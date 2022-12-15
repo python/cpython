@@ -344,7 +344,7 @@ dummy_func(
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_BinarySubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
@@ -491,7 +491,7 @@ dummy_func(
         inst(STORE_SUBSCR, (counter/1, v, container, sub -- )) {
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
@@ -1021,7 +1021,7 @@ dummy_func(
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *seq = TOP();
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -1104,7 +1104,7 @@ dummy_func(
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg);
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -1216,7 +1216,7 @@ dummy_func(
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg>>1);
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -1662,7 +1662,7 @@ dummy_func(
                 assert(cframe.use_tracing == 0);
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg>>1);
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -2005,7 +2005,7 @@ dummy_func(
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -2468,7 +2468,7 @@ dummy_func(
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_ForIter(TOP(), next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -2496,7 +2496,7 @@ dummy_func(
                 STACK_SHRINK(1);
                 Py_DECREF(iter);
                 /* Skip END_FOR */
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + OPSIZE);
             }
         }
 
@@ -2519,7 +2519,7 @@ dummy_func(
             }
             STACK_SHRINK(1);
             Py_DECREF(it);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + OPSIZE);
         end_for_iter_list:
         }
 
@@ -2542,7 +2542,7 @@ dummy_func(
             }
             STACK_SHRINK(1);
             Py_DECREF(it);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + OPSIZE);
         end_for_iter_tuple:
         }
 
@@ -2557,7 +2557,7 @@ dummy_func(
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + OPSIZE);
             }
             else {
                 long value = r->start;
@@ -2567,7 +2567,7 @@ dummy_func(
                     goto error;
                 }
                 // The STORE_FAST is already done.
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + OPSIZE);
             }
         }
 
@@ -2822,7 +2822,7 @@ dummy_func(
                 int is_meth = is_method(stack_pointer, oparg);
                 int nargs = oparg + is_meth;
                 PyObject *callable = PEEK(nargs + 1);
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_Call(callable, next_instr, nargs, kwnames);
                 DISPATCH_SAME_OPARG();
             }
@@ -3569,7 +3569,7 @@ dummy_func(
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                next_instr--;
+                next_instr -= OPSIZE;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
                 DISPATCH_SAME_OPARG();
             }

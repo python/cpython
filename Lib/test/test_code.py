@@ -192,7 +192,7 @@ class CodeTest(unittest.TestCase):
 
         def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
-            return c.replace(co_freevars=c.co_freevars + ('__class__',), co_code=bytes([COPY_FREE_VARS, 1])+c.co_code)
+            return c.replace(co_freevars=c.co_freevars + ('__class__',), co_code=bytes([COPY_FREE_VARS, 1, 0, 0])+c.co_code)
 
         def add_foreign_method(cls, name, f):
             code = new_code(f.__code__)
@@ -372,7 +372,7 @@ class CodeTest(unittest.TestCase):
         artificial_instructions = []
         for instr, positions in zip(
             dis.get_instructions(code, show_caches=True),
-            code.co_positions(),
+            dis._get_co_positions(code, show_caches=True),
             strict=True
         ):
             # If any of the positions is None, then all have to
@@ -699,9 +699,9 @@ class CodeLocationTest(unittest.TestCase):
             co_firstlineno=42,
             co_code=bytes(
                 [
-                    dis.opmap["RESUME"], 0,
-                    dis.opmap["LOAD_ASSERTION_ERROR"], 0,
-                    dis.opmap["RAISE_VARARGS"], 1,
+                    dis.opmap["RESUME"], 0, 0, 0,
+                    dis.opmap["LOAD_ASSERTION_ERROR"], 0, 0, 0,
+                    dis.opmap["RAISE_VARARGS"], 1, 0, 0,
                 ]
             ),
             co_linetable=bytes(

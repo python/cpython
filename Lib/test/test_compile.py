@@ -1205,7 +1205,9 @@ class TestSourcePositions(unittest.TestCase):
             line, end_line, column, end_column, occurrence=1):
 
         for instr, position in zip(
-            dis.Bytecode(code, show_caches=True), code.co_positions(), strict=True
+             dis.Bytecode(code, show_caches=True),
+             dis._get_co_positions(code, show_caches=True),
+             strict=True
         ):
             if instr.opname == opcode:
                 occurrence -= 1

@@ -609,7 +609,7 @@ class Analyzer:
             for comp in sup.parts:
                 if not first:
                     self.out.emit("NEXTOPARG();")
-                    self.out.emit("JUMPBY(1);")
+                    self.out.emit(f"JUMPBY(OPSIZE);")
                 first = False
                 comp.write_body(self.out, 0)
                 if comp.instr.cache_offset:

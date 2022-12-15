@@ -793,10 +793,10 @@ pycore_init_types(PyInterpreterState *interp)
 static const uint8_t INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     /* Put a NOP at the start, so that the IP points into
     * the code, rather than before it */
-    NOP, 0,
-    INTERPRETER_EXIT, 0,
+    NOP, 0, 0, 0,
+    INTERPRETER_EXIT, 0, 0, 0,
     /* RESUME at end makes sure that the frame appears incomplete */
-    RESUME, 0
+    RESUME, 0, 0, 0,
 };
 
 static const _PyShimCodeDef INTERPRETER_TRAMPOLINE_CODEDEF = {

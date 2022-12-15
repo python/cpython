@@ -11,6 +11,7 @@ from opcode import (
     _cache_format,
     _inline_cache_entries,
     _nb_ops,
+    _opsize,
     _specializations,
     _specialized_instructions,
 )
@@ -346,11 +347,12 @@ def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
         line_offset = first_line - co.co_firstlineno
     else:
         line_offset = 0
+    co_positions = _get_co_positions(co, show_caches=show_caches)
     return _get_instructions_bytes(_get_code_array(co, adaptive),
                                    co._varname_from_oparg,
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset,
-                                   co_positions=co.co_positions(),
+                                   co_positions=co_positions,
                                    show_caches=show_caches)
 
 def _get_const_value(op, arg, co_consts):
@@ -422,6 +424,25 @@ def _parse_exception_table(code):
 def _is_backward_jump(op):
     return 'JUMP_BACKWARD' in opname[op]
 
+def _get_co_positions(code, show_caches=False):
+    # generate all co_positions, with or without caches,
+    # skipping the oparg2, oparg3 codewords.
+
+    if code is None:
+        return iter(())
+
+    ops = code.co_code[::2]
+    prev_op = 0
+    for op, positions in zip(ops, code.co_positions()):
+        assert _opsize in (1, 2)
+        if _opsize == 2 and prev_op != 0:
+            # skip oparg2, oparg3
+            prev_op = op
+            continue
+        if show_caches or op != CACHE:
+            yield positions
+            prev_op = op
+
 def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, co_consts=None,
                             linestarts=None, line_offset=0,
@@ -476,7 +497,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argrepr = "to " + repr(argval)
             elif deop in hasjrel:
                 signed_arg = -arg if _is_backward_jump(deop) else arg
-                argval = offset + 2 + signed_arg*2
+                argval = offset + (signed_arg + _opsize) * 2
                 if deop == FOR_ITER:
                     argval += 2
                 argrepr = "to " + repr(argval)
@@ -504,9 +525,6 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         if not caches:
             continue
         if not show_caches:
-            # We still need to advance the co_positions iterator:
-            for _ in range(caches):
-                next(co_positions, ())
             continue
         for name, size in _cache_format[opname[deop]].items():
             for i in range(size):
@@ -527,11 +545,12 @@ def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
     exception_entries = _parse_exception_table(co)
+    co_positions = _get_co_positions(co, show_caches=show_caches)
     _disassemble_bytes(_get_code_array(co, adaptive),
                        lasti, co._varname_from_oparg,
                        co.co_names, co.co_consts, linestarts, file=file,
                        exception_entries=exception_entries,
-                       co_positions=co.co_positions(), show_caches=show_caches)
+                       co_positions=co_positions, show_caches=show_caches)
 
 def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False):
     disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive)
@@ -609,6 +628,7 @@ def _unpack_opargs(code):
         op = code[i]
         deop = _deoptop(op)
         caches = _inline_cache_entries[deop]
+        caches += _opsize - 1  # also skip over oparg2, oparg3
         if deop in hasarg:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if deop == EXTENDED_ARG else 0
@@ -635,7 +655,7 @@ def findlabels(code):
             if deop in hasjrel:
                 if _is_backward_jump(deop):
                     arg = -arg
-                label = offset + 2 + arg*2
+                label = offset + (arg + _opsize) * 2
                 if deop == FOR_ITER:
                     label += 2
             elif deop in hasjabs:
@@ -722,13 +742,14 @@ class Bytecode:
 
     def __iter__(self):
         co = self.codeobj
+        co_positions = _get_co_positions(co, show_caches=self.show_caches)
         return _get_instructions_bytes(_get_code_array(co, self.adaptive),
                                        co._varname_from_oparg,
                                        co.co_names, co.co_consts,
                                        self._linestarts,
                                        line_offset=self._line_offset,
                                        exception_entries=self.exception_entries,
-                                       co_positions=co.co_positions(),
+                                       co_positions=co_positions,
                                        show_caches=self.show_caches)
 
     def __repr__(self):
@@ -756,6 +777,7 @@ class Bytecode:
         else:
             offset = -1
         with io.StringIO() as output:
+            co_positions=_get_co_positions(co, show_caches=self.show_caches)
             _disassemble_bytes(_get_code_array(co, self.adaptive),
                                varname_from_oparg=co._varname_from_oparg,
                                names=co.co_names, co_consts=co.co_consts,
@@ -764,7 +786,7 @@ class Bytecode:
                                file=output,
                                lasti=offset,
                                exception_entries=self.exception_entries,
-                               co_positions=co.co_positions(),
+                               co_positions=co_positions,
                                show_caches=self.show_caches)
             return output.getvalue()
 

@@ -420,7 +420,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
         _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
-        entry_point++;
+        entry_point += OPSIZE;
     }
     co->_co_firsttraceable = entry_point;
     _PyCode_Quicken(co);
@@ -717,10 +717,10 @@ PyCode_New(int argcount, int kwonlyargcount,
 // NOTE: When modifying the construction of PyCode_NewEmpty, please also change
 // test.test_code.CodeLocationTest.test_code_new_empty to keep it in sync!
 
-static const uint8_t assert0[6] = {
-    RESUME, 0,
-    LOAD_ASSERTION_ERROR, 0,
-    RAISE_VARARGS, 1
+static const uint8_t assert0[12] = {
+    RESUME, 0, 0, 0,
+    LOAD_ASSERTION_ERROR, 0, 0, 0,
+    RAISE_VARARGS, 1, 0, 0,
 };
 
 static const uint8_t linetable[2] = {
@@ -752,7 +752,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL) {
         goto failed;
     }
-    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 6);
+    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 12);
     if (code_ob == NULL) {
         goto failed;
     }
@@ -1528,6 +1528,12 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].opcode = opcode;
+        for (int k = 0; k < OPSIZE - 1; k++) {
+            /* oparg2, oparg3 */
+            instructions[++i].opcode = 0;
+            instructions[i].oparg = 0;
+
+        }
         while (caches--) {
             instructions[++i].opcode = CACHE;
             instructions[i].oparg = 0;

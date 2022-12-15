@@ -381,6 +381,9 @@ _specialization_stats = [
     "deopt",
 ]
 
+# number of codewords for opcode+oparg(s)
+_opsize = 2
+
 _cache_format = {
     "LOAD_GLOBAL": {
         "counter": 1,
