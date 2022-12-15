@@ -55,6 +55,8 @@
  */
 #define STACK_USE_GUIDELINE 30
 
+#undef SUCCESS
+#undef ERROR
 #define SUCCESS 0
 #define ERROR -1
 
@@ -261,22 +263,32 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 24) & 0xFF);
+            codestr->opcode = EXTENDED_ARG;
+            codestr->oparg = (oparg >> 24) & 0xFF;
+            codestr++;
             /* fall through */
         case 3:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 16) & 0xFF);
+            codestr->opcode = EXTENDED_ARG;
+            codestr->oparg = (oparg >> 16) & 0xFF;
+            codestr++;
             /* fall through */
         case 2:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 8) & 0xFF);
+            codestr->opcode = EXTENDED_ARG;
+            codestr->oparg = (oparg >> 8) & 0xFF;
+            codestr++;
             /* fall through */
         case 1:
-            *codestr++ = _Py_MAKECODEUNIT(opcode, oparg & 0xFF);
+            codestr->opcode = opcode;
+            codestr->oparg = oparg & 0xFF;
+            codestr++;
             break;
         default:
             Py_UNREACHABLE();
     }
     while (caches--) {
-        *codestr++ = _Py_MAKECODEUNIT(CACHE, 0);
+        codestr->opcode = CACHE;
+        codestr->oparg = 0;
+        codestr++;
     }
 }
 

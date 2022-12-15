@@ -26,6 +26,7 @@ extern "C" {
         }, \
         .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
         .pyhash_state = pyhash_state_INIT, \
+        .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
@@ -69,7 +70,7 @@ extern "C" {
         .types = { \
             .next_version_tag = 1, \
         }, \
-        .global_objects = { \
+        .static_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
                 .bytes_empty = _PyBytes_SIMPLE_INIT(0, 0), \

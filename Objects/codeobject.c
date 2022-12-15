@@ -15,14 +15,21 @@ static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->active_code_watchers) {
-        assert(interp->_initialized);
-        for (int i = 0; i < CODE_MAX_WATCHERS; i++) {
+    assert(interp->_initialized);
+    uint8_t bits = interp->active_code_watchers;
+    int i = 0;
+    while (bits) {
+        assert(i < CODE_MAX_WATCHERS);
+        if (bits & 1) {
             PyCode_WatchCallback cb = interp->code_watchers[i];
-            if ((cb != NULL) && (cb(event, co) < 0)) {
+            // callback must be non-null if the watcher bit is set
+            assert(cb != NULL);
+            if (cb(event, co) < 0) {
                 PyErr_WriteUnraisable((PyObject *) co);
             }
         }
+        i++;
+        bits >>= 1;
     }
 }
 
@@ -1520,9 +1527,10 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
         _Py_CODEUNIT instruction = instructions[i];
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
-        instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
+        instructions[i].opcode = opcode;
         while (caches--) {
-            instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);
+            instructions[++i].opcode = CACHE;
+            instructions[i].oparg = 0;
         }
     }
 }
@@ -1775,9 +1783,9 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        _Py_SET_OPCODE(co_instr, _PyOpcode_Deopt[_Py_OPCODE(co_instr)]);
-        _Py_SET_OPCODE(cp_instr, _PyOpcode_Deopt[_Py_OPCODE(cp_instr)]);
-        eq = co_instr == cp_instr;
+        co_instr.opcode = _PyOpcode_Deopt[_Py_OPCODE(co_instr)];
+        cp_instr.opcode =_PyOpcode_Deopt[_Py_OPCODE(cp_instr)];
+        eq = co_instr.cache == cp_instr.cache;
         if (!eq) {
             goto unequal;
         }
