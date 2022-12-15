@@ -577,7 +577,7 @@ class Random(_random.Random):
         """
         return _exp(self.normalvariate(mu, sigma))
 
-    def expovariate(self, lambd):
+    def expovariate(self, lambd=1.0):
         """Exponential distribution.
 
         lambd is 1.0 divided by the desired mean.  It should be
