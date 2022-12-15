@@ -19,6 +19,7 @@ from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
+from collections import deque
 
 
 __all__ = [
@@ -1282,42 +1283,51 @@ class Path(PurePath):
         return self._walk(top_down, on_error, follow_symlinks)
 
     def _walk(self, top_down, on_error, follow_symlinks):
-        # We may not have read permission for self, in which case we can't
-        # get a list of the files the directory contains. os.walk
-        # always suppressed the exception then, rather than blow up for a
-        # minor reason when (say) a thousand readable directories are still
-        # left to visit. That logic is copied here.
-        try:
-            scandir_it = self._scandir()
-        except OSError as error:
-            if on_error is not None:
-                on_error(error)
-            return
+        stack: ... = deque(((False, self),))
 
-        with scandir_it:
-            dirnames = []
-            filenames = []
-            for entry in scandir_it:
-                try:
-                    is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
-                except OSError:
-                    # Carried over from os.path.isdir().
-                    is_dir = False
+        while stack:
+            is_result, top = stack.pop()
+            if is_result:
+                yield top
+                continue
 
-                if is_dir:
-                    dirnames.append(entry.name)
-                else:
-                    filenames.append(entry.name)
 
-        if top_down:
-            yield self, dirnames, filenames
+            # We may not have read permission for self, in which case we can't
+            # get a list of the files the directory contains. os.walk
+            # always suppressed the exception then, rather than blow up for a
+            # minor reason when (say) a thousand readable directories are still
+            # left to visit. That logic is copied here.
+            try:
+                scandir_it = self._scandir()
+            except OSError as error:
+                if on_error is not None:
+                    on_error(error)
+                continue
 
-        for dirname in dirnames:
-            dirpath = self._make_child_relpath(dirname)
-            yield from dirpath._walk(top_down, on_error, follow_symlinks)
+            with scandir_it:
+                dirnames = []
+                filenames = []
+                for entry in scandir_it:
+                    try:
+                        is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
+                    except OSError:
+                        # Carried over from os.path.isdir().
+                        is_dir = False
 
-        if not top_down:
-            yield self, dirnames, filenames
+                    if is_dir:
+                        dirnames.append(entry.name)
+                    else:
+                        filenames.append(entry.name)
+
+            if top_down:
+                stack.append((True, (top, dirnames, filenames)))
+
+            for dirname in dirnames:
+                dirpath = self._make_child_relpath(dirname)
+                stack.append((False, dirpath))
+
+            if not top_down:
+                stack.append((True, (top, dirnames, filenames)))
 
 
 class PosixPath(Path, PurePosixPath):
