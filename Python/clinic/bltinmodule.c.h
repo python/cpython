@@ -354,8 +354,8 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[4]) {
-        dont_inherit = _PyLong_AsInt(args[4]);
-        if (dont_inherit == -1 && PyErr_Occurred()) {
+        dont_inherit = PyObject_IsTrue(args[4]);
+        if (dont_inherit < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -1215,4 +1215,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3c9497e0ffeb8a30 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=973da43fa65aa727 input=a9049054013a1b77]*/

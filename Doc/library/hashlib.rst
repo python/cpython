@@ -497,6 +497,7 @@ update the hash:
     >>> h = blake2b()
     >>> for item in items:
     ...     h.update(item)
+    ...
     >>> h.hexdigest()
     '6ff843ba685842aa82031d3f53c48b66326df7639a63d128974c5c14f31a0f33343a8c65551134ed1ae0f2b0dd2bb495dc81039e3eeb0aa1bb0388bbeac29183'
 
