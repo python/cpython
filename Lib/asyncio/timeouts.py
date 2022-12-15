@@ -24,7 +24,7 @@ class _State(enum.Enum):
     EXITED = "finished"
 
 
-class Timeout:
+class Timeout(contextlib.AsyncContextDecorator):
 
     def __init__(self, when: Optional[float]) -> None:
         self._state = _State.CREATED
@@ -109,7 +109,7 @@ class Timeout:
         self._timeout_handler = None
 
 
-class timeout(Timeout, contextlib.AsyncContextDecorator):
+class timeout(Timeout):
     """Timeout async context manager.
 
     Useful in cases when you want to apply timeout logic around block
@@ -130,7 +130,7 @@ class timeout(Timeout, contextlib.AsyncContextDecorator):
         super().__init__(loop.time() + delay if delay is not None else None)
 
 
-class timeout_at(Timeout, contextlib.AsyncContextDecorator):
+class timeout_at(Timeout):
     """Schedule the timeout at absolute time.
 
     Like timeout() but argument gives absolute time in the same clock system
