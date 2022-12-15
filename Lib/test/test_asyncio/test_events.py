@@ -841,7 +841,7 @@ class EventLoopTestsMixin:
         self.assertEqual(sock.gettimeout(), 0)
         with self.assertRaises(ValueError):
             sock.setblocking(True)
-
+        sock.setblocking(False)
         server.close()
 
 
