@@ -2705,6 +2705,20 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         except ZeroDivisionError:
             pass
 
+    def test_findtext_with_falsey_text_attribute(self):
+        root_elem = ET.Element('foo')
+        sub_elem = ET.SubElement(root_elem, 'bar')
+        falsey = ["", 0, False, [], (), {}]
+        for val in falsey:
+            sub_elem.text = val
+            self.assertEqual(root_elem.findtext('./bar'), val)
+
+    def test_findtext_with_none_text_attribute(self):
+        root_elem = ET.Element('foo')
+        sub_elem = ET.SubElement(root_elem, 'bar')
+        sub_elem.text = None
+        self.assertEqual(root_elem.findtext('./bar'), '')
+
     def test_findall_with_mutating(self):
         e = ET.Element('foo')
         e.extend([ET.Element('bar')])

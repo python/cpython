@@ -13,15 +13,36 @@ sys.path.append(os.path.abspath('includes'))
 # General configuration
 # ---------------------
 
-extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
-              'pyspecific', 'c_annotations', 'escape4chm',
-              'asdl_highlight', 'peg_highlight', 'glossary_search']
+extensions = [
+    'asdl_highlight',
+    'c_annotations',
+    'escape4chm',
+    'glossary_search',
+    'peg_highlight',
+    'pyspecific',
+    'sphinx.ext.coverage',
+    'sphinx.ext.doctest',
+]
+
+# Skip if downstream redistributors haven't installed it
+try:
+    import sphinxext.opengraph
+except ImportError:
+    pass
+else:
+    extensions.append('sphinxext.opengraph')
+
 
 doctest_global_setup = '''
 try:
     import _tkinter
 except ImportError:
     _tkinter = None
+# Treat warnings as errors, done here to prevent warnings in Sphinx code from
+# causing spurious test failures.
+import warnings
+warnings.simplefilter('error')
+del warnings
 '''
 
 manpages_url = 'https://manpages.debian.org/{path}'
@@ -74,8 +95,23 @@ html_theme_options = {
     'root_include_title': False   # We use the version switcher instead.
 }
 
+# Override stylesheet fingerprinting for Windows CHM htmlhelp to fix GH-91207
+# https://github.com/python/cpython/issues/91207
+if any('htmlhelp' in arg for arg in sys.argv):
+    html_style = 'pydoctheme.css'
+    print("\nWARNING: Windows CHM Help is no longer supported.")
+    print("It may be removed in the future\n")
+
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
+
+# Deployment preview information, from Netlify
+# (See netlify.toml and https://docs.netlify.com/configure-builds/environment-variables/#git-metadata)
+html_context = {
+    "is_deployment_preview": os.getenv("IS_DEPLOYMENT_PREVIEW"),
+    "repository_url": os.getenv("REPOSITORY_URL"),
+    "pr_id": os.getenv("REVIEW_ID")
+}
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -102,7 +138,7 @@ html_additional_pages = {
 html_use_opensearch = 'https://docs.python.org/' + version
 
 # Additional static files.
-html_static_path = ['tools/static']
+html_static_path = ['_static', 'tools/static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')
@@ -185,7 +221,6 @@ epub_publisher = 'Python Software Foundation'
 coverage_ignore_modules = [
     r'[T|t][k|K]',
     r'Tix',
-    r'distutils.*',
 ]
 
 coverage_ignore_functions = [
@@ -228,12 +263,12 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
 
-# Sphinx 2 and Sphinx 3 compatibility
-# -----------------------------------
-
-# bpo-40204: Allow Sphinx 2 syntax in the C domain
-c_allow_pre_v3 = True
-
-# bpo-40204: Disable warnings on Sphinx 2 syntax of the C domain since the
-# documentation is built with -W (warnings treated as errors).
-c_warn_on_allowed_pre_v3 = False
+# sphinxext-opengraph config
+ogp_site_url = 'https://docs.python.org/3/'
+ogp_site_name = 'Python documentation'
+ogp_image = '_static/og-image.png'
+ogp_custom_meta_tags = [
+    '<meta property="og:image:width" content="200">',
+    '<meta property="og:image:height" content="200">',
+    '<meta name="theme-color" content="#3776ab">',
+]

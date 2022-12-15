@@ -25,6 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
+.. include:: ../includes/wasm-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -80,8 +81,10 @@ underlying :class:`Popen` interface can be used directly.
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
-   behavior of inheriting the current process' environment. It is passed directly
-   to :class:`Popen`.
+   behavior of inheriting the current process' environment. It is passed
+   directly to :class:`Popen`. This mapping can be str to str on any platform
+   or bytes to bytes on POSIX platforms much like :data:`os.environ` or
+   :data:`os.environb`.
 
    Examples::
 
@@ -192,7 +195,10 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: output
 
         Output of the child process if it was captured by :func:`run` or
-        :func:`check_output`.  Otherwise, ``None``.
+        :func:`check_output`.  Otherwise, ``None``.  This is always
+        :class:`bytes` when any output was captured regardless of the
+        ``text=True`` setting.  It may remain ``None`` instead of ``b''``
+        when no output was observed.
 
     .. attribute:: stdout
 
@@ -201,7 +207,9 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: stderr
 
         Stderr output of the child process if it was captured by :func:`run`.
-        Otherwise, ``None``.
+        Otherwise, ``None``.  This is always :class:`bytes` when stderr output
+        was captured regardless of the ``text=True`` setting.  It may remain
+        ``None`` instead of ``b''`` when no stderr output was observed.
 
     .. versionadded:: 3.3
 
@@ -613,7 +621,9 @@ functions.
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
-   behavior of inheriting the current process' environment.
+   behavior of inheriting the current process' environment. This mapping can be
+   str to str on any platform or bytes to bytes on POSIX platforms much like
+   :data:`os.environ` or :data:`os.environb`.
 
    .. note::
 
@@ -823,7 +833,7 @@ Instances of the :class:`Popen` class have the following methods:
 
       On Windows, SIGTERM is an alias for :meth:`terminate`. CTRL_C_EVENT and
       CTRL_BREAK_EVENT can be sent to processes started with a *creationflags*
-      parameter which includes `CREATE_NEW_PROCESS_GROUP`.
+      parameter which includes ``CREATE_NEW_PROCESS_GROUP``.
 
 
 .. method:: Popen.terminate()
@@ -1473,7 +1483,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/kill $$')
       (-15, '')
 
-   .. availability:: POSIX & Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3.4
       Windows support was added.
@@ -1495,7 +1505,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   .. availability:: POSIX & Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3.4
       Windows support added

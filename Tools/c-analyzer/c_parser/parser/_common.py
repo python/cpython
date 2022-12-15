@@ -9,7 +9,11 @@ from ._regexes import (
 
 def log_match(group, m):
     from . import _logger
-    _logger.debug(f'matched <{group}> ({m.group(0)})')
+    text = m.group(0)
+    if text.startswith(('(', ')')) or text.endswith(('(', ')')):
+        _logger.debug(f'matched <{group}> ({text!r})')
+    else:
+        _logger.debug(f'matched <{group}> ({text})')
 
 
 #############################

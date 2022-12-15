@@ -159,7 +159,7 @@ class BuiltinTest(unittest.TestCase):
         __import__('string')
         __import__(name='sys')
         __import__(name='time', level=0)
-        self.assertRaises(ImportError, __import__, 'spamspam')
+        self.assertRaises(ModuleNotFoundError, __import__, 'spamspam')
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
@@ -334,11 +334,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, compile)
         self.assertRaises(ValueError, compile, 'print(42)\n', '<string>', 'badmode')
         self.assertRaises(ValueError, compile, 'print(42)\n', '<string>', 'single', 0xff)
-        self.assertRaises(ValueError, compile, chr(0), 'f', 'exec')
         self.assertRaises(TypeError, compile, 'pass', '?', 'exec',
                           mode='eval', source='0', filename='tmp')
         compile('print("\xe5")\n', '', 'exec')
-        self.assertRaises(ValueError, compile, chr(0), 'f', 'exec')
+        self.assertRaises(SyntaxError, compile, chr(0), 'f', 'exec')
         self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
 
         # test the optimize argument
@@ -737,11 +736,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError,
                           exec, code, {'__builtins__': 123})
 
-        # no __build_class__ function
-        code = compile("class A: pass", "", "exec")
-        self.assertRaisesRegex(NameError, "__build_class__ not found",
-                               exec, code, {'__builtins__': {}})
-
+    def test_exec_globals_frozen(self):
         class frozendict_error(Exception):
             pass
 
@@ -758,11 +753,50 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(frozendict_error,
                           exec, code, {'__builtins__': frozen_builtins})
 
+        # no __build_class__ function
+        code = compile("class A: pass", "", "exec")
+        self.assertRaisesRegex(NameError, "__build_class__ not found",
+                               exec, code, {'__builtins__': {}})
+        # __build_class__ in a custom __builtins__
+        exec(code, {'__builtins__': frozen_builtins})
+        self.assertRaisesRegex(NameError, "__build_class__ not found",
+                               exec, code, {'__builtins__': frozendict()})
+
         # read-only globals
         namespace = frozendict({})
         code = compile("x=1", "test", "exec")
         self.assertRaises(frozendict_error,
                           exec, code, namespace)
+
+    def test_exec_globals_error_on_get(self):
+        # custom `globals` or `builtins` can raise errors on item access
+        class setonlyerror(Exception):
+            pass
+
+        class setonlydict(dict):
+            def __getitem__(self, key):
+                raise setonlyerror
+
+        # globals' `__getitem__` raises
+        code = compile("globalname", "test", "exec")
+        self.assertRaises(setonlyerror,
+                          exec, code, setonlydict({'globalname': 1}))
+
+        # builtins' `__getitem__` raises
+        code = compile("superglobal", "test", "exec")
+        self.assertRaises(setonlyerror, exec, code,
+                          {'__builtins__': setonlydict({'superglobal': 1})})
+
+    def test_exec_globals_dict_subclass(self):
+        class customdict(dict):  # this one should not do anything fancy
+            pass
+
+        code = compile("superglobal", "test", "exec")
+        # works correctly
+        exec(code, {'__builtins__': customdict({'superglobal': 1})})
+        # custom builtins dict subclass is missing key
+        self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
+                               exec, code, {'__builtins__': customdict()})
 
     def test_exec_redirected(self):
         savestdout = sys.stdout
@@ -2068,6 +2102,11 @@ class TestBreakpoint(unittest.TestCase):
             breakpoint()
             mock.assert_not_called()
 
+    def test_runtime_error_when_hook_is_lost(self):
+        del sys.breakpointhook
+        with self.assertRaises(RuntimeError):
+            breakpoint()
+
 
 @unittest.skipUnless(pty, "the pty and signal modules must be available")
 class PtyTests(unittest.TestCase):
@@ -2341,7 +2380,7 @@ class TestType(unittest.TestCase):
                 self.assertEqual(A.__module__, __name__)
         with self.assertRaises(ValueError):
             type('A\x00B', (), {})
-        with self.assertRaises(ValueError):
+        with self.assertRaises(UnicodeEncodeError):
             type('A\udcdcB', (), {})
         with self.assertRaises(TypeError):
             type(b'A', (), {})
@@ -2358,7 +2397,7 @@ class TestType(unittest.TestCase):
         with self.assertRaises(ValueError):
             A.__name__ = 'A\x00B'
         self.assertEqual(A.__name__, 'C')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(UnicodeEncodeError):
             A.__name__ = 'A\udcdcB'
         self.assertEqual(A.__name__, 'C')
         with self.assertRaises(TypeError):

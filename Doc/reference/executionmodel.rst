@@ -67,7 +67,7 @@ The following constructs bind names:
 
   + :keyword:`for` loop header,
   + after :keyword:`!as` in a :keyword:`with` statement, :keyword:`except`
-    clause or in the as-pattern in structural pattern matching,
+    clause, :keyword:`except* <except_star>` clause, or in the as-pattern in structural pattern matching,
   + in a capture pattern in structural pattern matching
 
 * :keyword:`import` statements.

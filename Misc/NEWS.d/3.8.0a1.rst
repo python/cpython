@@ -17,7 +17,7 @@ malicious or buggy certificate can result into segfault. Vulnerability
 .. section: Security
 
 The :option:`-I` command line option (run Python in isolated mode) is now
-also copied by the :mod:`multiprocessing` and :mod:`distutils` modules when
+also copied by the :mod:`multiprocessing` and ``distutils`` modules when
 spawning child processes. Previously, only :option:`-E` and :option:`-s`
 options (enabled by :option:`-I`) were copied.
 
@@ -2270,7 +2270,7 @@ last release was in 2000. Mac OS 9 last release was in 2001.
 .. nonce: laV_IE
 .. section: Library
 
-:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catches
+:func:`~distutils.utils.check_environ` of ``distutils.utils`` now catches
 :exc:`KeyError` on calling :func:`pwd.getpwuid`: don't create the ``HOME``
 environment variable in this case.
 
@@ -3070,7 +3070,7 @@ Add deprecation warning when `loop` is used in methods: `asyncio.sleep`,
 .. nonce: Pr3-iG
 .. section: Library
 
-ZIP files created by :mod:`distutils` will now include entries for
+ZIP files created by ``distutils`` will now include entries for
 directories.
 
 ..
@@ -3720,7 +3720,7 @@ Deprecate passing non-ThreadPoolExecutor instances to
 .. section: Library
 
 Restore ``msilib.Win64`` to preserve backwards compatibility since it's
-already used by :mod:`distutils`' ``bdist_msi`` command.
+already used by ``distutils``' ``bdist_msi`` command.
 
 ..
 

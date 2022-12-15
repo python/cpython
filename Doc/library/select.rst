@@ -22,6 +22,7 @@ it was last read.
    encouraged to use the :mod:`selectors` module instead, unless they want
    precise control over the OS-level primitives used.
 
+.. include:: ../includes/wasm-notavail.rst
 
 The module defines the following:
 
@@ -60,7 +61,7 @@ The module defines the following:
    events.
 
    *sizehint* informs epoll about the expected number of events to be
-   registered.  It must be positive, or `-1` to use the default. It is only
+   registered.  It must be positive, or ``-1`` to use the default. It is only
    used on older systems where :c:func:`epoll_create1` is not available;
    otherwise it has no effect (though its value is still checked).
 

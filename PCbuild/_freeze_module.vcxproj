@@ -110,6 +110,7 @@
     <ClCompile Include="..\Modules\getpath_noop.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
+    <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
     <ClCompile Include="..\Modules\_io\_iomodule.c" />
     <ClCompile Include="..\Modules\_io\bufferedio.c" />
@@ -120,7 +121,6 @@
     <ClCompile Include="..\Modules\_io\textio.c" />
     <ClCompile Include="..\Modules\_io\winconsoleio.c" />
     <ClCompile Include="..\Objects\abstract.c" />
-    <ClCompile Include="..\Objects\accu.c" />
     <ClCompile Include="..\Objects\boolobject.c" />
     <ClCompile Include="..\Objects\bytearrayobject.c" />
     <ClCompile Include="..\Objects\bytes_methods.c" />
@@ -200,6 +200,7 @@
     <ClCompile Include="..\Python\getopt.c" />
     <ClCompile Include="..\Python\getplatform.c" />
     <ClCompile Include="..\Python\getversion.c" />
+    <ClCompile Include="..\Python\ceval_gil.c" />
     <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\hashtable.c" />
     <ClCompile Include="..\Python\import.c" />
@@ -210,6 +211,7 @@
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
+    <ClCompile Include="..\Python\perf_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
@@ -394,7 +396,7 @@
           DependsOnTargets="FindPythonForBuild"
           Condition="$(Configuration) != 'PGUpdate'">
     <!-- BEGIN deepfreeze rule -->
-	<Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" ^
+	<Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\deepfreeze.py" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap.h:importlib._bootstrap" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h:importlib._bootstrap_external" ^
 		 "$(PySourcePath)Python\frozen_modules\zipimport.h:zipimport" ^
@@ -424,6 +426,10 @@
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>
       <Clean Include="%(None.IntFile)" />
+      <Clean Include="%(None.OutFile)" />
+      <Clean Include="%(GetPath.IntFile)" />
+      <Clean Include="%(GetPath.OutFile)" />
+      <Clean Include="$(PySourcePath)Python\deepfreeze\deepfreeze.c" />
     </ItemGroup>
   </Target>
 </Project>

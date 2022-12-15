@@ -95,6 +95,8 @@ for the I/O buffer escapes completely the Python memory manager.
 Allocator Domains
 =================
 
+.. _allocator-domains:
+
 All allocating functions belong to one of three different "domains" (see also
 :c:type:`PyMemAllocatorDomain`). These domains represent different allocation
 strategies and are optimized for different purposes. The specific details on
@@ -141,7 +143,7 @@ zero bytes.
 
 .. c:function:: void* PyMem_RawMalloc(size_t n)
 
-   Allocates *n* bytes and returns a pointer of type :c:type:`void*` to the
+   Allocates *n* bytes and returns a pointer of type :c:expr:`void*` to the
    allocated memory, or ``NULL`` if the request fails.
 
    Requesting zero bytes returns a distinct non-``NULL`` pointer if possible, as
@@ -152,7 +154,7 @@ zero bytes.
 .. c:function:: void* PyMem_RawCalloc(size_t nelem, size_t elsize)
 
    Allocates *nelem* elements each whose size in bytes is *elsize* and returns
-   a pointer of type :c:type:`void*` to the allocated memory, or ``NULL`` if the
+   a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
    Requesting zero elements or elements of size zero bytes returns a distinct
@@ -212,7 +214,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyMem_Malloc(size_t n)
 
-   Allocates *n* bytes and returns a pointer of type :c:type:`void*` to the
+   Allocates *n* bytes and returns a pointer of type :c:expr:`void*` to the
    allocated memory, or ``NULL`` if the request fails.
 
    Requesting zero bytes returns a distinct non-``NULL`` pointer if possible, as
@@ -223,7 +225,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 .. c:function:: void* PyMem_Calloc(size_t nelem, size_t elsize)
 
    Allocates *nelem* elements each whose size in bytes is *elsize* and returns
-   a pointer of type :c:type:`void*` to the allocated memory, or ``NULL`` if the
+   a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
    Requesting zero elements or elements of size zero bytes returns a distinct
@@ -265,14 +267,14 @@ The following type-oriented macros are provided for convenience.  Note  that
 .. c:function:: TYPE* PyMem_New(TYPE, size_t n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory.  Returns a pointer cast to :c:type:`TYPE*`.  The memory will not have
+   memory.  Returns a pointer cast to :c:expr:`TYPE*`.  The memory will not have
    been initialized in any way.
 
 
 .. c:function:: TYPE* PyMem_Resize(void *p, TYPE, size_t n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
-   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:type:`TYPE*`. On return,
+   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:expr:`TYPE*`. On return,
    *p* will be a pointer to the new memory area, or ``NULL`` in the event of
    failure.
 
@@ -320,7 +322,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyObject_Malloc(size_t n)
 
-   Allocates *n* bytes and returns a pointer of type :c:type:`void*` to the
+   Allocates *n* bytes and returns a pointer of type :c:expr:`void*` to the
    allocated memory, or ``NULL`` if the request fails.
 
    Requesting zero bytes returns a distinct non-``NULL`` pointer if possible, as
@@ -331,7 +333,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 .. c:function:: void* PyObject_Calloc(size_t nelem, size_t elsize)
 
    Allocates *nelem* elements each whose size in bytes is *elsize* and returns
-   a pointer of type :c:type:`void*` to the allocated memory, or ``NULL`` if the
+   a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
    Requesting zero elements or elements of size zero bytes returns a distinct
@@ -478,6 +480,25 @@ Customize Memory Allocators
 
    See also :c:member:`PyPreConfig.allocator` and :ref:`Preinitialize Python
    with PyPreConfig <c-preinit>`.
+
+   .. warning::
+
+       :c:func:`PyMem_SetAllocator` does have the following contract:
+
+        * It can be called after :c:func:`Py_PreInitialize` and before
+          :c:func:`Py_InitializeFromConfig` to install a custom memory
+          allocator. There are no restrictions over the installed allocator
+          other than the ones imposed by the domain (for instance, the Raw
+          Domain allows the allocator to be called without the GIL held). See
+          :ref:`the section on allocator domains <allocator-domains>` for more
+          information.
+
+        * If called after Python has finish initializing (after
+          :c:func:`Py_InitializeFromConfig` has been called) the allocator
+          **must** wrap the existing allocator. Substituting the current
+          allocator for some other arbitrary one is **not supported**.
+
+
 
 .. c:function:: void PyMem_SetupDebugHooks(void)
 
