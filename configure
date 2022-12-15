@@ -25251,7 +25251,9 @@ $as_echo "$OPENSSL_RPATH" >&6; }
 # This static linking is NOT OFFICIALLY SUPPORTED and not advertised.
 # Requires static OpenSSL build with position-independent code. Some features
 # like DSO engines or external OSSL providers don't work. Only tested with GCC
-# and clang on X86_64.
+# and clang on Linux and Darwin x86_64. On Darwin, ld64 will still prefer the
+# dynamic library if both the static version and the dynamic version are installed in
+# the same directory and have the same name.
 if test "x$PY_UNSUPPORTED_OPENSSL_BUILD" = xstatic; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for unsupported static openssl build" >&5
