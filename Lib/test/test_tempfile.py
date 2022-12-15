@@ -1654,7 +1654,6 @@ class TestTemporaryDirectory(BaseTestCase):
 
     @os_helper.skip_unless_symlink
     @os_helper.skip_unless_working_chmod
-    @unittest.skipUnless(os.chmod in os.supports_follow_symlinks, 'needs chmod follow_symlinks support')
     def test_cleanup_with_error_deleting_symlink(self):
         # cleanup() should not follow symlinks when fixing mode bits etc. (#91133)
         d1 = self.do_create()
