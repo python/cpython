@@ -26,6 +26,7 @@ extern "C" {
         }, \
         .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
         .pyhash_state = pyhash_state_INIT, \
+        .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
@@ -41,19 +42,21 @@ extern "C" {
                 .header = 1, \
             }, \
         }, \
+        .ceval = { \
+            .perf = _PyEval_RUNTIME_PERF_INIT, \
+        }, \
         .gilstate = { \
             .check_enabled = 1, \
             /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
                in accordance with the specification. */ \
             .autoTSSkey = Py_tss_NEEDS_INIT, \
         }, \
-        .tracemalloc = { \
-            .config = _PyTraceMalloc_Config_INIT, \
-        }, \
         .dtoa = _dtoa_runtime_state_INIT(runtime), \
         .fileutils = { \
             .force_ascii = -1, \
         }, \
+        .faulthandler = _faulthandler_runtime_state_INIT, \
+        .tracemalloc = _tracemalloc_runtime_state_INIT, \
         .float_state = { \
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
@@ -67,7 +70,7 @@ extern "C" {
         .types = { \
             .next_version_tag = 1, \
         }, \
-        .global_objects = { \
+        .static_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
                 .bytes_empty = _PyBytes_SIMPLE_INIT(0, 0), \

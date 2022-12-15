@@ -292,6 +292,7 @@ Data Types
          ...     @classmethod
          ...     def today(cls):
          ...         print('today is %s' % cls(date.today().isoweekday()).name)
+         ...
          >>> dir(Weekday.SATURDAY)
          ['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
 
@@ -309,11 +310,12 @@ Data Types
          >>> class PowersOfThree(Enum):
          ...     @staticmethod
          ...     def _generate_next_value_(name, start, count, last_values):
-         ...         return (count + 1) * 3
+         ...         return 3 ** (count + 1)
          ...     FIRST = auto()
          ...     SECOND = auto()
+         ...
          >>> PowersOfThree.SECOND.value
-         6
+         9
 
    .. method:: Enum.__init_subclass__(cls, **kwds)
 
@@ -336,6 +338,7 @@ Data Types
          ...             if member.value == value:
          ...                 return member
          ...         return None
+         ...
          >>> Build.DEBUG.value
          'debug'
          >>> Build('deBUG')
@@ -353,6 +356,7 @@ Data Types
          ...     def __repr__(self):
          ...         cls_name = self.__class__.__name__
          ...         return f'{cls_name}.{self.name}'
+         ...
          >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
          (OtherStyle.ALTERNATE, 'OtherStyle.ALTERNATE', 'OtherStyle.ALTERNATE')
 
@@ -367,6 +371,7 @@ Data Types
          ...     SOMETHING_ELSE = auto()
          ...     def __str__(self):
          ...         return f'{self.name}'
+         ...
          >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
          (<OtherStyle.ALTERNATE: 1>, 'ALTERNATE', 'ALTERNATE')
 
@@ -381,6 +386,7 @@ Data Types
          ...     SOMETHING_ELSE = auto()
          ...     def __format__(self, spec):
          ...         return f'{self.name}'
+         ...
          >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
          (<OtherStyle.ALTERNATE: 1>, 'OtherStyle.ALTERNATE', 'ALTERNATE')
 
@@ -388,6 +394,8 @@ Data Types
 
       Using :class:`auto` with :class:`Enum` results in integers of increasing value,
       starting with ``1``.
+
+   .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
 
 
 .. class:: IntEnum
@@ -401,6 +409,7 @@ Data Types
       ...     ONE = 1
       ...     TWO = 2
       ...     THREE = 3
+      ...
       >>> Numbers.THREE
       <Numbers.THREE: 3>
       >>> Numbers.ONE + Numbers.TWO
@@ -461,6 +470,7 @@ Data Types
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> purple = Color.RED | Color.BLUE
          >>> white = Color.RED | Color.GREEN | Color.BLUE
          >>> Color.GREEN in purple
@@ -568,6 +578,7 @@ Data Types
       ...     RED = auto()
       ...     GREEN = auto()
       ...     BLUE = auto()
+      ...
       >>> Color.RED & 2
       <Color: 0>
       >>> Color.RED | 2
@@ -693,6 +704,7 @@ Data Types
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> StrictFlag(2**2 + 2**4)
          Traceback (most recent call last):
          ...
@@ -710,6 +722,7 @@ Data Types
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> ConformFlag(2**2 + 2**4)
          <ConformFlag.BLUE: 4>
 
@@ -723,6 +736,7 @@ Data Types
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> EjectFlag(2**2 + 2**4)
          20
 
@@ -736,6 +750,7 @@ Data Types
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> KeepFlag(2**2 + 2**4)
          <KeepFlag.BLUE|16: 20>
 

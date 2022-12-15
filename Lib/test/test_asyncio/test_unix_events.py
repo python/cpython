@@ -1775,7 +1775,8 @@ class PolicyTests(unittest.TestCase):
 
     def test_child_watcher_replace_mainloop_existing(self):
         policy = self.create_policy()
-        loop = policy.get_event_loop()
+        loop = policy.new_event_loop()
+        policy.set_event_loop(loop)
 
         # Explicitly setup SafeChildWatcher,
         # default ThreadedChildWatcher has no _loop property
@@ -1884,13 +1885,15 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             # child
             try:
                 loop = asyncio.get_event_loop_policy().get_event_loop()
-                os.write(w, str(id(loop)).encode())
+            except RuntimeError:
+                os.write(w, b'NO LOOP')
+            except:
+                os.write(w, b'ERROR:' + ascii(sys.exc_info()).encode())
             finally:
                 os._exit(0)
         else:
             # parent
-            child_loop = int(os.read(r, 100).decode())
-            self.assertNotEqual(child_loop, id(loop))
+            self.assertEqual(os.read(r, 100), b'NO LOOP')
             wait_process(pid, exitcode=0)
 
     @hashlib_helper.requires_hashdigest('md5')

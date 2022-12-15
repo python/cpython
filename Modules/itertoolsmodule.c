@@ -56,11 +56,13 @@ static PyTypeObject pairwise_type;
 /* batched object ************************************************************/
 
 /* Note:  The built-in zip() function includes a "strict" argument
-   that is needed because that function can silently truncate data
-   and there is no easy way for a user to detect that condition.
-   The same reasoning does not apply to batched() which never drops
-   data.  Instead, it produces a shorter list which can be handled
-   as the user sees fit.
+   that was needed because that function would silently truncate data,
+   and there was no easy way for a user to detect the data loss.
+   The same reasoning does not apply to batched() which never drops data.
+   Instead, batched() produces a shorter tuple which can be handled
+   as the user sees fit.  If requested, it would be reasonable to add
+   "fillvalue" support which had demonstrated value in zip_longest().
+   For now, the API is kept simple and clean.
  */
 
 typedef struct {
@@ -74,25 +76,25 @@ typedef struct {
 itertools.batched.__new__ as batched_new
     iterable: object
     n: Py_ssize_t
-Batch data into lists of length n. The last batch may be shorter than n.
+Batch data into tuples of length n. The last batch may be shorter than n.
 
-Loops over the input iterable and accumulates data into lists
+Loops over the input iterable and accumulates data into tuples
 up to size n.  The input is consumed lazily, just enough to
-fill a list.  The result is yielded as soon as a batch is full
+fill a batch.  The result is yielded as soon as a batch is full
 or when the input iterable is exhausted.
 
     >>> for batch in batched('ABCDEFG', 3):
     ...     print(batch)
     ...
-    ['A', 'B', 'C']
-    ['D', 'E', 'F']
-    ['G']
+    ('A', 'B', 'C')
+    ('D', 'E', 'F')
+    ('G',)
 
 [clinic start generated code]*/
 
 static PyObject *
 batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
-/*[clinic end generated code: output=7ebc954d655371b6 input=f28fd12cb52365f0]*/
+/*[clinic end generated code: output=7ebc954d655371b6 input=ffd70726927c5129]*/
 {
     PyObject *it;
     batchedobject *bo;
@@ -150,12 +152,12 @@ batched_next(batchedobject *bo)
     if (it == NULL) {
         return NULL;
     }
-    result = PyList_New(n);
+    result = PyTuple_New(n);
     if (result == NULL) {
         return NULL;
     }
     iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
-    PyObject **items = _PyList_ITEMS(result);
+    PyObject **items = _PyTuple_ITEMS(result);
     for (i=0 ; i < n ; i++) {
         item = iternext(it);
         if (item == NULL) {
@@ -180,8 +182,7 @@ batched_next(batchedobject *bo)
         Py_DECREF(result);
         return NULL;
     }
-    /* Elements in result[i:] are still NULL */
-    Py_SET_SIZE(result, i);
+    _PyTuple_Resize(&result, i);
     return result;
 }
 

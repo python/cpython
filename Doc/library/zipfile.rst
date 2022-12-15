@@ -672,6 +672,7 @@ The :class:`PyZipFile` constructor takes the same parameters as the
           >>> def notests(s):
           ...     fn = os.path.basename(s)
           ...     return (not (fn == 'test' or fn.startswith('test_')))
+          ...
           >>> zf.writepy('myprog', filterfunc=notests)
 
       The :meth:`writepy` method makes archives with file names like

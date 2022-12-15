@@ -566,6 +566,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
     _control_char_table = str.maketrans(
             {c: fr'\x{c:02x}' for c in itertools.chain(range(0x20), range(0x7f,0xa0))})
+    _control_char_table[ord('\\')] = r'\\'
 
     def log_message(self, format, *args):
         """Log an arbitrary message.

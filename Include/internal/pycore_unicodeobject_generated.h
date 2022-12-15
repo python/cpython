@@ -982,6 +982,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(nstype);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(nt);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(null);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(number);
@@ -1057,6 +1059,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(pos1);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(pos2);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(posix);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(print_file_and_line);
     PyUnicode_InternInPlace(&string);
