@@ -6818,8 +6818,16 @@ static void warn_about_fork_with_threads(const char* name) {
     if (num_python_threads > 1) {
         PyErr_WarnFormat(
                 PyExc_DeprecationWarning, 1,
-                "multi-threaded process detected, "
-                "use of %s() may lead to deadlocks in the child.", name);
+#ifdef HAVE_GETPID
+                "This process (pid=%d) is multi-threaded, "
+#else
+                "This process is multi-threaded, "
+#endif
+                "use of %s() may lead to deadlocks in the child.",
+#ifdef HAVE_GETPID
+                getpid(),
+#endif
+                name);
         PyErr_Clear();
     }
 }
