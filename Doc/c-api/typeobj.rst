@@ -147,6 +147,8 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_watched`           | char                              |                   |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
 
@@ -2088,6 +2090,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is never inherited.
 
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
+
+
+.. c:member:: char PyTypeObject.tp_watched
+
+   Internal. Do not use.
+
+   .. versionadded:: 3.12
 
 
 .. _static-types:
