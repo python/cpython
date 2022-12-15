@@ -1280,9 +1280,6 @@ class Path(PurePath):
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
-        return self._walk(top_down, on_error, follow_symlinks)
-
-    def _walk(self, top_down, on_error, follow_symlinks):
         stack: ... = deque(((False, self),))
 
         while stack:
@@ -1290,7 +1287,6 @@ class Path(PurePath):
             if is_result:
                 yield top
                 continue
-
 
             # We may not have read permission for self, in which case we can't
             # get a list of the files the directory contains. os.walk
