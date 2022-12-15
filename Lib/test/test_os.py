@@ -4546,16 +4546,19 @@ class ForkTests(unittest.TestCase):
                     warnings.filterwarnings(
                             "always", category=DeprecationWarning)
                     if os.fork() == 0:
-                        assert len(ws) == 0  # Warn only the parent
+                        assert not ws, f"unexpected warnings in child: {ws}"
                         os._exit(0)  # child
                     else:
                         assert ws[0].category == DeprecationWarning, ws[0]
                         assert 'fork' in str(ws[0].message), ws[0]
+                        # Waiting allows an error in the child to hit stderr.
+                        exitcode = os.wait()[1]
+                        assert exitcode == 0, f"child exited {exitcode}"
                 assert threading.active_count() == 1, threading.enumerate()
             finally:
                 _end_spawned_pthread()
         """
-        _, out, err = assert_python_ok("-c", code)
+        _, out, err = assert_python_ok("-c", code, PYTHONOPTIMIZE='0')
         self.assertEqual(err.decode("utf-8"), "")
         self.assertEqual(out.decode("utf-8"), "")
 
