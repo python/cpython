@@ -1,1 +1,2 @@
-`hasattr(ctypes.windll, 'nonexistant')` now returns `False` instead of raising `OSError`.
+``hasattr(ctypes.windll, 'nonexistant')`` now returns `False` instead of raising exc:`OSError`.
+
