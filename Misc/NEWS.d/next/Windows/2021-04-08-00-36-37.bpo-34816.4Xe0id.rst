@@ -1,1 +1,1 @@
-Fix issue where hasattr(ctypes.windll, 'somefunction') raises OSError instead of the expected behavior: returning False
+`hasattr(ctypes.windll, 'nonexistant')` now returns `False` instead of raising `OSError`.
