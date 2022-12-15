@@ -2,30 +2,13 @@
 
 #include "pegen.h"
 #include "string_parser.h"
-
-static PyObject *
-_create_dummy_identifier(Parser *p)
-{
-    return _PyPegen_new_identifier(p, "");
-}
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_global_objects.h"  // _Py_SINGLETON()
 
 void *
 _PyPegen_dummy_name(Parser *p, ...)
 {
-    // XXX This leaks memory from the initial arena.
-    // Use a statically allocated variable instead of a pointer?
-    static void *cache = NULL;
-
-    if (cache != NULL) {
-        return cache;
-    }
-
-    PyObject *id = _create_dummy_identifier(p);
-    if (!id) {
-        return NULL;
-    }
-    cache = _PyAST_Name(id, Load, 1, 0, 1, 0, p->arena);
-    return cache;
+    return &_Py_SINGLETON(parser_dummy_name);
 }
 
 /* Creates a single-element asdl_seq* that contains a */

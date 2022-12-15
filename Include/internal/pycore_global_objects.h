@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_ast.h"             // struct _expr
 #include "pycore_gc.h"              // PyGC_Head
 #include "pycore_global_strings.h"  // struct _Py_global_strings
 #include "pycore_hamt.h"            // PyHamtNode_Bitmap
@@ -60,6 +61,8 @@ struct _Py_static_objects {
         _PyGC_Head_UNUSED _hamt_bitmap_node_empty_gc_not_used;
         PyHamtNode_Bitmap hamt_bitmap_node_empty;
         _PyContextTokenMissing context_token_missing;
+
+        struct _expr parser_dummy_name;
     } singletons;
 };
 

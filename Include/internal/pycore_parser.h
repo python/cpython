@@ -9,6 +9,8 @@ extern "C" {
 #endif
 
 
+#include "pycore_ast.h"             // Name_kind
+#include "pycore_global_strings.h"  // _Py_DECLARE_STR()
 #include "pycore_pyarena.h"         // PyArena
 
 
@@ -25,6 +27,18 @@ struct _parser_runtime_state {
 };
 
 
+_Py_DECLARE_STR(empty, "")
+
+#define _Py_parser_dummy_name_INIT \
+    { \
+        .kind = Name_kind, \
+        .v.Name.id = &_Py_STR(empty), \
+        .v.Name.ctx = Load, \
+        .lineno = 1, \
+        .col_offset = 0, \
+        .end_lineno = 1, \
+        .end_col_offset = 0, \
+    }
 
 extern struct _mod* _PyParser_ASTFromString(
     const char *str,
