@@ -884,7 +884,7 @@ static void wait_for_lock(void *unused) {
 }
 
 // These can be used to test things that care about the existence of another
-// thread that the Python runtime doesn't know about.
+// thread that the threading module doesn't know about.
 
 static PyObject *
 spawn_pthread_waiter(PyObject *self, PyObject *Py_UNUSED(ignored))
