@@ -149,10 +149,16 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
-   A slot name in parentheses indicates it is (effectively) deprecated.
-   Names in angle brackets should be treated as read-only.
-   Names in square brackets are for internal use only.
-   "<R>" (as a prefix) means the field is required (must be non-``NULL``).
+
+   **()**: A slot name in parentheses indicates it is (effectively) deprecated.
+
+   **<>**: Names in angle brackets should be initially set to ``NULL`` and
+   treated as read-only.
+
+   **[]**: Names in square brackets are for internal use only.
+
+   **<R>** (as a prefix) means the field is required (must be non-``NULL``).
+
 .. [#cols] Columns:
 
    **"O"**:  set on :c:type:`PyBaseObject_Type`
@@ -1923,8 +1929,19 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    Tuple of base types.
 
-   This is set for types created by a class statement.  It should be ``NULL`` for
-   statically defined types.
+   This field should be set to ``NULL`` and treated as read-only.
+   Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
+
+   For dynamically created classes, the ``Py_tp_bases``
+   :c:type:`slot <PyType_Slot>` can be used instead of the *bases* argument
+   of :c:func:`PyType_FromSpecWithBases`.
+   The argument form is preferred.
+
+   .. warning::
+
+      Multiple inheritance does not work well for statically defined types.
+      If you set ``tp_bases`` to a tuple, Python will not raise an error,
+      but some slots will only be inherited from the first base.
 
    **Inheritance:**
 
@@ -1936,6 +1953,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    Tuple containing the expanded set of base types, starting with the type itself
    and ending with :class:`object`, in Method Resolution Order.
 
+   This field should be set to ``NULL`` and treated as read-only.
+   Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
 
    **Inheritance:**
 

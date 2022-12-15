@@ -385,86 +385,67 @@ Accessing attributes of extension types
 .. c:type:: PyMemberDef
 
    Structure which describes an attribute of a type which corresponds to a C
-   struct member.  Its fields are:
+   struct member.  Its fields are, in order:
 
-   .. c:member:: const char* PyMemberDef.name
+   .. c:member:: const char* name
 
-         Name of the member
+         Name of the member.
+         A NULL value marks the end of a ``PyMemberDef[]`` array.
 
-   .. c:member:: int PyMemberDef.type
-
-      The type of the member in the C struct.
+         The string should be static, no copy is made of it.
 
    .. c:member:: Py_ssize_t PyMemberDef.offset
 
       The offset in bytes that the member is located on the type’s object struct.
 
-   .. c:member:: int PyMemberDef.flags
+   .. c:member:: int type
 
-      Flag bits indicating if the field should be read-only or writable.
+      The type of the member in the C struct.
+      See :ref:`PyMemberDef-types` for the possible values.
 
-   .. c:member:: const char* PyMemberDef.doc
+   .. c:member:: int flags
 
-      Points to the contents of the docstring.
+      Zero or more of the :ref:`PyMemberDef-flags`, combined using bitwise OR.
 
-   :c:member:`PyMemberDef.type` can be one of many ``T_`` macros corresponding to various C
-   types.  When the member is accessed in Python, it will be converted to the
-   equivalent Python type.
+   .. c:member:: const char* doc
 
-   =============== ==================
-   Macro name      C type
-   =============== ==================
-   T_SHORT         short
-   T_INT           int
-   T_LONG          long
-   T_FLOAT         float
-   T_DOUBLE        double
-   T_STRING        const char \*
-   T_OBJECT        PyObject \*
-   T_OBJECT_EX     PyObject \*
-   T_CHAR          char
-   T_BYTE          char
-   T_UBYTE         unsigned char
-   T_UINT          unsigned int
-   T_USHORT        unsigned short
-   T_ULONG         unsigned long
-   T_BOOL          char
-   T_LONGLONG      long long
-   T_ULONGLONG     unsigned long long
-   T_PYSSIZET      Py_ssize_t
-   =============== ==================
+      The docstring, or NULL.
+      The string should be static, no copy is made of it.
+      Typically, it is defined using :c:macro:`PyDoc_STR`.
 
-   :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX` differ in that
-   :c:macro:`T_OBJECT` returns ``None`` if the member is ``NULL`` and
-   :c:macro:`T_OBJECT_EX` raises an :exc:`AttributeError`.  Try to use
-   :c:macro:`T_OBJECT_EX` over :c:macro:`T_OBJECT` because :c:macro:`T_OBJECT_EX`
-   handles use of the :keyword:`del` statement on that attribute more correctly
-   than :c:macro:`T_OBJECT`.
-
-   :c:member:`PyMemberDef.flags` can be ``0`` for write and read access or :c:macro:`READONLY` for
-   read-only access.  Using :c:macro:`T_STRING` for :attr:`type` implies
-   :c:macro:`READONLY`.  :c:macro:`T_STRING` data is interpreted as UTF-8.
-   Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
-   members can be deleted.  (They are set to ``NULL``).
+   By default (when :c:member:`flags` is ``0``), members allow
+   both read and write access.
+   Use the :c:macro:`Py_READONLY` flag for read-only access.
+   Certain types, like :c:macro:`Py_T_STRING`, imply :c:macro:`Py_READONLY`.
+   Only :c:macro:`Py_T_OBJECT_EX` (and legacy :c:macro:`T_OBJECT`) members can
+   be deleted.
 
    .. _pymemberdef-offsets:
 
-   Heap allocated types (created using :c:func:`PyType_FromSpec` or similar),
-   ``PyMemberDef`` may contain definitions for the special member
-   ``__vectorcalloffset__``, corresponding to
+   For heap-allocated types (created using :c:func:`PyType_FromSpec` or similar),
+   ``PyMemberDef`` may contain a definition for the special member
+   ``"__vectorcalloffset__"``, corresponding to
    :c:member:`~PyTypeObject.tp_vectorcall_offset` in type objects.
-   These must be defined with ``T_PYSSIZET`` and ``READONLY``, for example::
+   These must be defined with ``Py_T_PYSSIZET`` and ``Py_READONLY``, for example::
 
       static PyMemberDef spam_type_members[] = {
-          {"__vectorcalloffset__", T_PYSSIZET, offsetof(Spam_object, vectorcall), READONLY},
+          {"__vectorcalloffset__", Py_T_PYSSIZET,
+           offsetof(Spam_object, vectorcall), Py_READONLY},
           {NULL}  /* Sentinel */
       };
 
-   The legacy offsets :c:member:`~PyTypeObject.tp_dictoffset` and
-   :c:member:`~PyTypeObject.tp_weaklistoffset` are still supported, but extensions are
-   strongly encouraged to use ``Py_TPFLAGS_MANAGED_DICT`` and
-   ``Py_TPFLAGS_MANAGED_WEAKREF`` instead.
+   (You may need to ``#include <stddef.h>`` for :c:func:`!offsetof`.)
 
+   The legacy offsets :c:member:`~PyTypeObject.tp_dictoffset` and
+   :c:member:`~PyTypeObject.tp_weaklistoffset` can be defined similarly using
+   ``"__dictoffset__"`` and ``"__weaklistoffset__"`` members, but extensions
+   are strongly encouraged to use :const:`Py_TPFLAGS_MANAGED_DICT` and
+   :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
+
+   .. versionchanged:: 3.12
+
+      ``PyMemberDef`` is always available.
+      Previously, it required including ``"structmember.h"``.
 
 .. c:function:: PyObject* PyMember_GetOne(const char *obj_addr, struct PyMemberDef *m)
 
@@ -472,6 +453,10 @@ Accessing attributes of extension types
    attribute is described by ``PyMemberDef`` *m*.  Returns ``NULL``
    on error.
 
+   .. versionchanged:: 3.12
+
+      ``PyMember_GetOne`` is always available.
+      Previously, it required including ``"structmember.h"``.
 
 .. c:function:: int PyMember_SetOne(char *obj_addr, struct PyMemberDef *m, PyObject *o)
 
@@ -479,6 +464,144 @@ Accessing attributes of extension types
    The attribute to set is described by ``PyMemberDef`` *m*.  Returns ``0``
    if successful and a negative value on failure.
 
+   .. versionchanged:: 3.12
+
+      ``PyMember_SetOne`` is always available.
+      Previously, it required including ``"structmember.h"``.
+
+.. _PyMemberDef-flags:
+
+Member flags
+^^^^^^^^^^^^
+
+The following flags can be used with :c:member:`PyMemberDef.flags`:
+
+.. c:macro:: Py_READONLY
+
+   Not writable.
+
+.. c:macro:: Py_AUDIT_READ
+
+   Emit an ``object.__getattr__`` :ref:`audit event <audit-events>`
+   before reading.
+
+.. index::
+   single: READ_RESTRICTED
+   single: WRITE_RESTRICTED
+   single: RESTRICTED
+
+.. versionchanged:: 3.10
+
+   The :const:`!RESTRICTED`, :const:`!READ_RESTRICTED` and
+   :const:`!WRITE_RESTRICTED` macros available with
+   ``#include "structmember.h"`` are deprecated.
+   :const:`!READ_RESTRICTED` and :const:`!RESTRICTED` are equivalent to
+   :const:`Py_AUDIT_READ`; :const:`!WRITE_RESTRICTED` does nothing.
+
+.. index::
+   single: READONLY
+
+.. versionchanged:: 3.12
+
+   The :const:`!READONLY` macro was renamed to :const:`Py_READONLY`.
+   The :const:`!PY_AUDIT_READ` macro was renamed with the ``Py_`` prefix.
+   The new names are now always available.
+   Previously, these required ``#include "structmember.h"``.
+   The header is still available and it provides the old names.
+
+.. _PyMemberDef-types:
+
+Member types
+^^^^^^^^^^^^
+
+:c:member:`PyMemberDef.type` can be one of the following macros corresponding
+to various C types.
+When the member is accessed in Python, it will be converted to the
+equivalent Python type.
+When it is set from Python, it will be converted back to the C type.
+If that is not possible, an exception such as :exc:`TypeError` or
+:exc:`ValueError` is raised.
+
+Unless marked (D), attributes defined this way cannot be deleted
+using e.g. :keyword:`del` or :py:func:`delattr`.
+
+================================ ============================= ======================
+Macro name                       C type                        Python type
+================================ ============================= ======================
+.. c:macro:: Py_T_BYTE           :c:expr:`char`                :py:class:`int`
+.. c:macro:: Py_T_SHORT          :c:expr:`short`               :py:class:`int`
+.. c:macro:: Py_T_INT            :c:expr:`int`                 :py:class:`int`
+.. c:macro:: Py_T_LONG           :c:expr:`long`                :py:class:`int`
+.. c:macro:: Py_T_LONGLONG       :c:expr:`long long`           :py:class:`int`
+.. c:macro:: Py_T_UBYTE          :c:expr:`unsigned char`       :py:class:`int`
+.. c:macro:: Py_T_UINT           :c:expr:`unsigned int`        :py:class:`int`
+.. c:macro:: Py_T_USHORT         :c:expr:`unsigned short`      :py:class:`int`
+.. c:macro:: Py_T_ULONG          :c:expr:`unsigned long`       :py:class:`int`
+.. c:macro:: Py_T_ULONGLONG      :c:expr:`unsigned long long`  :py:class:`int`
+.. c:macro:: Py_T_PYSSIZET       :c:expr:`Py_ssize_t`          :py:class:`int`
+.. c:macro:: Py_T_FLOAT          :c:expr:`float`               :py:class:`float`
+.. c:macro:: Py_T_DOUBLE         :c:expr:`double`              :py:class:`float`
+.. c:macro:: Py_T_BOOL           :c:expr:`char`                :py:class:`bool`
+                                 (written as 0 or 1)
+.. c:macro:: Py_T_STRING         :c:expr:`const char *` (*)    :py:class:`str` (RO)
+.. c:macro:: Py_T_STRING_INPLACE :c:expr:`const char[]` (*)    :py:class:`str` (RO)
+.. c:macro:: Py_T_CHAR           :c:expr:`char` (0-127)        :py:class:`str` (**)
+.. c:macro:: Py_T_OBJECT_EX      :c:expr:`PyObject *`          :py:class:`object` (D)
+================================ ============================= ======================
+
+   (*): Zero-terminated, UTF8-encoded C string.
+   With :c:macro:`!Py_T_STRING` the C representation is a pointer;
+   with :c:macro:`!Py_T_STRING_INLINE` the string is stored directly
+   in the structure.
+
+   (**): String of length 1. Only ASCII is accepted.
+
+   (RO): Implies :c:macro:`Py_READONLY`.
+
+   (D): Can be deleted, in which case the pointer is set to ``NULL``.
+   Reading a ``NULL`` pointer raises :py:exc:`AttributeError`.
+
+.. index::
+   single: T_BYTE
+   single: T_SHORT
+   single: T_INT
+   single: T_LONG
+   single: T_LONGLONG
+   single: T_UBYTE
+   single: T_USHORT
+   single: T_UINT
+   single: T_ULONG
+   single: T_ULONGULONG
+   single: T_PYSSIZET
+   single: T_FLOAT
+   single: T_DOUBLE
+   single: T_BOOL
+   single: T_CHAR
+   single: T_STRING
+   single: T_STRING_INPLACE
+   single: T_OBJECT_EX
+   single: structmember.h
+
+.. versionadded:: 3.12
+
+   In previous versions, the macros were only available with
+   ``#include "structmember.h"`` and were named without the ``Py_`` prefix
+   (e.g. as ``T_INT``).
+   The header is still available and contains the old names, along with
+   the following deprecated types:
+
+   .. c:macro:: T_OBJECT
+
+      Like ``Py_T_OBJECT_EX``, but ``NULL`` is converted to ``None``.
+      This results in surprising behavior in Python: deleting the attribute
+      effectively sets it to ``None``.
+
+   .. c:macro:: T_NONE
+
+      Always ``None``. Must be used with :c:macro:`Py_READONLY`.
+
+Defining Getters and Setters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. c:type:: PyGetSetDef
 

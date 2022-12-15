@@ -837,7 +837,8 @@ class AST_Tests(unittest.TestCase):
                 details = "Compiling ({!r} + {!r} * {})".format(
                             prefix, repeated, depth)
                 with self.assertRaises(RecursionError, msg=details):
-                    ast.parse(broken)
+                    with support.infinite_recursion():
+                        ast.parse(broken)
 
         check_limit("a", "()")
         check_limit("a", ".b")
@@ -1035,6 +1036,18 @@ Module(
         )
         self.assertEqual(ast.increment_lineno(src).lineno, 2)
         self.assertIsNone(ast.increment_lineno(src).end_lineno)
+
+    def test_increment_lineno_on_module(self):
+        src = ast.parse(dedent("""\
+        a = 1
+        b = 2 # type: ignore
+        c = 3
+        d = 4 # type: ignore@tag
+        """), type_comments=True)
+        ast.increment_lineno(src, n=5)
+        self.assertEqual(src.type_ignores[0].lineno, 7)
+        self.assertEqual(src.type_ignores[1].lineno, 9)
+        self.assertEqual(src.type_ignores[1].tag, '@tag')
 
     def test_iter_fields(self):
         node = ast.parse('foo()', mode='eval')

@@ -1,1 +1,0 @@
-Changes wording of docstring for :func:`pathlib.Path.iterdir`.
