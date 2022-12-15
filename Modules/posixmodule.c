@@ -989,6 +989,7 @@ typedef struct {
     PyObject *struct_rusage;
 #endif
     PyObject *st_mode;
+    int dup3_works;
 } _posixstate;
 
 
@@ -9407,11 +9408,6 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 /*[clinic end generated code: output=bc059d34a73404d1 input=c3cddda8922b038d]*/
 {
     int res = 0;
-#if defined(HAVE_DUP3) && \
-    !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
-    /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
-    static int dup3_works = -1;
-#endif
 
     if (fd < 0 || fd2 < 0) {
         posix_error();
@@ -9455,21 +9451,22 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 #else
 
 #ifdef HAVE_DUP3
-    if (!inheritable && dup3_works != 0) {
+    _posixstate *state = get_posix_state(module);
+    if (!inheritable && state->dup3_works != 0) {
         Py_BEGIN_ALLOW_THREADS
         res = dup3(fd, fd2, O_CLOEXEC);
         Py_END_ALLOW_THREADS
         if (res < 0) {
-            if (dup3_works == -1)
+            if (state->dup3_works == -1)
                 dup3_works = (errno != ENOSYS);
-            if (dup3_works) {
+            if (state->dup3_works) {
                 posix_error();
                 return -1;
             }
         }
     }
 
-    if (inheritable || dup3_works == 0)
+    if (inheritable || state->dup3_works == 0)
     {
 #endif
         Py_BEGIN_ALLOW_THREADS
@@ -15871,6 +15868,16 @@ static int
 posixmodule_exec(PyObject *m)
 {
     _posixstate *state = get_posix_state(m);
+
+#if defined(HAVE_DUP3) && \
+    !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
+    /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
+    state->dup3_works = -1;
+#elif !defined(HAVE_DUP3)
+    state->dup3_works = -1;
+#else
+    state->dup3_works = 0;
+#endif
 
 #if defined(HAVE_PWRITEV)
     if (HAVE_PWRITEV_RUNTIME) {} else {

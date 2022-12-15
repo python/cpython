@@ -19,8 +19,6 @@ Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
 # (set lazily, *after* first init)
-# XXX Is this thread-safe?
-Modules/posixmodule.c	os_dup2_impl	dup3_works	-
 
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-

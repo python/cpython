@@ -1,0 +1,2 @@
+Port dup3_works of :mod:`posix` module to the module state variable. Patch
+by Dong-hee Na.
