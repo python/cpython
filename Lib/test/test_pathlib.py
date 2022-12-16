@@ -2772,7 +2772,7 @@ class WalkTests(unittest.TestCase):
         path = pathlib.Path(base, *(['d']*50))
         path.mkdir(parents=True)
 
-        with infinite_recursion(25):
+        with infinite_recursion(40):
             list(base.walk())
             list(base.walk(top_down=False))
 
