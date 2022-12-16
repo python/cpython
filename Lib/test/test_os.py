@@ -33,6 +33,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import temp_recursion_limit
 from test.support import warnings_helper
 from platform import win32_is_iot
 
@@ -1471,6 +1472,12 @@ class WalkTests(unittest.TestCase):
                 self.assertEqual(next(it), expected)
             p = os.path.join(p, 'd')
 
+    def test_walk_above_recursion_limit(self):
+        os.makedirs(os.path.join(self.walk_path, *(['d'] * 50)))
+        with temp_recursion_limit(50):
+            all = list(self.walk(self.walk_path))
+        self.assertEqual(len(all), 54)
+
 
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
@@ -1545,6 +1552,8 @@ class FwalkTests(WalkTests):
 
     # fwalk() keeps file descriptors open
     test_walk_many_open_files = None
+    # fwalk() still uses recursion
+    test_walk_above_recursion_limit = None
 
 
 class BytesWalkTests(WalkTests):
