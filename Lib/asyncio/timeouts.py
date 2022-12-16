@@ -24,7 +24,8 @@ class _State(enum.Enum):
     EXITED = "finished"
 
 
-class Timeout(contextlib.AsyncContextDecorator):
+@final
+class Timeout:
 
     def __init__(self, when: Optional[float]) -> None:
         self._state = _State.CREATED
@@ -109,7 +110,8 @@ class Timeout(contextlib.AsyncContextDecorator):
         self._timeout_handler = None
 
 
-class timeout(Timeout):
+@contextlib.asynccontextmanager
+async def timeout(delay: Optional[float]) -> Timeout:
     """Timeout async context manager.
 
     Useful in cases when you want to apply timeout logic around block
@@ -125,19 +127,13 @@ class timeout(Timeout):
     the top-most affected timeout() context manager converts CancelledError
     into TimeoutError.
     """
-
-    def __init__(self, delay: Optional[float]):
-        self._delay = delay
-        super().__init__(None)
-
-    async def __aenter__(self):
-        self._state = _State.ENTERED
-        loop = events.get_running_loop()
-        self._when = loop.time() + self._delay if self._delay is not None else None
-        return await super().__aenter__()
+    loop = events.get_running_loop()
+    async with Timeout(loop.time() + delay if delay is not None else None) as t:
+        yield t
 
 
-class timeout_at(Timeout):
+@contextlib.asynccontextmanager
+async def timeout_at(when: Optional[float]) -> Timeout:
     """Schedule the timeout at absolute time.
 
     Like timeout() but argument gives absolute time in the same clock system
@@ -156,4 +152,5 @@ class timeout_at(Timeout):
     the top-most affected timeout() context manager converts CancelledError
     into TimeoutError.
     """
-    pass
+    async with Timeout(when) as t:
+        yield t
