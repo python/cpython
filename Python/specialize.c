@@ -340,7 +340,9 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_ATTR_PROPERTY_NOT_PY_FUNCTION 28
 #define SPEC_FAIL_ATTR_NOT_IN_KEYS 29
 #define SPEC_FAIL_ATTR_NOT_IN_DICT 30
-#define SPEC_FAIL_ATTR_CLASS_ATTR 31
+#define SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE 31
+#define SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR 32
+#define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ 33
 
 /* Binary subscr and store subscr */
 
@@ -814,12 +816,16 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             goto success;
         }
         case BUILTIN_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ);
+            goto fail;
         case PYTHON_CLASSMETHOD:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
             goto fail;
         case NON_OVERRIDING:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR);
+            goto fail;
         case NON_DESCRIPTOR:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR);
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
             goto fail;
         case ABSENT:
             if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
@@ -905,16 +911,23 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
             goto fail;
         case BUILTIN_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ);
+            goto fail;
         case PYTHON_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
+            goto fail;
         case NON_OVERRIDING:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR);
+            goto fail;
         case NON_DESCRIPTOR:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
+            goto fail;
         case ABSENT:
-            break;
-    }
-    if (specialize_dict_access(owner, instr, type, kind, name, STORE_ATTR,
-                               STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT))
-    {
-        goto success;
+            if (specialize_dict_access(owner, instr, type, kind, name, STORE_ATTR,
+                                    STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT))
+            {
+                goto success;
+            }
     }
 fail:
     STAT_INC(STORE_ATTR, failure);

@@ -8,7 +8,7 @@ extern "C" {
 
 #ifdef Py_STATS
 
-#define SPECIALIZATION_FAILURE_KINDS 32
+#define SPECIALIZATION_FAILURE_KINDS 36
 
 /* Stats for determining who is calling PyEval_EvalFrame */
 #define EVAL_CALL_TOTAL 0
