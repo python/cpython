@@ -23,6 +23,7 @@ and opendir), and leave all pathname manipulation to os.path
 
 #'
 import abc
+from collections import deque
 import sys
 import stat as st
 
@@ -341,7 +342,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
-    stack = [(False, fspath(top))]
+    stack = deque([(False, fspath(top))])
     while stack:
         must_yield, top = stack.pop()
         if must_yield:
