@@ -125,9 +125,15 @@ class timeout(Timeout):
     the top-most affected timeout() context manager converts CancelledError
     into TimeoutError.
     """
+
     def __init__(self, delay: Optional[float]):
+        self._delay = delay
+        super().__init__(None)
+
+    async def __aenter__(self):
         loop = events.get_running_loop()
-        super().__init__(loop.time() + delay if delay is not None else None)
+        self._when = loop.time() + self._delay if self._delay is not None else None
+        return await super().__aenter__()
 
 
 class timeout_at(Timeout):
