@@ -300,6 +300,13 @@ class AsyncSpecTest(unittest.TestCase):
         self.assertIsInstance(mock.async_method, AsyncMock)
         self.assertIsInstance(mock.normal_method, Mock)
 
+    def test_spec_async_attributes_instance(self):
+        async_instance = AsyncClass()
+        async_instance.async_func_attr = async_func
+
+        mock_async_instance = Mock(async_instance)
+        self.assertIsInstance(mock_async_instance.async_func_attr, AsyncMock)
+
     def test_spec_mock_type_kw(self):
         def inner_test(mock_type):
             async_mock = mock_type(spec=async_func)
