@@ -340,13 +340,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
-    return _walk(fspath(top), topdown, onerror, followlinks)
 
-def _walk(top, topdown, onerror, followlinks):
-    stack = [(False, top)]
+    stack = [(False, fspath(top))]
     while stack:
-        is_result, top = stack.pop()
-        if is_result:
+        must_yield, top = stack.pop()
+        if must_yield:
             yield top
             continue
 
