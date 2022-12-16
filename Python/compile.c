@@ -1701,10 +1701,8 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 #define ADDOP(C, LOC, OP) \
     RETURN_IF_ERROR(cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)))
 
-#define ADDOP_REGS(C, LOC, OP, R1, R2, R3) { \
-    if (!cfg_builder_addop(CFG_BUILDER(C), (OP), 0, (LOC), (R1), (R2), (R3))) \
-        return 0; \
-}
+#define ADDOP_REGS(C, LOC, OP, R1, R2, R3) \
+    RETURN_IF_ERROR(cfg_builder_addop(CFG_BUILDER(C), (OP), 0, (LOC), (R1), (R2), (R3)))
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
