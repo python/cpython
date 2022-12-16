@@ -2178,7 +2178,7 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
 
 @contextlib.contextmanager
-def temp_recursion_limit(limit):
+def set_recursion_limit(limit):
     """Temporarily change the recursion limit."""
     original_limit = sys.getrecursionlimit()
     try:
@@ -2193,7 +2193,7 @@ def infinite_recursion(max_depth=75):
     debug windows builds, due to not enough functions being inlined the
     stack size might not handle the default recursion limit (1000). See
     bpo-11105 for details."""
-    return temp_recursion_limit(max_depth)
+    return set_recursion_limit(max_depth)
 
 
 def ignore_deprecations_from(module: str, *, like: str) -> object:
