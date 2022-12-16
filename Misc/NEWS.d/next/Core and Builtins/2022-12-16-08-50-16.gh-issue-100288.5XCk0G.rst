@@ -1,0 +1,1 @@
+Specialize method loading for objects with ``Py_TPFLAGS_MANAGED_DICT`` set.
