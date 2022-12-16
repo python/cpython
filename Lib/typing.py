@@ -325,6 +325,7 @@ def _flatten_literal_params(parameters):
 
 
 _cleanups = []
+_caches = {}
 
 
 def _tp_cache(func=None, /, *, typed=False):
@@ -332,13 +333,20 @@ def _tp_cache(func=None, /, *, typed=False):
     original function for non-hashable arguments.
     """
     def decorator(func):
-        cached = functools.lru_cache(typed=typed)(func)
-        _cleanups.append(cached.cache_clear)
+        # The callback 'inner' references the newly created lru_cache
+        # indirectly by performing a lookup in the global '_caches' dictionary.
+        # This breaks a reference that can be problematic when combined with
+        # C API extensions that leak references to types. See GH-98253.
+
+        cache = functools.lru_cache(typed=typed)(func)
+        _caches[func] = cache
+        _cleanups.append(cache.cache_clear)
+        del cache
 
         @functools.wraps(func)
         def inner(*args, **kwds):
             try:
-                return cached(*args, **kwds)
+                return _caches[func](*args, **kwds)
             except TypeError:
                 pass  # All real errors (not unhashable args) are raised below.
             return func(*args, **kwds)
@@ -3355,6 +3363,7 @@ def dataclass_transform(
     eq_default: bool = True,
     order_default: bool = False,
     kw_only_default: bool = False,
+    frozen_default: bool = False,
     field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
     **kwargs: Any,
 ) -> Callable[[T], T]:
@@ -3408,6 +3417,8 @@ def dataclass_transform(
         assumed to be True or False if it is omitted by the caller.
     - ``kw_only_default`` indicates whether the ``kw_only`` parameter is
         assumed to be True or False if it is omitted by the caller.
+    - ``frozen_default`` indicates whether the ``frozen`` parameter is
+        assumed to be True or False if it is omitted by the caller.
     - ``field_specifiers`` specifies a static list of supported classes
         or functions that describe fields, similar to ``dataclasses.field()``.
     - Arbitrary other keyword arguments are accepted in order to allow for
@@ -3424,6 +3435,7 @@ def dataclass_transform(
             "eq_default": eq_default,
             "order_default": order_default,
             "kw_only_default": kw_only_default,
+            "frozen_default": frozen_default,
             "field_specifiers": field_specifiers,
             "kwargs": kwargs,
         }

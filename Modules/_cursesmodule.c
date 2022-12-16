@@ -2371,7 +2371,7 @@ _curses.window.touchline
     start: int
     count: int
     [
-    changed: bool(accept={int}) = True
+    changed: bool = True
     ]
     /
 
@@ -2384,7 +2384,7 @@ as having been changed (changed=True) or unchanged (changed=False).
 static PyObject *
 _curses_window_touchline_impl(PyCursesWindowObject *self, int start,
                               int count, int group_right_1, int changed)
-/*[clinic end generated code: output=65d05b3f7438c61d input=918ad1cbdadf93ea]*/
+/*[clinic end generated code: output=65d05b3f7438c61d input=a98aa4f79b6be845]*/
 {
     if (!group_right_1) {
         return PyCursesCheckERR(touchline(self->win, start, count), "touchline");
@@ -2706,7 +2706,7 @@ NoArgTrueFalseFunctionBody(can_change_color)
 /*[clinic input]
 _curses.cbreak
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling nocbreak().
     /
 
@@ -2721,7 +2721,7 @@ Calling first raw() then cbreak() leaves the terminal in cbreak mode.
 
 static PyObject *
 _curses_cbreak_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=9f9dee9664769751 input=150be619eb1f1458]*/
+/*[clinic end generated code: output=9f9dee9664769751 input=c7d0bddda93016c1]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
 /*[clinic input]
@@ -2870,7 +2870,7 @@ NoArgNoReturnFunctionBody(doupdate)
 /*[clinic input]
 _curses.echo
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling noecho().
     /
 
@@ -2881,7 +2881,7 @@ In echo mode, each character input is echoed to the screen as it is entered.
 
 static PyObject *
 _curses_echo_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=03acb2ddfa6c8729 input=2e9e891d637eac5d]*/
+/*[clinic end generated code: output=03acb2ddfa6c8729 input=86cd4d5bb1d569c0]*/
 NoArgOrFlagNoReturnFunctionBody(echo, flag)
 
 /*[clinic input]
@@ -3496,14 +3496,14 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 /*[clinic input]
 _curses.intrflush
 
-    flag: bool(accept={int})
+    flag: bool
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 _curses_intrflush_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=c1986df35e999a0f input=fcba57bb28dfd795]*/
+/*[clinic end generated code: output=c1986df35e999a0f input=c65fe2ef973fe40a]*/
 {
     PyCursesInitialised;
 
@@ -3605,7 +3605,7 @@ NoArgReturnStringFunctionBody(longname)
 /*[clinic input]
 _curses.meta
 
-    yes: bool(accept={int})
+    yes: bool
     /
 
 Enable/disable meta keys.
@@ -3616,7 +3616,7 @@ allow only 7-bit characters.
 
 static PyObject *
 _curses_meta_impl(PyObject *module, int yes)
-/*[clinic end generated code: output=22f5abda46a605d8 input=af9892e3a74f35db]*/
+/*[clinic end generated code: output=22f5abda46a605d8 input=cfe7da79f51d0e30]*/
 {
     PyCursesInitialised;
 
@@ -3766,7 +3766,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
 /*[clinic input]
 _curses.nl
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling nonl().
     /
 
@@ -3778,7 +3778,7 @@ newline into return and line-feed on output.  Newline mode is initially on.
 
 static PyObject *
 _curses_nl_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=b39cc0ffc9015003 input=cf36a63f7b86e28a]*/
+/*[clinic end generated code: output=b39cc0ffc9015003 input=18e3e9c6e8cfcf6f]*/
 NoArgOrFlagNoReturnFunctionBody(nl, flag)
 
 /*[clinic input]
@@ -3925,7 +3925,7 @@ _curses_putp_impl(PyObject *module, const char *string)
 /*[clinic input]
 _curses.qiflush
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling noqiflush().
     /
 
@@ -3937,7 +3937,7 @@ will be flushed when the INTR, QUIT and SUSP characters are read.
 
 static PyObject *
 _curses_qiflush_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=9167e862f760ea30 input=e9e4a389946a0dbc]*/
+/*[clinic end generated code: output=9167e862f760ea30 input=6ec8b3e2b717ec40]*/
 {
     PyCursesInitialised;
 
@@ -4018,7 +4018,7 @@ _curses_update_lines_cols_impl(PyObject *module)
 /*[clinic input]
 _curses.raw
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling noraw().
     /
 
@@ -4031,7 +4031,7 @@ curses input functions one by one.
 
 static PyObject *
 _curses_raw_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=a750e4b342be015b input=e36d8db27832b848]*/
+/*[clinic end generated code: output=a750e4b342be015b input=4b447701389fb4df]*/
 NoArgOrFlagNoReturnFunctionBody(raw, flag)
 
 /*[clinic input]
@@ -4503,7 +4503,7 @@ _curses_unget_wch(PyObject *module, PyObject *ch)
 /*[clinic input]
 _curses.use_env
 
-    flag: bool(accept={int})
+    flag: bool
     /
 
 Use environment variables LINES and COLUMNS.
@@ -4520,7 +4520,7 @@ not set).
 
 static PyObject *
 _curses_use_env_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=b2c445e435c0b164 input=1778eb1e9151ea37]*/
+/*[clinic end generated code: output=b2c445e435c0b164 input=06ac30948f2d78e4]*/
 {
     use_env(flag);
     Py_RETURN_NONE;
