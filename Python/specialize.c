@@ -822,10 +822,16 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
             goto fail;
         case NON_OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR);
+            SPECIALIZATION_FAIL(LOAD_ATTR,
+                                (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) ?
+                                SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR :
+                                SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
             goto fail;
         case NON_DESCRIPTOR:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
+            SPECIALIZATION_FAIL(LOAD_ATTR,
+                                (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) ?
+                                SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE :
+                                SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
             goto fail;
         case ABSENT:
             if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
