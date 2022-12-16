@@ -8873,9 +8873,11 @@ resolve_register(oparg_t *oparg, int nlocalsplus,
         case CONST_REG:
             assert(oparg->value >= 0 && oparg->value < nconsts);
             oparg->final = nlocalsplus + ntmps + stacksize + oparg->value;
+            break;
         case NAME_REG:
             assert(oparg->value >= 0 && oparg->value < nlocalsplus);
             oparg->final = oparg->value;
+            break;
         case TMP_REG: {
             assert(oparg->value >= 0 && oparg->value < ntmps);
             oparg->final = nlocalsplus + oparg->value;
@@ -9009,7 +9011,7 @@ assemble(struct compiler *c, int addNone)
 
     assert(no_redundant_jumps(g));
 
-    Py_ssize_t nconsts = PyList_GET_SIZE(consts);
+    int nconsts = (int)PyList_GET_SIZE(consts);
     int ntmps = c->u->u_ntmps;
     if (resolve_registers(g, nlocalsplus, ntmps, maxdepth, nconsts) < 0) {
         goto error;
