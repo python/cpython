@@ -177,22 +177,20 @@ enum oparg_type {
     EXPLICIT_ARG,  /* int value */
     CONST_REG,     /* index of const */
     NAME_REG,      /* index of name */
-    STACK_REG,     /* offset from TOS (1 is TOS) */
     TMP_REG,       /* index of tmp */
 };
 
 typedef struct oparg_ {
-    int value; /* logical value set by codegen */
     enum oparg_type type;
+    int value; /* logical value set by codegen */
     int final; /* actual reg value, resolved in assembly */
 } oparg_t;
 
-#define UNUSED_OPARG      ((const oparg_t){(0), UNUSED_ARG, -1})
-#define EXPLICIT_OPARG(V) ((const oparg_t){(V), EXPLICIT_ARG, -1})
-#define CONST_OPARG(V)    ((const oparg_t){(V), CONST_REG, -1})
-#define NAME_OPARG(V)     ((const oparg_t){(V), NAME_REG, -1})
-#define STACK_OPARG(V)    ((const oparg_t){(V), STACK_REG, -1})
-#define TMP_OPARG(V)      ((const oparg_t){(V), TMP_REG, -1})
+#define UNUSED_OPARG      ((const oparg_t){.value=(0), .type=UNUSED_ARG})
+#define EXPLICIT_OPARG(V) ((const oparg_t){.value=(V), .type=EXPLICIT_ARG})
+#define CONST_OPARG(V)    ((const oparg_t){.value=(V), .type=CONST_REG})
+#define NAME_OPARG(V)     ((const oparg_t){.value=(V), .type=NAME_REG})
+#define TMP_OPARG(V)      ((const oparg_t){.value=(V), .type=TMP_REG})
 
 #define IS_UNUSED(OPARG) ((OPARG).type == UNUSED_OPARG)
 
@@ -206,7 +204,6 @@ struct instr {
     /* The following fields should not be set by the front-end: */
     struct basicblock_ *i_target; /* target block (if jump instruction) */
     struct basicblock_ *i_except; /* target block when exception is raised */
-    int i_stackdepth;
 };
 
 /* One arg*/
@@ -709,7 +706,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
 
     c->c_filename = Py_NewRef(filename);
     const char *f = PyUnicode_AsUTF8(c->c_filename);
-    c->c_regcode = strstr(f, "iritkatriel");
+    c->c_regcode = strstr(f, "mytest");
 
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
@@ -5875,7 +5872,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP_REGS(c, loc, LOAD_FAST, r2, UNUSED_OPARG, UNUSED_OPARG);
         } else {
             ADDOP_REGS(c, loc, unaryop(e->v.UnaryOp.op, false),
-                       STACK_OPARG(1), STACK_OPARG(1), UNUSED_OPARG);
+                       UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
         }
         break;
     case Lambda_kind:
@@ -7240,7 +7237,6 @@ stackdepth(basicblock *entryblock, int code_flags)
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
-            instr->i_stackdepth = depth;
             int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
                 PyErr_Format(PyExc_SystemError,
@@ -8863,7 +8859,7 @@ add_return_at_end_of_block(struct compiler *c, int addNone)
 }
 
 static int
-resolve_register(oparg_t *oparg, int i_stackdepth, int nlocalsplus,
+resolve_register(oparg_t *oparg, int nlocalsplus,
                  int ntmps, int stacksize, int nconsts)
 {
     switch(oparg->type) {
@@ -8879,12 +8875,7 @@ resolve_register(oparg_t *oparg, int i_stackdepth, int nlocalsplus,
         case NAME_REG:
             assert(oparg->value >= 0 && oparg->value < nlocalsplus);
             oparg->final = oparg->value;
-        case STACK_REG: {
-            int tos = nlocalsplus + ntmps + i_stackdepth;
-            assert(oparg->value > 0 && oparg->value <= tos);
-            oparg->final = tos - oparg->value;
-            break;
-        case TMP_REG:
+        case TMP_REG: {
             assert(oparg->value >= 0 && oparg->value < ntmps);
             oparg->final = nlocalsplus + oparg->value;
             break;
@@ -8901,16 +8892,16 @@ resolve_registers(cfg_builder *g, int nlocalsplus, int ntmps, int stacksize, int
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *inst = &b->b_instr[i];
-            if (resolve_register(&inst->i_oparg1, inst->i_stackdepth,
-                                 nlocalsplus, ntmps, stacksize, nconsts) < 0) {
+            if (resolve_register(&inst->i_oparg1, nlocalsplus, ntmps,
+                                 stacksize, nconsts) < 0) {
                 return -1;
             }
-            if (resolve_register(&inst->i_oparg2, inst->i_stackdepth,
-                                 nlocalsplus, ntmps, stacksize, nconsts) < 0) {
+            if (resolve_register(&inst->i_oparg2, nlocalsplus, ntmps,
+                                 stacksize, nconsts) < 0) {
                 return -1;
             }
-            if (resolve_register(&inst->i_oparg3, inst->i_stackdepth,
-                                 nlocalsplus, ntmps, stacksize, nconsts) < 0) {
+            if (resolve_register(&inst->i_oparg3, nlocalsplus, ntmps,
+                                 stacksize, nconsts) < 0) {
                 return -1;
             }
         }
