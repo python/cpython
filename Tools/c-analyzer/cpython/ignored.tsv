@@ -50,10 +50,6 @@ Python/getversion.c	-	version	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
 
-## internal state - set lazily (*after* first init)
-# XXX Move to _PyRuntimeState (i.e. tie to init/fini cycle)?
-Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
-
 
 ##################################
 ## state tied to Py_Main()
