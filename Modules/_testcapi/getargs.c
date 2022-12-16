@@ -862,7 +862,7 @@ gh_99240_clear_args(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "eses", "idna", &a, "idna", &b)) {
         if (a || b) {
             PyErr_Clear();
-            PyErr_SetString(PyExc_AssertionError, "Arguments is not cleared.");
+            PyErr_SetString(PyExc_AssertionError, "Arguments are not cleared.");
         }
         return NULL;
     }
