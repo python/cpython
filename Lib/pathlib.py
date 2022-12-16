@@ -1283,8 +1283,8 @@ class Path(PurePath):
         stack = deque(((False, self),))
 
         while stack:
-            is_result, top = stack.pop()
-            if is_result:
+            must_be_yielded_immediately, top = stack.pop()
+            if must_be_yielded_immediately:
                 yield top
                 continue
 
@@ -1294,7 +1294,7 @@ class Path(PurePath):
             # minor reason when (say) a thousand readable directories are still
             # left to visit. That logic is copied here.
             try:
-                scandir_it = self._scandir()
+                scandir_it = top._scandir()
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
@@ -1316,14 +1316,13 @@ class Path(PurePath):
                         filenames.append(entry.name)
 
             if top_down:
+                yield top, dirnames, filenames
+            else:
                 stack.append((True, (top, dirnames, filenames)))
 
-            for dirname in dirnames:
-                dirpath = self._make_child_relpath(dirname)
+            for dirname in reversed(dirnames):
+                dirpath = top._make_child_relpath(dirname)
                 stack.append((False, dirpath))
-
-            if not top_down:
-                stack.append((True, (top, dirnames, filenames)))
 
 
 class PosixPath(Path, PurePosixPath):
