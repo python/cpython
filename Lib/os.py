@@ -341,9 +341,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
-    from collections import deque
-
-    stack = deque([(False, fspath(top))])
+    stack = [(False, fspath(top))]
     while stack:
         must_yield, top = stack.pop()
         if must_yield:
