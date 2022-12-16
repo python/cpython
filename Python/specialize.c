@@ -340,6 +340,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_ATTR_PROPERTY_NOT_PY_FUNCTION 28
 #define SPEC_FAIL_ATTR_NOT_IN_KEYS 29
 #define SPEC_FAIL_ATTR_NOT_IN_DICT 30
+#define SPEC_FAIL_ATTR_CLASS_ATTR 31
 
 /* Binary subscr and store subscr */
 
@@ -814,15 +815,18 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         }
         case BUILTIN_CLASSMETHOD:
         case PYTHON_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
+            goto fail;
         case NON_OVERRIDING:
         case NON_DESCRIPTOR:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR);
+            goto fail;
         case ABSENT:
-            break;
-    }
-    if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
-                               LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
-    {
-        goto success;
+            if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
+                                    LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
+            {
+                goto success;
+            }
     }
 fail:
     STAT_INC(LOAD_ATTR, failure);
