@@ -8861,7 +8861,7 @@ add_return_at_end_of_block(struct compiler *c, int addNone)
 
 static int
 resolve_register(oparg_t *oparg, int nlocalsplus,
-                 int ntmps, int stacksize, int nconsts)
+                 int ntmps, int stacksize, Py_ssize_t nconsts)
 {
     switch(oparg->type) {
         case UNUSED_ARG:
@@ -8890,7 +8890,8 @@ resolve_register(oparg_t *oparg, int nlocalsplus,
 }
 
 static int
-resolve_registers(cfg_builder *g, int nlocalsplus, int ntmps, int stacksize, int nconsts)
+resolve_registers(cfg_builder *g, int nlocalsplus, int ntmps, int stacksize,
+                  Py_ssize_t nconsts)
 {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
@@ -9011,7 +9012,7 @@ assemble(struct compiler *c, int addNone)
 
     assert(no_redundant_jumps(g));
 
-    int nconsts = (int)PyList_GET_SIZE(consts);
+    Py_ssize_t nconsts = PyList_GET_SIZE(consts);
     int ntmps = c->u->u_ntmps;
     if (resolve_registers(g, nlocalsplus, ntmps, maxdepth, nconsts) < 0) {
         goto error;
