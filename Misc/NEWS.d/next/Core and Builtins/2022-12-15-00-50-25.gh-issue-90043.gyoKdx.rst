@@ -1,0 +1,2 @@
+Handle NaNs when specializing :opcode:`COMPARE_OP` for :class:`float`
+values.
