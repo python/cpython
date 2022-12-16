@@ -22,10 +22,16 @@ typedef union {
         uint8_t opcode;
         uint8_t oparg;
     };
+    struct {
+        uint8_t oparg2;
+        uint8_t oparg3;
+    };
 } _Py_CODEUNIT;
 
 #define _Py_OPCODE(word) ((word).opcode)
 #define _Py_OPARG(word) ((word).oparg)
+#define _Py_OPARG2(word) ((word).oparg2)
+#define _Py_OPARG3(word) ((word).oparg3)
 
 static inline void
 _py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)

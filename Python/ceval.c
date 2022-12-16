@@ -760,8 +760,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         oparg1 = oparg = _Py_OPARG(word); \
         if (VERBOSE) fprintf(stderr, "[%d] next_instr = %p opcode = %d\n", __LINE__, next_instr, opcode); \
         word = *(next_instr +1); \
-        oparg2 = _Py_OPCODE(word); \
-        oparg3 = _Py_OPARG(word); \
+        oparg2 = _Py_OPARG2(word); \
+        oparg3 = _Py_OPARG3(word); \
         if (VERBOSE) fprintf(stderr, "%d  (%d, %d, %d)\n", opcode, oparg, oparg2, oparg3); \
     } while (0)
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))

@@ -266,7 +266,7 @@ is_jump(struct instr *i)
     return IS_JUMP_OPCODE(i->i_opcode);
 }
 
-static int num_extended_args(int oparg)
+static int extended_args(int oparg)
 {
     return (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
 }
@@ -281,11 +281,11 @@ instr_size(struct instr *instr)
     int oparg1 = instr->i_oparg1.type != UNUSED_ARG ? instr->i_oparg1.final : oparg;
     int oparg2 = instr->i_oparg2.final;
     int oparg3 = instr->i_oparg3.final;
-    int n1 = num_extended_args(oparg1);
-    int n2 = num_extended_args(oparg2);
-    int n3 = num_extended_args(oparg3);
-    int extended_args = n1 > n2 ? n1 : n2;
-    extended_args = extended_args > n3 ? extended_args : n3;
+    int e1 = extended_args(oparg1);
+    int e2 = extended_args(oparg2);
+    int e3 = extended_args(oparg3);
+    int extended_args = e1 > e2 ? e1 : e2;
+    extended_args = extended_args > e3 ? extended_args : e3;
     int caches = _PyOpcode_Caches[opcode];
     return OPSIZE * (extended_args + 1) + caches;
 }
@@ -318,32 +318,32 @@ if (0) {
             codestr->opcode = EXTENDED_ARG;
             codestr->oparg = (oparg >> 24) & 0xFF;
             codestr++;
-            codestr->opcode = (oparg2 >> 24) & 0xFF;
-            codestr->oparg = (oparg3 >> 24) & 0xFF;
+            codestr->oparg2 = (oparg2 >> 24) & 0xFF;
+            codestr->oparg3 = (oparg3 >> 24) & 0xFF;
             codestr++;
             /* fall through */
         case 3:
             codestr->opcode = EXTENDED_ARG;
             codestr->oparg = (oparg >> 16) & 0xFF;
             codestr++;
-            codestr->opcode = (oparg2 >> 16) & 0xFF;
-            codestr->oparg = (oparg3 >> 16) & 0xFF;
+            codestr->oparg2 = (oparg2 >> 16) & 0xFF;
+            codestr->oparg3 = (oparg3 >> 16) & 0xFF;
             codestr++;
             /* fall through */
         case 2:
             codestr->opcode = EXTENDED_ARG;
             codestr->oparg = (oparg >> 8) & 0xFF;
             codestr++;
-            codestr->opcode = (oparg2 >> 8) & 0xFF;
-            codestr->oparg = (oparg3 >> 8) & 0xFF;
+            codestr->oparg2 = (oparg2 >> 8) & 0xFF;
+            codestr->oparg3 = (oparg3 >> 8) & 0xFF;
             codestr++;
             /* fall through */
         case 1:
             codestr->opcode = opcode;
             codestr->oparg = oparg & 0xFF;
             codestr++;
-            codestr->opcode = oparg2 & 0xFF;
-            codestr->oparg = oparg3 & 0XFF;
+            codestr->oparg2 = oparg2 & 0xFF;
+            codestr->oparg3 = oparg3 & 0XFF;
             codestr++;
             break;
         default:
