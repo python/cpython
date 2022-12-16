@@ -705,7 +705,13 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
 
     c->c_filename = Py_NewRef(filename);
     const char *f = PyUnicode_AsUTF8(c->c_filename);
-    c->c_regcode = strstr(f, "mytest");
+    if (f == NULL) {
+        PyErr_Clear();
+        c->c_regcode = false;
+    }
+    else {
+        c->c_regcode = strstr(f, "mytest");
+    }
 
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
