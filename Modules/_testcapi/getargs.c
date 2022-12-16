@@ -855,7 +855,8 @@ getargs_s_hash_int2(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
-gh_99240_clear_args(PyObject *self, PyObject *args) {
+gh_99240_clear_args(PyObject *self, PyObject *args)
+{
     char *a = NULL;
     char *b = NULL;
 
