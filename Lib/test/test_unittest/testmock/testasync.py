@@ -303,9 +303,15 @@ class AsyncSpecTest(unittest.TestCase):
     def test_spec_async_attributes_instance(self):
         async_instance = AsyncClass()
         async_instance.async_func_attr = async_func
+        async_instance.later_async_func_attr = normal_func
 
-        mock_async_instance = Mock(async_instance)
+        mock_async_instance = Mock(spec_set=async_instance)
+
+        async_instance.later_async_func_attr = async_func
+
         self.assertIsInstance(mock_async_instance.async_func_attr, AsyncMock)
+        # only the shape of the spec at the time of mock construction matters
+        self.assertNotIsInstance(mock_async_instance.later_async_func_attr, AsyncMock)
 
     def test_spec_mock_type_kw(self):
         def inner_test(mock_type):

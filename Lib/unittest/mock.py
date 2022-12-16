@@ -506,10 +506,9 @@ class NonCallableMock(Base):
 
         _spec_class = None
         _spec_signature = None
-        _spec_obj = None
+        _spec_asyncs = []
 
         if spec is not None and not _is_list(spec):
-            _spec_obj = spec
             if isinstance(spec, type):
                 _spec_class = spec
             else:
@@ -518,14 +517,20 @@ class NonCallableMock(Base):
                                         _spec_as_instance, _eat_self)
             _spec_signature = res and res[1]
 
-            spec = dir(spec)
+            spec_list = dir(spec)
+
+            for attr in spec_list:
+                if iscoroutinefunction(getattr(spec, attr, None)):
+                    _spec_asyncs.append(attr)
+
+            spec = spec_list
 
         __dict__ = self.__dict__
         __dict__['_spec_class'] = _spec_class
-        __dict__['_spec_obj'] = _spec_obj
         __dict__['_spec_set'] = spec_set
         __dict__['_spec_signature'] = _spec_signature
         __dict__['_mock_methods'] = spec
+        __dict__['_spec_asyncs'] = _spec_asyncs
 
     def __get_return_value(self):
         ret = self._mock_return_value
@@ -1015,8 +1020,7 @@ class NonCallableMock(Base):
         For non-callable mocks the callable variant will be used (rather than
         any custom subclass)."""
         _new_name = kw.get("_new_name")
-        _spec_val = getattr(self.__dict__["_spec_obj"], _new_name, None)
-        if _spec_val is not None and asyncio.iscoroutinefunction(_spec_val):
+        if _new_name in self.__dict__['_spec_asyncs']:
             return AsyncMock(**kw)
 
         if self._mock_sealed:
