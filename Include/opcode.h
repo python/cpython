@@ -115,6 +115,8 @@ extern "C" {
 #define YIELD_VALUE                            150
 #define RESUME                                 151
 #define MATCH_CLASS                            152
+#define LOAD_FAST_R                            153
+#define STORE_FAST_R                           154
 #define FORMAT_VALUE                           155
 #define BUILD_CONST_KEY_MAP                    156
 #define BUILD_STRING                           157
@@ -180,21 +182,21 @@ extern "C" {
 #define LOAD_ATTR_METHOD_NO_DICT               121
 #define LOAD_ATTR_METHOD_WITH_DICT             141
 #define LOAD_ATTR_METHOD_WITH_VALUES           143
-#define LOAD_CONST__LOAD_FAST                  153
-#define LOAD_FAST__LOAD_CONST                  154
-#define LOAD_FAST__LOAD_FAST                   158
-#define LOAD_GLOBAL_BUILTIN                    159
-#define LOAD_GLOBAL_MODULE                     160
-#define STORE_ATTR_INSTANCE_VALUE              161
-#define STORE_ATTR_SLOT                        166
-#define STORE_ATTR_WITH_HINT                   167
-#define STORE_FAST__LOAD_FAST                  168
-#define STORE_FAST__STORE_FAST                 169
-#define STORE_SUBSCR_DICT                      170
-#define STORE_SUBSCR_LIST_INT                  173
-#define UNPACK_SEQUENCE_LIST                   174
-#define UNPACK_SEQUENCE_TUPLE                  175
-#define UNPACK_SEQUENCE_TWO_TUPLE              176
+#define LOAD_CONST__LOAD_FAST                  158
+#define LOAD_FAST__LOAD_CONST                  159
+#define LOAD_FAST__LOAD_FAST                   160
+#define LOAD_GLOBAL_BUILTIN                    161
+#define LOAD_GLOBAL_MODULE                     166
+#define STORE_ATTR_INSTANCE_VALUE              167
+#define STORE_ATTR_SLOT                        168
+#define STORE_ATTR_WITH_HINT                   169
+#define STORE_FAST__LOAD_FAST                  170
+#define STORE_FAST__STORE_FAST                 173
+#define STORE_SUBSCR_DICT                      174
+#define STORE_SUBSCR_LIST_INT                  175
+#define UNPACK_SEQUENCE_LIST                   176
+#define UNPACK_SEQUENCE_TUPLE                  177
+#define UNPACK_SEQUENCE_TWO_TUPLE              178
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\

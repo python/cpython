@@ -46,6 +46,16 @@
             DISPATCH();
         }
 
+        TARGET(LOAD_FAST_R) {
+            PyObject *value;
+            value = GETLOCAL(oparg);
+            assert(value != NULL);
+            Py_INCREF(value);
+            STACK_GROW(1);
+            POKE(1, value);
+            DISPATCH();
+        }
+
         TARGET(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
             PyObject *value;
@@ -57,6 +67,13 @@
         }
 
         TARGET(STORE_FAST) {
+            PyObject *value = PEEK(1);
+            SETLOCAL(oparg, value);
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
+        TARGET(STORE_FAST_R) {
             PyObject *value = PEEK(1);
             SETLOCAL(oparg, value);
             STACK_SHRINK(1);

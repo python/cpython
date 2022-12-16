@@ -145,12 +145,22 @@ dummy_func(
             Py_INCREF(value);
         }
 
+        inst(LOAD_FAST_R, (-- value)) {
+            value = GETLOCAL(oparg);
+            assert(value != NULL);
+            Py_INCREF(value);
+        }
+
         inst(LOAD_CONST, (-- value)) {
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
         }
 
         inst(STORE_FAST, (value --)) {
+            SETLOCAL(oparg, value);
+        }
+
+        inst(STORE_FAST_R, (value --)) {
             SETLOCAL(oparg, value);
         }
 

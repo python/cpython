@@ -304,9 +304,8 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int oparg3 = instruction->i_oparg3.final;
 
 if (0) {
-  if (opcode == UNARY_POSITIVE_R || opcode == UNARY_NEGATIVE ||
-      opcode == UNARY_NOT || opcode == UNARY_INVERT) {
-
+  if (opcode == LOAD_FAST_R || opcode == STORE_FAST_R)
+  {
     fprintf(stderr,
             "write_instr [%d]: oparg = %d oparg1 = %d oparg2 = %d oparg3 = %d\n",
              opcode, oparg, oparg1, oparg2, oparg3);
@@ -316,7 +315,7 @@ if (0) {
     switch ((ilen - caches)/OPSIZE) {
         case 4:
             codestr->opcode = EXTENDED_ARG;
-            codestr->oparg = (oparg >> 24) & 0xFF;
+            codestr->oparg = (oparg1 >> 24) & 0xFF;
             codestr++;
             codestr->oparg2 = (oparg2 >> 24) & 0xFF;
             codestr->oparg3 = (oparg3 >> 24) & 0xFF;
@@ -324,7 +323,7 @@ if (0) {
             /* fall through */
         case 3:
             codestr->opcode = EXTENDED_ARG;
-            codestr->oparg = (oparg >> 16) & 0xFF;
+            codestr->oparg = (oparg1 >> 16) & 0xFF;
             codestr++;
             codestr->oparg2 = (oparg2 >> 16) & 0xFF;
             codestr->oparg3 = (oparg3 >> 16) & 0xFF;
@@ -332,7 +331,7 @@ if (0) {
             /* fall through */
         case 2:
             codestr->opcode = EXTENDED_ARG;
-            codestr->oparg = (oparg >> 8) & 0xFF;
+            codestr->oparg = (oparg1 >> 8) & 0xFF;
             codestr++;
             codestr->oparg2 = (oparg2 >> 8) & 0xFF;
             codestr->oparg3 = (oparg3 >> 8) & 0xFF;
@@ -340,7 +339,7 @@ if (0) {
             /* fall through */
         case 1:
             codestr->opcode = opcode;
-            codestr->oparg = oparg & 0xFF;
+            codestr->oparg = oparg1 & 0xFF;
             codestr++;
             codestr->oparg2 = oparg2 & 0xFF;
             codestr->oparg3 = oparg3 & 0XFF;
@@ -1295,9 +1294,11 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
 
         case LOAD_FAST:
+        case LOAD_FAST_R:
         case LOAD_FAST_CHECK:
             return 1;
         case STORE_FAST:
+        case STORE_FAST_R:
             return -1;
         case DELETE_FAST:
             return 0;
@@ -5866,10 +5867,10 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         if (c->c_regcode) {
             oparg_t r1 = TMP_OPARG(c->u->u_ntmps++);
             oparg_t r2 = TMP_OPARG(c->u->u_ntmps++);
-            ADDOP_REGS(c, loc, STORE_FAST, r1, UNUSED_OPARG, UNUSED_OPARG);
+            ADDOP_REGS(c, loc, STORE_FAST_R, r1, UNUSED_OPARG, UNUSED_OPARG);
             ADDOP_REGS(c, loc, unaryop(e->v.UnaryOp.op, true),
                        r1, r2, UNUSED_OPARG);
-            ADDOP_REGS(c, loc, LOAD_FAST, r2, UNUSED_OPARG, UNUSED_OPARG);
+            ADDOP_REGS(c, loc, LOAD_FAST_R, r2, UNUSED_OPARG, UNUSED_OPARG);
         } else {
             ADDOP_REGS(c, loc, unaryop(e->v.UnaryOp.op, false),
                        UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
