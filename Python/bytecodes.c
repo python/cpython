@@ -2727,6 +2727,29 @@ dummy_func(
         }
 
         // error: LOAD_ATTR has irregular stack effect
+        inst(LOAD_ATTR_METHOD_MANAGED_DICT) {
+            assert(cframe.use_tracing == 0);
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
+            uint32_t type_version = read_u32(cache->type_version);
+            assert(type_version != 0);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR)
+            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            PyDictKeysObject *keys = ((PyHeapTypeObject *)self_cls)->ht_cached_keys;
+            DEOPT_IF(keys->dk_version != read_u32(cache->keys_version), LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
+            PyObject *res = read_obj(cache->descr);
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            SET_TOP(Py_NewRef(res));
+            PUSH(self);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+        }
+
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_WITH_DICT) {
             /* Can be either a managed dict, or a tp_dictoffset offset.*/
             assert(cframe.use_tracing == 0);
