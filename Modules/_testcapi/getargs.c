@@ -866,8 +866,8 @@ gh_99240_clear_args(PyObject *self, PyObject *args) {
         }
         return NULL;
     }
-    PyMem_FREE(a);
-    PyMem_FREE(b);
+    PyMem_Free(a);
+    PyMem_Free(b);
     Py_RETURN_NONE;
 }
 
