@@ -131,6 +131,7 @@ class timeout(Timeout):
         super().__init__(None)
 
     async def __aenter__(self):
+        self._state = _State.ENTERED
         loop = events.get_running_loop()
         self._when = loop.time() + self._delay if self._delay is not None else None
         return await super().__aenter__()
