@@ -302,10 +302,7 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ##################################
 ## global non-objects to fix in core code
 
-##-----------------------
-## state
-
-Objects/object.c	-	_Py_RefTotal	-
+# <none>
 
 
 ##################################
@@ -361,38 +358,11 @@ Modules/itertoolsmodule.c	-	tee_type	-
 Modules/itertoolsmodule.c	-	teedataobject_type	-
 Modules/itertoolsmodule.c	-	ziplongest_type	-
 
-##-----------------------
-## state
-
-Modules/faulthandler.c	-	fatal_error	-
-Modules/faulthandler.c	-	thread	-
-Modules/faulthandler.c	-	user_signals	-
-Modules/faulthandler.c	-	stack	-
-Modules/faulthandler.c	-	old_stack	-
-
 
 ##################################
 ## global non-objects to fix in builtin modules
 
-##-----------------------
-## state
-
-Modules/_tracemalloc.c	-	allocators	-
-Modules/_tracemalloc.c	-	tables_lock	-
-Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
-Modules/_tracemalloc.c	-	tracemalloc_traced_memory	-
-Modules/_tracemalloc.c	-	tracemalloc_peak_traced_memory	-
-Modules/_tracemalloc.c	-	tracemalloc_filenames	-
-Modules/_tracemalloc.c	-	tracemalloc_traceback	-
-Modules/_tracemalloc.c	-	tracemalloc_tracebacks	-
-Modules/_tracemalloc.c	-	tracemalloc_traces	-
-Modules/_tracemalloc.c	-	tracemalloc_domains	-
-Modules/_tracemalloc.c	-	tracemalloc_reentrant_key	-
-Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
-Modules/signalmodule.c	-	is_tripped	-
-Modules/signalmodule.c	-	signal_global_state	-
-Modules/signalmodule.c	-	wakeup	-
-Modules/signalmodule.c	-	Handlers	-
+# <none>
 
 
 ##################################

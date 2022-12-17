@@ -50,10 +50,6 @@ Python/getversion.c	-	version	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
 
-## internal state - set lazily (*after* first init)
-# XXX Move to _PyRuntimeState (i.e. tie to init/fini cycle)?
-Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
-
 
 ##################################
 ## state tied to Py_Main()
@@ -143,6 +139,12 @@ Modules/syslogmodule.c	-	S_ident_o	-
 Modules/syslogmodule.c	-	S_log_open	-
 
 ##-----------------------
+## kept for stable ABI compatibility
+
+# XXX should be per-interpreter, without impacting stable ABI extensions
+Objects/object.c	-	_Py_RefTotal	-
+
+##-----------------------
 ## one-off temporary state
 
 # used during runtime init
@@ -151,6 +153,7 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 
 # thread-safety
 # XXX need race protection?
+Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
