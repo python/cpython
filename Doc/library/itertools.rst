@@ -881,12 +881,12 @@ which incur interpreter overhead.
            raise ValueError('Expected fill, strict, or ignore')
 
    def batched(iterable, n):
-       "Batch data into lists of length n. The last batch may be shorter."
+       "Batch data into tuples of length n. The last batch may be shorter."
        # batched('ABCDEFG', 3) --> ABC DEF G
        if n < 1:
            raise ValueError('n must be at least one')
        it = iter(iterable)
-       while (batch := list(islice(it, n))):
+       while (batch := tuple(islice(it, n))):
            yield batch
 
    def triplewise(iterable):
@@ -1248,25 +1248,25 @@ which incur interpreter overhead.
     [('a', 'b', 'c'), ('d', 'e', 'f')]
 
     >>> list(batched('ABCDEFG', 3))
-    [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']]
+    [('A', 'B', 'C'), ('D', 'E', 'F'), ('G',)]]
     >>> list(batched('ABCDEF', 3))
-    [['A', 'B', 'C'], ['D', 'E', 'F']]
+    [('A', 'B', 'C'), ('D', 'E', 'F')]
     >>> list(batched('ABCDE', 3))
-    [['A', 'B', 'C'], ['D', 'E']]
+    [('A', 'B', 'C'), ('D', 'E')]
     >>> list(batched('ABCD', 3))
-    [['A', 'B', 'C'], ['D']]
+    [('A', 'B', 'C'), ('D',)]
     >>> list(batched('ABC', 3))
-    [['A', 'B', 'C']]
+    [('A', 'B', 'C')]
     >>> list(batched('AB', 3))
-    [['A', 'B']]
+    [('A', 'B')]
     >>> list(batched('A', 3))
-    [['A']]
+    [('A',)]
     >>> list(batched('', 3))
     []
     >>> list(batched('ABCDEFG', 2))
-    [['A', 'B'], ['C', 'D'], ['E', 'F'], ['G']]
+    [('A', 'B'), ('C', 'D'), ('E', 'F'), ('G',)]
     >>> list(batched('ABCDEFG', 1))
-    [['A'], ['B'], ['C'], ['D'], ['E'], ['F'], ['G']]
+    [('A',), ('B',), ('C',), ('D',), ('E',), ('F',), ('G',)]
     >>> s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     >>> all(list(flatten(batched(s[:n], 5))) == list(s[:n]) for n in range(len(s)))
     True
