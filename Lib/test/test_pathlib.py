@@ -285,24 +285,26 @@ class _BasePurePathTest(object):
 
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            p = self.cls(pathstr)
-            clsname = p.__class__.__name__
-            r = repr(p)
-            # The repr() is in the form ClassName("forward-slashes path").
-            self.assertTrue(r.startswith(clsname + '('), r)
-            self.assertTrue(r.endswith(')'), r)
-            inner = r[len(clsname) + 1 : -1]
-            self.assertEqual(eval(inner), p.as_posix())
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                clsname = p.__class__.__name__
+                r = repr(p)
+                # The repr() is in the form ClassName("forward-slashes path").
+                self.assertTrue(r.startswith(clsname + '('), r)
+                self.assertTrue(r.endswith(')'), r)
+                inner = r[len(clsname) + 1 : -1]
+                self.assertEqual(eval(inner), p.as_posix())
 
     def test_repr_roundtrips(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            p = self.cls(pathstr)
-            r = repr(p)
-            # The repr() roundtrips.
-            q = eval(r, pathlib.__dict__)
-            self.assertIs(q.__class__, p.__class__)
-            self.assertEqual(q, p)
-            self.assertEqual(repr(q), r)
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                r = repr(p)
+                # The repr() roundtrips.
+                q = eval(r, pathlib.__dict__)
+                self.assertIs(q.__class__, p.__class__)
+                self.assertEqual(q, p)
+                self.assertEqual(repr(q), r)
 
     def test_eq_common(self):
         P = self.cls
