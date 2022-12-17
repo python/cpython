@@ -1534,12 +1534,7 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].opcode = opcode;
-        for (int k = 0; k < OPSIZE - 1; k++) {
-            /* oparg2, oparg3 */
-            instructions[++i].opcode = 0;
-            instructions[i].oparg = 0;
-
-        }
+        i += OPSIZE - 1; // skip over oparg2, oparg3
         while (caches--) {
             instructions[++i].opcode = CACHE;
             instructions[i].oparg = 0;

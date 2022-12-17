@@ -212,9 +212,9 @@ def_op('YIELD_VALUE', 150)
 def_op('RESUME', 151)   # This must be kept in sync with deepfreeze.py
 def_op('MATCH_CLASS', 152)
 
-def_op('LOAD_FAST_R', 153)        # Local variable number, no null check
+def_op('LOAD_FAST_R', 153)
 haslocal.append(124)
-def_op('STORE_FAST_R', 154)       # Local variable number
+def_op('STORE_FAST_R', 154)
 haslocal.append(125)
 
 
