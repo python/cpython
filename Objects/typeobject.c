@@ -8752,16 +8752,6 @@ static pytype_slotdef slotdefs[] = {
     {NULL}
 };
 
-PyStatus
-_PyTypes_InitSlotDefs(void)
-{
-    // TODO(eelizondo): Figure out why this is needed
-    for (pytype_slotdef *p = slotdefs; p->name; p++) {
-        p->name_strobj = PyUnicode_InternFromString(p->name);
-    }
-    return _PyStatus_OK();
-}
-
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
    the offset to the type pointer, since it takes care to indirect through the

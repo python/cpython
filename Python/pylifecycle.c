@@ -730,11 +730,6 @@ pycore_init_types(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    status = _PyTypes_InitSlotDefs();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyTypes_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;

@@ -166,7 +166,6 @@ extern "C" {
         .length = sizeof(LITERAL) - 1, \
         .hash = -1, \
         .state = { \
-            .interned = 3, \
             .kind = 1, \
             .compact = 1, \
             .ascii = (ASCII), \

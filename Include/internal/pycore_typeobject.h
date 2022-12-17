@@ -11,7 +11,6 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern PyStatus _PyTypes_InitSlotDefs(void);
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
