@@ -893,6 +893,7 @@ class ArgsTestCase(BaseTestCase):
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
         output = self.run_tests('--huntrleaks', '9:3:', test,
+                                exitcode=EXITCODE_BAD_TEST,
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test)
 
