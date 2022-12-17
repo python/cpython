@@ -2214,13 +2214,11 @@
                 // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
                 DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+                STAT_INC(COMPARE_OP, hit);
                 double dleft = PyFloat_AS_DOUBLE(left);
                 double dright = PyFloat_AS_DOUBLE(right);
-                // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
-                int sign_ish = 2*(dleft > dright) + 2 - (dleft < dright);
-                DEOPT_IF(isnan(dleft), COMPARE_OP);
-                DEOPT_IF(isnan(dright), COMPARE_OP);
-                STAT_INC(COMPARE_OP, hit);
+                // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
+                int sign_ish = 1 << (2 * (dleft >= dright) + (dleft <= dright));
                 _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
                 _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
                 jump = sign_ish & when_to_jump_mask;
@@ -2258,8 +2256,8 @@
                 assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
                 Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
                 Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-                // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
-                int sign_ish = 2*(ileft > iright) + 2 - (ileft < iright);
+                // 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
+                int sign_ish = 1 << (2 * (ileft >= iright) + (ileft <= iright));
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
                 jump = sign_ish & when_to_jump_mask;

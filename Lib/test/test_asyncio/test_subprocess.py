@@ -686,6 +686,23 @@ class SubprocessMixin:
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
 
+    def test_subprocess_communicate_stdout(self):
+        # See https://github.com/python/cpython/issues/100133
+        async def get_command_stdout(cmd, *args):
+            proc = await asyncio.create_subprocess_exec(
+                cmd, *args, stdout=asyncio.subprocess.PIPE,
+            )
+            stdout, _ = await proc.communicate()
+            return stdout.decode().strip()
+
+        async def main():
+            outputs = [f'foo{i}' for i in range(10)]
+            res = await asyncio.gather(*[get_command_stdout(sys.executable, '-c',
+                                        f'print({out!r})') for out in outputs])
+            self.assertEqual(res, outputs)
+
+        self.loop.run_until_complete(main())
+
 
 if sys.platform != 'win32':
     # Unix
