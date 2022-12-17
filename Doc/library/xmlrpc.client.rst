@@ -548,11 +548,6 @@ Convenience Functions
    .. versionchanged:: 3.3
       The *use_builtin_types* flag was added.
 
-   .. versionchanged:: 3.11
-      Conversion to :class:`int` now limits the maximum length of the integer
-      string via the interpreter's :ref:`integer string conversion length
-      limitation <int_max_str_digits>` to help avoid denial of service attacks.
-
 
 .. _xmlrpc-client-example:
 
