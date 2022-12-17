@@ -1625,6 +1625,7 @@ expression support in the :mod:`re` module).
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
    Return the string encoded to :class:`bytes`.
+
    *encoding* defaults to ``'utf-8'``;
    see :ref:`standard-encodings` for possible values.
 
@@ -2762,6 +2763,7 @@ arbitrary binary data.
             bytearray.decode(encoding="utf-8", errors="strict")
 
    Return the bytes decoded to a :class:`str`.
+
    *encoding* defaults to ``'utf-8'``;
    see :ref:`standard-encodings` for possible values.
 
