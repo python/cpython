@@ -304,7 +304,7 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int oparg3 = instruction->i_oparg3.final;
 
 if (0) {
-  if (opcode == LOAD_FAST_R || opcode == STORE_FAST_R)
+  if (opcode == UNARY_NOT_R || opcode == LOAD_FAST_R || opcode == STORE_FAST_R)
   {
     fprintf(stderr,
             "write_instr [%d]: oparg = %d oparg1 = %d oparg2 = %d oparg3 = %d\n",
@@ -712,6 +712,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     else {
         c->c_regcode = strstr(f, "mytest");
     }
+    c->c_regcode = true;
 
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
