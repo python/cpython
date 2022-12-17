@@ -8436,24 +8436,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     assert(INT_MAX - posonlyargcount - posorkwargcount > 0);
     int kwonlyargcount = (int)c->u->u_kwonlyargcount;
 
-    for(int i=0; i < c->u->u_ntmps; i++) {
-        PyObject *k = PyUnicode_FromFormat("$%d", i);
-        if (!k) {
-            goto error;
-        }
-        PyObject *v = PyLong_FromSsize_t(nlocalsplus++);
-        if (!v) {
-            Py_DECREF(k);
-            goto error;
-        }
-        int ret = PyDict_SetItem(c->u->u_varnames, k, v);
-        Py_DECREF(k);
-        Py_DECREF(v);
-        if (ret < 0) {
-            goto error;
-        }
-    }
-
     localsplusnames = PyTuple_New(nlocalsplus);
     if (localsplusnames == NULL) {
         goto error;
@@ -8474,6 +8456,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .firstlineno = c->u->u_firstlineno,
         .linetable = a->a_linetable,
 
+        .ntmps = c->u->u_ntmps,
         .consts = consts,
         .names = names,
 
@@ -8878,7 +8861,10 @@ resolve_register(oparg_t *oparg, int nlocalsplus,
             break;
         case CONST_REG:
             assert(oparg->value >= 0 && oparg->value < nconsts);
-            oparg->final = nlocalsplus + ntmps + stacksize + oparg->value;
+            oparg->final = (nlocalsplus +
+                            stacksize +
+                            ntmps +
+                            oparg->value);
             break;
         case NAME_REG:
             assert(oparg->value >= 0 && oparg->value < nlocalsplus);
@@ -8886,7 +8872,9 @@ resolve_register(oparg_t *oparg, int nlocalsplus,
             break;
         case TMP_REG: {
             assert(oparg->value >= 0 && oparg->value < ntmps);
-            oparg->final = nlocalsplus + oparg->value;
+            oparg->final = (nlocalsplus +
+                            stacksize +
+                            oparg->value);
             break;
         }
         default:

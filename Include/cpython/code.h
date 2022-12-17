@@ -91,6 +91,7 @@ typedef struct {
     /* redundant values (derived from co_localsplusnames and                   \
        co_localspluskinds) */                                                  \
     int co_nlocalsplus;           /* number of local + cell + free variables */ \
+    int co_ntmps;                 /* number of temp registers */               \
     int co_framesize;             /* Size of frame in words */                 \
     int co_nlocals;               /* number of local variables */              \
     int co_nplaincellvars;        /* number of non-arg cell variables */       \

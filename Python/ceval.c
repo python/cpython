@@ -2011,8 +2011,14 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
         _PyEvalFrameClearAndPop(tstate, frame);
         return NULL;
     }
+    int tmps_idx = code->co_nlocalsplus + code->co_stacksize;
+    for (int i = 0; i < code->co_ntmps; i++) {
+        localsarray[tmps_idx + i] = NULL;
+    }
     if (nconsts > 0) {
-        PyObject **const_regs = localsarray + (code->co_nlocalsplus + code->co_stacksize);
+        PyObject **const_regs = localsarray + (code->co_nlocalsplus +
+                                               code->co_stacksize +
+                                               code->co_ntmps);
         PyObject **consts = &PyTuple_GET_ITEM(code->co_consts, 0);
         Py_MEMCPY(const_regs, consts, sizeof(PyObject*) * nconsts);
     }

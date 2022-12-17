@@ -158,6 +158,7 @@ struct _PyCodeConstructor {
     PyObject *linetable;
 
     /* used by the code */
+    int ntmps;
     PyObject *consts;
     PyObject *names;
 

@@ -947,7 +947,10 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = f->f_frame->f_code;
     int nconsts = (int)PyTuple_Size(code->co_consts);
-    res += (code->co_nlocalsplus + code->co_stacksize + nconsts) * sizeof(PyObject *);
+    res += (code->co_nlocalsplus +
+            code->co_stacksize +
+            code->co_ntmps +
+            nconsts) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
 
