@@ -13,6 +13,7 @@ extern "C" {
 #include "pycore_dict_state.h"      // struct _Py_dict_runtime_state
 #include "pycore_dtoa.h"            // struct _dtoa_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
+#include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_function.h"        // struct _func_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_import.h"          // struct _import_runtime_state
@@ -22,7 +23,9 @@ extern "C" {
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_obmalloc.h"        // struct obmalloc_state
+#include "pycore_signal.h"          // struct _signals_runtime_state
 #include "pycore_time.h"            // struct _time_runtime_state
+#include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 struct _getargs_runtime_state {
@@ -91,13 +94,9 @@ typedef struct pyruntimestate {
     struct _pymem_allocators allocators;
     struct _obmalloc_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
-    struct {
-        /* True if the main interpreter thread exited due to an unhandled
-         * KeyboardInterrupt exception, suggesting the user pressed ^C. */
-        int unhandled_keyboard_interrupt;
-    } signals;
     struct _time_runtime_state time;
     struct _pythread_runtime_state threads;
+    struct _signals_runtime_state signals;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
@@ -137,11 +136,10 @@ typedef struct pyruntimestate {
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
     struct _getargs_runtime_state getargs;
-    struct {
-        struct _PyTraceMalloc_Config config;
-    } tracemalloc;
     struct _dtoa_runtime_state dtoa;
     struct _fileutils_state fileutils;
+    struct _faulthandler_runtime_state faulthandler;
+    struct _tracemalloc_runtime_state tracemalloc;
 
     PyPreConfig preconfig;
 
@@ -165,7 +163,7 @@ typedef struct pyruntimestate {
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_cached_objects cached_objects;
-    struct _Py_global_objects global_objects;
+    struct _Py_static_objects static_objects;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through _PyRuntimeState pointer fields.
