@@ -1280,11 +1280,11 @@ class Path(PurePath):
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
-        stack = deque(((False, self),))
+        stack = [(False, self)]
 
         while stack:
-            must_be_yielded_immediately, top = stack.pop()
-            if must_be_yielded_immediately:
+            must_yield, top = stack.pop()
+            if must_yield:
                 yield top
                 continue
 
