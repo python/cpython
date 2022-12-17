@@ -495,9 +495,11 @@ extern char        *ctermid_r(char *);
 #ifdef MS_WINDOWS
 #  define INITFUNC PyInit_nt
 #  define MODNAME "nt"
+#  define MODNAME_OBJ &_Py_ID(nt)
 #else
 #  define INITFUNC PyInit_posix
 #  define MODNAME "posix"
+#  define MODNAME_OBJ &_Py_ID(posix)
 #endif
 
 #if defined(__sun)
@@ -974,6 +976,7 @@ typedef struct {
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
     PyObject *SchedParamType;
 #endif
+    newfunc statresult_new_orig;
     PyObject *StatResultType;
     PyObject *StatVFSResultType;
     PyObject *TerminalSizeType;
@@ -2225,13 +2228,25 @@ static PyStructSequence_Desc waitid_result_desc = {
     5
 };
 #endif
-static newfunc structseq_new;
 
 static PyObject *
 statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyStructSequence *result;
     int i;
+
+    // ht_module doesn't get set in PyStructSequence_NewType(),
+    // so we can't use PyType_GetModule().
+    PyObject *mod = PyImport_GetModule(MODNAME_OBJ);
+    if (mod == NULL) {
+        return NULL;
+    }
+    _posixstate *state = get_posix_state(mod);
+    Py_DECREF(mod);
+    if (state == NULL) {
+        return NULL;
+    }
+#define structseq_new state->statresult_new_orig
 
     result = (PyStructSequence*)structseq_new(type, args, kwds);
     if (!result)
@@ -9051,11 +9066,6 @@ build_times_result(PyObject *module, double user, double system,
 }
 
 
-#ifndef MS_WINDOWS
-#define NEED_TICKS_PER_SECOND
-static long ticks_per_second = -1;
-#endif /* MS_WINDOWS */
-
 /*[clinic input]
 os.times
 
@@ -9091,20 +9101,22 @@ os_times_impl(PyObject *module)
 }
 #else /* MS_WINDOWS */
 {
-
-
     struct tms t;
     clock_t c;
     errno = 0;
     c = times(&t);
-    if (c == (clock_t) -1)
+    if (c == (clock_t) -1) {
         return posix_error();
+    }
+    assert(_PyRuntime.time.ticks_per_second_initialized);
+#define ticks_per_second _PyRuntime.time.ticks_per_second
     return build_times_result(module,
                          (double)t.tms_utime / ticks_per_second,
                          (double)t.tms_stime / ticks_per_second,
                          (double)t.tms_cutime / ticks_per_second,
                          (double)t.tms_cstime / ticks_per_second,
                          (double)c / ticks_per_second);
+#undef ticks_per_second
 }
 #endif /* MS_WINDOWS */
 #endif /* HAVE_TIMES */
@@ -15912,7 +15924,7 @@ posixmodule_exec(PyObject *m)
     }
     PyModule_AddObject(m, "stat_result", Py_NewRef(StatResultType));
     state->StatResultType = StatResultType;
-    structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
+    state->statresult_new_orig = ((PyTypeObject *)StatResultType)->tp_new;
     ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
 
     statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
@@ -15922,15 +15934,6 @@ posixmodule_exec(PyObject *m)
     }
     PyModule_AddObject(m, "statvfs_result", Py_NewRef(StatVFSResultType));
     state->StatVFSResultType = StatVFSResultType;
-#ifdef NEED_TICKS_PER_SECOND
-#  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
-    ticks_per_second = sysconf(_SC_CLK_TCK);
-#  elif defined(HZ)
-    ticks_per_second = HZ;
-#  else
-    ticks_per_second = 60; /* magic fallback value; may be bogus */
-#  endif
-#endif
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
     sched_param_desc.name = MODNAME ".sched_param";
