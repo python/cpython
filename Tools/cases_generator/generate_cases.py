@@ -205,7 +205,7 @@ class Instruction:
                 else:
                     typ = f"uint{bits}_t "
                     func = f"read_u{bits}"
-                out.emit(f"{typ}{ceffect.name} = {func}(next_instr + {cache_offset});")
+                out.emit(f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 

@@ -54,7 +54,6 @@ extern void _PyIO_Fini(void);
 
 #ifdef MS_WINDOWS
 #  undef BYTE
-#  include "windows.h"
 
    extern PyTypeObject PyWindowsConsoleIO_Type;
 #  define PyWindowsConsoleIO_Check(op) \
