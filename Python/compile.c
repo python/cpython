@@ -150,6 +150,15 @@ location_is_after(location loc1, location loc2) {
              (loc1.col_offset > loc2.end_col_offset));
 }
 
+static inline bool
+same_location(location a, location b)
+{
+    return a.lineno == b.lineno && 
+           a.end_lineno == b.end_lineno &&
+           a.col_offset == b.col_offset &&
+           a.end_col_offset == b.end_col_offset;
+}
+
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
 typedef struct jump_target_label_ {
@@ -7722,15 +7731,15 @@ write_location_info_oneline_form(struct assembler* a, int length, int line_delta
 }
 
 static void
-write_location_info_long_form(struct assembler* a, struct instr* i, int length)
+write_location_info_long_form(struct assembler* a, location loc, int length)
 {
     assert(length > 0 &&  length <= 8);
     write_location_first_byte(a, PY_CODE_LOCATION_INFO_LONG, length);
-    write_location_signed_varint(a, i->i_loc.lineno - a->a_lineno);
-    assert(i->i_loc.end_lineno >= i->i_loc.lineno);
-    write_location_varint(a, i->i_loc.end_lineno - i->i_loc.lineno);
-    write_location_varint(a, i->i_loc.col_offset + 1);
-    write_location_varint(a, i->i_loc.end_col_offset + 1);
+    write_location_signed_varint(a, loc.lineno - a->a_lineno);
+    assert(loc.end_lineno >= loc.lineno);
+    write_location_varint(a, loc.end_lineno - loc.lineno);
+    write_location_varint(a, loc.col_offset + 1);
+    write_location_varint(a, loc.end_col_offset + 1);
 }
 
 static void
@@ -7749,7 +7758,7 @@ write_location_info_no_column(struct assembler* a, int length, int line_delta)
 #define THEORETICAL_MAX_ENTRY_SIZE 25 /* 1 + 6 + 6 + 6 + 6 */
 
 static int
-write_location_info_entry(struct assembler* a, struct instr* i, int isize)
+write_location_info_entry(struct assembler* a, location loc, int isize)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_linetable);
     if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
@@ -7758,49 +7767,51 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
             return -1;
         }
     }
-    if (i->i_loc.lineno < 0) {
+    if (loc.lineno < 0) {
         write_location_info_none(a, isize);
         return 0;
     }
-    int line_delta = i->i_loc.lineno - a->a_lineno;
-    int column = i->i_loc.col_offset;
-    int end_column = i->i_loc.end_col_offset;
+    int line_delta = loc.lineno - a->a_lineno;
+    int column = loc.col_offset;
+    int end_column = loc.end_col_offset;
     assert(column >= -1);
     assert(end_column >= -1);
     if (column < 0 || end_column < 0) {
-        if (i->i_loc.end_lineno == i->i_loc.lineno || i->i_loc.end_lineno == -1) {
+        if (loc.end_lineno == loc.lineno || loc.end_lineno == -1) {
             write_location_info_no_column(a, isize, line_delta);
-            a->a_lineno = i->i_loc.lineno;
+            a->a_lineno = loc.lineno;
             return 0;
         }
     }
-    else if (i->i_loc.end_lineno == i->i_loc.lineno) {
+    else if (loc.end_lineno == loc.lineno) {
         if (line_delta == 0 && column < 80 && end_column - column < 16 && end_column >= column) {
             write_location_info_short_form(a, isize, column, end_column);
             return 0;
         }
         if (line_delta >= 0 && line_delta < 3 && column < 128 && end_column < 128) {
             write_location_info_oneline_form(a, isize, line_delta, column, end_column);
-            a->a_lineno = i->i_loc.lineno;
+            a->a_lineno = loc.lineno;
             return 0;
         }
     }
-    write_location_info_long_form(a, i, isize);
-    a->a_lineno = i->i_loc.lineno;
+    write_location_info_long_form(a, loc, isize);
+    a->a_lineno = loc.lineno;
     return 0;
 }
 
 static int
-assemble_emit_location(struct assembler* a, struct instr* i)
+assemble_emit_location(struct assembler* a, location loc, int isize)
 {
-    int isize = instr_size(i);
+    if (isize == 0) {
+        return 0;
+    }
     while (isize > 8) {
-        if (write_location_info_entry(a, i, 8) < 0) {
+        if (write_location_info_entry(a, loc, 8)) {
             return -1;
         }
         isize -= 8;
     }
-    return write_location_info_entry(a, i, isize);
+    return write_location_info_entry(a, loc, isize);
 }
 
 /* assemble_emit()
@@ -8860,12 +8871,22 @@ assemble(struct compiler *c, int addNone)
 
     /* Emit location info */
     a.a_lineno = c->u->u_firstlineno;
+    location loc = NO_LOCATION;
+    int size = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++) {
-            if (assemble_emit_location(&a, &b->b_instr[j]) < 0) {
-                goto error;
+            if (!same_location(loc, b->b_instr[j].i_loc)) {
+                if (assemble_emit_location(&a, loc, size)) {
+                    goto error;
+                }
+                loc = b->b_instr[j].i_loc;
+                size = 0;
             }
+            size += instr_size(&b->b_instr[j]);
         }
+    }
+    if (assemble_emit_location(&a, loc, size)) {
+        goto error;
     }
 
     if (assemble_exception_table(&a, g->g_entryblock) < 0) {
