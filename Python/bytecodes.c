@@ -161,7 +161,7 @@ dummy_func(
         super(LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
 
         inst(POP_TOP, (value --)) {
-            Py_DECREF(value);
+            DECREF_INPUTS();
         }
 
         inst(PUSH_NULL, (-- res)) {
@@ -172,19 +172,19 @@ dummy_func(
 
         inst(UNARY_POSITIVE, (value -- res)) {
             res = PyNumber_Positive(value);
-            Py_DECREF(value);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
         inst(UNARY_NEGATIVE, (value -- res)) {
             res = PyNumber_Negative(value);
-            Py_DECREF(value);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
         inst(UNARY_NOT, (value -- res)) {
             int err = PyObject_IsTrue(value);
-            Py_DECREF(value);
+            DECREF_INPUTS();
             ERROR_IF(err < 0, error);
             if (err == 0) {
                 res = Py_True;
@@ -197,7 +197,7 @@ dummy_func(
 
         inst(UNARY_INVERT, (value -- res)) {
             res = PyNumber_Invert(value);
-            Py_DECREF(value);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
@@ -351,8 +351,7 @@ dummy_func(
             STAT_INC(BINARY_SUBSCR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             res = PyObject_GetItem(container, sub);
-            Py_DECREF(container);
-            Py_DECREF(sub);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
@@ -438,8 +437,7 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             Py_INCREF(res);  // Do this before DECREF'ing dict, sub
-            Py_DECREF(dict);
-            Py_DECREF(sub);
+            DECREF_INPUTS();
         }
 
         inst(BINARY_SUBSCR_GETITEM, (unused/1, type_version/2, func_version/1, container, sub -- unused)) {
@@ -500,9 +498,7 @@ dummy_func(
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
-            Py_DECREF(v);
-            Py_DECREF(container);
-            Py_DECREF(sub);
+            DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
@@ -538,8 +534,7 @@ dummy_func(
         inst(DELETE_SUBSCR, (container, sub --)) {
             /* del container[sub] */
             int err = PyObject_DelItem(container, sub);
-            Py_DECREF(container);
-            Py_DECREF(sub);
+            DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
@@ -550,11 +545,11 @@ dummy_func(
             if (hook == NULL) {
                 _PyErr_SetString(tstate, PyExc_RuntimeError,
                                  "lost sys.displayhook");
-                Py_DECREF(value);
+                DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
             res = PyObject_CallOneArg(hook, value);
-            Py_DECREF(value);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
             Py_DECREF(res);
         }
@@ -625,12 +620,12 @@ dummy_func(
                               "'async for' requires an object with "
                               "__aiter__ method, got %.100s",
                               type->tp_name);
-                Py_DECREF(obj);
+                DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
 
             iter = (*getter)(obj);
-            Py_DECREF(obj);
+            DECREF_INPUTS();
             ERROR_IF(iter == NULL, error);
 
             if (Py_TYPE(iter)->tp_as_async == NULL ||
