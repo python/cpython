@@ -1624,16 +1624,16 @@ expression support in the :mod:`re` module).
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
-   Return an encoded version of the string as a bytes object. Default encoding
-   is ``'utf-8'``.  And for a list of possible encodings, see section
-   :ref:`standard-encodings`.
+   Return the string encoded to :class:`bytes`.
+   *encoding* defaults to ``'utf-8'``;
+   see :ref:`standard-encodings` for possible values.
 
-   *errors* may be given to set a different error handling scheme.  The
-   default for *errors* is ``'strict'``, meaning that encoding errors raise
-   a :exc:`UnicodeError`. Other possible values are ``'ignore'``,
+   *errors* controls how encoding errors are handled.
+   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
+   Other possible values are ``'ignore'``,
    ``'replace'``, ``'xmlcharrefreplace'``, ``'backslashreplace'`` and any
-   other name registered via :func:`codecs.register_error`, see section
-   :ref:`error-handlers`.
+   other name registered via :func:`codecs.register_error`.
+   See :ref:`error-handlers` for details.
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first encoding error. Enable the :ref:`Python Development
@@ -2761,15 +2761,15 @@ arbitrary binary data.
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
 
-   Return a string decoded from the given bytes.  Default encoding is
-   ``'utf-8'``.  And for a list of possible encodings, see section
-   :ref:`standard-encodings`.
+   Return the bytes decoded to a :class:`str`.
+   *encoding* defaults to ``'utf-8'``;
+   see :ref:`standard-encodings` for possible values.
 
-   *errors* may be given to set a different error handling scheme.  The
-   default for *errors* is ``'strict'``, meaning that encoding errors raise a
-   :exc:`UnicodeError`.  Other possible values are ``'ignore'``, ``'replace'``
-   and any other name registered via :func:`codecs.register_error`, see
-   section :ref:`error-handlers`.
+   *errors* controls how decoding errors are handled.
+   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
+   Other possible values are ``'ignore'``, ``'replace'``,
+   and any other name registered via :func:`codecs.register_error`.
+   See :ref:`error-handlers` for details.
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first decoding error. Enable the :ref:`Python Development
