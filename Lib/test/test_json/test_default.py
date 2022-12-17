@@ -9,14 +9,14 @@ class TestDefault:
             self.dumps(repr(type)))
 
     def test_ordereddict(self):
-        od = collections.OrderedDict(a=1, b=2)
-        od.move_to_end('a')
+        od = collections.OrderedDict(a=1, b=2, c=3, d=4)
+        od.move_to_end('b')
         self.assertEqual(
             self.dumps(od),
-            '{"b": 2, "a": 1}')
+            '{"a": 1, "c": 3, "d": 4, "b": 2}')
         self.assertEqual(
             self.dumps(od, sort_keys=True),
-            '{"a": 1, "b": 2}')
+            '{"a": 1, "b": 2, "c": 3, "d": 4}')
 
 
 class TestPyDefault(TestDefault, PyTest): pass
