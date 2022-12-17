@@ -972,10 +972,13 @@ r_bytecode(RFILE *p)
         assert(0x00 <= opcode && opcode < 0x100);
         assert(0x00 <= oparg && oparg < 0x100);
         buffer[i].opcode = opcode;
-        buffer[i++].oparg = oparg;
+        buffer[i].oparg = oparg;
+        i++;
         for (int j = 0; j < _PyOpcode_Caches[opcode]; j++) {
+            assert(i < size);
             buffer[i].opcode = CACHE;
-            buffer[i++].oparg = 0;
+            buffer[i].oparg = 0;
+            i++;
         }
     }
     if (i != size) {

@@ -17,8 +17,10 @@ import types
 from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
-import opcode_for_build as opcode
+import opcode_for_build
 from generate_global_objects import get_identifiers_and_strings
+
+opcode = opcode_for_build.import_opcode()
 
 verbose = False
 identifiers, strings = get_identifiers_and_strings()

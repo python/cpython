@@ -1,9 +1,11 @@
 # Implementat marshal.loads() in pure Python
 
 import ast
-import opcode_for_build as opcode
+import opcode_for_build
 
 from typing import Any, Tuple
+
+opcode = opcode_for_build.import_opcode()
 
 
 class Type:
@@ -186,7 +188,7 @@ class Reader:
         bytecode = bytearray()
         while len(bytecode) < nbytes:
             opcode_byte = self.r_byte()
-            if opcode.HAVE_ARGUMENT <= opcode_byte:
+            if opcode_byte >= opcode.HAVE_ARGUMENT:
                 oparg_byte = self.r_byte()
             else:
                 oparg_byte = 0
