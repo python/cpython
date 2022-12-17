@@ -490,7 +490,7 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.is_relative_to(*other)
+.. method:: PurePath.is_relative_to(other)
 
    Return whether or not this path is relative to the *other* path.
 
@@ -502,6 +502,10 @@ Pure paths provide the following methods and properties:
 
    .. versionadded:: 3.9
 
+   .. deprecated-removed:: 3.12 3.14
+
+      Passing additional arguments is deprecated; if supplied, they are joined
+      with *other*.
 
 .. method:: PurePath.is_reserved()
 
@@ -564,7 +568,7 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.relative_to(*other, walk_up=False)
+.. method:: PurePath.relative_to(other, walk_up=False)
 
    Compute a version of this path relative to the path represented by
    *other*.  If it's impossible, :exc:`ValueError` is raised::
@@ -581,7 +585,7 @@ Pure paths provide the following methods and properties:
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
 
-When *walk_up* is False (the default), the path must start with *other*.
+   When *walk_up* is False (the default), the path must start with *other*.
    When the argument is True, ``..`` entries may be added to form the
    relative path. In all other cases, such as the paths referencing
    different drives, :exc:`ValueError` is raised.::
@@ -605,6 +609,10 @@ When *walk_up* is False (the default), the path must start with *other*.
    .. versionadded:: 3.12
       The *walk_up* argument (old behavior is the same as ``walk_up=False``).
 
+   .. deprecated-removed:: 3.12 3.14
+
+      Passing additional positional arguments is deprecated; if supplied,
+      they are joined with *other*.
 
 .. method:: PurePath.with_name(name)
 
