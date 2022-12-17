@@ -1,1 +1,1 @@
-Fix bug where :class:`pathlib.PurePath` and its subclasses take and ignore `**kwargs`. Patch provided by Yurii Karabas.
+Fix bug where :class:`pathlib.Path` accepted and ignored keyword arguments. Patch provided by Yurii Karabas.
