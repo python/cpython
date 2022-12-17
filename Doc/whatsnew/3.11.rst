@@ -2319,7 +2319,7 @@ Porting to Python 3.11
   can define the following macros and use them throughout
   the code (credit: these were copied from the ``mypy`` codebase)::
 
-    #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 8
+    #if PY_VERSION_HEX >= 0x03080000
     #  define CPy_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_BEGIN(op, dealloc)
     #  define CPy_TRASHCAN_END(op) Py_TRASHCAN_END
     #else

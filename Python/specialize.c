@@ -340,6 +340,9 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_ATTR_PROPERTY_NOT_PY_FUNCTION 28
 #define SPEC_FAIL_ATTR_NOT_IN_KEYS 29
 #define SPEC_FAIL_ATTR_NOT_IN_DICT 30
+#define SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE 31
+#define SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR 32
+#define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ 33
 
 /* Binary subscr and store subscr */
 
@@ -391,14 +394,14 @@ _PyCode_Quicken(PyCodeObject *code)
 
 #define SPEC_FAIL_CALL_INSTANCE_METHOD 11
 #define SPEC_FAIL_CALL_CMETHOD 12
-#define SPEC_FAIL_CALL_PYCFUNCTION 13
-#define SPEC_FAIL_CALL_PYCFUNCTION_WITH_KEYWORDS 14
-#define SPEC_FAIL_CALL_PYCFUNCTION_FAST_WITH_KEYWORDS 15
-#define SPEC_FAIL_CALL_PYCFUNCTION_NOARGS 16
+#define SPEC_FAIL_CALL_CFUNC_VARARGS 13
+#define SPEC_FAIL_CALL_CFUNC_VARARGS_KEYWORDS 14
+#define SPEC_FAIL_CALL_CFUNC_FASTCALL_KEYWORDS 15
+#define SPEC_FAIL_CALL_CFUNC_NOARGS 16
 #define SPEC_FAIL_CALL_BAD_CALL_FLAGS 17
-#define SPEC_FAIL_CALL_CLASS 18
+#define SPEC_FAIL_CALL_CFUNC_METHOD_FASTCALL_KEYWORDS 18
 #define SPEC_FAIL_CALL_PYTHON_CLASS 19
-#define SPEC_FAIL_CALL_METHOD_DESCRIPTOR 20
+#define SPEC_FAIL_CALL_PEP_523 20
 #define SPEC_FAIL_CALL_BOUND_METHOD 21
 #define SPEC_FAIL_CALL_STR 22
 #define SPEC_FAIL_CALL_CLASS_NO_VECTORCALL 23
@@ -406,8 +409,6 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CALL_KWNAMES 25
 #define SPEC_FAIL_CALL_METHOD_WRAPPER 26
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 27
-#define SPEC_FAIL_CALL_PYFUNCTION 28
-#define SPEC_FAIL_CALL_PEP_523 29
 
 /* COMPARE_OP */
 #define SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES 12
@@ -813,16 +814,29 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             goto success;
         }
         case BUILTIN_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ);
+            goto fail;
         case PYTHON_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
+            goto fail;
         case NON_OVERRIDING:
+            SPECIALIZATION_FAIL(LOAD_ATTR,
+                                (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) ?
+                                SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR :
+                                SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
+            goto fail;
         case NON_DESCRIPTOR:
+            SPECIALIZATION_FAIL(LOAD_ATTR,
+                                (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) ?
+                                SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE :
+                                SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
+            goto fail;
         case ABSENT:
-            break;
-    }
-    if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
-                               LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
-    {
-        goto success;
+            if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
+                                    LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
+            {
+                goto success;
+            }
     }
 fail:
     STAT_INC(LOAD_ATTR, failure);
@@ -901,16 +915,23 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
             goto fail;
         case BUILTIN_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ);
+            goto fail;
         case PYTHON_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
+            goto fail;
         case NON_OVERRIDING:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR);
+            goto fail;
         case NON_DESCRIPTOR:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
+            goto fail;
         case ABSENT:
-            break;
-    }
-    if (specialize_dict_access(owner, instr, type, kind, name, STORE_ATTR,
-                               STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT))
-    {
-        goto success;
+            if (specialize_dict_access(owner, instr, type, kind, name, STORE_ATTR,
+                                    STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT))
+            {
+                goto success;
+            }
     }
 fail:
     STAT_INC(STORE_ATTR, failure);
@@ -1494,17 +1515,19 @@ builtin_call_fail_kind(int ml_flags)
     switch (ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
         METH_KEYWORDS | METH_METHOD)) {
         case METH_VARARGS:
-            return SPEC_FAIL_CALL_PYCFUNCTION;
+            return SPEC_FAIL_CALL_CFUNC_VARARGS;
         case METH_VARARGS | METH_KEYWORDS:
-            return SPEC_FAIL_CALL_PYCFUNCTION_WITH_KEYWORDS;
+            return SPEC_FAIL_CALL_CFUNC_VARARGS_KEYWORDS;
         case METH_FASTCALL | METH_KEYWORDS:
-            return SPEC_FAIL_CALL_PYCFUNCTION_FAST_WITH_KEYWORDS;
+            return SPEC_FAIL_CALL_CFUNC_FASTCALL_KEYWORDS;
         case METH_NOARGS:
-            return SPEC_FAIL_CALL_PYCFUNCTION_NOARGS;
-        /* This case should never happen with PyCFunctionObject -- only
-            PyMethodObject. See zlib.compressobj()'s methods for an example.
-        */
+            return SPEC_FAIL_CALL_CFUNC_NOARGS;
         case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
+            return SPEC_FAIL_CALL_CFUNC_METHOD_FASTCALL_KEYWORDS;
+        /* These cases should be optimized, but return "other" just in case */
+        case METH_O:
+        case METH_FASTCALL:
+            return SPEC_FAIL_OTHER;
         default:
             return SPEC_FAIL_CALL_BAD_CALL_FLAGS;
     }
@@ -1675,32 +1698,17 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
 static int
 call_fail_kind(PyObject *callable)
 {
-    if (PyCFunction_CheckExact(callable)) {
-        return SPEC_FAIL_CALL_PYCFUNCTION;
-    }
-    else if (PyFunction_Check(callable)) {
-        return SPEC_FAIL_CALL_PYFUNCTION;
-    }
-    else if (PyInstanceMethod_Check(callable)) {
+    assert(!PyCFunction_CheckExact(callable));
+    assert(!PyFunction_Check(callable));
+    assert(!PyType_Check(callable));
+    assert(!Py_IS_TYPE(callable, &PyMethodDescr_Type));
+    assert(!PyMethod_Check(callable));
+    if (PyInstanceMethod_Check(callable)) {
         return SPEC_FAIL_CALL_INSTANCE_METHOD;
-    }
-    else if (PyMethod_Check(callable)) {
-        return SPEC_FAIL_CALL_BOUND_METHOD;
     }
     // builtin method
     else if (PyCMethod_Check(callable)) {
         return SPEC_FAIL_CALL_CMETHOD;
-    }
-    else if (PyType_Check(callable)) {
-        if (((PyTypeObject *)callable)->tp_new == PyBaseObject_Type.tp_new) {
-            return SPEC_FAIL_CALL_PYTHON_CLASS;
-        }
-        else {
-            return SPEC_FAIL_CALL_CLASS;
-        }
-    }
-    else if (Py_IS_TYPE(callable, &PyMethodDescr_Type)) {
-        return SPEC_FAIL_CALL_METHOD_DESCRIPTOR;
     }
     else if (Py_TYPE(callable) == &PyWrapperDescr_Type) {
         return SPEC_FAIL_CALL_OPERATOR_WRAPPER;
@@ -1737,7 +1745,7 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         fail = specialize_method_descriptor((PyMethodDescrObject *)callable,
                                             instr, nargs, kwnames);
     }
-    else if (Py_TYPE(callable) == &PyMethod_Type) {
+    else if (PyMethod_Check(callable)) {
         PyObject *func = ((PyMethodObject *)callable)->im_func;
         if (PyFunction_Check(func)) {
             fail = specialize_py_call((PyFunctionObject *)func,
@@ -1943,15 +1951,16 @@ compare_op_fail_kind(PyObject *lhs, PyObject *rhs)
 
 
 static int compare_masks[] = {
-    // 1-bit: jump if less than
-    // 2-bit: jump if equal
+    // 1-bit: jump if unordered
+    // 2-bit: jump if less
     // 4-bit: jump if greater
-    [Py_LT] = 1 | 0 | 0,
-    [Py_LE] = 1 | 2 | 0,
-    [Py_EQ] = 0 | 2 | 0,
-    [Py_NE] = 1 | 0 | 4,
-    [Py_GT] = 0 | 0 | 4,
-    [Py_GE] = 0 | 2 | 4,
+    // 8-bit: jump if equal
+    [Py_LT] = 0 | 2 | 0 | 0,
+    [Py_LE] = 0 | 2 | 0 | 8,
+    [Py_EQ] = 0 | 0 | 0 | 8,
+    [Py_NE] = 1 | 2 | 4 | 0,
+    [Py_GT] = 0 | 0 | 4 | 0,
+    [Py_GE] = 0 | 0 | 4 | 8,
 };
 
 void
@@ -1972,7 +1981,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     assert(oparg <= Py_GE);
     int when_to_jump_mask = compare_masks[oparg];
     if (next_opcode == POP_JUMP_IF_FALSE) {
-        when_to_jump_mask = (1 | 2 | 4) & ~when_to_jump_mask;
+        when_to_jump_mask = (1 | 2 | 4 | 8) & ~when_to_jump_mask;
     }
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
@@ -2001,7 +2010,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         }
         else {
             _py_set_opcode(instr, COMPARE_OP_STR_JUMP);
-            cache->mask = (when_to_jump_mask & 2) == 0;
+            cache->mask = (when_to_jump_mask & 8) == 0;
             goto success;
         }
     }
