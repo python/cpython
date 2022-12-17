@@ -1131,6 +1131,7 @@ _PyUnicode_Dump(PyObject *op)
 
 
 PyObject *
+    _Py_NO_SANITIZE_ADDRESS  // Disable ASAN, refer to _PyUnicode_ClearInterned
 PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 {
     /* Optimization for empty strings */
@@ -14649,7 +14650,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
      * allocations that carry over to a future initialization of Python within
      * the same process. i.e:
      *   ./python -X showrefcount -c 'import itertools'
-     *   [299 refs, 299 blocks]
+     *   [237 refs, 237 blocks]
      *
      * Therefore, this should remain disabled for production builds until there
      * is a strict guarantee that no memory will be left after `Py_Finalize`.
