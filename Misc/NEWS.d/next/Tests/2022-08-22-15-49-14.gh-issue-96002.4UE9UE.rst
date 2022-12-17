@@ -1,0 +1,1 @@
+Add functional test for Argument Clinic.

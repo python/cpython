@@ -24,6 +24,7 @@ IGNORE = {
     '_ctypes_test',
     '_testbuffer',
     '_testcapi',
+    '_testclinic',
     '_testconsole',
     '_testimportmultiple',
     '_testinternalcapi',
