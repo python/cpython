@@ -854,6 +854,24 @@ getargs_s_hash_int2(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+gh_99240_clear_args(PyObject *self, PyObject *args)
+{
+    char *a = NULL;
+    char *b = NULL;
+
+    if (!PyArg_ParseTuple(args, "eses", "idna", &a, "idna", &b)) {
+        if (a || b) {
+            PyErr_Clear();
+            PyErr_SetString(PyExc_AssertionError, "Arguments are not cleared.");
+        }
+        return NULL;
+    }
+    PyMem_Free(a);
+    PyMem_Free(b);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef test_methods[] = {
     {"get_args",                get_args,                        METH_VARARGS},
     {"get_kwargs", _PyCFunction_CAST(get_kwargs), METH_VARARGS|METH_KEYWORDS},
@@ -906,6 +924,7 @@ static PyMethodDef test_methods[] = {
     {"test_empty_argparse",     test_empty_argparse,             METH_NOARGS},
     {"test_k_code",             test_k_code,                     METH_NOARGS},
     {"test_s_code",             test_s_code,                     METH_NOARGS},
+    {"gh_99240_clear_args",     gh_99240_clear_args,             METH_VARARGS},
     {NULL},
 };
 
