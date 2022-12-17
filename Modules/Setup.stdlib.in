@@ -169,6 +169,7 @@
 @MODULE__TESTBUFFER_TRUE@_testbuffer _testbuffer.c
 @MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c
 @MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c
+@MODULE__TESTCLINIC_TRUE@_testclinic _testclinic.c
 
 # Some testing modules MUST be built as shared libraries.
 *shared*
