@@ -24,6 +24,7 @@ PyAPI_DATA(int) (*PyOS_InputHook)(void);
 
 #if defined(WIN32) && !defined(MS_WIN64) && !defined(_M_ARM) && defined(_MSC_VER) && _MSC_VER >= 1300
 /* Enable stack checking under Microsoft C */
+// When changing the platforms, ensure PyOS_CheckStack() docs are still correct
 #define USE_STACKCHECK
 #endif
 
@@ -34,7 +35,7 @@ PyAPI_FUNC(int) PyOS_CheckStack(void);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYTHONRUN_H
-#  include  "cpython/pythonrun.h"
+#  include "cpython/pythonrun.h"
 #  undef Py_CPYTHON_PYTHONRUN_H
 #endif
 

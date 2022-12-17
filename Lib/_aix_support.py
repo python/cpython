@@ -1,14 +1,8 @@
 """Shared AIX support functions."""
 
+import subprocess
 import sys
 import sysconfig
-
-try:
-    import subprocess
-except ImportError:  # pragma: no cover
-    # _aix_support is used in distutils by setup.py to build C extensions,
-    # before subprocess dependencies like _posixsubprocess are available.
-    import _bootsubprocess as subprocess
 
 
 def _aix_tag(vrtl, bd):
@@ -47,7 +41,7 @@ def aix_platform():
     # type: () -> str
     """
     AIX filesets are identified by four decimal values: V.R.M.F.
-    V (version) and R (release) can be retreived using ``uname``
+    V (version) and R (release) can be retrieved using ``uname``
     Since 2007, starting with AIX 5.3 TL7, the M value has been
     included with the fileset bos.rte and represents the Technology
     Level (TL) of AIX. The F (Fix) value also increases, but is not

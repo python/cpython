@@ -11,7 +11,7 @@ extern "C" {
 typedef struct {
     PyObject_HEAD
     PyObject *md_dict;
-    struct PyModuleDef *md_def;
+    PyModuleDef *md_def;
     void *md_state;
     PyObject *md_weaklist;
     // for logging purposes after md_dict is cleared

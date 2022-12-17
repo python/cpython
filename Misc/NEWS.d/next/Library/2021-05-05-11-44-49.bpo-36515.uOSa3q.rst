@@ -1,2 +1,0 @@
-The :mod:`hashlib` module no longer does unaligned memory accesses when
-compiled for ARM platforms.

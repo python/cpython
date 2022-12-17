@@ -94,7 +94,7 @@ Context Variables
           # var.get() would raise a LookupError.
 
 
-.. class:: contextvars.Token
+.. class:: Token
 
    *Token* objects are returned by the :meth:`ContextVar.set` method.
    They can be passed to the :meth:`ContextVar.reset` method to revert
@@ -110,7 +110,7 @@ Context Variables
 
       A read-only property.  Set to the value the variable had before
       the :meth:`ContextVar.set` method call that created the token.
-      It points to :attr:`Token.MISSING` is the variable was not set
+      It points to :attr:`Token.MISSING` if the variable was not set
       before the call.
 
    .. attribute:: Token.MISSING

@@ -1,2 +1,0 @@
-Allow subclassing ``csv.Error`` in 3.10 (it was allowed in 3.9 and earlier but
-was disallowed in early versions of 3.10).

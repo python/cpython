@@ -30,6 +30,7 @@ button.pack(side=BOTTOM)
 tk.mainloop()
 """
 
+import collections
 import enum
 import sys
 import types
@@ -142,6 +143,28 @@ def _splitdict(tk, v, cut_minus=True, conv=None):
             value = conv(value)
         dict[key] = value
     return dict
+
+class _VersionInfoType(collections.namedtuple('_VersionInfoType',
+        ('major', 'minor', 'micro', 'releaselevel', 'serial'))):
+    def __str__(self):
+        if self.releaselevel == 'final':
+            return f'{self.major}.{self.minor}.{self.micro}'
+        else:
+            return f'{self.major}.{self.minor}{self.releaselevel[0]}{self.serial}'
+
+def _parse_version(version):
+    import re
+    m = re.fullmatch(r'(\d+)\.(\d+)([ab.])(\d+)', version)
+    major, minor, releaselevel, serial = m.groups()
+    major, minor, serial = int(major), int(minor), int(serial)
+    if releaselevel == '.':
+        micro = serial
+        serial = 0
+        releaselevel = 'final'
+    else:
+        micro = 0
+        releaselevel = {'a': 'alpha', 'b': 'beta'}[releaselevel]
+    return _VersionInfoType(major, minor, micro, releaselevel, serial)
 
 
 @enum._simple_enum(enum.StrEnum)
@@ -841,7 +864,11 @@ class Misc:
                         self.deletecommand(name)
                     except TclError:
                         pass
-            callit.__name__ = func.__name__
+            try:
+                callit.__name__ = func.__name__
+            except AttributeError:
+                # Required for callable classes (bpo-44404)
+                callit.__name__ = type(func).__name__
             name = self._register(callit)
             return self.tk.call('after', ms, name)
 
@@ -1050,6 +1077,11 @@ class Misc:
         self.tk.call('raise', self._w, aboveThis)
 
     lift = tkraise
+
+    def info_patchlevel(self):
+        """Returns the exact version of the Tcl library."""
+        patchlevel = self.tk.call('info', 'patchlevel')
+        return _parse_version(patchlevel)
 
     def winfo_atom(self, name, displayof=0):
         """Return integer which represents atom NAME."""
@@ -2094,7 +2126,7 @@ class Wm:
         the bitmap if None is given.
 
         Under Windows, the DEFAULT parameter can be used to set the icon
-        for the widget and any descendents that don't have an icon set
+        for the widget and any descendants that don't have an icon set
         explicitly.  DEFAULT can be the relative path to a .ico file
         (example: root.iconbitmap(default='myicon.ico') ).  See Tk
         documentation for more information."""
@@ -2340,9 +2372,9 @@ class Tk(Misc, Wm):
             _default_root = None
 
     def readprofile(self, baseName, className):
-        """Internal function. It reads BASENAME.tcl and CLASSNAME.tcl into
-        the Tcl Interpreter and calls exec on the contents of BASENAME.py and
-        CLASSNAME.py if such a file exists in the home directory."""
+        """Internal function. It reads .BASENAME.tcl and .CLASSNAME.tcl into
+        the Tcl Interpreter and calls exec on the contents of .BASENAME.py and
+        .CLASSNAME.py if such a file exists in the home directory."""
         import os
         if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir
@@ -2587,7 +2619,7 @@ class BaseWidget(Misc):
         if kw:
             cnf = _cnfmerge((cnf, kw))
         self.widgetName = widgetName
-        BaseWidget._setup(self, master, cnf)
+        self._setup(master, cnf)
         if self._tclCommands is None:
             self._tclCommands = []
         classes = [(k, v) for k, v in cnf.items() if isinstance(k, type)]
@@ -2731,7 +2763,7 @@ class Canvas(Widget, XView, YView):
         """Add tag NEWTAG to item which is closest to pixel at X, Y.
         If several match take the top-most.
         All items closer than HALO are considered overlapping (all are
-        closests). If START is specified the next below this tag is taken."""
+        closest). If START is specified the next below this tag is taken."""
         self.addtag(newtag, 'closest', x, y, halo, start)
 
     def addtag_enclosed(self, newtag, x1, y1, x2, y2):
@@ -3006,6 +3038,8 @@ class Canvas(Widget, XView, YView):
         return self.tk.call(self._w, 'type', tagOrId) or None
 
 
+_checkbutton_count = 0
+
 class Checkbutton(Widget):
     """Checkbutton widget which is either in on- or off-state."""
 
@@ -3020,6 +3054,14 @@ class Checkbutton(Widget):
         selectcolor, selectimage, state, takefocus, text, textvariable,
         underline, variable, width, wraplength."""
         Widget.__init__(self, master, 'checkbutton', cnf, kw)
+
+    def _setup(self, master, cnf):
+        if not cnf.get('name'):
+            global _checkbutton_count
+            name = self.__class__.__name__.lower()
+            _checkbutton_count += 1
+            cnf['name'] = f'!{name}{_checkbutton_count}'
+        super()._setup(master, cnf)
 
     def deselect(self):
         """Put the button in off-state."""
@@ -3326,7 +3368,7 @@ class Menu(Widget):
         self.add('command', cnf or kw)
 
     def add_radiobutton(self, cnf={}, **kw):
-        """Addd radio menu item."""
+        """Add radio menu item."""
         self.add('radiobutton', cnf or kw)
 
     def add_separator(self, cnf={}, **kw):
@@ -3351,7 +3393,7 @@ class Menu(Widget):
         self.insert(index, 'command', cnf or kw)
 
     def insert_radiobutton(self, index, cnf={}, **kw):
-        """Addd radio menu item at INDEX."""
+        """Add radio menu item at INDEX."""
         self.insert(index, 'radiobutton', cnf or kw)
 
     def insert_separator(self, index, cnf={}, **kw):
@@ -3606,7 +3648,7 @@ class Text(Widget, XView, YView):
         "lines", "xpixels" and "ypixels". There is an additional possible
         option "update", which if given then all subsequent options ensure
         that any possible out of date information is recalculated."""
-        args = ['-%s' % arg for arg in args if not arg.startswith('-')]
+        args = ['-%s' % arg for arg in args]
         args += [index1, index2]
         res = self.tk.call(self._w, 'count', *args) or None
         if res is not None and len(args) <= 3:

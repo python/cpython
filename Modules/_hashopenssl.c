@@ -18,11 +18,16 @@
 #endif
 #define OPENSSL_NO_DEPRECATED 1
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_hashtable.h"
 #include "hashlib.h"
-#include "pystrhex.h"
+#include "pycore_strhex.h"        // _Py_strhex()
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -45,6 +50,160 @@
 #define PY_OPENSSL_HAS_SHAKE 1
 #define PY_OPENSSL_HAS_BLAKE2 1
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#define PY_EVP_MD EVP_MD
+#define PY_EVP_MD_fetch(algorithm, properties) EVP_MD_fetch(NULL, algorithm, properties)
+#define PY_EVP_MD_up_ref(md) EVP_MD_up_ref(md)
+#define PY_EVP_MD_free(md) EVP_MD_free(md)
+#else
+#define PY_EVP_MD const EVP_MD
+#define PY_EVP_MD_fetch(algorithm, properties) EVP_get_digestbyname(algorithm)
+#define PY_EVP_MD_up_ref(md) do {} while(0)
+#define PY_EVP_MD_free(md) do {} while(0)
+#endif
+
+/* hash alias map and fast lookup
+ *
+ * Map between Python's preferred names and OpenSSL internal names. Maintain
+ * cache of fetched EVP MD objects. The EVP_get_digestbyname() and
+ * EVP_MD_fetch() API calls have a performance impact.
+ *
+ * The py_hashentry_t items are stored in a _Py_hashtable_t with py_name and
+ * py_alias as keys.
+ */
+
+enum Py_hash_type {
+    Py_ht_evp,            // usedforsecurity=True / default
+    Py_ht_evp_nosecurity, // usedforsecurity=False
+    Py_ht_mac,            // HMAC
+    Py_ht_pbkdf2,         // PKBDF2
+};
+
+typedef struct {
+    const char *py_name;
+    const char *py_alias;
+    const char *ossl_name;
+    int ossl_nid;
+    int refcnt;
+    PY_EVP_MD *evp;
+    PY_EVP_MD *evp_nosecurity;
+} py_hashentry_t;
+
+#define Py_hash_md5 "md5"
+#define Py_hash_sha1 "sha1"
+#define Py_hash_sha224 "sha224"
+#define Py_hash_sha256 "sha256"
+#define Py_hash_sha384 "sha384"
+#define Py_hash_sha512 "sha512"
+#define Py_hash_sha512_224 "sha512_224"
+#define Py_hash_sha512_256 "sha512_256"
+#define Py_hash_sha3_224 "sha3_224"
+#define Py_hash_sha3_256 "sha3_256"
+#define Py_hash_sha3_384 "sha3_384"
+#define Py_hash_sha3_512 "sha3_512"
+#define Py_hash_shake_128 "shake_128"
+#define Py_hash_shake_256 "shake_256"
+#define Py_hash_blake2s "blake2s"
+#define Py_hash_blake2b "blake2b"
+
+#define PY_HASH_ENTRY(py_name, py_alias, ossl_name, ossl_nid) \
+    {py_name, py_alias, ossl_name, ossl_nid, 0, NULL, NULL}
+
+static const py_hashentry_t py_hashes[] = {
+    /* md5 */
+    PY_HASH_ENTRY(Py_hash_md5, "MD5", SN_md5, NID_md5),
+    /* sha1 */
+    PY_HASH_ENTRY(Py_hash_sha1, "SHA1", SN_sha1, NID_sha1),
+    /* sha2 family */
+    PY_HASH_ENTRY(Py_hash_sha224, "SHA224", SN_sha224, NID_sha224),
+    PY_HASH_ENTRY(Py_hash_sha256, "SHA256", SN_sha256, NID_sha256),
+    PY_HASH_ENTRY(Py_hash_sha384, "SHA384", SN_sha384, NID_sha384),
+    PY_HASH_ENTRY(Py_hash_sha512, "SHA512", SN_sha512, NID_sha512),
+    /* truncated sha2 */
+    PY_HASH_ENTRY(Py_hash_sha512_224, "SHA512_224", SN_sha512_224, NID_sha512_224),
+    PY_HASH_ENTRY(Py_hash_sha512_256, "SHA512_256", SN_sha512_256, NID_sha512_256),
+    /* sha3 */
+    PY_HASH_ENTRY(Py_hash_sha3_224, NULL, SN_sha3_224, NID_sha3_224),
+    PY_HASH_ENTRY(Py_hash_sha3_256, NULL, SN_sha3_256, NID_sha3_256),
+    PY_HASH_ENTRY(Py_hash_sha3_384, NULL, SN_sha3_384, NID_sha3_384),
+    PY_HASH_ENTRY(Py_hash_sha3_512, NULL, SN_sha3_512, NID_sha3_512),
+    /* sha3 shake */
+    PY_HASH_ENTRY(Py_hash_shake_128, NULL, SN_shake128, NID_shake128),
+    PY_HASH_ENTRY(Py_hash_shake_256, NULL, SN_shake256, NID_shake256),
+    /* blake2 digest */
+    PY_HASH_ENTRY(Py_hash_blake2s, "blake2s256", SN_blake2s256, NID_blake2s256),
+    PY_HASH_ENTRY(Py_hash_blake2b, "blake2b512", SN_blake2b512, NID_blake2b512),
+    PY_HASH_ENTRY(NULL, NULL, NULL, 0),
+};
+
+static Py_uhash_t
+py_hashentry_t_hash_name(const void *key) {
+    return _Py_HashBytes(key, strlen((const char *)key));
+}
+
+static int
+py_hashentry_t_compare_name(const void *key1, const void *key2) {
+    return strcmp((const char *)key1, (const char *)key2) == 0;
+}
+
+static void
+py_hashentry_t_destroy_value(void *entry) {
+    py_hashentry_t *h = (py_hashentry_t *)entry;
+    if (--(h->refcnt) == 0) {
+        if (h->evp != NULL) {
+            PY_EVP_MD_free(h->evp);
+            h->evp = NULL;
+        }
+        if (h->evp_nosecurity != NULL) {
+            PY_EVP_MD_free(h->evp_nosecurity);
+            h->evp_nosecurity = NULL;
+        }
+        PyMem_Free(entry);
+    }
+}
+
+static _Py_hashtable_t *
+py_hashentry_table_new(void) {
+    _Py_hashtable_t *ht = _Py_hashtable_new_full(
+        py_hashentry_t_hash_name,
+        py_hashentry_t_compare_name,
+        NULL,
+        py_hashentry_t_destroy_value,
+        NULL
+    );
+    if (ht == NULL) {
+        return NULL;
+    }
+
+    for (const py_hashentry_t *h = py_hashes; h->py_name != NULL; h++) {
+        py_hashentry_t *entry = (py_hashentry_t *)PyMem_Malloc(sizeof(py_hashentry_t));
+        if (entry == NULL) {
+            goto error;
+        }
+        memcpy(entry, h, sizeof(py_hashentry_t));
+
+        if (_Py_hashtable_set(ht, (const void*)entry->py_name, (void*)entry) < 0) {
+            PyMem_Free(entry);
+            goto error;
+        }
+        entry->refcnt = 1;
+
+        if (h->py_alias != NULL) {
+            if (_Py_hashtable_set(ht, (const void*)entry->py_alias, (void*)entry) < 0) {
+                PyMem_Free(entry);
+                goto error;
+            }
+            entry->refcnt++;
+        }
+    }
+
+    return ht;
+  error:
+    _Py_hashtable_destroy(ht);
+    return NULL;
+}
+
+/* Module state */
 static PyModuleDef _hashlibmodule;
 
 typedef struct {
@@ -55,6 +214,7 @@ typedef struct {
 #endif
     PyObject *constructs;
     PyObject *unsupported_digestmod_error;
+    _Py_hashtable_t *hashtable;
 } _hashlibstate;
 
 static inline _hashlibstate*
@@ -89,16 +249,23 @@ class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))
 
 /* LCOV_EXCL_START */
 static PyObject *
-_setException(PyObject *exc)
+_setException(PyObject *exc, const char* altmsg, ...)
 {
-    unsigned long errcode;
+    unsigned long errcode = ERR_peek_last_error();
     const char *lib, *func, *reason;
+    va_list vargs;
 
-    errcode = ERR_peek_last_error();
+    va_start(vargs, altmsg);
     if (!errcode) {
-        PyErr_SetString(exc, "unknown reasons");
+        if (altmsg == NULL) {
+            PyErr_SetString(exc, "no reason supplied");
+        } else {
+            PyErr_FormatV(exc, altmsg, vargs);
+        }
+        va_end(vargs);
         return NULL;
     }
+    va_end(vargs);
     ERR_clear_error();
 
     lib = ERR_lib_error_string(errcode);
@@ -123,68 +290,15 @@ py_digest_name(const EVP_MD *md)
 {
     int nid = EVP_MD_nid(md);
     const char *name = NULL;
+    const py_hashentry_t *h;
 
-    /* Hard-coded names for well-known hashing algorithms.
-     * OpenSSL uses slightly different names algorithms like SHA3.
-     */
-    switch (nid) {
-    case NID_md5:
-        name = "md5";
-        break;
-    case NID_sha1:
-        name = "sha1";
-        break;
-    case NID_sha224:
-        name ="sha224";
-        break;
-    case NID_sha256:
-        name ="sha256";
-        break;
-    case NID_sha384:
-        name ="sha384";
-        break;
-    case NID_sha512:
-        name ="sha512";
-        break;
-#ifdef NID_sha512_224
-    case NID_sha512_224:
-        name ="sha512_224";
-        break;
-    case NID_sha512_256:
-        name ="sha512_256";
-        break;
-#endif
-#ifdef PY_OPENSSL_HAS_SHA3
-    case NID_sha3_224:
-        name ="sha3_224";
-        break;
-    case NID_sha3_256:
-        name ="sha3_256";
-        break;
-    case NID_sha3_384:
-        name ="sha3_384";
-        break;
-    case NID_sha3_512:
-        name ="sha3_512";
-        break;
-#endif
-#ifdef PY_OPENSSL_HAS_SHAKE
-    case NID_shake128:
-        name ="shake_128";
-        break;
-    case NID_shake256:
-        name ="shake_256";
-        break;
-#endif
-#ifdef PY_OPENSSL_HAS_BLAKE2
-    case NID_blake2s256:
-        name ="blake2s";
-        break;
-    case NID_blake2b512:
-        name ="blake2b";
-        break;
-#endif
-    default:
+    for (h = py_hashes; h->py_name != NULL; h++) {
+        if (h->ossl_nid == nid) {
+            name = h->py_name;
+            break;
+        }
+    }
+    if (name == NULL) {
         /* Ignore aliased names and only use long, lowercase name. The aliases
          * pollute the list and OpenSSL appears to have its own definition of
          * alias as the resulting list still contains duplicate and alternate
@@ -193,67 +307,58 @@ py_digest_name(const EVP_MD *md)
         name = OBJ_nid2ln(nid);
         if (name == NULL)
             name = OBJ_nid2sn(nid);
-        break;
     }
 
     return PyUnicode_FromString(name);
 }
 
-static const EVP_MD*
-py_digest_by_name(const char *name)
+/* Get EVP_MD by HID and purpose */
+static PY_EVP_MD*
+py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
 {
-    const EVP_MD *digest = EVP_get_digestbyname(name);
+    PY_EVP_MD *digest = NULL;
+    _hashlibstate *state = get_hashlib_state(module);
+    py_hashentry_t *entry = (py_hashentry_t *)_Py_hashtable_get(
+        state->hashtable, (const void*)name
+    );
 
-    /* OpenSSL uses dash instead of underscore in names of some algorithms
-     * like SHA3 and SHAKE. Detect different spellings. */
-    if (digest == NULL) {
-        if (0) {}
-#ifdef NID_sha512_224
-        else if (!strcmp(name, "sha512_224") || !strcmp(name, "SHA512_224")) {
-            digest = EVP_sha512_224();
+    if (entry != NULL) {
+        switch (py_ht) {
+        case Py_ht_evp:
+        case Py_ht_mac:
+        case Py_ht_pbkdf2:
+            if (entry->evp == NULL) {
+                entry->evp = PY_EVP_MD_fetch(entry->ossl_name, NULL);
+            }
+            digest = entry->evp;
+            break;
+        case Py_ht_evp_nosecurity:
+            if (entry->evp_nosecurity == NULL) {
+                entry->evp_nosecurity = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
+            }
+            digest = entry->evp_nosecurity;
+            break;
         }
-        else if (!strcmp(name, "sha512_256") || !strcmp(name, "SHA512_256")) {
-            digest = EVP_sha512_256();
+        if (digest != NULL) {
+            PY_EVP_MD_up_ref(digest);
         }
-#endif
-#ifdef PY_OPENSSL_HAS_SHA3
-        /* could be sha3_ or shake_, Python never defined upper case */
-        else if (!strcmp(name, "sha3_224")) {
-            digest = EVP_sha3_224();
+    } else {
+        // Fall back for looking up an unindexed OpenSSL specific name.
+        switch (py_ht) {
+        case Py_ht_evp:
+        case Py_ht_mac:
+        case Py_ht_pbkdf2:
+            digest = PY_EVP_MD_fetch(name, NULL);
+            break;
+        case Py_ht_evp_nosecurity:
+            digest = PY_EVP_MD_fetch(name, "-fips");
+            break;
         }
-        else if (!strcmp(name, "sha3_256")) {
-            digest = EVP_sha3_256();
-        }
-        else if (!strcmp(name, "sha3_384")) {
-            digest = EVP_sha3_384();
-        }
-        else if (!strcmp(name, "sha3_512")) {
-            digest = EVP_sha3_512();
-        }
-#endif
-#ifdef PY_OPENSSL_HAS_SHAKE
-        else if (!strcmp(name, "shake_128")) {
-            digest = EVP_shake128();
-        }
-        else if (!strcmp(name, "shake_256")) {
-            digest = EVP_shake256();
-        }
-#endif
-#ifdef PY_OPENSSL_HAS_BLAKE2
-        else if (!strcmp(name, "blake2s256")) {
-            digest = EVP_blake2s256();
-        }
-        else if (!strcmp(name, "blake2b512")) {
-            digest = EVP_blake2b512();
-        }
-#endif
     }
-
     if (digest == NULL) {
-        PyErr_Format(PyExc_ValueError, "unsupported hash type %s", name);
+        _setException(PyExc_ValueError, "unsupported hash type %s", name);
         return NULL;
     }
-
     return digest;
 }
 
@@ -264,9 +369,9 @@ py_digest_by_name(const char *name)
  *
  * on error returns NULL with exception set.
  */
-static const EVP_MD*
-py_digest_by_digestmod(PyObject *module, PyObject *digestmod) {
-    const EVP_MD* evp;
+static PY_EVP_MD*
+py_digest_by_digestmod(PyObject *module, PyObject *digestmod, enum Py_hash_type py_ht) {
+    PY_EVP_MD* evp;
     PyObject *name_obj = NULL;
     const char *name;
 
@@ -291,7 +396,7 @@ py_digest_by_digestmod(PyObject *module, PyObject *digestmod) {
         return NULL;
     }
 
-    evp = py_digest_by_name(name);
+    evp = py_digest_by_name(module, name, py_ht);
     if (evp == NULL) {
         return NULL;
     }
@@ -330,7 +435,7 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
-            _setException(PyExc_ValueError);
+            _setException(PyExc_ValueError, NULL);
             return -1;
         }
         len -= process;
@@ -381,7 +486,7 @@ EVP_copy_impl(EVPobject *self)
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
         Py_DECREF(newobj);
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     return (PyObject *)newobj;
 }
@@ -408,11 +513,11 @@ EVP_digest_impl(EVPobject *self)
     }
 
     if (!locked_EVP_MD_CTX_copy(temp_ctx, self)) {
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     digest_size = EVP_MD_CTX_size(temp_ctx);
     if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
 
@@ -443,11 +548,11 @@ EVP_hexdigest_impl(EVPobject *self)
 
     /* Get the raw (binary) digest value */
     if (!locked_EVP_MD_CTX_copy(temp_ctx, self)) {
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     digest_size = EVP_MD_CTX_size(temp_ctx);
     if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
 
@@ -623,14 +728,14 @@ EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length)
     if (!locked_EVP_MD_CTX_copy(temp_ctx, self)) {
         Py_DECREF(retval);
         EVP_MD_CTX_free(temp_ctx);
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     if (!EVP_DigestFinalXOF(temp_ctx,
                             (unsigned char*)PyBytes_AS_STRING(retval),
                             length)) {
         Py_DECREF(retval);
         EVP_MD_CTX_free(temp_ctx);
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
 
@@ -671,12 +776,12 @@ EVPXOF_hexdigest_impl(EVPobject *self, Py_ssize_t length)
     if (!locked_EVP_MD_CTX_copy(temp_ctx, self)) {
         PyMem_Free(digest);
         EVP_MD_CTX_free(temp_ctx);
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     if (!EVP_DigestFinalXOF(temp_ctx, digest, length)) {
         PyMem_Free(digest);
         EVP_MD_CTX_free(temp_ctx);
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
 
@@ -744,53 +849,72 @@ static PyType_Spec EVPXOFtype_spec = {
 
 #endif
 
-static PyObject *
-EVPnew(PyObject *module, const EVP_MD *digest,
-       const unsigned char *cp, Py_ssize_t len, int usedforsecurity)
+static PyObject*
+py_evp_fromname(PyObject *module, const char *digestname, PyObject *data_obj,
+                int usedforsecurity)
 {
-    int result = 0;
-    EVPobject *self;
-    PyTypeObject *type = get_hashlib_state(module)->EVPtype;
+    Py_buffer view = { 0 };
+    PY_EVP_MD *digest = NULL;
+    PyTypeObject *type;
+    EVPobject *self = NULL;
 
-    if (!digest) {
-        PyErr_SetString(PyExc_ValueError, "unsupported hash type");
-        return NULL;
+    if (data_obj != NULL) {
+        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
     }
 
-#ifdef PY_OPENSSL_HAS_SHAKE
+    digest = py_digest_by_name(
+        module, digestname, usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity
+    );
+    if (digest == NULL) {
+        goto exit;
+    }
+
     if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {
         type = get_hashlib_state(module)->EVPXOFtype;
+    } else {
+        type = get_hashlib_state(module)->EVPtype;
     }
-#endif
 
-    if ((self = newEVPobject(type)) == NULL)
-        return NULL;
+    self = newEVPobject(type);
+    if (self == NULL) {
+        goto exit;
+    }
 
+#if defined(EVP_MD_CTX_FLAG_NON_FIPS_ALLOW) && OPENSSL_VERSION_NUMBER < 0x30000000L
+    // In OpenSSL 1.1.1 the non FIPS allowed flag is context specific while
+    // in 3.0.0 it is a different EVP_MD provider.
     if (!usedforsecurity) {
-#ifdef EVP_MD_CTX_FLAG_NON_FIPS_ALLOW
         EVP_MD_CTX_set_flags(self->ctx, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
+    }
 #endif
+
+    int result = EVP_DigestInit_ex(self->ctx, digest, NULL);
+    if (!result) {
+        _setException(PyExc_ValueError, NULL);
+        Py_CLEAR(self);
+        goto exit;
     }
 
-
-    if (!EVP_DigestInit_ex(self->ctx, digest, NULL)) {
-        _setException(PyExc_ValueError);
-        Py_DECREF(self);
-        return NULL;
-    }
-
-    if (cp && len) {
-        if (len >= HASHLIB_GIL_MINSIZE) {
+    if (view.buf && view.len) {
+        if (view.len >= HASHLIB_GIL_MINSIZE) {
             Py_BEGIN_ALLOW_THREADS
-            result = EVP_hash(self, cp, len);
+            result = EVP_hash(self, view.buf, view.len);
             Py_END_ALLOW_THREADS
         } else {
-            result = EVP_hash(self, cp, len);
+            result = EVP_hash(self, view.buf, view.len);
         }
         if (result == -1) {
-            Py_DECREF(self);
-            return NULL;
+            Py_CLEAR(self);
+            goto exit;
         }
+    }
+
+  exit:
+    if (data_obj != NULL) {
+        PyBuffer_Release(&view);
+    }
+    if (digest != NULL) {
+        PY_EVP_MD_free(digest);
     }
 
     return (PyObject *)self;
@@ -820,53 +944,14 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
              int usedforsecurity)
 /*[clinic end generated code: output=ddd5053f92dffe90 input=c24554d0337be1b0]*/
 {
-    Py_buffer view = { 0 };
-    PyObject *ret_obj = NULL;
     char *name;
-    const EVP_MD *digest = NULL;
-
     if (!PyArg_Parse(name_obj, "s", &name)) {
         PyErr_SetString(PyExc_TypeError, "name must be a string");
         return NULL;
     }
-
-    if (data_obj)
-        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
-
-    digest = py_digest_by_name(name);
-    if (digest == NULL) {
-        goto exit;
-    }
-
-    ret_obj = EVPnew(module, digest,
-                     (unsigned char*)view.buf, view.len,
-                     usedforsecurity);
-
-exit:
-    if (data_obj)
-        PyBuffer_Release(&view);
-    return ret_obj;
+    return py_evp_fromname(module, name, data_obj, usedforsecurity);
 }
 
-static PyObject*
-EVP_fast_new(PyObject *module, PyObject *data_obj, const EVP_MD *digest,
-             int usedforsecurity)
-{
-    Py_buffer view = { 0 };
-    PyObject *ret_obj;
-
-    if (data_obj)
-        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
-
-    ret_obj = EVPnew(module, digest,
-                     (unsigned char*)view.buf, view.len,
-                     usedforsecurity);
-
-    if (data_obj)
-        PyBuffer_Release(&view);
-
-    return ret_obj;
-}
 
 /*[clinic input]
 _hashlib.openssl_md5
@@ -884,7 +969,7 @@ _hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj,
                           int usedforsecurity)
 /*[clinic end generated code: output=87b0186440a44f8c input=990e36d5e689b16e]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_md5(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_md5, data_obj, usedforsecurity);
 }
 
 
@@ -904,7 +989,7 @@ _hashlib_openssl_sha1_impl(PyObject *module, PyObject *data_obj,
                            int usedforsecurity)
 /*[clinic end generated code: output=6813024cf690670d input=948f2f4b6deabc10]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha1(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha1, data_obj, usedforsecurity);
 }
 
 
@@ -924,7 +1009,7 @@ _hashlib_openssl_sha224_impl(PyObject *module, PyObject *data_obj,
                              int usedforsecurity)
 /*[clinic end generated code: output=a2dfe7cc4eb14ebb input=f9272821fadca505]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha224(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha224, data_obj, usedforsecurity);
 }
 
 
@@ -944,7 +1029,7 @@ _hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj,
                              int usedforsecurity)
 /*[clinic end generated code: output=1f874a34870f0a68 input=549fad9d2930d4c5]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha256(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha256, data_obj, usedforsecurity);
 }
 
 
@@ -964,7 +1049,7 @@ _hashlib_openssl_sha384_impl(PyObject *module, PyObject *data_obj,
                              int usedforsecurity)
 /*[clinic end generated code: output=58529eff9ca457b2 input=48601a6e3bf14ad7]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha384(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha384, data_obj, usedforsecurity);
 }
 
 
@@ -984,7 +1069,7 @@ _hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj,
                              int usedforsecurity)
 /*[clinic end generated code: output=2c744c9e4a40d5f6 input=c5c46a2a817aa98f]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha512(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha512, data_obj, usedforsecurity);
 }
 
 
@@ -1006,7 +1091,7 @@ _hashlib_openssl_sha3_224_impl(PyObject *module, PyObject *data_obj,
                                int usedforsecurity)
 /*[clinic end generated code: output=144641c1d144b974 input=e3a01b2888916157]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha3_224(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha3_224, data_obj, usedforsecurity);
 }
 
 /*[clinic input]
@@ -1025,7 +1110,7 @@ _hashlib_openssl_sha3_256_impl(PyObject *module, PyObject *data_obj,
                                int usedforsecurity)
 /*[clinic end generated code: output=c61f1ab772d06668 input=e2908126c1b6deed]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha3_256(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha3_256, data_obj , usedforsecurity);
 }
 
 /*[clinic input]
@@ -1044,7 +1129,7 @@ _hashlib_openssl_sha3_384_impl(PyObject *module, PyObject *data_obj,
                                int usedforsecurity)
 /*[clinic end generated code: output=f68e4846858cf0ee input=ec0edf5c792f8252]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha3_384(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha3_384, data_obj , usedforsecurity);
 }
 
 /*[clinic input]
@@ -1063,7 +1148,7 @@ _hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data_obj,
                                int usedforsecurity)
 /*[clinic end generated code: output=2eede478c159354a input=64e2cc0c094d56f4]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha3_512(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha3_512, data_obj , usedforsecurity);
 }
 #endif /* PY_OPENSSL_HAS_SHA3 */
 
@@ -1084,7 +1169,7 @@ _hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data_obj,
                                 int usedforsecurity)
 /*[clinic end generated code: output=bc49cdd8ada1fa97 input=6c9d67440eb33ec8]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_shake128(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_shake_128, data_obj , usedforsecurity);
 }
 
 /*[clinic input]
@@ -1103,7 +1188,7 @@ _hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data_obj,
                                 int usedforsecurity)
 /*[clinic end generated code: output=358d213be8852df7 input=479cbe9fefd4a9f8]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_shake256(), usedforsecurity);
+    return py_evp_fromname(module, Py_hash_shake_256, data_obj , usedforsecurity);
 }
 #endif /* PY_OPENSSL_HAS_SHAKE */
 
@@ -1129,9 +1214,8 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
     char *key;
     long dklen;
     int retval;
-    const EVP_MD *digest;
 
-    digest = py_digest_by_name(hash_name);
+    PY_EVP_MD *digest = py_digest_by_name(module, hash_name, Py_ht_pbkdf2);
     if (digest == NULL) {
         goto end;
     }
@@ -1194,11 +1278,14 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 
     if (!retval) {
         Py_CLEAR(key_obj);
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         goto end;
     }
 
   end:
+    if (digest != NULL) {
+        PY_EVP_MD_free(digest);
+    }
     return key_obj;
 }
 
@@ -1297,9 +1384,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     /* let OpenSSL validate the rest */
     retval = EVP_PBE_scrypt(NULL, 0, NULL, 0, n, r, p, maxmem, NULL, 0);
     if (!retval) {
-        /* sorry, can't do much better */
-        PyErr_SetString(PyExc_ValueError,
-                        "Invalid parameter combination for n, r, p, maxmem.");
+        _setException(PyExc_ValueError, "Invalid parameter combination for n, r, p, maxmem.");
         return NULL;
    }
 
@@ -1320,7 +1405,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
 
     if (!retval) {
         Py_CLEAR(key_obj);
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     return key_obj;
@@ -1348,12 +1433,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
     unsigned int md_len = 0;
     unsigned char *result;
-    const EVP_MD *evp;
-
-    evp = py_digest_by_digestmod(module, digest);
-    if (evp == NULL) {
-        return NULL;
-    }
+    PY_EVP_MD *evp;
 
     if (key->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
@@ -1366,6 +1446,11 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
         return NULL;
     }
 
+    evp = py_digest_by_digestmod(module, digest, Py_ht_mac);
+    if (evp == NULL) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     result = HMAC(
         evp,
@@ -1374,9 +1459,10 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
         md, &md_len
     );
     Py_END_ALLOW_THREADS
+    PY_EVP_MD_free(evp);
 
     if (result == NULL) {
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     return PyBytes_FromStringAndSize((const char*)md, md_len);
@@ -1403,7 +1489,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
 /*[clinic end generated code: output=c20d9e4d9ed6d219 input=5f4071dcc7f34362]*/
 {
     PyTypeObject *type = get_hashlib_state(module)->HMACtype;
-    const EVP_MD *digest;
+    PY_EVP_MD *digest;
     HMAC_CTX *ctx = NULL;
     HMACobject *self = NULL;
     int r;
@@ -1420,14 +1506,14 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         return NULL;
     }
 
-    digest = py_digest_by_digestmod(module, digestmod);
+    digest = py_digest_by_digestmod(module, digestmod, Py_ht_mac);
     if (digest == NULL) {
         return NULL;
     }
 
     ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         goto error;
     }
 
@@ -1437,8 +1523,9 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         (int)key->len,
         digest,
         NULL /*impl*/);
+    PY_EVP_MD_free(digest);
     if (r == 0) {
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         goto error;
     }
 
@@ -1508,7 +1595,7 @@ _hmac_update(HMACobject *self, PyObject *obj)
     PyBuffer_Release(&view);
 
     if (r == 0) {
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         return 0;
     }
     return 1;
@@ -1528,11 +1615,11 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 
     HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     if (!locked_HMAC_CTX_copy(ctx, self)) {
         HMAC_CTX_free(ctx);
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
 
     retval = (HMACobject *)PyObject_New(HMACobject, Py_TYPE(self));
@@ -1598,13 +1685,13 @@ _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
         return 0;
     }
     if (!locked_HMAC_CTX_copy(temp_ctx, self)) {
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         return 0;
     }
     int r = HMAC_Final(temp_ctx, buf, &len);
     HMAC_CTX_free(temp_ctx);
     if (r == 0) {
-        _setException(PyExc_ValueError);
+        _setException(PyExc_ValueError, NULL);
         return 0;
     }
     return 1;
@@ -1622,7 +1709,7 @@ _hashlib_HMAC_digest_impl(HMACobject *self)
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int digest_size = _hmac_digest_size(self);
     if (digest_size == 0) {
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     int r = _hmac_digest(self, digest, digest_size);
     if (r == 0) {
@@ -1647,7 +1734,7 @@ _hashlib_HMAC_hexdigest_impl(HMACobject *self)
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int digest_size = _hmac_digest_size(self);
     if (digest_size == 0) {
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     int r = _hmac_digest(self, digest, digest_size);
     if (r == 0) {
@@ -1661,7 +1748,7 @@ _hashlib_hmac_get_digest_size(HMACobject *self, void *closure)
 {
     unsigned int digest_size = _hmac_digest_size(self);
     if (digest_size == 0) {
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     return PyLong_FromLong(digest_size);
 }
@@ -1671,7 +1758,7 @@ _hashlib_hmac_get_block_size(HMACobject *self, void *closure)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        return _setException(PyExc_ValueError);
+        return _setException(PyExc_ValueError, NULL);
     }
     return PyLong_FromLong(EVP_MD_block_size(md));
 }
@@ -1745,15 +1832,21 @@ typedef struct _internal_name_mapper_state {
 
 /* A callback function to pass to OpenSSL's OBJ_NAME_do_all(...) */
 static void
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+_openssl_hash_name_mapper(EVP_MD *md, void *arg)
+#else
 _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
                           const char *to, void *arg)
+#endif
 {
     _InternalNameMapperState *state = (_InternalNameMapperState *)arg;
     PyObject *py_name;
 
     assert(state != NULL);
-    if (md == NULL)
+    // ignore all undefined providers
+    if ((md == NULL) || (EVP_MD_nid(md) == NID_undef)) {
         return;
+    }
 
     py_name = py_digest_name(md);
     if (py_name == NULL) {
@@ -1779,7 +1872,12 @@ hashlib_md_meth_names(PyObject *module)
         return -1;
     }
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    // get algorithms from all activated providers in default context
+    EVP_MD_do_all_provided(NULL, &_openssl_hash_name_mapper, &state);
+#else
     EVP_MD_do_all(&_openssl_hash_name_mapper, &state);
+#endif
 
     if (state.error) {
         Py_DECREF(state.set);
@@ -1824,7 +1922,7 @@ _hashlib_get_fips_mode_impl(PyObject *module)
         // But 0 is also a valid result value.
         unsigned long errcode = ERR_peek_last_error();
         if (errcode) {
-            _setException(PyExc_ValueError);
+            _setException(PyExc_ValueError, NULL);
             return -1;
         }
     }
@@ -1900,7 +1998,7 @@ _hashlib_compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
                     PyUnicode_GET_LENGTH(a),
                     PyUnicode_GET_LENGTH(b));
     }
-    /* fallback to buffer interface for bytes, bytesarray and other */
+    /* fallback to buffer interface for bytes, bytearray and other */
     else {
         Py_buffer view_a;
         Py_buffer view_b;
@@ -2000,6 +2098,12 @@ hashlib_clear(PyObject *m)
 #endif
     Py_CLEAR(state->constructs);
     Py_CLEAR(state->unsupported_digestmod_error);
+
+    if (state->hashtable != NULL) {
+        _Py_hashtable_destroy(state->hashtable);
+        state->hashtable = NULL;
+    }
+
     return 0;
 }
 
@@ -2010,6 +2114,19 @@ hashlib_free(void *m)
 }
 
 /* Py_mod_exec functions */
+static int
+hashlib_init_hashtable(PyObject *module)
+{
+    _hashlibstate *state = get_hashlib_state(module);
+
+    state->hashtable = py_hashentry_table_new();
+    if (state->hashtable == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
+}
+
 static int
 hashlib_init_evptype(PyObject *module)
 {
@@ -2137,6 +2254,7 @@ hashlib_exception(PyObject *module)
 
 
 static PyModuleDef_Slot hashlib_slots[] = {
+    {Py_mod_exec, hashlib_init_hashtable},
     {Py_mod_exec, hashlib_init_evptype},
     {Py_mod_exec, hashlib_init_evpxoftype},
     {Py_mod_exec, hashlib_init_hmactype},

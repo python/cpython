@@ -8,6 +8,7 @@ import operator
 import fractions
 import functools
 import sys
+import typing
 import unittest
 from copy import copy, deepcopy
 import pickle
@@ -161,6 +162,7 @@ class FractionTest(unittest.TestCase):
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
         self.assertEqual((3, 2), _components(F("3/2")))
+        self.assertEqual((3, 2), _components(F("3 / 2")))
         self.assertEqual((3, 2), _components(F(" \n  +3/2")))
         self.assertEqual((-3, 2), _components(F("-3/2  ")))
         self.assertEqual((13, 2), _components(F("    013/02 \n  ")))
@@ -173,6 +175,12 @@ class FractionTest(unittest.TestCase):
         self.assertEqual((-12300, 1), _components(F("-1.23e4")))
         self.assertEqual((0, 1), _components(F(" .0e+0\t")))
         self.assertEqual((0, 1), _components(F("-0.000e0")))
+        self.assertEqual((123, 1), _components(F("1_2_3")))
+        self.assertEqual((41, 107), _components(F("1_2_3/3_2_1")))
+        self.assertEqual((6283, 2000), _components(F("3.14_15")))
+        self.assertEqual((6283, 2*10**13), _components(F("3.14_15e-1_0")))
+        self.assertEqual((101, 100), _components(F("1.01")))
+        self.assertEqual((101, 100), _components(F("1.0_1")))
 
         self.assertRaisesMessage(
             ZeroDivisionError, "Fraction(3, 0)",
@@ -183,9 +191,6 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '/2'",
             F, "/2")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '3 /2'",
-            F, "3 /2")
         self.assertRaisesMessage(
             # Denominators don't need a sign.
             ValueError, "Invalid literal for Fraction: '3/+2'",
@@ -210,6 +215,62 @@ class FractionTest(unittest.TestCase):
             # Allow 3. and .3, but not .
             ValueError, "Invalid literal for Fraction: '.'",
             F, ".")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '_'",
+            F, "_")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '_1'",
+            F, "_1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1__2'",
+            F, "1__2")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '/_'",
+            F, "/_")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1_/'",
+            F, "1_/")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '_1/'",
+            F, "_1/")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1__2/'",
+            F, "1__2/")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/_'",
+            F, "1/_")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/_1'",
+            F, "1/_1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/1__2'",
+            F, "1/1__2")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1._111'",
+            F, "1._111")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1.1__1'",
+            F, "1.1__1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1.1e+_1'",
+            F, "1.1e+_1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1.1e+1__1'",
+            F, "1.1e+1__1")
+        # Test catastrophic backtracking.
+        val = "9"*50 + "_"
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '" + val + "'",
+            F, val)
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/" + val + "'",
+            F, "1/" + val)
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1." + val + "'",
+            F, "1." + val)
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1.1+e" + val + "'",
+            F, "1.1+e" + val)
 
     def testImmutable(self):
         r = F(7, 3)
@@ -322,6 +383,47 @@ class FractionTest(unittest.TestCase):
                                float(F(int('2'*400+'7'), int('3'*400+'1'))))
 
         self.assertTypedEquals(0.1+0j, complex(F(1,10)))
+
+    def testSupportsInt(self):
+        # See bpo-44547.
+        f = F(3, 2)
+        self.assertIsInstance(f, typing.SupportsInt)
+        self.assertEqual(int(f), 1)
+        self.assertEqual(type(int(f)), int)
+
+    def testIntGuaranteesIntReturn(self):
+        # Check that int(some_fraction) gives a result of exact type `int`
+        # even if the fraction is using some other Integral type for its
+        # numerator and denominator.
+
+        class CustomInt(int):
+            """
+            Subclass of int with just enough machinery to convince the Fraction
+            constructor to produce something with CustomInt numerator and
+            denominator.
+            """
+
+            @property
+            def numerator(self):
+                return self
+
+            @property
+            def denominator(self):
+                return CustomInt(1)
+
+            def __mul__(self, other):
+                return CustomInt(int(self) * int(other))
+
+            def __floordiv__(self, other):
+                return CustomInt(int(self) // int(other))
+
+        f = F(CustomInt(13), CustomInt(5))
+
+        self.assertIsInstance(f.numerator, CustomInt)
+        self.assertIsInstance(f.denominator, CustomInt)
+        self.assertIsInstance(f, typing.SupportsInt)
+        self.assertEqual(int(f), 2)
+        self.assertEqual(type(int(f)), int)
 
     def testBoolGuarateesBoolReturn(self):
         # Ensure that __bool__ is used on numerator which guarantees a bool
