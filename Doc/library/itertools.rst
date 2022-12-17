@@ -1248,7 +1248,7 @@ which incur interpreter overhead.
     [('a', 'b', 'c'), ('d', 'e', 'f')]
 
     >>> list(batched('ABCDEFG', 3))
-    [('A', 'B', 'C'), ('D', 'E', 'F'), ('G',)]]
+    [('A', 'B', 'C'), ('D', 'E', 'F'), ('G',)]
     >>> list(batched('ABCDEF', 3))
     [('A', 'B', 'C'), ('D', 'E', 'F')]
     >>> list(batched('ABCDE', 3))
