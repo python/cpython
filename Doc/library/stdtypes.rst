@@ -1636,10 +1636,10 @@ expression support in the :mod:`re` module).
    other name registered via :func:`codecs.register_error`.
    See :ref:`error-handlers` for details.
 
-   By default, the *errors* argument is not checked for best performances, but
-   only used at the first encoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check
-   *errors*.
+   For performance reasons, the value of *errors* is not checked for validity
+   unless an encoding error actually occurs,
+   :ref:`devmode` is enabled
+   or a :ref:`debug build <debug-build>` is used.
 
    .. versionchanged:: 3.1
       Support for keyword arguments added.
@@ -2773,9 +2773,9 @@ arbitrary binary data.
    and any other name registered via :func:`codecs.register_error`.
    See :ref:`error-handlers` for details.
 
-   By default, the *errors* argument is not checked for best performances, but
-   only used at the first decoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check *errors*.
+   For performance reasons, the value of *errors* is not checked for validity
+   unless a decoding error actually occurs,
+   :ref:`devmode` is enabled or a :ref:`debug build <debug-build>` is used.
 
    .. note::
 
