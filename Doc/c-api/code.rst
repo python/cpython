@@ -1,8 +1,8 @@
 .. highlight:: c
 
-.. _codeobjects:
-
 .. index:: object; code, code object
+
+.. _codeobjects:
 
 Code Objects
 ------------
@@ -115,3 +115,51 @@ bound into a function.
    the free variables. On error, ``NULL`` is returned and an exception is raised.
 
    .. versionadded:: 3.11
+
+.. c:function:: int PyCode_AddWatcher(PyCode_WatchCallback callback)
+
+   Register *callback* as a code object watcher for the current interpreter.
+   Return an ID which may be passed to :c:func:`PyCode_ClearWatcher`.
+   In case of error (e.g. no more watcher IDs available),
+   return ``-1`` and set an exception.
+
+   .. versionadded:: 3.12
+
+.. c:function:: int PyCode_ClearWatcher(int watcher_id)
+
+   Clear watcher identified by *watcher_id* previously returned from
+   :c:func:`PyCode_AddWatcher` for the current interpreter.
+   Return ``0`` on success, or ``-1`` and set an exception on error
+   (e.g. if the given *watcher_id* was never registered.)
+
+   .. versionadded:: 3.12
+
+.. c:type:: PyCodeEvent
+
+   Enumeration of possible code object watcher events:
+   - ``PY_CODE_EVENT_CREATE``
+   - ``PY_CODE_EVENT_DESTROY``
+
+   .. versionadded:: 3.12
+
+.. c:type:: int (*PyCode_WatchCallback)(PyCodeEvent event, PyCodeObject* co)
+
+   Type of a code object watcher callback function.
+
+   If *event* is ``PY_CODE_EVENT_CREATE``, then the callback is invoked
+   after `co` has been fully initialized. Otherwise, the callback is invoked
+   before the destruction of *co* takes place, so the prior state of *co*
+   can be inspected.
+
+   Users of this API should not rely on internal runtime implementation
+   details. Such details may include, but are not limited to, the exact
+   order and timing of creation and destruction of code objects. While
+   changes in these details may result in differences observable by watchers
+   (including whether a callback is invoked or not), it does not change
+   the semantics of the Python code being executed.
+
+   If the callback returns with an exception set, it must return ``-1``; this
+   exception will be printed as an unraisable exception using
+   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+
+   .. versionadded:: 3.12

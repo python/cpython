@@ -170,7 +170,7 @@ class Generator:
         # parameter.
         #
         # The way we do this, so as to make the _handle_*() methods simpler,
-        # is to cache any subpart writes into a buffer.  The we write the
+        # is to cache any subpart writes into a buffer.  Then we write the
         # headers and the buffer contents.  That way, subpart handlers can
         # Do The Right Thing, and can still modify the Content-Type: header if
         # necessary.

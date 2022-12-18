@@ -994,7 +994,7 @@ requesting iterator-2 and its corresponding key.
 The functools module
 ====================
 
-The :mod:`functools` module in Python 2.5 contains some higher-order functions.
+The :mod:`functools` module contains some higher-order functions.
 A **higher-order function** takes one or more functions as input and returns a
 new function.  The most useful tool in this module is the
 :func:`functools.partial` function.
@@ -1222,6 +1222,8 @@ https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
 describing functional programming.
 
 https://en.wikipedia.org/wiki/Coroutine: Entry for coroutines.
+
+https://en.wikipedia.org/wiki/Partial_application: Entry for the concept of partial function application.
 
 https://en.wikipedia.org/wiki/Currying: Entry for the concept of currying.
 

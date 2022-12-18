@@ -255,17 +255,18 @@ class socket(_socket.socket):
                self.type,
                self.proto)
         if not closed:
+            # getsockname and getpeername may not be available on WASI.
             try:
                 laddr = self.getsockname()
                 if laddr:
                     s += ", laddr=%s" % str(laddr)
-            except error:
+            except (error, AttributeError):
                 pass
             try:
                 raddr = self.getpeername()
                 if raddr:
                     s += ", raddr=%s" % str(raddr)
-            except error:
+            except (error, AttributeError):
                 pass
         s += '>'
         return s

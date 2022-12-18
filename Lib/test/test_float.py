@@ -137,6 +137,10 @@ class GeneralFloatCases(unittest.TestCase):
         check('123\xbd')
         check('  123 456  ')
         check(b'  123 456  ')
+        # all whitespace (cf. https://github.com/python/cpython/issues/95605)
+        check('')
+        check(' ')
+        check('\t \n')
 
         # non-ascii digits (error came from non-digit '!')
         check('\u0663\u0661\u0664!')
