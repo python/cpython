@@ -353,13 +353,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         walk_dirs = []
 
         # We may not have read permission for top, in which case we can't
-        # get a list of the files the directory contains.  os.walk
-        # always suppressed the exception then, rather than blow up for a
+        # get a list of the files the directory contains.
+        # We suppressed the exception here, rather than blow up for a
         # minor reason when (say) a thousand readable directories are still
-        # left to visit.  That logic is copied here.
+        # left to visit.
         try:
-            # Note that scandir is global in this module due
-            # to earlier import-*.
             scandir_it = scandir(top)
         except OSError as error:
             if onerror is not None:
@@ -384,7 +382,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     is_dir = entry.is_dir()
                 except OSError:
                     # If is_dir() raises an OSError, consider that the entry is not
-                    # a directory, same behaviour than os.path.isdir().
+                    # a directory, same behaviour as os.path.isdir().
                     is_dir = False
 
                 if is_dir:
@@ -419,7 +417,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             islink, join = path.islink, path.join
             for dirname in reversed(dirs):
                 new_path = join(top, dirname)
-                # Issue #23605: os.path.islink() is used instead of caching
+                # bpo-23605: os.path.islink() is used instead of caching
                 # entry.is_symlink() result during the loop on os.scandir() because
                 # the caller can replace the directory entry during the "yield"
                 # above.
