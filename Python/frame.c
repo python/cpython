@@ -72,7 +72,6 @@ _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
     int nconsts = (int)PyTuple_Size(src->f_code->co_consts);
     int nregisters = (src->f_code->co_nlocalsplus +
                       src->f_code->co_stacksize +
-                      src->f_code->co_ntmps +
                       nconsts);
     Py_ssize_t size = ((char*)&src->localsplus[nregisters]) - (char *)src;
     memcpy(dest, src, size);

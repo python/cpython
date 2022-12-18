@@ -8457,7 +8457,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .firstlineno = c->u->u_firstlineno,
         .linetable = a->a_linetable,
 
-        .ntmps = c->u->u_ntmps,
         .consts = consts,
         .names = names,
 
@@ -8876,7 +8875,6 @@ resolve_register(oparg_t *oparg, int nlocalsplus, PyObject *varnames,
             assert(oparg->value >= 0 && oparg->value < nconsts);
             oparg->final = (nlocalsplus +
                             stacksize +
-                            ntmps +
                             oparg->value);
             break;
         case NAME_REG:
@@ -9027,11 +9025,10 @@ assemble(struct compiler *c, int addNone)
     assert(no_redundant_jumps(g));
 
     Py_ssize_t nconsts = PyList_GET_SIZE(consts);
-    int ntmps = c->u->u_ntmps;
-    if (resolve_registers(g, nlocalsplus, c->u->u_varnames, ntmps, maxdepth, nconsts) < 0) {
+    if (resolve_registers(g, nlocalsplus, c->u->u_varnames, c->u->u_ntmps,
+                          maxdepth, nconsts) < 0) {
         goto error;
     }
-    c->u->u_ntmps = 0;
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
 

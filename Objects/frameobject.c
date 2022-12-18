@@ -949,7 +949,6 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     int nconsts = (int)PyTuple_Size(code->co_consts);
     res += (code->co_nlocalsplus +
             code->co_stacksize +
-            code->co_ntmps +
             nconsts) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }

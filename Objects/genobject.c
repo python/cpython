@@ -772,7 +772,6 @@ gen_sizeof(PyGenObject *gen, PyObject *Py_UNUSED(ignored))
     int nconsts = (int)PyTuple_Size(code->co_consts);
     res += (code->co_nlocalsplus +
             code->co_stacksize +
-            code->co_ntmps +
             nconsts) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
@@ -857,7 +856,6 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     int nconsts = (int)PyTuple_Size(code->co_consts);
     int slots = (code->co_nlocalsplus +
                  code->co_stacksize +
-                 code->co_ntmps +
                  nconsts);
     PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, slots);
     if (gen == NULL) {
