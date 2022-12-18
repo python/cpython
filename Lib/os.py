@@ -342,6 +342,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
     stack = [(False, fspath(top))]
+    islink, join = path.islink, path.join
     while stack:
         must_yield, top = stack.pop()
         if must_yield:
@@ -414,7 +415,6 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # Yield before sub-directory traversal if going top down
             yield top, dirs, nondirs
             # Traverse into sub-directories
-            islink, join = path.islink, path.join
             for dirname in reversed(dirs):
                 new_path = join(top, dirname)
                 # bpo-23605: os.path.islink() is used instead of caching
