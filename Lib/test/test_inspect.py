@@ -3614,6 +3614,38 @@ class TestSignatureObject(unittest.TestCase):
                 self.assertEqual(signature_func(foo), inspect.Signature())
         self.assertEqual(inspect.get_annotations(foo), {})
 
+    def test_signature_as_str(self):
+        self.maxDiff = None
+        class S:
+            __signature__ = '(a, b=2)'
+
+        self.assertEqual(self.signature(S),
+                         ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', 2, ..., 'positional_or_keyword')),
+                          ...))
+
+    def test_signature_as_callable(self):
+        # __signature__ should be either a staticmethod or a bound classmethod
+        class S:
+            @classmethod
+            def __signature__(cls):
+                return '(a, b=2)'
+
+        self.assertEqual(self.signature(S),
+                         ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', 2, ..., 'positional_or_keyword')),
+                          ...))
+
+        class S:
+            @staticmethod
+            def __signature__():
+                return '(a, b=2)'
+
+        self.assertEqual(self.signature(S),
+                         ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', 2, ..., 'positional_or_keyword')),
+                          ...))
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
