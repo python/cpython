@@ -96,7 +96,10 @@ static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
 
 void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
 
-/* Consumes reference to func and locals */
+/* Consumes reference to func and locals.
+   Does not initialize frame->previous, which happens
+   when frame is linked into the frame stack.
+ */
 static inline void
 _PyFrame_InitializeSpecials(
     _PyInterpreterFrame *frame, PyFunctionObject *func,
@@ -112,7 +115,6 @@ _PyFrame_InitializeSpecials(
     frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
-    // frame->previous: initialized when frame is linked into the frame stack
 }
 
 /* Gets the pointer to the locals array
