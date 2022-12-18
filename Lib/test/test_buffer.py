@@ -4521,7 +4521,8 @@ class TestPythonBufferProtocol(unittest.TestCase):
         with self.assertRaises(ValueError):
             mv.tobytes()
         # Calling it again doesn't cause issues
-        buf.__release_buffer__(mv)
+        with self.assertRaises(ValueError):
+            buf.__release_buffer__(mv)
         self.assertEqual(buf.references, 0)
 
 

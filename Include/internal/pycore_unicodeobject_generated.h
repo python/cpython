@@ -66,6 +66,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__bool__);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(__buffer__);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__build_class__);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__builtins__);
@@ -263,6 +265,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(__reduce__);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__reduce_ex__);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(__release_buffer__);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__repr__);
     PyUnicode_InternInPlace(&string);

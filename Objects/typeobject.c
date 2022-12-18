@@ -7624,7 +7624,6 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
 static PyObject *
 wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
 {
-    releasebufferproc func = (releasebufferproc)wrapped;
     PyMemoryViewObject *mview;
 
     if (!check_num_args(args, 1)) {
@@ -7636,6 +7635,11 @@ wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
     if (mview->view.obj != self) {
         PyErr_SetString(PyExc_ValueError,
                         "memoryview's buffer is not this object");
+        return NULL;
+    }
+    if (mview->flags & _Py_MEMORYVIEW_RELEASED) {
+        PyErr_SetString(PyExc_ValueError,
+                        "memoryview's buffer has already been released");
         return NULL;
     }
     PyObject *release = PyUnicode_FromString("release");
