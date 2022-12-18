@@ -305,6 +305,11 @@ w_bytecode(PyCodeObject *code, WFILE *p)
         }
         i += _PyOpcode_Caches[opcode];
     }
+    // Terminate with two zero bytes, so that programs scanning .pyc files can
+    // skip over the bytecode (even if they don't know the compression scheme).
+    // This is simpler than writing the compressed size in the header, which
+    // requires two loops (one to count the bytes, then one to write them):
+    w_short(0, p);
 }
 
 static int
@@ -969,8 +974,8 @@ r_bytecode(RFILE *p)
         else {
             oparg = 0;
         }
-        assert(0x00 <= opcode && opcode < 0x100);
-        assert(0x00 <= oparg && oparg < 0x100);
+        assert(0x01 <= opcode && opcode <= 0xFF);
+        assert(0x00 <= oparg && oparg <= 0xFF);
         buffer[i].opcode = opcode;
         buffer[i].oparg = oparg;
         i++;
@@ -981,7 +986,10 @@ r_bytecode(RFILE *p)
             i++;
         }
     }
-    if (i != size) {
+    // The compressed bytecode is terminated with two zero bytes (see the
+    // comment at the bottom of w_bytecode):
+    int zero_zero = r_short(p);
+    if (zero_zero == EOF || zero_zero != 0 || i != size) {
         const char *e = "bad marshal data (bytecode size incorrect)";
         PyErr_SetString(PyExc_ValueError, e);
         return NULL;

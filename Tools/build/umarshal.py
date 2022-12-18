@@ -192,12 +192,13 @@ class Reader:
                 oparg_byte = self.r_byte()
             else:
                 oparg_byte = 0
-            assert 0x00 <= opcode_byte < 0x100
-            assert 0x00 <= oparg_byte < 0x100
+            assert 0x01 <= opcode_byte <= 0xFF
+            assert 0x00 <= oparg_byte <= 0xFF
             bytecode.extend([opcode_byte, oparg_byte])
             for _ in range(opcode._inline_cache_entries[opcode_byte]):
                 bytecode.extend([CACHE, 0])
-        assert len(bytecode) == nbytes
+        zero_zero = self.r_short()
+        assert zero_zero == 0 and len(bytecode) == nbytes
         return bytes(bytecode)
 
     def _r_object(self) -> Any:
