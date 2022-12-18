@@ -325,8 +325,8 @@ class TestTranforms(BytecodeTestCase):
 
         # Verify that unfoldables are skipped
         for line, elem, opname in (
-            ('-"abc"', 'abc', 'UNARY_NEGATIVE'),
-            ('~"abc"', 'abc', 'UNARY_INVERT'),
+            ('-"abc"', 'abc', 'UNARY_NEGATIVE_R'),
+            ('~"abc"', 'abc', 'UNARY_INVERT_R'),
         ):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
