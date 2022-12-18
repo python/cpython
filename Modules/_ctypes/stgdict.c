@@ -257,11 +257,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
             }
             continue;
         }
-<<<<<<< HEAD
         new_descr = (CFieldObject *)PyCField_Type.tp_alloc((PyTypeObject *)&PyCField_Type, 0);
-=======
-        new_descr = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
->>>>>>> origin/main
         if (new_descr == NULL) {
             Py_DECREF(fdescr);
             Py_DECREF(fieldlist);

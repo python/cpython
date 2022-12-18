@@ -61,11 +61,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-<<<<<<< HEAD
     self = (CFieldObject *)PyCField_Type.tp_alloc((PyTypeObject *)&PyCField_Type, 0);
-=======
-    self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
->>>>>>> origin/main
     if (self == NULL)
         return NULL;
     dict = PyType_stgdict(desc);

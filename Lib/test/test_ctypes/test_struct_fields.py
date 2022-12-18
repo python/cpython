@@ -48,17 +48,17 @@ class StructFieldsTestCase(unittest.TestCase):
 
     def test_5(self):
         class X(Structure):
-<<<<<<< HEAD:Lib/ctypes/test/test_struct_fields.py
-            _fields_ = [("x", c_int)]
-        CField = type(X.x)
-        self.assertRaises(TypeError, CField)
-=======
             _fields_ = (("char", c_char * 5),)
 
         x = X(b'#' * 5)
         x.char = b'a\0b\0'
         self.assertEqual(bytes(x), b'a\x00###')
->>>>>>> origin/main:Lib/test/test_ctypes/test_struct_fields.py
+
+    def test_6(self):
+        class X(Structure):
+            _fields_ = [("x", c_int)]
+        CField = type(X.x)
+        self.assertRaises(TypeError, CField)
 
     def test_gh99275(self):
         class BrokenStructure(Structure):
