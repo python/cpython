@@ -82,7 +82,7 @@ class TestModule(unittest.TestCase):
 
         datetime = datetime_module
         names = set(name for name in dir(datetime)
-                    if not name.startswith('__') and not name.endswith('__'))
+                    if not name.startswith(('__', '$')) and not name.endswith('__'))
         allowed = set(['MAXYEAR', 'MINYEAR', 'date', 'datetime',
                        'datetime_CAPI', 'time', 'timedelta', 'timezone',
                        'tzinfo', 'UTC', 'sys'])
