@@ -678,11 +678,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #endif
 
 #if USE_COMPUTED_GOTOS
-#define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
-#define DISPATCH_GOTO() goto *opcode_targets[opcode]
+#  define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
+#  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-#define TARGET(op) case op: INSTRUCTION_START(op);
-#define DISPATCH_GOTO() goto dispatch_opcode
+#  define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
+#  define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
@@ -864,7 +864,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         STAT_INC(opcode, miss);                                  \
         STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
-        if (ADAPTIVE_COUNTER_IS_ZERO(*next_instr)) {             \
+        if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {       \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
         else {                                                   \
@@ -1009,14 +1009,6 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
     return 0;
 }
 
-static _PyInterpreterFrame *
-pop_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
-{
-    _PyInterpreterFrame *prev_frame = frame->previous;
-    _PyEvalFrameClearAndPop(tstate, frame);
-    return prev_frame;
-}
-
 
 int _Py_CheckRecursiveCallPy(
     PyThreadState *tstate)
@@ -1055,6 +1047,18 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 #define KWNAMES_LEN() \
     (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
+
+/* Disable unused label warnings.  They are handy for debugging, even
+   if computed gotos aren't used. */
+
+/* TBD - what about other compilers? */
+#if defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunused-label"
+#elif defined(_MSC_VER) /* MS_WINDOWS */
+#  pragma warning(push)
+#  pragma warning(disable:4102)
+#endif
 
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
@@ -1285,7 +1289,7 @@ handle_eval_breaker:
         }
         opcode = _PyOpcode_Deopt[opcode];
         if (_PyOpcode_Caches[opcode]) {
-            _Py_CODEUNIT *counter = &next_instr[1];
+            uint16_t *counter = &next_instr[1].cache;
             // The instruction is going to decrement the counter, so we need to
             // increment it here to make sure it doesn't try to specialize:
             if (!ADAPTIVE_COUNTER_IS_MAX(*counter)) {
@@ -1420,7 +1424,10 @@ exit_unwind:
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
     assert(frame != &entry_frame);
-    frame = cframe.current_frame = pop_frame(tstate, frame);
+    // GH-99729: We need to unlink the frame *before* clearing it:
+    _PyInterpreterFrame *dying = frame;
+    frame = cframe.current_frame = dying->previous;
+    _PyEvalFrameClearAndPop(tstate, dying);
     if (frame == &entry_frame) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
@@ -1435,6 +1442,11 @@ resume_with_error:
     goto error;
 
 }
+#if defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#elif defined(_MSC_VER) /* MS_WINDOWS */
+#  pragma warning(pop)
+#endif
 
 static void
 format_missing(PyThreadState *tstate, const char *kind,

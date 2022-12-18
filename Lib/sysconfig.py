@@ -544,7 +544,12 @@ def _init_non_posix(vars):
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
-    vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
+    try:
+        # GH-99201: _imp.extension_suffixes may be empty when
+        # HAVE_DYNAMIC_LOADING is not set. In this case, don't set EXT_SUFFIX.
+        vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
+    except IndexError:
+        pass
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))

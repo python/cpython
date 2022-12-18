@@ -112,7 +112,8 @@ comment_re = r'//.*|/\*([^*]|\*[^/])*\*/'
 COMMENT = 'COMMENT'
 
 newline = r"\n"
-matcher = re.compile(choice(id_re, number_re, str_re, char, newline, macro, comment_re, *operators.values()))
+invalid = r"\S"  # A single non-space character that's not caught by any of the other patterns
+matcher = re.compile(choice(id_re, number_re, str_re, char, newline, macro, comment_re, *operators.values(), invalid))
 letter = re.compile(r'[a-zA-Z_]')
 
 kwds = (
@@ -177,7 +178,6 @@ class Token:
 
 def tokenize(src, line=1, filename=None):
     linestart = -1
-    # TODO: finditer() skips over unrecognized characters, e.g. '@'
     for m in matcher.finditer(src):
         start, end = m.span()
         text = m.group(0)
@@ -240,7 +240,12 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
             res.append('\n')
             col = 1+dedent
         res.append(' '*(c-col))
-        res.append(tkn.text)
+        text = tkn.text
+        if dedent != 0 and tkn.kind == 'COMMENT' and '\n' in text:
+            if dedent < 0:
+                text = text.replace('\n', '\n' + ' '*-dedent)
+            # TODO: dedent > 0
+        res.append(text)
         line, col = tkn.end
     return ''.join(res)
 
