@@ -225,6 +225,12 @@ asyncio
   a custom event loop factory.
   (Contributed by Kumar Aditya in :gh:`99388`.)
 
+inspect
+-------
+
+* Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
+  a :term:`coroutine` for use with :func:`iscoroutinefunction`.
+  (Contributed Carlton Gibson in :gh:`99247`.)
 
 pathlib
 -------
