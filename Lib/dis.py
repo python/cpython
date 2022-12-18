@@ -435,9 +435,9 @@ def _get_co_positions(code, show_caches=False):
     prev_op = 0
     for op, positions in zip(ops, code.co_positions()):
         assert _opsize in (1, 2)
-        if _opsize == 2 and prev_op != 0:
+        if prev_op != CACHE:
             # skip oparg2, oparg3
-            prev_op = op
+            prev_op = CACHE
             continue
         if show_caches or op != CACHE:
             yield positions
