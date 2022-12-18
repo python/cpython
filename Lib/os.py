@@ -354,7 +354,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
         # We may not have read permission for top, in which case we can't
         # get a list of the files the directory contains.
-        # We suppressed the exception here, rather than blow up for a
+        # We suppress the exception here, rather than blow up for a
         # minor reason when (say) a thousand readable directories are still
         # left to visit.
         try:
@@ -381,8 +381,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                 try:
                     is_dir = entry.is_dir()
                 except OSError:
-                    # If is_dir() raises an OSError, consider that the entry is not
-                    # a directory, same behaviour as os.path.isdir().
+                    # If is_dir() raises an OSError, consider the entry not to
+                    # be a directory, same behaviour as os.path.isdir().
                     is_dir = False
 
                 if is_dir:
@@ -391,17 +391,17 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     nondirs.append(entry.name)
 
                 if not topdown and is_dir:
-                    # Bottom-up: traverse into sub-directory, but exclude symlinks to
-                    # directories if followlinks is False
+                    # Bottom-up: traverse into sub-directory, but exclude
+                    # symlinks to directories if followlinks is False
                     if followlinks:
                         walk_into = True
                     else:
                         try:
                             is_symlink = entry.is_symlink()
                         except OSError:
-                            # If is_symlink() raises an OSError, consider that the
-                            # entry is not a symbolic link, same behaviour than
-                            # os.path.islink().
+                            # If is_symlink() raises an OSError, consider the
+                            # entry not to be a symbolic link, same behaviour
+                            # as os.path.islink().
                             is_symlink = False
                         walk_into = not is_symlink
 
@@ -410,8 +410,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         if cont:
             continue
 
-        # Yield before sub-directory traversal if going top down
         if topdown:
+            # Yield before sub-directory traversal if going top down
             yield top, dirs, nondirs
             # Traverse into sub-directories
             islink, join = path.islink, path.join
