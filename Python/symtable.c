@@ -729,7 +729,7 @@ error:
 */
 
 static int
-analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
+analyze_child_block(PySTEntryObject *entry, PyObject *bound,
                     PyObject *global, PyObject* child_free);
 
 static int
@@ -737,7 +737,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
               PyObject *global)
 {
     PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
-    PyObject *newglobal = NULL, *newfree = NULL, *allfree = NULL;
+    PyObject *newglobal = NULL, *allfree = NULL;
     PyObject *temp;
     int i, success = 0;
     Py_ssize_t pos = 0;
@@ -762,9 +762,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     */
     newglobal = PySet_New(NULL);
     if (!newglobal)
-        goto error;
-    newfree = PySet_New(NULL);
-    if (!newfree)
         goto error;
     newbound = PySet_New(NULL);
     if (!newbound)
@@ -839,7 +836,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         PySTEntryObject* entry;
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
-        if (!analyze_child_block(entry, newbound, newfree, newglobal,
+        if (!analyze_child_block(entry, newbound, newglobal,
                                  allfree))
             goto error;
         /* Check if any children have free variables */
@@ -847,22 +844,17 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             ste->ste_child_free = 1;
     }
 
-    temp = PyNumber_InPlaceOr(newfree, allfree);
-    if (!temp)
-        goto error;
-    Py_DECREF(temp);
-
     /* Check if any local variables must be converted to cell variables */
-    if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree))
+    if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, allfree))
         goto error;
-    else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
+    else if (ste->ste_type == ClassBlock && !drop_class_free(ste, allfree))
         goto error;
     /* Records the results of the analysis in the symbol table entry */
-    if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
+    if (!update_symbols(ste->ste_symbols, scopes, bound, allfree,
                         ste->ste_type == ClassBlock))
         goto error;
 
-    temp = PyNumber_InPlaceOr(free, newfree);
+    temp = PyNumber_InPlaceOr(free, allfree);
     if (!temp)
         goto error;
     Py_DECREF(temp);
@@ -872,7 +864,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     Py_XDECREF(local);
     Py_XDECREF(newbound);
     Py_XDECREF(newglobal);
-    Py_XDECREF(newfree);
     Py_XDECREF(allfree);
     if (!success)
         assert(PyErr_Occurred());
@@ -880,7 +871,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 }
 
 static int
-analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
+analyze_child_block(PySTEntryObject *entry, PyObject *bound,
                     PyObject *global, PyObject* child_free)
 {
     PyObject *temp_bound = NULL, *temp_global = NULL, *temp_free = NULL;
@@ -896,7 +887,7 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
     temp_bound = PySet_New(bound);
     if (!temp_bound)
         goto error;
-    temp_free = PySet_New(free);
+    temp_free = PySet_New(NULL);
     if (!temp_free)
         goto error;
     temp_global = PySet_New(global);
