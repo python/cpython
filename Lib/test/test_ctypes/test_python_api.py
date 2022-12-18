@@ -81,6 +81,5 @@ class PythonAPITestCase(unittest.TestCase):
         self.assertEqual(repr(py_object(42)), "py_object(42)")
         self.assertEqual(repr(py_object(object)), "py_object(%r)" % object)
 
-
 if __name__ == "__main__":
     unittest.main()
