@@ -555,9 +555,8 @@ are always available.  They are listed here in alphabetical order.
    are stripped.
 
    .. versionchanged:: 3.11
-      :func:`ast.literal_eval` is no longer marked as safe for evaluating strings
-      with expressions containing only literals. For further information, please
-      check the documentation for :func:`ast.literal_eval`
+      See :func:`ast.literal_eval` for a function that can "safely" evaluate strings
+      with expressions containing only literals.
 
    .. audit-event:: exec code_object eval
 
