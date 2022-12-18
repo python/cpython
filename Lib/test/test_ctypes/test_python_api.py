@@ -81,36 +81,6 @@ class PythonAPITestCase(unittest.TestCase):
         self.assertEqual(repr(py_object(42)), "py_object(42)")
         self.assertEqual(repr(py_object(object)), "py_object(%r)" % object)
 
-    def test_PyFrame_New_f_back(self):
-        """Test that accessing `f_back` does not cause a segmentation fault on
-        a frame created with ctypes (GH-99110)."""
-        # Adapted from:
-        # https://naleraphael.github.io/blog/posts/devlog_create_a_builtin_frame_object/
-
-        p_memtype = POINTER(c_ulong if sizeof(c_void_p) == 8 else c_uint)
-        pythonapi.PyFrame_New.argtypes = (
-            p_memtype,   # PyThreadState *tstate
-            p_memtype,   # PyCodeObject *code
-            py_object,   # PyObject *globals
-            py_object    # PyObject *locals
-        )
-        pythonapi.PyFrame_New.restype = py_object   # PyFrameObject*
-        pythonapi.PyThreadState_Get.argtypes = None
-        pythonapi.PyThreadState_Get.restype = p_memtype
-
-        def dummy():
-            pass
-
-        frame = pythonapi.PyFrame_New(
-            pythonapi.PyThreadState_Get(),          # thread state
-            cast(id(dummy.__code__), p_memtype),    # a code object
-            globals(),
-            locals(),
-        )
-
-        # The following line should not cause a segmentation fault.
-        self.assertEqual(frame.f_back, None)
-
 
 if __name__ == "__main__":
     unittest.main()
