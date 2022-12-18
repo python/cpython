@@ -710,8 +710,9 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
         c->c_regcode = false;
     }
     else {
-        c->c_regcode = strstr(f, "mytest");
+        c->c_regcode = !strstr(f, "import"); // strstr(f, "test_");
     }
+    c->c_regcode = true;
 
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
@@ -8803,6 +8804,18 @@ remove_redundant_jumps(cfg_builder *g) {
 static int
 prepare_localsplus(struct compiler* c, int code_flags)
 {
+    for(int i = 0; i < c->u->u_ntmps; i++) {
+        PyObject *k = PyUnicode_FromFormat("$%d", i);
+        if (!k) {
+            return -1 ;
+        }
+        int ret = dict_add_o(c->u->u_varnames, k);
+        Py_DECREF(k);
+        if (ret < 0) {
+            return -1;
+        }
+    }
+
     assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_freevars) < INT_MAX);
@@ -8849,7 +8862,7 @@ add_return_at_end_of_block(struct compiler *c, int addNone)
 }
 
 static int
-resolve_register(oparg_t *oparg, int nlocalsplus,
+resolve_register(oparg_t *oparg, int nlocalsplus, PyObject *varnames,
                  int ntmps, int stacksize, Py_ssize_t nconsts)
 {
     switch(oparg->type) {
@@ -8872,34 +8885,41 @@ resolve_register(oparg_t *oparg, int nlocalsplus,
             break;
         case TMP_REG: {
             assert(oparg->value >= 0 && oparg->value < ntmps);
-            oparg->final = (nlocalsplus +
-                            stacksize +
-                            oparg->value);
+            PyObject *k = PyUnicode_FromFormat("$%d", oparg->value);
+            if (!k) {
+                return -1 ;
+            }
+            int ret = dict_add_o(varnames, k);
+            Py_DECREF(k);
+            if (ret < 0) {
+                return ERROR;
+            }
+            oparg->final = ret;
             break;
         }
         default:
             Py_UNREACHABLE();
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
-resolve_registers(cfg_builder *g, int nlocalsplus, int ntmps, int stacksize,
-                  Py_ssize_t nconsts)
+resolve_registers(cfg_builder *g, int nlocalsplus, PyObject *varnames,
+                  int ntmps, int stacksize, Py_ssize_t nconsts)
 {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *inst = &b->b_instr[i];
-            if (resolve_register(&inst->i_oparg1, nlocalsplus, ntmps,
-                                 stacksize, nconsts) < 0) {
+            if (resolve_register(&inst->i_oparg1, nlocalsplus, varnames,
+                                 ntmps, stacksize, nconsts) < 0) {
                 return -1;
             }
-            if (resolve_register(&inst->i_oparg2, nlocalsplus, ntmps,
-                                 stacksize, nconsts) < 0) {
+            if (resolve_register(&inst->i_oparg2, nlocalsplus, varnames,
+                                 ntmps, stacksize, nconsts) < 0) {
                 return -1;
             }
-            if (resolve_register(&inst->i_oparg3, nlocalsplus, ntmps,
-                                 stacksize, nconsts) < 0) {
+            if (resolve_register(&inst->i_oparg3, nlocalsplus, varnames,
+                                 ntmps, stacksize, nconsts) < 0) {
                 return -1;
             }
         }
@@ -9008,10 +9028,10 @@ assemble(struct compiler *c, int addNone)
 
     Py_ssize_t nconsts = PyList_GET_SIZE(consts);
     int ntmps = c->u->u_ntmps;
-    if (resolve_registers(g, nlocalsplus, ntmps, maxdepth, nconsts) < 0) {
+    if (resolve_registers(g, nlocalsplus, c->u->u_varnames, ntmps, maxdepth, nconsts) < 0) {
         goto error;
     }
-
+    c->u->u_ntmps = 0;
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
 
