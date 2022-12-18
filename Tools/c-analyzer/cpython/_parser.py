@@ -82,6 +82,10 @@ Objects/unicodetype_db.h
 # generated
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
+Python/generated_cases.c.h
+
+# not actually source
+Python/bytecodes.c
 
 # @end=conf@
 ''')
@@ -285,6 +289,7 @@ Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 
 SAME = {
     _abs('Include/*.h'): [_abs('Include/cpython/')],
+    _abs('Python/ceval.c'): ['Python/generated_cases.c.h'],
 }
 
 MAX_SIZES = {
@@ -311,6 +316,7 @@ MAX_SIZES = {
     _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/opcode_targets.h'): (10_000, 500),
     _abs('Python/stdlib_module_names.h'): (5_000, 500),
+    _abs('Python/importlib.h'): (200_000, 5000),
 
     # These large files are currently ignored (see above).
     _abs('Modules/_ssl_data.h'): (80_000, 10_000),

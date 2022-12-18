@@ -40,6 +40,13 @@ extern int _PyAST_Optimize(
     _PyASTOptimizeState *state);
 
 /* Access compiler internals for unit testing */
+
+PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
+        PyObject *ast,
+        PyObject *filename,
+        PyCompilerFlags *flags,
+        int optimize);
+
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
         PyObject *consts);
