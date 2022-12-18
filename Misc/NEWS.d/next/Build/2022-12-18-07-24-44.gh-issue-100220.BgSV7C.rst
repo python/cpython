@@ -1,0 +1,2 @@
+Fix error handling in compound Make rules that lead to the install targets
+succeeding when the respective files were not installed.
