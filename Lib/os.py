@@ -427,6 +427,13 @@ def _walk(top, topdown, onerror, followlinks):
 __all__.append("walk")
 
 if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
+    from enum import Enum, _simple_enum
+
+    @_simple_enum(Enum)
+    class _WalkAction:
+        YIELD = 1
+        CLOSE = 2
+        WALK = 3
 
     def fwalk(top=".", topdown=True, onerror=None, *, follow_symlinks=False, dir_fd=None):
         """Directory tree generator.
@@ -481,19 +488,19 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
         try:
-            stack = [(2, (topfd, toppath))]
+            stack = [(_WalkAction.WALK, (topfd, toppath))]
             while stack:
-                sig, val = stack.pop()
-                if sig == 1:
-                    yield val
+                action, value = stack.pop()
+                if action is _WalkAction.YIELD:
+                    yield value
                     continue
-                elif sig == 2:
-                    topfd, toppath = val
-                elif sig == 3:
-                    close(val)
+                elif action is _WalkAction.CLOSE:
+                    close(value)
                     continue
+                elif action is _WalkAction.WALK:
+                    topfd, toppath = value
                 else:
-                    raise ValueError(f"invalid sig: {sig}")
+                    raise ValueError(f"invalid walk action: {action}")
                 scandir_it = scandir(topfd)
                 dirs = []
                 nondirs = []
@@ -520,7 +527,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                 if topdown:
                     yield toppath, dirs, nondirs, topfd
                 else:
-                    stack.append((1, (toppath, dirs, nondirs, topfd)))
+                    stack.append((_WalkAction.YIELD, (toppath, dirs, nondirs, topfd)))
 
                 for name in reversed(dirs) if entries is None else zip(reversed(dirs), reversed(entries)):
                     try:
@@ -536,14 +543,14 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                         if onerror is not None:
                             onerror(err)
                         continue
-                    stack.append((3, dirfd))
+                    stack.append((_WalkAction.CLOSE, dirfd))
                     if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                         dirpath = path.join(toppath, name)
-                        stack.append((2, (dirfd, dirpath)))
+                        stack.append((_WalkAction.WALK, (dirfd, dirpath)))
         except:
-            for sig, val in reversed(stack):
-                if sig == 3:
-                    close(val)
+            for action, value in reversed(stack):
+                if action is _WalkAction.CLOSE:
+                    close(value)
             raise
 
     __all__.append("fwalk")
