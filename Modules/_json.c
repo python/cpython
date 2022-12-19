@@ -1321,8 +1321,8 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
         if (!s->allow_nan) {
             PyErr_Format(
                     PyExc_ValueError,
-                    "Out of range float values are not JSON compliant: %s",
-                    PyOS_double_to_string(i, 'r', 0, 0, NULL)
+                    "Out of range float values are not JSON compliant: %R",
+                    obj
                     );
             return NULL;
         }
