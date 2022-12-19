@@ -1,0 +1,1 @@
+Release _SelectorSocketTransport._read_ready_cb on close() to free up cyclic reference.
