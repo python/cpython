@@ -1847,20 +1847,20 @@ code_hash(PyCodeObject *co)
         uhash ^= (Py_uhash_t)(H);     \
         uhash *= _PyHASH_MULTIPLIER;  \
     } while (0)
-    #define SCRAMBLE_IN_OR_ERR(EXPR) do {  \
-        Py_hash_t h = (EXPR);              \
-        if (h == -1) {                     \
-            return -1;                     \
-        }                                  \
-        SCRAMBLE_IN(h);                    \
+    #define SCRAMBLE_IN_HASH(EXPR) do {     \
+        Py_hash_t h = PyObject_Hash(EXPR);  \
+        if (h == -1) {                      \
+            return -1;                      \
+        }                                   \
+        SCRAMBLE_IN(h);                     \
     } while (0)
 
-    SCRAMBLE_IN_OR_ERR(PyObject_Hash(co->co_name));
-    SCRAMBLE_IN_OR_ERR(PyObject_Hash(co->co_consts));
-    SCRAMBLE_IN_OR_ERR(PyObject_Hash(co->co_names));
-    SCRAMBLE_IN_OR_ERR(PyObject_Hash(co->co_localsplusnames));
-    SCRAMBLE_IN_OR_ERR(PyObject_Hash(co->co_linetable));
-    SCRAMBLE_IN_OR_ERR(PyObject_Hash(co->co_exceptiontable));
+    SCRAMBLE_IN_HASH(co->co_name);
+    SCRAMBLE_IN_HASH(co->co_consts);
+    SCRAMBLE_IN_HASH(co->co_names);
+    SCRAMBLE_IN_HASH(co->co_localsplusnames);
+    SCRAMBLE_IN_HASH(co->co_linetable);
+    SCRAMBLE_IN_HASH(co->co_exceptiontable);
     SCRAMBLE_IN(co->co_argcount);
     SCRAMBLE_IN(co->co_posonlyargcount);
     SCRAMBLE_IN(co->co_kwonlyargcount);
