@@ -480,57 +480,71 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # Note: This uses O(depth of the directory tree) file descriptors: if
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
-
-        scandir_it = scandir(topfd)
-        dirs = []
-        nondirs = []
-        entries = None if topdown or follow_symlinks else []
-        for entry in scandir_it:
-            name = entry.name
-            if isbytes:
-                name = fsencode(name)
-            try:
-                if entry.is_dir():
-                    dirs.append(name)
-                    if entries is not None:
-                        entries.append(entry)
+        try:
+            stack = [(2, (topfd, toppath))]
+            while stack:
+                sig, val = stack.pop()
+                if sig == 1:
+                    yield val
+                    continue
+                elif sig == 2:
+                    topfd, toppath = val
+                elif sig == 3:
+                    close(val)
+                    continue
                 else:
-                    nondirs.append(name)
-            except OSError:
-                try:
-                    # Add dangling symlinks, ignore disappeared files
-                    if entry.is_symlink():
-                        nondirs.append(name)
-                except OSError:
-                    pass
+                    raise ValueError(f"invalid sig: {sig}")
+                scandir_it = scandir(topfd)
+                dirs = []
+                nondirs = []
+                entries = None if topdown or follow_symlinks else []
+                for entry in scandir_it:
+                    name = entry.name
+                    if isbytes:
+                        name = fsencode(name)
+                    try:
+                        if entry.is_dir():
+                            dirs.append(name)
+                            if entries is not None:
+                                entries.append(entry)
+                        else:
+                            nondirs.append(name)
+                    except OSError:
+                        try:
+                            # Add dangling symlinks, ignore disappeared files
+                            if entry.is_symlink():
+                                nondirs.append(name)
+                        except OSError:
+                            pass
 
-        if topdown:
-            yield toppath, dirs, nondirs, topfd
+                if topdown:
+                    yield toppath, dirs, nondirs, topfd
+                else:
+                    stack.append((1, (toppath, dirs, nondirs, topfd)))
 
-        for name in dirs if entries is None else zip(dirs, entries):
-            try:
-                if not follow_symlinks:
-                    if topdown:
-                        orig_st = stat(name, dir_fd=topfd, follow_symlinks=False)
-                    else:
-                        assert entries is not None
-                        name, entry = name
-                        orig_st = entry.stat(follow_symlinks=False)
-                dirfd = open(name, O_RDONLY, dir_fd=topfd)
-            except OSError as err:
-                if onerror is not None:
-                    onerror(err)
-                continue
-            try:
-                if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
-                    dirpath = path.join(toppath, name)
-                    yield from _fwalk(dirfd, dirpath, isbytes,
-                                      topdown, onerror, follow_symlinks)
-            finally:
-                close(dirfd)
-
-        if not topdown:
-            yield toppath, dirs, nondirs, topfd
+                for name in reversed(dirs) if entries is None else zip(reversed(dirs), reversed(entries)):
+                    try:
+                        if not follow_symlinks:
+                            if topdown:
+                                orig_st = stat(name, dir_fd=topfd, follow_symlinks=False)
+                            else:
+                                assert entries is not None
+                                name, entry = name
+                                orig_st = entry.stat(follow_symlinks=False)
+                        dirfd = open(name, O_RDONLY, dir_fd=topfd)
+                    except OSError as err:
+                        if onerror is not None:
+                            onerror(err)
+                        continue
+                    stack.append((3, dirfd))
+                    if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
+                        dirpath = path.join(toppath, name)
+                        stack.append((2, (dirfd, dirpath)))
+        except:
+            for sig, val in reversed(stack):
+                if sig == 3:
+                    close(val)
+            raise
 
     __all__.append("fwalk")
 
