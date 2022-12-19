@@ -316,11 +316,10 @@ set_running_loop(asyncio_state *state, PyObject *loop)
     if (PyDict_SetItem(
             ts_dict, &_Py_ID(__asyncio_running_event_loop__), loop) < 0)
     {
-        Py_DECREF(loop);
         return -1;
     }
 
-    state->cached_running_loop = loop;
+    state->cached_running_loop = loop; // borrowed, kept alive by ts_dict
     state->cached_running_loop_tsid = PyThreadState_GetID(tstate);
 
     return 0;
