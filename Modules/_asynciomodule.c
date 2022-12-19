@@ -313,7 +313,6 @@ set_running_loop(asyncio_state *state, PyObject *loop)
             PyExc_RuntimeError, "thread-local storage is not available");
         return -1;
     }
-    Py_INCREF(loop);
     if (PyDict_SetItem(
             ts_dict, &_Py_ID(__asyncio_running_event_loop__), loop) < 0)
     {
