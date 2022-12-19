@@ -1570,10 +1570,9 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         */
     }
 
-    if (s->sort_keys) {
-
-        items = PyDict_Items(dct);
-        if (items == NULL || PyList_Sort(items) < 0)
+    if (s->sort_keys || !PyDict_CheckExact(dct)) {
+        items = PyMapping_Items(dct);
+        if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0))
             goto bail;
 
         for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
