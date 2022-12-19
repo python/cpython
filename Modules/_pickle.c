@@ -5004,13 +5004,12 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-Pickler_get_persid(PicklerObject *self, void *Py_UNUSED(ignored))
-{
-    if (self->pers_func == NULL) {
+Pickler_get_persid(PicklerObject *self, void *Py_UNUSED(ignored)) {
+    if (self->pers_func == NULL)
         PyErr_SetString(PyExc_AttributeError, "persistent_id");
-        return NULL;
-    }
-    return reconstruct_method(self->pers_func, self->pers_func_self);
+    else
+        Py_INCREF(self->pers_func);
+    return self->pers_func;
 }
 
 static int
