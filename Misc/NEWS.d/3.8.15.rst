@@ -1,0 +1,61 @@
+.. date: 2022-09-28-17-09-37
+.. gh-issue: 97616
+.. nonce: K1e3Xs
+.. release date: 2022-10-11
+.. section: Security
+
+Fix multiplying a list by an integer (``list *= int``): detect the integer
+overflow when the new allocated length is close to the maximum size. Issue
+reported by Jordan Limor.  Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-28-12-10-57
+.. gh-issue: 97612
+.. nonce: y6NvOQ
+.. section: Security
+
+Fix a shell code injection vulnerability in the
+``get-remote-certificate.py`` example script. The script no longer uses a
+shell to run ``openssl`` commands. Issue reported and initial fix by Caleb
+Shortt. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-21-14-38-31
+.. gh-issue: 96848
+.. nonce: WuoLzU
+.. section: Core and Builtins
+
+Fix command line parsing: reject :option:`-X int_max_str_digits <-X>` option
+with no value (invalid) when the :envvar:`PYTHONINTMAXSTRDIGITS` environment
+variable is set to a valid limit. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-16-19-02-40
+.. gh-issue: 95778
+.. nonce: cJmnst
+.. section: Core and Builtins
+
+When :exc:`ValueError` is raised if an integer is larger than the limit,
+mention the :func:`sys.set_int_max_str_digits` function in the error
+message. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-22-14-35-02
+.. gh-issue: 97005
+.. nonce: yf21Q7
+.. section: Library
+
+Update bundled libexpat to 2.4.9
+
+..
+
+.. date: 2022-09-07-00-11-33
+.. gh-issue: 96577
+.. nonce: kV4K_1
+.. section: Windows
+
+Fixes a potential buffer overrun in :mod:`msilib`.

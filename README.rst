@@ -1,4 +1,4 @@
-This is Python version 3.8.14
+This is Python version 3.8.16
 =============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=3.8
@@ -29,7 +29,7 @@ General Information
 
 - Website: https://www.python.org
 - Source code: https://github.com/python/cpython
-- Issue tracker: https://bugs.python.org
+- Issue tracker: https://github.com/python/cpython/issues/
 - Documentation: https://docs.python.org
 - Developer's Guide: https://devguide.python.org/
 
@@ -189,7 +189,7 @@ example, if ``test_os`` and ``test_gdb`` failed, you can run::
     make test TESTOPTS="-v test_os test_gdb"
 
 If the failure persists and appears to be a problem with Python rather than
-your environment, you can `file a bug report <https://bugs.python.org>`_ and
+your environment, you can `file a bug report <https://github.com/python/cpython/issues/>`_ and
 include relevant output from that command to show the issue.
 
 See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
@@ -218,7 +218,7 @@ Issue Tracker and Mailing List
 ------------------------------
 
 Bug reports are welcome!  You can use the `issue tracker
-<https://bugs.python.org>`_ to report bugs, and/or submit pull requests `on
+<https://github.com/python/cpython/issues/>`_ to report bugs, and/or submit pull requests `on
 GitHub <https://github.com/python/cpython>`_.
 
 You can also follow development discussion on the `python-dev mailing list

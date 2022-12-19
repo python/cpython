@@ -127,6 +127,11 @@ class AuditTest(unittest.TestCase):
             ["gc.get_objects", "gc.get_referrers", "gc.get_referents"]
         )
 
+    def test_not_in_gc(self):
+        returncode, _, stderr = self.run_python("test_not_in_gc")
+        if returncode:
+            self.fail(stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

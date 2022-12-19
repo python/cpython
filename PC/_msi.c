@@ -292,7 +292,7 @@ msierror(int status)
     int code;
     char buf[2000];
     char *res = buf;
-    DWORD size = sizeof(buf);
+    DWORD size = Py_ARRAY_LENGTH(buf);
     MSIHANDLE err = MsiGetLastErrorRecord();
 
     if (err == 0) {
@@ -386,7 +386,7 @@ record_getstring(msiobj* record, PyObject* args)
     unsigned int status;
     WCHAR buf[2000];
     WCHAR *res = buf;
-    DWORD size = sizeof(buf);
+    DWORD size = Py_ARRAY_LENGTH(buf);
     PyObject* string;
 
     if (!PyArg_ParseTuple(args, "I:GetString", &field))

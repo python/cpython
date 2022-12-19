@@ -341,6 +341,17 @@ def test_gc():
     gc.get_referents(y)
 
 
+def test_not_in_gc():
+    import gc
+
+    hook = lambda *a: None
+    sys.addaudithook(hook)
+
+    for o in gc.get_objects():
+        if isinstance(o, list):
+            assert hook not in o
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 

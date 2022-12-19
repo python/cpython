@@ -25,7 +25,7 @@ import time
 import datetime
 import threading
 from unittest import mock
-from io import BytesIO
+from io import BytesIO, StringIO
 
 import unittest
 from test import support
@@ -909,6 +909,25 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
     def verify_http_server_response(self, response):
         match = self.HTTPResponseMatch.search(response)
         self.assertIsNotNone(match)
+
+    def test_unprintable_not_logged(self):
+        # We call the method from the class directly as our Socketless
+        # Handler subclass overrode it... nice for everything BUT this test.
+        self.handler.client_address = ('127.0.0.1', 1337)
+        log_message = BaseHTTPRequestHandler.log_message
+        with mock.patch.object(sys, 'stderr', StringIO()) as fake_stderr:
+            log_message(self.handler, '/foo')
+            log_message(self.handler, '/\033bar\000\033')
+            log_message(self.handler, '/spam %s.', 'a')
+            log_message(self.handler, '/spam %s.', '\033\x7f\x9f\xa0beans')
+        stderr = fake_stderr.getvalue()
+        self.assertNotIn('\033', stderr)  # non-printable chars are caught.
+        self.assertNotIn('\000', stderr)  # non-printable chars are caught.
+        lines = stderr.splitlines()
+        self.assertIn('/foo', lines[0])
+        self.assertIn(r'/\x1bbar\x00\x1b', lines[1])
+        self.assertIn('/spam a.', lines[2])
+        self.assertIn('/spam \\x1b\\x7f\\x9f\xa0beans.', lines[3])
 
     def test_http_1_1(self):
         result = self.send_typical_request(b'GET / HTTP/1.1\r\n\r\n')
