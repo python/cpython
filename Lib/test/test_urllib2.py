@@ -1824,6 +1824,10 @@ class MiscTests(unittest.TestCase):
         expected_errmsg = '<HTTPError %s: %r>' % (err.code, err.msg)
         self.assertEqual(repr(err), expected_errmsg)
 
+    def test_gh_98778(self):
+        x = urllib.error.HTTPError("url", 405, "METHOD NOT ALLOWED", None, None)
+        self.assertEqual(getattr(x, "__notes__", ()), ())
+
     def test_parse_proxy(self):
         parse_proxy_test_cases = [
             ('proxy.example.com',

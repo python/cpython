@@ -125,6 +125,7 @@ __all__ = [
     "ismodule",
     "isroutine",
     "istraceback",
+    "markcoroutinefunction",
     "signature",
     "stack",
     "trace",
@@ -391,12 +392,33 @@ def isgeneratorfunction(obj):
     See help(isfunction) for a list of attributes."""
     return _has_code_flag(obj, CO_GENERATOR)
 
+# A marker for markcoroutinefunction and iscoroutinefunction.
+_is_coroutine_marker = object()
+
+def _has_coroutine_mark(f):
+    while ismethod(f):
+        f = f.__func__
+    f = functools._unwrap_partial(f)
+    if not (isfunction(f) or _signature_is_functionlike(f)):
+        return False
+    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_marker
+
+def markcoroutinefunction(func):
+    """
+    Decorator to ensure callable is recognised as a coroutine function.
+    """
+    if hasattr(func, '__func__'):
+        func = func.__func__
+    func._is_coroutine_marker = _is_coroutine_marker
+    return func
+
 def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
-    Coroutine functions are defined with "async def" syntax.
+    Coroutine functions are normally defined with "async def" syntax, but may
+    be marked via markcoroutinefunction.
     """
-    return _has_code_flag(obj, CO_COROUTINE)
+    return _has_code_flag(obj, CO_COROUTINE) or _has_coroutine_mark(obj)
 
 def isasyncgenfunction(obj):
     """Return true if the object is an asynchronous generator function.
@@ -1160,7 +1182,6 @@ class BlockFinder:
         self.started = False
         self.passline = False
         self.indecorator = False
-        self.decoratorhasargs = False
         self.last = 1
         self.body_col0 = None
 
@@ -1175,13 +1196,6 @@ class BlockFinder:
                     self.islambda = True
                 self.started = True
             self.passline = True    # skip to the end of the line
-        elif token == "(":
-            if self.indecorator:
-                self.decoratorhasargs = True
-        elif token == ")":
-            if self.indecorator:
-                self.indecorator = False
-                self.decoratorhasargs = False
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]
@@ -1189,7 +1203,7 @@ class BlockFinder:
                 raise EndOfBlock
             # hitting a NEWLINE when in a decorator without args
             # ends the decorator
-            if self.indecorator and not self.decoratorhasargs:
+            if self.indecorator:
                 self.indecorator = False
         elif self.passline:
             pass
@@ -2451,10 +2465,18 @@ def _signature_from_callable(obj, *,
         pass
     else:
         if sig is not None:
+            # since __text_signature__ is not writable on classes, __signature__
+            # may contain text (or be a callable that returns text);
+            # if so, convert it
+            o_sig = sig
+            if not isinstance(sig, (Signature, str)) and callable(sig):
+                sig = sig()
+            if isinstance(sig, str):
+                sig = _signature_fromstr(sigcls, obj, sig)
             if not isinstance(sig, Signature):
                 raise TypeError(
                     'unexpected object {!r} in __signature__ '
-                    'attribute'.format(sig))
+                    'attribute'.format(o_sig))
             return sig
 
     try:

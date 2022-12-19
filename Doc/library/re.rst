@@ -973,6 +973,7 @@ Functions
       >>> def dashrepl(matchobj):
       ...     if matchobj.group(0) == '-': return ' '
       ...     else: return '-'
+      ...
       >>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
       'pro--gram files'
       >>> re.sub(r'\sAND\s', ' & ', 'Baked Beans And Spam', flags=re.IGNORECASE)
@@ -1672,6 +1673,7 @@ in each word of a sentence except for the first and last characters::
    ...     inner_word = list(m.group(2))
    ...     random.shuffle(inner_word)
    ...     return m.group(1) + "".join(inner_word) + m.group(3)
+   ...
    >>> text = "Professor Abdolmalek, please report your absences promptly."
    >>> re.sub(r"(\w)(\w+)(\w)", repl, text)
    'Poefsrosr Aealmlobdk, pslaee reorpt your abnseces plmrptoy.'

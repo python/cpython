@@ -16,21 +16,24 @@ extern "C" {
  * 2**32 - 1, rather than INT_MAX.
  */
 
-typedef uint16_t _Py_CODEUNIT;
+typedef union {
+    uint16_t cache;
+    struct {
+        uint8_t opcode;
+        uint8_t oparg;
+    };
+} _Py_CODEUNIT;
 
-#ifdef WORDS_BIGENDIAN
-#  define _Py_OPCODE(word) ((word) >> 8)
-#  define _Py_OPARG(word) ((word) & 255)
-#  define _Py_MAKECODEUNIT(opcode, oparg) (((opcode)<<8)|(oparg))
-#else
-#  define _Py_OPCODE(word) ((word) & 255)
-#  define _Py_OPARG(word) ((word) >> 8)
-#  define _Py_MAKECODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
-#endif
+#define _Py_OPCODE(word) ((word).opcode)
+#define _Py_OPARG(word) ((word).oparg)
 
-// Use "unsigned char" instead of "uint8_t" here to avoid illegal aliasing:
-#define _Py_SET_OPCODE(word, opcode) \
-    do { ((unsigned char *)&(word))[0] = (opcode); } while (0)
+static inline void
+_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
+{
+    word->opcode = opcode;
+}
+
+#define _Py_SET_OPCODE(word, opcode) _py_set_opocde(&(word), opcode)
 
 typedef struct {
     PyObject *_co_code;
@@ -87,6 +90,7 @@ typedef struct {
     int co_nplaincellvars;        /* number of non-arg cell variables */       \
     int co_ncellvars;             /* total number of cell variables */         \
     int co_nfreevars;             /* number of free variables */               \
+    uint32_t co_version;          /* version number */                         \
                                                                                \
     PyObject *co_localsplusnames; /* tuple mapping offsets to names */         \
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte    \
