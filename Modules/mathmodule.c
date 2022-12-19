@@ -2069,8 +2069,7 @@ factorial_odd_part(unsigned long n)
         Py_DECREF(partial);
         if (tmp == NULL)
             goto error;
-        Py_DECREF(inner);
-        inner = tmp;
+        Py_SETREF(inner, tmp);
         /* Now inner is the product of all odd integers j in the range (0,
            n/2**i], giving the inner product in the formula above. */
 
@@ -2078,8 +2077,7 @@ factorial_odd_part(unsigned long n)
         tmp = PyNumber_Multiply(outer, inner);
         if (tmp == NULL)
             goto error;
-        Py_DECREF(outer);
-        outer = tmp;
+        Py_SETREF(outer, tmp);
     }
     Py_DECREF(inner);
     return outer;
@@ -3154,8 +3152,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
         long i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
         if (overflow == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
         }
         /* Loop over all the items in the iterable until we finish, we overflow
          * or we found a non integer element */
@@ -3202,8 +3199,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     */
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
@@ -3252,8 +3248,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
         if (item == NULL) {
             /* error, or end-of-sequence */
             if (PyErr_Occurred()) {
-                Py_DECREF(result);
-                result = NULL;
+                Py_SETREF(result, NULL);
             }
             break;
         }

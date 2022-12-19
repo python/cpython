@@ -1,1 +1,0 @@
-Add audit events for thread creation and clear operations.

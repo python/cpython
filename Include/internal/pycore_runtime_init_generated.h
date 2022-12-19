@@ -793,6 +793,7 @@ extern "C" {
     INIT_ID(byteorder), \
     INIT_ID(bytes), \
     INIT_ID(bytes_per_sep), \
+    INIT_ID(c), \
     INIT_ID(c_call), \
     INIT_ID(c_exception), \
     INIT_ID(c_return), \
@@ -842,6 +843,7 @@ extern "C" {
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(cwd), \
+    INIT_ID(d), \
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(decode), \
@@ -869,6 +871,7 @@ extern "C" {
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
     INIT_ID(duration), \
+    INIT_ID(e), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
     INIT_ID(encode), \
@@ -975,6 +978,9 @@ extern "C" {
     INIT_ID(keyfile), \
     INIT_ID(keys), \
     INIT_ID(kind), \
+    INIT_ID(kw), \
+    INIT_ID(kw1), \
+    INIT_ID(kw2), \
     INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_node), \
@@ -1037,6 +1043,7 @@ extern "C" {
     INIT_ID(node_offset), \
     INIT_ID(ns), \
     INIT_ID(nstype), \
+    INIT_ID(nt), \
     INIT_ID(null), \
     INIT_ID(number), \
     INIT_ID(obj), \
@@ -1073,6 +1080,9 @@ extern "C" {
     INIT_ID(pid), \
     INIT_ID(policy), \
     INIT_ID(pos), \
+    INIT_ID(pos1), \
+    INIT_ID(pos2), \
+    INIT_ID(posix), \
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \

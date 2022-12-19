@@ -718,8 +718,7 @@ _Py_HandleSystemExit(int *exitcode_p)
         /* The error code should be in the `code' attribute. */
         PyObject *code = PyObject_GetAttr(value, &_Py_ID(code));
         if (code) {
-            Py_DECREF(value);
-            value = code;
+            Py_SETREF(value, code);
             if (value == Py_None)
                 goto done;
         }

@@ -480,6 +480,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(bytes_per_sep);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(c);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(c_call);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(c_exception);
@@ -578,6 +580,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(cwd);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(d);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(data);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(database);
@@ -631,6 +635,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(dst_dir_fd);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(duration);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(e);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(effective_ids);
     PyUnicode_InternInPlace(&string);
@@ -844,6 +850,12 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(kind);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(kw);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(kw1);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(kw2);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(lambda);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(last);
@@ -968,6 +980,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(nstype);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(nt);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(null);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(number);
@@ -1039,6 +1053,12 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(policy);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(pos);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(pos1);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(pos2);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(posix);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(print_file_and_line);
     PyUnicode_InternInPlace(&string);
