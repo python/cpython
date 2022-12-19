@@ -202,6 +202,51 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
+        async def _fn3():
+            pass
+
+        @inspect.markcoroutinefunction
+        def fn3():
+            return _fn3()
+
+        self.assertTrue(inspect.iscoroutinefunction(fn3))
+        self.assertTrue(
+            inspect.iscoroutinefunction(
+                inspect.markcoroutinefunction(lambda: _fn3())
+            )
+        )
+
+        class Cl:
+            async def __call__(self):
+                pass
+
+        self.assertFalse(inspect.iscoroutinefunction(Cl))
+        # instances with async def __call__ are NOT recognised.
+        self.assertFalse(inspect.iscoroutinefunction(Cl()))
+
+        class Cl2:
+            @inspect.markcoroutinefunction
+            def __call__(self):
+                pass
+
+        self.assertFalse(inspect.iscoroutinefunction(Cl2))
+        # instances with marked __call__ are NOT recognised.
+        self.assertFalse(inspect.iscoroutinefunction(Cl2()))
+
+        class Cl3:
+            @inspect.markcoroutinefunction
+            @classmethod
+            def do_something_classy(cls):
+                pass
+
+            @inspect.markcoroutinefunction
+            @staticmethod
+            def do_something_static():
+                pass
+
+        self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_classy))
+        self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_static))
+
         self.assertFalse(
             inspect.iscoroutinefunction(unittest.mock.Mock()))
         self.assertTrue(

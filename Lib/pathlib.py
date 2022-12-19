@@ -624,7 +624,7 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
-    def relative_to(self, *other, walk_up=False):
+    def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
         related to the other path), raise ValueError.
@@ -632,10 +632,14 @@ class PurePath(object):
         The *walk_up* parameter controls whether `..` may be used to resolve
         the path.
         """
-        if not other:
-            raise TypeError("need at least one argument")
+        if _deprecated:
+            msg = ("support for supplying more than one positional argument "
+                   "to pathlib.PurePath.relative_to() is deprecated and "
+                   "scheduled for removal in Python {remove}")
+            warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
+                                 remove=(3, 14))
         path_cls = type(self)
-        other = path_cls(*other)
+        other = path_cls(other, *_deprecated)
         for step, path in enumerate([other] + list(other.parents)):
             if self.is_relative_to(path):
                 break
@@ -646,12 +650,16 @@ class PurePath(object):
         parts = ('..',) * step + self.parts[len(path.parts):]
         return path_cls(*parts)
 
-    def is_relative_to(self, *other):
+    def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
         """
-        if not other:
-            raise TypeError("need at least one argument")
-        other = type(self)(*other)
+        if _deprecated:
+            msg = ("support for supplying more than one argument to "
+                   "pathlib.PurePath.is_relative_to() is deprecated and "
+                   "scheduled for removal in Python {remove}")
+            warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
+                                 msg, remove=(3, 14))
+        other = type(self)(other, *_deprecated)
         return other == self or other in self.parents
 
     @property
