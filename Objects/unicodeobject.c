@@ -1131,7 +1131,6 @@ _PyUnicode_Dump(PyObject *op)
 
 
 PyObject *
-    _Py_NO_SANITIZE_ADDRESS  // Disable ASAN, refer to _PyUnicode_ClearInterned
 PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 {
     /* Optimization for empty strings */
