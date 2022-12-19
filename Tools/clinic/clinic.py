@@ -897,7 +897,7 @@ class CLanguage(Language):
                         parser_code.append(normalize_snippet("""
                             %s = PyTuple_New(%s);
                             for (Py_ssize_t i = 0; i < %s; ++i) {{
-                                PyTuple_SET_ITEM(%s, i, args[%d + i]);
+                                PyTuple_SET_ITEM(%s, i, Py_NewRef(args[%d + i]));
                             }}
                             """ % (
                                 p.converter.parser_name,
