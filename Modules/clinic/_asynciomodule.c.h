@@ -987,68 +987,6 @@ _asyncio_get_event_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _asyncio_get_event_loop_impl(module);
 }
 
-PyDoc_STRVAR(_asyncio__get_event_loop__doc__,
-"_get_event_loop($module, /, stacklevel=3)\n"
-"--\n"
-"\n");
-
-#define _ASYNCIO__GET_EVENT_LOOP_METHODDEF    \
-    {"_get_event_loop", _PyCFunction_CAST(_asyncio__get_event_loop), METH_FASTCALL|METH_KEYWORDS, _asyncio__get_event_loop__doc__},
-
-static PyObject *
-_asyncio__get_event_loop_impl(PyObject *module, int stacklevel);
-
-static PyObject *
-_asyncio__get_event_loop(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(stacklevel), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"stacklevel", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_get_event_loop",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    int stacklevel = 3;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    stacklevel = _PyLong_AsInt(args[0]);
-    if (stacklevel == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional_pos:
-    return_value = _asyncio__get_event_loop_impl(module, stacklevel);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_asyncio_get_running_loop__doc__,
 "get_running_loop($module, /)\n"
 "--\n"
@@ -1304,4 +1242,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=550bc6603df89ed9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=83580c190031241c input=a9049054013a1b77]*/

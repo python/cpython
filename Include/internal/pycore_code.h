@@ -18,53 +18,53 @@ extern "C" {
 #define CACHE_ENTRIES(cache) (sizeof(cache)/sizeof(_Py_CODEUNIT))
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT index;
-    _Py_CODEUNIT module_keys_version[2];
-    _Py_CODEUNIT builtin_keys_version;
+    uint16_t counter;
+    uint16_t index;
+    uint16_t module_keys_version[2];
+    uint16_t builtin_keys_version;
 } _PyLoadGlobalCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_GLOBAL CACHE_ENTRIES(_PyLoadGlobalCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
+    uint16_t counter;
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
+    uint16_t counter;
 } _PyUnpackSequenceCache;
 
 #define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
     CACHE_ENTRIES(_PyUnpackSequenceCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT mask;
+    uint16_t counter;
+    uint16_t mask;
 } _PyCompareOpCache;
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT type_version[2];
-    _Py_CODEUNIT func_version;
+    uint16_t counter;
+    uint16_t type_version[2];
+    uint16_t func_version;
 } _PyBinarySubscrCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT version[2];
-    _Py_CODEUNIT index;
+    uint16_t counter;
+    uint16_t version[2];
+    uint16_t index;
 } _PyAttrCache;
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT type_version[2];
-    _Py_CODEUNIT keys_version[2];
-    _Py_CODEUNIT descr[4];
+    uint16_t counter;
+    uint16_t type_version[2];
+    uint16_t keys_version[2];
+    uint16_t descr[4];
 } _PyLoadMethodCache;
 
 
@@ -74,21 +74,21 @@ typedef struct {
 #define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
-    _Py_CODEUNIT func_version[2];
-    _Py_CODEUNIT min_args;
+    uint16_t counter;
+    uint16_t func_version[2];
+    uint16_t min_args;
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
+    uint16_t counter;
 } _PyStoreSubscrCache;
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
 
 typedef struct {
-    _Py_CODEUNIT counter;
+    uint16_t counter;
 } _PyForIterCache;
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
@@ -409,7 +409,7 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 static inline uint16_t
 adaptive_counter_bits(int value, int backoff) {
     return (value << ADAPTIVE_BACKOFF_BITS) |
-           (backoff & ((1<<ADAPTIVE_BACKOFF_BITS)-1));
+        (backoff & ((1<<ADAPTIVE_BACKOFF_BITS)-1));
 }
 
 static inline uint16_t
@@ -473,6 +473,8 @@ typedef struct _PyShimCodeDef {
 
 extern PyCodeObject *
 _Py_MakeShimCode(const _PyShimCodeDef *code);
+
+extern uint32_t _Py_next_func_version;
 
 
 #ifdef __cplusplus

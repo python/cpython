@@ -305,38 +305,69 @@ _PyObject_GenericSetAttrWithDict(PyObject *, PyObject *,
 
 PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 
-/* Safely decref `op` and set `op` to `op2`.
+/* Safely decref `dst` and set `dst` to `src`.
  *
  * As in case of Py_CLEAR "the obvious" code can be deadly:
  *
- *     Py_DECREF(op);
- *     op = op2;
+ *     Py_DECREF(dst);
+ *     dst = src;
  *
  * The safe way is:
  *
- *      Py_SETREF(op, op2);
+ *      Py_SETREF(dst, src);
  *
- * That arranges to set `op` to `op2` _before_ decref'ing, so that any code
- * triggered as a side-effect of `op` getting torn down no longer believes
- * `op` points to a valid object.
+ * That arranges to set `dst` to `src` _before_ decref'ing, so that any code
+ * triggered as a side-effect of `dst` getting torn down no longer believes
+ * `dst` points to a valid object.
  *
- * Py_XSETREF is a variant of Py_SETREF that uses Py_XDECREF instead of
- * Py_DECREF.
+ * Temporary variables are used to only evalutate macro arguments once and so
+ * avoid the duplication of side effects. _Py_TYPEOF() or memcpy() is used to
+ * avoid a miscompilation caused by type punning. See Py_CLEAR() comment for
+ * implementation details about type punning.
+ *
+ * The memcpy() implementation does not emit a compiler warning if 'src' has
+ * not the same type than 'src': any pointer type is accepted for 'src'.
  */
-
-#define Py_SETREF(op, op2)                      \
-    do {                                        \
-        PyObject *_py_tmp = _PyObject_CAST(op); \
-        (op) = (op2);                           \
-        Py_DECREF(_py_tmp);                     \
+#ifdef _Py_TYPEOF
+#define Py_SETREF(dst, src) \
+    do { \
+        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_DECREF(_tmp_old_dst); \
     } while (0)
-
-#define Py_XSETREF(op, op2)                     \
-    do {                                        \
-        PyObject *_py_tmp = _PyObject_CAST(op); \
-        (op) = (op2);                           \
-        Py_XDECREF(_py_tmp);                    \
+#else
+#define Py_SETREF(dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        Py_DECREF(_tmp_old_dst); \
     } while (0)
+#endif
+
+/* Py_XSETREF() is a variant of Py_SETREF() that uses Py_XDECREF() instead of
+ * Py_DECREF().
+ */
+#ifdef _Py_TYPEOF
+#define Py_XSETREF(dst, src) \
+    do { \
+        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_XDECREF(_tmp_old_dst); \
+    } while (0)
+#else
+#define Py_XSETREF(dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        Py_XDECREF(_tmp_old_dst); \
+    } while (0)
+#endif
 
 
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
