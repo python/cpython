@@ -107,13 +107,13 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitdrive("//conky/mountpoint/foo/bar")',
                ('//conky/mountpoint', '/foo/bar'))
         tester('ntpath.splitdrive("\\\\\\conky\\mountpoint\\foo\\bar")',
-            ('', '\\\\\\conky\\mountpoint\\foo\\bar'))
+            ('\\\\\\conky', '\\mountpoint\\foo\\bar'))
         tester('ntpath.splitdrive("///conky/mountpoint/foo/bar")',
-            ('', '///conky/mountpoint/foo/bar'))
+            ('///conky', '/mountpoint/foo/bar'))
         tester('ntpath.splitdrive("\\\\conky\\\\mountpoint\\foo\\bar")',
-               ('', '\\\\conky\\\\mountpoint\\foo\\bar'))
+               ('\\\\conky\\', '\\mountpoint\\foo\\bar'))
         tester('ntpath.splitdrive("//conky//mountpoint/foo/bar")',
-               ('', '//conky//mountpoint/foo/bar'))
+               ('//conky/', '/mountpoint/foo/bar'))
         # Issue #19911: UNC part containing U+0130
         self.assertEqual(ntpath.splitdrive('//conky/MOUNTPOİNT/foo/bar'),
                          ('//conky/MOUNTPOİNT', '/foo/bar'))
@@ -121,8 +121,8 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitdrive("//?/c:")', ("//?/c:", ""))
         tester('ntpath.splitdrive("//?/c:/")', ("//?/c:", "/"))
         tester('ntpath.splitdrive("//?/c:/dir")', ("//?/c:", "/dir"))
-        tester('ntpath.splitdrive("//?/UNC")', ("", "//?/UNC"))
-        tester('ntpath.splitdrive("//?/UNC/")', ("", "//?/UNC/"))
+        tester('ntpath.splitdrive("//?/UNC")', ("//?/UNC", ""))
+        tester('ntpath.splitdrive("//?/UNC/")', ("//?/UNC/", ""))
         tester('ntpath.splitdrive("//?/UNC/server/")', ("//?/UNC/server/", ""))
         tester('ntpath.splitdrive("//?/UNC/server/share")', ("//?/UNC/server/share", ""))
         tester('ntpath.splitdrive("//?/UNC/server/share/dir")', ("//?/UNC/server/share", "/dir"))
@@ -133,8 +133,8 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitdrive("\\\\?\\c:")', ("\\\\?\\c:", ""))
         tester('ntpath.splitdrive("\\\\?\\c:\\")', ("\\\\?\\c:", "\\"))
         tester('ntpath.splitdrive("\\\\?\\c:\\dir")', ("\\\\?\\c:", "\\dir"))
-        tester('ntpath.splitdrive("\\\\?\\UNC")', ("", "\\\\?\\UNC"))
-        tester('ntpath.splitdrive("\\\\?\\UNC\\")', ("", "\\\\?\\UNC\\"))
+        tester('ntpath.splitdrive("\\\\?\\UNC")', ("\\\\?\\UNC", ""))
+        tester('ntpath.splitdrive("\\\\?\\UNC\\")', ("\\\\?\\UNC\\", ""))
         tester('ntpath.splitdrive("\\\\?\\UNC\\server\\")', ("\\\\?\\UNC\\server\\", ""))
         tester('ntpath.splitdrive("\\\\?\\UNC\\server\\share")', ("\\\\?\\UNC\\server\\share", ""))
         tester('ntpath.splitdrive("\\\\?\\UNC\\server\\share\\dir")',
@@ -142,6 +142,13 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitdrive("\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}\\spam")',
                ('\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}', '\\spam'))
         tester('ntpath.splitdrive("\\\\?\\BootPartition\\")', ("\\\\?\\BootPartition", "\\"))
+
+        # gh-96290: support partial/invalid UNC drives
+        tester('ntpath.splitdrive("//")', ("//", ""))  # empty server & missing share
+        tester('ntpath.splitdrive("///")', ("///", ""))  # empty server & empty share
+        tester('ntpath.splitdrive("///y")', ("///y", ""))  # empty server & valid share
+        tester('ntpath.splitdrive("//x")', ("//x", ""))  # valid server & missing share
+        tester('ntpath.splitdrive("//x/")', ("//x/", ""))  # valid server & empty share
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
@@ -269,6 +276,13 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('//server/share/../')" ,   '\\\\server\\share\\')
         tester("ntpath.normpath('//server/share/../..')",  '\\\\server\\share\\')
         tester("ntpath.normpath('//server/share/../../')", '\\\\server\\share\\')
+
+        # gh-96290: don't normalize partial/invalid UNC drives
+        tester("ntpath.normpath('\\\\foo\\bar')", '\\\\foo\\bar')
+        tester("ntpath.normpath('\\\\foo\\\\')", '\\\\foo\\\\')
+        tester("ntpath.normpath('\\\\foo\\')", '\\\\foo\\')
+        tester("ntpath.normpath('\\\\foo')", '\\\\foo')
+        tester("ntpath.normpath('\\\\')", '\\\\')
 
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())

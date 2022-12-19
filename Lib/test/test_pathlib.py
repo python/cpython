@@ -151,19 +151,16 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         self.assertEqual(f('c:a\\b'), ('c:', '', 'a\\b'))
         self.assertEqual(f('c:\\a\\b'), ('c:', '\\', 'a\\b'))
         # Redundant slashes in the root are collapsed.
-        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
-        self.assertEqual(f('\\\\\\a/b'), ('', '\\', 'a/b'))
         self.assertEqual(f('c:\\\\a'), ('c:', '\\', 'a'))
         self.assertEqual(f('c:\\\\\\a/b'), ('c:', '\\', 'a/b'))
         # Valid UNC paths.
         self.assertEqual(f('\\\\a\\b'), ('\\\\a\\b', '\\', ''))
         self.assertEqual(f('\\\\a\\b\\'), ('\\\\a\\b', '\\', ''))
         self.assertEqual(f('\\\\a\\b\\c\\d'), ('\\\\a\\b', '\\', 'c\\d'))
-        # These are non-UNC paths (according to ntpath.py and test_ntpath).
-        # However, command.com says such paths are invalid, so it's
+        # Invalid or partial UNC paths. Per gh-96290, it's
         # difficult to know what the right semantics are.
-        self.assertEqual(f('\\\\\\a\\b'), ('', '\\', 'a\\b'))
-        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
+        self.assertEqual(f('\\\\\\a\\b'),  ('\\\\\\a', '\\', 'b'))
+        self.assertEqual(f('\\\\a'), ('\\\\a', '\\', ''))
 
 
 #
@@ -182,7 +179,7 @@ class _BasePurePathTest(object):
             ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
             ],
         '/b/c/d': [
-            ('a', '/b/c', 'd'), ('a', '///b//c', 'd/'),
+            ('a', '/b/c', 'd'),
             ('/a', '/b/c', 'd'),
             # Empty components get removed.
             ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
