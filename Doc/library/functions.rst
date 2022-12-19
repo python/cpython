@@ -1919,7 +1919,12 @@ are always available.  They are listed here in alphabetical order.
      Unlike the default behavior, it raises a :exc:`ValueError` if one iterable
      is exhausted before the others:
 
-        >>> for item in zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True):
+        ..
+           This doctest is disabled because doctest does not support capturing
+           output and exceptions in the same code unit.
+           https://github.com/python/cpython/issues/65382
+
+        >>> for item in zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True):  # doctest: +SKIP
         ...     print(item)
         ...
         (0, 'fee')
