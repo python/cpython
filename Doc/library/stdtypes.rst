@@ -4459,6 +4459,7 @@ can be used interchangeably to index the same dictionary entry.
           >>> class Counter(dict):
           ...     def __missing__(self, key):
           ...         return 0
+          ...
           >>> c = Counter()
           >>> c['red']
           0
@@ -4716,6 +4717,7 @@ An example of dictionary view usage::
    >>> n = 0
    >>> for val in values:
    ...     n += val
+   ...
    >>> print(n)
    504
 
@@ -4741,7 +4743,7 @@ An example of dictionary view usage::
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
-   mappingproxy({'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500})
+   mappingproxy({'bacon': 1, 'spam': 500})
    >>> values.mapping['spam']
    500
 
@@ -5478,7 +5480,7 @@ to mitigate denial of service attacks. This limit *only* applies to decimal or
 other non-power-of-two number bases. Hexadecimal, octal, and binary conversions
 are unlimited. The limit can be configured.
 
-The :class:`int` type in CPython is an abitrary length number stored in binary
+The :class:`int` type in CPython is an arbitrary length number stored in binary
 form (commonly known as a "bignum"). There exists no algorithm that can convert
 a string to a binary integer or a binary integer to a string in linear time,
 *unless* the base is a power of 2. Even the best known algorithms for base 10
@@ -5501,7 +5503,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> _ = int('2' * 5432)
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
    >>> i = int('2' * 4300)
    >>> len(str(i))
    4300
@@ -5509,7 +5511,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> len(str(i_squared))
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
    >>> len(hex(i_squared))
    7144
    >>> assert int(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.
@@ -5542,7 +5544,7 @@ and :class:`str` or :class:`bytes`:
 * ``int(string)`` with default base 10.
 * ``int(string, base)`` for all bases that are not a power of 2.
 * ``str(integer)``.
-* ``repr(integer)``
+* ``repr(integer)``.
 * any other string conversion to base 10, for example ``f"{integer}"``,
   ``"{}".format(integer)``, or ``b"%d" % integer``.
 
@@ -5570,7 +5572,7 @@ command line flag to configure the limit:
   :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
   If both the env var and the ``-X`` option are set, the ``-X`` option takes
   precedence. A value of *-1* indicates that both were unset, thus a value of
-  :data:`sys.int_info.default_max_str_digits` was used during initilization.
+  :data:`sys.int_info.default_max_str_digits` was used during initialization.
 
 From code, you can inspect the current limit and set a new one using these
 :mod:`sys` APIs:

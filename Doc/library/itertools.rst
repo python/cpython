@@ -52,7 +52,7 @@ Iterator            Arguments               Results                             
 Iterator                        Arguments                       Results                                             Example
 ============================    ============================    =================================================   =============================================================
 :func:`accumulate`              p [,func]                       p0, p0+p1, p0+p1+p2, ...                            ``accumulate([1,2,3,4,5]) --> 1 3 6 10 15``
-:func:`batched`                 p, n                            [p0, p1, ..., p_n-1], ...                           ``batched('ABCDEFG', n=3) --> ABC DEF G``
+:func:`batched`                 p, n                            (p0, p1, ..., p_n-1), ...                           ``batched('ABCDEFG', n=3) --> ABC DEF G``
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) --> A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
@@ -166,11 +166,11 @@ loops that truncate the stream.
 
 .. function:: batched(iterable, n)
 
-   Batch data from the *iterable* into lists of length *n*. The last
+   Batch data from the *iterable* into tuples of length *n*. The last
    batch may be shorter than *n*.
 
-   Loops over the input iterable and accumulates data into lists up to
-   size *n*.  The input is consumed lazily, just enough to fill a list.
+   Loops over the input iterable and accumulates data into tuples up to
+   size *n*.  The input is consumed lazily, just enough to fill a batch.
    The result is yielded as soon as the batch is full or when the input
    iterable is exhausted:
 
@@ -179,14 +179,14 @@ loops that truncate the stream.
       >>> flattened_data = ['roses', 'red', 'violets', 'blue', 'sugar', 'sweet']
       >>> unflattened = list(batched(flattened_data, 2))
       >>> unflattened
-      [['roses', 'red'], ['violets', 'blue'], ['sugar', 'sweet']]
+      [('roses', 'red'), ('violets', 'blue'), ('sugar', 'sweet')]
 
       >>> for batch in batched('ABCDEFG', 3):
       ...     print(batch)
       ...
-      ['A', 'B', 'C']
-      ['D', 'E', 'F']
-      ['G']
+      ('A', 'B', 'C')
+      ('D', 'E', 'F')
+      ('G',)
 
    Roughly equivalent to::
 
@@ -195,7 +195,7 @@ loops that truncate the stream.
           if n < 1:
               raise ValueError('n must be at least one')
           it = iter(iterable)
-          while (batch := list(islice(it, n))):
+          while (batch := tuple(islice(it, n))):
               yield batch
 
    .. versionadded:: 3.12
@@ -829,10 +829,6 @@ which incur interpreter overhead.
        "Count how many times the predicate is true"
        return sum(map(pred, iterable))
 
-   def pad_none(iterable):
-       "Returns the sequence elements and then returns None indefinitely."
-       return chain(iterable, repeat(None))
-
    def ncycles(iterable, n):
        "Returns the sequence elements n times"
        return chain.from_iterable(repeat(tuple(iterable), n))
@@ -1192,9 +1188,6 @@ which incur interpreter overhead.
 
     >>> take(5, map(int, repeatfunc(random.random)))
     [0, 0, 0, 0, 0]
-
-    >>> list(islice(pad_none('abc'), 0, 6))
-    ['a', 'b', 'c', None, None, None]
 
     >>> list(ncycles('abc', 3))
     ['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']

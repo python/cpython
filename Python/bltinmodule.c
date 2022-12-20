@@ -714,7 +714,7 @@ compile as builtin_compile
     filename: object(converter="PyUnicode_FSDecoder")
     mode: str
     flags: int = 0
-    dont_inherit: bool(accept={int}) = False
+    dont_inherit: bool = False
     optimize: int = -1
     *
     _feature_version as feature_version: int = -1
@@ -737,7 +737,7 @@ static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
                      int optimize, int feature_version)
-/*[clinic end generated code: output=b0c09c84f116d3d7 input=40171fb92c1d580d]*/
+/*[clinic end generated code: output=b0c09c84f116d3d7 input=cc78e20e7c7682ba]*/
 {
     PyObject *source_copy;
     const char *str;

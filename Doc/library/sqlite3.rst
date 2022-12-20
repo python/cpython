@@ -292,6 +292,7 @@ Module functions
        By default (``0``), type detection is disabled.
 
    :param isolation_level:
+       Control legacy transaction handling behaviour.
        See :attr:`Connection.isolation_level` and
        :ref:`sqlite3-transaction-control-isolation-level` for more information.
        Can be ``"DEFERRED"`` (default), ``"EXCLUSIVE"`` or ``"IMMEDIATE"``;
@@ -325,6 +326,7 @@ Module functions
        enabling various :ref:`sqlite3-uri-tricks`.
 
    :param autocommit:
+       Control :pep:`249` transaction handling behaviour.
        See :attr:`Connection.autocommit` and
        :ref:`sqlite3-transaction-control-autocommit` for more information.
        *autocommit* currently defaults to
@@ -395,6 +397,7 @@ Module functions
       >>> con = sqlite3.connect(":memory:")
       >>> def evil_trace(stmt):
       ...     5/0
+      ...
       >>> con.set_trace_callback(evil_trace)
       >>> def debug(unraisable):
       ...     print(f"{unraisable.exc_value!r} in callback {unraisable.object.__name__}")
@@ -1927,12 +1930,16 @@ How to use placeholders to bind values in SQL queries
 
 SQL operations usually need to use values from Python variables. However,
 beware of using Python's string operations to assemble queries, as they
-are vulnerable to `SQL injection attacks`_ (see the `xkcd webcomic
-<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
+are vulnerable to `SQL injection attacks`_. For example, an attacker can simply
+close the single quote and inject ``OR TRUE`` to select all rows::
 
-   # Never do this -- insecure!
-   symbol = 'RHAT'
-   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
+   >>> # Never do this -- insecure!
+   >>> symbol = input()
+   ' OR TRUE; --
+   >>> sql = "SELECT * FROM stocks WHERE symbol = '%s'" % symbol
+   >>> print(sql)
+   SELECT * FROM stocks WHERE symbol = '' OR TRUE; --'
+   >>> cur.execute(sql)
 
 Instead, use the DB-API's parameter substitution. To insert a variable into a
 query string, use a placeholder in the string, and substitute the actual values
@@ -2105,7 +2112,7 @@ The following example illustrates the implicit and explicit approaches:
            return f"Point({self.x}, {self.y})"
 
    def adapt_point(point):
-       return f"{point.x};{point.y}".encode("utf-8")
+       return f"{point.x};{point.y}"
 
    def convert_point(s):
        x, y = list(map(float, s.split(b";")))
@@ -2468,9 +2475,9 @@ which implies :pep:`249`-compliant transaction control.
 This means:
 
 * :mod:`!sqlite3` ensures that a transaction is always open,
-  so :meth:`Connection.commit` and :meth:`Connection.rollback`
-  will implicitly open a new transaction immediately after closing
-  the pending one.
+  so :func:`connect`, :meth:`Connection.commit`, and :meth:`Connection.rollback`
+  will implicitly open a new transaction
+  (immediately after closing the pending one, for the latter two).
   :mod:`!sqlite3` uses ``BEGIN DEFERRED`` statements when opening transactions.
 * Transactions should be committed explicitly using :meth:`!commit`.
 * Transactions should be rolled back explicitly using :meth:`!rollback`.
