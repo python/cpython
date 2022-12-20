@@ -213,6 +213,9 @@ struct instr {
         struct instr *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = (ARG); \
+        _instr__ptr_->i_oparg1 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
     } while (0);
 
 /* No args*/
@@ -222,6 +225,9 @@ struct instr {
         struct instr *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = 0; \
+        _instr__ptr_->i_oparg1 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
     } while (0);
 
 typedef struct exceptstack {
