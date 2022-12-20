@@ -36,7 +36,10 @@ def current_task(loop=None):
     """Return a currently executed task."""
     if loop is None:
         loop = events.get_running_loop()
-    return _current_tasks.get(loop)
+    try:
+        return _current_tasks[loop]
+    except:
+        return None
 
 
 def all_tasks(loop=None):
