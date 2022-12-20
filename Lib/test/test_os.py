@@ -1586,6 +1586,8 @@ class FwalkTests(WalkTests):
 
     # fwalk() keeps file descriptors open
     test_walk_many_open_files = None
+    # fwalk() still uses recursion
+    test_walk_above_recursion_limit = None
 
 
 class BytesWalkTests(WalkTests):
