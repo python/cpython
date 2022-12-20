@@ -52,7 +52,6 @@ EXCLUDED = clean_lines('''
 
 # OSX
 #Modules/_ctypes/darwin/*.c
-#Modules/_ctypes/libffi_osx/*.c
 Modules/_scproxy.c                # SystemConfiguration/SystemConfiguration.h
 
 # Windows
