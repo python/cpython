@@ -5879,7 +5879,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case UnaryOp_kind:
         VISIT(c, expr, e->v.UnaryOp.operand);
-        if (c->c_regcode) {
+        if (true || c->c_regcode) {
             oparg_t r1 = TMP_OPARG(c->u->u_ntmps++);
             oparg_t r2 = TMP_OPARG(c->u->u_ntmps++);
             ADDOP_REGS(c, loc, STORE_FAST_R, r1, UNUSED_OPARG, UNUSED_OPARG);
