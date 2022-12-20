@@ -14610,8 +14610,8 @@ PyUnicode_InternInPlace(PyObject **p)
         _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
        return;
     }
-     _Py_SetImmortal(s);
-     _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
+    _Py_SetImmortal(s);
+    _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
 }
 
 // Function kept for the stable ABI.

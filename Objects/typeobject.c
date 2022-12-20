@@ -312,8 +312,7 @@ _PyType_InitCache(PyInterpreterState *interp)
     struct type_cache *cache = &interp->types.type_cache;
     for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
         struct type_cache_entry *entry = &cache->hashtable[i];
-        // TODO(eelizondo): Temporarily disable due to msvc build failure
-        // assert(entry->name == NULL);
+        assert(entry->name == NULL);
 
         entry->version = 0;
         // Set to None so _PyType_Lookup() can use Py_SETREF(),

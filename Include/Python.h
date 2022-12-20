@@ -33,7 +33,7 @@
 
 #include <assert.h>               // assert()
 #include <wchar.h>                // wchar_t
-#include <string.h>             // memcpy()
+#include <string.h>               // memcpy()
 
 #include "pyport.h"
 #include "pymacro.h"
