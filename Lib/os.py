@@ -527,13 +527,16 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                 if topdown:
                     yield toppath, dirs, nondirs, topfd
                 else:
-                    stack.append((_WalkAction.YIELD, (toppath, dirs, nondirs, topfd)))
+                    stack.append(
+                        (_WalkAction.YIELD, (toppath, dirs, nondirs, topfd)))
 
-                for name in reversed(dirs) if entries is None else zip(reversed(dirs), reversed(entries)):
+                for name in (reversed(dirs) if entries is None
+                             else zip(reversed(dirs), reversed(entries))):
                     try:
                         if not follow_symlinks:
                             if topdown:
-                                orig_st = stat(name, dir_fd=topfd, follow_symlinks=False)
+                                orig_st = stat(name, dir_fd=topfd,
+                                               follow_symlinks=False)
                             else:
                                 assert entries is not None
                                 name, entry = name
