@@ -1,1 +1,2 @@
-Release _SelectorSocketTransport._read_ready_cb on close() to free up cyclic reference.
+Fix ref cycle in :class:`!asyncio._SelectorSocketTransport` by removing ``_read_ready_cb`` in ``close``.
+
