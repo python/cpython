@@ -1,2 +1,2 @@
-Covert ``vars``, ``dir``, ``next``, ``getattr``, and ``iter`` to argument
+Convert ``vars``, ``dir``, ``next``, ``getattr``, and ``iter`` to argument
 clinic.
