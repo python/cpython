@@ -13,7 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
-from test.support import infinite_recursion
+from test.support import set_recursion_limit
 from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
@@ -2774,7 +2774,7 @@ class WalkTests(unittest.TestCase):
         path = pathlib.Path(base, *(['d']*50))
         path.mkdir(parents=True)
 
-        with infinite_recursion(40):
+        with set_recursion_limit(40):
             list(base.walk())
             list(base.walk(top_down=False))
 
