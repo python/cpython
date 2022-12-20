@@ -145,8 +145,8 @@ Manual Context Management
    :func:`~contextvars.copy_context` function.
 
    Every thread will have a different top-level :class:`~contextvars.Context`
-   object. This means that a :class:`ContextVar` object behave in a similar
-   fashion to :func:`threading.local()` when values are assigned in differeent
+   object. This means that a :class:`ContextVar` object behaves in a similar
+   fashion to :func:`threading.local()` when values are assigned in different
    threads.
 
    Context implements the :class:`collections.abc.Mapping` interface.
