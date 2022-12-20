@@ -1319,9 +1319,10 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
     double i = PyFloat_AS_DOUBLE(obj);
     if (!Py_IS_FINITE(i)) {
         if (!s->allow_nan) {
-            PyErr_SetString(
+            PyErr_Format(
                     PyExc_ValueError,
-                    "Out of range float values are not JSON compliant"
+                    "Out of range float values are not JSON compliant: %R",
+                    obj
                     );
             return NULL;
         }
