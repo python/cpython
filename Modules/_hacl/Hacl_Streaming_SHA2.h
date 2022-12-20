@@ -51,7 +51,14 @@ typedef Hacl_Streaming_SHA2_state_sha2_224 Hacl_Streaming_SHA2_state_sha2_256;
 Allocate initial state for the SHA2_256 hash. The state is to be freed by
 calling `free_256`.
 */
-Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_256();
+Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_256(void);
+
+/**
+Copies the state passed as argument into a newly allocated state. The state
+is to be freed by calling `free_256`
+*/
+Hacl_Streaming_SHA2_state_sha2_224
+*Hacl_Streaming_SHA2_copy_256(Hacl_Streaming_SHA2_state_sha2_224 *s0);
 
 /**
 Reset an existing state to the initial hash state with empty data.
@@ -92,7 +99,7 @@ Hash `input`, of len `input_len`, into `dst`, an array of 32 bytes.
 */
 void Hacl_Streaming_SHA2_sha256(uint8_t *input, uint32_t input_len, uint8_t *dst);
 
-Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_224();
+Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_224(void);
 
 void Hacl_Streaming_SHA2_init_224(Hacl_Streaming_SHA2_state_sha2_224 *s);
 

@@ -9,7 +9,7 @@ if [[ $1 == "" ]]; then
 fi
 
 hacl_dir=$1
-expected_rev=b0f29a4bd3a9408a9453b97de9cefffb11d89391
+expected_rev=34b8a9fcd91859460b021dabc54deb961e02a675
 actual_rev=$(cd "$hacl_dir" && git rev-parse HEAD)
 
 if [[ $actual_rev != $expected_rev ]]; then
@@ -54,9 +54,9 @@ fi
 
 all_files=$(find . -name '*.h' -or -name '*.c')
 
-# types.h is a simple wrapper that defines the uint128 then proceeds to include
-# FStar_UInt_8_16_32_64.h; we jump the types.h step since our current selection
-# of algorithms does not necessitate the use of uint128
+# types.h is a simple wrapper that defines the uint128 type then proceeds to
+# include FStar_UInt_8_16_32_64.h; we jump the types.h step since our current
+# selection of algorithms does not necessitate the use of uint128
 $sed -i 's!#include.*types.h"!#include "krml/FStar_UInt_8_16_32_64.h"!g' $all_files
 $sed -i 's!#include.*compat.h"!!g' $all_files
 

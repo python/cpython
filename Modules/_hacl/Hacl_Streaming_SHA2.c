@@ -253,7 +253,7 @@ static inline void sha224_finish(uint32_t *st, uint8_t *h)
 Allocate initial state for the SHA2_256 hash. The state is to be freed by
 calling `free_256`.
 */
-Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_256()
+Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_256(void)
 {
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC((uint32_t)64U, sizeof (uint8_t));
   uint32_t *block_state = (uint32_t *)KRML_HOST_CALLOC((uint32_t)8U, sizeof (uint32_t));
@@ -266,6 +266,32 @@ Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_256()
       ));
   p[0U] = s;
   sha256_init(block_state);
+  return p;
+}
+
+/**
+Copies the state passed as argument into a newly allocated state. The state
+is to be freed by calling `free_256`
+*/
+Hacl_Streaming_SHA2_state_sha2_224
+*Hacl_Streaming_SHA2_copy_256(Hacl_Streaming_SHA2_state_sha2_224 *s0)
+{
+  Hacl_Streaming_SHA2_state_sha2_224 scrut = *s0;
+  uint32_t *block_state0 = scrut.block_state;
+  uint8_t *buf0 = scrut.buf;
+  uint64_t total_len0 = scrut.total_len;
+  uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC((uint32_t)64U, sizeof (uint8_t));
+  memcpy(buf, buf0, (uint32_t)64U * sizeof (uint8_t));
+  uint32_t *block_state = (uint32_t *)KRML_HOST_CALLOC((uint32_t)8U, sizeof (uint32_t));
+  memcpy(block_state, block_state0, (uint32_t)8U * sizeof (uint32_t));
+  Hacl_Streaming_SHA2_state_sha2_224
+  s = { .block_state = block_state, .buf = buf, .total_len = total_len0 };
+  Hacl_Streaming_SHA2_state_sha2_224
+  *p =
+    (Hacl_Streaming_SHA2_state_sha2_224 *)KRML_HOST_MALLOC(sizeof (
+        Hacl_Streaming_SHA2_state_sha2_224
+      ));
+  p[0U] = s;
   return p;
 }
 
@@ -550,7 +576,7 @@ void Hacl_Streaming_SHA2_sha256(uint8_t *input, uint32_t input_len, uint8_t *dst
   sha256_finish(st, rb);
 }
 
-Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_224()
+Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_224(void)
 {
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC((uint32_t)64U, sizeof (uint8_t));
   uint32_t *block_state = (uint32_t *)KRML_HOST_CALLOC((uint32_t)8U, sizeof (uint32_t));

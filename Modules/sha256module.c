@@ -74,14 +74,7 @@ _sha256_get_state(PyObject *module)
 static void SHAcopy(SHAobject *src, SHAobject *dest)
 {
     dest->digestsize = src->digestsize;
-    // TODO: implement this in HACL
-    if (dest->digestsize == 28)
-      dest->state = Hacl_Streaming_SHA2_create_in_224();
-    else
-      dest->state = Hacl_Streaming_SHA2_create_in_256();
-    dest->state->total_len = src->state->total_len;
-    memcpy(dest->state->block_state, src->state->block_state, SHA_DIGESTSIZE);
-    memcpy(dest->state->buf, src->state->buf, SHA_BLOCKSIZE);
+    dest->state = Hacl_Streaming_SHA2_copy_256(src->state);
 }
 
 static SHAobject *
