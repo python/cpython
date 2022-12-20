@@ -353,7 +353,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See https://www.unicode.org/Public/15.0.0/ucd/extracted/DerivedNumericType.txt
+   See `the Unicode Standard <https://unicode.org/Public/UNIDATA/extracted/DerivedNumericType.txt>`_
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -1522,7 +1522,7 @@ multiple fragments.
    printable string representation of *object*.  For string objects, this is
    the string itself.  If *object* does not have a :meth:`~object.__str__`
    method, then :func:`str` falls back to returning
-   :meth:`repr(object) <repr>`.
+   :func:`repr(object) <repr>`.
 
    .. index::
       single: buffer protocol; str (built-in class)
@@ -1597,8 +1597,9 @@ expression support in the :mod:`re` module).
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
 
-   The casefolding algorithm is described in section 3.13 of the Unicode
-   Standard.
+   The casefolding algorithm is
+   `described in section 3.13 of the Unicode Standard
+   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G53253>`__.
 
    .. versionadded:: 3.3
 
@@ -1616,6 +1617,9 @@ expression support in the :mod:`re` module).
    Return the number of non-overlapping occurrences of substring *sub* in the
    range [*start*, *end*].  Optional arguments *start* and *end* are
    interpreted as in slice notation.
+
+   If *sub* is empty, returns the number of empty strings between characters
+   which is the length of the string plus one.
 
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
@@ -1754,7 +1758,8 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the "Alphabetic" property defined in the Unicode Standard.
+   from the `Alphabetic property defined in the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G91002>`_.
 
 
 .. method:: str.isascii()
@@ -1791,7 +1796,7 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
-   Call :func:`keyword.iskeyword` to test whether string ``s`` is a reserved
+   :func:`keyword.iskeyword` can be used to test whether string ``s`` is a reserved
    identifier, such as :keyword:`def` and :keyword:`class`.
 
    Example:
@@ -1888,8 +1893,9 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
-   The lowercasing algorithm used is described in section 3.13 of the Unicode
-   Standard.
+   The lowercasing algorithm used is
+   `described in section 3.13 of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2233,8 +2239,9 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
-   The uppercasing algorithm used is described in section 3.13 of the Unicode
-   Standard.
+   The uppercasing algorithm used is
+   `described in section 3.13 of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
 
 
 .. method:: str.zfill(width)
@@ -2697,6 +2704,9 @@ arbitrary binary data.
 
    The subsequence to search for may be any :term:`bytes-like object` or an
    integer in the range 0 to 255.
+
+   If *sub* is empty, returns the number of empty slices between characters
+   which is the length of the bytes object plus one.
 
    .. versionchanged:: 3.3
       Also accept an integer in the range 0 to 255 as the subsequence.
@@ -4449,6 +4459,7 @@ can be used interchangeably to index the same dictionary entry.
           >>> class Counter(dict):
           ...     def __missing__(self, key):
           ...         return 0
+          ...
           >>> c = Counter()
           >>> c['red']
           0
@@ -4706,6 +4717,7 @@ An example of dictionary view usage::
    >>> n = 0
    >>> for val in values:
    ...     n += val
+   ...
    >>> print(n)
    504
 
@@ -4731,7 +4743,7 @@ An example of dictionary view usage::
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
-   mappingproxy({'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500})
+   mappingproxy({'bacon': 1, 'spam': 500})
    >>> values.mapping['spam']
    500
 
@@ -5468,7 +5480,7 @@ to mitigate denial of service attacks. This limit *only* applies to decimal or
 other non-power-of-two number bases. Hexadecimal, octal, and binary conversions
 are unlimited. The limit can be configured.
 
-The :class:`int` type in CPython is an abitrary length number stored in binary
+The :class:`int` type in CPython is an arbitrary length number stored in binary
 form (commonly known as a "bignum"). There exists no algorithm that can convert
 a string to a binary integer or a binary integer to a string in linear time,
 *unless* the base is a power of 2. Even the best known algorithms for base 10
@@ -5491,7 +5503,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> _ = int('2' * 5432)
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
    >>> i = int('2' * 4300)
    >>> len(str(i))
    4300
@@ -5499,7 +5511,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> len(str(i_squared))
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
    >>> len(hex(i_squared))
    7144
    >>> assert int(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.
@@ -5532,7 +5544,7 @@ and :class:`str` or :class:`bytes`:
 * ``int(string)`` with default base 10.
 * ``int(string, base)`` for all bases that are not a power of 2.
 * ``str(integer)``.
-* ``repr(integer)``
+* ``repr(integer)``.
 * any other string conversion to base 10, for example ``f"{integer}"``,
   ``"{}".format(integer)``, or ``b"%d" % integer``.
 
@@ -5560,7 +5572,7 @@ command line flag to configure the limit:
   :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
   If both the env var and the ``-X`` option are set, the ``-X`` option takes
   precedence. A value of *-1* indicates that both were unset, thus a value of
-  :data:`sys.int_info.default_max_str_digits` was used during initilization.
+  :data:`sys.int_info.default_max_str_digits` was used during initialization.
 
 From code, you can inspect the current limit and set a new one using these
 :mod:`sys` APIs:

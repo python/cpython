@@ -168,8 +168,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
         if (winner != meta) {
-            Py_DECREF(meta);
-            meta = Py_NewRef(winner);
+            Py_SETREF(meta, Py_NewRef(winner));
         }
     }
     /* else: meta is not a class, so we cannot do the metaclass
@@ -219,8 +218,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__class__ set to %.200R defining %.200R as %.200R";
                     PyErr_Format(PyExc_TypeError, msg, cell_cls, name, cls);
                 }
-                Py_DECREF(cls);
-                cls = NULL;
+                Py_SETREF(cls, NULL);
                 goto error;
             }
         }
@@ -716,7 +714,7 @@ compile as builtin_compile
     filename: object(converter="PyUnicode_FSDecoder")
     mode: str
     flags: int = 0
-    dont_inherit: bool(accept={int}) = False
+    dont_inherit: bool = False
     optimize: int = -1
     *
     _feature_version as feature_version: int = -1
@@ -739,7 +737,7 @@ static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
                      int optimize, int feature_version)
-/*[clinic end generated code: output=b0c09c84f116d3d7 input=40171fb92c1d580d]*/
+/*[clinic end generated code: output=b0c09c84f116d3d7 input=cc78e20e7c7682ba]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -2402,8 +2400,7 @@ builtin_vars(PyObject *self, PyObject *args)
     if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
         return NULL;
     if (v == NULL) {
-        d = PyEval_GetLocals();
-        Py_XINCREF(d);
+        d = Py_XNewRef(PyEval_GetLocals());
     }
     else {
         if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &d) == 0) {
@@ -2485,8 +2482,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         long i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
         if (overflow == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
         }
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2536,8 +2532,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
@@ -2584,8 +2579,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         if (item == NULL) {
             /* error, or end-of-sequence */
             if (PyErr_Occurred()) {
-                Py_DECREF(result);
-                result = NULL;
+                Py_SETREF(result, NULL);
             }
             break;
         }

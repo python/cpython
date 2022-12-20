@@ -642,6 +642,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTCLINIC_FALSE
+MODULE__TESTCLINIC_TRUE
 MODULE__TESTCAPI_FALSE
 MODULE__TESTCAPI_TRUE
 MODULE__HASHLIB_FALSE
@@ -6755,7 +6757,7 @@ if test "x$enable_profiling" = xyes; then
   CC="$CC -pg"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-int main() { return 0; }
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
@@ -9220,7 +9222,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9275,7 +9277,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9324,7 +9326,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9373,7 +9375,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -12233,7 +12235,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-int main()
+int main(void)
 {
     char s[16];
     int i, *p1, *p2;
@@ -12509,7 +12511,7 @@ else
 
   LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
   LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
-  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_HEADERS) \$(LIBEXPAT_A)"
 
 fi
 
@@ -13018,7 +13020,7 @@ else
 
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
-  LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+  LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
 
     if test "x$with_pydebug" = xyes; then :
 
@@ -15042,6 +15044,7 @@ $as_echo_n "checking for pthread_create in -lpthread... " >&6; }
 /* end confdefs.h.  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 void * start_routine (void *arg) { exit (0); }
@@ -15352,7 +15355,7 @@ else
       void *foo(void *parm) {
         return NULL;
       }
-      int main() {
+      int main(void) {
         pthread_attr_t attr;
         pthread_t id;
         if (pthread_attr_init(&attr)) return (-1);
@@ -16954,7 +16957,7 @@ else
 
 #include <sys/stat.h>
 #include <unistd.h>
-int main(int argc, char*argv[])
+int main(int argc, char *argv[])
 {
   if(chflags(argv[0], 0) != 0)
     return 1;
@@ -17003,7 +17006,7 @@ else
 
 #include <sys/stat.h>
 #include <unistd.h>
-int main(int argc, char*argv[])
+int main(int argc, char *argv[])
 {
   if(lchflags(argv[0], 0) != 0)
     return 1;
@@ -19711,7 +19714,7 @@ else
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-int main()
+int main(void)
 {
   int passive, gaierr, inet4 = 0, inet6 = 0;
   struct addrinfo hints, *ai, *aitop;
@@ -20908,7 +20911,7 @@ else
 
 #include <stdlib.h>
 #include <math.h>
-int main() {
+int main(void) {
     volatile double x, y, z;
     /* 1./(1-2**-53) -> 1+2**-52 (correct), 1.0 (double rounding) */
     x = 0.99999999999999989; /* 1-2**-53 */
@@ -21687,7 +21690,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-int main()
+int main(void)
 {
 	return (((-1)>>3 == -1) ? 0 : 1);
 }
@@ -22589,7 +22592,7 @@ else
 
 #include <stdlib.h>
 #include <unistd.h>
-int main()
+int main(void)
 {
 	int val1 = nice(1);
 	if (val1 != -1 && val1 == nice(2))
@@ -22631,7 +22634,7 @@ else
 #include <poll.h>
 #include <unistd.h>
 
-int main()
+int main(void)
 {
     struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 };
     int poll_test;
@@ -22688,7 +22691,7 @@ else
 extern char *tzname[];
 #endif
 
-int main()
+int main(void)
 {
 	/* Note that we need to ensure that not only does tzset(3)
 	   do 'something' with localtime, but it works as documented
@@ -24350,9 +24353,10 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <stddef.h>
 #include <stdio.h>
-#include<stdlib.h>
-int main() {
+#include <stdlib.h>
+int main(void) {
     size_t len = -1;
     const char *str = "text";
     len = mbstowcs(NULL, str, 0);
@@ -24552,7 +24556,7 @@ else
 #include <stdlib.h>
 #include <string.h>
 void foo(void *p, void *q) { memmove(p, q, 19); }
-int main() {
+int main(void) {
   char a[32] = "123456789000000000";
   foo(&a[9], a);
   if (strcmp(a, "123456789123456789000000000") != 0)
@@ -24607,7 +24611,7 @@ else
               );
               return r;
             }
-            int main() {
+            int main(void) {
               int p = 8;
               if ((foo(&p) ? : p) != 6)
                 return 1;
@@ -24650,7 +24654,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
     #include <stdatomic.h>
     atomic_int int_var;
     atomic_uintptr_t uintptr_var;
-    int main() {
+    int main(void) {
       atomic_store_explicit(&int_var, 5, memory_order_relaxed);
       atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
       int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
@@ -24691,7 +24695,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 
     int val;
-    int main() {
+    int main(void) {
       __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
       (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
       return 0;
@@ -24767,7 +24771,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
     #include <dirent.h>
 
-    int main() {
+    int main(void) {
       struct dirent entry;
       return entry.d_type == DT_UNKNOWN;
     }
@@ -24805,11 +24809,12 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
+    #include <stddef.h>
     #include <unistd.h>
     #include <sys/syscall.h>
     #include <linux/random.h>
 
-    int main() {
+    int main(void) {
         char buffer[1];
         const size_t buflen = sizeof(buffer);
         const int flags = GRND_NONBLOCK;
@@ -24852,9 +24857,10 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
+    #include <stddef.h>
     #include <sys/random.h>
 
-    int main() {
+    int main(void) {
         char buffer[1];
         const size_t buflen = sizeof(buffer);
         const int flags = 0;
@@ -27769,6 +27775,40 @@ fi
 $as_echo "$py_cv_module__testcapi" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testclinic" >&5
+$as_echo_n "checking for stdlib extension module _testclinic... " >&6; }
+        if test "$py_cv_module__testclinic" != "n/a"; then :
+
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testclinic=yes
+else
+  py_cv_module__testclinic=missing
+fi
+else
+  py_cv_module__testclinic=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTCLINIC_STATE=$py_cv_module__testclinic$as_nl"
+  if test "x$py_cv_module__testclinic" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module__testclinic" = yes; then
+  MODULE__TESTCLINIC_TRUE=
+  MODULE__TESTCLINIC_FALSE='#'
+else
+  MODULE__TESTCLINIC_TRUE='#'
+  MODULE__TESTCLINIC_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testclinic" >&5
+$as_echo "$py_cv_module__testclinic" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 $as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"; then :
@@ -28490,6 +28530,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTCLINIC_TRUE}" && test -z "${MODULE__TESTCLINIC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTCLINIC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then

@@ -491,62 +491,39 @@ dumpSearchInfo(SearchInfo *search)
 
 
 int
-findArgumentLength(const wchar_t *buffer, int bufferLength)
+findArgv0Length(const wchar_t *buffer, int bufferLength)
 {
-    if (bufferLength < 0) {
-        bufferLength = (int)wcsnlen_s(buffer, MAXLEN);
-    }
-    if (bufferLength == 0) {
-        return 0;
-    }
-    const wchar_t *end;
-    int i;
-
-    if (buffer[0] != L'"') {
-        end = wcschr(buffer, L' ');
-        if (!end) {
-            return bufferLength;
-        }
-        i = (int)(end - buffer);
-        return i < bufferLength ? i : bufferLength;
-    }
-
-    i = 0;
-    while (i < bufferLength) {
-        end = wcschr(&buffer[i + 1], L'"');
-        if (!end) {
-            return bufferLength;
-        }
-
-        i = (int)(end - buffer);
-        if (i >= bufferLength) {
-            return bufferLength;
-        }
-
-        int j = i;
-        while (j > 1 && buffer[--j] == L'\\') {
-            if (j > 0 && buffer[--j] == L'\\') {
-                // Even number, so back up and keep counting
-            } else {
-                // Odd number, so it's escaped and we want to keep searching
-                continue;
+    // Note: this implements semantics that are only valid for argv0.
+    // Specifically, there is no escaping of quotes, and quotes within
+    // the argument have no effect. A quoted argv0 must start and end
+    // with a double quote character; otherwise, it ends at the first
+    // ' ' or '\t'.
+    int quoted = buffer[0] == L'"';
+    for (int i = 1; bufferLength < 0 || i < bufferLength; ++i) {
+        switch (buffer[i]) {
+        case L'\0':
+            return i;
+        case L' ':
+        case L'\t':
+            if (!quoted) {
+                return i;
             }
-        }
-
-        // Non-escaped quote with space after it - end of the argument!
-        if (i + 1 >= bufferLength || isspace(buffer[i + 1])) {
-            return i + 1;
+            break;
+        case L'"':
+            if (quoted) {
+                return i + 1;
+            }
+            break;
         }
     }
-
     return bufferLength;
 }
 
 
 const wchar_t *
-findArgumentEnd(const wchar_t *buffer, int bufferLength)
+findArgv0End(const wchar_t *buffer, int bufferLength)
 {
-    return &buffer[findArgumentLength(buffer, bufferLength)];
+    return &buffer[findArgv0Length(buffer, bufferLength)];
 }
 
 
@@ -562,11 +539,16 @@ parseCommandLine(SearchInfo *search)
         return RC_NO_COMMANDLINE;
     }
 
-    const wchar_t *tail = findArgumentEnd(search->originalCmdLine, -1);
-    const wchar_t *end = tail;
-    search->restOfCmdLine = tail;
+    const wchar_t *argv0End = findArgv0End(search->originalCmdLine, -1);
+    const wchar_t *tail = argv0End; // will be start of the executable name
+    const wchar_t *end = argv0End;  // will be end of the executable name
+    search->restOfCmdLine = argv0End;   // will be first space after argv0
     while (--tail != search->originalCmdLine) {
-        if (*tail == L'.' && end == search->restOfCmdLine) {
+        if (*tail == L'"' && end == argv0End) {
+            // Move the "end" up to the quote, so we also allow moving for
+            // a period later on.
+            end = argv0End = tail;
+        } else if (*tail == L'.' && end == argv0End) {
             end = tail;
         } else if (*tail == L'\\' || *tail == L'/') {
             ++tail;

@@ -98,9 +98,7 @@ class TestCopy:
     # Type-specific _copy_xxx() methods
 
     def test_copy_atomic(self):
-        class Classic:
-            pass
-        class NewStyle(object):
+        class NewStyle:
             pass
         def f():
             pass
@@ -110,7 +108,7 @@ class TestCopy:
                  42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
                  b"world", bytes(range(256)), range(10), slice(1, 10, 2),
-                 NewStyle, Classic, max, WithMetaclass, property()]
+                 NewStyle, max, WithMetaclass, property()]
         for x in tests:
             self.assertIs(self.copy_module.copy(x), x)
 
@@ -364,15 +362,13 @@ class TestDeepcopy:
     # Type-specific _deepcopy_xxx() methods
 
     def test_deepcopy_atomic(self):
-        class Classic:
-            pass
-        class NewStyle(object):
+        class NewStyle:
             pass
         def f():
             pass
         tests = [None, 42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
-                 NewStyle, range(10), Classic, max, property()]
+                 NewStyle, range(10), max, property()]
         for x in tests:
             self.assertIs(self.copy_module.deepcopy(x), x)
 
