@@ -452,8 +452,8 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         races (when follow_symlinks is False).
 
         If dir_fd is not None, it should be a file descriptor open to a directory,
-          and top should be relative; top will then be relative to that directory.
-          (dir_fd is always supported for fwalk.)
+        and top should be relative; top will then be relative to that directory.
+        (dir_fd is always supported for fwalk.)
 
         Caution:
         Since fwalk() yields file descriptors, those are only valid until the
@@ -489,7 +489,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
     def _fwalk(topfd, toppath, isbytes, topdown, onerror, follow_symlinks):
         # Note: This uses O(depth of the directory tree) file descriptors: if
         # necessary, it can be adapted to only require O(1) FDs, see issue
-        # #13734.
+        # bpo-13734 (gh-57943).
         stack = [(_WalkAction.WALK, (topfd, toppath))]
         try:
             while stack:
@@ -528,8 +528,10 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                             pass
 
                 if topdown:
+                    # Yield top immediately, before walking subdirs
                     yield toppath, dirs, nondirs, topfd
                 else:
+                    # Yield top after walking subdirs
                     stack.append(
                         (_WalkAction.YIELD, (toppath, dirs, nondirs, topfd)))
 
@@ -549,7 +551,11 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                         if onerror is not None:
                             onerror(err)
                         continue
+                    # Close dirfd right after all subdirs have been traversed.
+                    # Note that we use a stack, so actions appended first are
+                    # executed last.
                     stack.append((_WalkAction.CLOSE, dirfd))
+                    # Walk all subdirs
                     if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                         dirpath = path.join(toppath, name)
                         stack.append((_WalkAction.WALK, (dirfd, dirpath)))
