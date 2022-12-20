@@ -1919,11 +1919,6 @@ are always available.  They are listed here in alphabetical order.
      Unlike the default behavior, it raises a :exc:`ValueError` if one iterable
      is exhausted before the others:
 
-        ..
-           This doctest is disabled because doctest does not support capturing
-           output and exceptions in the same code unit.
-           https://github.com/python/cpython/issues/65382
-
         >>> for item in zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True):  # doctest: +SKIP
         ...     print(item)
         ...
@@ -1933,6 +1928,11 @@ are always available.  They are listed here in alphabetical order.
         Traceback (most recent call last):
           ...
         ValueError: zip() argument 2 is longer than argument 1
+
+     ..
+        This doctest is disabled because doctest does not support capturing
+        output and exceptions in the same code unit.
+        https://github.com/python/cpython/issues/65382
 
      Without the ``strict=True`` argument, any bug that results in iterables of
      different lengths will be silenced, possibly manifesting as a hard-to-find
