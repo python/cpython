@@ -1018,10 +1018,10 @@ PyImport_Import:PyObject*::+1:
 PyImport_Import:PyObject*:name:0:
 
 PyImport_ImportFrozenModule:int:::
-PyImport_ImportFrozenModule:const char*:::
+PyImport_ImportFrozenModule:const char*:name::
 
 PyImport_ImportFrozenModuleObject:int:::
-PyImport_ImportFrozenModuleObject:PyObject*::+1:
+PyImport_ImportFrozenModuleObject:PyObject*:name:+1:
 
 PyImport_ImportModule:PyObject*::+1:
 PyImport_ImportModule:const char*:name::

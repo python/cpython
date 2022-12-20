@@ -1032,13 +1032,13 @@ class date:
             _MONTHNAMES[self._month],
             self._day, self._year)
 
-    def strftime(self, fmt):
+    def strftime(self, format):
         """
         Format using strftime().
 
         Example: "%d/%m/%Y, %H:%M:%S"
         """
-        return _wrap_strftime(self, fmt, self.timetuple())
+        return _wrap_strftime(self, format, self.timetuple())
 
     def __format__(self, fmt):
         if not isinstance(fmt, str):

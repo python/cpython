@@ -1339,7 +1339,7 @@ These are not used in annotations. They are building blocks for creating generic
     ``Unpack[Ts]``.)
 
     Type variable tuples must *always* be unpacked. This helps distinguish type
-    variable types from normal type variables::
+    variable tuples from normal type variables::
 
         x: Ts          # Not valid
         x: tuple[Ts]   # Not valid
@@ -1351,7 +1351,7 @@ These are not used in annotations. They are building blocks for creating generic
         Shape = TypeVarTuple('Shape')
         class Array(Generic[*Shape]):
             def __getitem__(self, key: tuple[*Shape]) -> float: ...
-            def __abs__(self) -> Array[*Shape]: ...
+            def __abs__(self) -> "Array[*Shape]": ...
             def get_shape(self) -> tuple[*Shape]: ...
 
     Type variable tuples can be happily combined with normal type variables::
@@ -2009,7 +2009,7 @@ Other concrete types
    represent the types of I/O streams such as returned by
    :func:`open`.
 
-   .. deprecated-removed:: 3.8 3.12
+   .. deprecated-removed:: 3.8 3.13
       The ``typing.io`` namespace is deprecated and will be removed.
       These types should be directly imported from ``typing`` instead.
 
@@ -2023,7 +2023,7 @@ Other concrete types
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
 
-   .. deprecated-removed:: 3.8 3.12
+   .. deprecated-removed:: 3.8 3.13
       The ``typing.re`` namespace is deprecated and will be removed.
       These types should be directly imported from ``typing`` instead.
 
@@ -2057,7 +2057,7 @@ Abstract Base Classes
 Corresponding to collections in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-.. class:: AbstractSet(Sized, Collection[T_co])
+.. class:: AbstractSet(Collection[T_co])
 
    A generic version of :class:`collections.abc.Set`.
 
@@ -2113,7 +2113,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.KeysView` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
+.. class:: Mapping(Collection[KT], Generic[KT, VT_co])
 
    A generic version of :class:`collections.abc.Mapping`.
    This type can be used as follows::
@@ -2575,6 +2575,10 @@ Functions and decorators
      assumed to be True or False if it is omitted by the caller.
    * ``kw_only_default`` indicates whether the ``kw_only`` parameter is
      assumed to be True or False if it is omitted by the caller.
+   * ``frozen_default`` indicates whether the ``frozen`` parameter is
+     assumed to be True or False if it is omitted by the caller.
+
+     .. versionadded:: 3.12
    * ``field_specifiers`` specifies a static list of supported classes
      or functions that describe fields, similar to ``dataclasses.field()``.
    * Arbitrary other keyword arguments are accepted in order to allow for
@@ -2868,7 +2872,7 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  Feature                         | Deprecated in | Projected removal | PEP/issue      |
 +==================================+===============+===================+================+
-|  ``typing.io`` and ``typing.re`` | 3.8           | 3.12              | :issue:`38291` |
+|  ``typing.io`` and ``typing.re`` | 3.8           | 3.13              | :issue:`38291` |
 |  submodules                      |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |

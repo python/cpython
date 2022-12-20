@@ -819,11 +819,10 @@ make_pending_calls(PyInterpreterState *interp)
     }
 
     /* don't perform recursive pending calls */
-    static int busy = 0;
-    if (busy) {
+    if (interp->ceval.pending.busy) {
         return 0;
     }
-    busy = 1;
+    interp->ceval.pending.busy = 1;
 
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
@@ -851,11 +850,11 @@ make_pending_calls(PyInterpreterState *interp)
         }
     }
 
-    busy = 0;
+    interp->ceval.pending.busy = 0;
     return res;
 
 error:
-    busy = 0;
+    interp->ceval.pending.busy = 0;
     SIGNAL_PENDING_CALLS(interp);
     return res;
 }

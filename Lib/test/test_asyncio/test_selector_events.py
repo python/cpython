@@ -1081,6 +1081,10 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         self.protocol.datagram_received.assert_called_with(
             b'data', ('0.0.0.0', 1234))
 
+    def test_transport_inheritance(self):
+        transport = self.datagram_transport()
+        self.assertIsInstance(transport, asyncio.DatagramTransport)
+
     def test_read_ready_tryagain(self):
         transport = self.datagram_transport()
 

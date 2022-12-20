@@ -36,8 +36,11 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d) for integer string conversion: value has %zd digits; use sys.set_int_max_str_digits() to increase the limit"
-#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d digits) for integer string conversion: value has %zd digits; use sys.set_int_max_str_digits() to increase the limit"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d digits) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit"
+
+/* If defined, use algorithms from the _pylong.py module */
+#define WITH_PYLONG_MODULE 1
 
 static inline void
 _Py_DECREF_INT(PyLongObject *op)
@@ -59,8 +62,7 @@ get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
     PyObject *v = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
-    Py_INCREF(v);
-    return v;
+    return Py_NewRef(v);
 }
 
 static PyLongObject *
@@ -1732,6 +1734,72 @@ rem1(PyLongObject *a, digit n)
     );
 }
 
+#ifdef WITH_PYLONG_MODULE
+/* asymptotically faster long_to_decimal_string, using _pylong.py */
+static int
+pylong_int_to_decimal_string(PyObject *aa,
+                             PyObject **p_output,
+                             _PyUnicodeWriter *writer,
+                             _PyBytesWriter *bytes_writer,
+                             char **bytes_str)
+{
+    PyObject *s = NULL;
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return -1;
+    }
+    s = PyObject_CallMethod(mod, "int_to_decimal_string", "O", aa);
+    if (s == NULL) {
+        goto error;
+    }
+    if (!PyUnicode_Check(s)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "_pylong.int_to_decimal_string did not return a str");
+        goto error;
+    }
+    if (writer) {
+        Py_ssize_t size = PyUnicode_GET_LENGTH(s);
+        if (_PyUnicodeWriter_Prepare(writer, size, '9') == -1) {
+            goto error;
+        }
+        if (_PyUnicodeWriter_WriteStr(writer, s) < 0) {
+            goto error;
+        }
+        goto success;
+    }
+    else if (bytes_writer) {
+        Py_ssize_t size = PyUnicode_GET_LENGTH(s);
+        const void *data = PyUnicode_DATA(s);
+        int kind = PyUnicode_KIND(s);
+        *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, size);
+        if (*bytes_str == NULL) {
+            goto error;
+        }
+        char *p = *bytes_str;
+        for (Py_ssize_t i=0; i < size; i++) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+            *p++ = (char) ch;
+        }
+        (*bytes_str) = p;
+        goto success;
+    }
+    else {
+        *p_output = Py_NewRef(s);
+        goto success;
+    }
+
+error:
+        Py_DECREF(mod);
+        Py_XDECREF(s);
+        return -1;
+
+success:
+        Py_DECREF(mod);
+        Py_DECREF(s);
+        return 0;
+}
+#endif /* WITH_PYLONG_MODULE */
+
 /* Convert an integer to a base 10 string.  Returns a new non-shared
    string.  (Return value is non-shared so that callers can modify the
    returned value if necessary.) */
@@ -1775,6 +1843,17 @@ long_to_decimal_string_internal(PyObject *aa,
             return -1;
         }
     }
+
+#if WITH_PYLONG_MODULE
+    if (size_a > 1000) {
+        /* Switch to _pylong.int_to_decimal_string(). */
+        return pylong_int_to_decimal_string(aa,
+                                         p_output,
+                                         writer,
+                                         bytes_writer,
+                                         bytes_str);
+    }
+#endif
 
     /* quick and dirty upper bound for the number of digits
        required to express a in base _PyLong_DECIMAL_BASE:
@@ -2272,6 +2351,42 @@ long_from_binary_base(const char *start, const char *end, Py_ssize_t digits, int
     return 0;
 }
 
+static PyObject *long_neg(PyLongObject *v);
+
+#ifdef WITH_PYLONG_MODULE
+/* asymptotically faster str-to-long conversion for base 10, using _pylong.py */
+static int
+pylong_int_from_string(const char *start, const char *end, PyLongObject **res)
+{
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        goto error;
+    }
+    PyObject *s = PyUnicode_FromStringAndSize(start, end-start);
+    if (s == NULL) {
+        Py_DECREF(mod);
+        goto error;
+    }
+    PyObject *result = PyObject_CallMethod(mod, "int_from_string", "O", s);
+    Py_DECREF(s);
+    Py_DECREF(mod);
+    if (result == NULL) {
+        goto error;
+    }
+    if (!PyLong_Check(result)) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_TypeError,
+                        "_pylong.int_from_string did not return an int");
+        goto error;
+    }
+    *res = (PyLongObject *)result;
+    return 0;
+error:
+    *res = NULL;
+    return 0;  // See the long_from_string_base() API comment.
+}
+#endif /* WITH_PYLONG_MODULE */
+
 /***
 long_from_non_binary_base: parameters and return values are the same as
 long_from_binary_base.
@@ -2483,8 +2598,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
                 memcpy(tmp->ob_digit,
                        z->ob_digit,
                        sizeof(digit) * size_z);
-                Py_DECREF(z);
-                z = tmp;
+                Py_SETREF(z, tmp);
                 z->ob_digit[size_z] = (digit)c;
                 ++size_z;
             }
@@ -2507,7 +2621,8 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
  * Return values:
  *
  *   - Returns -1 on syntax error (exception needs to be set, *res is untouched)
- *   - Returns 0 and sets *res to NULL for MemoryError/OverflowError.
+ *   - Returns 0 and sets *res to NULL for MemoryError, OverflowError, or
+ *     _pylong.int_from_string() errors.
  *   - Returns 0 and sets *res to an unsigned, unnormalized PyLong (success!).
  *
  * Afterwards *str is set to point to the first non-digit (which may be *str!).
@@ -2586,6 +2701,12 @@ long_from_string_base(const char **str, int base, PyLongObject **res)
                 return 0;
             }
         }
+#if WITH_PYLONG_MODULE
+        if (digits > 6000 && base == 10) {
+            /* Switch to _pylong.int_from_string() */
+            return pylong_int_from_string(start, end, res);
+        }
+#endif
         /* Use the quadratic algorithm for non binary bases. */
         return long_from_non_binary_base(start, end, digits, base, res);
     }
@@ -2787,8 +2908,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
             return -1;
         }
         PyObject *zero = _PyLong_GetZero();
-        Py_INCREF(zero);
-        *pdiv = (PyLongObject*)zero;
+        *pdiv = (PyLongObject*)Py_NewRef(zero);
         return 0;
     }
     if (size_b == 1) {
@@ -3623,10 +3743,8 @@ k_mul(PyLongObject *a, PyLongObject *b)
     assert(Py_SIZE(ah) > 0);            /* the split isn't degenerate */
 
     if (a == b) {
-        bh = ah;
-        bl = al;
-        Py_INCREF(bh);
-        Py_INCREF(bl);
+        bh = (PyLongObject*)Py_NewRef(ah);
+        bl = (PyLongObject*)Py_NewRef(al);
     }
     else if (kmul_split(b, shift, &bh, &bl) < 0) goto fail;
 
@@ -3698,8 +3816,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
     ah = al = NULL;
 
     if (a == b) {
-        t2 = t1;
-        Py_INCREF(t2);
+        t2 = (PyLongObject*)Py_NewRef(t1);
     }
     else if ((t2 = x_add(bh, bl)) == NULL) {
         Py_DECREF(t1);
@@ -3913,6 +4030,46 @@ fast_floor_div(PyLongObject *a, PyLongObject *b)
     return PyLong_FromLong(div);
 }
 
+#ifdef WITH_PYLONG_MODULE
+/* asymptotically faster divmod, using _pylong.py */
+static int
+pylong_int_divmod(PyLongObject *v, PyLongObject *w,
+                  PyLongObject **pdiv, PyLongObject **pmod)
+{
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return -1;
+    }
+    PyObject *result = PyObject_CallMethod(mod, "int_divmod", "OO", v, w);
+    Py_DECREF(mod);
+    if (result == NULL) {
+        return -1;
+    }
+    if (!PyTuple_Check(result)) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_ValueError,
+                        "tuple is required from int_divmod()");
+        return -1;
+    }
+    PyObject *q = PyTuple_GET_ITEM(result, 0);
+    PyObject *r = PyTuple_GET_ITEM(result, 1);
+    if (!PyLong_Check(q) || !PyLong_Check(r)) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_ValueError,
+                        "tuple of int is required from int_divmod()");
+        return -1;
+    }
+    if (pdiv != NULL) {
+        *pdiv = (PyLongObject *)Py_NewRef(q);
+    }
+    if (pmod != NULL) {
+        *pmod = (PyLongObject *)Py_NewRef(r);
+    }
+    Py_DECREF(result);
+    return 0;
+}
+#endif /* WITH_PYLONG_MODULE */
+
 /* The / and % operators are now defined in terms of divmod().
    The expression a mod b has the value a - b*floor(a/b).
    The long_divrem function gives the remainder after division of
@@ -3964,14 +4121,25 @@ l_divmod(PyLongObject *v, PyLongObject *w,
         }
         return 0;
     }
+#if WITH_PYLONG_MODULE
+    Py_ssize_t size_v = Py_ABS(Py_SIZE(v)); /* digits in numerator */
+    Py_ssize_t size_w = Py_ABS(Py_SIZE(w)); /* digits in denominator */
+    if (size_w > 300 && (size_v - size_w) > 150) {
+        /* Switch to _pylong.int_divmod().  If the quotient is small then
+          "schoolbook" division is linear-time so don't use in that case.
+          These limits are empirically determined and should be slightly
+          conservative so that _pylong is used in cases it is likely
+          to be faster. See Tools/scripts/divmod_threshold.py. */
+        return pylong_int_divmod(v, w, pdiv, pmod);
+    }
+#endif
     if (long_divrem(v, w, &div, &mod) < 0)
         return -1;
     if ((Py_SIZE(mod) < 0 && Py_SIZE(w) > 0) ||
         (Py_SIZE(mod) > 0 && Py_SIZE(w) < 0)) {
         PyLongObject *temp;
         temp = (PyLongObject *) long_add(mod, w);
-        Py_DECREF(mod);
-        mod = temp;
+        Py_SETREF(mod, temp);
         if (mod == NULL) {
             Py_DECREF(div);
             return -1;
@@ -3982,8 +4150,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
             Py_DECREF(div);
             return -1;
         }
-        Py_DECREF(div);
-        div = temp;
+        Py_SETREF(div, temp);
     }
     if (pdiv != NULL)
         *pdiv = div;
@@ -4019,8 +4186,7 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
         (Py_SIZE(mod) > 0 && Py_SIZE(w) < 0)) {
         PyLongObject *temp;
         temp = (PyLongObject *) long_add(mod, w);
-        Py_DECREF(mod);
-        mod = temp;
+        Py_SETREF(mod, temp);
         if (mod == NULL)
             return -1;
     }
@@ -4260,8 +4426,7 @@ long_true_divide(PyObject *v, PyObject *w)
     else {
         PyLongObject *div, *rem;
         div = x_divrem(x, b, &rem);
-        Py_DECREF(x);
-        x = div;
+        Py_SETREF(x, div);
         if (x == NULL)
             goto error;
         if (Py_SIZE(rem))
@@ -4391,8 +4556,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
         if (l_divmod(a, n, &q, &r) == -1) {
             goto Error;
         }
-        Py_DECREF(a);
-        a = n;
+        Py_SETREF(a, n);
         n = r;
         t = (PyLongObject *)long_mul(q, c);
         Py_DECREF(q);
@@ -4404,8 +4568,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
         if (s == NULL) {
             goto Error;
         }
-        Py_DECREF(b);
-        b = c;
+        Py_SETREF(b, c);
         c = s;
     }
     /* references now owned: a, b, c, n */
@@ -4450,7 +4613,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     /* k-ary values.  If the exponent is large enough, table is
      * precomputed so that table[i] == a**(2*i+1) % c for i in
      * range(EXP_TABLE_LEN).
-     * Note: this is uninitialzed stack trash: don't pay to set it to known
+     * Note: this is uninitialized stack trash: don't pay to set it to known
      * values unless it's needed. Instead ensure that num_table_entries is
      * set to the number of entries actually filled whenever a branch to the
      * Error or Done labels is possible.
@@ -4460,11 +4623,10 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 
     /* a, b, c = v, w, x */
     CHECK_BINOP(v, w);
-    a = (PyLongObject*)v; Py_INCREF(a);
-    b = (PyLongObject*)w; Py_INCREF(b);
+    a = (PyLongObject*)Py_NewRef(v);
+    b = (PyLongObject*)Py_NewRef(w);
     if (PyLong_Check(x)) {
-        c = (PyLongObject *)x;
-        Py_INCREF(x);
+        c = (PyLongObject *)Py_NewRef(x);
     }
     else if (x == Py_None)
         c = NULL;
@@ -4501,8 +4663,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             temp = (PyLongObject *)_PyLong_Copy(c);
             if (temp == NULL)
                 goto Error;
-            Py_DECREF(c);
-            c = temp;
+            Py_SETREF(c, temp);
             temp = NULL;
             _PyLong_Negate(&c);
             if (c == NULL)
@@ -4522,8 +4683,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             temp = (PyLongObject *)_PyLong_Copy(b);
             if (temp == NULL)
                 goto Error;
-            Py_DECREF(b);
-            b = temp;
+            Py_SETREF(b, temp);
             temp = NULL;
             _PyLong_Negate(&b);
             if (b == NULL)
@@ -4532,8 +4692,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             temp = long_invmod(a, c);
             if (temp == NULL)
                 goto Error;
-            Py_DECREF(a);
-            a = temp;
+            Py_SETREF(a, temp);
             temp = NULL;
         }
 
@@ -4549,8 +4708,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         if (Py_SIZE(a) < 0 || Py_SIZE(a) > Py_SIZE(c)) {
             if (l_mod(a, c, &temp) < 0)
                 goto Error;
-            Py_DECREF(a);
-            a = temp;
+            Py_SETREF(a, temp);
             temp = NULL;
         }
     }
@@ -4617,9 +4775,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
          * because we're primarily trying to cut overhead for small powers.
          */
         assert(bi);  /* else there is no significant bit */
-        Py_INCREF(a);
-        Py_DECREF(z);
-        z = a;
+        Py_SETREF(z, (PyLongObject*)Py_NewRef(a));
         for (bit = 2; ; bit <<= 1) {
             if (bit > bi) { /* found the first bit */
                 assert((bi & bit) == 0);
@@ -4646,8 +4802,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         /* Left-to-right k-ary sliding window exponentiation
          * (Handbook of Applied Cryptography (HAC) Algorithm 14.85)
          */
-        Py_INCREF(a);
-        table[0] = a;
+        table[0] = (PyLongObject*)Py_NewRef(a);
         num_table_entries = 1;
         MULT(a, a, a2);
         /* table[i] == a**(2*i + 1) % c */
@@ -4706,8 +4861,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         temp = (PyLongObject *)long_sub(z, c);
         if (temp == NULL)
             goto Error;
-        Py_DECREF(z);
-        z = temp;
+        Py_SETREF(z, temp);
         temp = NULL;
     }
     goto Done;
@@ -5184,11 +5338,12 @@ long_or(PyObject *a, PyObject *b)
 static PyObject *
 long_long(PyObject *v)
 {
-    if (PyLong_CheckExact(v))
-        Py_INCREF(v);
-    else
-        v = _PyLong_Copy((PyLongObject *)v);
-    return v;
+    if (PyLong_CheckExact(v)) {
+        return Py_NewRef(v);
+    }
+    else {
+        return _PyLong_Copy((PyLongObject *)v);
+    }
 }
 
 PyObject *
@@ -5275,8 +5430,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             /* no progress; do a Euclidean step */
             if (l_mod(a, b, &r) < 0)
                 goto error;
-            Py_DECREF(a);
-            a = b;
+            Py_SETREF(a, b);
             b = r;
             alloc_a = alloc_b;
             alloc_b = Py_SIZE(b);
@@ -5295,8 +5449,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             Py_SET_SIZE(c, size_a);
         }
         else if (Py_REFCNT(a) == 1) {
-            Py_INCREF(a);
-            c = a;
+            c = (PyLongObject*)Py_NewRef(a);
         }
         else {
             alloc_a = size_a;
@@ -5309,8 +5462,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             Py_SET_SIZE(d, size_a);
         }
         else if (Py_REFCNT(b) == 1 && size_a <= alloc_b) {
-            Py_INCREF(b);
-            d = b;
+            d = (PyLongObject*)Py_NewRef(b);
             Py_SET_SIZE(d, size_a);
         }
         else {
@@ -5599,8 +5751,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
         goto error;
     if (quo_is_neg) {
         temp = long_neg((PyLongObject*)twice_rem);
-        Py_DECREF(twice_rem);
-        twice_rem = temp;
+        Py_SETREF(twice_rem, temp);
         if (twice_rem == NULL)
             goto error;
     }
@@ -5614,8 +5765,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
             temp = long_sub(quo, (PyLongObject *)one);
         else
             temp = long_add(quo, (PyLongObject *)one);
-        Py_DECREF(quo);
-        quo = (PyLongObject *)temp;
+        Py_SETREF(quo, (PyLongObject *)temp);
         if (quo == NULL)
             goto error;
         /* and remainder */
@@ -5623,8 +5773,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
             temp = long_add(rem, (PyLongObject *)b);
         else
             temp = long_sub(rem, (PyLongObject *)b);
-        Py_DECREF(rem);
-        rem = (PyLongObject *)temp;
+        Py_SETREF(rem, (PyLongObject *)temp);
         if (rem == NULL)
             goto error;
     }
@@ -5690,8 +5839,7 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
 
     /* result = self - divmod_near(self, 10 ** -ndigits)[1] */
     temp = long_neg((PyLongObject*)ndigits);
-    Py_DECREF(ndigits);
-    ndigits = temp;
+    Py_SETREF(ndigits, temp);
     if (ndigits == NULL)
         return NULL;
 
@@ -5703,21 +5851,18 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
 
     temp = long_pow(result, ndigits, Py_None);
     Py_DECREF(ndigits);
-    Py_DECREF(result);
-    result = temp;
+    Py_SETREF(result, temp);
     if (result == NULL)
         return NULL;
 
     temp = _PyLong_DivmodNear(self, result);
-    Py_DECREF(result);
-    result = temp;
+    Py_SETREF(result, temp);
     if (result == NULL)
         return NULL;
 
     temp = long_sub((PyLongObject *)self,
                     (PyLongObject *)PyTuple_GET_ITEM(result, 1));
-    Py_DECREF(result);
-    result = temp;
+    Py_SETREF(result, temp);
 
     return result;
 }
@@ -5782,8 +5927,7 @@ int_bit_length_impl(PyObject *self)
     Py_DECREF(x);
     if (y == NULL)
         goto error;
-    Py_DECREF(result);
-    result = y;
+    Py_SETREF(result, y);
 
     x = (PyLongObject *)PyLong_FromLong((long)msd_bits);
     if (x == NULL)
@@ -5792,8 +5936,7 @@ int_bit_length_impl(PyObject *self)
     Py_DECREF(x);
     if (y == NULL)
         goto error;
-    Py_DECREF(result);
-    result = y;
+    Py_SETREF(result, y);
 
     return (PyObject *)result;
 
@@ -5859,8 +6002,7 @@ int_bit_count_impl(PyObject *self)
         if (y == NULL) {
             goto error;
         }
-        Py_DECREF(result);
-        result = y;
+        Py_SETREF(result, y);
     }
 
     return result;
