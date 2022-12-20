@@ -45,8 +45,8 @@ Number-theoretic and representation functions
    to zero when ``k > n``.
 
    Also called the binomial coefficient because it is equivalent
-   to the coefficient of k-th term in polynomial expansion of the
-   expression ``(1 + x) ** n``.
+   to the coefficient of k-th term in polynomial expansion of
+   ``(1 + x)ⁿ``.
 
    Raises :exc:`TypeError` if either of the arguments are not integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
@@ -534,7 +534,7 @@ Angular conversion
 Hyperbolic functions
 --------------------
 
-`Hyperbolic functions <https://en.wikipedia.org/wiki/Hyperbolic_function>`_
+`Hyperbolic functions <https://en.wikipedia.org/wiki/Hyperbolic_functions>`_
 are analogs of trigonometric functions that are based on hyperbolas
 instead of circles.
 

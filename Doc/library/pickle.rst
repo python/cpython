@@ -90,7 +90,7 @@ Comparison with ``json``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are fundamental differences between the pickle protocols and
-`JSON (JavaScript Object Notation) <http://json.org>`_:
+`JSON (JavaScript Object Notation) <https://json.org>`_:
 
 * JSON is a text serialization format (it outputs unicode text, although
   most of the time it is then encoded to ``utf-8``), while pickle is

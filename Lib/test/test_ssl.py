@@ -9,6 +9,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import asyncore
 import socket
 import select
 import time
@@ -28,9 +29,6 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
-
-
-asyncore = warnings_helper.import_deprecated('asyncore')
 
 
 ssl = import_helper.import_module("ssl")
@@ -1463,6 +1461,8 @@ class ContextTests(unittest.TestCase):
         if OP_CIPHER_SERVER_PREFERENCE != 0:
             self.assertEqual(ctx.options & OP_CIPHER_SERVER_PREFERENCE,
                              OP_CIPHER_SERVER_PREFERENCE)
+        self.assertEqual(ctx.options & ssl.OP_LEGACY_SERVER_CONNECT,
+                         0 if IS_OPENSSL_3_0_0 else ssl.OP_LEGACY_SERVER_CONNECT)
 
     def test_create_default_context(self):
         ctx = ssl.create_default_context()
@@ -3816,6 +3816,20 @@ class ThreadedTests(unittest.TestCase):
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
         self.assertIs(stats['compression'], None)
+
+    def test_legacy_server_connect(self):
+        client_context, server_context, hostname = testing_context()
+        client_context.options |= ssl.OP_LEGACY_SERVER_CONNECT
+        server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+
+    def test_no_legacy_server_connect(self):
+        client_context, server_context, hostname = testing_context()
+        client_context.options &= ~ssl.OP_LEGACY_SERVER_CONNECT
+        server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
 
     @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_dh_params(self):

@@ -129,17 +129,17 @@ which disallows mutable objects such as :class:`bytearray`.
 ``S`` (:class:`bytes`) [PyBytesObject \*]
    Requires that the Python object is a :class:`bytes` object, without
    attempting any conversion.  Raises :exc:`TypeError` if the object is not
-   a bytes object.  The C variable may also be declared as :c:type:`PyObject*`.
+   a bytes object.  The C variable may also be declared as :c:expr:`PyObject*`.
 
 ``Y`` (:class:`bytearray`) [PyByteArrayObject \*]
    Requires that the Python object is a :class:`bytearray` object, without
    attempting any conversion.  Raises :exc:`TypeError` if the object is not
-   a :class:`bytearray` object. The C variable may also be declared as :c:type:`PyObject*`.
+   a :class:`bytearray` object. The C variable may also be declared as :c:expr:`PyObject*`.
 
 ``U`` (:class:`str`) [PyObject \*]
    Requires that the Python object is a Unicode object, without attempting
    any conversion.  Raises :exc:`TypeError` if the object is not a Unicode
-   object.  The C variable may also be declared as :c:type:`PyObject*`.
+   object.  The C variable may also be declared as :c:expr:`PyObject*`.
 
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
@@ -152,10 +152,10 @@ which disallows mutable objects such as :class:`bytearray`.
    It only works for encoded data without embedded NUL bytes.
 
    This format requires two arguments.  The first is only used as input, and
-   must be a :c:type:`const char*` which points to the name of an encoding as a
+   must be a :c:expr:`const char*` which points to the name of an encoding as a
    NUL-terminated string, or ``NULL``, in which case ``'utf-8'`` encoding is used.
    An exception is raised if the named encoding is not known to Python.  The
-   second argument must be a :c:type:`char**`; the value of the pointer it
+   second argument must be a :c:expr:`char**`; the value of the pointer it
    references will be set to a buffer with the contents of the argument text.
    The text will be encoded in the encoding specified by the first argument.
 
@@ -175,10 +175,10 @@ which disallows mutable objects such as :class:`bytearray`.
    characters.
 
    It requires three arguments.  The first is only used as input, and must be a
-   :c:type:`const char*` which points to the name of an encoding as a
+   :c:expr:`const char*` which points to the name of an encoding as a
    NUL-terminated string, or ``NULL``, in which case ``'utf-8'`` encoding is used.
    An exception is raised if the named encoding is not known to Python.  The
-   second argument must be a :c:type:`char**`; the value of the pointer it
+   second argument must be a :c:expr:`char**`; the value of the pointer it
    references will be set to a buffer with the contents of the argument text.
    The text will be encoded in the encoding specified by the first argument.
    The third argument must be a pointer to an integer; the referenced integer
@@ -215,38 +215,38 @@ Numbers
 
 ``b`` (:class:`int`) [unsigned char]
    Convert a nonnegative Python integer to an unsigned tiny int, stored in a C
-   :c:type:`unsigned char`.
+   :c:expr:`unsigned char`.
 
 ``B`` (:class:`int`) [unsigned char]
    Convert a Python integer to a tiny int without overflow checking, stored in a C
-   :c:type:`unsigned char`.
+   :c:expr:`unsigned char`.
 
 ``h`` (:class:`int`) [short int]
-   Convert a Python integer to a C :c:type:`short int`.
+   Convert a Python integer to a C :c:expr:`short int`.
 
 ``H`` (:class:`int`) [unsigned short int]
-   Convert a Python integer to a C :c:type:`unsigned short int`, without overflow
+   Convert a Python integer to a C :c:expr:`unsigned short int`, without overflow
    checking.
 
 ``i`` (:class:`int`) [int]
-   Convert a Python integer to a plain C :c:type:`int`.
+   Convert a Python integer to a plain C :c:expr:`int`.
 
 ``I`` (:class:`int`) [unsigned int]
-   Convert a Python integer to a C :c:type:`unsigned int`, without overflow
+   Convert a Python integer to a C :c:expr:`unsigned int`, without overflow
    checking.
 
 ``l`` (:class:`int`) [long int]
-   Convert a Python integer to a C :c:type:`long int`.
+   Convert a Python integer to a C :c:expr:`long int`.
 
 ``k`` (:class:`int`) [unsigned long]
-   Convert a Python integer to a C :c:type:`unsigned long` without
+   Convert a Python integer to a C :c:expr:`unsigned long` without
    overflow checking.
 
 ``L`` (:class:`int`) [long long]
-   Convert a Python integer to a C :c:type:`long long`.
+   Convert a Python integer to a C :c:expr:`long long`.
 
 ``K`` (:class:`int`) [unsigned long long]
-   Convert a Python integer to a C :c:type:`unsigned long long`
+   Convert a Python integer to a C :c:expr:`unsigned long long`
    without overflow checking.
 
 ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
@@ -254,20 +254,20 @@ Numbers
 
 ``c`` (:class:`bytes` or :class:`bytearray` of length 1) [char]
    Convert a Python byte, represented as a :class:`bytes` or
-   :class:`bytearray` object of length 1, to a C :c:type:`char`.
+   :class:`bytearray` object of length 1, to a C :c:expr:`char`.
 
    .. versionchanged:: 3.3
       Allow :class:`bytearray` objects.
 
 ``C`` (:class:`str` of length 1) [int]
    Convert a Python character, represented as a :class:`str` object of
-   length 1, to a C :c:type:`int`.
+   length 1, to a C :c:expr:`int`.
 
 ``f`` (:class:`float`) [float]
-   Convert a Python floating point number to a C :c:type:`float`.
+   Convert a Python floating point number to a C :c:expr:`float`.
 
 ``d`` (:class:`float`) [double]
-   Convert a Python floating point number to a C :c:type:`double`.
+   Convert a Python floating point number to a C :c:expr:`double`.
 
 ``D`` (:class:`complex`) [Py_complex]
    Convert a Python complex number to a C :c:type:`Py_complex` structure.
@@ -283,7 +283,7 @@ Other objects
 ``O!`` (object) [*typeobject*, PyObject \*]
    Store a Python object in a C object pointer.  This is similar to ``O``, but
    takes two C arguments: the first is the address of a Python type object, the
-   second is the address of the C variable (of type :c:type:`PyObject*`) into which
+   second is the address of the C variable (of type :c:expr:`PyObject*`) into which
    the object pointer is stored.  If the Python object does not have the required
    type, :exc:`TypeError` is raised.
 
@@ -292,13 +292,13 @@ Other objects
 ``O&`` (object) [*converter*, *anything*]
    Convert a Python object to a C variable through a *converter* function.  This
    takes two arguments: the first is a function, the second is the address of a C
-   variable (of arbitrary type), converted to :c:type:`void *`.  The *converter*
+   variable (of arbitrary type), converted to :c:expr:`void *`.  The *converter*
    function in turn is called as follows::
 
       status = converter(object, address);
 
    where *object* is the Python object to be converted and *address* is the
-   :c:type:`void*` argument that was passed to the :c:func:`PyArg_Parse\*` function.
+   :c:expr:`void*` argument that was passed to the ``PyArg_Parse*`` function.
    The returned *status* should be ``1`` for a successful conversion and ``0`` if
    the conversion has failed.  When the conversion fails, the *converter* function
    should raise an exception and leave the content of *address* unmodified.
@@ -372,9 +372,9 @@ what is specified for the corresponding format unit in that case.
 
 For the conversion to succeed, the *arg* object must match the format
 and the format must be exhausted.  On success, the
-:c:func:`PyArg_Parse\*` functions return true, otherwise they return
+``PyArg_Parse*`` functions return true, otherwise they return
 false and raise an appropriate exception. When the
-:c:func:`PyArg_Parse\*` functions fail due to conversion failure in one
+``PyArg_Parse*`` functions fail due to conversion failure in one
 of the format units, the variables at the addresses corresponding to that
 and the following format units are left untouched.
 
@@ -444,7 +444,7 @@ API Functions
    *args*; it must actually be a tuple.  The length of the tuple must be at least
    *min* and no more than *max*; *min* and *max* may be equal.  Additional
    arguments must be passed to the function, each of which should be a pointer to a
-   :c:type:`PyObject*` variable; these will be filled in with the values from
+   :c:expr:`PyObject*` variable; these will be filled in with the values from
    *args*; they will contain :term:`borrowed references <borrowed reference>`.
    The variables which correspond
    to optional parameters not given by *args* will not be filled in; these should
@@ -481,7 +481,7 @@ Building values
 .. c:function:: PyObject* Py_BuildValue(const char *format, ...)
 
    Create a new value based on a format string similar to those accepted by the
-   :c:func:`PyArg_Parse\*` family of functions and a sequence of values.  Returns
+   ``PyArg_Parse*`` family of functions and a sequence of values.  Returns
    the value or ``NULL`` in the case of an error; an exception will be raised if
    ``NULL`` is returned.
 
@@ -531,7 +531,7 @@ Building values
       Same as ``s#``.
 
    ``u`` (:class:`str`) [const wchar_t \*]
-      Convert a null-terminated :c:type:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
+      Convert a null-terminated :c:expr:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
       data to a Python Unicode object.  If the Unicode buffer pointer is ``NULL``,
       ``None`` is returned.
 
@@ -547,51 +547,51 @@ Building values
       Same as ``s#``.
 
    ``i`` (:class:`int`) [int]
-      Convert a plain C :c:type:`int` to a Python integer object.
+      Convert a plain C :c:expr:`int` to a Python integer object.
 
    ``b`` (:class:`int`) [char]
-      Convert a plain C :c:type:`char` to a Python integer object.
+      Convert a plain C :c:expr:`char` to a Python integer object.
 
    ``h`` (:class:`int`) [short int]
-      Convert a plain C :c:type:`short int` to a Python integer object.
+      Convert a plain C :c:expr:`short int` to a Python integer object.
 
    ``l`` (:class:`int`) [long int]
-      Convert a C :c:type:`long int` to a Python integer object.
+      Convert a C :c:expr:`long int` to a Python integer object.
 
    ``B`` (:class:`int`) [unsigned char]
-      Convert a C :c:type:`unsigned char` to a Python integer object.
+      Convert a C :c:expr:`unsigned char` to a Python integer object.
 
    ``H`` (:class:`int`) [unsigned short int]
-      Convert a C :c:type:`unsigned short int` to a Python integer object.
+      Convert a C :c:expr:`unsigned short int` to a Python integer object.
 
    ``I`` (:class:`int`) [unsigned int]
-      Convert a C :c:type:`unsigned int` to a Python integer object.
+      Convert a C :c:expr:`unsigned int` to a Python integer object.
 
    ``k`` (:class:`int`) [unsigned long]
-      Convert a C :c:type:`unsigned long` to a Python integer object.
+      Convert a C :c:expr:`unsigned long` to a Python integer object.
 
    ``L`` (:class:`int`) [long long]
-      Convert a C :c:type:`long long` to a Python integer object.
+      Convert a C :c:expr:`long long` to a Python integer object.
 
    ``K`` (:class:`int`) [unsigned long long]
-      Convert a C :c:type:`unsigned long long` to a Python integer object.
+      Convert a C :c:expr:`unsigned long long` to a Python integer object.
 
    ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
       Convert a C :c:type:`Py_ssize_t` to a Python integer.
 
    ``c`` (:class:`bytes` of length 1) [char]
-      Convert a C :c:type:`int` representing a byte to a Python :class:`bytes` object of
+      Convert a C :c:expr:`int` representing a byte to a Python :class:`bytes` object of
       length 1.
 
    ``C`` (:class:`str` of length 1) [int]
-      Convert a C :c:type:`int` representing a character to Python :class:`str`
+      Convert a C :c:expr:`int` representing a character to Python :class:`str`
       object of length 1.
 
    ``d`` (:class:`float`) [double]
-      Convert a C :c:type:`double` to a Python floating point number.
+      Convert a C :c:expr:`double` to a Python floating point number.
 
    ``f`` (:class:`float`) [float]
-      Convert a C :c:type:`float` to a Python floating point number.
+      Convert a C :c:expr:`float` to a Python floating point number.
 
    ``D`` (:class:`complex`) [Py_complex \*]
       Convert a C :c:type:`Py_complex` structure to a Python complex number.
@@ -614,7 +614,7 @@ Building values
 
    ``O&`` (object) [*converter*, *anything*]
       Convert *anything* to a Python object through a *converter* function.  The
-      function is called with *anything* (which should be compatible with :c:type:`void*`)
+      function is called with *anything* (which should be compatible with :c:expr:`void*`)
       as its argument and should return a "new" Python object, or ``NULL`` if an
       error occurred.
 

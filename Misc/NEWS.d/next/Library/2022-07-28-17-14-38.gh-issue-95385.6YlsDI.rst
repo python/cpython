@@ -1,1 +1,0 @@
-Faster ``json.dumps()`` when sorting of keys is not requested (default).

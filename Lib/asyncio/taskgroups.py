@@ -1,4 +1,5 @@
-# Adapted with permission from the EdgeDB project.
+# Adapted with permission from the EdgeDB project;
+# license: PSFL.
 
 
 __all__ = ["TaskGroup"]
@@ -115,10 +116,9 @@ class TaskGroup:
         if self._base_error is not None:
             raise self._base_error
 
-        if propagate_cancellation_error is not None:
-            # The wrapping task was cancelled; since we're done with
-            # closing all child tasks, just propagate the cancellation
-            # request now.
+        # Propagate CancelledError if there is one, except if there
+        # are other errors -- those have priority.
+        if propagate_cancellation_error and not self._errors:
             raise propagate_cancellation_error
 
         if et is not None and et is not exceptions.CancelledError:
@@ -128,11 +128,11 @@ class TaskGroup:
             # Exceptions are heavy objects that can have object
             # cycles (bad for GC); let's not keep a reference to
             # a bunch of them.
-            errors = self._errors
-            self._errors = None
-
-            me = BaseExceptionGroup('unhandled errors in a TaskGroup', errors)
-            raise me from None
+            try:
+                me = BaseExceptionGroup('unhandled errors in a TaskGroup', self._errors)
+                raise me from None
+            finally:
+                self._errors = None
 
     def create_task(self, coro, *, name=None, context=None):
         if not self._entered:

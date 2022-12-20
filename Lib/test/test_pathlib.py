@@ -136,6 +136,10 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['a', '/b', 'c'],         ('', '\\', ['\\', 'b', 'c']))
         check(['Z:/a', '/b', 'c'],      ('Z:', '\\', ['Z:\\', 'b', 'c']))
         check(['//?/Z:/a', '/b', 'c'],  ('\\\\?\\Z:', '\\', ['\\\\?\\Z:\\', 'b', 'c']))
+        # Joining with the same drive => the first path is appended to if
+        # the second path is relative.
+        check(['c:/a/b', 'c:x/y'], ('c:', '\\', ['c:\\', 'a', 'b', 'x', 'y']))
+        check(['c:/a/b', 'c:/x/y'], ('c:', '\\', ['c:\\', 'x', 'y']))
 
     def test_splitroot(self):
         f = self.flavour.splitroot
@@ -636,13 +640,30 @@ class _BasePurePathTest(object):
         self.assertEqual(p.relative_to('a/'), P('b'))
         self.assertEqual(p.relative_to(P('a/b')), P())
         self.assertEqual(p.relative_to('a/b'), P())
+        self.assertEqual(p.relative_to(P(), walk_up=True), P('a/b'))
+        self.assertEqual(p.relative_to('', walk_up=True), P('a/b'))
+        self.assertEqual(p.relative_to(P('a'), walk_up=True), P('b'))
+        self.assertEqual(p.relative_to('a', walk_up=True), P('b'))
+        self.assertEqual(p.relative_to('a/', walk_up=True), P('b'))
+        self.assertEqual(p.relative_to(P('a/b'), walk_up=True), P())
+        self.assertEqual(p.relative_to('a/b', walk_up=True), P())
+        self.assertEqual(p.relative_to(P('a/c'), walk_up=True), P('../b'))
+        self.assertEqual(p.relative_to('a/c', walk_up=True), P('../b'))
+        self.assertEqual(p.relative_to(P('a/b/c'), walk_up=True), P('..'))
+        self.assertEqual(p.relative_to('a/b/c', walk_up=True), P('..'))
+        self.assertEqual(p.relative_to(P('c'), walk_up=True), P('../a/b'))
+        self.assertEqual(p.relative_to('c', walk_up=True), P('../a/b'))
         # With several args.
-        self.assertEqual(p.relative_to('a', 'b'), P())
+        with self.assertWarns(DeprecationWarning):
+            p.relative_to('a', 'b')
+            p.relative_to('a', 'b', walk_up=True)
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P('c'))
         self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
         self.assertRaises(ValueError, p.relative_to, P('a/c'))
         self.assertRaises(ValueError, p.relative_to, P('/a'))
+        self.assertRaises(ValueError, p.relative_to, P('/'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/a'), walk_up=True)
         p = P('/a/b')
         self.assertEqual(p.relative_to(P('/')), P('a/b'))
         self.assertEqual(p.relative_to('/'), P('a/b'))
@@ -651,6 +672,19 @@ class _BasePurePathTest(object):
         self.assertEqual(p.relative_to('/a/'), P('b'))
         self.assertEqual(p.relative_to(P('/a/b')), P())
         self.assertEqual(p.relative_to('/a/b'), P())
+        self.assertEqual(p.relative_to(P('/'), walk_up=True), P('a/b'))
+        self.assertEqual(p.relative_to('/', walk_up=True), P('a/b'))
+        self.assertEqual(p.relative_to(P('/a'), walk_up=True), P('b'))
+        self.assertEqual(p.relative_to('/a', walk_up=True), P('b'))
+        self.assertEqual(p.relative_to('/a/', walk_up=True), P('b'))
+        self.assertEqual(p.relative_to(P('/a/b'), walk_up=True), P())
+        self.assertEqual(p.relative_to('/a/b', walk_up=True), P())
+        self.assertEqual(p.relative_to(P('/a/c'), walk_up=True), P('../b'))
+        self.assertEqual(p.relative_to('/a/c', walk_up=True), P('../b'))
+        self.assertEqual(p.relative_to(P('/a/b/c'), walk_up=True), P('..'))
+        self.assertEqual(p.relative_to('/a/b/c', walk_up=True), P('..'))
+        self.assertEqual(p.relative_to(P('/c'), walk_up=True), P('../a/b'))
+        self.assertEqual(p.relative_to('/c', walk_up=True), P('../a/b'))
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P('/c'))
         self.assertRaises(ValueError, p.relative_to, P('/a/b/c'))
@@ -658,6 +692,8 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, p.relative_to, P())
         self.assertRaises(ValueError, p.relative_to, '')
         self.assertRaises(ValueError, p.relative_to, P('a'))
+        self.assertRaises(ValueError, p.relative_to, P(''), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('a'), walk_up=True)
 
     def test_is_relative_to_common(self):
         P = self.cls
@@ -671,7 +707,8 @@ class _BasePurePathTest(object):
         self.assertTrue(p.is_relative_to(P('a/b')))
         self.assertTrue(p.is_relative_to('a/b'))
         # With several args.
-        self.assertTrue(p.is_relative_to('a', 'b'))
+        with self.assertWarns(DeprecationWarning):
+            p.is_relative_to('a', 'b')
         # Unrelated paths.
         self.assertFalse(p.is_relative_to(P('c')))
         self.assertFalse(p.is_relative_to(P('a/b/c')))
@@ -1120,6 +1157,16 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(p.relative_to('c:foO/'), P('Bar'))
         self.assertEqual(p.relative_to(P('c:foO/baR')), P())
         self.assertEqual(p.relative_to('c:foO/baR'), P())
+        self.assertEqual(p.relative_to(P('c:'), walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('c:', walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to(P('c:foO'), walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('c:foO', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('c:foO/', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to(P('c:foO/baR'), walk_up=True), P())
+        self.assertEqual(p.relative_to('c:foO/baR', walk_up=True), P())
+        self.assertEqual(p.relative_to(P('C:Foo/Bar/Baz'), walk_up=True), P('..'))
+        self.assertEqual(p.relative_to(P('C:Foo/Baz'), walk_up=True), P('../Bar'))
+        self.assertEqual(p.relative_to(P('C:Baz/Bar'), walk_up=True), P('../../Foo/Bar'))
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P())
         self.assertRaises(ValueError, p.relative_to, '')
@@ -1130,11 +1177,14 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('C:/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('C:Foo/Bar/Baz'))
         self.assertRaises(ValueError, p.relative_to, P('C:Foo/Baz'))
+        self.assertRaises(ValueError, p.relative_to, P(), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, '', walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('d:'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('C:/Foo'), walk_up=True)
         p = P('C:/Foo/Bar')
-        self.assertEqual(p.relative_to(P('c:')), P('/Foo/Bar'))
-        self.assertEqual(p.relative_to('c:'), P('/Foo/Bar'))
-        self.assertEqual(str(p.relative_to(P('c:'))), '\\Foo\\Bar')
-        self.assertEqual(str(p.relative_to('c:')), '\\Foo\\Bar')
         self.assertEqual(p.relative_to(P('c:/')), P('Foo/Bar'))
         self.assertEqual(p.relative_to('c:/'), P('Foo/Bar'))
         self.assertEqual(p.relative_to(P('c:/foO')), P('Bar'))
@@ -1142,7 +1192,19 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(p.relative_to('c:/foO/'), P('Bar'))
         self.assertEqual(p.relative_to(P('c:/foO/baR')), P())
         self.assertEqual(p.relative_to('c:/foO/baR'), P())
+        self.assertEqual(p.relative_to(P('c:/'), walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('c:/', walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to(P('c:/foO'), walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('c:/foO', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('c:/foO/', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to(P('c:/foO/baR'), walk_up=True), P())
+        self.assertEqual(p.relative_to('c:/foO/baR', walk_up=True), P())
+        self.assertEqual(p.relative_to('C:/Baz', walk_up=True), P('../Foo/Bar'))
+        self.assertEqual(p.relative_to('C:/Foo/Bar/Baz', walk_up=True), P('..'))
+        self.assertEqual(p.relative_to('C:/Foo/Baz', walk_up=True), P('../Bar'))
         # Unrelated paths.
+        self.assertRaises(ValueError, p.relative_to, 'c:')
+        self.assertRaises(ValueError, p.relative_to, P('c:'))
         self.assertRaises(ValueError, p.relative_to, P('C:/Baz'))
         self.assertRaises(ValueError, p.relative_to, P('C:/Foo/Bar/Baz'))
         self.assertRaises(ValueError, p.relative_to, P('C:/Foo/Baz'))
@@ -1152,6 +1214,14 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('/'))
         self.assertRaises(ValueError, p.relative_to, P('/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('//C/Foo'))
+        self.assertRaises(ValueError, p.relative_to, 'c:', walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('c:'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('C:Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('d:'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('d:/'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('//C/Foo'), walk_up=True)
         # UNC paths.
         p = P('//Server/Share/Foo/Bar')
         self.assertEqual(p.relative_to(P('//sErver/sHare')), P('Foo/Bar'))
@@ -1162,11 +1232,25 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(p.relative_to('//sErver/sHare/Foo/'), P('Bar'))
         self.assertEqual(p.relative_to(P('//sErver/sHare/Foo/Bar')), P())
         self.assertEqual(p.relative_to('//sErver/sHare/Foo/Bar'), P())
+        self.assertEqual(p.relative_to(P('//sErver/sHare'), walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare', walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/', walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to(P('//sErver/sHare/Foo'), walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/Foo', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/Foo/', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to(P('//sErver/sHare/Foo/Bar'), walk_up=True), P())
+        self.assertEqual(p.relative_to('//sErver/sHare/Foo/Bar', walk_up=True), P())
+        self.assertEqual(p.relative_to(P('//sErver/sHare/bar'), walk_up=True), P('../Foo/Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/bar', walk_up=True), P('../Foo/Bar'))
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P('/Server/Share/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('c:/Server/Share/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('//z/Share/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('//Server/z/Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('/Server/Share/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('c:/Server/Share/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('//z/Share/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('//Server/z/Foo'), walk_up=True)
 
     def test_is_relative_to(self):
         P = self.cls
@@ -1189,13 +1273,13 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertFalse(p.is_relative_to(P('C:Foo/Bar/Baz')))
         self.assertFalse(p.is_relative_to(P('C:Foo/Baz')))
         p = P('C:/Foo/Bar')
-        self.assertTrue(p.is_relative_to('c:'))
         self.assertTrue(p.is_relative_to(P('c:/')))
         self.assertTrue(p.is_relative_to(P('c:/foO')))
         self.assertTrue(p.is_relative_to('c:/foO/'))
         self.assertTrue(p.is_relative_to(P('c:/foO/baR')))
         self.assertTrue(p.is_relative_to('c:/foO/baR'))
         # Unrelated paths.
+        self.assertFalse(p.is_relative_to('c:'))
         self.assertFalse(p.is_relative_to(P('C:/Baz')))
         self.assertFalse(p.is_relative_to(P('C:/Foo/Bar/Baz')))
         self.assertFalse(p.is_relative_to(P('C:/Foo/Baz')))
@@ -2324,6 +2408,13 @@ class _BasePathTest(object):
         if os_helper.can_symlink():
             self.assertIs((P / 'linkA\udfff').is_file(), False)
             self.assertIs((P / 'linkA\x00').is_file(), False)
+
+    def test_is_junction(self):
+        P = self.cls(BASE)
+
+        with mock.patch.object(P._flavour, 'pathmod'):
+            self.assertEqual(P.is_junction(), P._flavour.pathmod.isjunction.return_value)
+            P._flavour.pathmod.isjunction.assert_called_once_with(P)
 
     def test_is_fifo_false(self):
         P = self.cls(BASE)

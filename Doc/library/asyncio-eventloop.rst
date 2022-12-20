@@ -1,6 +1,8 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-event-loop:
+
 ==========
 Event Loop
 ==========
@@ -31,7 +33,8 @@ an event loop:
 
    Return the running event loop in the current OS thread.
 
-   If there is no running event loop a :exc:`RuntimeError` is raised.
+   Raise a :exc:`RuntimeError` if there is no running event loop.
+
    This function can only be called from a coroutine or a callback.
 
    .. versionadded:: 3.7
@@ -40,27 +43,31 @@ an event loop:
 
    Get the current event loop.
 
-   If there is no current event loop set in the current OS thread,
-   the OS thread is main, and :func:`set_event_loop` has not yet
-   been called, asyncio will create a new event loop and set it as the
-   current one.
+   When called from a coroutine or a callback (e.g. scheduled with
+   call_soon or similar API), this function will always return the
+   running event loop.
+
+   If there is no running event loop set, the function will return
+   the result of calling ``get_event_loop_policy().get_event_loop()``.
 
    Because this function has rather complex behavior (especially
    when custom event loop policies are in use), using the
    :func:`get_running_loop` function is preferred to :func:`get_event_loop`
    in coroutines and callbacks.
 
-   Consider also using the :func:`asyncio.run` function instead of using
-   lower level functions to manually create and close an event loop.
+   As noted above, consider using the higher-level :func:`asyncio.run` function,
+   instead of using these lower level functions to manually create and close an
+   event loop.
 
-   .. deprecated:: 3.10
-      Deprecation warning is emitted if there is no running event loop.
-      In future Python releases, this function will be an alias of
-      :func:`get_running_loop`.
+   .. note::
+      In Python versions 3.10.0--3.10.8 and 3.11.0 this function
+      (and other functions which used it implicitly) emitted a
+      :exc:`DeprecationWarning` if there was no running event loop, even if
+      the current loop was set.
 
 .. function:: set_event_loop(loop)
 
-   Set *loop* as a current event loop for the current OS thread.
+   Set *loop* as the current event loop for the current OS thread.
 
 .. function:: new_event_loop()
 
@@ -92,7 +99,7 @@ This documentation page contains the following sections:
   loop APIs.
 
 
-.. _asyncio-event-loop:
+.. _asyncio-event-loop-methods:
 
 Event Loop Methods
 ==================
@@ -178,18 +185,27 @@ Running and stopping the loop
 
    .. versionadded:: 3.6
 
-.. coroutinemethod:: loop.shutdown_default_executor()
+.. coroutinemethod:: loop.shutdown_default_executor(timeout=None)
 
    Schedule the closure of the default executor and wait for it to join all of
    the threads in the :class:`ThreadPoolExecutor`. After calling this method, a
    :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
    while using the default executor.
 
+   The *timeout* parameter specifies the amount of time the executor will
+   be given to finish joining. The default value is ``None``, which means the
+   executor will be given an unlimited amount of time.
+
+   If the timeout duration is reached, a warning is emitted and executor is
+   terminated without waiting for its threads to finish joining.
+
    Note that there is no need to call this function when
    :func:`asyncio.run` is used.
 
    .. versionadded:: 3.9
 
+   .. versionchanged:: 3.12
+      Added the *timeout* parameter.
 
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^
@@ -377,7 +393,8 @@ Opening network connections
                           local_addr=None, server_hostname=None, \
                           ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, \
-                          happy_eyeballs_delay=None, interleave=None)
+                          happy_eyeballs_delay=None, interleave=None, \
+                          all_errors=False)
 
    Open a streaming transport connection to a given
    address specified by *host* and *port*.
@@ -456,6 +473,12 @@ Opening network connections
      *happy_eyeballs_delay*, *interleave*
      and *local_addr* should be specified.
 
+     .. note::
+
+        The *sock* argument transfers ownership of the socket to the
+        transport created. To close the socket, call the transport's
+        :meth:`~asyncio.BaseTransport.close` method.
+
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
      to bind the socket locally.  The *local_host* and *local_port*
      are looked up using ``getaddrinfo()``, similarly to *host* and *port*.
@@ -467,6 +490,14 @@ Opening network connections
    * *ssl_shutdown_timeout* is the time in seconds to wait for the SSL shutdown
      to complete before aborting the connection. ``30.0`` seconds if ``None``
      (default).
+
+   * *all_errors* determines what exceptions are raised when a connection cannot
+     be created. By default, only a single ``Exception`` is raised: the first
+     exception if there is only one or all errors have same message, or a single
+     ``OSError`` with the error messages combined. When ``all_errors`` is ``True``,
+     an ``ExceptionGroup`` will be raised containing all exceptions (even if there
+     is only one).
+
 
    .. versionchanged:: 3.5
 
@@ -499,6 +530,9 @@ Opening network connections
    .. versionchanged:: 3.11
 
       Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.12
+      *all_errors* was added.
 
    .. seealso::
 
@@ -553,6 +587,12 @@ Opening network connections
      already connected, :class:`socket.socket` object to be used by the
      transport. If specified, *local_addr* and *remote_addr* should be omitted
      (must be :const:`None`).
+
+     .. note::
+
+        The *sock* argument transfers ownership of the socket to the
+        transport created. To close the socket, call the transport's
+        :meth:`~asyncio.BaseTransport.close` method.
 
    See :ref:`UDP echo client protocol <asyncio-udp-echo-client-protocol>` and
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
@@ -665,6 +705,12 @@ Creating network servers
    * *sock* can optionally be specified in order to use a preexisting
      socket object. If specified, *host* and *port* must not be specified.
 
+     .. note::
+
+        The *sock* argument transfers ownership of the socket to the
+        server created. To close the socket, call the server's
+        :meth:`~asyncio.Server.close` method.
+
    * *backlog* is the maximum number of queued connections passed to
      :meth:`~socket.socket.listen` (defaults to 100).
 
@@ -766,6 +812,12 @@ Creating network servers
    * *sock* is a preexisting socket object returned from
      :meth:`socket.accept <socket.socket.accept>`.
 
+     .. note::
+
+        The *sock* argument transfers ownership of the socket to the
+        transport created. To close the socket, call the transport's
+        :meth:`~asyncio.BaseTransport.close` method.
+
    * *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over
      the accepted connections.
 
@@ -830,9 +882,14 @@ TLS Upgrade
 
    Upgrade an existing transport-based connection to TLS.
 
-   Return a new transport instance, that the *protocol* must start using
-   immediately after the *await*.  The *transport* instance passed to
-   the *start_tls* method should never be used again.
+   Create a TLS coder/decoder instance and insert it between the *transport*
+   and the *protocol*. The coder/decoder implements both *transport*-facing
+   protocol and *protocol*-facing transport.
+
+   Return the created two-interface instance. After *await*, the *protocol*
+   must stop using the original *transport* and communicate with the returned
+   object only because the coder caches *protocol*-side data and sporadically
+   exchanges extra TLS session packets with *transport*.
 
    Parameters:
 
@@ -875,7 +932,8 @@ Watching file descriptors
 
 .. method:: loop.remove_reader(fd)
 
-   Stop monitoring the *fd* file descriptor for read availability.
+   Stop monitoring the *fd* file descriptor for read availability. Returns
+   ``True`` if *fd* was previously being monitored for reads.
 
 .. method:: loop.add_writer(fd, callback, *args)
 
@@ -888,7 +946,8 @@ Watching file descriptors
 
 .. method:: loop.remove_writer(fd)
 
-   Stop monitoring the *fd* file descriptor for write availability.
+   Stop monitoring the *fd* file descriptor for write availability. Returns
+   ``True`` if *fd* was previously being monitored for writes.
 
 See also :ref:`Platform Support <asyncio-platform-support>` section
 for some limitations of these methods.
@@ -1206,7 +1265,13 @@ Executing code in thread or process pools
                   pool, cpu_bound)
               print('custom process pool', result)
 
-      asyncio.run(main())
+      if __name__ == '__main__':
+          asyncio.run(main())
+
+   Note that the entry point guard (``if __name__ == '__main__'``)
+   is required for option 3 due to the peculiarities of :mod:`multiprocessing`,
+   which is used by :class:`~concurrent.futures.ProcessPoolExecutor`.
+   See :ref:`Safe importing of main module <multiprocessing-safe-main-import>`.
 
    This method returns a :class:`asyncio.Future` object.
 
@@ -1247,6 +1312,15 @@ Allows customizing how exceptions are handled in the event loop.
    is a ``dict`` object containing the details of the exception
    (see :meth:`call_exception_handler` documentation for details
    about context).
+
+   If the handler is called on behalf of a :class:`~asyncio.Task` or
+   :class:`~asyncio.Handle`, it is run in the
+   :class:`contextvars.Context` of that task or callback handle.
+
+   .. versionchanged:: 3.12
+
+      The handler may be called in the :class:`~contextvars.Context`
+      of the task or handle where the exception originated.
 
 .. method:: loop.get_exception_handler()
 
@@ -1451,6 +1525,13 @@ Callback Handles
    A callback wrapper object returned by :meth:`loop.call_soon`,
    :meth:`loop.call_soon_threadsafe`.
 
+   .. method:: get_context()
+
+      Return the :class:`contextvars.Context` object
+      associated with the handle.
+
+      .. versionadded:: 3.12
+
    .. method:: cancel()
 
       Cancel the callback.  If the callback has already been canceled
@@ -1586,6 +1667,7 @@ Do not instantiate the class directly.
 
 
 .. _asyncio-event-loops:
+.. _asyncio-event-loop-implementations:
 
 Event Loop Implementations
 ==========================
@@ -1608,9 +1690,12 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       import asyncio
       import selectors
 
-      selector = selectors.SelectSelector()
-      loop = asyncio.SelectorEventLoop(selector)
-      asyncio.set_event_loop(loop)
+      class MyPolicy(asyncio.DefaultEventLoopPolicy):
+         def new_event_loop(self):
+            selector = selectors.SelectSelector()
+            return asyncio.SelectorEventLoop(selector)
+
+      asyncio.set_event_loop_policy(MyPolicy())
 
 
    .. availability:: Unix, Windows.
@@ -1632,7 +1717,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
 
    Abstract base class for asyncio-compliant event loops.
 
-   The :ref:`Event Loop Methods <asyncio-event-loop>` section lists all
+   The :ref:`asyncio-event-loop-methods` section lists all
    methods that an alternative implementation of ``AbstractEventLoop``
    should have defined.
 
@@ -1663,7 +1748,7 @@ event loop::
         print('Hello World')
         loop.stop()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     # Schedule a call to hello_world()
     loop.call_soon(hello_world, loop)
@@ -1699,7 +1784,7 @@ after 5 seconds, and then stops the event loop::
         else:
             loop.stop()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     # Schedule the first call to display_date()
     end_time = loop.time() + 5.0
@@ -1731,7 +1816,7 @@ Wait until a file descriptor received some data using the
     # Create a pair of connected file descriptors
     rsock, wsock = socketpair()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     def reader():
         data = rsock.recv(100)

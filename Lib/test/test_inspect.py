@@ -202,6 +202,51 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
+        async def _fn3():
+            pass
+
+        @inspect.markcoroutinefunction
+        def fn3():
+            return _fn3()
+
+        self.assertTrue(inspect.iscoroutinefunction(fn3))
+        self.assertTrue(
+            inspect.iscoroutinefunction(
+                inspect.markcoroutinefunction(lambda: _fn3())
+            )
+        )
+
+        class Cl:
+            async def __call__(self):
+                pass
+
+        self.assertFalse(inspect.iscoroutinefunction(Cl))
+        # instances with async def __call__ are NOT recognised.
+        self.assertFalse(inspect.iscoroutinefunction(Cl()))
+
+        class Cl2:
+            @inspect.markcoroutinefunction
+            def __call__(self):
+                pass
+
+        self.assertFalse(inspect.iscoroutinefunction(Cl2))
+        # instances with marked __call__ are NOT recognised.
+        self.assertFalse(inspect.iscoroutinefunction(Cl2()))
+
+        class Cl3:
+            @inspect.markcoroutinefunction
+            @classmethod
+            def do_something_classy(cls):
+                pass
+
+            @inspect.markcoroutinefunction
+            @staticmethod
+            def do_something_static():
+                pass
+
+        self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_classy))
+        self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_static))
+
         self.assertFalse(
             inspect.iscoroutinefunction(unittest.mock.Mock()))
         self.assertTrue(
@@ -886,6 +931,12 @@ class TestNoEOL(GetSourceBase):
         self.assertSourceEqual(self.fodderModule.X, 1, 2)
 
 
+class TestComplexDecorator(GetSourceBase):
+    fodderModule = mod2
+
+    def test_parens_in_decorator(self):
+        self.assertSourceEqual(self.fodderModule.complex_decorated, 273, 275)
+
 class _BrokenDataDescriptor(object):
     """
     A broken data descriptor. See bug #1785.
@@ -1419,6 +1470,13 @@ class TestClassesAndFunctions(unittest.TestCase):
         # test that local namespace lookups work
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})
+
+
+class TestFormatAnnotation(unittest.TestCase):
+    def test_typing_replacement(self):
+        from test.typinganndata.ann_module9 import ann, ann1
+        self.assertEqual(inspect.formatannotation(ann), 'Union[List[str], int]')
+        self.assertEqual(inspect.formatannotation(ann1), 'Union[List[testModule.typing.A], int]')
 
 
 class TestIsDataDescriptor(unittest.TestCase):
@@ -2953,8 +3011,6 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(str(inspect.signature(foo)), '(a)')
 
     def test_signature_on_decorated(self):
-        import functools
-
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs) -> int:
@@ -2965,6 +3021,8 @@ class TestSignatureObject(unittest.TestCase):
             @decorator
             def bar(self, a, b):
                 pass
+
+        bar = decorator(Foo().bar)
 
         self.assertEqual(self.signature(Foo.bar),
                          ((('self', ..., ..., "positional_or_keyword"),
@@ -2983,6 +3041,11 @@ class TestSignatureObject(unittest.TestCase):
                           ...)) # functools.wraps will copy __annotations__
                                 # from "func" to "wrapper", hence no
                                 # return_annotation
+
+        self.assertEqual(self.signature(bar),
+                         ((('a', ..., ..., "positional_or_keyword"),
+                           ('b', ..., ..., "positional_or_keyword")),
+                          ...))
 
         # Test that we handle method wrappers correctly
         def decorator(func):
@@ -3596,6 +3659,38 @@ class TestSignatureObject(unittest.TestCase):
                 self.assertEqual(signature_func(foo), inspect.Signature())
         self.assertEqual(inspect.get_annotations(foo), {})
 
+    def test_signature_as_str(self):
+        self.maxDiff = None
+        class S:
+            __signature__ = '(a, b=2)'
+
+        self.assertEqual(self.signature(S),
+                         ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', 2, ..., 'positional_or_keyword')),
+                          ...))
+
+    def test_signature_as_callable(self):
+        # __signature__ should be either a staticmethod or a bound classmethod
+        class S:
+            @classmethod
+            def __signature__(cls):
+                return '(a, b=2)'
+
+        self.assertEqual(self.signature(S),
+                         ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', 2, ..., 'positional_or_keyword')),
+                          ...))
+
+        class S:
+            @staticmethod
+            def __signature__():
+                return '(a, b=2)'
+
+        self.assertEqual(self.signature(S),
+                         ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', 2, ..., 'positional_or_keyword')),
+                          ...))
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
@@ -3891,7 +3986,8 @@ class TestSignatureBind(unittest.TestCase):
             self.call(test, 1, bar=2, spam='ham')
 
         with self.assertRaisesRegex(TypeError,
-                                     "missing a required argument: 'bar'"):
+                                     "missing a required keyword-only "
+                                     "argument: 'bar'"):
             self.call(test, 1)
 
         def test(foo, *, bar, **bin):
@@ -4358,8 +4454,11 @@ class TestMain(unittest.TestCase):
                                         'unittest', '--details')
         output = out.decode()
         # Just a quick sanity check on the output
+        self.assertIn(module.__spec__.name, output)
         self.assertIn(module.__name__, output)
+        self.assertIn(module.__spec__.origin, output)
         self.assertIn(module.__file__, output)
+        self.assertIn(module.__spec__.cached, output)
         self.assertIn(module.__cached__, output)
         self.assertEqual(err, b'')
 
