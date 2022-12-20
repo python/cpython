@@ -7,12 +7,15 @@
 #ifndef __FStar_UInt_8_16_32_64_H
 #define __FStar_UInt_8_16_32_64_H
 
+
+
+
 #include <inttypes.h>
 #include <stdbool.h>
-#include "krml/lowstar_endianness.h"
-#include "krml/internal/types.h"
-#include "krml/internal/target.h"
 
+#include "krml/lowstar_endianness.h"
+#include "krml/FStar_UInt_8_16_32_64.h"
+#include "krml/internal/target.h"
 static inline uint64_t FStar_UInt64_eq_mask(uint64_t a, uint64_t b)
 {
   uint64_t x = a ^ b;
@@ -100,6 +103,7 @@ static inline uint8_t FStar_UInt8_gte_mask(uint8_t a, uint8_t b)
   uint8_t x_xor_q_ = x_xor_q >> (uint32_t)7U;
   return x_xor_q_ - (uint8_t)1U;
 }
+
 
 #define __FStar_UInt_8_16_32_64_H_DEFINED
 #endif

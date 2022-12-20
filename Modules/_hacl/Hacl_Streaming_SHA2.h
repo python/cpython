@@ -30,8 +30,11 @@ extern "C" {
 #endif
 
 #include <string.h>
+#include "krml/FStar_UInt_8_16_32_64.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
+
+
 
 
 typedef struct Hacl_Streaming_SHA2_state_sha2_224_s
@@ -44,41 +47,75 @@ Hacl_Streaming_SHA2_state_sha2_224;
 
 typedef Hacl_Streaming_SHA2_state_sha2_224 Hacl_Streaming_SHA2_state_sha2_256;
 
-Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_224(void);
-
-void Hacl_Streaming_SHA2_init_224(Hacl_Streaming_SHA2_state_sha2_224 *s);
+/**
+Allocate initial state for the SHA2_256 hash. The state is to be freed by
+calling `free_256`.
+*/
+Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_256();
 
 /**
-0 = success, 1 = max length exceeded
+Reset an existing state to the initial hash state with empty data.
 */
-uint32_t
-Hacl_Streaming_SHA2_update_224(
-  Hacl_Streaming_SHA2_state_sha2_224 *p,
-  uint8_t *data,
-  uint32_t len
-);
-
-void Hacl_Streaming_SHA2_finish_224(Hacl_Streaming_SHA2_state_sha2_224 *p, uint8_t *dst);
-
-void Hacl_Streaming_SHA2_free_224(Hacl_Streaming_SHA2_state_sha2_224 *s);
-
-Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_256(void);
-
 void Hacl_Streaming_SHA2_init_256(Hacl_Streaming_SHA2_state_sha2_224 *s);
 
 /**
-0 = success, 1 = max length exceeded
+Feed an arbitrary amount of data into the hash. This function returns 0 for
+success, or 1 if the combined length of all of the data passed to `update_256`
+(since the last call to `init_256`) exceeds 2^61-1 bytes.
+
+This function is identical to the update function for SHA2_224.
 */
 uint32_t
 Hacl_Streaming_SHA2_update_256(
   Hacl_Streaming_SHA2_state_sha2_224 *p,
-  uint8_t *data,
-  uint32_t len
+  uint8_t *input,
+  uint32_t input_len
 );
 
+/**
+Write the resulting hash into `dst`, an array of 32 bytes. The state remains
+valid after a call to `finish_256`, meaning the user may feed more data into
+the hash via `update_256`. (The finish_256 function operates on an internal copy of
+the state and therefore does not invalidate the client-held state `p`.)
+*/
 void Hacl_Streaming_SHA2_finish_256(Hacl_Streaming_SHA2_state_sha2_224 *p, uint8_t *dst);
 
+/**
+Free a state allocated with `create_in_256`.
+
+This function is identical to the free function for SHA2_224.
+*/
 void Hacl_Streaming_SHA2_free_256(Hacl_Streaming_SHA2_state_sha2_224 *s);
+
+/**
+Hash `input`, of len `input_len`, into `dst`, an array of 32 bytes.
+*/
+void Hacl_Streaming_SHA2_sha256(uint8_t *input, uint32_t input_len, uint8_t *dst);
+
+Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_224();
+
+void Hacl_Streaming_SHA2_init_224(Hacl_Streaming_SHA2_state_sha2_224 *s);
+
+uint32_t
+Hacl_Streaming_SHA2_update_224(
+  Hacl_Streaming_SHA2_state_sha2_224 *p,
+  uint8_t *input,
+  uint32_t input_len
+);
+
+/**
+Write the resulting hash into `dst`, an array of 28 bytes. The state remains
+valid after a call to `finish_224`, meaning the user may feed more data into
+the hash via `update_224`.
+*/
+void Hacl_Streaming_SHA2_finish_224(Hacl_Streaming_SHA2_state_sha2_224 *p, uint8_t *dst);
+
+void Hacl_Streaming_SHA2_free_224(Hacl_Streaming_SHA2_state_sha2_224 *p);
+
+/**
+Hash `input`, of len `input_len`, into `dst`, an array of 28 bytes.
+*/
+void Hacl_Streaming_SHA2_sha224(uint8_t *input, uint32_t input_len, uint8_t *dst);
 
 #if defined(__cplusplus)
 }

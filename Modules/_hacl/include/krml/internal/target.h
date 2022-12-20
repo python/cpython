@@ -5,10 +5,12 @@
 #define __KRML_TARGET_H
 
 #include <stdlib.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <assert.h>
 
 /* Since KaRaMeL emits the inline keyword unconditionally, we follow the
  * guidelines at https://gcc.gnu.org/onlinedocs/gcc/Inline.html and make this
@@ -16,11 +18,6 @@
 #ifdef __GNUC__
 #  define inline __inline__
 #endif
-
-/******************************************************************************/
-/* Macros that KaRaMeL will generate.                                         */
-/******************************************************************************/
-
 
 #ifndef KRML_HOST_MALLOC
 #  define KRML_HOST_MALLOC malloc
