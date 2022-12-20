@@ -3362,23 +3362,23 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
 
     if (loop == Py_None) {
         loop = _asyncio_get_running_loop_impl(module);
-    }
-
-    if (loop == NULL) {
-        return NULL;
+        if (loop == NULL) {
+            return NULL;
+        }
+    } else {
+        Py_INCREF(loop);
     }
 
     ret = PyDict_GetItemWithError(state->current_tasks, loop);
+    Py_DECREF(loop);
     if (ret == NULL && PyErr_Occurred()) {
         return NULL;
     }
     else if (ret == NULL) {
         Py_RETURN_NONE;
     }
-    else {
-        Py_INCREF(ret);
-        return ret;
-    }
+    Py_INCREF(ret);
+    return ret;
 }
 
 
