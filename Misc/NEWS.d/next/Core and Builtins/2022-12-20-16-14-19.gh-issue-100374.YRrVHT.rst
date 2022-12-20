@@ -1,0 +1,1 @@
+Fixed incorrect result and delays in socket.getfqdn. (Patched by Dominic Socular @MTAwsl)
