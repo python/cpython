@@ -354,6 +354,14 @@ class HashLibTestCase(unittest.TestCase):
             self.assertEqual(m1.digest(*args), m4_copy.digest(*args))
             self.assertEqual(m4.digest(*args), m4_digest)
 
+    def test_sha256_over_4gb(self):
+        zero_1mb = b"\0" * 1024 * 1024
+        h = hashlib.sha256()
+        for i in range(0, 4096):
+            h.update(zero_1mb)
+        h.update(b"hello world")
+        self.assertEqual(h.hexdigest(), "a5364f7a52ebe2e25f1838a4ca715a893b6fd7a23f2a0d9e9762120da8b1bf53")
+
     def check(self, name, data, hexdigest, shake=False, **kwargs):
         length = len(hexdigest)//2
         hexdigest = hexdigest.lower()

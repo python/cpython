@@ -113,6 +113,20 @@ SHA_dealloc(SHAobject *ptr)
     Py_DECREF(tp);
 }
 
+/* HACL* takes a uint32_t for the length of its parameter, but Py_ssize_t can be
+ * 64 bits. */
+static void update_256(Hacl_Streaming_SHA2_state_sha2_256 *state, uint8_t *buf, Py_ssize_t len) {
+  /* Note: we explicitly ignore the error code on the basis that it would take >
+   * 1 billion years to overflow the maximum admissible length for SHA2-256
+   * (namely, 2^61-1 bytes). */
+  while (len > UINT32_MAX) {
+    Hacl_Streaming_SHA2_update_256(state, buf, UINT32_MAX);
+    len -= UINT32_MAX;
+    buf += UINT32_MAX;
+  }
+  Hacl_Streaming_SHA2_update_256(state, buf, len);
+}
+
 
 /* External methods for a hash object */
 
@@ -193,8 +207,7 @@ SHA256Type_update(SHAobject *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-    if (Hacl_Streaming_SHA2_update_256(self->state, buf.buf, buf.len) != 0)
-      PyErr_SetString(PyExc_RuntimeError, "maximum hashing length exceeded");
+    update_256(self->state, buf.buf, buf.len);
 
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -308,8 +321,7 @@ _sha256_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        if (Hacl_Streaming_SHA2_update_256(new->state, buf.buf, buf.len) != 0)
-            PyErr_SetString(PyExc_RuntimeError, "maximum hashing length exceeded");
+        update_256(new->state, buf.buf, buf.len);
         PyBuffer_Release(&buf);
     }
 
@@ -355,8 +367,7 @@ _sha256_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        if (Hacl_Streaming_SHA2_update_256(new->state, buf.buf, buf.len) != 0)
-            PyErr_SetString(PyExc_RuntimeError, "maximum hashing length exceeded");
+        update_256(new->state, buf.buf, buf.len);
         PyBuffer_Release(&buf);
     }
 
