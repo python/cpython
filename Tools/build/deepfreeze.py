@@ -262,10 +262,7 @@ class Printer:
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
-            num_registers = (len(localsplusnames) +
-                             code.co_stacksize +
-                             len(co_consts))
-            self.write(f".co_framesize = {num_registers} + FRAME_SPECIALS_SIZE,")
+            self.write(f".co_framesize = {len(localsplusnames)} + {code.co_stacksize} + {len(code.co_consts)} + FRAME_SPECIALS_SIZE,")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
             self.write(f".co_nlocalsplus = {len(localsplusnames)},")

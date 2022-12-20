@@ -304,7 +304,7 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int oparg3 = instruction->i_oparg3.final;
 
 if (0) {
-  if (opcode == LOAD_FAST_R || opcode == STORE_FAST_R)
+  if (opcode == LOAD_CONST_R || opcode == LOAD_FAST_R || opcode == STORE_FAST_R)
   {
     fprintf(stderr,
             "write_instr [%d]: oparg = %d oparg1 = %d oparg2 = %d oparg3 = %d\n",
@@ -710,9 +710,10 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
         c->c_regcode = false;
     }
     else {
-        c->c_regcode = !strstr(f, "import"); // strstr(f, "test_");
+        c->c_regcode = !strstr(f, "import") && !strstr(f, "frozen") && !strstr(f, "freeze") && !strstr(f, "encodings");
+        c->c_regcode = strstr(f, "mytest");
     }
-    c->c_regcode = true;
+    //c->c_regcode = true;
 
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
@@ -1223,6 +1224,7 @@ stack_effect(int opcode, int oparg, int jump)
         case DELETE_GLOBAL:
             return 0;
         case LOAD_CONST:
+        case LOAD_CONST_R:
             return 1;
         case LOAD_NAME:
             return 1;
@@ -1636,7 +1638,13 @@ compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
     if (arg < 0) {
         return ERROR;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, loc);
+    if (c->c_regcode) {
+        return cfg_builder_addop(CFG_BUILDER(c), LOAD_CONST_R, arg, loc,
+                                 CONST_OPARG(arg), UNUSED_OPARG, UNUSED_OPARG);
+    }
+    else {
+        return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, loc);
+    }
 }
 
 static int
@@ -8873,9 +8881,7 @@ resolve_register(oparg_t *oparg, int nlocalsplus, PyObject *varnames,
             break;
         case CONST_REG:
             assert(oparg->value >= 0 && oparg->value < nconsts);
-            oparg->final = (nlocalsplus +
-                            stacksize +
-                            oparg->value);
+            oparg->final = (nlocalsplus + stacksize + oparg->value);
             break;
         case NAME_REG:
             assert(oparg->value >= 0 && oparg->value < nlocalsplus);
@@ -9092,7 +9098,7 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
 {
     PyObject *constant = NULL;
     assert(HAS_CONST(opcode));
-    if (opcode == LOAD_CONST) {
+    if (opcode == LOAD_CONST || opcode == LOAD_CONST_R) {
         constant = PyList_GET_ITEM(co_consts, oparg);
     }
 
@@ -9385,10 +9391,15 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
         switch (inst->i_opcode) {
             /* Remove LOAD_CONST const; conditional jump */
             case LOAD_CONST:
+            case LOAD_CONST_R:
             {
                 PyObject* cnt;
                 int is_true;
                 int jump_if_true;
+                if (inst->i_opcode == LOAD_CONST_R) {
+                    oparg = inst->i_oparg1.value;
+                }
+
                 switch(nextop) {
                     case POP_JUMP_IF_FALSE:
                     case POP_JUMP_IF_TRUE:
@@ -9926,6 +9937,10 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
                 int index = b->b_instr[i].i_oparg;
                 index_map[index] = index;
             }
+            if (b->b_instr[i].i_opcode == LOAD_CONST_R) {
+                int index = b->b_instr[i].i_oparg1.value;
+                index_map[index] = index;
+            }
         }
     }
     /* now index_map[i] == i if consts[i] is used, -1 otherwise */
@@ -9984,6 +9999,12 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
                 b->b_instr[i].i_oparg = (int)reverse_index_map[index];
+            }
+            if (b->b_instr[i].i_opcode == LOAD_CONST_R) {
+                int index = b->b_instr[i].i_oparg1.value;
+                assert(reverse_index_map[index] >= 0);
+                assert(reverse_index_map[index] < n_used_consts);
+                b->b_instr[i].i_oparg1.value = (int)reverse_index_map[index];
             }
         }
     }

@@ -79,6 +79,7 @@ extern "C" {
 #define JUMP_FORWARD                           110
 #define JUMP_IF_FALSE_OR_POP                   111
 #define JUMP_IF_TRUE_OR_POP                    112
+#define LOAD_CONST_R                           113
 #define POP_JUMP_IF_FALSE                      114
 #define POP_JUMP_IF_TRUE                       115
 #define LOAD_GLOBAL                            116
@@ -178,25 +179,25 @@ extern "C" {
 #define LOAD_ATTR_PROPERTY                      80
 #define LOAD_ATTR_SLOT                          81
 #define LOAD_ATTR_WITH_HINT                     86
-#define LOAD_ATTR_METHOD_LAZY_DICT             113
-#define LOAD_ATTR_METHOD_NO_DICT               121
-#define LOAD_ATTR_METHOD_WITH_DICT             141
-#define LOAD_ATTR_METHOD_WITH_VALUES           143
-#define LOAD_CONST__LOAD_FAST                  158
-#define LOAD_FAST__LOAD_CONST                  159
-#define LOAD_FAST__LOAD_FAST                   160
-#define LOAD_GLOBAL_BUILTIN                    161
-#define LOAD_GLOBAL_MODULE                     166
-#define STORE_ATTR_INSTANCE_VALUE              167
-#define STORE_ATTR_SLOT                        168
-#define STORE_ATTR_WITH_HINT                   169
-#define STORE_FAST__LOAD_FAST                  170
-#define STORE_FAST__STORE_FAST                 173
-#define STORE_SUBSCR_DICT                      174
-#define STORE_SUBSCR_LIST_INT                  175
-#define UNPACK_SEQUENCE_LIST                   176
-#define UNPACK_SEQUENCE_TUPLE                  177
-#define UNPACK_SEQUENCE_TWO_TUPLE              178
+#define LOAD_ATTR_METHOD_LAZY_DICT             121
+#define LOAD_ATTR_METHOD_NO_DICT               141
+#define LOAD_ATTR_METHOD_WITH_DICT             143
+#define LOAD_ATTR_METHOD_WITH_VALUES           158
+#define LOAD_CONST__LOAD_FAST                  159
+#define LOAD_FAST__LOAD_CONST                  160
+#define LOAD_FAST__LOAD_FAST                   161
+#define LOAD_GLOBAL_BUILTIN                    166
+#define LOAD_GLOBAL_MODULE                     167
+#define STORE_ATTR_INSTANCE_VALUE              168
+#define STORE_ATTR_SLOT                        169
+#define STORE_ATTR_WITH_HINT                   170
+#define STORE_FAST__LOAD_FAST                  173
+#define STORE_FAST__STORE_FAST                 174
+#define STORE_SUBSCR_DICT                      175
+#define STORE_SUBSCR_LIST_INT                  176
+#define UNPACK_SEQUENCE_LIST                   177
+#define UNPACK_SEQUENCE_TUPLE                  178
+#define UNPACK_SEQUENCE_TWO_TUPLE              179
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
@@ -207,6 +208,7 @@ extern "C" {
 
 #define HAS_CONST(op) (false\
     || ((op) == LOAD_CONST) \
+    || ((op) == LOAD_CONST_R) \
     || ((op) == KW_NAMES) \
     )
 

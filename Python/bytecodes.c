@@ -156,6 +156,11 @@ dummy_func(
             Py_INCREF(value);
         }
 
+        inst(LOAD_CONST_R, (-- value)) {
+            value = REG(oparg1);
+            Py_INCREF(value);
+        }
+
         inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }

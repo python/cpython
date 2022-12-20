@@ -66,6 +66,15 @@
             DISPATCH();
         }
 
+        TARGET(LOAD_CONST_R) {
+            PyObject *value;
+            value = REG(oparg1);
+            Py_INCREF(value);
+            STACK_GROW(1);
+            POKE(1, value);
+            DISPATCH();
+        }
+
         TARGET(STORE_FAST) {
             PyObject *value = PEEK(1);
             SETLOCAL(oparg, value);

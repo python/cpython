@@ -220,6 +220,13 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func)
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
     _PyFrame_InitializeSpecials(new_frame, func, NULL, code);
+    int nconsts = (int)PyTuple_Size(code->co_consts);
+    if (nconsts > 0) {
+        PyObject **const_regs = new_frame->localsplus + (code->co_nlocalsplus +
+                                                         code->co_stacksize);
+        PyObject **consts = &PyTuple_GET_ITEM(code->co_consts, 0);
+        memcpy(const_regs, consts, sizeof(PyObject*) * nconsts);
+    }
     return new_frame;
 }
 

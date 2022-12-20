@@ -162,6 +162,8 @@ name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
 jrel_op('JUMP_IF_FALSE_OR_POP', 111) # Number of words to skip
 jrel_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
+def_op('LOAD_CONST_R', 113)     # Index in const list
+hasconst.append(113)
 jrel_op('POP_JUMP_IF_FALSE', 114)
 jrel_op('POP_JUMP_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116)     # Index in name list
