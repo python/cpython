@@ -724,6 +724,8 @@ public: // IBootstrapperApplication
             auto hr = LoadAssociateFilesStateFromKey(_engine, fPerMachine ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER);
             if (hr == S_OK) {
                 _engine->SetVariableNumeric(L"AssociateFiles", 1);
+            } else if (hr == S_FALSE) {
+                _engine->SetVariableNumeric(L"AssociateFiles", 0);
             } else if (FAILED(hr)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to load AssociateFiles state: error code 0x%08X", hr);
             }
@@ -817,6 +819,8 @@ public: // IBootstrapperApplication
             auto hr = LoadAssociateFilesStateFromKey(_engine, hkey);
             if (hr == S_OK) {
                 _engine->SetVariableNumeric(L"AssociateFiles", 1);
+            } else if (hr == S_FALSE) {
+                _engine->SetVariableNumeric(L"AssociateFiles", 0);
             } else if (FAILED(hr)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to load AssociateFiles state: error code 0x%08X", hr);
             }
@@ -834,7 +838,17 @@ public: // IBootstrapperApplication
             LONGLONG includeLauncher;
             if (SUCCEEDED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))
                 && includeLauncher == -1) {
-                _engine->SetVariableNumeric(L"Include_launcher", 1);
+                if (BOOTSTRAPPER_ACTION_LAYOUT == _command.action ||
+                    (BOOTSTRAPPER_ACTION_INSTALL == _command.action && !_upgrading)) {
+                    // When installing/downloading, we want to include the launcher
+                    // by default.
+                    _engine->SetVariableNumeric(L"Include_launcher", 1);
+                } else {
+                    // Any other action, if we didn't detect the MSI then we want to
+                    // keep it excluded
+                    _engine->SetVariableNumeric(L"Include_launcher", 0);
+                    _engine->SetVariableNumeric(L"AssociateFiles", 0);
+                }
             }
         }
 
@@ -2812,6 +2826,17 @@ private:
         return ::CompareStringW(LOCALE_NEUTRAL, 0, platform, -1, L"x64", -1) == CSTR_EQUAL;
     }
 
+    static bool IsTargetPlatformARM64(__in IBootstrapperEngine* pEngine) {
+        WCHAR platform[8];
+        DWORD platformLen = 8;
+
+        if (FAILED(pEngine->GetVariableString(L"TargetPlatform", platform, &platformLen))) {
+            return S_FALSE;
+        }
+
+        return ::CompareStringW(LOCALE_NEUTRAL, 0, platform, -1, L"ARM64", -1) == CSTR_EQUAL;
+    }
+
     static HRESULT LoadOptionalFeatureStatesFromKey(
         __in IBootstrapperEngine* pEngine,
         __in HKEY hkHive,
@@ -2820,7 +2845,7 @@ private:
         HKEY hKey;
         LRESULT res;
 
-        if (IsTargetPlatformx64(pEngine)) {
+        if (IsTargetPlatformx64(pEngine) || IsTargetPlatformARM64(pEngine)) {
             res = RegOpenKeyExW(hkHive, subkey, 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
         } else {
             res = RegOpenKeyExW(hkHive, subkey, 0, KEY_READ | KEY_WOW64_32KEY, &hKey);
@@ -2859,7 +2884,7 @@ private:
         BYTE buffer[1024];
         DWORD bufferLen = sizeof(buffer);
 
-        if (IsTargetPlatformx64(pEngine)) {
+        if (IsTargetPlatformx64(pEngine) || IsTargetPlatformARM64(pEngine)) {
             res = RegOpenKeyExW(hkHive, subkey, 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
         } else {
             res = RegOpenKeyExW(hkHive, subkey, 0, KEY_READ | KEY_WOW64_32KEY, &hKey);
@@ -2917,12 +2942,7 @@ private:
         HRESULT hr;
         HKEY hkHive;
 
-        // The launcher installation is separate from the Python install, so we
-        // check its state later. For now, assume we don't want the launcher or
-        // file associations, and if they have already been installed then
-        // loading the state will reactivate these settings.
-        pEngine->SetVariableNumeric(L"Include_launcher", 0);
-        pEngine->SetVariableNumeric(L"AssociateFiles", 0);
+        BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Loading state of optional features");
 
         // Get the registry key from the bundle, to save having to duplicate it
         // in multiple places.

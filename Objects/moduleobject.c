@@ -9,7 +9,6 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "structmember.h"         // PyMemberDef
 
-static Py_ssize_t max_module_number;
 
 static PyMemberDef module_members[] = {
     {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
@@ -43,10 +42,10 @@ PyModuleDef_Init(PyModuleDef* def)
 {
     assert(PyModuleDef_Type.tp_flags & Py_TPFLAGS_READY);
     if (def->m_base.m_index == 0) {
-        max_module_number++;
+        _PyRuntime.imports.last_module_index++;
         Py_SET_REFCNT(def, 1);
         Py_SET_TYPE(def, &PyModuleDef_Type);
-        def->m_base.m_index = max_module_number;
+        def->m_base.m_index = _PyRuntime.imports.last_module_index;
     }
     return (PyObject*)def;
 }
@@ -70,8 +69,7 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
     if (PyDict_SetItem(md_dict, &_Py_ID(__spec__), Py_None) != 0)
         return -1;
     if (PyUnicode_CheckExact(name)) {
-        Py_INCREF(name);
-        Py_XSETREF(mod->md_name, name);
+        Py_XSETREF(mod->md_name, Py_NewRef(name));
     }
 
     return 0;
@@ -220,6 +218,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
        _Py_PackageContext, and PyModule_Create*() will substitute this
        (if the name actually matches).
     */
+#define _Py_PackageContext (_PyRuntime.imports.pkgcontext)
     if (_Py_PackageContext != NULL) {
         const char *p = strrchr(_Py_PackageContext, '.');
         if (p != NULL && strcmp(module->m_name, p+1) == 0) {
@@ -227,6 +226,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
             _Py_PackageContext = NULL;
         }
     }
+#undef _Py_PackageContext
     if ((m = (PyModuleObject*)PyModule_New(name)) == NULL)
         return NULL;
 
@@ -291,23 +291,27 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     }
 
     for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
-        if (cur_slot->slot == Py_mod_create) {
-            if (create) {
+        switch (cur_slot->slot) {
+            case Py_mod_create:
+                if (create) {
+                    PyErr_Format(
+                        PyExc_SystemError,
+                        "module %s has multiple create slots",
+                        name);
+                    goto error;
+                }
+                create = cur_slot->value;
+                break;
+            case Py_mod_exec:
+                has_execution_slots = 1;
+                break;
+            default:
+                assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
                     PyExc_SystemError,
-                    "module %s has multiple create slots",
-                    name);
+                    "module %s uses unknown slot ID %i",
+                    name, cur_slot->slot);
                 goto error;
-            }
-            create = cur_slot->value;
-        } else if (cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT) {
-            PyErr_Format(
-                PyExc_SystemError,
-                "module %s uses unknown slot ID %i",
-                name, cur_slot->slot);
-            goto error;
-        } else {
-            has_execution_slots = 1;
         }
     }
 
@@ -502,8 +506,7 @@ PyModule_GetNameObject(PyObject *m)
         }
         return NULL;
     }
-    Py_INCREF(name);
-    return name;
+    return Py_NewRef(name);
 }
 
 const char *
@@ -537,8 +540,7 @@ PyModule_GetFilenameObject(PyObject *m)
         }
         return NULL;
     }
-    Py_INCREF(fileobj);
-    return fileobj;
+    return Py_NewRef(fileobj);
 }
 
 const char *

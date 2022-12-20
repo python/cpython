@@ -765,7 +765,7 @@ And on Windows, the configuration files are:
 +--------------+-------------------------------------------------+-------+
 
 On all platforms, the "personal" file can be temporarily disabled by
-passing the `--no-user-cfg` option.
+passing the ``--no-user-cfg`` option.
 
 Notes:
 
@@ -1066,7 +1066,7 @@ normal libraries do.
 
 .. seealso::
 
-   `Building Python modules on MS Windows platform with MinGW <http://old.zope.org/Members/als/tips/win32_mingw_modules>`_
+   `Building Python modules on MS Windows platform with MinGW <https://old.zope.dev/Members/als/tips/win32_mingw_modules>`_
       Information about building the required libraries for the MinGW environment.
 
 

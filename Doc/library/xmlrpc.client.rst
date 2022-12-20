@@ -60,7 +60,7 @@ between conformable Python objects and XML on the wire.
    may be passed to calls.
    The *headers* parameter is an optional sequence of HTTP headers to send with
    each request, expressed as a sequence of 2-tuples representing the header
-   name and value. (e.g. `[('Header-Name', 'value')]`).
+   name and value. (e.g. ``[('Header-Name', 'value')]``).
    The obsolete *use_datetime* flag is similar to *use_builtin_types* but it
    applies only to date/time values.
 
@@ -156,16 +156,16 @@ between conformable Python objects and XML on the wire.
       Added support of unmarshalling additional types used by Apache XML-RPC
       implementation for numerics: ``i1``, ``i2``, ``i8``, ``biginteger``,
       ``float`` and ``bigdecimal``.
-      See http://ws.apache.org/xmlrpc/types.html for a description.
+      See https://ws.apache.org/xmlrpc/types.html for a description.
 
 
 .. seealso::
 
-   `XML-RPC HOWTO <http://www.tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
+   `XML-RPC HOWTO <https://www.tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
       A good description of XML-RPC operation and client software in several languages.
       Contains pretty much everything an XML-RPC client developer needs to know.
 
-   `XML-RPC Introspection <http://xmlrpc-c.sourceforge.net/introspection.html>`_
+   `XML-RPC Introspection <https://xmlrpc-c.sourceforge.net/introspection.html>`_
       Describes the XML-RPC protocol extension for introspection.
 
    `XML-RPC Specification <http://xmlrpc.scripting.com/spec.html>`_

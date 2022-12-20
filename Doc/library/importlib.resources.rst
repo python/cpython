@@ -11,9 +11,17 @@
 .. versionadded:: 3.7
 
 This module leverages Python's import system to provide access to *resources*
-within *packages*.  If you can import a package, you can access resources
-within that package.  Resources can be opened or read, in either binary or
-text mode.
+within *packages*.
+
+"Resources" are file-like resources associated with a module or package in
+Python. The resources may be contained directly in a package or within a
+subdirectory contained in that package. Resources may be text or binary. As a
+result, Python module sources (.py) of a package and compilation artifacts
+(pycache) are technically de-facto resources of that package. In practice,
+however, resources are primarily those non-Python artifacts exposed
+specifically by the package author.
+
+Resources can be opened or read in either binary or text mode.
 
 Resources are roughly akin to files inside directories, though it's important
 to keep in mind that this is just a metaphor.  Resources and packages **do
@@ -26,16 +34,16 @@ for example, a package and its resources can be imported from a zip file using
    This module provides functionality similar to `pkg_resources
    <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`_ `Basic
    Resource Access
-   <http://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
+   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
    without the performance overhead of that package.  This makes reading
    resources included in packages easier, with more stable and consistent
    semantics.
 
    The standalone backport of this module provides more information
    on `using importlib.resources
-   <http://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
+   <https://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
    `migrating from pkg_resources to importlib.resources
-   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
+   <https://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
 
 :class:`Loaders <importlib.abc.Loader>` that wish to support resource reading should implement a
 ``get_resource_reader(fullname)`` method as specified by

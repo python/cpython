@@ -340,7 +340,7 @@ class LogRecord(object):
         self.lineno = lineno
         self.funcName = func
         self.created = ct
-        self.msecs = (ct - int(ct)) * 1000
+        self.msecs = int((ct - int(ct)) * 1000) + 0.0  # see gh-89047
         self.relativeCreated = (self.created - _startTime) * 1000
         if logThreads:
             self.thread = threading.get_ident()
@@ -511,7 +511,7 @@ class StringTemplateStyle(PercentStyle):
 
     def usesTime(self):
         fmt = self._fmt
-        return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
+        return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_search) >= 0
 
     def validate(self):
         pattern = Template.pattern
@@ -1828,6 +1828,25 @@ class Logger(Filterer):
             suffix = '.'.join((self.name, suffix))
         return self.manager.getLogger(suffix)
 
+    def getChildren(self):
+
+        def _hierlevel(logger):
+            if logger is logger.manager.root:
+                return 0
+            return 1 + logger.name.count('.')
+
+        d = self.manager.loggerDict
+        _acquireLock()
+        try:
+            # exclude PlaceHolders - the last check is to ensure that lower-level
+            # descendants aren't returned - if there are placeholders, a logger's
+            # parent field might point to a grandparent or ancestor thereof.
+            return set(item for item in d.values()
+                       if isinstance(item, Logger) and item.parent is self and
+                       _hierlevel(item) == 1 + _hierlevel(item.parent))
+        finally:
+            _releaseLock()
+
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
         return '<%s %s (%s)>' % (self.__class__.__name__, self.name, level)
@@ -2245,7 +2264,11 @@ def shutdown(handlerList=_handlerList):
             if h:
                 try:
                     h.acquire()
-                    h.flush()
+                    # MemoryHandlers might not want to be flushed on close,
+                    # but circular imports prevent us scoping this to just
+                    # those handlers.  hence the default to True.
+                    if getattr(h, 'flushOnClose', True):
+                        h.flush()
                     h.close()
                 except (OSError, ValueError):
                     # Ignore errors which might be caused
