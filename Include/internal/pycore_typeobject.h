@@ -35,7 +35,8 @@ struct type_cache_entry {
     PyObject *value;       // borrowed reference or NULL
 };
 
-#define MCACHE_SIZE_EXP 12
+// TODO(eelizondo): Windows builds fail with 12 temporarily remove
+#define MCACHE_SIZE_EXP 11
 
 struct type_cache {
     struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
