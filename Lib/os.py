@@ -427,13 +427,10 @@ def _walk(top, topdown, onerror, followlinks):
 __all__.append("walk")
 
 if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
-    from enum import Enum, _simple_enum
-
-    @_simple_enum(Enum)
     class _WalkAction:
-        YIELD = 1
-        CLOSE = 2
-        WALK = 3
+        YIELD = object()
+        CLOSE = object()
+        WALK = object()
 
     def fwalk(top=".", topdown=True, onerror=None, *, follow_symlinks=False, dir_fd=None):
         """Directory tree generator.
