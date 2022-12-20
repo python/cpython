@@ -1890,7 +1890,10 @@ class LWPCookieJar(FileCookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        with os.fdopen(os.open(filename, os.O_CREAT | os.O_WRONLY, 0o600), 'w') as f:
+        with os.fdopen(
+            os.open(filename, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600),
+            'w',
+        ) as f:
             # There really isn't an LWP Cookies 2.0 format, but this indicates
             # that there is extra information in here (domain_dot and
             # port_spec) while still being compatible with libwww-perl, I hope.
@@ -2086,7 +2089,10 @@ class MozillaCookieJar(FileCookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        with os.fdopen(os.open(filename, os.O_CREAT | os.O_WRONLY, 0o600), 'w') as f:
+        with os.fdopen(
+            os.open(filename, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600),
+            'w',
+        ) as f:
             f.write(NETSCAPE_HEADER_TEXT)
             now = time.time()
             for cookie in self:
