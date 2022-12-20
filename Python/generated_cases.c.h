@@ -240,8 +240,9 @@
 
         TARGET(UNARY_POSITIVE_R) {
             PyObject *value = REG(oparg1);
+            PyObject *res;
             assert(value != NULL);
-            PyObject *res = PyNumber_Positive(value);
+            res = PyNumber_Positive(value);
             if (res == NULL) goto error;
             Py_XSETREF(REG(oparg2), res);
             DISPATCH();

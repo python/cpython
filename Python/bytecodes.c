@@ -191,12 +191,10 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(UNARY_POSITIVE_R, (--)) {
-            PyObject *value = REG(oparg1);
+        register inst(UNARY_POSITIVE_R, (value -- res)) {
             assert(value != NULL);
-            PyObject *res = PyNumber_Positive(value);
+            res = PyNumber_Positive(value);
             ERROR_IF(res == NULL, error);
-            Py_XSETREF(REG(oparg2), res);
         }
 
         inst(UNARY_NEGATIVE, (value -- res)) {

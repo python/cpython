@@ -96,6 +96,8 @@ class Formatter:
         cast = self.cast(dst, src)
         if m := re.match(r"^PEEK\((\d+)\)$", dst.name):
             self.emit(f"POKE({m.group(1)}, {cast}{src.name});")
+        elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
+            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
         else:
             self.emit(f"{dst.name} = {cast}{src.name};")
 
@@ -109,6 +111,7 @@ class Instruction:
 
     # Parts of the underlying instruction definition
     inst: parser.InstDef
+    register: bool
     kind: typing.Literal["inst", "op"]
     name: str
     block: parser.Block
@@ -121,6 +124,8 @@ class Instruction:
     cache_effects: list[parser.CacheEffect]
     input_effects: list[StackEffect]
     output_effects: list[StackEffect]
+    input_registers: list[str]  # Parallel to input_effects
+    output_registers: list[str]  # Etc.
 
     # Set later
     family: parser.Family | None = None
@@ -128,6 +133,7 @@ class Instruction:
 
     def __init__(self, inst: parser.InstDef):
         self.inst = inst
+        self.register = inst.register
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
@@ -142,6 +148,14 @@ class Instruction:
         ]
         self.output_effects = inst.outputs  # For consistency/completeness
 
+    def analyze_registers(self, a: "Analyzer") -> None:
+        regs = iter(("REG(oparg1)", "REG(oparg2)", "REG(oparg3)"))
+        try:
+            self.input_registers = [next(regs) for _ in self.input_effects]
+            self.output_registers = [next(regs) for _ in self.output_effects]
+        except StopIteration:  # Running out of registers
+            a.error(f"Instruction {self.name} has too many register effects")
+
     def write(self, out: Formatter) -> None:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
@@ -153,10 +167,16 @@ class Instruction:
                         f'{self.cache_offset}, "incorrect cache size");'
                     )
 
-        # Write input stack effect variable declarations and initializations
-        for i, ieffect in enumerate(reversed(self.input_effects), 1):
-            src = StackEffect(f"PEEK({i})", "")
-            out.declare(ieffect, src)
+        if not self.register:
+            # Write input stack effect variable declarations and initializations
+            for i, ieffect in enumerate(reversed(self.input_effects), 1):
+                src = StackEffect(f"PEEK({i})", "")
+                out.declare(ieffect, src)
+        else:
+            # Write input register variable declarations and initializations
+            for ieffect, reg in zip(self.input_effects, self.input_registers):
+                src = StackEffect(reg, "")
+                out.declare(ieffect, src)
 
         # Write output stack effect variable declarations
         input_names = {ieffect.name for ieffect in self.input_effects}
@@ -170,18 +190,24 @@ class Instruction:
         if self.always_exits:
             return
 
-        # Write net stack growth/shrinkage
-        diff = len(self.output_effects) - len(self.input_effects)
-        out.stack_adjust(diff)
+        if not self.register:
+            # Write net stack growth/shrinkage
+            diff = len(self.output_effects) - len(self.input_effects)
+            out.stack_adjust(diff)
 
-        # Write output stack effect assignments
-        unmoved_names: set[str] = set()
-        for ieffect, oeffect in zip(self.input_effects, self.output_effects):
-            if ieffect.name == oeffect.name:
-                unmoved_names.add(ieffect.name)
-        for i, oeffect in enumerate(reversed(self.output_effects), 1):
-            if oeffect.name not in unmoved_names:
-                dst = StackEffect(f"PEEK({i})", "")
+            # Write output stack effect assignments
+            unmoved_names: set[str] = set()
+            for ieffect, oeffect in zip(self.input_effects, self.output_effects):
+                if ieffect.name == oeffect.name:
+                    unmoved_names.add(ieffect.name)
+            for i, oeffect in enumerate(reversed(self.output_effects), 1):
+                if oeffect.name not in unmoved_names:
+                    dst = StackEffect(f"PEEK({i})", "")
+                    out.assign(dst, oeffect)
+        else:
+            # Write output register assignments
+            for oeffect, reg in zip(self.output_effects, self.output_registers):
+                dst = StackEffect(reg, "")
                 out.assign(dst, oeffect)
 
         # Write cache effect
@@ -218,14 +244,17 @@ class Instruction:
                 # ERROR_IF() must pop the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.
                 # NOTE: If the label doesn't exist, just add it to ceval.c.
-                ninputs = len(self.input_effects)
-                # Don't pop common input/output effects at the bottom!
-                # These aren't DECREF'ed so they can stay.
-                for ieff, oeff in zip(self.input_effects, self.output_effects):
-                    if ieff.name == oeff.name:
-                        ninputs -= 1
-                    else:
-                        break
+                if not self.register:
+                    ninputs = len(self.input_effects)
+                    # Don't pop common input/output effects at the bottom!
+                    # These aren't DECREF'ed so they can stay.
+                    for ieff, oeff in zip(self.input_effects, self.output_effects):
+                        if ieff.name == oeff.name:
+                            ninputs -= 1
+                        else:
+                            break
+                else:
+                    ninputs = 0
                 if ninputs:
                     out.write_raw(
                         f"{extra}{space}if ({cond}) goto pop_{ninputs}_{label};\n"
@@ -233,9 +262,10 @@ class Instruction:
                 else:
                     out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*$", line):
-                space = m.group(1)
-                for ieff in self.input_effects:
-                    out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
+                if not self.register:
+                    space = m.group(1)
+                    for ieff in self.input_effects:
+                        out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
 
@@ -387,6 +417,7 @@ class Analyzer:
         self.find_predictions()
         self.map_families()
         self.check_families()
+        self.analyze_register_instrs()
         self.analyze_supers_and_macros()
 
     def find_predictions(self) -> None:
@@ -452,6 +483,11 @@ class Analyzer:
                         f"{member} = {(c, i, o)}",
                         family,
                     )
+
+    def analyze_register_instrs(self) -> None:
+        for instr in self.instrs.values():
+            if instr.register:
+                instr.analyze_registers(self)
 
     def analyze_supers_and_macros(self) -> None:
         """Analyze each super- and macro instruction."""
