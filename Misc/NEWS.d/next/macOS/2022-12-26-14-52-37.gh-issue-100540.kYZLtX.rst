@@ -1,0 +1,2 @@
+Removed obsolete ``dlfcn.h`` shim from the ``_ctypes`` extension module,
+which has not been necessary since Mac OS X 10.2.

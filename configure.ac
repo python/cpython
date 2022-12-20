@@ -3741,7 +3741,6 @@ AS_VAR_IF([have_libffi], [yes], [
   AS_CASE([$ac_sys_system],
     [Darwin], [
       dnl when do we need USING_APPLE_OS_LIBFFI?
-      AS_VAR_APPEND([LIBFFI_CFLAGS], [" -I\$(srcdir)/Modules/_ctypes/darwin"])
       ctypes_malloc_closure=yes
     ],
     [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])]
