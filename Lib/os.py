@@ -490,8 +490,8 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # Note: This uses O(depth of the directory tree) file descriptors: if
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
+        stack = [(_WalkAction.WALK, (topfd, toppath))]
         try:
-            stack = [(_WalkAction.WALK, (topfd, toppath))]
             while stack:
                 action, value = stack.pop()
                 if action is _WalkAction.YIELD:
