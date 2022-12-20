@@ -84,13 +84,13 @@ extern "C" {
                     .latin1 = _Py_str_latin1_INIT, \
                 }, \
                 .tuple_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+                    .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, 0) \
                 }, \
                 .hamt_bitmap_node_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&_PyHamt_BitmapNode_Type, 0) \
+                    .ob_base = PyVarObject_HEAD_INIT(&_PyHamt_BitmapNode_Type, 0) \
                 }, \
                 .context_token_missing = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyContextTokenMissing_Type), \
+                    .ob_base = PyObject_HEAD_IMMORTAL_INIT(&_PyContextTokenMissing_Type) \
                 }, \
             }, \
         }, \
@@ -130,7 +130,7 @@ extern "C" {
             .singletons = { \
                 ._not_used = 1, \
                 .hamt_empty = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
+                    .ob_base = PyObject_HEAD_IMMORTAL_INIT(&_PyHamt_Type) \
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
                 }, \
             }, \
@@ -149,14 +149,14 @@ extern "C" {
 
 #define _PyLong_DIGIT_INIT(val) \
     { \
-        _PyVarObject_IMMORTAL_INIT(&PyLong_Type, \
-                                   ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1))), \
+        PyVarObject_HEAD_INIT(&PyLong_Type, \
+                                   ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1))) \
         .ob_digit = { ((val) >= 0 ? (val) : -(val)) }, \
     }
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \
-        _PyVarObject_IMMORTAL_INIT(&PyBytes_Type, (LEN)), \
+        PyVarObject_HEAD_INIT(&PyBytes_Type, (LEN)) \
         .ob_shash = -1, \
         .ob_sval = { (CH) }, \
     }
@@ -167,7 +167,7 @@ extern "C" {
 
 #define _PyUnicode_ASCII_BASE_INIT(LITERAL, ASCII) \
     { \
-        .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
+        .ob_base = PyObject_HEAD_IMMORTAL_INIT(&PyUnicode_Type) \
         .length = sizeof(LITERAL) - 1, \
         .hash = -1, \
         .state = { \
