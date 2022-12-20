@@ -503,7 +503,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                 elif action is _WalkAction.WALK:
                     topfd, toppath = value
                 else:
-                    raise ValueError(f"invalid walk action: {action}")
+                    raise AssertionError(f"invalid walk action: {action!r}")
                 scandir_it = scandir(topfd)
                 dirs = []
                 nondirs = []
