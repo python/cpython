@@ -1,0 +1,2 @@
+:meth:`ssl.SSLContext.load_verify_locations` no longer incorrectly accepts
+some cases of trailing data when parsing DER.
