@@ -222,6 +222,14 @@ class XMLRPCTestCase(unittest.TestCase):
                 '</struct></value></param></params>')
         self.assertRaises(ResponseError, xmlrpclib.loads, data)
 
+    def test_limit_int(self):
+        data = '<params><param><value><int>{i}</int></value></param></params>'
+        maxdigits = 5000
+        with test_support.adjust_int_max_str_digits(maxdigits):
+            i = '1' * (maxdigits + 1)
+            with self.assertRaises(ValueError):
+                xmlrpclib.loads(data.format(i=i))
+
 
 class HelperTestCase(unittest.TestCase):
     def test_escape(self):

@@ -34,6 +34,8 @@ typedef struct _is {
     int tscdump;
 #endif
 
+    int long_max_str_digits;
+
 } PyInterpreterState;
 
 

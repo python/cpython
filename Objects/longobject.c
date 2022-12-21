@@ -1338,7 +1338,7 @@ long_to_decimal_string(PyObject *aa, int addL)
 {
     PyLongObject *scratch, *a;
     PyObject *str;
-    Py_ssize_t size, strlen, size_a, i, j;
+    Py_ssize_t size, digitlen, strlen, size_a, i, j;
     digit *pout, *pin, rem, tenpow;
     char *p;
     int negative;
@@ -1401,13 +1401,23 @@ long_to_decimal_string(PyObject *aa, int addL)
         pout[size++] = 0;
 
     /* calculate exact length of output string, and allocate */
-    strlen = (addL != 0) + negative +
-        1 + (size - 1) * _PyLong_DECIMAL_SHIFT;
+    digitlen = 1 + (size - 1) * _PyLong_DECIMAL_SHIFT;
     tenpow = 10;
     rem = pout[size-1];
     while (rem >= tenpow) {
         tenpow *= 10;
-        strlen++;
+        digitlen++;
+    }
+    strlen = (addL != 0) + negative + digitlen;
+    if (digitlen > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
+        PyInterpreterState *interp = PyThreadState_GET()->interp;
+        int max_str_digits = interp->long_max_str_digits;
+        if ((max_str_digits > 0) && (digitlen > max_str_digits)) {
+            Py_DECREF(scratch);
+            PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT,
+                         max_str_digits, digitlen);
+            return NULL;
+        }
     }
     str = PyString_FromStringAndSize(NULL, strlen);
     if (str == NULL) {
@@ -1761,6 +1771,7 @@ PyLong_FromString(char *str, char **pend, int base)
 
     start = str;
     if ((base & (base - 1)) == 0)
+        /* binary bases are not limited by long_max_str_digits */
         z = long_from_binary_base(&str, base);
     else {
 /***
@@ -1884,6 +1895,17 @@ digit beyond the first.
         scan = str;
         while (_PyLong_DigitValue[Py_CHARMASK(*scan)] < base)
             ++scan;
+
+        /* Limit the size to avoid excessive computation attacks. */
+        if ((scan - str) > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
+            PyInterpreterState *interp = PyThreadState_GET()->interp;
+            int max_str_digits = interp->long_max_str_digits;
+            if ((max_str_digits > 0) && ((scan - str) > max_str_digits)) {
+                PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT,
+                             max_str_digits, (scan - str));
+                return NULL;
+            }
+        }
 
         /* Create a long object that can contain the largest possible
          * integer with this base and length.  Note that there's no
@@ -4367,6 +4389,8 @@ internal representation of integers.  The attributes are read only.");
 static PyStructSequence_Field long_info_fields[] = {
     {"bits_per_digit", "size of a digit in bits"},
     {"sizeof_digit", "size in bytes of the C type used to represent a digit"},
+    {"default_max_str_digits", "maximum string conversion digits limitation"},
+    {"str_digits_check_threshold", "minimum positive value for long_max_str_digits"},
     {NULL, NULL}
 };
 
@@ -4374,7 +4398,7 @@ static PyStructSequence_Desc long_info_desc = {
     "sys.long_info",   /* name */
     long_info__doc__,  /* doc */
     long_info_fields,  /* fields */
-    2                  /* number of fields */
+    4                  /* number of fields */
 };
 
 PyObject *
@@ -4389,6 +4413,10 @@ PyLong_GetInfo(void)
                               PyInt_FromLong(PyLong_SHIFT));
     PyStructSequence_SET_ITEM(long_info, field++,
                               PyInt_FromLong(sizeof(digit)));
+    PyStructSequence_SET_ITEM(long_info, field++,
+                              PyLong_FromLong(_PY_LONG_DEFAULT_MAX_STR_DIGITS));
+    PyStructSequence_SET_ITEM(long_info, field++,
+                              PyLong_FromLong(_PY_LONG_MAX_STR_DIGITS_THRESHOLD));
     if (PyErr_Occurred()) {
         Py_CLEAR(long_info);
         return NULL;
@@ -4399,8 +4427,45 @@ PyLong_GetInfo(void)
 int
 _PyLong_Init(void)
 {
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
     /* initialize long_info */
     if (Long_InfoType.tp_name == 0)
         PyStructSequence_InitType(&Long_InfoType, &long_info_desc);
+    interp->long_max_str_digits = Py_LongMaxStrDigits;
+    if (interp->long_max_str_digits == -1) {
+        interp->long_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
+    }
     return 1;
+}
+
+
+void
+_PyLongMaxStrDigits_Init(void)
+{
+    char *env;
+    const char *endptr;
+    long maxdigits;
+
+
+    if (Py_LongMaxStrDigits >= 0 ||
+        !Py_LongMaxStrDigitsFlag)
+        return;
+
+    env = Py_GETENV("PYTHONINTMAXSTRDIGITS");
+    if (env && *env != '\0') {
+        errno = 0;
+        maxdigits = strtol(env, (char **)&endptr, 10);
+        if (*endptr != '\0' || errno == ERANGE || maxdigits < INT_MIN || maxdigits > INT_MAX ||
+            !((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD))) {
+#define STRINGIFY(VAL) _STRINGIFY(VAL)
+#define _STRINGIFY(VAL) #VAL
+            Py_FatalError(
+                "PYTHONINTMAXSTRDIGITS: invalid limit; must be >= "
+                STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
+                " or 0 for unlimited.");
+#undef _STRINGIFY
+#undef STRINGIFY
+        }
+        Py_LongMaxStrDigits = (int)maxdigits;
+    }
 }

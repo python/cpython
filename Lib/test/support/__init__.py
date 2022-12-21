@@ -45,7 +45,7 @@ __all__ = ["Error", "TestFailed", "TestDidNotRun", "ResourceDenied", "import_mod
            "check_impl_detail", "get_attribute", "py3k_bytes",
            "import_fresh_module", "threading_cleanup", "reap_children",
            "strip_python_stderr", "IPV6_ENABLED", "run_with_tz",
-           "SuppressCrashReport"]
+           "SuppressCrashReport", "adjust_int_max_str_digits"]
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -2175,3 +2175,14 @@ class SaveSignals:
     def restore(self):
         for signum, handler in self.handlers.items():
             self.signal.signal(signum, handler)
+
+
+@contextlib.contextmanager
+def adjust_int_max_str_digits(max_digits):
+    """Temporarily change the integer string conversion length limit."""
+    current = sys.get_int_max_str_digits()
+    try:
+        sys.set_int_max_str_digits(max_digits)
+        yield
+    finally:
+        sys.set_int_max_str_digits(current)

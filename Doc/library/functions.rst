@@ -788,6 +788,14 @@ section.
 
    The long type is described in :ref:`typesnumeric`.
 
+   .. versionchanged:: 2.7.18.6
+      :class:`long` string inputs and string representations can be limited to
+      help avoid denial of service attacks. A :exc:`ValueError` is raised when
+      the limit is exceeded while converting a string *x* to an :class:`long` or
+      when converting an :class:`long` into a string would exceed the limit.
+      See the :ref:`integer string conversion length limitation
+      <int_max_str_digits>` documentation.
+
 
 .. function:: map(function, iterable, ...)
 

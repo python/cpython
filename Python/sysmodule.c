@@ -668,6 +668,46 @@ The flag constants are defined in the ctypes and DLFCN modules.");
 
 #endif  /* HAVE_DLOPEN */
 
+static PyObject *
+sys_set_int_max_str_digits(PyObject *self, PyObject *args)
+{
+    int new_val;
+    PyThreadState *tstate = PyThreadState_GET();
+    if (!PyArg_ParseTuple(args, "i:set_int_max_str_digits", &new_val))
+        return NULL;
+    if (!tstate)
+        return NULL;
+    if ((!new_val) || new_val >= (_PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
+        tstate->interp->long_max_str_digits = new_val;
+    } else {
+        PyErr_Format(
+            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
+        return NULL;
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+PyDoc_STRVAR(set_int_max_str_digits_doc,
+"set_int_max_str_digits_doc() -> None\n\
+\n\
+Set the maximum string digits limit for non-binary int<->str conversions.");
+
+static PyObject *
+sys_get_int_max_str_digits(PyObject *self, PyObject *args)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    if (!tstate)
+        return NULL;
+    return PyInt_FromLong(tstate->interp->long_max_str_digits);
+}
+
+PyDoc_STRVAR(get_int_max_str_digits_doc,
+"get_int_max_str_digits_doc() -> int\n\
+\n\
+Return the maximum string digits limit for non-binary int<->str conversions.");
+
 #ifdef USE_MALLOPT
 /* Link with -lmalloc (or -lmpc) on an SGI */
 #include <malloc.h>
@@ -937,6 +977,8 @@ static PyMethodDef sys_methods[] = {
     {"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS,
      getdlopenflags_doc},
 #endif
+    {"get_int_max_str_digits", (PyCFunction)sys_get_int_max_str_digits,
+     METH_NOARGS, get_int_max_str_digits_doc},
 #ifdef COUNT_ALLOCS
     {"getcounts",       (PyCFunction)sys_getcounts, METH_NOARGS},
 #endif
@@ -978,6 +1020,8 @@ static PyMethodDef sys_methods[] = {
     {"setdlopenflags", sys_setdlopenflags, METH_VARARGS,
      setdlopenflags_doc},
 #endif
+    {"set_int_max_str_digits", (PyCFunction)sys_set_int_max_str_digits,
+     METH_VARARGS, set_int_max_str_digits_doc},
     {"setprofile",      sys_setprofile, METH_O, setprofile_doc},
     {"getprofile",      sys_getprofile, METH_NOARGS, getprofile_doc},
     {"setrecursionlimit", sys_setrecursionlimit, METH_VARARGS,
@@ -1139,6 +1183,7 @@ exc_info() -- return thread-safe information about the current exception\n\
 exc_clear() -- clear the exception state for the current thread\n\
 exit() -- exit the interpreter by raising SystemExit\n\
 getdlopenflags() -- returns flags to be used for dlopen() calls\n\
+get_int_max_str_digits() -- returns the length limit for non-binary int<->str conversions\n\
 getprofile() -- get the global profiling function\n\
 getrefcount() -- return the reference count for an object (plus one :-)\n\
 getrecursionlimit() -- return the max recursion depth for the interpreter\n\
@@ -1146,6 +1191,7 @@ getsizeof() -- return the size of an object in bytes\n\
 gettrace() -- get the global debug tracing function\n\
 setcheckinterval() -- control how often the interpreter checks for events\n\
 setdlopenflags() -- set the flags to be used for dlopen() calls\n\
+set_int_max_str_digits() -- set the length limit for non-binary int<->str conversions\n\
 setprofile() -- set the global profiling function\n\
 setrecursionlimit() -- set the max recursion depth for the interpreter\n\
 settrace() -- set the global debug tracing function\n\
@@ -1227,6 +1273,7 @@ static PyStructSequence_Field flags_fields[] = {
     /* {"skip_first",                   "-x"}, */
     {"bytes_warning", "-b"},
     {"hash_randomization", "-R"},
+    {"int_max_str_digits", "???"},
     {0}
 };
 
@@ -1235,9 +1282,9 @@ static PyStructSequence_Desc flags_desc = {
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
 #ifdef RISCOS
-    17
+    18
 #else
-    16
+    17
 #endif
 };
 
@@ -1275,6 +1322,7 @@ make_flags(void)
     /* SetFlag(skipfirstline); */
     SetFlag(Py_BytesWarningFlag);
     SetFlag(Py_HashRandomizationFlag);
+    SetFlag(Py_LongMaxStrDigits);
 #undef SetFlag
 
     if (PyErr_Occurred()) {
