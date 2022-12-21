@@ -1075,6 +1075,18 @@ class FractionTest(unittest.TestCase):
             (F(22, 7), '7.2%', '314.29%'),
             (F(22, 7), '8.2%', ' 314.29%'),
             (F(22, 7), '08.2%', '0314.29%'),
+            # Test cases from #67790 and discuss.python.org Ideas thread.
+            (F(1, 3), '.2f', '0.33'),
+            (F(1, 8), '.2f', '0.12'),
+            (F(3, 8), '.2f', '0.38'),
+            (F(2545, 1000), '.2f', '2.54'),
+            (F(2549, 1000), '.2f', '2.55'),
+            (F(2635, 1000), '.2f', '2.64'),
+            (F(1, 100), '.1f', '0.0'),
+            (F(49, 1000), '.1f', '0.0'),
+            (F(51, 1000), '.1f', '0.1'),
+            (F(149, 1000), '.1f', '0.1'),
+            (F(151, 1000), '.1f', '0.2'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
