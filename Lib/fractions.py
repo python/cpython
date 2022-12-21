@@ -435,11 +435,12 @@ class Fraction(numbers.Rational):
 
         # Round to get the digits we need, figure out where to place the point,
         # and decide whether to use scientific notation.
-        n, d = self._numerator, self._denominator
         if presentation_type in "fF%":
-            exponent = -precision - (2 if presentation_type == "%" else 0)
+            exponent = -precision
+            if presentation_type == "%":
+                exponent -= 2
             negative, significand = _round_to_exponent(
-                n, d, exponent, no_neg_zero)
+                self._numerator, self._denominator, exponent, no_neg_zero)
             scientific = False
             point_pos = precision
         else:  # presentation_type in "eEgG"
@@ -448,10 +449,12 @@ class Fraction(numbers.Rational):
                 if presentation_type in "gG"
                 else precision + 1
             )
-            negative, significand, exponent = _round_to_figures(n, d, figures)
+            negative, significand, exponent = _round_to_figures(
+                self._numerator, self._denominator, figures)
             scientific = (
                 presentation_type in "eE"
-                or exponent > 0 or exponent + figures <= -4
+                or exponent > 0
+                or exponent + figures <= -4
             )
             point_pos = figures - 1 if scientific else -exponent
 
@@ -493,8 +496,10 @@ class Fraction(numbers.Rational):
                 for pos in range(first_pos, len(leading), 3)
             )
 
-        # Pad with fill character if necessary and return.
+        # We now have a sign and a body.
         body = leading + trailing
+
+        # Pad with fill character if necessary and return.
         padding = fill * (minimumwidth - len(sign) - len(body))
         if align == ">":
             return padding + sign + body
