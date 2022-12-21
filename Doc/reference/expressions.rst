@@ -454,10 +454,10 @@ generator.  That generator then controls the execution of the generator
 function.  The execution starts when one of the generator's methods is called.
 At that time, the execution proceeds to the first yield expression, where it is
 suspended again, returning the value of :token:`~python-grammar:expression_list`
-to the generator's caller, but returns :const:`None` when the optional 
-:token:`~python-grammer:expression_list` is not passed.  By suspended, we mean that all local state is
-retained, including the current bindings of local variables, the instruction
-pointer, the internal evaluation stack, and the state of any exception handling.
+to the generator's caller, but returns :const:`None` when the optional
+:token:`~python-grammer:expression_list` is not passed.  By suspended, we mean that
+all local state is retained, including the current bindings of local variables, the
+instruction pointer, the internal evaluation stack, and the state of any exception handling.
 When the execution is resumed by calling one of the generator's methods, the
 function can proceed exactly as if the yield expression were just another
 external call.  The value of the yield expression after resuming depends on the
