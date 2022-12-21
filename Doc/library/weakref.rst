@@ -187,7 +187,7 @@ See :ref:`__slots__ documentation <slots>` for details.
       >>> k1, k2 = T(), T()
       >>> d = weakref.WeakKeyDictionary()
       >>> d[k1] = 1   # d = {k1: 1}
-      >>> d.pop(k1)
+      >>> del d[k1]
       >>> d[k2] = 2   # d = {k2: 2}
       >>> del k1      # d = {k2: 2}
 
