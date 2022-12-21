@@ -590,7 +590,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_getattr__doc__,
-"getattr($module, v, name, dflt=<unrepresentable>, /)\n"
+"getattr($module, object, name, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Get a named attribute from an object.\n"
@@ -603,28 +603,28 @@ PyDoc_STRVAR(builtin_getattr__doc__,
     {"getattr", _PyCFunction_CAST(builtin_getattr), METH_FASTCALL, builtin_getattr__doc__},
 
 static PyObject *
-builtin_getattr_impl(PyObject *module, PyObject *v, PyObject *name,
-                     PyObject *dflt);
+builtin_getattr_impl(PyObject *module, PyObject *object, PyObject *name,
+                     PyObject *default_value);
 
 static PyObject *
 builtin_getattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *v;
+    PyObject *object;
     PyObject *name;
-    PyObject *dflt = NULL;
+    PyObject *default_value = NULL;
 
     if (!_PyArg_CheckPositional("getattr", nargs, 2, 3)) {
         goto exit;
     }
-    v = args[0];
+    object = args[0];
     name = args[1];
     if (nargs < 3) {
         goto skip_optional;
     }
-    dflt = args[2];
+    default_value = args[2];
 skip_optional:
-    return_value = builtin_getattr_impl(module, v, name, dflt);
+    return_value = builtin_getattr_impl(module, object, name, default_value);
 
 exit:
     return return_value;
@@ -696,7 +696,7 @@ PyDoc_STRVAR(builtin_id__doc__,
     {"id", (PyCFunction)builtin_id, METH_O, builtin_id__doc__},
 
 PyDoc_STRVAR(builtin_next__doc__,
-"next($module, it, default=<unrepresentable>, /)\n"
+"next($module, iterator, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return the next item from the iterator.\n"
@@ -708,25 +708,26 @@ PyDoc_STRVAR(builtin_next__doc__,
     {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, builtin_next__doc__},
 
 static PyObject *
-builtin_next_impl(PyObject *module, PyObject *it, PyObject *default_value);
+builtin_next_impl(PyObject *module, PyObject *iterator,
+                  PyObject *default_value);
 
 static PyObject *
 builtin_next(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *it;
+    PyObject *iterator;
     PyObject *default_value = NULL;
 
     if (!_PyArg_CheckPositional("next", nargs, 1, 2)) {
         goto exit;
     }
-    it = args[0];
+    iterator = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
     default_value = args[1];
 skip_optional:
-    return_value = builtin_next_impl(module, it, default_value);
+    return_value = builtin_next_impl(module, iterator, default_value);
 
 exit:
     return return_value;
@@ -824,7 +825,7 @@ PyDoc_STRVAR(builtin_hex__doc__,
     {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
 
 PyDoc_STRVAR(builtin_iter__doc__,
-"iter($module, v, sentinel=<unrepresentable>, /)\n"
+"iter($module, object, sentinel=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Get an iterator from an object.\n"
@@ -836,25 +837,25 @@ PyDoc_STRVAR(builtin_iter__doc__,
     {"iter", _PyCFunction_CAST(builtin_iter), METH_FASTCALL, builtin_iter__doc__},
 
 static PyObject *
-builtin_iter_impl(PyObject *module, PyObject *v, PyObject *sentinel);
+builtin_iter_impl(PyObject *module, PyObject *object, PyObject *sentinel);
 
 static PyObject *
 builtin_iter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *v;
+    PyObject *object;
     PyObject *sentinel = NULL;
 
     if (!_PyArg_CheckPositional("iter", nargs, 1, 2)) {
         goto exit;
     }
-    v = args[0];
+    object = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
     sentinel = args[1];
 skip_optional:
-    return_value = builtin_iter_impl(module, v, sentinel);
+    return_value = builtin_iter_impl(module, object, sentinel);
 
 exit:
     return return_value;
@@ -1239,7 +1240,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_vars__doc__,
-"vars($module, v=<unrepresentable>, /)\n"
+"vars($module, object=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Show vars.\n"
@@ -1251,13 +1252,13 @@ PyDoc_STRVAR(builtin_vars__doc__,
     {"vars", _PyCFunction_CAST(builtin_vars), METH_FASTCALL, builtin_vars__doc__},
 
 static PyObject *
-builtin_vars_impl(PyObject *module, PyObject *v);
+builtin_vars_impl(PyObject *module, PyObject *object);
 
 static PyObject *
 builtin_vars(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *v = NULL;
+    PyObject *object = NULL;
 
     if (!_PyArg_CheckPositional("vars", nargs, 0, 1)) {
         goto exit;
@@ -1265,9 +1266,9 @@ builtin_vars(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    v = args[0];
+    object = args[0];
 skip_optional:
-    return_value = builtin_vars_impl(module, v);
+    return_value = builtin_vars_impl(module, object);
 
 exit:
     return return_value;
@@ -1408,4 +1409,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=91afbd4e4b5438f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a6a8efe82cf8b81 input=a9049054013a1b77]*/

@@ -1114,9 +1114,9 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
 /*[clinic input]
 getattr as builtin_getattr
 
-    v: object
+    object: object
     name: object
-    dflt: object = NULL
+    default: object = NULL
     /
 
 Get a named attribute from an object.
@@ -1127,19 +1127,19 @@ exist; without it, an exception is raised in that case.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_getattr_impl(PyObject *module, PyObject *v, PyObject *name,
-                     PyObject *dflt)
-/*[clinic end generated code: output=dd719f3bee023bc8 input=c89dfe401b53e36c]*/
+builtin_getattr_impl(PyObject *module, PyObject *object, PyObject *name,
+                     PyObject *default_value)
+/*[clinic end generated code: output=74ad0e225e3f701c input=d7562cd4c3556171]*/
 {
     PyObject *result;
 
-    if (dflt != NULL) {
-        if (_PyObject_LookupAttr(v, name, &result) == 0) {
-            return Py_NewRef(dflt);
+    if (default_value != NULL) {
+        if (_PyObject_LookupAttr(object, name, &result) == 0) {
+            return Py_NewRef(default_value);
         }
     }
     else {
-        result = PyObject_GetAttr(v, name);
+        result = PyObject_GetAttr(object, name);
     }
     return result;
 }
@@ -1458,7 +1458,7 @@ PyTypeObject PyMap_Type = {
 /*[clinic input]
 next as builtin_next
 
-    it: object
+    iterator: object
     default: object = NULL
     /
 
@@ -1469,19 +1469,20 @@ it is returned instead of raising StopIteration.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_next_impl(PyObject *module, PyObject *it, PyObject *default_value)
-/*[clinic end generated code: output=46a69959fd15f36c input=812f1b6154c81014]*/
+builtin_next_impl(PyObject *module, PyObject *iterator,
+                  PyObject *default_value)
+/*[clinic end generated code: output=a38a94eeb447fef9 input=180f9984f182020f]*/
 {
     PyObject *res;
 
-    if (!PyIter_Check(it)) {
+    if (!PyIter_Check(iterator)) {
         PyErr_Format(PyExc_TypeError,
             "'%.200s' object is not an iterator",
-            Py_TYPE(it)->tp_name);
+            Py_TYPE(iterator)->tp_name);
         return NULL;
     }
 
-    res = (*Py_TYPE(it)->tp_iternext)(it);
+    res = (*Py_TYPE(iterator)->tp_iternext)(iterator);
     if (res != NULL) {
         return res;
     } else if (default_value != NULL) {
@@ -1594,7 +1595,7 @@ builtin_hex(PyObject *module, PyObject *number)
 /*[clinic input]
 iter as builtin_iter
 
-    v: object
+    object: object
     sentinel: object = NULL
     /
 
@@ -1605,17 +1606,17 @@ In the second form, the callable is called until it returns the sentinel.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_iter_impl(PyObject *module, PyObject *v, PyObject *sentinel)
-/*[clinic end generated code: output=e44e927b4b674002 input=7ae9b0166003fe37]*/
+builtin_iter_impl(PyObject *module, PyObject *object, PyObject *sentinel)
+/*[clinic end generated code: output=12cf64203c195a94 input=a5d64d9d81880ba6]*/
 {
     if (sentinel == NULL)
-        return PyObject_GetIter(v);
-    if (!PyCallable_Check(v)) {
+        return PyObject_GetIter(object);
+    if (!PyCallable_Check(object)) {
         PyErr_SetString(PyExc_TypeError,
-                        "iter(v, w): v must be callable");
+                        "iter(object, sentinel): object must be callable");
         return NULL;
     }
-    return PyCallIter_New(v, sentinel);
+    return PyCallIter_New(object, sentinel);
 }
 
 
@@ -2399,7 +2400,7 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 /*[clinic input]
 vars as builtin_vars
 
-    v: object = NULL
+    object: object = NULL
     /
 
 Show vars.
@@ -2409,16 +2410,16 @@ With an argument, equivalent to object.__dict__.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_vars_impl(PyObject *module, PyObject *v)
-/*[clinic end generated code: output=a64017e4a4dc53fc input=4a426fb03c9b2781]*/
+builtin_vars_impl(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=840a7f64007a3e0a input=80cbdef9182c4ba3]*/
 {
     PyObject *d;
 
-    if (v == NULL) {
+    if (object == NULL) {
         d = Py_XNewRef(PyEval_GetLocals());
     }
     else {
-        if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &d) == 0) {
+        if (_PyObject_LookupAttr(object, &_Py_ID(__dict__), &d) == 0) {
             PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");
         }
