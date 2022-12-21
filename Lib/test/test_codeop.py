@@ -4,7 +4,9 @@
 """
 import sys
 import unittest
+import warnings
 from test import support
+from test.support import warnings_helper
 
 from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
 import io
@@ -133,6 +135,10 @@ class CodeopTests(unittest.TestCase):
         ai("a = {")
         ai("b + {")
 
+        ai("print([1,\n2,")
+        ai("print({1:1,\n2:3,")
+        ai("print((1,\n2,")
+
         ai("if 9==3:\n   pass\nelse:")
         ai("if 9==3:\n   pass\nelse:\n")
         ai("if 9==3:\n   pass\nelse:\n   pass")
@@ -158,7 +164,6 @@ class CodeopTests(unittest.TestCase):
         ai("","eval")
         ai("\n","eval")
         ai("(","eval")
-        ai("(\n\n\n","eval")
         ai("(9+","eval")
         ai("9+ \\","eval")
         ai("lambda z: \\","eval")
@@ -177,21 +182,21 @@ class CodeopTests(unittest.TestCase):
         ai("from a import (b,c")
         ai("from a import (b,c,")
 
-        ai("[");
-        ai("[a");
-        ai("[a,");
-        ai("[a,b");
-        ai("[a,b,");
+        ai("[")
+        ai("[a")
+        ai("[a,")
+        ai("[a,b")
+        ai("[a,b,")
 
-        ai("{");
-        ai("{a");
-        ai("{a:");
-        ai("{a:b");
-        ai("{a:b,");
-        ai("{a:b,c");
-        ai("{a:b,c:");
-        ai("{a:b,c:d");
-        ai("{a:b,c:d,");
+        ai("{")
+        ai("{a")
+        ai("{a:")
+        ai("{a:b")
+        ai("{a:b,")
+        ai("{a:b,c")
+        ai("{a:b,c:")
+        ai("{a:b,c:d")
+        ai("{a:b,c:d,")
 
         ai("a(")
         ai("a(b")
@@ -270,7 +275,6 @@ class CodeopTests(unittest.TestCase):
         ai("a = 'a\\\n")
 
         ai("a = 1","eval")
-        ai("a = (","eval")
         ai("]","eval")
         ai("())","eval")
         ai("[}","eval")
@@ -305,9 +309,38 @@ class CodeopTests(unittest.TestCase):
 
     def test_warning(self):
         # Test that the warning is only returned once.
-        with support.check_warnings((".*literal", SyntaxWarning)) as w:
-            compile_command("0 is 0")
-            self.assertEqual(len(w.warnings), 1)
+        with warnings_helper.check_warnings(
+                ('"is" with a literal', SyntaxWarning),
+                ("invalid escape sequence", SyntaxWarning),
+                ) as w:
+            compile_command(r"'\e' is 0")
+            self.assertEqual(len(w.warnings), 2)
+
+        # bpo-41520: check SyntaxWarning treated as an SyntaxError
+        with warnings.catch_warnings(), self.assertRaises(SyntaxError):
+            warnings.simplefilter('error', SyntaxWarning)
+            compile_command('1 is 1', symbol='exec')
+
+        # Check SyntaxWarning treated as an SyntaxError
+        with warnings.catch_warnings(), self.assertRaises(SyntaxError):
+            warnings.simplefilter('error', SyntaxWarning)
+            compile_command(r"'\e'", symbol='exec')
+
+    def test_incomplete_warning(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.assertIncomplete("'\\e' + (")
+        self.assertEqual(w, [])
+
+    def test_invalid_warning(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.assertInvalid("'\\e' 1")
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, SyntaxWarning)
+        self.assertRegex(str(w[0].message), 'invalid escape sequence')
+        self.assertEqual(w[0].filename, '<input>')
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -172,9 +172,7 @@ static FNFCIGETTEMPFILE(cb_gettempfile)
 static FNFCISTATUS(cb_status)
 {
     if (pv) {
-        _Py_IDENTIFIER(status);
-
-        PyObject *result = _PyObject_CallMethodId(pv, &PyId_status, "iii", typeStatus, cb1, cb2);
+        PyObject *result = PyObject_CallMethod(pv, "status", "iii", typeStatus, cb1, cb2);
         if (result == NULL)
             return -1;
         Py_DECREF(result);
@@ -185,15 +183,13 @@ static FNFCISTATUS(cb_status)
 static FNFCIGETNEXTCABINET(cb_getnextcabinet)
 {
     if (pv) {
-        _Py_IDENTIFIER(getnextcabinet);
-
-        PyObject *result = _PyObject_CallMethodId(pv, &PyId_getnextcabinet, "i", pccab->iCab);
+        PyObject *result = PyObject_CallMethod(pv, "getnextcabinet", "i", pccab->iCab);
         if (result == NULL)
             return -1;
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
                 "Incorrect return type %s from getnextcabinet",
-                result->ob_type->tp_name);
+                Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return FALSE;
         }
@@ -351,7 +347,7 @@ msiobj_dealloc(msiobj* msidb)
 {
     MsiCloseHandle(msidb->h);
     msidb->h = 0;
-    PyObject_Del(msidb);
+    PyObject_Free(msidb);
 }
 
 static PyObject*
@@ -360,7 +356,7 @@ msierror(int status)
     int code;
     char buf[2000];
     char *res = buf;
-    DWORD size = sizeof(buf);
+    DWORD size = Py_ARRAY_LENGTH(buf);
     MSIHANDLE err = MsiGetLastErrorRecord();
 
     if (err == 0) {
@@ -484,7 +480,7 @@ _msi_Record_GetString_impl(msiobj *self, unsigned int field)
     unsigned int status;
     WCHAR buf[2000];
     WCHAR *res = buf;
-    DWORD size = sizeof(buf);
+    DWORD size = Py_ARRAY_LENGTH(buf);
     PyObject* string;
 
     status = MsiRecordGetStringW(self->h, field, res, &size);
@@ -705,8 +701,7 @@ _msi_SummaryInformation_GetProperty_impl(msiobj *self, int field)
             result = PyBytes_FromStringAndSize(sval, ssize);
             break;
         case VT_EMPTY:
-            Py_INCREF(Py_None);
-            result = Py_None;
+            result = Py_NewRef(Py_None);
             break;
         default:
             PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);
@@ -757,22 +752,13 @@ _msi_SummaryInformation_SetProperty_impl(msiobj *self, int field,
     int status;
 
     if (PyUnicode_Check(data)) {
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        const WCHAR *value = _PyUnicode_AsUnicode(data);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
         WCHAR *value = PyUnicode_AsWideCharString(data, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         if (value == NULL) {
             return NULL;
         }
         status = MsiSummaryInfoSetPropertyW(self->h, field, VT_LPSTR,
             0, NULL, value);
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(value);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     } else if (PyLong_CheckExact(data)) {
         long value = PyLong_AsLong(data);
         if (value == -1 && PyErr_Occurred()) {
@@ -882,7 +868,7 @@ _msi_View_Execute(msiobj *self, PyObject *oparams)
     MSIHANDLE params = 0;
 
     if (oparams != Py_None) {
-        if (oparams->ob_type != &record_Type) {
+        if (!Py_IS_TYPE(oparams, &record_Type)) {
             PyErr_SetString(PyExc_TypeError, "Execute argument must be a record");
             return NULL;
         }
@@ -958,7 +944,7 @@ _msi_View_Modify_impl(msiobj *self, int kind, PyObject *data)
 {
     int status;
 
-    if (data->ob_type != &record_Type) {
+    if (!Py_IS_TYPE(data, &record_Type)) {
         PyErr_SetString(PyExc_TypeError, "Modify expects a record object");
         return NULL;
     }

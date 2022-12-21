@@ -1,8 +1,16 @@
 import contextlib
 import functools
+import importlib
 import re
 import sys
 import warnings
+
+
+def import_deprecated(name):
+    """Import *name* while suppressing DeprecationWarning."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        return importlib.import_module(name)
 
 
 def check_syntax_warning(testcase, statement, errtext='',
@@ -187,3 +195,13 @@ def save_restore_warnings_filters():
         yield
     finally:
         warnings.filters[:] = old_filters
+
+
+def _warn_about_deprecation():
+    warnings.warn(
+        "This is used in test_support test to ensure"
+        " support.ignore_deprecations_from() works as expected."
+        " You should not be seeing this.",
+        DeprecationWarning,
+        stacklevel=0,
+    )

@@ -1,2 +1,0 @@
-Calling :c:func:`PyDict_GetItem` without :term:`GIL` held had been allowed for
-historical reason. It is no longer allowed.
