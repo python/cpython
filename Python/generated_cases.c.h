@@ -3905,6 +3905,32 @@
             DISPATCH();
         }
 
+        TARGET(BINARY_OP_R) {
+            PyObject *lhs = REG(oparg1);
+            PyObject *rhs = REG(oparg2);
+            PyObject *res;
+            _PyBinaryOpRCache *cache = (_PyBinaryOpRCache *)next_instr;
+#if 0
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE;
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(BINARY_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+#endif
+            unsigned op = (unsigned)cache->op;
+            assert(0 <= op);
+            assert(op < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[op]);
+            res = binary_ops[op](lhs, rhs);
+            if (res == NULL) goto error;
+            Py_XSETREF(REG(oparg3), res);
+            JUMPBY(2);
+            DISPATCH();
+        }
+
         TARGET(SWAP) {
             assert(oparg != 0);
             PyObject *top = TOP();
