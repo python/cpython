@@ -3916,6 +3916,10 @@
             assert(cframe.use_tracing == 0);
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            oparg1 = oparg;
+            _Py_CODEUNIT word = *(next_instr + 1);
+            oparg2 = oparg2 << 8 | _Py_OPARG2(word);
+            oparg3 = oparg3 << 8 | _Py_OPARG3(word);
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
         }

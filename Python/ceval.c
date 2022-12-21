@@ -1308,6 +1308,10 @@ handle_eval_breaker:
             INSTRUCTION_START(EXTENDED_ARG);
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            oparg1 = oparg;
+            _Py_CODEUNIT word = *(next_instr + 1);
+            oparg2 = oparg2 << 8 | _Py_OPARG2(word);
+            oparg3 = oparg3 << 8 | _Py_OPARG3(word);
             // Make sure the next instruction isn't a RESUME, since that needs
             // to trace properly (and shouldn't have an EXTENDED_ARG, anyways):
             assert(opcode != RESUME);
