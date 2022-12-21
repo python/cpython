@@ -10,10 +10,10 @@ import calendar
 import threading
 import socket
 
-from test.support import (verbose,
-                          run_with_tz, run_with_locale, cpython_only)
+from test.support import verbose, run_with_tz, run_with_locale, cpython_only
 from test.support import hashlib_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -21,6 +21,8 @@ try:
     import ssl
 except ImportError:
     ssl = None
+
+support.requires_working_socket(module=True)
 
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
@@ -95,7 +97,7 @@ if ssl:
 
         def get_request(self):
             newsocket, fromaddr = self.socket.accept()
-            context = ssl.SSLContext()
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(CERTFILE)
             connstream = context.wrap_socket(newsocket, server_side=True)
             return connstream, fromaddr
@@ -386,7 +388,7 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(server.response, b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_bytes(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -404,7 +406,7 @@ class NewIMAPTestsMixin():
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_plain_text(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -475,7 +477,7 @@ class NewIMAPTestsMixin():
 
         _, server = self._setup(TimeoutHandler)
         addr = server.server_address[1]
-        with self.assertRaises(socket.timeout):
+        with self.assertRaises(TimeoutError):
             client = self.imap_class("localhost", addr, timeout=0.001)
 
     def test_with_statement(self):
@@ -570,15 +572,6 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
         client = self.imap_class("localhost", server.server_address[1],
                                  ssl_context=ssl_context)
         client.shutdown()
-
-    # Mock the private method _connect(), so mark the test as specific
-    # to CPython stdlib
-    @cpython_only
-    def test_certfile_arg_warn(self):
-        with support.check_warnings(('', DeprecationWarning)):
-            with mock.patch.object(self.imap_class, 'open'):
-                with mock.patch.object(self.imap_class, '_connect'):
-                    self.imap_class('localhost', 143, certfile=CERTFILE)
 
 class ThreadedNetworkedTests(unittest.TestCase):
     server_class = socketserver.TCPServer
@@ -850,7 +843,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                              b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
     @threading_helper.reap_threads
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5(self):
 
         class AuthHandler(SimpleIMAPHandler):
@@ -933,6 +926,21 @@ class ThreadedNetworkedTests(unittest.TestCase):
                 self.assertIsNone(server.logged)
             self.assertIsNone(server.logged)
 
+    @threading_helper.reap_threads
+    @cpython_only
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
+    def test_dump_ur(self):
+        # See: http://bugs.python.org/issue26543
+        untagged_resp_dict = {'READ-WRITE': [b'']}
+
+        with self.reaped_server(SimpleIMAPHandler) as server:
+            with self.imap_class(*server.server_address) as imap:
+                with mock.patch.object(imap, '_mesg') as mock_mesg:
+                    imap._dump_ur(untagged_resp_dict)
+                    mock_mesg.assert_called_with(
+                        "untagged responses dump:READ-WRITE: [b'']"
+                    )
+
 
 @unittest.skipUnless(ssl, "SSL not available")
 class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
@@ -961,6 +969,7 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
 
 @unittest.skipUnless(
     support.is_resource_enabled('network'), 'network resource disabled')
+@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
 class RemoteIMAPTest(unittest.TestCase):
     host = 'cyrus.andrew.cmu.edu'
     port = 143
@@ -996,6 +1005,7 @@ class RemoteIMAPTest(unittest.TestCase):
 @unittest.skipUnless(ssl, "SSL not available")
 @unittest.skipUnless(
     support.is_resource_enabled('network'), 'network resource disabled')
+@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
 class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
 
     def setUp(self):
@@ -1011,6 +1021,7 @@ class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
 
 
 @unittest.skipUnless(ssl, "SSL not available")
+@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
 class RemoteIMAP_SSLTest(RemoteIMAPTest):
     port = 993
     imap_class = IMAP4_SSL
@@ -1049,18 +1060,6 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
             _server = self.imap_class(self.host, self.port)
             rs = _server.logout()
             self.assertEqual(rs[0], 'BYE', rs)
-
-    def test_ssl_context_certfile_exclusive(self):
-        with socket_helper.transient_internet(self.host):
-            self.assertRaises(
-                ValueError, self.imap_class, self.host, self.port,
-                certfile=CERTFILE, ssl_context=self.create_ssl_context())
-
-    def test_ssl_context_keyfile_exclusive(self):
-        with socket_helper.transient_internet(self.host):
-            self.assertRaises(
-                ValueError, self.imap_class, self.host, self.port,
-                keyfile=CERTFILE, ssl_context=self.create_ssl_context())
 
 
 if __name__ == "__main__":
