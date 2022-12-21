@@ -72,27 +72,28 @@ _RATIONAL_FORMAT = re.compile(r"""
 # Helpers for formatting
 
 def _round_to_exponent(n, d, exponent, no_neg_zero=False):
-    """Round a rational number to an integer multiple of a power of 10.
+    """Round a rational number to the nearest multiple of a given power of 10.
 
     Rounds the rational number n/d to the nearest integer multiple of
-    10**exponent using the round-ties-to-even rule, and returns a
-    pair (sign, significand) representing the rounded value
-    (-1)**sign * significand.
+    10**exponent, rounding to the nearest even integer multiple in the case of
+    a tie. Returns a pair (sign: bool, significand: int) representing the
+    rounded value (-1)**sign * significand * 10**exponent.
+
+    If no_neg_zero is true, then the returned sign will always be False when
+    the significand is zero. Otherwise, the sign reflects the sign of the
+    input.
 
     d must be positive, but n and d need not be relatively prime.
-
-    If no_neg_zero is true, then the returned sign will always be False
-    for a zero result. Otherwise, the sign is based on the sign of the input.
     """
     if exponent >= 0:
         d *= 10**exponent
     else:
         n *= 10**-exponent
 
-    # The divmod quotient rounds ties towards positive infinity; we then adjust
-    # as needed for round-ties-to-even behaviour.
+    # The divmod quotient is correct for round-ties-towards-positive-infinity;
+    # In the case of a tie, we zero out the least significant bit of q.
     q, r = divmod(n + (d >> 1), d)
-    if r == 0 and d & 1 == 0:  # Tie
+    if r == 0 and d & 1 == 0:
         q &= -2
 
     sign = q < 0 if no_neg_zero else n < 0
