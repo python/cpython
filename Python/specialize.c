@@ -396,19 +396,21 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CALL_CMETHOD 12
 #define SPEC_FAIL_CALL_CFUNC_VARARGS 13
 #define SPEC_FAIL_CALL_CFUNC_VARARGS_KEYWORDS 14
-#define SPEC_FAIL_CALL_CFUNC_FASTCALL_KEYWORDS 15
-#define SPEC_FAIL_CALL_CFUNC_NOARGS 16
-#define SPEC_FAIL_CALL_BAD_CALL_FLAGS 17
-#define SPEC_FAIL_CALL_CFUNC_METHOD_FASTCALL_KEYWORDS 18
-#define SPEC_FAIL_CALL_PYTHON_CLASS 19
-#define SPEC_FAIL_CALL_PEP_523 20
-#define SPEC_FAIL_CALL_BOUND_METHOD 21
-#define SPEC_FAIL_CALL_STR 22
-#define SPEC_FAIL_CALL_CLASS_NO_VECTORCALL 23
-#define SPEC_FAIL_CALL_CLASS_MUTABLE 24
-#define SPEC_FAIL_CALL_KWNAMES 25
-#define SPEC_FAIL_CALL_METHOD_WRAPPER 26
-#define SPEC_FAIL_CALL_OPERATOR_WRAPPER 27
+#define SPEC_FAIL_CALL_CFUNC_NOARGS 15
+#define SPEC_FAIL_CALL_CFUNC_METHOD_FASTCALL_KEYWORDS 16
+#define SPEC_FAIL_CALL_METH_DESCR_VARARGS 17
+#define SPEC_FAIL_CALL_METH_DESCR_VARARGS_KEYWORDS 18
+#define SPEC_FAIL_CALL_METH_DESCR_METHOD_FASTCALL_KEYWORDS 19
+#define SPEC_FAIL_CALL_BAD_CALL_FLAGS 20
+#define SPEC_FAIL_CALL_PYTHON_CLASS 21
+#define SPEC_FAIL_CALL_PEP_523 22
+#define SPEC_FAIL_CALL_BOUND_METHOD 23
+#define SPEC_FAIL_CALL_STR 24
+#define SPEC_FAIL_CALL_CLASS_NO_VECTORCALL 25
+#define SPEC_FAIL_CALL_CLASS_MUTABLE 26
+#define SPEC_FAIL_CALL_KWNAMES 27
+#define SPEC_FAIL_CALL_METHOD_WRAPPER 28
+#define SPEC_FAIL_CALL_OPERATOR_WRAPPER 29
 
 /* COMPARE_OP */
 #define SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES 12
@@ -1518,8 +1520,6 @@ builtin_call_fail_kind(int ml_flags)
             return SPEC_FAIL_CALL_CFUNC_VARARGS;
         case METH_VARARGS | METH_KEYWORDS:
             return SPEC_FAIL_CALL_CFUNC_VARARGS_KEYWORDS;
-        case METH_FASTCALL | METH_KEYWORDS:
-            return SPEC_FAIL_CALL_CFUNC_FASTCALL_KEYWORDS;
         case METH_NOARGS:
             return SPEC_FAIL_CALL_CFUNC_NOARGS;
         case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
@@ -1527,6 +1527,29 @@ builtin_call_fail_kind(int ml_flags)
         /* These cases should be optimized, but return "other" just in case */
         case METH_O:
         case METH_FASTCALL:
+        case METH_FASTCALL | METH_KEYWORDS:
+            return SPEC_FAIL_OTHER;
+        default:
+            return SPEC_FAIL_CALL_BAD_CALL_FLAGS;
+    }
+}
+
+static int
+meth_descr_call_fail_kind(int ml_flags)
+{
+    switch (ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
+                        METH_KEYWORDS | METH_METHOD)) {
+        case METH_VARARGS:
+            return SPEC_FAIL_CALL_METH_DESCR_VARARGS;
+        case METH_VARARGS | METH_KEYWORDS:
+            return SPEC_FAIL_CALL_METH_DESCR_VARARGS_KEYWORDS;
+        case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
+            return SPEC_FAIL_CALL_METH_DESCR_METHOD_FASTCALL_KEYWORDS;
+            /* These cases should be optimized, but return "other" just in case */
+        case METH_NOARGS:
+        case METH_O:
+        case METH_FASTCALL:
+        case METH_FASTCALL | METH_KEYWORDS:
             return SPEC_FAIL_OTHER;
         default:
             return SPEC_FAIL_CALL_BAD_CALL_FLAGS;
@@ -1575,12 +1598,12 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             _py_set_opcode(instr, CALL_NO_KW_METHOD_DESCRIPTOR_FAST);
             return 0;
         }
-        case METH_FASTCALL|METH_KEYWORDS: {
+        case METH_FASTCALL | METH_KEYWORDS: {
             _py_set_opcode(instr, CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
             return 0;
         }
     }
-    SPECIALIZATION_FAIL(CALL, builtin_call_fail_kind(descr->d_method->ml_flags));
+    SPECIALIZATION_FAIL(CALL, meth_descr_call_fail_kind(descr->d_method->ml_flags));
     return -1;
 }
 
