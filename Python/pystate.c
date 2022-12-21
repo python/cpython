@@ -461,6 +461,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         interp->dict_state.watchers[i] = NULL;
     }
 
+    for (int i=0; i < TYPE_MAX_WATCHERS; i++) {
+        interp->type_watchers[i] = NULL;
+    }
+
     for (int i=0; i < FUNC_MAX_WATCHERS; i++) {
         interp->func_watchers[i] = NULL;
     }
@@ -1789,28 +1793,76 @@ PyGILState_Release(PyGILState_STATE oldstate)
 
 /* cross-interpreter data */
 
-crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);
-
-/* This is a separate func from _PyCrossInterpreterData_Lookup in order
-   to keep the registry code separate. */
-static crossinterpdatafunc
-_lookup_getdata(PyObject *obj)
+static inline void
+_xidata_init(_PyCrossInterpreterData *data)
 {
-    crossinterpdatafunc getdata = _PyCrossInterpreterData_Lookup(obj);
-    if (getdata == NULL && PyErr_Occurred() == 0)
-        PyErr_Format(PyExc_ValueError,
-                     "%S does not support cross-interpreter data", obj);
-    return getdata;
+    // If the value is being reused
+    // then _xidata_clear() should have been called already.
+    assert(data->data == NULL);
+    assert(data->obj == NULL);
+    *data = (_PyCrossInterpreterData){0};
+    data->interp = -1;
+}
+
+static inline void
+_xidata_clear(_PyCrossInterpreterData *data)
+{
+    if (data->free != NULL) {
+        data->free(data->data);
+    }
+    data->data = NULL;
+    Py_CLEAR(data->obj);
+}
+
+void
+_PyCrossInterpreterData_Init(_PyCrossInterpreterData *data,
+                             PyInterpreterState *interp,
+                             void *shared, PyObject *obj,
+                             xid_newobjectfunc new_object)
+{
+    assert(data != NULL);
+    assert(new_object != NULL);
+    _xidata_init(data);
+    data->data = shared;
+    if (obj != NULL) {
+        assert(interp != NULL);
+        // released in _PyCrossInterpreterData_Clear()
+        data->obj = Py_NewRef(obj);
+    }
+    // Ideally every object would know its owning interpreter.
+    // Until then, we have to rely on the caller to identify it
+    // (but we don't need it in all cases).
+    data->interp = (interp != NULL) ? interp->id : -1;
+    data->new_object = new_object;
 }
 
 int
-_PyObject_CheckCrossInterpreterData(PyObject *obj)
+_PyCrossInterpreterData_InitWithSize(_PyCrossInterpreterData *data,
+                                     PyInterpreterState *interp,
+                                     const size_t size, PyObject *obj,
+                                     xid_newobjectfunc new_object)
 {
-    crossinterpdatafunc getdata = _lookup_getdata(obj);
-    if (getdata == NULL) {
+    assert(size > 0);
+    // For now we always free the shared data in the same interpreter
+    // where it was allocated, so the interpreter is required.
+    assert(interp != NULL);
+    _PyCrossInterpreterData_Init(data, interp, NULL, obj, new_object);
+    data->data = PyMem_Malloc(size);
+    if (data->data == NULL) {
         return -1;
     }
+    data->free = PyMem_Free;
     return 0;
+}
+
+void
+_PyCrossInterpreterData_Clear(PyInterpreterState *interp,
+                              _PyCrossInterpreterData *data)
+{
+    assert(data != NULL);
+    // This must be called in the owning interpreter.
+    assert(interp == NULL || data->interp == interp->id);
+    _xidata_clear(data);
 }
 
 static int
@@ -1835,6 +1887,30 @@ _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
     return 0;
 }
 
+crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);
+
+/* This is a separate func from _PyCrossInterpreterData_Lookup in order
+   to keep the registry code separate. */
+static crossinterpdatafunc
+_lookup_getdata(PyObject *obj)
+{
+    crossinterpdatafunc getdata = _PyCrossInterpreterData_Lookup(obj);
+    if (getdata == NULL && PyErr_Occurred() == 0)
+        PyErr_Format(PyExc_ValueError,
+                     "%S does not support cross-interpreter data", obj);
+    return getdata;
+}
+
+int
+_PyObject_CheckCrossInterpreterData(PyObject *obj)
+{
+    crossinterpdatafunc getdata = _lookup_getdata(obj);
+    if (getdata == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
@@ -1847,7 +1923,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};
-    data->free = PyMem_RawFree;  // Set a default that may be overridden.
+    data->interp = -1;
 
     // Call the "getdata" func for the object.
     Py_INCREF(obj);
@@ -1856,7 +1932,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
         Py_DECREF(obj);
         return -1;
     }
-    int res = getdata(obj, data);
+    int res = getdata(tstate, obj, data);
     Py_DECREF(obj);
     if (res != 0) {
         return -1;
@@ -1872,21 +1948,17 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     return 0;
 }
 
-static void
-_release_xidata(void *arg)
+PyObject *
+_PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
 {
-    _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
-    if (data->free != NULL) {
-        data->free(data->data);
-    }
-    data->data = NULL;
-    Py_CLEAR(data->obj);
+    return data->new_object(data);
 }
+
+typedef void (*releasefunc)(PyInterpreterState *, void *);
 
 static void
 _call_in_interpreter(struct _gilstate_runtime_state *gilstate,
-                     PyInterpreterState *interp,
-                     void (*func)(void *), void *arg)
+                     PyInterpreterState *interp, releasefunc func, void *arg)
 {
     /* We would use Py_AddPendingCall() if it weren't specific to the
      * main interpreter (see bpo-33608).  In the meantime we take a
@@ -1902,7 +1974,7 @@ _call_in_interpreter(struct _gilstate_runtime_state *gilstate,
 
     // XXX Once the GIL is per-interpreter, this should be called with the
     // calling interpreter's GIL released and the target interpreter's held.
-    func(arg);
+    func(interp, arg);
 
     // Switch back.
     if (save_tstate != NULL) {
@@ -1931,14 +2003,9 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 
     // "Release" the data and/or the object.
     struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
-    _call_in_interpreter(gilstate, interp, _release_xidata, data);
+    _call_in_interpreter(gilstate, interp,
+                         (releasefunc)_PyCrossInterpreterData_Clear, data);
     return 0;
-}
-
-PyObject *
-_PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
-{
-    return data->new_object(data);
 }
 
 /* registry of {type -> crossinterpdatafunc} */
@@ -2091,16 +2158,21 @@ _new_bytes_object(_PyCrossInterpreterData *data)
 }
 
 static int
-_bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
+_bytes_shared(PyThreadState *tstate, PyObject *obj,
+              _PyCrossInterpreterData *data)
 {
-    struct _shared_bytes_data *shared = PyMem_NEW(struct _shared_bytes_data, 1);
-    if (PyBytes_AsStringAndSize(obj, &shared->bytes, &shared->len) < 0) {
+    if (_PyCrossInterpreterData_InitWithSize(
+            data, tstate->interp, sizeof(struct _shared_bytes_data), obj,
+            _new_bytes_object
+            ) < 0)
+    {
         return -1;
     }
-    data->data = (void *)shared;
-    data->obj = Py_NewRef(obj);  // Will be "released" (decref'ed) when data released.
-    data->new_object = _new_bytes_object;
-    data->free = PyMem_Free;
+    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)data->data;
+    if (PyBytes_AsStringAndSize(obj, &shared->bytes, &shared->len) < 0) {
+        _PyCrossInterpreterData_Clear(tstate->interp, data);
+        return -1;
+    }
     return 0;
 }
 
@@ -2118,16 +2190,20 @@ _new_str_object(_PyCrossInterpreterData *data)
 }
 
 static int
-_str_shared(PyObject *obj, _PyCrossInterpreterData *data)
+_str_shared(PyThreadState *tstate, PyObject *obj,
+            _PyCrossInterpreterData *data)
 {
-    struct _shared_str_data *shared = PyMem_NEW(struct _shared_str_data, 1);
+    if (_PyCrossInterpreterData_InitWithSize(
+            data, tstate->interp, sizeof(struct _shared_str_data), obj,
+            _new_str_object
+            ) < 0)
+    {
+        return -1;
+    }
+    struct _shared_str_data *shared = (struct _shared_str_data *)data->data;
     shared->kind = PyUnicode_KIND(obj);
     shared->buffer = PyUnicode_DATA(obj);
     shared->len = PyUnicode_GET_LENGTH(obj);
-    data->data = (void *)shared;
-    data->obj = Py_NewRef(obj);  // Will be "released" (decref'ed) when data released.
-    data->new_object = _new_str_object;
-    data->free = PyMem_Free;
     return 0;
 }
 
@@ -2138,7 +2214,8 @@ _new_long_object(_PyCrossInterpreterData *data)
 }
 
 static int
-_long_shared(PyObject *obj, _PyCrossInterpreterData *data)
+_long_shared(PyThreadState *tstate, PyObject *obj,
+             _PyCrossInterpreterData *data)
 {
     /* Note that this means the size of shareable ints is bounded by
      * sys.maxsize.  Hence on 32-bit architectures that is half the
@@ -2151,10 +2228,9 @@ _long_shared(PyObject *obj, _PyCrossInterpreterData *data)
         }
         return -1;
     }
-    data->data = (void *)value;
-    data->obj = NULL;
-    data->new_object = _new_long_object;
-    data->free = NULL;
+    _PyCrossInterpreterData_Init(data, tstate->interp, (void *)value, NULL,
+            _new_long_object);
+    // data->obj and data->free remain NULL
     return 0;
 }
 
@@ -2166,12 +2242,12 @@ _new_none_object(_PyCrossInterpreterData *data)
 }
 
 static int
-_none_shared(PyObject *obj, _PyCrossInterpreterData *data)
+_none_shared(PyThreadState *tstate, PyObject *obj,
+             _PyCrossInterpreterData *data)
 {
-    data->data = NULL;
-    // data->obj remains NULL
-    data->new_object = _new_none_object;
-    data->free = NULL;  // There is nothing to free.
+    _PyCrossInterpreterData_Init(data, tstate->interp, NULL, NULL,
+            _new_none_object);
+    // data->data, data->obj and data->free remain NULL
     return 0;
 }
 

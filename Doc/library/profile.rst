@@ -274,7 +274,7 @@ functions:
       with cProfile.Profile() as pr:
           # ... do something ...
 
-      pr.print_stats()
+          pr.print_stats()
 
    .. versionchanged:: 3.8
       Added context manager support.

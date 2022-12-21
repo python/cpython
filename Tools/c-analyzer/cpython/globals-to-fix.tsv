@@ -4,10 +4,10 @@ filename	funcname	name	reason
 # These are all variables that we will be making non-global.
 
 ##################################
-# global objects to fix in core code
+## global objects to fix in core code
 
-#-----------------------
-# exported builtin types (C-API)
+##-----------------------
+## exported builtin types (C-API)
 
 Objects/boolobject.c	-	PyBool_Type	-
 Objects/bytearrayobject.c	-	PyByteArrayIter_Type	-
@@ -102,8 +102,8 @@ Python/context.c	-	PyContextVar_Type	-
 Python/context.c	-	PyContext_Type	-
 Python/traceback.c	-	PyTraceBack_Type	-
 
-#-----------------------
-# other exported builtin types
+##-----------------------
+## other exported builtin types
 
 # Not in a .h file:
 Objects/codeobject.c	-	_PyLineIterator	-
@@ -126,8 +126,8 @@ Python/hamt.c	-	_PyHamt_CollisionNode_Type	-
 Python/hamt.c	-	_PyHamt_Type	-
 Python/symtable.c	-	PySTEntry_Type	-
 
-#-----------------------
-# private static builtin types
+##-----------------------
+## private static builtin types
 
 Objects/setobject.c	-	_PySetDummy_Type	-
 Objects/stringlib/unicode_format.h	-	PyFormatterIter_Type	-
@@ -136,8 +136,8 @@ Objects/unicodeobject.c	-	EncodingMapType	-
 #Objects/unicodeobject.c	-	PyFieldNameIter_Type	-
 #Objects/unicodeobject.c	-	PyFormatterIter_Type	-
 
-#-----------------------
-# static builtin structseq
+##-----------------------
+## static builtin structseq
 
 Objects/floatobject.c	-	FloatInfoType	-
 Objects/longobject.c	-	Int_InfoType	-
@@ -148,8 +148,8 @@ Python/sysmodule.c	-	Hash_InfoType	-
 Python/sysmodule.c	-	VersionInfoType	-
 Python/thread.c	-	ThreadInfoType	-
 
-#-----------------------
-# builtin exception types
+##-----------------------
+## builtin exception types
 
 Objects/exceptions.c	-	_PyExc_BaseException	-
 Objects/exceptions.c	-	_PyExc_BaseExceptionGroup	-
@@ -286,8 +286,8 @@ Objects/exceptions.c	-	PyExc_BytesWarning	-
 Objects/exceptions.c	-	PyExc_ResourceWarning	-
 Objects/exceptions.c	-	PyExc_EncodingWarning	-
 
-#-----------------------
-# singletons
+##-----------------------
+## singletons
 
 Objects/boolobject.c	-	_Py_FalseStruct	-
 Objects/boolobject.c	-	_Py_TrueStruct	-
@@ -300,39 +300,16 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 
 
 ##################################
-# global non-objects to fix in core code
+## global non-objects to fix in core code
 
-#-----------------------
-# effectively-const but initialized lazily
-
-# idempotent
-Python/dtoa.c	-	p5s	-
-Objects/obmalloc.c	new_arena	debug_stats	-
-
-# others
-Python/perf_trampoline.c	-	perf_map_file	-
-Objects/unicodeobject.c	-	ucnhash_capi	-
-
-#-----------------------
-# state
-
-# local buffer
-Python/suggestions.c	levenshtein_distance	buffer	-
-
-# other
-Objects/object.c	-	_Py_RefTotal	-
-Python/perf_trampoline.c	-	perf_status	-
-Python/perf_trampoline.c	-	extra_code_index	-
-Python/perf_trampoline.c	-	code_arena	-
-Python/perf_trampoline.c	-	trampoline_api	-
-Python/thread_pthread_stubs.h	-	py_tls_entries	-
+# <none>
 
 
 ##################################
-# global objects to fix in builtin modules
+## global objects to fix in builtin modules
 
-#-----------------------
-# static types
+##-----------------------
+## static types
 
 Modules/_collectionsmodule.c	-	defdict_type	-
 Modules/_collectionsmodule.c	-	deque_type	-
@@ -381,57 +358,18 @@ Modules/itertoolsmodule.c	-	tee_type	-
 Modules/itertoolsmodule.c	-	teedataobject_type	-
 Modules/itertoolsmodule.c	-	ziplongest_type	-
 
-#-----------------------
-# other
 
-# state
-Modules/faulthandler.c	-	fatal_error	-
-Modules/faulthandler.c	-	thread	-
-Modules/faulthandler.c	-	user_signals	-
-Modules/faulthandler.c	-	stack	-
-Modules/faulthandler.c	-	old_stack	-
+##################################
+## global non-objects to fix in builtin modules
+
+# <none>
 
 
 ##################################
-# global non-objects to fix in builtin modules
+## global objects to fix in extension modules
 
-#-----------------------
-# initialized once
-
-Modules/_io/bufferedio.c	_PyIO_trap_eintr	eintr_int	-
-Modules/posixmodule.c	os_dup2_impl	dup3_works	-
-Modules/posixmodule.c	-	structseq_new	-
-Modules/posixmodule.c	-	ticks_per_second	-
-Modules/timemodule.c	_PyTime_GetClockWithInfo	initialized	-
-Modules/timemodule.c	_PyTime_GetProcessTimeWithInfo	ticks_per_second	-
-
-#-----------------------
-# state
-
-Modules/_tracemalloc.c	-	allocators	-
-Modules/_tracemalloc.c	-	tables_lock	-
-Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
-Modules/_tracemalloc.c	-	tracemalloc_traced_memory	-
-Modules/_tracemalloc.c	-	tracemalloc_peak_traced_memory	-
-Modules/_tracemalloc.c	-	tracemalloc_filenames	-
-Modules/_tracemalloc.c	-	tracemalloc_traceback	-
-Modules/_tracemalloc.c	-	tracemalloc_tracebacks	-
-Modules/_tracemalloc.c	-	tracemalloc_traces	-
-Modules/_tracemalloc.c	-	tracemalloc_domains	-
-Modules/_tracemalloc.c	-	tracemalloc_reentrant_key	-
-Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
-Modules/posixmodule.c	-	environ	-
-Modules/signalmodule.c	-	is_tripped	-
-Modules/signalmodule.c	-	signal_global_state	-
-Modules/signalmodule.c	-	wakeup	-
-Modules/signalmodule.c	-	Handlers	-
-
-
-##################################
-# global objects to fix in extension modules
-
-#-----------------------
-# static types
+##-----------------------
+## static types
 
 Modules/_asynciomodule.c	-	FutureIterType	-
 Modules/_asynciomodule.c	-	FutureType	-
@@ -496,7 +434,6 @@ Modules/_pickle.c	-	PicklerMemoProxyType	-
 Modules/_pickle.c	-	Pickler_Type	-
 Modules/_pickle.c	-	UnpicklerMemoProxyType	-
 Modules/_pickle.c	-	Unpickler_Type	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelIDtype	-
 Modules/_zoneinfo.c	-	PyZoneInfo_ZoneInfoType	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
@@ -507,10 +444,10 @@ Modules/xxmodule.c	-	Xxo_Type	-
 Modules/xxsubtype.c	-	spamdict_type	-
 Modules/xxsubtype.c	-	spamlist_type	-
 
-#-----------------------
-# non-static types - initialized once
+##-----------------------
+## non-static types - initialized once
 
-# heap types
+## heap types
 Modules/_decimal/_decimal.c	-	DecimalTuple	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDict_Type	-
 Modules/_tkinter.c	-	PyTclObject_Type	-
@@ -518,32 +455,26 @@ Modules/_tkinter.c	-	Tkapp_Type	-
 Modules/_tkinter.c	-	Tktt_Type	-
 Modules/xxlimited_35.c	-	Xxo_Type	-
 
-# exception types
+## exception types
 Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelNotFoundError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelClosedError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelEmptyError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelNotEmptyError	-
-Modules/_xxsubinterpretersmodule.c	-	RunFailedError	-
 Modules/ossaudiodev.c	-	OSSAudioError	-
 Modules/socketmodule.c	-	socket_herror	-
 Modules/socketmodule.c	-	socket_gaierror	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
-#-----------------------
-# cached - initialized once
+##-----------------------
+## cached - initialized once
 
-# manually cached PyUnicodeOjbect
+## manually cached PyUnicodeOjbect
 Modules/_asynciomodule.c	-	context_kwname	-
 Modules/_ctypes/callproc.c	_ctypes_get_errobj	error_object_name	-
 Modules/_ctypes/_ctypes.c	CreateSwappedType	suffix	-
 
-# other - during module init
+## other - during module init
 Modules/_asynciomodule.c	-	asyncio_mod	-
 Modules/_asynciomodule.c	-	traceback_extract_stack	-
 Modules/_asynciomodule.c	-	asyncio_future_repr_func	-
@@ -558,10 +489,10 @@ Modules/_zoneinfo.c	-	io_open	-
 Modules/_zoneinfo.c	-	_tzpath_find_tzfile	-
 Modules/_zoneinfo.c	-	_common_mod	-
 
-#-----------------------
-# other
+##-----------------------
+## other
 
-# initialized once
+## initialized once
 Modules/_ctypes/_ctypes.c	-	_unpickle	-
 Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	cache	-
 Modules/_cursesmodule.c	-	ModDict	-
@@ -584,7 +515,7 @@ Modules/_decimal/_decimal.c	-	Rational	-
 Modules/_decimal/_decimal.c	-	SignalTuple	-
 Modules/arraymodule.c	array_array___reduce_ex___impl	array_reconstructor	-
 
-# state
+## state
 Modules/_asynciomodule.c	-	cached_running_holder	-
 Modules/_asynciomodule.c	-	fi_freelist	-
 Modules/_asynciomodule.c	-	fi_freelist_len	-
@@ -599,20 +530,19 @@ Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
 Modules/_zoneinfo.c	-	TIMEDELTA_CACHE	-
 Modules/_zoneinfo.c	-	ZONEINFO_WEAK_CACHE	-
-Modules/syslogmodule.c	-	S_ident_o	-
 
 
 ##################################
-# global non-objects to fix in extension modules
+## global non-objects to fix in extension modules
 
-#-----------------------
-# initialized once
+##-----------------------
+## initialized once
 
-# pre-allocated buffer
+## pre-allocated buffer
 Modules/nismodule.c	nisproc_maplist_2	res	-
 Modules/pyexpat.c	PyUnknownEncodingHandler	template_buffer	-
 
-# other
+## other
 Include/datetime.h	-	PyDateTimeAPI	-
 Modules/_asynciomodule.c	-	module_initialized	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
@@ -657,8 +587,8 @@ Modules/readline.c	-	libedit_history_start	-
 Modules/socketmodule.c	-	accept4_works	-
 Modules/socketmodule.c	-	sock_cloexec_works	-
 
-#-----------------------
-# state
+##-----------------------
+## state
 
 Modules/_asynciomodule.c	-	cached_running_holder_tsid	-
 Modules/_asynciomodule.c	-	task_name_counter	-
@@ -688,4 +618,3 @@ Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
 Modules/socketmodule.c	-	defaulttimeout	-
-Modules/syslogmodule.c	-	S_log_open	-

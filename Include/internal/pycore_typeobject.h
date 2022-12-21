@@ -36,15 +36,9 @@ struct type_cache_entry {
 };
 
 #define MCACHE_SIZE_EXP 12
-#define MCACHE_STATS 0
 
 struct type_cache {
     struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
-#if MCACHE_STATS
-    size_t hits;
-    size_t misses;
-    size_t collisions;
-#endif
 };
 
 /* For now we hard-code this to a value for which we are confident

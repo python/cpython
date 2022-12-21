@@ -383,11 +383,11 @@ class TestCodeObjectWatchers(unittest.TestCase):
                 del co3
                 self.assert_event_counts(2, 2, 1, 1)
 
-        # verify counts remain as they were after both watchers are cleared
+        # verify counts are reset and don't change after both watchers are cleared
         co4 = _testcapi.code_newempty("test_watchers", "dummy4", 0)
-        self.assert_event_counts(2, 2, 1, 1)
+        self.assert_event_counts(0, 0, 0, 0)
         del co4
-        self.assert_event_counts(2, 2, 1, 1)
+        self.assert_event_counts(0, 0, 0, 0)
 
     def test_clear_out_of_range_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"Invalid code watcher ID -1"):
