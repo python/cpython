@@ -38,7 +38,7 @@ def current_task(loop=None):
         loop = events.get_running_loop()
     try:
         return _current_tasks[loop]
-    except:
+    except KeyError:
         return None
 
 
