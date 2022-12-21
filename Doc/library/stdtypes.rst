@@ -1804,7 +1804,7 @@ expression support in the :mod:`re` module).
    .. note::
 
       This method is different from the standard publishing definition
-      of a title cased text fragment in which minor words would not be capitalized [6]_.
+      of a titlecased text fragment in which minor words would not be capitalized [6]_.
 
 
 .. method:: str.isupper()
@@ -2160,7 +2160,7 @@ expression support in the :mod:`re` module).
    .. note::
 
       This method is different from the standard publishing definition
-      of a title cased text fragment in which minor words would not be
+      of a titlecased text fragment in which minor words would not be
       capitalized [6]_.
 
 
@@ -3252,7 +3252,7 @@ place, and instead produce new objects.
    .. note::
 
       This method is different from the standard publishing definition
-      of a title cased text fragment in which minor words would not be capitalized [6]_.
+      of a titlecased text fragment in which minor words would not be capitalized [6]_.
 
 
 .. method:: bytes.isupper()
@@ -3394,7 +3394,7 @@ place, and instead produce new objects.
    .. note::
 
       This method is different from the standard publishing definition
-      of a title cased text fragment in which minor words would not be capitalized [6]_.
+      of a titlecased text fragment in which minor words would not be capitalized [6]_.
 
 
 .. method:: bytes.upper()
