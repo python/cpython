@@ -1,1 +1,1 @@
-Fixed incorrect result and delays in socket.getfqdn. (Patched by Dominic Socular @MTAwsl)
+Fix incorrect result and delay in :func:`socket.getfqdn`. Patch by Dominic Socular.
