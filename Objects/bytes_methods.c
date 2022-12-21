@@ -258,10 +258,6 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
     const unsigned char *e;
     int cased, previous_is_cased;
 
-    /* Shortcut for single character strings */
-    if (len == 1)
-        return PyBool_FromLong(Py_ISUPPER(*p));
-
     /* Special case for empty strings */
     if (len == 0)
         Py_RETURN_FALSE;

@@ -601,9 +601,9 @@ class BasicTest(BaseTest):
             ld_library_path_env = "DYLD_LIBRARY_PATH"
         else:
             ld_library_path_env = "LD_LIBRARY_PATH"
-        subprocess.check_call(cmd,
-                              env={"PYTHONPATH": pythonpath,
-                                   ld_library_path_env: ld_library_path})
+        subprocess.run(cmd,
+                       env={"PYTHONPATH": pythonpath,
+                            ld_library_path_env: ld_library_path})
         envpy = os.path.join(self.env_dir, self.bindir, self.exe)
         # Now check the venv created from the non-installed python has
         # correct zip path in pythonpath.
