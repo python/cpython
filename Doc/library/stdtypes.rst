@@ -1624,25 +1624,28 @@ expression support in the :mod:`re` module).
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
-   Return an encoded version of the string as a bytes object. Default encoding
-   is ``'utf-8'``. *errors* may be given to set a different error handling scheme.
-   The default for *errors* is ``'strict'``, meaning that encoding errors raise
-   a :exc:`UnicodeError`. Other possible
-   values are ``'ignore'``, ``'replace'``, ``'xmlcharrefreplace'``,
-   ``'backslashreplace'`` and any other name registered via
-   :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
-   list of possible encodings, see section :ref:`standard-encodings`.
+   Return the string encoded to :class:`bytes`.
 
-   By default, the *errors* argument is not checked for best performances, but
-   only used at the first encoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check
-   *errors*.
+   *encoding* defaults to ``'utf-8'``;
+   see :ref:`standard-encodings` for possible values.
+
+   *errors* controls how encoding errors are handled.
+   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
+   Other possible values are ``'ignore'``,
+   ``'replace'``, ``'xmlcharrefreplace'``, ``'backslashreplace'`` and any
+   other name registered via :func:`codecs.register_error`.
+   See :ref:`error-handlers` for details.
+
+   For performance reasons, the value of *errors* is not checked for validity
+   unless an encoding error actually occurs,
+   :ref:`devmode` is enabled
+   or a :ref:`debug build <debug-build>` is used.
 
    .. versionchanged:: 3.1
-      Support for keyword arguments added.
+      Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and
+      The value of the *errors* argument is now checked in :ref:`devmode` and
       in :ref:`debug mode <debug-build>`.
 
 
@@ -2759,29 +2762,32 @@ arbitrary binary data.
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
 
-   Return a string decoded from the given bytes.  Default encoding is
-   ``'utf-8'``. *errors* may be given to set a different
-   error handling scheme.  The default for *errors* is ``'strict'``, meaning
-   that encoding errors raise a :exc:`UnicodeError`.  Other possible values are
-   ``'ignore'``, ``'replace'`` and any other name registered via
-   :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
-   list of possible encodings, see section :ref:`standard-encodings`.
+   Return the bytes decoded to a :class:`str`.
 
-   By default, the *errors* argument is not checked for best performances, but
-   only used at the first decoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check *errors*.
+   *encoding* defaults to ``'utf-8'``;
+   see :ref:`standard-encodings` for possible values.
+
+   *errors* controls how decoding errors are handled.
+   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
+   Other possible values are ``'ignore'``, ``'replace'``,
+   and any other name registered via :func:`codecs.register_error`.
+   See :ref:`error-handlers` for details.
+
+   For performance reasons, the value of *errors* is not checked for validity
+   unless a decoding error actually occurs,
+   :ref:`devmode` is enabled or a :ref:`debug build <debug-build>` is used.
 
    .. note::
 
       Passing the *encoding* argument to :class:`str` allows decoding any
       :term:`bytes-like object` directly, without needing to make a temporary
-      bytes or bytearray object.
+      :class:`!bytes` or :class:`!bytearray` object.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and
+      The value of the *errors* argument is now checked in :ref:`devmode` and
       in :ref:`debug mode <debug-build>`.
 
 
