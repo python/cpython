@@ -302,22 +302,7 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ##################################
 ## global non-objects to fix in core code
 
-##-----------------------
-## effectively-const but initialized lazily
-
-## others
-Python/perf_trampoline.c	-	perf_map_file	-
-
-##-----------------------
-## state
-
-## other
-Objects/object.c	-	_Py_RefTotal	-
-Python/perf_trampoline.c	-	perf_status	-
-Python/perf_trampoline.c	-	extra_code_index	-
-Python/perf_trampoline.c	-	code_arena	-
-Python/perf_trampoline.c	-	trampoline_api	-
-Python/thread_pthread_stubs.h	-	py_tls_entries	-
+# <none>
 
 
 ##################################
@@ -373,48 +358,11 @@ Modules/itertoolsmodule.c	-	tee_type	-
 Modules/itertoolsmodule.c	-	teedataobject_type	-
 Modules/itertoolsmodule.c	-	ziplongest_type	-
 
-##-----------------------
-## other
-
-## state
-Modules/faulthandler.c	-	fatal_error	-
-Modules/faulthandler.c	-	thread	-
-Modules/faulthandler.c	-	user_signals	-
-Modules/faulthandler.c	-	stack	-
-Modules/faulthandler.c	-	old_stack	-
-
 
 ##################################
 ## global non-objects to fix in builtin modules
 
-##-----------------------
-## initialized once
-
-Modules/posixmodule.c	os_dup2_impl	dup3_works	-
-Modules/posixmodule.c	-	structseq_new	-
-Modules/posixmodule.c	-	ticks_per_second	-
-Modules/timemodule.c	_PyTime_GetClockWithInfo	initialized	-
-Modules/timemodule.c	_PyTime_GetProcessTimeWithInfo	ticks_per_second	-
-
-##-----------------------
-## state
-
-Modules/_tracemalloc.c	-	allocators	-
-Modules/_tracemalloc.c	-	tables_lock	-
-Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
-Modules/_tracemalloc.c	-	tracemalloc_traced_memory	-
-Modules/_tracemalloc.c	-	tracemalloc_peak_traced_memory	-
-Modules/_tracemalloc.c	-	tracemalloc_filenames	-
-Modules/_tracemalloc.c	-	tracemalloc_traceback	-
-Modules/_tracemalloc.c	-	tracemalloc_tracebacks	-
-Modules/_tracemalloc.c	-	tracemalloc_traces	-
-Modules/_tracemalloc.c	-	tracemalloc_domains	-
-Modules/_tracemalloc.c	-	tracemalloc_reentrant_key	-
-Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
-Modules/signalmodule.c	-	is_tripped	-
-Modules/signalmodule.c	-	signal_global_state	-
-Modules/signalmodule.c	-	wakeup	-
-Modules/signalmodule.c	-	Handlers	-
+# <none>
 
 
 ##################################

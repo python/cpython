@@ -11,18 +11,19 @@ filename	funcname	name	reason
 # These are effectively const.
 
 ##-----------------------
-## process-global resources - set during first init
+## process-global resources
 
 ## indicators for resource availability/capability
+# (set during first init)
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
+# (set lazily, *after* first init)
+# XXX Is this thread-safe?
+Modules/posixmodule.c	os_dup2_impl	dup3_works	-
 
-## resource init
-Python/thread.c	-	initialized	-
-Python/thread_pthread.h	-	condattr_monotonic	-
-# safe static buffer used during one-time initialization
-Python/thread_pthread.h	init_condattr	ca	-
+## guards around resource init
+Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
 
 ##-----------------------
 ## other values (not Python-specific)
@@ -48,10 +49,6 @@ Python/getversion.c	-	version	-
 ## public C-API - set during first init
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
-
-## internal state - set lazily (*after* first init)
-# XXX Move to _PyRuntimeState (i.e. tie to init/fini cycle)?
-Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 
 
 ##################################
@@ -142,6 +139,12 @@ Modules/syslogmodule.c	-	S_ident_o	-
 Modules/syslogmodule.c	-	S_log_open	-
 
 ##-----------------------
+## kept for stable ABI compatibility
+
+# XXX should be per-interpreter, without impacting stable ABI extensions
+Objects/object.c	-	_Py_RefTotal	-
+
+##-----------------------
 ## one-off temporary state
 
 # used during runtime init
@@ -150,6 +153,7 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 
 # thread-safety
 # XXX need race protection?
+Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
