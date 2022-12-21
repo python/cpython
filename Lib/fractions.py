@@ -149,10 +149,12 @@ _FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     (?P<sign>[-+ ]?)
     (?P<no_neg_zero>z)?
     (?P<alt>\#)?
-    (?P<zeropad>0(?=\d))?   # lookahead so that an isolated '0' is treated
-    (?P<minimumwidth>\d+)?  # as a minimum width rather than a zeropad flag
+    # lookahead so that a single '0' is treated as a minimum width rather
+    # than a zeropad flag
+    (?P<zeropad>0(?=[0-9]))?
+    (?P<minimumwidth>0|[1-9][0-9]*)?
     (?P<thousands_sep>[,_])?
-    (?:\.(?P<precision>\d+))?
+    (?:\.(?P<precision>0|[1-9][0-9]*))?
     (?P<presentation_type>[efg%])
 """, re.DOTALL | re.IGNORECASE | re.VERBOSE).fullmatch
 

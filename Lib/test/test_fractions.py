@@ -965,9 +965,6 @@ class FractionTest(unittest.TestCase):
             (F('0.001'), '-z.2f', '0.00'),
             (F('0.001'), '+z.2f', '+0.00'),
             (F('0.001'), ' z.2f', ' 0.00'),
-            # Corner-case: leading zeros are allowed in the precision
-            (F(2, 3), '.02f', '0.67'),
-            (F(22, 7), '.000f', '3'),
             # Specifying a minimum width
             (F(2, 3), '6.2f', '  0.67'),
             (F(12345), '6.2f', '12345.00'),
@@ -1185,6 +1182,12 @@ class FractionTest(unittest.TestCase):
             "=010%",
             '>00.2f',
             '>00f',
+            # Too many zeros - minimum width should not have leading zeros
+            '006f',
+            # Leading zeros in precision
+            '.010f',
+            '.02f',
+            '.000f',
             # Missing precision
             ".e",
             ".f",
