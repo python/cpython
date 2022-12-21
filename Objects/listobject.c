@@ -2227,7 +2227,7 @@ list.sort
 
     *
     key as keyfunc: object = None
-    reverse: bool(accept={int}) = False
+    reverse: bool = False
 
 Sort the list in ascending order and return None.
 
@@ -2242,7 +2242,7 @@ The reverse flag can be set to sort in descending order.
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=cb56cd179a713060]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=a74c4cd3ec6b5c08]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
