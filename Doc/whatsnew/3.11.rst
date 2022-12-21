@@ -676,10 +676,10 @@ enum
 * Changed :meth:`Enum.__format__() <enum.Enum.__format__>`
   (the default for :func:`format`, :meth:`str.format` and :term:`f-string`\s)
   of enums with mixed-in types (e.g. :class:`int`, :class:`str`)
-  to also include the class name in the output, not just the member's key.
+  to include the class name and member key in the output, not the member's value.
   This matches the existing behavior of :meth:`enum.Enum.__str__`,
   returning e.g. ``'AnEnum.MEMBER'`` for an enum ``AnEnum(str, Enum)``
-  instead of just ``'MEMBER'``.
+  instead of the member's value.
 
 * Added a new *boundary* class parameter to :class:`~enum.Flag` enums
   and the :class:`~enum.FlagBoundary` enum with its options,
