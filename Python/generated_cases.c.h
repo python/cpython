@@ -260,10 +260,11 @@
 
         TARGET(UNARY_NEGATIVE_R) {
             PyObject *value = REG(oparg1);
+            PyObject *res;
             assert(value != NULL);
-            PyObject *res = PyNumber_Negative(value);
-            Py_XSETREF(REG(oparg2), res);
+            res = PyNumber_Negative(value);
             if (res == NULL) goto error;
+            Py_XSETREF(REG(oparg2), res);
             DISPATCH();
         }
 
@@ -286,10 +287,10 @@
 
         TARGET(UNARY_NOT_R) {
             PyObject *value = REG(oparg1);
+            PyObject *res;
             assert(value != NULL);
             int err = PyObject_IsTrue(value);
             if (err < 0) goto error;
-            PyObject *res;
             if (err == 0) {
                 res = Py_True;
             }
@@ -313,8 +314,9 @@
 
         TARGET(UNARY_INVERT_R) {
             PyObject *value = REG(oparg1);
+            PyObject *res;
             assert(value != NULL);
-            PyObject *res = PyNumber_Invert(value);
+            res = PyNumber_Invert(value);
             if (res == NULL) goto error;
             Py_XSETREF(REG(oparg2), res);
             DISPATCH();
