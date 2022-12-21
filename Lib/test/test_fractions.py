@@ -1007,6 +1007,8 @@ class FractionTest(unittest.TestCase):
             (F(2, 3), '<0.2f', '0.67'),
             (F(2, 3), '^0.2f', '0.67'),
             (F(2, 3), '=0.2f', '0.67'),
+            # Corner case: zero-padding _and_ a zero minimum width.
+            (F(2, 3), '00.2f', '0.67'),
             # Thousands separator (only affects portion before the point)
             (F(2, 3), ',.2f', '0.67'),
             (F(2, 3), ',.7f', '0.6666667'),
@@ -1169,6 +1171,8 @@ class FractionTest(unittest.TestCase):
             "=010f",
             "=010g",
             "=010%",
+            '>00.2f',
+            '>00f',
             # Missing precision
             ".e",
             ".f",
