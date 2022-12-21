@@ -228,29 +228,30 @@ Implementing functions and methods
    Structure used to describe a method of an extension type.  This structure has
    four fields:
 
-   +------------------+---------------+-------------------------------+
-   | Field            | C Type        | Meaning                       |
-   +==================+===============+===============================+
-   | :attr:`ml_name`  | const char \* | name of the method            |
-   +------------------+---------------+-------------------------------+
-   | :attr:`ml_meth`  | PyCFunction   | pointer to the C              |
-   |                  |               | implementation                |
-   +------------------+---------------+-------------------------------+
-   | :attr:`ml_flags` | int           | flag bits indicating how the  |
-   |                  |               | call should be constructed    |
-   +------------------+---------------+-------------------------------+
-   | :attr:`ml_doc`   | const char \* | points to the contents of the |
-   |                  |               | docstring                     |
-   +------------------+---------------+-------------------------------+
+   .. c:member:: const char* ml_name
 
-The :attr:`ml_meth` is a C function pointer.  The functions may be of different
+      name of the method
+
+   .. c:member:: PyCFunction ml_meth
+
+      pointer to the C implementation
+
+   .. c:member:: int ml_flags
+
+      flags bits indicating how the call should be constructed
+
+   .. c:member:: const char* ml_doc
+
+      points to the contents of the docstring
+
+The :c:member:`ml_meth` is a C function pointer.  The functions may be of different
 types, but they always return :c:expr:`PyObject*`.  If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
 :c:expr:`PyObject*`, it is common that the method implementation uses the
 specific C type of the *self* object.
 
-The :attr:`ml_flags` field is a bitfield which can include the following flags.
+The :c:member:`ml_flags` field is a bitfield which can include the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.
 
