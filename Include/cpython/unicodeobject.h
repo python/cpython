@@ -135,7 +135,7 @@ typedef struct {
         unsigned int ascii:1;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
            4 bytes (see issue #19537 on m68k). */
-        unsigned int :26;
+        unsigned int :25;
     } state;
 } PyASCIIObject;
 
