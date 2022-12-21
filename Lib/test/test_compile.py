@@ -823,7 +823,7 @@ if 1:
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
             self.assertLessEqual(len(opcodes), 4)
-            self.assertEqual('LOAD_CONST', opcodes[-2].opname)
+            self.assertEqual('LOAD_CONST_R', opcodes[-2].opname)
             self.assertEqual(None, opcodes[-2].argval)
             self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
 
@@ -842,7 +842,7 @@ if 1:
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
             self.assertEqual(3, len(opcodes))
-            self.assertEqual('LOAD_CONST', opcodes[1].opname)
+            self.assertEqual('LOAD_CONST_R', opcodes[1].opname)
             self.assertEqual(None, opcodes[1].argval)
             self.assertEqual('RETURN_VALUE', opcodes[2].opname)
 
@@ -1289,7 +1289,7 @@ assert (a > 0 and
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
             line=1, end_line=3, column=0, end_column=30, occurrence=1)
         #  The "error msg":
-        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST_R',
             line=3, end_line=3, column=19, end_column=30, occurrence=4)
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=30, occurrence=1)

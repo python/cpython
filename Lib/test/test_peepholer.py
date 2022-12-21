@@ -94,7 +94,7 @@ class TestTranforms(BytecodeTestCase):
                 self.check_lnotab(code)
 
     def test_global_as_constant(self):
-        # LOAD_GLOBAL None/True/False  -->  LOAD_CONST None/True/False
+        # LOAD_GLOBAL None/True/False  -->  LOAD_CONST_R None/True/False
         def f():
             x = None
             x = None
@@ -109,7 +109,7 @@ class TestTranforms(BytecodeTestCase):
         for func, elem in ((f, None), (g, True), (h, False)):
             with self.subTest(func=func):
                 self.assertNotInBytecode(func, 'LOAD_GLOBAL')
-                self.assertInBytecode(func, 'LOAD_CONST', elem)
+                self.assertInBytecode(func, 'LOAD_CONST_R', elem)
                 self.check_lnotab(func)
 
         def f():
@@ -117,16 +117,16 @@ class TestTranforms(BytecodeTestCase):
             return None
 
         self.assertNotInBytecode(f, 'LOAD_GLOBAL')
-        self.assertInBytecode(f, 'LOAD_CONST', None)
+        self.assertInBytecode(f, 'LOAD_CONST_R', None)
         self.check_lnotab(f)
 
     def test_while_one(self):
-        # Skip over:  LOAD_CONST trueconst  POP_JUMP_IF_FALSE xx
+        # Skip over:  LOAD_CONST_R trueconst  POP_JUMP_IF_FALSE xx
         def f():
             while 1:
                 pass
             return list
-        for elem in ('LOAD_CONST', 'POP_JUMP_IF_FALSE'):
+        for elem in ('LOAD_CONST_R', 'POP_JUMP_IF_FALSE'):
             self.assertNotInBytecode(f, elem)
         for elem in ('JUMP_BACKWARD',):
             self.assertInBytecode(f, elem)
@@ -134,7 +134,7 @@ class TestTranforms(BytecodeTestCase):
 
     def test_pack_unpack(self):
         for line, elem in (
-            ('a, = a,', 'LOAD_CONST',),
+            ('a, = a,', 'LOAD_CONST_R',),
             ('a, b = a, b', 'SWAP',),
             ('a, b, c = a, b, c', 'SWAP',),
             ):
@@ -155,16 +155,16 @@ class TestTranforms(BytecodeTestCase):
             ):
             with self.subTest(line=line):
                 code = compile(line,'','single')
-                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertInBytecode(code, 'LOAD_CONST_R', elem)
                 self.assertNotInBytecode(code, 'BUILD_TUPLE')
                 self.check_lnotab(code)
 
         # Long tuples should be folded too.
         code = compile(repr(tuple(range(10000))),'','single')
         self.assertNotInBytecode(code, 'BUILD_TUPLE')
-        # One LOAD_CONST for the tuple, one for the None return value
+        # One LOAD_CONST_R for the tuple, one for the None return value
         load_consts = [instr for instr in dis.get_instructions(code)
-                              if instr.opname == 'LOAD_CONST']
+                              if instr.opname == 'LOAD_CONST_R']
         self.assertEqual(len(load_consts), 2)
         self.check_lnotab(code)
 
@@ -196,7 +196,7 @@ class TestTranforms(BytecodeTestCase):
             ):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
-                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertInBytecode(code, 'LOAD_CONST_R', elem)
                 self.assertNotInBytecode(code, 'BUILD_LIST')
                 self.check_lnotab(code)
 
@@ -212,7 +212,7 @@ class TestTranforms(BytecodeTestCase):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
                 self.assertNotInBytecode(code, 'BUILD_SET')
-                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertInBytecode(code, 'LOAD_CONST_R', elem)
                 self.check_lnotab(code)
 
         # Ensure that the resulting code actually works:
@@ -251,45 +251,45 @@ class TestTranforms(BytecodeTestCase):
             ):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
-                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertInBytecode(code, 'LOAD_CONST_R', elem)
                 for instr in dis.get_instructions(code):
                     self.assertFalse(instr.opname.startswith('BINARY_'))
                 self.check_lnotab(code)
 
         # Verify that unfoldables are skipped
         code = compile('a=2+"b"', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 2)
-        self.assertInBytecode(code, 'LOAD_CONST', 'b')
+        self.assertInBytecode(code, 'LOAD_CONST_R', 2)
+        self.assertInBytecode(code, 'LOAD_CONST_R', 'b')
         self.check_lnotab(code)
 
         # Verify that large sequences do not result from folding
         code = compile('a="x"*10000', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 10000)
+        self.assertInBytecode(code, 'LOAD_CONST_R', 10000)
         self.assertNotIn("x"*10000, code.co_consts)
         self.check_lnotab(code)
         code = compile('a=1<<1000', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 1000)
+        self.assertInBytecode(code, 'LOAD_CONST_R', 1000)
         self.assertNotIn(1<<1000, code.co_consts)
         self.check_lnotab(code)
         code = compile('a=2**1000', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 1000)
+        self.assertInBytecode(code, 'LOAD_CONST_R', 1000)
         self.assertNotIn(2**1000, code.co_consts)
         self.check_lnotab(code)
 
     def test_binary_subscr_on_unicode(self):
         # valid code get optimized
         code = compile('"foo"[0]', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 'f')
+        self.assertInBytecode(code, 'LOAD_CONST_R', 'f')
         self.assertNotInBytecode(code, 'BINARY_SUBSCR')
         self.check_lnotab(code)
         code = compile('"\u0061\uffff"[1]', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', '\uffff')
+        self.assertInBytecode(code, 'LOAD_CONST_R', '\uffff')
         self.assertNotInBytecode(code,'BINARY_SUBSCR')
         self.check_lnotab(code)
 
         # With PEP 393, non-BMP char get optimized
         code = compile('"\U00012345"[0]', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', '\U00012345')
+        self.assertInBytecode(code, 'LOAD_CONST_R', '\U00012345')
         self.assertNotInBytecode(code, 'BINARY_SUBSCR')
         self.check_lnotab(code)
 
@@ -310,7 +310,7 @@ class TestTranforms(BytecodeTestCase):
         ):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
-                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertInBytecode(code, 'LOAD_CONST_R', elem)
                 for instr in dis.get_instructions(code):
                     self.assertFalse(instr.opname.startswith('UNARY_'))
                 self.check_lnotab(code)
@@ -330,15 +330,15 @@ class TestTranforms(BytecodeTestCase):
         ):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
-                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertInBytecode(code, 'LOAD_CONST_R', elem)
                 self.assertInBytecode(code, opname)
                 self.check_lnotab(code)
 
     def test_elim_extra_return(self):
-        # RETURN LOAD_CONST None RETURN  -->  RETURN
+        # RETURN LOAD_CONST_R None RETURN  -->  RETURN
         def f(x):
             return x
-        self.assertNotInBytecode(f, 'LOAD_CONST', None)
+        self.assertNotInBytecode(f, 'LOAD_CONST_R', None)
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
         self.assertEqual(len(returns), 1)
@@ -991,16 +991,16 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', 2, 13),
+            ('LOAD_CONST_R', 2, 13),
             lbl,
-            ('LOAD_CONST', 3, 14),
+            ('LOAD_CONST_R', 3, 14),
         ]
         expected = [
             ('LOAD_NAME', '1', 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', '2', 13),
+            ('LOAD_CONST_R', '2', 13),
             lbl,
-            ('LOAD_CONST', '3', 14)
+            ('LOAD_CONST_R', '3', 14)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -1009,16 +1009,16 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         # becomes redundant and is replaced by a NOP (for the lineno)
 
         insts = [
-            ('LOAD_CONST', 3, 11),
+            ('LOAD_CONST_R', 3, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', 2, 13),
+            ('LOAD_CONST_R', 2, 13),
             lbl,
-            ('LOAD_CONST', 3, 14),
+            ('LOAD_CONST_R', 3, 14),
         ]
         expected = [
             ('NOP', None, 11),
             ('NOP', None, 12),
-            ('LOAD_CONST', '3', 14)
+            ('LOAD_CONST_R', '3', 14)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -1027,13 +1027,13 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             lbl1 := self.Label(),
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl1, 12),
-            ('LOAD_CONST', 2, 13),
+            ('LOAD_CONST_R', 2, 13),
         ]
         expected = [
             lbl := self.Label(),
             ('LOAD_NAME', '1', 11),
             ('POP_JUMP_IF_TRUE', lbl, 12),
-            ('LOAD_CONST', '2', 13)
+            ('LOAD_CONST_R', '2', 13)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -1041,9 +1041,9 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         # The unreachable branch of the jump is removed
         insts = [
             lbl1 := self.Label(),
-            ('LOAD_CONST', 1, 11),
+            ('LOAD_CONST_R', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl1, 12),
-            ('LOAD_CONST', 2, 13),
+            ('LOAD_CONST_R', 2, 13),
         ]
         expected = [
             lbl := self.Label(),

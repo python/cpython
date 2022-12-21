@@ -354,7 +354,8 @@ def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset,
                                    co_positions=co_positions,
-                                   show_caches=show_caches)
+                                   show_caches=show_caches,
+                                   consts_idx=_get_consts_idx(co))
 
 def _get_const_value(op, arg, co_consts, consts_idx=-1):
     """Helper to get the value of the const in a hasconst op.
@@ -700,13 +701,16 @@ def _find_imports(co):
     names = co.co_names
     opargs = [(op, arg) for _, op, arg in _unpack_opargs(co.co_code)
                   if op != EXTENDED_ARG]
+    consts_idx = _get_consts_idx(co)
     for i, (op, oparg) in enumerate(opargs):
         if op == IMPORT_NAME and i >= 2:
             from_op = opargs[i-1]
             level_op = opargs[i-2]
             if (from_op[0] in hasconst and level_op[0] in hasconst):
-                level = _get_const_value(level_op[0], level_op[1], consts)
-                fromlist = _get_const_value(from_op[0], from_op[1], consts)
+                level = _get_const_value(level_op[0], level_op[1],
+                                         consts, consts_idx=consts_idx)
+                fromlist = _get_const_value(from_op[0], from_op[1],
+                                            consts, consts_idx=consts_idx)
                 yield (names[oparg], level, fromlist)
 
 def _find_store_names(co):
@@ -758,7 +762,8 @@ class Bytecode:
                                        line_offset=self._line_offset,
                                        exception_entries=self.exception_entries,
                                        co_positions=co_positions,
-                                       show_caches=self.show_caches)
+                                       show_caches=self.show_caches,
+                                       consts_idx=_get_consts_idx(co))
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__,

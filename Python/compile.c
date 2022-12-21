@@ -207,13 +207,13 @@ struct instr {
 };
 
 /* One arg*/
-#define INSTR_SET_OP1(I, OP, ARG) \
+#define INSTR_SET_OP1(I, OP, ARG, OPARG1) \
     do { \
         assert(HAS_ARG(OP)); \
         struct instr *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = (ARG); \
-        _instr__ptr_->i_oparg1 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg1 = (OPARG1); \
         _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
     } while (0);
@@ -719,7 +719,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
         c->c_regcode = !strstr(f, "import") && !strstr(f, "frozen") && !strstr(f, "freeze") && !strstr(f, "encodings");
         c->c_regcode = strstr(f, "mytest");
     }
-    //c->c_regcode = true;
+    c->c_regcode = true;
 
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
@@ -9179,7 +9179,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     for (int i = 0; i < n; i++) {
         INSTR_SET_OP0(&inst[i], NOP);
     }
-    INSTR_SET_OP1(&inst[n], LOAD_CONST, (int)index);
+    INSTR_SET_OP1(&inst[n], LOAD_CONST_R, (int)index, CONST_OPARG((int)index));
     return 0;
 }
 
@@ -10153,8 +10153,15 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
             if (PyErr_Occurred()) {
                 return -1;
             }
+            oparg_t oparg1;
+            if (opcode == LOAD_CONST_R) {
+                oparg1 = CONST_OPARG(oparg);
+            }
+            else {
+                oparg1 = UNUSED_OPARG;
+            }
             if (cfg_builder_addop(g, opcode, oparg, loc,
-                                  UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG) < 0) {
+                                  oparg1, UNUSED_OPARG, UNUSED_OPARG) < 0) {
                 return -1;
             }
         }
