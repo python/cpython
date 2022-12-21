@@ -149,8 +149,8 @@ _FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     (?P<sign>[-+ ]?)
     (?P<no_neg_zero>z)?
     (?P<alt>\#)?
-    (?P<zeropad>0(?=\d))?   # use lookahead so that an isolated '0' is treated
-    (?P<minimumwidth>\d+)?  # as minimum width rather than the zeropad flag
+    (?P<zeropad>0(?=\d))?   # lookahead so that an isolated '0' is treated
+    (?P<minimumwidth>\d+)?  # as a minimum width rather than a zeropad flag
     (?P<thousands_sep>[,_])?
     (?:\.(?P<precision>\d+))?
     (?P<presentation_type>[efg%])

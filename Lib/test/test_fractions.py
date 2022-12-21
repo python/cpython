@@ -1000,7 +1000,13 @@ class FractionTest(unittest.TestCase):
             (F(-2, 3), '-07.2f', '-000.67'),
             (F(2, 3), '+07.2f', '+000.67'),
             (F(2, 3), ' 07.2f', ' 000.67'),
+            # An isolated zero is a minimum width, not a zero-pad flag.
+            # So unlike zero-padding, it's legal in combination with alignment.
             (F(2, 3), '0.2f', '0.67'),
+            (F(2, 3), '>0.2f', '0.67'),
+            (F(2, 3), '<0.2f', '0.67'),
+            (F(2, 3), '^0.2f', '0.67'),
+            (F(2, 3), '=0.2f', '0.67'),
             # Thousands separator (only affects portion before the point)
             (F(2, 3), ',.2f', '0.67'),
             (F(2, 3), ',.7f', '0.6666667'),
