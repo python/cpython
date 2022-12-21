@@ -104,32 +104,34 @@ def _round_to_figures(n, d, figures):
     """Round a rational number to a given number of significant figures.
 
     Rounds the rational number n/d to the given number of significant figures
-    using the round-ties-to-even rule, and returns a triple (sign, significand,
-    exponent) representing the rounded value (-1)**sign * significand *
-    10**exponent.
+    using the round-ties-to-even rule, and returns a triple
+    (sign: bool, significand: int, exponent: int) representing the rounded
+    value (-1)**sign * significand * 10**exponent.
+
+    In the special case where n = 0, returns a significand of zero and
+    an exponent of 1 - figures, for compatibility with formatting.
+    Otherwise, the returned significand satisfies
+    10**(figures - 1) <= significand < 10**figures.
 
     d must be positive, but n and d need not be relatively prime.
     figures must be positive.
-
-    In the special case where n = 0, returns an exponent of 1 - figures, for
-    compatibility with formatting; the significand will be zero. Otherwise,
-    the significand satisfies 10**(figures - 1) <= significand < 10**figures.
     """
-    # Find integer m satisfying 10**(m - 1) <= abs(self) <= 10**m if self
-    # is nonzero, with m = 1 if self = 0. (The latter choice is a little
-    # arbitrary, but gives the "right" results when formatting zero.)
+    # Special case for n == 0.
     if n == 0:
-        m = 1
-    else:
-        str_n, str_d = str(abs(n)), str(d)
-        m = len(str_n) - len(str_d) + (str_d <= str_n)
+        return False, 0, 1 - figures
 
-    # Round to a multiple of 10**(m - figures). The result will satisfy either
-    # significand == 0 or 10**(figures - 1) <= significand <= 10**figures.
+    # Find integer m satisfying 10**(m - 1) <= abs(n)/d <= 10**m. (If abs(n)/d
+    # is a power of 10, either of the two possible values for m is fine.)
+    str_n, str_d = str(abs(n)), str(d)
+    m = len(str_n) - len(str_d) + (str_d <= str_n)
+
+    # Round to a multiple of 10**(m - figures). The significand we get
+    # satisfies 10**(figures - 1) <= significand <= 10**figures.
     exponent = m - figures
     sign, significand = _round_to_exponent(n, d, exponent)
 
-    # Adjust in the case where significand == 10**figures.
+    # Adjust in the case where significand == 10**figures, to ensure that
+    # 10**(figures - 1) <= significand < 10**figures.
     if len(str(significand)) == figures + 1:
         significand //= 10
         exponent += 1
