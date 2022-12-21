@@ -2547,9 +2547,7 @@ class PolicyTests(unittest.TestCase):
     def test_get_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
         self.assertIsNone(policy._local._loop)
-        with self.assertWarns(DeprecationWarning) as cm:
-            loop = policy.get_event_loop()
-        self.assertEqual(cm.filename, __file__)
+        loop = policy.get_event_loop()
         self.assertIsInstance(loop, asyncio.AbstractEventLoop)
 
         self.assertIs(policy._local._loop, loop)
@@ -2563,10 +2561,8 @@ class PolicyTests(unittest.TestCase):
                 policy, "set_event_loop",
                 wraps=policy.set_event_loop) as m_set_event_loop:
 
-            with self.assertWarns(DeprecationWarning) as cm:
-                loop = policy.get_event_loop()
+            loop = policy.get_event_loop()
             self.addCleanup(loop.close)
-            self.assertEqual(cm.filename, __file__)
 
             # policy._local._loop must be set through .set_event_loop()
             # (the unix DefaultEventLoopPolicy needs this call to attach
@@ -2755,10 +2751,8 @@ class GetEventLoopTestsMixin:
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
-            with self.assertWarns(DeprecationWarning) as cm:
-                loop2 = asyncio.get_event_loop()
+            loop2 = asyncio.get_event_loop()
             self.addCleanup(loop2.close)
-            self.assertEqual(cm.filename, __file__)
             asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()

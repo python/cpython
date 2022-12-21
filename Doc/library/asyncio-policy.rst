@@ -112,11 +112,6 @@ asyncio ships with the following built-in policies:
 
       On Windows, :class:`ProactorEventLoop` is now used by default.
 
-   .. deprecated:: 3.11.1
-      :meth:`get_event_loop` now emits a :exc:`DeprecationWarning` if there
-      is no current event loop set and a new event loop has been implicitly
-      created. In Python 3.12 it will be an error.
-
 
 .. class:: WindowsSelectorEventLoopPolicy
 
