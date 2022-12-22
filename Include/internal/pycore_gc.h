@@ -142,6 +142,9 @@ struct gc_generation {
     int threshold; /* collection threshold */
     int count; /* count of allocations or collections of younger
                   generations */
+    float target; /* target number of collected objects */
+    int min_threshold; /* minimum threshold */
+    int max_threshold; /* maximum threshold */
 };
 
 /* Running stats per generation */

@@ -1175,6 +1175,43 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     gc_list_merge(resurrected, old_generation);
 }
 
+static void
+gc_adapt_threshold(GCState *gcstate, int generation, Py_ssize_t generation_size, Py_ssize_t collected) {
+    Py_ssize_t threshold = gcstate->generations[generation].threshold;
+    float target = gcstate->generations[generation].target;
+
+    Py_ssize_t new_threshold;
+
+    // Calculate the current ratio of collected objects to generation size
+    double ratio = (double)collected / (double)generation_size;
+
+    // Use a formula to adjust the threshold based on the difference between
+    // the current ratio and the target, and smoothly saturate towards the
+    // maximum value of MIN/MAX_THRESHOLD using a sigmoid function that grows
+    // saturates around 0 and 1;
+
+    // If the ratio is greater than the target, reduce the threshold
+    if (ratio > target) {
+        Py_ssize_t min_threshold = gcstate->generations[generation].min_threshold;
+        double exponent = -((ratio - target)*10.0-5);
+        double exxp = 1.0 / (1.0 + exp(exponent));
+        new_threshold = threshold + (min_threshold - threshold) * exxp;
+    }
+    // If the ratio is smaller than the target, increase the threshold
+    else if (ratio < target) {
+        Py_ssize_t max_threshold = gcstate->generations[generation].max_threshold;
+        double exponent = -((target - ratio)*10.0-5);
+        double exxp = 1.0 / (1.0 + exp(exponent));
+        new_threshold = threshold + (max_threshold - threshold) * exxp;
+    }
+    // If the ratio is equal to the target, do not change the threshold
+    else {
+        new_threshold = threshold;
+    }
+
+    gcstate->generations[generation].threshold = new_threshold;
+}
+
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
@@ -1225,6 +1262,8 @@ gc_collect_main(PyThreadState *tstate, int generation,
     else
         old = young;
     validate_list(old, collecting_clear_unreachable_clear);
+
+    Py_ssize_t gen_size = gc_list_size(young);
 
     deduce_unreachable(young, &unreachable);
 
@@ -1324,6 +1363,8 @@ gc_collect_main(PyThreadState *tstate, int generation,
             _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
         }
     }
+
+    gc_adapt_threshold(gcstate, generation, gen_size, m);
 
     /* Update stats */
     if (n_collected) {

@@ -121,9 +121,9 @@ extern "C" {
             .enabled = 1, \
             .generations = { \
                 /* .head is set in _PyGC_InitState(). */ \
-                { .threshold = 700, }, \
-                { .threshold = 10, }, \
-                { .threshold = 10, }, \
+                { .threshold = 700, .target = 0.2, .min_threshold=700, .max_threshold=5000 }, \
+                { .threshold = 10, .target = 0.4, .min_threshold=10, .max_threshold=10000 }, \
+                { .threshold = 10, .target = 0.6, .min_threshold=10, .max_threshold=50000 }, \
             }, \
         }, \
         .static_objects = { \
