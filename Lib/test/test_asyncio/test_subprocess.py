@@ -736,7 +736,7 @@ class SubprocessMixin:
 
     def test_subprocess_consistent_callbacks(self):
         events = []
-        class Protocol(asyncio.SubprocessProtocol):
+        class MyProtocol(asyncio.SubprocessProtocol):
             def __init__(self, exit_future: asyncio.Future) -> None:
                 self.exit_future = exit_future
 
@@ -754,16 +754,17 @@ class SubprocessMixin:
             loop = asyncio.get_running_loop()
             exit_future = asyncio.Future()
             code = 'import sys; sys.stdout.write("stdout"); sys.stderr.write("stderr")'
-            transport, _ = await loop.subprocess_exec(lambda: Protocol(exit_future), sys.executable, '-c', code,
-                                                             stdin=None)
+            transport, _ = await loop.subprocess_exec(lambda: MyProtocol(exit_future),
+                                                      sys.executable, '-c', code, stdin=None)
             await exit_future
             transport.close()
-            self.assertEqual(len(events), 5, events)
-            self.assertEqual(events[0], ('pipe_data_received', 1, b'stdout'))
-            self.assertEqual(events[1], ('pipe_data_received', 2, b'stderr'))
-            self.assertEqual(events[2], 'pipe_connection_lost')
-            self.assertEqual(events[3], 'pipe_connection_lost')
-            self.assertEqual(events[4], 'process_exited')
+            self.assertEqual(events, [
+                ('pipe_data_received', 1, b'stdout'),
+                ('pipe_data_received', 2, b'stderr'),
+                'pipe_connection_lost',
+                'pipe_connection_lost',
+                'process_exited',
+            ])
 
         self.loop.run_until_complete(main())
 
