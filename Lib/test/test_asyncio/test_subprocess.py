@@ -686,6 +686,15 @@ class SubprocessMixin:
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
 
+    async def check_stdout_output(self, coro, output):
+        proc = await coro
+        stdout, _ = await proc.communicate()
+        self.assertEqual(stdout, output)
+        self.assertEqual(proc.returncode, 0)
+        task = asyncio.create_task(proc.wait())
+        await asyncio.sleep(0)
+        self.assertEqual(task.result(), proc.returncode)
+
     def test_create_subprocess_env_shell(self) -> None:
         async def main() -> None:
             cmd = f'''{sys.executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
@@ -693,31 +702,22 @@ class SubprocessMixin:
             proc = await asyncio.create_subprocess_shell(
                 cmd, env=env, stdout=subprocess.PIPE
             )
-            stdout, _ = await proc.communicate()
-            self.assertEqual(stdout, b"bar")
-            self.assertEqual(proc.returncode, 0)
-            task = asyncio.create_task(proc.wait())
-            await asyncio.sleep(0)
-            self.assertEqual(task.result(), proc.returncode)
+            return proc
 
-        self.loop.run_until_complete(main())
+        self.loop.run_until_complete(self.check_stdout_output(main(), b'bar'))
 
     def test_create_subprocess_env_exec(self) -> None:
         async def main() -> None:
             cmd = [sys.executable, "-c",
                    "import os, sys; sys.stdout.write(os.getenv('FOO'))"]
-            env = {"FOO": 'bar'}
+            env = {"FOO": 'baz'}
             proc = await asyncio.create_subprocess_exec(
                 *cmd, env=env, stdout=subprocess.PIPE
             )
-            stdout, _ = await proc.communicate()
-            self.assertEqual(stdout, b"bar")
-            self.assertEqual(proc.returncode, 0)
-            task = asyncio.create_task(proc.wait())
-            await asyncio.sleep(0)
-            self.assertEqual(task.result(), proc.returncode)
+            return proc
 
-        self.loop.run_until_complete(main())
+        self.loop.run_until_complete(self.check_stdout_output(main(), b'baz'))
+
 
     def test_subprocess_concurrent_wait(self) -> None:
         async def main() -> None:
