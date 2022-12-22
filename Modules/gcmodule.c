@@ -2290,8 +2290,25 @@ void
 _Py_RunGC(PyThreadState *tstate)
 {
     GCState *gcstate = &tstate->interp->gc;
+
+    clock_t start_time = clock(); // record start time
+    size_t num_calls = gcstate->num_calls++;
+    double elapsed_time_since_last_call = (double)(start_time - gcstate->last_call_time) / CLOCKS_PER_SEC; // calculate elapsed time since last call in seconds
+    gcstate->running_average_since_last_call_time = (gcstate->running_average_since_last_call_time * num_calls + elapsed_time_since_last_call) / (num_calls + 1); 
+
+    if (gcstate->running_average_time / gcstate->running_average_since_last_call_time * 100 > 1.0) {
+        // If the fraction of gc time over runtime is greater than 1%, don't run gc
+        return;
+    }
+
     gcstate->collecting = 1;
     gc_collect_generations(tstate);
+    clock_t end_time = clock(); // record end time
+
+    double ellapsed_time = (double)(end_time - start_time) / CLOCKS_PER_SEC; // calculate elapsed time in seconds
+    gcstate->last_call_time = start_time; 
+    gcstate->running_average_time = (gcstate->running_average_time * num_calls + ellapsed_time) / (num_calls + 1); 
+
     gcstate->collecting = 0;
 }
 

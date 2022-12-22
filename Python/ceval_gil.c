@@ -22,7 +22,7 @@
      at every turn of the eval loop. That variable is set after a wait of
      `interval` microseconds on `gil_cond` has timed out.
 
-      [Actually, another volatile boolean variable (eval_breaker) is used
+      [Actually, another volatile boolean variablcre (eval_breaker) is used
        which ORs several conditions into one. Volatile booleans are
        sufficient as inter-thread signalling means since Python is run
        on cache-coherent architectures only.]
