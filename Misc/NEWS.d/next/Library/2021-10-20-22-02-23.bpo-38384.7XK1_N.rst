@@ -1,2 +1,2 @@
-Fix a crash in the C implementation of :mod:`pickle` if error occurred when
-look up the "read" attribute of the file.
+Fix a crash in the C implementation of :mod:`pickle` if an error occurred
+while looking up the ``read`` attribute of the file.

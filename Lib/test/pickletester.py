@@ -3371,7 +3371,7 @@ class AbstractPickleModuleTests:
         self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
 
     def test_unpickler_bad_file(self):
-        # bpo-38384: Crash in _pickle if the read attribute raises error.
+        # bpo-38384: Crash in _pickle if the read attribute raises an error.
         def raises_oserror(self, *args, **kwargs):
             raise OSError
         @property
