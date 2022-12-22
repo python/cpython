@@ -1,5 +1,6 @@
 import codecs
 import contextlib
+import copy
 import io
 import locale
 import sys
@@ -1752,6 +1753,14 @@ class CodecsModuleTest(unittest.TestCase):
                 codecs.open(os_helper.TESTFN, 'wt', 'invalid-encoding')
 
             file().close.assert_called()
+
+    def test_copy(self):
+        orig = codecs.lookup('utf-8')
+        dup = copy.copy(orig)
+
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
 
 
 class StreamReaderTest(unittest.TestCase):
