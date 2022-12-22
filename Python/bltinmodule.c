@@ -2547,7 +2547,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 return PyFloat_FromDouble(f_result);
             }
             if (PyFloat_CheckExact(item)) {
-                // Neumaier compensated summation
+                // Improved Kahan–Babuška algorithm by Arnold Neumaier
+                // https://www.mat.univie.ac.at/~neum/scan/01.pdf
                 x = PyFloat_AS_DOUBLE(item);
                 t = f_result + x;
                 if (fabs(f_result) >= fabs(x)) {
