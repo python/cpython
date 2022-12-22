@@ -681,6 +681,8 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
             except AttributeError:
                 pass
             else:
+                # Move up the call stack so that the warning is attached
+                # to the line outside asyncio itself.
                 while f:
                     module = f.f_globals.get('__name__')
                     if not (module == 'asyncio' or module.startswith('asyncio.')):

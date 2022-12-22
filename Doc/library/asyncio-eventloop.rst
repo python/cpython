@@ -48,7 +48,7 @@ an event loop:
    running event loop.
 
    If there is no running event loop set, the function will return
-   the result of ``get_event_loop_policy().get_event_loop()`` call.
+   the result of the ``get_event_loop_policy().get_event_loop()`` call.
 
    Because this function has rather complex behavior (especially
    when custom event loop policies are in use), using the
@@ -61,7 +61,7 @@ an event loop:
 
    .. deprecated:: 3.12
       Deprecation warning is emitted if there is no current event loop.
-      In future Python releases it will be an error.
+      In some future Python release it will become an error.
 
 .. function:: set_event_loop(loop)
 

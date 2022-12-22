@@ -119,7 +119,8 @@ asyncio ships with the following built-in policies:
    .. deprecated:: 3.12
       :meth:`get_event_loop` now emits a :exc:`DeprecationWarning` if there
       is no current event loop set and a new event loop has been implicitly
-      created. In future Python releases it will be an error.
+      created.
+      In some future Python release it will become an error.
 
 
 .. class:: WindowsSelectorEventLoopPolicy
