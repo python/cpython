@@ -3623,26 +3623,6 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        register inst(BINARY_OP_R, (unused/2, lhs, rhs -- res)) {
-            _PyBinaryOpRCache *cache = (_PyBinaryOpRCache *)next_instr;
-#if 0
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
-                next_instr -= OPSIZE;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(BINARY_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-#endif
-            unsigned op = (unsigned)cache->op;
-            assert(0 <= op);
-            assert(op < Py_ARRAY_LENGTH(binary_ops));
-            assert(binary_ops[op]);
-            res = binary_ops[op](lhs, rhs);
-            ERROR_IF(res == NULL, error);
-        }
-
         // stack effect: ( -- )
         inst(SWAP) {
             assert(oparg != 0);

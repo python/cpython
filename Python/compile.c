@@ -200,7 +200,6 @@ struct instr {
     oparg_t i_oparg1;
     oparg_t i_oparg2;
     oparg_t i_oparg3;
-    int i_cache_data;
     location i_loc;
     /* The following fields should not be set by the front-end: */
     struct basicblock_ *i_target; /* target block (if jump instruction) */
@@ -217,7 +216,6 @@ struct instr {
         _instr__ptr_->i_oparg1 = (OPARG1); \
         _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
-        _instr__ptr_->i_cache_data = -1; \
     } while (0);
 
 /* No args*/
@@ -230,7 +228,6 @@ struct instr {
         _instr__ptr_->i_oparg1 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
-        _instr__ptr_->i_cache_data = -1; \
     } while (0);
 
 typedef struct exceptstack {
@@ -357,20 +354,8 @@ if (0) {
         default:
             Py_UNREACHABLE();
     }
-    if (instruction->i_opcode == BINARY_OP_R) {
-        caches--;  /* last cache entry is used for the op */
-    }
-    while (caches > 0) {
+    while (caches--) {
         codestr->opcode = CACHE;
-        codestr->oparg = 0;
-        codestr++;
-        caches--;
-    }
-    if (instruction->i_opcode == BINARY_OP_R) {
-        fprintf(stderr, "instruction->i_cache_data = %d\n", instruction->i_cache_data);
-        assert(instruction->i_cache_data >= 0);
-        assert(instruction->i_cache_data < 256);
-        codestr->opcode = instruction->i_cache_data & 0xFF;
         codestr->oparg = 0;
         codestr++;
     }
@@ -734,7 +719,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
         c->c_regcode = !strstr(f, "import") && !strstr(f, "frozen") && !strstr(f, "freeze") && !strstr(f, "encodings");
         c->c_regcode = strstr(f, "mytest");
     }
-    //c->c_regcode = true;
+    c->c_regcode = true;
 
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
@@ -1414,8 +1399,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case BINARY_OP:
             return -1;
-        case BINARY_OP_R:
-            return 0;
         case INTERPRETER_EXIT:
             return -1;
         default:
@@ -1457,7 +1440,6 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc,
     i->i_oparg3 = oparg3;
     i->i_target = NULL;
     i->i_loc = loc;
-    i->i_cache_data = -1;
 
     return SUCCESS;
 }
@@ -1505,18 +1487,6 @@ cfg_builder_addop_noarg(cfg_builder *g, int opcode, location loc)
     assert(!HAS_ARG(opcode));
     return cfg_builder_addop(g, opcode, 0, loc,
                              UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
-}
-
-static int
-cfg_builder_add_cache_data(cfg_builder *g, int data)
-{
-    struct instr *last = basicblock_last_instr(g->g_curblock);
-    if (!last) {
-        return ERROR;
-    }
-    assert(last->i_cache_data == -1);
-    last->i_cache_data = data;
-    return SUCCESS;
 }
 
 static Py_ssize_t
@@ -1674,7 +1644,7 @@ compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
     if (arg < 0) {
         return ERROR;
     }
-    if (true || c->c_regcode) {
+    if (c->c_regcode) {
         return cfg_builder_addop(CFG_BUILDER(c), LOAD_CONST_R, arg, loc,
                                  CONST_OPARG(arg), UNUSED_OPARG, UNUSED_OPARG);
     }
@@ -1752,10 +1722,6 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADDOP_REGS(C, LOC, OP, R1, R2, R3) \
     RETURN_IF_ERROR(cfg_builder_addop(CFG_BUILDER(C), (OP), 0, (LOC), (R1), (R2), (R3)))
-
-// Attach cache data to the last instruction
-#define ADD_CACHE_DATA(C, D) \
-    RETURN_IF_ERROR(cfg_builder_add_cache_data(CFG_BUILDER(C), (D)))
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
@@ -4318,19 +4284,7 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
                          inplace ? "inplace" : "binary", binop);
             return ERROR;
     }
-    if (c->c_regcode) {
-        oparg_t lhs = TMP_OPARG(c->u->u_ntmps++);
-        oparg_t rhs = TMP_OPARG(c->u->u_ntmps++);
-        oparg_t res = TMP_OPARG(c->u->u_ntmps++);
-        ADDOP_REGS(c, loc, STORE_FAST_R, rhs, UNUSED_OPARG, UNUSED_OPARG);
-        ADDOP_REGS(c, loc, STORE_FAST_R, lhs, UNUSED_OPARG, UNUSED_OPARG);
-        ADDOP_REGS(c, loc, BINARY_OP_R, lhs, rhs, res);
-        ADD_CACHE_DATA(c, oparg);
-        ADDOP_REGS(c, loc, LOAD_FAST_R, res, UNUSED_OPARG, UNUSED_OPARG);
-    }
-    else {
-        ADDOP_I(c, loc, BINARY_OP, oparg);
-    }
+    ADDOP_I(c, loc, BINARY_OP, oparg);
     return SUCCESS;
 }
 

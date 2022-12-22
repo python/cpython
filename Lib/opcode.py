@@ -202,8 +202,6 @@ jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
-def_op('BINARY_OP_R', 143)
-
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
@@ -407,10 +405,6 @@ _cache_format = {
     },
     "BINARY_OP": {
         "counter": 1,
-    },
-    "BINARY_OP_R": {
-        "counter": 1,
-        "op" : 1,
     },
     "UNPACK_SEQUENCE": {
         "counter": 1,
