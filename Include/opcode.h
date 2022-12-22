@@ -11,6 +11,7 @@ extern "C" {
 #define CACHE                                    0
 #define POP_TOP                                  1
 #define PUSH_NULL                                2
+#define INTERPRETER_EXIT                         3
 #define END_FOR                                  4
 #define NOP                                      9
 #define UNARY_POSITIVE                          10
@@ -128,10 +129,9 @@ extern "C" {
 #define JUMP_NO_INTERRUPT                      261
 #define LOAD_METHOD                            262
 #define MAX_PSEUDO_OPCODE                      262
-#define BINARY_OP_ADD_FLOAT                      3
-#define BINARY_OP_ADD_INT                        5
-#define BINARY_OP_ADD_UNICODE                    6
-#define BINARY_OP_GENERIC                        7
+#define BINARY_OP_ADD_FLOAT                      5
+#define BINARY_OP_ADD_INT                        6
+#define BINARY_OP_ADD_UNICODE                    7
 #define BINARY_OP_INPLACE_ADD_UNICODE            8
 #define BINARY_OP_MULTIPLY_FLOAT                13
 #define BINARY_OP_MULTIPLY_INT                  14
@@ -159,10 +159,10 @@ extern "C" {
 #define CALL_NO_KW_TUPLE_1                      47
 #define CALL_NO_KW_TYPE_1                       48
 #define COMPARE_OP_FLOAT_JUMP                   56
-#define COMPARE_OP_GENERIC                      57
-#define COMPARE_OP_INT_JUMP                     58
-#define COMPARE_OP_STR_JUMP                     59
-#define FOR_ITER_LIST                           62
+#define COMPARE_OP_INT_JUMP                     57
+#define COMPARE_OP_STR_JUMP                     58
+#define FOR_ITER_LIST                           59
+#define FOR_ITER_TUPLE                          62
 #define FOR_ITER_RANGE                          64
 #define FOR_ITER_GEN                            65
 #define LOAD_ATTR_CLASS                         66

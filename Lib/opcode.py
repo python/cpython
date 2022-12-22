@@ -77,6 +77,7 @@ def pseudo_op(name, op, real_ops):
 def_op('CACHE', 0)
 def_op('POP_TOP', 1)
 def_op('PUSH_NULL', 2)
+def_op('INTERPRETER_EXIT', 3)
 
 def_op('END_FOR', 4)
 
@@ -281,7 +282,6 @@ _specializations = {
         "BINARY_OP_ADD_FLOAT",
         "BINARY_OP_ADD_INT",
         "BINARY_OP_ADD_UNICODE",
-        "BINARY_OP_GENERIC",
         "BINARY_OP_INPLACE_ADD_UNICODE",
         "BINARY_OP_MULTIPLY_FLOAT",
         "BINARY_OP_MULTIPLY_INT",
@@ -315,12 +315,12 @@ _specializations = {
     ],
     "COMPARE_OP": [
         "COMPARE_OP_FLOAT_JUMP",
-        "COMPARE_OP_GENERIC",
         "COMPARE_OP_INT_JUMP",
         "COMPARE_OP_STR_JUMP",
     ],
     "FOR_ITER": [
         "FOR_ITER_LIST",
+        "FOR_ITER_TUPLE",
         "FOR_ITER_RANGE",
         "FOR_ITER_GEN",
     ],
