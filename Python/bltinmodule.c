@@ -2541,7 +2541,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
-                return PyFloat_FromDouble(f_result + c);
+                if (c) {
+                    f_result += c;
+                }
+                return PyFloat_FromDouble(f_result);
             }
             if (PyFloat_CheckExact(item)) {
                 // Neumaier compensated summation
