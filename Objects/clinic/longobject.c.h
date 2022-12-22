@@ -467,4 +467,22 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bf6074ecf2f32cf4 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(int_is_integer__doc__,
+"is_integer($self, /)\n"
+"--\n"
+"\n"
+"Returns True.");
+
+#define INT_IS_INTEGER_METHODDEF    \
+    {"is_integer", (PyCFunction)int_is_integer, METH_NOARGS, int_is_integer__doc__},
+
+static PyObject *
+int_is_integer_impl(PyObject *self);
+
+static PyObject *
+int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return int_is_integer_impl(self);
+}
+/*[clinic end generated code: output=d6f555c14b0b534e input=a9049054013a1b77]*/
