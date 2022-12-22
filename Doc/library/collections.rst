@@ -477,12 +477,12 @@ or subtracting from an empty counter.
 
     Deque objects support the following methods:
 
-    .. method:: append(x)
+    .. method:: append(x, /)
 
         Add *x* to the right side of the deque.
 
 
-    .. method:: appendleft(x)
+    .. method:: appendleft(x, /)
 
         Add *x* to the left side of the deque.
 
@@ -499,27 +499,27 @@ or subtracting from an empty counter.
         .. versionadded:: 3.5
 
 
-    .. method:: count(x)
+    .. method:: count(x, /)
 
         Count the number of deque elements equal to *x*.
 
         .. versionadded:: 3.2
 
 
-    .. method:: extend(iterable)
+    .. method:: extend(iterable, /)
 
         Extend the right side of the deque by appending elements from the iterable
         argument.
 
 
-    .. method:: extendleft(iterable)
+    .. method:: extendleft(iterable, /)
 
         Extend the left side of the deque by appending elements from *iterable*.
         Note, the series of left appends results in reversing the order of
         elements in the iterable argument.
 
 
-    .. method:: index(x[, start[, stop]])
+    .. method:: index(x[, start[, stop]], /)
 
         Return the position of *x* in the deque (at or after index *start*
         and before index *stop*).  Returns the first match or raises
@@ -528,7 +528,7 @@ or subtracting from an empty counter.
         .. versionadded:: 3.5
 
 
-    .. method:: insert(i, x)
+    .. method:: insert(i, x, /)
 
         Insert *x* into the deque at position *i*.
 
@@ -550,7 +550,7 @@ or subtracting from an empty counter.
         elements are present, raises an :exc:`IndexError`.
 
 
-    .. method:: remove(value)
+    .. method:: remove(value, /)
 
         Remove the first occurrence of *value*.  If not found, raises a
         :exc:`ValueError`.
@@ -563,7 +563,7 @@ or subtracting from an empty counter.
         .. versionadded:: 3.2
 
 
-    .. method:: rotate(n=1)
+    .. method:: rotate(n=1, /)
 
         Rotate the deque *n* steps to the right.  If *n* is negative, rotate
         to the left.
