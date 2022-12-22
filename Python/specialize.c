@@ -367,26 +367,26 @@ _PyCode_Quicken(PyCodeObject *code)
 
 /* Binary op */
 
-#define SPEC_FAIL_BINARY_OP_ADD_DIFFERENT_TYPES          8
-#define SPEC_FAIL_BINARY_OP_ADD_OTHER                    9
-#define SPEC_FAIL_BINARY_OP_AND_DIFFERENT_TYPES         10
-#define SPEC_FAIL_BINARY_OP_AND_INT                     11
-#define SPEC_FAIL_BINARY_OP_AND_OTHER                   12
-#define SPEC_FAIL_BINARY_OP_FLOOR_DIVIDE                13
-#define SPEC_FAIL_BINARY_OP_LSHIFT                      14
-#define SPEC_FAIL_BINARY_OP_MATRIX_MULTIPLY             15
-#define SPEC_FAIL_BINARY_OP_MULTIPLY_DIFFERENT_TYPES    16
-#define SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER              17
-#define SPEC_FAIL_BINARY_OP_OR                          18
-#define SPEC_FAIL_BINARY_OP_POWER                       19
-#define SPEC_FAIL_BINARY_OP_REMAINDER                   20
-#define SPEC_FAIL_BINARY_OP_RSHIFT                      21
-#define SPEC_FAIL_BINARY_OP_SUBTRACT_DIFFERENT_TYPES    22
-#define SPEC_FAIL_BINARY_OP_SUBTRACT_OTHER              23
-#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_DIFFERENT_TYPES 24
-#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT           25
-#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER           26
-#define SPEC_FAIL_BINARY_OP_XOR                         27
+#define SPEC_FAIL_BINARY_OP_ADD_DIFFERENT_TYPES          9
+#define SPEC_FAIL_BINARY_OP_ADD_OTHER                   10
+#define SPEC_FAIL_BINARY_OP_AND_DIFFERENT_TYPES         11
+#define SPEC_FAIL_BINARY_OP_AND_INT                     12
+#define SPEC_FAIL_BINARY_OP_AND_OTHER                   13
+#define SPEC_FAIL_BINARY_OP_FLOOR_DIVIDE                14
+#define SPEC_FAIL_BINARY_OP_LSHIFT                      15
+#define SPEC_FAIL_BINARY_OP_MATRIX_MULTIPLY             16
+#define SPEC_FAIL_BINARY_OP_MULTIPLY_DIFFERENT_TYPES    17
+#define SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER              18
+#define SPEC_FAIL_BINARY_OP_OR                          19
+#define SPEC_FAIL_BINARY_OP_POWER                       20
+#define SPEC_FAIL_BINARY_OP_REMAINDER                   21
+#define SPEC_FAIL_BINARY_OP_RSHIFT                      22
+#define SPEC_FAIL_BINARY_OP_SUBTRACT_DIFFERENT_TYPES    23
+#define SPEC_FAIL_BINARY_OP_SUBTRACT_OTHER              24
+#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_DIFFERENT_TYPES 25
+#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT           26
+#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER           27
+#define SPEC_FAIL_BINARY_OP_XOR                         28
 
 /* Calls */
 
@@ -449,8 +449,8 @@ _PyCode_Quicken(PyCodeObject *code)
 
 // UNPACK_SEQUENCE
 
-#define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 8
-#define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 9
+#define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 9
+#define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 10
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
