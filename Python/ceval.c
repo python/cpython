@@ -746,7 +746,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* Code access macros */
 
-#define VERBOSE 1
+#define VERBOSE 0
 
 /* The integer overflow is checked by an assertion below. */
 #define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
@@ -1179,7 +1179,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         if(!_PyErr_Occurred(tstate)) PyObject_Print(frame->f_code->co_name, stderr, 0); \
         fprintf(stderr, "\n"); \
     } \
-    /* next_instr = frame->prev_instr + 1; */ \
     next_instr = frame->prev_instr + 1; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     /* Set stackdepth to -1. \

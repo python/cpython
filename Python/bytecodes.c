@@ -2849,14 +2849,12 @@ dummy_func(
         inst(CALL) {
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-
                 assert(cframe.use_tracing == 0);
                 int is_meth = is_method(stack_pointer, oparg);
                 int nargs = oparg + is_meth;
                 PyObject *callable = PEEK(nargs + 1);
                 _Py_Specialize_Call(callable, next_instr, nargs, kwnames);
                 DISPATCH_SAME_OPARG();
-
             }
             STAT_INC(CALL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
