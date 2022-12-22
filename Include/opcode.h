@@ -240,7 +240,7 @@ extern "C" {
 #define NB_INPLACE_XOR                          25
 
 /* number of codewords for opcode+oparg(s) */
-#define OPSIZE 2
+#define OPSIZE(OP) (((OP) == (OP)) ? 2 : 2)
 
 
 #define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))

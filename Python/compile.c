@@ -293,7 +293,7 @@ instr_size(struct instr *instr)
     int extended_args = e1 > e2 ? e1 : e2;
     extended_args = extended_args > e3 ? extended_args : e3;
     int caches = _PyOpcode_Caches[opcode];
-    return OPSIZE * (extended_args + 1) + caches;
+    return OPSIZE(EXTENDED_ARG) * extended_args + OPSIZE(opcode) + caches;
 }
 
 static void
@@ -318,8 +318,9 @@ if (0) {
   }
 }
 
-    switch ((ilen - caches)/OPSIZE) {
-        case 4:
+    int num_extended_arg = (ilen - caches - OPSIZE(opcode))/OPSIZE(EXTENDED_ARG);
+    switch (num_extended_arg) {
+        case 3:
             codestr->opcode = EXTENDED_ARG;
             codestr->oparg = (oparg1 >> 24) & 0xFF;
             codestr++;
@@ -327,7 +328,7 @@ if (0) {
             codestr->oparg3 = (oparg3 >> 24) & 0xFF;
             codestr++;
             /* fall through */
-        case 3:
+        case 2:
             codestr->opcode = EXTENDED_ARG;
             codestr->oparg = (oparg1 >> 16) & 0xFF;
             codestr++;
@@ -335,7 +336,7 @@ if (0) {
             codestr->oparg3 = (oparg3 >> 16) & 0xFF;
             codestr++;
             /* fall through */
-        case 2:
+        case 1:
             codestr->opcode = EXTENDED_ARG;
             codestr->oparg = (oparg1 >> 8) & 0xFF;
             codestr++;
@@ -343,7 +344,7 @@ if (0) {
             codestr->oparg3 = (oparg3 >> 8) & 0xFF;
             codestr++;
             /* fall through */
-        case 1:
+        case 0:
             codestr->opcode = opcode;
             codestr->oparg = oparg1 & 0xFF;
             codestr++;

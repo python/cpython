@@ -424,7 +424,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
         _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
-        entry_point += OPSIZE;
+        entry_point += OPSIZE(_Py_OPCODE(_PyCode_CODE(co)[entry_point]));
     }
     co->_co_firsttraceable = entry_point;
     _PyCode_Quicken(co);
@@ -1532,7 +1532,7 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].opcode = opcode;
-        i += OPSIZE - 1; // skip over oparg2, oparg3
+        i += OPSIZE(opcode) - 1; // skip over oparg2, oparg3, etc
         while (caches--) {
             instructions[++i].opcode = CACHE;
             instructions[i].oparg = 0;

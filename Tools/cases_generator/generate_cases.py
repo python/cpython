@@ -648,8 +648,9 @@ class Analyzer:
             first = True
             for comp in sup.parts:
                 if not first:
+                    self.out.emit("int opsize = OPSIZE(opcode);")
                     self.out.emit("NEXTOPARG();")
-                    self.out.emit("JUMPBY(OPSIZE);")
+                    self.out.emit("JUMPBY(opsize);")
                 first = False
                 comp.write_body(self.out, 0)
                 if comp.instr.cache_offset:
