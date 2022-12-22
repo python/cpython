@@ -5719,7 +5719,7 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance(g, G)
 
     def test_subclassing_subclasshook(self):
-        class Base(abc.ABC):
+        class Base(typing.Iterable):
             @classmethod
             def __subclasshook__(cls, other):
                 return other.__name__ == 'Foo'
