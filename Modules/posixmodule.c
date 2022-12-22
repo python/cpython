@@ -3173,6 +3173,9 @@ os.chmod
 
     mode: int
         Operating-system mode bitfield.
+        Be careful when using number literals for *mode*. The conventional UNIX notation for
+        numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in
+        Python.
 
     *
 
@@ -3198,7 +3201,7 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 static PyObject *
 os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
               int follow_symlinks)
-/*[clinic end generated code: output=5cf6a94915cc7bff input=989081551c00293b]*/
+/*[clinic end generated code: output=5cf6a94915cc7bff input=674a14bc998de09d]*/
 {
     int result;
 
@@ -3328,7 +3331,12 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 os.fchmod
 
     fd: int
+        The file descriptor of the file to be modified.
     mode: int
+        Operating-system mode bitfield.
+        Be careful when using number literals for *mode*. The conventional UNIX notation for
+        numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in
+        Python.
 
 Change the access permissions of the file given by file descriptor fd.
 
@@ -3337,7 +3345,7 @@ Equivalent to os.chmod(fd, mode).
 
 static PyObject *
 os_fchmod_impl(PyObject *module, int fd, int mode)
-/*[clinic end generated code: output=afd9bc05b4e426b3 input=8ab11975ca01ee5b]*/
+/*[clinic end generated code: output=afd9bc05b4e426b3 input=b5594618bbbc22df]*/
 {
     int res;
     int async_err = 0;

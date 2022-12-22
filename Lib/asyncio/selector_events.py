@@ -1197,6 +1197,10 @@ class _SelectorSocketTransport(_SelectorTransport):
     def _reset_empty_waiter(self):
         self._empty_waiter = None
 
+    def close(self):
+        self._read_ready_cb = None
+        super().close()
+
 
 class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTransport):
 
