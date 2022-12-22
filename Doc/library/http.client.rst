@@ -67,10 +67,9 @@ The module provides the following classes:
       *blocksize* parameter was added.
 
 
-.. class:: HTTPSConnection(host, port=None, key_file=None, \
-                           cert_file=None[, timeout], \
+.. class:: HTTPSConnection(host, port=None[, timeout], \
                            source_address=None, *, context=None, \
-                           check_hostname=None, blocksize=8192)
+                           blocksize=8192)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
@@ -96,6 +95,16 @@ The module provides the following classes:
       :func:`ssl._create_unverified_context` can be passed to the *context*
       parameter.
 
+   .. deprecated:: 3.6
+       *key_file* and *cert_file* are deprecated in favor of *context*.
+       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+       :func:`ssl.create_default_context` select the system's trusted CA
+       certificates for you.
+
+       The *check_hostname* parameter is also deprecated; the
+       :attr:`ssl.SSLContext.check_hostname` attribute of *context* should
+       be used instead.
+
    .. versionchanged:: 3.8
       This class now enables TLS 1.3
       :attr:`ssl.SSLContext.post_handshake_auth` for the default *context* or
@@ -106,16 +115,9 @@ The module provides the following classes:
       ``http/1.1`` when no *context* is given. Custom *context* should set
       ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
 
-   .. deprecated:: 3.6
-
-       *key_file* and *cert_file* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
-       The *check_hostname* parameter is also deprecated; the
-       :attr:`ssl.SSLContext.check_hostname` attribute of *context* should
-       be used instead.
+   .. versionchanged:: 3.12
+       The deprecated *key_file*, *cert_file* and *check_hostname* parameters
+       have been removed.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, method=None, url=None)

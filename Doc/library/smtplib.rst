@@ -75,9 +75,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket
 
-.. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, \
-                    certfile=None [, timeout], context=None, \
-                    source_address=None)
+.. class:: SMTP_SSL(host='', port=0, local_hostname=None [, timeout], \
+                    context=None, source_address=None)
 
    An :class:`SMTP_SSL` instance behaves exactly the same as instances of
    :class:`SMTP`. :class:`SMTP_SSL` should be used for situations where SSL is
@@ -89,10 +88,6 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    can contain a :class:`~ssl.SSLContext` and allows configuring various
    aspects of the secure connection.  Please read :ref:`ssl-security` for
    best practices.
-
-   *keyfile* and *certfile* are a legacy alternative to *context*, and can
-   point to a PEM formatted private key and certificate chain file for the
-   SSL connection.
 
    .. versionchanged:: 3.3
       *context* was added.
@@ -115,6 +110,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket
+
+   .. versionchanged:: 3.12
+       The deprecated *keyfile* and *certfile* parameters have been removed.
 
 .. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, \
                 source_address=None[, timeout])
