@@ -1614,9 +1614,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum((i / 2 for i in range(10)), 1000.25), 1022.75)
         self.assertEqual(sum([0.5, 1]), 1.5)
         self.assertEqual(sum([1, 0.5]), 1.5)
-        # self.assertEqual(repr(sum([-0.0])), '0.0')
-        # self.assertEqual(repr(sum([-0.0], -0.0)), '-0.0')
-        # self.assertEqual(repr(sum([], -0.0)), '-0.0')
+        self.assertEqual(sum([0.1] * 10), 1.0)  # Test accuracy of Kahan summation
+        self.assertEqual(repr(sum([-0.0])), '0.0')
+        self.assertEqual(repr(sum([-0.0], -0.0)), '-0.0')
+        self.assertEqual(repr(sum([], -0.0)), '-0.0')
 
         self.assertRaises(TypeError, sum)
         self.assertRaises(TypeError, sum, 42)
