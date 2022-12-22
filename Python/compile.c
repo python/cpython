@@ -153,7 +153,7 @@ location_is_after(location loc1, location loc2) {
 static inline bool
 same_location(location a, location b)
 {
-    return a.lineno == b.lineno && 
+    return a.lineno == b.lineno &&
            a.end_lineno == b.end_lineno &&
            a.col_offset == b.col_offset &&
            a.end_col_offset == b.end_col_offset;
