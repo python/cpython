@@ -309,7 +309,8 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_OUT_OF_RANGE 4
 #define SPEC_FAIL_EXPECTED_ERROR 5
 #define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 6
-#define SPEC_FAIL_NOT_PY_FUNCTION 7
+#define SPEC_FAIL_CODE_COMPLEX_PARAMETERS 7
+#define SPEC_FAIL_CODE_NOT_OPTIMIZED 8
 
 
 #define SPEC_FAIL_LOAD_GLOBAL_NON_DICT 17
@@ -317,18 +318,18 @@ _PyCode_Quicken(PyCodeObject *code)
 
 /* Attributes */
 
-#define SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR 8
-#define SPEC_FAIL_ATTR_NON_OVERRIDING_DESCRIPTOR 9
-#define SPEC_FAIL_ATTR_NOT_DESCRIPTOR 10
-#define SPEC_FAIL_ATTR_METHOD 11
-#define SPEC_FAIL_ATTR_MUTABLE_CLASS 12
-#define SPEC_FAIL_ATTR_PROPERTY 13
-#define SPEC_FAIL_ATTR_NON_OBJECT_SLOT 14
-#define SPEC_FAIL_ATTR_READ_ONLY 15
-#define SPEC_FAIL_ATTR_AUDITED_SLOT 16
-#define SPEC_FAIL_ATTR_NOT_MANAGED_DICT 17
-#define SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT 18
-#define SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND 19
+#define SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR 9
+#define SPEC_FAIL_ATTR_NON_OVERRIDING_DESCRIPTOR 10
+#define SPEC_FAIL_ATTR_NOT_DESCRIPTOR 11
+#define SPEC_FAIL_ATTR_METHOD 12
+#define SPEC_FAIL_ATTR_MUTABLE_CLASS 13
+#define SPEC_FAIL_ATTR_PROPERTY 14
+#define SPEC_FAIL_ATTR_NON_OBJECT_SLOT 15
+#define SPEC_FAIL_ATTR_READ_ONLY 16
+#define SPEC_FAIL_ATTR_AUDITED_SLOT 17
+#define SPEC_FAIL_ATTR_NOT_MANAGED_DICT 18
+#define SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT 19
+#define SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND 20
 
 #define SPEC_FAIL_ATTR_SHADOWED 21
 #define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD 22
@@ -346,12 +347,12 @@ _PyCode_Quicken(PyCodeObject *code)
 
 /* Binary subscr and store subscr */
 
-#define SPEC_FAIL_SUBSCR_ARRAY_INT 8
-#define SPEC_FAIL_SUBSCR_ARRAY_SLICE 9
-#define SPEC_FAIL_SUBSCR_LIST_SLICE 10
-#define SPEC_FAIL_SUBSCR_TUPLE_SLICE 11
-#define SPEC_FAIL_SUBSCR_STRING_INT 12
-#define SPEC_FAIL_SUBSCR_STRING_SLICE 13
+#define SPEC_FAIL_SUBSCR_ARRAY_INT 9
+#define SPEC_FAIL_SUBSCR_ARRAY_SLICE 10
+#define SPEC_FAIL_SUBSCR_LIST_SLICE 11
+#define SPEC_FAIL_SUBSCR_TUPLE_SLICE 12
+#define SPEC_FAIL_SUBSCR_STRING_INT 13
+#define SPEC_FAIL_SUBSCR_STRING_SLICE 14
 #define SPEC_FAIL_SUBSCR_BUFFER_INT 15
 #define SPEC_FAIL_SUBSCR_BUFFER_SLICE 16
 #define SPEC_FAIL_SUBSCR_SEQUENCE_INT 17
@@ -366,49 +367,48 @@ _PyCode_Quicken(PyCodeObject *code)
 
 /* Binary op */
 
-#define SPEC_FAIL_BINARY_OP_ADD_DIFFERENT_TYPES          8
-#define SPEC_FAIL_BINARY_OP_ADD_OTHER                    9
-#define SPEC_FAIL_BINARY_OP_AND_DIFFERENT_TYPES         10
-#define SPEC_FAIL_BINARY_OP_AND_INT                     11
-#define SPEC_FAIL_BINARY_OP_AND_OTHER                   12
-#define SPEC_FAIL_BINARY_OP_FLOOR_DIVIDE                13
-#define SPEC_FAIL_BINARY_OP_LSHIFT                      14
-#define SPEC_FAIL_BINARY_OP_MATRIX_MULTIPLY             15
-#define SPEC_FAIL_BINARY_OP_MULTIPLY_DIFFERENT_TYPES    16
-#define SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER              17
-#define SPEC_FAIL_BINARY_OP_OR                          18
-#define SPEC_FAIL_BINARY_OP_POWER                       19
-#define SPEC_FAIL_BINARY_OP_REMAINDER                   20
-#define SPEC_FAIL_BINARY_OP_RSHIFT                      21
-#define SPEC_FAIL_BINARY_OP_SUBTRACT_DIFFERENT_TYPES    22
-#define SPEC_FAIL_BINARY_OP_SUBTRACT_OTHER              23
-#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_DIFFERENT_TYPES 24
-#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT           25
-#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER           26
-#define SPEC_FAIL_BINARY_OP_XOR                         27
+#define SPEC_FAIL_BINARY_OP_ADD_DIFFERENT_TYPES          9
+#define SPEC_FAIL_BINARY_OP_ADD_OTHER                   10
+#define SPEC_FAIL_BINARY_OP_AND_DIFFERENT_TYPES         11
+#define SPEC_FAIL_BINARY_OP_AND_INT                     12
+#define SPEC_FAIL_BINARY_OP_AND_OTHER                   13
+#define SPEC_FAIL_BINARY_OP_FLOOR_DIVIDE                14
+#define SPEC_FAIL_BINARY_OP_LSHIFT                      15
+#define SPEC_FAIL_BINARY_OP_MATRIX_MULTIPLY             16
+#define SPEC_FAIL_BINARY_OP_MULTIPLY_DIFFERENT_TYPES    17
+#define SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER              18
+#define SPEC_FAIL_BINARY_OP_OR                          19
+#define SPEC_FAIL_BINARY_OP_POWER                       20
+#define SPEC_FAIL_BINARY_OP_REMAINDER                   21
+#define SPEC_FAIL_BINARY_OP_RSHIFT                      22
+#define SPEC_FAIL_BINARY_OP_SUBTRACT_DIFFERENT_TYPES    23
+#define SPEC_FAIL_BINARY_OP_SUBTRACT_OTHER              24
+#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_DIFFERENT_TYPES 25
+#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT           26
+#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER           27
+#define SPEC_FAIL_BINARY_OP_XOR                         28
 
 /* Calls */
-#define SPEC_FAIL_CALL_COMPLEX_PARAMETERS 9
-#define SPEC_FAIL_CALL_CO_NOT_OPTIMIZED 10
-/* SPEC_FAIL_METHOD  defined as 11 above */
 
 #define SPEC_FAIL_CALL_INSTANCE_METHOD 11
 #define SPEC_FAIL_CALL_CMETHOD 12
 #define SPEC_FAIL_CALL_CFUNC_VARARGS 13
 #define SPEC_FAIL_CALL_CFUNC_VARARGS_KEYWORDS 14
-#define SPEC_FAIL_CALL_CFUNC_FASTCALL_KEYWORDS 15
-#define SPEC_FAIL_CALL_CFUNC_NOARGS 16
-#define SPEC_FAIL_CALL_BAD_CALL_FLAGS 17
-#define SPEC_FAIL_CALL_CFUNC_METHOD_FASTCALL_KEYWORDS 18
-#define SPEC_FAIL_CALL_PYTHON_CLASS 19
-#define SPEC_FAIL_CALL_PEP_523 20
-#define SPEC_FAIL_CALL_BOUND_METHOD 21
-#define SPEC_FAIL_CALL_STR 22
-#define SPEC_FAIL_CALL_CLASS_NO_VECTORCALL 23
-#define SPEC_FAIL_CALL_CLASS_MUTABLE 24
-#define SPEC_FAIL_CALL_KWNAMES 25
-#define SPEC_FAIL_CALL_METHOD_WRAPPER 26
-#define SPEC_FAIL_CALL_OPERATOR_WRAPPER 27
+#define SPEC_FAIL_CALL_CFUNC_NOARGS 15
+#define SPEC_FAIL_CALL_CFUNC_METHOD_FASTCALL_KEYWORDS 16
+#define SPEC_FAIL_CALL_METH_DESCR_VARARGS 17
+#define SPEC_FAIL_CALL_METH_DESCR_VARARGS_KEYWORDS 18
+#define SPEC_FAIL_CALL_METH_DESCR_METHOD_FASTCALL_KEYWORDS 19
+#define SPEC_FAIL_CALL_BAD_CALL_FLAGS 20
+#define SPEC_FAIL_CALL_PYTHON_CLASS 21
+#define SPEC_FAIL_CALL_PEP_523 22
+#define SPEC_FAIL_CALL_BOUND_METHOD 23
+#define SPEC_FAIL_CALL_STR 24
+#define SPEC_FAIL_CALL_CLASS_NO_VECTORCALL 25
+#define SPEC_FAIL_CALL_CLASS_MUTABLE 26
+#define SPEC_FAIL_CALL_KWNAMES 27
+#define SPEC_FAIL_CALL_METHOD_WRAPPER 28
+#define SPEC_FAIL_CALL_OPERATOR_WRAPPER 29
 
 /* COMPARE_OP */
 #define SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES 12
@@ -449,8 +449,8 @@ _PyCode_Quicken(PyCodeObject *code)
 
 // UNPACK_SEQUENCE
 
-#define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 8
-#define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 9
+#define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 9
+#define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 10
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -1251,10 +1251,10 @@ static int
 function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
     if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
-        return SPEC_FAIL_CALL_COMPLEX_PARAMETERS;
+        return SPEC_FAIL_CODE_COMPLEX_PARAMETERS;
     }
     if ((flags & CO_OPTIMIZED) == 0) {
-        return SPEC_FAIL_CALL_CO_NOT_OPTIMIZED;
+        return SPEC_FAIL_CODE_NOT_OPTIMIZED;
     }
     return SIMPLE_FUNCTION;
 }
@@ -1526,8 +1526,6 @@ builtin_call_fail_kind(int ml_flags)
             return SPEC_FAIL_CALL_CFUNC_VARARGS;
         case METH_VARARGS | METH_KEYWORDS:
             return SPEC_FAIL_CALL_CFUNC_VARARGS_KEYWORDS;
-        case METH_FASTCALL | METH_KEYWORDS:
-            return SPEC_FAIL_CALL_CFUNC_FASTCALL_KEYWORDS;
         case METH_NOARGS:
             return SPEC_FAIL_CALL_CFUNC_NOARGS;
         case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
@@ -1535,6 +1533,29 @@ builtin_call_fail_kind(int ml_flags)
         /* These cases should be optimized, but return "other" just in case */
         case METH_O:
         case METH_FASTCALL:
+        case METH_FASTCALL | METH_KEYWORDS:
+            return SPEC_FAIL_OTHER;
+        default:
+            return SPEC_FAIL_CALL_BAD_CALL_FLAGS;
+    }
+}
+
+static int
+meth_descr_call_fail_kind(int ml_flags)
+{
+    switch (ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
+                        METH_KEYWORDS | METH_METHOD)) {
+        case METH_VARARGS:
+            return SPEC_FAIL_CALL_METH_DESCR_VARARGS;
+        case METH_VARARGS | METH_KEYWORDS:
+            return SPEC_FAIL_CALL_METH_DESCR_VARARGS_KEYWORDS;
+        case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
+            return SPEC_FAIL_CALL_METH_DESCR_METHOD_FASTCALL_KEYWORDS;
+            /* These cases should be optimized, but return "other" just in case */
+        case METH_NOARGS:
+        case METH_O:
+        case METH_FASTCALL:
+        case METH_FASTCALL | METH_KEYWORDS:
             return SPEC_FAIL_OTHER;
         default:
             return SPEC_FAIL_CALL_BAD_CALL_FLAGS;
@@ -1583,12 +1604,12 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             _py_set_opcode(instr, CALL_NO_KW_METHOD_DESCRIPTOR_FAST);
             return 0;
         }
-        case METH_FASTCALL|METH_KEYWORDS: {
+        case METH_FASTCALL | METH_KEYWORDS: {
             _py_set_opcode(instr, CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
             return 0;
         }
     }
-    SPECIALIZATION_FAIL(CALL, builtin_call_fail_kind(descr->d_method->ml_flags));
+    SPECIALIZATION_FAIL(CALL, meth_descr_call_fail_kind(descr->d_method->ml_flags));
     return -1;
 }
 
