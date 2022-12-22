@@ -225,6 +225,15 @@ asyncio
   a custom event loop factory.
   (Contributed by Kumar Aditya in :gh:`99388`.)
 
+* Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
+  (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
+
+inspect
+-------
+
+* Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
+  a :term:`coroutine` for use with :func:`iscoroutinefunction`.
+  (Contributed Carlton Gibson in :gh:`99247`.)
 
 pathlib
 -------

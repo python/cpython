@@ -205,11 +205,11 @@ class Instruction:
                 else:
                     typ = f"uint{bits}_t "
                     func = f"read_u{bits}"
-                out.emit(f"{typ}{ceffect.name} = {func}(next_instr + {cache_offset});")
+                out.emit(f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 
-        # Write the body, substituting a goto for ERROR_IF()
+        # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
         extra = " " * -dedent
         for line in self.block_text:
@@ -232,6 +232,10 @@ class Instruction:
                     )
                 else:
                     out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
+            elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*$", line):
+                space = m.group(1)
+                for ieff in self.input_effects:
+                    out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
 
