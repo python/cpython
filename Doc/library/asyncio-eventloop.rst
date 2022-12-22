@@ -59,6 +59,16 @@ an event loop:
    instead of using these lower level functions to manually create and close an
    event loop.
 
+   .. note::
+      In Python versions 3.10.0--3.10.8 and 3.11.0 this function
+      (and other functions which used it implicitly) emitted a
+      :exc:`DeprecationWarning` if there was no running event loop, even if
+      the current loop was set.
+      In Python versions 3.10.9, 3.11.1, and 3.12 they emitted a
+      :exc:`DeprecationWarning` if there was no running event loop, and no
+      current loop was set.
+      In some future Python release it will become an error.
+
 .. function:: set_event_loop(loop)
 
    Set *loop* as the current event loop for the current OS thread.
