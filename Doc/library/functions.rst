@@ -657,11 +657,16 @@ are always available.  They are listed here in alphabetical order.
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      numeric_value: `floatnumber` | `infinity` | `nan`
+
+      number: floatnumber [`exponent`]
+      floatnumber: [`digitpart`] "." `digitpart` | `digitpart` ["."]
+      digitpart: `digit` (["_"] `digit`)*
+      exponent: ("e" | "E") ["+" | "-"] `digitpart`
+
+      numeric_value: `number` | `infinity` | `nan`
       numeric_string: [`sign`] `numeric_value`
 
-   Here ``floatnumber`` is the form of a Python floating-point literal,
-   described in :ref:`floating`.  Case is not significant, so, for example,
+   Case is not significant, so, for example,
    "inf", "Inf", "INFINITY", and "iNfINity" are all acceptable spellings for
    positive infinity.
 
