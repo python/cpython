@@ -1,3 +1,6 @@
+# Copyright (C) 2022 ActiveState Software Inc.
+# test_long.py is licensed under the PSFLv2 License.
+# See the file LICENSE for details.
 import unittest
 import sys
 

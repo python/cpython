@@ -2,6 +2,25 @@
 .. date: 2022-11-16
 .. nonce: as$i9+
 .. release date: 2022-11-16
-.. section: Library
+.. original section: Library
+.. section: Security
 
 Address CVE-2021-3733 in urllib2
+
+.. bpo: 0
+.. date: 2022-11-16
+.. nonce: as$i9+
+.. release date: 2022-11-16
+.. original section: Core and Builtins
+.. section: Security
+
+Address CVE-2020-10735 for long objects
+
+.. bpo: 0
+.. date: 2022-11-16
+.. nonce: as$i9+
+.. release date: 2022-11-16
+.. original section: Library
+.. section: Security
+
+Address CVE-2015-20107 in mailcap
