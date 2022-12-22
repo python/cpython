@@ -430,10 +430,10 @@ STACK[-1] in this language.
 
 .. opcode:: COPY (i)
 
-   Push the i-th to the top of the stack without removing it from its original
+   Push the i-th item to the top of the stack without removing it from its original
    location.::
 
-      STACK.append(STACK[-i]
+      STACK.append(STACK[-i])
 
    .. versionadded:: 3.11
 
