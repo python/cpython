@@ -800,7 +800,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         transport = self.socket_transport(sendmsg=True)
         transport._fatal_error = mock.Mock()
         transport._buffer.extend(data)
-        self.loop._add_writer(7, transport._write_ready)
+        # Calls _fatal_error and clears the buffer
         transport._write_ready()
         self.assertTrue(self.sock.sendmsg.called)
         self.assertFalse(self.loop.writers)
