@@ -453,7 +453,7 @@ process which created it.
       ...     return x*x
       ...
       >>> with p:
-      ...     zp.map(f, [1,2,3])
+      ...     p.map(f, [1,2,3])
       Process PoolWorker-1:
       Process PoolWorker-2:
       Process PoolWorker-3:
