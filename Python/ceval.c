@@ -1115,6 +1115,7 @@ handle_eval_breaker:
 #endif
             /* Tell C compilers not to hold the opcode variable in the loop.
                next_instr points the current instruction without TARGET(). */
+            assert(0);
             opcode = _Py_OPCODE(*next_instr);
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",

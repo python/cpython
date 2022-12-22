@@ -893,7 +893,7 @@ class DisTests(DisTestBase):
 
     def test_widths(self):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
-                           ])
+                            'INSTRUMENTED_CALL_FUNCTION_EX'])
         for opcode, opname in enumerate(dis.opname):
             if opname in long_opcodes:
                 continue

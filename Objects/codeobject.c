@@ -341,10 +341,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
         co->_co_instrumentation.monitoring_matrix.tools[e] = 0;
     }
-    co->_co_instrumentation.layout.offsets.size = 0;
-    co->_co_instrumentation.layout.offsets.tools = -1;
-    co->_co_instrumentation.layout.offsets.lines = -1;
-    co->_co_instrumentation.layout.offsets.instructions = -1;
+    co->_co_instrumentation.layout.offsets.multi_tools = 0;
+    co->_co_instrumentation.layout.offsets.lines = 0;
+    co->_co_instrumentation.layout.offsets.instructions = 0;
     co->_co_instrumentation.monitoring_data = NULL;
     co->_co_instrumentation.monitoring_version = 0;
     /* not set */
@@ -1459,11 +1458,12 @@ PyCode_GetFreevars(PyCodeObject *code)
 }
 
 static void
-deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
+deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
 {
+    Py_ssize_t len = Py_SIZE(code);
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT instruction = instructions[i];
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
+        int opcode = _Py_GetBaseOpcode(code, i);
         int caches = _PyOpcode_Caches[opcode];
         instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
         while (caches--) {
@@ -1486,7 +1486,7 @@ _PyCode_GetCode(PyCodeObject *co)
     if (code == NULL) {
         return NULL;
     }
-    deopt_code((_Py_CODEUNIT *)PyBytes_AS_STRING(code), Py_SIZE(co));
+    deopt_code(co, (_Py_CODEUNIT *)PyBytes_AS_STRING(code));
     assert(co->_co_cached->_co_code == NULL);
     co->_co_cached->_co_code = Py_NewRef(code);
     return code;
@@ -2216,7 +2216,7 @@ _PyCode_ConstantKey(PyObject *op)
 void
 _PyStaticCode_Fini(PyCodeObject *co)
 {
-    deopt_code(_PyCode_CODE(co), Py_SIZE(co));
+    deopt_code(co, _PyCode_CODE(co));
     PyMem_Free(co->co_extra);
     if (co->_co_cached != NULL) {
         Py_CLEAR(co->_co_cached->_co_code);

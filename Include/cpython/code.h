@@ -47,10 +47,9 @@ typedef struct {
 } _PyCoCached;
 
 typedef struct _PyInstrumentationOffsets {
-    int8_t tools;
+    int8_t multi_tools;
     int8_t lines;
     int8_t instructions;
-    int8_t size;
 } _PyInstrumentationOffsets;
 
 typedef union _PyInstrumentationLayout {
@@ -59,10 +58,23 @@ typedef union _PyInstrumentationLayout {
 } _PyInstrumentationLayout;
 
 typedef struct {
+    uint8_t original_opcode;
+    int8_t line_delta;
+} _PyCoLineInstrumentationData;
+
+typedef struct {
+    uint8_t *tools;
+    _PyCoLineInstrumentationData *lines;
+    uint8_t *line_tools;
+    uint8_t *per_instruction_opcode;
+    uint8_t *per_instruction_tools;
+} _PyCoInstrumentationData;
+
+typedef struct {
     uint64_t monitoring_version; /* current instrumentation version */
     _PyInstrumentationLayout layout;
     _Py_MonitoringMatrix monitoring_matrix;
-    uint8_t *monitoring_data; /* array of data for monitoring */
+    _PyCoInstrumentationData *monitoring_data; /* data for monitoring */
 } _PyCoInstrumentation;
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are

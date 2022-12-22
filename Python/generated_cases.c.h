@@ -2390,6 +2390,7 @@
         }
 
         TARGET(POP_JUMP_IF_TRUE) {
+            PREDICTED(POP_JUMP_IF_TRUE);
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
@@ -2413,6 +2414,7 @@
         }
 
         TARGET(POP_JUMP_IF_NOT_NONE) {
+            PREDICTED(POP_JUMP_IF_NOT_NONE);
             PyObject *value = POP();
             if (!Py_IsNone(value)) {
                 JUMPBY(oparg);
@@ -2422,6 +2424,7 @@
         }
 
         TARGET(POP_JUMP_IF_NONE) {
+            PREDICTED(POP_JUMP_IF_NONE);
             PyObject *value = POP();
             if (Py_IsNone(value)) {
                 _Py_DECREF_NO_DEALLOC(value);
@@ -2434,6 +2437,7 @@
         }
 
         TARGET(JUMP_IF_FALSE_OR_POP) {
+            PREDICTED(JUMP_IF_FALSE_OR_POP);
             PyObject *cond = TOP();
             int err;
             if (Py_IsTrue(cond)) {
@@ -2460,6 +2464,7 @@
         }
 
         TARGET(JUMP_IF_TRUE_OR_POP) {
+            PREDICTED(JUMP_IF_TRUE_OR_POP);
             PyObject *cond = TOP();
             int err;
             if (Py_IsFalse(cond)) {
@@ -3779,15 +3784,86 @@
         }
 
         TARGET(INSTRUMENTED_LINE) {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             int original_opcode = _Py_call_instrumentation_line(
                     tstate, frame->f_code, next_instr-1);
-            assert(original_opcode!= 0);
             if (original_opcode < 0) goto error;
+            next_instr--;
+            if (frame->prev_instr != next_instr) {
+                fprintf(stderr, "Jump has happened\n");
+                /* Instrumentation has jumped */
+                next_instr = frame->prev_instr;
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                DISPATCH();
+            }
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+            if (_PyOpcode_Caches[original_opcode]) {
+                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
+                INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+            }
+            assert(original_opcode > 0 && original_opcode < 256);
             opcode = original_opcode;
-            assert(_PyOpcode_Deopt[opcode] == opcode);
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
             DISPATCH_GOTO();
+        }
+
+        TARGET(INSTRUMENTED_JUMP_FORWARD) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            if (err) goto error;
+            JUMPBY(oparg);
+            DISPATCH();
+        }
+
+        TARGET(INSTRUMENTED_JUMP_BACKWARD) {
+            assert(oparg < INSTR_OFFSET());
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            if (err) goto error;
+            JUMPBY(-oparg);
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
+        }
+
+        TARGET(INSTRUMENTED_JUMP_IF_TRUE_OR_POP) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            if (err) goto error;
+            GO_TO_INSTRUCTION(JUMP_IF_TRUE_OR_POP);
+        }
+
+        TARGET(INSTRUMENTED_JUMP_IF_FALSE_OR_POP) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            if (err) goto error;
+            GO_TO_INSTRUCTION(JUMP_IF_FALSE_OR_POP);
+        }
+
+        TARGET(INSTRUMENTED_POP_JUMP_IF_TRUE) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            if (err) goto error;
+            GO_TO_INSTRUCTION(POP_JUMP_IF_TRUE);
+        }
+
+        TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            if (err) goto error;
+            GO_TO_INSTRUCTION(POP_JUMP_IF_FALSE);
+        }
+
+        TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            if (err) goto error;
+            GO_TO_INSTRUCTION(POP_JUMP_IF_NONE);
+        }
+
+        TARGET(INSTRUMENTED_POP_JUMP_IF_NOT_NONE) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            if (err) goto error;
+            GO_TO_INSTRUCTION(POP_JUMP_IF_NOT_NONE);
         }
 
         TARGET(EXTENDED_ARG) {

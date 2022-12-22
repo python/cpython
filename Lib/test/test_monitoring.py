@@ -292,13 +292,29 @@ class SimulateProfileTest(unittest.TestCase, MonitoringEventsBase):
 
 
 class CounterWithDisable:
+
     def __init__(self):
         self.disable = False
         self.count = 0
+
     def __call__(self, *args):
         self.count += 1
         if self.disable:
             return sys.monitoring.DISABLE
+
+
+class RecorderWithDisable:
+
+    def __init__(self, events):
+        self.disable = False
+        self.events = events
+
+    def __call__(self, code, event):
+        self.events.append(event)
+        print(len(self.events))
+        if self.disable:
+            return sys.monitoring.DISABLE
+
 
 class MontoringDisableAndRestartTest(unittest.TestCase, MonitoringTestBase):
 
@@ -341,7 +357,7 @@ class MontoringDisableAndRestartTest(unittest.TestCase, MonitoringTestBase):
             sys.monitoring.restart_events()
 
 
-class MultipleMonitors(unittest.TestCase, MonitoringTestBase):
+class MultipleMonitorsTest(unittest.TestCase, MonitoringTestBase):
 
     def test_two_same(self):
         try:
@@ -456,6 +472,25 @@ class MultipleMonitors(unittest.TestCase, MonitoringTestBase):
             sys.monitoring.set_events(TEST_TOOL2, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.PY_START, None)
             sys.monitoring.register_callback(TEST_TOOL2, E.PY_START, None)
+            self.assertEqual(sys.monitoring._all_events(), {})
+            sys.monitoring.restart_events()
+
+class LineMontoringTest(unittest.TestCase):
+
+    def test_lines_single(self):
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            events = []
+            counter = RecorderWithDisable(events)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, counter)
+            sys.monitoring.set_events(TEST_TOOL, E.LINE)
+            f1()
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+            self.assertEqual(events, [487, 12, 488])
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
 

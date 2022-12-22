@@ -125,7 +125,15 @@ extern "C" {
 #define INSTRUMENTED_RETURN_VALUE              242
 #define INSTRUMENTED_YIELD_VALUE               243
 #define INSTRUMENTED_CALL_FUNCTION_EX          244
-#define INSTRUMENTED_LINE                      250
+#define INSTRUMENTED_JUMP_FORWARD              245
+#define INSTRUMENTED_JUMP_BACKWARD             246
+#define INSTRUMENTED_JUMP_IF_FALSE_OR_POP      247
+#define INSTRUMENTED_JUMP_IF_TRUE_OR_POP       249
+#define INSTRUMENTED_POP_JUMP_IF_FALSE         250
+#define INSTRUMENTED_POP_JUMP_IF_TRUE          251
+#define INSTRUMENTED_POP_JUMP_IF_NONE          252
+#define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      253
+#define INSTRUMENTED_LINE                      254
 #define MIN_PSEUDO_OPCODE                      256
 #define SETUP_FINALLY                          256
 #define SETUP_CLEANUP                          257

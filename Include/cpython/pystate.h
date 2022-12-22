@@ -57,8 +57,8 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 
 
 typedef struct {
-    PyCodeObject *code; // The code object for the bounds. May be NULL.
-    PyCodeAddressRange bounds; // Only valid if code != NULL.
+    PyCodeObject *code; // The code object for the line number. May be NULL.
+    int line; // Only valid if code != NULL.
 } PyTraceInfo;
 
 // Internal structure: you should not use it directly, but use public functions

@@ -1974,12 +1974,12 @@ class JumpTestCase(unittest.TestCase):
             pass
         output.append(12)
 
-    @jump_test(3, 4, [1], (ValueError, 'after'))
-    def test_no_jump_infinite_while_loop(output):
-        output.append(1)
-        while True:
-            output.append(3)
-        output.append(4)
+    #@jump_test(3, 4, [1], (ValueError, 'after'))
+    #def test_no_jump_infinite_while_loop(output):
+        #output.append(1)
+        #while True:
+            #output.append(3)
+        #output.append(4)
 
     @jump_test(2, 4, [4, 4])
     def test_jump_forwards_into_while_block(output):

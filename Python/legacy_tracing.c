@@ -4,6 +4,7 @@
 
 #include <stddef.h>
 #include "Python.h"
+#include "pycore_ceval.h"
 #include "pycore_instruments.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pymem.h"
@@ -14,6 +15,7 @@ typedef struct _PyLegacyEventHandler {
     PyObject_HEAD
     vectorcallfunc vectorcall;
     int event;
+    PyCodeObject *last_code;
 } _PyLegacyEventHandler;
 
 static void
@@ -36,15 +38,10 @@ call_profile_func(_PyLegacyEventHandler *self, PyObject *arg)
     if (tstate->c_profilefunc == NULL) {
         Py_RETURN_NONE;
     }
-    if (tstate->tracing) {
-        Py_RETURN_NONE;
-    }
     PyFrameObject* frame = PyEval_GetFrame();
     Py_INCREF(frame);
     assert(frame != NULL);
-    tstate->tracing++;
     int err = tstate->c_profilefunc(tstate->c_profileobj, frame, self->event, arg);
-    tstate->tracing--;
     Py_DECREF(frame);
     if (err) {
         return NULL;
@@ -90,7 +87,25 @@ sys_profile_call_or_return(
 }
 
 static PyObject *
-sys_profile_exception_func(
+call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->c_tracefunc == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyFrameObject* frame = PyEval_GetFrame();
+    Py_INCREF(frame);
+    assert(frame != NULL);
+    int err = tstate->c_tracefunc(tstate->c_traceobj, frame, self->event, arg);
+    Py_DECREF(frame);
+    if (err) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+sys_trace_exception_func(
     _PyLegacyEventHandler *self, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
@@ -102,9 +117,31 @@ sys_profile_exception_func(
     if (arg == NULL) {
         return NULL;
     }
-    PyObject *res = call_profile_func(self, arg);
+    PyObject *res = call_trace_func(self, arg);
     Py_DECREF(arg);
     return res;
+}
+
+static PyObject *
+sys_trace_func2(
+    _PyLegacyEventHandler *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames
+) {
+    assert(kwnames == NULL);
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    assert(nargs == 2);
+    return call_trace_func(self, Py_None);
+}
+
+static PyObject *
+sys_trace_func3(
+    _PyLegacyEventHandler *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames
+) {
+    assert(kwnames == NULL);
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    assert(nargs == 3);
+    return call_trace_func(self, args[2]);
 }
 
 static PyObject *
@@ -115,7 +152,93 @@ sys_trace_none_func(
     assert(kwnames == NULL);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     assert(nargs == 3);
-    return call_profile_func(self, Py_None);
+    return call_trace_func(self, Py_None);
+}
+
+static PyObject *
+trace_line(PyThreadState *tstate, PyCodeObject *code,
+    _PyLegacyEventHandler *self, PyFrameObject* frame, int line
+) {
+    Py_INCREF(frame);
+    tstate->trace_info.code = code;
+    tstate->trace_info.line = frame->f_lineno = line;
+    int err = tstate->c_tracefunc(tstate->c_traceobj, frame, self->event, Py_None);
+    frame->f_lineno = 0;
+    Py_DECREF(frame);
+    if (err) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+sys_trace_line_func(
+    _PyLegacyEventHandler *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames
+) {
+    assert(kwnames == NULL);
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->c_tracefunc == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    assert(nargs == 2);
+    _PyInterpreterFrame *iframe = _PyEval_GetFrame();
+    assert(iframe);
+    PyFrameObject* frame = _PyFrame_GetFrameObject(iframe);
+    if (frame == NULL) {
+        return NULL;
+    }
+    if (!frame->f_trace_lines) {
+        Py_RETURN_NONE;
+    }
+    assert(args[0] == (PyObject *)iframe->f_code);
+    int line = _PyLong_AsInt(args[1]);
+    assert(line >= 0);
+    if (tstate->trace_info.code == iframe->f_code &&
+        tstate->trace_info.line == line) {
+        /* Already traced this line */
+        Py_RETURN_NONE;
+    }
+    return trace_line(tstate, iframe->f_code, self, frame, line);
+}
+
+
+static PyObject *
+sys_trace_branch_func(
+    _PyLegacyEventHandler *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames
+) {
+    assert(kwnames == NULL);
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->c_tracefunc == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    assert(nargs == 3);
+    _PyInterpreterFrame *iframe = _PyEval_GetFrame();
+    assert(iframe);
+    PyFrameObject* frame = _PyFrame_GetFrameObject(iframe);
+    int from = _PyLong_AsInt(args[1]);
+    assert(from >= 0);
+    int to = _PyLong_AsInt(args[2]);
+    assert(to >= 0);
+    /* We can call _Py_Instrumentation_GetLine because we always set
+     * line events for tracing */
+    int to_line = _Py_Instrumentation_GetLine(iframe->f_code, to);
+    if (from > to) {
+        /* Backwards jump */
+        return trace_line(tstate, iframe->f_code, self, frame, to_line);
+    }
+    else {
+        /* Forwards jump, only handle if new line */
+        int from_line = _Py_Instrumentation_GetLine(iframe->f_code, from);
+        if (from_line != to_line) {
+            return trace_line(tstate, iframe->f_code, self, frame, to_line);
+        }
+    }
+    Py_RETURN_NONE;
 }
 
 
@@ -262,23 +385,28 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     if (!tstate->interp->sys_trace_initialized) {
         tstate->interp->sys_trace_initialized = true;
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
-            (vectorcallfunc)sys_profile_func2, PyTrace_CALL,
+            (vectorcallfunc)sys_trace_func2, PyTrace_CALL,
                         PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RESUME)) {
             return -1;
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
-            (vectorcallfunc)sys_profile_func3, PyTrace_RETURN,
+            (vectorcallfunc)sys_trace_func3, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_RETURN, PY_MONITORING_EVENT_PY_YIELD)) {
             return -1;
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
-            (vectorcallfunc)sys_profile_exception_func, PyTrace_EXCEPTION,
+            (vectorcallfunc)sys_trace_exception_func, PyTrace_EXCEPTION,
                         PY_MONITORING_EVENT_RAISE, -1)) {
             return -1;
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
-            (vectorcallfunc)sys_trace_none_func, PyTrace_LINE,
+            (vectorcallfunc)sys_trace_line_func, PyTrace_LINE,
                         PY_MONITORING_EVENT_LINE, -1)) {
+            return -1;
+        }
+        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+            (vectorcallfunc)sys_trace_branch_func, PyTrace_LINE,
+                        PY_MONITORING_EVENT_JUMP, PY_MONITORING_EVENT_BRANCH)) {
             return -1;
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
@@ -291,14 +419,16 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         uint32_t events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
-            (1 << PY_MONITORING_EVENT_RAISE) | (1 << PY_MONITORING_EVENT_LINE);
-        if (tstate->interp->f_opcode_trace_set) {
+            (1 << PY_MONITORING_EVENT_RAISE) | (1 << PY_MONITORING_EVENT_LINE) |
+            (1 << PY_MONITORING_EVENT_JUMP) | (1 << PY_MONITORING_EVENT_BRANCH);
+        /* TO DO -- opcode events */
+        if (tstate->interp->f_opcode_trace_set && false) {
             events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);
         }
-        _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_PROFILE, events);
+        _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_TRACE, events);
     }
     else {
-        _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_PROFILE, 0);
+        _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_TRACE, 0);
     }
     Py_XDECREF(old_traceobj);
     return 0;

@@ -70,6 +70,11 @@ extern int
 _Py_call_instrumentation_line(PyThreadState *tstate,
                               PyCodeObject *code, _Py_CODEUNIT *instr);
 
+int
+_Py_call_instrumentation_jump(
+    PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *target);
+
 extern int
 _Py_call_instrumentation_arg(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg);
@@ -78,6 +83,8 @@ extern void
 _Py_call_instrumentation_exc(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg);
 
+extern int
+_Py_Instrumentation_GetLine(PyCodeObject *code, int index);
 
 #ifdef __cplusplus
 }

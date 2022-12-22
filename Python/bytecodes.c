@@ -3769,15 +3769,86 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_LINE) {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             int original_opcode = _Py_call_instrumentation_line(
                     tstate, frame->f_code, next_instr-1);
-            assert(original_opcode!= 0);
             ERROR_IF(original_opcode < 0, error);
+            next_instr--;
+            if (frame->prev_instr != next_instr) {
+                fprintf(stderr, "Jump has happened\n");
+                /* Instrumentation has jumped */
+                next_instr = frame->prev_instr;
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                DISPATCH();
+            }
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+            if (_PyOpcode_Caches[original_opcode]) {
+                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
+                INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+            }
+            assert(original_opcode > 0 && original_opcode < 256);
             opcode = original_opcode;
-            assert(_PyOpcode_Deopt[opcode] == opcode);
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
             DISPATCH_GOTO();
+        }
+
+        // stack effect: ( -- )
+        inst(INSTRUMENTED_JUMP_FORWARD) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            ERROR_IF(err, error);
+            JUMPBY(oparg);
+        }
+
+        // stack effect: ( -- )
+        inst(INSTRUMENTED_JUMP_BACKWARD) {
+            assert(oparg < INSTR_OFFSET());
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            ERROR_IF(err, error);
+            JUMPBY(-oparg);
+            CHECK_EVAL_BREAKER();
+        }
+
+        inst(INSTRUMENTED_JUMP_IF_TRUE_OR_POP) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            ERROR_IF(err, error);
+            GO_TO_INSTRUCTION(JUMP_IF_TRUE_OR_POP);
+        }
+
+        inst(INSTRUMENTED_JUMP_IF_FALSE_OR_POP) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            ERROR_IF(err, error);
+            GO_TO_INSTRUCTION(JUMP_IF_FALSE_OR_POP);
+        }
+
+        inst(INSTRUMENTED_POP_JUMP_IF_TRUE) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            ERROR_IF(err, error);
+            GO_TO_INSTRUCTION(POP_JUMP_IF_TRUE);
+        }
+
+        inst(INSTRUMENTED_POP_JUMP_IF_FALSE) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            ERROR_IF(err, error);
+            GO_TO_INSTRUCTION(POP_JUMP_IF_FALSE);
+        }
+
+        inst(INSTRUMENTED_POP_JUMP_IF_NONE) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            ERROR_IF(err, error);
+            GO_TO_INSTRUCTION(POP_JUMP_IF_NONE);
+        }
+
+        inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE) {
+            int err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            ERROR_IF(err, error);
+            GO_TO_INSTRUCTION(POP_JUMP_IF_NOT_NONE);
         }
 
         // stack effect: ( -- )

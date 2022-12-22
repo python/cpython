@@ -468,6 +468,8 @@ _Py_MakeShimCode(const _PyShimCodeDef *code);
 
 extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
+extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
+
 
 #ifdef __cplusplus
 }
