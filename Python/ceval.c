@@ -668,18 +668,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
     do { \
-        frame->prev_instr = next_instr; \
-        next_instr += OPSIZE(op); \
+        frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
         if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) \
-   do { \
-         frame->prev_instr = next_instr; \
-         next_instr += OPSIZE(op); \
-     } while (0)
+#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
 #endif
 
 #if USE_COMPUTED_GOTOS
@@ -711,6 +706,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 #define DISPATCH_SAME_OPARG() \
     { \
+        JUMPBY(-OPSIZE(opcode)); \
         opcode = _Py_OPCODE(*next_instr); \
         PRE_DISPATCH_GOTO(); \
         opcode |= cframe.use_tracing OR_DTRACE_LINE; \
@@ -720,7 +716,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        frame->prev_instr = next_instr - OPSIZE(-1);    \
+        frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
         frame = cframe.current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
@@ -750,7 +746,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* Code access macros */
 
-#define VERBOSE 0
+#define VERBOSE 1
 
 /* The integer overflow is checked by an assertion below. */
 #define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
@@ -759,10 +755,16 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         opcode = _Py_OPCODE(word); \
         oparg1 = oparg = _Py_OPARG(word); \
         if (VERBOSE) fprintf(stderr, "[%d] next_instr = %p opcode = %d\n", __LINE__, next_instr, opcode); \
-        word = *(next_instr +1); \
+        word = *(next_instr + 1); \
         oparg2 = _Py_OPARG2(word); \
         oparg3 = _Py_OPARG3(word); \
-        if (VERBOSE) fprintf(stderr, "%d  (%d, %d, %d)\n", opcode, oparg, oparg2, oparg3); \
+        if (VERBOSE) { \
+            fprintf(stderr, "%d  (%d, %d, %d)\n", opcode, oparg, oparg2, oparg3); \
+            if(!_PyErr_Occurred(tstate)) PyObject_Print(frame->f_code->co_filename, stderr, 0); \
+            fprintf(stderr, "\n  name = "); \
+            if(!_PyErr_Occurred(tstate)) PyObject_Print(frame->f_code->co_name, stderr, 0); \
+            fprintf(stderr, "\n"); \
+        } \
     } while (0)
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
 #define JUMPBY(x)       (next_instr += (x))
@@ -896,6 +898,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         /* This is only a single jump on release builds! */ \
         UPDATE_MISS_STATS((INSTNAME));                      \
         assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+        JUMPBY(1 - OPSIZE(opcode));                         \
         GO_TO_INSTRUCTION(INSTNAME);                        \
     }
 
@@ -1125,7 +1128,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
     entry_frame.f_code = tstate->interp->interpreter_trampoline;
     entry_frame.prev_instr =
-        _PyCode_CODE(tstate->interp->interpreter_trampoline);
+        _PyCode_CODE(tstate->interp->interpreter_trampoline) + 1;
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.yield_offset = 0;
@@ -1169,13 +1172,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     /* Jump back to the last instruction executed... */ \
     if (VERBOSE) { \
         fprintf(stderr, "Jump back to the last instruction executed\n"); \
+        fprintf(stderr, "frame->prev_instr = %p\n", frame->prev_instr); \
         fprintf(stderr, "_PyInterpreterFrame_LASTI(frame) = %d\n  filename = ", _PyInterpreterFrame_LASTI(frame)); \
         if(!_PyErr_Occurred(tstate)) PyObject_Print(frame->f_code->co_filename, stderr, 0); \
         fprintf(stderr, "\n  name = "); \
         if(!_PyErr_Occurred(tstate)) PyObject_Print(frame->f_code->co_name, stderr, 0); \
         fprintf(stderr, "\n"); \
     } \
-    next_instr = frame->prev_instr + (_PyInterpreterFrame_LASTI(frame) == -1 ? 1 : OPSIZE(-1)); /* TODO: init frame to -OPSIZE? */ \
+    /* next_instr = frame->prev_instr + 1; */ \
+    next_instr = frame->prev_instr + 1; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     /* Set stackdepth to -1. \
         Update when returning or calling trace function. \
