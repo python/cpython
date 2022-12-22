@@ -2532,6 +2532,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
+        double c = 0.0;
+        double x, t;
         Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2539,10 +2541,18 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
-                return PyFloat_FromDouble(f_result);
+                return PyFloat_FromDouble(f_result + c);
             }
             if (PyFloat_CheckExact(item)) {
-                f_result += PyFloat_AS_DOUBLE(item);
+                // Neumaier compensated summation
+                x = PyFloat_AS_DOUBLE(item);
+                t = f_result + x;
+                if (fabs(f_result) >= fabs(x)) {
+                    c += (f_result - t) + x;
+                } else {
+                    c += (x - t) + f_result;
+                }
+                f_result = t;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
