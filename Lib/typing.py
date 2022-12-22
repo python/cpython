@@ -901,7 +901,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
 
     Parameter specification variables can be introspected. e.g.:
 
-       P.__name__ == 'T'
+       P.__name__ == 'P'
        P.__bound__ == None
        P.__covariant__ == False
        P.__contravariant__ == False
