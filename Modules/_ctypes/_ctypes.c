@@ -2731,11 +2731,33 @@ static PyMemberDef PyCData_members[] = {
     { NULL },
 };
 
-static int PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
+/* Find the innermost type of an array type, returning a borrowed reference */
+static PyObject *
+PyCData_item_type(PyObject *type)
+{
+    if (PyCArrayTypeObject_Check(type)) {
+        StgDictObject *stg_dict;
+        PyObject *elem_type;
+
+        /* asserts used here as these are all guaranteed by construction */
+        stg_dict = PyType_stgdict(type);
+        assert(stg_dict);
+        elem_type = stg_dict->proto;
+        assert(elem_type);
+        return PyCData_item_type(elem_type);
+    }
+    else {
+        return type;
+    }
+}
+
+static int
+PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
 {
     CDataObject *self = (CDataObject *)myself;
     StgDictObject *dict = PyObject_stgdict(myself);
-    Py_ssize_t i;
+    PyObject *item_type = PyCData_item_type((PyObject*)Py_TYPE(myself));
+    StgDictObject *item_dict = PyType_stgdict(item_type);
 
     if (view == NULL) return 0;
 
@@ -2747,12 +2769,7 @@ static int PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     view->format = dict->format ? dict->format : "B";
     view->ndim = dict->ndim;
     view->shape = dict->shape;
-    view->itemsize = self->b_size;
-    if (view->itemsize) {
-        for (i = 0; i < view->ndim; ++i) {
-            view->itemsize /= dict->shape[i];
-        }
-    }
+    view->itemsize = item_dict->size;
     view->strides = NULL;
     view->suboffsets = NULL;
     view->internal = NULL;
