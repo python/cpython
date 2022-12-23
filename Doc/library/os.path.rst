@@ -266,6 +266,15 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: isjunction(path)
+
+   Return ``True`` if *path* refers to an :func:`existing <lexists>` directory
+   entry that is a junction.  Always return ``False`` if junctions are not
+   supported on the current platform.
+
+   .. versionadded:: 3.12
+
+
 .. function:: islink(path)
 
    Return ``True`` if *path* refers to an :func:`existing <exists>` directory

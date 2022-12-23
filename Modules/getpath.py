@@ -679,9 +679,8 @@ elif not pythonpath_was_set:
         else:
             library_dir = executable_dir
         pythonpath.append(joinpath(library_dir, ZIP_LANDMARK))
-    elif build_prefix or venv_prefix:
+    elif build_prefix:
         # QUIRK: POSIX uses the default prefix when in the build directory
-        # or a venv
         pythonpath.append(joinpath(PREFIX, ZIP_LANDMARK))
     else:
         pythonpath.append(joinpath(prefix, ZIP_LANDMARK))

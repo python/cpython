@@ -957,17 +957,15 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 static PyObject *
 bytesio_sizeof(bytesio *self, void *unused)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
-        Py_ssize_t s = _PySys_GetSizeOf(self->buf);
-        if (s == -1) {
+        size_t s = _PySys_GetSizeOf(self->buf);
+        if (s == (size_t)-1) {
             return NULL;
         }
         res += s;
     }
-    return PyLong_FromSsize_t(res);
+    return PyLong_FromSize_t(res);
 }
 
 static int

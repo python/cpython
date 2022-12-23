@@ -355,7 +355,7 @@ class BugsTestCase(unittest.TestCase):
             for elements in (
                 "float('nan'), b'a', b'b', b'c', 'x', 'y', 'z'",
                 # Also test for bad interactions with backreferencing:
-                "('Spam', 0), ('Spam', 1), ('Spam', 2)",
+                "('Spam', 0), ('Spam', 1), ('Spam', 2), ('Spam', 3), ('Spam', 4), ('Spam', 5)",
             ):
                 s = f"{kind}([{elements}])"
                 with self.subTest(s):

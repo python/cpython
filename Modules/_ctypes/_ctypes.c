@@ -2937,8 +2937,7 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
         assert(CDataObject_Check(base));
         cmem->b_ptr = adr;
         cmem->b_needsfree = 0;
-        Py_INCREF(base);
-        cmem->b_base = (CDataObject *)base;
+        cmem->b_base = (CDataObject *)Py_NewRef(base);
         cmem->b_index = index;
     } else { /* copy contents of adr */
         if (-1 == PyCData_MallocBuffer(cmem, dict)) {

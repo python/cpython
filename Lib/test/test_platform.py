@@ -277,6 +277,14 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[:], expected)
         self.assertEqual(res[:5], expected[:5])
 
+    def test_uname_fields(self):
+        self.assertIn('processor', platform.uname()._fields)
+
+    def test_uname_asdict(self):
+        res = platform.uname()._asdict()
+        self.assertEqual(len(res), 6)
+        self.assertIn('processor', res)
+
     @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
     @support.requires_subprocess()
     def test_uname_processor(self):

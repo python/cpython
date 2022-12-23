@@ -806,8 +806,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
         PyErr_Format(PyExc_TypeError,
                      "__format__ must return a str, not %.200s",
                      Py_TYPE(result)->tp_name);
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         goto done;
     }
 
@@ -2791,8 +2790,7 @@ PyObject_GetIter(PyObject *o)
                          "iter() returned non-iterator "
                          "of type '%.100s'",
                          Py_TYPE(res)->tp_name);
-            Py_DECREF(res);
-            res = NULL;
+            Py_SETREF(res, NULL);
         }
         return res;
     }
@@ -2812,8 +2810,7 @@ PyObject_GetAIter(PyObject *o) {
         PyErr_Format(PyExc_TypeError,
                      "aiter() returned not an async iterator of type '%.100s'",
                      Py_TYPE(it)->tp_name);
-        Py_DECREF(it);
-        it = NULL;
+        Py_SETREF(it, NULL);
     }
     return it;
 }

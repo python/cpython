@@ -77,8 +77,9 @@ Interpreter improvements:
 New typing features:
 
 * :pep:`604`, Allow writing union types as X | Y
-* :pep:`613`, Explicit Type Aliases
 * :pep:`612`, Parameter Specification Variables
+* :pep:`613`, Explicit Type Aliases
+* :pep:`647`, User-Defined Type Guards
 
 Important deprecations, removals or restrictions:
 
