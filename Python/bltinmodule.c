@@ -2541,7 +2541,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
-                if (c) {
+                /* Avoid losing the sign on a negative result,
+                   and don't let adding the compensation convert
+                   an infinite or overflowed sum to a NaN. */
+                if (c && Py_IS_FINITE(c)) {
                     f_result += c;
                 }
                 return PyFloat_FromDouble(f_result);
