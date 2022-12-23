@@ -1,0 +1,3 @@
+``hasattr(ctypes.windll, 'nonexistant')`` now returns ``False`` instead of raising :exc:`OSError`.
+
+

@@ -462,6 +462,7 @@ are always available.  They are listed here in alphabetical order.
       >>> class Shape:
       ...     def __dir__(self):
       ...         return ['area', 'perimeter', 'location']
+      ...
       >>> s = Shape()
       >>> dir(s)
       ['area', 'location', 'perimeter']
@@ -1731,6 +1732,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.8
       The *start* parameter can be specified as a keyword argument.
+
+   .. versionchanged:: 3.12 Summation of floats switched to an algorithm
+      that gives higher accuracy on most builds.
+
 
 .. class:: super()
            super(type, object_or_type=None)

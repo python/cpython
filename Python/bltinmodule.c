@@ -714,7 +714,7 @@ compile as builtin_compile
     filename: object(converter="PyUnicode_FSDecoder")
     mode: str
     flags: int = 0
-    dont_inherit: bool(accept={int}) = False
+    dont_inherit: bool = False
     optimize: int = -1
     *
     _feature_version as feature_version: int = -1
@@ -737,7 +737,7 @@ static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
                      int optimize, int feature_version)
-/*[clinic end generated code: output=b0c09c84f116d3d7 input=40171fb92c1d580d]*/
+/*[clinic end generated code: output=b0c09c84f116d3d7 input=cc78e20e7c7682ba]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -2532,6 +2532,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
+        double c = 0.0;
         Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2539,10 +2540,25 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
+                /* Avoid losing the sign on a negative result,
+                   and don't let adding the compensation convert
+                   an infinite or overflowed sum to a NaN. */
+                if (c && Py_IS_FINITE(c)) {
+                    f_result += c;
+                }
                 return PyFloat_FromDouble(f_result);
             }
             if (PyFloat_CheckExact(item)) {
-                f_result += PyFloat_AS_DOUBLE(item);
+                // Improved Kahan–Babuška algorithm by Arnold Neumaier
+                // https://www.mat.univie.ac.at/~neum/scan/01.pdf
+                double x = PyFloat_AS_DOUBLE(item);
+                double t = f_result + x;
+                if (fabs(f_result) >= fabs(x)) {
+                    c += (f_result - t) + x;
+                } else {
+                    c += (x - t) + f_result;
+                }
+                f_result = t;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
@@ -2555,6 +2571,9 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     Py_DECREF(item);
                     continue;
                 }
+            }
+            if (c && Py_IS_FINITE(c)) {
+                f_result += c;
             }
             result = PyFloat_FromDouble(f_result);
             if (result == NULL) {
