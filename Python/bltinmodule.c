@@ -2572,6 +2572,9 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     continue;
                 }
             }
+            if (c && Py_IS_FINITE(c)) {
+                f_result += c;
+            }
             result = PyFloat_FromDouble(f_result);
             if (result == NULL) {
                 Py_DECREF(item);
