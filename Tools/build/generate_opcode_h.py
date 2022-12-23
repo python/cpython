@@ -84,6 +84,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
     hasjabs = opcode['hasjabs']
     is_pseudo = opcode['is_pseudo']
     _pseudo_ops = opcode['_pseudo_ops']
+    ENABLE_SPECIALIZATION = opcode['ENABLE_SPECIALIZATION']
 
     HAVE_ARGUMENT = opcode["HAVE_ARGUMENT"]
     MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
@@ -174,6 +175,10 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         fobj.write("\n")
         fobj.write("/* number of codewords for opcode+oparg(s) */\n")
         fobj.write("#define OPSIZE(OP) (((OP) == (OP)) ? 2 : 2)\n")
+
+        fobj.write("\n")
+        fobj.write("/* Defined in Lib/opcode.py */\n")
+        fobj.write(f"#define ENABLE_SPECIALIZATION {int(ENABLE_SPECIALIZATION)}");
 
         iobj.write("\n")
         iobj.write("#ifdef Py_DEBUG\n")

@@ -266,6 +266,7 @@ do { \
 void
 _PyCode_Quicken(PyCodeObject *code)
 {
+#if ENABLE_SPACIALIZATION
     int previous_opcode = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     int opcode = -1;
@@ -297,6 +298,7 @@ _PyCode_Quicken(PyCodeObject *code)
         }
         previous_opcode = opcode;
     }
+#endif
 }
 
 #define SIMPLE_FUNCTION 0

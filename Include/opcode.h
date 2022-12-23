@@ -242,6 +242,8 @@ extern "C" {
 /* number of codewords for opcode+oparg(s) */
 #define OPSIZE(OP) (((OP) == (OP)) ? 2 : 2)
 
+/* Defined in Lib/opcode.py */
+#define ENABLE_SPECIALIZATION 0
 
 #define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
 
