@@ -653,6 +653,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     """
 
     index_pages = ["index.html", "index.htm"]
+    default_extensions = [".html", ".htm"]
     server_version = "SimpleHTTP/" + __version__
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
@@ -661,11 +662,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.xz': 'application/x-xz',
     }
 
-    def __init__(self, *args, directory=None, index_pages=None, **kwargs):
+    def __init__(self, *args, directory=None, index_pages=None,
+        default_extensions=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
         if index_pages is not None:
             self.index_pages = index_pages
+        if default_extensions is not None:
+            self.default_extensions = default_extensions
         self.directory = os.fspath(directory)
         super().__init__(*args, **kwargs)
 
@@ -725,6 +729,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if path.endswith("/"):
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
+        # Special case for URLs with default extension.
+        if os.path.splitext(path)[1] == "":
+            if not os.path.exists(path):
+                for extension in self.default_extensions:
+                    if os.path.exists(path + extension):
+                        path += extension
+                        break
         try:
             f = open(path, 'rb')
         except OSError:
