@@ -1570,7 +1570,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaisesRegex(TypeError, '%u format: a real number is required, not complex', operator.mod, '%u', 3j)
         self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
         self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 1j)
-        self.assertRaises(TypeError, operator.mod, '%c', pi)
+        self.assertRaisesRegex(TypeError, '%c requires int or char', operator.mod, '%c', pi)
 
         class RaisingNumber:
             def __int__(self):
