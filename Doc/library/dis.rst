@@ -1071,7 +1071,7 @@ iterations of the loop.
 
    This opcode is a pseudo-instruction, replaced in final bytecode by
    the directed versions (forward/backward).
-   
+
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
