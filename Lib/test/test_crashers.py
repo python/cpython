@@ -11,7 +11,7 @@ import test.support
 from test.support.script_helper import assert_python_failure
 
 CRASHER_DIR = os.path.join(os.path.dirname(__file__), "crashers")
-CRASHER_FILES = os.path.join(CRASHER_DIR, "*.py")
+CRASHER_FILES = os.path.join(glob.escape(CRASHER_DIR), "*.py")
 
 infinite_loops = ["infinite_loop_re.py", "nasty_eq_vs_dict.py"]
 

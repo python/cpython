@@ -30,6 +30,7 @@ ESCAPE_DCT = {
 for i in range(0x20):
     ESCAPE_DCT.setdefault(chr(i), '\\u{0:04x}'.format(i))
     #ESCAPE_DCT.setdefault(chr(i), '\\u%04x' % (i,))
+del i
 
 INFINITY = float('inf')
 
@@ -71,7 +72,7 @@ encode_basestring_ascii = (
     c_encode_basestring_ascii or py_encode_basestring_ascii)
 
 class JSONEncoder(object):
-    """Extensible JSON <http://json.org> encoder for Python data structures.
+    """Extensible JSON <https://json.org> encoder for Python data structures.
 
     Supports the following objects and types by default:
 
@@ -116,7 +117,7 @@ class JSONEncoder(object):
 
         If check_circular is true, then lists, dicts, and custom encoded
         objects will be checked for circular references during encoding to
-        prevent an infinite recursion (which would cause an OverflowError).
+        prevent an infinite recursion (which would cause an RecursionError).
         Otherwise, no such check takes place.
 
         If allow_nan is true, then NaN, Infinity, and -Infinity will be
@@ -268,7 +269,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         list=list,
         str=str,
         tuple=tuple,
-        _intstr=int.__str__,
+        _intstr=int.__repr__,
     ):
 
     if _indent is not None and not isinstance(_indent, str):
@@ -307,7 +308,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif value is False:
                 yield buf + 'false'
             elif isinstance(value, int):
-                # Subclasses of int/float may override __str__, but we still
+                # Subclasses of int/float may override __repr__, but we still
                 # want to encode them as integers/floats in JSON. One example
                 # within the standard library is IntEnum.
                 yield buf + _intstr(value)
@@ -350,7 +351,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             item_separator = _item_separator
         first = True
         if _sort_keys:
-            items = sorted(dct.items(), key=lambda kv: kv[0])
+            items = sorted(dct.items())
         else:
             items = dct.items()
         for key, value in items:

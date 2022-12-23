@@ -6,7 +6,12 @@ import sys
 import types
 import unittest
 
-from test.support import findfile, run_unittest
+from test import support
+from test.support import findfile
+
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 
 def abspath(filename):
@@ -34,7 +39,7 @@ def normalize_trace_output(output):
         return "\n".join(result)
     except (IndexError, ValueError):
         raise AssertionError(
-            "tracer produced unparseable output:\n{}".format(output)
+            "tracer produced unparsable output:\n{}".format(output)
         )
 
 
@@ -97,7 +102,7 @@ class SystemTapBackend(TraceBackend):
     COMMAND = ["stap", "-g"]
 
 
-class TraceTests(unittest.TestCase):
+class TraceTests:
     # unittest.TestCase options
     maxDiff = None
 
@@ -149,30 +154,25 @@ class TraceTests(unittest.TestCase):
         self.run_case("line")
 
 
-class DTraceNormalTests(TraceTests):
+class DTraceNormalTests(TraceTests, unittest.TestCase):
     backend = DTraceBackend()
     optimize_python = 0
 
 
-class DTraceOptimizedTests(TraceTests):
+class DTraceOptimizedTests(TraceTests, unittest.TestCase):
     backend = DTraceBackend()
     optimize_python = 2
 
 
-class SystemTapNormalTests(TraceTests):
+class SystemTapNormalTests(TraceTests, unittest.TestCase):
     backend = SystemTapBackend()
     optimize_python = 0
 
 
-class SystemTapOptimizedTests(TraceTests):
+class SystemTapOptimizedTests(TraceTests, unittest.TestCase):
     backend = SystemTapBackend()
     optimize_python = 2
-
-
-def test_main():
-    run_unittest(DTraceNormalTests, DTraceOptimizedTests, SystemTapNormalTests,
-                 SystemTapOptimizedTests)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

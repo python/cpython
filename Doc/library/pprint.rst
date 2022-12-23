@@ -25,33 +25,69 @@ width constraint.
 
 Dictionaries are sorted by key before the display is computed.
 
+.. versionchanged:: 3.9
+   Added support for pretty-printing :class:`types.SimpleNamespace`.
+
+.. versionchanged:: 3.10
+   Added support for pretty-printing :class:`dataclasses.dataclass`.
+
 The :mod:`pprint` module defines one class:
 
 .. First the implementation class:
 
 
+.. index:: single: ...; placeholder
+
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False)
+                         compact=False, sort_dicts=True, underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
-   several keyword parameters.  An output stream may be set using the *stream*
-   keyword; the only method used on the stream object is the file protocol's
-   :meth:`write` method.  If not specified, the :class:`PrettyPrinter` adopts
-   ``sys.stdout``.  The
-   amount of indentation added for each recursive level is specified by *indent*;
-   the default is one.  Other values can cause output to look a little odd, but can
-   make nesting easier to spot.  The number of levels which may be printed is
-   controlled by *depth*; if the data structure being printed is too deep, the next
-   contained level is replaced by ``...``.  By default, there is no constraint on
-   the depth of the objects being formatted.  The desired output width is
-   constrained using the *width* parameter; the default is 80 characters.  If a
-   structure cannot be formatted within the constrained width, a best effort will
-   be made.  If *compact* is false (the default) each item of a long sequence
-   will be formatted on a separate line.  If *compact* is true, as many items
-   as will fit within the *width* will be formatted on each output line.
+   several keyword parameters.
+
+   *stream* (default ``sys.stdout``) is a :term:`file-like object` to
+   which the output will be written by calling its :meth:`write` method.
+   If both *stream* and ``sys.stdout`` are ``None``, then
+   :meth:`~PrettyPrinter.pprint` silently returns.
+
+   Other values configure the manner in which nesting of complex data
+   structures is displayed.
+
+   *indent* (default 1) specifies the amount of indentation added for
+   each nesting level.
+
+   *depth* controls the number of nesting levels which may be printed; if
+   the data structure being printed is too deep, the next contained level
+   is replaced by ``...``.  By default, there is no constraint on the
+   depth of the objects being formatted.
+
+   *width* (default 80) specifies the desired maximum number of characters per
+   line in the output. If a structure cannot be formatted within the width
+   constraint, a best effort will be made.
+
+   *compact* impacts the way that long sequences (lists, tuples, sets, etc)
+   are formatted. If *compact* is false (the default) then each item of a
+   sequence will be formatted on a separate line.  If *compact* is true, as
+   many items as will fit within the *width* will be formatted on each output
+   line.
+
+   If *sort_dicts* is true (the default), dictionaries will be formatted with
+   their keys sorted, otherwise they will display in insertion order.
+
+   If *underscore_numbers* is true, integers will be formatted with the
+   ``_`` character for a thousands separator, otherwise underscores are not
+   displayed (the default).
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
+
+   .. versionchanged:: 3.8
+      Added the *sort_dicts* parameter.
+
+   .. versionchanged:: 3.10
+      Added the *underscore_numbers* parameter.
+
+   .. versionchanged:: 3.11
+      No longer attempts to write to ``sys.stdout`` if it is ``None``.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
@@ -76,31 +112,39 @@ The :mod:`pprint` module defines one class:
       >>> pp.pprint(tup)
       ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
 
-
-The :mod:`pprint` module also provides several shortcut functions:
-
-.. function:: pformat(object, indent=1, width=80, depth=None, *, compact=False)
+.. function:: pformat(object, indent=1, width=80, depth=None, *, \
+                      compact=False, sort_dicts=True, underscore_numbers=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth* and *compact* will be passed to the :class:`PrettyPrinter`
-   constructor as formatting parameters.
+   *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* are
+   passed to the :class:`PrettyPrinter` constructor as formatting parameters
+   and their meanings are as described in its documentation above.
 
-   .. versionchanged:: 3.4
-      Added the *compact* parameter.
+
+.. function:: pp(object, *args, sort_dicts=False, **kwargs)
+
+   Prints the formatted representation of *object* followed by a newline.
+   If *sort_dicts* is false (the default), dictionaries will be displayed with
+   their keys in insertion order, otherwise the dict keys will be sorted.
+   *args* and *kwargs* will be passed to :func:`pprint` as formatting
+   parameters.
+
+   .. versionadded:: 3.8
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False)
+                     compact=False, sort_dicts=True, underscore_numbers=False)
 
    Prints the formatted representation of *object* on *stream*, followed by a
-   newline.  If *stream* is ``None``, ``sys.stdout`` is used.  This may be used
+   newline.  If *stream* is ``None``, ``sys.stdout`` is used. This may be used
    in the interactive interpreter instead of the :func:`print` function for
    inspecting values (you can even reassign ``print = pprint.pprint`` for use
-   within a scope).  *indent*, *width*, *depth* and *compact* will be passed
-   to the :class:`PrettyPrinter` constructor as formatting parameters.
+   within a scope).
 
-   .. versionchanged:: 3.4
-      Added the *compact* parameter.
+   The configuration parameters *stream*, *indent*, *width*, *depth*,
+   *compact*, *sort_dicts* and *underscore_numbers* are passed to the
+   :class:`PrettyPrinter` constructor and their meanings are as
+   described in its documentation above.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
@@ -113,12 +157,11 @@ The :mod:`pprint` module also provides several shortcut functions:
        'knights',
        'ni']
 
-
 .. function:: isreadable(object)
 
    .. index:: builtin: eval
 
-   Determine if the formatted representation of *object* is "readable," or can be
+   Determine if the formatted representation of *object* is "readable", or can be
    used to reconstruct the value using :func:`eval`.  This always returns ``False``
    for recursive objects.
 
@@ -128,17 +171,21 @@ The :mod:`pprint` module also provides several shortcut functions:
 
 .. function:: isrecursive(object)
 
-   Determine if *object* requires a recursive representation.
+   Determine if *object* requires a recursive representation.  This function is
+   subject to the same limitations as noted in :func:`saferepr` below and may raise an
+   :exc:`RecursionError` if it fails to detect a recursive object.
 
 
 One more support function is also defined:
 
 .. function:: saferepr(object)
 
-   Return a string representation of *object*, protected against recursive data
-   structures.  If the representation of *object* exposes a recursive entry, the
-   recursive reference will be represented as ``<Recursion on typename with
-   id=number>``.  The representation is not otherwise formatted.
+   Return a string representation of *object*, protected against recursion in
+   some common data structures, namely instances of :class:`dict`, :class:`list`
+   and :class:`tuple` or subclasses whose ``__repr__`` has not been overridden.  If the
+   representation of object exposes a recursive entry, the recursive reference
+   will be represented as ``<Recursion on typename with id=number>``.  The
+   representation is not otherwise formatted.
 
    >>> pprint.saferepr(stuff)
    "[<Recursion on list with id=...>, 'spam', 'eggs', 'lumberjack', 'knights', 'ni']"
@@ -212,140 +259,161 @@ Example
 -------
 
 To demonstrate several uses of the :func:`pprint` function and its parameters,
-let's fetch information about a project from `PyPI <https://pypi.python.org/pypi>`_::
+let's fetch information about a project from `PyPI <https://pypi.org>`_::
 
    >>> import json
    >>> import pprint
    >>> from urllib.request import urlopen
-   >>> with urlopen('http://pypi.python.org/pypi/Twisted/json') as url:
-   ...     http_info = url.info()
-   ...     raw_data = url.read().decode(http_info.get_content_charset())
-   >>> project_info = json.loads(raw_data)
+   >>> with urlopen('https://pypi.org/pypi/sampleproject/json') as resp:
+   ...     project_info = json.load(resp)['info']
 
 In its basic form, :func:`pprint` shows the whole object::
 
    >>> pprint.pprint(project_info)
-   {'info': {'_pypi_hidden': False,
-             '_pypi_ordering': 125,
-             'author': 'Glyph Lefkowitz',
-             'author_email': 'glyph@twistedmatrix.com',
-             'bugtrack_url': '',
-             'cheesecake_code_kwalitee_id': None,
-             'cheesecake_documentation_id': None,
-             'cheesecake_installability_id': None,
-             'classifiers': ['Programming Language :: Python :: 2.6',
-                             'Programming Language :: Python :: 2.7',
-                             'Programming Language :: Python :: 2 :: Only'],
-             'description': 'An extensible framework for Python programming, with '
-                            'special focus\r\n'
-                            'on event-based network programming and multiprotocol '
-                            'integration.',
-             'docs_url': '',
-             'download_url': 'UNKNOWN',
-             'home_page': 'http://twistedmatrix.com/',
-             'keywords': '',
-             'license': 'MIT',
-             'maintainer': '',
-             'maintainer_email': '',
-             'name': 'Twisted',
-             'package_url': 'http://pypi.python.org/pypi/Twisted',
-             'platform': 'UNKNOWN',
-             'release_url': 'http://pypi.python.org/pypi/Twisted/12.3.0',
-             'requires_python': None,
-             'stable_version': None,
-             'summary': 'An asynchronous networking framework written in Python',
-             'version': '12.3.0'},
-    'urls': [{'comment_text': '',
-              'downloads': 71844,
-              'filename': 'Twisted-12.3.0.tar.bz2',
-              'has_sig': False,
-              'md5_digest': '6e289825f3bf5591cfd670874cc0862d',
-              'packagetype': 'sdist',
-              'python_version': 'source',
-              'size': 2615733,
-              'upload_time': '2012-12-26T12:47:03',
-              'url': 'https://pypi.python.org/packages/source/T/Twisted/Twisted-12.3.0.tar.bz2'},
-             {'comment_text': '',
-              'downloads': 5224,
-              'filename': 'Twisted-12.3.0.win32-py2.7.msi',
-              'has_sig': False,
-              'md5_digest': '6b778f5201b622a5519a2aca1a2fe512',
-              'packagetype': 'bdist_msi',
-              'python_version': '2.7',
-              'size': 2916352,
-              'upload_time': '2012-12-26T12:48:15',
-              'url': 'https://pypi.python.org/packages/2.7/T/Twisted/Twisted-12.3.0.win32-py2.7.msi'}]}
+   {'author': 'The Python Packaging Authority',
+    'author_email': 'pypa-dev@googlegroups.com',
+    'bugtrack_url': None,
+    'classifiers': ['Development Status :: 3 - Alpha',
+                    'Intended Audience :: Developers',
+                    'License :: OSI Approved :: MIT License',
+                    'Programming Language :: Python :: 2',
+                    'Programming Language :: Python :: 2.6',
+                    'Programming Language :: Python :: 2.7',
+                    'Programming Language :: Python :: 3',
+                    'Programming Language :: Python :: 3.2',
+                    'Programming Language :: Python :: 3.3',
+                    'Programming Language :: Python :: 3.4',
+                    'Topic :: Software Development :: Build Tools'],
+    'description': 'A sample Python project\n'
+                   '=======================\n'
+                   '\n'
+                   'This is the description file for the project.\n'
+                   '\n'
+                   'The file should use UTF-8 encoding and be written using '
+                   'ReStructured Text. It\n'
+                   'will be used to generate the project webpage on PyPI, and '
+                   'should be written for\n'
+                   'that purpose.\n'
+                   '\n'
+                   'Typical contents for this file would include an overview of '
+                   'the project, basic\n'
+                   'usage examples, etc. Generally, including the project '
+                   'changelog in here is not\n'
+                   'a good idea, although a simple "What\'s New" section for the '
+                   'most recent version\n'
+                   'may be appropriate.',
+    'description_content_type': None,
+    'docs_url': None,
+    'download_url': 'UNKNOWN',
+    'downloads': {'last_day': -1, 'last_month': -1, 'last_week': -1},
+    'home_page': 'https://github.com/pypa/sampleproject',
+    'keywords': 'sample setuptools development',
+    'license': 'MIT',
+    'maintainer': None,
+    'maintainer_email': None,
+    'name': 'sampleproject',
+    'package_url': 'https://pypi.org/project/sampleproject/',
+    'platform': 'UNKNOWN',
+    'project_url': 'https://pypi.org/project/sampleproject/',
+    'project_urls': {'Download': 'UNKNOWN',
+                     'Homepage': 'https://github.com/pypa/sampleproject'},
+    'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
+    'requires_dist': None,
+    'requires_python': None,
+    'summary': 'A sample Python project',
+    'version': '1.2.0'}
 
 The result can be limited to a certain *depth* (ellipsis is used for deeper
 contents)::
 
-   >>> pprint.pprint(project_info, depth=2)
-   {'info': {'_pypi_hidden': False,
-             '_pypi_ordering': 125,
-             'author': 'Glyph Lefkowitz',
-             'author_email': 'glyph@twistedmatrix.com',
-             'bugtrack_url': '',
-             'cheesecake_code_kwalitee_id': None,
-             'cheesecake_documentation_id': None,
-             'cheesecake_installability_id': None,
-             'classifiers': [...],
-             'description': 'An extensible framework for Python programming, with '
-                            'special focus\r\n'
-                            'on event-based network programming and multiprotocol '
-                            'integration.',
-             'docs_url': '',
-             'download_url': 'UNKNOWN',
-             'home_page': 'http://twistedmatrix.com/',
-             'keywords': '',
-             'license': 'MIT',
-             'maintainer': '',
-             'maintainer_email': '',
-             'name': 'Twisted',
-             'package_url': 'http://pypi.python.org/pypi/Twisted',
-             'platform': 'UNKNOWN',
-             'release_url': 'http://pypi.python.org/pypi/Twisted/12.3.0',
-             'requires_python': None,
-             'stable_version': None,
-             'summary': 'An asynchronous networking framework written in Python',
-             'version': '12.3.0'},
-    'urls': [{...}, {...}]}
+   >>> pprint.pprint(project_info, depth=1)
+   {'author': 'The Python Packaging Authority',
+    'author_email': 'pypa-dev@googlegroups.com',
+    'bugtrack_url': None,
+    'classifiers': [...],
+    'description': 'A sample Python project\n'
+                   '=======================\n'
+                   '\n'
+                   'This is the description file for the project.\n'
+                   '\n'
+                   'The file should use UTF-8 encoding and be written using '
+                   'ReStructured Text. It\n'
+                   'will be used to generate the project webpage on PyPI, and '
+                   'should be written for\n'
+                   'that purpose.\n'
+                   '\n'
+                   'Typical contents for this file would include an overview of '
+                   'the project, basic\n'
+                   'usage examples, etc. Generally, including the project '
+                   'changelog in here is not\n'
+                   'a good idea, although a simple "What\'s New" section for the '
+                   'most recent version\n'
+                   'may be appropriate.',
+    'description_content_type': None,
+    'docs_url': None,
+    'download_url': 'UNKNOWN',
+    'downloads': {...},
+    'home_page': 'https://github.com/pypa/sampleproject',
+    'keywords': 'sample setuptools development',
+    'license': 'MIT',
+    'maintainer': None,
+    'maintainer_email': None,
+    'name': 'sampleproject',
+    'package_url': 'https://pypi.org/project/sampleproject/',
+    'platform': 'UNKNOWN',
+    'project_url': 'https://pypi.org/project/sampleproject/',
+    'project_urls': {...},
+    'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
+    'requires_dist': None,
+    'requires_python': None,
+    'summary': 'A sample Python project',
+    'version': '1.2.0'}
 
 Additionally, maximum character *width* can be suggested. If a long object
 cannot be split, the specified width will be exceeded::
 
-   >>> pprint.pprint(project_info, depth=2, width=50)
-   {'info': {'_pypi_hidden': False,
-             '_pypi_ordering': 125,
-             'author': 'Glyph Lefkowitz',
-             'author_email': 'glyph@twistedmatrix.com',
-             'bugtrack_url': '',
-             'cheesecake_code_kwalitee_id': None,
-             'cheesecake_documentation_id': None,
-             'cheesecake_installability_id': None,
-             'classifiers': [...],
-             'description': 'An extensible '
-                            'framework for Python '
-                            'programming, with '
-                            'special focus\r\n'
-                            'on event-based network '
-                            'programming and '
-                            'multiprotocol '
-                            'integration.',
-             'docs_url': '',
-             'download_url': 'UNKNOWN',
-             'home_page': 'http://twistedmatrix.com/',
-             'keywords': '',
-             'license': 'MIT',
-             'maintainer': '',
-             'maintainer_email': '',
-             'name': 'Twisted',
-             'package_url': 'http://pypi.python.org/pypi/Twisted',
-             'platform': 'UNKNOWN',
-             'release_url': 'http://pypi.python.org/pypi/Twisted/12.3.0',
-             'requires_python': None,
-             'stable_version': None,
-             'summary': 'An asynchronous networking '
-                        'framework written in '
-                        'Python',
-             'version': '12.3.0'},
-    'urls': [{...}, {...}]}
+   >>> pprint.pprint(project_info, depth=1, width=60)
+   {'author': 'The Python Packaging Authority',
+    'author_email': 'pypa-dev@googlegroups.com',
+    'bugtrack_url': None,
+    'classifiers': [...],
+    'description': 'A sample Python project\n'
+                   '=======================\n'
+                   '\n'
+                   'This is the description file for the '
+                   'project.\n'
+                   '\n'
+                   'The file should use UTF-8 encoding and be '
+                   'written using ReStructured Text. It\n'
+                   'will be used to generate the project '
+                   'webpage on PyPI, and should be written '
+                   'for\n'
+                   'that purpose.\n'
+                   '\n'
+                   'Typical contents for this file would '
+                   'include an overview of the project, '
+                   'basic\n'
+                   'usage examples, etc. Generally, including '
+                   'the project changelog in here is not\n'
+                   'a good idea, although a simple "What\'s '
+                   'New" section for the most recent version\n'
+                   'may be appropriate.',
+    'description_content_type': None,
+    'docs_url': None,
+    'download_url': 'UNKNOWN',
+    'downloads': {...},
+    'home_page': 'https://github.com/pypa/sampleproject',
+    'keywords': 'sample setuptools development',
+    'license': 'MIT',
+    'maintainer': None,
+    'maintainer_email': None,
+    'name': 'sampleproject',
+    'package_url': 'https://pypi.org/project/sampleproject/',
+    'platform': 'UNKNOWN',
+    'project_url': 'https://pypi.org/project/sampleproject/',
+    'project_urls': {...},
+    'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
+    'requires_dist': None,
+    'requires_python': None,
+    'summary': 'A sample Python project',
+    'version': '1.2.0'}

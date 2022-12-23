@@ -47,6 +47,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.1, compared to 3.0.
+Python 3.1 was released on June 27, 2009.
 
 
 PEP 372: Ordered Dictionaries
@@ -71,7 +72,7 @@ order.  The *_asdict()* method for :func:`collections.namedtuple` now
 returns an ordered dictionary with the values appearing in the same order as
 the underlying tuple indices.  The :mod:`json` module is being built-out with
 an *object_pairs_hook* to allow OrderedDicts to be built by the decoder.
-Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_.
+Support was also added for third-party tools like `PyYAML <https://pyyaml.org/>`_.
 
 .. seealso::
 
@@ -450,7 +451,7 @@ Major performance enhancements have been added:
 * The :mod:`json` module now has a C extension to substantially improve
   its performance.  In addition, the API was modified so that json works
   only with :class:`str`, not with :class:`bytes`.  That change makes the
-  module closely match the `JSON specification <http://json.org/>`_
+  module closely match the `JSON specification <https://json.org/>`_
   which is defined in terms of Unicode.
 
   (Contributed by Bob Ippolito and converted to Py3.1 by Antoine Pitrou
@@ -474,12 +475,12 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
-* Integers are now stored internally either in base 2**15 or in base
-  2**30, the base being determined at build time.  Previously, they
-  were always stored in base 2**15.  Using base 2**30 gives
+* Integers are now stored internally either in base ``2**15`` or in base
+  ``2**30``, the base being determined at build time.  Previously, they
+  were always stored in base ``2**15``.  Using base ``2**30`` gives
   significant performance improvements on 64-bit machines, but
   benchmark results on 32-bit machines have been mixed.  Therefore,
-  the default is to use base 2**30 on 64-bit machines and base 2**15
+  the default is to use base ``2**30`` on 64-bit machines and base ``2**15``
   on 32-bit machines; on Unix, there's a new configure option
   ``--enable-big-digits`` that can be used to override this default.
 
