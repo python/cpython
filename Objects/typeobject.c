@@ -4219,9 +4219,19 @@ _PyType_LookupId(PyTypeObject *type, _Py_Identifier *name)
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
-   but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
+   but uses _PyType_Lookup() instead of just looking in type->tp_dict.
+
+   The argument suppress_missing_attribute is used to provide a
+   fast path for hasattr. The modes are:
+
+   * NULL: do not suppress the exception
+   * Non-zero pointer: suppress the PyExc_AttributeError and set
+     *suppress_missing_attribute to 1 to signal we are returning NULL while
+      having suppressed the exception (other exceptions are not suppressed)
+
+   */
 PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress)
+_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missing_attribute)
 {
     PyTypeObject *metatype = Py_TYPE(type);
     PyObject *meta_attribute, *attribute;
@@ -4301,13 +4311,13 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress)
     }
 
     /* Give up */
-    if (suppress == NULL) {
+    if (suppress_missing_attribute == NULL) {
         PyErr_Format(PyExc_AttributeError,
                         "type object '%.50s' has no attribute '%U'",
                         type->tp_name, name);
     } else {
         // signal the caller we have not set an PyExc_AttributeError and gave up
-        *suppress = 1;
+        *suppress_missing_attribute = 1;
     }
     return NULL;
 }
