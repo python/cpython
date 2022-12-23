@@ -4811,7 +4811,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_hash */
     (ternaryfunc)type_call,                     /* tp_call */
     0,                                          /* tp_str */
-    (getattrofunc)_Py_type_getattro,                /* tp_getattro */
+    (getattrofunc)_Py_type_getattro,            /* tp_getattro */
     (setattrofunc)type_setattro,                /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |

@@ -940,9 +940,9 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
         return 0;
     }
     if (tp->tp_getattro == (getattrofunc)_Py_type_getattro) {
-        int flag = 0;
-        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &flag);
-        if (flag) {
+        int supress_missing_attribute_exception = 0;
+        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
+        if (supress_missing_attribute_exception) {
             // return 0 without having to clear the exception
             return 0;
         }

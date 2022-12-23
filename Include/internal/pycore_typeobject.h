@@ -75,7 +75,7 @@ extern void _PyStaticType_ClearWeakRefs(PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
 PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *flag);
+_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *supress);
 PyObject *
 _Py_type_getattro(PyTypeObject *type, PyObject *name);
 
