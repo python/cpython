@@ -587,6 +587,21 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
 
+    def test_default_extension(self):
+        """Checks an extensionless path finds a HMTL file, and finds an
+        extensionless file with priority.
+        """
+        data1 = b"SPAM SPAM SPAM!\r\n"
+        with open(os.path.join(self.tempdir_name, 'spam.html'), 'wb') as f:
+            f.write(data1)
+        response = self.request(self.tempdir_name + '/spam')
+        self.check_status_and_reason(response, HTTPStatus.OK, data1)
+        data2 = b"The one true spam.\r\n"
+        with open(os.path.join(self.tempdir_name, 'spam'), 'wb') as f:
+            f.write(data2)
+        response = self.request(self.tempdir_name + '/spam')
+        self.check_status_and_reason(response, HTTPStatus.OK, data2)
+
     def test_html_escape_filename(self):
         filename = '<test&>.txt'
         fullpath = os.path.join(self.tempdir, filename)
