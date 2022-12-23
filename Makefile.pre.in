@@ -1017,52 +1017,12 @@ _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modu
 FROZEN_FILES_IN = \
 		Lib/importlib/_bootstrap.py \
 		Lib/importlib/_bootstrap_external.py \
-		Lib/zipimport.py \
-		Lib/abc.py \
-		Lib/codecs.py \
-		Lib/io.py \
-		Lib/_collections_abc.py \
-		Lib/_sitebuiltins.py \
-		Lib/genericpath.py \
-		Lib/ntpath.py \
-		Lib/posixpath.py \
-		Lib/os.py \
-		Lib/site.py \
-		Lib/stat.py \
-		Lib/importlib/util.py \
-		Lib/importlib/machinery.py \
-		Lib/runpy.py \
-		Lib/__hello__.py \
-		Lib/__phello__/__init__.py \
-		Lib/__phello__/ham/__init__.py \
-		Lib/__phello__/ham/eggs.py \
-		Lib/__phello__/spam.py \
-		Tools/freeze/flag.py
+		Lib/zipimport.py
 # End FROZEN_FILES_IN
 FROZEN_FILES_OUT = \
 		Python/frozen_modules/importlib._bootstrap.h \
 		Python/frozen_modules/importlib._bootstrap_external.h \
-		Python/frozen_modules/zipimport.h \
-		Python/frozen_modules/abc.h \
-		Python/frozen_modules/codecs.h \
-		Python/frozen_modules/io.h \
-		Python/frozen_modules/_collections_abc.h \
-		Python/frozen_modules/_sitebuiltins.h \
-		Python/frozen_modules/genericpath.h \
-		Python/frozen_modules/ntpath.h \
-		Python/frozen_modules/posixpath.h \
-		Python/frozen_modules/os.h \
-		Python/frozen_modules/site.h \
-		Python/frozen_modules/stat.h \
-		Python/frozen_modules/importlib.util.h \
-		Python/frozen_modules/importlib.machinery.h \
-		Python/frozen_modules/runpy.h \
-		Python/frozen_modules/__hello__.h \
-		Python/frozen_modules/__phello__.h \
-		Python/frozen_modules/__phello__.ham.h \
-		Python/frozen_modules/__phello__.ham.eggs.h \
-		Python/frozen_modules/__phello__.spam.h \
-		Python/frozen_modules/frozen_only.h
+		Python/frozen_modules/zipimport.h
 # End FROZEN_FILES_OUT
 
 Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
@@ -1087,66 +1047,6 @@ Python/frozen_modules/importlib._bootstrap_external.h: Lib/importlib/_bootstrap_
 Python/frozen_modules/zipimport.h: Lib/zipimport.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
 	$(FREEZE_MODULE_BOOTSTRAP) zipimport $(srcdir)/Lib/zipimport.py Python/frozen_modules/zipimport.h
 
-Python/frozen_modules/abc.h: Lib/abc.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) abc $(srcdir)/Lib/abc.py Python/frozen_modules/abc.h
-
-Python/frozen_modules/codecs.h: Lib/codecs.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) codecs $(srcdir)/Lib/codecs.py Python/frozen_modules/codecs.h
-
-Python/frozen_modules/io.h: Lib/io.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h
-
-Python/frozen_modules/_collections_abc.h: Lib/_collections_abc.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) _collections_abc $(srcdir)/Lib/_collections_abc.py Python/frozen_modules/_collections_abc.h
-
-Python/frozen_modules/_sitebuiltins.h: Lib/_sitebuiltins.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) _sitebuiltins $(srcdir)/Lib/_sitebuiltins.py Python/frozen_modules/_sitebuiltins.h
-
-Python/frozen_modules/genericpath.h: Lib/genericpath.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) genericpath $(srcdir)/Lib/genericpath.py Python/frozen_modules/genericpath.h
-
-Python/frozen_modules/ntpath.h: Lib/ntpath.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) ntpath $(srcdir)/Lib/ntpath.py Python/frozen_modules/ntpath.h
-
-Python/frozen_modules/posixpath.h: Lib/posixpath.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) posixpath $(srcdir)/Lib/posixpath.py Python/frozen_modules/posixpath.h
-
-Python/frozen_modules/os.h: Lib/os.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) os $(srcdir)/Lib/os.py Python/frozen_modules/os.h
-
-Python/frozen_modules/site.h: Lib/site.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) site $(srcdir)/Lib/site.py Python/frozen_modules/site.h
-
-Python/frozen_modules/stat.h: Lib/stat.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) stat $(srcdir)/Lib/stat.py Python/frozen_modules/stat.h
-
-Python/frozen_modules/importlib.util.h: Lib/importlib/util.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) importlib.util $(srcdir)/Lib/importlib/util.py Python/frozen_modules/importlib.util.h
-
-Python/frozen_modules/importlib.machinery.h: Lib/importlib/machinery.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) importlib.machinery $(srcdir)/Lib/importlib/machinery.py Python/frozen_modules/importlib.machinery.h
-
-Python/frozen_modules/runpy.h: Lib/runpy.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) runpy $(srcdir)/Lib/runpy.py Python/frozen_modules/runpy.h
-
-Python/frozen_modules/__hello__.h: Lib/__hello__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) __hello__ $(srcdir)/Lib/__hello__.py Python/frozen_modules/__hello__.h
-
-Python/frozen_modules/__phello__.h: Lib/__phello__/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) __phello__ $(srcdir)/Lib/__phello__/__init__.py Python/frozen_modules/__phello__.h
-
-Python/frozen_modules/__phello__.ham.h: Lib/__phello__/ham/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) __phello__.ham $(srcdir)/Lib/__phello__/ham/__init__.py Python/frozen_modules/__phello__.ham.h
-
-Python/frozen_modules/__phello__.ham.eggs.h: Lib/__phello__/ham/eggs.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) __phello__.ham.eggs $(srcdir)/Lib/__phello__/ham/eggs.py Python/frozen_modules/__phello__.ham.eggs.h
-
-Python/frozen_modules/__phello__.spam.h: Lib/__phello__/spam.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) __phello__.spam $(srcdir)/Lib/__phello__/spam.py Python/frozen_modules/__phello__.spam.h
-
-Python/frozen_modules/frozen_only.h: Tools/freeze/flag.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) frozen_only $(srcdir)/Tools/freeze/flag.py Python/frozen_modules/frozen_only.h
-
 # END: freezing modules
 
 Tools/build/freeze_modules.py: $(FREEZE_MODULE)
@@ -1170,26 +1070,6 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/importlib._bootstrap.h:importlib._bootstrap \
 	Python/frozen_modules/importlib._bootstrap_external.h:importlib._bootstrap_external \
 	Python/frozen_modules/zipimport.h:zipimport \
-	Python/frozen_modules/abc.h:abc \
-	Python/frozen_modules/codecs.h:codecs \
-	Python/frozen_modules/io.h:io \
-	Python/frozen_modules/_collections_abc.h:_collections_abc \
-	Python/frozen_modules/_sitebuiltins.h:_sitebuiltins \
-	Python/frozen_modules/genericpath.h:genericpath \
-	Python/frozen_modules/ntpath.h:ntpath \
-	Python/frozen_modules/posixpath.h:posixpath \
-	Python/frozen_modules/os.h:os \
-	Python/frozen_modules/site.h:site \
-	Python/frozen_modules/stat.h:stat \
-	Python/frozen_modules/importlib.util.h:importlib.util \
-	Python/frozen_modules/importlib.machinery.h:importlib.machinery \
-	Python/frozen_modules/runpy.h:runpy \
-	Python/frozen_modules/__hello__.h:__hello__ \
-	Python/frozen_modules/__phello__.h:__phello__ \
-	Python/frozen_modules/__phello__.ham.h:__phello__.ham \
-	Python/frozen_modules/__phello__.ham.eggs.h:__phello__.ham.eggs \
-	Python/frozen_modules/__phello__.spam.h:__phello__.spam \
-	Python/frozen_modules/frozen_only.h:frozen_only \
 	-o Python/deepfreeze/deepfreeze.c
 # END: deepfreeze modules
 	@echo "Note: Deepfreeze may have added some global objects,"

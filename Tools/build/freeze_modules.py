@@ -45,6 +45,9 @@ FROZEN = [
         # on a builtin zip file instead of a filesystem.
         'zipimport',
         ]),
+]
+
+XXX = [
     ('stdlib - startup, without site (python -S)', [
         'abc',
         'codecs',
@@ -520,7 +523,7 @@ def regen_frozen(modules, frozen_modules: bool):
 
     for lines in (bootstraplines, stdliblines, testlines):
         # TODO: Is this necessary any more?
-        if not lines[0]:
+        if lines and not lines[0]:
             del lines[0]
         for i, line in enumerate(lines):
             if line:

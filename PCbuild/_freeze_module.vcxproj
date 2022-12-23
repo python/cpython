@@ -254,106 +254,6 @@
       <IntFile>$(IntDir)zipimport.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
     </None>
-    <None Include="..\Lib\abc.py">
-      <ModName>abc</ModName>
-      <IntFile>$(IntDir)abc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\abc.h</OutFile>
-    </None>
-    <None Include="..\Lib\codecs.py">
-      <ModName>codecs</ModName>
-      <IntFile>$(IntDir)codecs.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\codecs.h</OutFile>
-    </None>
-    <None Include="..\Lib\io.py">
-      <ModName>io</ModName>
-      <IntFile>$(IntDir)io.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\io.h</OutFile>
-    </None>
-    <None Include="..\Lib\_collections_abc.py">
-      <ModName>_collections_abc</ModName>
-      <IntFile>$(IntDir)_collections_abc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\_collections_abc.h</OutFile>
-    </None>
-    <None Include="..\Lib\_sitebuiltins.py">
-      <ModName>_sitebuiltins</ModName>
-      <IntFile>$(IntDir)_sitebuiltins.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\_sitebuiltins.h</OutFile>
-    </None>
-    <None Include="..\Lib\genericpath.py">
-      <ModName>genericpath</ModName>
-      <IntFile>$(IntDir)genericpath.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\genericpath.h</OutFile>
-    </None>
-    <None Include="..\Lib\ntpath.py">
-      <ModName>ntpath</ModName>
-      <IntFile>$(IntDir)ntpath.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\ntpath.h</OutFile>
-    </None>
-    <None Include="..\Lib\posixpath.py">
-      <ModName>posixpath</ModName>
-      <IntFile>$(IntDir)posixpath.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\posixpath.h</OutFile>
-    </None>
-    <None Include="..\Lib\os.py">
-      <ModName>os</ModName>
-      <IntFile>$(IntDir)os.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\os.h</OutFile>
-    </None>
-    <None Include="..\Lib\site.py">
-      <ModName>site</ModName>
-      <IntFile>$(IntDir)site.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\site.h</OutFile>
-    </None>
-    <None Include="..\Lib\stat.py">
-      <ModName>stat</ModName>
-      <IntFile>$(IntDir)stat.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\stat.h</OutFile>
-    </None>
-    <None Include="..\Lib\importlib\util.py">
-      <ModName>importlib.util</ModName>
-      <IntFile>$(IntDir)importlib.util.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.util.h</OutFile>
-    </None>
-    <None Include="..\Lib\importlib\machinery.py">
-      <ModName>importlib.machinery</ModName>
-      <IntFile>$(IntDir)importlib.machinery.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.machinery.h</OutFile>
-    </None>
-    <None Include="..\Lib\runpy.py">
-      <ModName>runpy</ModName>
-      <IntFile>$(IntDir)runpy.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\runpy.h</OutFile>
-    </None>
-    <None Include="..\Lib\__hello__.py">
-      <ModName>__hello__</ModName>
-      <IntFile>$(IntDir)__hello__.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__hello__.h</OutFile>
-    </None>
-    <None Include="..\Lib\__phello__\__init__.py">
-      <ModName>__phello__</ModName>
-      <IntFile>$(IntDir)__phello__.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.h</OutFile>
-    </None>
-    <None Include="..\Lib\__phello__\ham\__init__.py">
-      <ModName>__phello__.ham</ModName>
-      <IntFile>$(IntDir)__phello__.ham.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.ham.h</OutFile>
-    </None>
-    <None Include="..\Lib\__phello__\ham\eggs.py">
-      <ModName>__phello__.ham.eggs</ModName>
-      <IntFile>$(IntDir)__phello__.ham.eggs.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.ham.eggs.h</OutFile>
-    </None>
-    <None Include="..\Lib\__phello__\spam.py">
-      <ModName>__phello__.spam</ModName>
-      <IntFile>$(IntDir)__phello__.spam.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.spam.h</OutFile>
-    </None>
-    <None Include="..\Tools\freeze\flag.py">
-      <ModName>frozen_only</ModName>
-      <IntFile>$(IntDir)frozen_only.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\frozen_only.h</OutFile>
-    </None>
     <!-- END frozen modules -->
   </ItemGroup>
   <ItemGroup>
@@ -400,26 +300,6 @@
 		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap.h:importlib._bootstrap" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h:importlib._bootstrap_external" ^
 		 "$(PySourcePath)Python\frozen_modules\zipimport.h:zipimport" ^
-		 "$(PySourcePath)Python\frozen_modules\abc.h:abc" ^
-		 "$(PySourcePath)Python\frozen_modules\codecs.h:codecs" ^
-		 "$(PySourcePath)Python\frozen_modules\io.h:io" ^
-		 "$(PySourcePath)Python\frozen_modules\_collections_abc.h:_collections_abc" ^
-		 "$(PySourcePath)Python\frozen_modules\_sitebuiltins.h:_sitebuiltins" ^
-		 "$(PySourcePath)Python\frozen_modules\genericpath.h:genericpath" ^
-		 "$(PySourcePath)Python\frozen_modules\ntpath.h:ntpath" ^
-		 "$(PySourcePath)Python\frozen_modules\posixpath.h:posixpath" ^
-		 "$(PySourcePath)Python\frozen_modules\os.h:os" ^
-		 "$(PySourcePath)Python\frozen_modules\site.h:site" ^
-		 "$(PySourcePath)Python\frozen_modules\stat.h:stat" ^
-		 "$(PySourcePath)Python\frozen_modules\importlib.util.h:importlib.util" ^
-		 "$(PySourcePath)Python\frozen_modules\importlib.machinery.h:importlib.machinery" ^
-		 "$(PySourcePath)Python\frozen_modules\runpy.h:runpy" ^
-		 "$(PySourcePath)Python\frozen_modules\__hello__.h:__hello__" ^
-		 "$(PySourcePath)Python\frozen_modules\__phello__.h:__phello__" ^
-		 "$(PySourcePath)Python\frozen_modules\__phello__.ham.h:__phello__.ham" ^
-		 "$(PySourcePath)Python\frozen_modules\__phello__.ham.eggs.h:__phello__.ham.eggs" ^
-		 "$(PySourcePath)Python\frozen_modules\__phello__.spam.h:__phello__.spam" ^
-		 "$(PySourcePath)Python\frozen_modules\frozen_only.h:frozen_only" ^
 		 "-o" "$(PySourcePath)Python\deepfreeze\deepfreeze.c"'/>
     <!-- END deepfreeze rule -->
   </Target>
