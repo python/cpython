@@ -2392,10 +2392,6 @@ Queries now return :class:`!Row` objects:
    'Earth'
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
-   >>> 'name' in row
-   True
-   >>> 'missing_field' in row
-   False
 
 You can create a custom :attr:`~Cursor.row_factory`
 that returns each row as a :class:`dict`, with column names mapped to values:
