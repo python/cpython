@@ -416,7 +416,7 @@ class TestCAPI(unittest.TestCase):
 
         frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
         # The following line should not cause a segmentation fault.
-        self.assertEqual(frame.f_back, None)
+        self.assertIsNone(frame.f_back)
 
 if __name__ == "__main__":
     unittest.main()
