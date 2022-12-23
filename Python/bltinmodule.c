@@ -2532,6 +2532,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
+        double c = 0.0;
         Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2539,10 +2540,25 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
+                /* Avoid losing the sign on a negative result,
+                   and don't let adding the compensation convert
+                   an infinite or overflowed sum to a NaN. */
+                if (c && Py_IS_FINITE(c)) {
+                    f_result += c;
+                }
                 return PyFloat_FromDouble(f_result);
             }
             if (PyFloat_CheckExact(item)) {
-                f_result += PyFloat_AS_DOUBLE(item);
+                // Improved Kahan–Babuška algorithm by Arnold Neumaier
+                // https://www.mat.univie.ac.at/~neum/scan/01.pdf
+                double x = PyFloat_AS_DOUBLE(item);
+                double t = f_result + x;
+                if (fabs(f_result) >= fabs(x)) {
+                    c += (f_result - t) + x;
+                } else {
+                    c += (x - t) + f_result;
+                }
+                f_result = t;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
@@ -2555,6 +2571,9 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     Py_DECREF(item);
                     continue;
                 }
+            }
+            if (c && Py_IS_FINITE(c)) {
+                f_result += c;
             }
             result = PyFloat_FromDouble(f_result);
             if (result == NULL) {
