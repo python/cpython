@@ -20,7 +20,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 
 .. seealso::
 
-    The `Requests package <https://requests.readthedocs.io/en/master/>`_
+    The `Requests package <https://requests.readthedocs.io/en/latest/>`_
     is recommended for a higher-level HTTP client interface.
 
 .. note::
@@ -33,7 +33,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host, port=None[, timeout], source_address=None, \
+.. class:: HTTPConnection(host, port=None, *[, timeout], source_address=None, \
                           blocksize=8192)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP

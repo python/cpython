@@ -84,7 +84,7 @@ Three exceptions are defined as attributes of the :class:`IMAP4` class:
 There's also a subclass for secure connections:
 
 
-.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, ssl_context=None, \
+.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, *, ssl_context=None, \
                      timeout=None)
 
    This is a subclass derived from :class:`IMAP4` that connects over an SSL

@@ -75,7 +75,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket
 
-.. class:: SMTP_SSL(host='', port=0, local_hostname=None [, timeout], \
+.. class:: SMTP_SSL(host='', port=0, local_hostname=None, * [, timeout], \
                     context=None, source_address=None)
 
    An :class:`SMTP_SSL` instance behaves exactly the same as instances of
@@ -391,7 +391,7 @@ An :class:`SMTP` instance has the following methods:
    .. versionadded:: 3.5
 
 
-.. method:: SMTP.starttls(keyfile=None, certfile=None, context=None)
+.. method:: SMTP.starttls(*, context=None)
 
    Put the SMTP connection in TLS (Transport Layer Security) mode.  All SMTP
    commands that follow will be encrypted.  You should then call :meth:`ehlo`
@@ -413,6 +413,9 @@ An :class:`SMTP` instance has the following methods:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
+   .. versionchanged:: 3.12
+       The deprecated *keyfile* and *certfile* parameters have been removed.
 
    :exc:`SMTPHeloError`
       The server didn't reply properly to the ``HELO`` greeting.

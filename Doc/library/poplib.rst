@@ -53,7 +53,7 @@ The :mod:`poplib` module provides two classes:
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
 
-.. class:: POP3_SSL(host, port=POP3_SSL_PORT, timeout=None, context=None)
+.. class:: POP3_SSL(host, port=POP3_SSL_PORT, *, timeout=None, context=None)
 
    This is a subclass of :class:`POP3` that connects to the server over an SSL
    encrypted socket.  If *port* is not specified, 995, the standard POP3-over-SSL
