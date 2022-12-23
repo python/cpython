@@ -346,11 +346,11 @@ HTTPConnection Objects
    Set the host and the port for HTTP Connect Tunnelling. This allows running
    the connection through a proxy server.
 
-   The host and port arguments specify the endpoint of the tunneled connection
+   The *host* and *port* arguments specify the endpoint of the tunneled connection
    (i.e. the address included in the CONNECT request, *not* the address of the
    proxy server).
 
-   The headers argument should be a mapping of extra HTTP headers to send with
+   The *headers* argument should be a mapping of extra HTTP headers to send with
    the CONNECT request.
 
    For example, to tunnel through a HTTPS proxy server running locally on port

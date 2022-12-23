@@ -66,14 +66,14 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       Support for the :keyword:`with` statement was added.
 
    .. versionchanged:: 3.3
-      source_address argument was added.
+      *source_address* argument was added.
 
    .. versionadded:: 3.5
       The SMTPUTF8 extension (:rfc:`6531`) is now supported.
 
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
-      :class:`ValueError` to prevent the creation of a non-blocking socket
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
 
 .. class:: SMTP_SSL(host='', port=0, local_hostname=None, * [, timeout], \
                     context=None, source_address=None)
@@ -93,7 +93,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       *context* was added.
 
    .. versionchanged:: 3.3
-      source_address argument was added.
+      *source_address* argument was added.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with
@@ -120,7 +120,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
    standard SMTP client. It's common to use Unix sockets for LMTP, so our
    :meth:`connect` method must support that as well as a regular host:port
-   server. The optional arguments local_hostname and source_address have the
+   server. The optional arguments *local_hostname* and *source_address* have the
    same meaning as they do in the :class:`SMTP` class. To specify a Unix
    socket, you must use an absolute path for *host*, starting with a '/'.
 
@@ -358,7 +358,7 @@ An :class:`SMTP` instance has the following methods:
    be used as argument to the ``AUTH`` command; the valid values are
    those listed in the ``auth`` element of :attr:`esmtp_features`.
 
-   *authobject* must be a callable object taking an optional single argument:
+   *authobject* must be a callable object taking an optional single argument::
 
      data = authobject(challenge=None)
 

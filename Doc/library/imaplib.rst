@@ -561,7 +561,7 @@ An :class:`IMAP4` instance has the following methods:
    ``search``, the searching *charset* argument is mandatory.  There is also a
    ``uid thread`` command which corresponds to ``thread`` the way that ``uid
    search`` corresponds to ``search``.  The ``thread`` command first searches the
-   mailbox for messages that match the given searching criteria using the charset
+   mailbox for messages that match the given searching criteria using the *charset*
    argument for the interpretation of strings in the searching criteria. It then
    returns the matching messages threaded according to the specified threading
    algorithm.
