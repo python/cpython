@@ -491,8 +491,7 @@
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
 
             // Deopt unless 0 <= sub < PyList_Size(list)
-            Py_ssize_t signed_magnitude = Py_SIZE(sub);
-            DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
+            DEOPT_IF(!_PyLong_IsPositiveSingleDigit(sub), BINARY_SUBSCR);
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
@@ -517,8 +516,7 @@
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
 
             // Deopt unless 0 <= sub < PyTuple_Size(list)
-            Py_ssize_t signed_magnitude = Py_SIZE(sub);
-            DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
+            DEOPT_IF(!_PyLong_IsPositiveSingleDigit(sub), BINARY_SUBSCR);
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
@@ -562,8 +560,8 @@
         TARGET(BINARY_SUBSCR_GETITEM) {
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
-            uint32_t type_version = read_u32(next_instr + 1);
-            uint16_t func_version = read_u16(next_instr + 3);
+            uint32_t type_version = read_u32(&next_instr[1].cache);
+            uint16_t func_version = read_u16(&next_instr[3].cache);
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(tp->tp_version_tag != type_version, BINARY_SUBSCR);
             assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -612,7 +610,7 @@
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
             PyObject *v = PEEK(3);
-            uint16_t counter = read_u16(next_instr + 0);
+            uint16_t counter = read_u16(&next_instr[0].cache);
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
@@ -642,7 +640,7 @@
             DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
 
             // Ensure nonnegative, zero-or-one-digit ints.
-            DEOPT_IF(((size_t)Py_SIZE(sub)) > 1, STORE_SUBSCR);
+            DEOPT_IF(!_PyLong_IsPositiveSingleDigit(sub), STORE_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             // Ensure index < len(list)
             DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
@@ -1249,7 +1247,7 @@
             PREDICTED(STORE_ATTR);
             PyObject *owner = PEEK(1);
             PyObject *v = PEEK(2);
-            uint16_t counter = read_u16(next_instr + 0);
+            uint16_t counter = read_u16(&next_instr[0].cache);
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg);
@@ -2083,8 +2081,8 @@
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
             PyObject *owner = PEEK(1);
             PyObject *value = PEEK(2);
-            uint32_t type_version = read_u32(next_instr + 1);
-            uint16_t index = read_u16(next_instr + 3);
+            uint32_t type_version = read_u32(&next_instr[1].cache);
+            uint16_t index = read_u16(&next_instr[3].cache);
             assert(cframe.use_tracing == 0);
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
@@ -2111,8 +2109,8 @@
         TARGET(STORE_ATTR_WITH_HINT) {
             PyObject *owner = PEEK(1);
             PyObject *value = PEEK(2);
-            uint32_t type_version = read_u32(next_instr + 1);
-            uint16_t hint = read_u16(next_instr + 3);
+            uint32_t type_version = read_u32(&next_instr[1].cache);
+            uint16_t hint = read_u16(&next_instr[3].cache);
             assert(cframe.use_tracing == 0);
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
@@ -2160,8 +2158,8 @@
         TARGET(STORE_ATTR_SLOT) {
             PyObject *owner = PEEK(1);
             PyObject *value = PEEK(2);
-            uint32_t type_version = read_u32(next_instr + 1);
-            uint16_t index = read_u16(next_instr + 3);
+            uint32_t type_version = read_u32(&next_instr[1].cache);
+            uint16_t index = read_u16(&next_instr[3].cache);
             assert(cframe.use_tracing == 0);
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
@@ -2209,18 +2207,16 @@
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
                 size_t jump;
-                uint16_t when_to_jump_mask = read_u16(next_instr + 1);
+                uint16_t when_to_jump_mask = read_u16(&next_instr[1].cache);
                 assert(cframe.use_tracing == 0);
                 // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
                 DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+                STAT_INC(COMPARE_OP, hit);
                 double dleft = PyFloat_AS_DOUBLE(left);
                 double dright = PyFloat_AS_DOUBLE(right);
-                // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
-                int sign_ish = 2*(dleft > dright) + 2 - (dleft < dright);
-                DEOPT_IF(isnan(dleft), COMPARE_OP);
-                DEOPT_IF(isnan(dright), COMPARE_OP);
-                STAT_INC(COMPARE_OP, hit);
+                // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
+                int sign_ish = 1 << (2 * (dleft >= dright) + (dleft <= dright));
                 _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
                 _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
                 jump = sign_ish & when_to_jump_mask;
@@ -2247,7 +2243,7 @@
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
                 size_t jump;
-                uint16_t when_to_jump_mask = read_u16(next_instr + 1);
+                uint16_t when_to_jump_mask = read_u16(&next_instr[1].cache);
                 assert(cframe.use_tracing == 0);
                 // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
                 DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
@@ -2258,8 +2254,8 @@
                 assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
                 Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
                 Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-                // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
-                int sign_ish = 2*(ileft > iright) + 2 - (ileft < iright);
+                // 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
+                int sign_ish = 1 << (2 * (ileft >= iright) + (ileft <= iright));
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
                 jump = sign_ish & when_to_jump_mask;
@@ -2286,7 +2282,7 @@
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
                 size_t jump;
-                uint16_t invert = read_u16(next_instr + 1);
+                uint16_t invert = read_u16(&next_instr[1].cache);
                 assert(cframe.use_tracing == 0);
                 // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
                 DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);

@@ -685,7 +685,7 @@ class EnumType(type):
                         'member order does not match _order_:\n  %r\n  %r'
                         % (enum_class._member_names_, _order_)
                         )
-
+        #
         return enum_class
 
     def __bool__(cls):
@@ -1082,6 +1082,13 @@ class Enum(metaclass=EnumType):
     Methods can be added to enumerations, and members can have their own
     attributes -- see the documentation for details.
     """
+
+    @classmethod
+    def __signature__(cls):
+        if cls._member_names_:
+            return '(*values)'
+        else:
+            return '(new_class_name, /, names, *, module=None, qualname=None, type=None, start=1, boundary=None)'
 
     def __new__(cls, value):
         # all enum instances are actually created during class construction

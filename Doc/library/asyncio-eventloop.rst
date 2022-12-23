@@ -932,7 +932,8 @@ Watching file descriptors
 
 .. method:: loop.remove_reader(fd)
 
-   Stop monitoring the *fd* file descriptor for read availability.
+   Stop monitoring the *fd* file descriptor for read availability. Returns
+   ``True`` if *fd* was previously being monitored for reads.
 
 .. method:: loop.add_writer(fd, callback, *args)
 
@@ -945,7 +946,8 @@ Watching file descriptors
 
 .. method:: loop.remove_writer(fd)
 
-   Stop monitoring the *fd* file descriptor for write availability.
+   Stop monitoring the *fd* file descriptor for write availability. Returns
+   ``True`` if *fd* was previously being monitored for writes.
 
 See also :ref:`Platform Support <asyncio-platform-support>` section
 for some limitations of these methods.
