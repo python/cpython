@@ -664,9 +664,8 @@ are always available.  They are listed here in alphabetical order.
       numeric_value: `number` | `infinity` | `nan`
       numeric_string: [`sign`] `numeric_value`
 
-   Case is not significant, so, for example,
-   "inf", "Inf", "INFINITY", and "iNfINity" are all acceptable spellings for
-   positive infinity.
+   Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
+   "iNfINity" are all acceptable spellings for positive infinity.
 
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
