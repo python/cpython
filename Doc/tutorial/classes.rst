@@ -752,9 +752,9 @@ is to use :mod:`dataclasses` for this purpose::
     john = Employee("john", "computer lab", 1000)
 
     >>> john.dept
-    # "computer lab"
+    "computer lab"
     >>> john.salary
-    # '1000'
+    1000
 
 A piece of Python code that expects a particular abstract data type can often be
 passed a class that emulates the methods of that data type instead.  For
