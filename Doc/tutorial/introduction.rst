@@ -11,6 +11,13 @@ with a prompt are output from the interpreter. Note that a secondary prompt on a
 line by itself in an example means you must type a blank line; this is used to
 end a multi-line command.
 
+.. only:: html
+
+   You can toggle the display of prompts and output by clicking on ``>>>``
+   in the upper-right corner of an example box.  If you hide the prompts
+   and output for an example, then you can easily copy and paste the input
+   lines into your interpreter.
+
 .. index:: single: # (hash); comment
 
 Many of the examples in this manual, even those entered at the interactive
@@ -63,8 +70,8 @@ the ones with a fractional part (e.g. ``5.0``, ``1.6``) have type
 :class:`float`.  We will see more about numeric types later in the tutorial.
 
 Division (``/``) always returns a float.  To do :term:`floor division` and
-get an integer result (discarding any fractional result) you can use the ``//``
-operator; to calculate the remainder you can use ``%``::
+get an integer result you can use the ``//`` operator; to calculate
+the remainder you can use ``%``::
 
    >>> 17 / 3  # classic division returns a float
    5.666666666666667
@@ -73,7 +80,7 @@ operator; to calculate the remainder you can use ``%``::
    5
    >>> 17 % 3  # the % operator returns the remainder of the division
    2
-   >>> 5 * 3 + 2  # result * divisor + remainder
+   >>> 5 * 3 + 2  # floored quotient * divisor + remainder
    17
 
 With Python, it is possible to use the ``**`` operator to calculate powers [#]_::
@@ -227,12 +234,12 @@ This only works with two literals though, not with variables or expressions::
    >>> prefix 'thon'  # can't concatenate a variable and a string literal
      File "<stdin>", line 1
        prefix 'thon'
-                   ^
+              ^^^^^^
    SyntaxError: invalid syntax
    >>> ('un' * 3) 'ium'
      File "<stdin>", line 1
        ('un' * 3) 'ium'
-                      ^
+                  ^^^^^
    SyntaxError: invalid syntax
 
 If you want to concatenate variables or a variable and a literal, use ``+``::
@@ -262,20 +269,12 @@ Indices may also be negative numbers, to start counting from the right::
 Note that since -0 is the same as 0, negative indices start from -1.
 
 In addition to indexing, *slicing* is also supported.  While indexing is used
-to obtain individual characters, *slicing* allows you to obtain substring::
+to obtain individual characters, *slicing* allows you to obtain a substring::
 
    >>> word[0:2]  # characters from position 0 (included) to 2 (excluded)
    'Py'
    >>> word[2:5]  # characters from position 2 (included) to 5 (excluded)
    'tho'
-
-Note how the start is always included, and the end always excluded.  This
-makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
-
-   >>> word[:2] + word[2:]
-   'Python'
-   >>> word[:4] + word[4:]
-   'Python'
 
 Slice indices have useful defaults; an omitted first index defaults to zero, an
 omitted second index defaults to the size of the string being sliced. ::
@@ -286,6 +285,14 @@ omitted second index defaults to the size of the string being sliced. ::
    'on'
    >>> word[-2:]  # characters from the second-last (included) to the end
    'on'
+
+Note how the start is always included, and the end always excluded.  This
+makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
+
+   >>> word[:2] + word[2:]
+   'Python'
+   >>> word[:4] + word[4:]
+   'Python'
 
 One way to remember how slices work is to think of the indices as pointing
 *between* characters, with the left edge of the first character numbered 0.
@@ -394,7 +401,8 @@ indexed and sliced::
    [9, 16, 25]
 
 All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a new (shallow) copy of the list::
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
 
    >>> squares[:]
    [1, 4, 9, 16, 25]

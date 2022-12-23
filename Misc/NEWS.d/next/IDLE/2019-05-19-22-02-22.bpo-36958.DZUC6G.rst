@@ -1,2 +1,0 @@
-Print any argument other than None or int passed to SystemExit or
-sys.exit().

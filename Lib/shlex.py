@@ -55,7 +55,7 @@ class shlex:
             punctuation_chars = ''
         elif punctuation_chars is True:
             punctuation_chars = '();<>|&'
-        self.punctuation_chars = punctuation_chars
+        self._punctuation_chars = punctuation_chars
         if punctuation_chars:
             # _pushback_chars is a push back queue used by lookahead logic
             self._pushback_chars = deque()
@@ -64,6 +64,10 @@ class shlex:
             #remove any punctuation chars from wordchars
             t = self.wordchars.maketrans(dict.fromkeys(punctuation_chars))
             self.wordchars = self.wordchars.translate(t)
+
+    @property
+    def punctuation_chars(self):
+        return self._punctuation_chars
 
     def push_token(self, tok):
         "Push a token onto the stack popped by the get_token method"
@@ -246,7 +250,8 @@ class shlex:
                     escapedstate = 'a'
                     self.state = nextchar
                 elif (nextchar in self.wordchars or nextchar in self.quotes
-                      or self.whitespace_split):
+                      or (self.whitespace_split and
+                          nextchar not in self.punctuation_chars)):
                     self.token += nextchar
                 else:
                     if self.punctuation_chars:
@@ -298,6 +303,9 @@ class shlex:
         return token
 
 def split(s, comments=False, posix=True):
+    """Split the string *s* using shell-like syntax."""
+    if s is None:
+        raise ValueError("s argument must not be None")
     lex = shlex(s, posix=posix)
     lex.whitespace_split = True
     if not comments:
@@ -325,10 +333,7 @@ def quote(s):
 
 
 def _print_tokens(lexer):
-    while 1:
-        tt = lexer.get_token()
-        if not tt:
-            break
+    while tt := lexer.get_token():
         print("Token: " + repr(tt))
 
 if __name__ == '__main__':

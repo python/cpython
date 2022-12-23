@@ -52,6 +52,7 @@ __all__ = ['Trace', 'CoverageResults']
 import linecache
 import os
 import sys
+import sysconfig
 import token
 import tokenize
 import inspect
@@ -115,7 +116,7 @@ class _Ignore:
         return 0
 
 def _modname(path):
-    """Return a plausible module name for the patch."""
+    """Return a plausible module name for the path."""
 
     base = os.path.basename(path)
     filename, ext = os.path.splitext(base)
@@ -171,7 +172,7 @@ class CoverageResults:
             try:
                 with open(self.infile, 'rb') as f:
                     counts, calledfuncs, callers = pickle.load(f)
-                self.update(self.__class__(counts, calledfuncs, callers))
+                self.update(self.__class__(counts, calledfuncs, callers=callers))
             except (OSError, EOFError, ValueError) as err:
                 print(("Skipping counts file %r: %s"
                                       % (self.infile, err)), file=sys.stderr)
@@ -286,8 +287,9 @@ class CoverageResults:
         if self.outfile:
             # try and store counts and module info into self.outfile
             try:
-                pickle.dump((self.counts, self.calledfuncs, self.callers),
-                            open(self.outfile, 'wb'), 1)
+                with open(self.outfile, 'wb') as f:
+                    pickle.dump((self.counts, self.calledfuncs, self.callers),
+                                f, 1)
             except OSError as err:
                 print("Can't save counts files because %s" % err, file=sys.stderr)
 
@@ -451,22 +453,7 @@ class Trace:
                 sys.settrace(None)
                 threading.settrace(None)
 
-    def runfunc(*args, **kw):
-        if len(args) >= 2:
-            self, func, *args = args
-        elif not args:
-            raise TypeError("descriptor 'runfunc' of 'Trace' object "
-                            "needs an argument")
-        elif 'func' in kw:
-            func = kw.pop('func')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'func' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('runfunc expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
+    def runfunc(self, func, /, *args, **kw):
         result = None
         if not self.donothing:
             sys.settrace(self.globaltrace)
@@ -476,7 +463,6 @@ class Trace:
             if not self.donothing:
                 sys.settrace(None)
         return result
-    runfunc.__text_signature__ = '($self, func, /, *args, **kw)'
 
     def file_module_function_of(self, frame):
         code = frame.f_code
@@ -676,9 +662,8 @@ def main():
     opts = parser.parse_args()
 
     if opts.ignore_dir:
-        rel_path = 'lib', 'python{0.major}.{0.minor}'.format(sys.version_info)
-        _prefix = os.path.join(sys.base_prefix, *rel_path)
-        _exec_prefix = os.path.join(sys.base_exec_prefix, *rel_path)
+        _prefix = sysconfig.get_path("stdlib")
+        _exec_prefix = sysconfig.get_path("platstdlib")
 
     def parse_ignore_dir(s):
         s = os.path.expanduser(os.path.expandvars(s))
@@ -731,7 +716,7 @@ def main():
             sys.argv = [opts.progname, *opts.arguments]
             sys.path[0] = os.path.dirname(opts.progname)
 
-            with open(opts.progname) as fp:
+            with open(opts.progname, 'rb') as fp:
                 code = compile(fp.read(), opts.progname, 'exec')
             # try to emulate __main__ namespace as much as possible
             globs = {

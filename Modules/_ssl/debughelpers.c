@@ -1,5 +1,12 @@
 /* Debug helpers */
 
+#ifndef SSL3_MT_CHANGE_CIPHER_SPEC
+/* Dummy message type for handling CCS like a normal handshake message
+ * not defined in OpenSSL 1.0.2
+ */
+#define SSL3_MT_CHANGE_CIPHER_SPEC              0x0101
+#endif
+
 static void
 _PySSL_msg_callback(int write_p, int version, int content_type,
                     const void *buf, size_t len, SSL *ssl, void *arg)
@@ -14,8 +21,9 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
     threadstate = PyGILState_Ensure();
 
     ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
-    assert(PySSLSocket_Check(ssl_obj));
+    assert(Py_IS_TYPE(ssl_obj, get_state_sock(ssl_obj)->PySSLSocket_Type));
     if (ssl_obj->ctx->msg_cb == NULL) {
+        PyGILState_Release(threadstate);
         return;
     }
 
@@ -41,11 +49,13 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
       case SSL3_RT_HANDSHAKE:
         msg_type = (int)cbuf[0];
         break;
+#ifdef SSL3_RT_HEADER
       case SSL3_RT_HEADER:
         /* frame header encodes version in bytes 1..2 */
         version = cbuf[1] << 8 | cbuf[2];
         msg_type = (int)cbuf[0];
         break;
+#endif
 #ifdef SSL3_RT_INNER_CONTENT_TYPE
       case SSL3_RT_INNER_CONTENT_TYPE:
         msg_type = (int)cbuf[0];
@@ -77,8 +87,7 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
 static PyObject *
 _PySSLContext_get_msg_callback(PySSLContext *self, void *c) {
     if (self->msg_cb != NULL) {
-        Py_INCREF(self->msg_cb);
-        return self->msg_cb;
+        return Py_NewRef(self->msg_cb);
     } else {
         Py_RETURN_NONE;
     }
@@ -97,14 +106,11 @@ _PySSLContext_set_msg_callback(PySSLContext *self, PyObject *arg, void *c) {
                             "not a callable object");
             return -1;
         }
-        Py_INCREF(arg);
-        self->msg_cb = arg;
+        self->msg_cb = Py_NewRef(arg);
         SSL_CTX_set_msg_callback(self->ctx, _PySSL_msg_callback);
     }
     return 0;
 }
-
-#ifdef HAVE_OPENSSL_KEYLOG
 
 static void
 _PySSL_keylog_callback(const SSL *ssl, const char *line)
@@ -115,6 +121,12 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
     static PyThread_type_lock *lock = NULL;
 
     threadstate = PyGILState_Ensure();
+
+    ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
+    assert(Py_IS_TYPE(ssl_obj, get_state_sock(ssl_obj)->PySSLSocket_Type));
+    if (ssl_obj->ctx->keylog_bio == NULL) {
+        return;
+    }
 
     /* Allocate a static lock to synchronize writes to keylog file.
      * The lock is neither released on exit nor on fork(). The lock is
@@ -130,12 +142,6 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
                         &ssl_obj->exc_tb);
             return;
         }
-    }
-
-    ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
-    assert(PySSLSocket_Check(ssl_obj));
-    if (ssl_obj->ctx->keylog_bio == NULL) {
-        return;
     }
 
     PySSL_BEGIN_ALLOW_THREADS
@@ -158,8 +164,7 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
 static PyObject *
 _PySSLContext_get_keylog_filename(PySSLContext *self, void *c) {
     if (self->keylog_filename != NULL) {
-        Py_INCREF(self->keylog_filename);
-        return self->keylog_filename;
+        return Py_NewRef(self->keylog_filename);
     } else {
         Py_RETURN_NONE;
     }
@@ -191,12 +196,11 @@ _PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
 
     self->keylog_bio = BIO_new_fp(fp, BIO_CLOSE | BIO_FP_TEXT);
     if (self->keylog_bio == NULL) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
                         "Can't malloc memory for keylog file");
         return -1;
     }
-    Py_INCREF(arg);
-    self->keylog_filename = arg;
+    self->keylog_filename = Py_NewRef(arg);
 
     /* Write a header for seekable, empty files (this excludes pipes). */
     PySSL_BEGIN_ALLOW_THREADS
@@ -209,5 +213,3 @@ _PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
     SSL_CTX_set_keylog_callback(self->ctx, _PySSL_keylog_callback);
     return 0;
 }
-
-#endif

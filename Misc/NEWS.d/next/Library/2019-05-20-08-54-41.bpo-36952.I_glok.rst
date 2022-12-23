@@ -1,5 +1,0 @@
-Starting with Python 3.3, importing ABCs from :mod:`collections` is
-deprecated, and import should be done from :mod:`collections.abc`. Still
-being able to import from :mod:`collections` was marked for removal in 3.8,
-but has been delayed to 3.9; documentation and ``DeprecationWarning``
-clarified.

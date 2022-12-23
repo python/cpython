@@ -13,7 +13,7 @@ Functions:
     dump(object, file)
     dumps(object) -> string
     load(file) -> object
-    loads(string) -> object
+    loads(bytes) -> object
 
 Misc variables:
 
@@ -36,10 +36,16 @@ import io
 import codecs
 import _compat_pickle
 
-from _pickle import PickleBuffer
-
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
-           "Unpickler", "dump", "dumps", "load", "loads", "PickleBuffer"]
+           "Unpickler", "dump", "dumps", "load", "loads"]
+
+try:
+    from _pickle import PickleBuffer
+    __all__.append("PickleBuffer")
+    _HAVE_PICKLE_BUFFER = True
+except ImportError:
+    _HAVE_PICKLE_BUFFER = False
+
 
 # Shortcut for use in isinstance testing
 bytes_types = (bytes, bytearray)
@@ -333,8 +339,10 @@ def whichmodule(obj, name):
         return module_name
     # Protect the iteration by using a list copy of sys.modules against dynamic
     # modules that trigger imports of other modules upon calls to getattr.
-    for module_name, module in list(sys.modules.items()):
-        if module_name == '__main__' or module is None:
+    for module_name, module in sys.modules.copy().items():
+        if (module_name == '__main__'
+            or module_name == '__mp_main__'  # bpo-42406
+            or module is None):
             continue
         try:
             if _getattribute(module, name)[0] is obj:
@@ -403,9 +411,9 @@ class _Pickler:
         """This takes a binary file for writing a pickle data stream.
 
         The optional *protocol* argument tells the pickler to use the
-        given protocol; supported protocols are 0, 1, 2, 3 and 4.  The
-        default protocol is 4. It was introduced in Python 3.4, it is
-        incompatible with previous versions.
+        given protocol; supported protocols are 0, 1, 2, 3, 4 and 5.
+        The default protocol is 4. It was introduced in Python 3.4, and
+        is incompatible with previous versions.
 
         Specifying a negative protocol version selects the highest
         protocol version supported.  The higher the protocol used, the
@@ -611,7 +619,7 @@ class _Pickler:
                     "persistent IDs in protocol 0 must be ASCII strings")
 
     def save_reduce(self, func, args, state=None, listitems=None,
-                    dictitems=None, state_setter=None, obj=None):
+                    dictitems=None, state_setter=None, *, obj=None):
         # This API is called by some subclasses
 
         if not isinstance(args, tuple):
@@ -810,33 +818,35 @@ class _Pickler:
             self._write_large_bytes(BYTEARRAY8 + pack("<Q", n), obj)
         else:
             self.write(BYTEARRAY8 + pack("<Q", n) + obj)
+        self.memoize(obj)
     dispatch[bytearray] = save_bytearray
 
-    def save_picklebuffer(self, obj):
-        if self.proto < 5:
-            raise PicklingError("PickleBuffer can only pickled with "
-                                "protocol >= 5")
-        with obj.raw() as m:
-            if not m.contiguous:
-                raise PicklingError("PickleBuffer can not be pickled when "
-                                    "pointing to a non-contiguous buffer")
-            in_band = True
-            if self._buffer_callback is not None:
-                in_band = bool(self._buffer_callback(obj))
-            if in_band:
-                # Write data in-band
-                # XXX The C implementation avoids a copy here
-                if m.readonly:
-                    self.save_bytes(m.tobytes())
+    if _HAVE_PICKLE_BUFFER:
+        def save_picklebuffer(self, obj):
+            if self.proto < 5:
+                raise PicklingError("PickleBuffer can only pickled with "
+                                    "protocol >= 5")
+            with obj.raw() as m:
+                if not m.contiguous:
+                    raise PicklingError("PickleBuffer can not be pickled when "
+                                        "pointing to a non-contiguous buffer")
+                in_band = True
+                if self._buffer_callback is not None:
+                    in_band = bool(self._buffer_callback(obj))
+                if in_band:
+                    # Write data in-band
+                    # XXX The C implementation avoids a copy here
+                    if m.readonly:
+                        self.save_bytes(m.tobytes())
+                    else:
+                        self.save_bytearray(m.tobytes())
                 else:
-                    self.save_bytearray(m.tobytes())
-            else:
-                # Write data out-of-band
-                self.write(NEXT_BUFFER)
-                if m.readonly:
-                    self.write(READONLY_BUFFER)
+                    # Write data out-of-band
+                    self.write(NEXT_BUFFER)
+                    if m.readonly:
+                        self.write(READONLY_BUFFER)
 
-    dispatch[PickleBuffer] = save_picklebuffer
+        dispatch[PickleBuffer] = save_picklebuffer
 
     def save_str(self, obj):
         if self.bin:
@@ -1163,7 +1173,7 @@ class _Unpickler:
         used in Python 3.  The *encoding* and *errors* tell pickle how
         to decode 8-bit string instances pickled by Python 2; these
         default to 'ASCII' and 'strict', respectively. *encoding* can be
-        'bytes' to read theses 8-bit string instances as bytes objects.
+        'bytes' to read these 8-bit string instances as bytes objects.
         """
         self._buffers = iter(buffers) if buffers is not None else None
         self._file_readline = file.readline
@@ -1597,17 +1607,29 @@ class _Unpickler:
 
     def load_get(self):
         i = int(self.readline()[:-1])
-        self.append(self.memo[i])
+        try:
+            self.append(self.memo[i])
+        except KeyError:
+            msg = f'Memo value not found at index {i}'
+            raise UnpicklingError(msg) from None
     dispatch[GET[0]] = load_get
 
     def load_binget(self):
         i = self.read(1)[0]
-        self.append(self.memo[i])
+        try:
+            self.append(self.memo[i])
+        except KeyError as exc:
+            msg = f'Memo value not found at index {i}'
+            raise UnpicklingError(msg) from None
     dispatch[BINGET[0]] = load_binget
 
     def load_long_binget(self):
         i, = unpack('<I', self.read(4))
-        self.append(self.memo[i])
+        try:
+            self.append(self.memo[i])
+        except KeyError as exc:
+            msg = f'Memo value not found at index {i}'
+            raise UnpicklingError(msg) from None
     dispatch[LONG_BINGET[0]] = load_long_binget
 
     def load_put(self):
@@ -1742,7 +1764,7 @@ def _load(file, *, fix_imports=True, encoding="ASCII", errors="strict",
     return _Unpickler(file, fix_imports=fix_imports, buffers=buffers,
                      encoding=encoding, errors=errors).load()
 
-def _loads(s, *, fix_imports=True, encoding="ASCII", errors="strict",
+def _loads(s, /, *, fix_imports=True, encoding="ASCII", errors="strict",
            buffers=None):
     if isinstance(s, str):
         raise TypeError("Can't load pickle from unicode string")

@@ -1,2 +1,0 @@
-``cp65001`` encoding (Windows code page 65001) becomes an alias to ``utf_8``
-encoding.

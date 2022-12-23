@@ -1,3 +1,0 @@
-Expand object.__doc__ (docstring) to make it clearer.
-Modify pydoc.py so that help(object) lists object methods
-(for other classes, help omits methods of the object base class.)

@@ -2,6 +2,8 @@
     unicode_format.h -- implementation of str.format().
 */
 
+#include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
+
 /************************************************************************/
 /***********   Global data structures and forward declarations  *********/
 /************************************************************************/
@@ -440,8 +442,13 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
 
         /* look up in args */
         obj = PySequence_GetItem(args, index);
-        if (obj == NULL)
-            goto error;
+        if (obj == NULL) {
+            PyErr_Format(PyExc_IndexError,
+                         "Replacement index %zd out of range for positional "
+                         "args tuple",
+                         index);
+             goto error;
+        }
     }
 
     /* iterate over the rest of the field_name */
@@ -466,8 +473,7 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
             goto error;
 
         /* assign to obj */
-        Py_DECREF(obj);
-        obj = tmp;
+        Py_SETREF(obj, tmp);
     }
     /* end of iterator, this is the non-error case */
     if (ok == 1)
@@ -818,12 +824,11 @@ output_markup(SubString *field_name, SubString *format_spec,
             goto done;
 
         /* do the assignment, transferring ownership: fieldobj = tmp */
-        Py_DECREF(fieldobj);
-        fieldobj = tmp;
+        Py_SETREF(fieldobj, tmp);
         tmp = NULL;
     }
 
-    /* if needed, recurively compute the format_spec */
+    /* if needed, recursively compute the format_spec */
     if (format_spec_needs_expanding) {
         tmp = build_string(format_spec, args, kwargs, recursion_depth-1,
                            auto_number);
@@ -978,7 +983,7 @@ static void
 formatteriter_dealloc(formatteriterobject *it)
 {
     Py_XDECREF(it->str);
-    PyObject_FREE(it);
+    PyObject_Free(it);
 }
 
 /* returns a tuple:
@@ -1035,8 +1040,7 @@ formatteriter_next(formatteriterobject *it)
            otherwise create a one length string with the conversion
            character */
         if (conversion == '\0') {
-            conversion_str = Py_None;
-            Py_INCREF(conversion_str);
+            conversion_str = Py_NewRef(Py_None);
         }
         else
             conversion_str = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
@@ -1114,8 +1118,7 @@ formatter_parser(PyObject *ignored, PyObject *self)
         return NULL;
 
     /* take ownership, give the object to the iterator */
-    Py_INCREF(self);
-    it->str = self;
+    it->str = Py_NewRef(self);
 
     /* initialize the contained MarkupIterator */
     MarkupIterator_init(&it->it_markup, (PyObject*)self, 0, PyUnicode_GET_LENGTH(self));
@@ -1142,7 +1145,7 @@ static void
 fieldnameiter_dealloc(fieldnameiterobject *it)
 {
     Py_XDECREF(it->str);
-    PyObject_FREE(it);
+    PyObject_Free(it);
 }
 
 /* returns a tuple:
@@ -1258,8 +1261,7 @@ formatter_field_name_split(PyObject *ignored, PyObject *self)
 
     /* take ownership, give the object to the iterator.  this is
        just to keep the field_name alive */
-    Py_INCREF(self);
-    it->str = self;
+    it->str = Py_NewRef(self);
 
     /* Pass in auto_number = NULL. We'll return an empty string for
        first_obj in that case. */

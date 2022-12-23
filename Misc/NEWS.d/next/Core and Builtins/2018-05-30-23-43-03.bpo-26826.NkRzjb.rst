@@ -1,1 +1,0 @@
-Expose :func:`copy_file_range` as a low level API in the :mod:`os` module.

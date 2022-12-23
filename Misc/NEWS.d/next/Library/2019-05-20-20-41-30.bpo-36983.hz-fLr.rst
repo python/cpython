@@ -1,2 +1,0 @@
-Add missing names to ``typing.__all__``: ``ChainMap``, ``ForwardRef``,
-``OrderedDict`` - by Anthony Sottile.

@@ -1,2 +1,0 @@
-Avoid caching attributes of classes which type defines mro() to avoid a hard
-cache invalidation problem.
