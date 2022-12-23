@@ -30,6 +30,7 @@ SE (Subnegotiation End), NOP (No Operation), DM (Data Mark), BRK (Break), IP
 (Interrupt process), AO (Abort output), AYT (Are You There), EC (Erase
 Character), EL (Erase Line), GA (Go Ahead), SB (Subnegotiation Begin).
 
+.. include:: ../includes/wasm-notavail.rst
 
 .. class:: Telnet(host=None, port=0[, timeout])
 

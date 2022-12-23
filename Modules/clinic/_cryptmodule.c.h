@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(crypt_crypt__doc__,
 "crypt($module, word, salt, /)\n"
 "--\n"
@@ -60,4 +66,4 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6f61ab29e361f9d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=235ccef9211184f4 input=a9049054013a1b77]*/

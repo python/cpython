@@ -52,10 +52,10 @@ class Timeout:
             self._timeout_handler = None
         else:
             loop = events.get_running_loop()
-            self._timeout_handler = loop.call_at(
-                when,
-                self._on_timeout,
-            )
+            if when <= loop.time():
+                self._timeout_handler = loop.call_soon(self._on_timeout)
+            else:
+                self._timeout_handler = loop.call_at(when, self._on_timeout)
 
     def expired(self) -> bool:
         """Is timeout expired during execution?"""

@@ -1,7 +1,7 @@
 Quick Start Guide
 -----------------
 
-1.  Install Microsoft Visual Studio 2017 with Python workload and
+1.  Install Microsoft Visual Studio 2017 or later with Python workload and
     Python native development component.
 1a. Optionally install Python 3.6 or later.  If not installed,
     get_externals.bat (via build.bat) will download and use Python via
@@ -147,6 +147,7 @@ _testcapi
 _testconsole
 _testimportmultiple
 _testmultiphase
+_testsinglephase
 _tkinter
 pyexpat
 select
@@ -168,7 +169,7 @@ _lzma
     Homepage:
         https://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.1k of the OpenSSL secure sockets
+    Python wrapper for version 1.1.1q of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -187,7 +188,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.38.4, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.39.4, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 _tkinter
