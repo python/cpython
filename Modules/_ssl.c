@@ -65,7 +65,31 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
+#if defined(HAVE_DLFCN_H)
+#include <dlfcn.h>
+#elif defined(MS_WIN32) || defined(MS_WIN64)
+#define WINDOWS_LEAN_AND_MEAN
+#include "windows.h"
 
+#define HAVE_DLFCN_H
+
+typedef struct {
+    char dli_fname[MAX_PATH];
+} Dl_info;
+
+static int dladdr(const void *addr, Dl_info *info)
+{
+    HMODULE hmodule;
+    if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCSTR)addr, &hmodule)) {
+        if (GetModuleFileName(hmodule, info->dli_fname, sizeof(info->dli_fname))) {
+            info->dli_fname[sizeof(info->dli_fname)-1] = '\0';
+        }
+    }
+    return 1;
+}
+#endif
 
 struct py_ssl_error_code {
     const char *mnemonic;
@@ -910,6 +934,17 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 }
 
 /* SSL object methods */
+
+/*[clinic input]
+_ssl._SSLSocket.get_internal_addr
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_get_internal_addr_impl(PySSLSocket *self)
+/*[clinic end generated code: output=1f4d2afe94d5cb67 input=48e3adf2ace2e50d]*/
+{
+    return Py_BuildValue(_Py_PARSE_INTPTR, (intptr_t)self->ssl);
+}
 
 /*[clinic input]
 _ssl._SSLSocket.do_handshake
@@ -2755,6 +2790,53 @@ _ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
 #endif
 }
 
+/*[clinic input]
+_ssl._SSLSocket.export_keying_material
+    label: Py_buffer(accept={buffer, str})
+    material_len: int
+    context: Py_buffer(accept={buffer, str, NoneType})
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_export_keying_material_impl(PySSLSocket *self,
+                                            Py_buffer *label,
+                                            int material_len,
+                                            Py_buffer *context)
+/*[clinic end generated code: output=17b975255ccb2984 input=57daff6c33809e2e]*/
+{
+    PyObject *out = NULL;
+    unsigned char *material;
+
+    if (material_len < 1) {
+        PyErr_SetString(PyExc_ValueError, "material_len must be positive");
+        return NULL;
+    }
+
+    if (!SSL_is_init_finished(self->ssl)) {
+        /* handshake not finished */
+        Py_RETURN_NONE;
+    }
+
+    out = PyBytes_FromStringAndSize(NULL, material_len);
+    if (out == NULL)
+        goto error;
+
+    material = (unsigned char *)PyBytes_AS_STRING(out);
+
+    if (!SSL_export_keying_material(self->ssl,
+                                    material, material_len,
+                                    label->buf, label->len,
+                                    context->buf, context->len,
+                                    context->buf != NULL)) {
+        Py_CLEAR(out);
+        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        goto error;
+    }
+
+error:
+    return out;
+}
+
 static SSL_SESSION*
 _ssl_session_dup(SSL_SESSION *session) {
     SSL_SESSION *newsession = NULL;
@@ -2906,6 +2988,7 @@ static PyGetSetDef ssl_getsetlist[] = {
 };
 
 static PyMethodDef PySSLMethods[] = {
+    _SSL__SSLSOCKET_GET_INTERNAL_ADDR_METHODDEF
     _SSL__SSLSOCKET_DO_HANDSHAKE_METHODDEF
     _SSL__SSLSOCKET_WRITE_METHODDEF
     _SSL__SSLSOCKET_READ_METHODDEF
@@ -2921,6 +3004,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF
     _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF
     _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
+    _SSL__SSLSOCKET_EXPORT_KEYING_MATERIAL_METHODDEF
     {NULL, NULL}
 };
 
@@ -5791,6 +5875,16 @@ sslmodule_init_constants(PyObject *m)
     PyModule_AddIntConstant(m, "VERIFY_X509_TRUSTED_FIRST",
                             X509_V_FLAG_TRUSTED_FIRST);
 
+#ifdef HAVE_DLFCN_H
+    {
+        Dl_info info;
+        if (dladdr(OpenSSL_version, &info))
+            PyModule_AddStringConstant(m, "CRYPTO_DLL_PATH", info.dli_fname);
+        if (dladdr(SSL_version, &info))
+            PyModule_AddStringConstant(m, "SSL_DLL_PATH", info.dli_fname);
+    }
+#endif
+
 #ifdef X509_V_FLAG_PARTIAL_CHAIN
     PyModule_AddIntConstant(m, "VERIFY_X509_PARTIAL_CHAIN",
                             X509_V_FLAG_PARTIAL_CHAIN);
@@ -6099,6 +6193,22 @@ sslmodule_init_versioninfo(PyObject *m)
 
     r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
     if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
+        return -1;
+
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_CFLAGS));
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_CFLAGS", r))
+        return -1;
+
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_BUILT_ON));
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_BUILT_ON", r))
+        return -1;
+
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_PLATFORM));
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_PLATFORM", r))
+        return -1;
+
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_DIR));
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_DIR", r))
         return -1;
 
     libver = OPENSSL_VERSION_NUMBER;

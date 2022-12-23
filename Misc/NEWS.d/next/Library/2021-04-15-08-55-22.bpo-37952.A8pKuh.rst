@@ -1,0 +1,1 @@
+Added support for the RFC5705 :func:`ssl.SSLSocket.export_keying_material`
