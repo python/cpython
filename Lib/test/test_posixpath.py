@@ -244,6 +244,9 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os.lstat = save_lstat
 
+    def test_isjunction(self):
+        self.assertFalse(posixpath.isjunction(ABSTFN))
+
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
         self.assertEqual(posixpath.expanduser(b"foo"), b"foo")

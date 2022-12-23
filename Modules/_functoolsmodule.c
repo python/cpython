@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dict.h"          // _PyDict_Pop_KnownHash()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
@@ -1242,8 +1243,7 @@ lru_cache_clear_list(lru_list_elem *link)
 {
     while (link != NULL) {
         lru_list_elem *next = link->next;
-        Py_DECREF(link);
-        link = next;
+        Py_SETREF(link, next);
     }
 }
 

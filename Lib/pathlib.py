@@ -624,7 +624,7 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
-    def relative_to(self, *other, walk_up=False):
+    def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
         related to the other path), raise ValueError.
@@ -632,57 +632,35 @@ class PurePath(object):
         The *walk_up* parameter controls whether `..` may be used to resolve
         the path.
         """
-        # For the purpose of this method, drive and root are considered
-        # separate parts, i.e.:
-        #   Path('c:/').relative_to('c:')  gives Path('/')
-        #   Path('c:/').relative_to('/')   raise ValueError
-        if not other:
-            raise TypeError("need at least one argument")
-        parts = self._parts
-        drv = self._drv
-        root = self._root
-        if root:
-            abs_parts = [drv, root] + parts[1:]
-        else:
-            abs_parts = parts
-        other_drv, other_root, other_parts = self._parse_args(other)
-        if other_root:
-            other_abs_parts = [other_drv, other_root] + other_parts[1:]
-        else:
-            other_abs_parts = other_parts
-        num_parts = len(other_abs_parts)
-        casefold = self._flavour.casefold_parts
-        num_common_parts = 0
-        for part, other_part in zip(casefold(abs_parts), casefold(other_abs_parts)):
-            if part != other_part:
+        if _deprecated:
+            msg = ("support for supplying more than one positional argument "
+                   "to pathlib.PurePath.relative_to() is deprecated and "
+                   "scheduled for removal in Python {remove}")
+            warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
+                                 remove=(3, 14))
+        path_cls = type(self)
+        other = path_cls(other, *_deprecated)
+        for step, path in enumerate([other] + list(other.parents)):
+            if self.is_relative_to(path):
                 break
-            num_common_parts += 1
-        if walk_up:
-            failure = root != other_root
-            if drv or other_drv:
-                failure = casefold([drv]) != casefold([other_drv]) or (failure and num_parts > 1)
-            error_message = "{!r} is not on the same drive as {!r}"
-            up_parts = (num_parts-num_common_parts)*['..']
         else:
-            failure = (root or drv) if num_parts == 0 else num_common_parts != num_parts
-            error_message = "{!r} is not in the subpath of {!r}"
-            up_parts = []
-        error_message += " OR one path is relative and the other is absolute."
-        if failure:
-            formatted = self._format_parsed_parts(other_drv, other_root, other_parts)
-            raise ValueError(error_message.format(str(self), str(formatted)))
-        path_parts = up_parts + abs_parts[num_common_parts:]
-        new_root = root if num_common_parts == 1 else ''
-        return self._from_parsed_parts('', new_root, path_parts)
+            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
+        if step and not walk_up:
+            raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+        parts = ('..',) * step + self.parts[len(path.parts):]
+        return path_cls(*parts)
 
-    def is_relative_to(self, *other):
+    def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
         """
-        try:
-            self.relative_to(*other)
-            return True
-        except ValueError:
-            return False
+        if _deprecated:
+            msg = ("support for supplying more than one argument to "
+                   "pathlib.PurePath.is_relative_to() is deprecated and "
+                   "scheduled for removal in Python {remove}")
+            warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
+                                 msg, remove=(3, 14))
+        other = type(self)(other, *_deprecated)
+        return other == self or other in self.parents
 
     @property
     def parts(self):
@@ -1222,6 +1200,12 @@ class Path(PurePath):
         except ValueError:
             # Non-encodable path
             return False
+
+    def is_junction(self):
+        """
+        Whether this path is a junction.
+        """
+        return self._flavour.pathmod.isjunction(self)
 
     def is_block_device(self):
         """

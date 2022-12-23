@@ -16,6 +16,9 @@
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <pathcch.h>
+#  include <lmcons.h>             // UNLEN
+#  include "osdefs.h"             // SEP
+#  define HAVE_SYMLINK
 #endif
 
 #ifdef __VXWORKS__
@@ -152,6 +155,18 @@
 
 #  ifdef HAVE_SYMLINKAT
 #    define HAVE_SYMLINKAT_RUNTIME (symlinkat != NULL)
+#  endif
+
+#  ifdef HAVE_UTIMENSAT
+#    define HAVE_UTIMENSAT_RUNTIME (utimensat != NULL)
+#  endif
+
+#  ifdef HAVE_FUTIMENS
+#    define HAVE_FUTIMENS_RUNTIME (futimens != NULL)
+#  endif
+
+#  ifdef HAVE_PWRITEV
+#    define HAVE_PWRITEV_RUNTIME (pwritev != NULL)
 #  endif
 
 #endif
@@ -414,18 +429,7 @@ extern char        *ctermid_r(char *);
 #  ifdef HAVE_PROCESS_H
 #    include <process.h>
 #  endif
-#  ifndef IO_REPARSE_TAG_SYMLINK
-#    define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
-#  endif
-#  ifndef IO_REPARSE_TAG_MOUNT_POINT
-#    define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
-#  endif
-#  include "osdefs.h"             // SEP
 #  include <malloc.h>
-#  include <windows.h>
-#  include <shellapi.h>           // ShellExecute()
-#  include <lmcons.h>             // UNLEN
-#  define HAVE_SYMLINK
 #endif /* _MSC_VER */
 
 #ifndef MAXPATHLEN
@@ -491,9 +495,11 @@ extern char        *ctermid_r(char *);
 #ifdef MS_WINDOWS
 #  define INITFUNC PyInit_nt
 #  define MODNAME "nt"
+#  define MODNAME_OBJ &_Py_ID(nt)
 #else
 #  define INITFUNC PyInit_posix
 #  define MODNAME "posix"
+#  define MODNAME_OBJ &_Py_ID(posix)
 #endif
 
 #if defined(__sun)
@@ -970,6 +976,7 @@ typedef struct {
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
     PyObject *SchedParamType;
 #endif
+    newfunc statresult_new_orig;
     PyObject *StatResultType;
     PyObject *StatVFSResultType;
     PyObject *TerminalSizeType;
@@ -1190,8 +1197,7 @@ path_converter(PyObject *o, void *p)
         }
 
         /* still owns a reference to the original object */
-        Py_DECREF(o);
-        o = res;
+        Py_SETREF(o, res);
     }
 
     if (is_unicode) {
@@ -2222,13 +2228,25 @@ static PyStructSequence_Desc waitid_result_desc = {
     5
 };
 #endif
-static newfunc structseq_new;
 
 static PyObject *
 statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyStructSequence *result;
     int i;
+
+    // ht_module doesn't get set in PyStructSequence_NewType(),
+    // so we can't use PyType_GetModule().
+    PyObject *mod = PyImport_GetModule(MODNAME_OBJ);
+    if (mod == NULL) {
+        return NULL;
+    }
+    _posixstate *state = get_posix_state(mod);
+    Py_DECREF(mod);
+    if (state == NULL) {
+        return NULL;
+    }
+#define structseq_new state->statresult_new_orig
 
     result = (PyStructSequence*)structseq_new(type, args, kwds);
     if (!result)
@@ -3155,6 +3173,9 @@ os.chmod
 
     mode: int
         Operating-system mode bitfield.
+        Be careful when using number literals for *mode*. The conventional UNIX notation for
+        numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in
+        Python.
 
     *
 
@@ -3180,7 +3201,7 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 static PyObject *
 os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
               int follow_symlinks)
-/*[clinic end generated code: output=5cf6a94915cc7bff input=989081551c00293b]*/
+/*[clinic end generated code: output=5cf6a94915cc7bff input=674a14bc998de09d]*/
 {
     int result;
 
@@ -3310,7 +3331,12 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 os.fchmod
 
     fd: int
+        The file descriptor of the file to be modified.
     mode: int
+        Operating-system mode bitfield.
+        Be careful when using number literals for *mode*. The conventional UNIX notation for
+        numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in
+        Python.
 
 Change the access permissions of the file given by file descriptor fd.
 
@@ -3319,7 +3345,7 @@ Equivalent to os.chmod(fd, mode).
 
 static PyObject *
 os_fchmod_impl(PyObject *module, int fd, int mode)
-/*[clinic end generated code: output=afd9bc05b4e426b3 input=8ab11975ca01ee5b]*/
+/*[clinic end generated code: output=afd9bc05b4e426b3 input=b5594618bbbc22df]*/
 {
     int res;
     int async_err = 0;
@@ -4025,14 +4051,12 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
                 Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
             }
             if (v == NULL) {
-                Py_DECREF(list);
-                list = NULL;
+                Py_SETREF(list, NULL);
                 break;
             }
             if (PyList_Append(list, v) != 0) {
                 Py_DECREF(v);
-                Py_DECREF(list);
-                list = NULL;
+                Py_SETREF(list, NULL);
                 break;
             }
             Py_DECREF(v);
@@ -6323,9 +6347,9 @@ os.posix_spawn
         A sequence of file action tuples.
     setpgroup: object = NULL
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
-    resetids: bool(accept={int}) = False
+    resetids: bool = False
         If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.
-    setsid: bool(accept={int}) = False
+    setsid: bool = False
         If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.
     setsigmask: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
@@ -6343,7 +6367,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *setpgroup, int resetids, int setsid,
                     PyObject *setsigmask, PyObject *setsigdef,
                     PyObject *scheduler)
-/*[clinic end generated code: output=14a1098c566bc675 input=8c6305619a00ad04]*/
+/*[clinic end generated code: output=14a1098c566bc675 input=808aed1090d84e33]*/
 {
     return py_posix_spawn(0, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -6369,9 +6393,9 @@ os.posix_spawnp
         A sequence of file action tuples.
     setpgroup: object = NULL
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
-    resetids: bool(accept={int}) = False
+    resetids: bool = False
         If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
-    setsid: bool(accept={int}) = False
+    setsid: bool = False
         If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.
     setsigmask: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
@@ -6389,7 +6413,7 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
                      PyObject *setpgroup, int resetids, int setsid,
                      PyObject *setsigmask, PyObject *setsigdef,
                      PyObject *scheduler)
-/*[clinic end generated code: output=7b9aaefe3031238d input=c1911043a22028da]*/
+/*[clinic end generated code: output=7b9aaefe3031238d input=9e89e616116752a1]*/
 {
     return py_posix_spawn(1, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -9050,11 +9074,6 @@ build_times_result(PyObject *module, double user, double system,
 }
 
 
-#ifndef MS_WINDOWS
-#define NEED_TICKS_PER_SECOND
-static long ticks_per_second = -1;
-#endif /* MS_WINDOWS */
-
 /*[clinic input]
 os.times
 
@@ -9090,20 +9109,22 @@ os_times_impl(PyObject *module)
 }
 #else /* MS_WINDOWS */
 {
-
-
     struct tms t;
     clock_t c;
     errno = 0;
     c = times(&t);
-    if (c == (clock_t) -1)
+    if (c == (clock_t) -1) {
         return posix_error();
+    }
+    assert(_PyRuntime.time.ticks_per_second_initialized);
+#define ticks_per_second _PyRuntime.time.ticks_per_second
     return build_times_result(module,
                          (double)t.tms_utime / ticks_per_second,
                          (double)t.tms_stime / ticks_per_second,
                          (double)t.tms_cutime / ticks_per_second,
                          (double)t.tms_cstime / ticks_per_second,
                          (double)c / ticks_per_second);
+#undef ticks_per_second
 }
 #endif /* MS_WINDOWS */
 #endif /* HAVE_TIMES */
@@ -9838,7 +9859,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
     do {
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__clang__)
 /* This entire function will be removed from the module dict when the API
  * is not available.
  */
@@ -9853,7 +9874,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
@@ -10480,7 +10501,7 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__clang__)
 /* This entire function will be removed from the module dict when the API
  * is not available.
  */
@@ -10496,7 +10517,7 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
         Py_END_ALLOW_THREADS
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
@@ -13120,15 +13141,13 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
                 PyObject *attribute = PyUnicode_DecodeFSDefaultAndSize(start,
                                                                  trace - start);
                 if (!attribute) {
-                    Py_DECREF(result);
-                    result = NULL;
+                    Py_SETREF(result, NULL);
                     goto exit;
                 }
                 error = PyList_Append(result, attribute);
                 Py_DECREF(attribute);
                 if (error) {
-                    Py_DECREF(result);
-                    result = NULL;
+                    Py_SETREF(result, NULL);
                     goto exit;
                 }
                 start = trace + 1;
@@ -13529,7 +13548,7 @@ os_get_blocking_impl(PyObject *module, int fd)
 /*[clinic input]
 os.set_blocking
     fd: int
-    blocking: bool(accept={int})
+    blocking: bool
     /
 
 Set the blocking mode of the specified file descriptor.
@@ -13540,7 +13559,7 @@ clear the O_NONBLOCK flag otherwise.
 
 static PyObject *
 os_set_blocking_impl(PyObject *module, int fd, int blocking)
-/*[clinic end generated code: output=384eb43aa0762a9d input=bf5c8efdc5860ff3]*/
+/*[clinic end generated code: output=384eb43aa0762a9d input=7e9dfc9b14804dd4]*/
 {
     int result;
 
@@ -13619,6 +13638,25 @@ os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class)
 #else
     /* POSIX without d_type */
     return DirEntry_test_mode(defining_class, self, 0, S_IFLNK);
+#endif
+}
+
+/*[clinic input]
+os.DirEntry.is_junction -> bool
+    defining_class: defining_class
+    /
+
+Return True if the entry is a junction; cached per entry.
+[clinic start generated code]*/
+
+static int
+os_DirEntry_is_junction_impl(DirEntry *self, PyTypeObject *defining_class)
+/*[clinic end generated code: output=7061a07b0ef2cd1f input=475cd36fb7d4723f]*/
+{
+#ifdef MS_WINDOWS
+    return self->win32_lstat.st_reparse_tag == IO_REPARSE_TAG_MOUNT_POINT;
+#else
+    return 0;
 #endif
 }
 
@@ -13916,6 +13954,7 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_IS_DIR_METHODDEF
     OS_DIRENTRY_IS_FILE_METHODDEF
     OS_DIRENTRY_IS_SYMLINK_METHODDEF
+    OS_DIRENTRY_IS_JUNCTION_METHODDEF
     OS_DIRENTRY_STAT_METHODDEF
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF
@@ -15893,7 +15932,7 @@ posixmodule_exec(PyObject *m)
     }
     PyModule_AddObject(m, "stat_result", Py_NewRef(StatResultType));
     state->StatResultType = StatResultType;
-    structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
+    state->statresult_new_orig = ((PyTypeObject *)StatResultType)->tp_new;
     ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
 
     statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
@@ -15903,15 +15942,6 @@ posixmodule_exec(PyObject *m)
     }
     PyModule_AddObject(m, "statvfs_result", Py_NewRef(StatVFSResultType));
     state->StatVFSResultType = StatVFSResultType;
-#ifdef NEED_TICKS_PER_SECOND
-#  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
-    ticks_per_second = sysconf(_SC_CLK_TCK);
-#  elif defined(HZ)
-    ticks_per_second = HZ;
-#  else
-    ticks_per_second = 60; /* magic fallback value; may be bogus */
-#  endif
-#endif
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
     sched_param_desc.name = MODNAME ".sched_param";

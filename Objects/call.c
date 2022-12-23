@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgsTstate()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_dict.h"          // _PyDict_FromItems()
 #include "pycore_object.h"        // _PyCFunctionWithKeywords_TrampolineCall()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()

@@ -21,7 +21,7 @@
 
 #include "Python.h"
 #include "marshal.h"              // PyMarshal_WriteLongToFile
-#include "structmember.h"         // PyMemberDef
+#include "structmember.h"         // for offsetof(), T_OBJECT
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 
@@ -460,491 +460,6 @@ test_lazy_hash_inheritance(PyObject* self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-
-/* Tests of PyLong_{As, From}{Unsigned,}Long(), and
-   PyLong_{As, From}{Unsigned,}LongLong().
-
-   Note that the meat of the test is contained in testcapi_long.h.
-   This is revolting, but delicate code duplication is worse:  "almost
-   exactly the same" code is needed to test long long, but the ubiquitous
-   dependence on type names makes it impossible to use a parameterized
-   function.  A giant macro would be even worse than this.  A C++ template
-   would be perfect.
-
-   The "report an error" functions are deliberately not part of the #include
-   file:  if the test fails, you can set a breakpoint in the appropriate
-   error function directly, and crawl back from there in the debugger.
-*/
-
-#define UNBIND(X)  Py_DECREF(X); (X) = NULL
-
-static PyObject *
-raise_test_long_error(const char* msg)
-{
-    return raiseTestError("test_long_api", msg);
-}
-
-#define TESTNAME        test_long_api_inner
-#define TYPENAME        long
-#define F_S_TO_PY       PyLong_FromLong
-#define F_PY_TO_S       PyLong_AsLong
-#define F_U_TO_PY       PyLong_FromUnsignedLong
-#define F_PY_TO_U       PyLong_AsUnsignedLong
-
-#include "testcapi_long.h"
-
-static PyObject *
-test_long_api(PyObject* self, PyObject *Py_UNUSED(ignored))
-{
-    return TESTNAME(raise_test_long_error);
-}
-
-#undef TESTNAME
-#undef TYPENAME
-#undef F_S_TO_PY
-#undef F_PY_TO_S
-#undef F_U_TO_PY
-#undef F_PY_TO_U
-
-static PyObject *
-raise_test_longlong_error(const char* msg)
-{
-    return raiseTestError("test_longlong_api", msg);
-}
-
-#define TESTNAME        test_longlong_api_inner
-#define TYPENAME        long long
-#define F_S_TO_PY       PyLong_FromLongLong
-#define F_PY_TO_S       PyLong_AsLongLong
-#define F_U_TO_PY       PyLong_FromUnsignedLongLong
-#define F_PY_TO_U       PyLong_AsUnsignedLongLong
-
-#include "testcapi_long.h"
-
-static PyObject *
-test_longlong_api(PyObject* self, PyObject *args)
-{
-    return TESTNAME(raise_test_longlong_error);
-}
-
-#undef TESTNAME
-#undef TYPENAME
-#undef F_S_TO_PY
-#undef F_PY_TO_S
-#undef F_U_TO_PY
-#undef F_PY_TO_U
-
-/* Test the PyLong_AsLongAndOverflow API. General conversion to PY_LONG
-   is tested by test_long_api_inner. This test will concentrate on proper
-   handling of overflow.
-*/
-
-static PyObject *
-test_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *num, *one, *temp;
-    long value;
-    int overflow;
-
-    /* Test that overflow is set properly for a large value. */
-    /* num is a number larger than LONG_MAX even on 64-bit platforms */
-    num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
-    if (num == NULL)
-        return NULL;
-    overflow = 1234;
-    value = PyLong_AsLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -1)
-        return raiseTestError("test_long_and_overflow",
-            "return value was not set to -1");
-    if (overflow != 1)
-        return raiseTestError("test_long_and_overflow",
-            "overflow was not set to 1");
-
-    /* Same again, with num = LONG_MAX + 1 */
-    num = PyLong_FromLong(LONG_MAX);
-    if (num == NULL)
-        return NULL;
-    one = PyLong_FromLong(1L);
-    if (one == NULL) {
-        Py_DECREF(num);
-        return NULL;
-    }
-    temp = PyNumber_Add(num, one);
-    Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
-    if (num == NULL)
-        return NULL;
-    overflow = 0;
-    value = PyLong_AsLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -1)
-        return raiseTestError("test_long_and_overflow",
-            "return value was not set to -1");
-    if (overflow != 1)
-        return raiseTestError("test_long_and_overflow",
-            "overflow was not set to 1");
-
-    /* Test that overflow is set properly for a large negative value. */
-    /* num is a number smaller than LONG_MIN even on 64-bit platforms */
-    num = PyLong_FromString("-FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
-    if (num == NULL)
-        return NULL;
-    overflow = 1234;
-    value = PyLong_AsLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -1)
-        return raiseTestError("test_long_and_overflow",
-            "return value was not set to -1");
-    if (overflow != -1)
-        return raiseTestError("test_long_and_overflow",
-            "overflow was not set to -1");
-
-    /* Same again, with num = LONG_MIN - 1 */
-    num = PyLong_FromLong(LONG_MIN);
-    if (num == NULL)
-        return NULL;
-    one = PyLong_FromLong(1L);
-    if (one == NULL) {
-        Py_DECREF(num);
-        return NULL;
-    }
-    temp = PyNumber_Subtract(num, one);
-    Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
-    if (num == NULL)
-        return NULL;
-    overflow = 0;
-    value = PyLong_AsLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -1)
-        return raiseTestError("test_long_and_overflow",
-            "return value was not set to -1");
-    if (overflow != -1)
-        return raiseTestError("test_long_and_overflow",
-            "overflow was not set to -1");
-
-    /* Test that overflow is cleared properly for small values. */
-    num = PyLong_FromString("FF", NULL, 16);
-    if (num == NULL)
-        return NULL;
-    overflow = 1234;
-    value = PyLong_AsLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != 0xFF)
-        return raiseTestError("test_long_and_overflow",
-            "expected return value 0xFF");
-    if (overflow != 0)
-        return raiseTestError("test_long_and_overflow",
-            "overflow was not cleared");
-
-    num = PyLong_FromString("-FF", NULL, 16);
-    if (num == NULL)
-        return NULL;
-    overflow = 0;
-    value = PyLong_AsLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -0xFF)
-        return raiseTestError("test_long_and_overflow",
-            "expected return value 0xFF");
-    if (overflow != 0)
-        return raiseTestError("test_long_and_overflow",
-            "overflow was set incorrectly");
-
-    num = PyLong_FromLong(LONG_MAX);
-    if (num == NULL)
-        return NULL;
-    overflow = 1234;
-    value = PyLong_AsLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != LONG_MAX)
-        return raiseTestError("test_long_and_overflow",
-            "expected return value LONG_MAX");
-    if (overflow != 0)
-        return raiseTestError("test_long_and_overflow",
-            "overflow was not cleared");
-
-    num = PyLong_FromLong(LONG_MIN);
-    if (num == NULL)
-        return NULL;
-    overflow = 0;
-    value = PyLong_AsLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != LONG_MIN)
-        return raiseTestError("test_long_and_overflow",
-            "expected return value LONG_MIN");
-    if (overflow != 0)
-        return raiseTestError("test_long_and_overflow",
-            "overflow was not cleared");
-
-    Py_RETURN_NONE;
-}
-
-/* Test the PyLong_AsLongLongAndOverflow API. General conversion to
-   long long is tested by test_long_api_inner. This test will
-   concentrate on proper handling of overflow.
-*/
-
-static PyObject *
-test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *num, *one, *temp;
-    long long value;
-    int overflow;
-
-    /* Test that overflow is set properly for a large value. */
-    /* num is a number larger than LLONG_MAX on a typical machine. */
-    num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
-    if (num == NULL)
-        return NULL;
-    overflow = 1234;
-    value = PyLong_AsLongLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -1)
-        return raiseTestError("test_long_long_and_overflow",
-            "return value was not set to -1");
-    if (overflow != 1)
-        return raiseTestError("test_long_long_and_overflow",
-            "overflow was not set to 1");
-
-    /* Same again, with num = LLONG_MAX + 1 */
-    num = PyLong_FromLongLong(LLONG_MAX);
-    if (num == NULL)
-        return NULL;
-    one = PyLong_FromLong(1L);
-    if (one == NULL) {
-        Py_DECREF(num);
-        return NULL;
-    }
-    temp = PyNumber_Add(num, one);
-    Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
-    if (num == NULL)
-        return NULL;
-    overflow = 0;
-    value = PyLong_AsLongLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -1)
-        return raiseTestError("test_long_long_and_overflow",
-            "return value was not set to -1");
-    if (overflow != 1)
-        return raiseTestError("test_long_long_and_overflow",
-            "overflow was not set to 1");
-
-    /* Test that overflow is set properly for a large negative value. */
-    /* num is a number smaller than LLONG_MIN on a typical platform */
-    num = PyLong_FromString("-FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
-    if (num == NULL)
-        return NULL;
-    overflow = 1234;
-    value = PyLong_AsLongLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -1)
-        return raiseTestError("test_long_long_and_overflow",
-            "return value was not set to -1");
-    if (overflow != -1)
-        return raiseTestError("test_long_long_and_overflow",
-            "overflow was not set to -1");
-
-    /* Same again, with num = LLONG_MIN - 1 */
-    num = PyLong_FromLongLong(LLONG_MIN);
-    if (num == NULL)
-        return NULL;
-    one = PyLong_FromLong(1L);
-    if (one == NULL) {
-        Py_DECREF(num);
-        return NULL;
-    }
-    temp = PyNumber_Subtract(num, one);
-    Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
-    if (num == NULL)
-        return NULL;
-    overflow = 0;
-    value = PyLong_AsLongLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -1)
-        return raiseTestError("test_long_long_and_overflow",
-            "return value was not set to -1");
-    if (overflow != -1)
-        return raiseTestError("test_long_long_and_overflow",
-            "overflow was not set to -1");
-
-    /* Test that overflow is cleared properly for small values. */
-    num = PyLong_FromString("FF", NULL, 16);
-    if (num == NULL)
-        return NULL;
-    overflow = 1234;
-    value = PyLong_AsLongLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != 0xFF)
-        return raiseTestError("test_long_long_and_overflow",
-            "expected return value 0xFF");
-    if (overflow != 0)
-        return raiseTestError("test_long_long_and_overflow",
-            "overflow was not cleared");
-
-    num = PyLong_FromString("-FF", NULL, 16);
-    if (num == NULL)
-        return NULL;
-    overflow = 0;
-    value = PyLong_AsLongLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != -0xFF)
-        return raiseTestError("test_long_long_and_overflow",
-            "expected return value 0xFF");
-    if (overflow != 0)
-        return raiseTestError("test_long_long_and_overflow",
-            "overflow was set incorrectly");
-
-    num = PyLong_FromLongLong(LLONG_MAX);
-    if (num == NULL)
-        return NULL;
-    overflow = 1234;
-    value = PyLong_AsLongLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != LLONG_MAX)
-        return raiseTestError("test_long_long_and_overflow",
-            "expected return value LLONG_MAX");
-    if (overflow != 0)
-        return raiseTestError("test_long_long_and_overflow",
-            "overflow was not cleared");
-
-    num = PyLong_FromLongLong(LLONG_MIN);
-    if (num == NULL)
-        return NULL;
-    overflow = 0;
-    value = PyLong_AsLongLongAndOverflow(num, &overflow);
-    Py_DECREF(num);
-    if (value == -1 && PyErr_Occurred())
-        return NULL;
-    if (value != LLONG_MIN)
-        return raiseTestError("test_long_long_and_overflow",
-            "expected return value LLONG_MIN");
-    if (overflow != 0)
-        return raiseTestError("test_long_long_and_overflow",
-            "overflow was not cleared");
-
-    Py_RETURN_NONE;
-}
-
-/* Test the PyLong_As{Size,Ssize}_t API. At present this just tests that
-   non-integer arguments are handled correctly. It should be extended to
-   test overflow handling.
- */
-
-static PyObject *
-test_long_as_size_t(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    size_t out_u;
-    Py_ssize_t out_s;
-
-    Py_INCREF(Py_None);
-
-    out_u = PyLong_AsSize_t(Py_None);
-    if (out_u != (size_t)-1 || !PyErr_Occurred())
-        return raiseTestError("test_long_as_size_t",
-                              "PyLong_AsSize_t(None) didn't complain");
-    if (!PyErr_ExceptionMatches(PyExc_TypeError))
-        return raiseTestError("test_long_as_size_t",
-                              "PyLong_AsSize_t(None) raised "
-                              "something other than TypeError");
-    PyErr_Clear();
-
-    out_s = PyLong_AsSsize_t(Py_None);
-    if (out_s != (Py_ssize_t)-1 || !PyErr_Occurred())
-        return raiseTestError("test_long_as_size_t",
-                              "PyLong_AsSsize_t(None) didn't complain");
-    if (!PyErr_ExceptionMatches(PyExc_TypeError))
-        return raiseTestError("test_long_as_size_t",
-                              "PyLong_AsSsize_t(None) raised "
-                              "something other than TypeError");
-    PyErr_Clear();
-
-    /* Py_INCREF(Py_None) omitted - we already have a reference to it. */
-    return Py_None;
-}
-
-static PyObject *
-test_long_as_unsigned_long_long_mask(PyObject *self,
-                                     PyObject *Py_UNUSED(ignored))
-{
-    unsigned long long res = PyLong_AsUnsignedLongLongMask(NULL);
-
-    if (res != (unsigned long long)-1 || !PyErr_Occurred()) {
-        return raiseTestError("test_long_as_unsigned_long_long_mask",
-                              "PyLong_AsUnsignedLongLongMask(NULL) didn't "
-                              "complain");
-    }
-    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-        return raiseTestError("test_long_as_unsigned_long_long_mask",
-                              "PyLong_AsUnsignedLongLongMask(NULL) raised "
-                              "something other than SystemError");
-    }
-    PyErr_Clear();
-    Py_RETURN_NONE;
-}
-
-/* Test the PyLong_AsDouble API. At present this just tests that
-   non-integer arguments are handled correctly.
- */
-
-static PyObject *
-test_long_as_double(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    double out;
-
-    Py_INCREF(Py_None);
-
-    out = PyLong_AsDouble(Py_None);
-    if (out != -1.0 || !PyErr_Occurred())
-        return raiseTestError("test_long_as_double",
-                              "PyLong_AsDouble(None) didn't complain");
-    if (!PyErr_ExceptionMatches(PyExc_TypeError))
-        return raiseTestError("test_long_as_double",
-                              "PyLong_AsDouble(None) raised "
-                              "something other than TypeError");
-    PyErr_Clear();
-
-    /* Py_INCREF(Py_None) omitted - we already have a reference to it. */
-    return Py_None;
-}
-
-
 static PyObject *
 return_none(void *unused)
 {
@@ -1180,53 +695,6 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
 
   done:
     Py_DECREF(HeapTypeNameType);
-    Py_RETURN_NONE;
-}
-
-/* Simple test of _PyLong_NumBits and _PyLong_Sign. */
-static PyObject *
-test_long_numbits(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    struct triple {
-        long input;
-        size_t nbits;
-        int sign;
-    } testcases[] = {{0, 0, 0},
-                     {1L, 1, 1},
-                     {-1L, 1, -1},
-                     {2L, 2, 1},
-                     {-2L, 2, -1},
-                     {3L, 2, 1},
-                     {-3L, 2, -1},
-                     {4L, 3, 1},
-                     {-4L, 3, -1},
-                     {0x7fffL, 15, 1},          /* one Python int digit */
-             {-0x7fffL, 15, -1},
-             {0xffffL, 16, 1},
-             {-0xffffL, 16, -1},
-             {0xfffffffL, 28, 1},
-             {-0xfffffffL, 28, -1}};
-    size_t i;
-
-    for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
-        size_t nbits;
-        int sign;
-        PyObject *plong;
-
-        plong = PyLong_FromLong(testcases[i].input);
-        if (plong == NULL)
-            return NULL;
-        nbits = _PyLong_NumBits(plong);
-        sign = _PyLong_Sign(plong);
-
-        Py_DECREF(plong);
-        if (nbits != testcases[i].nbits)
-            return raiseTestError("test_long_numbits",
-                            "wrong result for _PyLong_NumBits");
-        if (sign != testcases[i].sign)
-            return raiseTestError("test_long_numbits",
-                            "wrong result for _PyLong_Sign");
-    }
     Py_RETURN_NONE;
 }
 
@@ -2598,78 +2066,6 @@ getitem_with_error(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-tracemalloc_track(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-    void *ptr;
-    Py_ssize_t size;
-    int release_gil = 0;
-    int res;
-
-    if (!PyArg_ParseTuple(args, "IOn|i", &domain, &ptr_obj, &size, &release_gil))
-        return NULL;
-    ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred())
-        return NULL;
-
-    if (release_gil) {
-        Py_BEGIN_ALLOW_THREADS
-        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
-        Py_END_ALLOW_THREADS
-    }
-    else {
-        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
-    }
-
-    if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Track error");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-tracemalloc_untrack(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-    void *ptr;
-    int res;
-
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj))
-        return NULL;
-    ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred())
-        return NULL;
-
-    res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
-    if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Untrack error");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-tracemalloc_get_traceback(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-    void *ptr;
-
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj))
-        return NULL;
-    ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred())
-        return NULL;
-
-    return _PyTraceMalloc_GetTraceback(domain, (uintptr_t)ptr);
-}
-
-static PyObject *
 dict_get_version(PyObject *self, PyObject *args)
 {
     PyDictObject *dict;
@@ -3087,7 +2483,6 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
     return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
 }
 
-
 static PyObject*
 pynumber_tobase(PyObject *module, PyObject *args)
 {
@@ -3099,7 +2494,6 @@ pynumber_tobase(PyObject *module, PyObject *args)
     }
     return PyNumber_ToBase(obj, base);
 }
-
 
 static PyObject*
 test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -3388,237 +2782,6 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     assert(id >= 1);
 
     Py_RETURN_NONE;
-}
-
-
-// Test dict watching
-static PyObject *g_dict_watch_events;
-static int g_dict_watchers_installed;
-
-static int
-dict_watch_callback(PyDict_WatchEvent event,
-                    PyObject *dict,
-                    PyObject *key,
-                    PyObject *new_value)
-{
-    PyObject *msg;
-    switch(event) {
-        case PyDict_EVENT_CLEARED:
-            msg = PyUnicode_FromString("clear");
-            break;
-        case PyDict_EVENT_DEALLOCATED:
-            msg = PyUnicode_FromString("dealloc");
-            break;
-        case PyDict_EVENT_CLONED:
-            msg = PyUnicode_FromString("clone");
-            break;
-        case PyDict_EVENT_ADDED:
-            msg = PyUnicode_FromFormat("new:%S:%S", key, new_value);
-            break;
-        case PyDict_EVENT_MODIFIED:
-            msg = PyUnicode_FromFormat("mod:%S:%S", key, new_value);
-            break;
-        case PyDict_EVENT_DELETED:
-            msg = PyUnicode_FromFormat("del:%S", key);
-            break;
-        default:
-            msg = PyUnicode_FromString("unknown");
-    }
-    if (!msg) {
-        return -1;
-    }
-    assert(PyList_Check(g_dict_watch_events));
-    if (PyList_Append(g_dict_watch_events, msg) < 0) {
-        Py_DECREF(msg);
-        return -1;
-    }
-    Py_DECREF(msg);
-    return 0;
-}
-
-static int
-dict_watch_callback_second(PyDict_WatchEvent event,
-                           PyObject *dict,
-                           PyObject *key,
-                           PyObject *new_value)
-{
-    PyObject *msg = PyUnicode_FromString("second");
-    if (!msg) {
-        return -1;
-    }
-    if (PyList_Append(g_dict_watch_events, msg) < 0) {
-        Py_DECREF(msg);
-        return -1;
-    }
-    Py_DECREF(msg);
-    return 0;
-}
-
-static int
-dict_watch_callback_error(PyDict_WatchEvent event,
-                          PyObject *dict,
-                          PyObject *key,
-                          PyObject *new_value)
-{
-    PyErr_SetString(PyExc_RuntimeError, "boom!");
-    return -1;
-}
-
-static PyObject *
-add_dict_watcher(PyObject *self, PyObject *kind)
-{
-    int watcher_id;
-    assert(PyLong_Check(kind));
-    long kind_l = PyLong_AsLong(kind);
-    if (kind_l == 2) {
-        watcher_id = PyDict_AddWatcher(dict_watch_callback_second);
-    } else if (kind_l == 1) {
-        watcher_id = PyDict_AddWatcher(dict_watch_callback_error);
-    } else {
-        watcher_id = PyDict_AddWatcher(dict_watch_callback);
-    }
-    if (watcher_id < 0) {
-        return NULL;
-    }
-    if (!g_dict_watchers_installed) {
-        assert(!g_dict_watch_events);
-        if (!(g_dict_watch_events = PyList_New(0))) {
-            return NULL;
-        }
-    }
-    g_dict_watchers_installed++;
-    return PyLong_FromLong(watcher_id);
-}
-
-static PyObject *
-clear_dict_watcher(PyObject *self, PyObject *watcher_id)
-{
-    if (PyDict_ClearWatcher(PyLong_AsLong(watcher_id))) {
-        return NULL;
-    }
-    g_dict_watchers_installed--;
-    if (!g_dict_watchers_installed) {
-        assert(g_dict_watch_events);
-        Py_CLEAR(g_dict_watch_events);
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-watch_dict(PyObject *self, PyObject *args)
-{
-    PyObject *dict;
-    int watcher_id;
-    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &dict)) {
-        return NULL;
-    }
-    if (PyDict_Watch(watcher_id, dict)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-unwatch_dict(PyObject *self, PyObject *args)
-{
-    PyObject *dict;
-    int watcher_id;
-    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &dict)) {
-        return NULL;
-    }
-    if (PyDict_Unwatch(watcher_id, dict)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-get_dict_watcher_events(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    if (!g_dict_watch_events) {
-        PyErr_SetString(PyExc_RuntimeError, "no watchers active");
-        return NULL;
-    }
-    return Py_NewRef(g_dict_watch_events);
-}
-
-
-// Test PyFloat_Pack2(), PyFloat_Pack4() and PyFloat_Pack8()
-static PyObject *
-test_float_pack(PyObject *self, PyObject *args)
-{
-    int size;
-    double d;
-    int le;
-    if (!PyArg_ParseTuple(args, "idi", &size, &d, &le)) {
-        return NULL;
-    }
-    switch (size)
-    {
-    case 2:
-    {
-        char data[2];
-        if (PyFloat_Pack2(d, data, le) < 0) {
-            return NULL;
-        }
-        return PyBytes_FromStringAndSize(data, Py_ARRAY_LENGTH(data));
-    }
-    case 4:
-    {
-        char data[4];
-        if (PyFloat_Pack4(d, data, le) < 0) {
-            return NULL;
-        }
-        return PyBytes_FromStringAndSize(data, Py_ARRAY_LENGTH(data));
-    }
-    case 8:
-    {
-        char data[8];
-        if (PyFloat_Pack8(d, data, le) < 0) {
-            return NULL;
-        }
-        return PyBytes_FromStringAndSize(data, Py_ARRAY_LENGTH(data));
-    }
-    default: break;
-    }
-
-    PyErr_SetString(PyExc_ValueError, "size must 2, 4 or 8");
-    return NULL;
-}
-
-
-// Test PyFloat_Unpack2(), PyFloat_Unpack4() and PyFloat_Unpack8()
-static PyObject *
-test_float_unpack(PyObject *self, PyObject *args)
-{
-    assert(!PyErr_Occurred());
-    const char *data;
-    Py_ssize_t size;
-    int le;
-    if (!PyArg_ParseTuple(args, "y#i", &data, &size, &le)) {
-        return NULL;
-    }
-    double d;
-    switch (size)
-    {
-    case 2:
-        d = PyFloat_Unpack2(data, le);
-        break;
-    case 4:
-        d = PyFloat_Unpack4(data, le);
-        break;
-    case 8:
-        d = PyFloat_Unpack8(data, le);
-        break;
-    default:
-        PyErr_SetString(PyExc_ValueError, "data length must 2, 4 or 8 bytes");
-        return NULL;
-    }
-
-    if (d == -1.0 && PyErr_Occurred()) {
-        return NULL;
-    }
-    return PyFloat_FromDouble(d);
 }
 
 static PyObject *
@@ -3988,128 +3151,6 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-
-// type watchers
-
-static PyObject *g_type_modified_events;
-static int g_type_watchers_installed;
-
-static int
-type_modified_callback(PyTypeObject *type)
-{
-    assert(PyList_Check(g_type_modified_events));
-    if(PyList_Append(g_type_modified_events, (PyObject *)type) < 0) {
-        return -1;
-    }
-    return 0;
-}
-
-static int
-type_modified_callback_wrap(PyTypeObject *type)
-{
-    assert(PyList_Check(g_type_modified_events));
-    PyObject *list = PyList_New(0);
-    if (!list) {
-        return -1;
-    }
-    if (PyList_Append(list, (PyObject *)type) < 0) {
-        Py_DECREF(list);
-        return -1;
-    }
-    if (PyList_Append(g_type_modified_events, list) < 0) {
-        Py_DECREF(list);
-        return -1;
-    }
-    Py_DECREF(list);
-    return 0;
-}
-
-static int
-type_modified_callback_error(PyTypeObject *type)
-{
-    PyErr_SetString(PyExc_RuntimeError, "boom!");
-    return -1;
-}
-
-static PyObject *
-add_type_watcher(PyObject *self, PyObject *kind)
-{
-    int watcher_id;
-    assert(PyLong_Check(kind));
-    long kind_l = PyLong_AsLong(kind);
-    if (kind_l == 2) {
-        watcher_id = PyType_AddWatcher(type_modified_callback_wrap);
-    } else if (kind_l == 1) {
-        watcher_id = PyType_AddWatcher(type_modified_callback_error);
-    } else {
-        watcher_id = PyType_AddWatcher(type_modified_callback);
-    }
-    if (watcher_id < 0) {
-        return NULL;
-    }
-    if (!g_type_watchers_installed) {
-        assert(!g_type_modified_events);
-        if (!(g_type_modified_events = PyList_New(0))) {
-            return NULL;
-        }
-    }
-    g_type_watchers_installed++;
-    return PyLong_FromLong(watcher_id);
-}
-
-static PyObject *
-clear_type_watcher(PyObject *self, PyObject *watcher_id)
-{
-    if (PyType_ClearWatcher(PyLong_AsLong(watcher_id))) {
-        return NULL;
-    }
-    g_type_watchers_installed--;
-    if (!g_type_watchers_installed) {
-        assert(g_type_modified_events);
-        Py_CLEAR(g_type_modified_events);
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-get_type_modified_events(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    if (!g_type_modified_events) {
-        PyErr_SetString(PyExc_RuntimeError, "no watchers active");
-        return NULL;
-    }
-    return Py_NewRef(g_type_modified_events);
-}
-
-static PyObject *
-watch_type(PyObject *self, PyObject *args)
-{
-    PyObject *type;
-    int watcher_id;
-    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &type)) {
-        return NULL;
-    }
-    if (PyType_Watch(watcher_id, type)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-unwatch_type(PyObject *self, PyObject *args)
-{
-    PyObject *type;
-    int watcher_id;
-    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &type)) {
-        return NULL;
-    }
-    if (PyType_Unwatch(watcher_id, type)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -4123,7 +3164,6 @@ static PyMethodDef TestMethods[] = {
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
     {"test_lazy_hash_inheritance",      test_lazy_hash_inheritance,METH_NOARGS},
-    {"test_long_api",           test_long_api,                   METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
     {"test_xdecref_doesnt_leak",test_xdecref_doesnt_leak,        METH_NOARGS},
@@ -4133,12 +3173,6 @@ static PyMethodDef TestMethods[] = {
     {"test_structseq_newtype_null_descr_doc",
         test_structseq_newtype_null_descr_doc, METH_NOARGS},
     {"test_incref_decref_API",  test_incref_decref_API,          METH_NOARGS},
-    {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
-    {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
-    {"test_long_as_size_t",     test_long_as_size_t,             METH_NOARGS},
-    {"test_long_as_unsigned_long_long_mask",
-        test_long_as_unsigned_long_long_mask, METH_NOARGS},
-    {"test_long_numbits",       test_long_numbits,               METH_NOARGS},
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
@@ -4155,8 +3189,6 @@ static PyMethodDef TestMethods[] = {
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
-    {"test_longlong_api",       test_longlong_api,               METH_NOARGS},
-    {"test_long_long_and_overflow",test_long_long_and_overflow,  METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
 #ifdef HAVE_GETTIMEOFDAY
@@ -4197,9 +3229,6 @@ static PyMethodDef TestMethods[] = {
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"Py_CompileString",     pycompilestring, METH_O},
-    {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
-    {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
-    {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
     {"dict_get_version", dict_get_version, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
@@ -4243,8 +3272,6 @@ static PyMethodDef TestMethods[] = {
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
-    {"float_pack", test_float_pack, METH_VARARGS, NULL},
-    {"float_unpack", test_float_unpack, METH_VARARGS, NULL},
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
@@ -4259,11 +3286,6 @@ static PyMethodDef TestMethods[] = {
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
-    {"add_dict_watcher", add_dict_watcher, METH_O, NULL},
-    {"clear_dict_watcher", clear_dict_watcher, METH_O, NULL},
-    {"watch_dict", watch_dict, METH_VARARGS, NULL},
-    {"unwatch_dict", unwatch_dict, METH_VARARGS, NULL},
-    {"get_dict_watcher_events", get_dict_watcher_events, METH_NOARGS, NULL},
     {"function_get_code", function_get_code, METH_O, NULL},
     {"function_get_globals", function_get_globals, METH_O, NULL},
     {"function_get_module", function_get_module, METH_O, NULL},
@@ -4271,153 +3293,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
-    {"add_type_watcher", add_type_watcher, METH_O, NULL},
-    {"clear_type_watcher", clear_type_watcher, METH_O, NULL},
-    {"watch_type", watch_type, METH_VARARGS, NULL},
-    {"unwatch_type", unwatch_type, METH_VARARGS, NULL},
-    {"get_type_modified_events", get_type_modified_events, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
-};
-
-typedef struct {
-    char bool_member;
-    char byte_member;
-    unsigned char ubyte_member;
-    short short_member;
-    unsigned short ushort_member;
-    int int_member;
-    unsigned int uint_member;
-    long long_member;
-    unsigned long ulong_member;
-    Py_ssize_t pyssizet_member;
-    float float_member;
-    double double_member;
-    char inplace_member[6];
-    long long longlong_member;
-    unsigned long long ulonglong_member;
-} all_structmembers;
-
-typedef struct {
-    PyObject_HEAD
-    all_structmembers structmembers;
-} test_structmembers;
-
-static struct PyMemberDef test_members[] = {
-    {"T_BOOL", T_BOOL, offsetof(test_structmembers, structmembers.bool_member), 0, NULL},
-    {"T_BYTE", T_BYTE, offsetof(test_structmembers, structmembers.byte_member), 0, NULL},
-    {"T_UBYTE", T_UBYTE, offsetof(test_structmembers, structmembers.ubyte_member), 0, NULL},
-    {"T_SHORT", T_SHORT, offsetof(test_structmembers, structmembers.short_member), 0, NULL},
-    {"T_USHORT", T_USHORT, offsetof(test_structmembers, structmembers.ushort_member), 0, NULL},
-    {"T_INT", T_INT, offsetof(test_structmembers, structmembers.int_member), 0, NULL},
-    {"T_UINT", T_UINT, offsetof(test_structmembers, structmembers.uint_member), 0, NULL},
-    {"T_LONG", T_LONG, offsetof(test_structmembers, structmembers.long_member), 0, NULL},
-    {"T_ULONG", T_ULONG, offsetof(test_structmembers, structmembers.ulong_member), 0, NULL},
-    {"T_PYSSIZET", T_PYSSIZET, offsetof(test_structmembers, structmembers.pyssizet_member), 0, NULL},
-    {"T_FLOAT", T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
-    {"T_DOUBLE", T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},
-    {"T_STRING_INPLACE", T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
-    {"T_LONGLONG", T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
-    {"T_ULONGLONG", T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
-    {NULL}
-};
-
-
-static PyObject *
-test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    static char *keywords[] = {
-        "T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT",
-        "T_INT", "T_UINT", "T_LONG", "T_ULONG", "T_PYSSIZET",
-        "T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",
-        "T_LONGLONG", "T_ULONGLONG",
-        NULL};
-    static const char fmt[] = "|bbBhHiIlknfds#LK";
-    test_structmembers *ob;
-    const char *s = NULL;
-    Py_ssize_t string_len = 0;
-    ob = PyObject_New(test_structmembers, type);
-    if (ob == NULL)
-        return NULL;
-    memset(&ob->structmembers, 0, sizeof(all_structmembers));
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
-                                     &ob->structmembers.bool_member,
-                                     &ob->structmembers.byte_member,
-                                     &ob->structmembers.ubyte_member,
-                                     &ob->structmembers.short_member,
-                                     &ob->structmembers.ushort_member,
-                                     &ob->structmembers.int_member,
-                                     &ob->structmembers.uint_member,
-                                     &ob->structmembers.long_member,
-                                     &ob->structmembers.ulong_member,
-                                     &ob->structmembers.pyssizet_member,
-                                     &ob->structmembers.float_member,
-                                     &ob->structmembers.double_member,
-                                     &s, &string_len
-                                     , &ob->structmembers.longlong_member,
-                                     &ob->structmembers.ulonglong_member
-        )) {
-        Py_DECREF(ob);
-        return NULL;
-    }
-    if (s != NULL) {
-        if (string_len > 5) {
-            Py_DECREF(ob);
-            PyErr_SetString(PyExc_ValueError, "string too long");
-            return NULL;
-        }
-        strcpy(ob->structmembers.inplace_member, s);
-    }
-    else {
-        strcpy(ob->structmembers.inplace_member, "");
-    }
-    return (PyObject *)ob;
-}
-
-static void
-test_structmembers_free(PyObject *ob)
-{
-    PyObject_Free(ob);
-}
-
-static PyTypeObject test_structmembersType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "test_structmembersType",
-    sizeof(test_structmembers),         /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    test_structmembers_free,            /* destructor tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    PyObject_GenericSetAttr,            /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    0,                                  /* tp_flags */
-    "Type containing all structmember types",
-    0,                                  /* traverseproc tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    0,                                  /* tp_methods */
-    test_members,                       /* tp_members */
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    test_structmembers_new,             /* tp_new */
 };
 
 
@@ -4972,11 +3848,6 @@ PyInit__testcapi(void)
 
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
 
-    Py_SET_TYPE(&test_structmembersType, &PyType_Type);
-    Py_INCREF(&test_structmembersType);
-    /* don't use a name starting with "test", since we don't want
-       test_capi to automatically call this */
-    PyModule_AddObject(m, "_test_structmembersType", (PyObject *)&test_structmembersType);
     if (PyType_Ready(&matmulType) < 0)
         return NULL;
     Py_INCREF(&matmulType);
@@ -5094,6 +3965,18 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Mem(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Watchers(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Long(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Float(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Structmember(m) < 0) {
         return NULL;
     }
 

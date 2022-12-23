@@ -849,15 +849,6 @@ static PyGetSetDef frame_getsetlist[] = {
     {0}
 };
 
-/* Stack frames are allocated and deallocated at a considerable rate.
-   In an attempt to improve the speed of function calls, we maintain
-   a separate free list of stack frames (just like floats are
-   allocated in a special way -- see floatobject.c).  When a stack
-   frame is on the free list, only the following members have a meaning:
-    ob_type             == &Frametype
-    f_back              next item on free list, or NULL
-*/
-
 static void
 frame_dealloc(PyFrameObject *f)
 {

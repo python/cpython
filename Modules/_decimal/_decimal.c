@@ -4796,13 +4796,11 @@ dec_reduce(PyObject *self, PyObject *dummy UNUSED)
 static PyObject *
 dec_sizeof(PyObject *v, PyObject *dummy UNUSED)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(v));
+    size_t res = _PyObject_SIZE(Py_TYPE(v));
     if (mpd_isdynamic_data(MPD(v))) {
-        res += MPD(v)->alloc * sizeof(mpd_uint_t);
+        res += (size_t)MPD(v)->alloc * sizeof(mpd_uint_t);
     }
-    return PyLong_FromSsize_t(res);
+    return PyLong_FromSize_t(res);
 }
 
 /* __trunc__ */

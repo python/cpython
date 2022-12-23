@@ -523,8 +523,7 @@ set_eval_frame_record(PyObject *self, PyObject *list)
         PyErr_SetString(PyExc_TypeError, "argument must be a list");
         return NULL;
     }
-    Py_CLEAR(record_list);
-    record_list = Py_NewRef(list);
+    Py_XSETREF(record_list, Py_NewRef(list));
     _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), record_eval);
     Py_RETURN_NONE;
 }
