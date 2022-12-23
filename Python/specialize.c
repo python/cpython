@@ -335,6 +335,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD 22
 #define SPEC_FAIL_ATTR_CLASS_METHOD_OBJ 23
 #define SPEC_FAIL_ATTR_OBJECT_SLOT 24
+#define SPEC_FAIL_ATTR_HAS_MANAGED_DICT 25
 #define SPEC_FAIL_ATTR_INSTANCE_ATTRIBUTE 26
 #define SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE 27
 #define SPEC_FAIL_ATTR_PROPERTY_NOT_PY_FUNCTION 28
@@ -1035,14 +1036,11 @@ PyObject *descr, DescriptorClassification kind)
     PyDictKeysObject *keys;
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+        keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
         if (_PyDictOrValues_IsValues(dorv)) {
-            keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
             dictkind = MANAGED_VALUES;
         }
         else {
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
-            keys = dict != NULL ? dict->ma_keys : NULL;
-            // User has directly accessed __dict__.
             dictkind = MANAGED_DICT;
         }
     }
@@ -1069,7 +1067,7 @@ PyObject *descr, DescriptorClassification kind)
             }
         }
     }
-    if (dictkind == MANAGED_VALUES || dictkind == OFFSET_DICT || (dictkind == MANAGED_DICT && keys != NULL)) {
+    if (dictkind == MANAGED_VALUES || dictkind == OFFSET_DICT) {
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         if (index != DKIX_EMPTY) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SHADOWED);
@@ -1090,11 +1088,8 @@ PyObject *descr, DescriptorClassification kind)
             _py_set_opcode(instr, LOAD_ATTR_METHOD_WITH_VALUES);
             break;
         case MANAGED_DICT:
-            if (keys == NULL) {
-                write_u32(cache->keys_version, 0);
-            }
-            _py_set_opcode(instr, LOAD_ATTR_METHOD_MANAGED_DICT);
-            break;
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_HAS_MANAGED_DICT);
+            goto fail;
         case OFFSET_DICT:
             assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
             _py_set_opcode(instr, LOAD_ATTR_METHOD_WITH_DICT);
