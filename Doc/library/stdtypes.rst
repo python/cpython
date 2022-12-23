@@ -611,7 +611,7 @@ class`. In addition, it provides a few more methods:
 
 .. method:: int.is_integer()
 
-   Returns ``True``.
+   Returns ``True``. Exists for duck type compatibility with :meth:`float.is_integer`.
 
    .. versionadded:: 3.12
 
