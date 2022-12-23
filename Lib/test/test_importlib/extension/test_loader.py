@@ -355,7 +355,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                     self.load_module_by_name(name)
 
                 # If there is an unreported exception, it should be chained
-                # with the `SystemError`
+                # with the `SystemError`.
                 if "unreported_exception" in name_base:
                     self.assertIsNotNone(cm.exception.__cause__)
 
