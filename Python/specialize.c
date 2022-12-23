@@ -860,7 +860,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         // We *might* not really need this check, but we inherited it from
         // PyObject_GenericSetAttr and friends... and this way we still do the
         // right thing if someone forgets to call PyType_Ready(type):
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
+        SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OTHER);
         goto fail;
     }
     if (PyModule_CheckExact(owner)) {
@@ -915,16 +915,16 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
             goto fail;
         case BUILTIN_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ);
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ);
             goto fail;
         case PYTHON_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
             goto fail;
         case NON_OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR);
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR);
             goto fail;
         case NON_DESCRIPTOR:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
             goto fail;
         case ABSENT:
             if (specialize_dict_access(owner, instr, type, kind, name, STORE_ATTR,
