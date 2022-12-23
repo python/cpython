@@ -1,0 +1,1 @@
+Add ``sqlite.Row.__contains__`` method.

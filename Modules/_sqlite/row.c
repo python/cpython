@@ -96,6 +96,25 @@ PyObject* pysqlite_row_item(pysqlite_Row* self, Py_ssize_t idx)
    return Py_XNewRef(item);
 }
 
+static int pysqlite_row_contains(PyObject *self, PyObject *arg)
+{
+    Py_ssize_t nitems, i;
+    int cmp = 0;
+    pysqlite_Row *row = (pysqlite_Row *)self;
+
+    nitems = PyTuple_Size(row->description);
+
+    for (i = 0; cmp == 0 && i < nitems; i++) {
+        cmp = PyObject_RichCompareBool(
+            arg,
+            PyTuple_GET_ITEM(PyTuple_GET_ITEM(row->description, i), 0),
+            Py_EQ
+        );
+    }
+
+    return cmp;
+}
+
 static int
 equal_ignore_case(PyObject *left, PyObject *right)
 {
@@ -249,6 +268,7 @@ static PyType_Slot row_slots[] = {
     {Py_mp_subscript, pysqlite_row_subscript},
     {Py_sq_length, pysqlite_row_length},
     {Py_sq_item, pysqlite_row_item},
+    {Py_sq_contains, pysqlite_row_contains},
     {Py_tp_new, pysqlite_row_new},
     {Py_tp_traverse, row_traverse},
     {Py_tp_clear, row_clear},
