@@ -4222,12 +4222,12 @@ _PyType_LookupId(PyTypeObject *type, _Py_Identifier *name)
    but uses _PyType_Lookup() instead of just looking in type->tp_dict.
 
    The argument suppress_missing_attribute is used to provide a
-   fast path for hasattr. The modes are:
+   fast path for hasattr. The possible values are:
 
    * NULL: do not suppress the exception
-   * Non-zero pointer: suppress the PyExc_AttributeError and set
-     *suppress_missing_attribute to 1 to signal we are returning NULL while
-      having suppressed the exception (other exceptions are not suppressed)
+   * Non-zero pointer: suppress the PyExc_AttributeError and
+     set *suppress_missing_attribute to 1 to signal we are returning NULL while
+     having suppressed the exception (other exceptions are not suppressed)
 
    */
 PyObject *
