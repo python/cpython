@@ -954,6 +954,7 @@ Removed
 * Remove the ``PyUnicode_InternImmortal()`` function and the
   ``SSTATE_INTERNED_IMMORTAL`` macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
+
 * Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
   (Contributed by Nikita Sobolev in :gh:`99482`.)
 
