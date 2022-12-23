@@ -341,7 +341,7 @@ class FileHash:
         return f'<FileHash mode: {self.mode} value: {self.value}>'
 
 
-class Distribution:
+class Distribution(metaclass=abc.ABCMeta):
     """A Python distribution package."""
 
     @abc.abstractmethod
