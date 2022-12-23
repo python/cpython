@@ -876,19 +876,20 @@ deepcopy(PyObject *object, PyObject *memo)
 
 
 /*[clinic input]
-_elementtree.Element.__sizeof__ -> Py_ssize_t
+_elementtree.Element.__sizeof__ -> size_t
 
 [clinic start generated code]*/
 
-static Py_ssize_t
+static size_t
 _elementtree_Element___sizeof___impl(ElementObject *self)
-/*[clinic end generated code: output=bf73867721008000 input=70f4b323d55a17c1]*/
+/*[clinic end generated code: output=baae4e7ae9fe04ec input=54e298c501f3e0d0]*/
 {
-    Py_ssize_t result = _PyObject_SIZE(Py_TYPE(self));
+    size_t result = _PyObject_SIZE(Py_TYPE(self));
     if (self->extra) {
         result += sizeof(ElementObjectExtra);
-        if (self->extra->children != self->extra->_children)
-            result += sizeof(PyObject*) * self->extra->allocated;
+        if (self->extra->children != self->extra->_children) {
+            result += (size_t)self->extra->allocated * sizeof(PyObject*);
+        }
     }
     return result;
 }

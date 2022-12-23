@@ -28,14 +28,16 @@ extern "C" {
 
 struct _Py_cached_objects {
     PyObject *str_replace_inf;
+
+    PyObject *interned_strings;
 };
 
 #define _Py_GLOBAL_OBJECT(NAME) \
-    _PyRuntime.global_objects.NAME
+    _PyRuntime.static_objects.NAME
 #define _Py_SINGLETON(NAME) \
     _Py_GLOBAL_OBJECT(singletons.NAME)
 
-struct _Py_global_objects {
+struct _Py_static_objects {
     struct {
         /* Small integers are preallocated in this array so that they
          * can be shared.
@@ -59,8 +61,6 @@ struct _Py_global_objects {
         PyHamtNode_Bitmap hamt_bitmap_node_empty;
         _PyContextTokenMissing context_token_missing;
     } singletons;
-
-    PyObject *interned;
 };
 
 #define _Py_INTERP_CACHED_OBJECT(interp, NAME) \

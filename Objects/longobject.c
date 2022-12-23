@@ -36,8 +36,8 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d) for integer string conversion: value has %zd digits; use sys.set_int_max_str_digits() to increase the limit"
-#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d digits) for integer string conversion: value has %zd digits; use sys.set_int_max_str_digits() to increase the limit"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d digits) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit"
 
 /* If defined, use algorithms from the _pylong.py module */
 #define WITH_PYLONG_MODULE 1
@@ -4775,7 +4775,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
          * because we're primarily trying to cut overhead for small powers.
          */
         assert(bi);  /* else there is no significant bit */
-        Py_SETREF(z, Py_NewRef(a));
+        Py_SETREF(z, (PyLongObject*)Py_NewRef(a));
         for (bit = 2; ; bit <<= 1) {
             if (bit > bi) { /* found the first bit */
                 assert((bi & bit) == 0);

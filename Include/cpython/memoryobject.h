@@ -36,7 +36,16 @@ typedef struct {
     Py_ssize_t ob_array[1];       /* shape, strides, suboffsets */
 } PyMemoryViewObject;
 
+#define _PyMemoryView_CAST(op) _Py_CAST(PyMemoryViewObject*, op)
+
 /* Get a pointer to the memoryview's private copy of the exporter's buffer. */
-#define PyMemoryView_GET_BUFFER(op) (&((PyMemoryViewObject *)(op))->view)
+static inline Py_buffer* PyMemoryView_GET_BUFFER(PyObject *op) {
+    return (&_PyMemoryView_CAST(op)->view);
+}
+#define PyMemoryView_GET_BUFFER(op) PyMemoryView_GET_BUFFER(_PyObject_CAST(op))
+
 /* Get a pointer to the exporting object (this may be NULL!). */
-#define PyMemoryView_GET_BASE(op) (((PyMemoryViewObject *)(op))->view.obj)
+static inline PyObject* PyMemoryView_GET_BASE(PyObject *op) {
+    return _PyMemoryView_CAST(op)->view.obj;
+}
+#define PyMemoryView_GET_BASE(op) PyMemoryView_GET_BASE(_PyObject_CAST(op))

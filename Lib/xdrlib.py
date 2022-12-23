@@ -224,9 +224,7 @@ class Unpacker:
 
     def unpack_list(self, unpack_item):
         list = []
-        while 1:
-            x = self.unpack_uint()
-            if x == 0: break
+        while (x := self.unpack_uint()) != 0:
             if x != 1:
                 raise ConversionError('0 or 1 expected, got %r' % (x,))
             item = unpack_item()

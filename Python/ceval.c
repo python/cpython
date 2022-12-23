@@ -864,7 +864,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         STAT_INC(opcode, miss);                                  \
         STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
-        if (ADAPTIVE_COUNTER_IS_ZERO(*next_instr)) {             \
+        if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {       \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
         else {                                                   \
@@ -1007,14 +1007,6 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
         }
     }
     return 0;
-}
-
-static _PyInterpreterFrame *
-pop_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
-{
-    _PyInterpreterFrame *prev_frame = frame->previous;
-    _PyEvalFrameClearAndPop(tstate, frame);
-    return prev_frame;
 }
 
 
@@ -1297,7 +1289,7 @@ handle_eval_breaker:
         }
         opcode = _PyOpcode_Deopt[opcode];
         if (_PyOpcode_Caches[opcode]) {
-            _Py_CODEUNIT *counter = &next_instr[1];
+            uint16_t *counter = &next_instr[1].cache;
             // The instruction is going to decrement the counter, so we need to
             // increment it here to make sure it doesn't try to specialize:
             if (!ADAPTIVE_COUNTER_IS_MAX(*counter)) {
@@ -1432,7 +1424,10 @@ exit_unwind:
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
     assert(frame != &entry_frame);
-    frame = cframe.current_frame = pop_frame(tstate, frame);
+    // GH-99729: We need to unlink the frame *before* clearing it:
+    _PyInterpreterFrame *dying = frame;
+    frame = cframe.current_frame = dying->previous;
+    _PyEvalFrameClearAndPop(tstate, dying);
     if (frame == &entry_frame) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
