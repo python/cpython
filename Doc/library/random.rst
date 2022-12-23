@@ -320,13 +320,16 @@ be found in any statistics text.
    ``beta > 0``. Returned values range between 0 and 1.
 
 
-.. function:: expovariate(lambd)
+.. function:: expovariate(lambd = 1.0)
 
    Exponential distribution.  *lambd* is 1.0 divided by the desired
    mean.  It should be nonzero.  (The parameter would be called
    "lambda", but that is a reserved word in Python.)  Returned values
    range from 0 to positive infinity if *lambd* is positive, and from
    negative infinity to 0 if *lambd* is negative.
+
+   .. versionchanged:: 3.12
+      Added the default value for ``lambd``.
 
 
 .. function:: gammavariate(alpha, beta)

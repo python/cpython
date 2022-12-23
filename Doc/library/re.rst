@@ -591,10 +591,9 @@ character ``'$'``.
 
 ``\w``
    For Unicode (str) patterns:
-      Matches Unicode word characters; this includes most characters
-      that can be part of a word in any language, as well as numbers and
-      the underscore. If the :const:`ASCII` flag is used, only
-      ``[a-zA-Z0-9_]`` is matched.
+      Matches Unicode word characters; this includes alphanumeric characters (as defined by :meth:`str.isalnum`)
+      as well as the underscore (``_``).
+      If the :const:`ASCII` flag is used, only ``[a-zA-Z0-9_]`` is matched.
 
    For 8-bit (bytes) patterns:
       Matches characters considered alphanumeric in the ASCII character set;
@@ -973,6 +972,7 @@ Functions
       >>> def dashrepl(matchobj):
       ...     if matchobj.group(0) == '-': return ' '
       ...     else: return '-'
+      ...
       >>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
       'pro--gram files'
       >>> re.sub(r'\sAND\s', ' & ', 'Baked Beans And Spam', flags=re.IGNORECASE)
@@ -1565,16 +1565,22 @@ search() vs. match()
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
-Python offers two different primitive operations based on regular expressions:
-:func:`re.match` checks for a match only at the beginning of the string, while
-:func:`re.search` checks for a match anywhere in the string (this is what Perl
-does by default).
+Python offers different primitive operations based on regular expressions:
+
++ :func:`re.match` checks for a match only at the beginning of the string
++ :func:`re.search` checks for a match anywhere in the string
+  (this is what Perl does by default)
++ :func:`re.fullmatch` checks for entire string to be a match
+
 
 For example::
 
    >>> re.match("c", "abcdef")    # No match
    >>> re.search("c", "abcdef")   # Match
    <re.Match object; span=(2, 3), match='c'>
+   >>> re.fullmatch("p.*n", "python") # Match
+   <re.Match object; span=(0, 6), match='python'>
+   >>> re.fullmatch("r.*n", "python") # No match
 
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
@@ -1588,8 +1594,8 @@ Note however that in :const:`MULTILINE` mode :func:`match` only matches at the
 beginning of the string, whereas using :func:`search` with a regular expression
 beginning with ``'^'`` will match at the beginning of each line. ::
 
-   >>> re.match('X', 'A\nB\nX', re.MULTILINE)  # No match
-   >>> re.search('^X', 'A\nB\nX', re.MULTILINE)  # Match
+   >>> re.match("X", "A\nB\nX", re.MULTILINE)  # No match
+   >>> re.search("^X", "A\nB\nX", re.MULTILINE)  # Match
    <re.Match object; span=(4, 5), match='X'>
 
 
@@ -1666,6 +1672,7 @@ in each word of a sentence except for the first and last characters::
    ...     inner_word = list(m.group(2))
    ...     random.shuffle(inner_word)
    ...     return m.group(1) + "".join(inner_word) + m.group(3)
+   ...
    >>> text = "Professor Abdolmalek, please report your absences promptly."
    >>> re.sub(r"(\w)(\w+)(\w)", repl, text)
    'Poefsrosr Aealmlobdk, pslaee reorpt your abnseces plmrptoy.'
