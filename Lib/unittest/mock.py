@@ -411,15 +411,18 @@ class NonCallableMock(Base):
     # necessary.
     _lock = RLock()
 
-    def __new__(cls, /, *args, **kw):
+    def __new__(
+            cls, spec=None, wraps=None, name=None, spec_set=None,
+            parent=None, _spec_state=None, _new_name='', _new_parent=None,
+            _spec_as_instance=False, _eat_self=None, unsafe=False, **kwargs
+        ):
         # every instance has its own class
         # so we can create magic methods on the
         # class without stomping on other mocks
         bases = (cls,)
         if not issubclass(cls, AsyncMockMixin):
             # Check if spec is an async object or function
-            bound_args = _MOCK_SIG.bind_partial(cls, *args, **kw).arguments
-            spec_arg = bound_args.get('spec_set', bound_args.get('spec'))
+            spec_arg = spec_set or spec
             if spec_arg is not None and _is_async_obj(spec_arg):
                 bases = (AsyncMockMixin, cls)
         new = type(cls.__name__, bases, {'__doc__': cls.__doc__})
@@ -505,10 +508,6 @@ class NonCallableMock(Base):
         _spec_signature = None
         _spec_asyncs = []
 
-        for attr in dir(spec):
-            if iscoroutinefunction(getattr(spec, attr, None)):
-                _spec_asyncs.append(attr)
-
         if spec is not None and not _is_list(spec):
             if isinstance(spec, type):
                 _spec_class = spec
@@ -518,7 +517,13 @@ class NonCallableMock(Base):
                                         _spec_as_instance, _eat_self)
             _spec_signature = res and res[1]
 
-            spec = dir(spec)
+            spec_list = dir(spec)
+
+            for attr in spec_list:
+                if iscoroutinefunction(getattr(spec, attr, None)):
+                    _spec_asyncs.append(attr)
+
+            spec = spec_list
 
         __dict__ = self.__dict__
         __dict__['_spec_class'] = _spec_class
@@ -1055,9 +1060,6 @@ class NonCallableMock(Base):
         if not self.mock_calls:
             return ""
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
-
-
-_MOCK_SIG = inspect.signature(NonCallableMock.__init__)
 
 
 class _AnyComparer(list):
@@ -2138,10 +2140,8 @@ class NonCallableMagicMock(MagicMixin, NonCallableMock):
 
 
 class AsyncMagicMixin(MagicMixin):
-    def __init__(self, /, *args, **kw):
-        self._mock_set_magics()  # make magic work for kwargs in init
-        _safe_super(AsyncMagicMixin, self).__init__(*args, **kw)
-        self._mock_set_magics()  # fix magic broken by upper level init
+    pass
+
 
 class MagicMock(MagicMixin, Mock):
     """
@@ -2183,6 +2183,10 @@ class MagicProxy(Base):
         return self.create_mock()
 
 
+_CODE_ATTRS = dir(CodeType)
+_CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+
+
 class AsyncMockMixin(Base):
     await_count = _delegating_property('await_count')
     await_args = _delegating_property('await_args')
@@ -2200,7 +2204,9 @@ class AsyncMockMixin(Base):
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
-        code_mock = NonCallableMock(spec_set=CodeType)
+        code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
+        code_mock.__dict__["_spec_class"] = CodeType
+        code_mock.__dict__["_spec_signature"] = _CODE_SIG
         code_mock.co_flags = inspect.CO_COROUTINE
         self.__dict__['__code__'] = code_mock
         self.__dict__['__name__'] = 'AsyncMock'
