@@ -6171,12 +6171,12 @@ long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
 /*[clinic input]
 int.is_integer
 
-Returns True.
+Returns True. Exists for duck type compatibility with float.is_integer.
 [clinic start generated code]*/
 
 static PyObject *
 int_is_integer_impl(PyObject *self)
-/*[clinic end generated code: output=90f8e794ce5430ef input=5987f0abb5d0e177]*/
+/*[clinic end generated code: output=90f8e794ce5430ef input=7e41c4d4416e05f2]*/
 {
     Py_RETURN_TRUE;
 }

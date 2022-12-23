@@ -472,7 +472,7 @@ PyDoc_STRVAR(int_is_integer__doc__,
 "is_integer($self, /)\n"
 "--\n"
 "\n"
-"Returns True.");
+"Returns True. Exists for duck type compatibility with float.is_integer.");
 
 #define INT_IS_INTEGER_METHODDEF    \
     {"is_integer", (PyCFunction)int_is_integer, METH_NOARGS, int_is_integer__doc__},
@@ -485,4 +485,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=d6f555c14b0b534e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e518fe2b5d519322 input=a9049054013a1b77]*/
