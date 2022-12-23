@@ -1733,6 +1733,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       The *start* parameter can be specified as a keyword argument.
 
+   .. versionchanged:: 3.12 Summation of floats switched to an algorithm
+      that gives higher accuracy on most builds.
+
+
 .. class:: super()
            super(type, object_or_type=None)
 
