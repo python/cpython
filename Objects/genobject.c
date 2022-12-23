@@ -335,7 +335,7 @@ _PyGen_yf(PyGenObject *gen)
             assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
             return NULL;
         }
-        _Py_CODEUNIT next = frame->prev_instr[1];
+        _Py_CODEUNIT next = frame->prev_instr[OPSIZE(-1)]; /* default OPSIZE - I don't think we know the op */ 
         if (_Py_OPCODE(next) != RESUME || _Py_OPARG(next) < 2)
         {
             /* Not in a yield from */

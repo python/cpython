@@ -3,12 +3,10 @@
 // Do not edit!
 
         TARGET(NOP) {
-            JUMPBY(OPSIZE(NOP) - 1);
             DISPATCH();
         }
 
         TARGET(RESUME) {
-            JUMPBY(OPSIZE(RESUME) - 1);
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
@@ -19,7 +17,6 @@
 
         TARGET(LOAD_CLOSURE) {
             PyObject *value;
-            JUMPBY(OPSIZE(LOAD_CLOSURE) - 1);
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
             value = GETLOCAL(oparg);
             if (value == NULL) goto unbound_local_error;
@@ -31,7 +28,6 @@
 
         TARGET(LOAD_FAST_CHECK) {
             PyObject *value;
-            JUMPBY(OPSIZE(LOAD_FAST_CHECK) - 1);
             value = GETLOCAL(oparg);
             if (value == NULL) goto unbound_local_error;
             Py_INCREF(value);
@@ -42,7 +38,6 @@
 
         TARGET(LOAD_FAST) {
             PyObject *value;
-            JUMPBY(OPSIZE(LOAD_FAST) - 1);
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -53,7 +48,6 @@
 
         TARGET(LOAD_FAST_R) {
             PyObject *value;
-            JUMPBY(OPSIZE(LOAD_FAST_R) - 1);
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -65,7 +59,6 @@
         TARGET(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
             PyObject *value;
-            JUMPBY(OPSIZE(LOAD_CONST) - 1);
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
             STACK_GROW(1);
@@ -75,7 +68,6 @@
 
         TARGET(LOAD_CONST_R) {
             PyObject *value;
-            JUMPBY(OPSIZE(LOAD_CONST_R) - 1);
             value = REG(oparg1);
             Py_INCREF(value);
             STACK_GROW(1);
@@ -85,7 +77,6 @@
 
         TARGET(STORE_FAST) {
             PyObject *value = PEEK(1);
-            JUMPBY(OPSIZE(STORE_FAST) - 1);
             SETLOCAL(oparg, value);
             STACK_SHRINK(1);
             DISPATCH();
@@ -93,7 +84,6 @@
 
         TARGET(STORE_FAST_R) {
             PyObject *value = PEEK(1);
-            JUMPBY(OPSIZE(STORE_FAST_R) - 1);
             SETLOCAL(oparg, value);
             STACK_SHRINK(1);
             DISPATCH();
@@ -102,7 +92,6 @@
         TARGET(LOAD_FAST__LOAD_FAST) {
             PyObject *_tmp_1;
             PyObject *_tmp_2;
-            JUMPBY(OPSIZE(opcode) - 1);
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -110,9 +99,9 @@
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
+            int opsize = OPSIZE(opcode);
             NEXTOPARG();
-            JUMPBY(1);
-            JUMPBY(OPSIZE(opcode) - 1);
+            JUMPBY(opsize);
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -129,7 +118,6 @@
         TARGET(LOAD_FAST__LOAD_CONST) {
             PyObject *_tmp_1;
             PyObject *_tmp_2;
-            JUMPBY(OPSIZE(opcode) - 1);
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -137,9 +125,9 @@
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
+            int opsize = OPSIZE(opcode);
             NEXTOPARG();
-            JUMPBY(1);
-            JUMPBY(OPSIZE(opcode) - 1);
+            JUMPBY(opsize);
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
@@ -154,14 +142,13 @@
 
         TARGET(STORE_FAST__LOAD_FAST) {
             PyObject *_tmp_1 = PEEK(1);
-            JUMPBY(OPSIZE(opcode) - 1);
             {
                 PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
             }
+            int opsize = OPSIZE(opcode);
             NEXTOPARG();
-            JUMPBY(1);
-            JUMPBY(OPSIZE(opcode) - 1);
+            JUMPBY(opsize);
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -176,14 +163,13 @@
         TARGET(STORE_FAST__STORE_FAST) {
             PyObject *_tmp_1 = PEEK(1);
             PyObject *_tmp_2 = PEEK(2);
-            JUMPBY(OPSIZE(opcode) - 1);
             {
                 PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
             }
+            int opsize = OPSIZE(opcode);
             NEXTOPARG();
-            JUMPBY(1);
-            JUMPBY(OPSIZE(opcode) - 1);
+            JUMPBY(opsize);
             {
                 PyObject *value = _tmp_2;
                 SETLOCAL(oparg, value);
@@ -195,16 +181,15 @@
         TARGET(LOAD_CONST__LOAD_FAST) {
             PyObject *_tmp_1;
             PyObject *_tmp_2;
-            JUMPBY(OPSIZE(opcode) - 1);
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
+            int opsize = OPSIZE(opcode);
             NEXTOPARG();
-            JUMPBY(1);
-            JUMPBY(OPSIZE(opcode) - 1);
+            JUMPBY(opsize);
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -220,7 +205,6 @@
 
         TARGET(POP_TOP) {
             PyObject *value = PEEK(1);
-            JUMPBY(OPSIZE(POP_TOP) - 1);
             Py_DECREF(value);
             STACK_SHRINK(1);
             DISPATCH();
@@ -228,7 +212,6 @@
 
         TARGET(PUSH_NULL) {
             PyObject *res;
-            JUMPBY(OPSIZE(PUSH_NULL) - 1);
             res = NULL;
             STACK_GROW(1);
             POKE(1, res);
@@ -253,7 +236,6 @@
         TARGET(UNARY_POSITIVE) {
             PyObject *value = PEEK(1);
             PyObject *res;
-            JUMPBY(OPSIZE(UNARY_POSITIVE) - 1);
             res = PyNumber_Positive(value);
             Py_DECREF(value);
             if (res == NULL) goto pop_1_error;
@@ -264,7 +246,6 @@
         TARGET(UNARY_POSITIVE_R) {
             PyObject *value = REG(oparg1);
             PyObject *res;
-            JUMPBY(OPSIZE(UNARY_POSITIVE_R) - 1);
             assert(value != NULL);
             res = PyNumber_Positive(value);
             if (res == NULL) goto error;
@@ -275,7 +256,6 @@
         TARGET(UNARY_NEGATIVE) {
             PyObject *value = PEEK(1);
             PyObject *res;
-            JUMPBY(OPSIZE(UNARY_NEGATIVE) - 1);
             res = PyNumber_Negative(value);
             Py_DECREF(value);
             if (res == NULL) goto pop_1_error;
@@ -286,7 +266,6 @@
         TARGET(UNARY_NEGATIVE_R) {
             PyObject *value = REG(oparg1);
             PyObject *res;
-            JUMPBY(OPSIZE(UNARY_NEGATIVE_R) - 1);
             assert(value != NULL);
             res = PyNumber_Negative(value);
             if (res == NULL) goto error;
@@ -297,7 +276,6 @@
         TARGET(UNARY_NOT) {
             PyObject *value = PEEK(1);
             PyObject *res;
-            JUMPBY(OPSIZE(UNARY_NOT) - 1);
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             if (err < 0) goto pop_1_error;
@@ -315,7 +293,6 @@
         TARGET(UNARY_NOT_R) {
             PyObject *value = REG(oparg1);
             PyObject *res;
-            JUMPBY(OPSIZE(UNARY_NOT_R) - 1);
             assert(value != NULL);
             int err = PyObject_IsTrue(value);
             if (err < 0) goto error;
@@ -333,7 +310,6 @@
         TARGET(UNARY_INVERT) {
             PyObject *value = PEEK(1);
             PyObject *res;
-            JUMPBY(OPSIZE(UNARY_INVERT) - 1);
             res = PyNumber_Invert(value);
             Py_DECREF(value);
             if (res == NULL) goto pop_1_error;
@@ -344,7 +320,6 @@
         TARGET(UNARY_INVERT_R) {
             PyObject *value = REG(oparg1);
             PyObject *res;
-            JUMPBY(OPSIZE(UNARY_INVERT_R) - 1);
             assert(value != NULL);
             res = PyNumber_Invert(value);
             if (res == NULL) goto error;
@@ -356,7 +331,6 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *prod;
-            JUMPBY(OPSIZE(BINARY_OP_MULTIPLY_INT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -375,7 +349,6 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *prod;
-            JUMPBY(OPSIZE(BINARY_OP_MULTIPLY_FLOAT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -396,7 +369,6 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sub;
-            JUMPBY(OPSIZE(BINARY_OP_SUBTRACT_INT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -415,7 +387,6 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sub;
-            JUMPBY(OPSIZE(BINARY_OP_SUBTRACT_FLOAT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -435,7 +406,6 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *res;
-            JUMPBY(OPSIZE(BINARY_OP_ADD_UNICODE) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -453,7 +423,6 @@
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
-            JUMPBY(OPSIZE(BINARY_OP_INPLACE_ADD_UNICODE) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -489,7 +458,6 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sum;
-            JUMPBY(OPSIZE(BINARY_OP_ADD_FLOAT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -510,7 +478,6 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sum;
-            JUMPBY(OPSIZE(BINARY_OP_ADD_INT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -531,10 +498,10 @@
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
             PyObject *res;
-            JUMPBY(OPSIZE(BINARY_SUBSCR) - 1);
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_BinarySubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
@@ -555,7 +522,6 @@
             PyObject *start = PEEK(2);
             PyObject *container = PEEK(3);
             PyObject *res;
-            JUMPBY(OPSIZE(BINARY_SLICE) - 1);
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
@@ -578,7 +544,6 @@
             PyObject *start = PEEK(2);
             PyObject *container = PEEK(3);
             PyObject *v = PEEK(4);
-            JUMPBY(OPSIZE(STORE_SLICE) - 1);
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
             int err;
             if (slice == NULL) {
@@ -599,7 +564,6 @@
             PyObject *sub = PEEK(1);
             PyObject *list = PEEK(2);
             PyObject *res;
-            JUMPBY(OPSIZE(BINARY_SUBSCR_LIST_INT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
@@ -626,7 +590,6 @@
             PyObject *sub = PEEK(1);
             PyObject *tuple = PEEK(2);
             PyObject *res;
-            JUMPBY(OPSIZE(BINARY_SUBSCR_TUPLE_INT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
@@ -653,7 +616,6 @@
             PyObject *sub = PEEK(1);
             PyObject *dict = PEEK(2);
             PyObject *res;
-            JUMPBY(OPSIZE(BINARY_SUBSCR_DICT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
@@ -678,7 +640,6 @@
         TARGET(BINARY_SUBSCR_GETITEM) {
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
-            JUMPBY(OPSIZE(BINARY_SUBSCR_GETITEM) - 1);
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint16_t func_version = read_u16(&next_instr[3].cache);
             PyTypeObject *tp = Py_TYPE(container);
@@ -706,7 +667,6 @@
 
         TARGET(LIST_APPEND) {
             PyObject *v = PEEK(1);
-            JUMPBY(OPSIZE(LIST_APPEND) - 1);
             PyObject *list = PEEK(oparg + 1);  // +1 to account for v staying on stack
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
             STACK_SHRINK(1);
@@ -716,7 +676,6 @@
 
         TARGET(SET_ADD) {
             PyObject *v = PEEK(1);
-            JUMPBY(OPSIZE(SET_ADD) - 1);
             PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
             int err = PySet_Add(set, v);
             Py_DECREF(v);
@@ -731,10 +690,10 @@
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
             PyObject *v = PEEK(3);
-            JUMPBY(OPSIZE(STORE_SUBSCR) - 1);
             uint16_t counter = read_u16(&next_instr[0].cache);
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
@@ -756,7 +715,6 @@
             PyObject *sub = PEEK(1);
             PyObject *list = PEEK(2);
             PyObject *value = PEEK(3);
-            JUMPBY(OPSIZE(STORE_SUBSCR_LIST_INT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
@@ -783,7 +741,6 @@
             PyObject *sub = PEEK(1);
             PyObject *dict = PEEK(2);
             PyObject *value = PEEK(3);
-            JUMPBY(OPSIZE(STORE_SUBSCR_DICT) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
@@ -798,7 +755,6 @@
         TARGET(DELETE_SUBSCR) {
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
-            JUMPBY(OPSIZE(DELETE_SUBSCR) - 1);
             /* del container[sub] */
             int err = PyObject_DelItem(container, sub);
             Py_DECREF(container);
@@ -810,7 +766,6 @@
 
         TARGET(PRINT_EXPR) {
             PyObject *value = PEEK(1);
-            JUMPBY(OPSIZE(PRINT_EXPR) - 1);
             PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
             PyObject *res;
             // Can't use ERROR_IF here.
@@ -829,7 +784,6 @@
         }
 
         TARGET(RAISE_VARARGS) {
-            JUMPBY(OPSIZE(RAISE_VARARGS) - 1);
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -853,7 +807,6 @@
 
         TARGET(INTERPRETER_EXIT) {
             PyObject *retval = PEEK(1);
-            JUMPBY(OPSIZE(INTERPRETER_EXIT) - 1);
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             STACK_SHRINK(1);  // Since we're not going to DISPATCH()
@@ -869,7 +822,6 @@
 
         TARGET(RETURN_VALUE) {
             PyObject *retval = PEEK(1);
-            JUMPBY(OPSIZE(RETURN_VALUE) - 1);
             STACK_SHRINK(1);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -888,7 +840,6 @@
         TARGET(GET_AITER) {
             PyObject *obj = PEEK(1);
             PyObject *iter;
-            JUMPBY(OPSIZE(GET_AITER) - 1);
             unaryfunc getter = NULL;
             PyTypeObject *type = Py_TYPE(obj);
 
@@ -924,7 +875,6 @@
         }
 
         TARGET(GET_ANEXT) {
-            JUMPBY(OPSIZE(GET_ANEXT) - 1);
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
             PyObject *awaitable = NULL;
@@ -977,7 +927,6 @@
 
         TARGET(GET_AWAITABLE) {
             PREDICTED(GET_AWAITABLE);
-            JUMPBY(OPSIZE(GET_AWAITABLE) - 1);
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
 
@@ -1012,7 +961,6 @@
         }
 
         TARGET(SEND) {
-            JUMPBY(OPSIZE(SEND) - 1);
             assert(frame != &entry_frame);
             assert(STACK_LEVEL() >= 2);
             PyObject *v = POP();
@@ -1063,7 +1011,6 @@
         }
 
         TARGET(ASYNC_GEN_WRAP) {
-            JUMPBY(OPSIZE(ASYNC_GEN_WRAP) - 1);
             PyObject *v = TOP();
             assert(frame->f_code->co_flags & CO_ASYNC_GENERATOR);
             PyObject *w = _PyAsyncGenValueWrapperNew(v);
@@ -1076,7 +1023,6 @@
         }
 
         TARGET(YIELD_VALUE) {
-            JUMPBY(OPSIZE(YIELD_VALUE) - 1);
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -1100,7 +1046,6 @@
         }
 
         TARGET(POP_EXCEPT) {
-            JUMPBY(OPSIZE(POP_EXCEPT) - 1);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             PyObject *value = exc_info->exc_value;
             exc_info->exc_value = POP();
@@ -1109,7 +1054,6 @@
         }
 
         TARGET(RERAISE) {
-            JUMPBY(OPSIZE(RERAISE) - 1);
             if (oparg) {
                 PyObject *lasti = PEEK(oparg + 1);
                 if (PyLong_Check(lasti)) {
@@ -1131,7 +1075,6 @@
         }
 
         TARGET(PREP_RERAISE_STAR) {
-            JUMPBY(OPSIZE(PREP_RERAISE_STAR) - 1);
             PyObject *excs = POP();
             assert(PyList_Check(excs));
             PyObject *orig = POP();
@@ -1149,7 +1092,6 @@
         }
 
         TARGET(END_ASYNC_FOR) {
-            JUMPBY(OPSIZE(END_ASYNC_FOR) - 1);
             PyObject *val = POP();
             assert(val && PyExceptionInstance_Check(val));
             if (PyErr_GivenExceptionMatches(val, PyExc_StopAsyncIteration)) {
@@ -1166,7 +1108,6 @@
         }
 
         TARGET(CLEANUP_THROW) {
-            JUMPBY(OPSIZE(CLEANUP_THROW) - 1);
             assert(throwflag);
             PyObject *exc_value = TOP();
             assert(exc_value && PyExceptionInstance_Check(exc_value));
@@ -1188,7 +1129,6 @@
         }
 
         TARGET(STOPITERATION_ERROR) {
-            JUMPBY(OPSIZE(STOPITERATION_ERROR) - 1);
             assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
             PyObject *exc = TOP();
             assert(PyExceptionInstance_Check(exc));
@@ -1231,14 +1171,12 @@
         }
 
         TARGET(LOAD_ASSERTION_ERROR) {
-            JUMPBY(OPSIZE(LOAD_ASSERTION_ERROR) - 1);
             PyObject *value = PyExc_AssertionError;
             PUSH(Py_NewRef(value));
             DISPATCH();
         }
 
         TARGET(LOAD_BUILD_CLASS) {
-            JUMPBY(OPSIZE(LOAD_BUILD_CLASS) - 1);
             PyObject *bc;
             if (PyDict_CheckExact(BUILTINS())) {
                 bc = _PyDict_GetItemWithError(BUILTINS(),
@@ -1266,7 +1204,6 @@
         }
 
         TARGET(STORE_NAME) {
-            JUMPBY(OPSIZE(STORE_NAME) - 1);
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
             PyObject *ns = LOCALS();
@@ -1288,7 +1225,6 @@
         }
 
         TARGET(DELETE_NAME) {
-            JUMPBY(OPSIZE(DELETE_NAME) - 1);
             PyObject *name = GETITEM(names, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -1310,11 +1246,11 @@
 
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
-            JUMPBY(OPSIZE(UNPACK_SEQUENCE) - 1);
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *seq = TOP();
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -1333,7 +1269,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
-            JUMPBY(OPSIZE(UNPACK_SEQUENCE_TWO_TUPLE) - 1);
             PyObject *seq = TOP();
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
@@ -1346,7 +1281,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
-            JUMPBY(OPSIZE(UNPACK_SEQUENCE_TUPLE) - 1);
             PyObject *seq = TOP();
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
@@ -1362,7 +1296,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
-            JUMPBY(OPSIZE(UNPACK_SEQUENCE_LIST) - 1);
             PyObject *seq = TOP();
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
@@ -1378,7 +1311,6 @@
         }
 
         TARGET(UNPACK_EX) {
-            JUMPBY(OPSIZE(UNPACK_EX) - 1);
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             PyObject *seq = POP();
             PyObject **top = stack_pointer + totalargs;
@@ -1395,11 +1327,11 @@
             PREDICTED(STORE_ATTR);
             PyObject *owner = PEEK(1);
             PyObject *v = PEEK(2);
-            JUMPBY(OPSIZE(STORE_ATTR) - 1);
             uint16_t counter = read_u16(&next_instr[0].cache);
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg);
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -1418,7 +1350,6 @@
 
         TARGET(DELETE_ATTR) {
             PyObject *owner = PEEK(1);
-            JUMPBY(OPSIZE(DELETE_ATTR) - 1);
             PyObject *name = GETITEM(names, oparg);
             int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
             Py_DECREF(owner);
@@ -1429,7 +1360,6 @@
 
         TARGET(STORE_GLOBAL) {
             PyObject *v = PEEK(1);
-            JUMPBY(OPSIZE(STORE_GLOBAL) - 1);
             PyObject *name = GETITEM(names, oparg);
             int err = PyDict_SetItem(GLOBALS(), name, v);
             Py_DECREF(v);
@@ -1439,7 +1369,6 @@
         }
 
         TARGET(DELETE_GLOBAL) {
-            JUMPBY(OPSIZE(DELETE_GLOBAL) - 1);
             PyObject *name = GETITEM(names, oparg);
             int err;
             err = PyDict_DelItem(GLOBALS(), name);
@@ -1455,7 +1384,6 @@
         }
 
         TARGET(LOAD_NAME) {
-            JUMPBY(OPSIZE(LOAD_NAME) - 1);
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = LOCALS();
             PyObject *v;
@@ -1521,11 +1449,11 @@
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
-            JUMPBY(OPSIZE(LOAD_GLOBAL) - 1);
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg>>1);
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -1583,7 +1511,6 @@
         }
 
         TARGET(LOAD_GLOBAL_MODULE) {
-            JUMPBY(OPSIZE(LOAD_GLOBAL_MODULE) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1604,7 +1531,6 @@
         }
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
-            JUMPBY(OPSIZE(LOAD_GLOBAL_BUILTIN) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
@@ -1629,7 +1555,6 @@
         }
 
         TARGET(DELETE_FAST) {
-            JUMPBY(OPSIZE(DELETE_FAST) - 1);
             PyObject *v = GETLOCAL(oparg);
             if (v == NULL) goto unbound_local_error;
             SETLOCAL(oparg, NULL);
@@ -1637,7 +1562,6 @@
         }
 
         TARGET(MAKE_CELL) {
-            JUMPBY(OPSIZE(MAKE_CELL) - 1);
             // "initial" is probably NULL but not if it's an arg (or set
             // via PyFrame_LocalsToFast() before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
@@ -1650,7 +1574,6 @@
         }
 
         TARGET(DELETE_DEREF) {
-            JUMPBY(OPSIZE(DELETE_DEREF) - 1);
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             // Can't use ERROR_IF here.
@@ -1665,7 +1588,6 @@
         }
 
         TARGET(LOAD_CLASSDEREF) {
-            JUMPBY(OPSIZE(LOAD_CLASSDEREF) - 1);
             PyObject *name, *value, *locals = LOCALS();
             assert(locals);
             assert(oparg >= 0 && oparg < frame->f_code->co_nlocalsplus);
@@ -1702,7 +1624,6 @@
         }
 
         TARGET(LOAD_DEREF) {
-            JUMPBY(OPSIZE(LOAD_DEREF) - 1);
             PyObject *cell = GETLOCAL(oparg);
             PyObject *value = PyCell_GET(cell);
             if (value == NULL) {
@@ -1714,7 +1635,6 @@
         }
 
         TARGET(STORE_DEREF) {
-            JUMPBY(OPSIZE(STORE_DEREF) - 1);
             PyObject *v = POP();
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
@@ -1724,7 +1644,6 @@
         }
 
         TARGET(COPY_FREE_VARS) {
-            JUMPBY(OPSIZE(COPY_FREE_VARS) - 1);
             /* Copy closure variables to free variables */
             PyCodeObject *co = frame->f_code;
             assert(PyFunction_Check(frame->f_funcobj));
@@ -1739,7 +1658,6 @@
         }
 
         TARGET(BUILD_STRING) {
-            JUMPBY(OPSIZE(BUILD_STRING) - 1);
             PyObject *str;
             str = _PyUnicode_JoinArray(&_Py_STR(empty),
                                        stack_pointer - oparg, oparg);
@@ -1754,7 +1672,6 @@
         }
 
         TARGET(BUILD_TUPLE) {
-            JUMPBY(OPSIZE(BUILD_TUPLE) - 1);
             STACK_SHRINK(oparg);
             PyObject *tup = _PyTuple_FromArraySteal(stack_pointer, oparg);
             if (tup == NULL)
@@ -1764,7 +1681,6 @@
         }
 
         TARGET(BUILD_LIST) {
-            JUMPBY(OPSIZE(BUILD_LIST) - 1);
             PyObject *list =  PyList_New(oparg);
             if (list == NULL)
                 goto error;
@@ -1777,7 +1693,6 @@
         }
 
         TARGET(LIST_TO_TUPLE) {
-            JUMPBY(OPSIZE(LIST_TO_TUPLE) - 1);
             PyObject *list = POP();
             PyObject *tuple = PyList_AsTuple(list);
             Py_DECREF(list);
@@ -1789,7 +1704,6 @@
         }
 
         TARGET(LIST_EXTEND) {
-            JUMPBY(OPSIZE(LIST_EXTEND) - 1);
             PyObject *iterable = POP();
             PyObject *list = PEEK(oparg);
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
@@ -1811,7 +1725,6 @@
         }
 
         TARGET(SET_UPDATE) {
-            JUMPBY(OPSIZE(SET_UPDATE) - 1);
             PyObject *iterable = POP();
             PyObject *set = PEEK(oparg);
             int err = _PySet_Update(set, iterable);
@@ -1823,7 +1736,6 @@
         }
 
         TARGET(BUILD_SET) {
-            JUMPBY(OPSIZE(BUILD_SET) - 1);
             PyObject *set = PySet_New(NULL);
             int err = 0;
             int i;
@@ -1845,7 +1757,6 @@
         }
 
         TARGET(BUILD_MAP) {
-            JUMPBY(OPSIZE(BUILD_MAP) - 1);
             PyObject *map = _PyDict_FromItems(
                     &PEEK(2*oparg), 2,
                     &PEEK(2*oparg - 1), 2,
@@ -1862,7 +1773,6 @@
         }
 
         TARGET(SETUP_ANNOTATIONS) {
-            JUMPBY(OPSIZE(SETUP_ANNOTATIONS) - 1);
             int err;
             PyObject *ann_dict;
             if (LOCALS() == NULL) {
@@ -1918,7 +1828,6 @@
         }
 
         TARGET(BUILD_CONST_KEY_MAP) {
-            JUMPBY(OPSIZE(BUILD_CONST_KEY_MAP) - 1);
             PyObject *map;
             PyObject *keys = TOP();
             if (!PyTuple_CheckExact(keys) ||
@@ -1943,7 +1852,6 @@
         }
 
         TARGET(DICT_UPDATE) {
-            JUMPBY(OPSIZE(DICT_UPDATE) - 1);
             PyObject *update = POP();
             PyObject *dict = PEEK(oparg);
             if (PyDict_Update(dict, update) < 0) {
@@ -1960,7 +1868,6 @@
         }
 
         TARGET(DICT_MERGE) {
-            JUMPBY(OPSIZE(DICT_MERGE) - 1);
             PyObject *update = POP();
             PyObject *dict = PEEK(oparg);
 
@@ -1975,7 +1882,6 @@
         }
 
         TARGET(MAP_ADD) {
-            JUMPBY(OPSIZE(MAP_ADD) - 1);
             PyObject *value = TOP();
             PyObject *key = SECOND();
             PyObject *map;
@@ -1992,12 +1898,12 @@
 
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
-            JUMPBY(OPSIZE(LOAD_ATTR) - 1);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg>>1);
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -2051,7 +1957,6 @@
         }
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
-            JUMPBY(OPSIZE(LOAD_ATTR_INSTANCE_VALUE) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -2077,7 +1982,6 @@
         }
 
         TARGET(LOAD_ATTR_MODULE) {
-            JUMPBY(OPSIZE(LOAD_ATTR_MODULE) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -2103,7 +2007,6 @@
         }
 
         TARGET(LOAD_ATTR_WITH_HINT) {
-            JUMPBY(OPSIZE(LOAD_ATTR_WITH_HINT) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -2143,7 +2046,6 @@
         }
 
         TARGET(LOAD_ATTR_SLOT) {
-            JUMPBY(OPSIZE(LOAD_ATTR_SLOT) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -2166,7 +2068,6 @@
         }
 
         TARGET(LOAD_ATTR_CLASS) {
-            JUMPBY(OPSIZE(LOAD_ATTR_CLASS) - 1);
             assert(cframe.use_tracing == 0);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
 
@@ -2190,7 +2091,6 @@
         }
 
         TARGET(LOAD_ATTR_PROPERTY) {
-            JUMPBY(OPSIZE(LOAD_ATTR_PROPERTY) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -2224,7 +2124,6 @@
         }
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
-            JUMPBY(OPSIZE(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -2262,7 +2161,6 @@
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
             PyObject *owner = PEEK(1);
             PyObject *value = PEEK(2);
-            JUMPBY(OPSIZE(STORE_ATTR_INSTANCE_VALUE) - 1);
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint16_t index = read_u16(&next_instr[3].cache);
             assert(cframe.use_tracing == 0);
@@ -2291,7 +2189,6 @@
         TARGET(STORE_ATTR_WITH_HINT) {
             PyObject *owner = PEEK(1);
             PyObject *value = PEEK(2);
-            JUMPBY(OPSIZE(STORE_ATTR_WITH_HINT) - 1);
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint16_t hint = read_u16(&next_instr[3].cache);
             assert(cframe.use_tracing == 0);
@@ -2341,7 +2238,6 @@
         TARGET(STORE_ATTR_SLOT) {
             PyObject *owner = PEEK(1);
             PyObject *value = PEEK(2);
-            JUMPBY(OPSIZE(STORE_ATTR_SLOT) - 1);
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint16_t index = read_u16(&next_instr[3].cache);
             assert(cframe.use_tracing == 0);
@@ -2364,10 +2260,10 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *res;
-            JUMPBY(OPSIZE(COMPARE_OP) - 1);
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -2387,7 +2283,6 @@
         TARGET(COMPARE_OP_FLOAT_JUMP) {
             PyObject *_tmp_1 = PEEK(1);
             PyObject *_tmp_2 = PEEK(2);
-            JUMPBY(OPSIZE(opcode) - 1);
             {
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
@@ -2407,10 +2302,10 @@
                 jump = sign_ish & when_to_jump_mask;
                 _tmp_2 = (PyObject *)jump;
             }
-            JUMPBY(2); /* cache */
+            JUMPBY(2);
+            int opsize = OPSIZE(opcode);
             NEXTOPARG();
-            JUMPBY(1);
-            JUMPBY(OPSIZE(opcode) - 1);
+            JUMPBY(opsize);
             {
                 size_t jump = (size_t)_tmp_2;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
@@ -2425,7 +2320,6 @@
         TARGET(COMPARE_OP_INT_JUMP) {
             PyObject *_tmp_1 = PEEK(1);
             PyObject *_tmp_2 = PEEK(2);
-            JUMPBY(OPSIZE(opcode) - 1);
             {
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
@@ -2448,10 +2342,10 @@
                 jump = sign_ish & when_to_jump_mask;
                 _tmp_2 = (PyObject *)jump;
             }
-            JUMPBY(2); /* cache */
+            JUMPBY(2);
+            int opsize = OPSIZE(opcode);
             NEXTOPARG();
-            JUMPBY(1);
-            JUMPBY(OPSIZE(opcode) - 1);
+            JUMPBY(opsize);
             {
                 size_t jump = (size_t)_tmp_2;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
@@ -2466,7 +2360,6 @@
         TARGET(COMPARE_OP_STR_JUMP) {
             PyObject *_tmp_1 = PEEK(1);
             PyObject *_tmp_2 = PEEK(2);
-            JUMPBY(OPSIZE(opcode) - 1);
             {
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
@@ -2486,10 +2379,10 @@
                 jump = res ^ invert;
                 _tmp_2 = (PyObject *)jump;
             }
-            JUMPBY(2); /* cache */
+            JUMPBY(2);
+            int opsize = OPSIZE(opcode);
             NEXTOPARG();
-            JUMPBY(1);
-            JUMPBY(OPSIZE(opcode) - 1);
+            JUMPBY(opsize);
             {
                 size_t jump = (size_t)_tmp_2;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
@@ -2502,7 +2395,6 @@
         }
 
         TARGET(IS_OP) {
-            JUMPBY(OPSIZE(IS_OP) - 1);
             PyObject *right = POP();
             PyObject *left = TOP();
             int res = Py_Is(left, right) ^ oparg;
@@ -2514,7 +2406,6 @@
         }
 
         TARGET(CONTAINS_OP) {
-            JUMPBY(OPSIZE(CONTAINS_OP) - 1);
             PyObject *right = POP();
             PyObject *left = POP();
             int res = PySequence_Contains(right, left);
@@ -2529,7 +2420,6 @@
         }
 
         TARGET(CHECK_EG_MATCH) {
-            JUMPBY(OPSIZE(CHECK_EG_MATCH) - 1);
             PyObject *match_type = POP();
             if (check_except_star_type_valid(tstate, match_type) < 0) {
                 Py_DECREF(match_type);
@@ -2571,7 +2461,6 @@
         }
 
         TARGET(CHECK_EXC_MATCH) {
-            JUMPBY(OPSIZE(CHECK_EXC_MATCH) - 1);
             PyObject *right = POP();
             PyObject *left = TOP();
             assert(PyExceptionInstance_Check(left));
@@ -2587,7 +2476,6 @@
         }
 
         TARGET(IMPORT_NAME) {
-            JUMPBY(OPSIZE(IMPORT_NAME) - 1);
             PyObject *name = GETITEM(names, oparg);
             PyObject *fromlist = POP();
             PyObject *level = TOP();
@@ -2602,7 +2490,6 @@
         }
 
         TARGET(IMPORT_STAR) {
-            JUMPBY(OPSIZE(IMPORT_STAR) - 1);
             PyObject *from = POP(), *locals;
             int err;
             if (_PyFrame_FastToLocalsWithError(frame) < 0) {
@@ -2626,7 +2513,6 @@
         }
 
         TARGET(IMPORT_FROM) {
-            JUMPBY(OPSIZE(IMPORT_FROM) - 1);
             PyObject *name = GETITEM(names, oparg);
             PyObject *from = TOP();
             PyObject *res;
@@ -2638,14 +2524,12 @@
         }
 
         TARGET(JUMP_FORWARD) {
-            JUMPBY(OPSIZE(JUMP_FORWARD) - 1);
             JUMPBY(oparg);
             DISPATCH();
         }
 
         TARGET(JUMP_BACKWARD) {
             PREDICTED(JUMP_BACKWARD);
-            JUMPBY(OPSIZE(JUMP_BACKWARD) - 1);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
@@ -2654,7 +2538,6 @@
 
         TARGET(POP_JUMP_IF_FALSE) {
             PREDICTED(POP_JUMP_IF_FALSE);
-            JUMPBY(OPSIZE(POP_JUMP_IF_FALSE) - 1);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
@@ -2678,7 +2561,6 @@
         }
 
         TARGET(POP_JUMP_IF_TRUE) {
-            JUMPBY(OPSIZE(POP_JUMP_IF_TRUE) - 1);
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
@@ -2702,7 +2584,6 @@
         }
 
         TARGET(POP_JUMP_IF_NOT_NONE) {
-            JUMPBY(OPSIZE(POP_JUMP_IF_NOT_NONE) - 1);
             PyObject *value = POP();
             if (!Py_IsNone(value)) {
                 JUMPBY(oparg);
@@ -2712,7 +2593,6 @@
         }
 
         TARGET(POP_JUMP_IF_NONE) {
-            JUMPBY(OPSIZE(POP_JUMP_IF_NONE) - 1);
             PyObject *value = POP();
             if (Py_IsNone(value)) {
                 _Py_DECREF_NO_DEALLOC(value);
@@ -2725,7 +2605,6 @@
         }
 
         TARGET(JUMP_IF_FALSE_OR_POP) {
-            JUMPBY(OPSIZE(JUMP_IF_FALSE_OR_POP) - 1);
             PyObject *cond = TOP();
             int err;
             if (Py_IsTrue(cond)) {
@@ -2752,7 +2631,6 @@
         }
 
         TARGET(JUMP_IF_TRUE_OR_POP) {
-            JUMPBY(OPSIZE(JUMP_IF_TRUE_OR_POP) - 1);
             PyObject *cond = TOP();
             int err;
             if (Py_IsFalse(cond)) {
@@ -2779,7 +2657,6 @@
         }
 
         TARGET(JUMP_BACKWARD_NO_INTERRUPT) {
-            JUMPBY(OPSIZE(JUMP_BACKWARD_NO_INTERRUPT) - 1);
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -2790,7 +2667,6 @@
         }
 
         TARGET(GET_LEN) {
-            JUMPBY(OPSIZE(GET_LEN) - 1);
             // PUSH(len(TOS))
             Py_ssize_t len_i = PyObject_Length(TOP());
             if (len_i < 0) {
@@ -2805,7 +2681,6 @@
         }
 
         TARGET(MATCH_CLASS) {
-            JUMPBY(OPSIZE(MATCH_CLASS) - 1);
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
             PyObject *names = POP();
@@ -2833,7 +2708,6 @@
         }
 
         TARGET(MATCH_MAPPING) {
-            JUMPBY(OPSIZE(MATCH_MAPPING) - 1);
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             PyObject *res = match ? Py_True : Py_False;
@@ -2843,7 +2717,6 @@
         }
 
         TARGET(MATCH_SEQUENCE) {
-            JUMPBY(OPSIZE(MATCH_SEQUENCE) - 1);
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             PyObject *res = match ? Py_True : Py_False;
@@ -2853,7 +2726,6 @@
         }
 
         TARGET(MATCH_KEYS) {
-            JUMPBY(OPSIZE(MATCH_KEYS) - 1);
             // On successful match, PUSH(values). Otherwise, PUSH(None).
             PyObject *keys = TOP();
             PyObject *subject = SECOND();
@@ -2866,7 +2738,6 @@
         }
 
         TARGET(GET_ITER) {
-            JUMPBY(OPSIZE(GET_ITER) - 1);
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
             PyObject *iter = PyObject_GetIter(iterable);
@@ -2878,7 +2749,6 @@
         }
 
         TARGET(GET_YIELD_FROM_ITER) {
-            JUMPBY(OPSIZE(GET_YIELD_FROM_ITER) - 1);
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
             PyObject *iter;
@@ -2909,10 +2779,10 @@
 
         TARGET(FOR_ITER) {
             PREDICTED(FOR_ITER);
-            JUMPBY(OPSIZE(FOR_ITER) - 1);
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_ForIter(TOP(), next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -2946,7 +2816,6 @@
         }
 
         TARGET(FOR_ITER_LIST) {
-            JUMPBY(OPSIZE(FOR_ITER_LIST) - 1);
             assert(cframe.use_tracing == 0);
             _PyListIterObject *it = (_PyListIterObject *)TOP();
             DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, FOR_ITER);
@@ -2970,7 +2839,6 @@
         }
 
         TARGET(FOR_ITER_TUPLE) {
-            JUMPBY(OPSIZE(FOR_ITER_TUPLE) - 1);
             assert(cframe.use_tracing == 0);
             _PyTupleIterObject *it = (_PyTupleIterObject *)TOP();
             DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
@@ -2994,7 +2862,6 @@
         }
 
         TARGET(FOR_ITER_RANGE) {
-            JUMPBY(OPSIZE(FOR_ITER_RANGE) - 1);
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
@@ -3020,7 +2887,6 @@
         }
 
         TARGET(FOR_ITER_GEN) {
-            JUMPBY(OPSIZE(FOR_ITER_GEN) - 1);
             assert(cframe.use_tracing == 0);
             PyGenObject *gen = (PyGenObject *)TOP();
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
@@ -3038,7 +2904,6 @@
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
-            JUMPBY(OPSIZE(BEFORE_ASYNC_WITH) - 1);
             PyObject *mgr = TOP();
             PyObject *res;
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
@@ -3075,7 +2940,6 @@
         }
 
         TARGET(BEFORE_WITH) {
-            JUMPBY(OPSIZE(BEFORE_WITH) - 1);
             PyObject *mgr = TOP();
             PyObject *res;
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
@@ -3116,7 +2980,6 @@
             PyObject *lasti = PEEK(3);
             PyObject *exit_func = PEEK(4);
             PyObject *res;
-            JUMPBY(OPSIZE(WITH_EXCEPT_START) - 1);
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
                - unused: SECOND = previous exception
@@ -3143,7 +3006,6 @@
         }
 
         TARGET(PUSH_EXC_INFO) {
-            JUMPBY(OPSIZE(PUSH_EXC_INFO) - 1);
             PyObject *value = TOP();
 
             _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -3161,7 +3023,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
-            JUMPBY(OPSIZE(LOAD_ATTR_METHOD_WITH_VALUES) - 1);
             /* Cached method object */
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -3187,7 +3048,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_DICT) {
-            JUMPBY(OPSIZE(LOAD_ATTR_METHOD_WITH_DICT) - 1);
             /* Can be either a managed dict, or a tp_dictoffset offset.*/
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -3215,7 +3075,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
-            JUMPBY(OPSIZE(LOAD_ATTR_METHOD_NO_DICT) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
@@ -3234,7 +3093,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
-            JUMPBY(OPSIZE(LOAD_ATTR_METHOD_LAZY_DICT) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
@@ -3257,7 +3115,6 @@
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
-            JUMPBY(OPSIZE(CALL_BOUND_METHOD_EXACT_ARGS) - 1);
             DEOPT_IF(is_method(stack_pointer, oparg), CALL);
             PyObject *function = PEEK(oparg + 1);
             DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, CALL);
@@ -3271,7 +3128,6 @@
         }
 
         TARGET(KW_NAMES) {
-            JUMPBY(OPSIZE(KW_NAMES) - 1);
             assert(kwnames == NULL);
             assert(oparg < PyTuple_GET_SIZE(consts));
             kwnames = GETITEM(consts, oparg);
@@ -3280,17 +3136,15 @@
 
         TARGET(CALL) {
             PREDICTED(CALL);
-            JUMPBY(OPSIZE(CALL) - 1);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-
                 assert(cframe.use_tracing == 0);
                 int is_meth = is_method(stack_pointer, oparg);
                 int nargs = oparg + is_meth;
                 PyObject *callable = PEEK(nargs + 1);
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_Call(callable, next_instr, nargs, kwnames);
                 DISPATCH_SAME_OPARG();
-
             }
             STAT_INC(CALL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
@@ -3363,7 +3217,6 @@
 
         TARGET(CALL_PY_EXACT_ARGS) {
             PREDICTED(CALL_PY_EXACT_ARGS);
-            JUMPBY(OPSIZE(CALL_PY_EXACT_ARGS) - 1);
             assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
@@ -3391,7 +3244,6 @@
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
-            JUMPBY(OPSIZE(CALL_PY_WITH_DEFAULTS) - 1);
             assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
@@ -3426,7 +3278,6 @@
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
-            JUMPBY(OPSIZE(CALL_NO_KW_TYPE_1) - 1);
             assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
@@ -3445,7 +3296,6 @@
         }
 
         TARGET(CALL_NO_KW_STR_1) {
-            JUMPBY(OPSIZE(CALL_NO_KW_STR_1) - 1);
             assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
@@ -3468,7 +3318,6 @@
         }
 
         TARGET(CALL_NO_KW_TUPLE_1) {
-            JUMPBY(OPSIZE(CALL_NO_KW_TUPLE_1) - 1);
             assert(kwnames == NULL);
             assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), CALL);
@@ -3490,7 +3339,6 @@
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
-            JUMPBY(OPSIZE(CALL_BUILTIN_CLASS) - 1);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             int kwnames_len = KWNAMES_LEN();
@@ -3519,7 +3367,6 @@
         }
 
         TARGET(CALL_NO_KW_BUILTIN_O) {
-            JUMPBY(OPSIZE(CALL_NO_KW_BUILTIN_O) - 1);
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
             assert(kwnames == NULL);
@@ -3554,7 +3401,6 @@
         }
 
         TARGET(CALL_NO_KW_BUILTIN_FAST) {
-            JUMPBY(OPSIZE(CALL_NO_KW_BUILTIN_FAST) - 1);
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
             assert(kwnames == NULL);
@@ -3595,7 +3441,6 @@
         }
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
-            JUMPBY(OPSIZE(CALL_BUILTIN_FAST_WITH_KEYWORDS) - 1);
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int is_meth = is_method(stack_pointer, oparg);
@@ -3635,7 +3480,6 @@
         }
 
         TARGET(CALL_NO_KW_LEN) {
-            JUMPBY(OPSIZE(CALL_NO_KW_LEN) - 1);
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             /* len(o) */
@@ -3666,7 +3510,6 @@
         }
 
         TARGET(CALL_NO_KW_ISINSTANCE) {
-            JUMPBY(OPSIZE(CALL_NO_KW_ISINSTANCE) - 1);
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             /* isinstance(o, o2) */
@@ -3700,7 +3543,6 @@
         }
 
         TARGET(CALL_NO_KW_LIST_APPEND) {
-            JUMPBY(OPSIZE(CALL_NO_KW_LIST_APPEND) - 1);
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             assert(oparg == 1);
@@ -3724,7 +3566,6 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
-            JUMPBY(OPSIZE(CALL_NO_KW_METHOD_DESCRIPTOR_O) - 1);
             assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3761,7 +3602,6 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-            JUMPBY(OPSIZE(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) - 1);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             PyMethodDescrObject *callable =
@@ -3799,7 +3639,6 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
-            JUMPBY(OPSIZE(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) - 1);
             assert(kwnames == NULL);
             assert(oparg == 0 || oparg == 1);
             int is_meth = is_method(stack_pointer, oparg);
@@ -3834,7 +3673,6 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
-            JUMPBY(OPSIZE(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) - 1);
             assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3871,7 +3709,6 @@
 
         TARGET(CALL_FUNCTION_EX) {
             PREDICTED(CALL_FUNCTION_EX);
-            JUMPBY(OPSIZE(CALL_FUNCTION_EX) - 1);
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();
@@ -3909,7 +3746,6 @@
         }
 
         TARGET(MAKE_FUNCTION) {
-            JUMPBY(OPSIZE(MAKE_FUNCTION) - 1);
             PyObject *codeobj = POP();
             PyFunctionObject *func = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
@@ -3942,7 +3778,6 @@
         }
 
         TARGET(RETURN_GENERATOR) {
-            JUMPBY(OPSIZE(RETURN_GENERATOR) - 1);
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -3966,7 +3801,6 @@
         }
 
         TARGET(BUILD_SLICE) {
-            JUMPBY(OPSIZE(BUILD_SLICE) - 1);
             PyObject *start, *stop, *step, *slice;
             if (oparg == 3)
                 step = POP();
@@ -3985,7 +3819,6 @@
         }
 
         TARGET(FORMAT_VALUE) {
-            JUMPBY(OPSIZE(FORMAT_VALUE) - 1);
             /* Handles f-string value formatting. */
             PyObject *result;
             PyObject *fmt_spec;
@@ -4046,7 +3879,6 @@
         }
 
         TARGET(COPY) {
-            JUMPBY(OPSIZE(COPY) - 1);
             assert(oparg != 0);
             PyObject *peek = PEEK(oparg);
             PUSH(Py_NewRef(peek));
@@ -4059,10 +3891,10 @@
             PyObject *rhs = PEEK(1);
             PyObject *lhs = PEEK(2);
             PyObject *res;
-            JUMPBY(OPSIZE(BINARY_OP) - 1);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE(opcode);
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
                 DISPATCH_SAME_OPARG();
             }
@@ -4082,7 +3914,6 @@
         }
 
         TARGET(SWAP) {
-            JUMPBY(OPSIZE(SWAP) - 1);
             assert(oparg != 0);
             PyObject *top = TOP();
             SET_TOP(PEEK(oparg));
@@ -4091,7 +3922,6 @@
         }
 
         TARGET(EXTENDED_ARG) {
-            JUMPBY(OPSIZE(EXTENDED_ARG) - 1);
             assert(oparg);
             assert(cframe.use_tracing == 0);
             opcode = _Py_OPCODE(*next_instr);
@@ -4105,6 +3935,5 @@
         }
 
         TARGET(CACHE) {
-            JUMPBY(OPSIZE(CACHE) - 1);
             Py_UNREACHABLE();
         }
