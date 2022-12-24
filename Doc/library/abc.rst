@@ -109,28 +109,27 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 
       .. XXX explain the "usual mechanism"
 
-
-   For a demonstration of these concepts, look at this example ABC definition::
+      ::
       
-      from abc import ABC, abstractmethod
+         from abc import ABC, abstractmethod
 
-      class MyIterable(ABC):
-          @abstractmethod
-          def __iter__(self):
-              return NotImplemented
-          
-          @classmethod
-          def __subclasshook__(cls, subclass: type) -> bool:
-              return hasattr(subclass, "__iter__")
-       
-       >>> MyIterable in list.__bases__
-       False
-       >>> issubclass(list, MyIterable)
-       True
+         class MyIterable(ABC):
+            @abstractmethod
+            def __iter__(self):
+               return NotImplemented
+            
+            @classmethod
+            def __subclasshook__(cls, subclass: type) -> bool:
+               return hasattr(subclass, "__iter__")
+         
+         >>> MyIterable in list.__bases__
+         False
+         >>> issubclass(list, MyIterable)
+         True
 
-   :class:`list` doesn't inherit from ``MyIterable``, nor is it registered as a subclass.
-   Using ``__subclasshook__`` it was possible to make not only :class:`list` but **all**
-   classes which define an ``__iter__`` method virtual subclasses of ``MyIterable``.
+      :class:`list` doesn't inherit from ``MyIterable``, nor is it registered as a subclass.
+      Using ``__subclasshook__`` it was possible to make not only :class:`list` but **all**
+      classes which define an ``__iter__`` method virtual subclasses of ``MyIterable``.
 
 
 The :mod:`abc` module also provides the following decorator:
