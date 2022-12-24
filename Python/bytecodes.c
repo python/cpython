@@ -844,6 +844,7 @@ dummy_func(
             // or throw() call.
             assert(oparg == STACK_LEVEL());
             assert(frame != &entry_frame);
+            frame->prev_instr += OPSIZE(YIELD_VALUE) - 1;
             PyObject *retval = POP();
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
@@ -2551,7 +2552,7 @@ dummy_func(
                 STACK_SHRINK(1);
                 Py_DECREF(iter);
                 /* Skip END_FOR */
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + OPSIZE(opcode));
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + OPSIZE(END_FOR));
             }
         }
 
@@ -3515,6 +3516,7 @@ dummy_func(
 
         // stack effect: ( -- )
         inst(RETURN_GENERATOR) {
+            frame->prev_instr += OPSIZE(RETURN_GENERATOR) - 1;
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);

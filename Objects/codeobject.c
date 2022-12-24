@@ -424,7 +424,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
         _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
-        entry_point += OPSIZE(_Py_OPCODE(_PyCode_CODE(co)[entry_point]));
+        entry_point++;
     }
     co->_co_firsttraceable = entry_point;
     _PyCode_Quicken(co);

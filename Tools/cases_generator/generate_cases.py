@@ -148,6 +148,7 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
         self.output_effects = inst.outputs  # For consistency/completeness
+        self.input_registers = self.output_registers = None
 
     def analyze_registers(self, a: "Analyzer") -> None:
         regs = iter(("REG(oparg1)", "REG(oparg2)", "REG(oparg3)"))
@@ -189,6 +190,8 @@ class Instruction:
         for oeffect in self.output_effects:
             if oeffect.name not in input_names:
                 out.declare(oeffect, None)
+
+        out.emit(f"JUMPBY(OPSIZE({self.inst.name}) - 1);")
 
         self.write_body(out, 0)
 
@@ -658,10 +661,11 @@ class Analyzer:
         with self.wrap_super_or_macro(sup):
             first = True
             for comp in sup.parts:
-                if not first:
-                    self.out.emit("int opsize = OPSIZE(opcode);")
+                if first:
+                    self.out.emit("JUMPBY(OPSIZE(opcode) - 1);")
+                else:
                     self.out.emit("NEXTOPARG();")
-                    self.out.emit("JUMPBY(opsize);")
+                    self.out.emit("JUMPBY(OPSIZE(opcode));")
                 first = False
                 comp.write_body(self.out, 0)
                 if comp.instr.cache_offset:
