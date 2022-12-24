@@ -94,7 +94,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertNotEqual(r"\u0020", " ")
 
     def test_ascii(self):
-        # Test basic sanity of repr()
         self.assertEqual(ascii('abc'), "'abc'")
         self.assertEqual(ascii('ab\\c'), "'ab\\\\c'")
         self.assertEqual(ascii('ab\\'), "'ab\\\\'")
