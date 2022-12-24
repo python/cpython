@@ -658,10 +658,10 @@ are always available.  They are listed here in alphabetical order.
       infinity: "Infinity" | "inf"
       nan: "nan"
       digitpart: `digit` (["_"] `digit`)*
-      floatnumber: [`digitpart`] "." `digitpart` | `digitpart` ["."]
+      number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
       exponent: ("e" | "E") ["+" | "-"] `digitpart`
-      number: floatnumber [`exponent`]
-      numeric_value: `number` | `infinity` | `nan`
+      floatnumber: number [`exponent`]
+      numeric_value: `floatnumber` | `infinity` | `nan`
       numeric_string: [`sign`] `numeric_value`
 
    Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
