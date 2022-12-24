@@ -125,7 +125,7 @@ class FlowControlMixin(protocols.Protocol):
 
     def __init__(self, loop=None):
         if loop is None:
-            self._loop = events._get_event_loop(stacklevel=4)
+            self._loop = events.get_event_loop()
         else:
             self._loop = loop
         self._paused = False
@@ -404,7 +404,7 @@ class StreamReader:
 
         self._limit = limit
         if loop is None:
-            self._loop = events._get_event_loop()
+            self._loop = events.get_event_loop()
         else:
             self._loop = loop
         self._buffer = bytearray()
@@ -688,7 +688,7 @@ class StreamReader:
             await self._wait_for_data('read')
 
         # This will work right even if buffer is less than n bytes
-        data = bytes(self._buffer[:n])
+        data = bytes(memoryview(self._buffer)[:n])
         del self._buffer[:n]
 
         self._maybe_resume_transport()
@@ -730,7 +730,7 @@ class StreamReader:
             data = bytes(self._buffer)
             self._buffer.clear()
         else:
-            data = bytes(self._buffer[:n])
+            data = bytes(memoryview(self._buffer)[:n])
             del self._buffer[:n]
         self._maybe_resume_transport()
         return data

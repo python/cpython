@@ -129,7 +129,14 @@ The following implementation-specific options are available:\n\
 \n\
 -X int_max_str_digits=number: limit the size of int<->str conversions.\n\
     This helps avoid denial of service attacks when parsing untrusted data.\n\
-    The default is sys.int_info.default_max_str_digits.  0 disables.";
+    The default is sys.int_info.default_max_str_digits.  0 disables."
+
+#ifdef Py_STATS
+"\n\
+\n\
+-X pystats: Enable pystats collection at startup."
+#endif
+;
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars[] =
@@ -241,7 +248,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #define FROM_STRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromString(STR) \
-        : (Py_INCREF(Py_None), Py_None))
+        : Py_NewRef(Py_None))
 #define SET_ITEM_STR(VAR) \
     SET_ITEM(#VAR, FROM_STRING(VAR))
 
@@ -595,17 +602,13 @@ _Py_ClearStandardStreamEncoding(void)
 
 /* --- Py_GetArgcArgv() ------------------------------------------- */
 
-/* For Py_GetArgcArgv(); set by _Py_SetArgcArgv() */
-static PyWideStringList orig_argv = {.length = 0, .items = NULL};
-
-
 void
 _Py_ClearArgcArgv(void)
 {
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyWideStringList_Clear(&orig_argv);
+    _PyWideStringList_Clear(&_PyRuntime.orig_argv);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -620,7 +623,9 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    res = _PyWideStringList_Copy(&orig_argv, &argv_list);
+    // XXX _PyRuntime.orig_argv only gets cleared by Py_Main(),
+    // so it it currently leaks for embedders.
+    res = _PyWideStringList_Copy(&_PyRuntime.orig_argv, &argv_list);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
@@ -631,8 +636,8 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
 void
 Py_GetArgcArgv(int *argc, wchar_t ***argv)
 {
-    *argc = (int)orig_argv.length;
-    *argv = orig_argv.items;
+    *argc = (int)_PyRuntime.orig_argv.length;
+    *argv = _PyRuntime.orig_argv.items;
 }
 
 
@@ -780,7 +785,6 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->check_hash_pycs_mode = NULL;
     config->pathconfig_warnings = -1;
     config->_init_main = 1;
-    config->_isolated_interpreter = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
@@ -1015,7 +1019,6 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTR_ATTR(check_hash_pycs_mode);
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
-    COPY_ATTR(_isolated_interpreter);
     COPY_ATTR(use_frozen_modules);
     COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
@@ -1056,7 +1059,7 @@ _PyConfig_AsDict(const PyConfig *config)
 #define FROM_WSTRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromWideChar(STR, -1) \
-        : (Py_INCREF(Py_None), Py_None))
+        : Py_NewRef(Py_None))
 #define SET_ITEM_WSTR(ATTR) \
     SET_ITEM(#ATTR, FROM_WSTRING(config->ATTR))
 #define SET_ITEM_WSTRLIST(LIST) \
@@ -1123,7 +1126,6 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(check_hash_pycs_mode);
     SET_ITEM_INT(pathconfig_warnings);
     SET_ITEM_INT(_init_main);
-    SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
     SET_ITEM_INT(use_frozen_modules);
     SET_ITEM_INT(safe_path);
@@ -1418,7 +1420,6 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
 
     GET_UINT(_install_importlib);
     GET_UINT(_init_main);
-    GET_UINT(_isolated_interpreter);
     GET_UINT(use_frozen_modules);
     GET_UINT(safe_path);
     GET_UINT(_is_python_build);
@@ -2191,6 +2192,12 @@ config_read(PyConfig *config, int compute_path_config)
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
     }
+
+#ifdef Py_STATS
+    if (config_get_xoption(config, L"pystats")) {
+        _py_stats = &_py_stats_struct;
+    }
+#endif
 
     status = config_read_complex_options(config);
     if (_PyStatus_EXCEPTION(status)) {

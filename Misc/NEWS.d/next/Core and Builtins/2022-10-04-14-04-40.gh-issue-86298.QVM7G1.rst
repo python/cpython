@@ -1,3 +1,0 @@
-In cases where ``warnings.warn_explicit()`` consults the module's loader, an
-``DeprecationWarning`` is issued when ``m.__loader__`` differs from
-``m.__spec__.loader``.

@@ -6,12 +6,12 @@ on:
     paths:
       - 'Lib/ensurepip/_bundled/**'
       - '.github/workflows/verify-ensurepip-wheels.yml'
-      - 'Tools/scripts/verify_ensurepip_wheels.py'
+      - 'Tools/build/verify_ensurepip_wheels.py'
   pull_request:
     paths:
       - 'Lib/ensurepip/_bundled/**'
       - '.github/workflows/verify-ensurepip-wheels.yml'
-      - 'Tools/scripts/verify_ensurepip_wheels.py'
+      - 'Tools/build/verify_ensurepip_wheels.py'
 
 permissions:
   contents: read
@@ -29,4 +29,4 @@ jobs:
         with:
           python-version: '3'
       - name: Compare checksums of bundled pip and setuptools to ones published on PyPI
-        run: ./Tools/scripts/verify_ensurepip_wheels.py
+        run: ./Tools/build/verify_ensurepip_wheels.py

@@ -118,6 +118,12 @@ class LoaderTest(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
+    def test_load_hasattr(self):
+        # bpo-34816: shouldn't raise OSError
+        self.assertFalse(hasattr(windll, 'test'))
+
+    @unittest.skipUnless(os.name == "nt",
+                         'test specific to Windows')
     def test_load_dll_with_flags(self):
         _sqlite3 = import_helper.import_module("_sqlite3")
         src = _sqlite3.__file__
