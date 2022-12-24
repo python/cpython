@@ -94,6 +94,10 @@ class TestLoader(object):
     def loadTestsFromModule(self, module, *, pattern=None):
         """Return a suite of all test cases contained in the given module"""
         tests = []
+        if pattern is not None and not fnmatch(
+            os.path.basename(module.__file__), pattern):
+            return self.suiteClass(tests)
+
         for name in dir(module):
             obj = getattr(module, name)
             if isinstance(obj, type) and issubclass(obj, case.TestCase):
