@@ -136,9 +136,7 @@ tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
         cursor = cursor->tb_next;
     }
 
-    PyObject *old_next = (PyObject*)self->tb_next;
-    self->tb_next = (PyTracebackObject *)Py_XNewRef(new_next);
-    Py_XDECREF(old_next);
+    Py_XSETREF(self->tb_next, (PyTracebackObject *)Py_XNewRef(new_next));
 
     return 0;
 }
@@ -533,8 +531,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         PyObject *truncated;
         truncated = PyUnicode_Substring(lineobj, i, PyUnicode_GET_LENGTH(lineobj));
         if (truncated) {
-            Py_DECREF(lineobj);
-            lineobj = truncated;
+            Py_SETREF(lineobj, truncated);
         } else {
             PyErr_Clear();
         }
