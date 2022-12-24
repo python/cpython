@@ -94,12 +94,11 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
    .. method:: __subclasshook__(subclass)
 
       (Must be defined as a class method.)
-
-      Check whether *subclass* is considered a subclass of this ABC.  This means
-      that you can customize the behavior of ``issubclass`` further without the
-      need to call :meth:`register` on every class you want to consider a
-      subclass of the ABC.  (This class method is called from the
-      :meth:`__subclasscheck__` method of the ABC.)
+      
+      Check whether *subclass* is considered a subclass of this ABC.  This allows
+      for *virtual* subclassing, where a class is considered a subclass of an
+      ABC by virtue of fulfilling some criteria, as opposed to by calling
+      :meth:`register` on *subclass* or having it inherit from the ABC.
 
       This method should return ``True``, ``False`` or ``NotImplemented``.  If
       it returns ``True``, the *subclass* is considered a subclass of this ABC.
@@ -112,52 +111,26 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 
 
    For a demonstration of these concepts, look at this example ABC definition::
-
-      class Foo:
-          def __getitem__(self, index):
-              ...
-          def __len__(self):
-              ...
-          def get_iterator(self):
-              return iter(self)
+      
+      from abc import ABC, abstractmethod
 
       class MyIterable(ABC):
-
           @abstractmethod
           def __iter__(self):
-              while False:
-                  yield None
-
-          def get_iterator(self):
-              return self.__iter__()
-
-          @classmethod
-          def __subclasshook__(cls, C):
-              if cls is MyIterable:
-                  if any("__iter__" in B.__dict__ for B in C.__mro__):
-                      return True
               return NotImplemented
+          
+          @classmethod
+          def __subclasshook__(cls, subclass: type) -> bool:
+              return hasattr(subclass, "__iter__")
+       
+       >>> MyIterable in list.__bases__
+       False
+       >>> issubclass(list, MyIterable)
+       True
 
-      MyIterable.register(Foo)
-
-   The ABC ``MyIterable`` defines the standard iterable method,
-   :meth:`~iterator.__iter__`, as an abstract method.  The implementation given
-   here can still be called from subclasses.  The :meth:`get_iterator` method
-   is also part of the ``MyIterable`` abstract base class, but it does not have
-   to be overridden in non-abstract derived classes.
-
-   The :meth:`__subclasshook__` class method defined here says that any class
-   that has an :meth:`~iterator.__iter__` method in its
-   :attr:`~object.__dict__` (or in that of one of its base classes, accessed
-   via the :attr:`~class.__mro__` list) is considered a ``MyIterable`` too.
-
-   Finally, the last line makes ``Foo`` a virtual subclass of ``MyIterable``,
-   even though it does not define an :meth:`~iterator.__iter__` method (it uses
-   the old-style iterable protocol, defined in terms of :meth:`__len__` and
-   :meth:`__getitem__`).  Note that this will not make ``get_iterator``
-   available as a method of ``Foo``, so it is provided separately.
-
-
+   :class:`list` doesn't inherit from ``MyIterable``, nor is it registered as a subclass.
+   Using ``__subclasshook__`` it was possible to make not only :class:`list` but **all**
+   classes which define an ``__iter__`` method virtual subclasses of ``MyIterable``.
 
 
 The :mod:`abc` module also provides the following decorator:
