@@ -20,6 +20,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
 #include "structmember.h"         // for offsetof(), T_OBJECT
 #include <float.h>                // FLT_MAX
@@ -2066,78 +2067,6 @@ getitem_with_error(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-tracemalloc_track(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-    void *ptr;
-    Py_ssize_t size;
-    int release_gil = 0;
-    int res;
-
-    if (!PyArg_ParseTuple(args, "IOn|i", &domain, &ptr_obj, &size, &release_gil))
-        return NULL;
-    ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred())
-        return NULL;
-
-    if (release_gil) {
-        Py_BEGIN_ALLOW_THREADS
-        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
-        Py_END_ALLOW_THREADS
-    }
-    else {
-        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
-    }
-
-    if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Track error");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-tracemalloc_untrack(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-    void *ptr;
-    int res;
-
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj))
-        return NULL;
-    ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred())
-        return NULL;
-
-    res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
-    if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Untrack error");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-tracemalloc_get_traceback(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-    void *ptr;
-
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj))
-        return NULL;
-    ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred())
-        return NULL;
-
-    return _PyTraceMalloc_GetTraceback(domain, (uintptr_t)ptr);
-}
-
-static PyObject *
 dict_get_version(PyObject *self, PyObject *args)
 {
     PyDictObject *dict;
@@ -2912,6 +2841,22 @@ frame_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+frame_new(PyObject *self, PyObject *args)
+{
+    PyObject *code, *globals, *locals;
+    if (!PyArg_ParseTuple(args, "OOO", &code, &globals, &locals)) {
+        return NULL;
+    }
+    if (!PyCode_Check(code)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyThreadState *tstate = PyThreadState_Get();
+
+    return (PyObject *)PyFrame_New(tstate, (PyCodeObject *)code, globals, locals);
+}
+
+static PyObject *
 test_frame_getvar(PyObject *self, PyObject *args)
 {
     PyObject *frame, *name;
@@ -3301,9 +3246,6 @@ static PyMethodDef TestMethods[] = {
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"Py_CompileString",     pycompilestring, METH_O},
-    {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
-    {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
-    {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
     {"dict_get_version", dict_get_version, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
@@ -3352,6 +3294,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
     {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
