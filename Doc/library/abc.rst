@@ -109,7 +109,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 
       .. XXX explain the "usual mechanism"
 
-      ::
+      **Example use**::
       
          from abc import ABC, abstractmethod
 
