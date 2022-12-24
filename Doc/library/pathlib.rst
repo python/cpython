@@ -543,7 +543,7 @@ Pure paths provide the following methods and properties:
 
    Create a new path object of the same type by combining the *other*
    arguments. This method is called whenever a derivative path is created,
-   such as from :data:`parent` and :method:`relative_to`. Subclasses may
+   such as from :data:`parent` and :meth:`relative_to`. Subclasses may
    override this method to pass information to derivative paths, for example::
 
       from pathlib import PurePosixPath
