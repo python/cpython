@@ -1740,29 +1740,18 @@ test_str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t 
         goto exit;
     }
     return_value = test_str_converter_encoding_impl(module, a, b, c, d, d_length, e, e_length);
+    /* Post parse cleanup for a */
+    PyMem_FREE(a);
+    /* Post parse cleanup for b */
+    PyMem_FREE(b);
+    /* Post parse cleanup for c */
+    PyMem_FREE(c);
+    /* Post parse cleanup for d */
+    PyMem_FREE(d);
+    /* Post parse cleanup for e */
+    PyMem_FREE(e);
 
 exit:
-    /* Cleanup for a */
-    if (a) {
-       PyMem_FREE(a);
-    }
-    /* Cleanup for b */
-    if (b) {
-       PyMem_FREE(b);
-    }
-    /* Cleanup for c */
-    if (c) {
-       PyMem_FREE(c);
-    }
-    /* Cleanup for d */
-    if (d) {
-       PyMem_FREE(d);
-    }
-    /* Cleanup for e */
-    if (e) {
-       PyMem_FREE(e);
-    }
-
     return return_value;
 }
 
@@ -1770,7 +1759,7 @@ static PyObject *
 test_str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
                                  char *d, Py_ssize_t d_length, char *e,
                                  Py_ssize_t e_length)
-/*[clinic end generated code: output=8acb886a3843f3bc input=eb4c38e1f898f402]*/
+/*[clinic end generated code: output=999c1deecfa15b0a input=eb4c38e1f898f402]*/
 
 
 /*[clinic input]
@@ -1803,12 +1792,12 @@ static PyObject *
 test_Py_UNICODE_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *a;
-    const Py_UNICODE *b;
-    const Py_UNICODE *c;
-    const Py_UNICODE *d;
+    const Py_UNICODE *a = NULL;
+    const Py_UNICODE *b = NULL;
+    const Py_UNICODE *c = NULL;
+    const Py_UNICODE *d = NULL;
     Py_ssize_t d_length;
-    const Py_UNICODE *e;
+    const Py_UNICODE *e = NULL;
     Py_ssize_t e_length;
 
     if (!_PyArg_ParseStack(args, nargs, "O&O&O&u#Z#:test_Py_UNICODE_converter",
@@ -1833,7 +1822,7 @@ test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
                                const Py_UNICODE *b, const Py_UNICODE *c,
                                const Py_UNICODE *d, Py_ssize_t d_length,
                                const Py_UNICODE *e, Py_ssize_t e_length)
-/*[clinic end generated code: output=4d426808cdbb3ea3 input=064a3b68ad7f04b0]*/
+/*[clinic end generated code: output=9f34a249b3071fdd input=064a3b68ad7f04b0]*/
 
 
 /*[clinic input]
@@ -3793,7 +3782,7 @@ test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
     a = args[0];
     __clinic_args = PyTuple_New(nargs - 1);
     for (Py_ssize_t i = 0; i < nargs - 1; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, args[1 + i]);
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[1 + i]));
     }
     return_value = test_vararg_and_posonly_impl(module, a, __clinic_args);
 
@@ -3804,7 +3793,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=548bca3a127c22c1 input=08dc2bf7afbf1613]*/
+/*[clinic end generated code: output=081a953b8cbe7617 input=08dc2bf7afbf1613]*/
 
 /*[clinic input]
 test_vararg
@@ -3856,7 +3845,6 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
-    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
 
@@ -3875,7 +3863,7 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=6661f3ca97d85e8c input=81d33815ad1bae6e]*/
+/*[clinic end generated code: output=880365c61ae205d7 input=81d33815ad1bae6e]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -3929,7 +3917,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
-    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
     int b = 0;
@@ -3958,7 +3946,7 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=5fe3cfccb1bef781 input=6e110b54acd9b22d]*/
+/*[clinic end generated code: output=291e9a5a09831128 input=6e110b54acd9b22d]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults

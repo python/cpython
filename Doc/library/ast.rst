@@ -1991,20 +1991,28 @@ and classes for traversing abstract syntax trees:
 
 .. function:: literal_eval(node_or_string)
 
-   Safely evaluate an expression node or a string containing a Python literal or
+   Evaluate an expression node or a string containing only a Python literal or
    container display.  The string or node provided may only consist of the
    following Python literal structures: strings, bytes, numbers, tuples, lists,
    dicts, sets, booleans, ``None`` and ``Ellipsis``.
 
-   This can be used for safely evaluating strings containing Python values from
-   untrusted sources without the need to parse the values oneself.  It is not
-   capable of evaluating arbitrarily complex expressions, for example involving
-   operators or indexing.
+   This can be used for evaluating strings containing Python values without the
+   need to parse the values oneself.  It is not capable of evaluating
+   arbitrarily complex expressions, for example involving operators or
+   indexing.
+
+   This function had been documented as "safe" in the past without defining
+   what that meant. That was misleading. This is specifically designed not to
+   execute Python code, unlike the more general :func:`eval`. There is no
+   namespace, no name lookups, or ability to call out. But it is not free from
+   attack: A relatively small input can lead to memory exhaustion or to C stack
+   exhaustion, crashing the process. There is also the possibility for
+   excessive CPU consumption denial of service on some inputs. Calling it on
+   untrusted data is thus not recommended.
 
    .. warning::
-      It is possible to crash the Python interpreter with a
-      sufficiently large/complex string due to stack depth limitations
-      in Python's AST compiler.
+      It is possible to crash the Python interpreter due to stack depth
+      limitations in Python's AST compiler.
 
       It can raise :exc:`ValueError`, :exc:`TypeError`, :exc:`SyntaxError`,
       :exc:`MemoryError` and :exc:`RecursionError` depending on the malformed
@@ -2269,7 +2277,7 @@ to stdout.  Otherwise, the content is read from stdin.
     code that generated them. This is helpful for tools that make source code
     transformations.
 
-    `leoAst.py <http://leoeditor.com/appendices.html#leoast-py>`_ unifies the
+    `leoAst.py <https://leoeditor.com/appendices.html#leoast-py>`_ unifies the
     token-based and parse-tree-based views of python programs by inserting
     two-way links between tokens and ast nodes.
 

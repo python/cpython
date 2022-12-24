@@ -3,7 +3,7 @@
 # Licensed to the PSF under a contributor agreement.
 
 from test import support, test_tools
-from test.support import os_helper
+from test.support import import_helper, os_helper
 from unittest import TestCase
 import collections
 import inspect
@@ -153,7 +153,7 @@ class ClinicGroupPermuterTest(TestCase):
     def test_have_left_options_but_required_is_empty(self):
         def fn():
             clinic.permute_optional_groups(['a'], [], [])
-        self.assertRaises(AssertionError, fn)
+        self.assertRaises(ValueError, fn)
 
 
 class ClinicLinearFormatTest(TestCase):
@@ -730,6 +730,15 @@ foo.bar
     x: int
 """)
 
+    def test_parameters_no_more_than_one_vararg(self):
+        s = self.parse_function_should_fail("""
+module foo
+foo.bar
+   *vararg1: object
+   *vararg2: object
+""")
+        self.assertEqual(s, "Error on line 0:\nToo many var args\n")
+
     def test_function_not_at_column_0(self):
         function = self.parse_function("""
   module foo
@@ -818,6 +827,462 @@ class ClinicExternalTest(TestCase):
         # Don't change the file modification time
         # if the content does not change
         self.assertEqual(new_mtime_ns, old_mtime_ns)
+
+
+ac_tester = import_helper.import_module('_testclinic')
+
+
+class ClinicFunctionalTest(unittest.TestCase):
+    locals().update((name, getattr(ac_tester, name))
+                    for name in dir(ac_tester) if name.startswith('test_'))
+
+    def test_objects_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.objects_converter()
+        self.assertEqual(ac_tester.objects_converter(1, 2), (1, 2))
+        self.assertEqual(ac_tester.objects_converter([], 'whatever class'), ([], 'whatever class'))
+        self.assertEqual(ac_tester.objects_converter(1), (1, None))
+
+    def test_bytes_object_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.bytes_object_converter(1)
+        self.assertEqual(ac_tester.bytes_object_converter(b'BytesObject'), (b'BytesObject',))
+
+    def test_byte_array_object_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.byte_array_object_converter(1)
+        byte_arr = bytearray(b'ByteArrayObject')
+        self.assertEqual(ac_tester.byte_array_object_converter(byte_arr), (byte_arr,))
+
+    def test_unicode_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.unicode_converter(1)
+        self.assertEqual(ac_tester.unicode_converter('unicode'), ('unicode',))
+
+    def test_bool_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.bool_converter(False, False, 'not a int')
+        self.assertEqual(ac_tester.bool_converter(), (True, True, True))
+        self.assertEqual(ac_tester.bool_converter('', [], 5), (False, False, True))
+        self.assertEqual(ac_tester.bool_converter(('not empty',), {1: 2}, 0), (True, True, False))
+
+    def test_char_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.char_converter(1)
+        with self.assertRaises(TypeError):
+            ac_tester.char_converter(b'ab')
+        chars = [b'A', b'\a', b'\b', b'\t', b'\n', b'\v', b'\f', b'\r', b'"', b"'", b'?', b'\\', b'\000', b'\377']
+        expected = tuple(ord(c) for c in chars)
+        self.assertEqual(ac_tester.char_converter(), expected)
+        chars = [b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'0', b'a', b'b', b'c', b'd']
+        expected = tuple(ord(c) for c in chars)
+        self.assertEqual(ac_tester.char_converter(*chars), expected)
+
+    def test_unsigned_char_converter(self):
+        from _testcapi import UCHAR_MAX
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_char_converter(-1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_char_converter(UCHAR_MAX + 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_char_converter(0, UCHAR_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.unsigned_char_converter([])
+        self.assertEqual(ac_tester.unsigned_char_converter(), (12, 34, 56))
+        self.assertEqual(ac_tester.unsigned_char_converter(0, 0, UCHAR_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_char_converter(0, 0, (UCHAR_MAX + 1) * 3 + 123), (0, 0, 123))
+
+    def test_short_converter(self):
+        from _testcapi import SHRT_MIN, SHRT_MAX
+        with self.assertRaises(OverflowError):
+            ac_tester.short_converter(SHRT_MIN - 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.short_converter(SHRT_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.short_converter([])
+        self.assertEqual(ac_tester.short_converter(-1234), (-1234,))
+        self.assertEqual(ac_tester.short_converter(4321), (4321,))
+
+    def test_unsigned_short_converter(self):
+        from _testcapi import USHRT_MAX
+        with self.assertRaises(ValueError):
+            ac_tester.unsigned_short_converter(-1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_short_converter(USHRT_MAX + 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_short_converter(0, USHRT_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.unsigned_short_converter([])
+        self.assertEqual(ac_tester.unsigned_short_converter(), (12, 34, 56))
+        self.assertEqual(ac_tester.unsigned_short_converter(0, 0, USHRT_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_short_converter(0, 0, (USHRT_MAX + 1) * 3 + 123), (0, 0, 123))
+
+    def test_int_converter(self):
+        from _testcapi import INT_MIN, INT_MAX
+        with self.assertRaises(OverflowError):
+            ac_tester.int_converter(INT_MIN - 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.int_converter(INT_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.int_converter(1, 2, 3)
+        with self.assertRaises(TypeError):
+            ac_tester.int_converter([])
+        self.assertEqual(ac_tester.int_converter(), (12, 34, 45))
+        self.assertEqual(ac_tester.int_converter(1, 2, '3'), (1, 2, ord('3')))
+
+    def test_unsigned_int_converter(self):
+        from _testcapi import UINT_MAX
+        with self.assertRaises(ValueError):
+            ac_tester.unsigned_int_converter(-1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_int_converter(UINT_MAX + 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_int_converter(0, UINT_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.unsigned_int_converter([])
+        self.assertEqual(ac_tester.unsigned_int_converter(), (12, 34, 56))
+        self.assertEqual(ac_tester.unsigned_int_converter(0, 0, UINT_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_int_converter(0, 0, (UINT_MAX + 1) * 3 + 123), (0, 0, 123))
+
+    def test_long_converter(self):
+        from _testcapi import LONG_MIN, LONG_MAX
+        with self.assertRaises(OverflowError):
+            ac_tester.long_converter(LONG_MIN - 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.long_converter(LONG_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.long_converter([])
+        self.assertEqual(ac_tester.long_converter(), (12,))
+        self.assertEqual(ac_tester.long_converter(-1234), (-1234,))
+
+    def test_unsigned_long_converter(self):
+        from _testcapi import ULONG_MAX
+        with self.assertRaises(ValueError):
+            ac_tester.unsigned_long_converter(-1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_long_converter(ULONG_MAX + 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_long_converter(0, ULONG_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.unsigned_long_converter([])
+        self.assertEqual(ac_tester.unsigned_long_converter(), (12, 34, 56))
+        self.assertEqual(ac_tester.unsigned_long_converter(0, 0, ULONG_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_long_converter(0, 0, (ULONG_MAX + 1) * 3 + 123), (0, 0, 123))
+
+    def test_long_long_converter(self):
+        from _testcapi import LLONG_MIN, LLONG_MAX
+        with self.assertRaises(OverflowError):
+            ac_tester.long_long_converter(LLONG_MIN - 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.long_long_converter(LLONG_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.long_long_converter([])
+        self.assertEqual(ac_tester.long_long_converter(), (12,))
+        self.assertEqual(ac_tester.long_long_converter(-1234), (-1234,))
+
+    def test_unsigned_long_long_converter(self):
+        from _testcapi import ULLONG_MAX
+        with self.assertRaises(ValueError):
+            ac_tester.unsigned_long_long_converter(-1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_long_long_converter(ULLONG_MAX + 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.unsigned_long_long_converter(0, ULLONG_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.unsigned_long_long_converter([])
+        self.assertEqual(ac_tester.unsigned_long_long_converter(), (12, 34, 56))
+        self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, ULLONG_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, (ULLONG_MAX + 1) * 3 + 123), (0, 0, 123))
+
+    def test_py_ssize_t_converter(self):
+        from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+        with self.assertRaises(OverflowError):
+            ac_tester.py_ssize_t_converter(PY_SSIZE_T_MIN - 1)
+        with self.assertRaises(OverflowError):
+            ac_tester.py_ssize_t_converter(PY_SSIZE_T_MAX + 1)
+        with self.assertRaises(TypeError):
+            ac_tester.py_ssize_t_converter([])
+        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56))
+        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None), (1, 2, 56))
+
+    def test_slice_index_converter(self):
+        from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+        with self.assertRaises(TypeError):
+            ac_tester.slice_index_converter([])
+        self.assertEqual(ac_tester.slice_index_converter(), (12, 34, 56))
+        self.assertEqual(ac_tester.slice_index_converter(1, 2, None), (1, 2, 56))
+        self.assertEqual(ac_tester.slice_index_converter(PY_SSIZE_T_MAX, PY_SSIZE_T_MAX + 1, PY_SSIZE_T_MAX + 1234),
+                         (PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX))
+        self.assertEqual(ac_tester.slice_index_converter(PY_SSIZE_T_MIN, PY_SSIZE_T_MIN - 1, PY_SSIZE_T_MIN - 1234),
+                         (PY_SSIZE_T_MIN, PY_SSIZE_T_MIN, PY_SSIZE_T_MIN))
+
+    def test_size_t_converter(self):
+        with self.assertRaises(ValueError):
+            ac_tester.size_t_converter(-1)
+        with self.assertRaises(TypeError):
+            ac_tester.size_t_converter([])
+        self.assertEqual(ac_tester.size_t_converter(), (12,))
+
+    def test_float_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.float_converter([])
+        self.assertEqual(ac_tester.float_converter(), (12.5,))
+        self.assertEqual(ac_tester.float_converter(-0.5), (-0.5,))
+
+    def test_double_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.double_converter([])
+        self.assertEqual(ac_tester.double_converter(), (12.5,))
+        self.assertEqual(ac_tester.double_converter(-0.5), (-0.5,))
+
+    def test_py_complex_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.py_complex_converter([])
+        self.assertEqual(ac_tester.py_complex_converter(complex(1, 2)), (complex(1, 2),))
+        self.assertEqual(ac_tester.py_complex_converter(complex('-1-2j')), (complex('-1-2j'),))
+        self.assertEqual(ac_tester.py_complex_converter(-0.5), (-0.5,))
+        self.assertEqual(ac_tester.py_complex_converter(10), (10,))
+
+    def test_str_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.str_converter(1)
+        with self.assertRaises(TypeError):
+            ac_tester.str_converter('a', 'b', 'c')
+        with self.assertRaises(ValueError):
+            ac_tester.str_converter('a', b'b\0b', 'c')
+        self.assertEqual(ac_tester.str_converter('a', b'b', 'c'), ('a', 'b', 'c'))
+        self.assertEqual(ac_tester.str_converter('a', b'b', b'c'), ('a', 'b', 'c'))
+        self.assertEqual(ac_tester.str_converter('a', b'b', 'c\0c'), ('a', 'b', 'c\0c'))
+
+    def test_str_converter_encoding(self):
+        with self.assertRaises(TypeError):
+            ac_tester.str_converter_encoding(1)
+        self.assertEqual(ac_tester.str_converter_encoding('a', 'b', 'c'), ('a', 'b', 'c'))
+        with self.assertRaises(TypeError):
+            ac_tester.str_converter_encoding('a', b'b\0b', 'c')
+        self.assertEqual(ac_tester.str_converter_encoding('a', b'b', bytearray([ord('c')])), ('a', 'b', 'c'))
+        self.assertEqual(ac_tester.str_converter_encoding('a', b'b', bytearray([ord('c'), 0, ord('c')])),
+                         ('a', 'b', 'c\x00c'))
+        self.assertEqual(ac_tester.str_converter_encoding('a', b'b', b'c\x00c'), ('a', 'b', 'c\x00c'))
+
+    def test_py_buffer_converter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.py_buffer_converter('a', 'b')
+        self.assertEqual(ac_tester.py_buffer_converter('abc', bytearray([1, 2, 3])), (b'abc', b'\x01\x02\x03'))
+
+    def test_keywords(self):
+        self.assertEqual(ac_tester.keywords(1, 2), (1, 2))
+        self.assertEqual(ac_tester.keywords(1, b=2), (1, 2))
+        self.assertEqual(ac_tester.keywords(a=1, b=2), (1, 2))
+
+    def test_keywords_kwonly(self):
+        with self.assertRaises(TypeError):
+            ac_tester.keywords_kwonly(1, 2)
+        self.assertEqual(ac_tester.keywords_kwonly(1, b=2), (1, 2))
+        self.assertEqual(ac_tester.keywords_kwonly(a=1, b=2), (1, 2))
+
+    def test_keywords_opt(self):
+        self.assertEqual(ac_tester.keywords_opt(1), (1, None, None))
+        self.assertEqual(ac_tester.keywords_opt(1, 2), (1, 2, None))
+        self.assertEqual(ac_tester.keywords_opt(1, 2, 3), (1, 2, 3))
+        self.assertEqual(ac_tester.keywords_opt(1, b=2), (1, 2, None))
+        self.assertEqual(ac_tester.keywords_opt(1, 2, c=3), (1, 2, 3))
+        self.assertEqual(ac_tester.keywords_opt(a=1, c=3), (1, None, 3))
+        self.assertEqual(ac_tester.keywords_opt(a=1, b=2, c=3), (1, 2, 3))
+
+    def test_keywords_opt_kwonly(self):
+        self.assertEqual(ac_tester.keywords_opt_kwonly(1), (1, None, None, None))
+        self.assertEqual(ac_tester.keywords_opt_kwonly(1, 2), (1, 2, None, None))
+        with self.assertRaises(TypeError):
+            ac_tester.keywords_opt_kwonly(1, 2, 3)
+        self.assertEqual(ac_tester.keywords_opt_kwonly(1, b=2), (1, 2, None, None))
+        self.assertEqual(ac_tester.keywords_opt_kwonly(1, 2, c=3), (1, 2, 3, None))
+        self.assertEqual(ac_tester.keywords_opt_kwonly(a=1, c=3), (1, None, 3, None))
+        self.assertEqual(ac_tester.keywords_opt_kwonly(a=1, b=2, c=3, d=4), (1, 2, 3, 4))
+
+    def test_keywords_kwonly_opt(self):
+        self.assertEqual(ac_tester.keywords_kwonly_opt(1), (1, None, None))
+        with self.assertRaises(TypeError):
+            ac_tester.keywords_kwonly_opt(1, 2)
+        self.assertEqual(ac_tester.keywords_kwonly_opt(1, b=2), (1, 2, None))
+        self.assertEqual(ac_tester.keywords_kwonly_opt(a=1, c=3), (1, None, 3))
+        self.assertEqual(ac_tester.keywords_kwonly_opt(a=1, b=2, c=3), (1, 2, 3))
+
+    def test_posonly_keywords(self):
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords(1)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords(a=1, b=2)
+        self.assertEqual(ac_tester.posonly_keywords(1, 2), (1, 2))
+        self.assertEqual(ac_tester.posonly_keywords(1, b=2), (1, 2))
+
+    def test_posonly_kwonly(self):
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_kwonly(1)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_kwonly(1, 2)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_kwonly(a=1, b=2)
+        self.assertEqual(ac_tester.posonly_kwonly(1, b=2), (1, 2))
+
+    def test_posonly_keywords_kwonly(self):
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_kwonly(1)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_kwonly(1, 2, 3)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_kwonly(a=1, b=2, c=3)
+        self.assertEqual(ac_tester.posonly_keywords_kwonly(1, 2, c=3), (1, 2, 3))
+        self.assertEqual(ac_tester.posonly_keywords_kwonly(1, b=2, c=3), (1, 2, 3))
+
+    def test_posonly_keywords_opt(self):
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_opt(1)
+        self.assertEqual(ac_tester.posonly_keywords_opt(1, 2), (1, 2, None, None))
+        self.assertEqual(ac_tester.posonly_keywords_opt(1, 2, 3), (1, 2, 3, None))
+        self.assertEqual(ac_tester.posonly_keywords_opt(1, 2, 3, 4), (1, 2, 3, 4))
+        self.assertEqual(ac_tester.posonly_keywords_opt(1, b=2), (1, 2, None, None))
+        self.assertEqual(ac_tester.posonly_keywords_opt(1, 2, c=3), (1, 2, 3, None))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_opt(a=1, b=2, c=3, d=4)
+        self.assertEqual(ac_tester.posonly_keywords_opt(1, b=2, c=3, d=4), (1, 2, 3, 4))
+
+    def test_posonly_opt_keywords_opt(self):
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt(1), (1, None, None, None))
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt(1, 2), (1, 2, None, None))
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt(1, 2, 3), (1, 2, 3, None))
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt(1, 2, 3, 4), (1, 2, 3, 4))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_opt_keywords_opt(1, b=2)
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt(1, 2, c=3), (1, 2, 3, None))
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt(1, 2, c=3, d=4), (1, 2, 3, 4))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_opt_keywords_opt(a=1, b=2, c=3, d=4)
+
+    def test_posonly_kwonly_opt(self):
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_kwonly_opt(1)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_kwonly_opt(1, 2)
+        self.assertEqual(ac_tester.posonly_kwonly_opt(1, b=2), (1, 2, None, None))
+        self.assertEqual(ac_tester.posonly_kwonly_opt(1, b=2, c=3), (1, 2, 3, None))
+        self.assertEqual(ac_tester.posonly_kwonly_opt(1, b=2, c=3, d=4), (1, 2, 3, 4))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_kwonly_opt(a=1, b=2, c=3, d=4)
+
+    def test_posonly_opt_kwonly_opt(self):
+        self.assertEqual(ac_tester.posonly_opt_kwonly_opt(1), (1, None, None, None))
+        self.assertEqual(ac_tester.posonly_opt_kwonly_opt(1, 2), (1, 2, None, None))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_opt_kwonly_opt(1, 2, 3)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_opt_kwonly_opt(1, b=2)
+        self.assertEqual(ac_tester.posonly_opt_kwonly_opt(1, 2, c=3), (1, 2, 3, None))
+        self.assertEqual(ac_tester.posonly_opt_kwonly_opt(1, 2, c=3, d=4), (1, 2, 3, 4))
+
+    def test_posonly_keywords_kwonly_opt(self):
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_kwonly_opt(1)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_kwonly_opt(1, 2)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_kwonly_opt(1, b=2)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_kwonly_opt(1, 2, 3)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_kwonly_opt(a=1, b=2, c=3)
+        self.assertEqual(ac_tester.posonly_keywords_kwonly_opt(1, 2, c=3), (1, 2, 3, None, None))
+        self.assertEqual(ac_tester.posonly_keywords_kwonly_opt(1, b=2, c=3), (1, 2, 3, None, None))
+        self.assertEqual(ac_tester.posonly_keywords_kwonly_opt(1, 2, c=3, d=4), (1, 2, 3, 4, None))
+        self.assertEqual(ac_tester.posonly_keywords_kwonly_opt(1, 2, c=3, d=4, e=5), (1, 2, 3, 4, 5))
+
+    def test_posonly_keywords_opt_kwonly_opt(self):
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_opt_kwonly_opt(1)
+        self.assertEqual(ac_tester.posonly_keywords_opt_kwonly_opt(1, 2), (1, 2, None, None, None))
+        self.assertEqual(ac_tester.posonly_keywords_opt_kwonly_opt(1, b=2), (1, 2, None, None, None))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_opt_kwonly_opt(1, 2, 3, 4)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_keywords_opt_kwonly_opt(a=1, b=2)
+        self.assertEqual(ac_tester.posonly_keywords_opt_kwonly_opt(1, 2, c=3), (1, 2, 3, None, None))
+        self.assertEqual(ac_tester.posonly_keywords_opt_kwonly_opt(1, b=2, c=3), (1, 2, 3, None, None))
+        self.assertEqual(ac_tester.posonly_keywords_opt_kwonly_opt(1, 2, 3, d=4), (1, 2, 3, 4, None))
+        self.assertEqual(ac_tester.posonly_keywords_opt_kwonly_opt(1, 2, c=3, d=4), (1, 2, 3, 4, None))
+        self.assertEqual(ac_tester.posonly_keywords_opt_kwonly_opt(1, 2, 3, d=4, e=5), (1, 2, 3, 4, 5))
+        self.assertEqual(ac_tester.posonly_keywords_opt_kwonly_opt(1, 2, c=3, d=4, e=5), (1, 2, 3, 4, 5))
+
+    def test_posonly_opt_keywords_opt_kwonly_opt(self):
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt_kwonly_opt(1), (1, None, None, None))
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt_kwonly_opt(1, 2), (1, 2, None, None))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_opt_keywords_opt_kwonly_opt(1, b=2)
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt_kwonly_opt(1, 2, 3), (1, 2, 3, None))
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt_kwonly_opt(1, 2, c=3), (1, 2, 3, None))
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt_kwonly_opt(1, 2, 3, d=4), (1, 2, 3, 4))
+        self.assertEqual(ac_tester.posonly_opt_keywords_opt_kwonly_opt(1, 2, c=3, d=4), (1, 2, 3, 4))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_opt_keywords_opt_kwonly_opt(1, 2, 3, 4)
+
+    def test_keyword_only_parameter(self):
+        with self.assertRaises(TypeError):
+            ac_tester.keyword_only_parameter()
+        with self.assertRaises(TypeError):
+            ac_tester.keyword_only_parameter(1)
+        self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
+
+    def test_posonly_vararg(self):
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_vararg()
+        self.assertEqual(ac_tester.posonly_vararg(1, 2), (1, 2, ()))
+        self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
+        self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
+
+    def test_vararg_and_posonly(self):
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_and_posonly()
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_and_posonly(1, b=2)
+        self.assertEqual(ac_tester.vararg_and_posonly(1, 2, 3, 4), (1, (2, 3, 4)))
+
+    def test_vararg(self):
+        with self.assertRaises(TypeError):
+            ac_tester.vararg()
+        with self.assertRaises(TypeError):
+            ac_tester.vararg(1, b=2)
+        self.assertEqual(ac_tester.vararg(1, 2, 3, 4), (1, (2, 3, 4)))
+
+    def test_vararg_with_default(self):
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_with_default()
+        self.assertEqual(ac_tester.vararg_with_default(1, b=False), (1, (), False))
+        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4), (1, (2, 3, 4), False))
+        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4, b=True), (1, (2, 3, 4), True))
+
+    def test_vararg_with_only_defaults(self):
+        self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))
+        self.assertEqual(ac_tester.vararg_with_only_defaults(b=2), ((), 2))
+        self.assertEqual(ac_tester.vararg_with_only_defaults(1, b=2), ((1, ), 2))
+        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4), ((1, 2, 3, 4), None))
+        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
+
+    def test_gh_32092_oob(self):
+        ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
+
+    def test_gh_32092_kw_pass(self):
+        ac_tester.gh_32092_kw_pass(1, 2, 3)
+
+    def test_gh_99233_refcount(self):
+        arg = '*A unique string is not referenced by anywhere else.*'
+        arg_refcount_origin = sys.getrefcount(arg)
+        ac_tester.gh_99233_refcount(arg)
+        arg_refcount_after = sys.getrefcount(arg)
+        self.assertEqual(arg_refcount_origin, arg_refcount_after)
+
+    def test_gh_99240_double_free(self):
+        expected_error = r'gh_99240_double_free\(\) argument 2 must be encoded string without null bytes, not str'
+        with self.assertRaisesRegex(TypeError, expected_error):
+            ac_tester.gh_99240_double_free('a', '\0b')
 
 
 if __name__ == "__main__":

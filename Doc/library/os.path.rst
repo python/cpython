@@ -16,7 +16,7 @@ files see :func:`open`, and for accessing the filesystem see the :mod:`os`
 module. The path parameters can be passed as strings, or bytes, or any object
 implementing the :class:`os.PathLike` protocol.
 
-Unlike a unix shell, Python does not do any *automatic* path expansions.
+Unlike a Unix shell, Python does not do any *automatic* path expansions.
 Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
 explicitly when an application desires shell-like path expansion.  (See also
 the :mod:`glob` module.)
@@ -264,6 +264,15 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+
+.. function:: isjunction(path)
+
+   Return ``True`` if *path* refers to an :func:`existing <lexists>` directory
+   entry that is a junction.  Always return ``False`` if junctions are not
+   supported on the current platform.
+
+   .. versionadded:: 3.12
 
 
 .. function:: islink(path)

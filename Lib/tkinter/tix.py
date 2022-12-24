@@ -310,7 +310,7 @@ class TixWidget(tkinter.Widget):
                 del cnf[k]
 
         self.widgetName = widgetName
-        Widget._setup(self, master, cnf)
+        self._setup(master, cnf)
 
         # If widgetName is None, this is a dummy creation call where the
         # corresponding Tk widget has already been created by Tix

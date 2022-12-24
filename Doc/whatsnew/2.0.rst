@@ -572,7 +572,7 @@ Work has been done on porting Python to 64-bit Windows on the Itanium processor,
 mostly by Trent Mick of ActiveState.  (Confusingly, ``sys.platform`` is still
 ``'win32'`` on Win64 because it seems that for ease of porting, MS Visual C++
 treats code as 32 bit on Itanium.) PythonWin also supports Windows CE; see the
-Python CE page at http://pythonce.sourceforge.net/ for more information.
+Python CE page at https://pythonce.sourceforge.net/ for more information.
 
 Another new platform is Darwin/MacOS X; initial support for it is in Python 2.0.
 Dynamic loading works, if you specify "configure --with-dyld --with-suffix=.x".

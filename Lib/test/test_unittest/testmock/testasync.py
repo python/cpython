@@ -149,6 +149,23 @@ class AsyncPatchCMTest(unittest.TestCase):
 
         run(test_async())
 
+    def test_patch_dict_async_def(self):
+        foo = {'a': 'a'}
+        @patch.dict(foo, {'a': 'b'})
+        async def test_async():
+            self.assertEqual(foo['a'], 'b')
+
+        self.assertTrue(iscoroutinefunction(test_async))
+        run(test_async())
+
+    def test_patch_dict_async_def_context(self):
+        foo = {'a': 'a'}
+        async def test_async():
+            with patch.dict(foo, {'a': 'b'}):
+                self.assertEqual(foo['a'], 'b')
+
+        run(test_async())
+
 
 class AsyncMockTest(unittest.TestCase):
     def test_iscoroutinefunction_default(self):
@@ -282,6 +299,19 @@ class AsyncSpecTest(unittest.TestCase):
         mock = Mock(AsyncClass)
         self.assertIsInstance(mock.async_method, AsyncMock)
         self.assertIsInstance(mock.normal_method, Mock)
+
+    def test_spec_async_attributes_instance(self):
+        async_instance = AsyncClass()
+        async_instance.async_func_attr = async_func
+        async_instance.later_async_func_attr = normal_func
+
+        mock_async_instance = Mock(spec_set=async_instance)
+
+        async_instance.later_async_func_attr = async_func
+
+        self.assertIsInstance(mock_async_instance.async_func_attr, AsyncMock)
+        # only the shape of the spec at the time of mock construction matters
+        self.assertNotIsInstance(mock_async_instance.later_async_func_attr, AsyncMock)
 
     def test_spec_mock_type_kw(self):
         def inner_test(mock_type):

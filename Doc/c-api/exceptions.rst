@@ -14,7 +14,7 @@ there is a global indicator (per thread) of the last error that occurred.  Most
 C API functions don't clear this on success, but will set it to indicate the
 cause of the error on failure.  Most C API functions also return an error
 indicator, usually ``NULL`` if they are supposed to return a pointer, or ``-1``
-if they return an integer (exception: the :c:func:`PyArg_\*` functions
+if they return an integer (exception: the ``PyArg_*`` functions
 return ``1`` for success and ``0`` for failure).
 
 Concretely, the error indicator consists of three object pointers: the
@@ -189,7 +189,7 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
 
    This is a convenience function to raise :exc:`WindowsError`. If called with
-   *ierr* of :c:data:`0`, the error code returned by a call to :c:func:`GetLastError`
+   *ierr* of ``0``, the error code returned by a call to :c:func:`GetLastError`
    is used instead.  It calls the Win32 function :c:func:`FormatMessage` to retrieve
    the Windows description of error code given by *ierr* or :c:func:`GetLastError`,
    then it constructs a tuple object whose first item is the *ierr* value and whose
@@ -370,7 +370,7 @@ Querying the error indicator
 .. c:function:: PyObject* PyErr_Occurred()
 
    Test whether the error indicator is set.  If set, return the exception *type*
-   (the first argument to the last call to one of the :c:func:`PyErr_Set\*`
+   (the first argument to the last call to one of the ``PyErr_Set*``
    functions or to :c:func:`PyErr_Restore`).  If not set, return ``NULL``.  You do not
    own a reference to the return value, so you do not need to :c:func:`Py_DECREF`
    it.
@@ -848,7 +848,7 @@ Standard Exceptions
 
 All standard Python exceptions are available as global variables whose names are
 ``PyExc_`` followed by the Python exception name.  These have the type
-:c:type:`PyObject*`; they are all class objects.  For completeness, here are all
+:c:expr:`PyObject*`; they are all class objects.  For completeness, here are all
 the variables:
 
 .. index::
@@ -1068,7 +1068,7 @@ Standard Warning Categories
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
-:c:type:`PyObject*`; they are all class objects. For completeness, here are all
+:c:expr:`PyObject*`; they are all class objects. For completeness, here are all
 the variables:
 
 .. index::

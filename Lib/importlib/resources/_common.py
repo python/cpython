@@ -67,10 +67,14 @@ def from_package(package):
 
 
 @contextlib.contextmanager
-def _tempfile(reader, suffix='',
-              # gh-93353: Keep a reference to call os.remove() in late Python
-              # finalization.
-              *, _os_remove=os.remove):
+def _tempfile(
+    reader,
+    suffix='',
+    # gh-93353: Keep a reference to call os.remove() in late Python
+    # finalization.
+    *,
+    _os_remove=os.remove,
+):
     # Not using tempfile.NamedTemporaryFile as it leads to deeper 'try'
     # blocks due to the need to close the temporary file to work on Windows
     # properly.
@@ -89,13 +93,30 @@ def _tempfile(reader, suffix='',
             pass
 
 
+def _temp_file(path):
+    return _tempfile(path.read_bytes, suffix=path.name)
+
+
+def _is_present_dir(path: Traversable) -> bool:
+    """
+    Some Traversables implement ``is_dir()`` to raise an
+    exception (i.e. ``FileNotFoundError``) when the
+    directory doesn't exist. This function wraps that call
+    to always return a boolean and only return True
+    if there's a dir and it exists.
+    """
+    with contextlib.suppress(FileNotFoundError):
+        return path.is_dir()
+    return False
+
+
 @functools.singledispatch
 def as_file(path):
     """
     Given a Traversable object, return that object as a
     path on the local file system in a context manager.
     """
-    return _tempfile(path.read_bytes, suffix=path.name)
+    return _temp_dir(path) if _is_present_dir(path) else _temp_file(path)
 
 
 @as_file.register(pathlib.Path)
@@ -105,3 +126,34 @@ def _(path):
     Degenerate behavior for pathlib.Path objects.
     """
     yield path
+
+
+@contextlib.contextmanager
+def _temp_path(dir: tempfile.TemporaryDirectory):
+    """
+    Wrap tempfile.TemporyDirectory to return a pathlib object.
+    """
+    with dir as result:
+        yield pathlib.Path(result)
+
+
+@contextlib.contextmanager
+def _temp_dir(path):
+    """
+    Given a traversable dir, recursively replicate the whole tree
+    to the file system in a context manager.
+    """
+    assert path.is_dir()
+    with _temp_path(tempfile.TemporaryDirectory()) as temp_dir:
+        yield _write_contents(temp_dir, path)
+
+
+def _write_contents(target, source):
+    child = target.joinpath(source.name)
+    if source.is_dir():
+        child.mkdir()
+        for item in source.iterdir():
+            _write_contents(child, item)
+    else:
+        child.open('wb').write(source.read_bytes())
+    return child
