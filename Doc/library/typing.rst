@@ -2774,7 +2774,7 @@ Introspection helpers
       Added ``include_extras`` parameter as part of :pep:`593`.
 
    .. versionchanged:: 3.10
-      ``__annotations__`` of a class does not contain anymore the annotations
+      Calling ``get_type_hints()`` on a class no longer returns the annotations
       of its base classes.
 
    .. versionchanged:: 3.11
