@@ -116,21 +116,54 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
          class MyIterable(ABC):
             @abstractmethod
             def __iter__(self):
-               return NotImplemented
+               raise NotImplementedError
             
             @classmethod
-            def __subclasshook__(cls, subclass: type) -> bool:
-               return hasattr(subclass, "__iter__")
-         
-         >>> MyIterable in list.__bases__
+            def __subclasshook__(cls, subclass):
+               """Check if ``subclass`` is a virtual subclass of ``MyIterable``."""
+
+               # This behaviour shouldn't be heritable.
+               if cls is MyIterable:
+                   return hasattr(subclass, "__iter__")
+               
+               # Defer back to the issubclass algorithm to determine.
+               return NotImplemented
+      
+      ::
+
+         >>> MyIterable in list.__bases__  # Does `list` inherit from `MyIterable`?
          False
          >>> issubclass(list, MyIterable)
          True
 
-      :class:`list` doesn't inherit from ``MyIterable``, nor is it registered as a subclass.
-      Using ``__subclasshook__`` it was possible to make not only :class:`list` but **all**
+      :class:`list` doesn't inherit from ``MyIterable``, nor did we :meth:`register` it as a subclass.
+      Using ``__subclasshook__`` we've made not only :class:`list` but **all**
       classes which define an ``__iter__`` method virtual subclasses of ``MyIterable``.
+      
+      .. warning::
 
+        The ``if cls is <ABC Name>:`` check is used to prevent subclasses from accidentally
+        inheriting this behaviour.
+        
+        Consider the following undesired behaviour that occurs
+        when ``__subclasshook__`` acts on a ``cls`` of the wrong type::
+
+            class MyIterable(ABC):
+                ...
+                @classmethod
+                def __subclasshook__(cls, subclass):
+                    # No 'if cls is MyIterable:' check.
+                    return hasattr(cls, "__iter__")
+
+            class MyList(MyIterable):
+                ...
+            
+            >>> issubclass(tuple, MyList)
+            True  # We expect this to be `False`!
+        
+        What makes something a subclass of an ABC is **not the same**
+        as what makes it a subclass of classes inheriting from that ABC.
+        
 
 The :mod:`abc` module also provides the following decorator:
 
