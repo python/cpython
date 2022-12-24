@@ -1223,12 +1223,12 @@ sys_mdebug(PyObject *self, PyObject *args)
 /*[clinic input]
 sys.get_int_max_str_digits
 
-Set the maximum string digits limit for non-binary int<->str conversions.
+Return the maximum string digits limit for non-binary int<->str conversions.
 [clinic start generated code]*/
 
 static PyObject *
 sys_get_int_max_str_digits_impl(PyObject *module)
-/*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
+/*[clinic end generated code: output=0042f5e8ae0e8631 input=61bf9f99bc8b112d]*/
 {
     return PyLong_FromSsize_t(_PyRuntime.int_max_str_digits);
 }

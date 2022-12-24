@@ -4751,7 +4751,7 @@ to mitigate denial of service attacks. This limit *only* applies to decimal or
 other non-power-of-two number bases. Hexadecimal, octal, and binary conversions
 are unlimited. The limit can be configured.
 
-The :class:`int` type in CPython is an abitrary length number stored in binary
+The :class:`int` type in CPython is an arbitrary length number stored in binary
 form (commonly known as a "bignum"). There exists no algorithm that can convert
 a string to a binary integer or a binary integer to a string in linear time,
 *unless* the base is a power of 2. Even the best known algorithms for base 10
@@ -4815,7 +4815,7 @@ and :class:`str` or :class:`bytes`:
 * ``int(string)`` with default base 10.
 * ``int(string, base)`` for all bases that are not a power of 2.
 * ``str(integer)``.
-* ``repr(integer)``
+* ``repr(integer)``.
 * any other string conversion to base 10, for example ``f"{integer}"``,
   ``"{}".format(integer)``, or ``b"%d" % integer``.
 
@@ -4843,7 +4843,7 @@ command line flag to configure the limit:
   :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
   If both the env var and the ``-X`` option are set, the ``-X`` option takes
   precedence. A value of *-1* indicates that both were unset, thus a value of
-  :data:`sys.int_info.default_max_str_digits` was used during initilization.
+  :data:`sys.int_info.default_max_str_digits` was used during initialization.
 
 From code, you can inspect the current limit and set a new one using these
 :mod:`sys` APIs:
