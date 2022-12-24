@@ -673,7 +673,7 @@ PyDoc_STRVAR(sys_get_int_max_str_digits__doc__,
 "get_int_max_str_digits($module, /)\n"
 "--\n"
 "\n"
-"Set the maximum string digits limit for non-binary int<->str conversions.");
+"Return the maximum string digits limit for non-binary int<->str conversions.");
 
 #define SYS_GET_INT_MAX_STR_DIGITS_METHODDEF    \
     {"get_int_max_str_digits", (PyCFunction)sys_get_int_max_str_digits, METH_NOARGS, sys_get_int_max_str_digits__doc__},
@@ -1067,4 +1067,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=21a32aa71d36a98c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3cae0e0212d88bcd input=a9049054013a1b77]*/
