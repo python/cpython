@@ -1,3 +1,4 @@
+
 :mod:`argparse` --- Parser for command-line options, arguments and sub-commands
 ===============================================================================
 
@@ -1747,8 +1748,7 @@ Sub-commands
      encountered at the command line
 
    * dest_ - name of the attribute under which sub-command name will be
-     stored; by default ``None`` and no value is stored. Required if
-     required_ has been passed
+     stored; by default ``None`` and no value is stored.
 
    * required_ - Whether or not a subcommand must be provided, by default
      ``False``. If this option parameter is passed then it is required
