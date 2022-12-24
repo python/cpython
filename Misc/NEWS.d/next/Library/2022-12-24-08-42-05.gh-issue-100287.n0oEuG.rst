@@ -1,0 +1,1 @@
+Fix the interaction of :func:`unittest.mock.seal` with :class:`unittest.mock.AsyncMock`.
