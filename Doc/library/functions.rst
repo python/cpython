@@ -657,10 +657,10 @@ are always available.  They are listed here in alphabetical order.
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      number: floatnumber [`exponent`]
-      floatnumber: [`digitpart`] "." `digitpart` | `digitpart` ["."]
       digitpart: `digit` (["_"] `digit`)*
+      floatnumber: [`digitpart`] "." `digitpart` | `digitpart` ["."]
       exponent: ("e" | "E") ["+" | "-"] `digitpart`
+      number: floatnumber [`exponent`]
       numeric_value: `number` | `infinity` | `nan`
       numeric_string: [`sign`] `numeric_value`
 
