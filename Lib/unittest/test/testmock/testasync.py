@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from asyncio import run, iscoroutinefunction
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
-                           create_autospec, sentinel, _CallList)
+                           create_autospec, sentinel, _CallList, seal)
 
 
 def tearDownModule():
@@ -297,6 +297,14 @@ class AsyncSpecTest(unittest.TestCase):
         mock = Mock(AsyncClass)
         self.assertIsInstance(mock.async_method, AsyncMock)
         self.assertIsInstance(mock.normal_method, Mock)
+
+    def test_spec_normal_methods_on_class_with_mock_seal(self):
+        mock = Mock(AsyncClass)
+        seal(mock)
+        with self.assertRaises(AttributeError):
+            mock.normal_method
+        with self.assertRaises(AttributeError):
+            mock.async_method
 
     def test_spec_mock_type_kw(self):
         def inner_test(mock_type):
@@ -1074,3 +1082,7 @@ class AsyncMockAssert(unittest.TestCase):
                         'Actual: [call(1)]'))) as cm:
             self.mock.assert_has_awaits([call(), call(1, 2)])
         self.assertIsInstance(cm.exception.__cause__, TypeError)
+
+
+if __name__ == '__main__':
+    unittest.main()
