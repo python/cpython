@@ -95,10 +95,10 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 
       (Must be defined as a class method.)
       
-      Check whether *subclass* is considered a subclass of this ABC.  This allows
-      for *virtual* subclassing, where a class is considered a subclass of an
-      ABC by virtue of fulfilling some criteria, as opposed to by calling
-      :meth:`register` on *subclass* or having it inherit from the ABC.
+      Check whether *subclass* is considered a subclass of this ABC.
+      This mechanism allows customizing the behaviour of ``issubclass``
+      without needing to call :meth:`register` on classes that you want
+      to be considered subclasses of an ABC.
 
       This method should return ``True``, ``False`` or ``NotImplemented``.  If
       it returns ``True``, the *subclass* is considered a subclass of this ABC.
