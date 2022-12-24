@@ -709,7 +709,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 return None
             for index in "index.html", "index.htm":
                 index = os.path.join(path, index)
-                if os.path.exists(index):
+                if os.path.isfile(index):
                     path = index
                     break
             else:
