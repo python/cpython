@@ -1,0 +1,2 @@
+Do not load test cases from exact :class:`unittest.case.TestCase` and
+:class:`unittest.case.FunctionTestCase` classes.

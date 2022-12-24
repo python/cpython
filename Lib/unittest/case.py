@@ -464,6 +464,16 @@ class TestCase(object):
         """Same as enterContext, but class-wide."""
         return _enter_context(cm, cls.addClassCleanup)
 
+    @classmethod
+    def _shouldBeLoaded(cls):
+        """Should the subclass of `TestCase` be loaded?
+
+        We skip known unittest subclasses."""
+        return (
+            issubclass(cls, TestCase)
+            and cls not in (TestCase, FunctionTestCase)
+        )
+
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
         pass
