@@ -348,11 +348,11 @@ class TestCase(object):
     # of difflib.  See #11763.
     _diffThreshold = 2**16
 
-    # Attribute used by TestSuite for classSetUp
-
-    _classSetupFailed = False
-
-    _class_cleanups = []
+    def __init_subclass__(cls, *args, **kwargs):
+        # Attribute used by TestSuite for classSetUp
+        cls._classSetupFailed = False
+        cls._class_cleanups = []
+        super().__init_subclass__(*args, **kwargs)
 
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test

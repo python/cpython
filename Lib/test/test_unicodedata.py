@@ -12,7 +12,8 @@ import sys
 import unicodedata
 import unittest
 from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only, check_disallow_instantiation)
+                          cpython_only, check_disallow_instantiation,
+                          ResourceDenied)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
@@ -345,8 +346,8 @@ class NormalizationTest(unittest.TestCase):
         except PermissionError:
             self.skipTest(f"Permission error when downloading {TESTDATAURL} "
                           f"into the test data directory")
-        except (OSError, HTTPException):
-            self.fail(f"Could not retrieve {TESTDATAURL}")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
 
         with testdata:
             self.run_normalization_tests(testdata)

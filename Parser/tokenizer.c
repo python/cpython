@@ -419,7 +419,11 @@ tok_readline_recode(struct tok_state *tok) {
         error_ret(tok);
         goto error;
     }
-    if (!tok_reserve_buf(tok, buflen + 1)) {
+    // Make room for the null terminator *and* potentially
+    // an extra newline character that we may need to artificially
+    // add.
+    size_t buffer_size = buflen + 2;
+    if (!tok_reserve_buf(tok, buffer_size)) {
         goto error;
     }
     memcpy(tok->inp, buf, buflen);
@@ -973,6 +977,7 @@ tok_underflow_file(struct tok_state *tok) {
         return 0;
     }
     if (tok->inp[-1] != '\n') {
+        assert(tok->inp + 1 < tok->end);
         /* Last line does not end in \n, fake one */
         *tok->inp++ = '\n';
         *tok->inp = '\0';

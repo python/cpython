@@ -439,7 +439,11 @@ class IocpProactor:
             self._poll(timeout)
         tmp = self._results
         self._results = []
-        return tmp
+        try:
+            return tmp
+        finally:
+            # Needed to break cycles when an exception occurs.
+            tmp = None
 
     def _result(self, value):
         fut = self._loop.create_future()
@@ -821,6 +825,8 @@ class IocpProactor:
                 else:
                     f.set_result(value)
                     self._results.append(f)
+                finally:
+                    f = None
 
         # Remove unregistered futures
         for ov in self._unregistered:

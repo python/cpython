@@ -650,6 +650,21 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
         if (self._local._loop is None and
                 not self._local._set_called and
                 threading.current_thread() is threading.main_thread()):
+            stacklevel = 2
+            try:
+                f = sys._getframe(1)
+            except AttributeError:
+                pass
+            else:
+                while f:
+                    module = f.f_globals.get('__name__')
+                    if not (module == 'asyncio' or module.startswith('asyncio.')):
+                        break
+                    f = f.f_back
+                    stacklevel += 1
+            import warnings
+            warnings.warn('There is no current event loop',
+                          DeprecationWarning, stacklevel=stacklevel)
             self.set_event_loop(self.new_event_loop())
 
         if self._local._loop is None:
@@ -763,12 +778,13 @@ def get_event_loop():
 
 
 def _get_event_loop(stacklevel=3):
+    # This internal method is going away in Python 3.12, left here only for
+    # backwards compatibility with 3.10.0 - 3.10.8 and 3.11.0.
+    # Similarly, this method's C equivalent in _asyncio is going away as well.
+    # See GH-99949 for more details.
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
-    import warnings
-    warnings.warn('There is no current event loop',
-                  DeprecationWarning, stacklevel=stacklevel)
     return get_event_loop_policy().get_event_loop()
 
 

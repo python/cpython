@@ -236,6 +236,12 @@ def increment_lineno(node, n=1):
     location in a file.
     """
     for child in walk(node):
+        # TypeIgnore is a special case where lineno is not an attribute
+        # but rather a field of the node itself.
+        if isinstance(child, TypeIgnore):
+            child.lineno = getattr(child, 'lineno', 0) + n
+            continue
+
         if 'lineno' in child._attributes:
             child.lineno = getattr(child, 'lineno', 0) + n
         if (

@@ -82,7 +82,12 @@ termios_tcgetattr_impl(PyObject *module, int fd)
 {
     termiosmodulestate *state = PyModule_GetState(module);
     struct termios mode;
-    if (tcgetattr(fd, &mode) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcgetattr(fd, &mode); 
+    Py_END_ALLOW_THREADS
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -169,7 +174,12 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
     /* Get the old mode, in case there are any hidden fields... */
     termiosmodulestate *state = PyModule_GetState(module);
     struct termios mode;
-    if (tcgetattr(fd, &mode) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcgetattr(fd, &mode);
+    Py_END_ALLOW_THREADS
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -211,7 +221,12 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         return PyErr_SetFromErrno(state->TermiosError);
     if (cfsetospeed(&mode, (speed_t) ospeed) == -1)
         return PyErr_SetFromErrno(state->TermiosError);
-    if (tcsetattr(fd, when, &mode) == -1)
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcsetattr(fd, when, &mode);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1)
         return PyErr_SetFromErrno(state->TermiosError);
 
     Py_RETURN_NONE;
@@ -235,7 +250,13 @@ termios_tcsendbreak_impl(PyObject *module, int fd, int duration)
 /*[clinic end generated code: output=5945f589b5d3ac66 input=dc2f32417691f8ed]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcsendbreak(fd, duration) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcsendbreak(fd, duration);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -256,7 +277,13 @@ termios_tcdrain_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=5fd86944c6255955 input=c99241b140b32447]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcdrain(fd) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcdrain(fd);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -282,7 +309,13 @@ termios_tcflush_impl(PyObject *module, int fd, int queue)
 /*[clinic end generated code: output=2424f80312ec2f21 input=0f7d08122ddc07b5]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcflush(fd, queue) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcflush(fd, queue);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -308,7 +341,13 @@ termios_tcflow_impl(PyObject *module, int fd, int action)
 /*[clinic end generated code: output=afd10928e6ea66eb input=c6aff0640b6efd9c]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcflow(fd, action) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcflow(fd, action);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 

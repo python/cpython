@@ -5982,5 +5982,5 @@ class SemLockTests(unittest.TestCase):
         class SemLock(_multiprocessing.SemLock):
             pass
         name = f'test_semlock_subclass-{os.getpid()}'
-        s = SemLock(1, 0, 10, name, 0)
+        s = SemLock(1, 0, 10, name, False)
         _multiprocessing.sem_unlink(name)

@@ -1,3 +1,4 @@
+import gc
 import importlib
 import importlib.util
 import os
@@ -377,6 +378,35 @@ class ImportTests(unittest.TestCase):
             file, path, description = imp.find_module('mymod', path=['.'])
             mod = imp.load_module('mymod', file, path, description)
         self.assertEqual(mod.x, 42)
+
+
+    @support.cpython_only
+    def test_create_builtin_subinterp(self):
+        # gh-99578: create_builtin() behavior changes after the creation of the
+        # first sub-interpreter. Test both code paths, before and after the
+        # creation of a sub-interpreter. Previously, create_builtin() had
+        # a reference leak after the creation of the first sub-interpreter.
+
+        import builtins
+        create_builtin = support.get_attribute(_imp, "create_builtin")
+        class Spec:
+            name = "builtins"
+        spec = Spec()
+
+        def check_get_builtins():
+            refcnt = sys.getrefcount(builtins)
+            mod = _imp.create_builtin(spec)
+            self.assertIs(mod, builtins)
+            self.assertEqual(sys.getrefcount(builtins), refcnt + 1)
+            # Check that a GC collection doesn't crash
+            gc.collect()
+
+        check_get_builtins()
+
+        ret = support.run_in_subinterp("import builtins")
+        self.assertEqual(ret, 0)
+
+        check_get_builtins()
 
 
 class ReloadTests(unittest.TestCase):

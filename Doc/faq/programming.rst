@@ -113,6 +113,8 @@ Yes.  The coding style required for standard library modules is documented as
 Core Language
 =============
 
+.. _faq-unboundlocalerror:
+
 Why am I getting an UnboundLocalError when the variable has a value?
 --------------------------------------------------------------------
 

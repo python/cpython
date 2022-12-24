@@ -880,6 +880,14 @@ class IOTest(unittest.TestCase):
             open('non-existent', 'r', opener=badopener)
         self.assertEqual(str(cm.exception), 'opener returned -2')
 
+    def test_opener_invalid_fd(self):
+        # Check that OSError is raised with error code EBADF if the
+        # opener returns an invalid file descriptor (see gh-82212).
+        fd = os_helper.make_bad_fd()
+        with self.assertRaises(OSError) as cm:
+            self.open('foo', opener=lambda name, flags: fd)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
     def test_fileio_closefd(self):
         # Issue #4841
         with self.open(__file__, 'rb') as f1, \
@@ -3918,7 +3926,15 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         self.assertEqual(decoder.decode(b"\r\r\n"), "\r\r\n")
 
 class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
-    pass
+    @support.cpython_only
+    def test_uninitialized(self):
+        uninitialized = self.IncrementalNewlineDecoder.__new__(
+            self.IncrementalNewlineDecoder)
+        self.assertRaises(ValueError, uninitialized.decode, b'bar')
+        self.assertRaises(ValueError, uninitialized.getstate)
+        self.assertRaises(ValueError, uninitialized.setstate, (b'foo', 0))
+        self.assertRaises(ValueError, uninitialized.reset)
+
 
 class PyIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
     pass

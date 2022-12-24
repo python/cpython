@@ -1743,6 +1743,10 @@ class GeneralModuleTests(unittest.TestCase):
         )
         self.assertEqual(sockaddr, ('ff02::1de:c0:face:8d', 1234, 0, 0))
 
+    def test_getfqdn_filter_localhost(self):
+        self.assertEqual(socket.getfqdn(), socket.getfqdn("0.0.0.0"))
+        self.assertEqual(socket.getfqdn(), socket.getfqdn("::"))
+
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test.')
     @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')

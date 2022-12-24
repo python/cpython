@@ -1,7 +1,0 @@
-Apply bugfixes from `importlib_metadata 4.11.4
-<https://importlib-metadata.readthedocs.io/en/latest/history.html#v4-11-4>`_,
-namely: In ``PathDistribution._name_from_stem``, avoid including parts of
-the extension in the result. In ``PathDistribution._normalized_name``,
-ensure names loaded from the stem of the filename are also normalized,
-ensuring duplicate entry points by packages varying only by non-normalized
-name are hidden.

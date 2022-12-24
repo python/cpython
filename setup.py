@@ -1043,6 +1043,9 @@ class PyBuildExt(build_ext):
         self.add(Extension('_testcapi', ['_testcapimodule.c'],
                            depends=['testcapi_long.h']))
 
+        # Python Argument Clinc functional test module
+        self.add(Extension('_testclinic', ['_testclinic.c']))
+
         # Python Internal C API test module
         self.add(Extension('_testinternalcapi', ['_testinternalcapi.c'],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))

@@ -201,9 +201,9 @@ _PyArg_VaParse_SizeT(PyObject *args, const char *format, va_list va)
 static int
 cleanup_ptr(PyObject *self, void *ptr)
 {
-    if (ptr) {
-        PyMem_Free(ptr);
-    }
+    void **pptr = (void **)ptr;
+    PyMem_Free(*pptr);
+    *pptr = NULL;
     return 0;
 }
 
@@ -1168,7 +1168,7 @@ _Py_COMP_DIAG_POP
                     PyErr_NoMemory();
                     RETURN_ERR_OCCURRED;
                 }
-                if (addcleanup(*buffer, freelist, cleanup_ptr)) {
+                if (addcleanup(buffer, freelist, cleanup_ptr)) {
                     Py_DECREF(s);
                     return converterr(
                         "(cleanup problem)",
@@ -1214,7 +1214,7 @@ _Py_COMP_DIAG_POP
                 PyErr_NoMemory();
                 RETURN_ERR_OCCURRED;
             }
-            if (addcleanup(*buffer, freelist, cleanup_ptr)) {
+            if (addcleanup(buffer, freelist, cleanup_ptr)) {
                 Py_DECREF(s);
                 return converterr("(cleanup problem)",
                                 arg, msgbuf, bufsize);

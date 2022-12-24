@@ -33,7 +33,8 @@ an event loop:
 
    Return the running event loop in the current OS thread.
 
-   If there is no running event loop a :exc:`RuntimeError` is raised.
+   Raise a :exc:`RuntimeError` if there is no running event loop.
+
    This function can only be called from a coroutine or a callback.
 
    .. versionadded:: 3.7
@@ -42,27 +43,35 @@ an event loop:
 
    Get the current event loop.
 
-   If there is no current event loop set in the current OS thread,
-   the OS thread is main, and :func:`set_event_loop` has not yet
-   been called, asyncio will create a new event loop and set it as the
-   current one.
+   When called from a coroutine or a callback (e.g. scheduled with
+   call_soon or similar API), this function will always return the
+   running event loop.
+
+   If there is no running event loop set, the function will return
+   the result of ``get_event_loop_policy().get_event_loop()`` call.
 
    Because this function has rather complex behavior (especially
    when custom event loop policies are in use), using the
    :func:`get_running_loop` function is preferred to :func:`get_event_loop`
    in coroutines and callbacks.
 
-   Consider also using the :func:`asyncio.run` function instead of using
-   lower level functions to manually create and close an event loop.
+   As noted above, consider using the higher-level :func:`asyncio.run` function,
+   instead of using these lower level functions to manually create and close an
+   event loop.
 
    .. deprecated:: 3.10
-      Deprecation warning is emitted if there is no running event loop.
-      In future Python releases, this function will be an alias of
-      :func:`get_running_loop`.
+      Deprecation warning is emitted if there is no current event loop.
+      In Python 3.12 it will be an error.
+
+   .. note::
+      In Python versions 3.10.0--3.10.8 this function
+      (and other functions which used it implicitly) emitted a
+      :exc:`DeprecationWarning` if there was no running event loop, even if
+      the current loop was set.
 
 .. function:: set_event_loop(loop)
 
-   Set *loop* as a current event loop for the current OS thread.
+   Set *loop* as the current event loop for the current OS thread.
 
 .. function:: new_event_loop()
 
@@ -849,7 +858,8 @@ Watching file descriptors
 
 .. method:: loop.remove_reader(fd)
 
-   Stop monitoring the *fd* file descriptor for read availability.
+   Stop monitoring the *fd* file descriptor for read availability. Returns
+   ``True`` if *fd* was previously being monitored for reads.
 
 .. method:: loop.add_writer(fd, callback, *args)
 
@@ -862,7 +872,8 @@ Watching file descriptors
 
 .. method:: loop.remove_writer(fd)
 
-   Stop monitoring the *fd* file descriptor for write availability.
+   Stop monitoring the *fd* file descriptor for write availability. Returns
+   ``True`` if *fd* was previously being monitored for writes.
 
 See also :ref:`Platform Support <asyncio-platform-support>` section
 for some limitations of these methods.

@@ -18,6 +18,10 @@ and Tasks.
 Coroutines
 ==========
 
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
+----------------------------------------------------
+
 :term:`Coroutines <coroutine>` declared with the async/await syntax is the
 preferred way of writing asyncio applications.  For example, the following
 snippet of code prints "hello", waits 1 second,
@@ -246,6 +250,10 @@ Running an asyncio Program
 
 Creating Tasks
 ==============
+
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+-----------------------------------------------
 
 .. function:: create_task(coro, *, name=None)
 

@@ -2278,7 +2278,7 @@ class Tk(Misc, Wm):
 
     def __init__(self, screenName=None, baseName=None, className='Tk',
                  useTk=True, sync=False, use=None):
-        """Return a new Toplevel widget on screen SCREENNAME. A new Tcl interpreter will
+        """Return a new top level widget on screen SCREENNAME. A new Tcl interpreter will
         be created. BASENAME will be used for the identification of the profile file (see
         readprofile).
         It is constructed from sys.argv[0] without extensions if None is given. CLASSNAME
