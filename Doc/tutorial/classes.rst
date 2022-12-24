@@ -737,6 +737,7 @@ to code that is byte-compiled together.  The same restriction applies to
 Odds and Ends
 =============
 
+Sometimes it is useful to have a data type similar to the Pascal "record" or C
 "struct", bundling together a few named data items. The idiomatic approach
 is to use :mod:`dataclasses` for this purpose::
 
@@ -748,10 +749,11 @@ is to use :mod:`dataclasses` for this purpose::
         dept: str
         salary: int
 
-    john = Employee("john", "computer lab", 1000)
+::
 
+    >>> john = Employee("john", "computer lab", 1000)
     >>> john.dept
-    "computer lab"
+    'computer lab'
     >>> john.salary
     1000
 
