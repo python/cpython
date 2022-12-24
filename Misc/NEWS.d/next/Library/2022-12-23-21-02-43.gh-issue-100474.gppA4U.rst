@@ -1,2 +1,2 @@
-Check that index page is actually a regular file before trying to serve it.
-This avoids issues around directories named "index.html".
+:mod:`http.server` now checks that an index page is actually a regular file before trying
+to serve it.  This avoids issues with directories named `index.html`.
