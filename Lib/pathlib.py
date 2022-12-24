@@ -694,7 +694,7 @@ class Path(PurePath):
         """Return a new path pointing to the current working directory
         (as returned by os.getcwd()).
         """
-        return cls().absolute()
+        return cls(os.getcwd())
 
     @classmethod
     def home(cls):
@@ -768,7 +768,7 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        return self.makepath(os.getcwd(), self)
+        return self.makepath(self.cwd(), *self._parts)
 
     def resolve(self, strict=False):
         """
