@@ -650,8 +650,8 @@ are always available.  They are listed here in alphabetical order.
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
    (not-a-number), or positive or negative infinity.  More precisely, the
-   input must conform to the following grammar after leading and trailing
-   whitespace characters are removed:
+   input must conform to the ``numeric_string`` production rule in the following
+   grammar, after leading and trailing whitespace characters are removed:
 
    .. productionlist:: float
       sign: "+" | "-"
