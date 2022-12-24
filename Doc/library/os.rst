@@ -2292,7 +2292,7 @@ features:
    will fail with an :exc:`OSError` subclass in a number of cases:
 
    On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
-   The operation will fail if *src* and *dst* are on different filesystems. Use
+   The operation may fail if *src* and *dst* are on different filesystems. Use
    :func:`shutil.move` to support moves to a different filesystem.
 
    On Unix, if *src* is a file and *dst* is a directory or vice-versa, an
