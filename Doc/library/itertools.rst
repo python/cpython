@@ -749,6 +749,11 @@ which incur interpreter overhead.
 
 .. testcode::
 
+   import collections
+   import math
+   import operator
+   import random
+
    def take(n, iterable):
        "Return first n items of the iterable as a list"
        return list(islice(iterable, n))
@@ -852,6 +857,21 @@ which incur interpreter overhead.
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
        data[2] = 1
        return iter_index(data, 1) if n > 2 else iter([])
+
+   def factor(n):
+       "Prime factors of n."
+       # factor(97) --> 97
+       # factor(98) --> 2 7 7
+       # factor(99) --> 3 3 11
+       for prime in sieve(n+1):
+           while True:
+               quotient, remainder = divmod(n, prime)
+               if remainder:
+                   break
+               yield prime
+               n = quotient
+               if n == 1:
+                   return
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -1104,11 +1124,6 @@ which incur interpreter overhead.
 
     Now, we test all of the itertool recipes
 
-    >>> import operator
-    >>> import collections
-    >>> import math
-    >>> import random
-
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -1219,6 +1234,35 @@ which incur interpreter overhead.
     78498
     >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
     >>> set(sieve(10_000)).isdisjoint(carmichael)
+    True
+
+    list(factor(0))
+    []
+    list(factor(1))
+    []
+    list(factor(2))
+    [2]
+    list(factor(3))
+    [3]
+    list(factor(4))
+    [2, 2]
+    list(factor(5))
+    [5]
+    list(factor(6))
+    [2, 3]
+    list(factor(7))
+    [7]
+    list(factor(8))
+    [2, 2, 2]
+    list(factor(9))
+    [3, 3]
+    list(factor(10))
+    [2, 5]
+    all(math.prod(factor(n)) == n for n in range(1, 1000))
+    True
+    all(set(factor(n)) <= set(sieve(n+1)) for n in range(1, 1000))
+    True
+    all(list(factor(n)) == sorted(factor(n)) for n in range(1, 1000))
     True
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
