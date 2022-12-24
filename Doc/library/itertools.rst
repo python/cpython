@@ -795,7 +795,8 @@ which incur interpreter overhead.
        return chain.from_iterable(repeat(tuple(iterable), n))
 
    def dotproduct(vec1, vec2):
-       return sum(map(operator.mul, vec1, vec2))
+       "Compute a sum of products."
+       return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
 
    def convolve(signal, kernel):
        # See:  https://betterexplained.com/articles/intuitive-convolution/
@@ -807,7 +808,7 @@ which incur interpreter overhead.
        window = collections.deque([0], maxlen=n) * n
        for x in chain(signal, repeat(0, n-1)):
            window.append(x)
-           yield sum(map(operator.mul, kernel, window))
+           yield dotproduct(kernel, window)
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
