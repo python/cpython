@@ -788,6 +788,11 @@ which incur interpreter overhead.
 
 .. testcode::
 
+   import collections
+   import math
+   import operator
+   import random
+
    def take(n, iterable):
        "Return first n items of the iterable as a list"
        return list(islice(iterable, n))
@@ -1133,11 +1138,6 @@ which incur interpreter overhead.
     [25, 26, 27, 28]
 
     Now, we test all of the itertool recipes
-
-    >>> import operator
-    >>> import collections
-    >>> import math
-    >>> import random
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
