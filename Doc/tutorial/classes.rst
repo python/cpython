@@ -751,7 +751,7 @@ is to use :mod:`dataclasses` for this purpose::
 
 ::
 
-    >>> john = Employee("john", "computer lab", 1000)
+    >>> john = Employee('john', 'computer lab', 1000)
     >>> john.dept
     'computer lab'
     >>> john.salary
