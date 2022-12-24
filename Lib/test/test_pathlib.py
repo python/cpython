@@ -741,10 +741,6 @@ class _BasePurePathTest(object):
             self.assertEqual(hash(pp), hash(p))
             self.assertEqual(str(pp), str(p))
 
-    def test_kwargs(self):
-        with self.assertRaisesRegex(TypeError, 'got an unexpected keyword argument'):
-            self.cls(arg=None)
-
 
 class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePosixPath
@@ -2573,6 +2569,11 @@ class _BasePathTest(object):
     @os_helper.skip_unless_symlink
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
+
+    def test_passing_kwargs_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            self.cls(foo="bar")
+
 
 class WalkTests(unittest.TestCase):
 
