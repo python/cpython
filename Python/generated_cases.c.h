@@ -930,14 +930,13 @@
         }
 
         TARGET(ASYNC_GEN_WRAP) {
-            PyObject *v = TOP();
+            PyObject *v = PEEK(1);
+            PyObject *w;
             assert(frame->f_code->co_flags & CO_ASYNC_GENERATOR);
-            PyObject *w = _PyAsyncGenValueWrapperNew(v);
-            if (w == NULL) {
-                goto error;
-            }
-            SET_TOP(w);
+            w = _PyAsyncGenValueWrapperNew(v);
             Py_DECREF(v);
+            if (w == NULL) goto pop_1_error;
+            POKE(1, w);
             DISPATCH();
         }
 

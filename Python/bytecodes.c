@@ -763,16 +763,11 @@ dummy_func(
             }
         }
 
-        // stack effect: ( -- )
-        inst(ASYNC_GEN_WRAP) {
-            PyObject *v = TOP();
+        inst(ASYNC_GEN_WRAP, (v -- w)) {
             assert(frame->f_code->co_flags & CO_ASYNC_GENERATOR);
-            PyObject *w = _PyAsyncGenValueWrapperNew(v);
-            if (w == NULL) {
-                goto error;
-            }
-            SET_TOP(w);
-            Py_DECREF(v);
+            w = _PyAsyncGenValueWrapperNew(v);
+            DECREF_INPUTS();
+            ERROR_IF(w == NULL, error);
         }
 
         // stack effect: ( -- )
