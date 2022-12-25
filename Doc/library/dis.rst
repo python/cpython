@@ -404,7 +404,7 @@ The Python compiler currently generates the following bytecode instructions.
 
 In the following, We will refer to the interpreter stack as STACK and describe
 operations on it as if it was a Python list. The top of the stack corresponds to
-STACK[-1] in this language.
+``STACK[-1]`` in this language.
 
 .. opcode:: NOP
 
@@ -512,37 +512,63 @@ not have to be) the original ``STACK[-2]``.
 .. opcode:: BINARY_OP (op)
 
    Implements the binary and in-place operators (depending on the value of
-   *op*).
-   ``STACK[-1] =  op STACK[-1]``.
+   *op*).::
+
+      rhs = STACK.pop()
+      lhs = STACK.pop()
+      STACK.append(lhs op rhs)
 
    .. versionadded:: 3.11
 
 
 .. opcode:: BINARY_SUBSCR
 
-   Implements ``STACK[-1] = STACK[-2][STACK[-1]]``.
+   Implements::
+
+      key = STACK.pop()
+      container = STACK.pop()
+      STACK.append(container[index])
 
 
 .. opcode:: STORE_SUBSCR
 
-   Implements ``STACK[-2][STACK[-1]] = STACK[-3]``.
+   Implements::
+
+      key = STACK.pop()
+      container = STACK.pop()
+      value = STACK.pop()
+      container[key] = value
 
 
 .. opcode:: DELETE_SUBSCR
 
-   Implements ``del STACK[-2][STACK[-1]]``.
+   Implements::
 
+      key = STACK.pop()
+      container = STACK.pop()
+      del container[key]
 
 .. opcode:: BINARY_SLICE
 
-   Implements ``STACK[-1] = STACK[-3][STACK[-2]:STACK[-1]]``.
+   Implements::
+
+      end = STACK.pop()
+      start = STACK.pop()
+      container = STACK.pop()
+      STACK.append(container[start:end])
 
    .. versionadded:: 3.12
 
 
 .. opcode:: STORE_SLICE
 
-   Implements ``STACK[-3][STACK[-2]:STACK[-1]] = STACK[-4]``.
+   Implements::
+
+      end = STACK.pop()
+      start = STACK.pop()
+      container = STACK.pop()
+      values = STACK.pop()
+      container[start:end] = value
 
    .. versionadded:: 3.12
 
@@ -625,18 +651,32 @@ not have to be) the original ``STACK[-2]``.
 
 .. opcode:: SET_ADD (i)
 
-   Calls ``set.add(STACK[-i], STACK[-1])``.  Used to implement set comprehensions.
+   Implements::
+      item = STACK.pop()
+      set.add(STACK[-i], item)
+
+   Used to implement set comprehensions.
 
 
 .. opcode:: LIST_APPEND (i)
 
-   Calls ``list.append(STACK[-i], STACK[-1])``.  Used to implement list comprehensions.
+   Implements::
+
+      item = STACK.pop()
+      list.append(STACK[-i], item)
+
+   Used to implement list comprehensions.
 
 
 .. opcode:: MAP_ADD (i)
 
-   Calls ``dict.__setitem__(STACK[-i], STACK[-2], STACK[-1])``.  Used to implement dict
-   comprehensions.
+   Implements::
+
+      value = STACK.pop()
+      key = STACK.pop()
+      dict.__setitem__(STACK[-i], key, value)
+
+   Used to implement dict comprehensions.
 
    .. versionadded:: 3.1
    .. versionchanged:: 3.8
@@ -809,7 +849,7 @@ iterations of the loop.
 
 .. opcode:: STORE_NAME (namei)
 
-   Implements ``name = STACK[-1]``. *namei* is the index of *name* in the attribute
+   Implements ``name = STACK.pop()``. *namei* is the index of *name* in the attribute
    :attr:`co_names` of the code object. The compiler tries to use
    :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
@@ -849,13 +889,22 @@ iterations of the loop.
 
 .. opcode:: STORE_ATTR (namei)
 
-   Implements ``STACK[-1].name = STACK[-2]``, where *namei* is the index of name in
-   :attr:`co_names`. Both values are popped from the stack.
+   Implements::
 
+      obj = STACK.pop()
+      value = STACK.pop()
+      obj.name = value
+
+   where *namei* is the index of name in :attr:`co_names`.
 
 .. opcode:: DELETE_ATTR (namei)
 
-   Implements ``del STACK[-1].name``, using *namei* as index into :attr:`co_names`.
+   Implements::
+
+      obj = STACK.pop()
+      del obj.name
+
+   where *namei* is the index of name into :attr:`co_names`.
 
 
 .. opcode:: STORE_GLOBAL (namei)
@@ -926,21 +975,36 @@ iterations of the loop.
 
 .. opcode:: LIST_EXTEND (i)
 
-   Calls ``list.extend(STACK[-i], STACK[-1])``.  Used to build lists.
+   Implements::
+
+      seq = STACK.pop()
+      list.extend(STACK[-i], seq)
+
+   Used to build lists.
 
    .. versionadded:: 3.9
 
 
 .. opcode:: SET_UPDATE (i)
 
-   Calls ``set.update(STACK[-i], STACK[-1])``.  Used to build sets.
+   Implements::
+
+      seq = STACK.pop()
+      set.update(STACK[-i], seq)
+
+   Used to build sets.
 
    .. versionadded:: 3.9
 
 
 .. opcode:: DICT_UPDATE (i)
 
-   Calls ``dict.update(STACK[-i], STACK[-1])``.  Used to build dicts.
+   Implements::
+
+      map = STACK.pop()
+      dict.update(STACK[-i], map)
+
+   Used to build dicts.
 
    .. versionadded:: 3.9
 
@@ -1103,10 +1167,10 @@ iterations of the loop.
 
 .. opcode:: FOR_ITER (delta)
 
-   ``STACK[-1]`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
-   this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted then the byte
-   code counter is incremented by *delta*.
+   ``STACK[-1]`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
+   If this yields a new value, push it on the stack (leaving the iterator below
+   it).  If the iterator indicates it is exhausted then the byte code counter is
+   incremented by *delta*.
 
    .. versionchanged:: 3.12
       Up until 3.11 the iterator was popped when it was exhausted.
@@ -1308,9 +1372,20 @@ iterations of the loop.
 
    .. index:: builtin: slice
 
-   Pushes a slice object on the stack.  *argc* must be 2 or 3.  If it is 2,
-   ``slice(STACK[-2], STACK[-1])`` is pushed; if it is 3, ``slice(STACK[-3], STACK[-2], STACK[-1])`` is
-   pushed. See the :func:`slice` built-in function for more information.
+   Pushes a slice object on the stack.  *argc* must be 2 or 3.  If it is 2, implements::
+
+      end = STACK.pop()
+      start = STACK.pop()
+      STACK.append(slice(start, stop))
+
+   if it is 3, implements::
+
+      step = STACK.pop()
+      end = STACK.pop()
+      start = STACK.pop()
+      STACK.append(slice(start, end, step))
+
+   See the :func:`slice` built-in function for more information.
 
 
 .. opcode:: EXTENDED_ARG (ext)
@@ -1351,7 +1426,8 @@ iterations of the loop.
 
    Pop ``STACK[-1]``, ``STACK[-2]``, and ``STACK[-3]``. If ``STACK[-3]`` is an
    instance of ``STACK[-2]`` and has the positional and keyword attributes
-   required by *count* and ``STACK[-1]``, push a tuple of extracted attributes.  Otherwise, push ``None``.
+   required by *count* and ``STACK[-1]``, push a tuple of extracted attributes.
+   Otherwise, push ``None``.
 
    .. versionadded:: 3.10
 
@@ -1386,8 +1462,8 @@ iterations of the loop.
 
 .. opcode:: SEND (delta)
 
-    Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from`` and ``await``
-    statements.
+    Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
+    and ``await`` statements.
 
     If the call raises :exc:`StopIteration`, pop both items, push the
     exception's ``value`` attribute, and increment the bytecode counter by
