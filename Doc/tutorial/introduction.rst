@@ -190,28 +190,9 @@ the first quote::
    C:\some\name
 
 There is one subtle aspect to raw strings: a raw string may not end in an odd
-number of ``\`` characters. That is of special concern while dealing with Windows
-paths. This is because the interpreter sees this as an escaped quote character,
-and so it does not recognize it as the end of the string::
-
-   >>> fn = r'C:\this\will\not\work\'
-     File "<stdin>", line 1
-       fn = r'C:\this\will\not\work\'
-            ^
-   SyntaxError: unterminated string literal (detected at line 1)
-
-
-There are several workarounds for this.  One is to use regular strings and
-double the backslashes::
-
-   >>> fn = 'C:\\this\\will\\work\\'
-
-Another is to add a blank character before the quote and then remove it::
-
-   >>> fn = r'C:\this\will\work\ '.strip()
-
-It is also possible to use :func:`os.path.join` to append a backslash on Windows
-(by leaving the last parameter empty).
+number of ``\`` characters; see
+:ref:`the FAQ entry <faq-programming-raw-string-backslash>` for more information
+and workarounds.
 
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically

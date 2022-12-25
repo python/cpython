@@ -1019,6 +1019,37 @@ What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
 See the :ref:`unicode-howto`.
 
 
+.. _faq-programming-raw-string-backslash:
+
+Can I end a raw string with an odd number of backslashes?
+---------------------------------------------------------
+
+A raw string ending with an odd number of backslashes will escape the string's quote::
+
+   >>> r'C:\this\will\not\work\'
+     File "<stdin>", line 1
+       r'C:\this\will\not\work\'
+            ^
+   SyntaxError: unterminated string literal (detected at line 1)
+
+There are several workarounds for this. One is to use regular strings and double
+the backslashes::
+
+   >>> 'C:\\this\\will\\work\\'
+   'C:\\this\\will\\work\\'
+
+Another is to add a blank character before the quote and then remove it::
+
+   >>> r'C:\this\will\work\ '.strip()
+   'C:\\this\\will\\work\\'
+
+
+It is also possible to use :func:`os.path.join` to append a backslash on Windows::
+
+   >>> os.path.join(r'C:\this\will\work', '')
+   'C:\\this\\will\\work\\'
+
+
 Performance
 ===========
 
