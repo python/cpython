@@ -1038,11 +1038,10 @@ the backslashes::
    >>> 'C:\\this\\will\\work\\'
    'C:\\this\\will\\work\\'
 
-Another is to add a blank character before the quote and then remove it::
+Another is to concatenate doubled slashes after the string::
 
-   >>> r'C:\this\will\work\ '.strip()
+   >>> r'C:\this\will\work' '\\'
    'C:\\this\\will\\work\\'
-
 
 It is also possible to use :func:`os.path.join` to append a backslash on Windows::
 
