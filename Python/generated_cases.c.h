@@ -848,8 +848,9 @@
 
         TARGET(GET_AWAITABLE) {
             PREDICTED(GET_AWAITABLE);
-            PyObject *iterable = TOP();
-            PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
+            PyObject *iterable = PEEK(1);
+            PyObject *iter;
+            iter = _PyCoro_GetAwaitableIter(iterable);
 
             if (iter == NULL) {
                 format_awaitable_error(tstate, Py_TYPE(iterable), oparg);
@@ -871,12 +872,9 @@
                 }
             }
 
-            SET_TOP(iter); /* Even if it's NULL */
+            if (iter == NULL) goto pop_1_error;
 
-            if (iter == NULL) {
-                goto error;
-            }
-
+            POKE(1, iter);
             PREDICT(LOAD_CONST);
             DISPATCH();
         }

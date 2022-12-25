@@ -685,16 +685,14 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        // stack effect: ( -- )
-        inst(GET_AWAITABLE) {
-            PyObject *iterable = TOP();
-            PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
+        inst(GET_AWAITABLE, (iterable -- iter)) {
+            iter = _PyCoro_GetAwaitableIter(iterable);
 
             if (iter == NULL) {
                 format_awaitable_error(tstate, Py_TYPE(iterable), oparg);
             }
 
-            Py_DECREF(iterable);
+            DECREF_INPUTS();
 
             if (iter != NULL && PyCoro_CheckExact(iter)) {
                 PyObject *yf = _PyGen_yf((PyGenObject*)iter);
@@ -710,11 +708,7 @@ dummy_func(
                 }
             }
 
-            SET_TOP(iter); /* Even if it's NULL */
-
-            if (iter == NULL) {
-                goto error;
-            }
+            ERROR_IF(iter == NULL, error);
 
             PREDICT(LOAD_CONST);
         }
