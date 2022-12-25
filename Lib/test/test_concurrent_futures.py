@@ -711,7 +711,6 @@ create_executor_tests(WaitTests,
 
 
 class AsCompletedTests:
-    # TODO(brian@sweetapp.com): Should have a test with a non-zero timeout.
     def test_no_timeout(self):
         future1 = self.executor.submit(mul, 2, 21)
         future2 = self.executor.submit(mul, 7, 6)
@@ -738,6 +737,28 @@ class AsCompletedTests:
                      SUCCESSFUL_FUTURE,
                      future1],
                     timeout=0):
+                completed_futures.add(future)
+        except futures.TimeoutError:
+            pass
+
+        self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
+                              EXCEPTION_FUTURE,
+                              SUCCESSFUL_FUTURE]),
+                         completed_futures)
+
+    def test_nonzero_timeout(self):
+        """Test ``futures.as_completed`` timing out before
+        completing it's final future completes."""
+
+        future1 = self.executor.submit(time.sleep, 1)
+        completed_futures = set()
+        try:
+            for future in futures.as_completed(
+                    [CANCELLED_AND_NOTIFIED_FUTURE,
+                     EXCEPTION_FUTURE,
+                     SUCCESSFUL_FUTURE,
+                     future1],
+                    timeout=0.01):
                 completed_futures.add(future)
         except futures.TimeoutError:
             pass
