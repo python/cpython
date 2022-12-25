@@ -640,7 +640,7 @@ def eff_request_host(request):
 
     """
     erhn = req_host = request_host(request)
-    if req_host.find(".") == -1 and not IPV4_RE.search(req_host):
+    if "." not in req_host:
         erhn = req_host + ".local"
     return req_host, erhn
 
