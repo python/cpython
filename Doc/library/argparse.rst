@@ -1234,7 +1234,7 @@ sequence should match the type_ specified::
    doors.py: error: argument door: invalid choice: 4 (choose from 1, 2, 3)
 
 Any sequence can be passed as the *choices* value, so :class:`list` objects,
-:class:`set` objects, and custom sequences are all supported.
+:class:`tuple` objects, and custom sequences are all supported.
 
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
