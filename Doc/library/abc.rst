@@ -134,7 +134,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 
           @classmethod
           def __subclasshook__(cls, C):
-              if cls is MyIterable:
+              if cls is MyIterable:  # Do not inherit this behaviour
                   if hasattr(C, "__iter__"):
                       return True
               return NotImplemented  # fallback to regular subclass check
