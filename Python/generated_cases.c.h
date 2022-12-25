@@ -941,15 +941,15 @@
         }
 
         TARGET(YIELD_VALUE) {
+            PyObject *retval = PEEK(1);
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(oparg == STACK_LEVEL());
             assert(frame != &entry_frame);
-            PyObject *retval = POP();
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             tstate->exc_info = gen->gi_exc_state.previous_item;
