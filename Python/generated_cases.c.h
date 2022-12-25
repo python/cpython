@@ -964,10 +964,10 @@
         }
 
         TARGET(POP_EXCEPT) {
+            PyObject *exc_value = PEEK(1);
             _PyErr_StackItem *exc_info = tstate->exc_info;
-            PyObject *value = exc_info->exc_value;
-            exc_info->exc_value = POP();
-            Py_XDECREF(value);
+            Py_XSETREF(exc_info->exc_value, exc_value);
+            STACK_SHRINK(1);
             DISPATCH();
         }
 

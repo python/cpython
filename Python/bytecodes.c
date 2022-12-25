@@ -792,12 +792,9 @@ dummy_func(
             goto resume_frame;
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_EXCEPT) {
+        inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
-            PyObject *value = exc_info->exc_value;
-            exc_info->exc_value = POP();
-            Py_XDECREF(value);
+            Py_XSETREF(exc_info->exc_value, exc_value);
         }
 
         // stack effect: (__0 -- )
