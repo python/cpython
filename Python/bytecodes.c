@@ -638,12 +638,9 @@ dummy_func(
             }
         }
 
-        // stack effect: ( -- __0)
-        inst(GET_ANEXT) {
+        inst(GET_ANEXT, (aiter -- aiter, awaitable)) {
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
-            PyObject *awaitable = NULL;
-            PyObject *aiter = TOP();
             PyTypeObject *type = Py_TYPE(aiter);
 
             if (PyAsyncGen_CheckExact(aiter)) {
@@ -685,7 +682,6 @@ dummy_func(
                 }
             }
 
-            PUSH(awaitable);
             PREDICT(LOAD_CONST);
         }
 

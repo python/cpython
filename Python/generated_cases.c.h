@@ -795,10 +795,10 @@
         }
 
         TARGET(GET_ANEXT) {
+            PyObject *aiter = PEEK(1);
+            PyObject *awaitable;
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
-            PyObject *awaitable = NULL;
-            PyObject *aiter = TOP();
             PyTypeObject *type = Py_TYPE(aiter);
 
             if (PyAsyncGen_CheckExact(aiter)) {
@@ -840,7 +840,8 @@
                 }
             }
 
-            PUSH(awaitable);
+            STACK_GROW(1);
+            POKE(1, awaitable);
             PREDICT(LOAD_CONST);
             DISPATCH();
         }
