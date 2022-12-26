@@ -1088,8 +1088,10 @@
         }
 
         TARGET(LOAD_ASSERTION_ERROR) {
-            PyObject *value = PyExc_AssertionError;
-            PUSH(Py_NewRef(value));
+            PyObject *value;
+            value = Py_NewRef(PyExc_AssertionError);
+            STACK_GROW(1);
+            POKE(1, value);
             DISPATCH();
         }
 

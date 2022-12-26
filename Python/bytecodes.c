@@ -906,11 +906,8 @@ dummy_func(
             }
         }
 
-
-        // stack effect: ( -- __0)
-        inst(LOAD_ASSERTION_ERROR) {
-            PyObject *value = PyExc_AssertionError;
-            PUSH(Py_NewRef(value));
+        inst(LOAD_ASSERTION_ERROR, ( -- value)) {
+            value = Py_NewRef(PyExc_AssertionError);
         }
 
         // stack effect: ( -- __0)
