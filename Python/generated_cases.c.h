@@ -1124,23 +1124,23 @@
         }
 
         TARGET(STORE_NAME) {
+            PyObject *v = PEEK(1);
             PyObject *name = GETITEM(names, oparg);
-            PyObject *v = POP();
             PyObject *ns = LOCALS();
             int err;
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when storing %R", name);
                 Py_DECREF(v);
-                goto error;
+                if (true) goto pop_1_error;
             }
             if (PyDict_CheckExact(ns))
                 err = PyDict_SetItem(ns, name, v);
             else
                 err = PyObject_SetItem(ns, name, v);
             Py_DECREF(v);
-            if (err != 0)
-                goto error;
+            if (err) goto pop_1_error;
+            STACK_SHRINK(1);
             DISPATCH();
         }
 

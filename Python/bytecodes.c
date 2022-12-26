@@ -934,25 +934,22 @@ dummy_func(
             }
         }
 
-        // stack effect: (__0 -- )
-        inst(STORE_NAME) {
+        inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *v = POP();
             PyObject *ns = LOCALS();
             int err;
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when storing %R", name);
-                Py_DECREF(v);
-                goto error;
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
             if (PyDict_CheckExact(ns))
                 err = PyDict_SetItem(ns, name, v);
             else
                 err = PyObject_SetItem(ns, name, v);
-            Py_DECREF(v);
-            if (err != 0)
-                goto error;
+            DECREF_INPUTS();
+            ERROR_IF(err, error);
         }
 
         inst(DELETE_NAME, (--)) {
