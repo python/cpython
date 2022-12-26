@@ -1304,9 +1304,9 @@
         }
 
         TARGET(LOAD_NAME) {
+            PyObject *v;
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = LOCALS();
-            PyObject *v;
             if (locals == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when loading %R", name);
@@ -1363,7 +1363,8 @@
                     }
                 }
             }
-            PUSH(v);
+            STACK_GROW(1);
+            POKE(1, v);
             DISPATCH();
         }
 

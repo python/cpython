@@ -1102,11 +1102,9 @@ dummy_func(
             }
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_NAME) {
+        inst(LOAD_NAME, ( -- v)) {
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = LOCALS();
-            PyObject *v;
             if (locals == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when loading %R", name);
@@ -1163,7 +1161,6 @@ dummy_func(
                     }
                 }
             }
-            PUSH(v);
         }
 
         // error: LOAD_GLOBAL has irregular stack effect
