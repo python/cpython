@@ -1630,8 +1630,8 @@
         }
 
         TARGET(LIST_EXTEND) {
-            PyObject *iterable = POP();
-            PyObject *list = PEEK(oparg);
+            PyObject *iterable = PEEK(1);
+            PyObject *list = PEEK(oparg + 1);  // iterable is still on the stack
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1643,10 +1643,11 @@
                           Py_TYPE(iterable)->tp_name);
                 }
                 Py_DECREF(iterable);
-                goto error;
+                if (true) goto pop_1_error;
             }
             Py_DECREF(none_val);
             Py_DECREF(iterable);
+            STACK_SHRINK(1);
             DISPATCH();
         }
 

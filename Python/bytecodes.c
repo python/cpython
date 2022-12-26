@@ -1404,10 +1404,8 @@ dummy_func(
             ERROR_IF(tuple == NULL, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(LIST_EXTEND) {
-            PyObject *iterable = POP();
-            PyObject *list = PEEK(oparg);
+        inst(LIST_EXTEND, (iterable -- )) {
+            PyObject *list = PEEK(oparg + 1);  // iterable is still on the stack
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1418,11 +1416,11 @@ dummy_func(
                           "Value after * must be an iterable, not %.200s",
                           Py_TYPE(iterable)->tp_name);
                 }
-                Py_DECREF(iterable);
-                goto error;
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
             Py_DECREF(none_val);
-            Py_DECREF(iterable);
+            DECREF_INPUTS();
         }
 
         // stack effect: (__0 -- )
