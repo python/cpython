@@ -1533,20 +1533,18 @@ dummy_func(
             PUSH(map);
         }
 
-        // stack effect: (__0 -- )
-        inst(DICT_UPDATE) {
-            PyObject *update = POP();
-            PyObject *dict = PEEK(oparg);
+        inst(DICT_UPDATE, (update --)) {
+            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                     "'%.200s' object is not a mapping",
                                     Py_TYPE(update)->tp_name);
                 }
-                Py_DECREF(update);
-                goto error;
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
-            Py_DECREF(update);
+            DECREF_INPUTS();
         }
 
         // stack effect: (__0 -- )

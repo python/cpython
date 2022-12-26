@@ -1766,8 +1766,8 @@
         }
 
         TARGET(DICT_UPDATE) {
-            PyObject *update = POP();
-            PyObject *dict = PEEK(oparg);
+            PyObject *update = PEEK(1);
+            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -1775,9 +1775,10 @@
                                     Py_TYPE(update)->tp_name);
                 }
                 Py_DECREF(update);
-                goto error;
+                if (true) goto pop_1_error;
             }
             Py_DECREF(update);
+            STACK_SHRINK(1);
             DISPATCH();
         }
 
