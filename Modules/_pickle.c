@@ -186,6 +186,9 @@ typedef struct {
     /* functools.partial, used for implementing __newobj_ex__ with protocols
        2 and 3 */
     PyObject *partial;
+
+    PyObject *reduce_large_str;
+    PyObject *reduce_large_bytes;
 } PickleState;
 
 /* Forward declaration of the _pickle module definition. */
@@ -278,6 +281,14 @@ _Pickle_InitState(PickleState *st)
                      "not %.200s", Py_TYPE(st->extension_cache)->tp_name);
         goto error;
     }
+    st->reduce_large_str = PyObject_GetAttrString(copyreg,
+                                                  "_reduce_large_str");
+    if (!st->reduce_large_str)
+        goto error;
+    st->reduce_large_bytes = PyObject_GetAttrString(copyreg,
+                                                    "_reduce_large_bytes");
+    if (!st->reduce_large_bytes)
+        goto error;
     Py_CLEAR(copyreg);
 
     /* Load the 2.x -> 3.x stdlib module mapping tables */
@@ -2362,10 +2373,19 @@ _save_bytes_data(PicklerObject *self, PyObject *obj, const char *data,
         len = 9;
     }
     else {
-        PyErr_SetString(PyExc_OverflowError,
-                        "serializing a bytes object larger than 4 GiB "
-                        "requires pickle protocol 4 or higher");
-        return -1;
+        PyObject *reduce_value;
+        int status;
+        PickleState *st = _Pickle_GetGlobalState();
+
+        reduce_value = PyObject_CallFunctionObjArgs(
+                st->reduce_large_bytes, obj, NULL);
+        if (reduce_value == NULL)
+            return -1;
+
+        /* save_reduce() will memoize the object automatically. */
+        status = save_reduce(self, reduce_value, obj);
+        Py_DECREF(reduce_value);
+        return status;
     }
 
     if (_Pickler_write_bytes(self, header, len, data, size, obj) < 0) {
@@ -2656,7 +2676,8 @@ write_unicode_binary(PicklerObject *self, PyObject *obj)
         header[1] = (unsigned char)(size & 0xff);
         len = 2;
     }
-    else if ((size_t)size <= 0xffffffffUL) {
+    else if ((size_t)size <= 0x7fffffffUL ||
+         (self->proto >= 3 && (size_t)size <= 0xffffffffUL)) {
         header[0] = BINUNICODE;
         header[1] = (unsigned char)(size & 0xff);
         header[2] = (unsigned char)((size >> 8) & 0xff);
@@ -2670,11 +2691,7 @@ write_unicode_binary(PicklerObject *self, PyObject *obj)
         len = 9;
     }
     else {
-        PyErr_SetString(PyExc_OverflowError,
-                        "serializing a string larger than 4 GiB "
-                        "requires pickle protocol 4 or higher");
-        Py_XDECREF(encoded);
-        return -1;
+        return -2;
     }
 
     if (_Pickler_write_bytes(self, header, len, data, size, encoded) < 0) {
@@ -2689,8 +2706,23 @@ static int
 save_unicode(PicklerObject *self, PyObject *obj)
 {
     if (self->bin) {
-        if (write_unicode_binary(self, obj) < 0)
-            return -1;
+        int r = write_unicode_binary(self, obj);
+        if (r == -2) {
+            PyObject *reduce_value;
+            PickleState *st = _Pickle_GetGlobalState();
+
+            reduce_value = PyObject_CallFunctionObjArgs(
+                    st->reduce_large_str, obj, NULL);
+            if (reduce_value == NULL)
+                return -1;
+
+            /* save_reduce() will memoize the object automatically. */
+            r = save_reduce(self, reduce_value, obj);
+            Py_DECREF(reduce_value);
+            return r;
+        }
+        if (r < 0)
+             return -1;
     }
     else {
         PyObject *encoded;

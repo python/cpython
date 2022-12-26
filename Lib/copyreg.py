@@ -93,6 +93,16 @@ def _reduce_ex(self, proto):
     else:
         return _reconstructor, args
 
+def _chunks(data, size):
+    for i in range(0, len(data), size):
+        yield data[i: i + size]
+
+def _reduce_large_str(data):
+    return ''.join, (list(_chunks(data, 0x7fffffff//4)),)
+
+def _reduce_large_bytes(data):
+    return b''.join, (list(_chunks(data, 0xffffffff)),)
+
 # Helper for __reduce_ex__ protocol 2
 
 def __newobj__(cls, *args):
