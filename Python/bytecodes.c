@@ -1467,54 +1467,41 @@ dummy_func(
             PUSH(map);
         }
 
-        // stack effect: ( -- )
-        inst(SETUP_ANNOTATIONS) {
+        inst(SETUP_ANNOTATIONS, (--)) {
             int err;
             PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when setting up annotations");
-                goto error;
+                ERROR_IF(true, error);
             }
             /* check if __annotations__ in locals()... */
             if (PyDict_CheckExact(LOCALS())) {
                 ann_dict = _PyDict_GetItemWithError(LOCALS(),
                                                     &_Py_ID(__annotations__));
                 if (ann_dict == NULL) {
-                    if (_PyErr_Occurred(tstate)) {
-                        goto error;
-                    }
+                    ERROR_IF(_PyErr_Occurred(tstate), error);
                     /* ...if not, create a new one */
                     ann_dict = PyDict_New();
-                    if (ann_dict == NULL) {
-                        goto error;
-                    }
+                    ERROR_IF(ann_dict == NULL, error);
                     err = PyDict_SetItem(LOCALS(), &_Py_ID(__annotations__),
                                          ann_dict);
                     Py_DECREF(ann_dict);
-                    if (err != 0) {
-                        goto error;
-                    }
+                    ERROR_IF(err, error);
                 }
             }
             else {
                 /* do the same if locals() is not a dict */
                 ann_dict = PyObject_GetItem(LOCALS(), &_Py_ID(__annotations__));
                 if (ann_dict == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        goto error;
-                    }
+                    ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
                     _PyErr_Clear(tstate);
                     ann_dict = PyDict_New();
-                    if (ann_dict == NULL) {
-                        goto error;
-                    }
+                    ERROR_IF(ann_dict == NULL, error);
                     err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
                                            ann_dict);
                     Py_DECREF(ann_dict);
-                    if (err != 0) {
-                        goto error;
-                    }
+                    ERROR_IF(err, error);
                 }
                 else {
                     Py_DECREF(ann_dict);
