@@ -1547,13 +1547,16 @@
         }
 
         TARGET(LOAD_DEREF) {
+            PyObject *value;
             PyObject *cell = GETLOCAL(oparg);
-            PyObject *value = PyCell_GET(cell);
+            value = PyCell_GET(cell);
             if (value == NULL) {
                 format_exc_unbound(tstate, frame->f_code, oparg);
-                goto error;
+                if (true) goto error;
             }
-            PUSH(Py_NewRef(value));
+            Py_INCREF(value);
+            STACK_GROW(1);
+            POKE(1, value);
             DISPATCH();
         }
 

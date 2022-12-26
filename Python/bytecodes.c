@@ -1333,15 +1333,14 @@ dummy_func(
             }
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_DEREF) {
+        inst(LOAD_DEREF, ( -- value)) {
             PyObject *cell = GETLOCAL(oparg);
-            PyObject *value = PyCell_GET(cell);
+            value = PyCell_GET(cell);
             if (value == NULL) {
                 format_exc_unbound(tstate, frame->f_code, oparg);
-                goto error;
+                ERROR_IF(true, error);
             }
-            PUSH(Py_NewRef(value));
+            Py_INCREF(value);
         }
 
         // stack effect: (__0 -- )
