@@ -1652,13 +1652,12 @@
         }
 
         TARGET(SET_UPDATE) {
-            PyObject *iterable = POP();
-            PyObject *set = PEEK(oparg);
+            PyObject *iterable = PEEK(1);
+            PyObject *set = PEEK(oparg + 1);  // iterable is still on the stack
             int err = _PySet_Update(set, iterable);
             Py_DECREF(iterable);
-            if (err < 0) {
-                goto error;
-            }
+            if (err < 0) goto pop_1_error;
+            STACK_SHRINK(1);
             DISPATCH();
         }
 

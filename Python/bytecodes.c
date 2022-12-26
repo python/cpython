@@ -1423,15 +1423,11 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        // stack effect: (__0 -- )
-        inst(SET_UPDATE) {
-            PyObject *iterable = POP();
-            PyObject *set = PEEK(oparg);
+        inst(SET_UPDATE, (iterable --)) {
+            PyObject *set = PEEK(oparg + 1);  // iterable is still on the stack
             int err = _PySet_Update(set, iterable);
-            Py_DECREF(iterable);
-            if (err < 0) {
-                goto error;
-            }
+            DECREF_INPUTS();
+            ERROR_IF(err < 0, error);
         }
 
         // stack effect: (__array[oparg] -- __0)
