@@ -1561,11 +1561,12 @@
         }
 
         TARGET(STORE_DEREF) {
-            PyObject *v = POP();
+            PyObject *v = PEEK(1);
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             PyCell_SET(cell, v);
             Py_XDECREF(oldobj);
+            STACK_SHRINK(1);
             DISPATCH();
         }
 

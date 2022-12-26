@@ -1343,9 +1343,7 @@ dummy_func(
             Py_INCREF(value);
         }
 
-        // stack effect: (__0 -- )
-        inst(STORE_DEREF) {
-            PyObject *v = POP();
+        inst(STORE_DEREF, (v --)) {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             PyCell_SET(cell, v);
