@@ -1620,13 +1620,12 @@
         }
 
         TARGET(LIST_TO_TUPLE) {
-            PyObject *list = POP();
-            PyObject *tuple = PyList_AsTuple(list);
+            PyObject *list = PEEK(1);
+            PyObject *tuple;
+            tuple = PyList_AsTuple(list);
             Py_DECREF(list);
-            if (tuple == NULL) {
-                goto error;
-            }
-            PUSH(tuple);
+            if (tuple == NULL) goto pop_1_error;
+            POKE(1, tuple);
             DISPATCH();
         }
 

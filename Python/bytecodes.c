@@ -1398,15 +1398,10 @@ dummy_func(
             PUSH(list);
         }
 
-        // stack effect: ( -- )
-        inst(LIST_TO_TUPLE) {
-            PyObject *list = POP();
-            PyObject *tuple = PyList_AsTuple(list);
-            Py_DECREF(list);
-            if (tuple == NULL) {
-                goto error;
-            }
-            PUSH(tuple);
+        inst(LIST_TO_TUPLE, (list -- tuple)) {
+            tuple = PyList_AsTuple(list);
+            DECREF_INPUTS();
+            ERROR_IF(tuple == NULL, error);
         }
 
         // stack effect: (__0 -- )
