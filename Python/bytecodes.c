@@ -1350,8 +1350,7 @@ dummy_func(
             Py_XDECREF(oldobj);
         }
 
-        // stack effect: ( -- )
-        inst(COPY_FREE_VARS) {
+        inst(COPY_FREE_VARS, (--)) {
             /* Copy closure variables to free variables */
             PyCodeObject *co = frame->f_code;
             assert(PyFunction_Check(frame->f_funcobj));
