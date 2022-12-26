@@ -910,9 +910,7 @@ dummy_func(
             value = Py_NewRef(PyExc_AssertionError);
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_BUILD_CLASS) {
-            PyObject *bc;
+        inst(LOAD_BUILD_CLASS, ( -- bc)) {
             if (PyDict_CheckExact(BUILTINS())) {
                 bc = _PyDict_GetItemWithError(BUILTINS(),
                                               &_Py_ID(__build_class__));
@@ -921,7 +919,7 @@ dummy_func(
                         _PyErr_SetString(tstate, PyExc_NameError,
                                          "__build_class__ not found");
                     }
-                    goto error;
+                    ERROR_IF(true, error);
                 }
                 Py_INCREF(bc);
             }
@@ -931,10 +929,9 @@ dummy_func(
                     if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                         _PyErr_SetString(tstate, PyExc_NameError,
                                          "__build_class__ not found");
-                    goto error;
+                    ERROR_IF(true, error);
                 }
             }
-            PUSH(bc);
         }
 
         // stack effect: (__0 -- )

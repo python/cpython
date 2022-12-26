@@ -1105,7 +1105,7 @@
                         _PyErr_SetString(tstate, PyExc_NameError,
                                          "__build_class__ not found");
                     }
-                    goto error;
+                    if (true) goto error;
                 }
                 Py_INCREF(bc);
             }
@@ -1115,10 +1115,11 @@
                     if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                         _PyErr_SetString(tstate, PyExc_NameError,
                                          "__build_class__ not found");
-                    goto error;
+                    if (true) goto error;
                 }
             }
-            PUSH(bc);
+            STACK_GROW(1);
+            POKE(1, bc);
             DISPATCH();
         }
 
