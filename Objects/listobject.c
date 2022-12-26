@@ -1025,13 +1025,14 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
 
     PyObject **items = self->ob_item;
     v = items[index];
-    if(Py_SIZE(self)-1==0) {
+   Py_ssize_t pop_after_size = Py_SIZE(self) - 1;
+    if(pop_after_size == 0) {
         Py_INCREF(v);
         status = _list_clear(self);
     }
     else {
-        if (Py_SIZE(self)-1-index) {
-            memmove(&items[index], &items[index+1], (Py_SIZE(self)-1-index)* sizeof(PyObject *));
+        if ((pop_after_size - index) > 0) {
+            memmove(&items[index], &items[index+1], (pop_after_size - index) * sizeof(PyObject *));
         }
         status = list_resize(self, Py_SIZE(self) - 1);
     }
@@ -1040,7 +1041,7 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     }
     else {
         // list resize failed, need to restore
-        memmove(&items[index+1], &items[index], (Py_SIZE(self)-1-index)* sizeof(PyObject *));
+        memmove(&items[index+1], &items[index], (pop_after_size - index)* sizeof(PyObject *));
         items[index] = v;
         return NULL;
     }
