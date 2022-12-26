@@ -1006,6 +1006,11 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.dist(p, q), 5*scale)
             self.assertEqual(math.dist(q, p), 5*scale)
 
+    def test_math_dist_leak(self):
+        # gh-98897: Check for error handling does not leak memory
+        with self.assertRaises(ValueError):
+            math.dist([1, 2], [3, 4, 5])
+
     def testIsqrt(self):
         # Test a variety of inputs, large and small.
         test_values = (

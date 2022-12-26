@@ -180,8 +180,8 @@ How do I create documentation from doc strings?
 
 The :mod:`pydoc` module can create HTML from the doc strings in your Python
 source code.  An alternative for creating API documentation purely from
-docstrings is `epydoc <http://epydoc.sourceforge.net/>`_.  `Sphinx
-<http://sphinx-doc.org>`_ can also include docstring content.
+docstrings is `epydoc <https://epydoc.sourceforge.net/>`_.  `Sphinx
+<https://www.sphinx-doc.org>`_ can also include docstring content.
 
 
 How do I get a single keypress at a time?
@@ -609,7 +609,7 @@ use ``p.read(n)``.
    substituted for standard input and output.  You will have to use pseudo ttys
    ("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
    "expect" library.  A Python extension that interfaces to expect is called
-   "expy" and available from http://expectpy.sourceforge.net.  A pure Python
+   "expy" and available from https://expectpy.sourceforge.net.  A pure Python
    solution that works like expect is `pexpect
    <https://pypi.org/project/pexpect/>`_.
 

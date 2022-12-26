@@ -26,6 +26,8 @@ implement a large subset of the IMAP4rev1 client protocol as defined in
 :rfc:`2060`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
 note that the ``STATUS`` command is not supported in IMAP4.
 
+.. include:: ../includes/wasm-notavail.rst
+
 Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
 base class:
 
@@ -185,7 +187,7 @@ IMAP4 Objects
 -------------
 
 All IMAP4rev1 commands are represented by methods of the same name, either
-upper-case or lower-case.
+uppercase or lowercase.
 
 All arguments to commands are converted to strings, except for ``AUTHENTICATE``,
 and the last argument to ``APPEND`` which is passed as an IMAP4 literal.  If

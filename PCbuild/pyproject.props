@@ -229,7 +229,7 @@ public override bool Execute() {
   </Target>
 
   <Target Name="FindPythonForBuild" Condition="$(PythonForBuild) == ''">
-    <Exec Command="$(MSBuildThisFileDirectory)\find_python.bat -q"
+    <Exec Command="&quot;$(MSBuildThisFileDirectory)\find_python.bat&quot; -q"
           EchoOff="true"
           ConsoleToMsBuild="true">
         <Output TaskParameter="ConsoleOutput" ItemName="_CmdExeLines" />

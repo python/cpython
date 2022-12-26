@@ -23,7 +23,11 @@
       The up to date module installation documentation. For regular Python
       usage, you almost certainly want that document rather than this one.
 
-.. include:: ../distutils/_setuptools_disclaimer.rst
+.. note::
+
+   This document is being retained solely until the ``setuptools`` documentation
+   at https://setuptools.readthedocs.io/en/latest/setuptools.html
+   independently covers all of the relevant information currently included here.
 
 .. note::
 
@@ -761,7 +765,7 @@ And on Windows, the configuration files are:
 +--------------+-------------------------------------------------+-------+
 
 On all platforms, the "personal" file can be temporarily disabled by
-passing the `--no-user-cfg` option.
+passing the ``--no-user-cfg`` option.
 
 Notes:
 
@@ -1062,7 +1066,7 @@ normal libraries do.
 
 .. seealso::
 
-   `Building Python modules on MS Windows platform with MinGW <http://old.zope.org/Members/als/tips/win32_mingw_modules>`_
+   `Building Python modules on MS Windows platform with MinGW <https://old.zope.dev/Members/als/tips/win32_mingw_modules>`_
       Information about building the required libraries for the MinGW environment.
 
 

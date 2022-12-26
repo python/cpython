@@ -82,6 +82,8 @@ Py_TPFLAGS_DICT_SUBCLASS     = (1 << 29)
 Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
+#From pycore_frame.h
+FRAME_OWNED_BY_CSTACK = 3
 
 MAX_OUTPUT_LEN=1024
 
@@ -478,17 +480,23 @@ class HeapTypeObjectPtr(PyObjectPtr):
             dictoffset = int_from_int(typeobj.field('tp_dictoffset'))
             if dictoffset != 0:
                 if dictoffset < 0:
-                    type_PyVarObject_ptr = gdb.lookup_type('PyVarObject').pointer()
-                    tsize = int_from_int(self._gdbval.cast(type_PyVarObject_ptr)['ob_size'])
-                    if tsize < 0:
-                        tsize = -tsize
-                    size = _PyObject_VAR_SIZE(typeobj, tsize)
-                    dictoffset += size
-                    assert dictoffset % _sizeof_void_p() == 0
+                    if int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT:
+                        assert dictoffset == -1
+                        dictoffset = -3 * _sizeof_void_p()
+                    else:
+                        type_PyVarObject_ptr = gdb.lookup_type('PyVarObject').pointer()
+                        tsize = int_from_int(self._gdbval.cast(type_PyVarObject_ptr)['ob_size'])
+                        if tsize < 0:
+                            tsize = -tsize
+                        size = _PyObject_VAR_SIZE(typeobj, tsize)
+                        dictoffset += size
+                        assert dictoffset % _sizeof_void_p() == 0
 
                 dictptr = self._gdbval.cast(_type_char_ptr()) + dictoffset
                 PyObjectPtrPtr = PyObjectPtr.get_gdb_type().pointer()
                 dictptr = dictptr.cast(PyObjectPtrPtr)
+                if int(dictptr.dereference()) & 1:
+                    return None
                 return PyObjectPtr.from_pyobject_ptr(dictptr.dereference())
         except RuntimeError:
             # Corrupt data somewhere; fail safe
@@ -502,12 +510,14 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        PyDictValuesPtrPtr = gdb.lookup_type("PyDictValues").pointer().pointer()
-        valuesptr = self._gdbval.cast(PyDictValuesPtrPtr) - 4
-        values = valuesptr.dereference()
-        if int(values) == 0:
+        charptrptr_t = _type_char_ptr().pointer()
+        ptr = self._gdbval.cast(charptrptr_t) - 3
+        char_ptr = ptr.dereference()
+        if (int(char_ptr) & 1) == 0:
             return None
-        values = values['values']
+        char_ptr += 1
+        values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
+        values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
 
     def get_cached_keys(self):
@@ -527,14 +537,15 @@ class HeapTypeObjectPtr(PyObjectPtr):
             return ProxyAlreadyVisited('<...>')
         visited.add(self.as_address())
 
-        pyop_attr_dict = self.get_attr_dict()
         keys_values = self.get_keys_values()
         if keys_values:
             attr_dict = keys_values.proxyval(visited)
-        elif pyop_attr_dict:
-            attr_dict = pyop_attr_dict.proxyval(visited)
         else:
-            attr_dict = {}
+            pyop_attr_dict = self.get_attr_dict()
+            if pyop_attr_dict:
+                attr_dict = pyop_attr_dict.proxyval(visited)
+            else:
+                attr_dict = {}
         tp_name = self.safe_tp_name()
 
         # Class:
@@ -1068,8 +1079,8 @@ class PyFramePtr:
         first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
         return int(prev_instr - first_instr)
 
-    def is_entry(self):
-        return self._f_special("is_entry", bool)
+    def is_shim(self):
+        return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)
@@ -1743,7 +1754,7 @@ class Frame(object):
 
     def is_waiting_for_gil(self):
         '''Is this frame waiting on the GIL?'''
-        # This assumes the _POSIX_THREADS version of Python/ceval_gil.h:
+        # This assumes the _POSIX_THREADS version of Python/ceval_gil.c:
         name = self._gdbframe.name()
         if name:
             return (name == 'take_gil')
@@ -1812,14 +1823,14 @@ class Frame(object):
             interp_frame = self.get_pyop()
             while True:
                 if interp_frame:
+                    if interp_frame.is_shim():
+                        break
                     line = interp_frame.get_truncated_repr(MAX_OUTPUT_LEN)
                     sys.stdout.write('#%i %s\n' % (self.get_index(), line))
                     if not interp_frame.is_optimized_out():
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.is_entry():
-                        break
                 else:
                     sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
                     break
@@ -1836,13 +1847,13 @@ class Frame(object):
             interp_frame = self.get_pyop()
             while True:
                 if interp_frame:
+                    if interp_frame.is_shim():
+                        break
                     interp_frame.print_traceback()
                     if not interp_frame.is_optimized_out():
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.is_entry():
-                        break
                 else:
                     sys.stdout.write('  (unable to read python frame information)\n')
                     break
@@ -2097,6 +2108,8 @@ class PyLocals(gdb.Command):
         while True:
             if not pyop_frame:
                 print(UNABLE_READ_INFO_PYTHON_FRAME)
+            if pyop_frame.is_shim():
+                break
 
             sys.stdout.write('Locals for %s\n' % (pyop_frame.co_name.proxyval(set())))
 
@@ -2105,8 +2118,6 @@ class PyLocals(gdb.Command):
                     % (pyop_name.proxyval(set()),
                         pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
 
-            if pyop_frame.is_entry():
-                break
 
             pyop_frame = pyop_frame.previous()
 
