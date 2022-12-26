@@ -1299,9 +1299,8 @@ dummy_func(
             Py_DECREF(oldobj);
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_CLASSDEREF) {
-            PyObject *name, *value, *locals = LOCALS();
+        inst(LOAD_CLASSDEREF, ( -- value)) {
+            PyObject *name, *locals = LOCALS();
             assert(locals);
             assert(oparg >= 0 && oparg < frame->f_code->co_nlocalsplus);
             name = PyTuple_GET_ITEM(frame->f_code->co_localsplusnames, oparg);
@@ -1332,7 +1331,6 @@ dummy_func(
                 }
                 Py_INCREF(value);
             }
-            PUSH(value);
         }
 
         // stack effect: ( -- __0)

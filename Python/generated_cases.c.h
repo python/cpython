@@ -1509,7 +1509,8 @@
         }
 
         TARGET(LOAD_CLASSDEREF) {
-            PyObject *name, *value, *locals = LOCALS();
+            PyObject *value;
+            PyObject *name, *locals = LOCALS();
             assert(locals);
             assert(oparg >= 0 && oparg < frame->f_code->co_nlocalsplus);
             name = PyTuple_GET_ITEM(frame->f_code->co_localsplusnames, oparg);
@@ -1540,7 +1541,8 @@
                 }
                 Py_INCREF(value);
             }
-            PUSH(value);
+            STACK_GROW(1);
+            POKE(1, value);
             DISPATCH();
         }
 
