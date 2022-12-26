@@ -993,19 +993,18 @@
         }
 
         TARGET(PREP_RERAISE_STAR) {
-            PyObject *excs = POP();
+            PyObject *excs = PEEK(1);
+            PyObject *orig = PEEK(2);
+            PyObject *val;
             assert(PyList_Check(excs));
-            PyObject *orig = POP();
 
-            PyObject *val = _PyExc_PrepReraiseStar(orig, excs);
-            Py_DECREF(excs);
+            val = _PyExc_PrepReraiseStar(orig, excs);
             Py_DECREF(orig);
+            Py_DECREF(excs);
 
-            if (val == NULL) {
-                goto error;
-            }
-
-            PUSH(val);
+            if (val == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            POKE(1, val);
             DISPATCH();
         }
 

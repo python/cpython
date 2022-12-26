@@ -819,21 +819,13 @@ dummy_func(
             goto exception_unwind;
         }
 
-        // stack effect: (__0 -- )
-        inst(PREP_RERAISE_STAR) {
-            PyObject *excs = POP();
+        inst(PREP_RERAISE_STAR, (orig, excs -- val)) {
             assert(PyList_Check(excs));
-            PyObject *orig = POP();
 
-            PyObject *val = _PyExc_PrepReraiseStar(orig, excs);
-            Py_DECREF(excs);
-            Py_DECREF(orig);
+            val = _PyExc_PrepReraiseStar(orig, excs);
+            DECREF_INPUTS();
 
-            if (val == NULL) {
-                goto error;
-            }
-
-            PUSH(val);
+            ERROR_IF(val == NULL, error);
         }
 
         // stack effect: (__0, __1 -- )
