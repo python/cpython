@@ -4083,7 +4083,6 @@
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-            // gen_frame->prev_instr = _PyCode_CODE((gen_frame)->f_code) + 2;
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame != &entry_frame);
             _PyInterpreterFrame *prev = frame->previous;
