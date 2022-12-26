@@ -348,7 +348,6 @@
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
-#if ENABLE_SPECIALIZATION
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *prod;
@@ -364,12 +363,10 @@
             STACK_SHRINK(1);
             POKE(1, prod);
             JUMPBY(1);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
-#if ENABLE_SPECIALIZATION
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *prod;
@@ -387,12 +384,10 @@
             STACK_SHRINK(1);
             POKE(1, prod);
             JUMPBY(1);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
-#if ENABLE_SPECIALIZATION
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sub;
@@ -408,12 +403,10 @@
             STACK_SHRINK(1);
             POKE(1, sub);
             JUMPBY(1);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
-#if ENABLE_SPECIALIZATION
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sub;
@@ -430,12 +423,10 @@
             STACK_SHRINK(1);
             POKE(1, sub);
             JUMPBY(1);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
-#if ENABLE_SPECIALIZATION
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *res;
@@ -451,12 +442,10 @@
             STACK_SHRINK(1);
             POKE(1, res);
             JUMPBY(1);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
-#if ENABLE_SPECIALIZATION
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             JUMPBY(OPSIZE(BINARY_OP_INPLACE_ADD_UNICODE) - 1);
@@ -488,12 +477,10 @@
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
             STACK_SHRINK(2);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
-#if ENABLE_SPECIALIZATION
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sum;
@@ -511,12 +498,10 @@
             STACK_SHRINK(1);
             POKE(1, sum);
             JUMPBY(1);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_INT) {
-#if ENABLE_SPECIALIZATION
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sum;
@@ -532,7 +517,6 @@
             STACK_SHRINK(1);
             POKE(1, sum);
             JUMPBY(1);
-#endif
             DISPATCH();
         }
 
@@ -610,7 +594,6 @@
         }
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
-#if ENABLE_SPECIALIZATION
             PyObject *sub = PEEK(1);
             PyObject *list = PEEK(2);
             PyObject *res;
@@ -634,12 +617,10 @@
             STACK_SHRINK(1);
             POKE(1, res);
             JUMPBY(4);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
-#if ENABLE_SPECIALIZATION
             PyObject *sub = PEEK(1);
             PyObject *tuple = PEEK(2);
             PyObject *res;
@@ -663,12 +644,10 @@
             STACK_SHRINK(1);
             POKE(1, res);
             JUMPBY(4);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_DICT) {
-#if ENABLE_SPECIALIZATION
             PyObject *sub = PEEK(1);
             PyObject *dict = PEEK(2);
             PyObject *res;
@@ -691,12 +670,10 @@
             STACK_SHRINK(1);
             POKE(1, res);
             JUMPBY(4);
-#endif
             DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
-#if ENABLE_SPECIALIZATION
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
             JUMPBY(OPSIZE(BINARY_SUBSCR_GETITEM) - 1);
@@ -723,7 +700,6 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             DISPATCH_INLINED(new_frame);
-#endif
         }
 
         TARGET(LIST_APPEND) {
@@ -778,7 +754,6 @@
         }
 
         TARGET(STORE_SUBSCR_LIST_INT) {
-#if ENABLE_SPECIALIZATION
             PyObject *sub = PEEK(1);
             PyObject *list = PEEK(2);
             PyObject *value = PEEK(3);
@@ -802,12 +777,10 @@
             Py_DECREF(list);
             STACK_SHRINK(3);
             JUMPBY(1);
-#endif
             DISPATCH();
         }
 
         TARGET(STORE_SUBSCR_DICT) {
-#if ENABLE_SPECIALIZATION
             PyObject *sub = PEEK(1);
             PyObject *dict = PEEK(2);
             PyObject *value = PEEK(3);
@@ -820,7 +793,6 @@
             if (err) goto pop_3_error;
             STACK_SHRINK(3);
             JUMPBY(1);
-#endif
             DISPATCH();
         }
 
@@ -1366,7 +1338,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(UNPACK_SEQUENCE_TWO_TUPLE) - 1);
             PyObject *seq = TOP();
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
@@ -1376,12 +1347,10 @@
             PUSH(Py_NewRef(PyTuple_GET_ITEM(seq, 0)));
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-#endif
             DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(UNPACK_SEQUENCE_TUPLE) - 1);
             PyObject *seq = TOP();
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
@@ -1394,12 +1363,10 @@
             }
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-#endif
             DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(UNPACK_SEQUENCE_LIST) - 1);
             PyObject *seq = TOP();
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
@@ -1412,7 +1379,6 @@
             }
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-#endif
             DISPATCH();
         }
 
@@ -1628,7 +1594,6 @@
         }
 
         TARGET(LOAD_GLOBAL_MODULE) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_GLOBAL_MODULE) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
@@ -1646,12 +1611,10 @@
             STAT_INC(LOAD_GLOBAL, hit);
             STACK_GROW(push_null+1);
             SET_TOP(Py_NewRef(res));
-#endif
             DISPATCH();
         }
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_GLOBAL_BUILTIN) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
@@ -1673,7 +1636,6 @@
             STAT_INC(LOAD_GLOBAL, hit);
             STACK_GROW(push_null+1);
             SET_TOP(Py_NewRef(res));
-#endif
             DISPATCH();
         }
 
@@ -2103,7 +2065,6 @@
         }
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_INSTANCE_VALUE) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -2126,12 +2087,10 @@
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-#endif
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_MODULE) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_MODULE) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -2154,12 +2113,10 @@
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-#endif
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_WITH_HINT) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_WITH_HINT) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -2196,12 +2153,10 @@
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-#endif
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_SLOT) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_SLOT) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -2221,12 +2176,10 @@
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-#endif
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_CLASS) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_CLASS) - 1);
             assert(cframe.use_tracing == 0);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -2247,12 +2200,10 @@
             SET_TOP(res);
             Py_DECREF(cls);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-#endif
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_PROPERTY) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_PROPERTY) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
@@ -2284,11 +2235,9 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH_INLINED(new_frame);
-#endif
         }
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) - 1);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
@@ -2322,11 +2271,9 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH_INLINED(new_frame);
-#endif
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
-#if ENABLE_SPECIALIZATION
             PyObject *owner = PEEK(1);
             PyObject *value = PEEK(2);
             JUMPBY(OPSIZE(STORE_ATTR_INSTANCE_VALUE) - 1);
@@ -2352,12 +2299,10 @@
             Py_DECREF(owner);
             STACK_SHRINK(2);
             JUMPBY(4);
-#endif
             DISPATCH();
         }
 
         TARGET(STORE_ATTR_WITH_HINT) {
-#if ENABLE_SPECIALIZATION
             PyObject *owner = PEEK(1);
             PyObject *value = PEEK(2);
             JUMPBY(OPSIZE(STORE_ATTR_WITH_HINT) - 1);
@@ -2404,12 +2349,10 @@
             Py_DECREF(owner);
             STACK_SHRINK(2);
             JUMPBY(4);
-#endif
             DISPATCH();
         }
 
         TARGET(STORE_ATTR_SLOT) {
-#if ENABLE_SPECIALIZATION
             PyObject *owner = PEEK(1);
             PyObject *value = PEEK(2);
             JUMPBY(OPSIZE(STORE_ATTR_SLOT) - 1);
@@ -2427,7 +2370,6 @@
             Py_DECREF(owner);
             STACK_SHRINK(2);
             JUMPBY(4);
-#endif
             DISPATCH();
         }
 
@@ -3021,7 +2963,6 @@
         }
 
         TARGET(FOR_ITER_LIST) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(FOR_ITER_LIST) - 1);
             assert(cframe.use_tracing == 0);
             _PyListIterObject *it = (_PyListIterObject *)TOP();
@@ -3042,12 +2983,10 @@
             Py_DECREF(it);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + OPSIZE(opcode));
         end_for_iter_list:
-#endif
             DISPATCH();
         }
 
         TARGET(FOR_ITER_TUPLE) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(FOR_ITER_TUPLE) - 1);
             assert(cframe.use_tracing == 0);
             _PyTupleIterObject *it = (_PyTupleIterObject *)TOP();
@@ -3068,12 +3007,10 @@
             Py_DECREF(it);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + OPSIZE(opcode));
         end_for_iter_tuple:
-#endif
             DISPATCH();
         }
 
         TARGET(FOR_ITER_RANGE) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(FOR_ITER_RANGE) - 1);
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
@@ -3096,12 +3033,10 @@
                 // The STORE_FAST is already done.
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + OPSIZE(opcode));
             }
-#endif
             DISPATCH();
         }
 
         TARGET(FOR_ITER_GEN) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(FOR_ITER_GEN) - 1);
             assert(cframe.use_tracing == 0);
             PyGenObject *gen = (PyGenObject *)TOP();
@@ -3117,7 +3052,6 @@
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             assert(_Py_OPCODE(*next_instr) == END_FOR);
             DISPATCH_INLINED(gen_frame);
-#endif
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
@@ -3244,7 +3178,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_METHOD_WITH_VALUES) - 1);
             /* Cached method object */
             assert(cframe.use_tracing == 0);
@@ -3267,12 +3200,10 @@
             SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-#endif
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_DICT) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_METHOD_WITH_DICT) - 1);
             /* Can be either a managed dict, or a tp_dictoffset offset.*/
             assert(cframe.use_tracing == 0);
@@ -3297,12 +3228,10 @@
             SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-#endif
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_METHOD_NO_DICT) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -3318,12 +3247,10 @@
             SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-#endif
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(LOAD_ATTR_METHOD_LAZY_DICT) - 1);
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -3343,12 +3270,10 @@
             SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_BOUND_METHOD_EXACT_ARGS) - 1);
             DEOPT_IF(is_method(stack_pointer, oparg), CALL);
             PyObject *function = PEEK(oparg + 1);
@@ -3360,7 +3285,6 @@
             PEEK(oparg + 2) = Py_NewRef(meth);
             Py_DECREF(function);
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
-#endif
         }
 
         TARGET(KW_NAMES) {
@@ -3457,7 +3381,6 @@
 
         TARGET(CALL_PY_EXACT_ARGS) {
             PREDICTED(CALL_PY_EXACT_ARGS);
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_PY_EXACT_ARGS) - 1);
             assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
@@ -3483,11 +3406,9 @@
             STACK_SHRINK(2-is_meth);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             DISPATCH_INLINED(new_frame);
-#endif
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_PY_WITH_DEFAULTS) - 1);
             assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
@@ -3520,11 +3441,9 @@
             STACK_SHRINK(2-is_meth);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             DISPATCH_INLINED(new_frame);
-#endif
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_TYPE_1) - 1);
             assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
@@ -3540,12 +3459,10 @@
             Py_DECREF(obj);
             STACK_SHRINK(2);
             SET_TOP(res);
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_STR_1) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_STR_1) - 1);
             assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
@@ -3565,12 +3482,10 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_TUPLE_1) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_TUPLE_1) - 1);
             assert(kwnames == NULL);
             assert(oparg == 1);
@@ -3589,12 +3504,10 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_BUILTIN_CLASS) - 1);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3620,12 +3533,10 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_BUILTIN_O) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_BUILTIN_O) - 1);
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
@@ -3657,12 +3568,10 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_BUILTIN_FAST) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_BUILTIN_FAST) - 1);
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
@@ -3700,12 +3609,10 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_BUILTIN_FAST_WITH_KEYWORDS) - 1);
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
@@ -3742,12 +3649,10 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_LEN) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_LEN) - 1);
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
@@ -3775,12 +3680,10 @@
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_ISINSTANCE) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_ISINSTANCE) - 1);
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
@@ -3811,12 +3714,10 @@
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_LIST_APPEND) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_LIST_APPEND) - 1);
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
@@ -3837,12 +3738,10 @@
             // CALL + POP_TOP
             JUMPBY(INLINE_CACHE_ENTRIES_CALL + 1);
             assert(_Py_OPCODE(next_instr[-1]) == POP_TOP);
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_METHOD_DESCRIPTOR_O) - 1);
             assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
@@ -3876,12 +3775,10 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) - 1);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3916,12 +3813,10 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) - 1);
             assert(kwnames == NULL);
             assert(oparg == 0 || oparg == 1);
@@ -3953,12 +3848,10 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
-#if ENABLE_SPECIALIZATION
             JUMPBY(OPSIZE(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) - 1);
             assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
@@ -3991,7 +3884,6 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-#endif
             DISPATCH();
         }
 

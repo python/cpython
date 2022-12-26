@@ -55,7 +55,7 @@ class Formatter:
     def emit(self, arg: str) -> None:
         prefix = '' if arg.startswith('#') else self.prefix
         if arg:
-            self.write_raw(f"{prefix}{arg}\n")
+            self.write_raw(f"{self.prefix}{arg}\n")
         else:
             self.write_raw("\n")
 
@@ -162,10 +162,6 @@ class Instruction:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
 
-        is_specialized = 'DEOPT_IF' in self.block.text
-        if is_specialized:
-            out.emit("#if ENABLE_SPECIALIZATION")
-
         if family := self.family:
             if self.name == family.members[0]:
                 if cache_size := family.size:
@@ -197,8 +193,6 @@ class Instruction:
 
         # Skip the rest if the block always exits
         if self.always_exits:
-            if is_specialized:
-                out.emit("#endif")
             return
 
         if not self.register:
@@ -225,8 +219,6 @@ class Instruction:
         if self.cache_offset:
             out.emit(f"JUMPBY({self.cache_offset});")
 
-        if is_specialized:
-            out.emit("#endif")
 
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
         """Write the instruction body."""
