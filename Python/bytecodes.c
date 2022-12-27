@@ -2093,8 +2093,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: ( -- )
-        inst(JUMP_FORWARD) {
+        inst(JUMP_FORWARD, (--)) {
             JUMPBY(oparg);
         }
 
