@@ -1026,7 +1026,7 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     PyObject **items = self->ob_item;
     v = items[index];
     const Py_ssize_t size_after_pop = Py_SIZE(self) - 1;
-    if(size_after_pop == 0) {
+    if (size_after_pop == 0) {
         Py_INCREF(v);
         status = _list_clear(self);
     }
