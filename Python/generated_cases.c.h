@@ -2429,13 +2429,13 @@
         }
 
         TARGET(IMPORT_FROM) {
-            PyObject *name = GETITEM(names, oparg);
-            PyObject *from = TOP();
+            PyObject *from = PEEK(1);
             PyObject *res;
+            PyObject *name = GETITEM(names, oparg);
             res = import_from(tstate, from, name);
-            PUSH(res);
-            if (res == NULL)
-                goto error;
+            if (res == NULL) goto error;
+            STACK_GROW(1);
+            POKE(1, res);
             DISPATCH();
         }
 

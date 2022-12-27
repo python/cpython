@@ -2087,15 +2087,10 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        // stack effect: ( -- __0)
-        inst(IMPORT_FROM) {
+        inst(IMPORT_FROM, (from -- from, res)) {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *from = TOP();
-            PyObject *res;
             res = import_from(tstate, from, name);
-            PUSH(res);
-            if (res == NULL)
-                goto error;
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: ( -- )
