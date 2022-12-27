@@ -1783,15 +1783,16 @@
         }
 
         TARGET(DICT_MERGE) {
-            PyObject *update = POP();
-            PyObject *dict = PEEK(oparg);
+            PyObject *update = PEEK(1);
+            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
 
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
-                format_kwargs_error(tstate, PEEK(2 + oparg), update);
+                format_kwargs_error(tstate, PEEK(3 + oparg), update);
                 Py_DECREF(update);
-                goto error;
+                if (true) goto pop_1_error;
             }
             Py_DECREF(update);
+            STACK_SHRINK(1);
             PREDICT(CALL_FUNCTION_EX);
             DISPATCH();
         }

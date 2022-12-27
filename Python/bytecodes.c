@@ -1547,17 +1547,15 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        // stack effect: (__0 -- )
-        inst(DICT_MERGE) {
-            PyObject *update = POP();
-            PyObject *dict = PEEK(oparg);
+        inst(DICT_MERGE, (update --)) {
+            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
 
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
-                format_kwargs_error(tstate, PEEK(2 + oparg), update);
-                Py_DECREF(update);
-                goto error;
+                format_kwargs_error(tstate, PEEK(3 + oparg), update);
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
-            Py_DECREF(update);
+            DECREF_INPUTS();
             PREDICT(CALL_FUNCTION_EX);
         }
 
