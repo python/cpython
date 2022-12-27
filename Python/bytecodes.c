@@ -2097,8 +2097,7 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        // stack effect: ( -- )
-        inst(JUMP_BACKWARD) {
+        inst(JUMP_BACKWARD, (--)) {
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
