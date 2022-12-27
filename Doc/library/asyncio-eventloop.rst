@@ -193,11 +193,12 @@ Running and stopping the loop
    :meth:`loop.run_in_executor` will raise a :exc:`RuntimeError` if called
    while using the default executor.
 
-   The *timeout* parameter specifies the amount of time this method gives the
-   executor to finish joining. The default value is ``None``, which means the
+   *timeout* specifies the duration in seconds (as a :class:`float`)
+   this method gives the executor to finish joining.
+   With the default, ``None``, the
    method allows the executor an unlimited amount of time.
 
-   If the timeout duration is reached, this method emits a warning and
+   If the *timeout* is reached, this method emits a :exc:`RuntimeWarning` and
    terminates the default executor without waiting for its threads to finish
    joining.
 
