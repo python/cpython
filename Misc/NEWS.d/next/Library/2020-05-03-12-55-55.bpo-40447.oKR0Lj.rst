@@ -1,0 +1,2 @@
+Accept :class:`os.PathLike` (such as :class:`pathlib.Path`) in the ``stripdir`` arguments of
+:meth:`compileall.compile_file` and :meth:`compileall.compile_dir`.

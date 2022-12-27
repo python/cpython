@@ -2525,7 +2525,7 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(p('f'), False)
         self.assertEqual(p('local'), 3)
         self.assertEqual(p('sys'), sys.maxsize)
-        self.assertNotIn('exp', signature.parameters)
+        self.assertEqual(p('exp'), sys.maxsize - 1)
 
         test_callable(object)
 
@@ -4323,9 +4323,28 @@ class TestSignatureDefinitions(unittest.TestCase):
         sig = inspect.signature(func)
         self.assertIsNotNone(sig)
         self.assertEqual(str(sig), '(self, /, a, b=1, *args, c, d=2, **kwargs)')
+
         func.__text_signature__ = '($self, a, b=1, /, *args, c, d=2, **kwargs)'
         sig = inspect.signature(func)
         self.assertEqual(str(sig), '(self, a, b=1, /, *args, c, d=2, **kwargs)')
+
+        func.__text_signature__ = '(self, a=1+2, b=4-3, c=1 | 3 | 16)'
+        sig = inspect.signature(func)
+        self.assertEqual(str(sig), '(self, a=3, b=1, c=19)')
+
+        func.__text_signature__ = '(self, a=1,\nb=2,\n\n\n   c=3)'
+        sig = inspect.signature(func)
+        self.assertEqual(str(sig), '(self, a=1, b=2, c=3)')
+
+        func.__text_signature__ = '(self, x=does_not_exist)'
+        with self.assertRaises(ValueError):
+            inspect.signature(func)
+        func.__text_signature__ = '(self, x=sys, y=inspect)'
+        with self.assertRaises(ValueError):
+            inspect.signature(func)
+        func.__text_signature__ = '(self, 123)'
+        with self.assertRaises(ValueError):
+            inspect.signature(func)
 
     def test_base_class_have_text_signature(self):
         # see issue 43118
