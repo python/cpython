@@ -1559,18 +1559,12 @@ dummy_func(
             PREDICT(CALL_FUNCTION_EX);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(MAP_ADD) {
-            PyObject *value = TOP();
-            PyObject *key = SECOND();
-            PyObject *map;
-            STACK_SHRINK(2);
-            map = PEEK(oparg);                      /* dict */
-            assert(PyDict_CheckExact(map));
-            /* map[key] = value */
-            if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
-                goto error;
-            }
+        inst(MAP_ADD, (key, value --)) {
+            PyObject *dict = PEEK(oparg + 2);  // key, value are still on the stack
+            assert(PyDict_CheckExact(dict));
+            /* dict[key] = value */
+            // Do not DECREF INPUTS because the function steals the references
+            ERROR_IF(_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
