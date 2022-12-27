@@ -67,8 +67,8 @@ The module provides the following classes:
       *blocksize* parameter was added.
 
 
-.. class:: HTTPSConnection(host, port=None[, timeout], \
-                           source_address=None, *, context=None, \
+.. class:: HTTPSConnection(host, port=None, *[, timeout], \
+                           source_address=None, context=None, \
                            blocksize=8192)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
