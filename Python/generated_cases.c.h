@@ -2374,17 +2374,19 @@
         }
 
         TARGET(CHECK_EXC_MATCH) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *b;
             assert(PyExceptionInstance_Check(left));
             if (check_except_type_valid(tstate, right) < 0) {
                  Py_DECREF(right);
-                 goto error;
+                 if (true) goto pop_1_error;
             }
 
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
-            PUSH(Py_NewRef(res ? Py_True : Py_False));
+            b = Py_NewRef(res ? Py_True : Py_False);
+            POKE(1, b);
             DISPATCH();
         }
 

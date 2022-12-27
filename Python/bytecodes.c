@@ -2047,19 +2047,16 @@ dummy_func(
             }
         }
 
-        // stack effect: ( -- )
-        inst(CHECK_EXC_MATCH) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
+        inst(CHECK_EXC_MATCH, (left, right -- left, b)) {
             assert(PyExceptionInstance_Check(left));
             if (check_except_type_valid(tstate, right) < 0) {
-                 Py_DECREF(right);
-                 goto error;
+                 DECREF_INPUTS();
+                 ERROR_IF(true, error);
             }
 
             int res = PyErr_GivenExceptionMatches(left, right);
-            Py_DECREF(right);
-            PUSH(Py_NewRef(res ? Py_True : Py_False));
+            DECREF_INPUTS();
+            b = Py_NewRef(res ? Py_True : Py_False);
         }
 
         // stack effect: (__0 -- )
