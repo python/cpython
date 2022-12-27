@@ -1993,15 +1993,10 @@ dummy_func(
         }
         super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_IF;
 
-        // stack effect: (__0 -- )
-        inst(IS_OP) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
+        inst(IS_OP, (left, right -- b)) {
             int res = Py_Is(left, right) ^ oparg;
-            PyObject *b = res ? Py_True : Py_False;
-            SET_TOP(Py_NewRef(b));
-            Py_DECREF(left);
-            Py_DECREF(right);
+            DECREF_INPUTS();
+            b = Py_NewRef(res ? Py_True : Py_False);
         }
 
         // stack effect: (__0 -- )

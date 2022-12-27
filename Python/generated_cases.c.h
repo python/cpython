@@ -2306,13 +2306,15 @@
         }
 
         TARGET(IS_OP) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *b;
             int res = Py_Is(left, right) ^ oparg;
-            PyObject *b = res ? Py_True : Py_False;
-            SET_TOP(Py_NewRef(b));
             Py_DECREF(left);
             Py_DECREF(right);
+            b = Py_NewRef(res ? Py_True : Py_False);
+            STACK_SHRINK(1);
+            POKE(1, b);
             DISPATCH();
         }
 
