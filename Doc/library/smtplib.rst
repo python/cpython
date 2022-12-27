@@ -93,7 +93,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       *context* was added.
 
    .. versionchanged:: 3.3
-      *source_address* argument was added.
+      The *source_address* argument was added.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with

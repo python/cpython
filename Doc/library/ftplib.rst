@@ -86,7 +86,7 @@ The module defines the following items:
       Latin-1 to UTF-8 to follow :rfc:`2640`.
 
 .. class:: FTP_TLS(host='', user='', passwd='', acct='', *, context=None,
-                   timeout=None, source_address=None, *, encoding='utf-8')
+                   timeout=None, source_address=None, encoding='utf-8')
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.

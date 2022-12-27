@@ -33,7 +33,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host, port=None, *[, timeout], source_address=None, \
+.. class:: HTTPConnection(host, port=None[, timeout], source_address=None, \
                           blocksize=8192)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP

@@ -729,7 +729,7 @@ Remove the *keyfile* and *certfile* parameters from the
 :mod:`ftplib`, :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib` modules,
 and the *key_file*, *cert_file* and *check_hostname* parameters from the
 :mod:`http.client` module,
-all deprecated since Python 3.6. Use the *context* parameter
+all deprecated since Python 3.6. Use the *context*
 parameter (*ssl_context* in :mod:`imaplib`) instead. Patch by Victor
 Stinner.
 
