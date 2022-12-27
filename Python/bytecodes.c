@@ -2066,27 +2066,25 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(IMPORT_STAR) {
-            PyObject *from = POP(), *locals;
+        inst(IMPORT_STAR, (from --)) {
+            PyObject *locals;
             int err;
             if (_PyFrame_FastToLocalsWithError(frame) < 0) {
-                Py_DECREF(from);
-                goto error;
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
 
             locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "no locals found during 'import *'");
-                Py_DECREF(from);
-                goto error;
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
             err = import_all_from(tstate, locals, from);
             _PyFrame_LocalsToFast(frame, 0);
-            Py_DECREF(from);
-            if (err != 0)
-                goto error;
+            DECREF_INPUTS();
+            ERROR_IF(err, error);
         }
 
         // stack effect: ( -- __0)
