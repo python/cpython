@@ -2391,16 +2391,16 @@
         }
 
         TARGET(IMPORT_NAME) {
-            PyObject *name = GETITEM(names, oparg);
-            PyObject *fromlist = POP();
-            PyObject *level = TOP();
+            PyObject *fromlist = PEEK(1);
+            PyObject *level = PEEK(2);
             PyObject *res;
+            PyObject *name = GETITEM(names, oparg);
             res = import_name(tstate, frame, name, fromlist, level);
             Py_DECREF(level);
             Py_DECREF(fromlist);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            POKE(1, res);
             DISPATCH();
         }
 

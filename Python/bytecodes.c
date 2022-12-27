@@ -2059,18 +2059,11 @@ dummy_func(
             b = Py_NewRef(res ? Py_True : Py_False);
         }
 
-        // stack effect: (__0 -- )
-        inst(IMPORT_NAME) {
+         inst(IMPORT_NAME, (level, fromlist -- res)) {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *fromlist = POP();
-            PyObject *level = TOP();
-            PyObject *res;
             res = import_name(tstate, frame, name, fromlist, level);
-            Py_DECREF(level);
-            Py_DECREF(fromlist);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            DECREF_INPUTS();
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: (__0 -- )
