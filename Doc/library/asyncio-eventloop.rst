@@ -202,9 +202,11 @@ Running and stopping the loop
    terminates the default executor without waiting for its threads to finish
    joining.
 
-   Note that there is no need to call this function when :func:`asyncio.run` is
-   used, because that high-level function handles default executor shutdown
-   automatically.
+   .. note::
+   
+      There is no need to call this method when :func:`asyncio.run` is
+      used, because that high-level function handles default executor shutdown
+      automatically.
 
    .. versionadded:: 3.9
 
