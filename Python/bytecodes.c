@@ -1999,18 +1999,11 @@ dummy_func(
             b = Py_NewRef(res ? Py_True : Py_False);
         }
 
-        // stack effect: (__0 -- )
-        inst(CONTAINS_OP) {
-            PyObject *right = POP();
-            PyObject *left = POP();
+        inst(CONTAINS_OP, (left, right -- b)) {
             int res = PySequence_Contains(right, left);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res < 0) {
-                goto error;
-            }
-            PyObject *b = (res^oparg) ? Py_True : Py_False;
-            PUSH(Py_NewRef(b));
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
+            b = Py_NewRef((res^oparg) ? Py_True : Py_False);
         }
 
         // stack effect: ( -- )

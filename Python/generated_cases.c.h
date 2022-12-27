@@ -2319,16 +2319,16 @@
         }
 
         TARGET(CONTAINS_OP) {
-            PyObject *right = POP();
-            PyObject *left = POP();
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *b;
             int res = PySequence_Contains(right, left);
             Py_DECREF(left);
             Py_DECREF(right);
-            if (res < 0) {
-                goto error;
-            }
-            PyObject *b = (res^oparg) ? Py_True : Py_False;
-            PUSH(Py_NewRef(b));
+            if (res < 0) goto pop_2_error;
+            b = Py_NewRef((res^oparg) ? Py_True : Py_False);
+            STACK_SHRINK(1);
+            POKE(1, b);
             DISPATCH();
         }
 
