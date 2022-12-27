@@ -513,7 +513,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-eval:
 
-.. function:: eval(expression, /, globals=None, locals=None)
+.. function:: eval(expression, globals=None, locals=None)
 
    The arguments are a string and optional globals and locals.  If provided,
    *globals* must be a dictionary.  If provided, *locals* can be any mapping
