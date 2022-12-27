@@ -83,9 +83,11 @@ static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 static PyObject *list, *tuple, *dict, *owner;
 static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
+static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc;
+static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
 static size_t jump;
 // Dummy variables for cache effects
-static _Py_CODEUNIT when_to_jump_mask, invert, counter, index, hint;
+static uint16_t when_to_jump_mask, invert, counter, index, hint;
 static uint32_t type_version;
 // Dummy opcode names for 'op' opcodes
 #define _COMPARE_OP_FLOAT 1003
