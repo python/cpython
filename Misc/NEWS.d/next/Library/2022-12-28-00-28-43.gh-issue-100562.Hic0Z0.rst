@@ -1,0 +1,1 @@
+Improve performance of :meth:`pathlib.Path.absolute`.
