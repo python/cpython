@@ -192,7 +192,7 @@ the first quote::
 There is one subtle aspect to raw strings: a raw string may not end in
 an odd number of ``\`` characters; see
 :ref:`the FAQ entry <faq-programming-raw-string-backslash>` for more information
-and workarounds, as well as the the :ref:`language reference <strings>`.
+and workarounds.
 
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically
