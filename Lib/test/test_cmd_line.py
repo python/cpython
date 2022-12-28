@@ -139,6 +139,7 @@ class CmdLineTest(unittest.TestCase):
         else:
             self.assertEqual(err, b'')
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_xoption_frozen_modules(self):
         tests = {
             ('=on', 'FrozenImporter'),

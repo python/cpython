@@ -70,6 +70,7 @@ class FindSpecTests(abc.FinderTests):
             expected = [os.path.dirname(filename)]
         self.assertListEqual(spec.submodule_search_locations, expected)
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_module(self):
         modules = [
             '__hello__',
@@ -112,6 +113,7 @@ class FindSpecTests(abc.FinderTests):
                 self.check_basic(spec, name)
                 self.check_loader_state(spec, origname, filename)
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_package(self):
         packages = [
             '__phello__',
@@ -193,15 +195,18 @@ class FinderTests(abc.FinderTests):
             with import_helper.frozen_modules():
                 return finder.find_module(name, path)
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_module(self):
         name = '__hello__'
         loader = self.find(name)
         self.assertTrue(hasattr(loader, 'load_module'))
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_package(self):
         loader = self.find('__phello__')
         self.assertTrue(hasattr(loader, 'load_module'))
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_module_in_package(self):
         loader = self.find('__phello__.spam', ['__phello__'])
         self.assertTrue(hasattr(loader, 'load_module'))
@@ -212,6 +217,7 @@ class FinderTests(abc.FinderTests):
     # No easy way to test.
     test_package_over_module = None
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_failure(self):
         loader = self.find('<not real>')
         self.assertIsNone(loader)

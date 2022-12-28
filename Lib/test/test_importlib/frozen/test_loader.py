@@ -67,6 +67,7 @@ class ExecModuleTests(abc.LoaderTests):
         self.assertEqual(module.__spec__.origin, 'frozen')
         return module, stdout.getvalue()
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_module(self):
         name = '__hello__'
         module, output = self.exec_module(name)
@@ -77,6 +78,7 @@ class ExecModuleTests(abc.LoaderTests):
         self.assertTrue(hasattr(module, '__spec__'))
         self.assertEqual(module.__spec__.loader_state.origname, name)
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_package(self):
         name = '__phello__'
         module, output = self.exec_module(name)
@@ -90,6 +92,7 @@ class ExecModuleTests(abc.LoaderTests):
         self.assertEqual(output, 'Hello world!\n')
         self.assertEqual(module.__spec__.loader_state.origname, name)
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_lacking_parent(self):
         name = '__phello__.spam'
         with util.uncache('__phello__'):
@@ -103,6 +106,7 @@ class ExecModuleTests(abc.LoaderTests):
                              expected=value))
         self.assertEqual(output, 'Hello world!\n')
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_module_repr_indirect_through_spec(self):
         name = '__hello__'
         module, output = self.exec_module(name)
@@ -134,6 +138,7 @@ class LoaderTests(abc.LoaderTests):
             module.main()
         return module, stdout
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_module(self):
         module, stdout = self.load_module('__hello__')
         filename = resolve_stdlib_file('__hello__')
@@ -146,6 +151,7 @@ class LoaderTests(abc.LoaderTests):
             self.assertEqual(getattr(module, attr, None), value)
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_package(self):
         module, stdout = self.load_module('__phello__')
         filename = resolve_stdlib_file('__phello__', ispkg=True)
@@ -163,6 +169,7 @@ class LoaderTests(abc.LoaderTests):
                              (attr, attr_value, value))
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_lacking_parent(self):
         with util.uncache('__phello__'):
             module, stdout = self.load_module('__phello__.spam')
@@ -179,6 +186,7 @@ class LoaderTests(abc.LoaderTests):
                              (attr, attr_value, value))
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_module_reuse(self):
         with fresh('__hello__', oldapi=True):
             module1 = self.machinery.FrozenImporter.load_module('__hello__')
@@ -211,6 +219,7 @@ class InspectLoaderTests:
 
     """Tests for the InspectLoader methods for FrozenImporter."""
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_get_code(self):
         # Make sure that the code object is good.
         name = '__hello__'
@@ -223,12 +232,14 @@ class InspectLoaderTests:
         self.assertTrue(hasattr(mod, 'initialized'))
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_get_source(self):
         # Should always return None.
         with import_helper.frozen_modules():
             result = self.machinery.FrozenImporter.get_source('__hello__')
         self.assertIsNone(result)
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_is_package(self):
         # Should be able to tell what is a package.
         test_for = (('__hello__', False), ('__phello__', True),
@@ -238,6 +249,7 @@ class InspectLoaderTests:
                 result = self.machinery.FrozenImporter.is_package(name)
             self.assertEqual(bool(result), is_package)
 
+    @unittest.skip("we've disabled optional freezing in this branch")
     def test_failure(self):
         # Raise ImportError for modules that are not frozen.
         for meth_name in ('get_code', 'get_source', 'is_package'):
