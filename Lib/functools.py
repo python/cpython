@@ -781,7 +781,18 @@ def _find_impl(cls, registry):
     *object* type, this function may return None.
 
     """
-    mro = _compose_mro(cls, registry.keys())
+    from typing import get_args, get_origin
+    # Distinguish between funcs for type[A] and A, only use appropriate ones
+    if get_origin(cls) is type:
+        classes = (
+            get_args(key) for key in registry.keys() if get_origin(key) is type
+        )
+    else:
+        classes = (
+            key for key in registry.keys() if get_origin(key) is None
+        )
+    # Everything from here on out works the same regardless of type[A] or A
+    mro = _compose_mro(cls, classes)
     match = None
     for t in mro:
         if match is not None:
@@ -845,7 +856,9 @@ def singledispatch(func):
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
             return True
-        from typing import get_args
+        from typing import get_args, get_origin
+        if get_origin(cls) is type and isinstance(get_args(cls)[0], type):
+            return True
         return (_is_union_type(cls) and
                 all(isinstance(arg, type) for arg in get_args(cls)))
 
@@ -906,7 +919,12 @@ def singledispatch(func):
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
 
-        return dispatch(args[0].__class__)(*args, **kw)
+        from inspect import isclass
+        if isclass(args[0]):
+            cls_arg = type[args[0]]
+        else:
+            cls_arg = args[0].__class__
+        return dispatch(cls_arg)(*args, **kw)
 
     funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
