@@ -901,12 +901,14 @@ which incur interpreter overhead.
        "Prime factors of n."
        # factor(99) --> 3 3 11
        for prime in sieve(math.isqrt(n) + 1):
-           while n >= prime:
+           while True:
                quotient, remainder = divmod(n, prime)
                if remainder:
                    break
                yield prime
                n = quotient
+               if n == 1:
+                   return
        if n >= 2:
            yield n
 
@@ -1286,13 +1288,21 @@ which incur interpreter overhead.
     [3, 3]
     >>> list(factor(10))
     [2, 5]
-    >>> list(factor(999953*999983))
+    >>> list(factor(128_884_753_939))       # large prime
+    [128884753939]
+    >>> list(factor(999953 * 999983))       # large semiprime
     [999953, 999983]
-    >>> all(math.prod(factor(n)) == n for n in range(1, 1000))
+    >>> list(factor(6 ** 20)) == [2] * 20 + [3] * 20   # large power
     True
-    >>> all(set(factor(n)) <= set(sieve(n+1)) for n in range(1, 1000))
+    >>> list(factor(909_909_090_909))       # large multiterm composite
+    [3, 3, 7, 13, 13, 751, 113797]
+    >>> math.prod([3, 3, 7, 13, 13, 751, 113797])
+    909909090909
+    >>> all(math.prod(factor(n)) == n for n in range(1, 2_000))
     True
-    >>> all(list(factor(n)) == sorted(factor(n)) for n in range(1, 1000))
+    >>> all(set(factor(n)) <= set(sieve(n+1)) for n in range(2_000))
+    True
+    >>> all(list(factor(n)) == sorted(factor(n)) for n in range(2_000))
     True
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
