@@ -899,18 +899,16 @@ which incur interpreter overhead.
 
    def factor(n):
        "Prime factors of n."
-       # factor(97) --> 97
-       # factor(98) --> 2 7 7
        # factor(99) --> 3 3 11
-       for prime in sieve(n+1):
-           while True:
+       for prime in sieve(math.isqrt(n) + 1):
+           while n >= prime:
                quotient, remainder = divmod(n, prime)
                if remainder:
                    break
                yield prime
                n = quotient
-               if n == 1:
-                   return
+       if n >= 2:
+           yield n
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -1266,33 +1264,35 @@ which incur interpreter overhead.
     >>> set(sieve(10_000)).isdisjoint(carmichael)
     True
 
-    list(factor(0))
+    >>> list(factor(0))
     []
-    list(factor(1))
+    >>> list(factor(1))
     []
-    list(factor(2))
+    >>> list(factor(2))
     [2]
-    list(factor(3))
+    >>> list(factor(3))
     [3]
-    list(factor(4))
+    >>> list(factor(4))
     [2, 2]
-    list(factor(5))
+    >>> list(factor(5))
     [5]
-    list(factor(6))
+    >>> list(factor(6))
     [2, 3]
-    list(factor(7))
+    >>> list(factor(7))
     [7]
-    list(factor(8))
+    >>> list(factor(8))
     [2, 2, 2]
-    list(factor(9))
+    >>> list(factor(9))
     [3, 3]
-    list(factor(10))
+    >>> list(factor(10))
     [2, 5]
-    all(math.prod(factor(n)) == n for n in range(1, 1000))
+    >>> list(factor(999953*999983))
+    [999953, 999983]
+    >>> all(math.prod(factor(n)) == n for n in range(1, 1000))
     True
-    all(set(factor(n)) <= set(sieve(n+1)) for n in range(1, 1000))
+    >>> all(set(factor(n)) <= set(sieve(n+1)) for n in range(1, 1000))
     True
-    all(list(factor(n)) == sorted(factor(n)) for n in range(1, 1000))
+    >>> all(list(factor(n)) == sorted(factor(n)) for n in range(1, 1000))
     True
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
