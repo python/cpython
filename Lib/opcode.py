@@ -202,6 +202,7 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
+def_op('BINARY_OP_R', 141)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -397,7 +398,8 @@ _specialization_stats = [
 ]
 
 # number of codewords for opcode+oparg(s)
-_opsize = 2
+def _opsize(opcode):
+    return 3 if opname[opcode] == "BINARY_OP_R" else 2
 
 _cache_format = {
     "LOAD_GLOBAL": {
@@ -407,6 +409,9 @@ _cache_format = {
         "builtin_keys_version": 1,
     },
     "BINARY_OP": {
+        "counter": 1,
+    },
+    "BINARY_OP_R": {
         "counter": 1,
     },
     "UNPACK_SEQUENCE": {

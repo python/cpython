@@ -4100,6 +4100,36 @@
             DISPATCH();
         }
 
+        TARGET(BINARY_OP_R) {
+            PyObject *lhs = REG(oparg1);
+            PyObject *rhs = REG(oparg2);
+            PyObject *res;
+            JUMPBY(OPSIZE(BINARY_OP_R) - 1);
+#if 0  /* specialization not implemented for this opcode yet */
+            #if ENABLE_SPECIALIZATION
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE(opcode);
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(BINARY_OP_R, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
+#endif
+            _Py_CODEUNIT word3 = *(next_instr - 1);
+            int oparg4 = _Py_OPCODE(word3);
+            assert(0 <= oparg4);
+            assert((unsigned)oparg4 < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg4]);
+            res = binary_ops[oparg4](lhs, rhs);
+            if (res == NULL) goto error;
+            Py_XSETREF(REG(oparg3), res);
+            JUMPBY(1);
+            DISPATCH();
+        }
+
         TARGET(SWAP) {
             JUMPBY(OPSIZE(SWAP) - 1);
             assert(oparg != 0);
@@ -4111,7 +4141,7 @@
 
         TARGET(EXTENDED_ARG) {
             JUMPBY(OPSIZE(EXTENDED_ARG) - 1);
-            assert(oparg);
+            assert(oparg1 || oparg2 || oparg3);
             assert(cframe.use_tracing == 0);
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);

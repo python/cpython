@@ -3534,6 +3534,29 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
+        register inst(BINARY_OP_R, (unused/1, lhs, rhs -- res)) {
+#if 0  /* specialization not implemented for this opcode yet */
+            #if ENABLE_SPECIALIZATION
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE(opcode);
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(BINARY_OP_R, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
+#endif
+            _Py_CODEUNIT word3 = *(next_instr - 1);
+            int oparg4 = _Py_OPCODE(word3);
+            assert(0 <= oparg4);
+            assert((unsigned)oparg4 < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg4]);
+            res = binary_ops[oparg4](lhs, rhs);
+            ERROR_IF(res == NULL, error);
+        }
+
         // stack effect: ( -- )
         inst(SWAP) {
             assert(oparg != 0);
@@ -3544,7 +3567,7 @@ dummy_func(
 
         // stack effect: ( -- )
         inst(EXTENDED_ARG) {
-            assert(oparg);
+            assert(oparg1 || oparg2 || oparg3);
             assert(cframe.use_tracing == 0);
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);

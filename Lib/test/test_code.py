@@ -25,10 +25,10 @@ argcount: 1
 posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
-varnames: ('y',)
+varnames: ('y', '$0', '$1', '$2')
 cellvars: ()
 freevars: ('x',)
-nlocals: 1
+nlocals: 4
 flags: 19
 consts: ('None',)
 
@@ -45,10 +45,10 @@ argcount: 2
 posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
-varnames: ('x', 'y', 'a', 'b', 'c')
+varnames: ('x', 'y', 'a', 'b', 'c', '$0', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8')
 cellvars: ()
 freevars: ()
-nlocals: 5
+nlocals: 14
 flags: 3
 consts: ('None',)
 

@@ -816,6 +816,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_FAST', "a73")
 
     def test_setting_lineno_no_undefined(self):
+        raise ValueError("fail test instead of crashing")
         code = textwrap.dedent(f"""\
             def f():
                 x = y = 2
@@ -848,6 +849,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertEqual(f.__code__.co_code, co_code)
 
     def test_setting_lineno_one_undefined(self):
+        raise ValueError("fail test instead of crashing")
         code = textwrap.dedent(f"""\
             def f():
                 x = y = 2
@@ -882,6 +884,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertEqual(f.__code__.co_code, co_code)
 
     def test_setting_lineno_two_undefined(self):
+        raise ValueError("fail test instead of crashing")
         code = textwrap.dedent(f"""\
             def f():
                 x = y = 2

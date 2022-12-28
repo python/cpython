@@ -201,7 +201,7 @@ typedef struct oparg_ {
 #define NAME_OPARG(V)     ((const oparg_t){.value=(V), .type=NAME_REG})
 #define TMP_OPARG(V)      ((const oparg_t){.value=(V), .type=TMP_REG})
 
-#define IS_UNUSED(OPARG) ((OPARG).type == UNUSED_OPARG)
+#define IS_UNUSED(OPARG) ((OPARG).type == UNUSED_ARG)
 
 struct instr {
     int i_opcode;
@@ -209,6 +209,7 @@ struct instr {
     oparg_t i_oparg1;
     oparg_t i_oparg2;
     oparg_t i_oparg3;
+    oparg_t i_oparg4;
     location i_loc;
     /* The following fields should not be set by the front-end: */
     struct basicblock_ *i_target; /* target block (if jump instruction) */
@@ -225,6 +226,7 @@ struct instr {
         _instr__ptr_->i_oparg1 = (OPARG1); \
         _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg4 = UNUSED_OPARG; \
     } while (0);
 
 /* No args*/
@@ -237,7 +239,10 @@ struct instr {
         _instr__ptr_->i_oparg1 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg4 = UNUSED_OPARG; \
     } while (0);
+
+#define INSTR_SET_OPARG4(I, OP4) ((I)->i_oparg4 = (OP4))
 
 typedef struct exceptstack {
     struct basicblock_ *handlers[CO_MAXBLOCKS+1];
@@ -363,6 +368,14 @@ if (0) {
             break;
         default:
             Py_UNREACHABLE();
+    }
+    if (! IS_UNUSED(instruction->i_oparg4)) {
+        assert(instruction->i_oparg4.type == EXPLICIT_ARG);
+        assert(instruction->i_oparg4.value >= 0);
+        assert(instruction->i_oparg4.value <= 255);
+        codestr->opcode = instruction->i_oparg4.value;
+        codestr->oparg = 0;
+        codestr++;
     }
     while (caches--) {
         codestr->opcode = CACHE;
@@ -1409,6 +1422,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case BINARY_OP:
             return -1;
+        case BINARY_OP_R:
+            return 0;
         case INTERPRETER_EXIT:
             return -1;
         default:
@@ -1448,6 +1463,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc,
     i->i_oparg1 = oparg1;
     i->i_oparg2 = oparg2;
     i->i_oparg3 = oparg3;
+    i->i_oparg4 = UNUSED_OPARG;
     i->i_target = NULL;
     i->i_loc = loc;
 
@@ -1497,6 +1513,17 @@ cfg_builder_addop_noarg(cfg_builder *g, int opcode, location loc)
     assert(!HAS_ARG(opcode));
     return cfg_builder_addop(g, opcode, 0, loc,
                              UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
+}
+
+static int
+cfg_builder_add_cache_data(cfg_builder *g, int value)
+{
+     struct instr *last = basicblock_last_instr(g->g_curblock);
+     if (!last) {
+         return ERROR;
+     }
+     INSTR_SET_OPARG4(last, EXPLICIT_OPARG(value));
+     return SUCCESS;
 }
 
 static Py_ssize_t
@@ -1739,6 +1766,9 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
         return -1; \
     } \
 }
+
+#define ADD_OPARG4(C, V) \
+     RETURN_IF_ERROR(cfg_builder_add_cache_data(CFG_BUILDER(C), (V)))
 
 #define ADDOP_LOAD_CONST(C, LOC, O) \
     RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)))
@@ -4294,7 +4324,19 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
                          inplace ? "inplace" : "binary", binop);
             return ERROR;
     }
-    ADDOP_I(c, loc, BINARY_OP, oparg);
+    if (c->c_regcode) {
+         oparg_t lhs = TMP_OPARG(c->u->u_ntmps++);
+         oparg_t rhs = TMP_OPARG(c->u->u_ntmps++);
+         oparg_t res = TMP_OPARG(c->u->u_ntmps++);
+         ADDOP_REGS(c, loc, STORE_FAST_R, rhs, UNUSED_OPARG, UNUSED_OPARG);
+         ADDOP_REGS(c, loc, STORE_FAST_R, lhs, UNUSED_OPARG, UNUSED_OPARG);
+         ADDOP_REGS(c, loc, BINARY_OP_R, lhs, rhs, res);
+         ADD_OPARG4(c, oparg);
+         ADDOP_REGS(c, loc, LOAD_FAST_R, res, UNUSED_OPARG, UNUSED_OPARG);
+     }
+     else {
+         ADDOP_I(c, loc, BINARY_OP, oparg);
+     }
     return SUCCESS;
 }
 

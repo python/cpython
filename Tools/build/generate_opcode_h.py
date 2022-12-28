@@ -174,7 +174,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
 
         fobj.write("\n")
         fobj.write("/* number of codewords for opcode+oparg(s) */\n")
-        fobj.write("#define OPSIZE(OP) (((OP) == (OP)) ? 2 : 2)\n")
+        fobj.write("#define OPSIZE(OP) (((OP) == (BINARY_OP_R)) ? 3 : 2)\n")
 
         fobj.write("\n")
         fobj.write("/* Defined in Lib/opcode.py */\n")
