@@ -437,21 +437,26 @@ def _get_co_positions(code, show_caches=False):
         return iter(())
 
     ops = code.co_code[::2]
-    prev_op = 0
-    skip = 0
+    state = [0, 0, 0]  # [op, args, caches] - how many to consume?
+    _ops_, _args_, _caches_ = 0, 1, 2
     for op, positions in zip(ops, code.co_positions()):
         assert _opsize(op) in (1, 2, 3)
-        if skip > 0:
-            skip -= 1
-            continue
-        if prev_op != CACHE:
-            # skip oparg2, oparg3
-            skip = _opsize(op) - 1
-            prev_op = CACHE
-            continue
-        if show_caches or op != CACHE:
+        if state == [0, 0, 0]:
+            state = [1, 0, 0]
+        if state[_ops_] > 0:
             yield positions
-            prev_op = op
+            assert state[_ops_] == 1
+            assert state[_args_] == state[_caches_] == 0
+            state[_ops_] = 0
+            state[_args_] = _opsize(op) - 1
+            state[_caches_] = _inline_cache_entries[op]
+        elif state[_args_] > 0:
+            state[_args_] -= 1
+        elif state[_caches_] > 0:
+            if show_caches:
+                yield positions
+            state[_caches_] -= 1
+
 
 def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, co_consts=None,
