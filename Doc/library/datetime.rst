@@ -737,18 +737,16 @@ Instance methods:
 .. method:: date.strftime(format)
 
    Return a string representing the date, controlled by an explicit format string.
-   Format codes referring to hours, minutes or seconds will see 0 values. For a
-   complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   Format codes referring to hours, minutes or seconds will see 0 values.
+   See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
 
 .. method:: date.__format__(format)
 
    Same as :meth:`.date.strftime`. This makes it possible to specify a format
    string for a :class:`.date` object in :ref:`formatted string
-   literals <f-strings>` and when using :meth:`str.format`. For a
-   complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   literals <f-strings>` and when using :meth:`str.format`.
+   See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
 Examples of Usage: :class:`date`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1052,8 +1050,8 @@ Other constructors, all class methods:
 
    :exc:`ValueError` is raised if the date_string and format
    can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
-   time tuple. For a complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   time tuple.  See also :ref:`strftime-strptime-behavior` and
+   :meth:`datetime.fromisoformat`.
 
 
 
@@ -1511,20 +1509,21 @@ Instance methods:
    (which :func:`time.ctime` invokes, but which
    :meth:`datetime.ctime` does not invoke) conforms to the C standard.
 
+
 .. method:: datetime.strftime(format)
 
-   Return a string representing the date and time, controlled by an explicit format
-   string. For a complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   Return a string representing the date and time,
+   controlled by an explicit format string.
+   See also :ref:`strftime-strptime-behavior` and :meth:`datetime.isoformat`.
 
 
 .. method:: datetime.__format__(format)
 
    Same as :meth:`.datetime.strftime`. This makes it possible to specify a format
    string for a :class:`.datetime` object in :ref:`formatted string
-   literals <f-strings>` and when using :meth:`str.format`. For a
-   complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   literals <f-strings>` and when using :meth:`str.format`.
+   See also :ref:`strftime-strptime-behavior` and :meth:`datetime.isoformat`.
+
 
 Examples of Usage: :class:`.datetime`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1869,17 +1868,15 @@ Instance methods:
 .. method:: time.strftime(format)
 
    Return a string representing the time, controlled by an explicit format
-   string. For a complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   string.  See also :ref:`strftime-strptime-behavior` and :meth:`time.isoformat`.
 
 
 .. method:: time.__format__(format)
 
-   Same as :meth:`.time.strftime`. This makes it possible to specify a format string
-   for a :class:`.time` object in :ref:`formatted string
-   literals <f-strings>` and when using :meth:`str.format`. For a
-   complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   Same as :meth:`.time.strftime`. This makes it possible to specify
+   a format string for a :class:`.time` object in :ref:`formatted string
+   literals <f-strings>` and when using :meth:`str.format`.
+   See also :ref:`strftime-strptime-behavior` and :meth:`time.isoformat`.
 
 
 .. method:: time.utcoffset()
