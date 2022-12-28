@@ -33,7 +33,7 @@ as text on the console.  The same text documentation can also be viewed from
 outside the Python interpreter by running :program:`pydoc` as a script at the
 operating system's command prompt. For example, running ::
 
-   pydoc sys
+   <python you are using> -m pydoc sys
 
 at a shell prompt will display documentation on the :mod:`sys` module, in a
 style similar to the manual pages shown by the Unix :program:`man` command.  The
