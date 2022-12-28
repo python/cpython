@@ -155,5 +155,5 @@ def _write_contents(target, source):
         for item in source.iterdir():
             _write_contents(child, item)
     else:
-        child.open('wb').write(source.read_bytes())
+        child.write_bytes(source.read_bytes())
     return child
