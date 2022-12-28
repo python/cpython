@@ -1,0 +1,2 @@
+Fix :exc:`SyntaxError` on comprehension rebind checking with names that are
+not actually redefined.

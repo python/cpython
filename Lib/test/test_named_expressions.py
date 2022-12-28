@@ -124,12 +124,53 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             ("Unreachable reuse", 'i', "[False or (i:=0) for i in range(5)]"),
             ("Unreachable nested reuse", 'i',
                 "[(i, j) for i in range(5) for j in range(5) if True or (i:=10)]"),
+            # Regression tests from https://github.com/python/cpython/issues/87447
+            ("Complex expression: a", "a",
+                "[(a := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
+            ("Complex expression: b", "b",
+                "[(b := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
         ]
         for case, target, code in cases:
             msg = f"assignment expression cannot rebind comprehension iteration variable '{target}'"
             with self.subTest(case=case):
                 with self.assertRaisesRegex(SyntaxError, msg):
-                    exec(code, {}, {})
+                    exec(code, {}) # Module scope
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    exec(code, {}, {}) # Class scope
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    exec(f"lambda: {code}", {}) # Function scope
+
+    def test_named_expression_valid_rebinding_list_comprehension_iteration_variable(self):
+        cases = [
+            # Regression tests from https://github.com/python/cpython/issues/87447
+            ("Complex expression: c",
+                "[(c := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
+            ("Complex expression: d",
+                "[(d := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
+            ("Complex expression: e",
+                "[(e := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
+            ("Complex expression: f",
+                "[(f := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
+            ("Complex expression: g",
+                "[(g := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
+            ("Complex expression: h",
+                "[(h := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
+            ("Complex expression: i",
+                "[(i := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
+            ("Complex expression: j",
+                "[(j := 1) for a, (*b, c[d+e::f(g)], h.i) in j]"),
+        ]
+        for case, code in cases:
+            with self.subTest(case=case):
+                # Names used in snippets are not defined,
+                # but we are fine with it: just must not be a SyntaxError.
+                # Names used in snippets are not defined,
+                # but we are fine with it: just must not be a SyntaxError.
+                with self.assertRaises(NameError):
+                    exec(code, {}) # Module scope
+                with self.assertRaises(NameError):
+                    exec(code, {}, {}) # Class scope
+                exec(f"lambda: {code}", {}) # Function scope
 
     def test_named_expression_invalid_rebinding_list_comprehension_inner_loop(self):
         cases = [
@@ -178,12 +219,51 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             ("Unreachable reuse", 'i', "{False or (i:=0) for i in range(5)}"),
             ("Unreachable nested reuse", 'i',
                 "{(i, j) for i in range(5) for j in range(5) if True or (i:=10)}"),
+            # Regression tests from https://github.com/python/cpython/issues/87447
+            ("Complex expression: a", "a",
+                "{(a := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
+            ("Complex expression: b", "b",
+                "{(b := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
         ]
         for case, target, code in cases:
             msg = f"assignment expression cannot rebind comprehension iteration variable '{target}'"
             with self.subTest(case=case):
                 with self.assertRaisesRegex(SyntaxError, msg):
-                    exec(code, {}, {})
+                    exec(code, {}) # Module scope
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    exec(code, {}, {}) # Class scope
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    exec(f"lambda: {code}", {}) # Function scope
+
+    def test_named_expression_valid_rebinding_set_comprehension_iteration_variable(self):
+        cases = [
+            # Regression tests from https://github.com/python/cpython/issues/87447
+            ("Complex expression: c",
+                "{(c := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
+            ("Complex expression: d",
+                "{(d := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
+            ("Complex expression: e",
+                "{(e := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
+            ("Complex expression: f",
+                "{(f := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
+            ("Complex expression: g",
+                "{(g := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
+            ("Complex expression: h",
+                "{(h := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
+            ("Complex expression: i",
+                "{(i := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
+            ("Complex expression: j",
+                "{(j := 1) for a, (*b, c[d+e::f(g)], h.i) in j}"),
+        ]
+        for case, code in cases:
+            with self.subTest(case=case):
+                # Names used in snippets are not defined,
+                # but we are fine with it: just must not be a SyntaxError.
+                with self.assertRaises(NameError):
+                    exec(code, {}) # Module scope
+                with self.assertRaises(NameError):
+                    exec(code, {}, {}) # Class scope
+                exec(f"lambda: {code}", {}) # Function scope
 
     def test_named_expression_invalid_rebinding_set_comprehension_inner_loop(self):
         cases = [
