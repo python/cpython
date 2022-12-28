@@ -159,6 +159,8 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
         # B's waiter; instead, it should move on to C's waiter.
 
         # Setup: A has the lock, b and c are waiting.
+
+        raise ValueError("This test hangs now, make it fail instead")
         lock = asyncio.Lock()
 
         async def lockit(name, blocker):
