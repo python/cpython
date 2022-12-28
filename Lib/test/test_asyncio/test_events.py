@@ -829,6 +829,7 @@ class EventLoopTestsMixin:
         server = self.loop.run_until_complete(f)
         self.assertEqual(len(server.sockets), 1)
         sock = server.sockets[0]
+        self.assertIsInstance(sock, asyncio.trsock.TransportSocket)
         host, port = sock.getsockname()
         self.assertEqual(host, '0.0.0.0')
         dup = sock.dup()
