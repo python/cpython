@@ -125,7 +125,6 @@ __all__ = [
     "ismodule",
     "isroutine",
     "istraceback",
-    "markcoroutinefunction",
     "signature",
     "stack",
     "trace",
@@ -392,33 +391,12 @@ def isgeneratorfunction(obj):
     See help(isfunction) for a list of attributes."""
     return _has_code_flag(obj, CO_GENERATOR)
 
-# A marker for markcoroutinefunction and iscoroutinefunction.
-_is_coroutine_marker = object()
-
-def _has_coroutine_mark(f):
-    while ismethod(f):
-        f = f.__func__
-    f = functools._unwrap_partial(f)
-    if not (isfunction(f) or _signature_is_functionlike(f)):
-        return False
-    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_marker
-
-def markcoroutinefunction(func):
-    """
-    Decorator to ensure callable is recognised as a coroutine function.
-    """
-    if hasattr(func, '__func__'):
-        func = func.__func__
-    func._is_coroutine_marker = _is_coroutine_marker
-    return func
-
 def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
-    Coroutine functions are normally defined with "async def" syntax, but may
-    be marked via markcoroutinefunction.
+    Coroutine functions are defined with "async def" syntax.
     """
-    return _has_code_flag(obj, CO_COROUTINE) or _has_coroutine_mark(obj)
+    return _has_code_flag(obj, CO_COROUTINE)
 
 def isasyncgenfunction(obj):
     """Return true if the object is an asynchronous generator function.
@@ -2122,7 +2100,7 @@ def _signature_strip_non_python_syntax(signature):
     self_parameter = None
     last_positional_only = None
 
-    lines = [l.encode('ascii') for l in signature.split('\n') if l]
+    lines = [l.encode('ascii') for l in signature.split('\n')]
     generator = iter(lines).__next__
     token_stream = tokenize.tokenize(generator)
 
@@ -2221,11 +2199,11 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             try:
                 value = eval(s, sys_module_dict)
             except NameError:
-                raise ValueError
+                raise RuntimeError()
 
         if isinstance(value, (str, int, float, bytes, bool, type(None))):
             return ast.Constant(value)
-        raise ValueError
+        raise RuntimeError()
 
     class RewriteSymbolics(ast.NodeTransformer):
         def visit_Attribute(self, node):
@@ -2235,7 +2213,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 a.append(n.attr)
                 n = n.value
             if not isinstance(n, ast.Name):
-                raise ValueError
+                raise RuntimeError()
             a.append(n.id)
             value = ".".join(reversed(a))
             return wrap_value(value)
@@ -2245,21 +2223,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 raise ValueError()
             return wrap_value(node.id)
 
-        def visit_BinOp(self, node):
-            # Support constant folding of a couple simple binary operations
-            # commonly used to define default values in text signatures
-            left = self.visit(node.left)
-            right = self.visit(node.right)
-            if not isinstance(left, ast.Constant) or not isinstance(right, ast.Constant):
-                raise ValueError
-            if isinstance(node.op, ast.Add):
-                return ast.Constant(left.value + right.value)
-            elif isinstance(node.op, ast.Sub):
-                return ast.Constant(left.value - right.value)
-            elif isinstance(node.op, ast.BitOr):
-                return ast.Constant(left.value | right.value)
-            raise ValueError
-
     def p(name_node, default_node, default=empty):
         name = parse_name(name_node)
         if default_node and default_node is not _empty:
@@ -2267,7 +2230,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 default_node = RewriteSymbolics().visit(default_node)
                 default = ast.literal_eval(default_node)
             except ValueError:
-                raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
+                return None
         parameters.append(Parameter(name, kind, default=default, annotation=empty))
 
     # non-keyword-only parameters

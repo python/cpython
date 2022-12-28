@@ -93,7 +93,7 @@ class LoaderTest(unittest.TestCase):
         # NOT fit into a 32-bit integer.  FreeLibrary must be able
         # to accept this address.
 
-        # These are tests for https://bugs.python.org/issue1703286
+        # These are tests for https://www.python.org/sf/1703286
         handle = LoadLibrary("advapi32")
         FreeLibrary(handle)
 
@@ -115,6 +115,12 @@ class LoaderTest(unittest.TestCase):
         self.assertTrue(proc)
         # This is the real test: call the function via 'call_function'
         self.assertEqual(0, call_function(proc, (None,)))
+
+    @unittest.skipUnless(os.name == "nt",
+                         'test specific to Windows')
+    def test_load_hasattr(self):
+        # bpo-34816: shouldn't raise OSError
+        self.assertFalse(hasattr(windll, 'test'))
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')

@@ -56,6 +56,11 @@ class Error(Exception):
     pass
 error = Error   # backward compatibility
 
+try:
+    from org.python.core import PyStringMap
+except ImportError:
+    PyStringMap = None
+
 __all__ = ["Error", "copy", "deepcopy"]
 
 def copy(x):
@@ -114,6 +119,9 @@ d[list] = list.copy
 d[dict] = dict.copy
 d[set] = set.copy
 d[bytearray] = bytearray.copy
+
+if PyStringMap is not None:
+    d[PyStringMap] = PyStringMap.copy
 
 del d, t
 
@@ -223,6 +231,8 @@ def _deepcopy_dict(x, memo, deepcopy=deepcopy):
         y[deepcopy(key, memo)] = deepcopy(value, memo)
     return y
 d[dict] = _deepcopy_dict
+if PyStringMap is not None:
+    d[PyStringMap] = _deepcopy_dict
 
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
@@ -291,4 +301,4 @@ def _reconstruct(x, memo, func, args,
                 y[key] = value
     return y
 
-del types, weakref
+del types, weakref, PyStringMap

@@ -2804,7 +2804,6 @@ class CIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
 
 
 class BaseCurrentLoopTests:
-    current_task = None
 
     def setUp(self):
         super().setUp()
@@ -2815,39 +2814,33 @@ class BaseCurrentLoopTests:
         raise NotImplementedError
 
     def test_current_task_no_running_loop(self):
-        self.assertIsNone(self.current_task(loop=self.loop))
+        self.assertIsNone(asyncio.current_task(loop=self.loop))
 
     def test_current_task_no_running_loop_implicit(self):
         with self.assertRaisesRegex(RuntimeError, 'no running event loop'):
-            self.current_task()
+            asyncio.current_task()
 
     def test_current_task_with_implicit_loop(self):
         async def coro():
-            self.assertIs(self.current_task(loop=self.loop), task)
+            self.assertIs(asyncio.current_task(loop=self.loop), task)
 
-            self.assertIs(self.current_task(None), task)
-            self.assertIs(self.current_task(), task)
+            self.assertIs(asyncio.current_task(None), task)
+            self.assertIs(asyncio.current_task(), task)
 
         task = self.new_task(coro())
         self.loop.run_until_complete(task)
-        self.assertIsNone(self.current_task(loop=self.loop))
+        self.assertIsNone(asyncio.current_task(loop=self.loop))
 
 
 class PyCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
-    current_task = staticmethod(tasks._py_current_task)
 
     def new_task(self, coro):
         return tasks._PyTask(coro, loop=self.loop)
 
 
-@unittest.skipUnless(hasattr(tasks, '_CTask') and
-                     hasattr(tasks, '_c_current_task'),
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
 class CCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
-    if hasattr(tasks, '_c_current_task'):
-        current_task = staticmethod(tasks._c_current_task)
-    else:
-        current_task = None
 
     def new_task(self, coro):
         return getattr(tasks, '_CTask')(coro, loop=self.loop)

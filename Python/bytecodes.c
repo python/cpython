@@ -83,11 +83,9 @@ static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 static PyObject *list, *tuple, *dict, *owner;
 static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
-static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc;
-static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
 static size_t jump;
 // Dummy variables for cache effects
-static uint16_t when_to_jump_mask, invert, counter, index, hint;
+static _Py_CODEUNIT when_to_jump_mask, invert, counter, index, hint;
 static uint32_t type_version;
 // Dummy opcode names for 'op' opcodes
 #define _COMPARE_OP_FLOAT 1003
@@ -441,7 +439,8 @@ dummy_func(
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
 
             // Deopt unless 0 <= sub < PyList_Size(list)
-            DEOPT_IF(!_PyLong_IsPositiveSingleDigit(sub), BINARY_SUBSCR);
+            Py_ssize_t signed_magnitude = Py_SIZE(sub);
+            DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
@@ -459,7 +458,8 @@ dummy_func(
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
 
             // Deopt unless 0 <= sub < PyTuple_Size(list)
-            DEOPT_IF(!_PyLong_IsPositiveSingleDigit(sub), BINARY_SUBSCR);
+            Py_ssize_t signed_magnitude = Py_SIZE(sub);
+            DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
@@ -558,7 +558,7 @@ dummy_func(
             DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
 
             // Ensure nonnegative, zero-or-one-digit ints.
-            DEOPT_IF(!_PyLong_IsPositiveSingleDigit(sub), STORE_SUBSCR);
+            DEOPT_IF(((size_t)Py_SIZE(sub)) > 1, STORE_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             // Ensure index < len(list)
             DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
@@ -690,9 +690,12 @@ dummy_func(
             }
         }
 
-        inst(GET_ANEXT, (aiter -- aiter, awaitable)) {
+        // stack effect: ( -- __0)
+        inst(GET_ANEXT) {
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
+            PyObject *awaitable = NULL;
+            PyObject *aiter = TOP();
             PyTypeObject *type = Py_TYPE(aiter);
 
             if (PyAsyncGen_CheckExact(aiter)) {
@@ -734,17 +737,20 @@ dummy_func(
                 }
             }
 
+            PUSH(awaitable);
             PREDICT(LOAD_CONST);
         }
 
-        inst(GET_AWAITABLE, (iterable -- iter)) {
-            iter = _PyCoro_GetAwaitableIter(iterable);
+        // stack effect: ( -- )
+        inst(GET_AWAITABLE) {
+            PyObject *iterable = TOP();
+            PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
 
             if (iter == NULL) {
                 format_awaitable_error(tstate, Py_TYPE(iterable), oparg);
             }
 
-            DECREF_INPUTS();
+            Py_DECREF(iterable);
 
             if (iter != NULL && PyCoro_CheckExact(iter)) {
                 PyObject *yf = _PyGen_yf((PyGenObject*)iter);
@@ -760,7 +766,11 @@ dummy_func(
                 }
             }
 
-            ERROR_IF(iter == NULL, error);
+            SET_TOP(iter); /* Even if it's NULL */
+
+            if (iter == NULL) {
+                goto error;
+            }
 
             PREDICT(LOAD_CONST);
         }
@@ -815,23 +825,30 @@ dummy_func(
             }
         }
 
-        inst(ASYNC_GEN_WRAP, (v -- w)) {
+        // stack effect: ( -- )
+        inst(ASYNC_GEN_WRAP) {
+            PyObject *v = TOP();
             assert(frame->f_code->co_flags & CO_ASYNC_GENERATOR);
-            w = _PyAsyncGenValueWrapperNew(v);
-            DECREF_INPUTS();
-            ERROR_IF(w == NULL, error);
+            PyObject *w = _PyAsyncGenValueWrapperNew(v);
+            if (w == NULL) {
+                goto error;
+            }
+            SET_TOP(w);
+            Py_DECREF(v);
         }
 
-        inst(YIELD_VALUE, (retval --)) {
+        // stack effect: ( -- )
+        inst(YIELD_VALUE) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(oparg == STACK_LEVEL());
             assert(frame != &entry_frame);
             frame->prev_instr += OPSIZE(YIELD_VALUE) - 1;
+            PyObject *retval = POP();
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
-            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             tstate->exc_info = gen->gi_exc_state.previous_item;
@@ -845,9 +862,12 @@ dummy_func(
             goto resume_frame;
         }
 
-        inst(POP_EXCEPT, (exc_value -- )) {
+        // stack effect: (__0 -- )
+        inst(POP_EXCEPT) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
-            Py_XSETREF(exc_info->exc_value, exc_value);
+            PyObject *value = exc_info->exc_value;
+            exc_info->exc_value = POP();
+            Py_XDECREF(value);
         }
 
         // stack effect: (__0 -- )
@@ -872,13 +892,21 @@ dummy_func(
             goto exception_unwind;
         }
 
-        inst(PREP_RERAISE_STAR, (orig, excs -- val)) {
+        // stack effect: (__0 -- )
+        inst(PREP_RERAISE_STAR) {
+            PyObject *excs = POP();
             assert(PyList_Check(excs));
+            PyObject *orig = POP();
 
-            val = _PyExc_PrepReraiseStar(orig, excs);
-            DECREF_INPUTS();
+            PyObject *val = _PyExc_PrepReraiseStar(orig, excs);
+            Py_DECREF(excs);
+            Py_DECREF(orig);
 
-            ERROR_IF(val == NULL, error);
+            if (val == NULL) {
+                goto error;
+            }
+
+            PUSH(val);
         }
 
         // stack effect: (__0, __1 -- )
@@ -959,11 +987,16 @@ dummy_func(
             }
         }
 
-        inst(LOAD_ASSERTION_ERROR, ( -- value)) {
-            value = Py_NewRef(PyExc_AssertionError);
+
+        // stack effect: ( -- __0)
+        inst(LOAD_ASSERTION_ERROR) {
+            PyObject *value = PyExc_AssertionError;
+            PUSH(Py_NewRef(value));
         }
 
-        inst(LOAD_BUILD_CLASS, ( -- bc)) {
+        // stack effect: ( -- __0)
+        inst(LOAD_BUILD_CLASS) {
+            PyObject *bc;
             if (PyDict_CheckExact(BUILTINS())) {
                 bc = _PyDict_GetItemWithError(BUILTINS(),
                                               &_Py_ID(__build_class__));
@@ -972,7 +1005,7 @@ dummy_func(
                         _PyErr_SetString(tstate, PyExc_NameError,
                                          "__build_class__ not found");
                     }
-                    ERROR_IF(true, error);
+                    goto error;
                 }
                 Py_INCREF(bc);
             }
@@ -982,27 +1015,31 @@ dummy_func(
                     if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                         _PyErr_SetString(tstate, PyExc_NameError,
                                          "__build_class__ not found");
-                    ERROR_IF(true, error);
+                    goto error;
                 }
             }
+            PUSH(bc);
         }
 
-        inst(STORE_NAME, (v -- )) {
+        // stack effect: (__0 -- )
+        inst(STORE_NAME) {
             PyObject *name = GETITEM(names, oparg);
+            PyObject *v = POP();
             PyObject *ns = LOCALS();
             int err;
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when storing %R", name);
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
+                Py_DECREF(v);
+                goto error;
             }
             if (PyDict_CheckExact(ns))
                 err = PyDict_SetItem(ns, name, v);
             else
                 err = PyObject_SetItem(ns, name, v);
-            DECREF_INPUTS();
-            ERROR_IF(err, error);
+            Py_DECREF(v);
+            if (err != 0)
+                goto error;
         }
 
         inst(DELETE_NAME, (--)) {
@@ -1159,9 +1196,11 @@ dummy_func(
             }
         }
 
-        inst(LOAD_NAME, ( -- v)) {
+        // stack effect: ( -- __0)
+        inst(LOAD_NAME) {
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = LOCALS();
+            PyObject *v;
             if (locals == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when loading %R", name);
@@ -1218,6 +1257,7 @@ dummy_func(
                     }
                 }
             }
+            PUSH(v);
         }
 
         // error: LOAD_GLOBAL has irregular stack effect
@@ -1358,8 +1398,9 @@ dummy_func(
             Py_DECREF(oldobj);
         }
 
-        inst(LOAD_CLASSDEREF, ( -- value)) {
-            PyObject *name, *locals = LOCALS();
+        // stack effect: ( -- __0)
+        inst(LOAD_CLASSDEREF) {
+            PyObject *name, *value, *locals = LOCALS();
             assert(locals);
             assert(oparg >= 0 && oparg < frame->f_code->co_nlocalsplus);
             name = PyTuple_GET_ITEM(frame->f_code->co_localsplusnames, oparg);
@@ -1390,26 +1431,31 @@ dummy_func(
                 }
                 Py_INCREF(value);
             }
+            PUSH(value);
         }
 
-        inst(LOAD_DEREF, ( -- value)) {
+        // stack effect: ( -- __0)
+        inst(LOAD_DEREF) {
             PyObject *cell = GETLOCAL(oparg);
-            value = PyCell_GET(cell);
+            PyObject *value = PyCell_GET(cell);
             if (value == NULL) {
                 format_exc_unbound(tstate, frame->f_code, oparg);
-                ERROR_IF(true, error);
+                goto error;
             }
-            Py_INCREF(value);
+            PUSH(Py_NewRef(value));
         }
 
-        inst(STORE_DEREF, (v --)) {
+        // stack effect: (__0 -- )
+        inst(STORE_DEREF) {
+            PyObject *v = POP();
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             PyCell_SET(cell, v);
             Py_XDECREF(oldobj);
         }
 
-        inst(COPY_FREE_VARS, (--)) {
+        // stack effect: ( -- )
+        inst(COPY_FREE_VARS) {
             /* Copy closure variables to free variables */
             PyCodeObject *co = frame->f_code;
             assert(PyFunction_Check(frame->f_funcobj));
@@ -1457,14 +1503,21 @@ dummy_func(
             PUSH(list);
         }
 
-        inst(LIST_TO_TUPLE, (list -- tuple)) {
-            tuple = PyList_AsTuple(list);
-            DECREF_INPUTS();
-            ERROR_IF(tuple == NULL, error);
+        // stack effect: ( -- )
+        inst(LIST_TO_TUPLE) {
+            PyObject *list = POP();
+            PyObject *tuple = PyList_AsTuple(list);
+            Py_DECREF(list);
+            if (tuple == NULL) {
+                goto error;
+            }
+            PUSH(tuple);
         }
 
-        inst(LIST_EXTEND, (iterable -- )) {
-            PyObject *list = PEEK(oparg + 1);  // iterable is still on the stack
+        // stack effect: (__0 -- )
+        inst(LIST_EXTEND) {
+            PyObject *iterable = POP();
+            PyObject *list = PEEK(oparg);
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1475,18 +1528,22 @@ dummy_func(
                           "Value after * must be an iterable, not %.200s",
                           Py_TYPE(iterable)->tp_name);
                 }
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
+                Py_DECREF(iterable);
+                goto error;
             }
             Py_DECREF(none_val);
-            DECREF_INPUTS();
+            Py_DECREF(iterable);
         }
 
-        inst(SET_UPDATE, (iterable --)) {
-            PyObject *set = PEEK(oparg + 1);  // iterable is still on the stack
+        // stack effect: (__0 -- )
+        inst(SET_UPDATE) {
+            PyObject *iterable = POP();
+            PyObject *set = PEEK(oparg);
             int err = _PySet_Update(set, iterable);
-            DECREF_INPUTS();
-            ERROR_IF(err < 0, error);
+            Py_DECREF(iterable);
+            if (err < 0) {
+                goto error;
+            }
         }
 
         // stack effect: (__array[oparg] -- __0)
@@ -1526,41 +1583,54 @@ dummy_func(
             PUSH(map);
         }
 
-        inst(SETUP_ANNOTATIONS, (--)) {
+        // stack effect: ( -- )
+        inst(SETUP_ANNOTATIONS) {
             int err;
             PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when setting up annotations");
-                ERROR_IF(true, error);
+                goto error;
             }
             /* check if __annotations__ in locals()... */
             if (PyDict_CheckExact(LOCALS())) {
                 ann_dict = _PyDict_GetItemWithError(LOCALS(),
                                                     &_Py_ID(__annotations__));
                 if (ann_dict == NULL) {
-                    ERROR_IF(_PyErr_Occurred(tstate), error);
+                    if (_PyErr_Occurred(tstate)) {
+                        goto error;
+                    }
                     /* ...if not, create a new one */
                     ann_dict = PyDict_New();
-                    ERROR_IF(ann_dict == NULL, error);
+                    if (ann_dict == NULL) {
+                        goto error;
+                    }
                     err = PyDict_SetItem(LOCALS(), &_Py_ID(__annotations__),
                                          ann_dict);
                     Py_DECREF(ann_dict);
-                    ERROR_IF(err, error);
+                    if (err != 0) {
+                        goto error;
+                    }
                 }
             }
             else {
                 /* do the same if locals() is not a dict */
                 ann_dict = PyObject_GetItem(LOCALS(), &_Py_ID(__annotations__));
                 if (ann_dict == NULL) {
-                    ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        goto error;
+                    }
                     _PyErr_Clear(tstate);
                     ann_dict = PyDict_New();
-                    ERROR_IF(ann_dict == NULL, error);
+                    if (ann_dict == NULL) {
+                        goto error;
+                    }
                     err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
                                            ann_dict);
                     Py_DECREF(ann_dict);
-                    ERROR_IF(err, error);
+                    if (err != 0) {
+                        goto error;
+                    }
                 }
                 else {
                     Py_DECREF(ann_dict);
@@ -1592,38 +1662,48 @@ dummy_func(
             PUSH(map);
         }
 
-        inst(DICT_UPDATE, (update --)) {
-            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
+        // stack effect: (__0 -- )
+        inst(DICT_UPDATE) {
+            PyObject *update = POP();
+            PyObject *dict = PEEK(oparg);
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                     "'%.200s' object is not a mapping",
                                     Py_TYPE(update)->tp_name);
                 }
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
+                Py_DECREF(update);
+                goto error;
             }
-            DECREF_INPUTS();
+            Py_DECREF(update);
         }
 
-        inst(DICT_MERGE, (update --)) {
-            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
+        // stack effect: (__0 -- )
+        inst(DICT_MERGE) {
+            PyObject *update = POP();
+            PyObject *dict = PEEK(oparg);
 
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
-                format_kwargs_error(tstate, PEEK(3 + oparg), update);
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
+                format_kwargs_error(tstate, PEEK(2 + oparg), update);
+                Py_DECREF(update);
+                goto error;
             }
-            DECREF_INPUTS();
+            Py_DECREF(update);
             PREDICT(CALL_FUNCTION_EX);
         }
 
-        inst(MAP_ADD, (key, value --)) {
-            PyObject *dict = PEEK(oparg + 2);  // key, value are still on the stack
-            assert(PyDict_CheckExact(dict));
-            /* dict[key] = value */
-            // Do not DECREF INPUTS because the function steals the references
-            ERROR_IF(_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0, error);
+        // stack effect: (__0, __1 -- )
+        inst(MAP_ADD) {
+            PyObject *value = TOP();
+            PyObject *key = SECOND();
+            PyObject *map;
+            STACK_SHRINK(2);
+            map = PEEK(oparg);                      /* dict */
+            assert(PyDict_CheckExact(map));
+            /* map[key] = value */
+            if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
+                goto error;
+            }
             PREDICT(JUMP_BACKWARD);
         }
 
@@ -2056,17 +2136,29 @@ dummy_func(
         }
         super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_IF;
 
-        inst(IS_OP, (left, right -- b)) {
+        // stack effect: (__0 -- )
+        inst(IS_OP) {
+            PyObject *right = POP();
+            PyObject *left = TOP();
             int res = Py_Is(left, right) ^ oparg;
-            DECREF_INPUTS();
-            b = Py_NewRef(res ? Py_True : Py_False);
+            PyObject *b = res ? Py_True : Py_False;
+            SET_TOP(Py_NewRef(b));
+            Py_DECREF(left);
+            Py_DECREF(right);
         }
 
-        inst(CONTAINS_OP, (left, right -- b)) {
+        // stack effect: (__0 -- )
+        inst(CONTAINS_OP) {
+            PyObject *right = POP();
+            PyObject *left = POP();
             int res = PySequence_Contains(right, left);
-            DECREF_INPUTS();
-            ERROR_IF(res < 0, error);
-            b = Py_NewRef((res^oparg) ? Py_True : Py_False);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) {
+                goto error;
+            }
+            PyObject *b = (res^oparg) ? Py_True : Py_False;
+            PUSH(Py_NewRef(b));
         }
 
         // stack effect: ( -- )
@@ -2110,57 +2202,76 @@ dummy_func(
             }
         }
 
-        inst(CHECK_EXC_MATCH, (left, right -- left, b)) {
+        // stack effect: ( -- )
+        inst(CHECK_EXC_MATCH) {
+            PyObject *right = POP();
+            PyObject *left = TOP();
             assert(PyExceptionInstance_Check(left));
             if (check_except_type_valid(tstate, right) < 0) {
-                 DECREF_INPUTS();
-                 ERROR_IF(true, error);
+                 Py_DECREF(right);
+                 goto error;
             }
 
             int res = PyErr_GivenExceptionMatches(left, right);
-            DECREF_INPUTS();
-            b = Py_NewRef(res ? Py_True : Py_False);
+            Py_DECREF(right);
+            PUSH(Py_NewRef(res ? Py_True : Py_False));
         }
 
-         inst(IMPORT_NAME, (level, fromlist -- res)) {
+        // stack effect: (__0 -- )
+        inst(IMPORT_NAME) {
             PyObject *name = GETITEM(names, oparg);
+            PyObject *fromlist = POP();
+            PyObject *level = TOP();
+            PyObject *res;
             res = import_name(tstate, frame, name, fromlist, level);
-            DECREF_INPUTS();
-            ERROR_IF(res == NULL, error);
+            Py_DECREF(level);
+            Py_DECREF(fromlist);
+            SET_TOP(res);
+            if (res == NULL)
+                goto error;
         }
 
-        inst(IMPORT_STAR, (from --)) {
-            PyObject *locals;
+        // stack effect: (__0 -- )
+        inst(IMPORT_STAR) {
+            PyObject *from = POP(), *locals;
             int err;
             if (_PyFrame_FastToLocalsWithError(frame) < 0) {
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
+                Py_DECREF(from);
+                goto error;
             }
 
             locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "no locals found during 'import *'");
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
+                Py_DECREF(from);
+                goto error;
             }
             err = import_all_from(tstate, locals, from);
             _PyFrame_LocalsToFast(frame, 0);
-            DECREF_INPUTS();
-            ERROR_IF(err, error);
+            Py_DECREF(from);
+            if (err != 0)
+                goto error;
         }
 
-        inst(IMPORT_FROM, (from -- from, res)) {
+        // stack effect: ( -- __0)
+        inst(IMPORT_FROM) {
             PyObject *name = GETITEM(names, oparg);
+            PyObject *from = TOP();
+            PyObject *res;
             res = import_from(tstate, from, name);
-            ERROR_IF(res == NULL, error);
+            PUSH(res);
+            if (res == NULL)
+                goto error;
         }
 
-        inst(JUMP_FORWARD, (--)) {
+        // stack effect: ( -- )
+        inst(JUMP_FORWARD) {
             JUMPBY(oparg);
         }
 
-        inst(JUMP_BACKWARD, (--)) {
+        // stack effect: ( -- )
+        inst(JUMP_BACKWARD) {
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
@@ -3594,6 +3705,8 @@ family(load_attr) = {
     LOAD_ATTR_PROPERTY, LOAD_ATTR_SLOT, LOAD_ATTR_WITH_HINT,
     LOAD_ATTR_METHOD_LAZY_DICT, LOAD_ATTR_METHOD_NO_DICT, LOAD_ATTR_METHOD_WITH_DICT,
     LOAD_ATTR_METHOD_WITH_VALUES };
+family(load_const) = { LOAD_CONST, LOAD_CONST__LOAD_FAST };
+family(load_fast) = { LOAD_FAST, LOAD_FAST__LOAD_CONST, LOAD_FAST__LOAD_FAST };
 family(load_global) = {
     LOAD_GLOBAL, LOAD_GLOBAL_BUILTIN,
     LOAD_GLOBAL_MODULE };

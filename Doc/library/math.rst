@@ -108,7 +108,12 @@ Number-theoretic and representation functions
 .. function:: fsum(iterable)
 
    Return an accurate floating point sum of values in the iterable.  Avoids
-   loss of precision by tracking multiple intermediate partial sums.
+   loss of precision by tracking multiple intermediate partial sums:
+
+        >>> sum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
+        0.9999999999999999
+        >>> fsum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
+        1.0
 
    The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
    typical case where the rounding mode is half-even.  On some non-Windows

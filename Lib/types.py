@@ -56,6 +56,7 @@ except TypeError as exc:
     TracebackType = type(exc.__traceback__)
     FrameType = type(exc.__traceback__.tb_frame)
 
+# For Jython, the following two types are identical
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 

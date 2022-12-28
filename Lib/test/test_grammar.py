@@ -415,28 +415,6 @@ class GrammarTests(unittest.TestCase):
                 x: int
                 x.y: list = []
 
-    def test_annotations_inheritance(self):
-        # Check that annotations are not inherited by derived classes
-        class A:
-            attr: int
-        class B(A):
-            pass
-        class C(A):
-            attr: str
-        class D:
-            attr2: int
-        class E(A, D):
-            pass
-        class F(C, A):
-            pass
-        self.assertEqual(A.__annotations__, {"attr": int})
-        self.assertEqual(B.__annotations__, {})
-        self.assertEqual(C.__annotations__, {"attr" : str})
-        self.assertEqual(D.__annotations__, {"attr2" : int})
-        self.assertEqual(E.__annotations__, {})
-        self.assertEqual(F.__annotations__, {})
-
-
     def test_var_annot_metaclass_semantics(self):
         class CMeta(type):
             @classmethod

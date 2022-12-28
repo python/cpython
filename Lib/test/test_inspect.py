@@ -202,51 +202,6 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
-        async def _fn3():
-            pass
-
-        @inspect.markcoroutinefunction
-        def fn3():
-            return _fn3()
-
-        self.assertTrue(inspect.iscoroutinefunction(fn3))
-        self.assertTrue(
-            inspect.iscoroutinefunction(
-                inspect.markcoroutinefunction(lambda: _fn3())
-            )
-        )
-
-        class Cl:
-            async def __call__(self):
-                pass
-
-        self.assertFalse(inspect.iscoroutinefunction(Cl))
-        # instances with async def __call__ are NOT recognised.
-        self.assertFalse(inspect.iscoroutinefunction(Cl()))
-
-        class Cl2:
-            @inspect.markcoroutinefunction
-            def __call__(self):
-                pass
-
-        self.assertFalse(inspect.iscoroutinefunction(Cl2))
-        # instances with marked __call__ are NOT recognised.
-        self.assertFalse(inspect.iscoroutinefunction(Cl2()))
-
-        class Cl3:
-            @inspect.markcoroutinefunction
-            @classmethod
-            def do_something_classy(cls):
-                pass
-
-            @inspect.markcoroutinefunction
-            @staticmethod
-            def do_something_static():
-                pass
-
-        self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_classy))
-        self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_static))
-
         self.assertFalse(
             inspect.iscoroutinefunction(unittest.mock.Mock()))
         self.assertTrue(
@@ -2525,7 +2480,7 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(p('f'), False)
         self.assertEqual(p('local'), 3)
         self.assertEqual(p('sys'), sys.maxsize)
-        self.assertEqual(p('exp'), sys.maxsize - 1)
+        self.assertNotIn('exp', signature.parameters)
 
         test_callable(object)
 
@@ -4323,28 +4278,9 @@ class TestSignatureDefinitions(unittest.TestCase):
         sig = inspect.signature(func)
         self.assertIsNotNone(sig)
         self.assertEqual(str(sig), '(self, /, a, b=1, *args, c, d=2, **kwargs)')
-
         func.__text_signature__ = '($self, a, b=1, /, *args, c, d=2, **kwargs)'
         sig = inspect.signature(func)
         self.assertEqual(str(sig), '(self, a, b=1, /, *args, c, d=2, **kwargs)')
-
-        func.__text_signature__ = '(self, a=1+2, b=4-3, c=1 | 3 | 16)'
-        sig = inspect.signature(func)
-        self.assertEqual(str(sig), '(self, a=3, b=1, c=19)')
-
-        func.__text_signature__ = '(self, a=1,\nb=2,\n\n\n   c=3)'
-        sig = inspect.signature(func)
-        self.assertEqual(str(sig), '(self, a=1, b=2, c=3)')
-
-        func.__text_signature__ = '(self, x=does_not_exist)'
-        with self.assertRaises(ValueError):
-            inspect.signature(func)
-        func.__text_signature__ = '(self, x=sys, y=inspect)'
-        with self.assertRaises(ValueError):
-            inspect.signature(func)
-        func.__text_signature__ = '(self, 123)'
-        with self.assertRaises(ValueError):
-            inspect.signature(func)
 
     def test_base_class_have_text_signature(self):
         # see issue 43118

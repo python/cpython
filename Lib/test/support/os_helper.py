@@ -11,7 +11,11 @@ import warnings
 
 
 # Filename used for testing
-TESTFN_ASCII = '@test'
+if os.name == 'java':
+    # Jython disallows @ in module names
+    TESTFN_ASCII = '$test'
+else:
+    TESTFN_ASCII = '@test'
 
 # Disambiguate TESTFN for parallel testing, while letting it remain a valid
 # module name.

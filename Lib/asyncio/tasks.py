@@ -964,7 +964,6 @@ def _unregister_task(task):
     _all_tasks.discard(task)
 
 
-_py_current_task = current_task
 _py_register_task = _register_task
 _py_unregister_task = _unregister_task
 _py_enter_task = _enter_task
@@ -974,12 +973,10 @@ _py_leave_task = _leave_task
 try:
     from _asyncio import (_register_task, _unregister_task,
                           _enter_task, _leave_task,
-                          _all_tasks, _current_tasks,
-                          current_task)
+                          _all_tasks, _current_tasks)
 except ImportError:
     pass
 else:
-    _c_current_task = current_task
     _c_register_task = _register_task
     _c_unregister_task = _unregister_task
     _c_enter_task = _enter_task

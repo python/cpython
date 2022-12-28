@@ -225,15 +225,6 @@ asyncio
   a custom event loop factory.
   (Contributed by Kumar Aditya in :gh:`99388`.)
 
-* Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
-  (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
-
-inspect
--------
-
-* Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
-  a :term:`coroutine` for use with :func:`iscoroutinefunction`.
-  (Contributed Carlton Gibson in :gh:`99247`.)
 
 pathlib
 -------
@@ -939,7 +930,7 @@ Removed
   internals.
   (Contributed by Victor Stinner in :gh:`92651`.)
 
-* Legacy Unicode APIs has been removed. See :pep:`623` for detail.
+* Leagcy Unicode APIs has been removed. See :pep:`623` for detail.
 
    * :c:macro:`PyUnicode_WCHAR_KIND`
    * :c:func:`PyUnicode_AS_UNICODE`
@@ -954,9 +945,6 @@ Removed
 * Remove the ``PyUnicode_InternImmortal()`` function and the
   ``SSTATE_INTERNED_IMMORTAL`` macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
-
-* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
-  (Contributed by Nikita Sobolev in :gh:`99482`.)
 
 * Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
   from :mod:`ctypes` module.

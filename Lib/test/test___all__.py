@@ -100,9 +100,10 @@ class AllTest(unittest.TestCase):
             '__future__',
         ])
 
-        # In case _socket fails to build, make this test fail more gracefully
-        # than an AttributeError somewhere deep in CGIHTTPServer.
-        import _socket
+        if not sys.platform.startswith('java'):
+            # In case _socket fails to build, make this test fail more gracefully
+            # than an AttributeError somewhere deep in CGIHTTPServer.
+            import _socket
 
         ignored = []
         failed_imports = []

@@ -180,7 +180,8 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         }
         goto error;
     } else if (PyErr_Occurred()) {
-        _PyErr_FormatFromCause(
+        PyErr_Clear();
+        PyErr_Format(
             PyExc_SystemError,
             "initialization of %s raised unreported exception",
             name_buf);

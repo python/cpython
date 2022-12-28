@@ -27,6 +27,7 @@ import traceback
 import types
 
 from types import *
+NoneType = type(None)
 
 # TODO:
 #
@@ -41,6 +42,7 @@ from types import *
 
 version = '1'
 
+NoneType = type(None)
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {"args"}

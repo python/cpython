@@ -609,12 +609,6 @@ class`. In addition, it provides a few more methods:
 
    .. versionadded:: 3.8
 
-.. method:: int.is_integer()
-
-   Returns ``True``. Exists for duck type compatibility with :meth:`float.is_integer`.
-
-   .. versionadded:: 3.12
-
 Additional Methods on Float
 ---------------------------
 
@@ -1630,28 +1624,25 @@ expression support in the :mod:`re` module).
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
-   Return the string encoded to :class:`bytes`.
+   Return an encoded version of the string as a bytes object. Default encoding
+   is ``'utf-8'``. *errors* may be given to set a different error handling scheme.
+   The default for *errors* is ``'strict'``, meaning that encoding errors raise
+   a :exc:`UnicodeError`. Other possible
+   values are ``'ignore'``, ``'replace'``, ``'xmlcharrefreplace'``,
+   ``'backslashreplace'`` and any other name registered via
+   :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
+   list of possible encodings, see section :ref:`standard-encodings`.
 
-   *encoding* defaults to ``'utf-8'``;
-   see :ref:`standard-encodings` for possible values.
-
-   *errors* controls how encoding errors are handled.
-   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
-   Other possible values are ``'ignore'``,
-   ``'replace'``, ``'xmlcharrefreplace'``, ``'backslashreplace'`` and any
-   other name registered via :func:`codecs.register_error`.
-   See :ref:`error-handlers` for details.
-
-   For performance reasons, the value of *errors* is not checked for validity
-   unless an encoding error actually occurs,
-   :ref:`devmode` is enabled
-   or a :ref:`debug build <debug-build>` is used.
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first encoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check
+   *errors*.
 
    .. versionchanged:: 3.1
-      Added support for keyword arguments.
+      Support for keyword arguments added.
 
    .. versionchanged:: 3.9
-      The value of the *errors* argument is now checked in :ref:`devmode` and
+      The *errors* is now checked in development mode and
       in :ref:`debug mode <debug-build>`.
 
 
@@ -2768,32 +2759,29 @@ arbitrary binary data.
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
 
-   Return the bytes decoded to a :class:`str`.
+   Return a string decoded from the given bytes.  Default encoding is
+   ``'utf-8'``. *errors* may be given to set a different
+   error handling scheme.  The default for *errors* is ``'strict'``, meaning
+   that encoding errors raise a :exc:`UnicodeError`.  Other possible values are
+   ``'ignore'``, ``'replace'`` and any other name registered via
+   :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
+   list of possible encodings, see section :ref:`standard-encodings`.
 
-   *encoding* defaults to ``'utf-8'``;
-   see :ref:`standard-encodings` for possible values.
-
-   *errors* controls how decoding errors are handled.
-   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
-   Other possible values are ``'ignore'``, ``'replace'``,
-   and any other name registered via :func:`codecs.register_error`.
-   See :ref:`error-handlers` for details.
-
-   For performance reasons, the value of *errors* is not checked for validity
-   unless a decoding error actually occurs,
-   :ref:`devmode` is enabled or a :ref:`debug build <debug-build>` is used.
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first decoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check *errors*.
 
    .. note::
 
       Passing the *encoding* argument to :class:`str` allows decoding any
       :term:`bytes-like object` directly, without needing to make a temporary
-      :class:`!bytes` or :class:`!bytearray` object.
+      bytes or bytearray object.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The value of the *errors* argument is now checked in :ref:`devmode` and
+      The *errors* is now checked in development mode and
       in :ref:`debug mode <debug-build>`.
 
 
@@ -5492,7 +5480,7 @@ to mitigate denial of service attacks. This limit *only* applies to decimal or
 other non-power-of-two number bases. Hexadecimal, octal, and binary conversions
 are unlimited. The limit can be configured.
 
-The :class:`int` type in CPython is an arbitrary length number stored in binary
+The :class:`int` type in CPython is an abitrary length number stored in binary
 form (commonly known as a "bignum"). There exists no algorithm that can convert
 a string to a binary integer or a binary integer to a string in linear time,
 *unless* the base is a power of 2. Even the best known algorithms for base 10
@@ -5556,7 +5544,7 @@ and :class:`str` or :class:`bytes`:
 * ``int(string)`` with default base 10.
 * ``int(string, base)`` for all bases that are not a power of 2.
 * ``str(integer)``.
-* ``repr(integer)``.
+* ``repr(integer)``
 * any other string conversion to base 10, for example ``f"{integer}"``,
   ``"{}".format(integer)``, or ``b"%d" % integer``.
 
@@ -5584,7 +5572,7 @@ command line flag to configure the limit:
   :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
   If both the env var and the ``-X`` option are set, the ``-X`` option takes
   precedence. A value of *-1* indicates that both were unset, thus a value of
-  :data:`sys.int_info.default_max_str_digits` was used during initialization.
+  :data:`sys.int_info.default_max_str_digits` was used during initilization.
 
 From code, you can inspect the current limit and set a new one using these
 :mod:`sys` APIs:
