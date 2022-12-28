@@ -1539,7 +1539,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
     /* We should always find either a FunctionBlock, ModuleBlock or ClassBlock
        and should never fall to this case
     */
-    assert(0);
+    Py_UNREACHABLE();
     return 0;
 }
 

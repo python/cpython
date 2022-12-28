@@ -20,6 +20,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
 #include "structmember.h"         // for offsetof(), T_OBJECT
 #include <float.h>                // FLT_MAX
@@ -2840,6 +2841,22 @@ frame_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+frame_new(PyObject *self, PyObject *args)
+{
+    PyObject *code, *globals, *locals;
+    if (!PyArg_ParseTuple(args, "OOO", &code, &globals, &locals)) {
+        return NULL;
+    }
+    if (!PyCode_Check(code)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyThreadState *tstate = PyThreadState_Get();
+
+    return (PyObject *)PyFrame_New(tstate, (PyCodeObject *)code, globals, locals);
+}
+
+static PyObject *
 test_frame_getvar(PyObject *self, PyObject *args)
 {
     PyObject *frame, *name;
@@ -3277,6 +3294,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
     {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
