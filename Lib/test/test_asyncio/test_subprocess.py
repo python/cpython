@@ -698,7 +698,8 @@ class SubprocessMixin:
     def test_create_subprocess_env_shell(self) -> None:
         async def main() -> None:
             cmd = f'''{sys.executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
-            env = {"FOO": 'bar'}
+            env = os.environ.copy()
+            env["FOO"] = "bar"
             proc = await asyncio.create_subprocess_shell(
                 cmd, env=env, stdout=subprocess.PIPE
             )
@@ -710,7 +711,8 @@ class SubprocessMixin:
         async def main() -> None:
             cmd = [sys.executable, "-c",
                    "import os, sys; sys.stdout.write(os.getenv('FOO'))"]
-            env = {"FOO": 'baz'}
+            env = os.environ.copy()
+            env["FOO"] = "baz"
             proc = await asyncio.create_subprocess_exec(
                 *cmd, env=env, stdout=subprocess.PIPE
             )
