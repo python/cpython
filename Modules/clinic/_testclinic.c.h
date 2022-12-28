@@ -2012,6 +2012,9 @@ vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     a = args[0];
     __clinic_args = PyTuple_New(nargs - 1);
+    if (!__clinic_args) {
+        goto exit;
+    }
     for (Py_ssize_t i = 0; i < nargs - 1; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[1 + i]));
     }
@@ -2257,6 +2260,9 @@ gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
     for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
@@ -2299,4 +2305,4 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fe398ac790310bc4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6b719efc1b8bd2c8 input=a9049054013a1b77]*/
