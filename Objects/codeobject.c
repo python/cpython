@@ -1842,28 +1842,41 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 static Py_hash_t
 code_hash(PyCodeObject *co)
 {
-    Py_hash_t h, h0, h1, h2, h3;
-    h0 = PyObject_Hash(co->co_name);
-    if (h0 == -1) return -1;
-    h1 = PyObject_Hash(co->co_consts);
-    if (h1 == -1) return -1;
-    h2 = PyObject_Hash(co->co_names);
-    if (h2 == -1) return -1;
-    h3 = PyObject_Hash(co->co_localsplusnames);
-    if (h3 == -1) return -1;
-    Py_hash_t h4 = PyObject_Hash(co->co_linetable);
-    if (h4 == -1) {
-        return -1;
+    Py_uhash_t uhash = 20221211;
+    #define SCRAMBLE_IN(H) do {       \
+        uhash ^= (Py_uhash_t)(H);     \
+        uhash *= _PyHASH_MULTIPLIER;  \
+    } while (0)
+    #define SCRAMBLE_IN_HASH(EXPR) do {     \
+        Py_hash_t h = PyObject_Hash(EXPR);  \
+        if (h == -1) {                      \
+            return -1;                      \
+        }                                   \
+        SCRAMBLE_IN(h);                     \
+    } while (0)
+
+    SCRAMBLE_IN_HASH(co->co_name);
+    SCRAMBLE_IN_HASH(co->co_consts);
+    SCRAMBLE_IN_HASH(co->co_names);
+    SCRAMBLE_IN_HASH(co->co_localsplusnames);
+    SCRAMBLE_IN_HASH(co->co_linetable);
+    SCRAMBLE_IN_HASH(co->co_exceptiontable);
+    SCRAMBLE_IN(co->co_argcount);
+    SCRAMBLE_IN(co->co_posonlyargcount);
+    SCRAMBLE_IN(co->co_kwonlyargcount);
+    SCRAMBLE_IN(co->co_flags);
+    SCRAMBLE_IN(co->co_firstlineno);
+    SCRAMBLE_IN(Py_SIZE(co));
+    for (int i = 0; i < Py_SIZE(co); i++) {
+        int deop = _PyOpcode_Deopt[_Py_OPCODE(_PyCode_CODE(co)[i])];
+        SCRAMBLE_IN(deop);
+        SCRAMBLE_IN(_Py_OPARG(_PyCode_CODE(co)[i]));
+        i += _PyOpcode_Caches[deop];
     }
-    Py_hash_t h5 = PyObject_Hash(co->co_exceptiontable);
-    if (h5 == -1) {
-        return -1;
+    if ((Py_hash_t)uhash == -1) {
+        return -2;
     }
-    h = h0 ^ h1 ^ h2 ^ h3 ^ h4 ^ h5 ^
-        co->co_argcount ^ co->co_posonlyargcount ^ co->co_kwonlyargcount ^
-        co->co_flags;
-    if (h == -1) h = -2;
-    return h;
+    return (Py_hash_t)uhash;
 }
 
 

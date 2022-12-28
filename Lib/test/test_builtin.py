@@ -9,6 +9,7 @@ import fractions
 import gc
 import io
 import locale
+import math
 import os
 import pickle
 import platform
@@ -31,11 +32,18 @@ from test.support import (swap_attr, maybe_get_event_loop_policy)
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import check_warnings
+from test.support import requires_IEEE_754
 from unittest.mock import MagicMock, patch
 try:
     import pty, signal
 except ImportError:
     pty = signal = None
+
+
+# Detect evidence of double-rounding: sum() does not always
+# get improved accuracy on machines that suffer from double rounding.
+x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
+HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 
 class Squares:
@@ -1617,6 +1625,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(repr(sum([-0.0])), '0.0')
         self.assertEqual(repr(sum([-0.0], -0.0)), '-0.0')
         self.assertEqual(repr(sum([], -0.0)), '-0.0')
+        self.assertTrue(math.isinf(sum([float("inf"), float("inf")])))
+        self.assertTrue(math.isinf(sum([1e308, 1e308])))
 
         self.assertRaises(TypeError, sum)
         self.assertRaises(TypeError, sum, 42)
@@ -1640,6 +1650,14 @@ class BuiltinTest(unittest.TestCase):
         empty = []
         sum(([x] for x in range(10)), empty)
         self.assertEqual(empty, [])
+
+    @requires_IEEE_754
+    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
+                         "sum accuracy not guaranteed on machines with double rounding")
+    @support.cpython_only    # Other implementations may choose a different algorithm
+    def test_sum_accuracy(self):
+        self.assertEqual(sum([0.1] * 10), 1.0)
+        self.assertEqual(sum([1.0, 10E100, 1.0, -10E100]), 2.0)
 
     def test_type(self):
         self.assertEqual(type(''),  type('123'))

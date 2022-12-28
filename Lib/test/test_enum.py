@@ -4259,7 +4259,7 @@ expected_help_output_with_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(value, names=None, *values, module=None, qualname=None, type=None, start=1, boundary=None)
+ |  Color(*values)
  |
  |  Method resolution order:
  |      Color
@@ -4315,7 +4315,7 @@ expected_help_output_without_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(value, names=None, *values, module=None, qualname=None, type=None, start=1)
+ |  Color(*values)
  |
  |  Method resolution order:
  |      Color
@@ -4461,6 +4461,27 @@ class TestStdLib(unittest.TestCase):
                 failed = True
         if failed:
             self.fail("result does not equal expected, see print above")
+
+    def test_inspect_signatures(self):
+        from inspect import signature, Signature, Parameter
+        self.assertEqual(
+                signature(Enum),
+                Signature([
+                    Parameter('new_class_name', Parameter.POSITIONAL_ONLY),
+                    Parameter('names', Parameter.POSITIONAL_OR_KEYWORD),
+                    Parameter('module', Parameter.KEYWORD_ONLY, default=None),
+                    Parameter('qualname', Parameter.KEYWORD_ONLY, default=None),
+                    Parameter('type', Parameter.KEYWORD_ONLY, default=None),
+                    Parameter('start', Parameter.KEYWORD_ONLY, default=1),
+                    Parameter('boundary', Parameter.KEYWORD_ONLY, default=None),
+                    ]),
+                )
+        self.assertEqual(
+                signature(enum.FlagBoundary),
+                Signature([
+                    Parameter('values', Parameter.VAR_POSITIONAL),
+                    ]),
+                )
 
     def test_test_simple_enum(self):
         @_simple_enum(Enum)

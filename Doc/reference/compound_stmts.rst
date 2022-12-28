@@ -506,7 +506,7 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
       method returns without an error, then :meth:`__exit__` will always be
       called. Thus, if an error occurs during the assignment to the target list,
       it will be treated the same as an error occurring within the suite would
-      be. See step 6 below.
+      be. See step 7 below.
 
 #. The suite is executed.
 
