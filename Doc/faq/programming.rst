@@ -1048,6 +1048,14 @@ It is also possible to use :func:`os.path.join` to append a backslash on Windows
    >>> os.path.join(r'C:\this\will\work', '')
    'C:\\this\\will\\work\\'
 
+Note that while a backslash will "escape" a quote for the purposes
+of determining where the raw string ends, there are no escape
+sequences that affect the interpretation of the value of the raw string.
+That is, the backslash remains present in the value of the raw string::
+
+   >>> r'backslash\'preserved'
+   "backslash\\'preserved"
+
 
 Performance
 ===========

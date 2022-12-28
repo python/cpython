@@ -189,15 +189,10 @@ the first quote::
    >>> print(r'C:\some\name')  # note the r before the quote
    C:\some\name
 
-Note that escaping quotes in raw strings will keep the backslash::
-
-   >>> r'before\'after'
-   "before\\'after"
-
-There is also one subtle aspect to raw strings: a raw string may not end in
+There is one subtle aspect to raw strings: a raw string may not end in
 an odd number of ``\`` characters; see
 :ref:`the FAQ entry <faq-programming-raw-string-backslash>` for more information
-and workarounds.
+and workarounds, as well as the the :ref:`language reference <strings>`.
 
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically
