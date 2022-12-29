@@ -375,7 +375,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
 
     def test_entry_frames_are_invisible_during_teardown(self):
         class C:
-            """A weakrefable class."""
+            """A weakref'able class."""
 
         def f():
             """Try to find globals and locals as this frame is being cleared."""
