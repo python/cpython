@@ -12802,8 +12802,7 @@ if test "x$have_libffi" = xyes; then :
   case $ac_sys_system in #(
   Darwin) :
 
-            as_fn_append LIBFFI_CFLAGS " -I\$(srcdir)/Modules/_ctypes/darwin"
-      ctypes_malloc_closure=yes
+            ctypes_malloc_closure=yes
      ;; #(
   sunos5) :
     as_fn_append LIBFFI_LIBS " -mimpure-text"
