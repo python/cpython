@@ -782,31 +782,35 @@ def _find_impl(cls, registry):
 
     """
     from typing import get_args, get_origin
-    # Distinguish between funcs for type[A] and A, only use appropriate ones
+    # Distinguish between funcs for type[A] and A
     if get_origin(cls) is type:
-        classes = (
-            get_args(key) for key in registry.keys() if get_origin(key) is type
+        to_type_like_given = lambda t: type[t]
+        class_ = get_args(cls)[0]
+        registry_classes = (
+            get_args(key)[0]
+            for key in registry.keys() if get_origin(key) is type
         )
     else:
-        classes = (
-            key for key in registry.keys() if get_origin(key) is None
+        to_type_like_given = lambda t: t
+        class_ = cls
+        registry_classes = (
+            key for key in registry.keys() if get_origin(key) is not type
         )
-    # Everything from here on out works the same regardless of type[A] or A
-    mro = _compose_mro(cls, classes)
+    mro = _compose_mro(class_, registry_classes)
     match = None
     for t in mro:
         if match is not None:
             # If *match* is an implicit ABC but there is another unrelated,
             # equally matching implicit ABC, refuse the temptation to guess.
-            if (t in registry and t not in cls.__mro__
-                              and match not in cls.__mro__
+            if (to_type_like_given(t) in registry and t not in class_.__mro__
+                              and match not in class_.__mro__
                               and not issubclass(match, t)):
                 raise RuntimeError("Ambiguous dispatch: {} or {}".format(
                     match, t))
             break
-        if t in registry:
+        if to_type_like_given(t) in registry:
             match = t
-    return registry.get(match)
+    return registry.get(to_type_like_given(match))
 
 def singledispatch(func):
     """Single-dispatch generic function decorator.
