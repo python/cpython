@@ -1489,7 +1489,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         if (ste->ste_comprehension) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
             if ((target_in_scope & DEF_COMP_ITER) &&
-                (target_in_scope & (DEF_LOCAL | DEF_GLOBAL))) {
+                (target_in_scope & DEF_LOCAL)) {
                 PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_CONFLICT, target_name);
                 PyErr_RangedSyntaxLocationObject(st->st_filename,
                                                   e->lineno,
