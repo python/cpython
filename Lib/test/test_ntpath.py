@@ -277,7 +277,7 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('//server/share/../..')",  '\\\\server\\share\\')
         tester("ntpath.normpath('//server/share/../../')", '\\\\server\\share\\')
 
-        # gh-96290: don't normalize partial/invalid UNC drives
+        # gh-96290: don't normalize partial/invalid UNC drives as rooted paths
         tester("ntpath.normpath('\\\\foo\\bar')", '\\\\foo\\bar')
         tester("ntpath.normpath('\\\\foo\\')", '\\\\foo\\')
         tester("ntpath.normpath('\\\\foo')", '\\\\foo')
