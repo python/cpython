@@ -6742,6 +6742,10 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 // Common code to raise a warning if we detect there is more than one thread
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
+//
+// This code might do an import, thus acquiring the import lock, which
+// PyOS_BeforeFork() also does.  As this should only be called from
+// the parent process, it is in the same thread so that works.
 static void warn_about_fork_with_threads(const char* name) {
     // TODO: Consider making an `os` module API to return the current number
     // of threads in the process. That'd presumably use this platform code but
@@ -6782,30 +6786,32 @@ static void warn_about_fork_with_threads(const char* name) {
     }
 #endif
     if (num_python_threads <= 0) {
-        // Fall back to just the number of threads our threading module knows about.
-        // An incomplete view of the world, but better than nothing for our purpose.
+        // Fall back to just the number our threading module knows about.
+        // An incomplete view of the world, but better than nothing.
         PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
         if (!threading) {
             PyErr_Clear();
             return;
         }
-        PyObject *threading_active = PyObject_GetAttr(threading, &_Py_ID(_active));
+        PyObject *threading_active =
+                PyObject_GetAttr(threading, &_Py_ID(_active));
         if (!threading_active) {
             PyErr_Clear();
             Py_DECREF(threading);
             return;
         }
-        PyObject *threading_limbo = PyObject_GetAttr(threading, &_Py_ID(_limbo));
+        PyObject *threading_limbo =
+                PyObject_GetAttr(threading, &_Py_ID(_limbo));
         if (!threading_limbo) {
             PyErr_Clear();
-            Py_XDECREF(threading);
-            Py_XDECREF(threading_active);
+            Py_DECREF(threading);
+            Py_DECREF(threading_active);
             return;
         }
         Py_DECREF(threading);
         // Duplicating what threading.active_count() does but without holding
-        // threading._active_limbo_lock so our count could be inaccurate if these
-        // dicts are mid-update from another thread.  Not a big deal.
+        // threading._active_limbo_lock so our count could be inaccurate if
+        // these dicts are mid-update from another thread.  Not a big deal.
         // Worst case if someone replaced threading._active or threading._limbo
         // with non-dicts, we get -1 from *Length() below and undercount.
         // Nobody should, but we're best effort so we clear errors and move on.
