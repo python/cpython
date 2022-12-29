@@ -146,9 +146,9 @@ class TestNtpath(NtpathTestCase):
         # gh-96290: support partial/invalid UNC drives
         tester('ntpath.splitdrive("//")', ("//", ""))  # empty server & missing share
         tester('ntpath.splitdrive("///")', ("//", "/"))  # empty server & empty share
-        tester('ntpath.splitdrive("///y")', ("///y", ""))  # empty server & valid share
-        tester('ntpath.splitdrive("//x")', ("//x", ""))  # valid server & missing share
-        tester('ntpath.splitdrive("//x/")', ("//x", "/"))  # valid server & empty share
+        tester('ntpath.splitdrive("///y")', ("///y", ""))  # empty server & non-empty share
+        tester('ntpath.splitdrive("//x")', ("//x", ""))  # non-empty server & missing share
+        tester('ntpath.splitdrive("//x/")', ("//x", "/"))  # non-empty server & empty share
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
