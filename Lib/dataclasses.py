@@ -382,10 +382,6 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
                  metadata, kw_only)
 
 
-def _symbol(i):
-    return f"__field_{i}__"
-
-
 def _fields_in_init_order(fields):
     # Returns the fields as __init__ will output them.  It returns 2 tuples:
     # the first for normal args, and the second for keyword args.
@@ -394,17 +390,20 @@ def _fields_in_init_order(fields):
             tuple(f for f in fields if f.init and f.kw_only)
             )
 
+def _symbol(x):
+    return f"__field_{x}__"
+
 
 def _tuple_str(obj_name, fields):
     # Return a string representing each field of obj_name as a tuple
     # member.  So, if fields is ['x', 'y'] and obj_name is "self",
-    # return "(self.__fields_0__,self.__fields_1__)".
+    # return "(self.__field_0__,self.__field_1__)".
 
     # Special case for the 0-tuple.
     if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
-    return f'({",".join([f"{obj_name}.{_symbol(i)}" for i in range(len(fields))])},)'
+    return f'({",".join([f"{obj_name}.{_symbol(f.name)}" for f in fields])},)'
 
 
 # This function's logic is copied from "recursive_repr" function in
@@ -428,62 +427,47 @@ def _recursive_repr(user_function):
     return wrapper
 
 
-def _create_code(name, args, body, *, globals=None, locals=None):
-    # Note that we may mutate locals. Callers beware!
-    # The only callers are internal to this module, so no
+_code_cache = {}
+_code_cache_hits = 0
+
+def _create_fn(name, args, body, fields, *, globals=None, locals=None):
+    # Note that we mutate locals when exec() is called.  Caller
+    # beware!  The only callers are internal to this module, so no
     # worries about external callers.
     if locals is None:
         locals = {}
     args = ','.join(args)
     body = '\n'.join(f'  {b}' for b in body)
-
-    # Compute the text of the entire function.
-    txt = f' def {name}({args}):\n{body}'
-
-    # Free variables in exec are resolved in the global namespace.
-    # The global namespace we have is user-provided, so we can't modify it for
-    # our purposes. So we put the things we need into locals and introduce a
-    # scope to allow the function we're creating to close over them.
-    local_vars = ', '.join(locals.keys())
-    txt = f"def __create_fn__({local_vars}):\n{txt}\n return {name}"
-    ns = {}
-    exec(txt, globals, ns)
-    return ns['__create_fn__'](**locals).__code__
-
-
-_code_cache = {}
-_code_cache_total = 0
-_code_cache_miss = 0
-
-
-def _create_fn(name, args, body, fields, *, globals=None, locals=None):
-    global _code_cache_total, _code_cache_miss
-    key = (name, args, body)
-    code = _code_cache.get(key)
-    _code_cache_total += 1
+    source = f'def {name}({args}):\n{body}'
+    patches = {}
+    for i, f in enumerate(fields):
+        named_symbol = _symbol(f.name)
+        numbered_symbol = _symbol(i)
+        source = source.replace(named_symbol, numbered_symbol)
+        patches[numbered_symbol] = f.name
+    code = _code_cache.get(source)
     if code is None:
-        _code_cache_miss += 1
-        code = _code_cache[key] = _create_code(
-             name, args, body, globals=globals, locals=locals
-        )
-    patched = {_symbol(i): f.name for i, f in enumerate(fields)}
-    varnames = tuple(patched.get(name, name) for name in code.co_varnames)
-    names = tuple(patched.get(name, name) for name in code.co_names)
-    consts = list(code.co_consts)
-    for i, const in enumerate(code.co_consts):
-        if isinstance(const, str):
-            for pair in patched.items():
-                const = const.replace(*pair)
-            consts[i] = const
-        elif isinstance(const, tuple):
-            consts[i] = tuple(patched.get(c, c) for c in const)
-    consts = tuple(consts)
+        # Free variables in exec are resolved in the global namespace.
+        # The global namespace we have is user-provided, so we can't modify it for
+        # our purposes. So we put the things we need into locals and introduce a
+        # scope to allow the function we're creating to close over them.
+        local_vars = ', '.join(locals.keys())
+        t = f"def __create_fn__({local_vars}):\n {source}\n return {name}"
+        ns = {}
+        exec(t, globals, ns)
+        code = _code_cache[source] = ns['__create_fn__'](**locals).__code__
+    else:
+        global _code_cache_hits
+        _code_cache_hits += 1
+    consts = tuple(patches.get(name, name) for name in code.co_consts)
+    names = tuple(patches.get(name, name) for name in code.co_names)
+    varnames = tuple(patches.get(name, name) for name in code.co_varnames)
     closure = tuple(CellType(locals[freevar]) for freevar in code.co_freevars)
     return FunctionType(
         code=code.replace(
-            co_varnames=varnames,
-            co_names=names,
             co_consts=consts,
+            co_names=names,
+            co_varnames=varnames,
         ),
         globals=globals or {},
         closure=closure,
@@ -506,7 +490,6 @@ def _field_init(f, frozen, globals, self_name, slots, i):
     # Return the text of the line in the body of __init__ that will
     # initialize this field.
 
-    field_name = _symbol(i)
     default_name = f'_dflt_{i}'
     if f.default_factory is not MISSING:
         if f.init:
@@ -514,8 +497,8 @@ def _field_init(f, frozen, globals, self_name, slots, i):
             # given, use it.  If not, call the factory.
             globals[default_name] = f.default_factory
             value = (f'{default_name}() '
-                     f'if {field_name} is _HAS_DEFAULT_FACTORY '
-                     f'else {field_name}')
+                     f'if {_symbol(f.name)} is _HAS_DEFAULT_FACTORY '
+                     f'else {_symbol(f.name)}')
         else:
             # This is a field that's not in the __init__ params, but
             # has a default factory function.  It needs to be
@@ -538,10 +521,10 @@ def _field_init(f, frozen, globals, self_name, slots, i):
         if f.init:
             if f.default is MISSING:
                 # There's no default, just do an assignment.
-                value = field_name
+                value = _symbol(f.name)
             elif f.default is not MISSING:
                 globals[default_name] = f.default
-                value = field_name
+                value = _symbol(f.name)
         else:
             # If the class has slots, then initialize this field.
             if slots and f.default is not MISSING:
@@ -560,7 +543,7 @@ def _field_init(f, frozen, globals, self_name, slots, i):
         return None
 
     # Now, actually generate the field assignment.
-    return _field_assign(frozen, field_name, value, self_name)
+    return _field_assign(frozen, _symbol(f.name), value, self_name)
 
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
              self_name, globals, slots):
@@ -598,7 +581,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
     # Does this class have a post-init function?
     if has_post_init:
-        params_str = ','.join(_symbol(i) for i, f in enumerate(fields)
+        params_str = ','.join(_symbol(f.name) for f in fields
                               if f._field_type is _FIELD_INITVAR)
         body_lines.append(f'{self_name}.{_POST_INIT_NAME}({params_str})')
 
@@ -606,13 +589,13 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     if not body_lines:
         body_lines = ['pass']
 
-    _init_params = [_symbol(fields.index(f)) for f in std_fields]
+    _init_params = [_symbol(f.name) for f in std_fields]
     if kw_only_fields:
         # Add the keyword-only args.  Because the * can only be added if
         # there's at least one keyword-only arg, there needs to be a test here
         # (instead of just concatenting the lists together).
         _init_params += ['*']
-        _init_params += [_symbol(fields.index(f)) for f in kw_only_fields]
+        _init_params += [_symbol(f.name) for f in kw_only_fields]
     f = _create_fn('__init__',
                    (self_name, *_init_params),
                    tuple(body_lines),
@@ -641,11 +624,12 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
 
 def _repr_fn(fields, globals):
+    # "{'__field_foo__'!s}={self.__field_foo__!r}"
+    attributes = [f"{{{_symbol(f.name)!r}!s}}={{self.{_symbol(f.name)}!r}}" for f in fields]
     fn = _create_fn('__repr__',
                     ('self',),
                     ('return self.__class__.__qualname__ + f"(' +
-                     ', '.join([f"{_symbol(i)}={{self.{_symbol(i)}!r}}"
-                                for i in range(len(fields))]) +
+                     ', '.join(attributes) +
                      ')"',),
                      fields=fields,
                      globals=globals)
@@ -656,13 +640,13 @@ def _frozen_get_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
     if fields:
-        fields_str = '(' + ','.join(repr(_symbol(i)) for i in range(len(fields))) + ',)'
+        fields_str = '[' + ','.join(repr(_symbol(f.name)) for f in fields) + ']'
     else:
         # Special case for the zero-length tuple.
         fields_str = '()'
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
-                      (f'if type(self) is cls or name in {fields_str}:',
+                      (f'if type(self) is cls or name in tuple({fields_str}):',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
                        fields=fields,
@@ -670,7 +654,7 @@ def _frozen_get_del_attr(cls, fields, globals):
                        globals=globals),
             _create_fn('__delattr__',
                       ('self', 'name'),
-                      (f'if type(self) is cls or name in {fields_str}:',
+                      (f'if type(self) is cls or name in tuple({fields_str}):',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
                        fields=fields,
