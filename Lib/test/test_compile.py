@@ -1264,19 +1264,19 @@ if (a or
 """
         compiled_code, _ = self.check_positions_against_ast(snippet)
         # jump if a is true:
-        self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_IF_TRUE_R',
             line=1, end_line=1, column=4, end_column=5, occurrence=1)
         # jump if b is false:
-        self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_FALSE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_IF_FALSE_R',
             line=2, end_line=2, column=5, end_column=6, occurrence=1)
         # jump if c is false:
-        self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_FALSE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_IF_FALSE_R',
             line=2, end_line=2, column=15, end_column=16, occurrence=2)
         # compare d and 0
         self.assertOpcodeSourcePositionIs(compiled_code, 'COMPARE_OP_R',
             line=4, end_line=4, column=8, end_column=13, occurrence=1)
         # jump if comparison it True
-        self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_IF_TRUE_R',
             line=4, end_line=4, column=8, end_column=13, occurrence=2)
 
     def test_multiline_assert(self):
@@ -1290,7 +1290,7 @@ assert (a > 0 and
             line=1, end_line=3, column=0, end_column=30, occurrence=1)
         #  The "error msg":
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST_R',
-            line=3, end_line=3, column=19, end_column=30, occurrence=4)
+            line=3, end_line=3, column=19, end_column=30, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=30, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RAISE_VARARGS',

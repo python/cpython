@@ -516,6 +516,7 @@ class ScopeTests(unittest.TestCase):
         d = f(2)(4)
         self.assertIn('h', d)
         del d['h']
+        d = {k:v for k,v in d.items() if not k.startswith('$')}
         self.assertEqual(d, {'x': 2, 'y': 7, 'w': 6})
 
     def testLocalsClass(self):
