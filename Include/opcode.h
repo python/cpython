@@ -108,6 +108,7 @@ extern "C" {
 #define JUMP_BACKWARD                          140
 #define BINARY_OP_R                            141
 #define CALL_FUNCTION_EX                       142
+#define COMPARE_OP_R                           143
 #define EXTENDED_ARG                           144
 #define LIST_APPEND                            145
 #define SET_ADD                                146
@@ -181,24 +182,24 @@ extern "C" {
 #define LOAD_ATTR_SLOT                          81
 #define LOAD_ATTR_WITH_HINT                     86
 #define LOAD_ATTR_METHOD_LAZY_DICT             121
-#define LOAD_ATTR_METHOD_NO_DICT               143
-#define LOAD_ATTR_METHOD_WITH_DICT             158
-#define LOAD_ATTR_METHOD_WITH_VALUES           159
-#define LOAD_CONST__LOAD_FAST                  160
-#define LOAD_FAST__LOAD_CONST                  161
-#define LOAD_FAST__LOAD_FAST                   166
-#define LOAD_GLOBAL_BUILTIN                    167
-#define LOAD_GLOBAL_MODULE                     168
-#define STORE_ATTR_INSTANCE_VALUE              169
-#define STORE_ATTR_SLOT                        170
-#define STORE_ATTR_WITH_HINT                   173
-#define STORE_FAST__LOAD_FAST                  174
-#define STORE_FAST__STORE_FAST                 175
-#define STORE_SUBSCR_DICT                      176
-#define STORE_SUBSCR_LIST_INT                  177
-#define UNPACK_SEQUENCE_LIST                   178
-#define UNPACK_SEQUENCE_TUPLE                  179
-#define UNPACK_SEQUENCE_TWO_TUPLE              180
+#define LOAD_ATTR_METHOD_NO_DICT               158
+#define LOAD_ATTR_METHOD_WITH_DICT             159
+#define LOAD_ATTR_METHOD_WITH_VALUES           160
+#define LOAD_CONST__LOAD_FAST                  161
+#define LOAD_FAST__LOAD_CONST                  166
+#define LOAD_FAST__LOAD_FAST                   167
+#define LOAD_GLOBAL_BUILTIN                    168
+#define LOAD_GLOBAL_MODULE                     169
+#define STORE_ATTR_INSTANCE_VALUE              170
+#define STORE_ATTR_SLOT                        173
+#define STORE_ATTR_WITH_HINT                   174
+#define STORE_FAST__LOAD_FAST                  175
+#define STORE_FAST__STORE_FAST                 176
+#define STORE_SUBSCR_DICT                      177
+#define STORE_SUBSCR_LIST_INT                  178
+#define UNPACK_SEQUENCE_LIST                   179
+#define UNPACK_SEQUENCE_TUPLE                  180
+#define UNPACK_SEQUENCE_TWO_TUPLE              181
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
@@ -241,7 +242,7 @@ extern "C" {
 #define NB_INPLACE_XOR                          25
 
 /* number of codewords for opcode+oparg(s) */
-#define OPSIZE(OP) (((OP) == (BINARY_OP_R)) ? 3 : 2)
+#define OPSIZE(OP) (((OP) == (BINARY_OP_R) || (OP) == (COMPARE_OP_R)) ? 3 : 2)
 
 /* Defined in Lib/opcode.py */
 #define ENABLE_SPECIALIZATION 0

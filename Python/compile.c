@@ -324,10 +324,10 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int oparg3 = instruction->i_oparg3.final;
 
 if (0) {
-  if (opcode == LOAD_CONST_R || opcode == LOAD_FAST_R || opcode == STORE_FAST_R)
+  if (opcode == COMPARE_OP_R || opcode == COMPARE_OP)
   {
     fprintf(stderr,
-            "write_instr [%d]: oparg = %d oparg1 = %d oparg2 = %d oparg3 = %d\n",
+            "write_instr [%d]: oparg = %d oparg1 = %d oparg2 = %d oparg3 = %d \n",
              opcode, oparg, oparg1, oparg2, oparg3);
   }
 }
@@ -739,7 +739,6 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
         c->c_regcode = false;
     }
     else {
-        c->c_regcode = !strstr(f, "import") && !strstr(f, "frozen") && !strstr(f, "freeze") && !strstr(f, "encodings");
         c->c_regcode = strstr(f, "mytest");
     }
     c->c_regcode = true;
@@ -1272,6 +1271,8 @@ stack_effect(int opcode, int oparg, int jump)
         case IS_OP:
         case CONTAINS_OP:
             return -1;
+        case COMPARE_OP_R:
+            return 0;
         case CHECK_EXC_MATCH:
             return 0;
         case CHECK_EG_MATCH:
@@ -1516,7 +1517,7 @@ cfg_builder_addop_noarg(cfg_builder *g, int opcode, location loc)
 }
 
 static int
-cfg_builder_add_cache_data(cfg_builder *g, int value)
+cfg_builder_add_oparg4(cfg_builder *g, int value)
 {
      struct instr *last = basicblock_last_instr(g->g_curblock);
      if (!last) {
@@ -1768,7 +1769,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define ADD_OPARG4(C, V) \
-     RETURN_IF_ERROR(cfg_builder_add_cache_data(CFG_BUILDER(C), (V)))
+     RETURN_IF_ERROR(cfg_builder_add_oparg4(CFG_BUILDER(C), (V)))
 
 #define ADDOP_LOAD_CONST(C, LOC, O) \
     RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)))
@@ -3041,7 +3042,21 @@ static int compiler_addcompare(struct compiler *c, location loc,
     default:
         Py_UNREACHABLE();
     }
-    ADDOP_I(c, loc, COMPARE_OP, cmp);
+
+    if (c->c_regcode) {
+        oparg_t lhs = TMP_OPARG(c->u->u_ntmps++);
+        oparg_t rhs = TMP_OPARG(c->u->u_ntmps++);
+        oparg_t res = TMP_OPARG(c->u->u_ntmps++);
+        ADDOP_REGS(c, loc, STORE_FAST_R, rhs, UNUSED_OPARG, UNUSED_OPARG);
+        ADDOP_REGS(c, loc, STORE_FAST_R, lhs, UNUSED_OPARG, UNUSED_OPARG);
+        ADDOP_REGS(c, loc, COMPARE_OP_R, lhs, rhs, res);
+        ADD_OPARG4(c, cmp);
+        ADDOP_REGS(c, loc, LOAD_FAST_R, res, UNUSED_OPARG, UNUSED_OPARG);
+    }
+    else {
+        ADDOP_I(c, loc, COMPARE_OP, cmp);
+    }
+
     return SUCCESS;
 }
 
@@ -4325,18 +4340,18 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
             return ERROR;
     }
     if (c->c_regcode) {
-         oparg_t lhs = TMP_OPARG(c->u->u_ntmps++);
-         oparg_t rhs = TMP_OPARG(c->u->u_ntmps++);
-         oparg_t res = TMP_OPARG(c->u->u_ntmps++);
-         ADDOP_REGS(c, loc, STORE_FAST_R, rhs, UNUSED_OPARG, UNUSED_OPARG);
-         ADDOP_REGS(c, loc, STORE_FAST_R, lhs, UNUSED_OPARG, UNUSED_OPARG);
-         ADDOP_REGS(c, loc, BINARY_OP_R, lhs, rhs, res);
-         ADD_OPARG4(c, oparg);
-         ADDOP_REGS(c, loc, LOAD_FAST_R, res, UNUSED_OPARG, UNUSED_OPARG);
-     }
-     else {
-         ADDOP_I(c, loc, BINARY_OP, oparg);
-     }
+        oparg_t lhs = TMP_OPARG(c->u->u_ntmps++);
+        oparg_t rhs = TMP_OPARG(c->u->u_ntmps++);
+        oparg_t res = TMP_OPARG(c->u->u_ntmps++);
+        ADDOP_REGS(c, loc, STORE_FAST_R, rhs, UNUSED_OPARG, UNUSED_OPARG);
+        ADDOP_REGS(c, loc, STORE_FAST_R, lhs, UNUSED_OPARG, UNUSED_OPARG);
+        ADDOP_REGS(c, loc, BINARY_OP_R, lhs, rhs, res);
+        ADD_OPARG4(c, oparg);
+        ADDOP_REGS(c, loc, LOAD_FAST_R, res, UNUSED_OPARG, UNUSED_OPARG);
+    }
+    else {
+        ADDOP_I(c, loc, BINARY_OP, oparg);
+    }
     return SUCCESS;
 }
 

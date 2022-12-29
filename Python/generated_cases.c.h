@@ -2393,6 +2393,35 @@
             DISPATCH();
         }
 
+        TARGET(COMPARE_OP_R) {
+            PyObject *left = REG(oparg1);
+            PyObject *right = REG(oparg2);
+            PyObject *res;
+            JUMPBY(OPSIZE(COMPARE_OP_R) - 1);
+#if 0  /* specialization not implemented for this opcode yet */
+            #if ENABLE_SPECIALIZATION
+            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE(opcode);
+                _Py_Specialize_CompareOp(left, right, next_instr, oparg);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(COMPARE_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
+#endif
+            _Py_CODEUNIT word3 = *(next_instr - 1);
+            int oparg4 = _Py_OPCODE(word3);
+            assert(0 <= oparg4);
+            assert(oparg4 <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg4);
+            if (res == NULL) goto error;
+            Py_XSETREF(REG(oparg3), res);
+            JUMPBY(2);
+            DISPATCH();
+        }
+
         TARGET(COMPARE_OP_FLOAT_JUMP) {
             PyObject *_tmp_1 = PEEK(1);
             PyObject *_tmp_2 = PEEK(2);

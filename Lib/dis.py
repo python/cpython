@@ -39,6 +39,7 @@ LOAD_CONST_R = opmap['LOAD_CONST_R']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
 BINARY_OP_R = opmap['BINARY_OP_R']
+COMPARE_OP_R = opmap['COMPARE_OP_R']
 JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 FOR_ITER = opmap['FOR_ITER']
 LOAD_ATTR = opmap['LOAD_ATTR']
@@ -520,6 +521,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif deop in haslocal or deop in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
             elif deop in hascompare:
+                if deop == COMPARE_OP_R:
+                    arg = extra_args[2]
                 argval = cmp_op[arg]
                 argrepr = argval
             elif deop == FORMAT_VALUE:
@@ -537,6 +540,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif deop == BINARY_OP_R:
                 arg = extra_args[2]
                 argval, argrepr = arg, _nb_ops[arg][1]
+
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
@@ -650,8 +654,8 @@ _INT_OVERFLOW = 2 ** (_INT_BITS - 1)
             state = [1, 0, 0]
         if state[_ops_] > 0:
             yield positions
-            assert state[_ops_] == 1
-            assert state[_args_] == state[_caches_] == 0
+	    assert state[_ops_] == 1
+	    assert state[_args_] == state[_caches_] == 0
             state[_ops_] = 0
             state[_args_] = _opsize(op) - 1
             state[_caches_] = _inline_cache_entries[op]

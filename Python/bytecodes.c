@@ -1994,6 +1994,28 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
+        register inst(COMPARE_OP_R, (unused/2, left, right -- res)) {
+#if 0  /* specialization not implemented for this opcode yet */
+            #if ENABLE_SPECIALIZATION
+            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                next_instr -= OPSIZE(opcode);
+                _Py_Specialize_CompareOp(left, right, next_instr, oparg);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(COMPARE_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
+#endif
+            _Py_CODEUNIT word3 = *(next_instr - 1);
+            int oparg4 = _Py_OPCODE(word3);
+            assert(0 <= oparg4);
+            assert(oparg4 <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg4);
+            ERROR_IF(res == NULL, error);
+        }
+
         // The result is an int disguised as an object pointer.
         op(_COMPARE_OP_FLOAT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);

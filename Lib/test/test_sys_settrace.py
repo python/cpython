@@ -1843,6 +1843,7 @@ class JumpTestCase(unittest.TestCase):
         def decorator(func):
             @wraps(func)
             def test(self):
+                raise ValueError("fail test instead of crashing")
                 self.run_test(func, jumpFrom, jumpTo, expected,
                               error=error, event=event, decorated=True)
             return test
@@ -2530,6 +2531,7 @@ class JumpTestCase(unittest.TestCase):
         no_jump_without_trace_function()
 
     def test_large_function(self):
+        raise ValueError("fail test instead of crashing")
         d = {}
         exec("""def f(output):        # line 0
             x = 0                     # line 1

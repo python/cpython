@@ -206,6 +206,8 @@ def_op('BINARY_OP_R', 141)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
+def_op('COMPARE_OP_R', 143)
+hascompare.append(143)
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
@@ -399,7 +401,7 @@ _specialization_stats = [
 
 # number of codewords for opcode+oparg(s)
 def _opsize(opcode):
-    return 3 if opname[opcode] == "BINARY_OP_R" else 2
+    return 3 if opname[opcode] in ("BINARY_OP_R", "COMPARE_OP_R") else 2
 
 _cache_format = {
     "LOAD_GLOBAL": {
@@ -418,6 +420,10 @@ _cache_format = {
         "counter": 1,
     },
     "COMPARE_OP": {
+        "counter": 1,
+        "mask": 1,
+    },
+    "COMPARE_OP_R": {
         "counter": 1,
         "mask": 1,
     },

@@ -7,6 +7,7 @@ import unittest
 from collections import namedtuple
 import contextlib
 import json
+import opcode
 import os
 import os.path
 import re
