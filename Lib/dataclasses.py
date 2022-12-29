@@ -262,6 +262,7 @@ class Field:
                  'metadata',
                  'kw_only',
                  '_field_type',  # Private: not to be used by user code.
+                 '_placeholder',
                  )
 
     def __init__(self, default, default_factory, init, repr, hash, compare,
@@ -279,6 +280,7 @@ class Field:
                          types.MappingProxyType(metadata))
         self.kw_only = kw_only
         self._field_type = None
+        self._placeholder = None
 
     def __repr__(self):
         return ('Field('
@@ -390,20 +392,16 @@ def _fields_in_init_order(fields):
             tuple(f for f in fields if f.init and f.kw_only)
             )
 
-def _symbol(x):
-    return f"__field_{x}__"
-
-
 def _tuple_str(obj_name, fields):
     # Return a string representing each field of obj_name as a tuple
     # member.  So, if fields is ['x', 'y'] and obj_name is "self",
-    # return "(self.__field_0__,self.__field_1__)".
+    # return "(self.$x$,self.$y$)".
 
     # Special case for the 0-tuple.
     if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
-    return f'({",".join([f"{obj_name}.{_symbol(f.name)}" for f in fields])},)'
+    return f'({",".join([f"{obj_name}.{f._placeholder}" for f in fields])},)'
 
 
 # This function's logic is copied from "recursive_repr" function in
@@ -430,36 +428,53 @@ def _recursive_repr(user_function):
 _code_cache = {}
 _code_cache_hits = 0
 
-def _create_fn(name, args, body, fields, *, globals=None, locals=None):
-    # Note that we mutate locals when exec() is called.  Caller
-    # beware!  The only callers are internal to this module, so no
+def _create_fn(name, args, body, *, globals=None, locals=None):
+    # Note that we may mutate locals. Callers beware!
+    # The only callers are internal to this module, so no
     # worries about external callers.
     if locals is None:
         locals = {}
     args = ','.join(args)
     body = '\n'.join(f'  {b}' for b in body)
-    source = f'def {name}({args}):\n{body}'
+    txt = f'def {name}({args}):\n{body}'
+    # Turn every illegal named placeholder ("$foo$", "$bar$", ...) in the
+    # source into a legal numbered identifier ("__field_0__", "__field_1__",
+    # ...). At the same time, build a mapping of these new identifiers to their
+    # final field names ({"__field_0__": "foo", "__field_1__": "bar", ...}):
+    # patches = {}
+    # for i, f in enumerate(fields):
+    #     named_placeholder = f._placeholder
+    #     numbered_identifier = f"__field_{i}__"
+    #     txt = txt.replace(named_placeholder, numbered_identifier)
+    #     patches[numbered_identifier] = f.name
     patches = {}
-    for i, f in enumerate(fields):
-        named_symbol = _symbol(f.name)
-        numbered_symbol = _symbol(i)
-        source = source.replace(named_symbol, numbered_symbol)
-        patches[numbered_symbol] = f.name
-    code = _code_cache.get(source)
+    for named_placeholder in dict.fromkeys(re.findall(r"\$\w+\$", txt)):
+        numbered_identifier = f"__field_{len(patches)}__"
+        field_name = named_placeholder[1:-1]
+        txt = txt.replace(named_placeholder, numbered_identifier)
+        patches[numbered_identifier] = field_name
+    key = txt
+    code = _code_cache.get(key)
     if code is None:
         # Free variables in exec are resolved in the global namespace.
         # The global namespace we have is user-provided, so we can't modify it for
         # our purposes. So we put the things we need into locals and introduce a
         # scope to allow the function we're creating to close over them.
         local_vars = ', '.join(locals.keys())
-        t = f"def __create_fn__({local_vars}):\n {source}\n return {name}"
+        txt = f"def __create_fn__({local_vars}):\n {txt}\n return {name}"
         ns = {}
-        exec(t, globals, ns)
-        code = _code_cache[source] = ns['__create_fn__'](**locals).__code__
+        exec(txt, globals, ns)
+        code = _code_cache[key] = ns['__create_fn__'](**locals).__code__
     else:
         global _code_cache_hits
         _code_cache_hits += 1
-    consts = tuple(patches.get(name, name) for name in code.co_consts)
+    consts = []
+    for const in code.co_consts:
+        if isinstance(const, str):
+            for numbered_symbol, field_name in patches.items():
+                const = const.replace(numbered_symbol, field_name)
+        consts.append(const)
+    consts = tuple(consts)
     names = tuple(patches.get(name, name) for name in code.co_names)
     varnames = tuple(patches.get(name, name) for name in code.co_varnames)
     closure = tuple(CellType(locals[freevar]) for freevar in code.co_freevars)
@@ -497,8 +512,8 @@ def _field_init(f, frozen, globals, self_name, slots, i):
             # given, use it.  If not, call the factory.
             globals[default_name] = f.default_factory
             value = (f'{default_name}() '
-                     f'if {_symbol(f.name)} is _HAS_DEFAULT_FACTORY '
-                     f'else {_symbol(f.name)}')
+                     f'if {f._placeholder} is _HAS_DEFAULT_FACTORY '
+                     f'else {f._placeholder}')
         else:
             # This is a field that's not in the __init__ params, but
             # has a default factory function.  It needs to be
@@ -521,10 +536,10 @@ def _field_init(f, frozen, globals, self_name, slots, i):
         if f.init:
             if f.default is MISSING:
                 # There's no default, just do an assignment.
-                value = _symbol(f.name)
+                value = f._placeholder
             elif f.default is not MISSING:
                 globals[default_name] = f.default
-                value = _symbol(f.name)
+                value = f._placeholder
         else:
             # If the class has slots, then initialize this field.
             if slots and f.default is not MISSING:
@@ -543,7 +558,7 @@ def _field_init(f, frozen, globals, self_name, slots, i):
         return None
 
     # Now, actually generate the field assignment.
-    return _field_assign(frozen, _symbol(f.name), value, self_name)
+    return _field_assign(frozen, f._placeholder, value, self_name)
 
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
              self_name, globals, slots):
@@ -581,7 +596,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
     # Does this class have a post-init function?
     if has_post_init:
-        params_str = ','.join(_symbol(f.name) for f in fields
+        params_str = ','.join(f._placeholder for f in fields
                               if f._field_type is _FIELD_INITVAR)
         body_lines.append(f'{self_name}.{_POST_INIT_NAME}({params_str})')
 
@@ -589,17 +604,16 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     if not body_lines:
         body_lines = ['pass']
 
-    _init_params = [_symbol(f.name) for f in std_fields]
+    _init_params = [f._placeholder for f in std_fields]
     if kw_only_fields:
         # Add the keyword-only args.  Because the * can only be added if
         # there's at least one keyword-only arg, there needs to be a test here
         # (instead of just concatenting the lists together).
         _init_params += ['*']
-        _init_params += [_symbol(f.name) for f in kw_only_fields]
+        _init_params += [f._placeholder for f in kw_only_fields]
     f = _create_fn('__init__',
                    (self_name, *_init_params),
                    tuple(body_lines),
-                   fields=fields,
                    locals=locals,
                    globals=globals)
     annotations = {"return": None}
@@ -624,14 +638,12 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
 
 def _repr_fn(fields, globals):
-    # "{'__field_foo__'!s}={self.__field_foo__!r}"
-    attributes = [f"{{{_symbol(f.name)!r}!s}}={{self.{_symbol(f.name)}!r}}" for f in fields]
     fn = _create_fn('__repr__',
                     ('self',),
-                    ('return self.__class__.__qualname__ + f"(' +
-                     ', '.join(attributes) +
-                     ')"',),
-                     fields=fields,
+                    ['return self.__class__.__qualname__ + f"(' +
+                     ', '.join([f"{f._placeholder}={{self.{f._placeholder}!r}}"
+                                for f in fields]) +
+                     ')"'],
                      globals=globals)
     return _recursive_repr(fn)
 
@@ -639,42 +651,35 @@ def _repr_fn(fields, globals):
 def _frozen_get_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
-    if fields:
-        fields_str = '[' + ','.join(repr(_symbol(f.name)) for f in fields) + ']'
-    else:
-        # Special case for the zero-length tuple.
-        fields_str = '()'
+    fields_str = ' '.join(f._placeholder for f in fields)
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
-                      (f'if type(self) is cls or name in tuple({fields_str}):',
+                      (f'if type(self) is cls or name in {fields_str!r}:',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
-                       fields=fields,
                        locals=locals,
                        globals=globals),
             _create_fn('__delattr__',
                       ('self', 'name'),
-                      (f'if type(self) is cls or name in tuple({fields_str}):',
+                      (f'if type(self) is cls or name in {fields_str!r}:',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
-                       fields=fields,
                        locals=locals,
                        globals=globals),
             )
 
 
-def _cmp_fn(name, op, self_tuple, other_tuple, globals, fields):
+def _cmp_fn(name, op, self_tuple, other_tuple, globals):
     # Create a comparison function.  If the fields in the object are
     # named 'x' and 'y', then self_tuple is the string
-    # '(self.x,self.y)' and other_tuple is the string
-    # '(other.x,other.y)'.
+    # '(self.$x$,self.$y$)' and other_tuple is the string
+    # '(other.$x$,other.$y$)'.
 
     return _create_fn(name,
                       ('self', 'other'),
-                      ( 'if other.__class__ is self.__class__:',
+                      [ 'if other.__class__ is self.__class__:',
                        f' return {self_tuple}{op}{other_tuple}',
-                        'return NotImplemented'),
-                      fields=fields,
+                        'return NotImplemented'],
                       globals=globals)
 
 
@@ -682,8 +687,7 @@ def _hash_fn(fields, globals):
     self_tuple = _tuple_str('self', fields)
     return _create_fn('__hash__',
                       ('self',),
-                      (f'return hash({self_tuple})',),
-                      fields=fields,
+                      [f'return hash({self_tuple})',],
                       globals=globals)
 
 
@@ -784,6 +788,8 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # Only at this point do we know the name and the type.  Set them.
     f.name = a_name
     f.type = a_type
+
+    f._placeholder = f"${a_name}$"
 
     # Assume it's a normal field until proven otherwise.  We're next
     # going to decide if it's a ClassVar or InitVar, everything else
@@ -1098,7 +1104,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         _set_new_attribute(cls, '__eq__',
                            _cmp_fn('__eq__', '==',
                                    self_tuple, other_tuple,
-                                   fields=flds, globals=globals))
+                                   globals=globals))
 
     if order:
         # Create and set the ordering methods.
@@ -1112,7 +1118,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                          ]:
             if _set_new_attribute(cls, name,
                                   _cmp_fn(name, op, self_tuple, other_tuple,
-                                          fields=flds, globals=globals)):
+                                          globals=globals)):
                 raise TypeError(f'Cannot overwrite attribute {name} '
                                 f'in class {cls.__name__}. Consider using '
                                 'functools.total_ordering')
