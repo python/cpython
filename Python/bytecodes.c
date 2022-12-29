@@ -2211,6 +2211,25 @@ dummy_func(
             }
         }
 
+        register inst(JUMP_IF_FALSE_R, (__0, cond -- )) {
+            int offset = oparg1;
+            if (Py_IsTrue(cond)) {
+            }
+            else if (Py_IsFalse(cond)) {
+                JUMPBY(offset);
+            }
+            else {
+                int err = PyObject_IsTrue(cond);
+                if (err > 0)
+                    ;
+                else if (err == 0) {
+                    JUMPBY(offset);
+                }
+                else
+                    goto error;
+            }
+        }
+
         // stack effect: (__0 -- )
         inst(POP_JUMP_IF_TRUE) {
             PyObject *cond = POP();
@@ -2226,6 +2245,25 @@ dummy_func(
                 Py_DECREF(cond);
                 if (err > 0) {
                     JUMPBY(oparg);
+                }
+                else if (err == 0)
+                    ;
+                else
+                    goto error;
+            }
+        }
+
+        register inst(JUMP_IF_TRUE_R, (__0, cond -- )) {
+            int offset = oparg1;
+            if (Py_IsFalse(cond)) {
+            }
+            else if (Py_IsTrue(cond)) {
+                JUMPBY(offset);
+            }
+            else {
+                int err = PyObject_IsTrue(cond);
+                if (err > 0) {
+                    JUMPBY(offset);
                 }
                 else if (err == 0)
                     ;

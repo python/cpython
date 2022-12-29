@@ -324,7 +324,7 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int oparg3 = instruction->i_oparg3.final;
 
 if (0) {
-  if (opcode == COMPARE_OP_R || opcode == COMPARE_OP)
+  if (IS_JUMP_OPCODE(opcode))
   {
     fprintf(stderr,
             "write_instr [%d]: oparg = %d oparg1 = %d oparg2 = %d oparg3 = %d \n",
@@ -1300,6 +1300,10 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_JUMP_IF_TRUE:
             return -1;
 
+        case JUMP_IF_FALSE_R:
+        case JUMP_IF_TRUE_R:
+            return 0;
+
         case LOAD_GLOBAL:
             return (oparg & 1) + 1;
 
@@ -1746,13 +1750,21 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
 }
 
 static int
-cfg_builder_addop_j(cfg_builder *g, location loc,
-                    int opcode, jump_target_label target)
+cfg_builder_addop_j_reg(cfg_builder *g, location loc,
+                        int opcode, jump_target_label target,
+                        oparg_t oparg2, oparg_t oparg3)
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     return cfg_builder_addop(g, opcode, target.id, loc,
-                             UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
+                             UNUSED_OPARG, oparg2, oparg3);
+}
+
+static int
+cfg_builder_addop_j(cfg_builder *g, location loc,
+                    int opcode, jump_target_label target)
+{
+    return cfg_builder_addop_j_reg(g, loc, opcode, target, UNUSED_OPARG, UNUSED_OPARG);
 }
 
 #define ADDOP(C, LOC, OP) \
@@ -1760,6 +1772,9 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADDOP_REGS(C, LOC, OP, R1, R2, R3) \
     RETURN_IF_ERROR(cfg_builder_addop(CFG_BUILDER(C), (OP), 0, (LOC), (R1), (R2), (R3)))
+
+#define ADDOP_JUMP_REGS(C, LOC, OP, O, R2, R3) \
+    RETURN_IF_ERROR(cfg_builder_addop_j_reg(CFG_BUILDER(C), (LOC), (OP), (O), (R2), (R3)))
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
@@ -3043,7 +3058,7 @@ static int compiler_addcompare(struct compiler *c, location loc,
         Py_UNREACHABLE();
     }
 
-    if (c->c_regcode) {
+    if (true || c->c_regcode) {
         oparg_t lhs = TMP_OPARG(c->u->u_ntmps++);
         oparg_t rhs = TMP_OPARG(c->u->u_ntmps++);
         oparg_t res = TMP_OPARG(c->u->u_ntmps++);
@@ -3126,7 +3141,14 @@ compiler_jump_if(struct compiler *c, location loc,
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, n));
-            ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+            if (c->c_regcode) {
+                oparg_t cond_reg = TMP_OPARG(c->u->u_ntmps++);
+                ADDOP_REGS(c, loc, STORE_FAST_R, cond_reg, UNUSED_OPARG, UNUSED_OPARG);
+                ADDOP_JUMP_REGS(c, loc, cond ? JUMP_IF_TRUE_R : JUMP_IF_FALSE_R, next, cond_reg, UNUSED_OPARG);
+            }
+            else {
+                ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+            }
             NEW_JUMP_TARGET_LABEL(c, end);
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
@@ -3149,7 +3171,15 @@ compiler_jump_if(struct compiler *c, location loc,
 
     /* general implementation */
     VISIT(c, expr, e);
-    ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    if (c->c_regcode) {
+        oparg_t cond_reg = TMP_OPARG(c->u->u_ntmps++);
+        ADDOP_REGS(c, LOC(e), STORE_FAST_R, cond_reg, UNUSED_OPARG, UNUSED_OPARG);
+        ADDOP_JUMP_REGS(c, LOC(e), cond ? JUMP_IF_TRUE_R : JUMP_IF_FALSE_R, next, cond_reg, UNUSED_OPARG);
+    }
+    else {
+        ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    }
+
     return SUCCESS;
 }
 
@@ -4339,7 +4369,7 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
                          inplace ? "inplace" : "binary", binop);
             return ERROR;
     }
-    if (c->c_regcode) {
+    if (true || c->c_regcode) {
         oparg_t lhs = TMP_OPARG(c->u->u_ntmps++);
         oparg_t rhs = TMP_OPARG(c->u->u_ntmps++);
         oparg_t res = TMP_OPARG(c->u->u_ntmps++);
@@ -8048,6 +8078,12 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         case POP_JUMP_IF_TRUE:
             reversed_opcode = POP_JUMP_IF_FALSE;
             break;
+        case JUMP_IF_FALSE_R:
+            reversed_opcode = JUMP_IF_TRUE_R;
+            break;
+        case JUMP_IF_TRUE_R:
+            reversed_opcode = JUMP_IF_FALSE_R;
+            break;
         case JUMP_IF_TRUE_OR_POP:
         case JUMP_IF_FALSE_OR_POP:
             if (!is_forward) {
@@ -8104,6 +8140,7 @@ normalize_jumps(cfg_builder *g)
     }
     return 0;
 }
+
 
 static void
 assemble_jump_offsets(basicblock *entryblock)
