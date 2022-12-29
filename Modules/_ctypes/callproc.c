@@ -67,7 +67,7 @@
 #include <windows.h>
 #include <tchar.h>
 #else
-#include "ctypes_dlfcn.h"
+#include <dlfcn.h>
 #endif
 
 #ifdef __APPLE__
@@ -1537,10 +1537,10 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlopen", "O", name) < 0) {
         return NULL;
     }
-    handle = ctypes_dlopen(name_str, mode);
+    handle = dlopen(name_str, mode);
     Py_XDECREF(name2);
     if (!handle) {
-        const char *errmsg = ctypes_dlerror();
+        const char *errmsg = dlerror();
         if (!errmsg)
             errmsg = "dlopen() error";
         PyErr_SetString(PyExc_OSError,
@@ -1558,7 +1558,7 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
         return NULL;
     if (dlclose(handle)) {
         PyErr_SetString(PyExc_OSError,
-                               ctypes_dlerror());
+                               dlerror());
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1576,10 +1576,10 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlsym/handle", "O", args) < 0) {
         return NULL;
     }
-    ptr = ctypes_dlsym((void*)handle, name);
+    ptr = dlsym((void*)handle, name);
     if (!ptr) {
         PyErr_SetString(PyExc_OSError,
-                               ctypes_dlerror());
+                               dlerror());
         return NULL;
     }
     return PyLong_FromVoidPtr(ptr);
