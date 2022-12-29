@@ -2718,7 +2718,6 @@
         }
 
         TARGET(JUMP_IF_FALSE_R) {
-            PyObject *__0 = REG(oparg1);
             PyObject *cond = REG(oparg2);
             JUMPBY(OPSIZE(JUMP_IF_FALSE_R) - 1);
             int offset = oparg1;
@@ -2765,7 +2764,6 @@
         }
 
         TARGET(JUMP_IF_TRUE_R) {
-            PyObject *__0 = REG(oparg1);
             PyObject *cond = REG(oparg2);
             JUMPBY(OPSIZE(JUMP_IF_TRUE_R) - 1);
             int offset = oparg1;

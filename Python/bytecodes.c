@@ -2211,7 +2211,7 @@ dummy_func(
             }
         }
 
-        register inst(JUMP_IF_FALSE_R, (__0, cond -- )) {
+        register inst(JUMP_IF_FALSE_R, (unused, cond -- )) {
             int offset = oparg1;
             if (Py_IsTrue(cond)) {
             }
@@ -2253,7 +2253,7 @@ dummy_func(
             }
         }
 
-        register inst(JUMP_IF_TRUE_R, (__0, cond -- )) {
+        register inst(JUMP_IF_TRUE_R, (unused, cond -- )) {
             int offset = oparg1;
             if (Py_IsFalse(cond)) {
             }
