@@ -37,9 +37,9 @@ operating system's command prompt. For example, running ::
 
 at a shell prompt will display documentation on the :mod:`sys` module, in a
 style similar to the manual pages shown by the Unix :program:`man` command.  The
-argument to :program:`python -m pydoc` can be the name of a function, module, or package,
+argument to :program:`pydoc` can be the name of a function, module, or package,
 or a dotted reference to a class, method, or function within a module or module
-in a package.  If the argument to :program:`python -m pydoc` looks like a path (that is,
+in a package.  If the argument to :program:`pydoc` looks like a path (that is,
 it contains the path separator for your operating system, such as a slash in
 Unix), and refers to an existing Python source file, then documentation is
 produced for that file.
@@ -51,9 +51,9 @@ produced for that file.
    executed on that occasion.  Use an ``if __name__ == '__main__':`` guard to
    only execute code when a file is invoked as a script and not just imported.
 
-When printing output to the console, :program:`python -m pydoc` attempts to paginate the
+When printing output to the console, :program:`pydoc` attempts to paginate the
 output for easier reading.  If the :envvar:`PAGER` environment variable is set,
-:program:`python -m pydoc` will use its value as a pagination program.
+:program:`pydoc` will use its value as a pagination program.
 
 Specifying a ``-w`` flag before the argument will cause HTML documentation
 to be written out to a file in the current directory, instead of displaying text
@@ -82,8 +82,8 @@ top where you can *Get* help on an individual item, *Search* all modules with a
 keyword in their synopsis line, and go to the *Module index*, *Topics* and
 *Keywords* pages.
 
-When :program:`python -m pydoc` generates documentation, it uses the current environment
-and path to locate modules.  Thus, invoking :program:`python -m pydoc spam`
+When :program:`pydoc` generates documentation, it uses the current environment
+and path to locate modules.  Thus, invoking :program:`pydoc spam`
 documents precisely the version of the module you would get if you started the
 Python interpreter and typed ``import spam``.
 
