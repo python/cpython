@@ -2857,7 +2857,24 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    PyObject *locals = current_frame->f_locals;
+    assert(PyDict_Check(current_frame->f_locals));
+
+    PyObject *locals = PyDict_New();
+    if (locals == NULL) {
+        return NULL;
+    }
+
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(current_frame->f_locals, &pos, &key, &value)) {
+        Py_UCS4 first = PyUnicode_ReadChar(key, 0);
+        if (first != '$') {
+            if (PyDict_SetItem(locals, key, value) < 0) {
+                return NULL;
+            }
+        }
+    }
+
     assert(locals != NULL);
     return locals;
 }
