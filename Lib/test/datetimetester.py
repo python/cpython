@@ -1,13 +1,12 @@
 """Test date/time type.
 
-See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
+See https://www.zope.dev/Members/fdrake/DateTimeWiki/TestCases
 """
 import io
 import itertools
 import bisect
 import copy
 import decimal
-import functools
 import sys
 import os
 import pickle
@@ -1464,8 +1463,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # test that unicode input is allowed (issue 2782)
         self.assertEqual(t.strftime("%m"), "03")
 
-        # A naive object replaces %z and %Z w/ empty strings.
-        self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
+        # A naive object replaces %z, %:z and %Z w/ empty strings.
+        self.assertEqual(t.strftime("'%z' '%:z' '%Z'"), "'' '' ''")
 
         #make sure that invalid format specifiers are handled correctly
         #self.assertRaises(ValueError, t.strftime, "%e")
@@ -1489,6 +1488,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
         #check that this standard extension works
         t.strftime("%f")
+
+        # bpo-41260: The parameter was named "fmt" in the pure python impl.
+        t.strftime(format="%f")
 
     def test_strftime_trailing_percent(self):
         # bpo-35066: Make sure trailing '%' doesn't cause datetime's strftime to
@@ -1529,7 +1531,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
         for fmt in ["m:%m d:%d y:%y",
                     "m:%m d:%d y:%y H:%H M:%M S:%S",
-                    "%z %Z",
+                    "%z %:z %Z",
                     ]:
             self.assertEqual(dt.__format__(fmt), dt.strftime(fmt))
             self.assertEqual(a.__format__(fmt), dt.strftime(fmt))
@@ -2135,7 +2137,7 @@ class TestDateTime(TestDate):
 
         for fmt in ["m:%m d:%d y:%y",
                     "m:%m d:%d y:%y H:%H M:%M S:%S",
-                    "%z %Z",
+                    "%z %:z %Z",
                     ]:
             self.assertEqual(dt.__format__(fmt), dt.strftime(fmt))
             self.assertEqual(a.__format__(fmt), dt.strftime(fmt))
@@ -2424,6 +2426,12 @@ class TestDateTime(TestDate):
         got = self.theclass.fromtimestamp(ts)
         self.verify_field_equality(expected, got)
 
+    def test_fromtimestamp_keyword_arg(self):
+        import time
+
+        # gh-85432: The parameter was named "t" in the pure-Python impl.
+        self.theclass.fromtimestamp(timestamp=time.time())
+
     def test_utcfromtimestamp(self):
         import time
 
@@ -2515,45 +2523,101 @@ class TestDateTime(TestDate):
             self.assertEqual(t.microsecond, 7812)
 
     def test_timestamp_limits(self):
-        # minimum timestamp
+        with self.subTest("minimum UTC"):
+            min_dt = self.theclass.min.replace(tzinfo=timezone.utc)
+            min_ts = min_dt.timestamp()
+
+            # This test assumes that datetime.min == 0000-01-01T00:00:00.00
+            # If that assumption changes, this value can change as well
+            self.assertEqual(min_ts, -62135596800)
+
+        with self.subTest("maximum UTC"):
+            # Zero out microseconds to avoid rounding issues
+            max_dt = self.theclass.max.replace(tzinfo=timezone.utc,
+                                               microsecond=0)
+            max_ts = max_dt.timestamp()
+
+            # This test assumes that datetime.max == 9999-12-31T23:59:59.999999
+            # If that assumption changes, this value can change as well
+            self.assertEqual(max_ts, 253402300799.0)
+
+    def test_fromtimestamp_limits(self):
+        try:
+            self.theclass.fromtimestamp(-2**32 - 1)
+        except (OSError, OverflowError):
+            self.skipTest("Test not valid on this platform")
+
+        # XXX: Replace these with datetime.{min,max}.timestamp() when we solve
+        # the issue with gh-91012
+        min_dt = self.theclass.min + timedelta(days=1)
+        min_ts = min_dt.timestamp()
+
+        max_dt = self.theclass.max.replace(microsecond=0)
+        max_ts = ((self.theclass.max - timedelta(hours=23)).timestamp() +
+                  timedelta(hours=22, minutes=59, seconds=59).total_seconds())
+
+        for (test_name, ts, expected) in [
+                ("minimum", min_ts, min_dt),
+                ("maximum", max_ts, max_dt),
+        ]:
+            with self.subTest(test_name, ts=ts, expected=expected):
+                actual = self.theclass.fromtimestamp(ts)
+
+                self.assertEqual(actual, expected)
+
+        # Test error conditions
+        test_cases = [
+            ("Too small by a little", min_ts - timedelta(days=1, hours=12).total_seconds()),
+            ("Too small by a lot", min_ts - timedelta(days=400).total_seconds()),
+            ("Too big by a little", max_ts + timedelta(days=1).total_seconds()),
+            ("Too big by a lot", max_ts + timedelta(days=400).total_seconds()),
+        ]
+
+        for test_name, ts in test_cases:
+            with self.subTest(test_name, ts=ts):
+                with self.assertRaises((ValueError, OverflowError)):
+                    # converting a Python int to C time_t can raise a
+                    # OverflowError, especially on 32-bit platforms.
+                    self.theclass.fromtimestamp(ts)
+
+    def test_utcfromtimestamp_limits(self):
+        try:
+            self.theclass.utcfromtimestamp(-2**32 - 1)
+        except (OSError, OverflowError):
+            self.skipTest("Test not valid on this platform")
+
         min_dt = self.theclass.min.replace(tzinfo=timezone.utc)
         min_ts = min_dt.timestamp()
-        try:
-            # date 0001-01-01 00:00:00+00:00: timestamp=-62135596800
-            self.assertEqual(self.theclass.fromtimestamp(min_ts, tz=timezone.utc),
-                             min_dt)
-        except (OverflowError, OSError) as exc:
-            # the date 0001-01-01 doesn't fit into 32-bit time_t,
-            # or platform doesn't support such very old date
-            self.skipTest(str(exc))
 
-        # maximum timestamp: set seconds to zero to avoid rounding issues
-        max_dt = self.theclass.max.replace(tzinfo=timezone.utc,
-                                           second=0, microsecond=0)
+        max_dt = self.theclass.max.replace(microsecond=0, tzinfo=timezone.utc)
         max_ts = max_dt.timestamp()
-        # date 9999-12-31 23:59:00+00:00: timestamp 253402300740
-        self.assertEqual(self.theclass.fromtimestamp(max_ts, tz=timezone.utc),
-                         max_dt)
 
-        # number of seconds greater than 1 year: make sure that the new date
-        # is not valid in datetime.datetime limits
-        delta = 3600 * 24 * 400
+        for (test_name, ts, expected) in [
+                ("minimum", min_ts, min_dt.replace(tzinfo=None)),
+                ("maximum", max_ts, max_dt.replace(tzinfo=None)),
+        ]:
+            with self.subTest(test_name, ts=ts, expected=expected):
+                try:
+                    actual = self.theclass.utcfromtimestamp(ts)
+                except (OSError, OverflowError) as exc:
+                    self.skipTest(str(exc))
 
-        # too small
-        ts = min_ts - delta
-        # converting a Python int to C time_t can raise a OverflowError,
-        # especially on 32-bit platforms.
-        with self.assertRaises((ValueError, OverflowError)):
-            self.theclass.fromtimestamp(ts)
-        with self.assertRaises((ValueError, OverflowError)):
-            self.theclass.utcfromtimestamp(ts)
+                self.assertEqual(actual, expected)
 
-        # too big
-        ts = max_dt.timestamp() + delta
-        with self.assertRaises((ValueError, OverflowError)):
-            self.theclass.fromtimestamp(ts)
-        with self.assertRaises((ValueError, OverflowError)):
-            self.theclass.utcfromtimestamp(ts)
+        # Test error conditions
+        test_cases = [
+            ("Too small by a little", min_ts - 1),
+            ("Too small by a lot", min_ts - timedelta(days=400).total_seconds()),
+            ("Too big by a little", max_ts + 1),
+            ("Too big by a lot", max_ts + timedelta(days=400).total_seconds()),
+        ]
+
+        for test_name, ts in test_cases:
+            with self.subTest(test_name, ts=ts):
+                with self.assertRaises((ValueError, OverflowError)):
+                    # converting a Python int to C time_t can raise a
+                    # OverflowError, especially on 32-bit platforms.
+                    self.theclass.utcfromtimestamp(ts)
 
     def test_insane_fromtimestamp(self):
         # It's possible that some platform maps time_t to double,
@@ -2722,6 +2786,7 @@ class TestDateTime(TestDate):
             tz = timezone(-timedelta(hours=2, seconds=s, microseconds=us))
             t = t.replace(tzinfo=tz)
             self.assertEqual(t.strftime("%z"), "-0200" + z)
+            self.assertEqual(t.strftime("%:z"), "-02:00:" + z)
 
         # bpo-34482: Check that surrogates don't cause a crash.
         try:
@@ -3460,14 +3525,17 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
     def test_strftime(self):
         t = self.theclass(1, 2, 3, 4)
         self.assertEqual(t.strftime('%H %M %S %f'), "01 02 03 000004")
-        # A naive object replaces %z and %Z with empty strings.
-        self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
+        # A naive object replaces %z, %:z and %Z with empty strings.
+        self.assertEqual(t.strftime("'%z' '%:z' '%Z'"), "'' '' ''")
 
         # bpo-34482: Check that surrogates don't cause a crash.
         try:
             t.strftime('%H\ud800%M')
         except UnicodeEncodeError:
             pass
+
+        # gh-85432: The parameter was named "fmt" in the pure-Python impl.
+        t.strftime(format="%f")
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
@@ -3879,10 +3947,10 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(repr(t4), d + "(0, 0, 0, 40)")
         self.assertEqual(repr(t5), d + "(0, 0, 0, 40, tzinfo=utc)")
 
-        self.assertEqual(t1.strftime("%H:%M:%S %%Z=%Z %%z=%z"),
-                                     "07:47:00 %Z=EST %z=-0500")
-        self.assertEqual(t2.strftime("%H:%M:%S %Z %z"), "12:47:00 UTC +0000")
-        self.assertEqual(t3.strftime("%H:%M:%S %Z %z"), "13:47:00 MET +0100")
+        self.assertEqual(t1.strftime("%H:%M:%S %%Z=%Z %%z=%z %%:z=%:z"),
+                                     "07:47:00 %Z=EST %z=-0500 %:z=-05:00")
+        self.assertEqual(t2.strftime("%H:%M:%S %Z %z %:z"), "12:47:00 UTC +0000 +00:00")
+        self.assertEqual(t3.strftime("%H:%M:%S %Z %z %:z"), "13:47:00 MET +0100 +01:00")
 
         yuck = FixedOffset(-1439, "%z %Z %%z%%Z")
         t1 = time(23, 59, tzinfo=yuck)

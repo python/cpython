@@ -22,13 +22,11 @@ import re
 import shlex
 import string
 import sys
-import tempfile
 import textwrap
 import traceback
 import types
 
 from types import *
-NoneType = type(None)
 
 # TODO:
 #
@@ -43,7 +41,6 @@ NoneType = type(None)
 
 version = '1'
 
-NoneType = type(None)
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {"args"}
@@ -349,6 +346,12 @@ class CRenderData:
         # "goto exit" if there are any.
         self.return_conversion = []
 
+        # The C statements required to do some operations
+        # after the end of parsing but before cleaning up.
+        # These operations may be, for example, memory deallocations which
+        # can only be done without any error happening during argument parsing.
+        self.post_parsing = []
+
         # The C statements required to clean up after the impl call.
         self.cleanup = []
 
@@ -496,7 +499,8 @@ def permute_optional_groups(left, required, right):
     result = []
 
     if not required:
-        assert not left
+        if left:
+            raise ValueError("required is empty but left is not")
 
     accumulator = []
     counts = set()
@@ -534,6 +538,65 @@ def normalize_snippet(s, *, indent=0):
     if indent:
         s = textwrap.indent(s, ' ' * indent)
     return s
+
+
+def declare_parser(f, *, hasformat=False):
+    """
+    Generates the code template for a static local PyArg_Parser variable,
+    with an initializer.  For core code (incl. builtin modules) the
+    kwtuple field is also statically initialized.  Otherwise
+    it is initialized at runtime.
+    """
+    if hasformat:
+        fname = ''
+        format_ = '.format = "{format_units}:{name}",'
+    else:
+        fname = '.fname = "{name}",'
+        format_ = ''
+
+    num_keywords = len([
+        p for p in f.parameters.values()
+        if not p.is_positional_only() and not p.is_vararg()
+    ])
+    if num_keywords == 0:
+        declarations = """
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+            #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+            #else
+            #  define KWTUPLE NULL
+            #endif
+        """
+    else:
+        declarations = """
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+            #define NUM_KEYWORDS %d
+            static struct {{
+                PyGC_Head _this_is_not_used;
+                PyObject_VAR_HEAD
+                PyObject *ob_item[NUM_KEYWORDS];
+            }} _kwtuple = {{
+                .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+                .ob_item = {{ {keywords_py} }},
+            }};
+            #undef NUM_KEYWORDS
+            #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+            #else  // !Py_BUILD_CORE
+            #  define KWTUPLE NULL
+            #endif  // !Py_BUILD_CORE
+        """ % num_keywords
+
+    declarations += """
+            static const char * const _keywords[] = {{{keywords_c} NULL}};
+            static _PyArg_Parser _parser = {{
+                .keywords = _keywords,
+                %s
+                .kwtuple = KWTUPLE,
+            }};
+            #undef KWTUPLE
+    """ % (format_ or fname)
+    return normalize_snippet(declarations)
 
 
 def wrap_declarations(text, length=78):
@@ -654,7 +717,7 @@ class CLanguage(Language):
         vararg = NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
-            if p.is_keyword_only() or vararg != NO_VARARG:
+            if p.is_keyword_only():
                 assert not p.is_positional_only()
                 if not p.is_optional():
                     min_kw_only = i - max_pos
@@ -761,6 +824,7 @@ class CLanguage(Language):
                     {modifications}
                     {return_value} = {c_basename}_impl({impl_arguments});
                     {return_conversion}
+                    {post_parsing}
 
                 {exit_label}
                     {cleanup}
@@ -896,12 +960,16 @@ class CLanguage(Language):
                     if not new_or_init:
                         parser_code.append(normalize_snippet("""
                             %s = PyTuple_New(%s);
+                            if (!%s) {{
+                                goto exit;
+                            }}
                             for (Py_ssize_t i = 0; i < %s; ++i) {{
-                                PyTuple_SET_ITEM(%s, i, args[%d + i]);
+                                PyTuple_SET_ITEM(%s, i, Py_NewRef(args[%d + i]));
                             }}
                             """ % (
                                 p.converter.parser_name,
                                 left_args,
+                                p.converter.parser_name,
                                 left_args,
                                 p.converter.parser_name,
                                 max_pos
@@ -950,13 +1018,14 @@ class CLanguage(Language):
             parser_definition = parser_body(parser_prototype, *parser_code)
 
         else:
-            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters))
+            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
             if vararg == NO_VARARG:
                 args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
                     min_pos,
                     max_pos,
                     min_kw_only
                 )
+                nargs = "nargs"
             else:
                 args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                     min_pos,
@@ -964,18 +1033,15 @@ class CLanguage(Language):
                     min_kw_only,
                     vararg
                 )
+                nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
             if not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
                 argname_fmt = 'args[%d]'
-                declarations = normalize_snippet("""
-                    static const char * const _keywords[] = {{{keywords} NULL}};
-                    static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
-                    PyObject *argsbuf[%s];
-                    """ % len(converters))
+                declarations = declare_parser(f)
+                declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
-                    pre_buffer = "0" if vararg != NO_VARARG else "nargs"
-                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
                     if (!args) {{
@@ -987,15 +1053,12 @@ class CLanguage(Language):
                 flags = "METH_VARARGS|METH_KEYWORDS"
                 parser_prototype = parser_prototype_keyword
                 argname_fmt = 'fastargs[%d]'
-                declarations = normalize_snippet("""
-                    static const char * const _keywords[] = {{{keywords} NULL}};
-                    static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
-                    PyObject *argsbuf[%s];
-                    PyObject * const *fastargs;
-                    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-                    """ % len(converters))
+                declarations = declare_parser(f)
+                declarations += "\nPyObject *argsbuf[%s];" % len(converters)
+                declarations += "\nPyObject * const *fastargs;"
+                declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if has_optional_kw:
-                    declarations += "\nPy_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
                     if (!fastargs) {{
@@ -1070,9 +1133,7 @@ class CLanguage(Language):
                 if add_label:
                     parser_code.append("%s:" % add_label)
             else:
-                declarations = (
-                    'static const char * const _keywords[] = {{{keywords} NULL}};\n'
-                    'static _PyArg_Parser _parser = {{"{format_units}:{name}", _keywords, 0}};')
+                declarations = declare_parser(f, hasformat=True)
                 if not new_or_init:
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
@@ -1395,7 +1456,11 @@ class CLanguage(Language):
         template_dict['declarations'] = format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
         template_dict['modifications'] = '\n\n'.join(data.modifications)
-        template_dict['keywords'] = ' '.join('"' + k + '",' for k in data.keywords)
+        template_dict['keywords_c'] = ' '.join('"' + k + '",'
+                                               for k in data.keywords)
+        keywords = [k for k in data.keywords if k]
+        template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
+                                                for k in keywords)
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)
         if data.parse_arguments:
@@ -1405,6 +1470,7 @@ class CLanguage(Language):
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
         template_dict['return_conversion'] = format_escape("".join(data.return_conversion).rstrip())
+        template_dict['post_parsing'] = format_escape("".join(data.post_parsing).rstrip())
         template_dict['cleanup'] = format_escape("".join(data.cleanup))
         template_dict['return_value'] = data.return_value
 
@@ -1429,6 +1495,7 @@ class CLanguage(Language):
                 return_conversion=template_dict['return_conversion'],
                 initializers=template_dict['initializers'],
                 modifications=template_dict['modifications'],
+                post_parsing=template_dict['post_parsing'],
                 cleanup=template_dict['cleanup'],
                 )
 
@@ -1628,10 +1695,16 @@ class BlockParser:
         def is_stop_line(line):
             # make sure to recognize stop line even if it
             # doesn't end with EOL (it could be the very end of the file)
-            if not line.startswith(stop_line):
+            if line.startswith(stop_line):
+                remainder = line[len(stop_line):]
+                if remainder and not remainder.isspace():
+                    fail(f"Garbage after stop line: {remainder!r}")
+                return True
+            else:
+                # gh-92256: don't allow incorrectly formatted stop lines
+                if line.lstrip().startswith(stop_line):
+                    fail(f"Whitespace is not allowed before the stop line: {line!r}")
                 return False
-            remainder = line[len(stop_line):]
-            return (not remainder) or remainder.isspace()
 
         # consume body of program
         while self.input:
@@ -1707,7 +1780,7 @@ class BlockPrinter:
         self.language = language
         self.f = f or io.StringIO()
 
-    def print_block(self, block):
+    def print_block(self, block, *, core_includes=False):
         input = block.input
         output = block.output
         dsl_name = block.dsl_name
@@ -1734,8 +1807,18 @@ class BlockPrinter:
         write(self.language.stop_line.format(dsl_name=dsl_name))
         write("\n")
 
+        output = ''
+        if core_includes:
+            output += textwrap.dedent("""
+                #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+                #  include "pycore_gc.h"            // PyGC_Head
+                #  include "pycore_runtime.h"       // _Py_ID()
+                #endif
+
+            """)
+
         input = ''.join(block.input)
-        output = ''.join(block.output)
+        output += ''.join(block.output)
         if output:
             if not output.endswith('\n'):
                 output += '\n'
@@ -2068,7 +2151,7 @@ impl_definition block
 
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block)
+                    printer_2.print_block(block, core_includes=True)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
         text = printer.f.getvalue()
@@ -2654,6 +2737,10 @@ class CConverter(metaclass=CConverterAutoRegister):
         # parse_arguments
         self.parse_argument(data.parse_arguments)
 
+        # post_parsing
+        if post_parsing := self.post_parsing():
+            data.post_parsing.append('/* Post parse cleanup for ' + name + ' */\n' + post_parsing.rstrip() + '\n')
+
         # cleanup
         cleanup = self.cleanup()
         if cleanup:
@@ -2745,7 +2832,15 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
-        If no initialization is necessary, returns an empty string.
+        If no modification is necessary, returns an empty string.
+        """
+        return ""
+
+    def post_parsing(self):
+        """
+        The C statements required to do some operations after the end of parsing but before cleaning up.
+        Return a string containing this code indented at column 0.
+        If no operation is necessary, return an empty string.
         """
         return ""
 
@@ -3345,10 +3440,10 @@ class str_converter(CConverter):
         if NoneType in accept and self.c_default == "Py_None":
             self.c_default = "NULL"
 
-    def cleanup(self):
+    def post_parsing(self):
         if self.encoding:
             name = self.name
-            return "".join(["if (", name, ") {\n   PyMem_FREE(", name, ");\n}\n"])
+            return f"PyMem_FREE({name});\n"
 
     def parse_arg(self, argname, displayname):
         if self.format_unit == 's':
@@ -3516,13 +3611,12 @@ class Py_UNICODE_converter(CConverter):
                 self.converter = '_PyUnicode_WideCharString_Opt_Converter'
             else:
                 fail("Py_UNICODE_converter: illegal 'accept' argument " + repr(accept))
+        self.c_default = "NULL"
 
     def cleanup(self):
         if not self.length:
             return """\
-#if !USE_UNICODE_WCHAR_CACHE
 PyMem_Free((void *){name});
-#endif /* USE_UNICODE_WCHAR_CACHE */
 """.format(name=self.name)
 
     def parse_arg(self, argname, argnum):
@@ -3533,11 +3627,7 @@ PyMem_Free((void *){name});
                         _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
                         goto exit;
                     }}}}
-                    #if USE_UNICODE_WCHAR_CACHE
-                    {paramname} = _PyUnicode_AsUnicode({argname});
-                    #else /* USE_UNICODE_WCHAR_CACHE */
                     {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                    #endif /* USE_UNICODE_WCHAR_CACHE */
                     if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}
@@ -3548,11 +3638,7 @@ PyMem_Free((void *){name});
                         {paramname} = NULL;
                     }}}}
                     else if (PyUnicode_Check({argname})) {{{{
-                        #if USE_UNICODE_WCHAR_CACHE
-                        {paramname} = _PyUnicode_AsUnicode({argname});
-                        #else /* USE_UNICODE_WCHAR_CACHE */
                         {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                        #endif /* USE_UNICODE_WCHAR_CACHE */
                         if ({paramname} == NULL) {{{{
                             goto exit;
                         }}}}
@@ -3830,17 +3916,6 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
         pass
 
 add_c_return_converter(CReturnConverter, 'object')
-
-class NoneType_return_converter(CReturnConverter):
-    def render(self, function, data):
-        self.declare(data)
-        data.return_conversion.append('''
-if (_return_value != Py_None) {
-    goto exit;
-}
-return_value = Py_None;
-Py_INCREF(Py_None);
-'''.strip())
 
 class bool_return_converter(CReturnConverter):
     type = 'int'
@@ -4125,7 +4200,7 @@ class DSLParser:
             self.block.output.append('\n')
             return
 
-        d = self.clinic.get_destination(destination)
+        d = self.clinic.get_destination_buffer(destination)
 
         if command_or_name == "everything":
             for name in list(fd):
@@ -4715,9 +4790,14 @@ class DSLParser:
 
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 
-        if parameter_name in self.function.parameters:
+        names = [k.name for k in self.function.parameters.values()]
+        if parameter_name in names[1:]:
             fail("You can't have two parameters named " + repr(parameter_name) + "!")
-        self.function.parameters[parameter_name] = p
+        elif names and parameter_name == names[0] and c_name is None:
+            fail(f"Parameter '{parameter_name}' requires a custom C name")
+
+        key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
+        self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
         if (hasattr(ast, 'Constant') and
@@ -5134,10 +5214,6 @@ clinic = None
 
 def main(argv):
     import sys
-
-    if sys.version_info.major < 3 or sys.version_info.minor < 3:
-        sys.exit("Error: clinic.py requires Python 3.3 or greater.")
-
     import argparse
     cmdline = argparse.ArgumentParser(
         description="""Preprocessor for CPython C files.

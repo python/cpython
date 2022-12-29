@@ -73,7 +73,7 @@ Dictionary Objects
    .. index:: single: PyUnicode_FromString()
 
    Insert *val* into the dictionary *p* using *key* as a key. *key* should
-   be a :c:type:`const char*`.  The key object is created using
+   be a :c:expr:`const char*`.  The key object is created using
    ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
    failure.  This function *does not* steal a reference to *val*.
 
@@ -118,7 +118,7 @@ Dictionary Objects
 .. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
 
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
-   :c:type:`const char*`, rather than a :c:type:`PyObject*`.
+   :c:expr:`const char*`, rather than a :c:expr:`PyObject*`.
 
    Note that exceptions which occur while calling :meth:`__hash__` and
    :meth:`__eq__` methods and creating a temporary string object
@@ -167,7 +167,7 @@ Dictionary Objects
    prior to the first call to this function to start the iteration; the
    function returns true for each pair in the dictionary, and false once all
    pairs have been reported.  The parameters *pkey* and *pvalue* should either
-   point to :c:type:`PyObject*` variables that will be filled in with each key
+   point to :c:expr:`PyObject*` variables that will be filled in with each key
    and value, respectively, or may be ``NULL``.  Any references returned through
    them are borrowed.  *ppos* should not be altered during iteration. Its
    value represents offsets within the internal dictionary structure, and
@@ -238,3 +238,73 @@ Dictionary Objects
           for key, value in seq2:
               if override or key not in a:
                   a[key] = value
+
+.. c:function:: int PyDict_AddWatcher(PyDict_WatchCallback callback)
+
+   Register *callback* as a dictionary watcher. Return a non-negative integer
+   id which must be passed to future calls to :c:func:`PyDict_Watch`. In case
+   of error (e.g. no more watcher IDs available), return ``-1`` and set an
+   exception.
+
+   .. versionadded:: 3.12
+
+.. c:function:: int PyDict_ClearWatcher(int watcher_id)
+
+   Clear watcher identified by *watcher_id* previously returned from
+   :c:func:`PyDict_AddWatcher`. Return ``0`` on success, ``-1`` on error (e.g.
+   if the given *watcher_id* was never registered.)
+
+   .. versionadded:: 3.12
+
+.. c:function:: int PyDict_Watch(int watcher_id, PyObject *dict)
+
+   Mark dictionary *dict* as watched. The callback granted *watcher_id* by
+   :c:func:`PyDict_AddWatcher` will be called when *dict* is modified or
+   deallocated. Return ``0`` on success or ``-1`` on error.
+
+   .. versionadded:: 3.12
+
+.. c:function:: int PyDict_Unwatch(int watcher_id, PyObject *dict)
+
+   Mark dictionary *dict* as no longer watched. The callback granted
+   *watcher_id* by :c:func:`PyDict_AddWatcher` will no longer be called when
+   *dict* is modified or deallocated. The dict must previously have been
+   watched by this watcher. Return ``0`` on success or ``-1`` on error.
+
+   .. versionadded:: 3.12
+
+.. c:type:: PyDict_WatchEvent
+
+   Enumeration of possible dictionary watcher events: ``PyDict_EVENT_ADDED``,
+   ``PyDict_EVENT_MODIFIED``, ``PyDict_EVENT_DELETED``, ``PyDict_EVENT_CLONED``,
+   ``PyDict_EVENT_CLEARED``, or ``PyDict_EVENT_DEALLOCATED``.
+
+   .. versionadded:: 3.12
+
+.. c:type:: int (*PyDict_WatchCallback)(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
+
+   Type of a dict watcher callback function.
+
+   If *event* is ``PyDict_EVENT_CLEARED`` or ``PyDict_EVENT_DEALLOCATED``, both
+   *key* and *new_value* will be ``NULL``. If *event* is ``PyDict_EVENT_ADDED``
+   or ``PyDict_EVENT_MODIFIED``, *new_value* will be the new value for *key*.
+   If *event* is ``PyDict_EVENT_DELETED``, *key* is being deleted from the
+   dictionary and *new_value* will be ``NULL``.
+
+   ``PyDict_EVENT_CLONED`` occurs when *dict* was previously empty and another
+   dict is merged into it. To maintain efficiency of this operation, per-key
+   ``PyDict_EVENT_ADDED`` events are not issued in this case; instead a
+   single ``PyDict_EVENT_CLONED`` is issued, and *key* will be the source
+   dictionary.
+
+   The callback may inspect but must not modify *dict*; doing so could have
+   unpredictable effects, including infinite recursion.
+
+   Callbacks occur before the notified modification to *dict* takes place, so
+   the prior state of *dict* can be inspected.
+
+   If the callback returns with an exception set, it must return ``-1``; this
+   exception will be printed as an unraisable exception using
+   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+
+   .. versionadded:: 3.12

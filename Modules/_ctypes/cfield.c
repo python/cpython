@@ -30,13 +30,6 @@ static void pymem_destructor(PyObject *ptr)
 /*
   PyCField_Type
 */
-static PyObject *
-PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    CFieldObject *obj;
-    obj = (CFieldObject *)type->tp_alloc(type, 0);
-    return (PyObject *)obj;
-}
 
 /*
  * Expects the size, index and offset for the current field in *psize and
@@ -68,7 +61,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
+    self = (CFieldObject *)PyCField_Type.tp_alloc((PyTypeObject *)&PyCField_Type, 0);
     if (self == NULL)
         return NULL;
     dict = PyType_stgdict(desc);
@@ -144,8 +137,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     self->getfunc = getfunc;
     self->index = index;
 
-    Py_INCREF(proto);
-    self->proto = proto;
+    self->proto = Py_NewRef(proto);
 
     switch (fieldtype) {
     case NEW_BITFIELD:
@@ -231,8 +223,7 @@ PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
 {
     CDataObject *src;
     if (inst == NULL) {
-        Py_INCREF(self);
-        return (PyObject *)self;
+        return Py_NewRef(self);
     }
     if (!CDataObject_Check(inst)) {
         PyErr_SetString(PyExc_TypeError,
@@ -279,6 +270,7 @@ PyCField_clear(CFieldObject *self)
 static void
 PyCField_dealloc(PyObject *self)
 {
+    PyObject_GC_UnTrack(self);
     PyCField_clear((CFieldObject *)self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -342,7 +334,7 @@ PyTypeObject PyCField_Type = {
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
-    PyCField_new,                               /* tp_new */
+    0,                                          /* tp_new */
     0,                                          /* tp_free */
 };
 
@@ -1096,8 +1088,7 @@ O_get(void *ptr, Py_ssize_t size)
                             "PyObject is NULL");
         return NULL;
     }
-    Py_INCREF(ob);
-    return ob;
+    return Py_NewRef(ob);
 }
 
 static PyObject *
@@ -1105,8 +1096,7 @@ O_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     /* Hm, does the memory block need it's own refcount or not? */
     *(PyObject **)ptr = value;
-    Py_INCREF(value);
-    return value;
+    return Py_NewRef(value);
 }
 
 
@@ -1232,8 +1222,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
         return NULL;
     }
 
-    Py_INCREF(value);
-    return value;
+    return Py_NewRef(value);
 }
 
 
@@ -1291,13 +1280,11 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     if (value == Py_None) {
         *(char **)ptr = NULL;
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     }
     if (PyBytes_Check(value)) {
         *(const char **)ptr = PyBytes_AsString(value);
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     } else if (PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
         *(char **)ptr = (char *)PyLong_AsUnsignedLongLongMask(value);
@@ -1333,8 +1320,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 
     if (value == Py_None) {
         *(wchar_t **)ptr = NULL;
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     }
     if (PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG

@@ -26,8 +26,6 @@ from test.support import threading_helper
 from test.support import warnings_helper
 from http.client import HTTPException
 
-# Were we compiled --with-pydebug or with #define Py_DEBUG?
-COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
 # default builtin hash module
 default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
@@ -109,7 +107,7 @@ class HashLibTestCase(unittest.TestCase):
     shakes = {'shake_128', 'shake_256'}
 
     # Issue #14693: fallback modules are always compiled under POSIX
-    _warn_on_extension_import = os.name == 'posix' or COMPILED_WITH_PYDEBUG
+    _warn_on_extension_import = (os.name == 'posix' or support.Py_DEBUG)
 
     def _conditional_import_module(self, module_name):
         """Import a module and return a reference to it or None on failure."""
@@ -1098,15 +1096,7 @@ class KDFTests(unittest.TestCase):
                 iterations=1, dklen=None)
             self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
 
-    @unittest.skipIf(builtin_hashlib is None, "test requires builtin_hashlib")
-    def test_pbkdf2_hmac_py(self):
-        with warnings_helper.check_warnings():
-            self._test_pbkdf2_hmac(
-                builtin_hashlib.pbkdf2_hmac, builtin_hashes
-            )
-
-    @unittest.skipUnless(hasattr(openssl_hashlib, 'pbkdf2_hmac'),
-                     '   test requires OpenSSL > 1.0')
+    @unittest.skipIf(openssl_hashlib is None, "requires OpenSSL bindings")
     def test_pbkdf2_hmac_c(self):
         self._test_pbkdf2_hmac(openssl_hashlib.pbkdf2_hmac, openssl_md_meth_names)
 

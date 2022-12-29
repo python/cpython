@@ -2,6 +2,47 @@
 Configure Python
 ****************
 
+Build Requirements
+==================
+
+Features required to build CPython:
+
+* A `C11 <https://en.cppreference.com/w/c/11>`_ compiler. `Optional C11
+  features
+  <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
+  are not required.
+
+* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
+  point numbers and `floating point Not-a-Number (NaN)
+  <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
+
+* Support for threads.
+
+* OpenSSL 1.1.1 or newer for the :mod:`ssl` and :mod:`hashlib` modules.
+
+* On Windows, Microsoft Visual Studio 2017 or later is required.
+
+.. versionchanged:: 3.11
+   C11 compiler, IEEE 754 and NaN support are now required.
+   On Windows, Visual Studio 2017 or later is required.
+
+.. versionchanged:: 3.10
+   OpenSSL 1.1.1 is now required.
+
+.. versionchanged:: 3.7
+   Thread support and OpenSSL 1.0.2 are now required.
+
+.. versionchanged:: 3.6
+   Selected C99 features are now required, like ``<stdint.h>`` and ``static
+   inline`` functions.
+
+.. versionchanged:: 3.5
+   On Windows, Visual Studio 2015 or later is required.
+
+See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
+support".
+
+
 .. _configure-options:
 
 Configure Options
@@ -40,12 +81,6 @@ General Options
    Define the ``PYLONG_BITS_IN_DIGIT`` to ``15`` or ``30``.
 
    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
-
-.. cmdoption:: --with-cxx-main
-.. cmdoption:: --with-cxx-main=COMPILER
-
-   Compile the Python ``main()`` function and link Python executable with C++
-   compiler: ``$CXX``, or *COMPILER* if specified.
 
 .. cmdoption:: --with-suffix=SUFFIX
 
@@ -99,6 +134,12 @@ General Options
 
    See :envvar:`PYTHONCOERCECLOCALE` and the :pep:`538`.
 
+.. cmdoption:: --without-freelists
+
+   Disable all freelists except the empty tuple singleton.
+
+   .. versionadded:: 3.11
+
 .. cmdoption:: --with-platlibdir=DIRNAME
 
    Python library directory name (default is ``lib``).
@@ -137,7 +178,8 @@ General Options
    Turn on internal statistics gathering.
 
    The statistics will be dumped to a arbitrary (probably unique) file in
-   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
+   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows. If that directory
+   does not exist, results will be printed on stdout.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
 
@@ -197,7 +239,8 @@ Performance options
 -------------------
 
 Configuring Python using ``--enable-optimizations --with-lto`` (PGO + LTO) is
-recommended for best performance.
+recommended for best performance. The experimental ``--enable-bolt`` flag can
+also be used to improve performance.
 
 .. cmdoption:: --enable-optimizations
 
@@ -236,6 +279,27 @@ recommended for best performance.
 
    .. versionadded:: 3.11
       To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
+
+   .. versionchanged:: 3.12
+      Use ThinLTO as the default optimization policy on Clang if the compiler accepts the flag.
+
+.. cmdoption:: --enable-bolt
+
+   Enable usage of the `BOLT post-link binary optimizer
+   <https://github.com/llvm/llvm-project/tree/main/bolt>`_ (disabled by
+   default).
+
+   BOLT is part of the LLVM project but is not always included in their binary
+   distributions. This flag requires that ``llvm-bolt`` and ``merge-fdata``
+   are available.
+
+   BOLT is still a fairly new project so this flag should be considered
+   experimental for now. Because this tool operates on machine code its success
+   is dependent on a combination of the build environment + the other
+   optimization configure args + the CPU architecture, and not all combinations
+   are supported.
+
+   .. versionadded:: 3.12
 
 .. cmdoption:: --with-computed-gotos
 
@@ -278,7 +342,8 @@ Effects of a debug build:
 * Add ``d`` to :data:`sys.abiflags`.
 * Add :func:`sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
-* Add :envvar:`PYTHONTHREADDEBUG` environment variable.
+* Add :option:`-d` command line option and :envvar:`PYTHONDEBUG` environment
+  variable to debug the parser.
 * Add support for the ``__lltrace__`` variable: enable low-level tracing in the
   bytecode evaluation loop if the variable is defined.
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
@@ -405,11 +470,6 @@ Libraries options
 
    Build the :mod:`pyexpat` module using an installed ``expat`` library
    (default is no).
-
-.. cmdoption:: --with-system-ffi
-
-   Build the :mod:`_ctypes` extension module using an installed ``ffi``
-   library, see the :mod:`ctypes` module (default is system-dependent).
 
 .. cmdoption:: --with-system-libmpdec
 
@@ -598,7 +658,7 @@ Main files of the build system
 * :file:`pyconfig.h` (created by :file:`configure`);
 * :file:`Modules/Setup`: C extensions built by the Makefile using
   :file:`Module/makesetup` shell script;
-* :file:`setup.py`: C extensions built using the :mod:`distutils` module.
+* :file:`setup.py`: C extensions built using the ``setuptools`` package.
 
 Main build steps
 ----------------
@@ -720,21 +780,9 @@ Compiler flags
 
    Example: ``gcc -pthread``.
 
-.. envvar:: MAINCC
-
-   C compiler command used to build the ``main()`` function of programs like
-   ``python``.
-
-   Variable set by the :option:`--with-cxx-main` option of the configure
-   script.
-
-   Default: ``$(CC)``.
-
 .. envvar:: CXX
 
    C++ compiler command.
-
-   Used if the :option:`--with-cxx-main` option is used.
 
    Example: ``g++ -pthread``.
 
@@ -748,7 +796,25 @@ Compiler flags
    extensions.  Use it when a compiler flag should *not* be part of the
    distutils :envvar:`CFLAGS` once Python is installed (:issue:`21121`).
 
+   In particular, :envvar:`CFLAGS` should not contain:
+
+   * the compiler flag ``-I`` (for setting the search path for include files).
+     The ``-I`` flags are processed from left to right, and any flags in
+     :envvar:`CFLAGS` would take precedence over user- and package-supplied ``-I``
+     flags.
+
+   * hardening flags such as ``-Werror`` because distributions cannot control
+     whether packages installed by users conform to such heightened
+     standards.
+
    .. versionadded:: 3.5
+
+.. envvar:: COMPILEALL_OPTS
+
+   Options passed to the :mod:`compileall` command line when building PYC files
+   in ``make install``. Default: ``-j0``.
+
+   .. versionadded:: 3.12
 
 .. envvar:: EXTRA_CFLAGS
 
@@ -842,7 +908,7 @@ Linker flags
 
    Linker command used to build programs like ``python`` and ``_testembed``.
 
-   Default: ``$(PURIFY) $(MAINCC)``.
+   Default: ``$(PURIFY) $(CC)``.
 
 .. envvar:: CONFIGURE_LDFLAGS
 
@@ -859,6 +925,13 @@ Linker flags
    :envvar:`LDFLAGS_NODIST` is used in the same manner as
    :envvar:`CFLAGS_NODIST`.  Use it when a linker flag should *not* be part of
    the distutils :envvar:`LDFLAGS` once Python is installed (:issue:`35257`).
+
+   In particular, :envvar:`LDFLAGS` should not contain:
+
+   * the compiler flag ``-L`` (for setting the search path for libraries).
+     The ``-L`` flags are processed from left to right, and any flags in
+     :envvar:`LDFLAGS` would take precedence over user- and package-supplied ``-L``
+     flags.
 
 .. envvar:: CONFIGURE_LDFLAGS_NODIST
 

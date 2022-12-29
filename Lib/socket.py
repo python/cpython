@@ -28,6 +28,7 @@ socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
+create_server() -- create a TCP socket and bind it to a specified address.
 
  [*] not available on all platforms!
 
@@ -122,7 +123,7 @@ if sys.platform.lower().startswith("win"):
     errorTab[10014] = "A fault occurred on the network??"  # WSAEFAULT
     errorTab[10022] = "An invalid operation was attempted."
     errorTab[10024] = "Too many open files."
-    errorTab[10035] = "The socket operation would block"
+    errorTab[10035] = "The socket operation would block."
     errorTab[10036] = "A blocking operation is already in progress."
     errorTab[10037] = "Operation already in progress."
     errorTab[10038] = "Socket operation on nonsocket."
@@ -254,17 +255,18 @@ class socket(_socket.socket):
                self.type,
                self.proto)
         if not closed:
+            # getsockname and getpeername may not be available on WASI.
             try:
                 laddr = self.getsockname()
                 if laddr:
                     s += ", laddr=%s" % str(laddr)
-            except error:
+            except (error, AttributeError):
                 pass
             try:
                 raddr = self.getpeername()
                 if raddr:
                     s += ", raddr=%s" % str(raddr)
-            except error:
+            except (error, AttributeError):
                 pass
         s += '>'
         return s
@@ -783,11 +785,11 @@ def getfqdn(name=''):
 
     First the hostname returned by gethostbyaddr() is checked, then
     possibly existing aliases. In case no FQDN is available and `name`
-    was given, it is returned unchanged. If `name` was empty or '0.0.0.0',
+    was given, it is returned unchanged. If `name` was empty, '0.0.0.0' or '::',
     hostname from gethostname() is returned.
     """
     name = name.strip()
-    if not name or name == '0.0.0.0':
+    if not name or name in ('0.0.0.0', '::'):
         name = gethostname()
     try:
         hostname, aliases, ipaddrs = gethostbyaddr(name)

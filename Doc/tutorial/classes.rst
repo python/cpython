@@ -119,12 +119,12 @@ directly accessible:
 
 * the innermost scope, which is searched first, contains the local names
 * the scopes of any enclosing functions, which are searched starting with the
-  nearest enclosing scope, contains non-local, but also non-global names
+  nearest enclosing scope, contain non-local, but also non-global names
 * the next-to-last scope contains the current module's global names
 * the outermost scope (searched last) is the namespace containing built-in names
 
 If a name is declared global, then all references and assignments go directly to
-the middle scope containing the module's global names.  To rebind variables
+the next-to-last scope containing the module's global names.  To rebind variables
 found outside of the innermost scope, the :keyword:`nonlocal` statement can be
 used; if not declared nonlocal, those variables are read-only (an attempt to
 write to such a variable will simply create a *new* local variable in the
@@ -297,7 +297,7 @@ initial state. Therefore a class may define a special method named
        self.data = []
 
 When a class defines an :meth:`__init__` method, class instantiation
-automatically invokes :meth:`__init__` for the newly-created class instance.  So
+automatically invokes :meth:`__init__` for the newly created class instance.  So
 in this example, a new, initialized instance can be obtained by::
 
    x = MyClass()
@@ -479,9 +479,9 @@ If the same attribute name occurs in both an instance and in a class,
 then attribute lookup prioritizes the instance::
 
     >>> class Warehouse:
-            purpose = 'storage'
-            region = 'west'
-
+    ...    purpose = 'storage'
+    ...    region = 'west'
+    ...
     >>> w1 = Warehouse()
     >>> print(w1.purpose, w1.region)
     storage west
@@ -581,7 +581,8 @@ this::
        .
        <statement-N>
 
-The name :class:`BaseClassName` must be defined in a scope containing the
+The name :class:`BaseClassName` must be defined in a
+namespace accessible from the scope containing the
 derived class definition.  In place of a base class name, other arbitrary
 expressions are also allowed.  This can be useful, for example, when the base
 class is defined in another module::
@@ -737,18 +738,24 @@ Odds and Ends
 =============
 
 Sometimes it is useful to have a data type similar to the Pascal "record" or C
-"struct", bundling together a few named data items.  An empty class definition
-will do nicely::
+"struct", bundling together a few named data items. The idiomatic approach
+is to use :mod:`dataclasses` for this purpose::
 
-   class Employee:
-       pass
+    from dataclasses import dataclasses
 
-   john = Employee()  # Create an empty employee record
+    @dataclass
+    class Employee:
+        name: str
+        dept: str
+        salary: int
 
-   # Fill the fields of the record
-   john.name = 'John Doe'
-   john.dept = 'computer lab'
-   john.salary = 1000
+::
+
+    >>> john = Employee('john', 'computer lab', 1000)
+    >>> john.dept
+    'computer lab'
+    >>> john.salary
+    1000
 
 A piece of Python code that expects a particular abstract data type can often be
 passed a class that emulates the methods of that data type instead.  For

@@ -1,4 +1,4 @@
-This is Python version 3.12.0 alpha 0
+This is Python version 3.12.0 alpha 3
 =====================================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
@@ -65,7 +65,7 @@ Building a complete Python installation requires the use of various
 additional third-party libraries, depending on your build platform and
 configure options.  Not all standard library modules are buildable or
 useable on all platforms.  Refer to the
-`Install dependencies <https://devguide.python.org/setup/#install-dependencies>`_
+`Install dependencies <https://devguide.python.org/getting-started/setup-building.html#build-dependencies>`_
 section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
 
@@ -135,7 +135,7 @@ What's New
 We have a comprehensive overview of the changes in the `What's New in Python
 3.12 <https://docs.python.org/3.12/whatsnew/3.12.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/main/Misc/NEWS.d>`_, but a full
+<https://github.com/python/cpython/tree/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/main>`_.
 
@@ -189,7 +189,7 @@ your environment, you can `file a bug report
 <https://github.com/python/cpython/issues>`_ and include relevant output from
 that command to show the issue.
 
-See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
+See `Running & Writing Tests <https://devguide.python.org/testing/run-write-tests.html>`_
 for more on running tests.
 
 Installing multiple versions
@@ -201,7 +201,7 @@ script) you must take care that your primary python executable is not
 overwritten by the installation of a different version.  All files and
 directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
-``${prefix}/bin/python3`` which refers to ``${prefix}/bin/pythonX.Y``.  If you
+``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.  If you
 intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
@@ -238,7 +238,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`664` for Python 3.12 release details.
+See :pep:`693` for Python 3.12 release details.
 
 
 Copyright and License Information

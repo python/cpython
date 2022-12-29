@@ -83,13 +83,23 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
 .. c:var:: int Py_BytesWarningFlag
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.bytes_warning` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
+
    Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
    :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
    or equal to ``2``.
 
    Set by the :option:`-b` option.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_DebugFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.parser_debug` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Turn on parser debugging output (for expert only, depending on compilation
    options).
@@ -97,7 +107,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
    variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_DontWriteBytecodeFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.write_bytecode` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    If set to non-zero, Python won't try to write ``.pyc`` files on the
    import of source modules.
@@ -105,14 +121,27 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
    environment variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_FrozenFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.pathconfig_warnings` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Suppress error messages when calculating the module search path in
    :c:func:`Py_GetPath`.
 
    Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_HashRandomizationFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.hash_seed` and :c:member:`PyConfig.use_hash_seed` should
+   be used instead, see :ref:`Python Initialization Configuration
+   <init-config>`.
 
    Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
    a non-empty string.
@@ -120,14 +149,26 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
    variable to initialize the secret hash seed.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_IgnoreEnvironmentFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.use_environment` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    Set by the :option:`-E` and :option:`-I` options.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_InspectFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.inspect` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    When a script is passed as first argument or the :option:`-c` option is used,
    enter interactive mode after executing the script or the command, even when
@@ -136,11 +177,23 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
    variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_InteractiveFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.interactive` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Set by the :option:`-i` option.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_IsolatedFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.isolated` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Run Python in isolated mode. In isolated mode :data:`sys.path` contains
    neither the script's directory nor the user's site-packages directory.
@@ -149,7 +202,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.4
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_LegacyWindowsFSEncodingFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyPreConfig.legacy_windows_fs_encoding` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    If the flag is non-zero, use the ``mbcs`` encoding with ``replace`` error
    handler, instead of the UTF-8 encoding with ``surrogatepass`` error handler,
@@ -162,7 +221,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_LegacyWindowsStdioFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.legacy_windows_stdio` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    If the flag is non-zero, use :class:`io.FileIO` instead of
    :class:`WindowsConsoleIO` for :mod:`sys` standard streams.
@@ -174,7 +239,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_NoSiteFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.site_import` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Disable the import of the module :mod:`site` and the site-dependent
    manipulations of :data:`sys.path` that it entails.  Also disable these
@@ -183,7 +254,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-S` option.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_NoUserSiteDirectory
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.user_site_directory` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Don't add the :data:`user site-packages directory <site.USER_SITE>` to
    :data:`sys.path`.
@@ -191,12 +268,24 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-s` and :option:`-I` options, and the
    :envvar:`PYTHONNOUSERSITE` environment variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_OptimizeFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.optimization_level` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
    variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_QuietFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.quiet` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Don't display the copyright and version messages even in interactive mode.
 
@@ -204,14 +293,26 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.2
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_UnbufferedStdioFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.buffered_stdio` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Force the stdout and stderr streams to be unbuffered.
 
    Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
    environment variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_VerboseFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.verbose` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Print a message each time a module is initialized, showing the place
    (filename or built-in module) from which it is loaded.  If greater or equal
@@ -220,6 +321,8 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
    variable.
+
+   .. deprecated:: 3.12
 
 
 Initializing and finalizing the interpreter
@@ -253,6 +356,9 @@ Initializing and finalizing the interpreter
    (without calling :c:func:`Py_FinalizeEx` first).  There is no return value; it is a
    fatal error if the initialization fails.
 
+   Use the :c:func:`Py_InitializeFromConfig` function to customize the
+   :ref:`Python Initialization Configuration <init-config>`.
+
    .. note::
       On Windows, changes the console mode from ``O_TEXT`` to ``O_BINARY``, which will
       also affect non-Python uses of the console using the C Runtime.
@@ -263,6 +369,9 @@ Initializing and finalizing the interpreter
    This function works like :c:func:`Py_Initialize` if *initsigs* is ``1``. If
    *initsigs* is ``0``, it skips initialization registration of signal handlers, which
    might be useful when Python is embedded.
+
+   Use the :c:func:`Py_InitializeFromConfig` function to customize the
+   :ref:`Python Initialization Configuration <init-config>`.
 
 
 .. c:function:: int Py_IsInitialized()
@@ -376,7 +485,7 @@ Process-wide parameters
    interpreter will change the contents of this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    .. deprecated:: 3.11
 
@@ -527,7 +636,7 @@ Process-wide parameters
    if required after calling :c:func:`Py_Initialize`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    The path argument is copied internally, so the caller may free it after the
    call completes.
@@ -642,7 +751,7 @@ Process-wide parameters
      directory (``"."``).
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
@@ -678,7 +787,7 @@ Process-wide parameters
    :option:`-I`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
@@ -704,7 +813,7 @@ Process-wide parameters
    this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    .. deprecated:: 3.11
 
@@ -847,11 +956,11 @@ from a C thread is::
    /* Release the thread. No Python API allowed beyond this point. */
    PyGILState_Release(gstate);
 
-Note that the :c:func:`PyGILState_\*` functions assume there is only one global
+Note that the ``PyGILState_*`` functions assume there is only one global
 interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
-:c:func:`PyGILState_\*` API is unsupported.
+``PyGILState_*`` API is unsupported.
 
 
 .. _fork-and-threads:
@@ -914,7 +1023,7 @@ code, or when embedding the Python interpreter:
 .. c:type:: PyThreadState
 
    This data structure represents the state of a single thread.  The only public
-   data member is :attr:`interp` (:c:type:`PyInterpreterState *`), which points to
+   data member is :attr:`interp` (:c:expr:`PyInterpreterState *`), which points to
    this thread's interpreter state.
 
 
@@ -1291,8 +1400,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    exception (if any) for the thread is cleared. This raises no exceptions.
 
    .. versionchanged:: 3.7
-      The type of the *id* parameter changed from :c:type:`long` to
-      :c:type:`unsigned long`.
+      The type of the *id* parameter changed from :c:expr:`long` to
+      :c:expr:`unsigned long`.
 
 .. c:function:: void PyEval_AcquireThread(PyThreadState *tstate)
 
@@ -1478,7 +1587,7 @@ operations executed by such objects may affect the wrong (sub-)interpreter's
 dictionary of loaded modules. It is equally important to avoid sharing
 objects from which the above are reachable.
 
-Also note that combining this functionality with :c:func:`PyGILState_\*` APIs
+Also note that combining this functionality with ``PyGILState_*`` APIs
 is delicate, because these APIs assume a bijection between Python thread states
 and OS-level threads, an assumption broken by the presence of sub-interpreters.
 It is highly recommended that you don't switch sub-interpreters between a pair
@@ -1665,6 +1774,18 @@ Python-level trace functions in previous versions.
 
    The caller must hold the :term:`GIL`.
 
+.. c:function:: void PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *obj)
+
+   Like :c:func:`PyEval_SetProfile` but sets the profile function in all running threads
+   belonging to the current interpreter instead of the setting it only on the current thread.
+
+   The caller must hold the :term:`GIL`.
+
+   As :c:func:`PyEval_SetProfile`, this function ignores any exceptions raised while
+   setting the profile functions in all threads.
+
+.. versionadded:: 3.12
+
 
 .. c:function:: void PyEval_SetTrace(Py_tracefunc func, PyObject *obj)
 
@@ -1678,6 +1799,18 @@ Python-level trace functions in previous versions.
    See also the :func:`sys.settrace` function.
 
    The caller must hold the :term:`GIL`.
+
+.. c:function:: void PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *obj)
+
+   Like :c:func:`PyEval_SetTrace` but sets the tracing function in all running threads
+   belonging to the current interpreter instead of the setting it only on the current thread.
+
+   The caller must hold the :term:`GIL`.
+
+   As :c:func:`PyEval_SetTrace`, this function ignores any exceptions raised while
+   setting the trace functions in all threads.
+
+.. versionadded:: 3.12
 
 
 .. _advanced-debugging:
@@ -1730,7 +1863,7 @@ The Python interpreter provides low-level support for thread-local storage
 (TLS) which wraps the underlying native TLS implementation to support the
 Python-level thread local storage API (:class:`threading.local`).  The
 CPython C level APIs are similar to those offered by pthreads and Windows:
-use a thread key and functions to associate a :c:type:`void*` value per
+use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
 
 The GIL does *not* need to be held when calling these functions; they supply
@@ -1741,8 +1874,8 @@ you need to include :file:`pythread.h` to use thread-local storage.
 
 .. note::
    None of these API functions handle memory management on behalf of the
-   :c:type:`void*` values.  You need to allocate and deallocate them yourself.
-   If the :c:type:`void*` values happen to be :c:type:`PyObject*`, these
+   :c:expr:`void*` values.  You need to allocate and deallocate them yourself.
+   If the :c:expr:`void*` values happen to be :c:expr:`PyObject*`, these
    functions don't do refcount operations on them either.
 
 .. _thread-specific-storage-api:
@@ -1752,7 +1885,7 @@ Thread Specific Storage (TSS) API
 
 TSS API is introduced to supersede the use of the existing TLS API within the
 CPython interpreter.  This API uses a new type :c:type:`Py_tss_t` instead of
-:c:type:`int` to represent thread keys.
+:c:expr:`int` to represent thread keys.
 
 .. versionadded:: 3.7
 
@@ -1796,11 +1929,11 @@ is not possible due to its implementation being opaque at build time.
    Free the given *key* allocated by :c:func:`PyThread_tss_alloc`, after
    first calling :c:func:`PyThread_tss_delete` to ensure any associated
    thread locals have been unassigned. This is a no-op if the *key*
-   argument is `NULL`.
+   argument is ``NULL``.
 
    .. note::
       A freed key becomes a dangling pointer. You should reset the key to
-      `NULL`.
+      ``NULL``.
 
 
 Methods
@@ -1838,14 +1971,14 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
 
 .. c:function:: int PyThread_tss_set(Py_tss_t *key, void *value)
 
-   Return a zero value to indicate successfully associating a :c:type:`void*`
+   Return a zero value to indicate successfully associating a :c:expr:`void*`
    value with a TSS key in the current thread.  Each thread has a distinct
-   mapping of the key to a :c:type:`void*` value.
+   mapping of the key to a :c:expr:`void*` value.
 
 
 .. c:function:: void* PyThread_tss_get(Py_tss_t *key)
 
-   Return the :c:type:`void*` value associated with a TSS key in the current
+   Return the :c:expr:`void*` value associated with a TSS key in the current
    thread.  This returns ``NULL`` if no value is associated with the key in the
    current thread.
 
