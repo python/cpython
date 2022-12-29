@@ -451,7 +451,7 @@ Major performance enhancements have been added:
 * The :mod:`json` module now has a C extension to substantially improve
   its performance.  In addition, the API was modified so that json works
   only with :class:`str`, not with :class:`bytes`.  That change makes the
-  module closely match the `JSON specification <http://json.org/>`_
+  module closely match the `JSON specification <https://json.org/>`_
   which is defined in terms of Unicode.
 
   (Contributed by Bob Ippolito and converted to Py3.1 by Antoine Pitrou

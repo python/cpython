@@ -1,3 +1,4 @@
+#define PY_SSIZE_T_CLEAN
 #include "parts.h"
 
 static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
@@ -99,6 +100,17 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
+
+/* Test PyUnicode_FromObject() */
+static PyObject *
+unicode_fromobject(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    return PyUnicode_FromObject(arg);
+}
+
+/* Test PyUnicode_AsWideChar() */
 static PyObject *
 unicode_aswidechar(PyObject *self, PyObject *args)
 {
@@ -130,6 +142,7 @@ unicode_aswidechar(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", result, size);
 }
 
+/* Test PyUnicode_AsWideCharString() */
 static PyObject *
 unicode_aswidecharstring(PyObject *self, PyObject *args)
 {
@@ -151,6 +164,7 @@ unicode_aswidecharstring(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", result, size);
 }
 
+/* Test PyUnicode_AsUCS4() */
 static PyObject *
 unicode_asucs4(PyObject *self, PyObject *args)
 {
@@ -181,6 +195,7 @@ unicode_asucs4(PyObject *self, PyObject *args)
     return result;
 }
 
+/* Test PyUnicode_AsUTF8() */
 static PyObject *
 unicode_asutf8(PyObject *self, PyObject *args)
 {
@@ -199,6 +214,7 @@ unicode_asutf8(PyObject *self, PyObject *args)
     return PyBytes_FromString(buffer);
 }
 
+/* Test PyUnicode_AsUTF8AndSize() */
 static PyObject *
 unicode_asutf8andsize(PyObject *self, PyObject *args)
 {
@@ -223,6 +239,228 @@ unicode_asutf8andsize(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", result, utf8_len);
 }
 
+/* Test PyUnicode_DecodeUTF8() */
+static PyObject *
+unicode_decodeutf8(PyObject *self, PyObject *args)
+{
+    const char *data;
+    Py_ssize_t size;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
+        return NULL;
+
+    return PyUnicode_DecodeUTF8(data, size, errors);
+}
+
+/* Test PyUnicode_DecodeUTF8Stateful() */
+static PyObject *
+unicode_decodeutf8stateful(PyObject *self, PyObject *args)
+{
+    const char *data;
+    Py_ssize_t size;
+    const char *errors = NULL;
+    Py_ssize_t consumed = 123456789;
+    PyObject *result;
+
+    if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
+        return NULL;
+
+    result = PyUnicode_DecodeUTF8Stateful(data, size, errors, &consumed);
+    if (!result) {
+        return NULL;
+    }
+    return Py_BuildValue("(Nn)", result, consumed);
+}
+
+/* Test PyUnicode_Concat() */
+static PyObject *
+unicode_concat(PyObject *self, PyObject *args)
+{
+    PyObject *left;
+    PyObject *right;
+
+    if (!PyArg_ParseTuple(args, "OO", &left, &right))
+        return NULL;
+
+    NULLABLE(left);
+    NULLABLE(right);
+    return PyUnicode_Concat(left, right);
+}
+
+/* Test PyUnicode_Split() */
+static PyObject *
+unicode_split(PyObject *self, PyObject *args)
+{
+    PyObject *s;
+    PyObject *sep;
+    Py_ssize_t maxsplit = -1;
+
+    if (!PyArg_ParseTuple(args, "OO|n", &s, &sep, &maxsplit))
+        return NULL;
+
+    NULLABLE(s);
+    NULLABLE(sep);
+    return PyUnicode_Split(s, sep, maxsplit);
+}
+
+/* Test PyUnicode_RSplit() */
+static PyObject *
+unicode_rsplit(PyObject *self, PyObject *args)
+{
+    PyObject *s;
+    PyObject *sep;
+    Py_ssize_t maxsplit = -1;
+
+    if (!PyArg_ParseTuple(args, "OO|n", &s, &sep, &maxsplit))
+        return NULL;
+
+    NULLABLE(s);
+    NULLABLE(sep);
+    return PyUnicode_RSplit(s, sep, maxsplit);
+}
+
+/* Test PyUnicode_Splitlines() */
+static PyObject *
+unicode_splitlines(PyObject *self, PyObject *args)
+{
+    PyObject *s;
+    int keepends = 0;
+
+    if (!PyArg_ParseTuple(args, "O|i", &s, &keepends))
+        return NULL;
+
+    NULLABLE(s);
+    return PyUnicode_Splitlines(s, keepends);
+}
+
+/* Test PyUnicode_Partition() */
+static PyObject *
+unicode_partition(PyObject *self, PyObject *args)
+{
+    PyObject *s;
+    PyObject *sep;
+
+    if (!PyArg_ParseTuple(args, "OO", &s, &sep))
+        return NULL;
+
+    NULLABLE(s);
+    NULLABLE(sep);
+    return PyUnicode_Partition(s, sep);
+}
+
+/* Test PyUnicode_RPartition() */
+static PyObject *
+unicode_rpartition(PyObject *self, PyObject *args)
+{
+    PyObject *s;
+    PyObject *sep;
+
+    if (!PyArg_ParseTuple(args, "OO", &s, &sep))
+        return NULL;
+
+    NULLABLE(s);
+    NULLABLE(sep);
+    return PyUnicode_RPartition(s, sep);
+}
+
+/* Test PyUnicode_Translate() */
+static PyObject *
+unicode_translate(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    PyObject *table;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "OO|z", &obj, &table, &errors))
+        return NULL;
+
+    NULLABLE(obj);
+    NULLABLE(table);
+    return PyUnicode_Translate(obj, table, errors);
+}
+
+/* Test PyUnicode_Join() */
+static PyObject *
+unicode_join(PyObject *self, PyObject *args)
+{
+    PyObject *sep;
+    PyObject *seq;
+
+    if (!PyArg_ParseTuple(args, "OO", &sep, &seq))
+        return NULL;
+
+    NULLABLE(sep);
+    NULLABLE(seq);
+    return PyUnicode_Join(sep, seq);
+}
+
+/* Test PyUnicode_Count() */
+static PyObject *
+unicode_count(PyObject *self, PyObject *args)
+{
+    PyObject *str;
+    PyObject *substr;
+    Py_ssize_t start;
+    Py_ssize_t end;
+    Py_ssize_t result;
+
+    if (!PyArg_ParseTuple(args, "OOnn", &str, &substr, &start, &end))
+        return NULL;
+
+    NULLABLE(str);
+    NULLABLE(substr);
+    result = PyUnicode_Count(str, substr, start, end);
+    if (result == -1)
+        return NULL;
+    return PyLong_FromSsize_t(result);
+}
+
+/* Test PyUnicode_Find() */
+static PyObject *
+unicode_find(PyObject *self, PyObject *args)
+{
+    PyObject *str;
+    PyObject *substr;
+    Py_ssize_t start;
+    Py_ssize_t end;
+    int direction;
+    Py_ssize_t result;
+
+    if (!PyArg_ParseTuple(args, "OOnni", &str, &substr, &start, &end, &direction))
+        return NULL;
+
+    NULLABLE(str);
+    NULLABLE(substr);
+    result = PyUnicode_Find(str, substr, start, end, direction);
+    if (result == -2)
+        return NULL;
+    return PyLong_FromSsize_t(result);
+}
+
+/* Test PyUnicode_Tailmatch() */
+static PyObject *
+unicode_tailmatch(PyObject *self, PyObject *args)
+{
+    PyObject *str;
+    PyObject *substr;
+    Py_ssize_t start;
+    Py_ssize_t end;
+    int direction;
+    Py_ssize_t result;
+
+    if (!PyArg_ParseTuple(args, "OOnni", &str, &substr, &start, &end, &direction))
+        return NULL;
+
+    NULLABLE(str);
+    NULLABLE(substr);
+    result = PyUnicode_Tailmatch(str, substr, start, end, direction);
+    if (result == -1)
+        return NULL;
+    return PyLong_FromSsize_t(result);
+}
+
+/* Test PyUnicode_FindChar() */
 static PyObject *
 unicode_findchar(PyObject *self, PyObject *args)
 {
@@ -244,6 +482,130 @@ unicode_findchar(PyObject *self, PyObject *args)
         return PyLong_FromSsize_t(result);
 }
 
+/* Test PyUnicode_Replace() */
+static PyObject *
+unicode_replace(PyObject *self, PyObject *args)
+{
+    PyObject *str;
+    PyObject *substr;
+    PyObject *replstr;
+    Py_ssize_t maxcount = -1;
+
+    if (!PyArg_ParseTuple(args, "OOO|n", &str, &substr, &replstr, &maxcount))
+        return NULL;
+
+    NULLABLE(str);
+    NULLABLE(substr);
+    NULLABLE(replstr);
+    return PyUnicode_Replace(str, substr, replstr, maxcount);
+}
+
+/* Test PyUnicode_Compare() */
+static PyObject *
+unicode_compare(PyObject *self, PyObject *args)
+{
+    PyObject *left;
+    PyObject *right;
+    int result;
+
+    if (!PyArg_ParseTuple(args, "OO", &left, &right))
+        return NULL;
+
+    NULLABLE(left);
+    NULLABLE(right);
+    result = PyUnicode_Compare(left, right);
+    if (result == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLong(result);
+}
+
+/* Test PyUnicode_CompareWithASCIIString() */
+static PyObject *
+unicode_comparewithasciistring(PyObject *self, PyObject *args)
+{
+    PyObject *left;
+    const char *right = NULL;
+    Py_ssize_t right_len;
+    int result;
+
+    if (!PyArg_ParseTuple(args, "O|y#", &left, &right, &right_len))
+        return NULL;
+
+    NULLABLE(left);
+    result = PyUnicode_CompareWithASCIIString(left, right);
+    if (result == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLong(result);
+}
+
+/* Test PyUnicode_RichCompare() */
+static PyObject *
+unicode_richcompare(PyObject *self, PyObject *args)
+{
+    PyObject *left;
+    PyObject *right;
+    int op;
+
+    if (!PyArg_ParseTuple(args, "OOi", &left, &right, &op))
+        return NULL;
+
+    NULLABLE(left);
+    NULLABLE(right);
+    return PyUnicode_RichCompare(left, right, op);
+}
+
+/* Test PyUnicode_Format() */
+static PyObject *
+unicode_format(PyObject *self, PyObject *args)
+{
+    PyObject *format;
+    PyObject *fargs;
+
+    if (!PyArg_ParseTuple(args, "OO", &format, &fargs))
+        return NULL;
+
+    NULLABLE(format);
+    NULLABLE(fargs);
+    return PyUnicode_Format(format, fargs);
+}
+
+/* Test PyUnicode_Contains() */
+static PyObject *
+unicode_contains(PyObject *self, PyObject *args)
+{
+    PyObject *container;
+    PyObject *element;
+    int result;
+
+    if (!PyArg_ParseTuple(args, "OO", &container, &element))
+        return NULL;
+
+    NULLABLE(container);
+    NULLABLE(element);
+    result = PyUnicode_Contains(container, element);
+    if (result == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLong(result);
+}
+
+/* Test PyUnicode_IsIdentifier() */
+static PyObject *
+unicode_isidentifier(PyObject *self, PyObject *arg)
+{
+    int result;
+
+    NULLABLE(arg);
+    result = PyUnicode_IsIdentifier(arg);
+    if (result == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLong(result);
+}
+
+/* Test PyUnicode_CopyCharacters() */
 static PyObject *
 unicode_copycharacters(PyObject *self, PyObject *args)
 {
@@ -691,12 +1053,33 @@ static PyMethodDef TestMethods[] = {
      test_unicode_compare_with_ascii,                            METH_NOARGS},
     {"test_string_from_format",  test_string_from_format,        METH_NOARGS},
     {"test_widechar",            test_widechar,                  METH_NOARGS},
+    {"unicode_fromobject",       unicode_fromobject,             METH_O},
     {"unicode_aswidechar",       unicode_aswidechar,             METH_VARARGS},
     {"unicode_aswidecharstring", unicode_aswidecharstring,       METH_VARARGS},
     {"unicode_asucs4",           unicode_asucs4,                 METH_VARARGS},
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_asutf8andsize",    unicode_asutf8andsize,          METH_VARARGS},
+    {"unicode_decodeutf8",       unicode_decodeutf8,             METH_VARARGS},
+    {"unicode_decodeutf8stateful",unicode_decodeutf8stateful,    METH_VARARGS},
+    {"unicode_concat",           unicode_concat,                 METH_VARARGS},
+    {"unicode_splitlines",       unicode_splitlines,             METH_VARARGS},
+    {"unicode_split",            unicode_split,                  METH_VARARGS},
+    {"unicode_rsplit",           unicode_rsplit,                 METH_VARARGS},
+    {"unicode_partition",        unicode_partition,              METH_VARARGS},
+    {"unicode_rpartition",       unicode_rpartition,             METH_VARARGS},
+    {"unicode_translate",        unicode_translate,              METH_VARARGS},
+    {"unicode_join",             unicode_join,                   METH_VARARGS},
+    {"unicode_count",            unicode_count,                  METH_VARARGS},
+    {"unicode_tailmatch",        unicode_tailmatch,              METH_VARARGS},
+    {"unicode_find",             unicode_find,                   METH_VARARGS},
     {"unicode_findchar",         unicode_findchar,               METH_VARARGS},
+    {"unicode_replace",          unicode_replace,                METH_VARARGS},
+    {"unicode_compare",          unicode_compare,                METH_VARARGS},
+    {"unicode_comparewithasciistring",unicode_comparewithasciistring,METH_VARARGS},
+    {"unicode_richcompare",      unicode_richcompare,            METH_VARARGS},
+    {"unicode_format",           unicode_format,                 METH_VARARGS},
+    {"unicode_contains",         unicode_contains,               METH_VARARGS},
+    {"unicode_isidentifier",     unicode_isidentifier,           METH_O},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
     {NULL},
 };

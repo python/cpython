@@ -3,6 +3,7 @@
 #include "pycore_getopt.h"        // _PyOS_GetOpt()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _PyInterpreterState.runtime
+#include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_pathconfig.h"    // _Py_path_config
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
@@ -118,8 +119,24 @@ The following implementation-specific options are available:\n\
    files are desired as well as suppressing the extra visual location indicators \n\
    when the interpreter displays tracebacks.\n\
 \n\
+-X perf: activate support for the Linux \"perf\" profiler by activating the \"perf\"\n\
+    trampoline. When this option is activated, the Linux \"perf\" profiler will be \n\
+    able to report Python calls. This option is only available on some platforms and will \n\
+    do nothing if is not supported on the current system. The default value is \"off\".\n\
+\n\
 -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
-   The default is \"on\" (or \"off\" if you are running a local build).";
+   The default is \"on\" (or \"off\" if you are running a local build).\n\
+\n\
+-X int_max_str_digits=number: limit the size of int<->str conversions.\n\
+    This helps avoid denial of service attacks when parsing untrusted data.\n\
+    The default is sys.int_info.default_max_str_digits.  0 disables."
+
+#ifdef Py_STATS
+"\n\
+\n\
+-X pystats: Enable pystats collection at startup."
+#endif
+;
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars[] =
@@ -139,6 +156,10 @@ static const char usage_envvars[] =
 "   to seed the hashes of str and bytes objects.  It can also be set to an\n"
 "   integer in the range [0,4294967295] to get hash values with a\n"
 "   predictable seed.\n"
+"PYTHONINTMAXSTRDIGITS: limits the maximum digit characters in an int value\n"
+"   when converting from a string and when converting an int back to a str.\n"
+"   A value of 0 disables the limit.  Conversions to or from bases 2, 4, 8,\n"
+"   16, and 32 are never limited.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
 "   hooks.\n"
@@ -227,7 +248,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #define FROM_STRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromString(STR) \
-        : (Py_INCREF(Py_None), Py_None))
+        : Py_NewRef(Py_None))
 #define SET_ITEM_STR(VAR) \
     SET_ITEM(#VAR, FROM_STRING(VAR))
 
@@ -581,17 +602,13 @@ _Py_ClearStandardStreamEncoding(void)
 
 /* --- Py_GetArgcArgv() ------------------------------------------- */
 
-/* For Py_GetArgcArgv(); set by _Py_SetArgcArgv() */
-static PyWideStringList orig_argv = {.length = 0, .items = NULL};
-
-
 void
 _Py_ClearArgcArgv(void)
 {
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyWideStringList_Clear(&orig_argv);
+    _PyWideStringList_Clear(&_PyRuntime.orig_argv);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -606,7 +623,9 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    res = _PyWideStringList_Copy(&orig_argv, &argv_list);
+    // XXX _PyRuntime.orig_argv only gets cleared by Py_Main(),
+    // so it it currently leaks for embedders.
+    res = _PyWideStringList_Copy(&_PyRuntime.orig_argv, &argv_list);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
@@ -617,8 +636,8 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
 void
 Py_GetArgcArgv(int *argc, wchar_t ***argv)
 {
-    *argc = (int)orig_argv.length;
-    *argv = orig_argv.items;
+    *argc = (int)_PyRuntime.orig_argv.length;
+    *argv = _PyRuntime.orig_argv.items;
 }
 
 
@@ -681,6 +700,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->pathconfig_warnings >= 0);
     assert(config->_is_python_build >= 0);
     assert(config->safe_path >= 0);
+    assert(config->int_max_str_digits >= 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
     return 1;
@@ -745,6 +765,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->use_hash_seed = -1;
     config->faulthandler = -1;
     config->tracemalloc = -1;
+    config->perf_profiling = -1;
     config->module_search_paths_set = 0;
     config->parse_argv = 0;
     config->site_import = -1;
@@ -764,7 +785,6 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->check_hash_pycs_mode = NULL;
     config->pathconfig_warnings = -1;
     config->_init_main = 1;
-    config->_isolated_interpreter = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
@@ -774,6 +794,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->use_frozen_modules = 1;
 #endif
     config->safe_path = 0;
+    config->int_max_str_digits = -1;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
 }
@@ -829,6 +850,8 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->use_hash_seed = 0;
     config->faulthandler = 0;
     config->tracemalloc = 0;
+    config->perf_profiling = 0;
+    config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
@@ -940,6 +963,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(_install_importlib);
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
+    COPY_ATTR(perf_profiling);
     COPY_ATTR(import_time);
     COPY_ATTR(code_debug_ranges);
     COPY_ATTR(show_ref_count);
@@ -995,11 +1019,11 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTR_ATTR(check_hash_pycs_mode);
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
-    COPY_ATTR(_isolated_interpreter);
     COPY_ATTR(use_frozen_modules);
     COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
+    COPY_ATTR(int_max_str_digits);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1035,7 +1059,7 @@ _PyConfig_AsDict(const PyConfig *config)
 #define FROM_WSTRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromWideChar(STR, -1) \
-        : (Py_INCREF(Py_None), Py_None))
+        : Py_NewRef(Py_None))
 #define SET_ITEM_WSTR(ATTR) \
     SET_ITEM(#ATTR, FROM_WSTRING(config->ATTR))
 #define SET_ITEM_WSTRLIST(LIST) \
@@ -1050,6 +1074,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_UINT(hash_seed);
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
+    SET_ITEM_INT(perf_profiling);
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(code_debug_ranges);
     SET_ITEM_INT(show_ref_count);
@@ -1101,11 +1126,11 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(check_hash_pycs_mode);
     SET_ITEM_INT(pathconfig_warnings);
     SET_ITEM_INT(_init_main);
-    SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
     SET_ITEM_INT(use_frozen_modules);
     SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
+    SET_ITEM_INT(int_max_str_digits);
 
     return dict;
 
@@ -1295,6 +1320,12 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
         } \
         CHECK_VALUE(#KEY, config->KEY >= 0); \
     } while (0)
+#define GET_INT(KEY) \
+    do { \
+        if (config_dict_get_int(dict, #KEY, &config->KEY) < 0) { \
+            return -1; \
+        } \
+    } while (0)
 #define GET_WSTR(KEY) \
     do { \
         if (config_dict_get_wstr(dict, #KEY, config, &config->KEY) < 0) { \
@@ -1331,6 +1362,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     CHECK_VALUE("hash_seed", config->hash_seed <= MAX_HASH_SEED);
     GET_UINT(faulthandler);
     GET_UINT(tracemalloc);
+    GET_UINT(perf_profiling);
     GET_UINT(import_time);
     GET_UINT(code_debug_ranges);
     GET_UINT(show_ref_count);
@@ -1388,13 +1420,14 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
 
     GET_UINT(_install_importlib);
     GET_UINT(_init_main);
-    GET_UINT(_isolated_interpreter);
     GET_UINT(use_frozen_modules);
     GET_UINT(safe_path);
     GET_UINT(_is_python_build);
+    GET_INT(int_max_str_digits);
 
 #undef CHECK_VALUE
 #undef GET_UINT
+#undef GET_INT
 #undef GET_WSTR
 #undef GET_WSTR_OPT
     return 0;
@@ -1687,6 +1720,26 @@ config_read_env_vars(PyConfig *config)
     return _PyStatus_OK();
 }
 
+static PyStatus
+config_init_perf_profiling(PyConfig *config)
+{
+    int active = 0;
+    const char *env = config_get_env(config, "PYTHONPERFSUPPORT");
+    if (env) {
+        if (_Py_str_to_int(env, &active) != 0) {
+            active = 0;
+        }
+        if (active) {
+            config->perf_profiling = 1;
+        }
+    }
+    const wchar_t *xoption = config_get_xoption(config, L"perf");
+    if (xoption) {
+        config->perf_profiling = 1;
+    }
+    return _PyStatus_OK();
+
+}
 
 static PyStatus
 config_init_tracemalloc(PyConfig *config)
@@ -1732,6 +1785,52 @@ config_init_tracemalloc(PyConfig *config)
     return _PyStatus_OK();
 }
 
+static PyStatus
+config_init_int_max_str_digits(PyConfig *config)
+{
+    int maxdigits;
+
+    const char *env = config_get_env(config, "PYTHONINTMAXSTRDIGITS");
+    if (env) {
+        bool valid = 0;
+        if (!_Py_str_to_int(env, &maxdigits)) {
+            valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
+        }
+        if (!valid) {
+#define STRINGIFY(VAL) _STRINGIFY(VAL)
+#define _STRINGIFY(VAL) #VAL
+            return _PyStatus_ERR(
+                    "PYTHONINTMAXSTRDIGITS: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
+        }
+        config->int_max_str_digits = maxdigits;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"int_max_str_digits");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        bool valid = 0;
+        if (sep) {
+            if (!config_wstr_to_int(sep + 1, &maxdigits)) {
+                valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
+            }
+        }
+        if (!valid) {
+            return _PyStatus_ERR(
+                    "-X int_max_str_digits: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
+#undef _STRINGIFY
+#undef STRINGIFY
+        }
+        config->int_max_str_digits = maxdigits;
+    }
+    if (config->int_max_str_digits < 0) {
+        config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
+    }
+    return _PyStatus_OK();
+}
 
 static PyStatus
 config_init_pycache_prefix(PyConfig *config)
@@ -1784,6 +1883,20 @@ config_read_complex_options(PyConfig *config)
     PyStatus status;
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->perf_profiling < 0) {
+        status = config_init_perf_profiling(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->int_max_str_digits < 0) {
+        status = config_init_int_max_str_digits(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2080,6 +2193,12 @@ config_read(PyConfig *config, int compute_path_config)
         config->show_ref_count = 1;
     }
 
+#ifdef Py_STATS
+    if (config_get_xoption(config, L"pystats")) {
+        _py_stats = &_py_stats_struct;
+    }
+#endif
+
     status = config_read_complex_options(config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -2103,6 +2222,9 @@ config_read(PyConfig *config, int compute_path_config)
     }
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
+    }
+    if (config->perf_profiling < 0) {
+        config->perf_profiling = 0;
     }
     if (config->use_hash_seed < 0) {
         config->use_hash_seed = 0;

@@ -199,4 +199,21 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2eac4fabc87a4d56 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(warnings_filters_mutated__doc__,
+"_filters_mutated($module, /)\n"
+"--\n"
+"\n");
+
+#define WARNINGS_FILTERS_MUTATED_METHODDEF    \
+    {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS, warnings_filters_mutated__doc__},
+
+static PyObject *
+warnings_filters_mutated_impl(PyObject *module);
+
+static PyObject *
+warnings_filters_mutated(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return warnings_filters_mutated_impl(module);
+}
+/*[clinic end generated code: output=0d264d1ddfc37100 input=a9049054013a1b77]*/

@@ -127,7 +127,7 @@ thoughts in mind:
 .. seealso::
 
    * `Sorted Collections
-     <http://www.grantjenks.com/docs/sortedcollections/>`_ is a high performance
+     <https://grantjenks.com/docs/sortedcollections/>`_ is a high performance
      module that uses *bisect* to managed sorted collections of data.
 
    * The `SortedCollection recipe
@@ -216,7 +216,7 @@ records in a table::
     ...     Movie('Aliens', 1986, 'Scott')
     ... ]
 
-    >>> # Find the first movie released on or after 1960
+    >>> # Find the first movie released after 1960
     >>> by_year = attrgetter('released')
     >>> movies.sort(key=by_year)
     >>> movies[bisect(movies, 1960, key=by_year)]

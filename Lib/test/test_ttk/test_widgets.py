@@ -275,6 +275,21 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         self.assertEqual(cbtn['offvalue'],
             cbtn.tk.globalgetvar(cbtn['variable']))
 
+    def test_unique_variables(self):
+        frames = []
+        buttons = []
+        for i in range(2):
+            f = ttk.Frame(self.root)
+            f.pack()
+            frames.append(f)
+            for j in 'AB':
+                b = ttk.Checkbutton(f, text=j)
+                b.pack()
+                buttons.append(b)
+        variables = [str(b['variable']) for b in buttons]
+        print(variables)
+        self.assertEqual(len(set(variables)), 4, variables)
+
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
