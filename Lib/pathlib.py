@@ -748,9 +748,11 @@ class Path(PurePath):
 
     @classmethod
     def cwd(cls):
-        """Return a new path pointing to the current working directory
-        (as returned by os.getcwd()).
-        """
+        """Return a new path pointing to the current working directory."""
+        # We call 'absolute()' rather than using 'os.getcwd()' directly to
+        # enable users to replace the implementation of 'absolute()' in a
+        # subclass and benefit from the new behaviour here. This works because
+        # os.path.abspath('.') == os.getcwd().
         return cls().absolute()
 
     @classmethod
