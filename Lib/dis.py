@@ -38,6 +38,7 @@ LOAD_CONST = opmap['LOAD_CONST']
 LOAD_CONST_R = opmap['LOAD_CONST_R']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
+BINARY_OP_R = opmap['BINARY_OP_R']
 JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 FOR_ITER = opmap['FOR_ITER']
 LOAD_ATTR = opmap['LOAD_ATTR']
@@ -478,7 +479,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         for i in range(start, end):
             labels.add(target)
     starts_line = None
-    for offset, op, arg in _unpack_opargs(code):
+    for offset, op, arg, *extra_args in _unpack_opargs(code):
         if linestarts is not None:
             starts_line = linestarts.get(offset, None)
             if starts_line is not None:
@@ -533,6 +534,9 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                                     if arg & (1<<i))
             elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]
+            elif deop == BINARY_OP_R:
+                arg = extra_args[2]
+                argval, argrepr = arg, _nb_ops[arg][1]
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
@@ -636,10 +640,34 @@ _INT_BITS = 32
 # Value for c int when it overflows
 _INT_OVERFLOW = 2 ** (_INT_BITS - 1)
 
+"""
+    ops = code.co_code[::2]
+    state = [0, 0, 0]  # [op, args, caches] - how many to consume?
+    _ops_, _args_, _caches_ = 0, 1, 2
+    for op, positions in zip(ops, code.co_positions()):
+        assert _opsize(op) in (1, 2, 3)
+        if state == [0, 0, 0]:
+            state = [1, 0, 0]
+        if state[_ops_] > 0:
+            yield positions
+            assert state[_ops_] == 1
+            assert state[_args_] == state[_caches_] == 0
+            state[_ops_] = 0
+            state[_args_] = _opsize(op) - 1
+            state[_caches_] = _inline_cache_entries[op]
+        elif state[_args_] > 0:
+            state[_args_] -= 1
+        elif state[_caches_] > 0:
+            if show_caches:
+                yield positions
+            state[_caches_] -= 1
+
+"""
 def _unpack_opargs(code):
     extended_arg = 0
     caches = 0
     for i in range(0, len(code), 2):
+
         # Skip inline CACHE entries:
         if caches:
             caches -= 1
@@ -647,7 +675,7 @@ def _unpack_opargs(code):
         op = code[i]
         deop = _deoptop(op)
         caches = _inline_cache_entries[deop]
-        caches += _opsize(op) - 1  # also skip over oparg2, oparg3
+        caches += _opsize(op) - 1  # also skip over the extra args as well
         if deop in hasarg:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if deop == EXTENDED_ARG else 0
@@ -659,7 +687,8 @@ def _unpack_opargs(code):
         else:
             arg = None
             extended_arg = 0
-        yield (i, op, arg)
+        extra_args = [code[i+j] for j in range(2, 2*_opsize(deop))]
+        yield (i, op, arg, *extra_args)
 
 def findlabels(code):
     """Detect all offsets in a byte code which are jump targets.
@@ -668,7 +697,7 @@ def findlabels(code):
 
     """
     labels = []
-    for offset, op, arg in _unpack_opargs(code):
+    for offset, op, arg, *extra_args in _unpack_opargs(code):
         if arg is not None:
             deop = _deoptop(op)
             if deop in hasjrel:
@@ -708,7 +737,7 @@ def _find_imports(co):
 
     consts = co.co_consts
     names = co.co_names
-    opargs = [(op, arg) for _, op, arg in _unpack_opargs(co.co_code)
+    opargs = [(op, arg) for _, op, arg, *extra_args in _unpack_opargs(co.co_code)
                   if op != EXTENDED_ARG]
     consts_idx = _get_consts_idx(co)
     for i, (op, oparg) in enumerate(opargs):
@@ -733,7 +762,7 @@ def _find_store_names(co):
     }
 
     names = co.co_names
-    for _, op, arg in _unpack_opargs(co.co_code):
+    for _, op, arg, *extra_args in _unpack_opargs(co.co_code):
         if op in STORE_OPS:
             yield names[arg]
 
