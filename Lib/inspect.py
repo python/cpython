@@ -1434,6 +1434,9 @@ def getfullargspec(func):
 
 ArgInfo = namedtuple('ArgInfo', 'args varargs keywords locals')
 
+def _program_locals(frame):
+    return { k:v for k,v in frame.f_locals.items() if not k.startswith('$') }
+
 def getargvalues(frame):
     """Get information about arguments passed into a particular frame.
 
@@ -1442,7 +1445,7 @@ def getargvalues(frame):
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'locals' is the locals dictionary of the given frame."""
     args, varargs, varkw = getargs(frame.f_code)
-    return ArgInfo(args, varargs, varkw, frame.f_locals)
+    return ArgInfo(args, varargs, varkw, _program_locals(frame))
 
 def formatannotation(annotation, base_module=None):
     if getattr(annotation, '__module__', None) == 'typing':
@@ -1894,7 +1897,7 @@ def getgeneratorlocals(generator):
 
     frame = getattr(generator, "gi_frame", None)
     if frame is not None:
-        return generator.gi_frame.f_locals
+        return _program_locals(generator.gi_frame)
     else:
         return {}
 
@@ -1932,7 +1935,7 @@ def getcoroutinelocals(coroutine):
     bound values."""
     frame = getattr(coroutine, "cr_frame", None)
     if frame is not None:
-        return frame.f_locals
+        return _program_locals(frame)
     else:
         return {}
 
