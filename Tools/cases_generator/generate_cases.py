@@ -125,6 +125,7 @@ class Instruction:
     # Set later
     family: parser.Family | None = None
     predicted: bool = False
+    unmoved_names: frozenset[str] = frozenset()
 
     def __init__(self, inst: parser.InstDef):
         self.inst = inst
@@ -141,6 +142,13 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
         self.output_effects = inst.outputs  # For consistency/completeness
+        unmoved_names: set[str] = set()
+        for ieffect, oeffect in zip(self.input_effects, self.output_effects):
+            if ieffect.name == oeffect.name:
+                unmoved_names.add(ieffect.name)
+            else:
+                break
+        self.unmoved_names = frozenset(unmoved_names)
 
     def write(self, out: Formatter) -> None:
         """Write one instruction, sans prologue and epilogue."""
@@ -175,12 +183,8 @@ class Instruction:
         out.stack_adjust(diff)
 
         # Write output stack effect assignments
-        unmoved_names: set[str] = set()
-        for ieffect, oeffect in zip(self.input_effects, self.output_effects):
-            if ieffect.name == oeffect.name:
-                unmoved_names.add(ieffect.name)
         for i, oeffect in enumerate(reversed(self.output_effects), 1):
-            if oeffect.name not in unmoved_names:
+            if oeffect.name not in self.unmoved_names:
                 dst = StackEffect(f"PEEK({i})", "")
                 out.assign(dst, oeffect)
 
@@ -205,11 +209,11 @@ class Instruction:
                 else:
                     typ = f"uint{bits}_t "
                     func = f"read_u{bits}"
-                out.emit(f"{typ}{ceffect.name} = {func}(next_instr + {cache_offset});")
+                out.emit(f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 
-        # Write the body, substituting a goto for ERROR_IF()
+        # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
         extra = " " * -dedent
         for line in self.block_text:
@@ -232,6 +236,11 @@ class Instruction:
                     )
                 else:
                     out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
+            elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*$", line):
+                space = m.group(1)
+                for ieff in self.input_effects:
+                    if ieff.name not in self.unmoved_names:
+                        out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
 
@@ -529,7 +538,7 @@ class Analyzer:
     ) -> tuple[list[StackEffect], int]:
         """Analyze a super-instruction or macro.
 
-        Print an error if there's a cache effect (which we don't support yet).
+        Ignore cache effects.
 
         Return the list of variable names and the initial stack pointer.
         """

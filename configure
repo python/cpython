@@ -1064,7 +1064,6 @@ with_hash_algorithm
 with_tzpath
 with_libs
 with_system_expat
-with_system_ffi
 with_system_libmpdec
 with_decimal_contextvar
 enable_loadable_sqlite_extensions
@@ -1847,9 +1846,6 @@ Optional Packages:
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
-  --with-system-ffi       build _ctypes module using an installed ffi library,
-                          see Doc/library/ctypes.rst (default is
-                          system-dependent)
   --with-system-libmpdec  build _decimal module using an installed libmpdec
                           library, see Doc/library/decimal.rst (default is no)
   --with-decimal-contextvar
@@ -12516,43 +12512,77 @@ fi
 
 
 
-# Check for use of the system libffi library
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-ffi" >&5
-$as_echo_n "checking for --with-system-ffi... " >&6; }
-
-# Check whether --with-system_ffi was given.
-if test "${with_system_ffi+set}" = set; then :
-  withval=$with_system_ffi;
-fi
-
-
-if test "$ac_sys_system" = "Darwin"
-then
-    case "$with_system_ffi" in
-        "")
-            with_system_ffi="no"
-            ;;
-        yes|no)
-            ;;
-        *)
-            as_fn_error $? "--with-system-ffi accepts no arguments" "$LINENO" 5
-            ;;
-    esac
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_ffi" >&5
-$as_echo "$with_system_ffi" >&6; }
-else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    if test "$with_system_ffi" != ""
-    then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with(out)-system-ffi is ignored on this platform" >&5
-$as_echo "$as_me: WARNING: --with(out)-system-ffi is ignored on this platform" >&2;}
-    fi
-    with_system_ffi="yes"
-fi
-
 have_libffi=missing
-if test "x$with_system_ffi" = xyes; then :
+if test "x$ac_sys_system" = xDarwin; then :
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
+    ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
+$as_echo_n "checking for ffi_call in -lffi... " >&6; }
+if ${ac_cv_lib_ffi_ffi_call+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lffi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ffi_call ();
+int
+main ()
+{
+return ffi_call ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ffi_ffi_call=yes
+else
+  ac_cv_lib_ffi_ffi_call=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
+$as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
+if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
+
+                have_libffi=yes
+        LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
+        LIBFFI_LIBS="-lffi"
+
+fi
+
+
+fi
+
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+if test "x$have_libffi" = xmissing; then :
 
 
 pkg_failed=no
@@ -12764,80 +12794,6 @@ $as_echo "yes" >&6; }
 	have_libffi=yes
 fi
 
-else
-
-  if test "x$ac_sys_system" = xDarwin; then :
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-      CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
-      ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
-if test "x$ac_cv_header_ffi_h" = xyes; then :
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
-$as_echo_n "checking for ffi_call in -lffi... " >&6; }
-if ${ac_cv_lib_ffi_ffi_call+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lffi  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char ffi_call ();
-int
-main ()
-{
-return ffi_call ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ffi_ffi_call=yes
-else
-  ac_cv_lib_ffi_ffi_call=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
-$as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
-if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
-
-                    have_libffi=yes
-          LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-          LIBFFI_LIBS="-lffi"
-
-else
-  have_libffi=no
-fi
-
-
-fi
-
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
-fi
-
 fi
 
 if test "x$have_libffi" = xyes; then :
@@ -12846,7 +12802,7 @@ if test "x$have_libffi" = xyes; then :
   case $ac_sys_system in #(
   Darwin) :
 
-            as_fn_append LIBFFI_CFLAGS " -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"
+            as_fn_append LIBFFI_CFLAGS " -I\$(srcdir)/Modules/_ctypes/darwin"
       ctypes_malloc_closure=yes
      ;; #(
   sunos5) :

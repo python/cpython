@@ -725,9 +725,11 @@ Fix handling of ``bytes`` :term:`path-like objects <path-like object>` in
 .. nonce: AXE2IZ
 .. section: Library
 
-Remove the *keyfile*, *certfile* and *check_hostname* parameters, deprecated
-since Python 3.6, in modules: :mod:`ftplib`, :mod:`http.client`,
-:mod:`imaplib`, :mod:`poplib` and :mod:`smtplib`. Use the *context*
+Remove the *keyfile* and *certfile* parameters from the
+:mod:`ftplib`, :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib` modules,
+and the *key_file*, *cert_file* and *check_hostname* parameters from the
+:mod:`http.client` module,
+all deprecated since Python 3.6. Use the *context*
 parameter (*ssl_context* in :mod:`imaplib`) instead. Patch by Victor
 Stinner.
 

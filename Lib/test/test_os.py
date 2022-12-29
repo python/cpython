@@ -33,6 +33,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import set_recursion_limit
 from test.support import warnings_helper
 from platform import win32_is_iot
 
@@ -1471,6 +1472,46 @@ class WalkTests(unittest.TestCase):
                 self.assertEqual(next(it), expected)
             p = os.path.join(p, 'd')
 
+    def test_walk_above_recursion_limit(self):
+        depth = 50
+        os.makedirs(os.path.join(self.walk_path, *(['d'] * depth)))
+        with set_recursion_limit(depth - 5):
+            all = list(self.walk(self.walk_path))
+
+        sub2_path = self.sub2_tree[0]
+        for root, dirs, files in all:
+            if root == sub2_path:
+                dirs.sort()
+                files.sort()
+
+        d_entries = []
+        d_path = self.walk_path
+        for _ in range(depth):
+            d_path = os.path.join(d_path, "d")
+            d_entries.append((d_path, ["d"], []))
+        d_entries[-1][1].clear()
+
+        # Sub-sequences where the order is known
+        sections = {
+            "SUB1": [
+                (self.sub1_path, ["SUB11"], ["tmp2"]),
+                (self.sub11_path, [], []),
+            ],
+            "SUB2": [self.sub2_tree],
+            "d": d_entries,
+        }
+
+        # The ordering of sub-dirs is arbitrary but determines the order in
+        # which sub-sequences appear
+        dirs = all[0][1]
+        expected = [(self.walk_path, dirs, ["tmp1"])]
+        for d in dirs:
+            expected.extend(sections[d])
+
+        self.assertEqual(len(all), depth + 4)
+        self.assertEqual(sorted(dirs), ["SUB1", "SUB2", "d"])
+        self.assertEqual(all, expected)
+
 
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
@@ -1545,6 +1586,8 @@ class FwalkTests(WalkTests):
 
     # fwalk() keeps file descriptors open
     test_walk_many_open_files = None
+    # fwalk() still uses recursion
+    test_walk_above_recursion_limit = None
 
 
 class BytesWalkTests(WalkTests):

@@ -505,6 +505,7 @@ def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
 requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
                         'requires legacy Unicode C API')
 
+# Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
@@ -736,8 +737,6 @@ def gc_collect():
     """
     import gc
     gc.collect()
-    if is_jython:
-        time.sleep(0.1)
     gc.collect()
     gc.collect()
 
@@ -2178,19 +2177,23 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
 
 @contextlib.contextmanager
+def set_recursion_limit(limit):
+    """Temporarily change the recursion limit."""
+    original_limit = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(limit)
+        yield
+    finally:
+        sys.setrecursionlimit(original_limit)
+
 def infinite_recursion(max_depth=75):
     """Set a lower limit for tests that interact with infinite recursions
     (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
     debug windows builds, due to not enough functions being inlined the
     stack size might not handle the default recursion limit (1000). See
     bpo-11105 for details."""
+    return set_recursion_limit(max_depth)
 
-    original_depth = sys.getrecursionlimit()
-    try:
-        sys.setrecursionlimit(max_depth)
-        yield
-    finally:
-        sys.setrecursionlimit(original_depth)
 
 def ignore_deprecations_from(module: str, *, like: str) -> object:
     token = object()

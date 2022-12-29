@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_object.h"
+#include "pycore_parser.h"
 #include "pycore_pymem_init.h"
 #include "pycore_obmalloc_init.h"
 
@@ -32,6 +33,7 @@ extern "C" {
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        .parser = _parser_runtime_state_INIT, \
         .imports = { \
             .lock = { \
                 .mutex = NULL, \
@@ -70,7 +72,7 @@ extern "C" {
         .types = { \
             .next_version_tag = 1, \
         }, \
-        .global_objects = { \
+        .static_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
                 .bytes_empty = _PyBytes_SIMPLE_INIT(0, 0), \

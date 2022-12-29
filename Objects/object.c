@@ -939,7 +939,15 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
         }
         return 0;
     }
-    if (tp->tp_getattro != NULL) {
+    if (tp->tp_getattro == (getattrofunc)_Py_type_getattro) {
+        int supress_missing_attribute_exception = 0;
+        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
+        if (supress_missing_attribute_exception) {
+            // return 0 without having to clear the exception
+            return 0;
+        }
+    }
+    else if (tp->tp_getattro != NULL) {
         *result = (*tp->tp_getattro)(v, name);
     }
     else if (tp->tp_getattr != NULL) {
@@ -1641,6 +1649,11 @@ none_bool(PyObject *v)
     return 0;
 }
 
+static Py_hash_t none_hash(PyObject *v)
+{
+    return 0xFCA86420;
+}
+
 static PyNumberMethods none_as_number = {
     0,                          /* nb_add */
     0,                          /* nb_subtract */
@@ -1692,7 +1705,7 @@ PyTypeObject _PyNone_Type = {
     &none_as_number,    /*tp_as_number*/
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash */
+    (hashfunc)none_hash,/*tp_hash */
     0,                  /*tp_call */
     0,                  /*tp_str */
     0,                  /*tp_getattro */
