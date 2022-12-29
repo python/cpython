@@ -2172,7 +2172,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case 42:
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(42), {})
@@ -2184,7 +2184,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case 42.0:
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(42.0), {})
@@ -2196,7 +2196,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case 1 | 2 | 3:
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(1), {})
@@ -2211,7 +2211,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case [1, 2] | [3, 4]:
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f([1, 2]), {})
@@ -2225,7 +2225,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case x:
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(42), {"x": 42})
@@ -2236,7 +2236,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case _:
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(42), {})
@@ -2247,7 +2247,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case (x, y, z):
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f((1, 2, 3)), {"x": 1, "y": 2, "z": 3})
@@ -2264,7 +2264,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case {"x": x, "y": "y", "z": z}:
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f({"x": "x", "y": "y", "z": "z"}), {"x": "x", "z": "z"})
@@ -2276,7 +2276,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case Point(int(xx), y="hello"):
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(Point(42, "hello")), {"xx": 42})
@@ -2285,7 +2285,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case (p, q) as x:
-                    out = {k : v for k,v in locals().items() if not k.startswith('$')}
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f((1, 2)), {"p": 1, "q": 2, "x": (1, 2)})
@@ -2297,56 +2297,56 @@ class TestPatma(unittest.TestCase):
         def f():
             match 42:
                 case 42:
-                    return [l for l in locals() if not l.startswith('$')]
+                    return locals()
         self.assertEqual(set(f()), set())
 
     def test_patma_215(self):
         def f():
             match 1:
                 case 1 | 2 | 3:
-                    return [l for l in locals() if not l.startswith('$')]
+                    return locals()
         self.assertEqual(set(f()), set())
 
     def test_patma_216(self):
         def f():
             match ...:
                 case _:
-                    return [l for l in locals() if not l.startswith('$')]
+                    return locals()
         self.assertEqual(set(f()), set())
 
     def test_patma_217(self):
         def f():
             match ...:
                 case abc:
-                    return [l for l in locals() if not l.startswith('$')]
+                    return locals()
         self.assertEqual(set(f()), {"abc"})
 
     def test_patma_218(self):
         def f():
             match ..., ...:
                 case a, b:
-                    return [l for l in locals() if not l.startswith('$')]
+                    return locals()
         self.assertEqual(set(f()), {"a", "b"})
 
     def test_patma_219(self):
         def f():
             match {"k": ..., "l": ...}:
                 case {"k": a, "l": b}:
-                    return [l for l in locals() if not l.startswith('$')]
+                    return locals()
         self.assertEqual(set(f()), {"a", "b"})
 
     def test_patma_220(self):
         def f():
             match Point(..., ...):
                 case Point(x, y=y):
-                    return [l for l in locals() if not l.startswith('$')]
+                    return locals()
         self.assertEqual(set(f()), {"x", "y"})
 
     def test_patma_221(self):
         def f():
             match ...:
                 case b as a:
-                    return [l for l in locals() if not l.startswith('$')]
+                    return locals()
         self.assertEqual(set(f()), {"a", "b"})
 
     def test_patma_222(self):
@@ -2601,7 +2601,7 @@ class TestPatma(unittest.TestCase):
                       (g, b, a, c, d, -5, e, h, i, f) |
                       (-1, d, f, b, g, e, i, a, h, c)):
                     w = 0
-            out = {k : v for k,v in locals().items() if not k.startswith('$')}
+            out = locals()
             del out["x"]
             return out
         alts = [
@@ -2625,7 +2625,7 @@ class TestPatma(unittest.TestCase):
                          (g, b, a, c, d, -5, e, h, i, f) |
                          (-1, d, f, b, g, e, i, a, h, c), z]:
                     w = 0
-            out = {k : v for k,v in locals().items() if not k.startswith('$')}
+            out = locals()
             del out["x"]
             return out
         alts = [
