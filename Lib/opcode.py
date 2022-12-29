@@ -233,6 +233,8 @@ def_op('BUILD_STRING', 157)
 jrel_op('JUMP_IF_FALSE_R', 158)
 jrel_op('JUMP_IF_TRUE_R', 159)
 
+def_op('COPY_R', 160)
+
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)

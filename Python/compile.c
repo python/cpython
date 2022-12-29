@@ -216,28 +216,50 @@ struct instr {
     struct basicblock_ *i_except; /* target block when exception is raised */
 };
 
-/* One arg*/
-#define INSTR_SET_OP1(I, OP, ARG, OPARG1) \
-    do { \
-        assert(HAS_ARG(OP)); \
-        struct instr *_instr__ptr_ = (I); \
-        _instr__ptr_->i_opcode = (OP); \
-        _instr__ptr_->i_oparg = (ARG); \
-        _instr__ptr_->i_oparg1 = (OPARG1); \
-        _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
-        _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
-        _instr__ptr_->i_oparg4 = UNUSED_OPARG; \
-    } while (0);
 
 /* No args*/
 #define INSTR_SET_OP0(I, OP) \
     do { \
         assert(!HAS_ARG(OP)); \
+        int opcode = (OP); \
         struct instr *_instr__ptr_ = (I); \
-        _instr__ptr_->i_opcode = (OP); \
+        _instr__ptr_->i_opcode = opcode; \
         _instr__ptr_->i_oparg = 0; \
         _instr__ptr_->i_oparg1 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg4 = UNUSED_OPARG; \
+    } while (0);
+
+/* One arg*/
+#define INSTR_SET_OP1(I, OP, ARG, OPARG1) \
+    do { \
+        assert(HAS_ARG(OP)); \
+        int opcode = (OP); \
+        int oparg = (ARG); \
+        oparg_t oparg1 = (OPARG1); \
+        struct instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_opcode = opcode; \
+        _instr__ptr_->i_oparg = oparg; \
+        _instr__ptr_->i_oparg1 = oparg1; \
+        _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
+        _instr__ptr_->i_oparg4 = UNUSED_OPARG; \
+    } while (0);
+
+/* Two args */
+#define INSTR_SET_OP2(I, OP, ARG, OPARG1, OPARG2) \
+    do { \
+        assert(HAS_ARG(OP)); \
+        int opcode = (OP); \
+        int oparg = (ARG); \
+        oparg_t oparg1 = (OPARG1); \
+        oparg_t oparg2 = (OPARG2); \
+        struct instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_opcode = opcode; \
+        _instr__ptr_->i_oparg = oparg; \
+        _instr__ptr_->i_oparg1 = oparg1; \
+        _instr__ptr_->i_oparg2 = oparg2; \
         _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg4 = UNUSED_OPARG; \
     } while (0);
@@ -1425,6 +1447,8 @@ stack_effect(int opcode, int oparg, int jump)
         case COPY:
         case PUSH_NULL:
             return 1;
+        case COPY_R:
+            return 0;
         case BINARY_OP:
             return -1;
         case BINARY_OP_R:
@@ -8624,16 +8648,28 @@ dump_instr(struct instr *i)
     const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
 
     char arg[128];
+    char arg1[128];
+    char arg2[128];
+    char arg3[128];
 
-    *arg = '\0';
+    *arg = *arg1 = *arg2 = *arg3 = '\0';
     if (HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
+    }
+    if (!IS_UNUSED(i->i_oparg1)) {
+        sprintf(arg1, "arg1 (%d): %d ", i->i_oparg1.type, i->i_oparg1.value);
+    }
+    if (!IS_UNUSED(i->i_oparg2)) {
+        sprintf(arg2, "arg2 (%d): %d ", i->i_oparg2.type, i->i_oparg2.value);
+    }
+    if (!IS_UNUSED(i->i_oparg3)) {
+        sprintf(arg3, "arg3 (%d): %d ", i->i_oparg3.type, i->i_oparg3.value);
     }
     if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
     }
-    fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
-                    i->i_loc.lineno, i->i_opcode, arg, jabs, jrel);
+    fprintf(stderr, "line: %d, opcode: %d %s%s%s%s%s%s\n",
+                    i->i_loc.lineno, i->i_opcode, arg, arg1, arg2, arg3, jabs, jrel);
 }
 
 static void
@@ -9972,6 +10008,24 @@ translate_jump_labels_to_targets(basicblock *entryblock)
     return 0;
 }
 
+
+static int
+reduce_traffic_between_registers_and_stack(basicblock *b)
+{
+    for (int i = 0; i < b->b_iused - 1; i++) {
+        struct instr *instr = &b->b_instr[i];
+        struct instr *next = &b->b_instr[i+1];
+        if ((instr->i_opcode == LOAD_CONST_R || instr->i_opcode == LOAD_FAST_R) &&
+             next->i_opcode == STORE_FAST_R) {
+
+            INSTR_SET_OP2(next, COPY_R, 0, instr->i_oparg1, next->i_oparg1);
+            INSTR_SET_OP0(instr, NOP);
+        }
+    }
+    return 0;
+}
+
+
 /* Perform optimizations on a control flow graph.
    The consts object should still be in list form to allow new constants
    to be appended.
@@ -9992,6 +10046,12 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         if (inline_small_exit_blocks(b) < 0) {
             return -1;
         }
+    }
+    assert(no_empty_basic_blocks(g));
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        if (reduce_traffic_between_registers_and_stack(b)) {
+            return -1;
+         }
     }
     assert(no_empty_basic_blocks(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
@@ -10065,6 +10125,25 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
             }
         }
     }
+    /* Any const accessed via a const register */
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (instr->i_oparg1.type == CONST_REG) {
+                int index = instr->i_oparg1.value;
+                index_map[index] = index;
+            }
+            if (instr->i_oparg2.type == CONST_REG) {
+                int index = instr->i_oparg2.value;
+                index_map[index] = index;
+            }
+            if (instr->i_oparg3.type == CONST_REG) {
+                int index = instr->i_oparg3.value;
+                index_map[index] = index;
+            }
+        }
+    }
+
     /* now index_map[i] == i if consts[i] is used, -1 otherwise */
 
     /* condense consts */
@@ -10114,19 +10193,32 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
 
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_opcode == LOAD_CONST ||
-                b->b_instr[i].i_opcode == KW_NAMES) {
+            struct instr *instr = &b->b_instr[i];
+            if (instr->i_opcode == LOAD_CONST ||
+                instr->i_opcode == KW_NAMES) {
 
-                int index = b->b_instr[i].i_oparg;
+                int index = instr->i_oparg;
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
-                b->b_instr[i].i_oparg = (int)reverse_index_map[index];
+                instr->i_oparg = (int)reverse_index_map[index];
             }
-            if (b->b_instr[i].i_opcode == LOAD_CONST_R) {
-                int index = b->b_instr[i].i_oparg1.value;
+            if (instr->i_oparg1.type == CONST_REG) {
+                int index = instr->i_oparg1.value;
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
-                b->b_instr[i].i_oparg1.value = (int)reverse_index_map[index];
+                instr->i_oparg1.value = (int)reverse_index_map[index];
+            }
+            if (instr->i_oparg2.type == CONST_REG) {
+               int index = instr->i_oparg2.value;
+                assert(reverse_index_map[index] >= 0);
+                assert(reverse_index_map[index] < n_used_consts);
+                instr->i_oparg2.value = (int)reverse_index_map[index];
+            }
+            if (instr->i_oparg3.type == CONST_REG) {
+               int index = instr->i_oparg3.value;
+                assert(reverse_index_map[index] >= 0);
+                assert(reverse_index_map[index] < n_used_consts);
+                instr->i_oparg3.value = (int)reverse_index_map[index];
             }
         }
     }

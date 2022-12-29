@@ -2411,6 +2411,8 @@
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
 #endif
+            assert(left != NULL);
+            assert(right != NULL);
             _Py_CODEUNIT word3 = *(next_instr - 1);
             int oparg4 = _Py_OPCODE(word3);
             assert(0 <= oparg4);
@@ -4139,6 +4141,16 @@
             assert(oparg != 0);
             PyObject *peek = PEEK(oparg);
             PUSH(Py_NewRef(peek));
+            DISPATCH();
+        }
+
+        TARGET(COPY_R) {
+            PyObject *src = REG(oparg1);
+            PyObject *dst;
+            JUMPBY(OPSIZE(COPY_R) - 1);
+            assert(src != NULL);
+            dst = Py_XNewRef(src);
+            Py_XSETREF(REG(oparg2), dst);
             DISPATCH();
         }
 

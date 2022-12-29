@@ -2008,6 +2008,8 @@ dummy_func(
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
 #endif
+            assert(left != NULL);
+            assert(right != NULL);
             _Py_CODEUNIT word3 = *(next_instr - 1);
             int oparg4 = _Py_OPCODE(word3);
             assert(0 <= oparg4);
@@ -3571,6 +3573,11 @@ dummy_func(
             assert(oparg != 0);
             PyObject *peek = PEEK(oparg);
             PUSH(Py_NewRef(peek));
+        }
+
+        register inst(COPY_R, (src -- dst)) {
+            assert(src != NULL);
+            dst = Py_XNewRef(src);
         }
 
         inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
