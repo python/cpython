@@ -178,7 +178,7 @@ class FrameAttrsTest(unittest.TestCase):
         outer_locals = outer.f_locals
         self.assertIsInstance(outer_locals.pop('inner'), types.FunctionType)
         self.assertEqual(outer_locals, {'x': 5, 'y': 6})
-        inner_locals = inner.f_locals
+        inner_locals = { k:v for k,v in inner.f_locals.items() if not k.startswith('$')}
         self.assertEqual(inner_locals, {'x': 5, 'z': 7})
 
     def test_clear_locals(self):
