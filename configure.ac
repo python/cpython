@@ -3705,36 +3705,22 @@ AS_VAR_IF([with_system_expat], [yes], [
 AC_SUBST([LIBEXPAT_CFLAGS])
 AC_SUBST([LIBEXPAT_INTERNAL])
 
-# Check for use of the system libffi library
-AC_MSG_CHECKING(for --with-system-ffi)
-AC_ARG_WITH(system_ffi,
-            AS_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library, see Doc/library/ctypes.rst (default is system-dependent)]),,,)
-
-if test "$ac_sys_system" = "Darwin"
-then
-    case "$with_system_ffi" in
-        "")
-            with_system_ffi="no"
-            ;;
-        yes|no)
-            ;;
-        *)
-            AC_MSG_ERROR([--with-system-ffi accepts no arguments])
-            ;;
-    esac
-    AC_MSG_RESULT($with_system_ffi)
-else
-    AC_MSG_RESULT(yes)
-    if test "$with_system_ffi" != ""
-    then
-        AC_MSG_WARN([--with(out)-system-ffi is ignored on this platform])
-    fi
-    with_system_ffi="yes"
-fi
-
 dnl detect libffi
 have_libffi=missing
-AS_VAR_IF([with_system_ffi], [yes], [
+AS_VAR_IF([ac_sys_system], [Darwin], [
+  WITH_SAVE_ENV([
+    CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
+    AC_CHECK_HEADER([ffi.h], [
+      AC_CHECK_LIB([ffi], [ffi_call], [
+        dnl use ffi from SDK root
+        have_libffi=yes
+        LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
+        LIBFFI_LIBS="-lffi"
+      ])
+    ])
+  ])
+])
+AS_VAR_IF([have_libffi], [missing], [
   PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
     WITH_SAVE_ENV([
       CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
@@ -3748,20 +3734,6 @@ AS_VAR_IF([with_system_ffi], [yes], [
       ])
     ])
   ])
-], [
-  AS_VAR_IF([ac_sys_system], [Darwin], [
-    WITH_SAVE_ENV([
-      CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
-      AC_CHECK_HEADER([ffi.h], [
-        AC_CHECK_LIB([ffi], [ffi_call], [
-          dnl use ffi from SDK root
-          have_libffi=yes
-          LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-          LIBFFI_LIBS="-lffi"
-        ], [have_libffi=no])
-      ])
-    ])
-  ])
 ])
 
 AS_VAR_IF([have_libffi], [yes], [
@@ -3769,7 +3741,7 @@ AS_VAR_IF([have_libffi], [yes], [
   AS_CASE([$ac_sys_system],
     [Darwin], [
       dnl when do we need USING_APPLE_OS_LIBFFI?
-      AS_VAR_APPEND([LIBFFI_CFLAGS], [" -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"])
+      AS_VAR_APPEND([LIBFFI_CFLAGS], [" -I\$(srcdir)/Modules/_ctypes/darwin"])
       ctypes_malloc_closure=yes
     ],
     [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])]
