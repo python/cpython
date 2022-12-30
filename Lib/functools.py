@@ -857,12 +857,18 @@ def singledispatch(func):
         from typing import get_origin, Union
         return get_origin(cls) in {Union, types.UnionType}
 
+    def _is_type_type(cls):
+        from typing import get_args, get_origin, Type
+        if (get_origin(cls) in (type, Type) and
+            isinstance(get_args(cls)[0], type)):
+            return True
+
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
             return True
-        from typing import get_args, get_origin
-        if get_origin(cls) is type and isinstance(get_args(cls)[0], type):
+        if _is_type_type(cls):
             return True
+        from typing import get_args
         return (_is_union_type(cls) and
                 all(isinstance(arg, type) for arg in get_args(cls)))
 
@@ -911,6 +917,10 @@ def singledispatch(func):
 
             for arg in get_args(cls):
                 registry[arg] = func
+        elif _is_type_type(cls):
+            from typing import get_args
+
+            registry[type[get_args(cls)[0]]] = func  # normalize Type -> type
         else:
             registry[cls] = func
         if cache_token is None and hasattr(cls, '__abstractmethods__'):
@@ -924,11 +934,8 @@ def singledispatch(func):
                             '1 positional argument')
 
         from inspect import isclass
-        if isclass(args[0]):
-            cls_arg = type[args[0]]
-        else:
-            cls_arg = args[0].__class__
-        return dispatch(cls_arg)(*args, **kw)
+        type_arg = type[arg1] if isclass(arg1 := args[0]) else arg1.__class__
+        return dispatch(type_arg)(*args, **kw)
 
     funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func

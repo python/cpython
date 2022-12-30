@@ -2905,6 +2905,47 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(""), "default")
         self.assertEqual(f(b""), "default")
 
+    def test_type_argument(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        @f.register
+        def _(arg: type[int]):
+            return "type[int]"
+
+        @f.register
+        def _(arg: typing.Type[float]):
+            return "type[float]"
+
+        @f.register(type[str])
+        def _(arg):
+            return "type[str]"
+
+        @f.register(typing.Type[bytes])
+        def _(arg):
+            return "type[bytes]"
+
+        class A:
+            pass
+
+        class B(A):
+            pass
+
+        @f.register
+        def _(arg: type[A]):
+            return "type[A]"
+
+        @f.register
+        def _(arg: B):
+            return "B"
+
+        self.assertEqual(f(int), "type[int]")
+        self.assertEqual(f(float), "type[float]")
+        self.assertEqual(f(str), "type[str]")
+        self.assertEqual(f(bytes), "type[bytes]")
+        self.assertEqual(f(B), "type[A]")
+
 
 class CachedCostItem:
     _cost = 1
