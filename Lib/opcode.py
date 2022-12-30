@@ -234,6 +234,7 @@ jrel_op('JUMP_IF_FALSE_R', 158)
 jrel_op('JUMP_IF_TRUE_R', 159)
 
 def_op('COPY_R', 160)
+def_op('RETURN_VALUE_R', 161)
 
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)

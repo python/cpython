@@ -121,6 +121,7 @@
 
 #define IS_SCOPE_EXIT_OPCODE(opcode) \
         ((opcode) == RETURN_VALUE || \
+         (opcode) == RETURN_VALUE_R || \
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
@@ -459,7 +460,7 @@ basicblock_last_instr(const basicblock *b) {
 static inline int
 basicblock_returns(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE;
+    return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_VALUE_R);
 }
 
 static inline int
@@ -764,7 +765,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     else {
         c->c_regcode = strstr(f, "mytest");
     }
-    c->c_regcode = true;
+    // c->c_regcode = true;
 
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
@@ -1242,6 +1243,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case RETURN_VALUE:
             return -1;
+        case RETURN_VALUE_R:
+            return 0;
         case IMPORT_STAR:
             return -1;
         case SETUP_ANNOTATIONS:
@@ -1856,6 +1859,16 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADD_YIELD_FROM(C, LOC, await) \
     RETURN_IF_ERROR(compiler_add_yield_from((C), (LOC), (await)))
+
+#define ADD_RETURN_VALUE(C, LOC) \
+    RETURN_IF_ERROR(compiler_add_return_value((C), (LOC)));
+
+#define ADD_RETURN_VALUE_IN_SCOPE(C, LOC) { \
+    if (compiler_add_return_value((C), (LOC)) < 0) { \
+        compiler_exit_scope(C); \
+        return -1; \
+    } \
+}
 
 #define POP_EXCEPT_AND_RERAISE(C, LOC) \
     RETURN_IF_ERROR(compiler_pop_except_and_reraise((C), (LOC)))
@@ -2756,6 +2769,20 @@ compiler_check_debug_args(struct compiler *c, arguments_ty args)
     return SUCCESS;
 }
 
+static int
+compiler_add_return_value(struct compiler *c, location loc)
+{
+    if (c->c_regcode) {
+        oparg_t val = TMP_OPARG(c->u->u_ntmps++);
+        ADDOP_REGS(c, loc, STORE_FAST_R, val, UNUSED_OPARG, UNUSED_OPARG);
+        ADDOP_REGS(c, loc, RETURN_VALUE_R, val, UNUSED_OPARG, UNUSED_OPARG);
+    }
+    else {
+        ADDOP(c, loc, RETURN_VALUE);
+    }
+    return SUCCESS;
+}
+
 static inline int
 insert_instruction(basicblock *block, int pos, struct instr *instr) {
     RETURN_IF_ERROR(basicblock_next_instr(block));
@@ -2782,7 +2809,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
         insert_instruction(c->u->u_cfg_builder.g_entryblock, 0, &setup));
 
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-    ADDOP(c, NO_LOCATION, RETURN_VALUE);
+    ADD_RETURN_VALUE(c, NO_LOCATION);
     USE_LABEL(c, handler);
     ADDOP(c, NO_LOCATION, STOPITERATION_ERROR);
     ADDOP_I(c, NO_LOCATION, RERAISE, 1);
@@ -2966,7 +2993,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             assert(PyDict_GET_SIZE(c->u->u_cellvars) == 0);
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
-        ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
+        ADD_RETURN_VALUE_IN_SCOPE(c, NO_LOCATION);
         /* create the code object */
         co = assemble(c, 1);
     }
@@ -3263,7 +3290,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
     }
     else {
         location loc = LOCATION(e->lineno, e->lineno, 0, 0);
-        ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+        ADD_RETURN_VALUE_IN_SCOPE(c, loc);
         co = assemble(c, 1);
     }
     qualname = Py_NewRef(c->u->u_qualname);
@@ -3461,7 +3488,7 @@ compiler_return(struct compiler *c, stmt_ty s)
     else if (!preserve_tos) {
         ADDOP_LOAD_CONST(c, loc, s->v.Return.value->v.Constant.value);
     }
-    ADDOP(c, loc, RETURN_VALUE);
+    ADD_RETURN_VALUE(c, loc);
 
     return SUCCESS;
 }
@@ -5673,7 +5700,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     if (type != COMP_GENEXP) {
-        ADDOP(c, LOC(e), RETURN_VALUE);
+        ADD_RETURN_VALUE(c, LOC(e));
     }
     if (type == COMP_GENEXP) {
         if (wrap_in_stopiteration_handler(c) < 0) {
@@ -8838,7 +8865,7 @@ guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
             continue;
         }
         if (last->i_loc.lineno < 0) {
-            if (last->i_opcode == RETURN_VALUE) {
+            if (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_VALUE_R) {
                 for (int i = 0; i < b->b_iused; i++) {
                     assert(b->b_instr[i].i_loc.lineno < 0);
 
@@ -9020,7 +9047,7 @@ add_return_at_end_of_block(struct compiler *c, int addNone)
         if (addNone) {
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
-        ADDOP(c, NO_LOCATION, RETURN_VALUE);
+        ADD_RETURN_VALUE(c, NO_LOCATION);
     }
     return SUCCESS;
 }
