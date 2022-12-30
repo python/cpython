@@ -961,7 +961,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             sock = socket.socket(family=family, type=type_, proto=proto)
             sock.setblocking(False)
             if local_addr_infos is not None:
-                for _, _, _, _, laddr in local_addr_infos:
+                for lfamily, _, _, _, laddr in local_addr_infos:
+                    # skip local addresses of different family
+                    if lfamily != family:
+                        continue
                     try:
                         sock.bind(laddr)
                         break
