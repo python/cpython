@@ -2926,6 +2926,13 @@ class TestSingleDispatch(unittest.TestCase):
         def _(arg):
             return "type[bytes]"
 
+        self.assertEqual(f(int), "type[int]")
+        self.assertEqual(f(float), "type[float]")
+        self.assertEqual(f(str), "type[str]")
+        self.assertEqual(f(bytes), "type[bytes]")
+        self.assertEqual(f(2), "default")
+
+    def test_type_argument_mro(self):
         class A:
             pass
 
@@ -2935,6 +2942,10 @@ class TestSingleDispatch(unittest.TestCase):
         class C:
             pass
 
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
         @f.register
         def _(arg: type[A]):
             return "type[A]"
@@ -2942,6 +2953,14 @@ class TestSingleDispatch(unittest.TestCase):
         @f.register
         def _(arg: B):
             return "B"
+
+        self.assertEqual(f(B), "type[A]")
+        self.assertEqual(f(C), "default")
+
+    def test_type_argument_unions(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
 
         @f.register
         def _(arg: type[list|dict]):
@@ -2951,14 +2970,13 @@ class TestSingleDispatch(unittest.TestCase):
         def _(arg: type[set]|typing.Type[type(None)]):
             return "type[set]|type[NoneType]"
 
-        self.assertEqual(f(int), "type[int]")
-        self.assertEqual(f(float), "type[float]")
-        self.assertEqual(f(str), "type[str]")
-        self.assertEqual(f(bytes), "type[bytes]")
-        self.assertEqual(f(B), "type[A]")
-        self.assertEqual(f(C), "default")
         self.assertEqual(f(list), "type[list|dict]")
         self.assertEqual(f(type(None)), "type[set]|type[NoneType]")
+
+    def test_type_argument_invalid_types(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
 
         with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
             @f.register
