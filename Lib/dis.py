@@ -198,13 +198,15 @@ def code_info(x):
     return _format_code_info(_get_code_object(x))
 
 def _format_code_info(co):
+    realvars = tuple(n for n in co.co_varnames if not n.startswith('$'))
+    ntmpvars = len(co.co_varnames) - len(realvars)
     lines = []
     lines.append("Name:              %s" % co.co_name)
     lines.append("Filename:          %s" % co.co_filename)
     lines.append("Argument count:    %s" % co.co_argcount)
     lines.append("Positional-only arguments: %s" % co.co_posonlyargcount)
     lines.append("Kw-only arguments: %s" % co.co_kwonlyargcount)
-    lines.append("Number of locals:  %s" % co.co_nlocals)
+    lines.append("Number of locals:  %s" % (co.co_nlocals - ntmpvars))
     lines.append("Stack size:        %s" % co.co_stacksize)
     lines.append("Flags:             %s" % pretty_flags(co.co_flags))
     if co.co_consts:
@@ -215,9 +217,9 @@ def _format_code_info(co):
         lines.append("Names:")
         for i_n in enumerate(co.co_names):
             lines.append("%4d: %s" % i_n)
-    if co.co_varnames:
+    if realvars:
         lines.append("Variable names:")
-        for i_n in enumerate(co.co_varnames):
+        for i_n in enumerate(realvars):
             lines.append("%4d: %s" % i_n)
     if co.co_freevars:
         lines.append("Free variables:")
