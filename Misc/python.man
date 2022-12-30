@@ -308,6 +308,11 @@ Set implementation specific option. The following options are available:
 
     -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the
          given directory instead of to the code tree.
+
+    -X int_max_str_digits=number: limit the size of int<->str conversions.
+       This helps avoid denial of service attacks when parsing untrusted data.
+       The default is sys.int_info.default_max_str_digits.  0 disables.
+
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
@@ -477,6 +482,11 @@ values.
 
 The integer must be a decimal number in the range [0,4294967295].  Specifying
 the value 0 will disable hash randomization.
+.IP PYTHONINTMAXSTRDIGITS
+Limit the maximum digit characters in an int value
+when converting from a string and when converting an int back to a str.
+A value of 0 disables the limit.  Conversions to or from bases 2, 4, 8,
+16, and 32 are never limited.
 .IP PYTHONMALLOC
 Set the Python memory allocators and/or install debug hooks. The available
 memory allocators are
