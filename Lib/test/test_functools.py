@@ -2945,7 +2945,11 @@ class TestSingleDispatch(unittest.TestCase):
 
         @f.register
         def _(arg: type[list|dict]):
-            return "list|dict"
+            return "type[list|dict]"
+
+        @f.register
+        def _(arg: type[set]|typing.Type[type(None)]):
+            return "type[set]|type[NoneType]"
 
         self.assertEqual(f(int), "type[int]")
         self.assertEqual(f(float), "type[float]")
@@ -2953,7 +2957,8 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(bytes), "type[bytes]")
         self.assertEqual(f(B), "type[A]")
         self.assertEqual(f(C), "default")
-        self.assertEqual(f(list), "list|dict")
+        self.assertEqual(f(list), "type[list|dict]")
+        self.assertEqual(f(type(None)), "type[set]|type[NoneType]")
 
 
 class CachedCostItem:

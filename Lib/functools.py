@@ -871,7 +871,10 @@ def singledispatch(func):
             return True
         from typing import get_args
         return (_is_union_type(cls) and
-                all(isinstance(arg, type) for arg in get_args(cls)))
+                all(isinstance(arg, type) if not _is_type_type(arg)
+                                          else isinstance(get_args(arg)[0],
+                                                          type)
+                    for arg in get_args(cls)))
 
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
@@ -917,7 +920,10 @@ def singledispatch(func):
             from typing import get_args
 
             for arg in get_args(cls):
-                registry[arg] = func
+                if _is_type_type(arg):
+                    registry[type[get_args(arg)[0]]] = func
+                else:
+                    registry[arg] = func
         elif _is_type_type(cls):
             from typing import get_args
 
