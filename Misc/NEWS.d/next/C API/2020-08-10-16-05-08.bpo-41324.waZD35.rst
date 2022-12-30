@@ -1,3 +1,0 @@
-Add a minimal decimal capsule API.  The API supports fast conversions
-between Decimals up to 38 digits and their triple representation as a C
-struct.

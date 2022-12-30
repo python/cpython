@@ -1,3 +1,0 @@
-The implementation of :func:`signal.siginterrupt` now uses :c:func:`sigaction`
-(if it is available in the system) instead of the deprecated :c:func:`siginterrupt`.
-Patch by Pablo Galindo.
