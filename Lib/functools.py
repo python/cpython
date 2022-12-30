@@ -939,6 +939,7 @@ def singledispatch(func):
 
     funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
+    registry[type[object]] = func
     wrapper.register = register
     wrapper.dispatch = dispatch
     wrapper.registry = types.MappingProxyType(registry)

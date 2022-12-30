@@ -2932,6 +2932,9 @@ class TestSingleDispatch(unittest.TestCase):
         class B(A):
             pass
 
+        class C:
+            pass
+
         @f.register
         def _(arg: type[A]):
             return "type[A]"
@@ -2945,6 +2948,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(str), "type[str]")
         self.assertEqual(f(bytes), "type[bytes]")
         self.assertEqual(f(B), "type[A]")
+        self.assertEqual(f(C), "default")
 
 
 class CachedCostItem:
