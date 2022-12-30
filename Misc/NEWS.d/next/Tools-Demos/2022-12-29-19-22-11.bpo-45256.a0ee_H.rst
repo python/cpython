@@ -1,0 +1,1 @@
+Fix confusing AttributeError in python-gdb.py when py-locals is used without a frame.
