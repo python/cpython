@@ -280,6 +280,32 @@ if sys.platform != 'win32':
             from .popen_fork import Popen
             return Popen(process_obj)
 
+    class _DeprecatedForkProcess(ForkProcess):
+        @classmethod
+        def _warn(cls, stacklevel):
+            import warnings
+            warnings.warn(
+                "Use of the multiprocessing 'fork' start method by default is "
+                "deprecated.  "
+                "The default will change in Python >= 3.14, per GH-84559.  "
+                "Please use an explicit multiprocessing.get_context or "
+                "multiprocessing.set_start_method API call to specify your "
+                "application's start method if you want to use 'fork'."
+                "  The 'spawn' and 'forkserver' start methods are safer "
+                "depending on the platform and application.",
+                category=DeprecationWarning,
+                stacklevel=stacklevel,
+            )
+
+        # Blame the process.start() method call.
+        _ORIG_WARNING_STACKLEVEL = 5
+        _warning_stacklevel = _ORIG_WARNING_STACKLEVEL
+
+        @classmethod
+        def _Popen(cls, process_obj):
+            cls._warn(stacklevel=cls._warning_stacklevel)
+            return super()._Popen(process_obj)
+
     class SpawnProcess(process.BaseProcess):
         _start_method = 'spawn'
         @staticmethod
@@ -303,6 +329,9 @@ if sys.platform != 'win32':
         _name = 'fork'
         Process = ForkProcess
 
+    class _DefaultForkContext(ForkContext):
+        Process = _DeprecatedForkProcess
+
     class SpawnContext(BaseContext):
         _name = 'spawn'
         Process = SpawnProcess
@@ -318,13 +347,16 @@ if sys.platform != 'win32':
         'fork': ForkContext(),
         'spawn': SpawnContext(),
         'forkserver': ForkServerContext(),
+        # Remove None and _DefaultForkContext() when changing the default
+        # in 3.14 for https://github.com/python/cpython/issues/84559.
+        None: _DefaultForkContext(),
     }
     if sys.platform == 'darwin':
         # bpo-33725: running arbitrary code after fork() is no longer reliable
         # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
         _default_context = DefaultContext(_concrete_contexts['spawn'])
     else:
-        _default_context = DefaultContext(_concrete_contexts['fork'])
+        _default_context = DefaultContext(_concrete_contexts[None])
 
 else:
 

@@ -326,7 +326,20 @@ class Pool(object):
                               wrap_exception))
             w.name = w.name.replace('Process', 'PoolWorker')
             w.daemon = True
+            if _warn := getattr(w, '_warn', None):  # GH-84559
+                # Hacky, but BaseProcess._Popen does everything via the class
+                # using static or class methods with no instance.  The way
+                # multiprocessing APIs get used, a concurrency mess here
+                # with a Pool() being constructed at the same time as other
+                # threads are calling Process.start() is highly unlikely.
+                # If so: The oddball application gets the warning attributed
+                # to an unusual spot in the stack on occasion.
+                process_class = w.__class__
+                process_class._warning_stacklevel = 8  # blame mp.Pool()
             w.start()
+            if _warn:
+                process_class._warning_stacklevel = (
+                        process_class._ORIG_WARNING_STACKLEVEL)
             pool.append(w)
             util.debug('added worker')
 
