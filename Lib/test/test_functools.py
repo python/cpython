@@ -2943,12 +2943,17 @@ class TestSingleDispatch(unittest.TestCase):
         def _(arg: B):
             return "B"
 
+        @f.register
+        def _(arg: type[list|dict]):
+            return "list|dict"
+
         self.assertEqual(f(int), "type[int]")
         self.assertEqual(f(float), "type[float]")
         self.assertEqual(f(str), "type[str]")
         self.assertEqual(f(bytes), "type[bytes]")
         self.assertEqual(f(B), "type[A]")
         self.assertEqual(f(C), "default")
+        self.assertEqual(f(list), "list|dict")
 
 
 class CachedCostItem:

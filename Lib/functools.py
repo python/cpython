@@ -858,15 +858,16 @@ def singledispatch(func):
         return get_origin(cls) in {Union, types.UnionType}
 
     def _is_type_type(cls):
-        from typing import get_args, get_origin, Type
-        if (get_origin(cls) in (type, Type) and
-            isinstance(get_args(cls)[0], type)):
+        # checks if cls is something like type[A]
+        from typing import get_origin, Type
+        if get_origin(cls) in (type, Type):
             return True
 
     def _is_valid_dispatch_type(cls):
-        if isinstance(cls, type):
-            return True
         if _is_type_type(cls):
+            from typing import get_args
+            cls = get_args(cls)[0]
+        if isinstance(cls, type):
             return True
         from typing import get_args
         return (_is_union_type(cls) and
@@ -920,7 +921,13 @@ def singledispatch(func):
         elif _is_type_type(cls):
             from typing import get_args
 
-            registry[type[get_args(cls)[0]]] = func  # normalize Type -> type
+            inner = get_args(cls)[0]
+
+            if _is_union_type(inner):
+                for arg in get_args(inner):
+                    registry[type[arg]] = func
+            else:
+                registry[type[inner]] = func
         else:
             registry[cls] = func
         if cache_token is None and hasattr(cls, '__abstractmethods__'):
