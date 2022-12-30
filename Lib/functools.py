@@ -786,16 +786,16 @@ def _find_impl(cls, registry):
     if get_origin(cls) is type:
         to_type_like_given = lambda t: type[t]
         class_ = get_args(cls)[0]
-        registry_classes = (
+        registry_classes = {
             get_args(key)[0]
             for key in registry.keys() if get_origin(key) is type
-        )
+        }
     else:
         to_type_like_given = lambda t: t
         class_ = cls
-        registry_classes = (
+        registry_classes = {
             key for key in registry.keys() if get_origin(key) is not type
-        )
+        }
     mro = _compose_mro(class_, registry_classes)
     match = None
     for t in mro:
