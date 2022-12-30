@@ -10012,14 +10012,23 @@ translate_jump_labels_to_targets(basicblock *entryblock)
 static int
 reduce_traffic_between_registers_and_stack(basicblock *b)
 {
-    for (int i = 0; i < b->b_iused - 1; i++) {
-        struct instr *instr = &b->b_instr[i];
-        struct instr *next = &b->b_instr[i+1];
-        if ((instr->i_opcode == LOAD_CONST_R || instr->i_opcode == LOAD_FAST_R) &&
-             next->i_opcode == STORE_FAST_R) {
-
-            INSTR_SET_OP2(next, COPY_R, 0, instr->i_oparg1, next->i_oparg1);
-            INSTR_SET_OP0(instr, NOP);
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (int i = 0; i < b->b_iused - 1; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (instr->i_opcode == LOAD_CONST_R || instr->i_opcode == LOAD_FAST_R) {
+                int next_i = i + 1;
+                while (next_i < b->b_iused && b->b_instr[next_i].i_opcode == COPY_R) {
+                    next_i++;
+                }
+                if (next_i < b->b_iused && b->b_instr[next_i].i_opcode == STORE_FAST_R) {
+                    struct instr *next = &b->b_instr[next_i];
+                    INSTR_SET_OP2(next, COPY_R, 0, instr->i_oparg1, next->i_oparg1);
+                    INSTR_SET_OP0(instr, NOP);
+                    changed = true;
+                }
+            }
         }
     }
     return 0;
