@@ -1,6 +1,4 @@
 #include "Python.h"
-
-#include "Python-ast.h"
 #include "pycore_symtable.h"      // struct symtable
 
 #include "clinic/symtablemodule.c.h"
@@ -58,9 +56,7 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
     if (st == NULL) {
         return NULL;
     }
-    t = (PyObject *)st->st_top;
-    Py_INCREF(t);
-    PyMem_Free((void *)st->st_future);
+    t = Py_NewRef(st->st_top);
     _PySymtable_Free(st);
     return t;
 }

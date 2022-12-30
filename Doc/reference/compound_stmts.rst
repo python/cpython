@@ -154,17 +154,17 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
 .. productionlist:: python-grammar
-   for_stmt: "for" `target_list` "in" `expression_list` ":" `suite`
+   for_stmt: "for" `target_list` "in" `starred_list` ":" `suite`
            : ["else" ":" `suite`]
 
-The expression list is evaluated once; it should yield an iterable object.  An
-iterator is created for the result of the ``expression_list``.  The suite is
-then executed once for each item provided by the iterator, in the order returned
-by the iterator.  Each item in turn is assigned to the target list using the
-standard rules for assignments (see :ref:`assignment`), and then the suite is
-executed.  When the items are exhausted (which is immediately when the sequence
-is empty or an iterator raises a :exc:`StopIteration` exception), the suite in
-the :keyword:`!else` clause, if present, is executed, and the loop terminates.
+The ``starred_list`` expression is evaluated once; it should yield an
+:term:`iterable` object.  An :term:`iterator` is created for that iterable.
+The first item provided
+by the iterator is then assigned to the target list using the standard
+rules for assignments (see :ref:`assignment`), and the suite is executed.  This
+repeats for each item provided by the iterator.  When the iterator is exhausted,
+the suite in the :keyword:`!else` clause,
+if present, is executed, and the loop terminates.
 
 .. index::
    statement: break
@@ -196,31 +196,11 @@ the built-in function :func:`range` returns an iterator of integers suitable to
 emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
 returns the list ``[0, 1, 2]``.
 
-.. note::
-
-   .. index::
-      single: loop; over mutable sequence
-      single: mutable sequence; loop over
-
-   There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, e.g. lists).  An internal counter is used
-   to keep track of which item is used next, and this is incremented on each
-   iteration.  When this counter has reached the length of the sequence the loop
-   terminates.  This means that if the suite deletes the current (or a previous)
-   item from the sequence, the next item will be skipped (since it gets the
-   index of the current item which has already been treated).  Likewise, if the
-   suite inserts an item in the sequence before the current item, the current
-   item will be treated again the next time through the loop. This can lead to
-   nasty bugs that can be avoided by making a temporary copy using a slice of
-   the whole sequence, e.g., ::
-
-      for x in a[:]:
-          if x < 0: a.remove(x)
+.. versionchanged:: 3.11
+   Starred elements are now allowed in the expression list.
 
 
 .. _try:
-.. _except:
-.. _finally:
 
 The :keyword:`!try` statement
 =============================
@@ -233,51 +213,72 @@ The :keyword:`!try` statement
    keyword: as
    single: : (colon); compound statement
 
-The :keyword:`try` statement specifies exception handlers and/or cleanup code
+The :keyword:`!try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist:: python-grammar
-   try_stmt: `try1_stmt` | `try2_stmt`
+   try_stmt: `try1_stmt` | `try2_stmt` | `try3_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
             : ["else" ":" `suite`]
             : ["finally" ":" `suite`]
    try2_stmt: "try" ":" `suite`
+            : ("except" "*" `expression` ["as" `identifier`] ":" `suite`)+
+            : ["else" ":" `suite`]
+            : ["finally" ":" `suite`]
+   try3_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
+Additional information on exceptions can be found in section :ref:`exceptions`,
+and information on using the :keyword:`raise` statement to generate exceptions
+may be found in section :ref:`raise`.
 
-The :keyword:`except` clause(s) specify one or more exception handlers. When no
+
+.. _except:
+
+:keyword:`!except` clause
+-------------------------
+
+The :keyword:`!except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
 When an exception occurs in the :keyword:`!try` suite, a search for an exception
-handler is started.  This search inspects the except clauses in turn until one
-is found that matches the exception.  An expression-less except clause, if
-present, must be last; it matches any exception.  For an except clause with an
-expression, that expression is evaluated, and the clause matches the exception
+handler is started. This search inspects the :keyword:`!except` clauses in turn
+until one is found that matches the exception.
+An expression-less :keyword:`!except` clause, if present, must be last;
+it matches any exception.
+For an :keyword:`!except` clause with an expression,
+that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if it is the class or a base class of the exception
-object, or a tuple containing an item that is the class or a base class of
-the exception object.
+compatible with an exception if the object is the class or a
+:term:`non-virtual base class <abstract base class>` of the exception object,
+or a tuple containing an item that is the class or a non-virtual base class
+of the exception object.
 
-If no except clause matches the exception, the search for an exception handler
+If no :keyword:`!except` clause matches the exception,
+the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
 
-If the evaluation of an expression in the header of an except clause raises an
-exception, the original search for a handler is canceled and a search starts for
+If the evaluation of an expression
+in the header of an :keyword:`!except` clause raises an exception,
+the original search for a handler is canceled and a search starts for
 the new exception in the surrounding code and on the call stack (it is treated
 as if the entire :keyword:`try` statement raised the exception).
 
 .. index:: single: as; except clause
 
-When a matching except clause is found, the exception is assigned to the target
-specified after the :keyword:`!as` keyword in that except clause, if present, and
-the except clause's suite is executed.  All except clauses must have an
-executable block.  When the end of this block is reached, execution continues
-normally after the entire try statement.  (This means that if two nested
-handlers exist for the same exception, and the exception occurs in the try
-clause of the inner handler, the outer handler will not handle the exception.)
+When a matching :keyword:`!except` clause is found,
+the exception is assigned to the target
+specified after the :keyword:`!as` keyword in that :keyword:`!except` clause,
+if present, and the :keyword:`!except` clause's suite is executed.
+All :keyword:`!except` clauses must have an executable block.
+When the end of this block is reached, execution continues
+normally after the entire :keyword:`try` statement.
+(This means that if two nested handlers exist for the same exception,
+and the exception occurs in the :keyword:`!try` clause of the inner handler,
+the outer handler will not handle the exception.)
 
 When an exception has been assigned using ``as target``, it is cleared at the
-end of the except clause.  This is as if ::
+end of the :keyword:`!except` clause.  This is as if ::
 
    except E as N:
        foo
@@ -291,7 +292,8 @@ was translated to ::
            del N
 
 This means the exception must be assigned to a different name to be able to
-refer to it after the except clause.  Exceptions are cleared because with the
+refer to it after the :keyword:`!except` clause.
+Exceptions are cleared because with the
 traceback attached to them, they form a reference cycle with the stack frame,
 keeping all locals in that frame alive until the next garbage collection occurs.
 
@@ -299,7 +301,8 @@ keeping all locals in that frame alive until the next garbage collection occurs.
    module: sys
    object: traceback
 
-Before an except clause's suite is executed, details about the exception are
+Before an :keyword:`!except` clause's suite is executed,
+details about the exception are
 stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
 :func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
 exception instance and a traceback object (see section :ref:`types`) identifying
@@ -325,11 +328,76 @@ when leaving an exception handler::
    >>> print(sys.exc_info())
    (None, None, None)
 
+
+.. index::
+   keyword: except_star
+
+.. _except_star:
+
+:keyword:`!except*` clause
+--------------------------
+
+The :keyword:`!except*` clause(s) are used for handling
+:exc:`ExceptionGroup`\s. The exception type for matching is interpreted as in
+the case of :keyword:`except`, but in the case of exception groups we can have
+partial matches when the type matches some of the exceptions in the group.
+This means that multiple :keyword:`!except*` clauses can execute,
+each handling part of the exception group.
+Each clause executes at most once and handles an exception group
+of all matching exceptions.  Each exception in the group is handled by at most
+one :keyword:`!except*` clause, the first that matches it. ::
+
+   >>> try:
+   ...     raise ExceptionGroup("eg",
+   ...         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
+   ... except* TypeError as e:
+   ...     print(f'caught {type(e)} with nested {e.exceptions}')
+   ... except* OSError as e:
+   ...     print(f'caught {type(e)} with nested {e.exceptions}')
+   ...
+   caught <class 'ExceptionGroup'> with nested (TypeError(2),)
+   caught <class 'ExceptionGroup'> with nested (OSError(3), OSError(4))
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 2, in <module>
+     | ExceptionGroup: eg
+     +-+---------------- 1 ----------------
+       | ValueError: 1
+       +------------------------------------
+
+
+Any remaining exceptions that were not handled by any :keyword:`!except*`
+clause are re-raised at the end, combined into an exception group along with
+all exceptions that were raised from within :keyword:`!except*` clauses.
+
+If the raised exception is not an exception group and its type matches
+one of the :keyword:`!except*` clauses, it is caught and wrapped by an
+exception group with an empty message string. ::
+
+   >>> try:
+   ...     raise BlockingIOError
+   ... except* BlockingIOError as e:
+   ...     print(repr(e))
+   ...
+   ExceptionGroup('', (BlockingIOError()))
+
+An :keyword:`!except*` clause must have a matching type,
+and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
+It is not possible to mix :keyword:`except` and :keyword:`!except*`
+in the same :keyword:`try`.
+:keyword:`break`, :keyword:`continue` and :keyword:`return`
+cannot appear in an :keyword:`!except*` clause.
+
+
 .. index::
    keyword: else
    statement: return
    statement: break
    statement: continue
+
+.. _except_else:
+
+:keyword:`!else` clause
+-----------------------
 
 The optional :keyword:`!else` clause is executed if the control flow leaves the
 :keyword:`try` suite, no exception was raised, and no :keyword:`return`,
@@ -337,11 +405,17 @@ The optional :keyword:`!else` clause is executed if the control flow leaves the
 the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
+
 .. index:: keyword: finally
 
-If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
+.. _finally:
+
+:keyword:`!finally` clause
+--------------------------
+
+If :keyword:`!finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`!else` clauses.  If an exception occurs in any of the clauses and is
+:keyword:`else` clauses.  If an exception occurs in any of the clauses and is
 not handled, the exception is temporarily saved. The :keyword:`!finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
@@ -359,7 +433,7 @@ or :keyword:`continue` statement, the saved exception is discarded::
    42
 
 The exception information is not available to the program during execution of
-the :keyword:`finally` clause.
+the :keyword:`!finally` clause.
 
 .. index::
    statement: return
@@ -368,10 +442,10 @@ the :keyword:`finally` clause.
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
 executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally`
-statement, the :keyword:`finally` clause is also executed 'on the way out.'
+statement, the :keyword:`!finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
-statement executed.  Since the :keyword:`finally` clause always executes, a
+statement executed.  Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
 always be the last one executed::
 
@@ -384,13 +458,9 @@ always be the last one executed::
    >>> foo()
    'finally'
 
-Additional information on exceptions can be found in section :ref:`exceptions`,
-and information on using the :keyword:`raise` statement to generate exceptions
-may be found in section :ref:`raise`.
-
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
-   :keyword:`finally` clause due to a problem with the implementation.
+   :keyword:`!finally` clause due to a problem with the implementation.
 
 
 .. _with:
@@ -418,8 +488,8 @@ usage patterns to be encapsulated for convenient reuse.
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
 
-#. The context expression (the expression given in the :token:`with_item`) is
-   evaluated to obtain a context manager.
+#. The context expression (the expression given in the
+   :token:`~python-grammar:with_item`) is evaluated to obtain a context manager.
 
 #. The context manager's :meth:`__enter__` is loaded for later use.
 
@@ -436,7 +506,7 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
       method returns without an error, then :meth:`__exit__` will always be
       called. Thus, if an error occurs during the assignment to the target list,
       it will be treated the same as an error occurring within the suite would
-      be. See step 6 below.
+      be. See step 7 below.
 
 #. The suite is executed.
 
@@ -523,6 +593,7 @@ The :keyword:`!match` statement
    keyword: if
    keyword: as
    pair: match; case
+   single: as; match statement
    single: : (colon); compound statement
 
 .. versionadded:: 3.10
@@ -533,7 +604,7 @@ The match statement is used for pattern matching.  Syntax:
    match_stmt: 'match' `subject_expr` ":" NEWLINE INDENT `case_block`+ DEDENT
    subject_expr: `star_named_expression` "," `star_named_expressions`?
                : | `named_expression`
-   case_block: 'case' `patterns` [`guard`] ':' `block`
+   case_block: 'case' `patterns` [`guard`] ":" `block`
 
 .. note::
    This section uses single quotes to denote
@@ -585,8 +656,8 @@ Here's an overview of the logical flow of a match statement:
 #. If the pattern succeeds, the corresponding guard (if present) is evaluated. In
    this case all name bindings are guaranteed to have happened.
 
-   * If the guard evaluates as truthy or missing, the ``block`` inside ``case_block`` is
-     executed.
+   * If the guard evaluates as true or is missing, the ``block`` inside
+     ``case_block`` is executed.
 
    * Otherwise, the next ``case_block`` is attempted as described above.
 
@@ -637,10 +708,10 @@ The logical flow of a ``case`` block with a ``guard`` follows:
 
 #. If the pattern succeeded, evaluate the ``guard``.
 
-   * If the ``guard`` condition evaluates to "truthy", the case block is
+   * If the ``guard`` condition evaluates as true, the case block is
      selected.
 
-   * If the ``guard`` condition evaluates to "falsy", the case block is not
+   * If the ``guard`` condition evaluates as false, the case block is not
      selected.
 
    * If the ``guard`` raises an exception during evaluation, the exception
@@ -797,7 +868,8 @@ Syntax:
    capture_pattern: !'_' NAME
 
 A single underscore ``_`` is not a capture pattern (this is what ``!'_'``
-expresses). And is instead treated as a :token:`wildcard_pattern`.
+expresses). It is instead treated as a
+:token:`~python-grammar:wildcard_pattern`.
 
 In a given pattern, a given name can only be bound once.  E.g.
 ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
@@ -820,7 +892,9 @@ and binds no name.  Syntax:
 .. productionlist:: python-grammar
    wildcard_pattern: '_'
 
-``_`` is a :ref:`soft keyword <soft-keywords>`.
+``_`` is a :ref:`soft keyword <soft-keywords>` within any pattern,
+but only within patterns.  It is an identifier, as usual, even within
+``match`` subject expressions, ``guard``\ s, and ``case`` blocks.
 
 In simple terms, ``_`` will always succeed.
 
@@ -861,7 +935,7 @@ emphasize the intended grouping.  Otherwise, it has no additional syntax.
 Syntax:
 
 .. productionlist:: python-grammar
-   group_pattern: '(' `pattern` ')'
+   group_pattern: "(" `pattern` ")"
 
 In simple terms ``(P)`` has the same effect as ``P``.
 
@@ -898,8 +972,8 @@ sequence pattern.
 The following is the logical flow for matching a sequence pattern against a
 subject value:
 
-#. If the subject value is not an instance of a
-   :class:`collections.abc.Sequence` the sequence pattern fails.
+#. If the subject value is not a sequence [#]_, the sequence pattern
+   fails.
 
 #. If the subject value is an instance of ``str``, ``bytes`` or ``bytearray``
    the sequence pattern fails.
@@ -941,7 +1015,7 @@ subject value:
 In simple terms ``[P1, P2, P3,`` ... ``, P<N>]`` matches only if all the following
 happens:
 
-* ``isinstance(<subject>, collections.abc.Sequence)``
+* check ``<subject>`` is a sequence
 * ``len(subject) == <N>``
 * ``P1`` matches ``<subject>[0]`` (note that this match can also bind names)
 * ``P2`` matches ``<subject>[1]`` (note that this match can also bind names)
@@ -966,22 +1040,22 @@ Syntax:
 At most one double star pattern may be in a mapping pattern.  The double star
 pattern must be the last subpattern in the mapping pattern.
 
-Duplicate key values in mapping patterns are disallowed. (If all key patterns
-are literal patterns this is considered a syntax error; otherwise this is a
-runtime error and will raise :exc:`ValueError`.)
+Duplicate keys in mapping patterns are disallowed. Duplicate literal keys will
+raise a :exc:`SyntaxError`. Two keys that otherwise have the same value will
+raise a :exc:`ValueError` at runtime.
 
 The following is the logical flow for matching a mapping pattern against a
 subject value:
 
-#. If the subject value is not an instance of :class:`collections.abc.Mapping`,
-   the mapping pattern fails.
+#. If the subject value is not a mapping [#]_,the mapping pattern fails.
 
 #. If every key given in the mapping pattern is present in the subject mapping,
    and the pattern for each key matches the corresponding item of the subject
    mapping, the mapping pattern succeeds.
 
 #. If duplicate keys are detected in the mapping pattern, the pattern is
-   considered invalid and :exc:`ValueError` is raised.
+   considered invalid. A :exc:`SyntaxError` is raised for duplicate literal
+   values; or a :exc:`ValueError` for named keys of the same value.
 
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
    subject's ``get()`` method.  Matched key-value pairs must already be present
@@ -991,7 +1065,7 @@ subject value:
 In simple terms ``{KEY1: P1, KEY2: P2, ... }`` matches only if all the following
 happens:
 
-* ``isinstance(<subject>, collections.abc.Mapping)``
+* check ``<subject>`` is a mapping
 * ``KEY1 in <subject>``
 * ``P1`` matches ``<subject>[KEY1]``
 * ... and so on for the corresponding KEY/pattern pair.
@@ -1015,7 +1089,7 @@ A class pattern represents a class and its positional and keyword arguments
 
 The same keyword should not be repeated in class patterns.
 
-The following is the logical flow for matching a mapping pattern against a
+The following is the logical flow for matching a class pattern against a
 subject value:
 
 #. If ``name_or_attr`` is not an instance of the builtin :class:`type` , raise
@@ -1030,7 +1104,7 @@ subject value:
 
    For a number of built-in types (specified below), a single positional
    subpattern is accepted which will match the entire subject; for these types
-   no keyword patterns are accepted.
+   keyword patterns also work as for other types.
 
    If only keyword patterns are present, they are processed as follows,
    one by one:
@@ -1053,11 +1127,11 @@ subject value:
    patterns using the :data:`~object.__match_args__` attribute on the class
    ``name_or_attr`` before matching:
 
-   I. The equivalent of ``getattr(cls, "__match_args__", ()))`` is called.
+   I. The equivalent of ``getattr(cls, "__match_args__", ())`` is called.
 
       * If this raises an exception, the exception bubbles up.
 
-      * If the returned value is not a list or tuple, the conversion fails and
+      * If the returned value is not a tuple, the conversion fails and
         :exc:`TypeError` is raised.
 
       * If there are more positional patterns than ``len(cls.__match_args__)``,
@@ -1091,7 +1165,7 @@ subject value:
 
    These classes accept a single positional argument, and the pattern there is matched
    against the whole object rather than an attribute. For example ``int(0|1)`` matches
-   the value ``0``, but not the values ``0.0`` or ``False``.
+   the value ``0``, but not the value ``0.0``.
 
 In simple terms ``CLS(P1, attr=P2)`` matches only if the following happens:
 
@@ -1138,7 +1212,6 @@ A function definition defines a user-defined function object (see section
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `assignment_expression` NEWLINE
-   dotted_name: `identifier` ("." `identifier`)*
    parameter_list: `defparameter` ("," `defparameter`)* "," "/" ["," [`parameter_list_no_posonly`]]
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
@@ -1181,9 +1254,9 @@ is roughly equivalent to ::
 except that the original function is not temporarily bound to the name ``func``.
 
 .. versionchanged:: 3.9
-   Functions may be decorated with any valid :token:`assignment_expression`.
-   Previously, the grammar was much more restrictive; see :pep:`614` for
-   details.
+   Functions may be decorated with any valid
+   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
+   much more restrictive; see :pep:`614` for details.
 
 .. index::
    triple: default; parameter; value
@@ -1215,19 +1288,25 @@ e.g.::
        return penguin
 
 .. index::
+   single: / (slash); function definition
    single: * (asterisk); function definition
    single: **; function definition
 
 Function call semantics are described in more detail in section :ref:`calls`. A
 function call always assigns values to all parameters mentioned in the parameter
-list, either from position arguments, from keyword arguments, or from default
+list, either from positional arguments, from keyword arguments, or from default
 values.  If the form "``*identifier``" is present, it is initialized to a tuple
 receiving any excess positional parameters, defaulting to the empty tuple.
 If the form "``**identifier``" is present, it is initialized to a new
 ordered mapping receiving any excess keyword arguments, defaulting to a
 new empty mapping of the same type.  Parameters after "``*``" or
 "``*identifier``" are keyword-only parameters and may only be passed
-used keyword arguments.
+by keyword arguments.  Parameters before "``/``" are positional-only parameters
+and may only be passed by positional arguments.
+
+.. versionchanged:: 3.8
+   The ``/`` function parameter syntax may be used to indicate positional-only
+   parameters. See :pep:`570` for details.
 
 .. index::
    pair: function; annotations
@@ -1239,9 +1318,13 @@ following the parameter name.  Any parameter may have an annotation, even those 
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as string values
-in a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object.
+semantics of a function.  The annotation values are available as values of
+a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.  If the ``annotations`` import from
+:mod:`__future__` is used, annotations are preserved as strings at runtime which
+enables postponed evaluation.  Otherwise, they are evaluated when the function
+definition is executed.  In this case annotations may be evaluated in
+a different order than they appear in the source code.
 
 .. index:: pair: lambda; expression
 
@@ -1349,9 +1432,9 @@ The evaluation rules for the decorator expressions are the same as for function
 decorators.  The result is then bound to the class name.
 
 .. versionchanged:: 3.9
-   Classes may be decorated with any valid :token:`assignment_expression`.
-   Previously, the grammar was much more restrictive; see :pep:`614` for
-   details.
+   Classes may be decorated with any valid
+   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
+   much more restrictive; see :pep:`614` for details.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
@@ -1455,7 +1538,7 @@ Is semantically equivalent to::
     else:
         SUITE2
 
-See also :meth:`__aiter__` and :meth:`__anext__` for details.
+See also :meth:`~object.__aiter__` and :meth:`~object.__anext__` for details.
 
 It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
 body of a coroutine function.
@@ -1497,7 +1580,7 @@ is semantically equivalent to::
         if not hit_except:
             await aexit(manager, None, None, None)
 
-See also :meth:`__aenter__` and :meth:`__aexit__` for details.
+See also :meth:`~object.__aenter__` and :meth:`~object.__aexit__` for details.
 
 It is a :exc:`SyntaxError` to use an ``async with`` statement outside the
 body of a coroutine function.
@@ -1514,6 +1597,35 @@ body of a coroutine function.
 .. [#] The exception is propagated to the invocation stack unless
    there is a :keyword:`finally` clause which happens to raise another
    exception. That new exception causes the old one to be lost.
+
+.. [#] In pattern matching, a sequence is defined as one of the following:
+
+      * a class that inherits from :class:`collections.abc.Sequence`
+      * a Python class that has been registered as :class:`collections.abc.Sequence`
+      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_SEQUENCE` bit set
+      * a class that inherits from any of the above
+
+   The following standard library classes are sequences:
+
+      * :class:`array.array`
+      * :class:`collections.deque`
+      * :class:`list`
+      * :class:`memoryview`
+      * :class:`range`
+      * :class:`tuple`
+
+   .. note:: Subject values of type ``str``, ``bytes``, and ``bytearray``
+      do not match sequence patterns.
+
+.. [#] In pattern matching, a mapping is defined as one of the following:
+
+      * a class that inherits from :class:`collections.abc.Mapping`
+      * a Python class that has been registered as :class:`collections.abc.Mapping`
+      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_MAPPING` bit set
+      * a class that inherits from any of the above
+
+   The standard library classes :class:`dict` and :class:`types.MappingProxyType`
+   are mappings.
 
 .. [#] A string literal appearing as the first statement in the function body is
    transformed into the function's ``__doc__`` attribute and therefore the

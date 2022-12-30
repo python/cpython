@@ -1,11 +1,12 @@
 #! /usr/bin/env python
 """Generate C code from an ASDL description."""
 
-import os
 import sys
 import textwrap
+import types
 
 from argparse import ArgumentParser
+from contextlib import contextmanager
 from pathlib import Path
 
 import asdl
@@ -69,16 +70,20 @@ def reflow_lines(s, depth):
 def reflow_c_string(s, depth):
     return '"%s"' % s.replace('\n', '\\n"\n%s"' % (' ' * depth * TABSIZE))
 
-def is_simple(sum):
+def is_simple(sum_type):
     """Return True if a sum is a simple.
 
-    A sum is simple if its types have no fields, e.g.
+    A sum is simple if it's types have no fields and itself
+    doesn't have any attributes. Instances of these types are
+    cached at C level, and they act like singletons when propagating
+    parser generated nodes into Python level, e.g.
     unaryop = Invert | Not | UAdd | USub
     """
-    for t in sum.types:
-        if t.fields:
-            return False
-    return True
+
+    return not (
+        sum_type.attributes or
+        any(constructor.fields for constructor in sum_type.types)
+    )
 
 def asdl_of(name, obj):
     if isinstance(obj, asdl.Product) or isinstance(obj, asdl.Constructor):
@@ -99,21 +104,10 @@ def asdl_of(name, obj):
 class EmitVisitor(asdl.VisitorBase):
     """Visit that emits lines"""
 
-    def __init__(self, file):
+    def __init__(self, file, metadata = None):
         self.file = file
-        self.identifiers = set()
-        self.singletons = set()
-        self.types = set()
+        self._metadata = metadata
         super(EmitVisitor, self).__init__()
-
-    def emit_identifier(self, name):
-        self.identifiers.add(str(name))
-
-    def emit_singleton(self, name):
-        self.singletons.add(str(name))
-
-    def emit_type(self, name):
-        self.types.add(str(name))
 
     def emit(self, s, depth, reflow=True):
         # XXX reflow long lines?
@@ -125,6 +119,78 @@ class EmitVisitor(asdl.VisitorBase):
             if line:
                 line = (" " * TABSIZE * depth) + line
             self.file.write(line + "\n")
+
+    @property
+    def metadata(self):
+        if self._metadata is None:
+            raise ValueError(
+                "%s was expecting to be annnotated with metadata"
+                % type(self).__name__
+            )
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, value):
+        self._metadata = value
+
+class MetadataVisitor(asdl.VisitorBase):
+    ROOT_TYPE = "AST"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Metadata:
+        #    - simple_sums: Tracks the list of compound type
+        #                   names where all the constructors
+        #                   belonging to that type lack of any
+        #                   fields.
+        #    - identifiers: All identifiers used in the AST declarations
+        #    - singletons:  List of all constructors that originates from
+        #                   simple sums.
+        #    - types:       List of all top level type names
+        #
+        self.metadata = types.SimpleNamespace(
+            simple_sums=set(),
+            identifiers=set(),
+            singletons=set(),
+            types={self.ROOT_TYPE},
+        )
+
+    def visitModule(self, mod):
+        for dfn in mod.dfns:
+            self.visit(dfn)
+
+    def visitType(self, type):
+        self.visit(type.value, type.name)
+
+    def visitSum(self, sum, name):
+        self.metadata.types.add(name)
+
+        simple_sum = is_simple(sum)
+        if simple_sum:
+            self.metadata.simple_sums.add(name)
+
+        for constructor in sum.types:
+            if simple_sum:
+                self.metadata.singletons.add(constructor.name)
+            self.visitConstructor(constructor)
+        self.visitFields(sum.attributes)
+
+    def visitConstructor(self, constructor):
+        self.metadata.types.add(constructor.name)
+        self.visitFields(constructor.fields)
+
+    def visitProduct(self, product, name):
+        self.metadata.types.add(name)
+        self.visitFields(product.attributes)
+        self.visitFields(product.fields)
+
+    def visitFields(self, fields):
+        for field in fields:
+            self.visitField(field)
+
+    def visitField(self, field):
+        self.metadata.identifiers.add(field.name)
 
 
 class TypeDefVisitor(EmitVisitor):
@@ -243,7 +309,7 @@ class StructVisitor(EmitVisitor):
         ctype = get_c_type(field.type)
         name = field.name
         if field.seq:
-            if field.type == 'cmpop':
+            if field.type in self.metadata.simple_sums:
                 self.emit("asdl_int_seq *%(name)s;" % locals(), depth)
             else:
                 _type = field.type
@@ -262,6 +328,10 @@ class StructVisitor(EmitVisitor):
             self.emit("%s %s;" % (type, field.name), depth + 1);
         self.emit("};", depth)
         self.emit("", depth)
+
+
+def ast_func_name(name):
+    return f"_PyAST_{name}"
 
 
 class PrototypeVisitor(EmitVisitor):
@@ -299,7 +369,7 @@ class PrototypeVisitor(EmitVisitor):
                 name = f.name
             # XXX should extend get_c_type() to handle this
             if f.seq:
-                if f.type == 'cmpop':
+                if f.type in self.metadata.simple_sums:
                     ctype = "asdl_int_seq *"
                 else:
                     ctype = f"asdl_{f.type}_seq *"
@@ -322,12 +392,7 @@ class PrototypeVisitor(EmitVisitor):
             argstr += ", PyArena *arena"
         else:
             argstr = "PyArena *arena"
-        margs = "a0"
-        for i in range(1, len(args)+1):
-            margs += ", a%d" % i
-        self.emit("#define %s(%s) _Py_%s(%s)" % (name, margs, name, margs), 0,
-                reflow=False)
-        self.emit("%s _Py_%s(%s);" % (ctype, name, argstr), False)
+        self.emit("%s %s(%s);" % (ctype, ast_func_name(name), argstr), False)
 
     def visitProduct(self, prod, name):
         self.emit_function(name, get_c_type(name),
@@ -349,7 +414,7 @@ class FunctionVisitor(PrototypeVisitor):
         else:
             argstr = "PyArena *arena"
         self.emit("%s" % ctype, 0)
-        emit("%s(%s)" % (name, argstr))
+        emit("%s(%s)" % (ast_func_name(name), argstr))
         emit("{")
         emit("%s p;" % ctype, 1)
         for argtype, argname, opt in args:
@@ -362,7 +427,7 @@ class FunctionVisitor(PrototypeVisitor):
                 emit('return NULL;', 2)
                 emit('}', 1)
 
-        emit("p = (%s)PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
+        emit("p = (%s)_PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
         emit("if (!p)", 1)
         emit("return NULL;", 2)
         if union:
@@ -422,6 +487,20 @@ class Obj2ModPrototypeVisitor(PickleVisitor):
 
 
 class Obj2ModVisitor(PickleVisitor):
+
+    attribute_special_defaults = {
+        "end_lineno": "lineno",
+        "end_col_offset": "col_offset",
+    }
+
+    @contextmanager
+    def recursive_call(self, node, level):
+        self.emit('if (_Py_EnterRecursiveCall(" while traversing \'%s\' node")) {' % node, level, reflow=False)
+        self.emit('goto failed;', level + 1)
+        self.emit('}', level)
+        yield
+        self.emit('_Py_LeaveRecursiveCall();', level)
+
     def funcHeader(self, name):
         ctype = get_c_type(name)
         self.emit("int", 0)
@@ -488,7 +567,7 @@ class Obj2ModVisitor(PickleVisitor):
             for f in t.fields:
                 self.visitField(f, t.name, sum=sum, depth=2)
             args = [f.name for f in t.fields] + [a.name for a in sum.attributes]
-            self.emit("*out = %s(%s);" % (t.name, self.buildArgs(args)), 2)
+            self.emit("*out = %s(%s);" % (ast_func_name(t.name), self.buildArgs(args)), 2)
             self.emit("if (*out == NULL) goto failed;", 2)
             self.emit("return 0;", 2)
             self.emit("}", 1)
@@ -521,7 +600,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.visitField(a, name, prod=prod, depth=1)
         args = [f.name for f in prod.fields]
         args.extend([a.name for a in prod.attributes])
-        self.emit("*out = %s(%s);" % (name, self.buildArgs(args)), 1)
+        self.emit("*out = %s(%s);" % (ast_func_name(name), self.buildArgs(args)), 1)
         self.emit("return 0;", 1)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(tmp);", 1)
@@ -541,16 +620,11 @@ class Obj2ModVisitor(PickleVisitor):
             ctype = get_c_type(field.type)
             self.emit("%s %s;" % (ctype, field.name), depth)
 
-    def isSimpleSum(self, field):
-        # XXX can the members of this list be determined automatically?
-        return field.type in ('expr_context', 'boolop', 'operator',
-                              'unaryop', 'cmpop')
-
     def isNumeric(self, field):
         return get_c_type(field.type) in ("int", "bool")
 
     def isSimpleType(self, field):
-        return self.isSimpleSum(field) or self.isNumeric(field)
+        return field.type in self.metadata.simple_sums or self.isNumeric(field)
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
@@ -568,7 +642,13 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
             self.emit("Py_CLEAR(tmp);", depth+1)
             if self.isNumeric(field):
-                self.emit("%s = 0;" % field.name, depth+1)
+                if field.name in self.attribute_special_defaults:
+                    self.emit(
+                        "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
+                        depth+1,
+                    )
+                else:
+                    self.emit("%s = 0;" % field.name, depth+1)
             elif not self.isSimpleType(field):
                 self.emit("%s = NULL;" % field.name, depth+1)
             else:
@@ -595,10 +675,10 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (%s == NULL) goto failed;" % field.name, depth+1)
             self.emit("for (i = 0; i < len; i++) {", depth+1)
             self.emit("%s val;" % ctype, depth+2)
-            self.emit("PyObject *tmp2 = PyList_GET_ITEM(tmp, i);", depth+2)
-            self.emit("Py_INCREF(tmp2);", depth+2)
-            self.emit("res = obj2ast_%s(state, tmp2, &val, arena);" %
-                      field.type, depth+2, reflow=False)
+            self.emit("PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));", depth+2)
+            with self.recursive_call(name, depth+2):
+                self.emit("res = obj2ast_%s(state, tmp2, &val, arena);" %
+                          field.type, depth+2, reflow=False)
             self.emit("Py_DECREF(tmp2);", depth+2)
             self.emit("if (res != 0) goto failed;", depth+2)
             self.emit("if (len != PyList_GET_SIZE(tmp)) {", depth+2)
@@ -611,8 +691,9 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("asdl_seq_SET(%s, i, val);" % field.name, depth+2)
             self.emit("}", depth+1)
         else:
-            self.emit("res = obj2ast_%s(state, tmp, &%s, arena);" %
-                      (field.type, field.name), depth+1)
+            with self.recursive_call(name, depth+1):
+                self.emit("res = obj2ast_%s(state, tmp, &%s, arena);" %
+                          (field.type, field.name), depth+1)
             self.emit("if (res != 0) goto failed;", depth+1)
 
         self.emit("Py_CLEAR(tmp);", depth+1)
@@ -640,28 +721,20 @@ class SequenceConstructorVisitor(EmitVisitor):
 class PyTypesDeclareVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
-        self.emit_type("%s_type" % name)
         self.emit("static PyObject* ast2obj_%s(struct ast_state *state, void*);" % name, 0)
         if prod.attributes:
-            for a in prod.attributes:
-                self.emit_identifier(a.name)
             self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in prod.attributes:
                 self.emit('"%s",' % a.name, 1)
             self.emit("};", 0)
         if prod.fields:
-            for f in prod.fields:
-                self.emit_identifier(f.name)
             self.emit("static const char * const %s_fields[]={" % name,0)
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
             self.emit("};", 0)
 
     def visitSum(self, sum, name):
-        self.emit_type("%s_type" % name)
         if sum.attributes:
-            for a in sum.attributes:
-                self.emit_identifier(a.name)
             self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in sum.attributes:
                 self.emit('"%s",' % a.name, 1)
@@ -669,16 +742,12 @@ class PyTypesDeclareVisitor(PickleVisitor):
         ptype = "void*"
         if is_simple(sum):
             ptype = get_c_type(name)
-            for t in sum.types:
-                self.emit_singleton("%s_singleton" % t.name)
         self.emit("static PyObject* ast2obj_%s(struct ast_state *state, %s);" % (name, ptype), 0)
         for t in sum.types:
             self.visitConstructor(t, name)
 
     def visitConstructor(self, cons, name):
         if cons.fields:
-            for t in cons.fields:
-                self.emit_identifier(t.name)
             self.emit("static const char * const %s_fields[]={" % cons.name, 0)
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
@@ -925,10 +994,11 @@ static PyObject* ast2obj_list(struct ast_state *state, asdl_seq *seq, PyObject* 
 
 static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), void *o)
 {
-    if (!o)
-        o = Py_None;
-    Py_INCREF((PyObject*)o);
-    return (PyObject*)o;
+    PyObject *op = (PyObject*)o;
+    if (!op) {
+        op = Py_None;
+    }
+    return Py_NewRef(op);
 }
 #define ast2obj_constant ast2obj_object
 #define ast2obj_identifier ast2obj_object
@@ -946,24 +1016,25 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
     if (obj == Py_None)
         obj = NULL;
     if (obj) {
-        if (PyArena_AddPyObject(arena, obj) < 0) {
+        if (_PyArena_AddPyObject(arena, obj) < 0) {
             *out = NULL;
             return -1;
         }
-        Py_INCREF(obj);
+        *out = Py_NewRef(obj);
     }
-    *out = obj;
+    else {
+        *out = NULL;
+    }
     return 0;
 }
 
 static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (PyArena_AddPyObject(arena, obj) < 0) {
+    if (_PyArena_AddPyObject(arena, obj) < 0) {
         *out = NULL;
         return -1;
     }
-    Py_INCREF(obj);
-    *out = obj;
+    *out = Py_NewRef(obj);
     return 0;
 }
 
@@ -1042,6 +1113,8 @@ static int add_ast_fields(struct ast_state *state)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.file.write(textwrap.dedent('''
+                state->recursion_depth = 0;
+                state->recursion_limit = 0;
                 state->initialized = 1;
                 return 1;
             }
@@ -1056,8 +1129,6 @@ static int add_ast_fields(struct ast_state *state)
                         (name, name, fields, len(prod.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, prod), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
-        self.emit_type("AST_type")
-        self.emit_type("%s_type" % name)
         if prod.attributes:
             self.emit("if (!add_attributes(state, state->%s_type, %s_attributes, %d)) return 0;" %
                             (name, name, len(prod.attributes)), 1)
@@ -1070,7 +1141,6 @@ static int add_ast_fields(struct ast_state *state)
         self.emit('state->%s_type = make_type(state, "%s", state->AST_type, NULL, 0,' %
                   (name, name), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, sum), 2), 2, reflow=False)
-        self.emit_type("%s_type" % name)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         if sum.attributes:
             self.emit("if (!add_attributes(state, state->%s_type, %s_attributes, %d)) return 0;" %
@@ -1091,7 +1161,6 @@ static int add_ast_fields(struct ast_state *state)
                             (cons.name, cons.name, name, fields, len(cons.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(cons.name, cons), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
-        self.emit_type("%s_type" % cons.name)
         self.emit_defaults(cons.name, cons.fields, 1)
         if simple:
             self.emit("state->%s_singleton = PyType_GenericNew((PyTypeObject *)"
@@ -1193,8 +1262,14 @@ class ObjVisitor(PickleVisitor):
         self.emit('if (!o) {', 1)
         self.emit("Py_RETURN_NONE;", 2)
         self.emit("}", 1)
+        self.emit("if (++state->recursion_depth > state->recursion_limit) {", 1)
+        self.emit("PyErr_SetString(PyExc_RecursionError,", 2)
+        self.emit('"maximum recursion depth exceeded during ast construction");', 3)
+        self.emit("return 0;", 2)
+        self.emit("}", 1)
 
     def func_end(self):
+        self.emit("state->recursion_depth--;", 1)
         self.emit("return result;", 1)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(value);", 1)
@@ -1227,8 +1302,7 @@ class ObjVisitor(PickleVisitor):
         self.emit("switch(o) {", 1)
         for t in sum.types:
             self.emit("case %s:" % t.name, 2)
-            self.emit("Py_INCREF(state->%s_singleton);" % t.name, 3)
-            self.emit("return state->%s_singleton;" % t.name, 3)
+            self.emit("return Py_NewRef(state->%s_singleton);" % t.name, 3)
         self.emit("}", 1)
         self.emit("Py_UNREACHABLE();", 1);
         self.emit("}", 0)
@@ -1272,18 +1346,23 @@ class ObjVisitor(PickleVisitor):
 
     def set(self, field, value, depth):
         if field.seq:
-            # XXX should really check for is_simple, but that requires a symbol table
-            if field.type == "cmpop":
+            if field.type in self.metadata.simple_sums:
                 # While the sequence elements are stored as void*,
-                # ast2obj_cmpop expects an enum
+                # simple sums expects an enum
                 self.emit("{", depth)
                 self.emit("Py_ssize_t i, n = asdl_seq_LEN(%s);" % value, depth+1)
                 self.emit("value = PyList_New(n);", depth+1)
                 self.emit("if (!value) goto failed;", depth+1)
                 self.emit("for(i = 0; i < n; i++)", depth+1)
                 # This cannot fail, so no need for error handling
-                self.emit("PyList_SET_ITEM(value, i, ast2obj_cmpop(state, (cmpop_ty)asdl_seq_GET(%s, i)));" % value,
-                          depth+2, reflow=False)
+                self.emit(
+                    "PyList_SET_ITEM(value, i, ast2obj_{0}(state, ({0}_ty)asdl_seq_GET({1}, i)));".format(
+                        field.type,
+                        value
+                    ),
+                    depth + 2,
+                    reflow=False,
+                )
                 self.emit("}", depth)
             else:
                 self.emit("value = ast2obj_list(state, (asdl_seq*)%s, ast2obj_%s);" % (value, field.type), depth)
@@ -1300,7 +1379,29 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (state == NULL) {
         return NULL;
     }
-    return ast2obj_mod(state, t);
+
+    int starting_recursion_depth;
+    /* Be careful here to prevent overflow. */
+    int COMPILER_STACK_FRAME_SCALE = 3;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!tstate) {
+        return 0;
+    }
+    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
+    state->recursion_depth = starting_recursion_depth;
+
+    PyObject *result = ast2obj_mod(state, t);
+
+    /* Check that the recursion depth counting balanced correctly */
+    if (result && state->recursion_depth != starting_recursion_depth) {
+        PyErr_Format(PyExc_SystemError,
+            "AST constructor recursion depth mismatch (before=%d, after=%d)",
+            starting_recursion_depth, state->recursion_depth);
+        return 0;
+    }
+    return result;
 }
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
@@ -1352,11 +1453,13 @@ int PyAST_Check(PyObject* obj)
 """
 
 class ChainOfVisitors:
-    def __init__(self, *visitors):
+    def __init__(self, *visitors, metadata = None):
         self.visitors = visitors
+        self.metadata = metadata
 
     def visit(self, object):
         for v in self.visitors:
+            v.metadata = self.metadata
             v.visit(object)
             v.emit("", 0)
 
@@ -1364,6 +1467,8 @@ class ChainOfVisitors:
 def generate_ast_state(module_state, f):
     f.write('struct ast_state {\n')
     f.write('    int initialized;\n')
+    f.write('    int recursion_depth;\n')
+    f.write('    int recursion_limit;\n')
     for s in module_state:
         f.write('    PyObject *' + s + ';\n')
     f.write('};')
@@ -1379,6 +1484,10 @@ def generate_ast_fini(module_state, f):
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
+                if (_PyInterpreterState_Get() == _PyInterpreterState_Main()) {
+                    Py_CLEAR(_Py_CACHED_OBJECT(str_replace_inf));
+                }
+
             #if !defined(NDEBUG)
                 state->initialized = -1;
             #else
@@ -1389,17 +1498,8 @@ def generate_ast_fini(module_state, f):
     """))
 
 
-def generate_module_def(mod, f, internal_h):
+def generate_module_def(mod, metadata, f, internal_h):
     # Gather all the data needed for ModuleSpec
-    visitor_list = set()
-    with open(os.devnull, "w") as devnull:
-        visitor = PyTypesDeclareVisitor(devnull)
-        visitor.visit(mod)
-        visitor_list.add(visitor)
-        visitor = PyTypesVisitor(devnull)
-        visitor.visit(mod)
-        visitor_list.add(visitor)
-
     state_strings = {
         "ast",
         "_fields",
@@ -1408,50 +1508,48 @@ def generate_module_def(mod, f, internal_h):
         "__dict__",
         "__module__",
         "_attributes",
+        *metadata.identifiers
     }
+
     module_state = state_strings.copy()
-    for visitor in visitor_list:
-        for identifier in visitor.identifiers:
-            module_state.add(identifier)
-            state_strings.add(identifier)
-        for singleton in visitor.singletons:
-            module_state.add(singleton)
-        for tp in visitor.types:
-            module_state.add(tp)
+    module_state.update(
+        "%s_singleton" % singleton
+        for singleton in metadata.singletons
+    )
+    module_state.update(
+        "%s_type" % type
+        for type in metadata.types
+    )
+
     state_strings = sorted(state_strings)
     module_state = sorted(module_state)
 
     generate_ast_state(module_state, internal_h)
 
-    print(textwrap.dedent(f"""
-        #include "pycore_ast_state.h"       // struct ast_state
-        #include "pycore_interp.h"          // _PyInterpreterState.ast
-        #include "pycore_pystate.h"         // _PyInterpreterState_GET()
-    """).rstrip(), file=f)
+    print(textwrap.dedent("""
+        #include "Python.h"
+        #include "pycore_ast.h"
+        #include "pycore_ast_state.h"     // struct ast_state
+        #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+        #include "pycore_interp.h"        // _PyInterpreterState.ast
+        #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+        #include "structmember.h"
+        #include <stddef.h>
 
-    f.write("""
-// Forward declaration
-static int init_types(struct ast_state *state);
+        // Forward declaration
+        static int init_types(struct ast_state *state);
 
-static struct ast_state*
-get_ast_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct ast_state *state = &interp->ast;
-    if (!init_types(state)) {
-        return NULL;
-    }
-    return state;
-}
-""")
-
-    # f-string for {mod.name}
-    f.write(f"""
-// Include {mod.name}-ast.h after pycore_interp.h to avoid conflicts
-// with the Yield macro redefined by <winbase.h>
-#include "{mod.name}-ast.h"
-#include "structmember.h"
-""")
+        static struct ast_state*
+        get_ast_state(void)
+        {
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            struct ast_state *state = &interp->ast;
+            if (!init_types(state)) {
+                return NULL;
+            }
+            return state;
+        }
+    """).strip(), file=f)
 
     generate_ast_fini(module_state, f)
 
@@ -1464,34 +1562,55 @@ get_ast_state(void)
     f.write('    return 1;\n')
     f.write('};\n\n')
 
-def write_header(mod, f):
-    f.write('#ifndef Py_PYTHON_AST_H\n')
-    f.write('#define Py_PYTHON_AST_H\n')
-    f.write('#ifdef __cplusplus\n')
-    f.write('extern "C" {\n')
-    f.write('#endif\n')
-    f.write('\n')
-    f.write('#ifndef Py_LIMITED_API\n')
-    f.write('#include "asdl.h"\n')
-    f.write('\n')
-    f.write('#undef Yield   /* undefine macro conflicting with <winbase.h> */\n')
-    f.write('\n')
-    c = ChainOfVisitors(TypeDefVisitor(f),
-                        SequenceDefVisitor(f),
-                        StructVisitor(f))
+def write_header(mod, metadata, f):
+    f.write(textwrap.dedent("""
+        #ifndef Py_INTERNAL_AST_H
+        #define Py_INTERNAL_AST_H
+        #ifdef __cplusplus
+        extern "C" {
+        #endif
+
+        #ifndef Py_BUILD_CORE
+        #  error "this header requires Py_BUILD_CORE define"
+        #endif
+
+        #include "pycore_asdl.h"
+
+    """).lstrip())
+
+    c = ChainOfVisitors(
+        TypeDefVisitor(f),
+        SequenceDefVisitor(f),
+        StructVisitor(f),
+        metadata=metadata
+    )
     c.visit(mod)
+
     f.write("// Note: these macros affect function definitions, not only call sites.\n")
-    PrototypeVisitor(f).visit(mod)
-    f.write("\n")
-    f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
-    f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
-    f.write("int PyAST_Check(PyObject* obj);\n")
-    f.write("#endif /* !Py_LIMITED_API */\n")
-    f.write('\n')
-    f.write('#ifdef __cplusplus\n')
-    f.write('}\n')
-    f.write('#endif\n')
-    f.write('#endif /* !Py_PYTHON_AST_H */\n')
+    prototype_visitor = PrototypeVisitor(f, metadata=metadata)
+    prototype_visitor.visit(mod)
+
+    f.write(textwrap.dedent("""
+
+        PyObject* PyAST_mod2obj(mod_ty t);
+        mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
+        int PyAST_Check(PyObject* obj);
+
+        extern int _PyAST_Validate(mod_ty);
+
+        /* _PyAST_ExprAsUnicode is defined in ast_unparse.c */
+        extern PyObject* _PyAST_ExprAsUnicode(expr_ty);
+
+        /* Return the borrowed reference to the first literal string in the
+           sequence of statements or NULL if it doesn't start from a literal string.
+           Doesn't set exception. */
+        extern PyObject* _PyAST_GetDocString(asdl_stmt_seq *);
+
+        #ifdef __cplusplus
+        }
+        #endif
+        #endif /* !Py_INTERNAL_AST_H */
+    """))
 
 
 def write_internal_h_header(mod, f):
@@ -1517,15 +1636,8 @@ def write_internal_h_footer(mod, f):
         #endif /* !Py_INTERNAL_AST_STATE_H */
     """), file=f)
 
-
-def write_source(mod, f, internal_h_file):
-    print(textwrap.dedent(f"""
-        #include <stddef.h>
-
-        #include "Python.h"
-    """), file=f)
-
-    generate_module_def(mod, f, internal_h_file)
+def write_source(mod, metadata, f, internal_h_file):
+    generate_module_def(mod, metadata, f, internal_h_file)
 
     v = ChainOfVisitors(
         SequenceConstructorVisitor(f),
@@ -1537,6 +1649,7 @@ def write_source(mod, f, internal_h_file):
         Obj2ModVisitor(f),
         ASTModuleVisitor(f),
         PartingShots(f),
+        metadata=metadata
     )
     v.visit(mod)
 
@@ -1549,6 +1662,10 @@ def main(input_filename, c_filename, h_filename, internal_h_filename, dump_modul
     if not asdl.check(mod):
         sys.exit(1)
 
+    metadata_visitor = MetadataVisitor()
+    metadata_visitor.visit(mod)
+    metadata = metadata_visitor.metadata
+
     with c_filename.open("w") as c_file, \
          h_filename.open("w") as h_file, \
          internal_h_filename.open("w") as internal_h_file:
@@ -1557,8 +1674,8 @@ def main(input_filename, c_filename, h_filename, internal_h_filename, dump_modul
         internal_h_file.write(auto_gen_msg)
 
         write_internal_h_header(mod, internal_h_file)
-        write_source(mod, c_file, internal_h_file)
-        write_header(mod, h_file)
+        write_source(mod, metadata, c_file, internal_h_file)
+        write_header(mod, metadata, h_file)
         write_internal_h_footer(mod, internal_h_file)
 
     print(f"{c_filename}, {h_filename}, {internal_h_filename} regenerated.")

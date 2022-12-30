@@ -1,0 +1,2 @@
+Small simplification of :func:`http.cookiejar.eff_request_host` that
+improves readability and better matches the RFC wording.

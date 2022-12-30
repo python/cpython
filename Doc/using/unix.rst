@@ -69,7 +69,7 @@ Building Python
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
 latest release's source or just grab a fresh `clone
-<https://devguide.python.org/setup/#getting-the-source-code>`_.  (If you want
+<https://devguide.python.org/setup/#get-the-source-code>`_.  (If you want
 to contribute patches, you will need a clone.)
 
 The build process consists of the usual commands::
@@ -78,9 +78,9 @@ The build process consists of the usual commands::
    make
    make install
 
-Configuration options and caveats for specific Unix platforms are extensively
-documented in the :source:`README.rst` file in the root of the Python source
-tree.
+:ref:`Configuration options <configure-options>` and caveats for specific Unix
+platforms are extensively documented in the :source:`README.rst` file in the
+root of the Python source tree.
 
 .. warning::
 
@@ -135,6 +135,7 @@ some Unices may not have the :program:`env` command, so you may need to hardcode
 
 To use shell commands in your Python scripts, look at the :mod:`subprocess` module.
 
+.. _unix_custom_openssl:
 
 Custom OpenSSL
 ==============
@@ -157,17 +158,19 @@ Custom OpenSSL
    .. code-block:: shell-session
 
       $ curl -O https://www.openssl.org/source/openssl-VERSION.tar.gz
-         $ tar xzf openssl-VERSION
-         $ pushd openssl-VERSION
-         $ ./config \
-              --prefix=/usr/local/custom-openssl \
-              --openssldir=/etc/ssl
-         $ make -j1 depend
-         $ make -j8
-         $ make install_sw
-         $ popd
+      $ tar xzf openssl-VERSION
+      $ pushd openssl-VERSION
+      $ ./config \
+          --prefix=/usr/local/custom-openssl \
+          --libdir=lib \
+          --openssldir=/etc/ssl
+      $ make -j1 depend
+      $ make -j8
+      $ make install_sw
+      $ popd
 
 3. Build Python with custom OpenSSL
+   (see the configure ``--with-openssl`` and ``--with-openssl-rpath`` options)
 
    .. code-block:: shell-session
 
