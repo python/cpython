@@ -2960,6 +2960,15 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(list), "type[list|dict]")
         self.assertEqual(f(type(None)), "type[set]|type[NoneType]")
 
+        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
+            @f.register
+            def _(arg: type[2]):
+                pass
+
+        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
+            @f.register
+            def _(arg: typing.Type[int]|type[3]):
+                pass
 
 class CachedCostItem:
     _cost = 1
