@@ -1313,7 +1313,7 @@ the following methods and attributes:
             window.vline(y, x, ch, n[, attr])
 
    Display a vertical line starting at ``(y, x)`` with length *n* consisting of the
-   character *ch*.
+   character *ch* with attributes *attr*.
 
 
 Constants
