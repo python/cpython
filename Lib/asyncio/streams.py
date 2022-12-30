@@ -688,7 +688,7 @@ class StreamReader:
             await self._wait_for_data('read')
 
         # This will work right even if buffer is less than n bytes
-        data = bytes(self._buffer[:n])
+        data = bytes(memoryview(self._buffer)[:n])
         del self._buffer[:n]
 
         self._maybe_resume_transport()
@@ -730,7 +730,7 @@ class StreamReader:
             data = bytes(self._buffer)
             self._buffer.clear()
         else:
-            data = bytes(self._buffer[:n])
+            data = bytes(memoryview(self._buffer)[:n])
             del self._buffer[:n]
         self._maybe_resume_transport()
         return data

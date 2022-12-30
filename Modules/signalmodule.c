@@ -13,7 +13,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_signal.h"        // Py_NSIG
+#include "pycore_signal.h"
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -23,11 +23,12 @@
 #endif
 
 #ifdef MS_WINDOWS
-#  include <windows.h>
 #  ifdef HAVE_PROCESS_H
 #    include <process.h>
 #  endif
 #endif
+
+#include "pycore_signal.h"        // Py_NSIG
 
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>
@@ -100,47 +101,13 @@ class sigset_t_converter(CConverter):
    may not be the thread that received the signal.
 */
 
-static volatile struct {
-    _Py_atomic_int tripped;
-    /* func is atomic to ensure that PyErr_SetInterrupt is async-signal-safe
-     * (even though it would probably be otherwise, anyway).
-     */
-    _Py_atomic_address func;
-} Handlers[Py_NSIG];
-
-#ifdef MS_WINDOWS
-#define INVALID_FD ((SOCKET_T)-1)
-
-static volatile struct {
-    SOCKET_T fd;
-    int warn_on_full_buffer;
-    int use_send;
-} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1, .use_send = 0};
-#else
-#define INVALID_FD (-1)
-static volatile struct {
-#ifdef __VXWORKS__
-    int fd;
-#else
-    sig_atomic_t fd;
-#endif
-    int warn_on_full_buffer;
-} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1};
-#endif
-
-/* Speed up sigcheck() when none tripped */
-static _Py_atomic_int is_tripped;
-
-typedef struct {
-    PyObject *default_handler;
-    PyObject *ignore_handler;
-#ifdef MS_WINDOWS
-    HANDLE sigint_event;
-#endif
-} signal_state_t;
+#define Handlers _PyRuntime.signals.handlers
+#define wakeup _PyRuntime.signals.wakeup
+#define is_tripped _PyRuntime.signals.is_tripped
 
 // State shared by all Python interpreters
-static signal_state_t signal_global_state = {0};
+typedef struct _signals_runtime_state signal_state_t;
+#define signal_global_state _PyRuntime.signals
 
 #if defined(HAVE_GETITIMER) || defined(HAVE_SETITIMER)
 #  define PYHAVE_ITIMER_ERROR
@@ -331,13 +298,7 @@ trip_signal(int sig_num)
        See bpo-30038 for more details.
     */
 
-    int fd;
-#ifdef MS_WINDOWS
-    fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
-#else
-    fd = wakeup.fd;
-#endif
-
+    int fd = wakeup.fd;
     if (fd != INVALID_FD) {
         unsigned char byte = (unsigned char)sig_num;
 #ifdef MS_WINDOWS
@@ -407,7 +368,7 @@ signal_handler(int sig_num)
 #ifdef MS_WINDOWS
     if (sig_num == SIGINT) {
         signal_state_t *state = &signal_global_state;
-        SetEvent(state->sigint_event);
+        SetEvent((HANDLE)state->sigint_event);
     }
 #endif
 }
@@ -822,7 +783,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     old_sockfd = wakeup.fd;
-    wakeup.fd = sockfd;
+    wakeup.fd = Py_SAFE_DOWNCAST(sockfd, SOCKET_T, int);
     wakeup.warn_on_full_buffer = warn_on_full_buffer;
     wakeup.use_send = is_socket;
 
@@ -873,11 +834,7 @@ PySignal_SetWakeupFd(int fd)
         fd = -1;
     }
 
-#ifdef MS_WINDOWS
-    int old_fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
-#else
     int old_fd = wakeup.fd;
-#endif
     wakeup.fd = fd;
     wakeup.warn_on_full_buffer = 1;
     return old_fd;
@@ -1654,6 +1611,8 @@ signal_module_exec(PyObject *m)
     signal_state_t *state = &signal_global_state;
     _signal_module_state *modstate = get_signal_state(m);
 
+    // XXX For proper isolation, these values must be guaranteed
+    // to be effectively const (e.g. immortal).
     modstate->default_handler = state->default_handler;  // borrowed ref
     modstate->ignore_handler = state->ignore_handler;  // borrowed ref
 
@@ -1783,7 +1742,7 @@ _PySignal_Fini(void)
 
 #ifdef MS_WINDOWS
     if (state->sigint_event != NULL) {
-        CloseHandle(state->sigint_event);
+        CloseHandle((HANDLE)state->sigint_event);
         state->sigint_event = NULL;
     }
 #endif
@@ -2009,7 +1968,7 @@ _PySignal_Init(int install_signal_handlers)
 
 #ifdef MS_WINDOWS
     /* Create manual-reset event, initially unset */
-    state->sigint_event = CreateEvent(NULL, TRUE, FALSE, FALSE);
+    state->sigint_event = (void *)CreateEvent(NULL, TRUE, FALSE, FALSE);
     if (state->sigint_event == NULL) {
         PyErr_SetFromWindowsErr(0);
         return -1;

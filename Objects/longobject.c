@@ -36,8 +36,8 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d) for integer string conversion: value has %zd digits; use sys.set_int_max_str_digits() to increase the limit"
-#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d digits) for integer string conversion: value has %zd digits; use sys.set_int_max_str_digits() to increase the limit"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d digits) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit"
 
 /* If defined, use algorithms from the _pylong.py module */
 #define WITH_PYLONG_MODULE 1
@@ -6168,6 +6168,19 @@ long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
     return long_long(self);
 }
 
+/*[clinic input]
+int.is_integer
+
+Returns True. Exists for duck type compatibility with float.is_integer.
+[clinic start generated code]*/
+
+static PyObject *
+int_is_integer_impl(PyObject *self)
+/*[clinic end generated code: output=90f8e794ce5430ef input=7e41c4d4416e05f2]*/
+{
+    Py_RETURN_TRUE;
+}
+
 static PyMethodDef long_methods[] = {
     {"conjugate",       long_long_meth, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
@@ -6186,6 +6199,7 @@ static PyMethodDef long_methods[] = {
     INT___GETNEWARGS___METHODDEF
     INT___FORMAT___METHODDEF
     INT___SIZEOF___METHODDEF
+    INT_IS_INTEGER_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
