@@ -51,7 +51,6 @@ EXCLUDED = clean_lines('''
 # @begin=conf@
 
 # OSX
-#Modules/_ctypes/darwin/*.c
 Modules/_scproxy.c                # SystemConfiguration/SystemConfiguration.h
 
 # Windows
