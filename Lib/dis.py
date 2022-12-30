@@ -37,6 +37,7 @@ MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 LOAD_CONST = opmap['LOAD_CONST']
 LOAD_CONST_R = opmap['LOAD_CONST_R']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
+LOAD_FAST_R = opmap['LOAD_FAST_R']
 BINARY_OP = opmap['BINARY_OP']
 BINARY_OP_R = opmap['BINARY_OP_R']
 COMPARE_OP_R = opmap['COMPARE_OP_R']
@@ -509,6 +510,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                     argval, argrepr = _get_name_info(arg//2, get_name)
                     if (arg & 1) and argrepr:
                         argrepr = "NULL|self + " + argrepr
+                elif deop == LOAD_FAST_R:
+                    argval, argrepr = _get_name_info(extra_args[0], get_name)
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjabs:

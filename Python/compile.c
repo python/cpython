@@ -202,6 +202,7 @@ typedef struct oparg_ {
 #define TMP_OPARG(V)      ((const oparg_t){.value=(V), .type=TMP_REG})
 
 #define IS_UNUSED(OPARG) ((OPARG).type == UNUSED_ARG)
+#define SAME_REGISTER(R1, R2) (((R1).type == (R2).type) && ((R1).value == (R2).value))
 
 struct instr {
     int i_opcode;
@@ -221,9 +222,9 @@ struct instr {
 #define INSTR_SET_OP0(I, OP) \
     do { \
         assert(!HAS_ARG(OP)); \
-        int opcode = (OP); \
+        int _opcode_ = (OP); \
         struct instr *_instr__ptr_ = (I); \
-        _instr__ptr_->i_opcode = opcode; \
+        _instr__ptr_->i_opcode = _opcode_; \
         _instr__ptr_->i_oparg = 0; \
         _instr__ptr_->i_oparg1 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
@@ -235,13 +236,13 @@ struct instr {
 #define INSTR_SET_OP1(I, OP, ARG, OPARG1) \
     do { \
         assert(HAS_ARG(OP)); \
-        int opcode = (OP); \
-        int oparg = (ARG); \
-        oparg_t oparg1 = (OPARG1); \
+        int _opcode_ = (OP); \
+        int _oparg_ = (ARG); \
+        oparg_t _oparg1_ = (OPARG1); \
         struct instr *_instr__ptr_ = (I); \
-        _instr__ptr_->i_opcode = opcode; \
-        _instr__ptr_->i_oparg = oparg; \
-        _instr__ptr_->i_oparg1 = oparg1; \
+        _instr__ptr_->i_opcode = _opcode_; \
+        _instr__ptr_->i_oparg = _oparg_; \
+        _instr__ptr_->i_oparg1 = _oparg1_; \
         _instr__ptr_->i_oparg2 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg4 = UNUSED_OPARG; \
@@ -251,15 +252,15 @@ struct instr {
 #define INSTR_SET_OP2(I, OP, ARG, OPARG1, OPARG2) \
     do { \
         assert(HAS_ARG(OP)); \
-        int opcode = (OP); \
-        int oparg = (ARG); \
-        oparg_t oparg1 = (OPARG1); \
-        oparg_t oparg2 = (OPARG2); \
+        int _opcode_ = (OP); \
+        int _oparg_ = (ARG); \
+        oparg_t _oparg1_ = (OPARG1); \
+        oparg_t _oparg2_ = (OPARG2); \
         struct instr *_instr__ptr_ = (I); \
-        _instr__ptr_->i_opcode = opcode; \
-        _instr__ptr_->i_oparg = oparg; \
-        _instr__ptr_->i_oparg1 = oparg1; \
-        _instr__ptr_->i_oparg2 = oparg2; \
+        _instr__ptr_->i_opcode = _opcode_; \
+        _instr__ptr_->i_oparg = _oparg_; \
+        _instr__ptr_->i_oparg1 = _oparg1_; \
+        _instr__ptr_->i_oparg2 = _oparg2_; \
         _instr__ptr_->i_oparg3 = UNUSED_OPARG; \
         _instr__ptr_->i_oparg4 = UNUSED_OPARG; \
     } while (0);
@@ -8265,13 +8266,18 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
         if (instr->i_oparg >= 64) {
             continue;
         }
-        assert(instr->i_oparg >= 0);
-        uint64_t bit = (uint64_t)1 << instr->i_oparg;
+        int oparg = instr->i_oparg;
+        if (instr->i_opcode == LOAD_FAST_R || instr->i_opcode == STORE_FAST_R) {
+            oparg = instr->i_oparg1.value;
+        }
+        assert(oparg >= 0);
+        uint64_t bit = (uint64_t)1 << oparg;
         switch (instr->i_opcode) {
             case DELETE_FAST:
                 unsafe_mask |= bit;
                 break;
             case STORE_FAST:
+            case STORE_FAST_R:
                 unsafe_mask &= ~bit;
                 break;
             case LOAD_FAST_CHECK:
@@ -8279,8 +8285,10 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
                 unsafe_mask &= ~bit;
                 break;
             case LOAD_FAST:
+            case LOAD_FAST_R:
                 if (unsafe_mask & bit) {
                     instr->i_opcode = LOAD_FAST_CHECK;
+                    instr->i_oparg = oparg;
                 }
                 unsafe_mask &= ~bit;
                 break;
@@ -8328,6 +8336,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
                     states[arg - 64] = blocknum;
                     break;
                 case LOAD_FAST:
+                case LOAD_FAST_R:
                     if (states[arg - 64] != blocknum) {
                         instr->i_opcode = LOAD_FAST_CHECK;
                     }
@@ -10012,6 +10021,13 @@ translate_jump_labels_to_targets(basicblock *entryblock)
 static int
 reduce_traffic_between_registers_and_stack(basicblock *b)
 {
+    for (int i = 0; i < b->b_iused - 1; i++) {
+        struct instr *instr = &b->b_instr[i];
+        if (instr->i_opcode == LOAD_FAST) {
+            int oparg = instr->i_oparg;
+            INSTR_SET_OP1(instr, LOAD_FAST_R, oparg, NAME_OPARG(oparg));
+        }
+    }
     bool changed = true;
     while (changed) {
         changed = false;
@@ -10019,7 +10035,9 @@ reduce_traffic_between_registers_and_stack(basicblock *b)
             struct instr *instr = &b->b_instr[i];
             if (instr->i_opcode == LOAD_CONST_R || instr->i_opcode == LOAD_FAST_R) {
                 int next_i = i + 1;
-                while (next_i < b->b_iused && b->b_instr[next_i].i_opcode == COPY_R) {
+                while (next_i < b->b_iused &&
+                         (b->b_instr[next_i].i_opcode == COPY_R ||
+                          b->b_instr[next_i].i_opcode == NOP)) {
                     next_i++;
                 }
                 if (next_i < b->b_iused && b->b_instr[next_i].i_opcode == STORE_FAST_R) {
@@ -10029,6 +10047,33 @@ reduce_traffic_between_registers_and_stack(basicblock *b)
                     changed = true;
                 }
             }
+        }
+    }
+    return 0;
+}
+
+static int
+propagate_register_copies(basicblock *b)
+{
+    for (int i = 0; i < b->b_iused - 1; i++) {
+        struct instr *instr = &b->b_instr[i];
+        if (instr->i_opcode == COPY_R) {
+            oparg_t src = instr->i_oparg1;
+            oparg_t dst = instr->i_oparg2;
+            for (int j = i+1; j < b->b_iused; j++) {
+                struct instr *next = &b->b_instr[j];
+                /* These should all be reads, because SSA */
+                if (SAME_REGISTER(next->i_oparg1, dst)) {
+                    next->i_oparg1 = src;
+                }
+                if (SAME_REGISTER(next->i_oparg2, dst)) {
+                    next->i_oparg2 = src;
+                }
+                if (SAME_REGISTER(next->i_oparg3, dst)) {
+                    next->i_oparg3 = src;
+                }
+            }
+            INSTR_SET_OP0(instr, NOP);
         }
     }
     return 0;
@@ -10058,9 +10103,12 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     }
     assert(no_empty_basic_blocks(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        if (reduce_traffic_between_registers_and_stack(b)) {
+        if (reduce_traffic_between_registers_and_stack(b) < 0) {
             return -1;
-         }
+        }
+        if (propagate_register_copies(b) < 0) {
+            return -1;
+        }
     }
     assert(no_empty_basic_blocks(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
