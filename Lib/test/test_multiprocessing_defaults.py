@@ -2,6 +2,7 @@
 
 from inspect import currentframe, getframeinfo
 import multiprocessing
+from multiprocessing.context import DefaultsDeprecationWarning
 import sys
 from test.support import threading_helper
 import unittest
@@ -27,31 +28,36 @@ class DefaultWarningsTest(unittest.TestCase):
 
     def test_default_fork_start_method_warning_process(self):
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')
+            warnings.simplefilter('ignore')
+            warnings.filterwarnings('always', category=DefaultsDeprecationWarning)
             process = multiprocessing.Process(target=do_nothing)
             process.start()  # warning should point here.
         join_process(process)
-        self.assertEqual(len(ws), 1, msg=[str(x) for x in ws])
+        self.assertIsInstance(ws[0].message, DefaultsDeprecationWarning)
         self.assertIn(__file__, ws[0].filename)
         self.assertEqual(getframeinfo(currentframe()).lineno-4, ws[0].lineno)
         self.assertIn("'fork'", str(ws[0].message))
         self.assertIn("start_method API", str(ws[0].message))
+        self.assertEqual(len(ws), 1, msg=[str(x) for x in ws])
 
     def test_default_fork_start_method_warning_pool(self):
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')
+            warnings.simplefilter('ignore')
+            warnings.filterwarnings('always', category=DefaultsDeprecationWarning)
             pool = multiprocessing.Pool(1)  # warning should point here.
         pool.terminate()
         pool.join()
-        self.assertEqual(len(ws), 1, msg=[str(x) for x in ws])
+        self.assertIsInstance(ws[0].message, DefaultsDeprecationWarning)
         self.assertIn(__file__, ws[0].filename)
         self.assertEqual(getframeinfo(currentframe()).lineno-5, ws[0].lineno)
         self.assertIn("'fork'", str(ws[0].message))
         self.assertIn("start_method API", str(ws[0].message))
+        self.assertEqual(len(ws), 1, msg=[str(x) for x in ws])
 
-    def test_no_warning_when_using_explicit_fork_mp_context(self):
+    def test_no_mp_warning_when_using_explicit_fork_context(self):
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')  # Enable all warnings.
+            warnings.simplefilter('ignore')
+            warnings.filterwarnings('always', category=DefaultsDeprecationWarning)
             fork_mp = multiprocessing.get_context('fork')
             pool = fork_mp.Pool(1)
             pool.terminate()

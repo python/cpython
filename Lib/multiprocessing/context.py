@@ -23,6 +23,9 @@ class TimeoutError(ProcessError):
 class AuthenticationError(ProcessError):
     pass
 
+class DefaultsDeprecationWarning(DeprecationWarning):
+    pass
+
 #
 # Base type for contexts. Bound methods of an instance of this type are included in __all__ of __init__.py
 #
@@ -293,7 +296,7 @@ if sys.platform != 'win32':
                 "application's start method if you want to use 'fork'."
                 "  The 'spawn' and 'forkserver' start methods are safer "
                 "depending on the platform and application.",
-                category=DeprecationWarning,
+                category=DefaultsDeprecationWarning,
                 stacklevel=stacklevel,
             )
 
