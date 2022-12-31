@@ -946,8 +946,8 @@ def singledispatch(func):
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
 
-        from inspect import isclass
-        type_arg = type[arg1] if isclass(arg1 := args[0]) else arg1.__class__
+        type_arg = (type[arg1] if isinstance(arg1 := args[0], type)
+                               else arg1.__class__)
         return dispatch(type_arg)(*args, **kw)
 
     funcname = getattr(func, '__name__', 'singledispatch function')
