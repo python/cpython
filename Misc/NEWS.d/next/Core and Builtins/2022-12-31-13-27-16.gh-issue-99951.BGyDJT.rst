@@ -1,0 +1,1 @@
+Raises :exc:`RuntimeWarning` when there is an OpenSSL major version mismatch between the version python was compiled against and the version python is currently using.
