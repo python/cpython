@@ -1879,7 +1879,7 @@ long_to_decimal_string_internal(PyObject *aa,
 
     /* convert array of base _PyLong_BASE digits in pin to an array of
        base _PyLong_DECIMAL_BASE digits in pout, following Knuth (TAOCP,
-       Volume 2 (3rd edn), section 4.4, Method 1b). */
+       Volume 2 (3rd edn), section 4.4, Method 1a). */
     pin = a->ob_digit;
     pout = scratch->ob_digit;
     size = 0;
