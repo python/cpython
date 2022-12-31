@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import string
 import warnings
 
 from fnmatch import fnmatch, fnmatchcase, translate, filter
@@ -91,6 +92,119 @@ class FnmatchTestCase(unittest.TestCase):
         check('usr/bin', 'usr\\bin', normsep)
         check('usr\\bin', 'usr\\bin')
 
+    def test_char_set(self):
+        ignorecase = os.path.normcase('ABC') == os.path.normcase('abc')
+        check = self.check_match
+        tescases = string.ascii_lowercase + string.digits + string.punctuation
+        for c in tescases:
+            check(c, '[az]', c in 'az')
+            check(c, '[!az]', c not in 'az')
+        # Case insensitive.
+        for c in tescases:
+            check(c, '[AZ]', (c in 'az') and ignorecase)
+            check(c, '[!AZ]', (c not in 'az') or not ignorecase)
+        for c in string.ascii_uppercase:
+            check(c, '[az]', (c in 'AZ') and ignorecase)
+            check(c, '[!az]', (c not in 'AZ') or not ignorecase)
+        # Repeated same character.
+        for c in tescases:
+            check(c, '[aa]', c == 'a')
+        # Special cases.
+        for c in tescases:
+            check(c, '[^az]', c in '^az')
+            check(c, '[[az]', c in '[az')
+            check(c, r'[!]]', c != ']')
+        check('[', '[')
+        check('[]', '[]')
+        check('[!', '[!')
+        check('[!]', '[!]')
+
+    def test_range(self):
+        ignorecase = os.path.normcase('ABC') == os.path.normcase('abc')
+        normsep = os.path.normcase('\\') == os.path.normcase('/')
+        check = self.check_match
+        tescases = string.ascii_lowercase + string.digits + string.punctuation
+        for c in tescases:
+            check(c, '[b-d]', c in 'bcd')
+            check(c, '[!b-d]', c not in 'bcd')
+            check(c, '[b-dx-z]', c in 'bcdxyz')
+            check(c, '[!b-dx-z]', c not in 'bcdxyz')
+        # Case insensitive.
+        for c in tescases:
+            check(c, '[B-D]', (c in 'bcd') and ignorecase)
+            check(c, '[!B-D]', (c not in 'bcd') or not ignorecase)
+        for c in string.ascii_uppercase:
+            check(c, '[b-d]', (c in 'BCD') and ignorecase)
+            check(c, '[!b-d]', (c not in 'BCD') or not ignorecase)
+        # Upper bound == lower bound.
+        for c in tescases:
+            check(c, '[b-b]', c == 'b')
+        # Special cases.
+        for c in tescases:
+            check(c, '[!-#]', c not in '-#')
+            check(c, '[!--.]', c not in '-.')
+            check(c, '[^-`]', c in '^_`')
+            if not (normsep and c == '/'):
+                check(c, '[[-^]', c in r'[\]^')
+                check(c, r'[\-^]', c in r'\]^')
+            check(c, '[b-]', c in '-b')
+            check(c, '[!b-]', c not in '-b')
+            check(c, '[-b]', c in '-b')
+            check(c, '[!-b]', c not in '-b')
+            check(c, '[-]', c in '-')
+            check(c, '[!-]', c not in '-')
+        # Upper bound is less that lower bound: error in RE.
+        for c in tescases:
+            check(c, '[d-b]', False)
+            check(c, '[!d-b]', True)
+            check(c, '[d-bx-z]', c in 'xyz')
+            check(c, '[!d-bx-z]', c not in 'xyz')
+            check(c, '[d-b^-`]', c in '^_`')
+            if not (normsep and c == '/'):
+                check(c, '[d-b[-^]', c in r'[\]^')
+
+    def test_sep_in_char_set(self):
+        normsep = os.path.normcase('\\') == os.path.normcase('/')
+        check = self.check_match
+        check('/', r'[/]')
+        check('\\', r'[\]')
+        check('/', r'[\]', normsep)
+        check('\\', r'[/]', normsep)
+        check('[/]', r'[/]', False)
+        check(r'[\\]', r'[/]', False)
+        check('\\', r'[\t]')
+        check('/', r'[\t]', normsep)
+        check('t', r'[\t]')
+        check('\t', r'[\t]', False)
+
+    def test_sep_in_range(self):
+        normsep = os.path.normcase('\\') == os.path.normcase('/')
+        check = self.check_match
+        check('a/b', 'a[.-0]b', not normsep)
+        check('a\\b', 'a[.-0]b', False)
+        check('a\\b', 'a[Z-^]b', not normsep)
+        check('a/b', 'a[Z-^]b', False)
+
+        check('a/b', 'a[/-0]b', not normsep)
+        check(r'a\b', 'a[/-0]b', False)
+        check('a[/-0]b', 'a[/-0]b', False)
+        check(r'a[\-0]b', 'a[/-0]b', False)
+
+        check('a/b', 'a[.-/]b')
+        check(r'a\b', 'a[.-/]b', normsep)
+        check('a[.-/]b', 'a[.-/]b', False)
+        check(r'a[.-\]b', 'a[.-/]b', False)
+
+        check(r'a\b', r'a[\-^]b')
+        check('a/b', r'a[\-^]b', normsep)
+        check(r'a[\-^]b', r'a[\-^]b', False)
+        check('a[/-^]b', r'a[\-^]b', False)
+
+        check(r'a\b', r'a[Z-\]b', not normsep)
+        check('a/b', r'a[Z-\]b', False)
+        check(r'a[Z-\]b', r'a[Z-\]b', False)
+        check('a[Z-/]b', r'a[Z-\]b', False)
+
     def test_warnings(self):
         with warnings.catch_warnings():
             warnings.simplefilter('error', Warning)
@@ -124,17 +238,9 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\Z')
         # fancy translation to prevent exponential-time match failure
         t = translate('**a*a****a')
-        digits = re.findall(r'\d+', t)
-        self.assertEqual(len(digits), 4)
-        self.assertEqual(digits[0], digits[1])
-        self.assertEqual(digits[2], digits[3])
-        g1 = f"g{digits[0]}"  # e.g., group name "g4"
-        g2 = f"g{digits[2]}"  # e.g., group name "g5"
-        self.assertEqual(t,
-         fr'(?s:(?=(?P<{g1}>.*?a))(?P={g1})(?=(?P<{g2}>.*?a))(?P={g2}).*a)\Z')
+        self.assertEqual(t, r'(?s:(?>.*?a)(?>.*?a).*a)\Z')
         # and try pasting multiple translate results - it's an undocumented
-        # feature that this works; all the pain of generating unique group
-        # names across calls exists to support this
+        # feature that this works
         r1 = translate('**a**a**a*')
         r2 = translate('**b**b**b*')
         r3 = translate('*c*c*c*')

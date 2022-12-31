@@ -245,14 +245,7 @@ static const struct dbcs_map *mapping_list;
 static PyObject *
 getmultibytecodec(void)
 {
-    PyObject *mod = PyImport_ImportModuleNoBlock("_multibytecodec");
-    if (mod == NULL) {
-        return NULL;
-    }
-
-    PyObject *cofunc = PyObject_GetAttrString(mod, "__create_codec");
-    Py_DECREF(mod);
-    return cofunc;
+    return _PyImport_GetModuleAttrString("_multibytecodec", "__create_codec");
 }
 
 static PyObject *
@@ -291,6 +284,7 @@ getcodec(PyObject *self, PyObject *encoding)
 
     r = PyObject_CallOneArg(cofunc, codecobj);
     Py_DECREF(codecobj);
+    Py_DECREF(cofunc);
 
     return r;
 }

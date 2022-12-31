@@ -1,3 +1,0 @@
-The undocumented built-in function ``sqlite3.enable_shared_cache`` is now
-deprecated, scheduled for removal in Python 3.12.  Its use is strongly
-discouraged by the SQLite3 documentation.  Patch by Erlend E. Aasland.
