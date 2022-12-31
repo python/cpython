@@ -84,7 +84,7 @@ These are the Boolean operations, ordered by ascending priority:
 +-------------+---------------------------------+-------+
 | Operation   | Result                          | Notes |
 +=============+=================================+=======+
-| ``x or y``  | if *x* is True, then *x*, else  | \(1)  |
+| ``x or y``  | if *x* is true, then *x*, else  | \(1)  |
 |             | *y*                             |       |
 +-------------+---------------------------------+-------+
 | ``x and y`` | if *x* is false, then *x*, else | \(2)  |
