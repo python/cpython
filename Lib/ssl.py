@@ -264,6 +264,14 @@ import base64        # for DER-to-PEM translation
 import errno
 import warnings
 
+if not OPENSSL_VERSION_INFO[:2] == _OPENSSL_API_VERSION[:2]:
+    warnings.warn(
+        "Python was compiled against OpenSSL "
+        f"{_OPENSSL_API_VERSION[0]}.{_OPENSSL_API_VERSION[1]}, "
+        "but is using OpenSSL "
+        f"{OPENSSL_VERSION_INFO[0]}.{OPENSSL_VERSION_INFO[1]}. "
+        "OpenSSL does not guarantee compatibility between different major versions.",
+        category=RuntimeWarning, stacklevel=2)
 
 socket_error = OSError  # keep that public name in module namespace
 
