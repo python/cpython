@@ -1905,7 +1905,7 @@ class ConstantTests(unittest.TestCase):
 
         code = '\n'.join(['x={!r}'.format(const) for const in consts])
         code += '\nx = ...'
-        consts.extend((Ellipsis, None))
+        consts.extend((Ellipsis, ))
 
         tree = ast.parse(code)
         self.assertEqual(self.get_load_const(tree),

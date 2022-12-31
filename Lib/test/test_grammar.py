@@ -544,8 +544,8 @@ class GrammarTests(unittest.TestCase):
         f1(*(), **{})
         def f2(one_argument): pass
         def f3(two, arguments): pass
-        self.assertEqual(f2.__code__.co_varnames, ('one_argument',))
-        self.assertEqual(f3.__code__.co_varnames, ('two', 'arguments'))
+        self.assertEqual(f2.__code__.co_varnames, ('one_argument', '$0'))
+        self.assertEqual(f3.__code__.co_varnames, ('two', 'arguments', '$0'))
         def a1(one_arg,): pass
         def a2(two, args,): pass
         def v0(*rest): pass

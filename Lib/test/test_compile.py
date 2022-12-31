@@ -741,7 +741,7 @@ if 1:
         # RETURN_VALUE opcode.  This does not always crash an interpreter.
         # When you build with the clang memory sanitizer it reliably aborts.
         self.assertEqual(
-            'RETURN_VALUE',
+            'RETURN_VALUE_R',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     def test_dont_merge_constants(self):
@@ -825,7 +825,7 @@ if 1:
             self.assertLessEqual(len(opcodes), 4)
             self.assertEqual('LOAD_CONST_R', opcodes[-2].opname)
             self.assertEqual(None, opcodes[-2].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
+            self.assertEqual('RETURN_VALUE_R', opcodes[-1].opname)
 
     def test_false_while_loop(self):
         def break_in_while():
@@ -844,7 +844,7 @@ if 1:
             self.assertEqual(3, len(opcodes))
             self.assertEqual('LOAD_CONST_R', opcodes[1].opname)
             self.assertEqual(None, opcodes[1].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[2].opname)
+            self.assertEqual('RETURN_VALUE_R', opcodes[2].opname)
 
     def test_consts_in_conditionals(self):
         def and_true(x):
@@ -867,7 +867,7 @@ if 1:
                 opcodes = list(dis.get_instructions(func))
                 self.assertLessEqual(len(opcodes), 3)
                 self.assertIn('LOAD_', opcodes[-2].opname)
-                self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
+                self.assertEqual('RETURN_VALUE_R', opcodes[-1].opname)
 
     def test_imported_load_method(self):
         sources = [
@@ -1312,7 +1312,7 @@ assert (a > 0 and
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_R',
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
@@ -1329,7 +1329,7 @@ assert (a > 0 and
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'YIELD_VALUE',
             line=1, end_line=2, column=1, end_column=8, occurrence=2)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_R',
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_list_comprehension(self):
@@ -1348,7 +1348,7 @@ assert (a > 0 and
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_R',
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_list_comprehension(self):
@@ -1370,7 +1370,7 @@ async def f():
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_R',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_multiline_set_comprehension(self):
@@ -1389,7 +1389,7 @@ async def f():
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_R',
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_set_comprehension(self):
@@ -1411,7 +1411,7 @@ async def f():
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_R',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_multiline_dict_comprehension(self):
@@ -1430,7 +1430,7 @@ async def f():
             line=1, end_line=2, column=1, end_column=7, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=7, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_R',
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_dict_comprehension(self):
@@ -1452,7 +1452,7 @@ async def f():
             line=2, end_line=3, column=5, end_column=11, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=2, end_line=3, column=5, end_column=11, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_R',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_matchcase_sequence(self):

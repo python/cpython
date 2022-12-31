@@ -2107,6 +2107,7 @@ class JumpTestCase(unittest.TestCase):
 
     @async_jump_test(2, 4, [1, 4, 5, -4])
     async def test_jump_across_async_with(output):
+        raise ValueError("fail test instead of crashing")
         output.append(1)
         async with asynctracecontext(output, 2):
             output.append(3)

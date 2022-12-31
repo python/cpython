@@ -12,10 +12,10 @@ argcount: 1
 posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
-varnames: ('x', 'g')
+varnames: ('x', 'g', '$0')
 cellvars: ('x',)
 freevars: ()
-nlocals: 2
+nlocals: 3
 flags: 3
 consts: ('None', '<code object g>')
 
@@ -25,10 +25,10 @@ argcount: 1
 posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
-varnames: ('y', '$0', '$1', '$2')
+varnames: ('y', '$0', '$1', '$2', '$3')
 cellvars: ()
 freevars: ('x',)
-nlocals: 4
+nlocals: 5
 flags: 19
 consts: ('None',)
 
@@ -45,10 +45,10 @@ argcount: 2
 posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
-varnames: ('x', 'y', 'a', 'b', 'c', '$0', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8')
+varnames: ('x', 'y', 'a', 'b', 'c', '$0', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9')
 cellvars: ()
 freevars: ()
-nlocals: 14
+nlocals: 15
 flags: 3
 consts: ('None',)
 
@@ -63,10 +63,10 @@ argcount: 1
 posonlyargcount: 0
 kwonlyargcount: 0
 names: ('print', 'attr1', 'attr2', 'attr3')
-varnames: ('obj',)
+varnames: ('obj', '$0')
 cellvars: ()
 freevars: ()
-nlocals: 1
+nlocals: 2
 flags: 3
 consts: ('None',)
 
@@ -82,10 +82,10 @@ argcount: 0
 posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
-varnames: ()
+varnames: ('$0',)
 cellvars: ()
 freevars: ()
-nlocals: 0
+nlocals: 1
 flags: 3
 consts: ("'doc string'", 'None')
 
@@ -99,10 +99,10 @@ argcount: 2
 posonlyargcount: 0
 kwonlyargcount: 1
 names: ()
-varnames: ('a', 'b', 'k1')
+varnames: ('a', 'b', 'k1', '$0')
 cellvars: ()
 freevars: ()
-nlocals: 3
+nlocals: 4
 flags: 3
 consts: ('None',)
 
@@ -116,10 +116,10 @@ argcount: 3
 posonlyargcount: 2
 kwonlyargcount: 0
 names: ()
-varnames: ('a', 'b', 'c')
+varnames: ('a', 'b', 'c', '$0')
 cellvars: ()
 freevars: ()
-nlocals: 3
+nlocals: 4
 flags: 3
 consts: ('None',)
 
@@ -266,14 +266,14 @@ class CodeTest(unittest.TestCase):
             ("co_argcount", 0),
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
-            ("co_nlocals", 1),
+            ("co_nlocals", 2),
             ("co_stacksize", 0),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
             ("co_consts", code2.co_consts),
             ("co_names", ("myname",)),
-            ("co_varnames", ('spam',)),
+            ("co_varnames", ('spam', '$0')),
             ("co_freevars", ("freevar",)),
             ("co_cellvars", ("cellvar",)),
             ("co_filename", "newfilename"),
@@ -725,6 +725,7 @@ class CodeLocationTest(unittest.TestCase):
             pass
         PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
         f.__code__ = f.__code__.replace(
+            co_stacksize=1,
             co_firstlineno=42,
             co_code=bytes(
                 [

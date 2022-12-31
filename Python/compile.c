@@ -765,7 +765,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     else {
         c->c_regcode = strstr(f, "mytest");
     }
-    // c->c_regcode = true;
+    c->c_regcode = true;
 
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
