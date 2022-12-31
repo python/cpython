@@ -1020,17 +1020,23 @@ which incur interpreter overhead.
        "List unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
        # unique_everseen('ABBcCAD', str.lower) --> A B c D
+       seen = set()
        if key is None:
-           yield from dict.fromkeys(iterable)
+           for element in filterfalse(seen.__contains__, iterable):
+               seen.add(element)
+               yield element
+           # The steps shown above are intended to demonstrate
+           # filterfalse(). For order preserving deduplication,
+           # a faster but non-lazy solution is:
+           #     yield from dict.fromkeys(iterable)
        else:
-           seen = set()
            for element in iterable:
                k = key(element)
                if k not in seen:
                    seen.add(k)
                    yield element
            # For use cases that allow the last matching element to be returned,
-           # there is a faster alternative implementation.
+           # a faster but non-lazy solution is:
            #      t1, t2 = tee(iterable)
            #      yield from dict(zip(map(key, t1), t2)).values()
 
