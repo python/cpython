@@ -616,9 +616,9 @@ class ProcessPoolExecutor(_base.Executor):
             max_workers: The maximum number of processes that can be used to
                 execute the given calls. If None or not given then as many
                 worker processes will be created as the machine has processors.
-            mp_context: A multiprocessing context to launch the workers. This
-                object should provide SimpleQueue, Queue and Process. Useful
-                to allow specific multiprocessing start methods.
+            mp_context: A multiprocessing context to launch the workers created
+                using the multiprocessing.get_context('start method') API. This
+                object should provide SimpleQueue, Queue and Process.
             initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
             max_tasks_per_child: The maximum number of tasks a worker process
@@ -650,6 +650,19 @@ class ProcessPoolExecutor(_base.Executor):
                 mp_context = mp.get_context("spawn")
             else:
                 mp_context = mp.get_context()
+        if (getattr(mp_context, "get_start_method", lambda: None)() == "fork"
+            and mp_context == mp.context._default_context._default_context):
+            import warnings
+            warnings.warn(
+                "The multiprocessing 'fork' start method will change "
+                "away from 'fork' in Python >= 3.14, per GH-84559.  "
+                "concurrent.futures.process is built upon multiprocessing.  "
+                "If your application requires continued use of 'fork', "
+                "pass a mp_context= parameter created with the start method "
+                "explicitly specified.",
+                category=mp.context.DefaultForkDeprecationWarning,
+                stacklevel=2,
+            )
         self._mp_context = mp_context
 
         # https://github.com/python/cpython/issues/90622

@@ -23,7 +23,7 @@ class TimeoutError(ProcessError):
 class AuthenticationError(ProcessError):
     pass
 
-class DefaultsDeprecationWarning(DeprecationWarning):
+class DefaultForkDeprecationWarning(DeprecationWarning):
     pass
 
 #
@@ -261,6 +261,7 @@ class DefaultContext(BaseContext):
         return self._actual_context._name
 
     def get_all_start_methods(self):
+        """Returns a list of the supported start methods, default first."""
         if sys.platform == 'win32':
             return ['spawn']
         else:
@@ -284,19 +285,16 @@ if sys.platform != 'win32':
             return Popen(process_obj)
 
     class _DeprecatedForkProcess(ForkProcess):
-        @classmethod
-        def _warn(cls, stacklevel):
+        @staticmethod
+        def _warn(stacklevel):
             import warnings
             warnings.warn(
-                "Use of the multiprocessing 'fork' start method by default is "
-                "deprecated.  "
-                "The default will change in Python >= 3.14, per GH-84559.  "
-                "Please use an explicit multiprocessing.get_context or "
-                "multiprocessing.set_start_method API call to specify your "
-                "application's start method if you want to use 'fork'."
-                "  The 'spawn' and 'forkserver' start methods are safer "
-                "depending on the platform and application.",
-                category=DefaultsDeprecationWarning,
+                "The multiprocessing 'fork' start method will change "
+                "change away from 'fork' in Python >= 3.14, per GH-84559.  "
+                "Use a multiprocessing.get_context(X) context or "
+                "call multiprocessing.set_start_method(X) to explicitly "
+                "specify your application's need if you really want 'fork'.",
+                category=DefaultForkDeprecationWarning,
                 stacklevel=stacklevel,
             )
 
