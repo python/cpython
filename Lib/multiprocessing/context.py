@@ -289,11 +289,11 @@ if sys.platform != 'win32':
         def _warn(stacklevel):
             import warnings
             warnings.warn(
-                "The multiprocessing 'fork' start method will change "
-                "change away from 'fork' in Python >= 3.14, per GH-84559.  "
-                "Use a multiprocessing.get_context(X) context or "
-                "call multiprocessing.set_start_method(X) to explicitly "
-                "specify your application's need if you really want 'fork'.",
+                "The default multiprocessing start method will change "
+                "away from 'fork' in Python >= 3.14, per GH-84559. "
+                "Use multiprocessing.get_context(X) or .set_start_method(X) to "
+                "explicitly specify it when your application requires 'fork'. "
+                "The safest start method is 'spawn'.",
                 category=DefaultForkDeprecationWarning,
                 stacklevel=stacklevel,
             )
