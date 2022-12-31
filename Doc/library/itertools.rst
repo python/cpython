@@ -1025,8 +1025,7 @@ which incur interpreter overhead.
            for element in filterfalse(seen.__contains__, iterable):
                seen.add(element)
                yield element
-           # The steps shown above are intended to demonstrate
-           # filterfalse(). For order preserving deduplication,
+           # For order preserving deduplication,
            # a faster but non-lazy solution is:
            #     yield from dict.fromkeys(iterable)
        else:
