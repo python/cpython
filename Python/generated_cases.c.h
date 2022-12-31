@@ -40,6 +40,13 @@
             DISPATCH();
         }
 
+        TARGET(CHECK_FAST_R) {
+            PyObject *value = REG(oparg1);
+            JUMPBY(OPSIZE(CHECK_FAST_R) - 1);
+            if (value == NULL) goto unbound_local_error;
+            DISPATCH();
+        }
+
         TARGET(LOAD_FAST) {
             PyObject *value;
             JUMPBY(OPSIZE(LOAD_FAST) - 1);

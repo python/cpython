@@ -141,6 +141,10 @@ dummy_func(
             Py_INCREF(value);
         }
 
+        register inst(CHECK_FAST_R, (value -- )) {
+            ERROR_IF(value == NULL, unbound_local_error);
+        }
+
         inst(LOAD_FAST, (-- value)) {
             value = GETLOCAL(oparg);
             assert(value != NULL);

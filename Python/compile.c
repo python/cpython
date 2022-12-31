@@ -1366,6 +1366,8 @@ stack_effect(int opcode, int oparg, int jump)
         case LOAD_FAST_R:
         case LOAD_FAST_CHECK:
             return 1;
+        case CHECK_FAST_R:
+            return 0;
         case STORE_FAST:
         case STORE_FAST_R:
             return -1;
@@ -8311,6 +8313,13 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
                 // If this doesn't raise, then the local is defined.
                 unsafe_mask &= ~bit;
                 break;
+            case CHECK_FAST_R:
+                if (!(unsafe_mask & bit)) {
+                    INSTR_SET_OP0(instr, NOP);
+                }
+                // If this doesn't raise, then the local is defined.
+                unsafe_mask &= ~bit;
+                break;
             case LOAD_FAST:
             case LOAD_FAST_R:
                 if (unsafe_mask & bit) {
@@ -10070,7 +10079,13 @@ reduce_traffic_between_registers_and_stack(basicblock *b)
                 if (next_i < b->b_iused && b->b_instr[next_i].i_opcode == STORE_FAST_R) {
                     struct instr *next = &b->b_instr[next_i];
                     INSTR_SET_OP2(next, COPY_R, 0, instr->i_oparg1, next->i_oparg1);
-                    INSTR_SET_OP0(instr, NOP);
+                    if (instr->i_opcode == LOAD_CONST_R) {
+                        INSTR_SET_OP0(instr, NOP);
+                    }
+                    else {
+                        assert(instr->i_opcode == LOAD_FAST_R);
+                        INSTR_SET_OP1(instr, CHECK_FAST_R, instr->i_oparg1.value, instr->i_oparg1);
+                    }
                     changed = true;
                 }
             }

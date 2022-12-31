@@ -241,6 +241,9 @@ def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 
+def_op('CHECK_FAST_R', 166)
+haslocal.append(166)
+
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
