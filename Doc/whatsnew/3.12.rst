@@ -631,9 +631,11 @@ Removed
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
   (Contributed by Julien Palard in :gh:`98179`.)
 
-* Remove the *keyfile*, *certfile* and *check_hostname* parameters, deprecated
-  since Python 3.6, in modules: :mod:`ftplib`, :mod:`http.client`,
-  :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib`. Use the *context* parameter
+* Remove the *keyfile* and *certfile* parameters from the
+  :mod:`ftplib`, :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib` modules,
+  and the *key_file*, *cert_file* and *check_hostname* parameters from the
+  :mod:`http.client` module,
+  all deprecated since Python 3.6. Use the *context* parameter
   (*ssl_context* in :mod:`imaplib`) instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
