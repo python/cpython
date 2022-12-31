@@ -650,6 +650,9 @@ class ProcessPoolExecutor(_base.Executor):
                 mp_context = mp.get_context("spawn")
             else:
                 mp_context = mp.get_context()
+        # getattr(...)() instead of .get_start_method() as the docs imply that
+        # this method is not required. Hokey! But if someone passed us an odd
+        # duck, we just skip our introspection and warning.
         if (getattr(mp_context, "get_start_method", lambda: None)() == "fork"
             and mp_context == mp.context._default_context._default_context):
             import warnings
@@ -663,6 +666,9 @@ class ProcessPoolExecutor(_base.Executor):
                 category=mp.context.DefaultForkDeprecationWarning,
                 stacklevel=2,
             )
+            # Avoid the equivalent warning from multiprocessing itself via
+            # a non-default fork context.
+            mp_context = mp.get_context("fork")
         self._mp_context = mp_context
 
         # https://github.com/python/cpython/issues/90622
