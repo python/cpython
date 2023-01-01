@@ -20,7 +20,7 @@
 version: 2.59
 
 -- This set of tests primarily tests the existence of the operator.
--- Additon, subtraction, rounding, and more overflows are tested
+-- Addition, subtraction, rounding, and more overflows are tested
 -- elsewhere.
 
 precision:   9

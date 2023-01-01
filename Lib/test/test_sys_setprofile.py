@@ -2,6 +2,7 @@ import gc
 import pprint
 import sys
 import unittest
+from test import support
 
 
 class TestGetProfile(unittest.TestCase):
@@ -334,6 +335,15 @@ class ProfileSimulatorTestCase(TestCaseBase):
                               (1, 'return', j_ident),
                               ])
 
+    # bpo-34125: profiling method_descriptor with **kwargs
+    def test_unbound_method(self):
+        kwargs = {}
+        def f(p):
+            dict.get({}, 42, **kwargs)
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'return', f_ident)])
+
     # Test an invalid call (bpo-34126)
     def test_unbound_method_no_args(self):
         def f(p):
@@ -404,6 +414,40 @@ def capture_events(callable, p=None):
 def show_events(callable):
     import pprint
     pprint.pprint(capture_events(callable))
+
+
+class TestEdgeCases(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.setprofile, sys.getprofile())
+        sys.setprofile(None)
+
+    def test_reentrancy(self):
+        def foo(*args):
+            ...
+
+        def bar(*args):
+            ...
+
+        class A:
+            def __call__(self, *args):
+                pass
+
+            def __del__(self):
+                sys.setprofile(bar)
+
+        sys.setprofile(A())
+        sys.setprofile(foo)
+        self.assertEqual(sys.getprofile(), bar)
+
+
+    def test_same_object(self):
+        def foo(*args):
+            ...
+
+        sys.setprofile(foo)
+        del foo
+        sys.setprofile(sys.getprofile())
 
 
 if __name__ == "__main__":

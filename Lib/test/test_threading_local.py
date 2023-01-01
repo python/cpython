@@ -2,13 +2,16 @@ import sys
 import unittest
 from doctest import DocTestSuite
 from test import support
+from test.support import threading_helper
 import weakref
-import gc
 
 # Modules under test
 import _thread
 import threading
 import _threading_local
+
+
+threading_helper.requires_working_threading(module=True)
 
 
 class Weak(object):
@@ -36,7 +39,7 @@ class BaseLocalTest:
             t.join()
         del t
 
-        gc.collect()
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(weaklist), n)
 
         # XXX _threading_local keeps the local of the last stopped thread alive.
@@ -45,7 +48,7 @@ class BaseLocalTest:
 
         # Assignment to the same thread local frees it sometimes (!)
         local.someothervar = None
-        gc.collect()
+        support.gc_collect()  # For PyPy or other GCs.
         deadlist = [weak for weak in weaklist if weak() is None]
         self.assertIn(len(deadlist), (n-1, n), (n, len(deadlist)))
 
@@ -65,8 +68,8 @@ class BaseLocalTest:
             # Simply check that the variable is correctly set
             self.assertEqual(local.x, i)
 
-        with support.start_threads(threading.Thread(target=f, args=(i,))
-                                   for i in range(10)):
+        with threading_helper.start_threads(threading.Thread(target=f, args=(i,))
+                                            for i in range(10)):
             pass
 
     def test_derived_cycle_dealloc(self):
@@ -88,7 +91,7 @@ class BaseLocalTest:
             # 2) GC the cycle (triggers threadmodule.c::local_clear
             # before local_dealloc)
             del cycle
-            gc.collect()
+            support.gc_collect()  # For PyPy or other GCs.
             e1.set()
             e2.wait()
 
@@ -189,7 +192,7 @@ class BaseLocalTest:
         x.local.x = x
         wr = weakref.ref(x)
         del x
-        gc.collect()
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(wr())
 
 
@@ -200,22 +203,19 @@ class PyThreadingLocalTest(unittest.TestCase, BaseLocalTest):
     _local = _threading_local.local
 
 
-def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(DocTestSuite('_threading_local'))
-    suite.addTest(unittest.makeSuite(ThreadLocalTest))
-    suite.addTest(unittest.makeSuite(PyThreadingLocalTest))
+def load_tests(loader, tests, pattern):
+    tests.addTest(DocTestSuite('_threading_local'))
 
     local_orig = _threading_local.local
     def setUp(test):
         _threading_local.local = _thread._local
     def tearDown(test):
         _threading_local.local = local_orig
-    suite.addTest(DocTestSuite('_threading_local',
-                               setUp=setUp, tearDown=tearDown)
-                  )
+    tests.addTests(DocTestSuite('_threading_local',
+                                setUp=setUp, tearDown=tearDown)
+                   )
+    return tests
 
-    support.run_unittest(suite)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

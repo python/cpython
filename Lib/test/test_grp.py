@@ -1,9 +1,10 @@
 """Test script for the grp module."""
 
 import unittest
-from test import support
+from test.support import import_helper
 
-grp = support.import_module('grp')
+
+grp = import_helper.import_module('grp')
 
 class GroupDatabaseTestCase(unittest.TestCase):
 
@@ -48,10 +49,12 @@ class GroupDatabaseTestCase(unittest.TestCase):
 
     def test_errors(self):
         self.assertRaises(TypeError, grp.getgrgid)
+        self.assertRaises(TypeError, grp.getgrgid, 3.14)
         self.assertRaises(TypeError, grp.getgrnam)
+        self.assertRaises(TypeError, grp.getgrnam, 42)
         self.assertRaises(TypeError, grp.getgrall, 42)
         # embedded null character
-        self.assertRaises(ValueError, grp.getgrnam, 'a\x00b')
+        self.assertRaisesRegex(ValueError, 'null', grp.getgrnam, 'a\x00b')
 
         # try to get some errors
         bynames = {}
@@ -100,8 +103,8 @@ class GroupDatabaseTestCase(unittest.TestCase):
             self.skipTest('no groups')
         # Choose an existent gid.
         gid = entries[0][2]
-        self.assertWarns(DeprecationWarning, grp.getgrgid, float(gid))
-        self.assertWarns(DeprecationWarning, grp.getgrgid, str(gid))
+        self.assertRaises(TypeError, grp.getgrgid, float(gid))
+        self.assertRaises(TypeError, grp.getgrgid, str(gid))
 
 
 if __name__ == "__main__":

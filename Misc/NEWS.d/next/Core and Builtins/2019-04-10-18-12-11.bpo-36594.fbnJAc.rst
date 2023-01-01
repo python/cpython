@@ -1,2 +1,0 @@
-Fix incorrect use of ``%p`` in format strings.
-Patch by Zackery Spytz.
