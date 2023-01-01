@@ -741,7 +741,7 @@ Sometimes it is useful to have a data type similar to the Pascal "record" or C
 "struct", bundling together a few named data items. The idiomatic approach
 is to use :mod:`dataclasses` for this purpose::
 
-    from dataclasses import dataclasses
+    from dataclasses import dataclass
 
     @dataclass
     class Employee:

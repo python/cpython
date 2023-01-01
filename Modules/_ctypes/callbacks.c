@@ -426,7 +426,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
         goto error;
 #else
-#if defined(__clang__) || defined(MACOSX)
+#if defined(__clang__)
         #pragma clang diagnostic push
         #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -436,7 +436,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 #endif
         result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
 
-#if defined(__clang__) || defined(MACOSX)
+#if defined(__clang__)
         #pragma clang diagnostic pop
 #endif
 #if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))

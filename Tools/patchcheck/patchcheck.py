@@ -13,11 +13,11 @@ import untabify
 
 # Excluded directories which are copies of external libraries:
 # don't check their coding style
-EXCLUDE_DIRS = [os.path.join('Modules', '_ctypes', 'libffi_osx'),
-                os.path.join('Modules', '_ctypes', 'libffi_msvc'),
-                os.path.join('Modules', '_decimal', 'libmpdec'),
-                os.path.join('Modules', 'expat'),
-                os.path.join('Modules', 'zlib')]
+EXCLUDE_DIRS = [
+    os.path.join('Modules', '_decimal', 'libmpdec'),
+    os.path.join('Modules', 'expat'),
+    os.path.join('Modules', 'zlib'),
+    ]
 SRCDIR = sysconfig.get_config_var('srcdir')
 
 
