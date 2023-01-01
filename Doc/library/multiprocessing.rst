@@ -683,7 +683,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    .. doctest::
 
        >>> import multiprocessing, time, signal
-       >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
+       >>> mp_context = multiprocessing.get_context('spawn')
+       >>> p = mp_context.Process(target=time.sleep, args=(1000,))
        >>> print(p, p.is_alive())
        <Process ... initial> False
        >>> p.start()
@@ -1928,7 +1929,8 @@ their parent process exits.  The manager classes are defined in the
 
    .. doctest::
 
-    >>> manager = multiprocessing.Manager()
+    >>> mp_context = multiprocessing.get_context('spawn')
+    >>> manager = mp_context.Manager()
     >>> Global = manager.Namespace()
     >>> Global.x = 10
     >>> Global.y = 'hello'
@@ -2040,8 +2042,8 @@ the proxy).  In this way, a proxy can be used just like its referent can:
 
 .. doctest::
 
-   >>> from multiprocessing import Manager
-   >>> manager = Manager()
+   >>> mp_context = multiprocessing.get_context('spawn')
+   >>> manager = mp_context.Manager()
    >>> l = manager.list([i*i for i in range(10)])
    >>> print(l)
    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
