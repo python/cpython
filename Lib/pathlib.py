@@ -1214,12 +1214,12 @@ class Path(PurePath):
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
-        stack = [(False, self)]
+        stack = [self]
 
         while stack:
-            must_yield, top = stack.pop()
-            if must_yield:
-                yield top
+            path = stack.pop()
+            if isinstance(path, tuple):
+                yield path
                 continue
 
             # We may not have read permission for self, in which case we can't
@@ -1228,7 +1228,7 @@ class Path(PurePath):
             # minor reason when (say) a thousand readable directories are still
             # left to visit. That logic is copied here.
             try:
-                scandir_it = top._scandir()
+                scandir_it = path._scandir()
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
@@ -1250,13 +1250,13 @@ class Path(PurePath):
                         filenames.append(entry.name)
 
             if top_down:
-                yield top, dirnames, filenames
+                yield path, dirnames, filenames
             else:
-                stack.append((True, (top, dirnames, filenames)))
+                stack.append((path, dirnames, filenames))
 
             for dirname in reversed(dirnames):
-                dirpath = top._make_child_relpath(dirname)
-                stack.append((False, dirpath))
+                dirpath = path._make_child_relpath(dirname)
+                stack.append(dirpath)
 
 
 class PosixPath(Path, PurePosixPath):
