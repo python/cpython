@@ -4343,7 +4343,7 @@ The constructors for both classes work the same:
 
    .. note::
       Users are recommended to not to make any assumptions about which element is kept
-      because this behavior is implementation-defined, not specified by python.   
+      because this behavior is implementation-defined, not specified by python.
 
    .. method:: remove(elem)
 
