@@ -5879,7 +5879,7 @@ int___sizeof___impl(PyObject *self)
 {
     Py_ssize_t res;
 
-    res = offsetof(PyLongObject, ob_digit) + Py_ABS(Py_SIZE(self))*sizeof(digit);
+    res = offsetof(PyLongObject, ob_digit) + Py_MAX(Py_ABS(Py_SIZE(self)), 1)*sizeof(digit);
     return res;
 }
 
