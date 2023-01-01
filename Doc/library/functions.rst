@@ -513,7 +513,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-eval:
 
-.. function:: eval(expression, /, globals=None, locals=None)
+.. function:: eval(expression, globals=None, locals=None)
 
    The arguments are a string and optional globals and locals.  If provided,
    *globals* must be a dictionary.  If provided, *locals* can be any mapping
@@ -650,20 +650,23 @@ are always available.  They are listed here in alphabetical order.
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
    (not-a-number), or positive or negative infinity.  More precisely, the
-   input must conform to the following grammar after leading and trailing
-   whitespace characters are removed:
+   input must conform to the ``floatvalue`` production rule in the following
+   grammar, after leading and trailing whitespace characters are removed:
 
    .. productionlist:: float
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      numeric_value: `floatnumber` | `infinity` | `nan`
-      numeric_string: [`sign`] `numeric_value`
+      digitpart: `digit` (["_"] `digit`)*
+      number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
+      exponent: ("e" | "E") ["+" | "-"] `digitpart`
+      floatnumber: number [`exponent`]
+      floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
 
-   Here ``floatnumber`` is the form of a Python floating-point literal,
-   described in :ref:`floating`.  Case is not significant, so, for example,
-   "inf", "Inf", "INFINITY", and "iNfINity" are all acceptable spellings for
-   positive infinity.
+   Here ``digit`` is a Unicode decimal digit (character in the Unicode general
+   category ``Nd``). Case is not significant, so, for example, "inf", "Inf",
+   "INFINITY", and "iNfINity" are all acceptable spellings for positive
+   infinity.
 
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
@@ -1733,6 +1736,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       The *start* parameter can be specified as a keyword argument.
 
+   .. versionchanged:: 3.12 Summation of floats switched to an algorithm
+      that gives higher accuracy on most builds.
+
+
 .. class:: super()
            super(type, object_or_type=None)
 
@@ -1916,13 +1923,23 @@ are always available.  They are listed here in alphabetical order.
         >>> list(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
         [('a', 1), ('b', 2), ('c', 3)]
 
-     Unlike the default behavior, it checks that the lengths of iterables are
-     identical, raising a :exc:`ValueError` if they aren't:
+     Unlike the default behavior, it raises a :exc:`ValueError` if one iterable
+     is exhausted before the others:
 
-        >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
+        >>> for item in zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True):  # doctest: +SKIP
+        ...     print(item)
+        ...
+        (0, 'fee')
+        (1, 'fi')
+        (2, 'fo')
         Traceback (most recent call last):
           ...
         ValueError: zip() argument 2 is longer than argument 1
+
+     ..
+        This doctest is disabled because doctest does not support capturing
+        output and exceptions in the same code unit.
+        https://github.com/python/cpython/issues/65382
 
      Without the ``strict=True`` argument, any bug that results in iterables of
      different lengths will be silenced, possibly manifesting as a hard-to-find

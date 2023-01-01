@@ -465,6 +465,32 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(code_b, code_d)
         self.assertNotEqual(code_c, code_d)
 
+    def test_code_hash_uses_firstlineno(self):
+        c1 = (lambda: 1).__code__
+        c2 = (lambda: 1).__code__
+        self.assertNotEqual(c1, c2)
+        self.assertNotEqual(hash(c1), hash(c2))
+        c3 = c1.replace(co_firstlineno=17)
+        self.assertNotEqual(c1, c3)
+        self.assertNotEqual(hash(c1), hash(c3))
+
+    def test_code_hash_uses_order(self):
+        # Swapping posonlyargcount and kwonlyargcount should change the hash.
+        c = (lambda x, y, *, z=1, w=1: 1).__code__
+        self.assertEqual(c.co_argcount, 2)
+        self.assertEqual(c.co_posonlyargcount, 0)
+        self.assertEqual(c.co_kwonlyargcount, 2)
+        swapped = c.replace(co_posonlyargcount=2, co_kwonlyargcount=0)
+        self.assertNotEqual(c, swapped)
+        self.assertNotEqual(hash(c), hash(swapped))
+
+    def test_code_hash_uses_bytecode(self):
+        c = (lambda x, y: x + y).__code__
+        d = (lambda x, y: x * y).__code__
+        c1 = c.replace(co_code=d.co_code)
+        self.assertNotEqual(c, c1)
+        self.assertNotEqual(hash(c), hash(c1))
+
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
