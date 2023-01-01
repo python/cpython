@@ -225,6 +225,10 @@ class Fraction(numbers.Rational):
                 (cls.__name__, dec, type(dec).__name__))
         return cls(*dec.as_integer_ratio())
 
+    def is_integer(self):
+        """Return True if the Fraction is an integer."""
+        return self._denominator == 1
+
     def as_integer_ratio(self):
         """Return the integer ratio as a tuple.
 
