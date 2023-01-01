@@ -2841,7 +2841,27 @@ static PyObject *
 math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
 /*[clinic end generated code: output=6722dbfe60664554 input=43acbb5dc736a1f5]*/
 {
-    return PyFloat_FromDouble(2.71828);
+    PyObject *p_it, *q_it, *total;
+    PyObject *p_i, *q_i, *term_i, *new_total;
+
+    p_it = PyObject_GetIter(p);
+    q_it = PyObject_GetIter(q);
+    total = PyLong_FromLong(0);
+    while (1) {
+        p_i = PyIter_Next(p_it);
+        q_i = PyIter_Next(q_it);
+        if (q_i == NULL)
+            break;
+        term_i = PyNumber_Multiply(p_i, q_i);
+        new_total = PyNumber_Add(total, term_i);
+        Py_SETREF(total, new_total);
+        Py_DECREF(p_i);
+        Py_DECREF(q_i);
+        Py_DECREF(term_i);
+    }
+    Py_DECREF(p_it);
+    Py_DECREF(q_it);
+    return total;
 }
 
 
