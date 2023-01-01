@@ -36,6 +36,9 @@ Queue
    the queue is always known and can be returned by calling the
    :meth:`qsize` method.
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 

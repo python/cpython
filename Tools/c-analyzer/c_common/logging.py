@@ -41,7 +41,7 @@ def configure_logger(logger, verbosity=VERBOSITY, *,
 def hide_emit_errors():
     """Ignore errors while emitting log entries.
 
-    Rather than printing a message desribing the error, we show nothing.
+    Rather than printing a message describing the error, we show nothing.
     """
     # For now we simply ignore all exceptions.  If we wanted to ignore
     # specific ones (e.g. BrokenPipeError) then we would need to use

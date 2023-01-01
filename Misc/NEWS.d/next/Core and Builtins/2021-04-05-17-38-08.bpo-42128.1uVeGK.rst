@@ -1,1 +1,0 @@
-:data:`~object.__match_args__` is no longer allowed to be a list.

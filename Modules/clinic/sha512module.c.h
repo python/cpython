@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(SHA512Type_copy__doc__,
 "copy($self, /)\n"
 "--\n"
@@ -9,7 +15,7 @@ PyDoc_STRVAR(SHA512Type_copy__doc__,
 "Return a copy of the hash object.");
 
 #define SHA512TYPE_COPY_METHODDEF    \
-    {"copy", (PyCFunction)(void(*)(void))SHA512Type_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, SHA512Type_copy__doc__},
+    {"copy", _PyCFunction_CAST(SHA512Type_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, SHA512Type_copy__doc__},
 
 static PyObject *
 SHA512Type_copy_impl(SHAobject *self, PyTypeObject *cls);
@@ -17,18 +23,11 @@ SHA512Type_copy_impl(SHAobject *self, PyTypeObject *cls);
 static PyObject *
 SHA512Type_copy(SHAobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":copy", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
     }
-    return_value = SHA512Type_copy_impl(self, cls);
-
-exit:
-    return return_value;
+    return SHA512Type_copy_impl(self, cls);
 }
 
 PyDoc_STRVAR(SHA512Type_digest__doc__,
@@ -83,7 +82,7 @@ PyDoc_STRVAR(_sha512_sha512__doc__,
 "Return a new SHA-512 hash object; optionally initialized with a string.");
 
 #define _SHA512_SHA512_METHODDEF    \
-    {"sha512", (PyCFunction)(void(*)(void))_sha512_sha512, METH_FASTCALL|METH_KEYWORDS, _sha512_sha512__doc__},
+    {"sha512", _PyCFunction_CAST(_sha512_sha512), METH_FASTCALL|METH_KEYWORDS, _sha512_sha512__doc__},
 
 static PyObject *
 _sha512_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity);
@@ -92,8 +91,31 @@ static PyObject *
 _sha512_sha512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sha512", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sha512",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *string = NULL;
@@ -134,7 +156,7 @@ PyDoc_STRVAR(_sha512_sha384__doc__,
 "Return a new SHA-384 hash object; optionally initialized with a string.");
 
 #define _SHA512_SHA384_METHODDEF    \
-    {"sha384", (PyCFunction)(void(*)(void))_sha512_sha384, METH_FASTCALL|METH_KEYWORDS, _sha512_sha384__doc__},
+    {"sha384", _PyCFunction_CAST(_sha512_sha384), METH_FASTCALL|METH_KEYWORDS, _sha512_sha384__doc__},
 
 static PyObject *
 _sha512_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity);
@@ -143,8 +165,31 @@ static PyObject *
 _sha512_sha384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sha384", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sha384",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *string = NULL;
@@ -177,4 +222,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9ff9f11937fabf35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd168f3f21097afe input=a9049054013a1b77]*/

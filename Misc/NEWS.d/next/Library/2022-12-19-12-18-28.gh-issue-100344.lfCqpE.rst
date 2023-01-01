@@ -1,0 +1,2 @@
+Provide C implementation for :func:`asyncio.current_task` for a 4x-6x
+speedup.

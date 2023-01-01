@@ -93,6 +93,28 @@ class PowTest(unittest.TestCase):
                             pow(int(i),j,k)
                         )
 
+    def test_big_exp(self):
+        import random
+        self.assertEqual(pow(2, 50000), 1 << 50000)
+        # Randomized modular tests, checking the identities
+        #  a**(b1 + b2) == a**b1 * a**b2
+        #  a**(b1 * b2) == (a**b1)**b2
+        prime = 1000000000039 # for speed, relatively small prime modulus
+        for i in range(10):
+            a = random.randrange(1000, 1000000)
+            bpower = random.randrange(1000, 50000)
+            b = random.randrange(1 << (bpower - 1), 1 << bpower)
+            b1 = random.randrange(1, b)
+            b2 = b - b1
+            got1 = pow(a, b, prime)
+            got2 = pow(a, b1, prime) * pow(a, b2, prime) % prime
+            if got1 != got2:
+                self.fail(f"{a=:x} {b1=:x} {b2=:x} {got1=:x} {got2=:x}")
+            got3 = pow(a, b1 * b2, prime)
+            got4 = pow(pow(a, b1, prime), b2, prime)
+            if got3 != got4:
+                self.fail(f"{a=:x} {b1=:x} {b2=:x} {got3=:x} {got4=:x}")
+
     def test_bug643260(self):
         class TestRpow:
             def __rpow__(self, other):

@@ -42,6 +42,10 @@ def interpreter_requires_environment():
         if 'PYTHONHOME' in os.environ:
             __cached_interp_requires_environment = True
             return True
+        # cannot run subprocess, assume we don't need it
+        if not support.has_subprocess_support:
+            __cached_interp_requires_environment = False
+            return False
 
         # Try running an interpreter with -E to see if it works or not.
         try:
@@ -87,6 +91,7 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
 
 
 # Executing the interpreter in a subprocess
+@support.requires_subprocess()
 def run_python_until_end(*args, **env_vars):
     env_required = interpreter_requires_environment()
     cwd = env_vars.pop('__cwd', None)
@@ -139,6 +144,7 @@ def run_python_until_end(*args, **env_vars):
     return _PythonRunResult(rc, out, err), cmd_line
 
 
+@support.requires_subprocess()
 def _assert_python(expected_success, /, *args, **env_vars):
     res, cmd_line = run_python_until_end(*args, **env_vars)
     if (res.rc and expected_success) or (not res.rc and not expected_success):
@@ -171,6 +177,7 @@ def assert_python_failure(*args, **env_vars):
     return _assert_python(False, *args, **env_vars)
 
 
+@support.requires_subprocess()
 def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     """Run a Python subprocess with the given arguments.
 
@@ -273,6 +280,7 @@ def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     return zip_name, os.path.join(zip_name, script_name_in_zip)
 
 
+@support.requires_subprocess()
 def run_test_script(script):
     # use -u to try to get the full output if the test hangs or crash
     if support.verbose:

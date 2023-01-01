@@ -10,8 +10,15 @@ extern "C" {
 
 struct _mod;   // Type defined in pycore_ast.h
 
-typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock }
+typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock, AnnotationBlock }
     _Py_block_ty;
+
+typedef enum _comprehension_type {
+    NoComprehension = 0,
+    ListComprehension = 1,
+    DictComprehension = 2,
+    SetComprehension = 3,
+    GeneratorExpression = 4 } _Py_comprehension_ty;
 
 struct _symtable_entry;
 
@@ -32,7 +39,6 @@ struct symtable {
                                        the symbol table */
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
-    int in_pattern;                 /* whether we are currently in a pattern */
 };
 
 typedef struct _symtable_entry {
@@ -43,14 +49,14 @@ typedef struct _symtable_entry {
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
-    _Py_block_ty ste_type;   /* module, class, or function */
+    _Py_block_ty ste_type;   /* module, class, function or annotation */
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
     unsigned ste_child_free : 1;  /* true if a child block has free vars,
                                      including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
     unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
-    unsigned ste_comprehension : 1; /* true if namespace is a list comprehension */
+    _Py_comprehension_ty ste_comprehension;  /* Kind of comprehension (if any) */
     unsigned ste_varargs : 1;     /* true if block has varargs */
     unsigned ste_varkeywords : 1; /* true if block has varkeywords */
     unsigned ste_returns_value : 1;  /* true if namespace uses return with
@@ -62,6 +68,8 @@ typedef struct _symtable_entry {
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     int ste_lineno;          /* first line of block */
     int ste_col_offset;      /* offset of first line of block */
+    int ste_end_lineno;      /* end line of block */
+    int ste_end_col_offset;  /* end offset of first line of block */
     int ste_opt_lineno;      /* lineno of last exec or import * */
     int ste_opt_col_offset;  /* offset of last exec or import * */
     struct symtable *ste_table;
@@ -69,8 +77,9 @@ typedef struct _symtable_entry {
 
 extern PyTypeObject PySTEntry_Type;
 
-#define PySTEntry_Check(op) Py_IS_TYPE(op, &PySTEntry_Type)
+#define PySTEntry_Check(op) Py_IS_TYPE((op), &PySTEntry_Type)
 
+extern long _PyST_GetSymbol(PySTEntryObject *, PyObject *);
 extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
 
 extern struct symtable* _PySymtable_Build(

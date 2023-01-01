@@ -6,7 +6,7 @@ import unittest
 import unittest.mock
 import warnings
 
-from test.support import hashlib_helper
+from test.support import hashlib_helper, check_disallow_instantiation
 
 from _operator import _compare_digest as operator_compare_digest
 
@@ -439,10 +439,9 @@ class ConstructorTestCase(unittest.TestCase):
     @unittest.skipUnless(C_HMAC is not None, 'need _hashlib')
     def test_internal_types(self):
         # internal types like _hashlib.C_HMAC are not constructable
-        with self.assertRaisesRegex(
-            TypeError, "cannot create 'HMAC' instance"
-        ):
-            C_HMAC()
+        check_disallow_instantiation(self, C_HMAC)
+        with self.assertRaisesRegex(TypeError, "immutable type"):
+            C_HMAC.value = None
 
     @unittest.skipUnless(sha256_module is not None, 'need _sha256')
     def test_with_sha256_module(self):

@@ -124,9 +124,7 @@ square brackets, is recursively defined as follows.
 * If the target list is a single target with no trailing comma,
   optionally in parentheses, the object is assigned to that target.
 
-* Else: The object must be an iterable with the same number of
-  items as there are targets in the target list, and the items are assigned,
-  from left to right, to the corresponding targets.
+* Else:
 
   * If the target list contains one target prefixed with an asterisk, called a
     "starred" target: The object must be an iterable with at least as many items
@@ -332,7 +330,7 @@ statement, of a variable or attribute annotation and an optional assignment stat
    annotated_assignment_stmt: `augtarget` ":" `expression`
                             : ["=" (`starred_expression` | `yield_expression`)]
 
-The difference from normal :ref:`assignment` is that only single target is allowed.
+The difference from normal :ref:`assignment` is that only a single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
@@ -367,8 +365,8 @@ target, then the interpreter evaluates the target except for the last
       IDEs.
 
 .. versionchanged:: 3.8
-   Now annotated assignments allow same expressions in the right hand side as
-   the regular assignments. Previously, some expressions (like un-parenthesized
+   Now annotated assignments allow the same expressions in the right hand side as
+   regular assignments. Previously, some expressions (like un-parenthesized
    tuple expressions) caused a syntax error.
 
 
@@ -563,10 +561,10 @@ The :keyword:`!raise` statement
 .. productionlist:: python-grammar
    raise_stmt: "raise" [`expression` ["from" `expression`]]
 
-If no expressions are present, :keyword:`raise` re-raises the last exception
-that was active in the current scope.  If no exception is active in the current
-scope, a :exc:`RuntimeError` exception is raised indicating that this is an
-error.
+If no expressions are present, :keyword:`raise` re-raises the
+exception that is currently being handled, which is also known as the *active exception*.
+If there isn't currently an active exception, a :exc:`RuntimeError` exception is raised
+indicating that this is an error.
 
 Otherwise, :keyword:`raise` evaluates the first expression as the exception
 object.  It must be either a subclass or an instance of :class:`BaseException`.
@@ -581,8 +579,8 @@ The :dfn:`type` of the exception is the exception instance's class, the
 A traceback object is normally created automatically when an exception is raised
 and attached to it as the :attr:`__traceback__` attribute, which is writable.
 You can create an exception and set your own traceback in one step using the
-:meth:`with_traceback` exception method (which returns the same exception
-instance, with its traceback set to its argument), like so::
+:meth:`~BaseException.with_traceback` exception method (which returns the
+same exception instance, with its traceback set to its argument), like so::
 
    raise Exception("foo occurred").with_traceback(tracebackobj)
 
@@ -614,8 +612,10 @@ exceptions will be printed::
      File "<stdin>", line 4, in <module>
    RuntimeError: Something bad happened
 
-A similar mechanism works implicitly if an exception is raised inside an
-exception handler or a :keyword:`finally` clause: the previous exception is then
+A similar mechanism works implicitly if a new exception is raised when
+an exception is already being handled.  An exception may be handled
+when an :keyword:`except` or :keyword:`finally` clause, or a
+:keyword:`with` statement, is used.  The previous exception is then
 attached as the new exception's :attr:`__context__` attribute::
 
    >>> try:
@@ -654,6 +654,12 @@ and information about handling exceptions is in section :ref:`try`.
 .. versionadded:: 3.3
     The ``__suppress_context__`` attribute to suppress automatic display of the
     exception context.
+
+.. versionchanged:: 3.11
+    If the traceback of the active exception is modified in an :keyword:`except`
+    clause, a subsequent ``raise`` statement re-raises the exception with the
+    modified traceback. Previously, the exception was re-raised with the
+    traceback it had when it was caught.
 
 .. _break:
 
@@ -734,7 +740,7 @@ The :keyword:`!import` statement
               : ("," `identifier` ["as" `identifier`])*
               : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])* [","] ")"
-              : | "from" `module` "import" "*"
+              : | "from" `relative_module` "import" "*"
    module: (`identifier` ".")* `identifier`
    relative_module: "."* `module` | "."+
 
@@ -750,7 +756,7 @@ commas) the two steps are carried out separately for each clause, just
 as though the clauses had been separated out into individual import
 statements.
 
-The details of the first step, finding and loading modules are described in
+The details of the first step, finding and loading modules, are described in
 greater detail in the section on the :ref:`import system <importsystem>`,
 which also describes the various types of packages and modules that can
 be imported, as well as all the hooks that can be used to customize
@@ -795,9 +801,9 @@ The :keyword:`from` form uses a slightly more complex process:
 Examples::
 
    import foo                 # foo imported and bound locally
-   import foo.bar.baz         # foo.bar.baz imported, foo bound locally
-   import foo.bar.baz as fbb  # foo.bar.baz imported and bound as fbb
-   from foo.bar import baz    # foo.bar.baz imported and bound as baz
+   import foo.bar.baz         # foo, foo.bar, and foo.bar.baz imported, foo bound locally
+   import foo.bar.baz as fbb  # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as fbb
+   from foo.bar import baz    # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as baz
    from foo import attr       # foo imported and foo.attr bound as attr
 
 .. index:: single: * (asterisk); import statement
@@ -877,11 +883,14 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
+The only feature that requires using the future statement is
+``annotations`` (see :pep:`563`).
+
 All historical features enabled by the future statement are still recognized
 by Python 3.  The list includes ``absolute_import``, ``division``,
 ``generators``, ``generator_stop``, ``unicode_literals``,
-``print_function``, ``nested_scopes``, ``with_statement`` and ``annotations``.
-They are all redundant because they are always enabled, and only kept for
+``print_function``, ``nested_scopes`` and ``with_statement``.  They are
+all redundant because they are always enabled, and only kept for
 backwards compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes
@@ -985,19 +994,11 @@ The :keyword:`!nonlocal` statement
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-.. XXX add when implemented
-                : ["=" (`target_list` "=")+ starred_expression]
-                : | "nonlocal" identifier augop expression_list
-
 The :keyword:`nonlocal` statement causes the listed identifiers to refer to
 previously bound variables in the nearest enclosing scope excluding globals.
 This is important because the default behavior for binding is to search the
 local namespace first.  The statement allows encapsulated code to rebind
 variables outside of the local scope besides the global (module) scope.
-
-.. XXX not implemented
-   The :keyword:`nonlocal` statement may prepend an assignment or augmented
-   assignment, but not an expression.
 
 Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
 :keyword:`global` statement, must refer to pre-existing bindings in an

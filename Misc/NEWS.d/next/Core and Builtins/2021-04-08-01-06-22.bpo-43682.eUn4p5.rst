@@ -1,5 +1,0 @@
-Static methods (:func:`@staticmethod <staticmethod>`) and class methods
-(:func:`@classmethod <classmethod>`) now inherit the method attributes
-(``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
-``__annotations__``) and have a new ``__wrapped__`` attribute.
-Patch by Victor Stinner.
