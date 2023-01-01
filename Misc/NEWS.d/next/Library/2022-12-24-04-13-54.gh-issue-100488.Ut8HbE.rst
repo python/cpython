@@ -1,0 +1,1 @@
+Add :meth:`Fraction.is_integer` to check whether a :class:`fractions.Fraction` is an integer. This improves duck type compatibility with :class:`float` and :class:`int`.
