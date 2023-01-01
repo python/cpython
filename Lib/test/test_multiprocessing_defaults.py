@@ -54,6 +54,19 @@ class DefaultWarningsTest(unittest.TestCase):
         self.assertIn("get_context", str(ws[0].message))
         self.assertEqual(len(ws), 1, msg=[str(x) for x in ws])
 
+    def test_default_fork_start_method_warning_manager(self):
+        with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter('ignore')
+            warnings.filterwarnings('always', category=DefaultForkDeprecationWarning)
+            manager = multiprocessing.Manager()  # warning should point here.
+        manager.shutdown()
+        self.assertIsInstance(ws[0].message, DefaultForkDeprecationWarning)
+        self.assertIn(__file__, ws[0].filename)
+        self.assertEqual(getframeinfo(currentframe()).lineno-4, ws[0].lineno)
+        self.assertIn("'fork'", str(ws[0].message))
+        self.assertIn("get_context", str(ws[0].message))
+        self.assertEqual(len(ws), 1, msg=[str(x) for x in ws])
+
     def test_no_mp_warning_when_using_explicit_fork_context(self):
         with warnings.catch_warnings(record=True) as ws:
             warnings.simplefilter('ignore')

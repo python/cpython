@@ -56,8 +56,15 @@ class BaseContext(object):
         can be used to create shared objects.
         '''
         from .managers import SyncManager
-        m = SyncManager(ctx=self.get_context())
+        ctx = self.get_context()
+        m = SyncManager(ctx=ctx)
+        proc_class = ctx.Process
+        orig_level = getattr(proc_class, '_ORIG_WARNING_STACKLEVEL', None)
+        if orig_level:
+            ctx.Process._warning_stacklevel = 6  # blame mp.Manager()
         m.start()
+        if orig_level:
+            ctx.Process._warning_stacklevel = orig_level
         return m
 
     def Pipe(self, duplex=True):
