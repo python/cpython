@@ -4341,10 +4341,6 @@ The constructors for both classes work the same:
 
       Add element *elem* to the set.
 
-   .. note::
-      Users are recommended to not to make any assumptions about which element is kept
-      because this behavior is implementation-defined, not specified by python.
-
    .. method:: remove(elem)
 
       Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is
@@ -4363,6 +4359,9 @@ The constructors for both classes work the same:
 
       Remove all elements from the set.
 
+   .. note::
+      Users are recommended to not to make any assumptions about which element is kept
+      because this behavior is implementation-defined, not specified by python.   
 
    Note, the non-operator versions of the :meth:`update`,
    :meth:`intersection_update`, :meth:`difference_update`, and
