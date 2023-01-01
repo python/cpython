@@ -686,14 +686,14 @@ The :mod:`multiprocessing` package mostly replicates the API of the
        >>> mp_context = multiprocessing.get_context('spawn')
        >>> p = mp_context.Process(target=time.sleep, args=(1000,))
        >>> print(p, p.is_alive())
-       <Process ... initial> False
+       <...Process ... initial> False
        >>> p.start()
        >>> print(p, p.is_alive())
-       <Process ... started> True
+       <...Process ... started> True
        >>> p.terminate()
        >>> time.sleep(0.1)
        >>> print(p, p.is_alive())
-       <Process ... stopped exitcode=-SIGTERM> False
+       <...Process ... stopped exitcode=-SIGTERM> False
        >>> p.exitcode == -signal.SIGTERM
        True
 
