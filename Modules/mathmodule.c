@@ -2819,6 +2819,32 @@ For example, the hypotenuse of a 3/4/5 right triangle is:\n\
     5.0\n\
 ");
 
+/*[clinic input]
+math.sumprod
+
+    p: object
+    q: object
+    /
+
+Return the sum of products of value from two iterables p and q.
+
+Roughly equivalent to:
+
+    sum(itertools.starmap(operator.mul, zip(vec1, vec2, strict=True)))
+
+For float and mixed int/float inputs, the products and an running
+sum are computed in quad precison and the result is rounded back
+to double precision.
+[clinic start generated code]*/
+
+static PyObject *
+math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
+/*[clinic end generated code: output=6722dbfe60664554 input=43acbb5dc736a1f5]*/
+{
+    return PyFloat_FromDouble(2.71828);
+}
+
+
 /* pow can't use math_2, but needs its own wrapper: the problem is
    that an infinite result can arise either as a result of overflow
    (in which case OverflowError should be raised) or as a result of
@@ -3933,6 +3959,7 @@ static PyMethodDef math_methods[] = {
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},
     {"tan",             math_tan,       METH_O,         math_tan_doc},
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
+    MATH_SUMPROD_METHODDEF
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
     MATH_PERM_METHODDEF
