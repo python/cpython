@@ -893,7 +893,7 @@ are always available.  They are listed here in alphabetical order.
    :class:`bytes`, or :class:`bytearray` instance representing an integer
    in radix *base*.  Optionally, the string can be preceded by ``+`` or ``-``
    (with no space in between), have leading zeros, be surrounded by whitespace,
-   and have interspersed single underscores.
+   and have single underscores interspersed between digits.
 
    A base-n integer string contains digits, each representing a value from 0 to
    n-1. The values 0--9 can be represented by any Unicode decimal digit. The
