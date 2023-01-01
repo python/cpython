@@ -119,7 +119,7 @@ another rational number, or from a string.
 
    .. method:: is_integer()
 
-      Return True if the Fraction is an integer.
+      Return ``True`` if the Fraction is an integer.
 
       .. versionadded:: 3.12
 
