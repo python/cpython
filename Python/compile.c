@@ -1733,7 +1733,13 @@ compiler_addop_o(struct compiler *c, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc);
+    if (c->c_regcode && opcode == STORE_FAST) {
+        return cfg_builder_addop(CFG_BUILDER(c), STORE_FAST_R, arg, loc,
+                                 NAME_OPARG(arg), UNUSED_OPARG, UNUSED_OPARG);
+    }
+    else {
+        return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc);
+    }
 }
 
 static int
@@ -8683,9 +8689,10 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     return co;
 }
 
+#define VV 0
 
 /* For debugging purposes only */
-#if 0
+#if VV
 static void
 dump_instr(struct instr *i)
 {
@@ -10054,6 +10061,7 @@ translate_jump_labels_to_targets(basicblock *entryblock)
 }
 
 
+
 static int
 reduce_traffic_between_registers_and_stack(basicblock *b)
 {
@@ -10065,8 +10073,10 @@ reduce_traffic_between_registers_and_stack(basicblock *b)
         }
     }
     bool changed = true;
+    if (VV) fprintf(stderr, "-----------------------------\n");
     while (changed) {
         changed = false;
+        if (VV) dump_basicblock(b);
         for (int i = 0; i < b->b_iused - 1; i++) {
             struct instr *instr = &b->b_instr[i];
             if (instr->i_opcode == LOAD_CONST_R || instr->i_opcode == LOAD_FAST_R) {
@@ -10079,7 +10089,7 @@ reduce_traffic_between_registers_and_stack(basicblock *b)
                 if (next_i < b->b_iused && b->b_instr[next_i].i_opcode == STORE_FAST_R) {
                     struct instr *next = &b->b_instr[next_i];
                     INSTR_SET_OP2(next, COPY_R, 0, instr->i_oparg1, next->i_oparg1);
-                    if (instr->i_opcode == LOAD_CONST_R) {
+                    if (instr->i_opcode == LOAD_CONST_R || instr->i_oparg1.type == TMP_REG) {
                         INSTR_SET_OP0(instr, NOP);
                     }
                     else {
@@ -10089,8 +10099,22 @@ reduce_traffic_between_registers_and_stack(basicblock *b)
                     changed = true;
                 }
             }
+            else if (instr->i_opcode == STORE_FAST_R && instr->i_oparg1.type == TMP_REG) {
+                int next_i = i + 1;
+                while (next_i < b->b_iused && b->b_instr[next_i].i_opcode == NOP) {
+                    next_i++;
+                }
+                if (next_i < b->b_iused && b->b_instr[next_i].i_opcode == LOAD_FAST_R) {
+                    struct instr *next = &b->b_instr[next_i];
+                    if (SAME_REGISTER(instr->i_oparg1, next->i_oparg1)) {
+                        INSTR_SET_OP0(instr, NOP);
+                        INSTR_SET_OP0(next, NOP);
+                    }
+                }
+            }
         }
     }
+    if (VV) dump_basicblock(b);
     return 0;
 }
 
@@ -10106,7 +10130,13 @@ propagate_register_copies(basicblock *b)
                 struct instr *next = &b->b_instr[j];
                 /* These should all be reads, because SSA */
                 if (SAME_REGISTER(next->i_oparg1, dst)) {
-                    next->i_oparg1 = src;
+                    if (next->i_opcode == CHECK_FAST_R && src.type == TMP_REG) {
+                        INSTR_SET_OP0(next, NOP);  /* no need to check tmps */
+                    }
+                    else if (next->i_opcode != LOAD_FAST_R &&
+                             next->i_opcode != LOAD_CONST_R) {
+                        next->i_oparg1 = src;
+                    }
                 }
                 if (SAME_REGISTER(next->i_oparg2, dst)) {
                     next->i_oparg2 = src;
@@ -10115,8 +10145,15 @@ propagate_register_copies(basicblock *b)
                     next->i_oparg3 = src;
                 }
             }
-            INSTR_SET_OP0(instr, NOP);
+            if (dst.type == TMP_REG) {
+                INSTR_SET_OP0(instr, NOP);
+            }
         }
+    }
+
+    if (VV) {
+        fprintf(stderr, "after propagate_register_copies:\n");
+        dump_basicblock(b);
     }
     return 0;
 }
