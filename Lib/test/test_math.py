@@ -1269,6 +1269,17 @@ class MathTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             sumprod([5, 10], ['abc', 3])
 
+        # Special values should give the same as the pure python recipe
+        self.assertEqual(sumprod([10.1, math.inf], [20.2, 30.3]), math.inf)
+        self.assertEqual(sumprod([10.1, math.inf], [math.inf, 30.3]), math.inf)
+        self.assertEqual(sumprod([10.1, math.inf], [math.inf, math.inf]), math.inf)
+        self.assertEqual(sumprod([10.1, -math.inf], [20.2, 30.3]), -math.inf)
+        self.assertTrue(math.isnan(sumprod([10.1, math.inf], [-math.inf, math.inf])))
+        self.assertTrue(math.isnan(sumprod([10.1, math.nan], [20.2, 30.3])))
+        self.assertTrue(math.isnan(sumprod([10.1, math.inf], [math.nan, 30.3])))
+        self.assertTrue(math.isnan(sumprod([10.1, math.inf], [20.3, math.nan])))
+
+
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
 
