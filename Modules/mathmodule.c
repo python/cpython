@@ -2842,7 +2842,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
 /*[clinic end generated code: output=6722dbfe60664554 input=43acbb5dc736a1f5]*/
 {
     PyObject *p_it, *q_it, *total;
-    PyObject *p_i, *q_i, *term_i, *new_total;
+    PyObject *p_i = NULL, *q_i = NULL, *term_i = NULL, *new_total = NULL;
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -2860,20 +2860,62 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
         return NULL;
     }
     while (1) {
+        int p_stopped = 0;
+        int q_stopped = 0;
+
+        assert (p_i == NULL);
+        assert (q_i == NULL);
+        assert (term_i == NULL);
+        assert (new_total == NULL);
+
+        assert (p_it != NULL);
+        assert (q_it != NULL);
+        assert (total != NULL);
+
         p_i = PyIter_Next(p_it);
+        if (p_i == NULL) {
+            if (PyErr_Occurred()) {
+                goto err_exit;
+            }
+            p_stopped = 1;
+        }
         q_i = PyIter_Next(q_it);
-        if (q_i == NULL)
-            break;
+        if (q_i == NULL) {
+            if (PyErr_Occurred()) {
+                goto err_exit;
+            }
+            q_stopped = 1;
+        }
+        if (p_stopped && q_stopped) {
+            goto normal_exit;
+        }
+        if (p_stopped != q_stopped) {
+            PyErr_Format(PyExc_ValueError, "Inputs are not the same length");
+            goto err_exit;
+        }
         term_i = PyNumber_Multiply(p_i, q_i);
         new_total = PyNumber_Add(total, term_i);
         Py_SETREF(total, new_total);
-        Py_DECREF(p_i);
-        Py_DECREF(q_i);
-        Py_DECREF(term_i);
+        new_total = NULL;
+        Py_CLEAR(p_i);
+        Py_CLEAR(q_i);
+        Py_CLEAR(term_i);
     }
+
+ normal_exit:
     Py_DECREF(p_it);
     Py_DECREF(q_it);
     return total;
+
+ err_exit:
+    Py_DECREF(p_it);
+    Py_DECREF(q_it);
+    Py_DECREF(total);
+    Py_XDECREF(p_i);
+    Py_XDECREF(q_i);
+    Py_XDECREF(term_i);
+    Py_XDECREF(new_total);
+    return NULL;
 }
 
 

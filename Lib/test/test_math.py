@@ -1238,6 +1238,20 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, sumprod, None, [10])   # Non-iterable
         self.assertRaises(TypeError, sumprod, [10], None)   # Non-iterable
 
+        # Uneven lengths
+        self.assertRaises(ValueError, sumprod, [10, 20], [30])
+        # self.assertRaises(ValueError, sumprod, [10], [20, 30])
+
+        # Error in iterator
+        def raise_after(n):
+            for i in range(n):
+                yield i
+            raise RuntimeError
+        with self.assertRaises(RuntimeError):
+            sumprod(range(10), raise_after(5))
+        with self.assertRaises(RuntimeError):
+            sumprod(raise_after(5), range(10))
+
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
 
