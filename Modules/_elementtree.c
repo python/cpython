@@ -345,8 +345,7 @@ get_attrib_from_keywords(PyObject *kwds)
         }
         attrib = PyDict_Copy(attrib);
         if (attrib && PyDict_DelItem(kwds, attrib_str) < 0) {
-            Py_DECREF(attrib);
-            attrib = NULL;
+            Py_SETREF(attrib, NULL);
         }
     }
     else if (!PyErr_Occurred()) {
@@ -411,14 +410,10 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_XDECREF(attrib);
 
     /* Replace the objects already pointed to by tag, text and tail. */
-    Py_INCREF(tag);
-    Py_XSETREF(self_elem->tag, tag);
+    Py_XSETREF(self_elem->tag, Py_NewRef(tag));
 
-    Py_INCREF(Py_None);
-    _set_joined_ptr(&self_elem->text, Py_None);
-
-    Py_INCREF(Py_None);
-    _set_joined_ptr(&self_elem->tail, Py_None);
+    _set_joined_ptr(&self_elem->text, Py_NewRef(Py_None));
+    _set_joined_ptr(&self_elem->tail, Py_NewRef(Py_None));
 
     return 0;
 }
@@ -537,8 +532,7 @@ element_get_text(ElementObject* self)
             if (!tmp)
                 return NULL;
             self->text = tmp;
-            Py_DECREF(res);
-            res = tmp;
+            Py_SETREF(res, tmp);
         }
     }
 
@@ -559,8 +553,7 @@ element_get_tail(ElementObject* self)
             if (!tmp)
                 return NULL;
             self->tail = tmp;
-            Py_DECREF(res);
-            res = tmp;
+            Py_SETREF(res, tmp);
         }
     }
 
@@ -692,11 +685,8 @@ _elementtree_Element_clear_impl(ElementObject *self)
 {
     clear_extra(self);
 
-    Py_INCREF(Py_None);
-    _set_joined_ptr(&self->text, Py_None);
-
-    Py_INCREF(Py_None);
-    _set_joined_ptr(&self->tail, Py_None);
+    _set_joined_ptr(&self->text, Py_NewRef(Py_None));
+    _set_joined_ptr(&self->tail, Py_NewRef(Py_None));
 
     Py_RETURN_NONE;
 }
@@ -886,19 +876,20 @@ deepcopy(PyObject *object, PyObject *memo)
 
 
 /*[clinic input]
-_elementtree.Element.__sizeof__ -> Py_ssize_t
+_elementtree.Element.__sizeof__ -> size_t
 
 [clinic start generated code]*/
 
-static Py_ssize_t
+static size_t
 _elementtree_Element___sizeof___impl(ElementObject *self)
-/*[clinic end generated code: output=bf73867721008000 input=70f4b323d55a17c1]*/
+/*[clinic end generated code: output=baae4e7ae9fe04ec input=54e298c501f3e0d0]*/
 {
-    Py_ssize_t result = _PyObject_SIZE(Py_TYPE(self));
+    size_t result = _PyObject_SIZE(Py_TYPE(self));
     if (self->extra) {
         result += sizeof(ElementObjectExtra);
-        if (self->extra->children != self->extra->_children)
-            result += sizeof(PyObject*) * self->extra->allocated;
+        if (self->extra->children != self->extra->_children) {
+            result += (size_t)self->extra->allocated * sizeof(PyObject*);
+        }
     }
     return result;
 }
@@ -933,8 +924,7 @@ _elementtree_Element___getstate___impl(ElementObject *self)
     if (!children)
         return NULL;
     for (i = 0; i < PyList_GET_SIZE(children); i++) {
-        PyObject *child = self->extra->children[i];
-        Py_INCREF(child);
+        PyObject *child = Py_NewRef(self->extra->children[i]);
         PyList_SET_ITEM(children, i, child);
     }
 
@@ -973,8 +963,7 @@ element_setstate_from_attributes(ElementObject *self,
         return NULL;
     }
 
-    Py_INCREF(tag);
-    Py_XSETREF(self->tag, tag);
+    Py_XSETREF(self->tag, Py_NewRef(tag));
 
     text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
     Py_INCREF(JOIN_OBJ(text));
@@ -1038,8 +1027,7 @@ element_setstate_from_attributes(ElementObject *self,
     }
 
     /* Stash attrib. */
-    Py_XINCREF(attrib);
-    Py_XSETREF(self->extra->attrib, attrib);
+    Py_XSETREF(self->extra->attrib, Py_XNewRef(attrib));
     dealloc_extra(oldextra);
 
     Py_RETURN_NONE;
@@ -1176,8 +1164,7 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
     }
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(seq); i++) {
-        PyObject* element = PySequence_Fast_GET_ITEM(seq, i);
-        Py_INCREF(element);
+        PyObject* element = Py_NewRef(PySequence_Fast_GET_ITEM(seq, i));
         if (element_add_subelement(self, element) < 0) {
             Py_DECREF(seq);
             Py_DECREF(element);
@@ -1365,10 +1352,8 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
 /*[clinic end generated code: output=523c614142595d75 input=ee153bbf8cdb246e]*/
 {
     if (self->extra && self->extra->attrib) {
-        PyObject *attrib = self->extra->attrib;
-        Py_INCREF(attrib);
-        PyObject *value = PyDict_GetItemWithError(attrib, key);
-        Py_XINCREF(value);
+        PyObject *attrib = Py_NewRef(self->extra->attrib);
+        PyObject *value = Py_XNewRef(PyDict_GetItemWithError(attrib, key));
         Py_DECREF(attrib);
         if (value != NULL || PyErr_Occurred()) {
             return value;
@@ -1723,8 +1708,7 @@ element_subscr(PyObject* self_, PyObject* item)
 
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
-                PyObject* item = self->extra->children[cur];
-                Py_INCREF(item);
+                PyObject* item = Py_NewRef(self->extra->children[cur]);
                 PyList_SET_ITEM(list, i, item);
             }
 
@@ -1969,8 +1953,7 @@ static int
 element_tag_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
-    Py_INCREF(value);
-    Py_SETREF(self->tag, value);
+    Py_SETREF(self->tag, Py_NewRef(value));
     return 0;
 }
 
@@ -1978,8 +1961,7 @@ static int
 element_text_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
-    Py_INCREF(value);
-    _set_joined_ptr(&self->text, value);
+    _set_joined_ptr(&self->text, Py_NewRef(value));
     return 0;
 }
 
@@ -1987,8 +1969,7 @@ static int
 element_tail_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
-    Py_INCREF(value);
-    _set_joined_ptr(&self->tail, value);
+    _set_joined_ptr(&self->tail, Py_NewRef(value));
     return 0;
 }
 
@@ -2006,8 +1987,7 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
         if (create_extra(self, NULL) < 0)
             return -1;
     }
-    Py_INCREF(value);
-    Py_XSETREF(self->extra->attrib, value);
+    Py_XSETREF(self->extra->attrib, Py_NewRef(value));
     return 0;
 }
 
@@ -2154,9 +2134,8 @@ elementiter_next(ElementIterObject *it)
             }
 
             assert(Element_Check(extra->children[child_index]));
-            elem = (ElementObject *)extra->children[child_index];
+            elem = (ElementObject *)Py_NewRef(extra->children[child_index]);
             item->child_index++;
-            Py_INCREF(elem);
         }
 
         if (parent_stack_push_new(it, elem) < 0) {
@@ -2369,8 +2348,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
 /*[clinic end generated code: output=8571d4dcadfdf952 input=ae98a94df20b5cc3]*/
 {
     if (element_factory != Py_None) {
-        Py_INCREF(element_factory);
-        Py_XSETREF(self->element_factory, element_factory);
+        Py_XSETREF(self->element_factory, Py_NewRef(element_factory));
     } else {
         Py_CLEAR(self->element_factory);
     }
@@ -2380,8 +2358,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
         comment_factory = st->comment_factory;
     }
     if (comment_factory) {
-        Py_INCREF(comment_factory);
-        Py_XSETREF(self->comment_factory, comment_factory);
+        Py_XSETREF(self->comment_factory, Py_NewRef(comment_factory));
         self->insert_comments = insert_comments;
     } else {
         Py_CLEAR(self->comment_factory);
@@ -2393,8 +2370,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
         pi_factory = st->pi_factory;
     }
     if (pi_factory) {
-        Py_INCREF(pi_factory);
-        Py_XSETREF(self->pi_factory, pi_factory);
+        Py_XSETREF(self->pi_factory, Py_NewRef(pi_factory));
         self->insert_pis = insert_pis;
     } else {
         Py_CLEAR(self->pi_factory);
@@ -2497,14 +2473,12 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
     if (comment_factory == Py_None) {
         Py_CLEAR(st->comment_factory);
     } else {
-        Py_INCREF(comment_factory);
-        Py_XSETREF(st->comment_factory, comment_factory);
+        Py_XSETREF(st->comment_factory, Py_NewRef(comment_factory));
     }
     if (pi_factory == Py_None) {
         Py_CLEAR(st->pi_factory);
     } else {
-        Py_INCREF(pi_factory);
-        Py_XSETREF(st->pi_factory, pi_factory);
+        Py_XSETREF(st->pi_factory, Py_NewRef(pi_factory));
     }
 
     return old;
@@ -2681,10 +2655,8 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     }
     self->index++;
 
-    Py_INCREF(node);
-    Py_SETREF(self->this, node);
-    Py_INCREF(node);
-    Py_SETREF(self->last, node);
+    Py_SETREF(self->this, Py_NewRef(node));
+    Py_SETREF(self->last, Py_NewRef(node));
 
     if (treebuilder_append_event(self, self->start_event_obj, node) < 0)
         goto error;
@@ -2724,9 +2696,9 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
             PyObject* list = PyList_New(2);
             if (!list)
                 return NULL;
-            PyList_SET_ITEM(list, 0, self->data);
-            Py_INCREF(data); PyList_SET_ITEM(list, 1, data);
-            self->data = list;
+            PyList_SET_ITEM(list, 0, Py_NewRef(self->data));
+            PyList_SET_ITEM(list, 1, Py_NewRef(data));
+            Py_SETREF(self->data, list);
         }
     }
 
@@ -2754,15 +2726,13 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
     self->last = Py_NewRef(self->this);
     Py_XSETREF(self->last_for_tail, self->last);
     self->index--;
-    self->this = PyList_GET_ITEM(self->stack, self->index);
-    Py_INCREF(self->this);
+    self->this = Py_NewRef(PyList_GET_ITEM(self->stack, self->index));
     Py_DECREF(item);
 
     if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0)
         return NULL;
 
-    Py_INCREF(self->last);
-    return (PyObject*) self->last;
+    return Py_NewRef(self->last);
 }
 
 LOCAL(PyObject*)
@@ -2784,8 +2754,7 @@ treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
         if (self->insert_comments && this != Py_None) {
             if (treebuilder_add_subelement(this, comment) < 0)
                 goto error;
-            Py_INCREF(comment);
-            Py_XSETREF(self->last_for_tail, comment);
+            Py_XSETREF(self->last_for_tail, Py_NewRef(comment));
         }
     } else {
         comment = Py_NewRef(text);
@@ -2824,8 +2793,7 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
         if (self->insert_pis && this != Py_None) {
             if (treebuilder_add_subelement(this, pi) < 0)
                 goto error;
-            Py_INCREF(pi);
-            Py_XSETREF(self->last_for_tail, pi);
+            Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
         }
     } else {
         pi = PyTuple_Pack(2, target, text);
@@ -3044,12 +3012,9 @@ makeuniversal(XMLParserObject* self, const char* string)
     if (!key)
         return NULL;
 
-    value = PyDict_GetItemWithError(self->names, key);
+    value = Py_XNewRef(PyDict_GetItemWithError(self->names, key));
 
-    if (value) {
-        Py_INCREF(value);
-    }
-    else if (!PyErr_Occurred()) {
+    if (value == NULL && !PyErr_Occurred()) {
         /* new name.  convert to universal name, and decode as
            necessary */
 
@@ -4035,39 +4000,37 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
             return NULL;
         }
 
-        Py_INCREF(event_name_obj);
         if (strcmp(event_name, "start") == 0) {
-            Py_XSETREF(target->start_event_obj, event_name_obj);
+            Py_XSETREF(target->start_event_obj, Py_NewRef(event_name_obj));
         } else if (strcmp(event_name, "end") == 0) {
-            Py_XSETREF(target->end_event_obj, event_name_obj);
+            Py_XSETREF(target->end_event_obj, Py_NewRef(event_name_obj));
         } else if (strcmp(event_name, "start-ns") == 0) {
-            Py_XSETREF(target->start_ns_event_obj, event_name_obj);
+            Py_XSETREF(target->start_ns_event_obj, Py_NewRef(event_name_obj));
             EXPAT(SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
         } else if (strcmp(event_name, "end-ns") == 0) {
-            Py_XSETREF(target->end_ns_event_obj, event_name_obj);
+            Py_XSETREF(target->end_ns_event_obj, Py_NewRef(event_name_obj));
             EXPAT(SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
         } else if (strcmp(event_name, "comment") == 0) {
-            Py_XSETREF(target->comment_event_obj, event_name_obj);
+            Py_XSETREF(target->comment_event_obj, Py_NewRef(event_name_obj));
             EXPAT(SetCommentHandler)(
                 self->parser,
                 (XML_CommentHandler) expat_comment_handler
                 );
         } else if (strcmp(event_name, "pi") == 0) {
-            Py_XSETREF(target->pi_event_obj, event_name_obj);
+            Py_XSETREF(target->pi_event_obj, Py_NewRef(event_name_obj));
             EXPAT(SetProcessingInstructionHandler)(
                 self->parser,
                 (XML_ProcessingInstructionHandler) expat_pi_handler
                 );
         } else {
-            Py_DECREF(event_name_obj);
             Py_DECREF(events_seq);
             PyErr_Format(PyExc_ValueError, "unknown event '%s'", event_name);
             return NULL;
@@ -4412,9 +4375,7 @@ PyInit__elementtree(void)
     st->parseerror_obj = PyErr_NewException(
         "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
         );
-    Py_INCREF(st->parseerror_obj);
-    if (PyModule_AddObject(m, "ParseError", st->parseerror_obj) < 0) {
-        Py_DECREF(st->parseerror_obj);
+    if (PyModule_AddObjectRef(m, "ParseError", st->parseerror_obj) < 0) {
         return NULL;
     }
 

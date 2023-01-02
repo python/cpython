@@ -1084,8 +1084,8 @@ bytearray_splitlines(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    keepends = _PyLong_AsInt(args[0]);
-    if (keepends == -1 && PyErr_Occurred()) {
+    keepends = PyObject_IsTrue(args[0]);
+    if (keepends < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -1287,4 +1287,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=72bfa6cac2fd6832 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=022698e8b0faa272 input=a9049054013a1b77]*/

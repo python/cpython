@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_object.h"
+#include "pycore_parser.h"
 #include "pycore_pymem_init.h"
 #include "pycore_obmalloc_init.h"
 
@@ -19,26 +20,20 @@ extern "C" {
 
 #define _PyRuntimeState_INIT(runtime) \
     { \
-        .gilstate = { \
-            .check_enabled = 1, \
-            /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
-               in accordance with the specification. */ \
-            .autoTSSkey = Py_tss_NEEDS_INIT, \
-        }, \
         .allocators = { \
             _pymem_allocators_standard_INIT(runtime), \
             _pymem_allocators_debug_INIT, \
             _pymem_allocators_obj_arena_INIT, \
         }, \
         .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
+        .pyhash_state = pyhash_state_INIT, \
+        .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
-        .types = { \
-            .next_version_tag = 1, \
-        }, \
+        .parser = _parser_runtime_state_INIT, \
         .imports = { \
             .lock = { \
                 .mutex = NULL, \
@@ -49,7 +44,35 @@ extern "C" {
                 .header = 1, \
             }, \
         }, \
-        .global_objects = { \
+        .ceval = { \
+            .perf = _PyEval_RUNTIME_PERF_INIT, \
+        }, \
+        .gilstate = { \
+            .check_enabled = 1, \
+            /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
+               in accordance with the specification. */ \
+            .autoTSSkey = Py_tss_NEEDS_INIT, \
+        }, \
+        .dtoa = _dtoa_runtime_state_INIT(runtime), \
+        .fileutils = { \
+            .force_ascii = -1, \
+        }, \
+        .faulthandler = _faulthandler_runtime_state_INIT, \
+        .tracemalloc = _tracemalloc_runtime_state_INIT, \
+        .float_state = { \
+            .float_format = _py_float_format_unknown, \
+            .double_format = _py_float_format_unknown, \
+        }, \
+        .dict_state = { \
+            .next_keys_version = 2, \
+        }, \
+        .func_state = { \
+            .next_version = 1, \
+        }, \
+        .types = { \
+            .next_version_tag = 1, \
+        }, \
+        .static_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
                 .bytes_empty = _PyBytes_SIMPLE_INIT(0, 0), \
@@ -62,6 +85,12 @@ extern "C" {
                 }, \
                 .tuple_empty = { \
                     .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+                }, \
+                .hamt_bitmap_node_empty = { \
+                    .ob_base = _PyVarObject_IMMORTAL_INIT(&_PyHamt_BitmapNode_Type, 0) \
+                }, \
+                .context_token_missing = { \
+                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyContextTokenMissing_Type), \
                 }, \
             }, \
         }, \
@@ -100,6 +129,10 @@ extern "C" {
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
+                .hamt_empty = { \
+                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
+                    .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
+                }, \
             }, \
         }, \
         ._initial_thread = _PyThreadState_INIT, \

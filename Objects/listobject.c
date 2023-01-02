@@ -1022,21 +1022,29 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
-    v = self->ob_item[index];
-    if (index == Py_SIZE(self) - 1) {
-        status = list_resize(self, Py_SIZE(self) - 1);
-        if (status >= 0)
-            return v; /* and v now owns the reference the list had */
-        else
-            return NULL;
+
+    PyObject **items = self->ob_item;
+    v = items[index];
+    const Py_ssize_t size_after_pop = Py_SIZE(self) - 1;
+    if (size_after_pop == 0) {
+        Py_INCREF(v);
+        status = _list_clear(self);
     }
-    Py_INCREF(v);
-    status = list_ass_slice(self, index, index+1, (PyObject *)NULL);
-    if (status < 0) {
-        Py_DECREF(v);
+    else {
+        if ((size_after_pop - index) > 0) {
+            memmove(&items[index], &items[index+1], (size_after_pop - index) * sizeof(PyObject *));
+        }
+        status = list_resize(self, size_after_pop);
+    }
+    if (status >= 0) {
+        return v; // and v now owns the reference the list had
+    }
+    else {
+        // list resize failed, need to restore
+        memmove(&items[index+1], &items[index], (size_after_pop - index)* sizeof(PyObject *));
+        items[index] = v;
         return NULL;
     }
-    return v;
 }
 
 /* Reverse a slice of a list in place, from lo up to (exclusive) hi. */
@@ -2227,7 +2235,7 @@ list.sort
 
     *
     key as keyfunc: object = None
-    reverse: bool(accept={int}) = False
+    reverse: bool = False
 
 Sort the list in ascending order and return None.
 
@@ -2242,7 +2250,7 @@ The reverse flag can be set to sort in descending order.
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=cb56cd179a713060]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=a74c4cd3ec6b5c08]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
@@ -2806,10 +2814,9 @@ static PyObject *
 list___sizeof___impl(PyListObject *self)
 /*[clinic end generated code: output=3417541f95f9a53e input=b8030a5d5ce8a187]*/
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self)) + self->allocated * sizeof(void*);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
+    res += (size_t)self->allocated * sizeof(void*);
+    return PyLong_FromSize_t(res);
 }
 
 static PyObject *list_iter(PyObject *seq);

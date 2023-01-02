@@ -14,10 +14,6 @@ extern "C" {
 struct _PyArgv;
 struct pyruntimestate;
 
-/* True if the main interpreter thread exited due to an unhandled
- * KeyboardInterrupt exception, suggesting the user pressed ^C. */
-PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
-
 extern int _Py_SetFileSystemEncoding(
     const char *encoding,
     const char *errors);
@@ -33,6 +29,7 @@ PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 /* Various one-time initializers */
 
+extern void _Py_InitVersion(void);
 extern PyStatus _PyImport_Init(void);
 extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
@@ -47,6 +44,7 @@ extern void _PySys_Fini(PyInterpreterState *interp);
 extern int _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
+extern PyStatus _PyTime_Init(void);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);

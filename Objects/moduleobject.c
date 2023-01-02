@@ -218,6 +218,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
        _Py_PackageContext, and PyModule_Create*() will substitute this
        (if the name actually matches).
     */
+#define _Py_PackageContext (_PyRuntime.imports.pkgcontext)
     if (_Py_PackageContext != NULL) {
         const char *p = strrchr(_Py_PackageContext, '.');
         if (p != NULL && strcmp(module->m_name, p+1) == 0) {
@@ -225,6 +226,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
             _Py_PackageContext = NULL;
         }
     }
+#undef _Py_PackageContext
     if ((m = (PyModuleObject*)PyModule_New(name)) == NULL)
         return NULL;
 
@@ -325,9 +327,10 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
             goto error;
         } else {
             if (PyErr_Occurred()) {
-                PyErr_Format(PyExc_SystemError,
-                            "creation of module %s raised unreported exception",
-                            name);
+                _PyErr_FormatFromCause(
+                    PyExc_SystemError,
+                    "creation of module %s raised unreported exception",
+                    name);
                 goto error;
             }
         }
@@ -429,7 +432,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                     return -1;
                 }
                 if (PyErr_Occurred()) {
-                    PyErr_Format(
+                    _PyErr_FormatFromCause(
                         PyExc_SystemError,
                         "execution of module %s raised unreported exception",
                         name);

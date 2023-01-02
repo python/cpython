@@ -236,11 +236,6 @@ static int dictresize(PyDictObject *mp, uint8_t log_newsize, int unicode);
 
 static PyObject* dict_iter(PyDictObject *dict);
 
-/*Global counter used to set ma_version_tag field of dictionary.
- * It is incremented each time that a dictionary is created and each
- * time that a dictionary is modified. */
-uint64_t _pydict_global_version = 0;
-
 #include "clinic/dictobject.c.h"
 
 
@@ -690,9 +685,9 @@ free_keys_object(PyDictKeysObject *keys)
 }
 
 static inline PyDictValues*
-new_values(Py_ssize_t size)
+new_values(size_t size)
 {
-    assert(size > 0);
+    assert(size >= 1);
     size_t prefix_size = _Py_SIZE_ROUND_UP(size+2, sizeof(PyObject *));
     assert(prefix_size < 256);
     size_t n = prefix_size + size * sizeof(PyObject *);
@@ -751,27 +746,24 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values, Py_ssize_t used, int free
     return (PyObject *)mp;
 }
 
-static inline Py_ssize_t
+static inline size_t
 shared_keys_usable_size(PyDictKeysObject *keys)
 {
-    return keys->dk_nentries + keys->dk_usable;
+    return (size_t)keys->dk_nentries + (size_t)keys->dk_usable;
 }
 
 /* Consumes a reference to the keys object */
 static PyObject *
 new_dict_with_shared_keys(PyDictKeysObject *keys)
 {
-    PyDictValues *values;
-    Py_ssize_t i, size;
-
-    size = shared_keys_usable_size(keys);
-    values = new_values(size);
+    size_t size = shared_keys_usable_size(keys);
+    PyDictValues *values = new_values(size);
     if (values == NULL) {
         dictkeys_decref(keys);
         return PyErr_NoMemory();
     }
     ((char *)values)[-2] = 0;
-    for (i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
     return new_dict(keys, values, 0, 1);
@@ -786,7 +778,7 @@ clone_combined_dict_keys(PyDictObject *orig)
     assert(orig->ma_values == NULL);
     assert(orig->ma_keys->dk_refcnt == 1);
 
-    Py_ssize_t keys_size = _PyDict_KeysSize(orig->ma_keys);
+    size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
     PyDictKeysObject *keys = PyObject_Malloc(keys_size);
     if (keys == NULL) {
         PyErr_NoMemory();
@@ -1883,13 +1875,11 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     assert(hash != -1);
     mp = (PyDictObject *)op;
 
-    Py_INCREF(key);
-    Py_INCREF(value);
     if (mp->ma_keys == Py_EMPTY_KEYS) {
-        return insert_to_emptydict(mp, key, hash, value);
+        return insert_to_emptydict(mp, Py_NewRef(key), hash, Py_NewRef(value));
     }
     /* insertdict() handles any resizing that might be necessary */
-    return insertdict(mp, key, hash, value);
+    return insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
 }
 
 static void
@@ -2197,9 +2187,8 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
         return NULL;
     }
     assert(old_value != NULL);
-    Py_INCREF(old_value);
     uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
-    delitem_common(mp, hash, ix, old_value, new_version);
+    delitem_common(mp, hash, ix, Py_NewRef(old_value), new_version);
 
     ASSERT_CONSISTENT(mp);
     return old_value;
@@ -2967,7 +2956,6 @@ PyDict_Copy(PyObject *o)
 {
     PyObject *copy;
     PyDictObject *mp;
-    Py_ssize_t i, n;
 
     if (o == NULL || !PyDict_Check(o)) {
         PyErr_BadInternalCall();
@@ -2982,9 +2970,8 @@ PyDict_Copy(PyObject *o)
 
     if (_PyDict_HasSplitTable(mp)) {
         PyDictObject *split_copy;
-        Py_ssize_t size = shared_keys_usable_size(mp->ma_keys);
-        PyDictValues *newvalues;
-        newvalues = new_values(size);
+        size_t size = shared_keys_usable_size(mp->ma_keys);
+        PyDictValues *newvalues = new_values(size);
         if (newvalues == NULL)
             return PyErr_NoMemory();
         split_copy = PyObject_GC_New(PyDictObject, &PyDict_Type);
@@ -2999,7 +2986,7 @@ PyDict_Copy(PyObject *o)
         split_copy->ma_used = mp->ma_used;
         split_copy->ma_version_tag = DICT_NEXT_VERSION();
         dictkeys_incref(mp->ma_keys);
-        for (i = 0, n = size; i < n; i++) {
+        for (size_t i = 0; i < size; i++) {
             PyObject *value = mp->ma_values->values[i];
             split_copy->ma_values->values[i] = Py_XNewRef(value);
         }
@@ -3522,9 +3509,7 @@ static PyObject *dictiter_new(PyDictObject *, PyTypeObject *);
 Py_ssize_t
 _PyDict_SizeOf(PyDictObject *mp)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(mp));
+    size_t res = _PyObject_SIZE(Py_TYPE(mp));
     if (mp->ma_values) {
         res += shared_keys_usable_size(mp->ma_keys) * sizeof(PyObject*);
     }
@@ -3533,17 +3518,19 @@ _PyDict_SizeOf(PyDictObject *mp)
     if (mp->ma_keys->dk_refcnt == 1) {
         res += _PyDict_KeysSize(mp->ma_keys);
     }
-    return res;
+    assert(res <= (size_t)PY_SSIZE_T_MAX);
+    return (Py_ssize_t)res;
 }
 
-Py_ssize_t
+size_t
 _PyDict_KeysSize(PyDictKeysObject *keys)
 {
-    size_t es = keys->dk_kind == DICT_KEYS_GENERAL
-        ?  sizeof(PyDictKeyEntry) : sizeof(PyDictUnicodeEntry);
-    return (sizeof(PyDictKeysObject)
-            + ((size_t)1 << keys->dk_log2_index_bytes)
-            + USABLE_FRACTION(DK_SIZE(keys)) * es);
+    size_t es = (keys->dk_kind == DICT_KEYS_GENERAL
+                 ? sizeof(PyDictKeyEntry) : sizeof(PyDictUnicodeEntry));
+    size_t size = sizeof(PyDictKeysObject);
+    size += (size_t)1 << keys->dk_log2_index_bytes;
+    size += USABLE_FRACTION((size_t)DK_SIZE(keys)) * es;
+    return size;
 }
 
 static PyObject *
@@ -5294,16 +5281,15 @@ init_inline_values(PyObject *obj, PyTypeObject *tp)
     if (keys->dk_usable > 1) {
         keys->dk_usable--;
     }
-    Py_ssize_t size = shared_keys_usable_size(keys);
-    assert(size > 0);
+    size_t size = shared_keys_usable_size(keys);
     PyDictValues *values = new_values(size);
     if (values == NULL) {
         PyErr_NoMemory();
         return -1;
     }
-    assert(((uint8_t *)values)[-1] >= size+2);
+    assert(((uint8_t *)values)[-1] >= (size + 2));
     ((uint8_t *)values)[-2] = 0;
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
     _PyDictOrValues_SetValues(_PyObject_DictOrValuesPointer(obj), values);
@@ -5343,7 +5329,8 @@ make_dict_from_instance_attributes(PyDictKeysObject *keys, PyDictValues *values)
     dictkeys_incref(keys);
     Py_ssize_t used = 0;
     Py_ssize_t track = 0;
-    for (Py_ssize_t i = 0; i < shared_keys_usable_size(keys); i++) {
+    size_t size = shared_keys_usable_size(keys);
+    for (size_t i = 0; i < size; i++) {
         PyObject *val = values->values[i];
         if (val != NULL) {
             used += 1;
@@ -5661,17 +5648,15 @@ _PyDictKeys_DecRef(PyDictKeysObject *keys)
     dictkeys_decref(keys);
 }
 
-static uint32_t next_dict_keys_version = 2;
-
 uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys)
 {
     if (dictkeys->dk_version != 0) {
         return dictkeys->dk_version;
     }
-    if (next_dict_keys_version == 0) {
+    if (_PyRuntime.dict_state.next_keys_version == 0) {
         return 0;
     }
-    uint32_t v = next_dict_keys_version++;
+    uint32_t v = _PyRuntime.dict_state.next_keys_version++;
     dictkeys->dk_version = v;
     return v;
 }
@@ -5683,7 +5668,7 @@ validate_watcher_id(PyInterpreterState *interp, int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
         return -1;
     }
-    if (!interp->dict_watchers[watcher_id]) {
+    if (!interp->dict_state.watchers[watcher_id]) {
         PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
         return -1;
     }
@@ -5726,8 +5711,8 @@ PyDict_AddWatcher(PyDict_WatchCallback callback)
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
-        if (!interp->dict_watchers[i]) {
-            interp->dict_watchers[i] = callback;
+        if (!interp->dict_state.watchers[i]) {
+            interp->dict_state.watchers[i] = callback;
             return i;
         }
     }
@@ -5743,7 +5728,7 @@ PyDict_ClearWatcher(int watcher_id)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    interp->dict_watchers[watcher_id] = NULL;
+    interp->dict_state.watchers[watcher_id] = NULL;
     return 0;
 }
 
@@ -5757,7 +5742,7 @@ _PyDict_SendEvent(int watcher_bits,
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
         if (watcher_bits & 1) {
-            PyDict_WatchCallback cb = interp->dict_watchers[i];
+            PyDict_WatchCallback cb = interp->dict_state.watchers[i];
             if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
                 // some dict modification paths (e.g. PyDict_Clear) can't raise, so we
                 // can't propagate exceptions from dict watchers.

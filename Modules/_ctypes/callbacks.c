@@ -403,9 +403,15 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
                      "ffi_prep_cif failed with %d", result);
         goto error;
     }
+
+
 #if HAVE_FFI_PREP_CLOSURE_LOC
 #   ifdef USING_APPLE_OS_LIBFFI
+#    ifdef HAVE_BUILTIN_AVAILABLE
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#    else
+#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME (ffi_prep_closure_loc != NULL)
+#    endif
 #   else
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME 1
 #   endif
@@ -420,7 +426,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
         goto error;
 #else
-#if defined(__clang__) || defined(MACOSX)
+#if defined(__clang__)
         #pragma clang diagnostic push
         #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -430,7 +436,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 #endif
         result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
 
-#if defined(__clang__) || defined(MACOSX)
+#if defined(__clang__)
         #pragma clang diagnostic pop
 #endif
 #if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))

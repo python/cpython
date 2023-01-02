@@ -1,7 +1,7 @@
 """Parser for bytecodes.inst."""
 
 from dataclasses import dataclass, field
-from typing import NamedTuple, Callable, TypeVar
+from typing import NamedTuple, Callable, TypeVar, Literal
 
 import lexer as lx
 from plexer import PLexer
@@ -9,10 +9,12 @@ from plexer import PLexer
 
 P = TypeVar("P", bound="Parser")
 N = TypeVar("N", bound="Node")
-def contextual(func: Callable[[P], N|None]) -> Callable[[P], N|None]:
+
+
+def contextual(func: Callable[[P], N | None]) -> Callable[[P], N | None]:
     # Decorator to wrap grammar methods.
     # Resets position if `func` returns None.
-    def contextual_wrapper(self: P) -> N|None:
+    def contextual_wrapper(self: P) -> N | None:
         begin = self.getpos()
         res = func(self)
         if res is None:
@@ -21,6 +23,7 @@ def contextual(func: Callable[[P], N|None]) -> Callable[[P], N|None]:
         end = self.getpos()
         res.context = Context(begin, end, self)
         return res
+
     return contextual_wrapper
 
 
@@ -35,7 +38,7 @@ class Context(NamedTuple):
 
 @dataclass
 class Node:
-    context: Context|None = field(init=False, default=None)
+    context: Context | None = field(init=False, default=None)
 
     @property
     def text(self) -> str:
@@ -57,95 +60,115 @@ class Block(Node):
 
 
 @dataclass
-class InstHeader(Node):
+class StackEffect(Node):
     name: str
-    inputs: list[str]
-    outputs: list[str]
+    type: str = ""
+    # TODO: array, condition
+
+
+@dataclass
+class CacheEffect(Node):
+    name: str
+    size: int
+
+
+@dataclass
+class OpName(Node):
+    name: str
+
+
+InputEffect = StackEffect | CacheEffect
+OutputEffect = StackEffect
+UOp = OpName | CacheEffect
+
+
+@dataclass
+class InstHeader(Node):
+    kind: Literal["inst", "op"]
+    name: str
+    inputs: list[InputEffect]
+    outputs: list[OutputEffect]
 
 
 @dataclass
 class InstDef(Node):
-    header: InstHeader
+    kind: Literal["inst", "op"]
+    name: str
+    inputs: list[InputEffect]
+    outputs: list[OutputEffect]
     block: Block
-
-    @property
-    def name(self):
-        return self.header.name
-
-    @property
-    def inputs(self):
-        return self.header.inputs
-
-    @property
-    def outputs(self):
-        return self.header.outputs
 
 
 @dataclass
 class Super(Node):
     name: str
-    ops: list[str]
+    ops: list[OpName]
+
+
+@dataclass
+class Macro(Node):
+    name: str
+    uops: list[UOp]
 
 
 @dataclass
 class Family(Node):
     name: str
+    size: str  # Variable giving the cache size in code units
     members: list[str]
 
 
 class Parser(PLexer):
+    @contextual
+    def definition(self) -> InstDef | Super | Macro | Family | None:
+        if inst := self.inst_def():
+            return inst
+        if super := self.super_def():
+            return super
+        if macro := self.macro_def():
+            return macro
+        if family := self.family_def():
+            return family
 
     @contextual
     def inst_def(self) -> InstDef | None:
-        if header := self.inst_header():
+        if hdr := self.inst_header():
             if block := self.block():
-                return InstDef(header, block)
+                return InstDef(hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block)
             raise self.make_syntax_error("Expected block")
         return None
 
     @contextual
     def inst_header(self) -> InstHeader | None:
-        # inst(NAME) | inst(NAME, (inputs -- outputs))
-        # TODO: Error out when there is something unexpected.
-        # TODO: Make INST a keyword in the lexer.``
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "inst":
-            if (self.expect(lx.LPAREN)
-                    and (tkn := self.expect(lx.IDENTIFIER))):
+        # inst(NAME)
+        #   | inst(NAME, (inputs -- outputs))
+        #   | op(NAME, (inputs -- outputs))
+        # TODO: Make INST a keyword in the lexer.
+        if (tkn := self.expect(lx.IDENTIFIER)) and (kind := tkn.text) in ("inst", "op"):
+            if self.expect(lx.LPAREN) and (tkn := self.expect(lx.IDENTIFIER)):
                 name = tkn.text
                 if self.expect(lx.COMMA):
-                    inp, outp = self.stack_effect()
+                    inp, outp = self.io_effect()
                     if self.expect(lx.RPAREN):
-                        if ((tkn := self.peek())
-                                and tkn.kind == lx.LBRACE):
-                            self.check_overlaps(inp, outp)
-                            return InstHeader(name, inp, outp)
-                elif self.expect(lx.RPAREN):
-                    return InstHeader(name, [], [])
+                        if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
+                            return InstHeader(kind, name, inp, outp)
+                elif self.expect(lx.RPAREN) and kind == "inst":
+                    # No legacy stack effect if kind is "op".
+                    return InstHeader(kind, name, [], [])
         return None
 
-    def check_overlaps(self, inp: list[str], outp: list[str]):
-        for i, name in enumerate(inp):
-            try:
-                j = outp.index(name)
-            except ValueError:
-                continue
-            else:
-                if i != j:
-                    raise self.make_syntax_error(
-                        f"Input {name!r} at pos {i} repeated in output at different pos {j}")
-
-    def stack_effect(self) -> tuple[list[str], list[str]]:
+    def io_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
         # '(' [inputs] '--' [outputs] ')'
         if self.expect(lx.LPAREN):
-            inp = self.inputs() or []
+            inputs = self.inputs() or []
             if self.expect(lx.MINUSMINUS):
-                outp = self.outputs() or []
+                outputs = self.outputs() or []
                 if self.expect(lx.RPAREN):
-                    return inp, outp
+                    return inputs, outputs
         raise self.make_syntax_error("Expected stack effect")
 
-    def inputs(self) -> list[str] | None:
-        # input (, input)*
+    def inputs(self) -> list[InputEffect] | None:
+        # input (',' input)*
         here = self.getpos()
         if inp := self.input():
             near = self.getpos()
@@ -157,27 +180,11 @@ class Parser(PLexer):
         self.setpos(here)
         return None
 
-    def input(self) -> str | None:
-        # IDENTIFIER
-        if (tkn := self.expect(lx.IDENTIFIER)):
-            if self.expect(lx.LBRACKET):
-                if arg := self.expect(lx.IDENTIFIER):
-                    if self.expect(lx.RBRACKET):
-                        return f"{tkn.text}[{arg.text}]"
-                    if self.expect(lx.TIMES):
-                        if num := self.expect(lx.NUMBER):
-                            if self.expect(lx.RBRACKET):
-                                return f"{tkn.text}[{arg.text}*{num.text}]"
-                raise self.make_syntax_error("Expected argument in brackets", tkn)
+    @contextual
+    def input(self) -> InputEffect | None:
+        return self.cache_effect() or self.stack_effect()
 
-            return tkn.text
-        if self.expect(lx.CONDOP):
-            while self.expect(lx.CONDOP):
-                pass
-            return "??"
-        return None
-
-    def outputs(self) -> list[str] | None:
+    def outputs(self) -> list[OutputEffect] | None:
         # output (, output)*
         here = self.getpos()
         if outp := self.output():
@@ -190,50 +197,130 @@ class Parser(PLexer):
         self.setpos(here)
         return None
 
-    def output(self) -> str | None:
-        return self.input()  # TODO: They're not quite the same.
+    @contextual
+    def output(self) -> OutputEffect | None:
+        return self.stack_effect()
+
+    @contextual
+    def cache_effect(self) -> CacheEffect | None:
+        # IDENTIFIER '/' NUMBER
+        if tkn := self.expect(lx.IDENTIFIER):
+            if self.expect(lx.DIVIDE):
+                num = self.require(lx.NUMBER).text
+                try:
+                    size = int(num)
+                except ValueError:
+                    raise self.make_syntax_error(f"Expected integer, got {num!r}")
+                else:
+                    return CacheEffect(tkn.text, size)
+
+    @contextual
+    def stack_effect(self) -> StackEffect | None:
+        # IDENTIFIER [':' IDENTIFIER]
+        # TODO: Arrays, conditions
+        if tkn := self.expect(lx.IDENTIFIER):
+            type = ""
+            if self.expect(lx.COLON):
+                type = self.require(lx.IDENTIFIER).text
+            return StackEffect(tkn.text, type)
 
     @contextual
     def super_def(self) -> Super | None:
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "super":
             if self.expect(lx.LPAREN):
-                if (tkn := self.expect(lx.IDENTIFIER)):
+                if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if ops := self.ops():
+                                self.require(lx.SEMI)
                                 res = Super(tkn.text, ops)
                                 return res
 
-    def ops(self) -> list[str] | None:
-        if tkn := self.expect(lx.IDENTIFIER):
-            ops = [tkn.text]
+    def ops(self) -> list[OpName] | None:
+        if op := self.op():
+            ops = [op]
             while self.expect(lx.PLUS):
-                if tkn := self.require(lx.IDENTIFIER):
-                    ops.append(tkn.text)
-            self.require(lx.SEMI)
+                if op := self.op():
+                    ops.append(op)
             return ops
+
+    @contextual
+    def op(self) -> OpName | None:
+        if tkn := self.expect(lx.IDENTIFIER):
+            return OpName(tkn.text)
+
+    @contextual
+    def macro_def(self) -> Macro | None:
+        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "macro":
+            if self.expect(lx.LPAREN):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.EQUALS):
+                            if uops := self.uops():
+                                self.require(lx.SEMI)
+                                res = Macro(tkn.text, uops)
+                                return res
+
+    def uops(self) -> list[UOp] | None:
+        if uop := self.uop():
+            uops = [uop]
+            while self.expect(lx.PLUS):
+                if uop := self.uop():
+                    uops.append(uop)
+                else:
+                    raise self.make_syntax_error("Expected op name or cache effect")
+            return uops
+
+    @contextual
+    def uop(self) -> UOp | None:
+        if tkn := self.expect(lx.IDENTIFIER):
+            if self.expect(lx.DIVIDE):
+                if num := self.expect(lx.NUMBER):
+                    try:
+                        size = int(num.text)
+                    except ValueError:
+                        raise self.make_syntax_error(
+                            f"Expected integer, got {num.text!r}"
+                        )
+                    else:
+                        return CacheEffect(tkn.text, size)
+                raise self.make_syntax_error("Expected integer")
+            else:
+                return OpName(tkn.text)
 
     @contextual
     def family_def(self) -> Family | None:
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "family":
+            size = None
             if self.expect(lx.LPAREN):
-                if (tkn := self.expect(lx.IDENTIFIER)):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.COMMA):
+                        if not (size := self.expect(lx.IDENTIFIER)):
+                            raise self.make_syntax_error("Expected identifier")
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
+                            if not self.expect(lx.LBRACE):
+                                raise self.make_syntax_error("Expected {")
                             if members := self.members():
-                                if self.expect(lx.SEMI):
-                                    return Family(tkn.text, members)
+                                if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
+                                    return Family(
+                                        tkn.text, size.text if size else "", members
+                                    )
         return None
 
     def members(self) -> list[str] | None:
         here = self.getpos()
         if tkn := self.expect(lx.IDENTIFIER):
-            near = self.getpos()
-            if self.expect(lx.COMMA):
-                if rest := self.members():
-                    return [tkn.text] + rest
-            self.setpos(near)
-            return [tkn.text]
+            members = [tkn.text]
+            while self.expect(lx.COMMA):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    members.append(tkn.text)
+                else:
+                    break
+            peek = self.peek()
+            if not peek or peek.kind != lx.RBRACE:
+                raise self.make_syntax_error("Expected comma or right paren")
+            return members
         self.setpos(here)
         return None
 
@@ -258,21 +345,22 @@ class Parser(PLexer):
 
 if __name__ == "__main__":
     import sys
+
     if sys.argv[1:]:
         filename = sys.argv[1]
         if filename == "-c" and sys.argv[2:]:
             src = sys.argv[2]
-            filename = None
+            filename = "<string>"
         else:
             with open(filename) as f:
                 src = f.read()
             srclines = src.splitlines()
             begin = srclines.index("// BEGIN BYTECODES //")
             end = srclines.index("// END BYTECODES //")
-            src = "\n".join(srclines[begin+1 : end])
+            src = "\n".join(srclines[begin + 1 : end])
     else:
-        filename = None
+        filename = "<default>"
         src = "if (x) { x.foo; // comment\n}"
     parser = Parser(src, filename)
-    x = parser.inst_def()
+    x = parser.definition()
     print(x)

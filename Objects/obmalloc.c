@@ -201,12 +201,6 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
 #endif
 
 
-/* bpo-35053: Declare tracemalloc configuration here rather than
-   Modules/_tracemalloc.c because _tracemalloc can be compiled as dynamic
-   library, whereas _Py_NewReference() requires it. */
-struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT;
-
-
 #define _PyMem_Raw (_PyRuntime.allocators.standard.raw)
 #define _PyMem (_PyRuntime.allocators.standard.mem)
 #define _PyObject (_PyRuntime.allocators.standard.obj)
@@ -914,11 +908,12 @@ new_arena(void)
     struct arena_object* arenaobj;
     uint excess;        /* number of bytes above pool alignment */
     void *address;
-    static int debug_stats = -1;
 
+    int debug_stats = _PyRuntime.obmalloc.dump_debug_stats;
     if (debug_stats == -1) {
         const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
+        _PyRuntime.obmalloc.dump_debug_stats = debug_stats;
     }
     if (debug_stats) {
         _PyObject_DebugMallocStats(stderr);

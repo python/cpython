@@ -173,7 +173,7 @@ class RunPyMixin:
                     errors="ignore",
                 ) as p:
                     p.stdin.close()
-                    version = next(p.stdout).splitlines()[0].rpartition(" ")[2]
+                    version = next(p.stdout, "\n").splitlines()[0].rpartition(" ")[2]
                     p.stdout.read()
                     p.wait(10)
                 if not sys.version.startswith(version):
@@ -466,6 +466,15 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
         self.assertEqual("X.Y-arm64.exe -X fake_arg_for_test -arg", data["stdout"].strip())
+
+    def test_py_default_short_argv0(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            for argv0 in ['"py.exe"', 'py.exe', '"py"', 'py']:
+                with self.subTest(argv0):
+                    data = self.run_py(["--version"], argv=f'{argv0} --version')
+                    self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+                    self.assertEqual("3.100", data["SearchInfo.tag"])
+                    self.assertEqual(f'X.Y.exe --version', data["stdout"].strip())
 
     def test_py_default_in_list(self):
         data = self.run_py(["-0"], env=TEST_PY_ENV)
