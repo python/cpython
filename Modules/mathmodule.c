@@ -2830,7 +2830,7 @@ Return the sum of products of values from two iterables p and q.
 
 Roughly equivalent to:
 
-    sum(itertools.starmap(operator.mul, zip(vec1, vec2, strict=True)))
+    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
 
 For float and mixed int/float inputs, the products and and running
 sum are computed in quad precison and the result is rounded back
@@ -2894,7 +2894,13 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             goto err_exit;
         }
         term_i = PyNumber_Multiply(p_i, q_i);
+        if (term_i == NULL) {
+            goto err_exit;
+        }
         new_total = PyNumber_Add(total, term_i);
+        if (new_total == NULL) {
+            goto err_exit;
+        }
         Py_SETREF(total, new_total);
         new_total = NULL;
         Py_CLEAR(p_i);

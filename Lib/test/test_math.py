@@ -1240,7 +1240,7 @@ class MathTests(unittest.TestCase):
 
         # Uneven lengths
         self.assertRaises(ValueError, sumprod, [10, 20], [30])
-        # self.assertRaises(ValueError, sumprod, [10], [20, 30])
+        self.assertRaises(ValueError, sumprod, [10], [20, 30])
 
         # Error in iterator
         def raise_after(n):
@@ -1251,6 +1251,23 @@ class MathTests(unittest.TestCase):
             sumprod(range(10), raise_after(5))
         with self.assertRaises(RuntimeError):
             sumprod(raise_after(5), range(10))
+
+        # Error in multiplication
+        class BadMultiply:
+            def __mul__(self, other):
+                raise RuntimeError
+            def __rmul__(self, other):
+                raise RuntimeError
+        with self.assertRaises(RuntimeError):
+            sumprod([10, BadMultiply(), 30], [1, 2, 3])
+        with self.assertRaises(RuntimeError):
+            sumprod([1, 2, 3], [10, BadMultiply(), 30])
+
+        # Error in addition
+        with self.assertRaises(TypeError):
+            sumprod(['abc', 3], [5, 10])
+        with self.assertRaises(TypeError):
+            sumprod([5, 10], ['abc', 3])
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
