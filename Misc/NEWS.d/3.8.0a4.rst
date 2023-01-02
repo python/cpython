@@ -843,7 +843,7 @@ Using the code of the ``Tools/scripts/serve.py`` script as an example in the
 .. nonce: nF1pP1
 .. section: Documentation
 
-Added Documention for  PyInterpreterState_Main().
+Added Documentation for  PyInterpreterState_Main().
 
 ..
 
