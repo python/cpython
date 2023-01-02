@@ -4,6 +4,7 @@
 from test.support import verbose, requires_IEEE_754
 from test import support
 import unittest
+import fractions
 import itertools
 import decimal
 import math
@@ -1201,6 +1202,40 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.log10, NINF)
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log10(NAN)))
+
+    def testSumProd(self):
+        sumprod = math.sumprod
+        Decimal = decimal.Decimal
+        Fraction = fractions.Fraction
+
+        # Core functionality
+        self.assertEqual(sumprod(iter([10, 20, 30]), (1, 2, 3)), 140)
+        self.assertEqual(sumprod([1.5, 2.5], [3.5, 4.5]), 16.5)
+        self.assertEqual(sumprod([], []), 0)
+
+        # Type preservation and coercion
+        for v in [
+            (10, 20, 30),
+            (1.5, -2.5),
+            (Fraction(3, 5), Fraction(4, 5)),
+            (Decimal(3.5), Decimal(4.5)),
+            (2.5, 10),             # float/int
+            (2.5, Fraction(3, 5)), # float/fraction
+            (25, Fraction(3, 5)),  # int/fraction
+            (25, Decimal(4.5)),    # int/decimal
+        ]:
+            for p, q in [(v, v), (v, v[::-1])]:
+                with self.subTest(p=p, q=q):
+                    expected = sum(p_i * q_i for p_i, q_i in zip(p, q, strict=True))
+                    actual = sumprod(p, q)
+                    self.assertEqual(expected, actual)
+                    self.assertEqual(type(expected), type(actual))
+
+        # Bad arguments
+        self.assertRaises(TypeError, sumprod)               # No args
+        self.assertRaises(TypeError, sumprod, [])           # One arg
+        self.assertRaises(TypeError, sumprod, [], [], [])   # Three args
+
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
