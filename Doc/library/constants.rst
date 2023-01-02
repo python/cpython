@@ -94,6 +94,8 @@ should not be used in programs.
    (i.e. EOF) to exit", and when called, raise :exc:`SystemExit` with the
    specified exit code.
 
+   On Windows, "Use quit() or Ctrl-Z plus Return to exit" is printed instead.
+
 .. data:: copyright
           credits
 
