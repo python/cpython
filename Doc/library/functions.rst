@@ -901,9 +901,9 @@ are always available.  They are listed here in alphabetical order.
    default *base* is 10. The allowed bases are 0 and 2--36. Base-2, -8, and -16
    strings can be optionally prefixed with ``0b``/``0B``, ``0o``/``0O``, or
    ``0x``/``0X``, as with integer literals in code.  For base 0, the string is
-   interpreted in a similar to an :ref:`integer literal in code <integers>`, in
-   that the actual base is 2, 8, 10, or 16 as determined by the prefix. Base 0
-   also disallows leading zeros: ``int('010', 0)`` is not legal, while
+   interpreted in a similar way to an :ref:`integer literal in code <integers>`,
+   in that the actual base is 2, 8, 10, or 16 as determined by the prefix. Base
+   0 also disallows leading zeros: ``int('010', 0)`` is not legal, while
    ``int('010')`` and ``int('010', 8)`` are.
 
    The integer type is described in :ref:`typesnumeric`.
