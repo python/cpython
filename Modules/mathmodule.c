@@ -2826,13 +2826,13 @@ math.sumprod
     q: object
     /
 
-Return the sum of products of value from two iterables p and q.
+Return the sum of products of values from two iterables p and q.
 
 Roughly equivalent to:
 
     sum(itertools.starmap(operator.mul, zip(vec1, vec2, strict=True)))
 
-For float and mixed int/float inputs, the products and an running
+For float and mixed int/float inputs, the products and and running
 sum are computed in quad precison and the result is rounded back
 to double precision.
 [clinic start generated code]*/
