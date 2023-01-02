@@ -2839,7 +2839,7 @@ to double precision.
 
 static PyObject *
 math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
-/*[clinic end generated code: output=6722dbfe60664554 input=43acbb5dc736a1f5]*/
+/*[clinic end generated code: output=6722dbfe60664554 input=6fc5c5e00f7b79d1]*/
 {
     PyObject *p_it, *q_it, *total;
     PyObject *p_i = NULL, *q_i = NULL, *term_i = NULL, *new_total = NULL;

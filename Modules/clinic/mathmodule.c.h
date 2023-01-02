@@ -337,13 +337,13 @@ PyDoc_STRVAR(math_sumprod__doc__,
 "sumprod($module, p, q, /)\n"
 "--\n"
 "\n"
-"Return the sum of products of value from two iterables p and q.\n"
+"Return the sum of products of values from two iterables p and q.\n"
 "\n"
 "Roughly equivalent to:\n"
 "\n"
-"    sum(itertools.starmap(operator.mul, zip(vec1, vec2, strict=True)))\n"
+"    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))\n"
 "\n"
-"For float and mixed int/float inputs, the products and an running\n"
+"For float and mixed int/float inputs, the products and and running\n"
 "sum are computed in quad precison and the result is rounded back\n"
 "to double precision.");
 
@@ -955,4 +955,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ac2a3f407dadd9ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=267c6eb95ea9a8d8 input=a9049054013a1b77]*/
