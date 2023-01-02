@@ -1,0 +1,1 @@
+" ".join() is used instead of ", ".join() in  help=f'Upgrade core dependencies: {" ".join(CORE_VENV_DEPS)} '
