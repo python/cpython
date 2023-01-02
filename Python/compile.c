@@ -8689,10 +8689,8 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     return co;
 }
 
-#define VV 0
-
 /* For debugging purposes only */
-#if VV
+#if 1
 static void
 dump_instr(struct instr *i)
 {
@@ -10061,6 +10059,7 @@ translate_jump_labels_to_targets(basicblock *entryblock)
 }
 
 
+#define VV 0
 
 static int
 reduce_traffic_between_registers_and_stack(basicblock *b)
