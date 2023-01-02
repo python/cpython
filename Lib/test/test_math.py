@@ -1235,7 +1235,8 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, sumprod)               # No args
         self.assertRaises(TypeError, sumprod, [])           # One arg
         self.assertRaises(TypeError, sumprod, [], [], [])   # Three args
-
+        self.assertRaises(TypeError, sumprod, None, [10])   # Non-iterable
+        self.assertRaises(TypeError, sumprod, [10], None)   # Non-iterable
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)

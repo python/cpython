@@ -2845,8 +2845,20 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     PyObject *p_i, *q_i, *term_i, *new_total;
 
     p_it = PyObject_GetIter(p);
+    if (p_it == NULL) {
+        return NULL;
+    }
     q_it = PyObject_GetIter(q);
+    if (q_it == NULL) {
+        Py_DECREF(p_it);
+        return NULL;
+    }
     total = PyLong_FromLong(0);
+    if (total == NULL) {
+        Py_DECREF(p_it);
+        Py_DECREF(q_it);
+        return NULL;
+    }
     while (1) {
         p_i = PyIter_Next(p_it);
         q_i = PyIter_Next(q_it);
