@@ -1019,15 +1019,14 @@ which incur interpreter overhead.
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-       # unique_everseen('ABBCcAD', str.lower) --> A B C D
+       # unique_everseen('ABBcCAD', str.lower) --> A B c D
        seen = set()
        if key is None:
            for element in filterfalse(seen.__contains__, iterable):
                seen.add(element)
                yield element
-           # Note: The steps shown above are intended to demonstrate
-           # filterfalse(). For order preserving deduplication,
-           # a better solution is:
+           # For order preserving deduplication,
+           # a faster but non-lazy solution is:
            #     yield from dict.fromkeys(iterable)
        else:
            for element in iterable:
@@ -1035,11 +1034,15 @@ which incur interpreter overhead.
                if k not in seen:
                    seen.add(k)
                    yield element
+           # For use cases that allow the last matching element to be returned,
+           # a faster but non-lazy solution is:
+           #      t1, t2 = tee(iterable)
+           #      yield from dict(zip(map(key, t1), t2)).values()
 
    def unique_justseen(iterable, key=None):
        "List unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-       # unique_justseen('ABBCcAD', str.lower) --> A B C A D
+       # unique_justseen('ABBcCAD', str.lower) --> A B c A D
        return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
    def iter_except(func, exception, first=None):
@@ -1371,15 +1374,17 @@ which incur interpreter overhead.
 
     >>> list(unique_everseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D']
-
     >>> list(unique_everseen('ABBCcAD', str.lower))
     ['A', 'B', 'C', 'D']
+    >>> list(unique_everseen('ABBcCAD', str.lower))
+    ['A', 'B', 'c', 'D']
 
     >>> list(unique_justseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D', 'A', 'B']
-
     >>> list(unique_justseen('ABBCcAD', str.lower))
     ['A', 'B', 'C', 'A', 'D']
+    >>> list(unique_justseen('ABBcCAD', str.lower))
+    ['A', 'B', 'c', 'A', 'D']
 
     >>> d = dict(a=1, b=2, c=3)
     >>> it = iter_except(d.popitem, KeyError)
