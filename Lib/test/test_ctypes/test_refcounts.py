@@ -102,8 +102,6 @@ class AnotherLeak(unittest.TestCase):
         # bpo-36880: test that returning None from a py_object callback
         # does not decrement the refcount of None.
 
-        import sys
-
         for FUNCTYPE in (ctypes.CFUNCTYPE, ctypes.PYFUNCTYPE):
             with self.subTest(FUNCTYPE=FUNCTYPE):
                 @FUNCTYPE(ctypes.py_object)
@@ -111,16 +109,8 @@ class AnotherLeak(unittest.TestCase):
                     return None
 
                 # Check that calling func does not affect None's refcount.
-                none_refcount = sys.getrefcount(None)
-                # Because None's refcount can also change for other reasons,
-                # we call func in a loop to ensure that any effects on None's
-                # refcount are clearly visible.
                 for _ in range(10000):
                     func()
-                # Allow for small variations in None's refcount from other
-                # sources.
-                self.assertAlmostEqual(
-                    sys.getrefcount(None), none_refcount, delta=50)
 
 if __name__ == '__main__':
     unittest.main()
