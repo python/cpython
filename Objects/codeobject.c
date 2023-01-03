@@ -247,11 +247,10 @@ _Py_set_localsplus_info(int offset, PyObject *name, _PyLocals_Kind kind,
 
 static void
 get_localsplus_counts(PyObject *names, PyObject *kinds,
-                      int *pnlocals, int *pnplaincellvars, int *pncellvars,
+                      int *pnlocals, int *pncellvars,
                       int *pnfreevars)
 {
     int nlocals = 0;
-    int nplaincellvars = 0;
     int ncellvars = 0;
     int nfreevars = 0;
     Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(names);
@@ -265,7 +264,6 @@ get_localsplus_counts(PyObject *names, PyObject *kinds,
         }
         else if (kind & CO_FAST_CELL) {
             ncellvars += 1;
-            nplaincellvars += 1;
         }
         else if (kind & CO_FAST_FREE) {
             nfreevars += 1;
@@ -273,9 +271,6 @@ get_localsplus_counts(PyObject *names, PyObject *kinds,
     }
     if (pnlocals != NULL) {
         *pnlocals = nlocals;
-    }
-    if (pnplaincellvars != NULL) {
-        *pnplaincellvars = nplaincellvars;
     }
     if (pncellvars != NULL) {
         *pncellvars = ncellvars;
@@ -351,7 +346,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
      * here to avoid the possibility of overflow (however remote). */
     int nlocals;
     get_localsplus_counts(con->localsplusnames, con->localspluskinds,
-                          &nlocals, NULL, NULL, NULL);
+                          &nlocals, NULL, NULL);
     int nplainlocals = nlocals -
                        con->argcount -
                        con->kwonlyargcount -
@@ -371,9 +366,9 @@ static void
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
     int nlocalsplus = (int)PyTuple_GET_SIZE(con->localsplusnames);
-    int nlocals, nplaincellvars, ncellvars, nfreevars;
+    int nlocals, ncellvars, nfreevars;
     get_localsplus_counts(con->localsplusnames, con->localspluskinds,
-                          &nlocals, &nplaincellvars, &ncellvars, &nfreevars);
+                          &nlocals, &ncellvars, &nfreevars);
 
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
@@ -401,7 +396,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_nlocalsplus = nlocalsplus;
     co->co_nlocals = nlocals;
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
-    co->co_nplaincellvars = nplaincellvars;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     co->co_version = _Py_next_func_version;

@@ -1119,7 +1119,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
 
     /* Free vars have not been initialized -- Do that */
     PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
-    int offset = co->co_nlocals + co->co_nplaincellvars;
+    int offset = PyCode_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);
         frame->localsplus[offset + i] = Py_NewRef(o);
