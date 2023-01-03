@@ -2730,9 +2730,11 @@ dummy_func(
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
             DEOPT_IF(_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
             PyObject *dict = _PyDictOrValues_GetDict(dorv);
-            PyDictKeysObject *keys = (dict == NULL) ? NULL : ((PyDictObject *)dict)->ma_keys;
-            // Note: cache->keys_version can be 0 when dict is NULL.
-            DEOPT_IF(keys != NULL && keys->dk_version != read_u32(cache->keys_version), LOAD_ATTR);
+            // Note: cache->keys_version is 0 when dict is NULL.
+            if (dict != NULL) {
+                DEOPT_IF(((PyDictObject *)dict)->ma_keys->dk_version !=
+                         read_u32(cache->keys_version), LOAD_ATTR);
+            }
             STAT_INC(LOAD_ATTR, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);

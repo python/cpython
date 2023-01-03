@@ -1091,6 +1091,9 @@ PyObject *descr, DescriptorClassification kind)
             break;
         case MANAGED_DICT:
             if (keys == NULL) {
+                // Set cache->keys_version to zero as a failsafe, so comparisons
+                // to this keys_version will always fail (as dict keys version
+                // is never zero).
                 write_u32(cache->keys_version, 0);
             }
             _py_set_opcode(instr, LOAD_ATTR_METHOD_MANAGED_DICT);
