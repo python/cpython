@@ -192,8 +192,7 @@ those made in the suite of the for-loop::
 
 Names in the target list are not deleted when the loop is finished, but if the
 sequence is empty, they will not have been assigned to at all by the loop.  Hint:
-the built-in type :func:`range` represents an immutable sequence of integers from 0
-to a specified number; e.g., ``list(range(3))`` returns the list ``[0, 1, 2]``.
+the built-in type :func:`range` represents immutable arithmetic sequences of integers.  For instance, iterating ``range(3)`` successively yields 0, 1, and then 2.
 
 .. versionchanged:: 3.11
    Starred elements are now allowed in the expression list.
