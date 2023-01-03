@@ -171,6 +171,9 @@ range_dealloc(rangeobject *r)
     PyObject_Free(r);
 }
 
+static unsigned long
+get_len_of_range(long lo, long hi, long step);
+
 /* Return number of items in range (lo, hi, step) as a PyLong object,
  * when arguments are PyLong objects.  Arguments MUST return 1 with
  * PyLong_Check().  Return NULL when there is an error.
@@ -182,6 +185,13 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     Algorithm is equal to that of get_len_of_range(), but it operates
     on PyObjects (which are assumed to be PyLong objects).
     ---------------------------------------------------------------*/
+
+    if (IS_MEDIUM_VALUE(start) && IS_MEDIUM_VALUE(stop) && IS_MEDIUM_VALUE(step) ) {
+        // fast path when all arguments fit into a long integer
+        assert( PyLong_Check(start) && PyLong_Check(stop) && PyLong_Check(*step) );
+        long len = get_len_of_range(medium_value((PyLongObject *)start), medium_value((PyLongObject *)stop), medium_value((PyLongObject *)step));
+        return PyLong_FromLong(len);
+    }
     int cmp_result;
     PyObject *lo, *hi;
     PyObject *diff = NULL;

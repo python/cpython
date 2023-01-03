@@ -129,6 +129,17 @@ _PyLong_IsPositiveSingleDigit(PyObject* sub) {
     return ((size_t)signed_size) <= 1;
 }
 
+/* Is this PyLong of size 1, 0 or -1? */
+#define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
+
+/* convert a PyLong of size 1, 0 or -1 to a C integer */
+static inline stwodigits
+medium_value(PyLongObject *x)
+{
+    assert(IS_MEDIUM_VALUE(x));
+    return ((stwodigits)Py_SIZE(x)) * x->ob_digit[0];
+}
+
 #ifdef __cplusplus
 }
 #endif
