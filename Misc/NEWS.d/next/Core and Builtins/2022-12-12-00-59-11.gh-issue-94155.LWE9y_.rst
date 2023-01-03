@@ -1,0 +1,1 @@
+Improved the hashing algorithm for code objects, mitigating some hash collisions.

@@ -711,7 +711,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 return None
             for index in self.index_pages:
                 index = os.path.join(path, index)
-                if os.path.exists(index):
+                if os.path.isfile(index):
                     path = index
                     break
             else:
