@@ -1645,12 +1645,18 @@ class MockTest(unittest.TestCase):
             m.aseert_foo_call()
         with self.assertRaisesRegex(AttributeError, msg):
             m.assrt_foo_call()
+        with self.assertRaisesRegex(AttributeError, msg):
+            m.called_once_with()
+        with self.assertRaisesRegex(AttributeError, msg):
+            m.has_calls()
         m = Mock(unsafe=True)
         m.assert_foo_call()
         m.assret_foo_call()
         m.asert_foo_call()
         m.aseert_foo_call()
         m.assrt_foo_call()
+        m.called_once_with()
+        m.has_calls()
 
     #Issue21262
     def test_assert_not_called(self):

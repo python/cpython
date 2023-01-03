@@ -1,0 +1,3 @@
+Mock objects which are not unsafe will now raise an AttributeError if an
+attribute with the prefix ``called_`` is accessed, in addition to this already
+happening for the prefixes assert, assret, asert, aseert, assrt.

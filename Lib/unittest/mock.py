@@ -653,7 +653,7 @@ class NonCallableMock(Base):
         elif _is_magic(name):
             raise AttributeError(name)
         if not self._mock_unsafe:
-            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')):
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in ATTRIB_DENY_LIST:
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
                     f"for the mock if {name!r} is meant to be an attribute.")
@@ -1062,6 +1062,10 @@ class NonCallableMock(Base):
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 
 
+# gh-100690 Denylist for forbidden method names in safe mode
+ATTRIB_DENY_LIST = {name.removeprefix("assert_") for name in dir(NonCallableMock) if name.startswith("assert_")}
+
+
 class _AnyComparer(list):
     """A list which checks if it contains a call which may have an
     argument of ANY, flipping the components of item and self from
@@ -1231,7 +1235,7 @@ class Mock(CallableMixin, NonCallableMock):
       `return_value` attribute.
 
     * `unsafe`: By default, accessing any attribute whose name starts with
-      *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
+      *assert*, *assret*, *asert*, *aseert*, *assrt*, or *called_* will raise an
        AttributeError. Passing `unsafe=True` will allow access to
       these attributes.
 
