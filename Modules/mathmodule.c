@@ -2920,8 +2920,8 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 }
                 int_total += int_p * int_q;                           // XXX Check for addition overflow
                 int_total_in_use = true;
-                // Py_CLEAR(p_i);
-                // Py_CLEAR(q_i);
+                Py_CLEAR(p_i);
+                Py_CLEAR(q_i);
                 continue;
             }
 
@@ -2934,16 +2934,17 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                     goto err_exit;
                 }
                 new_total = PyNumber_Add(total, term_i);
+                Py_CLEAR(term_i);
                 if (new_total == NULL) {
                     goto err_exit;
                 }
                 Py_SETREF(total, new_total);
                 new_total = NULL;
-                //Py_CLEAR(term_i);
                 int_total_in_use = false;
             }
         }
 
+        assert(!int_total_in_use);
         if (finished) {
             goto normal_exit;
         }
