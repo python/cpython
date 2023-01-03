@@ -1523,7 +1523,7 @@ PyCode_GetFreevars(PyCodeObject *code)
 int
 _PyCode_GetNumFrameSlots(PyCodeObject *code)
 {
-    assert(code->co_framesize - FRAME_SPECIALS_SIZE >= 0);
+    assert(code->co_framesize >= (int)FRAME_SPECIALS_SIZE);
     return code->co_framesize - FRAME_SPECIALS_SIZE;
 }
 
