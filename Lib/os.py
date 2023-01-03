@@ -347,6 +347,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     except OSError as error:
         if onerror is not None:
             onerror(error)
+        return
+
     stack = []
     islink, join = path.islink, path.join
     while True:
