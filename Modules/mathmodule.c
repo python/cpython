@@ -2873,6 +2873,8 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
         return NULL;
     }
     while (1) {
+        bool finished;
+
         assert (p_i == NULL);
         assert (q_i == NULL);
         assert (term_i == NULL);
@@ -2900,10 +2902,11 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             PyErr_Format(PyExc_ValueError, "Inputs are not the same length");
             goto err_exit;
         }
+        finished = p_stopped & q_stopped;
 
         if (int_path_enabled) {
 
-            if (!p_stopped && !q_stopped && PyLong_CheckExact(p_i) & PyLong_CheckExact(q_i)) {
+            if (!finished && PyLong_CheckExact(p_i) & PyLong_CheckExact(q_i)) {
                 int overflow;
                 long int_p, int_q, int_prod;
 
@@ -2949,7 +2952,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
         }
 
         assert(!int_total_in_use);
-        if (p_stopped && q_stopped) {
+        if (finished) {
             goto normal_exit;
         }
         term_i = PyNumber_Multiply(p_i, q_i);
