@@ -341,40 +341,14 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
-    parent = b"" if isinstance(top, bytes) else ""
-    dirs = iter([fspath(top)])
-    stack = [[parent, dirs]] if topdown else [dirs]
+    top = fspath(top)
+    stack = []
     islink, join = path.islink, path.join
-    while stack:
-        value = stack[-1]
-        if topdown:
-            parent, dirs = value
-            try:
-                dirname = next(dirs)
-            except StopIteration:
-                stack.pop()
-                continue
-            top = join(parent, dirname)
-            # bpo-23605: os.path.islink() is used instead of caching
-            # entry.is_symlink() result during the loop on os.scandir() because
-            # the caller can replace the directory entry during the previous
-            # "yield"
-            if not (followlinks or not islink(top)):
-                continue
-        else:
-            if isinstance(value, tuple):
-                stack.pop()
-                yield value
-                continue
-            try:
-                top = next(value)
-            except StopIteration:
-                stack.pop()
-                continue
-
+    while True:
         dirs = []
         nondirs = []
         walk_dirs = []
+        cont = False
 
         # We may not have read permission for top, in which case we can't
         # get a list of the files the directory contains.
@@ -386,64 +360,92 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         except OSError as error:
             if onerror is not None:
                 onerror(error)
-            continue
+            cont = True
+        else:
+            with scandir_it:
+                while True:
+                    try:
+                        try:
+                            entry = next(scandir_it)
+                        except StopIteration:
+                            break
+                    except OSError as error:
+                        if onerror is not None:
+                            onerror(error)
+                        cont = True
+                        break
 
-        cont = False
-        with scandir_it:
+                    try:
+                        is_dir = entry.is_dir()
+                    except OSError:
+                        # If is_dir() raises an OSError, consider the entry not to
+                        # be a directory, same behaviour as os.path.isdir().
+                        is_dir = False
+
+                    if is_dir:
+                        dirs.append(entry.name)
+                    else:
+                        nondirs.append(entry.name)
+
+                    if not topdown and is_dir:
+                        # Bottom-up: traverse into sub-directory, but exclude
+                        # symlinks to directories if followlinks is False
+                        if followlinks:
+                            walk_into = True
+                        else:
+                            try:
+                                is_symlink = entry.is_symlink()
+                            except OSError:
+                                # If is_symlink() raises an OSError, consider the
+                                # entry not to be a symbolic link, same behaviour
+                                # as os.path.islink().
+                                is_symlink = False
+                            walk_into = not is_symlink
+
+                        if walk_into:
+                            walk_dirs.append(entry.path)
+        if topdown:
+            if not cont:
+                # Yield before sub-directory traversal if going top down
+                yield top, dirs, nondirs
+                # Traverse into sub-directories
+                stack.append([top, iter(dirs)])
+
             while True:
                 try:
-                    try:
-                        entry = next(scandir_it)
-                    except StopIteration:
+                    value, dirs = stack[-1]
+                except IndexError:
+                    return
+                for dirname in dirs:
+                    top = join(value, dirname)
+                    # bpo-23605: os.path.islink() is used instead of caching
+                    # entry.is_symlink() result during the loop on os.scandir() because
+                    # the caller can replace the directory entry during the previous
+                    # "yield"
+                    if followlinks or not islink(top):
                         break
-                except OSError as error:
-                    if onerror is not None:
-                        onerror(error)
-                    cont = True
-                    break
-
-                try:
-                    is_dir = entry.is_dir()
-                except OSError:
-                    # If is_dir() raises an OSError, consider the entry not to
-                    # be a directory, same behaviour as os.path.isdir().
-                    is_dir = False
-
-                if is_dir:
-                    dirs.append(entry.name)
                 else:
-                    nondirs.append(entry.name)
-
-                if not topdown and is_dir:
-                    # Bottom-up: traverse into sub-directory, but exclude
-                    # symlinks to directories if followlinks is False
-                    if followlinks:
-                        walk_into = True
-                    else:
-                        try:
-                            is_symlink = entry.is_symlink()
-                        except OSError:
-                            # If is_symlink() raises an OSError, consider the
-                            # entry not to be a symbolic link, same behaviour
-                            # as os.path.islink().
-                            is_symlink = False
-                        walk_into = not is_symlink
-
-                    if walk_into:
-                        walk_dirs.append(entry.path)
-        if cont:
-            continue
-
-        if topdown:
-            # Yield before sub-directory traversal if going top down
-            yield top, dirs, nondirs
-            # Traverse into sub-directories
-            stack.append([top, iter(dirs)])
+                    stack.pop()
+                    continue
+                break
         else:
-            # Yield after sub-directory traversal if going bottom up
-            stack.append((top, dirs, nondirs))
-            # Traverse into sub-directories
-            stack.append(iter(walk_dirs))
+            if not cont:
+                # Traverse into sub-directories
+                stack.append(((top, dirs, nondirs), iter(walk_dirs)))
+
+            while True:
+                try:
+                    value, dirs = stack[-1]
+                except IndexError:
+                    return
+                try:
+                    top = next(dirs)
+                except StopIteration:
+                    stack.pop()
+                    # Yield after sub-directory traversal if going bottom up
+                    yield value
+                else:
+                    break
 
 __all__.append("walk")
 
