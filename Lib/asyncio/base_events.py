@@ -977,7 +977,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                         exc = OSError(exc.errno, msg)
                         my_exceptions.append(exc)
                 else:  # all bind attempts failed
-                    raise my_exceptions.pop()
+                    if my_exceptions:
+                        raise my_exceptions.pop()
+                    else:
+                        raise OSError(f"no matching local address with {family=} found")
             await self.sock_connect(sock, address)
             return sock
         except OSError as exc:
