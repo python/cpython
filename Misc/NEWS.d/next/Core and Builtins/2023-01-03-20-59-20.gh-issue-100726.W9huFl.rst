@@ -1,1 +1,1 @@
-Optimize construction of `range` object for medium size integers.
+Optimize construction of ``range`` object for medium size integers.
