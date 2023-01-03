@@ -1512,6 +1512,57 @@ class WalkTests(unittest.TestCase):
         self.assertEqual(sorted(dirs), ["SUB1", "SUB2", "d"])
         self.assertEqual(all, expected)
 
+    def test_walk_late_dirs_modification(self):
+        extra_parts = [
+            ("SUB3", "SUB31"),
+            ("SUB4", "SUB41"),
+            ("SUB5", "SUB51"),
+        ]
+        for dir_parts in extra_parts:
+            os.makedirs(os.path.join(self.walk_path, *dir_parts))
+
+        all = self.walk(self.walk_path)
+        result = []
+        result.append(next(all))
+        dirs = result[0][1]
+        dirs.sort()
+
+        # SUB1
+        # SUB1/SUB11
+        result.append(next(all))
+        result.append(next(all))
+        # SUB2 is removed
+        dirs.pop(1)
+        # swap SUB3 and SUB4
+        dirs[1], dirs[2] = dirs[2], dirs[1]
+        # SUB4
+        # SUB4/SUB41
+        # SUB3
+        result.append(next(all))
+        result.append(next(all))
+        result.append(next(all))
+        # clear while between SUB3 and SUB3/SUB31
+        dirs.clear()
+        result.extend(all)
+
+        expected_parts = [
+            ([], [], ["tmp1"]),
+            (["SUB1"], ["SUB11"], ["tmp2"]),
+            (["SUB1", "SUB11"], [], []),
+            # SUB2 skipped
+            (["SUB4"], ["SUB41"], []),
+            (["SUB4", "SUB41"], [], []),
+            (["SUB3"], ["SUB31"], []),
+            (["SUB3", "SUB31"], [], []),
+            # SUB5 skipped
+            # SUB5/SUB51 skipped
+        ]
+        expected = [
+            (os.path.join(self.walk_path, *r), d, f)
+            for r, d, f in expected_parts
+        ]
+        self.assertEqual(result, expected)
+
 
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
@@ -1603,6 +1654,10 @@ class BytesWalkTests(WalkTests):
             bdirs[:] = list(map(os.fsencode, dirs))
             bfiles[:] = list(map(os.fsencode, files))
 
+    # modifying bdirs in self.walk above prevents late modification
+    test_walk_late_dirs_modification = None
+
+
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class BytesFwalkTests(FwalkTests):
     """Tests for os.walk() with bytes."""
@@ -1614,6 +1669,8 @@ class BytesFwalkTests(FwalkTests):
             yield (root, dirs, files, topfd)
             bdirs[:] = list(map(os.fsencode, dirs))
             bfiles[:] = list(map(os.fsencode, files))
+
+    test_walk_late_dirs_modification = None
 
 
 class MakedirTests(unittest.TestCase):
