@@ -355,7 +355,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         dirs = []
         nondirs = []
         walk_dirs = []
-        cont = False
+        use_entry = True
 
         # We may not have read permission for top, in which case we can't
         # get a list of the files the directory contains.
@@ -372,7 +372,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                 except OSError as error:
                     if onerror is not None:
                         onerror(error)
-                    cont = True
+                    use_entry = False
                     break
 
                 try:
@@ -405,19 +405,17 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     if walk_into:
                         walk_dirs.append(entry.path)
         if topdown:
-            if not cont:
+            if use_entry:
                 # Yield before sub-directory traversal if going top down
                 yield top, dirs, nondirs
-                # Traverse into sub-directories
+                # Append dir names to walk along with top, their parent dir
                 stack.append([top, iter(dirs)])
 
-            while True:
-                try:
-                    value, dirs = stack[-1]
-                except IndexError:
-                    return
+            # Set top and scandir_it for the next iteration
+            while stack:
+                root, dirs = stack[-1]
                 for dirname in dirs:
-                    top = join(value, dirname)
+                    top = join(root, dirname)
                     # bpo-23605: os.path.islink() is used instead of caching
                     # entry.is_symlink() result during the loop on os.scandir() because
                     # the caller can replace the directory entry during the previous
@@ -434,16 +432,18 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     stack.pop()
                     continue
                 break
+            else:
+                return
         else:
-            if not cont:
-                # Traverse into sub-directories
+            if use_entry:
+                # Traverse into sub-directories by appending a value
+                # (entry, dirs) where dirs will be walked and then
+                # when dirs is exhausted entry will be yielded
                 stack.append(((top, dirs, nondirs), iter(walk_dirs)))
 
-            while True:
-                try:
-                    value, dirs = stack[-1]
-                except IndexError:
-                    return
+            # Set top and scandir_it for the next iteration
+            while stack:
+                entry, dirs = stack[-1]
                 for top in dirs:
                     try:
                         scandir_it = scandir(top)
@@ -454,10 +454,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                         break
                 else:
                     stack.pop()
-                    # Yield after sub-directory traversal if going bottom up
-                    yield value
+                    yield entry
                     continue
                 break
+            else:
+                return
 
 __all__.append("walk")
 
