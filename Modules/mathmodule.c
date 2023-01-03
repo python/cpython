@@ -2823,6 +2823,12 @@ For example, the hypotenuse of a 3/4/5 right triangle is:\n\
 /* Forward declaration */
 static inline int _check_long_mult_overflow(long a, long b);
 
+static inline bool
+long_add_will_overflow(long a, long b)
+{
+    return (a > 0) ? (b > LONG_MAX - a) : (b < LONG_MIN - a);
+}
+
 /*[clinic input]
 math.sumprod
 
@@ -2899,7 +2905,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
 
             if (!p_stopped && !q_stopped && PyLong_CheckExact(p_i) & PyLong_CheckExact(q_i)) {
                 int overflow;
-                long int_p, int_q;
+                long int_p, int_q, int_prod;
 
                 int_p = PyLong_AsLongAndOverflow(p_i, &overflow);
                 if (overflow) {
@@ -2912,7 +2918,11 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 if (_check_long_mult_overflow(int_p, int_q)) {
                     goto finalize_int_path;
                 }
-                int_total += int_p * int_q;                           // XXX Check for addition overflow
+                int_prod = int_p * int_q;
+                if (long_add_will_overflow(int_total, int_prod)) {
+                    goto finalize_int_path;
+                }
+                int_total += int_prod;
                 int_total_in_use = true;
                 Py_CLEAR(p_i);
                 Py_CLEAR(q_i);
