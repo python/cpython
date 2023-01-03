@@ -341,13 +341,36 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
-    stack = [fspath(top)]
+    parent = b"" if isinstance(top, bytes) else ""
+    dirs = iter([fspath(top)])
+    stack = [[parent, dirs]] if topdown else [dirs]
     islink, join = path.islink, path.join
     while stack:
-        top = stack.pop()
-        if isinstance(top, tuple):
-            yield top
-            continue
+        value = stack[-1]
+        if topdown:
+            parent, dirs = value
+            try:
+                dirname = next(dirs)
+            except StopIteration:
+                stack.pop()
+                continue
+            top = join(parent, dirname)
+            # bpo-23605: os.path.islink() is used instead of caching
+            # entry.is_symlink() result during the loop on os.scandir() because
+            # the caller can replace the directory entry during the previous
+            # "yield"
+            if not (followlinks or not islink(top)):
+                continue
+        else:
+            if isinstance(value, tuple):
+                stack.pop()
+                yield value
+                continue
+            try:
+                top = next(value)
+            except StopIteration:
+                stack.pop()
+                continue
 
         dirs = []
         nondirs = []
@@ -415,20 +438,12 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # Yield before sub-directory traversal if going top down
             yield top, dirs, nondirs
             # Traverse into sub-directories
-            for dirname in reversed(dirs):
-                new_path = join(top, dirname)
-                # bpo-23605: os.path.islink() is used instead of caching
-                # entry.is_symlink() result during the loop on os.scandir() because
-                # the caller can replace the directory entry during the "yield"
-                # above.
-                if followlinks or not islink(new_path):
-                    stack.append(new_path)
+            stack.append([top, iter(dirs)])
         else:
             # Yield after sub-directory traversal if going bottom up
             stack.append((top, dirs, nondirs))
             # Traverse into sub-directories
-            for new_path in reversed(walk_dirs):
-                stack.append(new_path)
+            stack.append(iter(walk_dirs))
 
 __all__.append("walk")
 
