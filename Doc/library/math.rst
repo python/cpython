@@ -301,9 +301,8 @@ Number-theoretic and representation functions
 
        sum(itertools.starmap(operator.mul, zip(p, q, strict=true)))
 
-   For float and mixed int/float inputs, the products and and running
-   sum are computed in quad precison and the result is rounded back
-   to double precision.
+   For float and mixed int/float inputs, the intermediate products and
+   and sums are computed in extended precision.
 
    .. versionadded:: 3.12
 
