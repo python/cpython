@@ -99,15 +99,14 @@ class AnotherLeak(unittest.TestCase):
 
     @support.refcount_test
     def test_callback_py_object_none_return(self):
-        """Test that returning ``None`` from a ``py_object`` callback
-        does not affect ``None``'s refcount (bpo-36880)."""
+        # bpo-36880: test that returning None from a py_object callback
+        # does not decrement the refcount of None.
 
         import sys
 
         for FUNCTYPE in (ctypes.CFUNCTYPE, ctypes.PYFUNCTYPE):
             with self.subTest(FUNCTYPE=FUNCTYPE):
-                proto = FUNCTYPE(ctypes.py_object)
-                @proto
+                @FUNCTYPE(ctypes.py_object)
                 def func():
                     return None
 
