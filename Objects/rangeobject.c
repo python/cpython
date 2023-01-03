@@ -188,7 +188,7 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
 
     if (IS_MEDIUM_VALUE(start) && IS_MEDIUM_VALUE(stop) && IS_MEDIUM_VALUE(step) ) {
         // fast path when all arguments fit into a long integer
-        assert( PyLong_Check(start) && PyLong_Check(stop) && PyLong_Check(*step) );
+        assert( PyLong_Check(start) && PyLong_Check(stop) && PyLong_Check(step) );
         long len = get_len_of_range(medium_value((PyLongObject *)start), medium_value((PyLongObject *)stop), medium_value((PyLongObject *)step));
         return PyLong_FromLong(len);
     }
