@@ -1520,6 +1520,13 @@ PyCode_GetFreevars(PyCodeObject *code)
     return _PyCode_GetFreevars(code);
 }
 
+int
+_PyCode_GetNumFrameSlots(PyCodeObject *code)
+{
+    assert(code->co_framesize - FRAME_SPECIALS_SIZE >= 0);
+    return code->co_framesize - FRAME_SPECIALS_SIZE;
+}
+
 static void
 deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 {
