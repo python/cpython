@@ -1,1 +1,0 @@
-Fix use after free in trace refs build mode. Patch by Kumar Aditya.

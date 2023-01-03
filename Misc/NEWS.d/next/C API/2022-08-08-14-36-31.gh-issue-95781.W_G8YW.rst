@@ -1,4 +1,0 @@
-An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
-:c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
-In previous versions it caused all the rest of the format string to be
-copied as-is to the result string, and any extra arguments discarded.
