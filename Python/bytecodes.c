@@ -1390,13 +1390,10 @@ dummy_func(
 
         // stack effect: (__array[oparg] -- __0)
         inst(BUILD_LIST) {
-            PyObject *list =  PyList_New(oparg);
+            STACK_SHRINK(oparg);
+            PyObject *list = _PyList_FromArraySteal(stack_pointer, oparg);
             if (list == NULL)
                 goto error;
-            while (--oparg >= 0) {
-                PyObject *item = POP();
-                PyList_SET_ITEM(list, oparg, item);
-            }
             PUSH(list);
         }
 
