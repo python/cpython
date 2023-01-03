@@ -442,13 +442,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     value, dirs = stack[-1]
                 except IndexError:
                     return
-                try:
-                    top = next(dirs)
-                except StopIteration:
-                    stack.pop()
-                    # Yield after sub-directory traversal if going bottom up
-                    yield value
-                else:
+                for top in dirs:
                     try:
                         scandir_it = scandir(top)
                     except OSError as error:
@@ -456,6 +450,12 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                             onerror(error)
                     else:
                         break
+                else:
+                    stack.pop()
+                    # Yield after sub-directory traversal if going bottom up
+                    yield value
+                    continue
+                break
 
 __all__.append("walk")
 
