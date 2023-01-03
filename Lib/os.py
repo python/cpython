@@ -302,7 +302,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     subdirectories (directories are generated bottom up).
 
     When topdown is true, the caller can modify the dirnames list in-place
-    (e.g., via del or slice assignment), and walk will only recurse into the
+    (e.g., via del or slice assignment), and walk will only traverse into the
     subdirectories whose names remain in dirnames; this can be used to prune the
     search, or to impose a specific order of visiting.  Modifying dirnames when
     topdown is false has no effect on the behavior of os.walk(), since the
