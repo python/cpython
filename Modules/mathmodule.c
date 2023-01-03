@@ -2867,8 +2867,6 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
         return NULL;
     }
     while (1) {
-        bool finished, p_is_int, q_is_int;
-
         assert (p_i == NULL);
         assert (q_i == NULL);
         assert (term_i == NULL);
@@ -2897,13 +2895,9 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             goto err_exit;
         }
 
-        finished = p_stopped && q_stopped;
-        p_is_int = PyLong_CheckExact(p_i);
-        q_is_int = PyLong_CheckExact(q_i);
-
         if (int_path_enabled) {
 
-            if (!finished && p_is_int & q_is_int) {
+            if (!p_stopped && !q_stopped && PyLong_CheckExact(p_i) & PyLong_CheckExact(q_i)) {
                 int overflow;
                 long int_p, int_q;
 
@@ -2934,18 +2928,18 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                     goto err_exit;
                 }
                 new_total = PyNumber_Add(total, term_i);
-                Py_CLEAR(term_i);
                 if (new_total == NULL) {
                     goto err_exit;
                 }
                 Py_SETREF(total, new_total);
                 new_total = NULL;
+                Py_CLEAR(term_i);
                 int_total_in_use = false;
             }
         }
 
         assert(!int_total_in_use);
-        if (finished) {
+        if (p_stopped && q_stopped) {
             goto normal_exit;
         }
         term_i = PyNumber_Multiply(p_i, q_i);
