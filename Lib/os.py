@@ -342,6 +342,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
     top = fspath(top)
+    try:
+        scandir_it = scandir(top)
+    except OSError as error:
+        if onerror is not None:
+            onerror(error)
     stack = []
     islink, join = path.islink, path.join
     while True:
@@ -355,55 +360,48 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         # We suppress the exception here, rather than blow up for a
         # minor reason when (say) a thousand readable directories are still
         # left to visit.
-        try:
-            scandir_it = scandir(top)
-        except OSError as error:
-            if onerror is not None:
-                onerror(error)
-            cont = True
-        else:
-            with scandir_it:
-                while True:
+        with scandir_it:
+            while True:
+                try:
                     try:
-                        try:
-                            entry = next(scandir_it)
-                        except StopIteration:
-                            break
-                    except OSError as error:
-                        if onerror is not None:
-                            onerror(error)
-                        cont = True
+                        entry = next(scandir_it)
+                    except StopIteration:
                         break
+                except OSError as error:
+                    if onerror is not None:
+                        onerror(error)
+                    cont = True
+                    break
 
-                    try:
-                        is_dir = entry.is_dir()
-                    except OSError:
-                        # If is_dir() raises an OSError, consider the entry not to
-                        # be a directory, same behaviour as os.path.isdir().
-                        is_dir = False
+                try:
+                    is_dir = entry.is_dir()
+                except OSError:
+                    # If is_dir() raises an OSError, consider the entry not to
+                    # be a directory, same behaviour as os.path.isdir().
+                    is_dir = False
 
-                    if is_dir:
-                        dirs.append(entry.name)
+                if is_dir:
+                    dirs.append(entry.name)
+                else:
+                    nondirs.append(entry.name)
+
+                if not topdown and is_dir:
+                    # Bottom-up: traverse into sub-directory, but exclude
+                    # symlinks to directories if followlinks is False
+                    if followlinks:
+                        walk_into = True
                     else:
-                        nondirs.append(entry.name)
+                        try:
+                            is_symlink = entry.is_symlink()
+                        except OSError:
+                            # If is_symlink() raises an OSError, consider the
+                            # entry not to be a symbolic link, same behaviour
+                            # as os.path.islink().
+                            is_symlink = False
+                        walk_into = not is_symlink
 
-                    if not topdown and is_dir:
-                        # Bottom-up: traverse into sub-directory, but exclude
-                        # symlinks to directories if followlinks is False
-                        if followlinks:
-                            walk_into = True
-                        else:
-                            try:
-                                is_symlink = entry.is_symlink()
-                            except OSError:
-                                # If is_symlink() raises an OSError, consider the
-                                # entry not to be a symbolic link, same behaviour
-                                # as os.path.islink().
-                                is_symlink = False
-                            walk_into = not is_symlink
-
-                        if walk_into:
-                            walk_dirs.append(entry.path)
+                    if walk_into:
+                        walk_dirs.append(entry.path)
         if topdown:
             if not cont:
                 # Yield before sub-directory traversal if going top down
@@ -423,7 +421,13 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     # the caller can replace the directory entry during the previous
                     # "yield"
                     if followlinks or not islink(top):
-                        break
+                        try:
+                            scandir_it = scandir(top)
+                        except OSError as error:
+                            if onerror is not None:
+                                onerror(error)
+                        else:
+                            break
                 else:
                     stack.pop()
                     continue
@@ -445,7 +449,13 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     # Yield after sub-directory traversal if going bottom up
                     yield value
                 else:
-                    break
+                    try:
+                        scandir_it = scandir(top)
+                    except OSError as error:
+                        if onerror is not None:
+                            onerror(error)
+                    else:
+                        break
 
 __all__.append("walk")
 
