@@ -68,6 +68,7 @@ raised for division by zero and mod by zero.
 #include <float.h>
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
 #include "_math.h"
+#include <stdbool.h>
 
 #include "clinic/mathmodule.c.h"
 
@@ -2843,6 +2844,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
 {
     PyObject *p_it, *q_it, *total;
     PyObject *p_i = NULL, *q_i = NULL, *term_i = NULL, *new_total = NULL;
+    bool p_stopped = false, q_stopped = false;
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -2860,9 +2862,6 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
         return NULL;
     }
     while (1) {
-        int p_stopped = 0;
-        int q_stopped = 0;
-
         assert (p_i == NULL);
         assert (q_i == NULL);
         assert (term_i == NULL);
@@ -2877,21 +2876,21 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             if (PyErr_Occurred()) {
                 goto err_exit;
             }
-            p_stopped = 1;
+            p_stopped = true;
         }
         q_i = PyIter_Next(q_it);
         if (q_i == NULL) {
             if (PyErr_Occurred()) {
                 goto err_exit;
             }
-            q_stopped = 1;
-        }
-        if (p_stopped && q_stopped) {
-            goto normal_exit;
+            q_stopped = true;
         }
         if (p_stopped != q_stopped) {
             PyErr_Format(PyExc_ValueError, "Inputs are not the same length");
             goto err_exit;
+        }
+        if (p_stopped && q_stopped) {
+            goto normal_exit;
         }
         term_i = PyNumber_Multiply(p_i, q_i);
         if (term_i == NULL) {
