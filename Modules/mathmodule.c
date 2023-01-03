@@ -2820,6 +2820,9 @@ For example, the hypotenuse of a 3/4/5 right triangle is:\n\
     5.0\n\
 ");
 
+/* Forward declaration */
+static inline int _check_long_mult_overflow(long a, long b);
+
 /*[clinic input]
 math.sumprod
 
@@ -2845,6 +2848,8 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     PyObject *p_it, *q_it, *total;
     PyObject *p_i = NULL, *q_i = NULL, *term_i = NULL, *new_total = NULL;
     bool p_stopped = false, q_stopped = false;
+    bool int_path_enabled = true, int_total_in_use = false;
+    long int_total = 0;
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -2862,6 +2867,8 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
         return NULL;
     }
     while (1) {
+        bool finished, p_is_int, q_is_int;
+
         assert (p_i == NULL);
         assert (q_i == NULL);
         assert (term_i == NULL);
@@ -2889,7 +2896,55 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             PyErr_Format(PyExc_ValueError, "Inputs are not the same length");
             goto err_exit;
         }
-        if (p_stopped && q_stopped) {
+
+        finished = p_stopped && q_stopped;
+        p_is_int = PyLong_CheckExact(p_i);
+        q_is_int = PyLong_CheckExact(q_i);
+
+        if (int_path_enabled) {
+
+            if (!finished && p_is_int & q_is_int) {
+                int overflow;
+                long int_p, int_q;
+
+                int_p = PyLong_AsLongAndOverflow(p_i, &overflow);
+                if (overflow) {
+                    goto finalize_int_path;
+                }
+                int_q = PyLong_AsLongAndOverflow(q_i, &overflow);
+                if (overflow) {
+                    goto finalize_int_path;
+                }
+                if (_check_long_mult_overflow(int_p, int_q)) {
+                    goto finalize_int_path;
+                }
+                int_total += int_p * int_q;                           // XXX Check for addition overflow
+                int_total_in_use = true;
+                // Py_CLEAR(p_i);
+                // Py_CLEAR(q_i);
+                continue;
+            }
+
+          finalize_int_path:
+            //  # We're finished, overflowed, or have a non-int
+            int_path_enabled = false;
+            if (int_total_in_use) {
+                term_i = PyLong_FromLong(int_total);
+                if (term_i == NULL) {
+                    goto err_exit;
+                }
+                new_total = PyNumber_Add(total, term_i);
+                if (new_total == NULL) {
+                    goto err_exit;
+                }
+                Py_SETREF(total, new_total);
+                new_total = NULL;
+                //Py_CLEAR(term_i);
+                int_total_in_use = false;
+            }
+        }
+
+        if (finished) {
             goto normal_exit;
         }
         term_i = PyNumber_Multiply(p_i, q_i);
