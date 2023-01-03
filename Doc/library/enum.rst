@@ -807,9 +807,9 @@ Utilities and Decorators
    call an *Enum*'s :meth:`_generate_next_value_` to get an appropriate value.
    For *Enum* and *IntEnum* that appropriate value will be the last value plus
    one; for *Flag* and *IntFlag* it will be the first power-of-two greater
-   than the last value; for *StrEnum* it will be the lower-cased version of the
-   member's name.  Care must be taken if mixing *auto()* with manually specified
-   values.
+   than the highest value; for *StrEnum* it will be the lower-cased version of
+   the member's name.  Care must be taken if mixing *auto()* with manually
+   specified values.
 
    *auto* instances are only resolved when at the top level of an assignment:
 
