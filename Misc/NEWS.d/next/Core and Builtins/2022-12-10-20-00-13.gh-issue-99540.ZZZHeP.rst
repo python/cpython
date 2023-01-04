@@ -1,0 +1,1 @@
+``None`` now hashes to a constant value. This is not a requirements change.

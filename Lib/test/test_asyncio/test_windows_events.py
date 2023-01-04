@@ -45,7 +45,7 @@ class ProactorLoopCtrlC(test_utils.TestCase):
             signal.raise_signal(signal.SIGINT)
 
         thread = threading.Thread(target=SIGINT_after_delay)
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         try:
             # only start the loop once the event loop is running
             loop.call_soon(thread.start)
@@ -238,6 +238,17 @@ class ProactorTests(test_utils.TestCase):
         # loop's default executor).
         self.close_loop(self.loop)
         self.assertFalse(self.loop.call_exception_handler.called)
+
+    def test_address_argument_type_error(self):
+        # Regression test for https://github.com/python/cpython/issues/98793
+        proactor = self.loop._proactor
+        sock = socket.socket(type=socket.SOCK_DGRAM)
+        bad_address = None
+        with self.assertRaises(TypeError):
+            proactor.connect(sock, bad_address)
+        with self.assertRaises(TypeError):
+            proactor.sendto(sock, b'abc', addr=bad_address)
+        sock.close()
 
 
 class WinPolicyTests(test_utils.TestCase):
