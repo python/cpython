@@ -1,2 +1,5 @@
 Fix :exc:`SyntaxError` on comprehension rebind checking with names that are
 not actually redefined.
+
+Now reassing ``b`` in ``[(b := 1) for a, b.prop in some_iter]`` is allowed.
+But, reassing ``a`` is still not allowed due to :pep:`572`.
