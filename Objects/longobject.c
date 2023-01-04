@@ -22,6 +22,17 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
+/* Is this PyLong of size 1, 0 or -1? */
+#define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
+
+/* convert a PyLong of size 1, 0 or -1 to a C integer */
+static inline stwodigits
+medium_value(PyLongObject *x)
+{
+    assert(IS_MEDIUM_VALUE(x));
+    return ((stwodigits)Py_SIZE(x)) * x->ob_digit[0];
+}
+
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 

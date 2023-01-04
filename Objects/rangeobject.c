@@ -174,6 +174,28 @@ range_dealloc(rangeobject *r)
 static unsigned long
 get_len_of_range(long lo, long hi, long step);
 
+/// Return the length as a long, or -1 on error
+long compute_range_length_long(PyObject *start, PyObject *stop, PyObject *step) {
+    int overflow = 0;
+    long long_start = PyLong_AsLongAndOverflow(start, &overflow);
+    if (long_start==-1) {
+        // we have either an overflow or another type of error
+        if (overflow || PyErr_Occurred())
+            return -1;
+    }
+    long long_stop = PyLong_AsLongAndOverflow(stop, &overflow);
+    if (long_stop==-1) {
+        if (overflow || PyErr_Occurred())
+            return -1;
+    }
+    long long_step = PyLong_AsLongAndOverflow(step, &overflow);
+    if (long_step==-1) {
+        if (overflow || PyErr_Occurred())
+            return -1;
+    }
+    return get_len_of_range(long_start, long_stop, long_step);
+}
+
 /* Return number of items in range (lo, hi, step) as a PyLong object,
  * when arguments are PyLong objects.  Arguments MUST return 1 with
  * PyLong_Check().  Return NULL when there is an error.
@@ -186,10 +208,9 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     on PyObjects (which are assumed to be PyLong objects).
     ---------------------------------------------------------------*/
 
-    if (IS_MEDIUM_VALUE(start) && IS_MEDIUM_VALUE(stop) && IS_MEDIUM_VALUE(step) ) {
-        // fast path when all arguments fit into a long integer
-        assert( PyLong_Check(start) && PyLong_Check(stop) && PyLong_Check(step) );
-        long len = get_len_of_range(medium_value((PyLongObject *)start), medium_value((PyLongObject *)stop), medium_value((PyLongObject *)step));
+    // fast path when all arguments fit into a long integer
+    long len = compute_range_length_long(start, stop, step);
+    if (len>=0) {
         return PyLong_FromLong(len);
     }
     int cmp_result;
