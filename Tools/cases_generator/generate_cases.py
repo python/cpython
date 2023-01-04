@@ -634,10 +634,14 @@ class Analyzer:
             self.out = Formatter(f, 0)
 
             # Write variable definition
+            self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
             self.out.emit("struct {")
             with self.out.indent():
-                self.out.emit("int n_popped;")
-                self.out.emit("int n_pushed;")
+                self.out.emit("short n_popped;")
+                self.out.emit("short n_pushed;")
+                self.out.emit("Direction dir_op1;")
+                self.out.emit("Direction dir_op2;")
+                self.out.emit("Direction dir_op3;")
             self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
@@ -658,18 +662,27 @@ class Analyzer:
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
+        dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
         if instr.kind == "legacy":
             n_popped = n_pushed = -1
+            assert not instr.register
         else:
             n_popped = len(instr.input_effects)
             n_pushed = len(instr.output_effects)
-        self.out.emit(f"    [{instr.name}] = {{ .{n_popped = }, .{n_pushed = } }},")
+            if instr.register:
+                directions: list[str] = []
+                directions.extend("DIR_READ" for _ in instr.input_effects)
+                directions.extend("DIR_WRITE" for _ in instr.output_effects)
+                directions.extend("DIR_NONE" for _ in range(3))
+                dir_op1, dir_op2, dir_op3 = directions[:3]
+        self.out.emit(f"    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3} }},")
 
     def write_metadata_for_super(self, sup: SuperInstruction) -> None:
         """Write metadata for a super-instruction."""
         n_popped = sum(len(comp.instr.input_effects) for comp in sup.parts)
         n_pushed = sum(len(comp.instr.output_effects) for comp in sup.parts)
-        self.out.emit(f"    [{sup.name}] = {{ .{n_popped = }, .{n_pushed = } }},")
+        dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
+        self.out.emit(f"    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3} }},")
 
     def write_instructions(self) -> None:
         """Write instructions to output file."""
