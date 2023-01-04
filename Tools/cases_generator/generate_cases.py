@@ -635,13 +635,13 @@ class Analyzer:
 
             # Write variable definition
             self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
-            self.out.emit("struct {")
+            self.out.emit("static const struct {")
             with self.out.indent():
                 self.out.emit("short n_popped;")
                 self.out.emit("short n_pushed;")
-                self.out.emit("Direction dir_op1;")
-                self.out.emit("Direction dir_op2;")
-                self.out.emit("Direction dir_op3;")
+                self.out.emit("enum Direction dir_op1;")
+                self.out.emit("enum Direction dir_op2;")
+                self.out.emit("enum Direction dir_op3;")
             self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction

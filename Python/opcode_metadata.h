@@ -2,12 +2,12 @@
 // from Python/bytecodes.c
 // Do not edit!
 enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };
-struct {
+static const struct {
     short n_popped;
     short n_pushed;
-    Direction dir_op1;
-    Direction dir_op2;
-    Direction dir_op3;
+    enum Direction dir_op1;
+    enum Direction dir_op2;
+    enum Direction dir_op3;
 } _PyOpcode_opcode_metadata[256] = {
     [NOP] = { 0, 0, DIR_NONE, DIR_NONE, DIR_NONE },
     [RESUME] = { 0, 0, DIR_NONE, DIR_NONE, DIR_NONE },
