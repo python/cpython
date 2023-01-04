@@ -8683,6 +8683,9 @@ opcode_metadata_is_sane(cfg_builder *g) {
             if (pushed >= 0) {
                 int effect = stack_effect(opcode, instr->i_oparg, -1);
                 if (effect != pushed - popped) {
+                   fprintf(stderr,
+                           "op=%d: stack_effect (%d) != pushed (%d) - popped (%d)\n",
+                           opcode, effect, pushed, popped);
                    return false;
                 }
             }
