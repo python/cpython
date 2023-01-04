@@ -94,6 +94,15 @@ static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
 
 #define FRAME_SPECIALS_SIZE ((int)((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *)))
 
+static inline int
+_PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
+{
+    /* This function needs to remain in sync with the calculation of
+     * co_framesize in Tools/build/deepfreeze.py */
+    assert(code->co_framesize >= FRAME_SPECIALS_SIZE);
+    return code->co_framesize - FRAME_SPECIALS_SIZE;
+}
+
 void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
 
 /* Consumes reference to func and locals.

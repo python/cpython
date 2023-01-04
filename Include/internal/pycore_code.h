@@ -199,8 +199,6 @@ extern PyObject* _PyCode_GetCellvars(PyCodeObject *);
 extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
 extern PyObject* _PyCode_GetCode(PyCodeObject *);
 
-extern int _PyCode_GetNumFrameSlots(PyCodeObject *);
-
 /** API for initializing the line number tables. */
 extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
 

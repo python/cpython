@@ -1520,15 +1520,6 @@ PyCode_GetFreevars(PyCodeObject *code)
     return _PyCode_GetFreevars(code);
 }
 
-int
-_PyCode_GetNumFrameSlots(PyCodeObject *code)
-{
-    /* This function needs to remain in sync with the calculation of
-     * co_framesize  in Tools/build/deepfreeze.py */
-    assert(code->co_framesize >= FRAME_SPECIALS_SIZE);
-    return code->co_framesize - FRAME_SPECIALS_SIZE;
-}
-
 static void
 deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 {
