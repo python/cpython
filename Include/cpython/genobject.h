@@ -44,6 +44,7 @@ PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(PyFrameObject *,
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
+PyAPI_FUNC(PyCodeObject *) PyGen_GetCode(PyGenObject *gen);
 
 
 /* --- PyCoroObject ------------------------------------------------------- */

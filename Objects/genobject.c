@@ -31,6 +31,14 @@ _PyGen_GetCode(PyGenObject *gen) {
     return frame->f_code;
 }
 
+PyCodeObject *
+PyGen_GetCode(PyGenObject *gen) {
+    assert(PyGen_Check(gen));
+    PyCodeObject *res = _PyGen_GetCode(gen);
+    Py_INCREF(res);
+    return res;
+}
+
 static inline int
 exc_state_traverse(_PyErr_StackItem *exc_state, visitproc visit, void *arg)
 {
