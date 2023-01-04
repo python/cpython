@@ -2857,7 +2857,9 @@ typedef struct DoubleLengthFloat DoubleLength;
 static inline DoubleLength
 dl_split(double x) {
     const double VELTKAMP_CONSTANT = 134217729.0;  /* float(0x8000001) */
-    double t = x * VELTKAMP_CONSTANT, hi = t - (t - x), lo = x - hi;
+    double t = x * VELTKAMP_CONSTANT;
+    double hi = t - (t - x);
+    double lo = x - hi;
     return (DoubleLength) {hi, lo};
 }
 
@@ -2883,9 +2885,6 @@ dl_fma(DoubleLength total, double p, double q)
     total = dl_neumaier(total, pp.hi * qq.lo);
     total = dl_neumaier(total, pp.lo * qq.hi);
     return  dl_neumaier(total, pp.lo * qq.lo);
-    // XXX Possibly leverage instruction level parallelization by
-    // keeping separate accumulators and only combined them after
-    // all of the dl_fma() calls.
 }
 
 /*[clinic input]
