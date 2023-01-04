@@ -1644,6 +1644,22 @@ class MockTest(unittest.TestCase):
         m.aseert_foo_call()
         m.assrt_foo_call()
 
+    # gh-100739
+    def test_mock_safe_with_spec(self):
+        class Foo(object):
+            def assert_bar(self):
+                pass
+
+            def assertSome(self):
+                pass
+
+        m = Mock(spec=Foo)
+        m.assert_bar()
+        m.assertSome()
+
+        m.assert_bar.assert_called_once()
+        m.assertSome.assert_called_once()
+
     #Issue21262
     def test_assert_not_called(self):
         m = Mock()
