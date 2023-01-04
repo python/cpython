@@ -2856,6 +2856,8 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     bool p_stopped = false, q_stopped = false;
     bool int_path_enabled = true, int_total_in_use = false;
     long int_total = 0;
+    bool flt_path_enabled = true, flt_total_in_use = false;
+    double flt_total = 0.0;
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -2948,6 +2950,38 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 new_total = NULL;
                 Py_CLEAR(term_i);
                 int_total_in_use = false;
+            }
+        }
+
+        if (flt_path_enabled) {
+            if (!finished && PyFloat_CheckExact(p_i) & PyFloat_CheckExact(q_i)) {
+                double flt_p = PyFloat_AS_DOUBLE(p_i);
+                double flt_q = PyFloat_AS_DOUBLE(q_i);
+                double new_flt_total = flt_total + flt_p * flt_q;
+                if (isfinite(new_flt_total)) {
+                    flt_total = new_flt_total;
+                    flt_total_in_use = true;
+                    Py_CLEAR(p_i);
+                    Py_CLEAR(q_i);
+                    continue;
+                }
+                // For non-finite values arises, fallback to the slow path
+            }
+            // We're finished, overflowed, have a non-float, or had a non-finite value
+            flt_path_enabled = false;
+            if (flt_total_in_use) {
+                term_i = PyFloat_FromDouble(flt_total);
+                if (term_i == NULL) {
+                    goto err_exit;
+                }
+                new_total = PyNumber_Add(total, term_i);
+                if (new_total == NULL) {
+                    goto err_exit;
+                }
+                Py_SETREF(total, new_total);
+                new_total = NULL;
+                Py_CLEAR(term_i);
+                flt_total_in_use = false;
             }
         }
 
