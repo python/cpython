@@ -68,6 +68,20 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(repr_output, expected_output)
 
+    def test_field_recursive_repr(self):
+        rec_field = field()
+        rec_field.type = rec_field
+        rec_field.name = "id"
+        repr_output = repr(rec_field)
+        expected_output = "Field(name='id',type=...," \
+                           f"default={MISSING!r},default_factory={MISSING!r}," \
+                           "init=True,repr=True,hash=None," \
+                           "compare=True,metadata=mappingproxy({})," \
+                           f"kw_only={MISSING!r}," \
+                           "_field_type=None)"
+
+        self.assertEqual(repr_output, expected_output)
+
     def test_dataclass_params_repr(self):
         # Even though this is testing an internal implementation detail,
         # it's testing a feature we want to make sure is correctly implemented
