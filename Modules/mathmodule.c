@@ -2987,11 +2987,10 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                     Py_CLEAR(q_i);
                     continue;
                 }
-                // For non-finite values arises, fallback to pure Python arithmetic
             }
 
           finalize_flt_path:
-            // We're finished, overflowed, have a non-float, or had a non-finite value
+            // We're finished, overflowed, have a non-float, or got a non-finite value
             flt_path_enabled = false;
             if (flt_total_in_use) {
                 term_i = PyFloat_FromDouble(flt_total);
