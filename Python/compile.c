@@ -8681,6 +8681,7 @@ opcode_metadata_is_sane(cfg_builder *g) {
             int popped = _PyOpcode_opcode_metadata[opcode].n_popped;
             assert((pushed < 0) == (popped < 0));
             if (pushed >= 0) {
+                assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
                 int effect = stack_effect(opcode, instr->i_oparg, -1);
                 if (effect != pushed - popped) {
                    fprintf(stderr,
