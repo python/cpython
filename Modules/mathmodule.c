@@ -2858,8 +2858,7 @@ static inline DoubleLength
 dl_split(double x) {
     const double VELTKAMP_CONSTANT = 134217729.0;  /* float(0x8000001) */
     double t = x * VELTKAMP_CONSTANT, hi = t - (t - x), lo = x - hi;
-    DoubleLength result = {hi, lo};
-    return result;
+    return (DoubleLength) {hi, lo};
 }
 
 static inline DoubleLength
@@ -2883,8 +2882,7 @@ dl_fma(DoubleLength total, double p, double q)
     total = dl_neumaier(total, pp.hi * qq.hi);
     total = dl_neumaier(total, pp.hi * qq.lo);
     total = dl_neumaier(total, pp.lo * qq.hi);
-    total = dl_neumaier(total, pp.lo * qq.lo);
-    return total;
+    return  dl_neumaier(total, pp.lo * qq.lo);
     // XXX Possibly leverage instruction level parallelization by
     // keeping separate accumulators and only combined them after
     // all of the dl_fma() calls.
