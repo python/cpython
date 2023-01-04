@@ -94,7 +94,7 @@ def rgb_to_hls(r, g, b):
     else:
         h = 4.0+gc-rc
     h = (h/6.0) % 1.0
-    return h, l, s
+    return round(h, 14), round(l, 14), round(s, 14)
 
 def hls_to_rgb(h, l, s):
     if s == 0.0:
