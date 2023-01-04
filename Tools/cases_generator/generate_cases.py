@@ -159,8 +159,8 @@ class Instruction:
     def analyze_registers(self, a: "Analyzer") -> None:
         regs = iter(("REG(oparg1)", "REG(oparg2)", "REG(oparg3)"))
         try:
-            self.input_registers = [next(regs) for _ in self.input_effects]
-            self.output_registers = [next(regs) for _ in self.output_effects]
+            self.input_registers = [next(regs) for ieff in self.input_effects if ieff.name != UNUSED]
+            self.output_registers = [next(regs) for oeff in self.output_effects if oeff.name != UNUSED]
         except StopIteration:  # Running out of registers
             a.error(f"Instruction {self.name} has too many register effects", node=self.inst)
 
