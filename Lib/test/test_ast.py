@@ -11,6 +11,7 @@ import weakref
 from textwrap import dedent
 
 from test import support
+from test.support.ast_helper import ASTTestMixin
 
 def to_tuple(t):
     if t is None or isinstance(t, (str, int, complex)) or t is Ellipsis:
@@ -2352,9 +2353,8 @@ class NodeVisitorTests(BaseNodeVisitorCases, unittest.TestCase):
     visitor_class = ast.NodeVisitor
 
 
-class NodeTransformerTests(BaseNodeVisitorCases, unittest.TestCase):
+class NodeTransformerTests(ASTTestMixin, BaseNodeVisitorCases, unittest.TestCase):
     visitor_class = ast.NodeTransformer
-    maxDiff = None  # `ast.dump` might generate a large string
 
     def assertASTTransformation(self, tranformer_class,
                                 initial_code, expected_code):
@@ -2364,8 +2364,7 @@ class NodeTransformerTests(BaseNodeVisitorCases, unittest.TestCase):
         tranformer = tranformer_class()
         result_ast = ast.fix_missing_locations(tranformer.visit(initial_ast))
 
-        self.assertEqual(ast.dump(result_ast),
-                         ast.dump(expected_ast))
+        self.assertASTEqual(result_ast, expected_ast)
 
     def test_node_remove_single(self):
         code = 'def func(arg) -> SomeType: ...'
