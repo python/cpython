@@ -343,9 +343,8 @@ PyDoc_STRVAR(math_sumprod__doc__,
 "\n"
 "    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))\n"
 "\n"
-"For float and mixed int/float inputs, the products and and running\n"
-"sum are computed in quad precison and the result is rounded back\n"
-"to double precision.");
+"For float and mixed int/float inputs, the intermediate products\n"
+"and sums are computed with extended precision.");
 
 #define MATH_SUMPROD_METHODDEF    \
     {"sumprod", _PyCFunction_CAST(math_sumprod), METH_FASTCALL, math_sumprod__doc__},
@@ -955,4 +954,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=267c6eb95ea9a8d8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=899211ec70e4506c input=a9049054013a1b77]*/

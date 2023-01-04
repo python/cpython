@@ -295,9 +295,9 @@ Number-theoretic and representation functions
 
    Return the sum of products of values from two iterables *p* and *q*.
 
-   raises :exc:`valueerror` if the inputs do not have the same length.
+   Raises :exc:`ValueError` if the inputs do not have the same length.
 
-   roughly equivalent to::
+   Roughly equivalent to::
 
        sum(itertools.starmap(operator.mul, zip(p, q, strict=true)))
 

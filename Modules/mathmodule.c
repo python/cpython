@@ -2842,14 +2842,13 @@ Roughly equivalent to:
 
     sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
 
-For float and mixed int/float inputs, the products and and running
-sum are computed in quad precison and the result is rounded back
-to double precision.
+For float and mixed int/float inputs, the intermediate products
+and sums are computed with extended precision.
 [clinic start generated code]*/
 
 static PyObject *
 math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
-/*[clinic end generated code: output=6722dbfe60664554 input=6fc5c5e00f7b79d1]*/
+/*[clinic end generated code: output=6722dbfe60664554 input=82be54fe26f87e30]*/
 {
     PyObject *p_it, *q_it, *total;
     PyObject *p_i = NULL, *q_i = NULL, *term_i = NULL, *new_total = NULL;
