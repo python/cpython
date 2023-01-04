@@ -670,6 +670,47 @@ class EventLoopTestsMixin:
             self.assertEqual(port, expected)
             tr.close()
 
+    def test_create_connection_local_addr_skip_different_family(self):
+        # See https://github.com/python/cpython/issues/86508
+        port1 = socket_helper.find_unused_port()
+        port2 = socket_helper.find_unused_port()
+        getaddrinfo_orig = self.loop.getaddrinfo
+
+        async def getaddrinfo(host, port, *args, **kwargs):
+            if port == port2:
+                return [(socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 0, 0, 0)),
+                        (socket.AF_INET, socket.SOCK_STREAM, 0, '', ('127.0.0.1', 0))]
+            return await getaddrinfo_orig(host, port, *args, **kwargs)
+
+        self.loop.getaddrinfo = getaddrinfo
+
+        f = self.loop.create_connection(
+            lambda: MyProto(loop=self.loop),
+            'localhost', port1, local_addr=('localhost', port2))
+
+        with self.assertRaises(OSError):
+            self.loop.run_until_complete(f)
+
+    def test_create_connection_local_addr_nomatch_family(self):
+        # See https://github.com/python/cpython/issues/86508
+        port1 = socket_helper.find_unused_port()
+        port2 = socket_helper.find_unused_port()
+        getaddrinfo_orig = self.loop.getaddrinfo
+
+        async def getaddrinfo(host, port, *args, **kwargs):
+            if port == port2:
+                return [(socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 0, 0, 0))]
+            return await getaddrinfo_orig(host, port, *args, **kwargs)
+
+        self.loop.getaddrinfo = getaddrinfo
+
+        f = self.loop.create_connection(
+            lambda: MyProto(loop=self.loop),
+            'localhost', port1, local_addr=('localhost', port2))
+
+        with self.assertRaises(OSError):
+            self.loop.run_until_complete(f)
+
     def test_create_connection_local_addr_in_use(self):
         with test_utils.run_test_server() as httpd:
             f = self.loop.create_connection(
