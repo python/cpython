@@ -156,7 +156,7 @@ static inline Py_ssize_t PyCode_GetNumFree(PyCodeObject *op) {
     return op->co_nfreevars;
 }
 
-static inline Py_ssize_t PyCode_GetFirstFree(PyCodeObject *op) {
+static inline int PyCode_GetFirstFree(PyCodeObject *op) {
     assert(PyCode_Check(op));
     return op->co_nlocalsplus - op->co_nfreevars;
 }
