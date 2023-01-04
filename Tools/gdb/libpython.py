@@ -2126,6 +2126,7 @@ class PyLocals(gdb.Command):
         while True:
             if not pyop_frame:
                 print(UNABLE_READ_INFO_PYTHON_FRAME)
+                break
 
             sys.stdout.write('Locals for %s\n' % (pyop_frame.co_name.proxyval(set())))
 
