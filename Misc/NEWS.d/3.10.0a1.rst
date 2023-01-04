@@ -133,16 +133,6 @@ Port the :mod:`_lsprof` extension module to multi-phase initialization
 
 ..
 
-.. bpo: 41756
-.. date: 2020-09-12-12-55-45
-.. nonce: 1h0tbV
-.. section: Core and Builtins
-
-Add PyGen_Send function to allow sending value into generator/coroutine
-without raising StopIteration exception to signal return
-
-..
-
 .. bpo: 1635741
 .. date: 2020-09-08-21-58-47
 .. nonce: vdjSLH
@@ -188,7 +178,7 @@ Convert the :mod:`_sha256` extension module types to heap types.
 .. section: Core and Builtins
 
 Fix a possible stack overflow in the parser when parsing functions and
-classes with a huge ammount of arguments. Patch by Pablo Galindo.
+classes with a huge amount of arguments. Patch by Pablo Galindo.
 
 ..
 
@@ -2214,7 +2204,7 @@ Handle cases where the ``end_lineno`` is ``None`` on
 .. nonce: zwl5Hc
 .. section: Library
 
-:mod:`distutils` upload creates SHA2-256 and Blake2b-256 digests. MD5
+``distutils`` upload creates SHA2-256 and Blake2b-256 digests. MD5
 digests is skipped if platform blocks MD5.
 
 ..

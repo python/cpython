@@ -660,7 +660,7 @@ Applying the same patch to every test method
 
 If you want several patches in place for multiple test methods the obvious way
 is to apply the patch decorators to every method. This can feel like unnecessary
-repetition. For Python 2.6 or more recent you can use :func:`patch` (in all its
+repetition. Instead, you can use :func:`patch` (in all its
 various forms) as a class decorator. This applies the patches to all test
 methods on the class. A test method is identified by methods whose names start
 with ``test``::
@@ -893,7 +893,7 @@ Here's an example implementation:
     ...     def __call__(self, /, *args, **kwargs):
     ...         args = deepcopy(args)
     ...         kwargs = deepcopy(kwargs)
-    ...         return super(CopyingMock, self).__call__(*args, **kwargs)
+    ...         return super().__call__(*args, **kwargs)
     ...
     >>> c = CopyingMock(return_value=None)
     >>> arg = set()
@@ -1116,7 +1116,7 @@ on first use).
 That aside there is a way to use ``mock`` to affect the results of an import.
 Importing fetches an *object* from the :data:`sys.modules` dictionary. Note that it
 fetches an *object*, which need not be a module. Importing a module for the
-first time results in a module object being put in `sys.modules`, so usually
+first time results in a module object being put in ``sys.modules``, so usually
 when you import something you get a module back. This need not be the case
 however.
 

@@ -70,6 +70,9 @@ class LocaleTime_Tests(unittest.TestCase):
         self.assertEqual(self.LT_ins.am_pm[position], strftime_output,
                          "AM/PM representation in the wrong position within the tuple")
 
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_timezone(self):
         # Make sure timezone is correct
         timezone = time.strftime("%Z", self.time_tuple).lower()
@@ -368,6 +371,9 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
     @skip_if_buggy_ucrt_strfptime
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_timezone(self):
         # Test timezone directives.
         # When gmtime() is used with %Z, entire result of strftime() is empty.
@@ -390,6 +396,9 @@ class StrptimeTests(unittest.TestCase):
                             "LocaleTime().timezone has duplicate values and "
                              "time.daylight but timezone value not set to -1")
 
+    @unittest.skipUnless(
+        hasattr(time, "tzset"), "time module has no attribute tzset"
+        )
     def test_bad_timezone(self):
         # Explicitly test possibility of bad timezone;
         # when time.tzname[0] == time.tzname[1] and time.daylight

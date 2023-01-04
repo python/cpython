@@ -7,6 +7,7 @@ import abc
 from operator import le, lt, ge, gt, eq, ne
 
 import unittest
+from test import support
 
 order_comparisons = le, lt, ge, gt
 equality_comparisons = eq, ne
@@ -87,9 +88,7 @@ class TestCopy(unittest.TestCase):
     # Type-specific _copy_xxx() methods
 
     def test_copy_atomic(self):
-        class Classic:
-            pass
-        class NewStyle(object):
+        class NewStyle:
             pass
         def f():
             pass
@@ -99,7 +98,7 @@ class TestCopy(unittest.TestCase):
                  42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
                  b"world", bytes(range(256)), range(10), slice(1, 10, 2),
-                 NewStyle, Classic, max, WithMetaclass, property()]
+                 NewStyle, max, WithMetaclass, property()]
         for x in tests:
             self.assertIs(copy.copy(x), x)
 
@@ -349,15 +348,13 @@ class TestCopy(unittest.TestCase):
     # Type-specific _deepcopy_xxx() methods
 
     def test_deepcopy_atomic(self):
-        class Classic:
-            pass
-        class NewStyle(object):
+        class NewStyle:
             pass
         def f():
             pass
         tests = [None, 42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
-                 NewStyle, range(10), Classic, max, property()]
+                 NewStyle, range(10), max, property()]
         for x in tests:
             self.assertIs(copy.deepcopy(x), x)
 
@@ -677,6 +674,28 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x["foo"], y["foo"])
 
+    def test_reduce_6tuple(self):
+        def state_setter(*args, **kwargs):
+            self.fail("shouldn't call this")
+        class C:
+            def __reduce__(self):
+                return C, (), self.__dict__, None, None, state_setter
+        x = C()
+        with self.assertRaises(TypeError):
+            copy.copy(x)
+        with self.assertRaises(TypeError):
+            copy.deepcopy(x)
+
+    def test_reduce_6tuple_none(self):
+        class C:
+            def __reduce__(self):
+                return C, (), self.__dict__, None, None, None
+        x = C()
+        with self.assertRaises(TypeError):
+            copy.copy(x)
+        with self.assertRaises(TypeError):
+            copy.deepcopy(x)
+
     def test_copy_slots(self):
         class C(object):
             __slots__ = ["foo"]
@@ -805,6 +824,7 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(v[c], d)
         self.assertEqual(len(v), 2)
         del c, d
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(v), 1)
         x, y = C(), C()
         # The underlying containers are decoupled
@@ -834,6 +854,7 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(v[a].i, b.i)
         self.assertEqual(v[c].i, d.i)
         del c
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(v), 1)
 
     def test_deepcopy_weakvaluedict(self):
@@ -857,6 +878,7 @@ class TestCopy(unittest.TestCase):
         self.assertIs(t, d)
         del x, y, z, t
         del d
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(v), 1)
 
     def test_deepcopy_bound_method(self):
