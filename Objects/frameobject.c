@@ -946,7 +946,7 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     Py_ssize_t res;
     res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = f->f_frame->f_code;
-    res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
+    res += _PyFrame_NumSlotsForCodeObject(code) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
 
