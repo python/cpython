@@ -642,6 +642,7 @@ class Analyzer:
                 self.out.emit("enum Direction dir_op1;")
                 self.out.emit("enum Direction dir_op2;")
                 self.out.emit("enum Direction dir_op3;")
+                self.out.emit("bool valid_entry;")
             self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
@@ -675,21 +676,35 @@ class Analyzer:
                 directions.extend("DIR_WRITE" for _ in instr.output_effects)
                 directions.extend("DIR_NONE" for _ in range(3))
                 dir_op1, dir_op2, dir_op3 = directions[:3]
-        self.out.emit(f"    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3} }},")
+        self.out.emit(
+            f"    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true }},"
+        )
 
     def write_metadata_for_super(self, sup: SuperInstruction) -> None:
         """Write metadata for a super-instruction."""
         n_popped = sum(len(comp.instr.input_effects) for comp in sup.parts)
         n_pushed = sum(len(comp.instr.output_effects) for comp in sup.parts)
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
-        self.out.emit(f"    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3} }},")
+        self.out.emit(
+            f"    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true }},"
+        )
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        n_popped = sum(len(comp.instr.input_effects) for comp in mac.parts if isinstance(comp, Component))
-        n_pushed = sum(len(comp.instr.output_effects) for comp in mac.parts if isinstance(comp, Component))
+        n_popped = sum(
+            len(comp.instr.input_effects)
+            for comp in mac.parts
+            if isinstance(comp, Component)
+        )
+        n_pushed = sum(
+            len(comp.instr.output_effects)
+            for comp in mac.parts
+            if isinstance(comp, Component)
+        )
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
-        self.out.emit(f"    [{mac.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3} }},")
+        self.out.emit(
+            f"    [{mac.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true }},"
+        )
 
     def write_instructions(self) -> None:
         """Write instructions to output file."""
