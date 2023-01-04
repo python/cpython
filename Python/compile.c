@@ -2260,7 +2260,7 @@ compiler_make_closure(struct compiler *c, location loc,
         qualname = co->co_name;
 
     if (co->co_nfreevars) {
-        int i = co->co_nlocals + co->co_nplaincellvars;
+        int i = PyCode_GetFirstFree(co);
         for (; i < co->co_nlocalsplus; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
