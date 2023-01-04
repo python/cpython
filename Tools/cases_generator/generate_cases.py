@@ -653,7 +653,7 @@ class Analyzer:
                     case parser.Super():
                         self.write_metadata_for_super(self.super_instrs[thing.name])
                     case parser.Macro():
-                        pass  # Macros don't exist at runtime
+                        self.write_metadata_for_macro(self.macro_instrs[thing.name])
                     case _:
                         typing.assert_never(thing)
 
@@ -683,6 +683,13 @@ class Analyzer:
         n_pushed = sum(len(comp.instr.output_effects) for comp in sup.parts)
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
         self.out.emit(f"    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3} }},")
+
+    def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
+        """Write metadata for a macro-instruction."""
+        n_popped = sum(len(comp.instr.input_effects) for comp in mac.parts if isinstance(comp, Component))
+        n_pushed = sum(len(comp.instr.output_effects) for comp in mac.parts if isinstance(comp, Component))
+        dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
+        self.out.emit(f"    [{mac.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3} }},")
 
     def write_instructions(self) -> None:
         """Write instructions to output file."""
