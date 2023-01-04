@@ -35,6 +35,8 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject
 
+#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata
+
 
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_CODE_SIZE 128
