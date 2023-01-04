@@ -2954,9 +2954,31 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
         }
 
         if (flt_path_enabled) {
-            if (!finished && PyFloat_CheckExact(p_i) & PyFloat_CheckExact(q_i)) {
-                double flt_p = PyFloat_AS_DOUBLE(p_i);
-                double flt_q = PyFloat_AS_DOUBLE(q_i);
+
+            if (!finished) {
+                double flt_p, flt_q;
+                bool p_type_float = PyFloat_CheckExact(p_i);
+                bool q_type_float = PyFloat_CheckExact(q_i);
+                if (p_type_float && q_type_float) {
+                    flt_p = PyFloat_AS_DOUBLE(p_i);
+                    flt_q = PyFloat_AS_DOUBLE(q_i);
+                } else if (p_type_float && PyLong_CheckExact(q_i)) {
+                    flt_p = PyFloat_AS_DOUBLE(p_i);
+                    flt_q = PyLong_AsDouble(q_i);
+                    if (flt_q == -1.0 && PyErr_Occurred()) {
+                        PyErr_Clear();
+                        goto finalize_flt_path;
+                    }
+                } else if (q_type_float && PyLong_CheckExact(p_i)) {
+                    flt_q = PyFloat_AS_DOUBLE(q_i);
+                    flt_p = PyLong_AsDouble(p_i);
+                    if (flt_p == -1.0 && PyErr_Occurred()) {
+                        PyErr_Clear();
+                        goto finalize_flt_path;
+                    }
+                } else {
+                    goto finalize_flt_path;
+                }
                 double new_flt_total = flt_total + flt_p * flt_q;
                 if (isfinite(new_flt_total)) {
                     flt_total = new_flt_total;
@@ -2965,8 +2987,10 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                     Py_CLEAR(q_i);
                     continue;
                 }
-                // For non-finite values arises, fallback to the slow path
+                // For non-finite values arises, fallback to pure Python arithmetic
             }
+
+          finalize_flt_path:
             // We're finished, overflowed, have a non-float, or had a non-finite value
             flt_path_enabled = false;
             if (flt_total_in_use) {
