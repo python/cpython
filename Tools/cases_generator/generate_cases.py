@@ -159,10 +159,16 @@ class Instruction:
     def analyze_registers(self, a: "Analyzer") -> None:
         regs = iter(("REG(oparg1)", "REG(oparg2)", "REG(oparg3)"))
         try:
-            self.input_registers = [next(regs) for ieff in self.input_effects if ieff.name != UNUSED]
-            self.output_registers = [next(regs) for oeff in self.output_effects if oeff.name != UNUSED]
+            self.input_registers = [
+                next(regs) for ieff in self.input_effects if ieff.name != UNUSED
+            ]
+            self.output_registers = [
+                next(regs) for oeff in self.output_effects if oeff.name != UNUSED
+            ]
         except StopIteration:  # Running out of registers
-            a.error(f"Instruction {self.name} has too many register effects", node=self.inst)
+            a.error(
+                f"Instruction {self.name} has too many register effects", node=self.inst
+            )
 
     def write(self, out: Formatter) -> None:
         """Write one instruction, sans prologue and epilogue."""
@@ -238,7 +244,9 @@ class Instruction:
                 else:
                     typ = f"uint{bits}_t "
                     func = f"read_u{bits}"
-                out.emit(f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);")
+                out.emit(
+                    f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
+                )
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 
