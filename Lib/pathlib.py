@@ -1254,8 +1254,7 @@ class Path(PurePath):
             else:
                 stack.append((path, dirnames, filenames))
 
-            stack += [path._make_child_relpath(dirname) 
-                      for dirname in reversed(dirnames)]
+            stack += [path._make_child_relpath(d) for d in reversed(dirnames)]
 
 
 class PosixPath(Path, PurePosixPath):
