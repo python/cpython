@@ -342,6 +342,12 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
     top = fspath(top)
+
+    # We may not have read permission for top, in which case we can't
+    # get a list of the files the directory contains.
+    # We suppress the exception here, rather than blow up for a
+    # minor reason when (say) a thousand readable directories are still
+    # left to visit.
     try:
         scandir_it = scandir(top)
     except OSError as error:
@@ -357,11 +363,6 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         walk_dirs = []
         use_entry = True
 
-        # We may not have read permission for top, in which case we can't
-        # get a list of the files the directory contains.
-        # We suppress the exception here, rather than blow up for a
-        # minor reason when (say) a thousand readable directories are still
-        # left to visit.
         with scandir_it:
             while True:
                 try:
