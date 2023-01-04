@@ -643,6 +643,7 @@ class Analyzer:
                 self.out.emit("enum Direction dir_op2;")
                 self.out.emit("enum Direction dir_op3;")
                 self.out.emit("bool valid_entry;")
+                self.out.emit("char instr_format[10];")
             self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
@@ -661,6 +662,46 @@ class Analyzer:
             # Write end of array
             self.out.emit("};")
 
+    def get_format(self, thing: Instruction | SuperInstruction | MacroInstruction) -> str:
+        """Get the format string for a single instruction."""
+        def instr_format(instr: Instruction) -> str:
+            if instr.register:
+                fmt = "IBBB"
+            else:
+                fmt = "IB"
+            cache = "C"
+            for ce in instr.cache_effects:
+                for _ in range(ce.size):
+                    fmt += cache
+                    cache = "0"
+            return fmt
+        match thing:
+            case Instruction():
+                format = instr_format(thing)
+            case SuperInstruction():
+                format = ""
+                for part in thing.parts:
+                    format += instr_format(part.instr)
+            case MacroInstruction():
+                # Macros don't support register instructions yet
+                format = "IB"
+                cache = "C"
+                for part in thing.parts:
+                    if isinstance(part, parser.CacheEffect):
+                        for _ in range(part.size):
+                            format += cache
+                            cache = "0"
+                    else:
+                        assert isinstance(part, Component)
+                        for ce in part.instr.cache_effects:
+                            for _ in range(ce.size):
+                                format += cache
+                                cache = "0"
+            case _:
+                typing.assert_never(thing)
+        assert len(format) < 10  # Else update the size of instr_format above
+        return format
+
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
@@ -676,8 +717,9 @@ class Analyzer:
                 directions.extend("DIR_WRITE" for _ in instr.output_effects)
                 directions.extend("DIR_NONE" for _ in range(3))
                 dir_op1, dir_op2, dir_op3 = directions[:3]
+        format = self.get_format(instr)
         self.out.emit(
-            f"    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true }},"
+            f'    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, "{format}" }},'
         )
 
     def write_metadata_for_super(self, sup: SuperInstruction) -> None:
@@ -685,25 +727,20 @@ class Analyzer:
         n_popped = sum(len(comp.instr.input_effects) for comp in sup.parts)
         n_pushed = sum(len(comp.instr.output_effects) for comp in sup.parts)
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
+        format = self.get_format(sup)
         self.out.emit(
-            f"    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true }},"
+            f'    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, "{format}" }},'
         )
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        n_popped = sum(
-            len(comp.instr.input_effects)
-            for comp in mac.parts
-            if isinstance(comp, Component)
-        )
-        n_pushed = sum(
-            len(comp.instr.output_effects)
-            for comp in mac.parts
-            if isinstance(comp, Component)
-        )
+        parts = [comp for comp in mac.parts if isinstance(comp, Component)]
+        n_popped = sum(len(comp.instr.input_effects) for comp in parts)
+        n_pushed = sum(len(comp.instr.output_effects) for comp in parts)
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
+        format = self.get_format(mac)
         self.out.emit(
-            f"    [{mac.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true }},"
+            f'    [{mac.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, "{format}" }},'
         )
 
     def write_instructions(self) -> None:
