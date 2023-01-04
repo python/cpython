@@ -222,6 +222,8 @@ The slash operator helps create child paths, similarly to :func:`os.path.join`::
    >>> q = PurePath('bin')
    >>> '/usr' / q
    PurePosixPath('/usr/bin')
+   >>> p / '/another' / 'absolute' / 'path'
+   PurePosixPath('/another/absolute/path')
 
 A path object can be used anywhere an object implementing :class:`os.PathLike`
 is accepted::
