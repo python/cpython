@@ -1626,7 +1626,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
-        compiler_exit_scope(c); \
+        compiler_exit_scope(C); \
         return -1; \
     } \
 }
@@ -1692,7 +1692,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define VISIT_IN_SCOPE(C, TYPE, V) {\
     if (compiler_visit_ ## TYPE((C), (V)) < 0) { \
-        compiler_exit_scope(c); \
+        compiler_exit_scope(C); \
         return ERROR; \
     } \
 }
@@ -1713,7 +1713,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
         if (compiler_visit_ ## TYPE((C), elt) < 0) { \
-            compiler_exit_scope(c); \
+            compiler_exit_scope(C); \
             return ERROR; \
         } \
     } \
