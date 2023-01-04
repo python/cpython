@@ -2820,6 +2820,8 @@ For example, the hypotenuse of a 3/4/5 right triangle is:\n\
     5.0\n\
 ");
 
+/** sumprod() ***************************************************************/
+
 /* Forward declaration */
 static inline int _check_long_mult_overflow(long a, long b);
 
@@ -2827,6 +2829,65 @@ static inline bool
 long_add_will_overflow(long a, long b)
 {
     return (a > 0) ? (b > LONG_MAX - a) : (b < LONG_MIN - a);
+}
+
+/*
+Double length extended precision floating point arithmetic
+based on ideas from three sources:
+
+  Improved Kahan–Babuška algorithm by Arnold Neumaier
+  https://www.mat.univie.ac.at/~neum/scan/01.pdf
+
+  A Floating-Point Technique for Extending the Available Precision
+  by T. J. Dekker
+  https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+
+  Ultimately Fast Accurate Summation by Siegfried M. Rump
+  https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
+
+dl_split() exactly splits a double into two half precision components.
+dl_neumaier() performs compensated summation to keep a running total.
+dl_fma() implements an extended precision fused-multiply-add.
+
+ */
+
+struct DoubleLengthFloat { double hi; double lo; };
+typedef struct DoubleLengthFloat DoubleLength;
+
+static inline DoubleLength
+dl_split(double x) {
+    const double VELTKAMP_CONSTANT = 134217729.0;  /* float(0x8000001) */
+    double t = x * VELTKAMP_CONSTANT, hi = t - (t - x), lo = x - hi;
+    DoubleLength result = {hi, lo};
+    return result;
+}
+
+static inline DoubleLength
+dl_neumaier(DoubleLength total, double x)
+{
+    double t = total.hi + x;
+    if (fabs(total.hi) >= fabs(x)) {
+        total.lo += (total.hi - t) + x;
+    } else {
+        total.lo += (x - t) + total.hi;
+    }
+    total.hi = t;
+    return total;
+}
+
+static inline DoubleLength
+dl_fma(DoubleLength total, double p, double q)
+{
+    DoubleLength pp = dl_split(p);
+    DoubleLength qq = dl_split(q);
+    total = dl_neumaier(total, pp.hi * qq.hi);
+    total = dl_neumaier(total, pp.hi * qq.lo);
+    total = dl_neumaier(total, pp.lo * qq.hi);
+    total = dl_neumaier(total, pp.lo * qq.lo);
+    return total;
+    // XXX Possibly leverage instruction level parallelization by
+    // keeping separate accumulators and only combined them after
+    // all of the dl_fma() calls.
 }
 
 /*[clinic input]
@@ -2856,7 +2917,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     bool int_path_enabled = true, int_total_in_use = false;
     long int_total = 0;
     bool flt_path_enabled = true, flt_total_in_use = false;
-    double flt_total = 0.0;
+    DoubleLength flt_total = {0.0, 0.0};
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -2948,6 +3009,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 Py_SETREF(total, new_total);
                 new_total = NULL;
                 Py_CLEAR(term_i);
+                int_total = 0;   // An ounce of prevention, ...
                 int_total_in_use = false;
             }
         }
@@ -2978,8 +3040,8 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 } else {
                     goto finalize_flt_path;
                 }
-                double new_flt_total = flt_total + flt_p * flt_q;
-                if (isfinite(new_flt_total)) {
+                DoubleLength new_flt_total = dl_fma(flt_total, flt_p, flt_q);
+                if (isfinite(new_flt_total.hi)) {
                     flt_total = new_flt_total;
                     flt_total_in_use = true;
                     Py_CLEAR(p_i);
@@ -2992,7 +3054,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             // We're finished, overflowed, have a non-float, or got a non-finite value
             flt_path_enabled = false;
             if (flt_total_in_use) {
-                term_i = PyFloat_FromDouble(flt_total);
+                term_i = PyFloat_FromDouble(flt_total.hi + flt_total.lo);
                 if (term_i == NULL) {
                     goto err_exit;
                 }
@@ -3003,6 +3065,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 Py_SETREF(total, new_total);
                 new_total = NULL;
                 Py_CLEAR(term_i);
+                flt_total = (DoubleLength) {0.0, 0.0};
                 flt_total_in_use = false;
             }
         }

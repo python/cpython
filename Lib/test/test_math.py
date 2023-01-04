@@ -1280,6 +1280,16 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(sumprod([10.1, math.inf], [20.3, math.nan])))
 
 
+    @requires_IEEE_754
+    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
+                         "sumprod() accuracy not guaranteed on machines with double rounding")
+    @support.cpython_only    # Other implementations may choose a different algorithm
+    def test_sumprod_accuracy(self):
+        sumprod = math.sumprod
+        self.assertEqual(sumprod([0.1] * 10, [1]*10), 1.0)
+        self.assertEqual(sumprod([1.0, 10E100, 1.0, -10E100], [1.0]*4), 2.0)
+
+
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
 
