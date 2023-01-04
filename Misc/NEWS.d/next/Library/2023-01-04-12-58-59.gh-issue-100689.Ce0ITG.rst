@@ -1,0 +1,1 @@
+Fix crash in ``_elementtree.c`` by reverting :gh:`24061`.
