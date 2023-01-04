@@ -1,1 +1,1 @@
-Fix crash in ``_elementtree.c`` by reverting ``GH-24061``.
+Fix crash in ``_elementtree.c`` by statically allocating ``PyExpat_CAPI`` capsule. 
