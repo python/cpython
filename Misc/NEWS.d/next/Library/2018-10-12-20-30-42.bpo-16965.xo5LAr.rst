@@ -1,2 +1,0 @@
-The :term:`2to3` :2to3fixer:`execfile` fixer now opens the file with mode
-``'rb'``.  Patch by Zackery Spytz.

@@ -9,10 +9,16 @@ import re
 import io
 import tempfile
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
 import unittest
 import textwrap
 import mailbox
 import glob
+
+
+if not socket_helper.has_gethostname:
+    raise unittest.SkipTest("test requires gethostname()")
 
 
 class TestBase:
@@ -38,9 +44,9 @@ class TestBase:
     def _delete_recursively(self, target):
         # Delete a file or delete a directory recursively
         if os.path.isdir(target):
-            support.rmtree(target)
+            os_helper.rmtree(target)
         elif os.path.exists(target):
-            support.unlink(target)
+            os_helper.unlink(target)
 
 
 class TestMailbox(TestBase):
@@ -51,7 +57,7 @@ class TestMailbox(TestBase):
     _template = 'From: foo\n\n%s\n'
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = os_helper.TESTFN
         self._delete_recursively(self._path)
         self._box = self._factory(self._path)
 
@@ -76,7 +82,7 @@ class TestMailbox(TestBase):
         self.assertEqual(len(self._box), 6)
         with self.assertWarns(DeprecationWarning):
             keys.append(self._box.add(
-                io.TextIOWrapper(io.BytesIO(_bytes_sample_message))))
+                io.TextIOWrapper(io.BytesIO(_bytes_sample_message), encoding="utf-8")))
         self.assertEqual(len(self._box), 7)
         self.assertEqual(self._box.get_string(keys[0]), self._template % 0)
         for i in (1, 2, 3, 4, 5, 6):
@@ -159,7 +165,7 @@ class TestMailbox(TestBase):
             self._non_latin_bin_msg.split(b'\n'))
 
     def test_add_text_file_warns(self):
-        with tempfile.TemporaryFile('w+') as f:
+        with tempfile.TemporaryFile('w+', encoding='utf-8') as f:
             f.write(_sample_message)
             f.seek(0)
             with self.assertWarns(DeprecationWarning):
@@ -723,9 +729,9 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # Remove old files from 'tmp'
         foo_path = os.path.join(self._path, 'tmp', 'foo')
         bar_path = os.path.join(self._path, 'tmp', 'bar')
-        with open(foo_path, 'w') as f:
+        with open(foo_path, 'w', encoding='utf-8') as f:
             f.write("@")
-        with open(bar_path, 'w') as f:
+        with open(bar_path, 'w', encoding='utf-8') as f:
             f.write("@")
         self._box.clean()
         self.assertTrue(os.path.exists(foo_path))
@@ -864,7 +870,6 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             pass
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def test_file_permissions(self):
         # Verify that message files are created without execute permissions
         msg = mailbox.MaildirMessage(self._template % 0)
@@ -878,7 +883,6 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self.assertFalse(mode & 0o111)
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def test_folder_file_perms(self):
         # From bug #3228, we want to verify that the file created inside a Maildir
         # subfolder isn't marked as executable.
@@ -928,7 +932,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # the mtime and should cause a re-read. Note that "sleep
         # emulation" is still in effect, as skewfactor is -3.
         filename = os.path.join(self._path, 'cur', 'stray-file')
-        support.create_empty_file(filename)
+        os_helper.create_empty_file(filename)
         os.unlink(filename)
         self._box._refresh()
         self.assertTrue(refreshed())
@@ -981,11 +985,11 @@ class _TestMboxMMDF(_TestSingleFile):
         super().tearDown()
         self._box.close()
         self._delete_recursively(self._path)
-        for lock_remnant in glob.glob(self._path + '.*'):
-            support.unlink(lock_remnant)
+        for lock_remnant in glob.glob(glob.escape(self._path) + '.*'):
+            os_helper.unlink(lock_remnant)
 
     def assertMailboxEmpty(self):
-        with open(self._path) as f:
+        with open(self._path, 'rb') as f:
             self.assertEqual(f.readlines(), [])
 
     def test_get_bytes_from(self):
@@ -1062,7 +1066,7 @@ class _TestMboxMMDF(_TestSingleFile):
             self.assertEqual(contents, f.read())
         self._box = self._factory(self._path)
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "Test needs fork().")
+    @support.requires_fork()
     @unittest.skipUnless(hasattr(socket, 'socketpair'), "Test needs socketpair().")
     def test_lock_conflict(self):
         # Fork off a child process that will lock the mailbox temporarily,
@@ -1094,7 +1098,7 @@ class _TestMboxMMDF(_TestSingleFile):
             # Signal the child it can now release the lock and exit.
             p.send(b'p')
             # Wait for child to exit.  Locking should now succeed.
-            exited_pid, status = os.waitpid(pid, 0)
+            support.wait_process(pid, exitcode=0)
 
         self._box.lock()
         self._box.unlock()
@@ -1120,7 +1124,6 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
     _factory = lambda self, path, factory=None: mailbox.mbox(path, factory)
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def test_file_perms(self):
         # From bug #3228, we want to verify that the mailbox file isn't executable,
         # even if the umask is set to something that would leave executable bits set.
@@ -1152,12 +1155,12 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
     def test_message_separator(self):
         # Check there's always a single blank line after each message
         self._box.add('From: foo\n\n0')  # No newline at the end
-        with open(self._path) as f:
+        with open(self._path, encoding='utf-8') as f:
             data = f.read()
             self.assertEqual(data[-3:], '0\n\n')
 
         self._box.add('From: foo\n\n0\n')  # Newline at the end
-        with open(self._path) as f:
+        with open(self._path, encoding='utf-8') as f:
             data = f.read()
             self.assertEqual(data[-3:], '0\n\n')
 
@@ -1307,15 +1310,15 @@ class TestBabyl(_TestSingleFile, unittest.TestCase):
     _factory = lambda self, path, factory=None: mailbox.Babyl(path, factory)
 
     def assertMailboxEmpty(self):
-        with open(self._path) as f:
+        with open(self._path, 'rb') as f:
             self.assertEqual(f.readlines(), [])
 
     def tearDown(self):
         super().tearDown()
         self._box.close()
         self._delete_recursively(self._path)
-        for lock_remnant in glob.glob(self._path + '.*'):
-            support.unlink(lock_remnant)
+        for lock_remnant in glob.glob(glob.escape(self._path) + '.*'):
+            os_helper.unlink(lock_remnant)
 
     def test_labels(self):
         # Get labels from the mailbox
@@ -1372,7 +1375,7 @@ class TestMessage(TestBase, unittest.TestCase):
     _factory = mailbox.Message      # Overridden by subclasses to reuse tests
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = os_helper.TESTFN
 
     def tearDown(self):
         self._delete_recursively(self._path)
@@ -1392,7 +1395,7 @@ class TestMessage(TestBase, unittest.TestCase):
 
     def test_initialize_with_file(self):
         # Initialize based on contents of file
-        with open(self._path, 'w+') as f:
+        with open(self._path, 'w+', encoding='utf-8') as f:
             f.write(_sample_message)
             f.seek(0)
             msg = self._factory(f)
@@ -1423,7 +1426,7 @@ class TestMessage(TestBase, unittest.TestCase):
         # Initialize with invalid argument
         self.assertRaises(TypeError, lambda: self._factory(object()))
 
-    def test_all_eMM_attribues_exist(self):
+    def test_all_eMM_attributes_exist(self):
         # Issue 12537
         eMM = email.message_from_string(_sample_message)
         msg = self._factory(_sample_message)
@@ -2022,7 +2025,7 @@ class TestProxyFileBase(TestBase):
 class TestProxyFile(TestProxyFileBase, unittest.TestCase):
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = os_helper.TESTFN
         self._file = open(self._path, 'wb+')
 
     def tearDown(self):
@@ -2071,7 +2074,7 @@ class TestProxyFile(TestProxyFileBase, unittest.TestCase):
 class TestPartialFile(TestProxyFileBase, unittest.TestCase):
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = os_helper.TESTFN
         self._file = open(self._path, 'wb+')
 
     def tearDown(self):
@@ -2134,11 +2137,11 @@ class MaildirTestCase(unittest.TestCase):
 
     def setUp(self):
         # create a new maildir mailbox to work with:
-        self._dir = support.TESTFN
+        self._dir = os_helper.TESTFN
         if os.path.isdir(self._dir):
-            support.rmtree(self._dir)
+            os_helper.rmtree(self._dir)
         elif os.path.isfile(self._dir):
-            support.unlink(self._dir)
+            os_helper.unlink(self._dir)
         os.mkdir(self._dir)
         os.mkdir(os.path.join(self._dir, "cur"))
         os.mkdir(os.path.join(self._dir, "tmp"))
@@ -2148,10 +2151,10 @@ class MaildirTestCase(unittest.TestCase):
 
     def tearDown(self):
         list(map(os.unlink, self._msgfiles))
-        support.rmdir(os.path.join(self._dir, "cur"))
-        support.rmdir(os.path.join(self._dir, "tmp"))
-        support.rmdir(os.path.join(self._dir, "new"))
-        support.rmdir(self._dir)
+        os_helper.rmdir(os.path.join(self._dir, "cur"))
+        os_helper.rmdir(os.path.join(self._dir, "tmp"))
+        os_helper.rmdir(os.path.join(self._dir, "new"))
+        os_helper.rmdir(self._dir)
 
     def createMessage(self, dir, mbox=False):
         t = int(time.time() % 1000000)
@@ -2160,7 +2163,7 @@ class MaildirTestCase(unittest.TestCase):
         filename = ".".join((str(t), str(pid), "myhostname", "mydomain"))
         tmpname = os.path.join(self._dir, "tmp", filename)
         newname = os.path.join(self._dir, dir, filename)
-        with open(tmpname, "w") as fp:
+        with open(tmpname, "w", encoding="utf-8") as fp:
             self._msgfiles.append(tmpname)
             if mbox:
                 fp.write(FROM_)
@@ -2177,7 +2180,7 @@ class MaildirTestCase(unittest.TestCase):
         """Test an empty maildir mailbox"""
         # Test for regression on bug #117490:
         # Make sure the boxes attribute actually gets set.
-        self.mbox = mailbox.Maildir(support.TESTFN)
+        self.mbox = mailbox.Maildir(os_helper.TESTFN)
         #self.assertTrue(hasattr(self.mbox, "boxes"))
         #self.assertEqual(len(self.mbox.boxes), 0)
         self.assertIsNone(self.mbox.next())
@@ -2185,7 +2188,7 @@ class MaildirTestCase(unittest.TestCase):
 
     def test_nonempty_maildir_cur(self):
         self.createMessage("cur")
-        self.mbox = mailbox.Maildir(support.TESTFN)
+        self.mbox = mailbox.Maildir(os_helper.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 1)
         self.assertIsNotNone(self.mbox.next())
         self.assertIsNone(self.mbox.next())
@@ -2193,7 +2196,7 @@ class MaildirTestCase(unittest.TestCase):
 
     def test_nonempty_maildir_new(self):
         self.createMessage("new")
-        self.mbox = mailbox.Maildir(support.TESTFN)
+        self.mbox = mailbox.Maildir(os_helper.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 1)
         self.assertIsNotNone(self.mbox.next())
         self.assertIsNone(self.mbox.next())
@@ -2202,7 +2205,7 @@ class MaildirTestCase(unittest.TestCase):
     def test_nonempty_maildir_both(self):
         self.createMessage("cur")
         self.createMessage("new")
-        self.mbox = mailbox.Maildir(support.TESTFN)
+        self.mbox = mailbox.Maildir(os_helper.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 2)
         self.assertIsNotNone(self.mbox.next())
         self.assertIsNotNone(self.mbox.next())
@@ -2298,19 +2301,13 @@ Gregory K. Johnson
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {"linesep", "fcntl"}
-        support.check__all__(self, mailbox, blacklist=blacklist)
+        support.check__all__(self, mailbox,
+                             not_exported={"linesep", "fcntl"})
 
 
-def test_main():
-    tests = (TestMailboxSuperclass, TestMaildir, TestMbox, TestMMDF, TestMH,
-             TestBabyl, TestMessage, TestMaildirMessage, TestMboxMessage,
-             TestMHMessage, TestBabylMessage, TestMMDFMessage,
-             TestMessageConversion, TestProxyFile, TestPartialFile,
-             MaildirTestCase, TestFakeMailBox, MiscTestCase)
-    support.run_unittest(*tests)
+def tearDownModule():
     support.reap_children()
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

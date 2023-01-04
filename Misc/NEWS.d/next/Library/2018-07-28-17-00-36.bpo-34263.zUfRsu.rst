@@ -1,2 +1,0 @@
-asyncio's event loop will not pass timeouts longer than one day to
-epoll/select etc.

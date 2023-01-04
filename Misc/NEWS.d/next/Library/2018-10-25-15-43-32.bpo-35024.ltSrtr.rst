@@ -1,3 +1,0 @@
-`importlib` no longer logs `wrote <bytecode path>` redundantly after
-`(created|could not create) <bytecode path>` is already logged.
-Patch by Quentin Agren.

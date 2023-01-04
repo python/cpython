@@ -1,0 +1,1 @@
+Simplify and optimize :func:`os.walk` by using :func:`isinstance` checks to check the top of the stack.

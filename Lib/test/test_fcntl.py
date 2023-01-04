@@ -5,14 +5,16 @@ import os
 import struct
 import sys
 import unittest
-from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
-                          cpython_only)
+from multiprocessing import Process
+from test.support import verbose, cpython_only
+from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, unlink
+
 
 # Skip test if no fcntl module.
 fcntl = import_module('fcntl')
 
 
-# TODO - Write tests for flock() and lockf().
 
 def get_lockdata():
     try:
@@ -34,7 +36,7 @@ def get_lockdata():
                                fcntl.F_WRLCK, 0)
     elif sys.platform.startswith('gnukfreebsd'):
         lockdata = struct.pack('qqihhi', 0, 0, 0, fcntl.F_WRLCK, 0, 0)
-    elif sys.platform in ['aix3', 'aix4', 'hp-uxB', 'unixware7']:
+    elif sys.platform in ['hp-uxB', 'unixware7']:
         lockdata = struct.pack('hhlllii', fcntl.F_WRLCK, 0, 0, 0, 0, 0, 0)
     else:
         lockdata = struct.pack('hh'+start_len+'hh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
@@ -50,6 +52,21 @@ class BadFile:
         self.fn = fn
     def fileno(self):
         return self.fn
+
+def try_lockf_on_other_process_fail(fname, cmd):
+    f = open(fname, 'wb+')
+    try:
+        fcntl.lockf(f, cmd)
+    except BlockingIOError:
+        pass
+    finally:
+        f.close()
+
+def try_lockf_on_other_process(fname, cmd):
+    f = open(fname, 'wb+')
+    fcntl.lockf(f, cmd)
+    fcntl.lockf(f, fcntl.LOCK_UN)
+    f.close()
 
 class TestFcntl(unittest.TestCase):
 
@@ -138,15 +155,60 @@ class TestFcntl(unittest.TestCase):
         self.assertRaises(ValueError, fcntl.flock, -1, fcntl.LOCK_SH)
         self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
 
+    @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+    def test_lockf_exclusive(self):
+        self.f = open(TESTFN, 'wb+')
+        cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
+        fcntl.lockf(self.f, cmd)
+        p = Process(target=try_lockf_on_other_process_fail, args=(TESTFN, cmd))
+        p.start()
+        p.join()
+        fcntl.lockf(self.f, fcntl.LOCK_UN)
+        self.assertEqual(p.exitcode, 0)
+
+    @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+    def test_lockf_share(self):
+        self.f = open(TESTFN, 'wb+')
+        cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
+        fcntl.lockf(self.f, cmd)
+        p = Process(target=try_lockf_on_other_process, args=(TESTFN, cmd))
+        p.start()
+        p.join()
+        fcntl.lockf(self.f, fcntl.LOCK_UN)
+        self.assertEqual(p.exitcode, 0)
+
     @cpython_only
     def test_flock_overflow(self):
         import _testcapi
         self.assertRaises(OverflowError, fcntl.flock, _testcapi.INT_MAX+1,
                           fcntl.LOCK_SH)
 
+    @unittest.skipIf(sys.platform != 'darwin', "F_GETPATH is only available on macos")
+    def test_fcntl_f_getpath(self):
+        self.f = open(TESTFN, 'wb')
+        expected = os.path.abspath(TESTFN).encode('utf-8')
+        res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(expected)))
+        self.assertEqual(expected, res)
 
-def test_main():
-    run_unittest(TestFcntl)
+    @unittest.skipUnless(
+        hasattr(fcntl, "F_SETPIPE_SZ") and hasattr(fcntl, "F_GETPIPE_SZ"),
+        "F_SETPIPE_SZ and F_GETPIPE_SZ are not available on all platforms.")
+    def test_fcntl_f_pipesize(self):
+        test_pipe_r, test_pipe_w = os.pipe()
+        try:
+            # Get the default pipesize with F_GETPIPE_SZ
+            pipesize_default = fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ)
+            pipesize = pipesize_default // 2  # A new value to detect change.
+            if pipesize < 512:  # the POSIX minimum
+                raise unittest.SkitTest(
+                    'default pipesize too small to perform test.')
+            fcntl.fcntl(test_pipe_w, fcntl.F_SETPIPE_SZ, pipesize)
+            self.assertEqual(fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ),
+                             pipesize)
+        finally:
+            os.close(test_pipe_r)
+            os.close(test_pipe_w)
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

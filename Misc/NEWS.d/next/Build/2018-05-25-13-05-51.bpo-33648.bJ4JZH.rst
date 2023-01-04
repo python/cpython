@@ -1,2 +1,0 @@
-The --with-c-locale-warning configuration flag has been removed. It has had
-no effect for about a year.

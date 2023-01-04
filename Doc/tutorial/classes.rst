@@ -114,17 +114,17 @@ accessible.  "Directly accessible" here means that an unqualified reference to a
 name attempts to find the name in the namespace.
 
 Although scopes are determined statically, they are used dynamically. At any
-time during execution, there are at least three nested scopes whose namespaces
-are directly accessible:
+time during execution, there are 3 or 4 nested scopes whose namespaces are
+directly accessible:
 
 * the innermost scope, which is searched first, contains the local names
 * the scopes of any enclosing functions, which are searched starting with the
-  nearest enclosing scope, contains non-local, but also non-global names
+  nearest enclosing scope, contain non-local, but also non-global names
 * the next-to-last scope contains the current module's global names
 * the outermost scope (searched last) is the namespace containing built-in names
 
 If a name is declared global, then all references and assignments go directly to
-the middle scope containing the module's global names.  To rebind variables
+the next-to-last scope containing the module's global names.  To rebind variables
 found outside of the innermost scope, the :keyword:`nonlocal` statement can be
 used; if not declared nonlocal, those variables are read-only (an attempt to
 write to such a variable will simply create a *new* local variable in the
@@ -143,10 +143,10 @@ language definition is evolving towards static name resolution, at "compile"
 time, so don't rely on dynamic name resolution!  (In fact, local variables are
 already determined statically.)
 
-A special quirk of Python is that -- if no :keyword:`global` statement is in
-effect -- assignments to names always go into the innermost scope.  Assignments
-do not copy data --- they just bind names to objects.  The same is true for
-deletions: the statement ``del x`` removes the binding of ``x`` from the
+A special quirk of Python is that -- if no :keyword:`global` or :keyword:`nonlocal`
+statement is in effect -- assignments to names always go into the innermost scope.
+Assignments do not copy data --- they just bind names to objects.  The same is true
+for deletions: the statement ``del x`` removes the binding of ``x`` from the
 namespace referenced by the local scope.  In fact, all operations that introduce
 new names use the local scope: in particular, :keyword:`import` statements and
 function definitions bind the module or function name in the local scope.
@@ -297,7 +297,7 @@ initial state. Therefore a class may define a special method named
        self.data = []
 
 When a class defines an :meth:`__init__` method, class instantiation
-automatically invokes :meth:`__init__` for the newly-created class instance.  So
+automatically invokes :meth:`__init__` for the newly created class instance.  So
 in this example, a new, initialized instance can be obtained by::
 
    x = MyClass()
@@ -323,7 +323,7 @@ Instance Objects
 
 Now what can we do with instance objects?  The only operations understood by
 instance objects are attribute references.  There are two kinds of valid
-attribute names, data attributes and methods.
+attribute names: data attributes and methods.
 
 *data attributes* correspond to "instance variables" in Smalltalk, and to "data
 members" in C++.  Data attributes need not be declared; like local variables,
@@ -475,12 +475,20 @@ Random Remarks
 
 .. These should perhaps be placed more carefully...
 
-Data attributes override method attributes with the same name; to avoid
-accidental name conflicts, which may cause hard-to-find bugs in large programs,
-it is wise to use some kind of convention that minimizes the chance of
-conflicts.  Possible conventions include capitalizing method names, prefixing
-data attribute names with a small unique string (perhaps just an underscore), or
-using verbs for methods and nouns for data attributes.
+If the same attribute name occurs in both an instance and in a class,
+then attribute lookup prioritizes the instance::
+
+    >>> class Warehouse:
+    ...    purpose = 'storage'
+    ...    region = 'west'
+    ...
+    >>> w1 = Warehouse()
+    >>> print(w1.purpose, w1.region)
+    storage west
+    >>> w2 = Warehouse()
+    >>> w2.region = 'east'
+    >>> print(w2.purpose, w2.region)
+    storage east
 
 Data attributes may be referenced by methods as well as by ordinary users
 ("clients") of an object.  In other words, classes are not usable to implement
@@ -573,7 +581,8 @@ this::
        .
        <statement-N>
 
-The name :class:`BaseClassName` must be defined in a scope containing the
+The name :class:`BaseClassName` must be defined in a
+namespace accessible from the scope containing the
 derived class definition.  In place of a base class name, other arbitrary
 expressions are also allowed.  This can be useful, for example, when the base
 class is defined in another module::
@@ -672,6 +681,9 @@ be treated as a non-public part of the API (whether it is a function, a method
 or a data member).  It should be considered an implementation detail and subject
 to change without notice.
 
+.. index::
+   pair: name; mangling
+
 Since there is a valid use-case for class-private members (namely to avoid name
 clashes of names with names defined by subclasses), there is limited support for
 such a mechanism, called :dfn:`name mangling`.  Any identifier of the form
@@ -726,18 +738,24 @@ Odds and Ends
 =============
 
 Sometimes it is useful to have a data type similar to the Pascal "record" or C
-"struct", bundling together a few named data items.  An empty class definition
-will do nicely::
+"struct", bundling together a few named data items. The idiomatic approach
+is to use :mod:`dataclasses` for this purpose::
 
-   class Employee:
-       pass
+    from dataclasses import dataclass
 
-   john = Employee()  # Create an empty employee record
+    @dataclass
+    class Employee:
+        name: str
+        dept: str
+        salary: int
 
-   # Fill the fields of the record
-   john.name = 'John Doe'
-   john.dept = 'computer lab'
-   john.salary = 1000
+::
+
+    >>> john = Employee('john', 'computer lab', 1000)
+    >>> john.dept
+    'computer lab'
+    >>> john.salary
+    1000
 
 A piece of Python code that expects a particular abstract data type can often be
 passed a class that emulates the methods of that data type instead.  For
@@ -780,13 +798,13 @@ calls :func:`iter` on the container object.  The function returns an iterator
 object that defines the method :meth:`~iterator.__next__` which accesses
 elements in the container one at a time.  When there are no more elements,
 :meth:`~iterator.__next__` raises a :exc:`StopIteration` exception which tells the
-:keyword:`for` loop to terminate.  You can call the :meth:`~iterator.__next__` method
+:keyword:`!for` loop to terminate.  You can call the :meth:`~iterator.__next__` method
 using the :func:`next` built-in function; this example shows how it all works::
 
    >>> s = 'abc'
    >>> it = iter(s)
    >>> it
-   <iterator object at 0x00A1DB50>
+   <str_iterator object at 0x10c90e650>
    >>> next(it)
    'a'
    >>> next(it)
@@ -838,7 +856,7 @@ defines :meth:`__next__`, then :meth:`__iter__` can just return ``self``::
 Generators
 ==========
 
-:term:`Generator`\s are a simple and powerful tool for creating iterators.  They
+:term:`Generators <generator>` are a simple and powerful tool for creating iterators.  They
 are written like regular functions but use the :keyword:`yield` statement
 whenever they want to return data.  Each time :func:`next` is called on it, the
 generator resumes where it left off (it remembers all the data values and which

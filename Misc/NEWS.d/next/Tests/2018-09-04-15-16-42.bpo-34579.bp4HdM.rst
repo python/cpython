@@ -1,2 +1,0 @@
-Fix test_embed for AIX
-Patch by Michael Felt

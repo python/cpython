@@ -5,8 +5,11 @@ effect on some MBCS Windows systems.
 https://bugs.python.org/issue32174
 """
 
+import pathlib
 import re
 from html.entities import codepoint2name
+
+from sphinx.util.logging import getLogger
 
 # escape the characters which codepoint > 0x7F
 def _process(string):
@@ -23,7 +26,7 @@ def _process(string):
 
 def escape_for_chm(app, pagename, templatename, context, doctree):
     # only works for .chm output
-    if not hasattr(app.builder, 'name') or app.builder.name != 'htmlhelp':
+    if getattr(app.builder, 'name', '') != 'htmlhelp':
         return
 
     # escape the `body` part to 7-bit ASCII
@@ -31,9 +34,25 @@ def escape_for_chm(app, pagename, templatename, context, doctree):
     if body is not None:
         context['body'] = _process(body)
 
+def fixup_keywords(app, exception):
+    # only works for .chm output
+    if getattr(app.builder, 'name', '') != 'htmlhelp' or exception:
+        return
+
+    getLogger(__name__).info('fixing HTML escapes in keywords file...')
+    outdir = pathlib.Path(app.builder.outdir)
+    outname = app.builder.config.htmlhelp_basename
+    with open(outdir / (outname + '.hhk'), 'rb') as f:
+        index = f.read()
+    with open(outdir / (outname + '.hhk'), 'wb') as f:
+        f.write(index.replace(b'&#x27;', b'&#39;'))
+
 def setup(app):
     # `html-page-context` event emitted when the HTML builder has
     # created a context dictionary to render a template with.
     app.connect('html-page-context', escape_for_chm)
+    # `build-finished` event emitted when all the files have been
+    # output.
+    app.connect('build-finished', fixup_keywords)
 
     return {'version': '1.0', 'parallel_read_safe': True}

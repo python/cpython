@@ -1,4 +1,0 @@
-Deprecated ``l*gettext()`` functions and methods in the :mod:`gettext`
-module. They return encoded bytes instead of Unicode strings and are
-artifacts from Python 2 times. Also deprecated functions and methods related
-to setting the charset for ``l*gettext()`` functions and methods.

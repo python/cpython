@@ -1,0 +1,1 @@
+Instantiation of ``Mock()`` and ``AsyncMock()`` is now 3.8x faster.

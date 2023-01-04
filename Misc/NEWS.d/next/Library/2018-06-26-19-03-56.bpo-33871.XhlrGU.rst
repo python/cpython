@@ -1,3 +1,0 @@
-Fixed integer overflow in :func:`os.readv`, :func:`os.writev`,
-:func:`os.preadv` and :func:`os.pwritev` and in :func:`os.sendfile` with
-*headers* or *trailers* arguments (on BSD-based OSes and macOS).

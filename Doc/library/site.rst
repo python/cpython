@@ -8,7 +8,7 @@
 
 --------------
 
-.. highlightlang:: none
+.. highlight:: none
 
 **This module is automatically imported during initialization.** The automatic
 import can be suppressed using the interpreter's :option:`-S` option.
@@ -32,7 +32,7 @@ It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python{X.Y}/site-packages` (on Unix and Macintosh).  For each
+:file:`lib/python{X.Y}/site-packages` (on Unix and macOS).  For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
 added path for configuration files.
@@ -45,9 +45,9 @@ sys.prefix and sys.exec_prefix are set to that directory and
 it is also checked for site-packages (sys.base_prefix and
 sys.base_exec_prefix will always be the "real" prefixes of the Python
 installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "false"
-(case-insensitive), the system-level prefixes will still also be
-searched for site-packages; otherwise they won't.
+the key "include-system-site-packages" set to anything other than "true"
+(case-insensitive), the system-level prefixes will not be
+searched for site-packages; otherwise they will.
 
 .. index::
    single: # (hash); comment
@@ -60,6 +60,19 @@ are never added to ``sys.path``, and no check is made that the item refers to a
 directory rather than a file.  No item is added to ``sys.path`` more than
 once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
 with ``import`` (followed by space or tab) are executed.
+
+.. note::
+
+   An executable line in a :file:`.pth` file is run at every Python startup,
+   regardless of whether a particular module is actually going to be used.
+   Its impact should thus be kept to a minimum.
+   The primary intended purpose of executable lines is to make the
+   corresponding module(s) importable
+   (load 3rd-party import hooks, adjust :envvar:`PATH` etc).
+   Any other initialization is supposed to be done upon a module's
+   actual import, if and when it happens.
+   Limiting a code chunk to a single line is a deliberate measure
+   to discourage putting anything more complex here.
 
 .. index::
    single: package
@@ -163,8 +176,8 @@ Module contents
 
    Path to the user site-packages for the running Python.  Can be ``None`` if
    :func:`getusersitepackages` hasn't been called yet.  Default value is
-   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework Mac
-   OS X builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for Mac
+   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework
+   macOS builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for macOS
    framework builds, and :file:`{%APPDATA%}\\Python\\Python{XY}\\site-packages`
    on Windows.  This directory is a site directory, which means that
    :file:`.pth` files in it will be processed.
@@ -174,8 +187,8 @@ Module contents
 
    Path to the base directory for the user site-packages.  Can be ``None`` if
    :func:`getuserbase` hasn't been called yet.  Default value is
-   :file:`~/.local` for UNIX and Mac OS X non-framework builds,
-   :file:`~/Library/Python/{X.Y}` for Mac framework builds, and
+   :file:`~/.local` for UNIX and macOS non-framework builds,
+   :file:`~/Library/Python/{X.Y}` for macOS framework builds, and
    :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Distutils to
    compute the installation directories for scripts, data files, Python modules,
    etc. for the :ref:`user installation scheme <inst-alt-install-user>`.
@@ -218,10 +231,19 @@ Module contents
 
    Return the path of the user-specific site-packages directory,
    :data:`USER_SITE`.  If it is not initialized yet, this function will also set
-   it, respecting :envvar:`PYTHONNOUSERSITE` and :data:`USER_BASE`.
+   it, respecting :data:`USER_BASE`.  To determine if the user-specific
+   site-packages was added to ``sys.path`` :data:`ENABLE_USER_SITE` should be
+   used.
 
    .. versionadded:: 3.2
 
+
+.. _site-commandline:
+
+Command Line Interface
+----------------------
+
+.. program:: site
 
 The :mod:`site` module also provides a way to get the user directories from the
 command line:
@@ -230,8 +252,6 @@ command line:
 
    $ python3 -m site --user-site
    /home/user/.local/lib/python3.3/site-packages
-
-.. program:: site
 
 If it is called without arguments, it will print the contents of
 :data:`sys.path` on the standard output, followed by the value of
@@ -256,4 +276,6 @@ value greater than 2 if there is an error.
 
 .. seealso::
 
-   :pep:`370` -- Per user site-packages directory
+   * :pep:`370` -- Per user site-packages directory
+   * :ref:`sys-path-init` -- The initialization of :data:`sys.path`.
+

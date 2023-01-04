@@ -4,7 +4,9 @@
 extern "C" {
 #endif
 
-#include "object.h"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
 
 struct _warnings_runtime_state {
     /* Both 'filters' and 'onceregistry' can be set in warnings.py;
@@ -14,6 +16,12 @@ struct _warnings_runtime_state {
     PyObject *default_action; /* String */
     long filters_version;
 };
+
+extern int _PyWarnings_InitState(PyInterpreterState *interp);
+
+PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
+
+extern void _PyErr_WarnUnawaitedCoroutine(PyObject *coro);
 
 #ifdef __cplusplus
 }

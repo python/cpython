@@ -1,2 +1,0 @@
-Fix possible mojibake in the error message of `pwd.getpwnam` and
-`grp.getgrnam`. Patch by William Grzybowski.

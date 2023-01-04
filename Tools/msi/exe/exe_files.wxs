@@ -3,7 +3,7 @@
     <Fragment>
         <ComponentGroup Id="exe_txt">
             <Component Id="LICENSE.txt" Directory="InstallDirectory" Guid="*">
-                <File Name="LICENSE.txt" Source="LICENSE" KeyPath="yes" />
+                <File Name="LICENSE.txt" Source="LICENSE.txt" KeyPath="yes" />
             </Component>
             <Component Id="NEWS.txt" Directory="InstallDirectory" Guid="*">
                 <File Name="NEWS.txt" KeyPath="yes" />
@@ -30,8 +30,13 @@
                 </RegistryKey>
             </Component>
             <Component Id="vcruntime140.dll" Directory="InstallDirectory" Guid="*">
-                <File Name="vcruntime140.dll" Source="!(bindpath.redist)vcruntime140.dll" KeyPath="yes" />
+                <File Name="vcruntime140.dll" Source="vcruntime140.dll" KeyPath="yes" />
             </Component>
+<?ifdef Include_Vcruntime140_1_dll ?>
+            <Component Id="vcruntime140_1.dll" Directory="InstallDirectory" Guid="*">
+                <File Name="vcruntime140_1.dll" Source="vcruntime140_1.dll" KeyPath="yes" />
+            </Component>
+<?endif ?>
         </ComponentGroup>
     </Fragment>
 

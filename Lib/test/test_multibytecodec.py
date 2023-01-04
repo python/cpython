@@ -3,10 +3,15 @@
 #   Unit test for multibytecodec itself
 #
 
-from test import support
-from test.support import TESTFN
-import unittest, io, codecs, sys
 import _multibytecodec
+import codecs
+import io
+import sys
+import textwrap
+import unittest
+from test import support
+from test.support import os_helper
+from test.support.os_helper import TESTFN
 
 ALL_CJKENCODINGS = [
 # _codecs_cn
@@ -57,7 +62,7 @@ class Test_MultibyteCodec(unittest.TestCase):
                 code = '# coding: {}\n'.format(enc)
                 exec(code)
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_init_segfault(self):
         # bug #3305: this used to segfault
@@ -204,6 +209,24 @@ class Test_IncrementalEncoder(unittest.TestCase):
         self.assertEqual(encoder.encode('\xff'), b'\\xff')
         self.assertEqual(encoder.encode('\n'), b'\n')
 
+    @support.cpython_only
+    def test_subinterp(self):
+        # bpo-42846: Test a CJK codec in a subinterpreter
+        import _testcapi
+        encoding = 'cp932'
+        text = "Python の開発は、1990 年ごろから開始されています。"
+        code = textwrap.dedent("""
+            import codecs
+            encoding = %r
+            text = %r
+            encoder = codecs.getincrementalencoder(encoding)()
+            text2 = encoder.encode(text).decode(encoding)
+            if text2 != text:
+                raise ValueError(f"encoding issue: {text2!a} != {text!a}")
+        """) % (encoding, text)
+        res = _testcapi.run_in_subinterp(code)
+        self.assertEqual(res, 0)
+
 class Test_IncrementalDecoder(unittest.TestCase):
 
     def test_dbcs(self):
@@ -271,6 +294,10 @@ class Test_IncrementalDecoder(unittest.TestCase):
         pending4, _ = decoder.getstate()
         self.assertEqual(pending4, b'')
 
+        # Ensure state values are preserved correctly
+        decoder.setstate((b'abc', 123456789))
+        self.assertEqual(decoder.getstate(), (b'abc', 123456789))
+
     def test_setstate_validates_input(self):
         decoder = codecs.getincrementaldecoder('euc_jp')()
         self.assertRaises(TypeError, decoder.setstate, 123)
@@ -292,7 +319,7 @@ class Test_StreamReader(unittest.TestCase):
             finally:
                 f.close()
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
 class Test_StreamWriter(unittest.TestCase):
     def test_gb18030(self):
@@ -376,8 +403,6 @@ class TestHZStateful(TestStateful):
     reset = b'~}'
     expected_reset = expected + reset
 
-def test_main():
-    support.run_unittest(__name__)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

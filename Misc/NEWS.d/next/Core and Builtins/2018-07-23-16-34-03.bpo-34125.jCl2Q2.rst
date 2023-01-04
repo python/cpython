@@ -1,1 +1,0 @@
-Profiling of unbound built-in methods now works when ``**kwargs`` is given.

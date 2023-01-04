@@ -1,2 +1,0 @@
-The Activate.ps1 script from venv works with PowerShell Core 6.1 and is now
-available under all operating systems.

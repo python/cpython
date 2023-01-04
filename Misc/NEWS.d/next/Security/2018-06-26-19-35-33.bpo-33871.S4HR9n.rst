@@ -1,3 +1,0 @@
-Fixed sending the part of the file in :func:`os.sendfile` on macOS.  Using
-the *trailers* argument could cause sending more bytes from the input file
-than was specified.
