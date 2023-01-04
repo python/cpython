@@ -175,22 +175,18 @@ static unsigned long
 get_len_of_range(long lo, long hi, long step);
 
 /// Return the length as a long, or -1 on error
-long compute_range_length_long(PyObject *start, PyObject *stop, PyObject *step) {
+long compute_range_length_long(PyLongObject *start, PyLongObject *stop, PyLongObject *step) {
     int overflow = 0;
-    long long_start = PyLong_AsLongAndOverflow(start, &overflow);
-    if (long_start==-1) {
-        // we have either an overflow or another type of error
-        if (overflow || PyErr_Occurred())
+    long long_start = _PyLong_AsLongAndOverflow(start, &overflow);
+    if (overflow) {
             return -1;
     }
-    long long_stop = PyLong_AsLongAndOverflow(stop, &overflow);
-    if (long_stop==-1) {
-        if (overflow || PyErr_Occurred())
+    long long_stop = _PyLong_AsLongAndOverflow(stop, &overflow);
+    if (overflow) {
             return -1;
     }
-    long long_step = PyLong_AsLongAndOverflow(step, &overflow);
-    if (long_step==-1) {
-        if (overflow || PyErr_Occurred())
+    long long_step = _PyLong_AsLongAndOverflow(step, &overflow);
+    if (overflow) {
             return -1;
     }
     return get_len_of_range(long_start, long_stop, long_step);
@@ -209,7 +205,7 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     ---------------------------------------------------------------*/
 
     // fast path when all arguments fit into a long integer
-    long len = compute_range_length_long(start, stop, step);
+    long len = compute_range_length_long((PyLongObject*)start, (PyLongObject*)stop, (PyLongObject*)step);
     if (len>=0) {
         return PyLong_FromLong(len);
     }

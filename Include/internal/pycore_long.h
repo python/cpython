@@ -129,6 +129,9 @@ _PyLong_IsPositiveSingleDigit(PyObject* sub) {
     return ((size_t)signed_size) <= 1;
 }
 
+long _PyLong_AsLongAndOverflow(const PyLongObject *v, int *overflow);
+
+
 #ifdef __cplusplus
 }
 #endif
