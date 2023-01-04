@@ -175,7 +175,7 @@ static unsigned long
 get_len_of_range(long lo, long hi, long step);
 
 /// Return the length as a long, or -1 on error
-long compute_range_length_long(PyLongObject *start, PyLongObject *stop, PyLongObject *step) {
+static inline long compute_range_length_long(PyLongObject *start, PyLongObject *stop, PyLongObject *step) {
     int overflow = 0;
 
     long long_start = _PyLong_AsLongAndOverflow(start, &overflow);
