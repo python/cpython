@@ -1962,6 +1962,49 @@ fail_post_args:
     return -1;
 }
 
+static void
+clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_THREAD);
+    // Make sure that this is, indeed, the top frame. We can't check this in
+    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
+    assert((PyObject **)frame + frame->f_code->co_framesize ==
+        tstate->datastack_top);
+    tstate->c_recursion_remaining--;
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    _PyFrame_ClearExceptCode(frame);
+    Py_DECREF(frame->f_code);
+    tstate->c_recursion_remaining++;
+    _PyThreadState_PopFrame(tstate, frame);
+}
+
+static void
+clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    PyGenObject *gen = _PyFrame_GetGenerator(frame);
+    gen->gi_frame_state = FRAME_CLEARED;
+    assert(tstate->exc_info == &gen->gi_exc_state);
+    tstate->exc_info = gen->gi_exc_state.previous_item;
+    gen->gi_exc_state.previous_item = NULL;
+    tstate->c_recursion_remaining--;
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    _PyFrame_ClearExceptCode(frame);
+    tstate->c_recursion_remaining++;
+    frame->previous = NULL;
+}
+
+static void
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    if (frame->owner == FRAME_OWNED_BY_THREAD) {
+        clear_thread_frame(tstate, frame);
+    }
+    else {
+        clear_gen_frame(tstate, frame);
+    }
+}
+
 /* Consumes references to func, locals and all the args */
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
@@ -1980,8 +2023,8 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
         localsarray[i] = NULL;
     }
     if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
-        assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
-        _PyEvalFrameClearAndPop(tstate, frame);
+        assert(frame->owner == FRAME_OWNED_BY_THREAD);
+        clear_thread_frame(tstate, frame);
         return NULL;
     }
     return frame;
@@ -1999,49 +2042,6 @@ fail:
     PyErr_NoMemory();
     return NULL;
 }
-
-static void
-clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
-{
-    assert(frame->owner == FRAME_OWNED_BY_THREAD);
-    // Make sure that this is, indeed, the top frame. We can't check this in
-    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
-    assert((PyObject **)frame + frame->f_code->co_framesize ==
-        tstate->datastack_top);
-    tstate->c_recursion_remaining--;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
-    _PyFrame_Clear(frame);
-    tstate->c_recursion_remaining++;
-    _PyThreadState_PopFrame(tstate, frame);
-}
-
-static void
-clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
-{
-    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
-    PyGenObject *gen = _PyFrame_GetGenerator(frame);
-    gen->gi_frame_state = FRAME_CLEARED;
-    assert(tstate->exc_info == &gen->gi_exc_state);
-    tstate->exc_info = gen->gi_exc_state.previous_item;
-    gen->gi_exc_state.previous_item = NULL;
-    tstate->c_recursion_remaining--;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
-    _PyFrame_Clear(frame);
-    tstate->c_recursion_remaining++;
-    frame->previous = NULL;
-}
-
-static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
-{
-    if (frame->owner == FRAME_OWNED_BY_THREAD) {
-        clear_thread_frame(tstate, frame);
-    }
-    else {
-        clear_gen_frame(tstate, frame);
-    }
-}
-
 
 PyObject *
 _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
