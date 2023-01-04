@@ -1,1 +1,0 @@
-fix `tkinter.EventType` Enum so all members are strings, and none are tuples

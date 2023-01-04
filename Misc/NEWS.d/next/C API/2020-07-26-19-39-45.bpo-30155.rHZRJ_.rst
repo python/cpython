@@ -1,3 +1,0 @@
-Add :c:func:`PyDateTime_DATE_GET_TZINFO` and
-:c:func:`PyDateTime_TIME_GET_TZINFO` macros for accessing the ``tzinfo``
-attributes of :class:`datetime.datetime` and :class:`datetime.time` objects.

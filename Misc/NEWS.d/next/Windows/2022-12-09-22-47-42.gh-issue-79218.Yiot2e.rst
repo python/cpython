@@ -1,0 +1,1 @@
+Define ``MS_WIN64`` for Mingw-w64 64bit, fix cython compilation failure.

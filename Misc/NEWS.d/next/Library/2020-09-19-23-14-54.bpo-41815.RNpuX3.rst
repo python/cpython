@@ -1,2 +1,0 @@
-Fix SQLite3 segfault when backing up closed database. Patch contributed by
-Peter David McCormick.

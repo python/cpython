@@ -1,2 +1,0 @@
-Port the :mod:`_sha1`, :mod:`_sha512`, and :mod:`_md5` extension modules
-to multi-phase initialization API (:pep:`489`).

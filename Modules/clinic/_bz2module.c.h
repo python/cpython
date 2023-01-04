@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_bz2_BZ2Compressor_compress__doc__,
 "compress($self, data, /)\n"
 "--\n"
@@ -65,23 +71,6 @@ _bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
     return _bz2_BZ2Compressor_flush_impl(self);
 }
 
-PyDoc_STRVAR(_bz2_BZ2Compressor___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n");
-
-#define _BZ2_BZ2COMPRESSOR___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_bz2_BZ2Compressor___reduce__, METH_NOARGS, _bz2_BZ2Compressor___reduce____doc__},
-
-static PyObject *
-_bz2_BZ2Compressor___reduce___impl(BZ2Compressor *self);
-
-static PyObject *
-_bz2_BZ2Compressor___reduce__(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
-{
-    return _bz2_BZ2Compressor___reduce___impl(self);
-}
-
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
@@ -102,7 +91,7 @@ PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)(void(*)(void))_bz2_BZ2Decompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
+    {"decompress", _PyCFunction_CAST(_bz2_BZ2Decompressor_decompress), METH_FASTCALL|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
 
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
@@ -112,8 +101,31 @@ static PyObject *
 _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(data), &_Py_ID(max_length), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"data", "max_length", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decompress",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
@@ -156,21 +168,4 @@ exit:
 
     return return_value;
 }
-
-PyDoc_STRVAR(_bz2_BZ2Decompressor___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n");
-
-#define _BZ2_BZ2DECOMPRESSOR___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_bz2_BZ2Decompressor___reduce__, METH_NOARGS, _bz2_BZ2Decompressor___reduce____doc__},
-
-static PyObject *
-_bz2_BZ2Decompressor___reduce___impl(BZ2Decompressor *self);
-
-static PyObject *
-_bz2_BZ2Decompressor___reduce__(BZ2Decompressor *self, PyObject *Py_UNUSED(ignored))
-{
-    return _bz2_BZ2Decompressor___reduce___impl(self);
-}
-/*[clinic end generated code: output=001f31fdacb4cb01 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=829bed4097cf2e63 input=a9049054013a1b77]*/

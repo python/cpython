@@ -14,6 +14,27 @@ from fractions import Fraction as F
 _PyHASH_MODULUS = sys.hash_info.modulus
 _PyHASH_INF = sys.hash_info.inf
 
+
+class DummyIntegral(int):
+    """Dummy Integral class to test conversion of the Rational to float."""
+
+    def __mul__(self, other):
+        return DummyIntegral(super().__mul__(other))
+    __rmul__ = __mul__
+
+    def __truediv__(self, other):
+        return NotImplemented
+    __rtruediv__ = __truediv__
+
+    @property
+    def numerator(self):
+        return DummyIntegral(self)
+
+    @property
+    def denominator(self):
+        return DummyIntegral(1)
+
+
 class HashTest(unittest.TestCase):
     def check_equal_hash(self, x, y):
         # check both that x and y are equal and that their hashes are equal
@@ -120,6 +141,13 @@ class HashTest(unittest.TestCase):
         self.assertEqual(hash(F(-1, 3*_PyHASH_MODULUS)), -_PyHASH_INF)
         self.assertEqual(hash(F(7*_PyHASH_MODULUS, 1)), 0)
         self.assertEqual(hash(F(-_PyHASH_MODULUS, 1)), 0)
+
+        # The numbers ABC doesn't enforce that the "true" division
+        # of integers produces a float.  This tests that the
+        # Rational.__float__() method has required type conversions.
+        x = F(DummyIntegral(1), DummyIntegral(2), _normalize=False)
+        self.assertRaises(TypeError, lambda: x.numerator/x.denominator)
+        self.assertEqual(float(x), 0.5)
 
     def test_hash_normalization(self):
         # Test for a bug encountered while changing long_hash.
