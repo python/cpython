@@ -92,7 +92,7 @@ static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
     f->stacktop++;
 }
 
-#define FRAME_SPECIALS_SIZE ((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *))
+#define FRAME_SPECIALS_SIZE ((int)((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *)))
 
 void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
 
