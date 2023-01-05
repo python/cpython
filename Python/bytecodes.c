@@ -764,7 +764,7 @@ dummy_func(
             ERROR_IF(w == NULL, error);
         }
 
-        inst(YIELD_VALUE, (retval -- unused)) {
+        inst(YIELD_VALUE, (retval --)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
