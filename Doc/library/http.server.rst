@@ -376,13 +376,16 @@ provides three different variants:
       :func:`os.listdir` to scan the directory, and returns a ``404`` error
       response if the :func:`~os.listdir` fails.
 
-      If the request was mapped to a file, it is opened. Any :exc:`OSError`
-      exception in opening the requested file is mapped to a ``404``,
-      ``'File not found'`` error. If there was a ``'If-Modified-Since'``
-      header in the request, and the file was not modified after this time,
-      a ``304``, ``'Not Modified'`` response is sent. Otherwise, the content
-      type is guessed by calling the :meth:`guess_type` method, which in turn
-      uses the *extensions_map* variable, and the file contents are returned.
+      If the request did not map to a directory, a file is assumed.  If the
+      file does not exist, and the file name has no extension, then default
+      extensions, if any, are tried.  After an appropriate file name is
+      selected, it is opened. Any :exc:`OSError` exception in opening the
+      requested file is mapped to a ``404``, ``'File not found'`` error. If
+      there was a ``'If-Modified-Since'`` header in the request, and the file
+      was not modified after this time, a ``304``, ``'Not Modified'`` response
+      is sent. Otherwise, the content type is guessed by calling the
+      :meth:`guess_type` method, which in turn uses the *extensions_map*
+      variable, and the file contents are returned.
 
       A ``'Content-type:'`` header with the guessed content type is output,
       followed by a ``'Content-Length:'`` header with the file's size and a
@@ -397,6 +400,9 @@ provides three different variants:
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
+
+      .. versionchanged:: 3.12
+         Support for default extensions added.
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
@@ -416,7 +422,8 @@ the current directory::
 
 :class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
 such as using different index file names by overriding the class attribute
-:attr:`index_pages`.
+:attr:`index_pages`, or locating files with default extensions by overriding
+the class attribute :attr:`default_extensions`.
 
 .. _http-server-cli:
 
@@ -461,6 +468,17 @@ following command runs an HTTP/1.1 conformant server::
 
 .. versionadded:: 3.11
     ``--protocol`` argument was introduced.
+
+By default, the server uses the exact url to locate file names.  The option
+``-e/--extension`` enables searching for ``.html``/``.htm`` files, or allows
+specifying other extensions::
+
+        python -m http.server --extension             # enables .html/.htm
+        pithon -m http.server --extension .pl .asp    # enables .pl/.asp
+
+.. versionadded:: 3.12
+    ``--ext`` argument was introduced.
+
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 

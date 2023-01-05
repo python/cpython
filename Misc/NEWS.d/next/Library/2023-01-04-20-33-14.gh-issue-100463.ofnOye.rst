@@ -1,0 +1,2 @@
+Add support for default extensions in
+``http.server.SimpleHTTPRequestHandler``.

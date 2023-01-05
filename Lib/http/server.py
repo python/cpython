@@ -654,6 +654,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "SimpleHTTP/" + __version__
     index_pages = ("index.html", "index.htm")
+    default_extensions = ()
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
         '.Z': 'application/octet-stream',
@@ -723,6 +724,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if path.endswith("/"):
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
+        # Special case for URLs with no extension.
+        if os.path.splitext(path)[1] == "" and not os.path.exists(path):
+            for extension in self.default_extensions:
+                if os.path.exists(path + extension):
+                    path += extension
+                    break
         try:
             f = open(path, 'rb')
         except OSError:
@@ -1246,7 +1253,7 @@ def _get_best_family(*address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=None):
+         protocol="HTTP/1.0", port=8000, bind=None, extensions=None):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1254,6 +1261,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
+    HandlerClass.default_extensions = extensions
     with ServerClass(addr, HandlerClass) as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
@@ -1284,10 +1292,19 @@ if __name__ == '__main__':
                         default='HTTP/1.0',
                         help='conform to this HTTP version '
                              '(default: %(default)s)')
+    parser.add_argument('-e', '--extension', default=None, nargs='*',
+                        help='extensions to try if none specified in url '
+                             '(default: none; default with -e alone: .html .htm)')
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
     args = parser.parse_args()
+    if args.extension is None:
+        ext = ()
+    elif args.extension == []:
+        ext = ('.html', '.htm')
+    else:
+        ext = tuple(args.extension)
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
     else:
@@ -1313,4 +1330,5 @@ if __name__ == '__main__':
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
+        extensions=ext,
     )
