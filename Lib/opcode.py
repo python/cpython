@@ -113,6 +113,7 @@ def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
 
 def_op('STOPITERATION_ERROR', 63)
+def_op('CALL_INTRINSIC_1', 64)
 
 def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)

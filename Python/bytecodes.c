@@ -12,6 +12,7 @@
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_function.h"
+#include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
@@ -552,6 +553,12 @@ dummy_func(
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
             Py_DECREF(res);
+        }
+
+        inst(CALL_INTRINSIC_1, (value -- res)) {
+            res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
+            Py_DECREF(value);
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: (__array[oparg] -- )

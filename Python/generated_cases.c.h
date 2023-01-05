@@ -703,6 +703,16 @@
             DISPATCH();
         }
 
+        TARGET(CALL_INTRINSIC_1) {
+            PyObject *value = PEEK(1);
+            PyObject *res;
+            res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
+            Py_DECREF(value);
+            if (res == NULL) goto pop_1_error;
+            POKE(1, res);
+            DISPATCH();
+        }
+
         TARGET(RAISE_VARARGS) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {

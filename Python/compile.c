@@ -1249,7 +1249,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case CALL:
             return -1-oparg;
-
+        case CALL_INTRINSIC_1:
+            return 0;
         case CALL_FUNCTION_EX:
             return -2 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
