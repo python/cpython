@@ -1354,8 +1354,8 @@ dummy_func(
             PyCodeObject *co = frame->f_code;
             assert(PyFunction_Check(frame->f_funcobj));
             PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
-            int offset = co->co_nlocals + co->co_nplaincellvars;
             assert(oparg == co->co_nfreevars);
+            int offset = co->co_nlocalsplus - oparg;
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
                 frame->localsplus[offset + i] = Py_NewRef(o);
@@ -2597,33 +2597,6 @@ dummy_func(
         }
 
         // error: LOAD_ATTR has irregular stack effect
-        inst(LOAD_ATTR_METHOD_WITH_DICT) {
-            /* Can be either a managed dict, or a tp_dictoffset offset.*/
-            assert(cframe.use_tracing == 0);
-            PyObject *self = TOP();
-            PyTypeObject *self_cls = Py_TYPE(self);
-            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
-
-            DEOPT_IF(self_cls->tp_version_tag != read_u32(cache->type_version),
-                     LOAD_ATTR);
-            /* Treat index as a signed 16 bit value */
-            Py_ssize_t dictoffset = self_cls->tp_dictoffset;
-            assert(dictoffset > 0);
-            PyDictObject **dictptr = (PyDictObject**)(((char *)self)+dictoffset);
-            PyDictObject *dict = *dictptr;
-            DEOPT_IF(dict == NULL, LOAD_ATTR);
-            DEOPT_IF(dict->ma_keys->dk_version != read_u32(cache->keys_version),
-                     LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, hit);
-            PyObject *res = read_obj(cache->descr);
-            assert(res != NULL);
-            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            SET_TOP(Py_NewRef(res));
-            PUSH(self);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-        }
-
-        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_NO_DICT) {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -3502,7 +3475,7 @@ family(load_attr) = {
     LOAD_ATTR, LOAD_ATTR_CLASS,
     LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_MODULE,
     LOAD_ATTR_PROPERTY, LOAD_ATTR_SLOT, LOAD_ATTR_WITH_HINT,
-    LOAD_ATTR_METHOD_LAZY_DICT, LOAD_ATTR_METHOD_NO_DICT, LOAD_ATTR_METHOD_WITH_DICT,
+    LOAD_ATTR_METHOD_LAZY_DICT, LOAD_ATTR_METHOD_NO_DICT,
     LOAD_ATTR_METHOD_WITH_VALUES };
 family(load_global) = {
     LOAD_GLOBAL, LOAD_GLOBAL_BUILTIN,

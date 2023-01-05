@@ -131,9 +131,9 @@
          (opcode) == STORE_FAST__LOAD_FAST || \
          (opcode) == STORE_FAST__STORE_FAST)
 
-#define IS_TOP_LEVEL_AWAIT(c) ( \
-        (c->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
-        && (c->u->u_ste->ste_type == ModuleBlock))
+#define IS_TOP_LEVEL_AWAIT(C) ( \
+        ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
+        && ((C)->u->u_ste->ste_type == ModuleBlock))
 
 typedef _PyCompilerSrcLocation location;
 
@@ -479,7 +479,7 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-#define CFG_BUILDER(c) (&((c)->u->u_cfg_builder))
+#define CFG_BUILDER(C) (&((C)->u->u_cfg_builder))
 
 
 typedef struct {
@@ -1626,7 +1626,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
-        compiler_exit_scope(c); \
+        compiler_exit_scope(C); \
         return -1; \
     } \
 }
@@ -1692,7 +1692,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define VISIT_IN_SCOPE(C, TYPE, V) {\
     if (compiler_visit_ ## TYPE((C), (V)) < 0) { \
-        compiler_exit_scope(c); \
+        compiler_exit_scope(C); \
         return ERROR; \
     } \
 }
@@ -1713,7 +1713,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
         if (compiler_visit_ ## TYPE((C), elt) < 0) { \
-            compiler_exit_scope(c); \
+            compiler_exit_scope(C); \
             return ERROR; \
         } \
     } \
@@ -2260,7 +2260,7 @@ compiler_make_closure(struct compiler *c, location loc,
         qualname = co->co_name;
 
     if (co->co_nfreevars) {
-        int i = co->co_nlocals + co->co_nplaincellvars;
+        int i = PyCode_GetFirstFree(co);
         for (; i < co->co_nlocalsplus; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
