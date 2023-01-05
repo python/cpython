@@ -2826,7 +2826,7 @@ For example, the hypotenuse of a 3/4/5 right triangle is:\n\
 static inline int _check_long_mult_overflow(long a, long b);
 
 static inline bool
-long_add_will_overflow(long a, long b)
+long_add_would_overflow(long a, long b)
 {
     return (a > 0) ? (b > LONG_MAX - a) : (b < LONG_MIN - a);
 }
@@ -2846,7 +2846,7 @@ based on ideas from three sources:
   https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
 
 dl_split() exactly splits a double into two half precision components.
-dl_neumaier() performs compensated summation to keep a running total.
+dl_add() performs compensated summation to keep a running total.
 dl_fma() implements an extended precision fused-multiply-add.
 
  */
@@ -2864,7 +2864,7 @@ dl_split(double x) {
 }
 
 static inline DoubleLength
-dl_neumaier(DoubleLength total, double x)
+dl_add(DoubleLength total, double x)
 {
     double t = total.hi + x;
     if (fabs(total.hi) >= fabs(x)) {
@@ -2881,10 +2881,10 @@ dl_fma(DoubleLength total, double p, double q)
 {
     DoubleLength pp = dl_split(p);
     DoubleLength qq = dl_split(q);
-    total = dl_neumaier(total, pp.hi * qq.hi);
-    total = dl_neumaier(total, pp.hi * qq.lo);
-    total = dl_neumaier(total, pp.lo * qq.hi);
-    return  dl_neumaier(total, pp.lo * qq.lo);
+    total = dl_add(total, pp.hi * qq.hi);
+    total = dl_add(total, pp.hi * qq.lo);
+    total = dl_add(total, pp.lo * qq.hi);
+    return  dl_add(total, pp.lo * qq.lo);
 }
 
 /*[clinic input]
@@ -2981,7 +2981,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                     goto finalize_int_path;
                 }
                 int_prod = int_p * int_q;
-                if (long_add_will_overflow(int_total, int_prod)) {
+                if (long_add_would_overflow(int_total, int_prod)) {
                     goto finalize_int_path;
                 }
                 int_total += int_prod;
@@ -3021,6 +3021,10 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                     flt_p = PyFloat_AS_DOUBLE(p_i);
                     flt_q = PyFloat_AS_DOUBLE(q_i);
                 } else if (p_type_float && PyLong_CheckExact(q_i)) {
+                    /* We care about float/int pairs and int/float pairs because
+                       they arise naturally in several use cases such as price
+                       vs quantity, data multiplied by integer weights, or data
+                       selected by a vector of bools. */
                     flt_p = PyFloat_AS_DOUBLE(p_i);
                     flt_q = PyLong_AsDouble(q_i);
                     if (flt_q == -1.0 && PyErr_Occurred()) {
@@ -3031,6 +3035,20 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                     flt_q = PyFloat_AS_DOUBLE(q_i);
                     flt_p = PyLong_AsDouble(p_i);
                     if (flt_p == -1.0 && PyErr_Occurred()) {
+                        PyErr_Clear();
+                        goto finalize_flt_path;
+                    }
+                } else if (flt_total_in_use && PyLong_CheckExact(p_i) && PyLong_CheckExact(q_i)) {
+                    /* This path makes sure that we don't throw-away a double
+                       length float accumulation if a subsequent int/int pair is
+                       encountered. */
+                    flt_p = PyLong_AsDouble(p_i);
+                    if (flt_p == -1.0 && PyErr_Occurred()) {
+                        PyErr_Clear();
+                        goto finalize_flt_path;
+                    }
+                    flt_q = PyLong_AsDouble(q_i);
+                    if (flt_q == -1.0 && PyErr_Occurred()) {
                         PyErr_Clear();
                         goto finalize_flt_path;
                     }
