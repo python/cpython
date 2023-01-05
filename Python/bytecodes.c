@@ -2015,27 +2015,6 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(IMPORT_STAR, (from --)) {
-            PyObject *locals;
-            int err;
-            if (_PyFrame_FastToLocalsWithError(frame) < 0) {
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-
-            locals = LOCALS();
-            if (locals == NULL) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "no locals found during 'import *'");
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-            err = import_all_from(tstate, locals, from);
-            _PyFrame_LocalsToFast(frame, 0);
-            DECREF_INPUTS();
-            ERROR_IF(err, error);
-        }
-
         inst(IMPORT_FROM, (from -- from, res)) {
             PyObject *name = GETITEM(names, oparg);
             res = import_from(tstate, from, name);

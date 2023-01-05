@@ -1119,8 +1119,6 @@ stack_effect(int opcode, int oparg, int jump)
 
         case RETURN_VALUE:
             return -1;
-        case IMPORT_STAR:
-            return -1;
         case SETUP_ANNOTATIONS:
             return 0;
         case ASYNC_GEN_WRAP:
@@ -3949,7 +3947,8 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
         if (i == 0 && PyUnicode_READ_CHAR(alias->name, 0) == '*') {
             assert(n == 1);
-            ADDOP(c, LOC(s), IMPORT_STAR);
+            ADDOP_I(c, LOC(s), CALL_INTRINSIC_1, INTRINSIC_IMPORT_STAR);
+            ADDOP(c, NO_LOCATION, POP_TOP);
             return SUCCESS;
         }
 

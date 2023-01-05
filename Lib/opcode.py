@@ -122,7 +122,7 @@ def_op('RETURN_GENERATOR', 75)
 
 def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
-def_op('IMPORT_STAR', 84)
+
 def_op('SETUP_ANNOTATIONS', 85)
 
 def_op('ASYNC_GEN_WRAP', 87)

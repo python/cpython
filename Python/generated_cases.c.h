@@ -2350,30 +2350,6 @@
             DISPATCH();
         }
 
-        TARGET(IMPORT_STAR) {
-            PyObject *from = PEEK(1);
-            PyObject *locals;
-            int err;
-            if (_PyFrame_FastToLocalsWithError(frame) < 0) {
-                Py_DECREF(from);
-                if (true) goto pop_1_error;
-            }
-
-            locals = LOCALS();
-            if (locals == NULL) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "no locals found during 'import *'");
-                Py_DECREF(from);
-                if (true) goto pop_1_error;
-            }
-            err = import_all_from(tstate, locals, from);
-            _PyFrame_LocalsToFast(frame, 0);
-            Py_DECREF(from);
-            if (err) goto pop_1_error;
-            STACK_SHRINK(1);
-            DISPATCH();
-        }
-
         TARGET(IMPORT_FROM) {
             PyObject *from = PEEK(1);
             PyObject *res;

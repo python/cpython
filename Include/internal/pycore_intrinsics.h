@@ -4,7 +4,7 @@ typedef PyObject *(*instrinsic_func1)(PyThreadState* tstate, PyObject *value);
 
 
 #define INTRINSIC_PRINT 1
-#define INRINSIC_IMPORT_STAR 2
+#define INTRINSIC_IMPORT_STAR 2
 #define INTRINSIC_STOPITERATION_ERROR 3
 
 extern instrinsic_func1

@@ -44,7 +44,6 @@ extern "C" {
 #define RETURN_GENERATOR                        75
 #define LIST_TO_TUPLE                           82
 #define RETURN_VALUE                            83
-#define IMPORT_STAR                             84
 #define SETUP_ANNOTATIONS                       85
 #define ASYNC_GEN_WRAP                          87
 #define PREP_RERAISE_STAR                       88
@@ -176,20 +175,20 @@ extern "C" {
 #define LOAD_ATTR_METHOD_WITH_DICT              79
 #define LOAD_ATTR_METHOD_WITH_VALUES            80
 #define LOAD_CONST__LOAD_FAST                   81
-#define LOAD_FAST__LOAD_CONST                   86
-#define LOAD_FAST__LOAD_FAST                   113
-#define LOAD_GLOBAL_BUILTIN                    121
-#define LOAD_GLOBAL_MODULE                     141
-#define STORE_ATTR_INSTANCE_VALUE              143
-#define STORE_ATTR_SLOT                        153
-#define STORE_ATTR_WITH_HINT                   154
-#define STORE_FAST__LOAD_FAST                  158
-#define STORE_FAST__STORE_FAST                 159
-#define STORE_SUBSCR_DICT                      160
-#define STORE_SUBSCR_LIST_INT                  161
-#define UNPACK_SEQUENCE_LIST                   166
-#define UNPACK_SEQUENCE_TUPLE                  167
-#define UNPACK_SEQUENCE_TWO_TUPLE              168
+#define LOAD_FAST__LOAD_CONST                   84
+#define LOAD_FAST__LOAD_FAST                    86
+#define LOAD_GLOBAL_BUILTIN                    113
+#define LOAD_GLOBAL_MODULE                     121
+#define STORE_ATTR_INSTANCE_VALUE              141
+#define STORE_ATTR_SLOT                        143
+#define STORE_ATTR_WITH_HINT                   153
+#define STORE_FAST__LOAD_FAST                  154
+#define STORE_FAST__STORE_FAST                 158
+#define STORE_SUBSCR_DICT                      159
+#define STORE_SUBSCR_LIST_INT                  160
+#define UNPACK_SEQUENCE_LIST                   161
+#define UNPACK_SEQUENCE_TUPLE                  166
+#define UNPACK_SEQUENCE_TWO_TUPLE              167
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
