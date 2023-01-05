@@ -105,7 +105,7 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
             err = PyObject_SetItem(locals, name, value);
         Py_DECREF(name);
         Py_XDECREF(value);
-        if (err != 0)
+        if (err < 0)
             break;
     }
     Py_DECREF(all);
@@ -128,7 +128,7 @@ import_star(PyThreadState* tstate, PyObject *from)
     }
     int err = import_all_from(tstate, locals, from);
     _PyFrame_LocalsToFast(frame, 0);
-    if (err) {
+    if (err < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
