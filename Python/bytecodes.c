@@ -12,6 +12,7 @@
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_function.h"
+#include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
@@ -538,20 +539,11 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        inst(PRINT_EXPR, (value --)) {
-            PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
-            PyObject *res;
-            // Can't use ERROR_IF here.
-            if (hook == NULL) {
-                _PyErr_SetString(tstate, PyExc_RuntimeError,
-                                 "lost sys.displayhook");
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-            res = PyObject_CallOneArg(hook, value);
-            DECREF_INPUTS();
+        inst(CALL_INTRINSIC_1, (value -- res)) {
+            assert(oparg <= MAX_INTRINSIC_1);
+            res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
+            Py_DECREF(value);
             ERROR_IF(res == NULL, error);
-            Py_DECREF(res);
         }
 
         // stack effect: (__array[oparg] -- )
@@ -864,47 +856,6 @@ dummy_func(
                 PyObject *exc_traceback = PyException_GetTraceback(exc_value);
                 _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
                 goto exception_unwind;
-            }
-        }
-
-        inst(STOPITERATION_ERROR) {
-            assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
-            PyObject *exc = TOP();
-            assert(PyExceptionInstance_Check(exc));
-            const char *msg = NULL;
-            if (PyErr_GivenExceptionMatches(exc, PyExc_StopIteration)) {
-                msg = "generator raised StopIteration";
-                if (frame->f_code->co_flags & CO_ASYNC_GENERATOR) {
-                    msg = "async generator raised StopIteration";
-                }
-                else if (frame->f_code->co_flags & CO_COROUTINE) {
-                    msg = "coroutine raised StopIteration";
-                }
-            }
-            else if ((frame->f_code->co_flags & CO_ASYNC_GENERATOR) &&
-                    PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration))
-            {
-                /* code in `gen` raised a StopAsyncIteration error:
-                raise a RuntimeError.
-                */
-                msg = "async generator raised StopAsyncIteration";
-            }
-            if (msg != NULL) {
-                PyObject *message = _PyUnicode_FromASCII(msg, strlen(msg));
-                if (message == NULL) {
-                    goto error;
-                }
-                PyObject *error = PyObject_CallOneArg(PyExc_RuntimeError, message);
-                if (error == NULL) {
-                    Py_DECREF(message);
-                    goto error;
-                }
-                assert(PyExceptionInstance_Check(error));
-                SET_TOP(error);
-                PyException_SetCause(error, Py_NewRef(exc));
-                // Steal exc reference, rather than Py_NewRef+Py_DECREF
-                PyException_SetContext(error, exc);
-                Py_DECREF(message);
             }
         }
 
@@ -2063,27 +2014,6 @@ dummy_func(
             res = import_name(tstate, frame, name, fromlist, level);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
-        }
-
-        inst(IMPORT_STAR, (from --)) {
-            PyObject *locals;
-            int err;
-            if (_PyFrame_FastToLocalsWithError(frame) < 0) {
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-
-            locals = LOCALS();
-            if (locals == NULL) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "no locals found during 'import *'");
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-            err = import_all_from(tstate, locals, from);
-            _PyFrame_LocalsToFast(frame, 0);
-            DECREF_INPUTS();
-            ERROR_IF(err, error);
         }
 
         inst(IMPORT_FROM, (from -- from, res)) {
