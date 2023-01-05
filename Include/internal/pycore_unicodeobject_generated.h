@@ -344,6 +344,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_abstract_);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_active);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_annotation);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_anonymous_);
@@ -383,6 +385,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(_is_text_encoding);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_length_);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_limbo);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_lock_unlock_module);
     PyUnicode_InternInPlace(&string);
