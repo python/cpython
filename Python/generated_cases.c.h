@@ -1575,8 +1575,8 @@
             PyCodeObject *co = frame->f_code;
             assert(PyFunction_Check(frame->f_funcobj));
             PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
-            int offset = co->co_nlocals + co->co_nplaincellvars;
             assert(oparg == co->co_nfreevars);
+            int offset = co->co_nlocalsplus - oparg;
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
                 frame->localsplus[offset + i] = Py_NewRef(o);
@@ -1608,13 +1608,10 @@
         }
 
         TARGET(BUILD_LIST) {
-            PyObject *list =  PyList_New(oparg);
+            STACK_SHRINK(oparg);
+            PyObject *list = _PyList_FromArraySteal(stack_pointer, oparg);
             if (list == NULL)
                 goto error;
-            while (--oparg >= 0) {
-                PyObject *item = POP();
-                PyList_SET_ITEM(list, oparg, item);
-            }
             PUSH(list);
             DISPATCH();
         }

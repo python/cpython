@@ -3417,7 +3417,7 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     if (_PyErr_Occurred(tstate))
         return;
     name = PyTuple_GET_ITEM(co->co_localsplusnames, oparg);
-    if (oparg < co->co_nplaincellvars + co->co_nlocals) {
+    if (oparg < PyCode_GetFirstFree(co)) {
         format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                              UNBOUNDLOCAL_ERROR_MSG, name);
     } else {

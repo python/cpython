@@ -652,7 +652,7 @@ class NonCallableMock(Base):
                 raise AttributeError("Mock object has no attribute %r" % name)
         elif _is_magic(name):
             raise AttributeError(name)
-        if not self._mock_unsafe:
+        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
             if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in ATTRIB_DENY_LIST:
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
@@ -1062,7 +1062,7 @@ class NonCallableMock(Base):
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 
 
-# gh-100690 Denylist for forbidden method names in safe mode
+# gh-100690 Denylist for forbidden attribute names in safe mode
 ATTRIB_DENY_LIST = {name.removeprefix("assert_") for name in dir(NonCallableMock) if name.startswith("assert_")}
 
 
