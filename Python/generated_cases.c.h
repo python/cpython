@@ -684,25 +684,6 @@
             DISPATCH();
         }
 
-        TARGET(PRINT_EXPR) {
-            PyObject *value = PEEK(1);
-            PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
-            PyObject *res;
-            // Can't use ERROR_IF here.
-            if (hook == NULL) {
-                _PyErr_SetString(tstate, PyExc_RuntimeError,
-                                 "lost sys.displayhook");
-                Py_DECREF(value);
-                if (true) goto pop_1_error;
-            }
-            res = PyObject_CallOneArg(hook, value);
-            Py_DECREF(value);
-            if (res == NULL) goto pop_1_error;
-            Py_DECREF(res);
-            STACK_SHRINK(1);
-            DISPATCH();
-        }
-
         TARGET(CALL_INTRINSIC_1) {
             PyObject *value = PEEK(1);
             PyObject *res;

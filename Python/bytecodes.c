@@ -539,22 +539,6 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        inst(PRINT_EXPR, (value --)) {
-            PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
-            PyObject *res;
-            // Can't use ERROR_IF here.
-            if (hook == NULL) {
-                _PyErr_SetString(tstate, PyExc_RuntimeError,
-                                 "lost sys.displayhook");
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-            res = PyObject_CallOneArg(hook, value);
-            DECREF_INPUTS();
-            ERROR_IF(res == NULL, error);
-            Py_DECREF(res);
-        }
-
         inst(CALL_INTRINSIC_1, (value -- res)) {
             res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
             Py_DECREF(value);
