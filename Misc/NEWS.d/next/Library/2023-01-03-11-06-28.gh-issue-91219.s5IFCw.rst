@@ -1,0 +1,2 @@
+Change ``SimpleHTTPRequestHandler`` to support subclassing to provide a
+different set of index file names instead of using ``__init__`` parameters.

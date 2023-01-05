@@ -1567,12 +1567,16 @@ If you ever encounter a presumed highly unusual situation where you need to
 prevent ``vfork()`` from being used by Python, you can set the
 :attr:`subprocess._USE_VFORK` attribute to a false value.
 
+::
+
    subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
 
 Setting this has no impact on use of ``posix_spawn()`` which could use
 ``vfork()`` internally within its libc implementation.  There is a similar
 :attr:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
 that.
+
+::
 
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
 

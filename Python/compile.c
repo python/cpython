@@ -30,10 +30,13 @@
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"       // _PyFuture_FromAST()
+#include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject
+
+#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata
 
 
 #define DEFAULT_BLOCK_SIZE 16
@@ -131,9 +134,9 @@
          (opcode) == STORE_FAST__LOAD_FAST || \
          (opcode) == STORE_FAST__STORE_FAST)
 
-#define IS_TOP_LEVEL_AWAIT(c) ( \
-        (c->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
-        && (c->u->u_ste->ste_type == ModuleBlock))
+#define IS_TOP_LEVEL_AWAIT(C) ( \
+        ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
+        && ((C)->u->u_ste->ste_type == ModuleBlock))
 
 typedef _PyCompilerSrcLocation location;
 
@@ -148,6 +151,15 @@ location_is_after(location loc1, location loc2) {
     return (loc1.lineno > loc2.end_lineno) ||
             ((loc1.lineno == loc2.end_lineno) &&
              (loc1.col_offset > loc2.end_col_offset));
+}
+
+static inline bool
+same_location(location a, location b)
+{
+    return a.lineno == b.lineno &&
+           a.end_lineno == b.end_lineno &&
+           a.col_offset == b.col_offset &&
+           a.end_col_offset == b.end_col_offset;
 }
 
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
@@ -470,7 +482,7 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-#define CFG_BUILDER(c) (&((c)->u->u_cfg_builder))
+#define CFG_BUILDER(C) (&((C)->u->u_cfg_builder))
 
 
 typedef struct {
@@ -1104,14 +1116,10 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_ITER:
             return 0;
 
-        case PRINT_EXPR:
-            return -1;
         case LOAD_BUILD_CLASS:
             return 1;
 
         case RETURN_VALUE:
-            return -1;
-        case IMPORT_STAR:
             return -1;
         case SETUP_ANNOTATIONS:
             return 0;
@@ -1207,10 +1215,6 @@ stack_effect(int opcode, int oparg, int jump)
              * of __(a)enter__ and push 2 values before jumping to the handler
              * if an exception be raised. */
             return jump ? 1 : 0;
-
-        case STOPITERATION_ERROR:
-            return 0;
-
         case PREP_RERAISE_STAR:
              return -1;
         case RERAISE:
@@ -1240,7 +1244,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case CALL:
             return -1-oparg;
-
+        case CALL_INTRINSIC_1:
+            return 0;
         case CALL_FUNCTION_EX:
             return -2 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
@@ -1617,7 +1622,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
-        compiler_exit_scope(c); \
+        compiler_exit_scope(C); \
         return -1; \
     } \
 }
@@ -1683,7 +1688,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define VISIT_IN_SCOPE(C, TYPE, V) {\
     if (compiler_visit_ ## TYPE((C), (V)) < 0) { \
-        compiler_exit_scope(c); \
+        compiler_exit_scope(C); \
         return ERROR; \
     } \
 }
@@ -1704,7 +1709,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
         if (compiler_visit_ ## TYPE((C), elt) < 0) { \
-            compiler_exit_scope(c); \
+            compiler_exit_scope(C); \
             return ERROR; \
         } \
     } \
@@ -2251,7 +2256,7 @@ compiler_make_closure(struct compiler *c, location loc,
         qualname = co->co_name;
 
     if (co->co_nfreevars) {
-        int i = co->co_nlocals + co->co_nplaincellvars;
+        int i = PyCode_GetFirstFree(co);
         for (; i < co->co_nlocalsplus; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
@@ -2595,7 +2600,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
     ADDOP(c, NO_LOCATION, RETURN_VALUE);
     USE_LABEL(c, handler);
-    ADDOP(c, NO_LOCATION, STOPITERATION_ERROR);
+    ADDOP_I(c, NO_LOCATION, CALL_INTRINSIC_1, INTRINSIC_STOPITERATION_ERROR);
     ADDOP_I(c, NO_LOCATION, RERAISE, 1);
     return SUCCESS;
 }
@@ -3944,7 +3949,8 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
         if (i == 0 && PyUnicode_READ_CHAR(alias->name, 0) == '*') {
             assert(n == 1);
-            ADDOP(c, LOC(s), IMPORT_STAR);
+            ADDOP_I(c, LOC(s), CALL_INTRINSIC_1, INTRINSIC_IMPORT_STAR);
+            ADDOP(c, NO_LOCATION, POP_TOP);
             return SUCCESS;
         }
 
@@ -3996,7 +4002,8 @@ compiler_stmt_expr(struct compiler *c, location loc, expr_ty value)
 {
     if (c->c_interactive && c->c_nestlevel <= 1) {
         VISIT(c, expr, value);
-        ADDOP(c, loc, PRINT_EXPR);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PRINT);
+        ADDOP(c, NO_LOCATION, POP_TOP);
         return SUCCESS;
     }
 
@@ -7722,15 +7729,15 @@ write_location_info_oneline_form(struct assembler* a, int length, int line_delta
 }
 
 static void
-write_location_info_long_form(struct assembler* a, struct instr* i, int length)
+write_location_info_long_form(struct assembler* a, location loc, int length)
 {
     assert(length > 0 &&  length <= 8);
     write_location_first_byte(a, PY_CODE_LOCATION_INFO_LONG, length);
-    write_location_signed_varint(a, i->i_loc.lineno - a->a_lineno);
-    assert(i->i_loc.end_lineno >= i->i_loc.lineno);
-    write_location_varint(a, i->i_loc.end_lineno - i->i_loc.lineno);
-    write_location_varint(a, i->i_loc.col_offset + 1);
-    write_location_varint(a, i->i_loc.end_col_offset + 1);
+    write_location_signed_varint(a, loc.lineno - a->a_lineno);
+    assert(loc.end_lineno >= loc.lineno);
+    write_location_varint(a, loc.end_lineno - loc.lineno);
+    write_location_varint(a, loc.col_offset + 1);
+    write_location_varint(a, loc.end_col_offset + 1);
 }
 
 static void
@@ -7749,7 +7756,7 @@ write_location_info_no_column(struct assembler* a, int length, int line_delta)
 #define THEORETICAL_MAX_ENTRY_SIZE 25 /* 1 + 6 + 6 + 6 + 6 */
 
 static int
-write_location_info_entry(struct assembler* a, struct instr* i, int isize)
+write_location_info_entry(struct assembler* a, location loc, int isize)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_linetable);
     if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
@@ -7758,49 +7765,51 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
             return -1;
         }
     }
-    if (i->i_loc.lineno < 0) {
+    if (loc.lineno < 0) {
         write_location_info_none(a, isize);
         return 0;
     }
-    int line_delta = i->i_loc.lineno - a->a_lineno;
-    int column = i->i_loc.col_offset;
-    int end_column = i->i_loc.end_col_offset;
+    int line_delta = loc.lineno - a->a_lineno;
+    int column = loc.col_offset;
+    int end_column = loc.end_col_offset;
     assert(column >= -1);
     assert(end_column >= -1);
     if (column < 0 || end_column < 0) {
-        if (i->i_loc.end_lineno == i->i_loc.lineno || i->i_loc.end_lineno == -1) {
+        if (loc.end_lineno == loc.lineno || loc.end_lineno == -1) {
             write_location_info_no_column(a, isize, line_delta);
-            a->a_lineno = i->i_loc.lineno;
+            a->a_lineno = loc.lineno;
             return 0;
         }
     }
-    else if (i->i_loc.end_lineno == i->i_loc.lineno) {
+    else if (loc.end_lineno == loc.lineno) {
         if (line_delta == 0 && column < 80 && end_column - column < 16 && end_column >= column) {
             write_location_info_short_form(a, isize, column, end_column);
             return 0;
         }
         if (line_delta >= 0 && line_delta < 3 && column < 128 && end_column < 128) {
             write_location_info_oneline_form(a, isize, line_delta, column, end_column);
-            a->a_lineno = i->i_loc.lineno;
+            a->a_lineno = loc.lineno;
             return 0;
         }
     }
-    write_location_info_long_form(a, i, isize);
-    a->a_lineno = i->i_loc.lineno;
+    write_location_info_long_form(a, loc, isize);
+    a->a_lineno = loc.lineno;
     return 0;
 }
 
 static int
-assemble_emit_location(struct assembler* a, struct instr* i)
+assemble_emit_location(struct assembler* a, location loc, int isize)
 {
-    int isize = instr_size(i);
+    if (isize == 0) {
+        return 0;
+    }
     while (isize > 8) {
-        if (write_location_info_entry(a, i, 8) < 0) {
+        if (write_location_info_entry(a, loc, 8)) {
             return -1;
         }
         isize -= 8;
     }
-    return write_location_info_entry(a, i, isize);
+    return write_location_info_entry(a, loc, isize);
 }
 
 /* assemble_emit()
@@ -8658,6 +8667,31 @@ no_redundant_jumps(cfg_builder *g) {
 }
 
 static bool
+opcode_metadata_is_sane(cfg_builder *g) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            int opcode = instr->i_opcode;
+            assert(opcode <= MAX_REAL_OPCODE); 
+            int pushed = _PyOpcode_opcode_metadata[opcode].n_pushed;
+            int popped = _PyOpcode_opcode_metadata[opcode].n_popped;
+            assert((pushed < 0) == (popped < 0));
+            if (pushed >= 0) {
+                assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
+                int effect = stack_effect(opcode, instr->i_oparg, -1);
+                if (effect != pushed - popped) {
+                   fprintf(stderr,
+                           "op=%d: stack_effect (%d) != pushed (%d) - popped (%d)\n",
+                           opcode, effect, pushed, popped);
+                   return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+static bool
 no_empty_basic_blocks(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused == 0) {
@@ -8840,6 +8874,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     assert(no_redundant_jumps(g));
+    assert(opcode_metadata_is_sane(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
@@ -8860,12 +8895,22 @@ assemble(struct compiler *c, int addNone)
 
     /* Emit location info */
     a.a_lineno = c->u->u_firstlineno;
+    location loc = NO_LOCATION;
+    int size = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++) {
-            if (assemble_emit_location(&a, &b->b_instr[j]) < 0) {
-                goto error;
+            if (!same_location(loc, b->b_instr[j].i_loc)) {
+                if (assemble_emit_location(&a, loc, size)) {
+                    goto error;
+                }
+                loc = b->b_instr[j].i_loc;
+                size = 0;
             }
+            size += instr_size(&b->b_instr[j]);
         }
+    }
+    if (assemble_emit_location(&a, loc, size)) {
+        goto error;
     }
 
     if (assemble_exception_table(&a, g->g_entryblock) < 0) {
