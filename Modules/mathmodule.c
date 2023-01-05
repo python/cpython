@@ -2878,14 +2878,14 @@ dl_split(double x) {
 static inline DoubleLength
 dl_add(DoubleLength total, double x)
 {
-    double t = total.hi + x;
+    double s = total.hi + x;
+    double c = total.lo;
     if (fabs(total.hi) >= fabs(x)) {
-        total.lo += (total.hi - t) + x;
+        c += (total.hi - s) + x;
     } else {
-        total.lo += (x - t) + total.hi;
+        c += (x - s) + total.hi;
     }
-    total.hi = t;
-    return total;
+    return (DoubleLength) {s, c};
 }
 
 static inline DoubleLength
