@@ -63,7 +63,7 @@ Python/traceback.c            @iritkatriel
 # bytecode.
 **/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 **/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-**/*importlib/resources/*      @jaraco @warsaw @brettcannon @FFY00
+**/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
@@ -151,9 +151,6 @@ Lib/ast.py                    @isidentical
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
-
-# pathlib
-**/*pathlib*                  @brettcannon
 
 # zipfile.Path
 **/*zipfile/*_path.py         @jaraco
