@@ -336,7 +336,6 @@ _specializations = {
         # These will always push [unbound method, self] onto the stack.
         "LOAD_ATTR_METHOD_LAZY_DICT",
         "LOAD_ATTR_METHOD_NO_DICT",
-        "LOAD_ATTR_METHOD_WITH_DICT",
         "LOAD_ATTR_METHOD_WITH_VALUES",
     ],
     "LOAD_CONST": [
