@@ -1088,7 +1088,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -2;
 
         /* Unary operators */
-        case UNARY_POSITIVE:
         case UNARY_NEGATIVE:
         case UNARY_NOT:
         case UNARY_INVERT:
@@ -1121,7 +1120,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case SETUP_ANNOTATIONS:
             return 0;
-        case ASYNC_GEN_WRAP:
         case YIELD_VALUE:
             return 0;
         case POP_BLOCK:
@@ -1294,8 +1292,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case LOAD_ASSERTION_ERROR:
             return 1;
-        case LIST_TO_TUPLE:
-            return 0;
         case LIST_EXTEND:
         case SET_UPDATE:
         case DICT_MERGE:
@@ -4120,8 +4116,6 @@ unaryop(unaryop_ty op)
         return UNARY_INVERT;
     case Not:
         return UNARY_NOT;
-    case UAdd:
-        return UNARY_POSITIVE;
     case USub:
         return UNARY_NEGATIVE;
     default:
@@ -4189,7 +4183,7 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
 static int
 addop_yield(struct compiler *c, location loc) {
     if (c->u->u_ste->ste_generator && c->u->u_ste->ste_coroutine) {
-        ADDOP(c, loc, ASYNC_GEN_WRAP);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     }
     ADDOP_I(c, loc, YIELD_VALUE, 0);
     ADDOP_I(c, loc, RESUME, 1);
@@ -4356,7 +4350,7 @@ starunpack_helper(struct compiler *c, location loc,
             ADDOP_LOAD_CONST_NEW(c, loc, folded);
             ADDOP_I(c, loc, extend, 1);
             if (tuple) {
-                ADDOP(c, loc, LIST_TO_TUPLE);
+                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
             }
         }
         return SUCCESS;
@@ -4407,7 +4401,7 @@ starunpack_helper(struct compiler *c, location loc,
     }
     assert(sequence_built);
     if (tuple) {
-        ADDOP(c, loc, LIST_TO_TUPLE);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
     }
     return SUCCESS;
 }
@@ -5782,7 +5776,12 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case UnaryOp_kind:
         VISIT(c, expr, e->v.UnaryOp.operand);
-        ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
+        if (e->v.UnaryOp.op == UAdd) {
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_UNARY_POSITIVE);
+        }
+        else {
+            ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
+        }
         break;
     case Lambda_kind:
         return compiler_lambda(c, e);

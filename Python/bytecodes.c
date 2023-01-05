@@ -173,12 +173,6 @@ dummy_func(
 
         macro(END_FOR) = POP_TOP + POP_TOP;
 
-        inst(UNARY_POSITIVE, (value -- res)) {
-            res = PyNumber_Positive(value);
-            DECREF_INPUTS();
-            ERROR_IF(res == NULL, error);
-        }
-
         inst(UNARY_NEGATIVE, (value -- res)) {
             res = PyNumber_Negative(value);
             DECREF_INPUTS();
@@ -755,13 +749,6 @@ dummy_func(
                 assert(retval != NULL);
                 PUSH(retval);
             }
-        }
-
-        inst(ASYNC_GEN_WRAP, (v -- w)) {
-            assert(frame->f_code->co_flags & CO_ASYNC_GENERATOR);
-            w = _PyAsyncGenValueWrapperNew(v);
-            DECREF_INPUTS();
-            ERROR_IF(w == NULL, error);
         }
 
         inst(YIELD_VALUE, (retval --)) {
@@ -1346,12 +1333,6 @@ dummy_func(
             if (list == NULL)
                 goto error;
             PUSH(list);
-        }
-
-        inst(LIST_TO_TUPLE, (list -- tuple)) {
-            tuple = PyList_AsTuple(list);
-            DECREF_INPUTS();
-            ERROR_IF(tuple == NULL, error);
         }
 
         inst(LIST_EXTEND, (iterable -- )) {

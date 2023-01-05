@@ -460,10 +460,6 @@ The Python compiler currently generates the following bytecode instructions.
 Unary operations take the top of the stack, apply the operation, and push the
 result back on the stack.
 
-.. opcode:: UNARY_POSITIVE
-
-   Implements ``TOS = +TOS``.
-
 
 .. opcode:: UNARY_NEGATIVE
 
@@ -904,13 +900,6 @@ iterations of the loop.
    onto the stack.
 
    .. versionadded:: 3.6
-
-
-.. opcode:: LIST_TO_TUPLE
-
-   Pops a list from the stack and pushes a tuple containing the same values.
-
-   .. versionadded:: 3.9
 
 
 .. opcode:: LIST_EXTEND (i)
@@ -1372,14 +1361,6 @@ iterations of the loop.
     .. versionadded:: 3.11
 
 
-.. opcode:: ASYNC_GEN_WRAP
-
-    Wraps the value on top of the stack in an ``async_generator_wrapped_value``.
-    Used to yield in async generators.
-
-    .. versionadded:: 3.11
-
-
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
@@ -1411,6 +1392,9 @@ iterations of the loop.
     * ``1`` Prints the argument to standard out. Used in the REPL.
     * ``2`` Performs ``import *`` for the named module.
     * ``3`` Extracts the return value from a ``StopIteration`` exception.
+    * ``4`` Wraps an aync generator value
+    * ``5`` Performs the unary ``+`` operation
+    * ``6`` Converts a list to a tuple
 
    .. versionadded:: 3.12
 
