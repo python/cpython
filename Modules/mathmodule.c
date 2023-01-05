@@ -2851,6 +2851,18 @@ dl_add() performs compensated summation to keep a running total.
 dl_fma() implements an extended precision fused-multiply-add.
 dl_to_d() converts from extended precision to double precision.
 
+The double length routines allow for quite a bit of instruction
+level parallelism.  On a 3.22 Ghz Apple M1 Max, the incremental
+cost of increasing the input vector sizes by one adds 8.75ns
+which is about 28 clock cycles.  This includes the time for
+fetching floats from the iterator, decoding them into C doubles,
+and managing their reference counts.
+
+The total function running time for input vectors of size 100
+is 946 nsec.  This includes 71 nsec fixed costs for call overhead,
+creating the iterators, building the float object result,
+and managing the reference counts.
+
 */
 
 struct DoubleLengthFloat { double hi; double lo; };
