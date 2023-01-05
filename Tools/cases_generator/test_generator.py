@@ -6,7 +6,7 @@ import tempfile
 import generate_cases
 
 
-def run_test(input: str, expected: str):
+def run_cases_test(input: str, expected: str):
     temp_input = tempfile.NamedTemporaryFile("w+")
     temp_input.write(generate_cases.BEGIN_MARKER)
     temp_input.write(input)
@@ -38,7 +38,7 @@ def test_legacy():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_inst_no_args():
     input = """
@@ -52,7 +52,7 @@ def test_inst_no_args():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_inst_one_pop():
     input = """
@@ -68,7 +68,7 @@ def test_inst_one_pop():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_inst_one_push():
     input = """
@@ -85,7 +85,7 @@ def test_inst_one_push():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_inst_one_push_one_pop():
     input = """
@@ -102,7 +102,7 @@ def test_inst_one_push_one_pop():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_binary_op():
     input = """
@@ -121,7 +121,7 @@ def test_binary_op():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_predictions():
     input = """
@@ -151,7 +151,7 @@ def test_predictions():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_error_if_plain():
     input = """
@@ -165,7 +165,7 @@ def test_error_if_plain():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_error_if_pop():
     input = """
@@ -184,7 +184,7 @@ def test_error_if_pop():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_cache_effect():
     input = """
@@ -201,7 +201,7 @@ def test_cache_effect():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_suppress_dispatch():
     input = """
@@ -214,7 +214,7 @@ def test_suppress_dispatch():
             goto somewhere;
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_super_instruction():
     # TODO: Test cache effect
@@ -267,7 +267,7 @@ def test_super_instruction():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
 
 def test_macro_instruction():
     input = """
@@ -307,4 +307,4 @@ def test_macro_instruction():
             DISPATCH();
         }
     """
-    run_test(input, output)
+    run_cases_test(input, output)
