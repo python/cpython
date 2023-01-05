@@ -825,7 +825,7 @@ class _Processor:
                 ['uname', '-p'],
                 stderr=subprocess.DEVNULL,
                 text=True,
-                encoding="locale",
+                encoding="utf8",
             ).strip()
         except (OSError, subprocess.CalledProcessError):
             pass

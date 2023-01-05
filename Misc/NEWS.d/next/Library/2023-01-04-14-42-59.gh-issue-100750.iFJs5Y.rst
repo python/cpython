@@ -1,1 +1,1 @@
-pass encoding='locale' kwarg in platform
+pass encoding kwarg to subprocess in platform
