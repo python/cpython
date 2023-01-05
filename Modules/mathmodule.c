@@ -3056,20 +3056,6 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                         PyErr_Clear();
                         goto finalize_flt_path;
                     }
-                } else if (flt_total_in_use && PyLong_CheckExact(p_i) && PyLong_CheckExact(q_i)) {
-                    /* This path makes sure that we don't throw-away a double
-                       length float accumulation if a subsequent int/int pair is
-                       encountered. */
-                    flt_p = PyLong_AsDouble(p_i);
-                    if (flt_p == -1.0 && PyErr_Occurred()) {
-                        PyErr_Clear();
-                        goto finalize_flt_path;
-                    }
-                    flt_q = PyLong_AsDouble(q_i);
-                    if (flt_q == -1.0 && PyErr_Occurred()) {
-                        PyErr_Clear();
-                        goto finalize_flt_path;
-                    }
                 } else {
                     goto finalize_flt_path;
                 }

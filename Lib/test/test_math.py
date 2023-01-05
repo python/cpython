@@ -1279,6 +1279,10 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(sumprod([10.1, math.inf], [math.nan, 30.3])))
         self.assertTrue(math.isnan(sumprod([10.1, math.inf], [20.3, math.nan])))
 
+        # Error cases that arose during development
+        args = ((-5, -5, 10), (1.5, 4611686018427387904, 2305843009213693952))
+        self.assertEqual(sumprod(*args), 0.0)
+
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
