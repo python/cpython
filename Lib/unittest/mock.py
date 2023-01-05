@@ -652,7 +652,7 @@ class NonCallableMock(Base):
                 raise AttributeError("Mock object has no attribute %r" % name)
         elif _is_magic(name):
             raise AttributeError(name)
-        if not self._mock_unsafe:
+        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
             if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')):
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "

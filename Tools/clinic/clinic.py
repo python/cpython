@@ -960,12 +960,16 @@ class CLanguage(Language):
                     if not new_or_init:
                         parser_code.append(normalize_snippet("""
                             %s = PyTuple_New(%s);
+                            if (!%s) {{
+                                goto exit;
+                            }}
                             for (Py_ssize_t i = 0; i < %s; ++i) {{
                                 PyTuple_SET_ITEM(%s, i, Py_NewRef(args[%d + i]));
                             }}
                             """ % (
                                 p.converter.parser_name,
                                 left_args,
+                                p.converter.parser_name,
                                 left_args,
                                 p.converter.parser_name,
                                 max_pos
@@ -2828,7 +2832,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
-        If no initialization is necessary, returns an empty string.
+        If no modification is necessary, returns an empty string.
         """
         return ""
 

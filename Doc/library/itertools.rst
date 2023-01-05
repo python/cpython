@@ -899,10 +899,8 @@ which incur interpreter overhead.
 
    def factor(n):
        "Prime factors of n."
-       # factor(97) --> 97
-       # factor(98) --> 2 7 7
        # factor(99) --> 3 3 11
-       for prime in sieve(n+1):
+       for prime in sieve(math.isqrt(n) + 1):
            while True:
                quotient, remainder = divmod(n, prime)
                if remainder:
@@ -911,6 +909,8 @@ which incur interpreter overhead.
                n = quotient
                if n == 1:
                    return
+       if n >= 2:
+           yield n
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -1019,15 +1019,14 @@ which incur interpreter overhead.
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-       # unique_everseen('ABBCcAD', str.lower) --> A B C D
+       # unique_everseen('ABBcCAD', str.lower) --> A B c D
        seen = set()
        if key is None:
            for element in filterfalse(seen.__contains__, iterable):
                seen.add(element)
                yield element
-           # Note: The steps shown above are intended to demonstrate
-           # filterfalse(). For order preserving deduplication,
-           # a better solution is:
+           # For order preserving deduplication,
+           # a faster but non-lazy solution is:
            #     yield from dict.fromkeys(iterable)
        else:
            for element in iterable:
@@ -1035,11 +1034,15 @@ which incur interpreter overhead.
                if k not in seen:
                    seen.add(k)
                    yield element
+           # For use cases that allow the last matching element to be returned,
+           # a faster but non-lazy solution is:
+           #      t1, t2 = tee(iterable)
+           #      yield from dict(zip(map(key, t1), t2)).values()
 
    def unique_justseen(iterable, key=None):
        "List unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-       # unique_justseen('ABBCcAD', str.lower) --> A B C A D
+       # unique_justseen('ABBcCAD', str.lower) --> A B c A D
        return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
    def iter_except(func, exception, first=None):
@@ -1266,33 +1269,43 @@ which incur interpreter overhead.
     >>> set(sieve(10_000)).isdisjoint(carmichael)
     True
 
-    list(factor(0))
+    >>> list(factor(0))
     []
-    list(factor(1))
+    >>> list(factor(1))
     []
-    list(factor(2))
+    >>> list(factor(2))
     [2]
-    list(factor(3))
+    >>> list(factor(3))
     [3]
-    list(factor(4))
+    >>> list(factor(4))
     [2, 2]
-    list(factor(5))
+    >>> list(factor(5))
     [5]
-    list(factor(6))
+    >>> list(factor(6))
     [2, 3]
-    list(factor(7))
+    >>> list(factor(7))
     [7]
-    list(factor(8))
+    >>> list(factor(8))
     [2, 2, 2]
-    list(factor(9))
+    >>> list(factor(9))
     [3, 3]
-    list(factor(10))
+    >>> list(factor(10))
     [2, 5]
-    all(math.prod(factor(n)) == n for n in range(1, 1000))
+    >>> list(factor(128_884_753_939))       # large prime
+    [128884753939]
+    >>> list(factor(999953 * 999983))       # large semiprime
+    [999953, 999983]
+    >>> list(factor(6 ** 20)) == [2] * 20 + [3] * 20   # large power
     True
-    all(set(factor(n)) <= set(sieve(n+1)) for n in range(1, 1000))
+    >>> list(factor(909_909_090_909))       # large multiterm composite
+    [3, 3, 7, 13, 13, 751, 113797]
+    >>> math.prod([3, 3, 7, 13, 13, 751, 113797])
+    909909090909
+    >>> all(math.prod(factor(n)) == n for n in range(1, 2_000))
     True
-    all(list(factor(n)) == sorted(factor(n)) for n in range(1, 1000))
+    >>> all(set(factor(n)) <= set(sieve(n+1)) for n in range(2_000))
+    True
+    >>> all(list(factor(n)) == sorted(factor(n)) for n in range(2_000))
     True
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
@@ -1361,15 +1374,17 @@ which incur interpreter overhead.
 
     >>> list(unique_everseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D']
-
     >>> list(unique_everseen('ABBCcAD', str.lower))
     ['A', 'B', 'C', 'D']
+    >>> list(unique_everseen('ABBcCAD', str.lower))
+    ['A', 'B', 'c', 'D']
 
     >>> list(unique_justseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D', 'A', 'B']
-
     >>> list(unique_justseen('ABBCcAD', str.lower))
     ['A', 'B', 'C', 'A', 'D']
+    >>> list(unique_justseen('ABBcCAD', str.lower))
+    ['A', 'B', 'c', 'A', 'D']
 
     >>> d = dict(a=1, b=2, c=3)
     >>> it = iter_except(d.popitem, KeyError)

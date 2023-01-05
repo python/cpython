@@ -117,6 +117,12 @@ another rational number, or from a string.
 
       .. versionadded:: 3.8
 
+   .. method:: is_integer()
+
+      Return ``True`` if the Fraction is an integer.
+
+      .. versionadded:: 3.12
+
    .. classmethod:: from_float(flt)
 
       Alternative constructor which only accepts instances of
