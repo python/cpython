@@ -10,9 +10,6 @@ from test import support
 
 import modulefinder
 
-TEST_DIR = tempfile.mkdtemp()
-TEST_PATH = [TEST_DIR, os.path.dirname(tempfile.__file__)]
-
 # Each test description is a list of 5 items:
 #
 # 1. a module name that will be imported by modulefinder
@@ -23,9 +20,9 @@ TEST_PATH = [TEST_DIR, os.path.dirname(tempfile.__file__)]
 #    about because they MAY be not found
 # 5. a string specifying packages to create; the format is obvious imo.
 #
-# Each package will be created in TEST_DIR, and TEST_DIR will be
+# Each package will be created in test_dir, and test_dir will be
 # removed after the tests again.
-# Modulefinder searches in a path that contains TEST_DIR, plus
+# Modulefinder searches in a path that contains test_dir, plus
 # the standard Lib directory.
 
 maybe_test = [
@@ -300,7 +297,7 @@ def open_file(path):
     return open(path, 'wb')
 
 
-def create_package(source):
+def create_package(test_dir, source):
     ofi = None
     try:
         for line in source.splitlines():
@@ -313,41 +310,45 @@ def create_package(source):
                     ofi.close()
                 if type(line) == bytes:
                     line = line.decode('utf-8')
-                ofi = open_file(os.path.join(TEST_DIR, line.strip()))
+                ofi = open_file(os.path.join(test_dir, line.strip()))
     finally:
         if ofi:
             ofi.close()
 
 class ModuleFinderTest(unittest.TestCase):
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp()
+        self.test_path = [self.test_dir, os.path.dirname(tempfile.__file__)]
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+
     def _do_test(self, info, report=False, debug=0, replace_paths=[], modulefinder_class=modulefinder.ModuleFinder):
         import_this, modules, missing, maybe_missing, source = info
-        create_package(source)
-        try:
-            mf = modulefinder_class(path=TEST_PATH, debug=debug,
-                                           replace_paths=replace_paths)
-            mf.import_hook(import_this)
-            if report:
-                mf.report()
-##                # This wouldn't work in general when executed several times:
-##                opath = sys.path[:]
-##                sys.path = TEST_PATH
-##                try:
-##                    __import__(import_this)
-##                except:
-##                    import traceback; traceback.print_exc()
-##                sys.path = opath
-##                return
-            modules = sorted(set(modules))
-            found = sorted(mf.modules)
-            # check if we found what we expected, not more, not less
-            self.assertEqual(found, modules)
+        create_package(self.test_dir, source)
+        mf = modulefinder_class(path=self.test_path, debug=debug,
+                                        replace_paths=replace_paths)
+        mf.import_hook(import_this)
+        if report:
+            mf.report()
+##            # This wouldn't work in general when executed several times:
+##            opath = sys.path[:]
+##            sys.path = self.test_path
+##            try:
+##                __import__(import_this)
+##            except:
+##                import traceback; traceback.print_exc()
+##            sys.path = opath
+##            return
+        modules = sorted(set(modules))
+        found = sorted(mf.modules)
+        # check if we found what we expected, not more, not less
+        self.assertEqual(found, modules)
 
-            # check for missing and maybe missing modules
-            bad, maybe = mf.any_missing_maybe()
-            self.assertEqual(bad, missing)
-            self.assertEqual(maybe, maybe_missing)
-        finally:
-            shutil.rmtree(TEST_DIR)
+        # check for missing and maybe missing modules
+        bad, maybe = mf.any_missing_maybe()
+        self.assertEqual(bad, missing)
+        self.assertEqual(maybe, maybe_missing)
 
     def test_package(self):
         self._do_test(package_test)
@@ -380,7 +381,7 @@ class ModuleFinderTest(unittest.TestCase):
         self._do_test(same_name_as_bad_test)
 
     def test_bytecode(self):
-        base_path = os.path.join(TEST_DIR, 'a')
+        base_path = os.path.join(self.test_dir, 'a')
         source_path = base_path + importlib.machinery.SOURCE_SUFFIXES[0]
         bytecode_path = base_path + importlib.machinery.BYTECODE_SUFFIXES[0]
         with open_file(source_path) as file:
@@ -390,8 +391,8 @@ class ModuleFinderTest(unittest.TestCase):
         self._do_test(bytecode_test)
 
     def test_replace_paths(self):
-        old_path = os.path.join(TEST_DIR, 'a', 'module.py')
-        new_path = os.path.join(TEST_DIR, 'a', 'spam.py')
+        old_path = os.path.join(self.test_dir, 'a', 'module.py')
+        new_path = os.path.join(self.test_dir, 'a', 'spam.py')
         with support.captured_stdout() as output:
             self._do_test(maybe_test, debug=2,
                           replace_paths=[(old_path, new_path)])

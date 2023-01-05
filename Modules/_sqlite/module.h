@@ -26,6 +26,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
+#define LEGACY_TRANSACTION_CONTROL -1
+
 #define PYSQLITE_VERSION "2.6.0"
 #define MODULE_NAME "sqlite3"
 
@@ -53,11 +55,22 @@ typedef struct {
     int BaseTypeAdapted;
     int enable_callback_tracebacks;
 
+    PyTypeObject *BlobType;
     PyTypeObject *ConnectionType;
     PyTypeObject *CursorType;
     PyTypeObject *PrepareProtocolType;
     PyTypeObject *RowType;
     PyTypeObject *StatementType;
+
+    /* Pointers to interned strings */
+    PyObject *str___adapt__;
+    PyObject *str___conform__;
+    PyObject *str_executescript;
+    PyObject *str_finalize;
+    PyObject *str_inverse;
+    PyObject *str_step;
+    PyObject *str_upper;
+    PyObject *str_value;
 } pysqlite_state;
 
 extern pysqlite_state pysqlite_global_state;

@@ -172,7 +172,8 @@ def freeze(python, scriptfile, outdir):
 
     print(f'freezing {scriptfile}...')
     os.makedirs(outdir, exist_ok=True)
-    _run_quiet([python, FREEZE, '-o', outdir, scriptfile], outdir)
+    # Use -E to ignore PYTHONSAFEPATH
+    _run_quiet([python, '-E', FREEZE, '-o', outdir, scriptfile], outdir)
     _run_quiet([MAKE, '-C', os.path.dirname(scriptfile)])
 
     name = os.path.basename(scriptfile).rpartition('.')[0]

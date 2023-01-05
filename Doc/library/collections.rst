@@ -229,6 +229,7 @@ For example::
     >>> cnt = Counter()
     >>> for word in ['red', 'blue', 'red', 'green', 'blue', 'blue']:
     ...     cnt[word] += 1
+    ...
     >>> cnt
     Counter({'blue': 3, 'red': 2, 'green': 1})
 
@@ -276,7 +277,7 @@ For example::
        according to when an element is first encountered in the left operand
        and then by the order encountered in the right operand.
 
-    Counter objects support three methods beyond those available for all
+    Counter objects support additional methods beyond those available for all
     dictionaries:
 
     .. method:: elements()
@@ -664,7 +665,7 @@ added elements by appending to the right and popping to the left::
 
     def moving_average(iterable, n=3):
         # moving_average([40, 30, 50, 46, 39, 44]) --> 40.0 42.0 45.0 43.0
-        # http://en.wikipedia.org/wiki/Moving_average
+        # https://en.wikipedia.org/wiki/Moving_average
         it = iter(iterable)
         d = deque(itertools.islice(it, n-1))
         d.appendleft(0)
@@ -818,6 +819,7 @@ zero):
 
     >>> def constant_factory(value):
     ...     return lambda: value
+    ...
     >>> d = defaultdict(constant_factory('<missing>'))
     >>> d.update(name='John', action='ran')
     >>> '%(name)s %(action)s to %(object)s' % d
@@ -1092,18 +1094,35 @@ Some differences from :class:`dict` still remain:
   Space efficiency, iteration speed, and the performance of update
   operations were secondary.
 
-* Algorithmically, :class:`OrderedDict` can handle frequent reordering
-  operations better than :class:`dict`.  This makes it suitable for tracking
-  recent accesses (for example in an `LRU cache
-  <https://medium.com/@krishankantsinghal/my-first-blog-on-medium-583159139237>`_).
+* The :class:`OrderedDict` algorithm can handle frequent reordering operations
+  better than :class:`dict`.  As shown in the recipes below, this makes it
+  suitable for implementing various kinds of LRU caches.
 
 * The equality operation for :class:`OrderedDict` checks for matching order.
+
+  A regular :class:`dict` can emulate the order sensitive equality test with
+  ``p == q and all(k1 == k2 for k1, k2 in zip(p, q))``.
 
 * The :meth:`popitem` method of :class:`OrderedDict` has a different
   signature.  It accepts an optional argument to specify which item is popped.
 
-* :class:`OrderedDict` has a :meth:`move_to_end` method to
-  efficiently reposition an element to an endpoint.
+  A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=True)``
+  with ``d.popitem()`` which is guaranteed to pop the rightmost (last) item.
+
+  A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=False)``
+  with ``(k := next(iter(d)), d.pop(k))`` which will return and remove the
+  leftmost (first) item if it exists.
+
+* :class:`OrderedDict` has a :meth:`move_to_end` method to efficiently
+  reposition an element to an endpoint.
+
+  A regular :class:`dict` can emulate OrderedDict's ``od.move_to_end(k,
+  last=True)`` with ``d[k] = d.pop(k)`` which will move the key and its
+  associated value to the rightmost (last) position.
+
+  A regular :class:`dict` does not have an efficient equivalent for
+  OrderedDict's ``od.move_to_end(k, last=False)`` which moves the key
+  and its associated value to the leftmost (first) position.
 
 * Until Python 3.8, :class:`dict` lacked a :meth:`__reversed__` method.
 
@@ -1184,6 +1203,7 @@ variants of :func:`functools.lru_cache`:
 
 .. testcode::
 
+    from collections import OrderedDict
     from time import time
 
     class TimeBoundedLRU:

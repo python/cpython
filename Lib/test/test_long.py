@@ -985,6 +985,10 @@ class LongTest(unittest.TestCase):
         self.assertEqual((-1122) >> 9, -3)
         self.assertEqual(2**128 >> 9, 2**119)
         self.assertEqual(-2**128 >> 9, -2**119)
+        # Exercise corner case of the current algorithm, where the result of
+        # shifting a two-limb int by the limb size still has two limbs.
+        self.assertEqual((1 - BASE*BASE) >> SHIFT, -BASE)
+        self.assertEqual((BASE - 1 - BASE*BASE) >> SHIFT, -BASE)
 
     def test_big_rshift(self):
         self.assertEqual(42 >> 32, 0)
@@ -1023,6 +1027,48 @@ class LongTest(unittest.TestCase):
         c = a + 1
         self.assertIs(a + b, 1)
         self.assertIs(c - a, 1)
+
+    @support.cpython_only
+    def test_pow_uses_cached_small_ints(self):
+        self.assertIs(pow(10, 3, 998), 2)
+        self.assertIs(10 ** 3 % 998, 2)
+        a, p, m = 10, 3, 998
+        self.assertIs(a ** p % m, 2)
+
+        self.assertIs(pow(2, 31, 2 ** 31 - 1), 1)
+        self.assertIs(2 ** 31 % (2 ** 31 - 1), 1)
+        a, p, m = 2, 31, 2 ** 31 - 1
+        self.assertIs(a ** p % m, 1)
+
+        self.assertIs(pow(2, 100, 2**100 - 3), 3)
+        self.assertIs(2 ** 100 % (2 ** 100 - 3), 3)
+        a, p, m = 2, 100, 2**100 - 3
+        self.assertIs(a ** p % m, 3)
+
+    @support.cpython_only
+    def test_divmod_uses_cached_small_ints(self):
+        big = 10 ** 100
+
+        self.assertIs((big + 1) % big, 1)
+        self.assertIs((big + 1) // big, 1)
+        self.assertIs(big // (big // 2), 2)
+        self.assertIs(big // (big // -4), -4)
+
+        q, r = divmod(2 * big + 3, big)
+        self.assertIs(q, 2)
+        self.assertIs(r, 3)
+
+        q, r = divmod(-4 * big + 100, big)
+        self.assertIs(q, -4)
+        self.assertIs(r, 100)
+
+        q, r = divmod(3 * (-big) - 1, -big)
+        self.assertIs(q, 3)
+        self.assertIs(r, -1)
+
+        q, r = divmod(3 * big - 1, -big)
+        self.assertIs(q, -3)
+        self.assertIs(r, -1)
 
     def test_small_ints(self):
         for i in range(-5, 257):
@@ -1288,6 +1334,12 @@ class LongTest(unittest.TestCase):
                          b'\xff\xff\xff\xff\xff')
         self.assertRaises(OverflowError, (1).to_bytes, 0, 'big')
 
+        # gh-98783
+        class SubStr(str):
+            pass
+        self.assertEqual((0).to_bytes(1, SubStr('big')), b'\x00')
+        self.assertEqual((0).to_bytes(0, SubStr('little')), b'')
+
     def test_from_bytes(self):
         def check(tests, byteorder, signed=False):
             def equivalent_python(byte_array, byteorder, signed=False):
@@ -1472,12 +1524,39 @@ class LongTest(unittest.TestCase):
         self.assertEqual(i, 1)
         self.assertEqual(getattr(i, 'foo', 'none'), 'bar')
 
+        class ValidBytes:
+            def __bytes__(self):
+                return b'\x01'
+        class InvalidBytes:
+            def __bytes__(self):
+                return 'abc'
+        class MissingBytes: ...
+        class RaisingBytes:
+            def __bytes__(self):
+                1 / 0
+
+        self.assertEqual(int.from_bytes(ValidBytes()), 1)
+        self.assertRaises(TypeError, int.from_bytes, InvalidBytes())
+        self.assertRaises(TypeError, int.from_bytes, MissingBytes())
+        self.assertRaises(ZeroDivisionError, int.from_bytes, RaisingBytes())
+
+        # gh-98783
+        class SubStr(str):
+            pass
+        self.assertEqual(int.from_bytes(b'', SubStr('big')), 0)
+        self.assertEqual(int.from_bytes(b'\x00', SubStr('little')), 0)
+
     @support.cpython_only
     def test_from_bytes_small(self):
         # bpo-46361
         for i in range(-5, 257):
             b = i.to_bytes(2, signed=True)
             self.assertIs(int.from_bytes(b, signed=True), i)
+
+    def test_is_integer(self):
+        self.assertTrue((-1).is_integer())
+        self.assertTrue((0).is_integer())
+        self.assertTrue((1).is_integer())
 
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that

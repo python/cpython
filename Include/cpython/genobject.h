@@ -27,7 +27,7 @@ extern "C" {
     char prefix##_closed;                                                   \
     char prefix##_running_async;                                            \
     /* The frame */                                                         \
-    char prefix##_frame_valid;                                              \
+    int8_t prefix##_frame_state;                                            \
     PyObject *prefix##_iframe[1];
 
 typedef struct {
@@ -37,15 +37,14 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyGen_Type;
 
-#define PyGen_Check(op) PyObject_TypeCheck(op, &PyGen_Type)
-#define PyGen_CheckExact(op) Py_IS_TYPE(op, &PyGen_Type)
+#define PyGen_Check(op) PyObject_TypeCheck((op), &PyGen_Type)
+#define PyGen_CheckExact(op) Py_IS_TYPE((op), &PyGen_Type)
 
 PyAPI_FUNC(PyObject *) PyGen_New(PyFrameObject *);
 PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
-PyObject *_PyGen_yf(PyGenObject *);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 
 
@@ -58,8 +57,7 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyCoro_Type;
 PyAPI_DATA(PyTypeObject) _PyCoroWrapper_Type;
 
-#define PyCoro_CheckExact(op) Py_IS_TYPE(op, &PyCoro_Type)
-PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
+#define PyCoro_CheckExact(op) Py_IS_TYPE((op), &PyCoro_Type)
 PyAPI_FUNC(PyObject *) PyCoro_New(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 
@@ -78,9 +76,7 @@ PyAPI_DATA(PyTypeObject) _PyAsyncGenAThrow_Type;
 PyAPI_FUNC(PyObject *) PyAsyncGen_New(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 
-#define PyAsyncGen_CheckExact(op) Py_IS_TYPE(op, &PyAsyncGen_Type)
-
-PyObject *_PyAsyncGenValueWrapperNew(PyObject *);
+#define PyAsyncGen_CheckExact(op) Py_IS_TYPE((op), &PyAsyncGen_Type)
 
 
 #undef _PyGenObject_HEAD
