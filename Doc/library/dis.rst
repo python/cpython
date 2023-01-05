@@ -1405,6 +1405,13 @@ iterations of the loop.
    and sets TOS to the result. Used to implement functionality that is necessary
    but not performance critical.
 
+    The operand determines which intrinsic function is called:
+
+    * ``0`` Not valid
+    * ``1`` Prints the argument to standard out. Used in the REPL.
+    * ``2`` Performs ``import *`` for the named module.
+    * ``3`` Extracts the return value from a ``StopIteration`` exception.
+
    .. versionadded:: 3.12
 
 
