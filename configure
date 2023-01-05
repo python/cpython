@@ -9395,12 +9395,14 @@ fi
 
 # If we have set a CC compiler flag for thread support then
 # check if it works for CXX, too.
-ac_cv_cxx_thread=no
 if test ! -z "$CXX"
 then
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CXX also accepts flags for thread support" >&5
 $as_echo_n "checking whether $CXX also accepts flags for thread support... " >&6; }
-ac_save_cxx="$CXX"
+if ${ac_cv_cxx_thread+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_save_cxx="$CXX"
 
 if test "$ac_cv_kpthread" = "yes"
 then
@@ -9414,6 +9416,8 @@ elif test "$ac_cv_pthread" = "yes"
 then
   CXX="$CXX -pthread"
   ac_cv_cxx_thread=yes
+else
+  ac_cv_cxx_thread=no
 fi
 
 if test $ac_cv_cxx_thread = yes
@@ -9429,10 +9433,13 @@ then
   fi
   rm -fr conftest*
 fi
+CXX="$ac_save_cxx"
+fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_thread" >&5
 $as_echo "$ac_cv_cxx_thread" >&6; }
+else
+  ac_cv_cxx_thread=no
 fi
-CXX="$ac_save_cxx"
 
 
 
