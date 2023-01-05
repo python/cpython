@@ -687,6 +687,7 @@
         TARGET(CALL_INTRINSIC_1) {
             PyObject *value = PEEK(1);
             PyObject *res;
+            assert(oparg <= MAX_INTRINSIC_1);
             res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
             Py_DECREF(value);
             if (res == NULL) goto pop_1_error;
