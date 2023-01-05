@@ -182,13 +182,11 @@ Other Language Changes
   arguments of any type instead of just :class:`bool` and :class:`int`.
   (Contributed by Serhiy Storchaka in :gh:`60203`.)
 
-* It is now allowed to reassign (with ``:=``) variables mentioned
-  in iterable part of comprehensions.
-  For example, in ``[(b := 1) for a, b.prop in some_iter]``
-  it is now possible to reassign variable ``b``.
-  However, reassigning variables directly defined
-  in iterable parts of comprehensions (like ``a``)
-  is still not allowed due to :pep:`572`.
+* Variables used in the target part of comprehensions that are not stored to
+  can now be used in assignment expressions (``:=``).
+  For example, in ``[(b := 1) for a, b.prop in some_iter]``, the assignment to
+  ``b`` is now allowed. Note that assigning to variables stored to in the target
+  part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
   (Contributed by Nikita Sobolev in :gh:`100581`.)
 
 
