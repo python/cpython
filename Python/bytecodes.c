@@ -540,6 +540,7 @@ dummy_func(
         }
 
         inst(CALL_INTRINSIC_1, (value -- res)) {
+            assert(oparg <= MAX_INTRINSIC_1);
             res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
             Py_DECREF(value);
             ERROR_IF(res == NULL, error);

@@ -11,6 +11,13 @@
 
 
 static PyObject *
+no_intrinsic(PyThreadState* tstate, PyObject *unused)
+{
+    _PyErr_SetString(tstate, PyExc_SystemError, "invalid intrinsic function");
+    return NULL;
+}
+
+static PyObject *
 print_expr(PyThreadState* tstate, PyObject *value)
 {
     PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
@@ -180,6 +187,7 @@ stopiteration_error(PyThreadState* tstate, PyObject *exc)
 
 instrinsic_func1
 _PyIntrinsics_UnaryFunctions[] = {
+    [0] = no_intrinsic,
     [INTRINSIC_PRINT] = print_expr,
     [INTRINSIC_IMPORT_STAR] = import_star,
     [INTRINSIC_STOPITERATION_ERROR] = stopiteration_error,
