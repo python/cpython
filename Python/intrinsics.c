@@ -180,10 +180,7 @@ stopiteration_error(PyThreadState* tstate, PyObject *exc)
 
 instrinsic_func1
 _PyIntrinsics_UnaryFunctions[] = {
-
     [INTRINSIC_PRINT] = print_expr,
     [INTRINSIC_IMPORT_STAR] = import_star,
     [INTRINSIC_STOPITERATION_ERROR] = stopiteration_error,
 };
-
-
