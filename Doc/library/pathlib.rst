@@ -127,7 +127,7 @@ we also call *flavours*:
       PureWindowsPath('d:bar')
 
    On Windows, the drive letter is not reset when a drive-less absolute path
-   component (e.g., `r'\foo'`) is encountered::
+   component (e.g., ``r'\foo'``) is encountered::
 
       >>> PureWindowsPath('c:/Windows', '/Program Files')
       PureWindowsPath('c:/Program Files')
@@ -215,7 +215,7 @@ Operators
 The slash operator helps create child paths, like :func:`os.path.join`.
 If the argument is an absolute path, the previous path components are thrown away.
 On Windows, the drive letter is not reset when a drive-less absolute path
-component (e.g., `r'\foo'`) is encountered::
+component (e.g., ``r'\foo'``) is encountered::
 
    >>> p = PurePath('/etc')
    >>> p
