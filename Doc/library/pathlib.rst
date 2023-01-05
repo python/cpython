@@ -212,7 +212,10 @@ Paths of a different flavour compare unequal and cannot be ordered::
 Operators
 ^^^^^^^^^
 
-The slash operator helps create child paths, similarly to :func:`os.path.join`::
+The slash operator helps create child paths, mimicking the behaviour of
+:func:`os.path.join`. For instance, when several absolute paths are given, the
+last is taken as an anchor; for a Windows path, changing the local root doesn't
+discard the previous drive setting::
 
    >>> p = PurePath('/etc')
    >>> p
@@ -222,6 +225,10 @@ The slash operator helps create child paths, similarly to :func:`os.path.join`::
    >>> q = PurePath('bin')
    >>> '/usr' / q
    PurePosixPath('/usr/bin')
+   >>> p / '/an_absolute_path'
+   PurePosixPath('/an_absolute_path')
+   >>> PureWindowsPath('c:/Windows', '/Program Files')
+   PureWindowsPath('c:/Program Files')
 
 A path object can be used anywhere an object implementing :class:`os.PathLike`
 is accepted::
