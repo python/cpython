@@ -13,6 +13,7 @@
 #include "structmember.h"         // PyMemberDef
 #include "opcode.h"               // SEND
 #include "pystats.h"
+#include "pycore_gc.h"            // _PyGC_UNSET_FINALIZED
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
@@ -23,6 +24,22 @@ static const char *NON_INIT_CORO_MSG = "can't send non-None value to a "
 
 static const char *ASYNC_GEN_IGNORED_EXIT_MSG =
                                  "async generator ignored GeneratorExit";
+
+typedef struct {
+    PyGenObject *free_list;
+    int numfree;
+} gen_free_list;
+
+#define FREE_LIST_GEN 0
+#define FREE_LIST_CORO 1
+#define FREE_LIST_ASYNC_GEN 2
+#define FREE_LIST_MAX 3
+
+#define MAX_SLOTS 20
+
+gen_free_list freelists[FREE_LIST_MAX][MAX_SLOTS];
+
+#define PyGen_MAXFREELIST 20
 
 static inline int
 exc_state_traverse(_PyErr_StackItem *exc_state, visitproc visit, void *arg)
@@ -142,11 +159,35 @@ gen_dealloc(PyGenObject *gen)
     if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
         Py_CLEAR(((PyCoroObject *)gen)->cr_origin_or_finalizer);
     }
+    int slots = _PyFrame_NumSlotsForCodeObject(gen->gi_code);
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
     _PyErr_ClearExcState(&gen->gi_exc_state);
-    PyObject_GC_Del(gen);
+
+    if (slots >= MAX_SLOTS) {
+        PyObject_GC_Del(gen);
+    } else {
+
+        gen_free_list *list = NULL;
+        if (PyCoro_CheckExact(gen)) {
+            list = &freelists[FREE_LIST_CORO][slots];
+        } else if (PyGen_CheckExact(gen)) {
+            list = &freelists[FREE_LIST_GEN][slots];
+        } else if (PyAsyncGen_CheckExact(gen)) {
+            list = &freelists[FREE_LIST_ASYNC_GEN][slots];
+        } else {
+            assert(0);
+        }
+
+        if (list->numfree < PyGen_MAXFREELIST) {
+            ++list->numfree;
+            gen->gi_code = (PyCodeObject *)list->free_list;
+            list->free_list = gen;
+        } else {
+            PyObject_GC_Del(gen);
+        }
+    }
 }
 
 static PySendResult
@@ -846,12 +887,39 @@ PyTypeObject PyGen_Type = {
     _PyGen_Finalize,                            /* tp_finalize */
 };
 
+static PyGenObject *
+gen_alloc(PyTypeObject *type, int slots, int free_list)
+{
+    PyGenObject *gen;
+
+    if (slots >= MAX_SLOTS) {
+        return PyObject_GC_NewVar(PyGenObject, type, slots);
+    }
+
+    gen_free_list *list = &freelists[free_list][slots];
+    if (list->free_list == NULL) {
+        return PyObject_GC_NewVar(PyGenObject, type, slots);
+    }
+
+    assert(list->numfree > 0);
+    --list->numfree;
+    gen = list->free_list;
+    list->free_list = (PyGenObject *)gen->gi_code;
+
+    assert(((PyObject *)gen)->ob_type == type);
+
+    _Py_NewReference((PyObject *)gen);
+    _PyGC_SET_UNFINALIZED((PyObject *)gen);
+
+    return gen;
+}
+
 static PyObject *
-make_gen(PyTypeObject *type, PyFunctionObject *func)
+make_gen(PyTypeObject *type, PyFunctionObject *func, int free_list)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int slots = _PyFrame_NumSlotsForCodeObject(code);
-    PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, slots);
+    PyGenObject *gen = gen_alloc(type, slots, free_list);
     if (gen == NULL) {
         return NULL;
     }
@@ -878,11 +946,11 @@ _Py_MakeCoro(PyFunctionObject *func)
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
     assert(coro_flags);
     if (coro_flags == CO_GENERATOR) {
-        return make_gen(&PyGen_Type, func);
+        return make_gen(&PyGen_Type, func, FREE_LIST_GEN);
     }
     if (coro_flags == CO_ASYNC_GENERATOR) {
         PyAsyncGenObject *o;
-        o = (PyAsyncGenObject *)make_gen(&PyAsyncGen_Type, func);
+        o = (PyAsyncGenObject *)make_gen(&PyAsyncGen_Type, func, FREE_LIST_ASYNC_GEN);
         if (o == NULL) {
             return NULL;
         }
@@ -893,7 +961,7 @@ _Py_MakeCoro(PyFunctionObject *func)
         return (PyObject*)o;
     }
     assert (coro_flags == CO_COROUTINE);
-    PyObject *coro = make_gen(&PyCoro_Type, func);
+    PyObject *coro = make_gen(&PyCoro_Type, func, FREE_LIST_CORO);
     if (!coro) {
         return NULL;
     }
@@ -918,12 +986,12 @@ _Py_MakeCoro(PyFunctionObject *func)
 }
 
 static PyObject *
-gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
+gen_new_with_qualname(PyTypeObject *type, int free_list, PyFrameObject *f,
                       PyObject *name, PyObject *qualname)
 {
     PyCodeObject *code = f->f_frame->f_code;
     int size = code->co_nlocalsplus + code->co_stacksize;
-    PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, size);
+    PyGenObject *gen = gen_alloc(type, size, free_list);
     if (gen == NULL) {
         Py_DECREF(f);
         return NULL;
@@ -959,13 +1027,13 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
 PyObject *
 PyGen_NewWithQualName(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
-    return gen_new_with_qualname(&PyGen_Type, f, name, qualname);
+    return gen_new_with_qualname(&PyGen_Type, FREE_LIST_GEN, f, name, qualname);
 }
 
 PyObject *
 PyGen_New(PyFrameObject *f)
 {
-    return gen_new_with_qualname(&PyGen_Type, f, NULL, NULL);
+    return gen_new_with_qualname(&PyGen_Type, FREE_LIST_GEN, f, NULL, NULL);
 }
 
 /* Coroutine Object */
@@ -1317,7 +1385,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
 PyObject *
 PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
-    PyObject *coro = gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
+    PyObject *coro = gen_new_with_qualname(&PyCoro_Type, FREE_LIST_CORO, f, name, qualname);
     if (!coro) {
         return NULL;
     }
@@ -1612,7 +1680,7 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
     PyAsyncGenObject *o;
     o = (PyAsyncGenObject *)gen_new_with_qualname(
-        &PyAsyncGen_Type, f, name, qualname);
+        &PyAsyncGen_Type, FREE_LIST_ASYNC_GEN, f, name, qualname);
     if (o == NULL) {
         return NULL;
     }
@@ -1622,7 +1690,6 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     o->ag_running_async = 0;
     return (PyObject*)o;
 }
-
 
 void
 _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp)

@@ -80,6 +80,9 @@ static inline int _PyGCHead_FINALIZED(PyGC_Head *gc) {
 static inline void _PyGCHead_SET_FINALIZED(PyGC_Head *gc) {
     gc->_gc_prev |= _PyGC_PREV_MASK_FINALIZED;
 }
+static inline void _PyGCHead_UNSET_FINALIZED(PyGC_Head *gc) {
+    gc->_gc_prev &= !_PyGC_PREV_MASK_FINALIZED;
+}
 
 static inline int _PyGC_FINALIZED(PyObject *op) {
     PyGC_Head *gc = _Py_AS_GC(op);
@@ -88,6 +91,10 @@ static inline int _PyGC_FINALIZED(PyObject *op) {
 static inline void _PyGC_SET_FINALIZED(PyObject *op) {
     PyGC_Head *gc = _Py_AS_GC(op);
     _PyGCHead_SET_FINALIZED(gc);
+}
+static inline void _PyGC_SET_UNFINALIZED(PyObject *op) {
+    PyGC_Head *gc = _Py_AS_GC(op);
+    _PyGCHead_UNSET_FINALIZED(gc);
 }
 
 
