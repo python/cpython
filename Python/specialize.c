@@ -1091,9 +1091,8 @@ PyObject *descr, DescriptorClassification kind)
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_HAS_MANAGED_DICT);
             goto fail;
         case OFFSET_DICT:
-            assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
-            _py_set_opcode(instr, LOAD_ATTR_METHOD_WITH_DICT);
-            break;
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
+            goto fail;
         case LAZY_DICT:
             assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
             _py_set_opcode(instr, LOAD_ATTR_METHOD_LAZY_DICT);
