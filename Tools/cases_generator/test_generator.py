@@ -17,7 +17,7 @@ def run_cases_test(input: str, expected: str):
     a.parse()
     a.analyze()
     if a.errors:
-        raise RuntimeError("Found {a.errors} errors")
+        raise RuntimeError(f"Found {a.errors} errors")
     a.write_instructions()
     temp_output.seek(0)
     lines = temp_output.readlines()
