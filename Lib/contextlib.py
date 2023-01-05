@@ -173,7 +173,7 @@ class _GeneratorContextManager(
                     isinstance(value, StopIteration)
                     and exc.__cause__ is value
                 ):
-                    exc.__traceback__ = traceback
+                    value.__traceback__ = traceback
                     return False
                 raise
             except BaseException as exc:
@@ -228,6 +228,7 @@ class _AsyncGeneratorContextManager(
             except RuntimeError as exc:
                 # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
+                    exc.__traceback__ = traceback
                     return False
                 # Avoid suppressing if a Stop(Async)Iteration exception
                 # was passed to athrow() and later wrapped into a RuntimeError
@@ -239,6 +240,7 @@ class _AsyncGeneratorContextManager(
                     isinstance(value, (StopIteration, StopAsyncIteration))
                     and exc.__cause__ is value
                 ):
+                    value.__traceback__ = traceback
                     return False
                 raise
             except BaseException as exc:
@@ -250,6 +252,7 @@ class _AsyncGeneratorContextManager(
                 # and the __exit__() protocol.
                 if exc is not value:
                     raise
+                exc.__traceback__ = traceback
                 return False
             raise RuntimeError("generator didn't stop after athrow()")
 
