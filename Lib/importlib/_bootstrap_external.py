@@ -426,6 +426,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3510 (FOR_ITER leaves iterator on the stack)
 #     Python 3.12a1 3511 (Add STOPITERATION_ERROR instruction)
 #     Python 3.12a1 3512 (Remove all unused consts from code objects)
+#     Python 3.12a1 3513 (Add CALL_INTRINSIC_1 instruction, removed STOPITERATION_ERROR, PRINT_EXPR, IMPORT_STAR)
 
 #     Python 3.13 will start with 3550
 
@@ -438,7 +439,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3512).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3513).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

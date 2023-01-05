@@ -30,6 +30,7 @@
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"       // _PyFuture_FromAST()
+#include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
@@ -1113,14 +1114,10 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_ITER:
             return 0;
 
-        case PRINT_EXPR:
-            return -1;
         case LOAD_BUILD_CLASS:
             return 1;
 
         case RETURN_VALUE:
-            return -1;
-        case IMPORT_STAR:
             return -1;
         case SETUP_ANNOTATIONS:
             return 0;
@@ -1216,10 +1213,6 @@ stack_effect(int opcode, int oparg, int jump)
              * of __(a)enter__ and push 2 values before jumping to the handler
              * if an exception be raised. */
             return jump ? 1 : 0;
-
-        case STOPITERATION_ERROR:
-            return 0;
-
         case PREP_RERAISE_STAR:
              return -1;
         case RERAISE:
@@ -1249,7 +1242,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case CALL:
             return -1-oparg;
-
+        case CALL_INTRINSIC_1:
+            return 0;
         case CALL_FUNCTION_EX:
             return -2 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
@@ -2604,7 +2598,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
     ADDOP(c, NO_LOCATION, RETURN_VALUE);
     USE_LABEL(c, handler);
-    ADDOP(c, NO_LOCATION, STOPITERATION_ERROR);
+    ADDOP_I(c, NO_LOCATION, CALL_INTRINSIC_1, INTRINSIC_STOPITERATION_ERROR);
     ADDOP_I(c, NO_LOCATION, RERAISE, 1);
     return SUCCESS;
 }
@@ -3953,7 +3947,8 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
         if (i == 0 && PyUnicode_READ_CHAR(alias->name, 0) == '*') {
             assert(n == 1);
-            ADDOP(c, LOC(s), IMPORT_STAR);
+            ADDOP_I(c, LOC(s), CALL_INTRINSIC_1, INTRINSIC_IMPORT_STAR);
+            ADDOP(c, NO_LOCATION, POP_TOP);
             return SUCCESS;
         }
 
@@ -4005,7 +4000,8 @@ compiler_stmt_expr(struct compiler *c, location loc, expr_ty value)
 {
     if (c->c_interactive && c->c_nestlevel <= 1) {
         VISIT(c, expr, value);
-        ADDOP(c, loc, PRINT_EXPR);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PRINT);
+        ADDOP(c, NO_LOCATION, POP_TOP);
         return SUCCESS;
     }
 
