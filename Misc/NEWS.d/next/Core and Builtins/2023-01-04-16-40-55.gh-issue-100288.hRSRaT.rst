@@ -1,0 +1,2 @@
+Remove the LOAD_ATTR_METHOD_WITH_DICT specialized instruction. Stats show it
+is not useful.
