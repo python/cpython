@@ -2845,14 +2845,22 @@ based on ideas from three sources:
   Ultimately Fast Accurate Summation by Siegfried M. Rump
   https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
 
+dl_zero() returns an extended precision zero
 dl_split() exactly splits a double into two half precision components.
 dl_add() performs compensated summation to keep a running total.
 dl_fma() implements an extended precision fused-multiply-add.
+dl_to_d() converts from extended precision to double precision.
 
- */
+*/
 
 struct DoubleLengthFloat { double hi; double lo; };
 typedef struct DoubleLengthFloat DoubleLength;
+
+static inline DoubleLength
+dl_zero()
+{
+    return (DoubleLength) {0.0, 0.0};
+}
 
 static inline DoubleLength
 dl_split(double x) {
@@ -2887,6 +2895,12 @@ dl_fma(DoubleLength total, double p, double q)
     return  dl_add(total, pp.lo * qq.lo);
 }
 
+static inline double
+dl_to_d(DoubleLength total)
+{
+    return total.hi + total.lo;
+}
+
 /*[clinic input]
 math.sumprod
 
@@ -2914,7 +2928,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     bool int_path_enabled = true, int_total_in_use = false;
     long int_total = 0;
     bool flt_path_enabled = true, flt_total_in_use = false;
-    DoubleLength flt_total = {0.0, 0.0};
+    DoubleLength flt_total = dl_zero();
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -3069,7 +3083,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             // We're finished, overflowed, have a non-float, or got a non-finite value
             flt_path_enabled = false;
             if (flt_total_in_use) {
-                term_i = PyFloat_FromDouble(flt_total.hi + flt_total.lo);
+                term_i = PyFloat_FromDouble(dl_to_d(flt_total));
                 if (term_i == NULL) {
                     goto err_exit;
                 }
@@ -3080,7 +3094,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 Py_SETREF(total, new_total);
                 new_total = NULL;
                 Py_CLEAR(term_i);
-                flt_total = (DoubleLength) {0.0, 0.0};
+                flt_total = dl_zero();
                 flt_total_in_use = false;
             }
         }
