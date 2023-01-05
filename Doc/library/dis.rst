@@ -607,15 +607,6 @@ the original TOS1.
    .. versionadded:: 3.12
 
 
-.. opcode:: STOPITERATION_ERROR
-
-   Handles a StopIteration raised in a generator or coroutine.
-   If TOS is an instance of :exc:`StopIteration`, or :exc:`StopAsyncIteration`
-   replace it with a :exc:`RuntimeError`.
-
-   .. versionadded:: 3.12
-
-
 .. opcode:: BEFORE_ASYNC_WITH
 
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
@@ -626,13 +617,6 @@ the original TOS1.
 
 
 **Miscellaneous opcodes**
-
-.. opcode:: PRINT_EXPR
-
-   Implements the expression statement for the interactive mode.  TOS is removed
-   from the stack and printed.  In non-interactive mode, an expression statement
-   is terminated with :opcode:`POP_TOP`.
-
 
 .. opcode:: SET_ADD (i)
 
@@ -680,13 +664,6 @@ iterations of the loop.
    statically.
 
    .. versionadded:: 3.6
-
-
-.. opcode:: IMPORT_STAR
-
-   Loads all symbols not starting with ``'_'`` directly from the module TOS to
-   the local namespace. The module is popped after loading all names. This
-   opcode implements ``from module import *``.
 
 
 .. opcode:: POP_EXCEPT
@@ -1420,6 +1397,15 @@ iterations of the loop.
       Pseudo instructions were added to the :mod:`dis` module, and for them
       it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
       they use their arg.
+
+
+.. opcode:: CALL_INTRINSIC_1
+
+   Calls an intrinsic function with one argument. Passes the TOS as the argument
+   and sets TOS to the result. Used to implement functionality that is necessary
+   but not performance critical.
+
+   .. versionadded:: 3.12
 
 
 **Pseudo-instructions**
