@@ -144,7 +144,7 @@ Lib/ast.py                    @isidentical
 **/*cgi*                      @ethanfurman
 **/*tarfile*                  @ethanfurman
 
-**/*tomllib*                  @encukou
+**/*tomllib*                  @encukou @hauntsaninja
 
 **/*sysconfig*                @FFY00
 
