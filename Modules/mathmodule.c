@@ -2847,8 +2847,7 @@ based on ideas from three sources:
 
 The double length routines allow for quite a bit of instruction
 level parallelism.  On a 3.22 Ghz Apple M1 Max, the incremental
-cost of increasing the input vector size by one is 8.75ns which
-is about 28 clock cycles for everything including
+cost of increasing the input vector size by one is 8.75ns.
 
 dl_zero() returns an extended precision zero
 dl_split() exactly splits a double into two half precision components.
