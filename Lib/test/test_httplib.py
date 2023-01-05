@@ -19,6 +19,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import warnings_helper
 
+support.requires_working_socket(module=True)
 
 here = os.path.dirname(__file__)
 # Self-signed cert file for 'localhost'
@@ -552,6 +553,27 @@ class BasicTest(TestCase):
                 obj.phrase = phrase
                 obj.description = description
                 return obj
+
+            @property
+            def is_informational(self):
+                return 100 <= self <= 199
+
+            @property
+            def is_success(self):
+                return 200 <= self <= 299
+
+            @property
+            def is_redirection(self):
+                return 300 <= self <= 399
+
+            @property
+            def is_client_error(self):
+                return 400 <= self <= 499
+
+            @property
+            def is_server_error(self):
+                return 500 <= self <= 599
+
             # informational
             CONTINUE = 100, 'Continue', 'Request received, please continue'
             SWITCHING_PROTOCOLS = (101, 'Switching Protocols',
@@ -668,6 +690,30 @@ class BasicTest(TestCase):
                 'The client needs to authenticate to gain network access')
         enum._test_simple_enum(CheckedHTTPStatus, HTTPStatus)
 
+    def test_httpstatus_range(self):
+        """Checks that the statuses are in the 100-599 range"""
+
+        for member in HTTPStatus.__members__.values():
+            self.assertGreaterEqual(member, 100)
+            self.assertLessEqual(member, 599)
+
+    def test_httpstatus_category(self):
+        """Checks that the statuses belong to the standard categories"""
+
+        categories = (
+            ((100, 199), "is_informational"),
+            ((200, 299), "is_success"),
+            ((300, 399), "is_redirection"),
+            ((400, 499), "is_client_error"),
+            ((500, 599), "is_server_error"),
+        )
+        for member in HTTPStatus.__members__.values():
+            for (lower, upper), category in categories:
+                category_indicator = getattr(member, category)
+                if lower <= member <= upper:
+                    self.assertTrue(category_indicator)
+                else:
+                    self.assertFalse(category_indicator)
 
     def test_status_lines(self):
         # Test HTTP status lines
@@ -1932,7 +1978,7 @@ class HTTPSTest(TestCase):
         self.assertEqual(exc_info.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
 
     def test_local_good_hostname(self):
-        # The (valid) cert validates the HTTP hostname
+        # The (valid) cert validates the HTTPS hostname
         import ssl
         server = self.make_server(CERT_localhost)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1945,7 +1991,7 @@ class HTTPSTest(TestCase):
         self.assertEqual(resp.status, 404)
 
     def test_local_bad_hostname(self):
-        # The (valid) cert doesn't validate the HTTP hostname
+        # The (valid) cert doesn't validate the HTTPS hostname
         import ssl
         server = self.make_server(CERT_fakehostname)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1953,38 +1999,21 @@ class HTTPSTest(TestCase):
         h = client.HTTPSConnection('localhost', server.port, context=context)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
-        # Same with explicit check_hostname=True
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            h = client.HTTPSConnection('localhost', server.port,
-                                       context=context, check_hostname=True)
+
+        # Same with explicit context.check_hostname=True
+        context.check_hostname = True
+        h = client.HTTPSConnection('localhost', server.port, context=context)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
-        # With check_hostname=False, the mismatching is ignored
-        context.check_hostname = False
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            h = client.HTTPSConnection('localhost', server.port,
-                                       context=context, check_hostname=False)
-        h.request('GET', '/nonexistent')
-        resp = h.getresponse()
-        resp.close()
-        h.close()
-        self.assertEqual(resp.status, 404)
-        # The context's check_hostname setting is used if one isn't passed to
-        # HTTPSConnection.
+
+        # With context.check_hostname=False, the mismatching is ignored
         context.check_hostname = False
         h = client.HTTPSConnection('localhost', server.port, context=context)
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
-        self.assertEqual(resp.status, 404)
         resp.close()
         h.close()
-        # Passing check_hostname to HTTPSConnection should override the
-        # context's setting.
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            h = client.HTTPSConnection('localhost', server.port,
-                                       context=context, check_hostname=True)
-        with self.assertRaises(ssl.CertificateError):
-            h.request('GET', '/')
+        self.assertEqual(resp.status, 404)
 
     @unittest.skipIf(not hasattr(client, 'HTTPSConnection'),
                      'http.client.HTTPSConnection not available')
@@ -2020,11 +2049,9 @@ class HTTPSTest(TestCase):
         self.assertIs(h._context, context)
         self.assertFalse(h._context.post_handshake_auth)
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', 'key_file, cert_file and check_hostname are deprecated',
-                                    DeprecationWarning)
-            h = client.HTTPSConnection('localhost', 443, context=context,
-                                       cert_file=CERT_localhost)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT, cert_file=CERT_localhost)
+        context.post_handshake_auth = True
+        h = client.HTTPSConnection('localhost', 443, context=context)
         self.assertTrue(h._context.post_handshake_auth)
 
 

@@ -116,8 +116,8 @@ Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
 Some modules contain code that is intended for script use only, like parsing
-command-line arguments or fetching data from standard input.  When a module
-like this were to be imported from a different module, for example to unit test
+command-line arguments or fetching data from standard input.  If a module
+like this was imported from a different module, for example to unit test
 it, the script code would unintentionally execute as well.
 
 This is where using the ``if __name__ == '__main__'`` code block comes in
@@ -231,7 +231,7 @@ students::
     print(f'Found student: {search_students(student_name)}')
 
 Note that ``from .student import search_students`` is an example of a relative
-import.  This import style must be used when referencing modules within a
+import.  This import style can be used when referencing modules within a
 package.  For more details, see :ref:`intra-package-references` in the
 :ref:`tut-modules` section of the tutorial.
 
@@ -253,7 +253,7 @@ attribute will include the package's path if imported::
 
 This won't work for ``__main__.py`` files in the root directory of a .zip file
 though.  Hence, for consistency, minimal ``__main__.py`` like the :mod:`venv`
-one mentioned above are preferred.
+one mentioned below are preferred.
 
 .. seealso::
 

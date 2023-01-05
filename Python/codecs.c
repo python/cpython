@@ -235,8 +235,7 @@ PyObject *args_tuple(PyObject *object,
     args = PyTuple_New(1 + (errors != NULL));
     if (args == NULL)
         return NULL;
-    Py_INCREF(object);
-    PyTuple_SET_ITEM(args,0,object);
+    PyTuple_SET_ITEM(args, 0, Py_NewRef(object));
     if (errors) {
         PyObject *v;
 
@@ -263,8 +262,7 @@ PyObject *codec_getitem(const char *encoding, int index)
         return NULL;
     v = PyTuple_GET_ITEM(codecs, index);
     Py_DECREF(codecs);
-    Py_INCREF(v);
-    return v;
+    return Py_NewRef(v);
 }
 
 /* Helper functions to create an incremental codec. */
@@ -430,8 +428,7 @@ _PyCodec_EncodeInternal(PyObject *object,
                         "encoder must return a tuple (object, integer)");
         goto onError;
     }
-    v = PyTuple_GET_ITEM(result,0);
-    Py_INCREF(v);
+    v = Py_NewRef(PyTuple_GET_ITEM(result,0));
     /* We don't check or use the second (integer) entry. */
 
     Py_DECREF(args);
@@ -475,8 +472,7 @@ _PyCodec_DecodeInternal(PyObject *object,
                         "decoder must return a tuple (object,integer)");
         goto onError;
     }
-    v = PyTuple_GET_ITEM(result,0);
-    Py_INCREF(v);
+    v = Py_NewRef(PyTuple_GET_ITEM(result,0));
     /* We don't check or use the second (integer) entry. */
 
     Py_DECREF(args);
@@ -522,7 +518,6 @@ PyObject *PyCodec_Decode(PyObject *object,
 PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
                                        const char *alternate_command)
 {
-    _Py_IDENTIFIER(_is_text_encoding);
     PyObject *codec;
     PyObject *attr;
     int is_text_codec;
@@ -536,7 +531,7 @@ PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
      * attribute.
      */
     if (!PyTuple_CheckExact(codec)) {
-        if (_PyObject_LookupAttrId(codec, &PyId__is_text_encoding, &attr) < 0) {
+        if (_PyObject_LookupAttr(codec, &_Py_ID(_is_text_encoding), &attr) < 0) {
             Py_DECREF(codec);
             return NULL;
         }
@@ -572,8 +567,7 @@ PyObject *codec_getitem_checked(const char *encoding,
     if (codec == NULL)
         return NULL;
 
-    v = PyTuple_GET_ITEM(codec, index);
-    Py_INCREF(v);
+    v = Py_NewRef(PyTuple_GET_ITEM(codec, index));
     Py_DECREF(codec);
     return v;
 }
@@ -1527,7 +1521,7 @@ static int _PyCodecRegistry_Init(void)
         }
     }
 
-    mod = PyImport_ImportModuleNoBlock("encodings");
+    mod = PyImport_ImportModule("encodings");
     if (mod == NULL) {
         return -1;
     }

@@ -1,3 +1,0 @@
-Fix test_name_error_suggestions_do_not_trigger_for_too_many_locals() of
-test_exceptions if a directory name contains "a1" (like "Python-3.11.0a1"):
-use a stricter regular expression. Patch by Victor Stinner.

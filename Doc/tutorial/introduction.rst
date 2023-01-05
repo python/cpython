@@ -11,6 +11,13 @@ with a prompt are output from the interpreter. Note that a secondary prompt on a
 line by itself in an example means you must type a blank line; this is used to
 end a multi-line command.
 
+.. only:: html
+
+   You can toggle the display of prompts and output by clicking on ``>>>``
+   in the upper-right corner of an example box.  If you hide the prompts
+   and output for an example, then you can easily copy and paste the input
+   lines into your interpreter.
+
 .. index:: single: # (hash); comment
 
 Many of the examples in this manual, even those entered at the interactive
@@ -63,8 +70,8 @@ the ones with a fractional part (e.g. ``5.0``, ``1.6``) have type
 :class:`float`.  We will see more about numeric types later in the tutorial.
 
 Division (``/``) always returns a float.  To do :term:`floor division` and
-get an integer result (discarding any fractional result) you can use the ``//``
-operator; to calculate the remainder you can use ``%``::
+get an integer result you can use the ``//`` operator; to calculate
+the remainder you can use ``%``::
 
    >>> 17 / 3  # classic division returns a float
    5.666666666666667
@@ -182,6 +189,11 @@ the first quote::
    >>> print(r'C:\some\name')  # note the r before the quote
    C:\some\name
 
+There is one subtle aspect to raw strings: a raw string may not end in
+an odd number of ``\`` characters; see
+:ref:`the FAQ entry <faq-programming-raw-string-backslash>` for more information
+and workarounds.
+
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically
 included in the string, but it's possible to prevent this by adding a ``\`` at
@@ -227,12 +239,12 @@ This only works with two literals though, not with variables or expressions::
    >>> prefix 'thon'  # can't concatenate a variable and a string literal
      File "<stdin>", line 1
        prefix 'thon'
-                   ^
+              ^^^^^^
    SyntaxError: invalid syntax
    >>> ('un' * 3) 'ium'
      File "<stdin>", line 1
        ('un' * 3) 'ium'
-                      ^
+                  ^^^^^
    SyntaxError: invalid syntax
 
 If you want to concatenate variables or a variable and a literal, use ``+``::
@@ -262,7 +274,7 @@ Indices may also be negative numbers, to start counting from the right::
 Note that since -0 is the same as 0, negative indices start from -1.
 
 In addition to indexing, *slicing* is also supported.  While indexing is used
-to obtain individual characters, *slicing* allows you to obtain substring::
+to obtain individual characters, *slicing* allows you to obtain a substring::
 
    >>> word[0:2]  # characters from position 0 (included) to 2 (excluded)
    'Py'

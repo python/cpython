@@ -9,6 +9,11 @@
 
 **Source code:** :source:`Lib/json/__init__.py`
 
+.. testsetup:: *
+
+   import json
+   from json import AttrDict
+
 --------------
 
 `JSON (JavaScript Object Notation) <https://json.org>`_, specified by
@@ -17,6 +22,11 @@
 is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
 (although it is not a strict subset of JavaScript [#rfc-errata]_ ).
+
+.. warning::
+   Be cautious when parsing JSON data from untrusted sources. A malicious
+   JSON string may cause the decoder to consume considerable CPU and memory
+   resources. Limiting the size of data to be parsed is recommended.
 
 :mod:`json` exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
@@ -115,7 +125,7 @@ See :ref:`json-commandline` for detailed documentation.
 
 .. note::
 
-   JSON is a subset of `YAML <http://yaml.org/>`_ 1.2.  The JSON produced by
+   JSON is a subset of `YAML <https://yaml.org/>`_ 1.2.  The JSON produced by
    this module's default settings (in particular, the default *separators*
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.
@@ -124,13 +134,6 @@ See :ref:`json-commandline` for detailed documentation.
 
    This module's encoders and decoders preserve input and output order by
    default.  Order is only lost if the underlying containers are unordered.
-
-   Prior to Python 3.7, :class:`dict` was not guaranteed to be ordered, so
-   inputs and outputs were typically scrambled unless
-   :class:`collections.OrderedDict` was specifically requested.  Starting
-   with Python 3.7, the regular :class:`dict` became order preserving, so
-   it is no longer necessary to specify :class:`collections.OrderedDict` for
-   JSON generation and parsing.
 
 
 Basic Usage
@@ -159,7 +162,7 @@ Basic Usage
 
    If *check_circular* is false (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
-   will result in an :exc:`OverflowError` (or worse).
+   will result in a :exc:`RecursionError` (or worse).
 
    If *allow_nan* is false (default: ``True``), then it will be a
    :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
@@ -233,7 +236,7 @@ Basic Usage
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
    *object_hook* will be used instead of the :class:`dict`.  This feature can be used
-   to implement custom decoders (e.g. `JSON-RPC <http://www.jsonrpc.org>`_
+   to implement custom decoders (e.g. `JSON-RPC <https://www.jsonrpc.org>`_
    class hinting).
 
    *object_pairs_hook* is an optional function that will be called with the
@@ -254,6 +257,12 @@ Basic Usage
    to be decoded.  By default, this is equivalent to ``int(num_str)``.  This can
    be used to use another datatype or parser for JSON integers
    (e.g. :class:`float`).
+
+   .. versionchanged:: 3.11
+      The default *parse_int* of :func:`int` now limits the maximum length of
+      the integer string via the interpreter's :ref:`integer string
+      conversion length limitation <int_max_str_digits>` to help avoid denial
+      of service attacks.
 
    *parse_constant*, if specified, will be called with one of the following
    strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.
@@ -333,7 +342,7 @@ Encoders and Decoders
    *object_hook*, if specified, will be called with the result of every JSON
    object decoded and its return value will be used in place of the given
    :class:`dict`.  This can be used to provide custom deserializations (e.g. to
-   support `JSON-RPC <http://www.jsonrpc.org>`_ class hinting).
+   support `JSON-RPC <https://www.jsonrpc.org>`_ class hinting).
 
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of
@@ -432,7 +441,7 @@ Encoders and Decoders
 
    If *check_circular* is true (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
-   prevent an infinite recursion (which would cause an :exc:`OverflowError`).
+   prevent an infinite recursion (which would cause a :exc:`RecursionError`).
    Otherwise, no such check takes place.
 
    If *allow_nan* is true (the default), then ``NaN``, ``Infinity``, and
@@ -538,6 +547,44 @@ Exceptions
       The column corresponding to *pos*.
 
    .. versionadded:: 3.5
+
+.. class:: AttrDict(**kwargs)
+           AttrDict(mapping, **kwargs)
+           AttrDict(iterable, **kwargs)
+
+   Subclass of :class:`dict` object that also supports attribute style dotted access.
+
+   This class is intended for use with the :attr:`object_hook` in
+   :func:`json.load` and :func:`json.loads`::
+
+   .. doctest::
+
+        >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
+        >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
+        >>> orbital_period['earth']     # Dict style lookup
+        365
+        >>> orbital_period.earth        # Attribute style lookup
+        365
+        >>> orbital_period.keys()       # All dict methods are present
+        dict_keys(['mercury', 'venus', 'earth', 'mars'])
+
+   Attribute style access only works for keys that are valid attribute
+   names.  In contrast, dictionary style access works for all keys.  For
+   example, ``d.two words`` contains a space and is not syntactically
+   valid Python, so ``d["two words"]`` should be used instead.
+
+   If a key has the same name as a dictionary method, then a dictionary
+   lookup finds the key and an attribute lookup finds the method:
+
+   .. doctest::
+
+        >>> d = AttrDict(items=50)
+        >>> d['items']                  # Lookup the key
+        50
+        >>> d.items()                   # Call the method
+        dict_items([('items', 50)])
+
+   .. versionadded:: 3.12
 
 
 Standard Compliance and Interoperability

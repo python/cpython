@@ -8,6 +8,7 @@ import operator
 import fractions
 import functools
 import sys
+import typing
 import unittest
 from copy import copy, deepcopy
 import pickle
@@ -161,6 +162,7 @@ class FractionTest(unittest.TestCase):
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
         self.assertEqual((3, 2), _components(F("3/2")))
+        self.assertEqual((3, 2), _components(F("3 / 2")))
         self.assertEqual((3, 2), _components(F(" \n  +3/2")))
         self.assertEqual((-3, 2), _components(F("-3/2  ")))
         self.assertEqual((13, 2), _components(F("    013/02 \n  ")))
@@ -189,9 +191,6 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '/2'",
             F, "/2")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '3 /2'",
-            F, "3 /2")
         self.assertRaisesMessage(
             # Denominators don't need a sign.
             ValueError, "Invalid literal for Fraction: '3/+2'",
@@ -341,6 +340,19 @@ class FractionTest(unittest.TestCase):
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
 
+    def test_is_integer(self):
+        self.assertTrue(F(1, 1).is_integer())
+        self.assertTrue(F(-1, 1).is_integer())
+        self.assertTrue(F(1, -1).is_integer())
+        self.assertTrue(F(2, 2).is_integer())
+        self.assertTrue(F(-2, 2).is_integer())
+        self.assertTrue(F(2, -2).is_integer())
+
+        self.assertFalse(F(1, 2).is_integer())
+        self.assertFalse(F(-1, 2).is_integer())
+        self.assertFalse(F(1, -2).is_integer())
+        self.assertFalse(F(-1, -2).is_integer())
+
     def test_as_integer_ratio(self):
         self.assertEqual(F(4, 6).as_integer_ratio(), (2, 3))
         self.assertEqual(F(-4, 6).as_integer_ratio(), (-2, 3))
@@ -384,6 +396,47 @@ class FractionTest(unittest.TestCase):
                                float(F(int('2'*400+'7'), int('3'*400+'1'))))
 
         self.assertTypedEquals(0.1+0j, complex(F(1,10)))
+
+    def testSupportsInt(self):
+        # See bpo-44547.
+        f = F(3, 2)
+        self.assertIsInstance(f, typing.SupportsInt)
+        self.assertEqual(int(f), 1)
+        self.assertEqual(type(int(f)), int)
+
+    def testIntGuaranteesIntReturn(self):
+        # Check that int(some_fraction) gives a result of exact type `int`
+        # even if the fraction is using some other Integral type for its
+        # numerator and denominator.
+
+        class CustomInt(int):
+            """
+            Subclass of int with just enough machinery to convince the Fraction
+            constructor to produce something with CustomInt numerator and
+            denominator.
+            """
+
+            @property
+            def numerator(self):
+                return self
+
+            @property
+            def denominator(self):
+                return CustomInt(1)
+
+            def __mul__(self, other):
+                return CustomInt(int(self) * int(other))
+
+            def __floordiv__(self, other):
+                return CustomInt(int(self) // int(other))
+
+        f = F(CustomInt(13), CustomInt(5))
+
+        self.assertIsInstance(f.numerator, CustomInt)
+        self.assertIsInstance(f.denominator, CustomInt)
+        self.assertIsInstance(f, typing.SupportsInt)
+        self.assertEqual(int(f), 2)
+        self.assertEqual(type(int(f)), int)
 
     def testBoolGuarateesBoolReturn(self):
         # Ensure that __bool__ is used on numerator which guarantees a bool

@@ -2,8 +2,8 @@
  * C Extension module to test Python internal C APIs (Include/internal).
  */
 
-#if !defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE_MODULE)
-#  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 /* Always enable assertions */
@@ -14,14 +14,24 @@
 #include "Python.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
+#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg
+#include "pycore_fileutils.h"    // _Py_normpath
+#include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
+#include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
+#include "osdefs.h"              // MAXPATHLEN
 
+#include "clinic/_testinternalcapi.c.h"
 
+/*[clinic input]
+module _testinternalcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7bb583d8c9eb9a78]*/
 static PyObject *
 get_configs(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -34,8 +44,7 @@ get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    /* subtract one to ignore the frame of the get_recursion_depth() call */
-    return PyLong_FromLong(tstate->recursion_depth - 1);
+    return PyLong_FromLong(tstate->py_recursion_limit - tstate->py_recursion_remaining);
 }
 
 
@@ -96,6 +105,7 @@ test_popcount(PyObject *self, PyObject *Py_UNUSED(args))
     CHECK(0, 0);
     CHECK(1, 1);
     CHECK(0x08080808, 4);
+    CHECK(0x10000001, 2);
     CHECK(0x10101010, 4);
     CHECK(0x10204080, 4);
     CHECK(0xDEADCAFE, 22);
@@ -270,6 +280,14 @@ error:
 }
 
 
+static PyObject *
+test_reset_path_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(arg))
+{
+    _PyPathConfig_ClearGlobal();
+    Py_RETURN_NONE;
+}
+
+
 static PyObject*
 test_atomic_funcs(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -293,7 +311,7 @@ check_edit_cost(const char *a, const char *b, Py_ssize_t expected)
         goto exit;
     }
     b_obj = PyUnicode_FromString(b);
-    if (a_obj == NULL) {
+    if (b_obj == NULL) {
         goto exit;
     }
     Py_ssize_t result = _Py_UTF8_Edit_Cost(a_obj, b_obj, -1);
@@ -366,6 +384,235 @@ test_edit_cost(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+normalize_path(PyObject *self, PyObject *filename)
+{
+    Py_ssize_t size = -1;
+    wchar_t *encoded = PyUnicode_AsWideCharString(filename, &size);
+    if (encoded == NULL) {
+        return NULL;
+    }
+
+    PyObject *result = PyUnicode_FromWideChar(_Py_normpath(encoded, size), -1);
+    PyMem_Free(encoded);
+
+    return result;
+}
+
+static PyObject *
+get_getpath_codeobject(PyObject *self, PyObject *Py_UNUSED(args)) {
+    return _Py_Get_Getpath_CodeObject();
+}
+
+
+static PyObject *
+encode_locale_ex(PyObject *self, PyObject *args)
+{
+    PyObject *unicode;
+    int current_locale = 0;
+    wchar_t *wstr;
+    PyObject *res = NULL;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "U|is", &unicode, &current_locale, &errors)) {
+        return NULL;
+    }
+    wstr = PyUnicode_AsWideCharString(unicode, NULL);
+    if (wstr == NULL) {
+        return NULL;
+    }
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
+
+    char *str = NULL;
+    size_t error_pos;
+    const char *reason = NULL;
+    int ret = _Py_EncodeLocaleEx(wstr,
+                                 &str, &error_pos, &reason,
+                                 current_locale, error_handler);
+    PyMem_Free(wstr);
+
+    switch(ret) {
+    case 0:
+        res = PyBytes_FromString(str);
+        PyMem_RawFree(str);
+        break;
+    case -1:
+        PyErr_NoMemory();
+        break;
+    case -2:
+        PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu, reason=%s",
+                     error_pos, reason);
+        break;
+    case -3:
+        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
+        break;
+    default:
+        PyErr_SetString(PyExc_ValueError, "unknown error code");
+        break;
+    }
+    return res;
+}
+
+
+static PyObject *
+decode_locale_ex(PyObject *self, PyObject *args)
+{
+    char *str;
+    int current_locale = 0;
+    PyObject *res = NULL;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "y|is", &str, &current_locale, &errors)) {
+        return NULL;
+    }
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
+
+    wchar_t *wstr = NULL;
+    size_t wlen = 0;
+    const char *reason = NULL;
+    int ret = _Py_DecodeLocaleEx(str,
+                                 &wstr, &wlen, &reason,
+                                 current_locale, error_handler);
+
+    switch(ret) {
+    case 0:
+        res = PyUnicode_FromWideChar(wstr, wlen);
+        PyMem_RawFree(wstr);
+        break;
+    case -1:
+        PyErr_NoMemory();
+        break;
+    case -2:
+        PyErr_Format(PyExc_RuntimeError, "decode error: pos=%zu, reason=%s",
+                     wlen, reason);
+        break;
+    case -3:
+        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
+        break;
+    default:
+        PyErr_SetString(PyExc_ValueError, "unknown error code");
+        break;
+    }
+    return res;
+}
+
+static PyObject *record_list = NULL;
+
+static PyObject *
+set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), _PyEval_EvalFrameDefault);
+    Py_CLEAR(record_list);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
+{
+    if (PyFunction_Check(f->f_funcobj)) {
+        PyList_Append(record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
+    }
+    return _PyEval_EvalFrameDefault(tstate, f, exc);
+}
+
+
+static PyObject *
+set_eval_frame_record(PyObject *self, PyObject *list)
+{
+    if (!PyList_Check(list)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a list");
+        return NULL;
+    }
+    Py_XSETREF(record_list, Py_NewRef(list));
+    _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), record_eval);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+
+_testinternalcapi.compiler_codegen -> object
+
+  ast: object
+  filename: object
+  optimize: int
+
+Apply compiler code generation to an AST.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_compiler_codegen_impl(PyObject *module, PyObject *ast,
+                                        PyObject *filename, int optimize)
+/*[clinic end generated code: output=fbbbbfb34700c804 input=e9fbe6562f7f75e4]*/
+{
+    PyCompilerFlags *flags = NULL;
+    return _PyCompile_CodeGen(ast, filename, flags, optimize);
+}
+
+
+/*[clinic input]
+
+_testinternalcapi.optimize_cfg -> object
+
+  instructions: object
+  consts: object
+
+Apply compiler optimizations to an instruction list.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
+                                    PyObject *consts)
+/*[clinic end generated code: output=5412aeafca683c8b input=7e8a3de86ebdd0f9]*/
+{
+    return _PyCompile_OptimizeCfg(instructions, consts);
+}
+
+
+static PyObject *
+get_interp_settings(PyObject *self, PyObject *args)
+{
+    int interpid = -1;
+    if (!PyArg_ParseTuple(args, "|i:get_interp_settings", &interpid)) {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = NULL;
+    if (interpid < 0) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        interp = tstate ? tstate->interp : _PyInterpreterState_Main();
+    }
+    else if (interpid == 0) {
+        interp = _PyInterpreterState_Main();
+    }
+    else {
+        PyErr_Format(PyExc_NotImplementedError,
+                     "%zd", interpid);
+        return NULL;
+    }
+    assert(interp != NULL);
+
+    PyObject *settings = PyDict_New();
+    if (settings == NULL) {
+        return NULL;
+    }
+
+    /* Add the feature flags. */
+    PyObject *flags = PyLong_FromUnsignedLong(interp->feature_flags);
+    if (flags == NULL) {
+        Py_DECREF(settings);
+        return NULL;
+    }
+    int res = PyDict_SetItemString(settings, "feature_flags", flags);
+    Py_DECREF(flags);
+    if (res != 0) {
+        Py_DECREF(settings);
+        return NULL;
+    }
+
+    return settings;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -375,8 +622,18 @@ static PyMethodDef TestMethods[] = {
     {"test_hashtable", test_hashtable, METH_NOARGS},
     {"get_config", test_get_config, METH_NOARGS},
     {"set_config", test_set_config, METH_O},
+    {"reset_path_config", test_reset_path_config, METH_NOARGS},
     {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
+    {"normalize_path", normalize_path, METH_O, NULL},
+    {"get_getpath_codeobject", get_getpath_codeobject, METH_NOARGS, NULL},
+    {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
+    {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
+    {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
+    {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
+    _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
+    _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
+    {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

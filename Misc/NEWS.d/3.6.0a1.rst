@@ -1,7 +1,40 @@
+.. release date: 2016-05-16
+.. bpo: 26657
+.. date: 9135
+.. nonce: C_-XFg
+.. original section: Library
+.. section: Security
+
+Fix directory traversal vulnerability with http.server on Windows.  This
+fixes a regression that was introduced in 3.3.4rc1 and 3.4.0rc1.  Based on
+patch by Philipp Hagemeister.
+
+..
+
+.. bpo: 26313
+.. date: 9102
+.. nonce: LjZAjy
+.. original section: Library
+.. section: Security
+
+ssl.py _load_windows_store_certs fails if windows cert store is empty. Patch
+by Baji.
+
+..
+
+.. bpo: 25939
+.. date: 9076
+.. nonce: X49Fqd
+.. original section: Library
+.. section: Security
+
+On Windows open the cert store readonly in ssl.enum_certificates.
+
+..
+
 .. bpo: 20041
 .. date: 9253
 .. nonce: TypyGp
-.. release date: 2016-05-16
 .. section: Core and Builtins
 
 Fixed TypeError when frame.f_trace is set to None. Patch by Xavier de Gaye.
@@ -1198,18 +1231,6 @@ limits for multibyte character encodings like utf-8.
 
 ..
 
-.. bpo: 26657
-.. date: 9135
-.. nonce: C_-XFg
-.. original section: Library
-.. section: Security
-
-Fix directory traversal vulnerability with http.server on Windows.  This
-fixes a regression that was introduced in 3.3.4rc1 and 3.4.0rc1.  Based on
-patch by Philipp Hagemeister.
-
-..
-
 .. bpo: 26717
 .. date: 9134
 .. nonce: jngTdu
@@ -1532,17 +1553,6 @@ tracemalloc to get the traceback where source object was allocated.
 
 ..
 
-.. bpo: 26313
-.. date: 9102
-.. nonce: LjZAjy
-.. original section: Library
-.. section: Security
-
-ssl.py _load_windows_store_certs fails if windows cert store is empty. Patch
-by Baji.
-
-..
-
 .. bpo: 26569
 .. date: 9101
 .. nonce: EX8vF1
@@ -1790,16 +1800,6 @@ Change the socketserver module to only catch exceptions raised from a
 request handler that are derived from Exception (instead of BaseException).
 Therefore SystemExit and KeyboardInterrupt no longer trigger the
 handle_error() method, and will now to stop a single-threaded server.
-
-..
-
-.. bpo: 25939
-.. date: 9076
-.. nonce: X49Fqd
-.. original section: Library
-.. section: Security
-
-On Windows open the cert store readonly in ssl.enum_certificates.
 
 ..
 

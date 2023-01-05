@@ -57,6 +57,12 @@ Accessing The Annotations Dict Of An Object In Python 3.10 And Newer
   newer is to call :func:`getattr` with three arguments,
   for example ``getattr(o, '__annotations__', None)``.
 
+  Before Python 3.10, accessing ``__annotations__`` on a class that
+  defines no annotations but that has a parent class with
+  annotations would return the parent's ``__annotations__``.
+  In Python 3.10 and newer, the child class's annotations
+  will be an empty dict instead.
+
 
 Accessing The Annotations Dict Of An Object In Python 3.9 And Older
 ===================================================================
@@ -156,7 +162,7 @@ Manually Un-Stringizing Stringized Annotations
   require annotating with string values that specifically
   *can't* be evaluated.  For example:
 
-  * :pep:`604` union types using `|`, before support for this
+  * :pep:`604` union types using ``|``, before support for this
     was added to Python 3.10.
   * Definitions that aren't needed at runtime, only imported
     when :const:`typing.TYPE_CHECKING` is true.

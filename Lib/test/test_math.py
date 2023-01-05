@@ -501,6 +501,17 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.exp(NAN)))
         self.assertRaises(OverflowError, math.exp, 1000000)
 
+    def testExp2(self):
+        self.assertRaises(TypeError, math.exp2)
+        self.ftest('exp2(-1)', math.exp2(-1), 0.5)
+        self.ftest('exp2(0)', math.exp2(0), 1)
+        self.ftest('exp2(1)', math.exp2(1), 2)
+        self.ftest('exp2(2.3)', math.exp2(2.3), 4.924577653379665)
+        self.assertEqual(math.exp2(INF), INF)
+        self.assertEqual(math.exp2(NINF), 0.)
+        self.assertTrue(math.isnan(math.exp2(NAN)))
+        self.assertRaises(OverflowError, math.exp2, 1000000)
+
     def testFabs(self):
         self.assertRaises(TypeError, math.fabs)
         self.ftest('fabs(-1)', math.fabs(-1), 1)
@@ -994,6 +1005,11 @@ class MathTests(unittest.TestCase):
             q = (0.0, 0.0)
             self.assertEqual(math.dist(p, q), 5*scale)
             self.assertEqual(math.dist(q, p), 5*scale)
+
+    def test_math_dist_leak(self):
+        # gh-98897: Check for error handling does not leak memory
+        with self.assertRaises(ValueError):
+            math.dist([1, 2], [3, 4, 5])
 
     def testIsqrt(self):
         # Test a variety of inputs, large and small.
@@ -1878,8 +1894,8 @@ class MathTests(unittest.TestCase):
         perm = math.perm
         factorial = math.factorial
         # Test if factorial definition is satisfied
-        for n in range(100):
-            for k in range(n + 1):
+        for n in range(500):
+            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
                 self.assertEqual(perm(n, k),
                                  factorial(n) // factorial(n - k))
 
@@ -1942,8 +1958,8 @@ class MathTests(unittest.TestCase):
         comb = math.comb
         factorial = math.factorial
         # Test if factorial definition is satisfied
-        for n in range(100):
-            for k in range(n + 1):
+        for n in range(500):
+            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
                 self.assertEqual(comb(n, k), factorial(n)
                     // (factorial(k) * factorial(n - k)))
 
