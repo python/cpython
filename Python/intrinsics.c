@@ -171,11 +171,11 @@ stopiteration_error(PyThreadState* tstate, PyObject *exc)
         assert(PyExceptionInstance_Check(error));
         PyException_SetCause(error, Py_NewRef(exc));
         // Steal exc reference, rather than Py_NewRef+Py_DECREF
-        PyException_SetContext(error, exc);
+        PyException_SetContext(error, Py_NewRef(exc));
         Py_DECREF(message);
         return error;
     }
-    return exc;
+    return Py_NewRef(exc);
 }
 
 instrinsic_func1

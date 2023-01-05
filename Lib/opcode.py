@@ -112,9 +112,6 @@ def_op('CLEANUP_THROW', 55)
 def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
 
-def_op('STOPITERATION_ERROR', 63)
-def_op('CALL_INTRINSIC_1', 64)
-
 def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)
 
@@ -221,7 +218,7 @@ def_op('DICT_UPDATE', 165)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
-
+def_op('CALL_INTRINSIC_1', 173)
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 

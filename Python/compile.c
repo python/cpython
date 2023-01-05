@@ -1215,10 +1215,6 @@ stack_effect(int opcode, int oparg, int jump)
              * of __(a)enter__ and push 2 values before jumping to the handler
              * if an exception be raised. */
             return jump ? 1 : 0;
-
-        case STOPITERATION_ERROR:
-            return 0;
-
         case PREP_RERAISE_STAR:
              return -1;
         case RERAISE:
@@ -2604,7 +2600,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
     ADDOP(c, NO_LOCATION, RETURN_VALUE);
     USE_LABEL(c, handler);
-    ADDOP(c, NO_LOCATION, STOPITERATION_ERROR);
+    ADDOP_I(c, NO_LOCATION, CALL_INTRINSIC_1, INTRINSIC_STOPITERATION_ERROR);
     ADDOP_I(c, NO_LOCATION, RERAISE, 1);
     return SUCCESS;
 }
