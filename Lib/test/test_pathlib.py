@@ -1554,8 +1554,7 @@ class _BasePathTest(object):
     def test_absolute_common(self):
         P = self.cls
 
-        with mock.patch("os.getcwd") as getcwd:
-            getcwd.return_value = BASE
+        with os_helper.change_cwd(BASE):
 
             # Simple relative paths.
             self.assertEqual(str(P().absolute()), BASE)
@@ -2993,14 +2992,25 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         self.assertEqual(str(P(share + 'a\\b').absolute()), share + 'a\\b')
 
         # UNC relative paths.
-        with mock.patch("os.getcwd") as getcwd:
-            getcwd.return_value = share
+        def getfullpathname(path):
+            return os.path.join(share, path)
 
+        with mock.patch("nt._getfullpathname", getfullpathname):
             self.assertEqual(str(P().absolute()), share)
             self.assertEqual(str(P('.').absolute()), share)
             self.assertEqual(str(P('a').absolute()), os.path.join(share, 'a'))
             self.assertEqual(str(P('a', 'b', 'c').absolute()),
                              os.path.join(share, 'a', 'b', 'c'))
+
+        drive = os.path.splitdrive(BASE)[0]
+        with os_helper.change_cwd(BASE):
+            # Relative path with drive
+            self.assertEqual(str(P(drive).absolute()), BASE)
+            self.assertEqual(str(P(drive + 'foo').absolute()), os.path.join(BASE, 'foo'))
+
+            # Relative path with root
+            self.assertEqual(str(P('\\').absolute()), drive + '\\')
+            self.assertEqual(str(P('\\foo').absolute()), drive + '\\foo')
 
 
     def test_glob(self):

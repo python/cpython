@@ -19,6 +19,17 @@ from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
+try:
+    from nt import _getfullpathname
+except ImportError:
+    def _absolute_parts(path):
+        return [os.getcwd()] + path._parts
+else:
+    def _absolute_parts(path):
+        try:
+            return [_getfullpathname(path)]
+        except (OSError, ValueError):
+            return [os.getcwd()] + path._parts
 
 
 __all__ = [
@@ -827,7 +838,7 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        return self._from_parts([os.getcwd()] + self._parts)
+        return self._from_parts(_absolute_parts(self))
 
     def resolve(self, strict=False):
         """
