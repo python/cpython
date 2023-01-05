@@ -1235,9 +1235,9 @@ class Mock(CallableMixin, NonCallableMock):
       `return_value` attribute.
 
     * `unsafe`: By default, accessing any attribute whose name starts with
-      *assert*, *assret*, *asert*, *aseert*, *assrt*, or *called_* will raise an
-       AttributeError. Passing `unsafe=True` will allow access to
-      these attributes.
+      *assert*, *assret*, *asert*, *aseert*, *assrt*, or an attribute name that matches
+      an assertion method without the prefix *assert_* will raise an
+      AttributeError. Passing `unsafe=True` will allow access to these attributes.
 
     * `wraps`: Item for the mock object to wrap. If `wraps` is not None then
       calling the Mock will pass the call through to the wrapped object
