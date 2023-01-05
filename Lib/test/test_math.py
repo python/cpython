@@ -1293,6 +1293,78 @@ class MathTests(unittest.TestCase):
         self.assertEqual(sumprod([0.1] * 10, [1]*10), 1.0)
         self.assertEqual(sumprod([1.0, 10E100, 1.0, -10E100], [1.0]*4), 2.0)
 
+    def test_sumprod_stress(self):
+        sumprod = math.sumprod
+        product = itertools.product
+        Decimal = decimal.Decimal
+        Fraction = fractions.Fraction
+
+        class Int(int):
+            def __add__(self, other):
+                return Int(int(self) + int(other))
+            def __mul__(self, other):
+                return Int(int(self) * int(other))
+            __radd__ = __add__
+            __rmul__ = __mul__
+            def __repr__(self):
+                return f'Int({int(self)})'
+
+        class Flt(float):
+            def __add__(self, other):
+                return Int(int(self) + int(other))
+            def __mul__(self, other):
+                return Int(int(self) * int(other))
+            __radd__ = __add__
+            __rmul__ = __mul__
+            def __repr__(self):
+                return f'Flt({int(self)})'
+
+        def baseline_sumprod(p, q):
+            """This defines the target behavior including expections and special values.
+            However, it is subject to rounding errors, so float inputs should be exactly
+            representable with only a few bits.
+            """
+            total = 0
+            for p_i, q_i in zip(p, q, strict=True):
+                total += p_i * q_i
+            return total
+
+        def run(func, *args):
+            "Make comparing functions easier. Returns error status, type, and result."
+            try:
+                result = func(*args)
+            except (AssertionError, NameError):
+                raise
+            except Exception as e:
+                return type(e), None, 'None'
+            return None, type(result), repr(result)
+
+        pools = [
+            (-5, 10, -2**20, 2**31, 2**40, 2**61, 2**62, 2**80, 1.5, Int(7)),
+            (5.25, -3.5, 4.75, 11.25, 400.5, 0.046875, 0.25, -1.0, -0.078125),
+            (-19.0*2**500, 11*2**1000, -3*2**1500, 17*2*333,
+               5.25, -3.25, -3.0*2**(-333),  3, 2**513),
+            (3.75, 2.5, -1.5, float('inf'), -float('inf'), float('NaN'), 14,
+                9, 3+4j, Flt(13), 0.0),
+            (13.25, -4.25, Decimal('10.5'), Decimal('-2.25'), Fraction(13, 8),
+                 Fraction(-11, 16), 4.75 + 0.125j, 97, -41, Int(3)),
+            (Decimal('6.125'), Decimal('12.375'), Decimal('-2.75'), Decimal(0),
+                 Decimal('Inf'), -Decimal('Inf'), Decimal('NaN'), 12, 13.5),
+            (-2.0 ** -1000, 11*2**1000, 3, 7, -37*2**32, -2*2**-537, -2*2**-538,
+                 2*2**-513),
+            (-7 * 2.0 ** -510, 5 * 2.0 ** -520, 17, -19.0, -6.25),
+        ]
+
+        for pool in pools:
+            for size in range(4):
+                for args1 in product(pool, repeat=size):
+                    for args2 in product(pool, repeat=size):
+                        args = (args1, args2)
+                        self.assertEqual(
+                            run(baseline_sumprod, *args),
+                            run(sumprod, *args),
+                            args,
+                        )
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
