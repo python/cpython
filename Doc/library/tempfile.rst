@@ -214,7 +214,7 @@ The module defines the following user-callable items:
    by child processes.
 
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
-   for deleting the temporary file when done with it.
+   for deleting the temporary file and closing the file descriptor.
 
    If *suffix* is not ``None``, the file name will end with that suffix,
    otherwise there will be no suffix.  :func:`mkstemp` does not put a dot
