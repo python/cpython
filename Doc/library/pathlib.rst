@@ -96,7 +96,7 @@ Pure path objects provide path-handling operations which don't actually
 access a filesystem.  There are three ways to access these classes, which
 we also call *flavours*:
 
-.. class:: PurePath(*pathcomponents)
+.. class:: PurePath(*pathsegments)
 
    A generic class that represents the system's path flavour (instantiating
    it creates either a :class:`PurePosixPath` or a :class:`PureWindowsPath`)::
@@ -104,8 +104,8 @@ we also call *flavours*:
       >>> PurePath('setup.py')      # Running on a Unix machine
       PurePosixPath('setup.py')
 
-   Each element of *pathcomponents* can be either a string representing a
-   path component, an object implementing the :class:`os.PathLike` interface
+   Each element of *pathsegments* can be either a string representing a
+   path segment, an object implementing the :class:`os.PathLike` interface
    which returns a string, or another path object::
 
       >>> PurePath('foo', 'some/path', 'bar')
@@ -113,7 +113,7 @@ we also call *flavours*:
       >>> PurePath(Path('foo'), Path('bar'))
       PurePosixPath('foo/bar')
 
-   When *pathcomponents* is empty, the current directory is assumed::
+   When *pathsegments* is empty, the current directory is assumed::
 
       >>> PurePath()
       PurePosixPath('.')
@@ -155,7 +155,7 @@ we also call *flavours*:
    .. versionchanged:: 3.6
       Added support for the :class:`os.PathLike` interface.
 
-.. class:: PurePosixPath(*pathcomponents)
+.. class:: PurePosixPath(*pathsegments)
 
    A subclass of :class:`PurePath`, this path flavour represents non-Windows
    filesystem paths::
@@ -163,9 +163,9 @@ we also call *flavours*:
       >>> PurePosixPath('/etc')
       PurePosixPath('/etc')
 
-   *pathcomponents* is specified similarly to :class:`PurePath`.
+   *pathsegments* is specified similarly to :class:`PurePath`.
 
-.. class:: PureWindowsPath(*pathcomponents)
+.. class:: PureWindowsPath(*pathsegments)
 
    A subclass of :class:`PurePath`, this path flavour represents Windows
    filesystem paths, including `UNC paths`_::
@@ -175,7 +175,7 @@ we also call *flavours*:
       >>> PureWindowsPath('//server/share/file')
       PureWindowsPath('//server/share/file')
 
-   *pathcomponents* is specified similarly to :class:`PurePath`.
+   *pathsegments* is specified similarly to :class:`PurePath`.
 
    .. _unc paths: https://en.wikipedia.org/wiki/Path_(computing)#UNC
 
@@ -689,7 +689,7 @@ Concrete paths are subclasses of the pure path classes.  In addition to
 operations provided by the latter, they also provide methods to do system
 calls on path objects.  There are three ways to instantiate concrete paths:
 
-.. class:: Path(*pathcomponents)
+.. class:: Path(*pathsegments)
 
    A subclass of :class:`PurePath`, this class represents concrete paths of
    the system's path flavour (instantiating it creates either a
@@ -698,9 +698,9 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> Path('setup.py')
       PosixPath('setup.py')
 
-   *pathcomponents* is specified similarly to :class:`PurePath`.
+   *pathsegments* is specified similarly to :class:`PurePath`.
 
-.. class:: PosixPath(*pathcomponents)
+.. class:: PosixPath(*pathsegments)
 
    A subclass of :class:`Path` and :class:`PurePosixPath`, this class
    represents concrete non-Windows filesystem paths::
@@ -708,9 +708,9 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> PosixPath('/etc')
       PosixPath('/etc')
 
-   *pathcomponents* is specified similarly to :class:`PurePath`.
+   *pathsegments* is specified similarly to :class:`PurePath`.
 
-.. class:: WindowsPath(*pathcomponents)
+.. class:: WindowsPath(*pathsegments)
 
    A subclass of :class:`Path` and :class:`PureWindowsPath`, this class
    represents concrete Windows filesystem paths::
@@ -718,7 +718,7 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> WindowsPath('c:/Program Files/')
       WindowsPath('c:/Program Files')
 
-   *pathcomponents* is specified similarly to :class:`PurePath`.
+   *pathsegments* is specified similarly to :class:`PurePath`.
 
 You can only instantiate the class flavour that corresponds to your system
 (allowing system calls on non-compatible path flavours could lead to
