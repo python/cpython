@@ -199,7 +199,7 @@ class _ModuleLock:
 
     def has_deadlock(self):
         # To avoid deadlocks for concurrent or re-entrant circular imports,
-        # look at the "blocking on" state to see if any threads are blocking
+        # look at _blocking_on to see if any threads are blocking
         # on getting the import lock for any module for which the import lock
         # is held by this thread.
         return _has_deadlocked(
