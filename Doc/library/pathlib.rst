@@ -119,7 +119,7 @@ we also call *flavours*:
       PurePosixPath('.')
 
    If a segment is an absolute path, all previous segments are ignored
-   (like :func:`os.path.join`')::
+   (like :func:`os.path.join`)::
 
       >>> PurePath('/etc', '/usr', 'lib64')
       PurePosixPath('/usr/lib64')
