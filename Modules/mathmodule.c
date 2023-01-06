@@ -2852,6 +2852,7 @@ cost of increasing the input vector size by one is 7.4ns.
 dl_zero() returns an extended precision zero
 dl_split() exactly splits a double into two half precision components.
 dl_add() performs compensated summation to keep a running total.
+dl_mul() implements lossless multiplication of doubles.
 dl_fma() implements an extended precision fused-multiply-add.
 dl_to_d() converts from extended precision to double precision.
 
@@ -2887,14 +2888,20 @@ dl_add(DoubleLength total, double x)
 }
 
 static inline DoubleLength
-dl_fma(DoubleLength total, double p, double q)
+dl_mul(double p, double q)
 {
     DoubleLength pp = dl_split(p);
     DoubleLength qq = dl_split(q);
-    total = dl_add(total, pp.hi * qq.hi);
-    total = dl_add(total, pp.hi * qq.lo);
-    total = dl_add(total, pp.lo * qq.hi);
-    return  dl_add(total, pp.lo * qq.lo);
+    DoubleLength product = {pp.hi * qq.hi, pp.lo * qq.lo};
+    return dl_add(product, pp.hi * qq.lo + pp.lo * qq.hi);
+}
+
+static inline DoubleLength
+dl_fma(DoubleLength total, double p, double q)
+{
+    DoubleLength product = dl_mul(p, q);
+    total = dl_add(total, product.hi);
+    return dl_add(total, product.lo);
 }
 
 static inline double
