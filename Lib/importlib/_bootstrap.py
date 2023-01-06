@@ -55,13 +55,13 @@ def _new_module(name):
 # Dictionary protected by the global import lock
 _module_locks = {}
 
-# A dict mapping thread ids to lists of _ModuleLock instances.  This maps a
+# A dict mapping thread IDs to lists of _ModuleLock instances.  This maps a
 # thread to the module locks it is blocking on acquiring.  The values are
 # lists because a single thread could perform a re-entrant import and be "in
-# the process" of blocking on locks for more than one module.  "in the
-# process" because a thread cannot actually block on acquiring more than one
-# lock but it can have set up bookkeeping that reflects that it intends to
-# block on acquiring more than one lock.
+# the process" of blocking on locks for more than one module.  A thread can
+# be "in the process" because a thread cannot actually block on acquiring
+# more than one lock but it can have set up bookkeeping that reflects that
+# it intends to block on acquiring more than one lock.
 _blocking_on = {}
 
 
