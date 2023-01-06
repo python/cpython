@@ -110,9 +110,9 @@ void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
    when frame is linked into the frame stack.
  */
 static inline void
-_PyFrame_InitializeSpecials(
+_PyFrame_Initialize(
     _PyInterpreterFrame *frame, PyFunctionObject *func,
-    PyObject *locals, PyCodeObject *code)
+    PyObject *locals, PyCodeObject *code, int null_locals_from)
 {
     frame->f_funcobj = (PyObject *)func;
     frame->f_code = (PyCodeObject *)Py_NewRef(code);
@@ -124,6 +124,10 @@ _PyFrame_InitializeSpecials(
     frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
+
+    for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
+        frame->localsplus[i] = NULL;
+    }
 }
 
 /* Gets the pointer to the locals array
@@ -224,14 +228,14 @@ void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
  * Must be guarded by _PyThreadState_HasStackSpace()
  * Consumes reference to func. */
 static inline _PyInterpreterFrame *
-_PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func)
+_PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_locals_from)
 {
     CALL_STAT_INC(frames_pushed);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
-    _PyFrame_InitializeSpecials(new_frame, func, NULL, code);
+    _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from);
     return new_frame;
 }
 

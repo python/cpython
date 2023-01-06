@@ -564,13 +564,10 @@
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             Py_INCREF(getitem);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2);
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            for (int i = 2; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
-            }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             DISPATCH_INLINED(new_frame);
         }
@@ -1941,14 +1938,11 @@
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(fget);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
             SET_TOP(NULL);
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
             new_frame->localsplus[0] = owner;
-            for (int i = 1; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
-            }
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH_INLINED(new_frame);
         }
@@ -1975,15 +1969,12 @@
 
             PyObject *name = GETITEM(names, oparg >> 1);
             Py_INCREF(f);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2);
             SET_TOP(NULL);
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
-            for (int i = 2; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
-            }
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH_INLINED(new_frame);
         }
@@ -3011,13 +3002,10 @@
             DEOPT_IF(code->co_argcount != argcount, CALL);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
-            }
-            for (int i = argcount; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
@@ -3040,7 +3028,7 @@
             DEOPT_IF(argcount < minargs, CALL);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, code->co_argcount);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -3049,9 +3037,6 @@
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults,
                                                  i - minargs);
                 new_frame->localsplus[i] = Py_NewRef(def);
-            }
-            for (int i = code->co_argcount; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
