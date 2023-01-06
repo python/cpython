@@ -119,8 +119,7 @@ def _has_deadlocked(target_id, seen_ids, candidate_ids, blocking_on):
         if not candidate_blocking_on:
             # There are no edges out from this node, skip it.
             continue
-
-        if tid in seen_ids:
+        elif tid in seen_ids:
             # bpo 38091: the chain of tid's we encounter here eventually leads
             # to a fixed point or a cycle, but does not reach 'target_id'.
             # This means we would not actually deadlock.  This can happen if
