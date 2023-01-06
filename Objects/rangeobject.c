@@ -179,15 +179,15 @@ static inline long compute_range_length_long(PyObject *start, PyObject *stop, Py
     int overflow = 0;
 
     long long_start = PyLong_AsLongAndOverflow(start, &overflow);
-    if (overflow || PyErr_Occurred()) {
+    if (overflow || (long_start==-1 && PyErr_Occurred()) ) {
             return -1;
     }
     long long_stop = PyLong_AsLongAndOverflow(stop, &overflow);
-    if (overflow || PyErr_Occurred()) {
+    if (overflow || (long_stop==-1 && PyErr_Occurred()) ) {
             return -1;
     }
     long long_step = PyLong_AsLongAndOverflow(step, &overflow);
-    if (overflow || PyErr_Occurred()) {
+    if (overflow || (long_step == -1 && PyErr_Occurred()) ) {
             return -1;
     }
     return get_len_of_range(long_start, long_stop, long_step);
