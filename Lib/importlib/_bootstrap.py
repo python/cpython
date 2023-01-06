@@ -168,8 +168,8 @@ class _ModuleLock:
         # The name of the module for which this is a lock.
         self.name = name
 
-        # Either None if this lock is not owned by any thread or the thread
-        # identifier for the owning thread.
+        # Can end up being set to None if this lock is not owned by any thread
+        # or the thread identifier for the owning thread.
         self.owner = None
 
         # Represent the number of times the owning thread has acquired this lock
