@@ -82,7 +82,7 @@ def_op('INTERPRETER_EXIT', 3)
 def_op('END_FOR', 4)
 
 def_op('NOP', 9)
-def_op('UNARY_POSITIVE', 10)
+
 def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 
@@ -120,12 +120,10 @@ def_op('LOAD_BUILD_CLASS', 71)
 def_op('LOAD_ASSERTION_ERROR', 74)
 def_op('RETURN_GENERATOR', 75)
 
-def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
 
-def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 

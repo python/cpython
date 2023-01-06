@@ -202,16 +202,6 @@
             DISPATCH();
         }
 
-        TARGET(UNARY_POSITIVE) {
-            PyObject *value = PEEK(1);
-            PyObject *res;
-            res = PyNumber_Positive(value);
-            Py_DECREF(value);
-            if (res == NULL) goto pop_1_error;
-            POKE(1, res);
-            DISPATCH();
-        }
-
         TARGET(UNARY_NEGATIVE) {
             PyObject *value = PEEK(1);
             PyObject *res;
@@ -921,17 +911,6 @@
             DISPATCH();
         }
 
-        TARGET(ASYNC_GEN_WRAP) {
-            PyObject *v = PEEK(1);
-            PyObject *w;
-            assert(frame->f_code->co_flags & CO_ASYNC_GENERATOR);
-            w = _PyAsyncGenValueWrapperNew(v);
-            Py_DECREF(v);
-            if (w == NULL) goto pop_1_error;
-            POKE(1, w);
-            DISPATCH();
-        }
-
         TARGET(YIELD_VALUE) {
             PyObject *retval = PEEK(1);
             // NOTE: It's important that YIELD_VALUE never raises an exception!
@@ -1563,16 +1542,6 @@
             if (list == NULL)
                 goto error;
             PUSH(list);
-            DISPATCH();
-        }
-
-        TARGET(LIST_TO_TUPLE) {
-            PyObject *list = PEEK(1);
-            PyObject *tuple;
-            tuple = PyList_AsTuple(list);
-            Py_DECREF(list);
-            if (tuple == NULL) goto pop_1_error;
-            POKE(1, tuple);
             DISPATCH();
         }
 
