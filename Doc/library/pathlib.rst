@@ -118,7 +118,7 @@ we also call *flavours*:
       >>> PurePath()
       PurePosixPath('.')
 
-   If a component is an absolute path, all previous components are ignored
+   If a segment is an absolute path, all previous segments are ignored
    (like :func:`os.path.join`')::
 
       >>> PurePath('/etc', '/usr', 'lib64')
@@ -127,7 +127,7 @@ we also call *flavours*:
       PureWindowsPath('d:bar')
 
    On Windows, the drive is not reset when a drive-less absolute path
-   component (e.g., ``r'\foo'``) is encountered::
+   segment (e.g., ``r'\foo'``) is encountered::
 
       >>> PureWindowsPath('c:/Windows', '/Program Files')
       PureWindowsPath('c:/Program Files')
@@ -213,9 +213,9 @@ Operators
 ^^^^^^^^^
 
 The slash operator helps create child paths, like :func:`os.path.join`.
-If the argument is an absolute path, the previous path components are ignored.
-On Windows, the drive is not reset when a drive-less absolute path
-component (e.g., ``r'\foo'``) is encountered::
+If the argument is an absolute path, the previous path is ignored.
+On Windows, the drive is not reset when the argument is a drive-less
+absolute path (e.g., ``r'\foo'``)::
 
    >>> p = PurePath('/etc')
    >>> p
