@@ -206,7 +206,7 @@ class _ModuleLock:
             # Try to find this thread.
             target_id=_thread.get_ident(),
             seen_ids=set(),
-            # starting from the thread that holds the import lock for this
+            # Start from the thread that holds the import lock for this
             # module.
             candidate_ids=[self.owner],
             # using the global "blocking on" state.
