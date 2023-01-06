@@ -1291,6 +1291,7 @@ class MathTests(unittest.TestCase):
     def test_sumprod_accuracy(self):
         sumprod = math.sumprod
         self.assertEqual(sumprod([0.1] * 10, [1]*10), 1.0)
+        self.assertEqual(sumprod([0.1] * 20, [True, False] * 10), 1.0)
         self.assertEqual(sumprod([1.0, 10E100, 1.0, -10E100], [1.0]*4), 2.0)
 
     def test_sumprod_stress(self):
@@ -1353,6 +1354,7 @@ class MathTests(unittest.TestCase):
             (-2.0 ** -1000, 11*2**1000, 3, 7, -37*2**32, -2*2**-537, -2*2**-538,
                  2*2**-513),
             (-7 * 2.0 ** -510, 5 * 2.0 ** -520, 17, -19.0, -6.25),
+            (11.25, -3.75, -0.625, 23.375, True, False, 7, Int(5)),
         ]
 
         for pool in pools:
