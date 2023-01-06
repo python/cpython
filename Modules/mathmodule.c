@@ -2900,8 +2900,8 @@ static inline DoubleLength
 dl_fma(DoubleLength total, double p, double q)
 {
     DoubleLength product = dl_mul(p, q);
-    total = dl_add(total, product.hi);
-    return dl_add(total, product.lo);
+    total = dl_add(total, product.lo);
+    return  dl_add(total, product.hi);
 }
 
 static inline double
