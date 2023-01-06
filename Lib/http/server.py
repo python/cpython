@@ -104,8 +104,8 @@ import socketserver
 import sys
 import time
 import urllib.parse
-import contextlib
 import tempfile
+import contextlib
 from functools import partial
 
 from http import HTTPStatus
