@@ -2575,6 +2575,10 @@ Functions and decorators
      assumed to be True or False if it is omitted by the caller.
    * ``kw_only_default`` indicates whether the ``kw_only`` parameter is
      assumed to be True or False if it is omitted by the caller.
+   * ``frozen_default`` indicates whether the ``frozen`` parameter is
+     assumed to be True or False if it is omitted by the caller.
+
+     .. versionadded:: 3.12
    * ``field_specifiers`` specifies a static list of supported classes
      or functions that describe fields, similar to ``dataclasses.field()``.
    * Arbitrary other keyword arguments are accepted in order to allow for
@@ -2772,6 +2776,10 @@ Introspection helpers
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
+
+   .. versionchanged:: 3.10
+      Calling ``get_type_hints()`` on a class no longer returns the annotations
+      of its base classes.
 
    .. versionchanged:: 3.11
       Previously, ``Optional[t]`` was added for function and method annotations

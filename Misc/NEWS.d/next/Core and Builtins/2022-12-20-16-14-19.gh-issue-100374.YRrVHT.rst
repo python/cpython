@@ -1,0 +1,1 @@
+Fix incorrect result and delay in :func:`socket.getfqdn`. Patch by Dominic Socular.

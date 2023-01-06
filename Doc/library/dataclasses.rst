@@ -79,7 +79,8 @@ Module contents
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
+                match_args=True, kw_only=False, slots=False, weakref_slot=False)
      class C:
          ...
 

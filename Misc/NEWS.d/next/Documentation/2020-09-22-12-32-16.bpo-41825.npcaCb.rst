@@ -1,3 +1,0 @@
-Restructured the documentation for the :func:`os.wait* <os.wait>` family of functions,
-and improved the docs for :func:`os.waitid` with more explanation of the
-possible argument constants.

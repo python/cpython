@@ -2108,6 +2108,7 @@ class PyLocals(gdb.Command):
         while True:
             if not pyop_frame:
                 print(UNABLE_READ_INFO_PYTHON_FRAME)
+                break
             if pyop_frame.is_shim():
                 break
 
