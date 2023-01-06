@@ -152,5 +152,8 @@ Lib/ast.py                    @isidentical
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
 
+# pathlib
+**/*pathlib*                  @barneygale
+
 # zipfile.Path
 **/*zipfile/*_path.py         @jaraco
