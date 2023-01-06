@@ -3097,6 +3097,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
         }
 
         assert(!int_total_in_use);
+        assert(!flt_total_in_use);
         if (finished) {
             goto normal_exit;
         }
