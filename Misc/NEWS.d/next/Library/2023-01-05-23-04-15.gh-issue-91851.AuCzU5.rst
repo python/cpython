@@ -1,0 +1,3 @@
+Microoptimizations for :func:`fractions.Fraction.__round__`,
+:func:`fractions.Fraction.__ceil__` and
+:func:`fractions.Fraction.__floor__`.
