@@ -1974,11 +1974,8 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_InitializeSpecials(frame, func, locals, code);
+    _PyFrame_Initialize(frame, func, locals, code, 0);
     PyObject **localsarray = &frame->localsplus[0];
-    for (int i = 0; i < code->co_nlocalsplus; i++) {
-        localsarray[i] = NULL;
-    }
     if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
         assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
         _PyEvalFrameClearAndPop(tstate, frame);
