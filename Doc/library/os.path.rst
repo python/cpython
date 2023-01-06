@@ -310,8 +310,9 @@ the :mod:`glob` module.)
    concatenation of *path* and any members of *\*paths* with exactly one
    directory separator following each non-empty part except the last, meaning
    that the result will only end in a separator if the last part is empty.  If
-   a segment is an absolute path, all previous segments are ignored
-   and joining continues from the absolute path segment.
+   a segment is an absolute path (which on Windows requires both a drive and a
+   root), then all previous segments are ignored and joining continues from the
+   absolute path segment.
 
    On Windows, the drive is not reset when a rooted path segment (e.g.,
    ``r'\foo'``) is encountered. If a segment is from a different drive or is an
