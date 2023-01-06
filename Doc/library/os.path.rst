@@ -315,7 +315,7 @@ the :mod:`glob` module.)
    absolute path segment.
 
    On Windows, the drive is not reset when a rooted path segment (e.g.,
-   ``r'\foo'``) is encountered. If a segment is from a different drive or is an
+   ``r'\foo'``) is encountered. If a segment is on a different drive or is an
    absolute path, all previous segments are ignored and the drive is reset. Note
    that since there is a current directory for each drive,
    ``os.path.join("c:", "foo")`` represents a path relative to the current
