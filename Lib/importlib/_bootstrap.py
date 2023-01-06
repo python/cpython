@@ -191,7 +191,7 @@ class _ModuleLock:
         # acquiring this module lock.  This repeats until all the threads have
         # gotten a turn.
         #
-        # This is incremented in `self.acquire` when a thread notices it is
+        # This is incremented in self.acquire() when a thread notices it is
         # going to have to wait for another thread to finish.
         #
         # See the comment above count for explanation of the representation.
