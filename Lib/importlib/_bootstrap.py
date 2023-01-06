@@ -159,9 +159,9 @@ class _ModuleLock:
         #                       -> importlib._bootstrap._ModuleLock.acquire
         #                          -> _BlockingOnManager.__enter__
         #
-        # If a different thread than the running thread holds the lock then it
-        # will have to block on taking it which is just what we want for
-        # thread safety.
+        # If a different thread than the running one holds the lock then the
+        # thread will have to block on taking the lock, which is what we want
+        # for thread safety.
         self.lock = _thread.RLock()
         self.wakeup = _thread.allocate_lock()
 
