@@ -185,10 +185,26 @@ stopiteration_error(PyThreadState* tstate, PyObject *exc)
     return Py_NewRef(exc);
 }
 
+static PyObject *
+unary_pos(PyThreadState* unused, PyObject *value)
+{
+    return PyNumber_Positive(value);
+}
+
+static PyObject *
+list_to_tuple(PyThreadState* unused, PyObject *v)
+{
+    assert(PyList_Check(v));
+    return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
+}
+
 instrinsic_func1
 _PyIntrinsics_UnaryFunctions[] = {
     [0] = no_intrinsic,
     [INTRINSIC_PRINT] = print_expr,
     [INTRINSIC_IMPORT_STAR] = import_star,
     [INTRINSIC_STOPITERATION_ERROR] = stopiteration_error,
+    [INTRINSIC_ASYNC_GEN_WRAP] = _PyAsyncGenValueWrapperNew,
+    [INTRINSIC_UNARY_POSITIVE] = unary_pos,
+    [INTRINSIC_LIST_TO_TUPLE] = list_to_tuple,
 };
