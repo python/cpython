@@ -2602,7 +2602,7 @@ static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
-    PyObject *qualname, *docstring = NULL;
+    PyObject *docstring = NULL;
     arguments_ty args;
     expr_ty returns;
     identifier name;
@@ -3008,7 +3008,6 @@ static int
 compiler_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
-    PyObject *qualname;
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
@@ -5381,7 +5380,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 {
     PyCodeObject *co = NULL;
     comprehension_ty outermost;
-    PyObject *qualname = NULL;
     int scope_type = c->u->u_scope_type;
     int is_async_generator = 0;
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
@@ -5477,7 +5475,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 error_in_scope:
     compiler_exit_scope(c);
 error:
-    Py_XDECREF(qualname);
     Py_XDECREF(co);
     return ERROR;
 }
