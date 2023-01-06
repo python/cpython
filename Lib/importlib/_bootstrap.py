@@ -184,7 +184,7 @@ class _ModuleLock:
         self.count = []
 
         # This is a count of the number of threads that are blocking on
-        # self.wakeup.acquire() to try to get their turn holding this module
+        # self.wakeup.acquire() awaiting to get their turn holding this module
         # lock.  When the module lock is released, if this is greater than
         # zero, it is decremented and `self.wakeup` is released one time.  The
         # intent is that this will let one other thread make more progress on
