@@ -476,8 +476,10 @@ PyLong_FromDouble(double dval)
 
 /* Get a C long int from an int object or any object that has an __index__
    method.
+
    On overflow, return -1 and set *overflow to 1 or -1 depending on the sign of
    the result.  Otherwise *overflow is 0.
+
    For other errors (e.g., TypeError), return -1 and set an error condition.
    In this case *overflow will be 0.
 */
