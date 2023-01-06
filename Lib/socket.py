@@ -59,7 +59,6 @@ try:
     import errno
 except ImportError:
     errno = None
-EBADF = getattr(errno, 'EBADF', 9)
 EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
