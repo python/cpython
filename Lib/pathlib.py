@@ -22,14 +22,7 @@ from urllib.parse import quote_from_bytes as urlquote_from_bytes
 try:
     from nt import _getfullpathname
 except ImportError:
-    def _absolute_parts(path):
-        return [os.getcwd()] + path._parts
-else:
-    def _absolute_parts(path):
-        try:
-            return [_getfullpathname(path)]
-        except (OSError, ValueError):
-            return [os.getcwd()] + path._parts
+    _getfullpathname = None
 
 
 __all__ = [
@@ -838,7 +831,14 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        return self._from_parts(_absolute_parts(self))
+        elif self._drv and _getfullpathname:
+            try:
+                cwd = _getfullpathname(self._drv)
+            except (ValueError, OSError):
+                cwd = os.getcwd()
+        else:
+            cwd = os.getcwd()
+        return self._from_parts([cwd] + self._parts)
 
     def resolve(self, strict=False):
         """
