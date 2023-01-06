@@ -209,7 +209,7 @@ class _ModuleLock:
             # Start from the thread that holds the import lock for this
             # module.
             candidate_ids=[self.owner],
-            # using the global "blocking on" state.
+            # Use the global "blocking on" state.
             blocking_on=_blocking_on,
         )
 
