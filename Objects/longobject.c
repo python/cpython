@@ -474,21 +474,44 @@ PyLong_FromDouble(double dval)
 #define PY_ABS_LONG_MIN         (0-(unsigned long)LONG_MIN)
 #define PY_ABS_SSIZE_T_MIN      (0-(size_t)PY_SSIZE_T_MIN)
 
-/* Get a C long int from a PyLong object
 
+/* Get a C long int from an int object or any object that has an __index__
+   method.
    On overflow, return -1 and set *overflow to 1 or -1 depending on the sign of
-   the result.  Otherwise *overflow is unchanged.
-
-   Internal version, does not perform error checking
+   the result.  Otherwise *overflow is 0.
+   For other errors (e.g., TypeError), return -1 and set an error condition.
+   In this case *overflow will be 0.
 */
-inline long
-_PyLong_AsLongAndOverflow(const PyLongObject *v, int *overflow)
-{
-    assert(v != NULL);
-    assert( PyLong_Check(v) );
 
-    long res = -1;
-    Py_ssize_t i = Py_SIZE(v);
+long
+PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
+{
+    /* This version by Tim Peters */
+    PyLongObject *v;
+    unsigned long x, prev;
+    long res;
+    Py_ssize_t i;
+    int sign;
+    int do_decref = 0; /* if PyNumber_Index was called */
+
+    *overflow = 0;
+    if (vv == NULL) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    if (PyLong_Check(vv)) {
+        v = (PyLongObject *)vv;
+    }
+    else {
+        v = (PyLongObject *)_PyNumber_Index(vv);
+        if (v == NULL)
+            return -1;
+        do_decref = 1;
+    }
+
+    res = -1;
+    i = Py_SIZE(v);
 
     switch (i) {
     case -1:
@@ -501,15 +524,14 @@ _PyLong_AsLongAndOverflow(const PyLongObject *v, int *overflow)
         res = v->ob_digit[0];
         break;
     default:
-    {
-        int sign = 1;
-        unsigned long x = 0;
+        sign = 1;
+        x = 0;
         if (i < 0) {
             sign = -1;
             i = -(i);
         }
         while (--i >= 0) {
-            unsigned long prev = x;
+            prev = x;
             x = (x << PyLong_SHIFT) | v->ob_digit[i];
             if ((x >> PyLong_SHIFT) != prev) {
                 *overflow = sign;
@@ -530,46 +552,7 @@ _PyLong_AsLongAndOverflow(const PyLongObject *v, int *overflow)
             /* res is already set to -1 */
         }
     }
-    }
   exit:
-    return res;
-}
-
-
-/* Get a C long int from an int object or any object that has an __index__
-   method.
-
-   On overflow, return -1 and set *overflow to 1 or -1 depending on the sign of
-   the result.  Otherwise *overflow is 0.
-
-   For other errors (e.g., TypeError), return -1 and set an error condition.
-   In this case *overflow will be 0.
-*/
-long
-PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
-{
-    /* This version by Tim Peters */
-    PyLongObject *v;
-    int do_decref = 0; /* if PyNumber_Index was called */
-    *overflow = 0;
-
-    if (vv == NULL) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-
-    if (PyLong_Check(vv)) {
-        v = (PyLongObject *)vv;
-    }
-    else {
-        v = (PyLongObject *)_PyNumber_Index(vv);
-        if (v == NULL)
-            return -1;
-        do_decref = 1;
-    }
-
-    long res = _PyLong_AsLongAndOverflow(v, overflow);
-
     if (do_decref) {
         Py_DECREF(v);
     }
