@@ -173,7 +173,7 @@ class _ModuleLock:
         self.owner = None
 
         # Represent the number of times the owning thread has acquired this lock
-        # via a list of `True`.  This supports RLock-like ("re-entrant lock")
+        # via a list of True.  This supports RLock-like ("re-entrant lock")
         # behavior, necessary in case a single thread is following a circular
         # import dependency and needs to take the lock for a single module
         # more than once.
