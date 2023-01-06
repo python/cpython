@@ -308,3 +308,36 @@ def test_macro_instruction():
         }
     """
     run_cases_test(input, output)
+
+def test_array_input():
+    input = """
+        inst(OP, (values[oparg] --)) {
+            spam();
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject **values = &PEEK(oparg);
+            spam();
+            STACK_SHRINK(oparg);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_array_output():
+    input = """
+        inst(OP, (-- values[oparg])) {
+            spam();
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject **values;
+            spam();
+            STACK_GROW(oparg);
+            MOVE_ITEMS(values, &PEEK(oparg), oparg);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)

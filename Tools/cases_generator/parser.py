@@ -62,8 +62,17 @@ class Block(Node):
 @dataclass
 class StackEffect(Node):
     name: str
-    type: str = ""
-    # TODO: array, condition
+    type: str = ""  # Optional `:type`
+    size: str = ""  # Optional `[size]`
+    # Note: we can have type or size but not both
+    # TODO: condition (can be combined with type but not size)
+
+
+@dataclass
+class Dimension(Node):
+    # NAME ['*' NUMBER]
+    name: str
+    size: int = 1
 
 
 @dataclass
@@ -224,10 +233,24 @@ class Parser(PLexer):
         # IDENTIFIER [':' IDENTIFIER]
         # TODO: Arrays, conditions
         if tkn := self.expect(lx.IDENTIFIER):
-            type = ""
             if self.expect(lx.COLON):
-                type = self.require(lx.IDENTIFIER).text
-            return StackEffect(tkn.text, type)
+                typ = self.require(lx.IDENTIFIER)
+                return StackEffect(tkn.text, typ.text)
+            elif self.expect(lx.LBRACKET):
+                if not (dim := self.dimension()):
+                    raise self.make_syntax_error("Expected dimension")
+                self.require(lx.RBRACKET)
+                return StackEffect(tkn.text, "PyObject **", dim.text.strip())
+            else:
+                return StackEffect(tkn.text)
+
+    @contextual
+    def dimension(self) -> Dimension | None:
+        if name := self.expect(lx.IDENTIFIER):
+            if self.expect(lx.TIMES):
+                if size := self.expect(lx.NUMBER):
+                    return Dimension(name.text, int(size.text))
+            return Dimension(name.text)
 
     @contextual
     def super_def(self) -> Super | None:

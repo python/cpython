@@ -83,21 +83,28 @@ class Formatter:
             yield
         self.emit("}")
 
-    def stack_adjust(self, diff: int):
+    def stack_adjust(self, diff: int, symbolic: list[str]):
         if diff > 0:
             self.emit(f"STACK_GROW({diff});")
         elif diff < 0:
             self.emit(f"STACK_SHRINK({-diff});")
+        if symbolic:
+            for sym in symbolic:
+                if sym.startswith("-"):
+                    self.emit(f"STACK_SHRINK({sym[1:]});")
+                else:
+                    self.emit(f"STACK_GROW({sym});")
 
     def declare(self, dst: StackEffect, src: StackEffect | None):
         if dst.name == UNUSED:
             return
-        typ = f"{dst.type} " if dst.type else "PyObject *"
+        typ = f"{dst.type}" if dst.type else "PyObject *"
         init = ""
         if src:
             cast = self.cast(dst, src)
             init = f" = {cast}{src.name}"
-        self.emit(f"{typ}{dst.name}{init};")
+        sepa = "" if typ.endswith("*") else " "
+        self.emit(f"{typ}{sepa}{dst.name}{init};")
 
     def assign(self, dst: StackEffect, src: StackEffect):
         if src.name == UNUSED:
@@ -105,6 +112,12 @@ class Formatter:
         cast = self.cast(dst, src)
         if m := re.match(r"^PEEK\((\d+)\)$", dst.name):
             self.emit(f"POKE({m.group(1)}, {cast}{src.name});")
+        elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
+            # NOTE: MOVE_ITEMS() does not exist.
+            # The only supported output array forms are:
+            # - unused[...]
+            # - X[...] where X[...] matches an input array form
+            self.emit(f"MOVE_ITEMS({src.name}, {dst.name}, {src.size});")
         elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
         else:
@@ -195,7 +208,10 @@ class Instruction:
         if not self.register:
             # Write input stack effect variable declarations and initializations
             for i, ieffect in enumerate(reversed(self.input_effects), 1):
-                src = StackEffect(f"PEEK({i})", "")
+                if ieffect.size:
+                    src = StackEffect(f"&PEEK({ieffect.size})", "PyObject **")
+                else:
+                    src = StackEffect(f"PEEK({i})", "")
                 out.declare(ieffect, src)
         else:
             # Write input register variable declarations and initializations
@@ -219,13 +235,27 @@ class Instruction:
 
         if not self.register:
             # Write net stack growth/shrinkage
-            diff = len(self.output_effects) - len(self.input_effects)
-            out.stack_adjust(diff)
+            diff = 0
+            symbolic: list[str] = []
+            for ieff in self.input_effects:
+                if ieff.size:
+                    symbolic.append(f"-{ieff.size}")
+                else:
+                    diff -= 1
+            for oeff in self.output_effects:
+                if oeff.size:
+                    symbolic.append(oeff.size)
+                else:
+                    diff += 1
+            out.stack_adjust(diff, symbolic)
 
             # Write output stack effect assignments
             for i, oeffect in enumerate(reversed(self.output_effects), 1):
                 if oeffect.name not in self.unmoved_names:
-                    dst = StackEffect(f"PEEK({i})", "")
+                    if oeffect.size:
+                        dst = StackEffect(f"&PEEK({oeffect.size})", "PyObject **")
+                    else:
+                        dst = StackEffect(f"PEEK({i})", "")
                     out.assign(dst, oeffect)
         else:
             # Write output register assignments
@@ -843,7 +873,7 @@ class Analyzer:
 
             yield
 
-            self.out.stack_adjust(up.final_sp - up.initial_sp)
+            self.out.stack_adjust(up.final_sp - up.initial_sp, [])
             for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
                 dst = StackEffect(f"PEEK({i})", "")
                 self.out.assign(dst, var)
