@@ -271,8 +271,9 @@ class _ModuleLock:
                     if self.wakeup.acquire(False):
                         self.waiters.append(None)
 
-                # Now blockingly take the lock.  This won't complete until the
-                # thread holding this lock (self.owner) calls self.release.
+                # Now take the lock in a blocking fashion.  This won't
+                # complete until the thread holding this lock
+                # (self.owner) calls self.release.
                 self.wakeup.acquire()
 
                 # Taking the lock has served its purpose (making us wait), so we can
