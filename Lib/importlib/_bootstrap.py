@@ -203,7 +203,7 @@ class _ModuleLock:
         # on getting the import lock for any module for which the import lock
         # is held by this thread.
         return _has_deadlocked(
-            # Try to find this thread
+            # Try to find this thread.
             target_id=_thread.get_ident(),
             seen_ids=set(),
             # starting from the thread that holds the import lock for this
