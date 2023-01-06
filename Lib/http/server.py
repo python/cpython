@@ -1292,6 +1292,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                     self.log_message("CGI script exited OK")
                 p.stdout.close()
                 p.stderr.close()
+                
 
 def _get_best_family(*address):
     infos = socket.getaddrinfo(
