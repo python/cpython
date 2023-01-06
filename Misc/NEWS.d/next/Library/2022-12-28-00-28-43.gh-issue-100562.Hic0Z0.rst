@@ -1,0 +1,3 @@
+Improve performance of :meth:`pathlib.Path.absolute` by nearly 2x. This comes
+at the cost of a performance regression in :meth:`pathlib.Path.cwd`, which is
+generally used less frequently in user code.

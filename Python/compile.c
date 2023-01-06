@@ -36,6 +36,8 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject
 
+#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata
+
 
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_CODE_SIZE 128
@@ -8664,6 +8666,31 @@ no_redundant_jumps(cfg_builder *g) {
 }
 
 static bool
+opcode_metadata_is_sane(cfg_builder *g) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            int opcode = instr->i_opcode;
+            assert(opcode <= MAX_REAL_OPCODE); 
+            int pushed = _PyOpcode_opcode_metadata[opcode].n_pushed;
+            int popped = _PyOpcode_opcode_metadata[opcode].n_popped;
+            assert((pushed < 0) == (popped < 0));
+            if (pushed >= 0) {
+                assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
+                int effect = stack_effect(opcode, instr->i_oparg, -1);
+                if (effect != pushed - popped) {
+                   fprintf(stderr,
+                           "op=%d: stack_effect (%d) != pushed (%d) - popped (%d)\n",
+                           opcode, effect, pushed, popped);
+                   return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+static bool
 no_empty_basic_blocks(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused == 0) {
@@ -8846,6 +8873,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     assert(no_redundant_jumps(g));
+    assert(opcode_metadata_is_sane(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);

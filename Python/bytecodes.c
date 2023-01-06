@@ -751,7 +751,7 @@ dummy_func(
             }
         }
 
-        inst(YIELD_VALUE, (retval --)) {
+        inst(YIELD_VALUE, (retval -- unused)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
