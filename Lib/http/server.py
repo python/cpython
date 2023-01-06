@@ -104,6 +104,7 @@ import socketserver
 import sys
 import time
 import urllib.parse
+import tempfile
 from functools import partial
 
 from http import HTTPStatus
@@ -1219,8 +1220,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
             chunk_size = 1 * 1024 * 1024
 
             # Receive client POST form in chunks, if the size is more than one chunk, use a temp file to store it.
-            tmpdir = os.path.join(os.path.dirname(scriptfile), f'tmp{os.path.sep}')
-            if not os.path.exists(tmpdir): os.makedirs(tmpdir)
+            tmpdir = tempfile.gettempdir()
             tmpfile = os.path.join(tmpdir, f'{p.pid}.tmp')
 
             # log with frequency limit
