@@ -276,7 +276,7 @@ class _ModuleLock:
                 self.wakeup.acquire()
 
                 # Taking the lock has served its purpose (making us wait), so we can
-                # give it up now.  We'll take it non-blockingly again on the
+                # give it up now.  We'll take it w/o blocking again on the
                 # next iteration around this 'while' loop.
                 self.wakeup.release()
 
