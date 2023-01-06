@@ -474,7 +474,6 @@ PyLong_FromDouble(double dval)
 #define PY_ABS_LONG_MIN         (0-(unsigned long)LONG_MIN)
 #define PY_ABS_SSIZE_T_MIN      (0-(size_t)PY_SSIZE_T_MIN)
 
-
 /* Get a C long int from an int object or any object that has an __index__
    method.
    On overflow, return -1 and set *overflow to 1 or -1 depending on the sign of
