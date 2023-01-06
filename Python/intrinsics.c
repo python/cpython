@@ -191,7 +191,7 @@ unary_pos(PyThreadState* unused, PyObject *value)
     return PyNumber_Positive(value);
 }
 
-PyObject *
+static PyObject *
 list_to_tuple(PyThreadState* unused, PyObject *v)
 {
     assert(PyList_Check(v));
