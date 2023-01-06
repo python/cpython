@@ -1970,13 +1970,13 @@ PyTypeObject _PyAsyncGenWrappedValue_Type = {
 
 
 PyObject *
-_PyAsyncGenValueWrapperNew(PyObject *val)
+_PyAsyncGenValueWrapperNew(PyThreadState *tstate, PyObject *val)
 {
     _PyAsyncGenWrappedValue *o;
     assert(val);
 
 #if _PyAsyncGen_MAXFREELIST > 0
-    struct _Py_async_gen_state *state = get_async_gen_state();
+    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
 #ifdef Py_DEBUG
     // _PyAsyncGenValueWrapperNew() must not be called after _PyAsyncGen_Fini()
     assert(state->value_numfree != -1);
