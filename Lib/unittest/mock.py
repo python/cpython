@@ -1062,7 +1062,7 @@ class NonCallableMock(Base):
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 
 
-# gh-100690 Denylist for forbidden attribute names in safe mode
+# Denylist for forbidden attribute names in safe mode
 ATTRIB_DENY_LIST = {name.removeprefix("assert_") for name in dir(NonCallableMock) if name.startswith("assert_")}
 
 
@@ -1235,9 +1235,11 @@ class Mock(CallableMixin, NonCallableMock):
       `return_value` attribute.
 
     * `unsafe`: By default, accessing any attribute whose name starts with
-      *assert*, *assret*, *asert*, *aseert*, *assrt*, or an attribute name that matches
-      an assertion method without the prefix *assert_* will raise an
-      AttributeError. Passing `unsafe=True` will allow access to these attributes.
+      *assert*, *assret*, *asert*, *aseert*, or *assrt* raises an AttributeError.
+      Additionally, an AttributeError is raised when accessing
+      attributes that match the name of an assertion method without the prefix
+      `assert_`, e.g. accessing `called_once` instead of `assert_called_once`.
+      Passing `unsafe=True` will allow access to these attributes.
 
     * `wraps`: Item for the mock object to wrap. If `wraps` is not None then
       calling the Mock will pass the call through to the wrapped object
