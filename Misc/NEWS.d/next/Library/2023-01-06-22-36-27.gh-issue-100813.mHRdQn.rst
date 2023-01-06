@@ -1,0 +1,5 @@
+The socket option IP_PKTINFO is defined on Linux and OSX.
+I would think we would want all the socket option constants defined in systems headers specifically <in.h> available as socket module level attributes.
+
+There are many other constants I would be willing to add, if desired.
+In fact I'm curious if all constants should be pulled from headers dynamically.
