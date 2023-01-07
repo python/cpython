@@ -174,25 +174,34 @@ range_dealloc(rangeobject *r)
 static unsigned long
 get_len_of_range(long lo, long hi, long step);
 
-/* Return the length as a long, or -1 on error
+/* Return the length as a long, -1 for an overflow and -2 for any other type of error
  *
- * On overflow -1 is returned, but no exception is set
+ * Exceptions are cleared
  */
 static long compute_range_length_long(PyObject *start,
                 PyObject *stop, PyObject *step) {
     int overflow = 0;
 
     long long_start = PyLong_AsLongAndOverflow(start, &overflow);
-    if (overflow || (long_start==-1 && PyErr_Occurred()) ) {
+    if (overflow)
         return -1;
+    if (long_start==-1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        return -2;
     }
     long long_stop = PyLong_AsLongAndOverflow(stop, &overflow);
-    if (overflow || (long_stop==-1 && PyErr_Occurred()) ) {
+    if (overflow)
         return -1;
+    if (long_stop==-1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        return -2;
     }
     long long_step = PyLong_AsLongAndOverflow(step, &overflow);
-    if (overflow || (long_step == -1 && PyErr_Occurred()) ) {
+    if (overflow)
         return -1;
+    if (long_step==-1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        return -2;
     }
     return get_len_of_range(long_start, long_stop, long_step);
 }
