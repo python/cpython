@@ -407,6 +407,8 @@ typedef struct {
     bool listPaths;
     // if true, display help message before contiuning
     bool help;
+    // if true, display Python Launcher version before contiuning
+    bool version;
     // dynamically allocated buffers to free later
     struct _SearchInfoBuffer *_buffer;
 } SearchInfo;
@@ -647,6 +649,8 @@ parseCommandLine(SearchInfo *search)
                 search->help = true;
                 // Do not update restOfCmdLine so that we trigger the help
                 // message from whichever interpreter we select
+            } else if (STARTSWITH(L"V") || STARTSWITH(L"-version")) {
+                search->version = true;
             }
         }
     }
@@ -2462,6 +2466,11 @@ process(int argc, wchar_t ** argv)
         if (exitCode) {
             goto abort;
         }
+    }
+
+    if (search.version) {
+        fwprintf(stdout, L"Python launcher for Windows %S\n", PY_VERSION);
+        fflush(stdout);
     }
 
     // Select best environment
