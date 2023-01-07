@@ -104,15 +104,39 @@ class ContextManagerTestCase(unittest.TestCase):
         self.assertEqual(frames[0].line, '1/0')
 
         # Repeat with RuntimeError (which goes through a different code path)
+        class RuntimeErrorSubclass(RuntimeError):
+            pass
+
         try:
             with f():
-                raise NotImplementedError(42)
-        except NotImplementedError as e:
+                raise RuntimeErrorSubclass(42)
+        except RuntimeErrorSubclass as e:
             frames = traceback.extract_tb(e.__traceback__)
 
         self.assertEqual(len(frames), 1)
         self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
-        self.assertEqual(frames[0].line, 'raise NotImplementedError(42)')
+        self.assertEqual(frames[0].line, 'raise RuntimeErrorSubclass(42)')
+
+        class StopIterationSubclass(StopIteration):
+            pass
+
+        for stop_exc in (
+            StopIteration('spam'),
+            StopIterationSubclass('spam'),
+        ):
+            with self.subTest(type=type(stop_exc)):
+                try:
+                    with f():
+                        raise stop_exc
+                except type(stop_exc) as e:
+                    self.assertIs(e, stop_exc)
+                    frames = traceback.extract_tb(e.__traceback__)
+                else:
+                    self.fail(f'{stop_exc} was suppressed')
+
+                self.assertEqual(len(frames), 1)
+                self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+                self.assertEqual(frames[0].line, 'raise stop_exc')
 
     def test_contextmanager_no_reraise(self):
         @contextmanager

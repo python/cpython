@@ -346,7 +346,7 @@ class TraceTestCase(unittest.TestCase):
         return Tracer()
 
     def compare_events(self, line_offset, events, expected_events):
-        events = [(l - line_offset, e) for (l, e) in events]
+        events = [(l - line_offset if l is not None else None, e) for (l, e) in events]
         if events != expected_events:
             self.fail(
                 "events did not match expectation:\n" +
@@ -834,9 +834,8 @@ class TraceTestCase(unittest.TestCase):
              (5, 'line'),
              (6, 'line'),
              (7, 'line'),
-             (10, 'line'),
-             (13, 'line'),
-             (13, 'return')])
+             (10, 'line')] +
+             ([(13, 'line'), (13, 'return')] if __debug__ else [(10, 'return')]))
 
     def test_continue_through_finally(self):
 
@@ -871,9 +870,8 @@ class TraceTestCase(unittest.TestCase):
              (6, 'line'),
              (7, 'line'),
              (10, 'line'),
-             (3, 'line'),
-             (13, 'line'),
-             (13, 'return')])
+             (3, 'line')] +
+             ([(13, 'line'), (13, 'return')] if __debug__ else [(3, 'return')]))
 
     def test_return_through_finally(self):
 
@@ -1571,6 +1569,28 @@ class TraceTestCase(unittest.TestCase):
 
         self.run_and_compare(func, EXPECTED_EVENTS)
 
+    def test_very_large_function(self):
+        # There is a separate code path when the number of lines > (1 << 15).
+        d = {}
+        exec("""def f():              # line 0
+            x = 0                     # line 1
+            y = 1                     # line 2
+            %s                        # lines 3 through (1 << 16)
+            x += 1                    #
+            return""" % ('\n' * (1 << 16),), d)
+        f = d['f']
+
+        EXPECTED_EVENTS = [
+            (0, 'call'),
+            (1, 'line'),
+            (2, 'line'),
+            (65540, 'line'),
+            (65541, 'line'),
+            (65541, 'return'),
+        ]
+
+        self.run_and_compare(f, EXPECTED_EVENTS)
+
 
 EVENT_NAMES = [
     'call',
@@ -1698,6 +1718,20 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
                 pass
         finally:
             sys.settrace(existing)
+
+    def test_line_event_raises_before_opcode_event(self):
+        exception = ValueError("BOOM!")
+        def trace(frame, event, arg):
+            if event == "line":
+                raise exception
+            frame.f_trace_opcodes = True
+            return trace
+        def f():
+            pass
+        with self.assertRaises(ValueError) as caught:
+            sys.settrace(trace)
+            f()
+        self.assertIs(caught.exception, exception)
 
 
 # 'Jump' tests: assigning to frame.f_lineno within a trace function
@@ -1857,7 +1891,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
-    @async_jump_test(4, 5, [3], (ValueError, 'into'))
+    @async_jump_test(4, 5, [3, 5])
     async def test_jump_out_of_async_for_block_forwards(output):
         for i in [1]:
             async for i in asynciter([1, 2]):
@@ -1899,7 +1933,7 @@ class JumpTestCase(unittest.TestCase):
                 output.append(8)
             output.append(9)
 
-    @jump_test(6, 7, [2], (ValueError, 'within'))
+    @jump_test(6, 7, [2, 7], (ZeroDivisionError, ''))
     def test_jump_in_nested_finally_2(output):
         try:
             output.append(2)
@@ -1910,7 +1944,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(6, 11, [2], (ValueError, 'within'))
+    @jump_test(6, 11, [2, 11], (ZeroDivisionError, ''))
     def test_jump_in_nested_finally_3(output):
         try:
             output.append(2)
@@ -2021,8 +2055,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(5)
             raise
 
-    @jump_test(5, 7, [4], (ValueError, 'within'))
-    def test_no_jump_between_except_blocks(output):
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_between_except_blocks(output):
         try:
             1/0
         except ZeroDivisionError:
@@ -2032,8 +2066,19 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(5, 6, [4], (ValueError, 'within'))
-    def test_no_jump_within_except_block(output):
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_from_except_to_finally(output):
+        try:
+            1/0
+        except ZeroDivisionError:
+            output.append(4)
+            output.append(5)
+        finally:
+            output.append(7)
+        output.append(8)
+
+    @jump_test(5, 6, [4, 6, 7])
+    def test_jump_within_except_block(output):
         try:
             1/0
         except:
@@ -2268,7 +2313,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(2)
         output.append(3)
 
-    @async_jump_test(3, 2, [2, 2], (ValueError, 'within'))
+    @async_jump_test(3, 2, [2, 2], (ValueError, "can't jump into the body of a for loop"))
     async def test_no_jump_backwards_into_async_for_block(output):
         async for i in asynciter([1, 2]):
             output.append(2)
@@ -2333,8 +2378,8 @@ class JumpTestCase(unittest.TestCase):
         output.append(6)
 
     # 'except' with a variable creates an implicit finally block
-    @jump_test(5, 7, [4], (ValueError, 'within'))
-    def test_no_jump_between_except_blocks_2(output):
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_between_except_blocks_2(output):
         try:
             1/0
         except ZeroDivisionError:
@@ -2370,7 +2415,7 @@ class JumpTestCase(unittest.TestCase):
         finally:
             output.append(5)
 
-    @jump_test(1, 5, [], (ValueError, "into an exception"))
+    @jump_test(1, 5, [], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_bare_except_block(output):
         output.append(1)
         try:
@@ -2378,7 +2423,7 @@ class JumpTestCase(unittest.TestCase):
         except:
             output.append(5)
 
-    @jump_test(1, 5, [], (ValueError, "into an exception"))
+    @jump_test(1, 5, [], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_qualified_except_block(output):
         output.append(1)
         try:
@@ -2386,7 +2431,7 @@ class JumpTestCase(unittest.TestCase):
         except Exception:
             output.append(5)
 
-    @jump_test(3, 6, [2, 5, 6], (ValueError, "into an exception"))
+    @jump_test(3, 6, [2, 5, 6], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_bare_except_block_from_try_block(output):
         try:
             output.append(2)
@@ -2397,7 +2442,7 @@ class JumpTestCase(unittest.TestCase):
             raise
         output.append(8)
 
-    @jump_test(3, 6, [2], (ValueError, "into an exception"))
+    @jump_test(3, 6, [2], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_qualified_except_block_from_try_block(output):
         try:
             output.append(2)
@@ -2408,8 +2453,8 @@ class JumpTestCase(unittest.TestCase):
             raise
         output.append(8)
 
-    @jump_test(7, 1, [1, 3, 6], (ValueError, "within"))
-    def test_no_jump_out_of_bare_except_block(output):
+    @jump_test(7, 1, [1, 3, 6, 1, 3, 6, 7])
+    def test_jump_out_of_bare_except_block(output):
         output.append(1)
         try:
             output.append(3)
@@ -2418,8 +2463,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
             output.append(7)
 
-    @jump_test(7, 1, [1, 3, 6], (ValueError, "within"))
-    def test_no_jump_out_of_qualified_except_block(output):
+    @jump_test(7, 1, [1, 3, 6, 1, 3, 6, 7])
+    def test_jump_out_of_qualified_except_block(output):
         output.append(1)
         try:
             output.append(3)
@@ -2652,6 +2697,42 @@ output.append(4)
         )
         output.append(15)
 
+    @jump_test(2, 3, [1, 3])
+    def test_jump_extended_args_unpack_ex_simple(output):
+        output.append(1)
+        _, *_, _ = output.append(2) or "Spam"
+        output.append(3)
+
+    @jump_test(3, 4, [1, 4, 4, 5])
+    def test_jump_extended_args_unpack_ex_tricky(output):
+        output.append(1)
+        (
+            _, *_, _
+        ) = output.append(4) or "Spam"
+        output.append(5)
+
+    def test_jump_extended_args_for_iter(self):
+        # In addition to failing when extended arg handling is broken, this can
+        # also hang for a *very* long time:
+        source = [
+            "def f(output):",
+            "    output.append(1)",
+            "    for _ in spam:",
+            *(f"        output.append({i})" for i in range(3, 100_000)),
+            f"    output.append(100_000)",
+        ]
+        namespace = {}
+        exec("\n".join(source), namespace)
+        f = namespace["f"]
+        self.run_test(f,  2, 100_000, [1, 100_000])
+
+    @jump_test(2, 3, [1, 3])
+    def test_jump_or_pop(output):
+        output.append(1)
+        _ = output.append(2) and "Spam"
+        output.append(3)
+
+
 class TestExtendedArgs(unittest.TestCase):
 
     def setUp(self):
@@ -2715,12 +2796,8 @@ class TestEdgeCases(unittest.TestCase):
                 sys.settrace(bar)
 
         sys.settrace(A())
-        with support.catch_unraisable_exception() as cm:
-            sys.settrace(foo)
-            self.assertEqual(cm.unraisable.object, A.__del__)
-            self.assertIsInstance(cm.unraisable.exc_value, RuntimeError)
-
-        self.assertEqual(sys.gettrace(), foo)
+        sys.settrace(foo)
+        self.assertEqual(sys.gettrace(), bar)
 
 
     def test_same_object(self):

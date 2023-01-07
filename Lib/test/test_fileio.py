@@ -503,7 +503,7 @@ class OtherFileTests:
 
     def testTruncateOnWindows(self):
         def bug801631():
-            # SF bug <http://www.python.org/sf/801631>
+            # SF bug <https://bugs.python.org/issue801631>
             # "file.truncate fault on windows"
             f = self.FileIO(TESTFN, 'w')
             f.write(bytes(range(11)))

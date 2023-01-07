@@ -182,12 +182,22 @@ else:
         return path.startswith(path_separators)
 
 
+def _path_abspath(path):
+    """Replacement for os.path.abspath."""
+    if not _path_isabs(path):
+        for sep in path_separators:
+            path = path.removeprefix(f".{sep}")
+        return _path_join(_os.getcwd(), path)
+    else:
+        return path
+
+
 def _write_atomic(path, data, mode=0o666):
     """Best-effort function to write data to a path atomically.
     Be prepared to handle a FileExistsError if concurrent writing of the
     temporary file is attempted."""
     # id() is used to generate a pseudo-random filename.
-    path_tmp = '{}.{}'.format(path, id(path))
+    path_tmp = f'{path}.{id(path)}'
     fd = _os.open(path_tmp,
                   _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY, mode & 0o666)
     try:
@@ -411,10 +421,16 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3505 (Specialization/Cache for FOR_ITER)
 #     Python 3.12a1 3506 (Add BINARY_SLICE and STORE_SLICE instructions)
 #     Python 3.12a1 3507 (Set lineno of module's RESUME to 0)
+#     Python 3.12a1 3508 (Add CLEANUP_THROW)
+#     Python 3.12a1 3509 (Conditional jumps only jump forward)
+#     Python 3.12a1 3510 (FOR_ITER leaves iterator on the stack)
+#     Python 3.12a1 3511 (Add STOPITERATION_ERROR instruction)
+#     Python 3.12a1 3512 (Remove all unused consts from code objects)
+#     Python 3.12a1 3513 (Add CALL_INTRINSIC_1 instruction, removed STOPITERATION_ERROR, PRINT_EXPR, IMPORT_STAR)
+#     Python 3.12a1 3514 (Remove ASYNC_GEN_WRAP, LIST_TO_TUPLE, and UNARY_POSITIVE)
 
 #     Python 3.13 will start with 3550
 
-#
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
@@ -424,7 +440,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3507).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3514).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
@@ -481,8 +497,8 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
     optimization = str(optimization)
     if optimization != '':
         if not optimization.isalnum():
-            raise ValueError('{!r} is not alphanumeric'.format(optimization))
-        almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
+            raise ValueError(f'{optimization!r} is not alphanumeric')
+        almost_filename = f'{almost_filename}.{_OPT}{optimization}'
     filename = almost_filename + BYTECODE_SUFFIXES[0]
     if sys.pycache_prefix is not None:
         # We need an absolute path to the py file to avoid the possibility of
@@ -493,8 +509,7 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         # make it absolute (`C:\Somewhere\Foo\Bar`), then make it root-relative
         # (`Somewhere\Foo\Bar`), so we end up placing the bytecode file in an
         # unambiguous `C:\Bytecode\Somewhere\Foo\Bar\`.
-        if not _path_isabs(head):
-            head = _path_join(_os.getcwd(), head)
+        head = _path_abspath(head)
 
         # Strip initial drive from a Windows path. We know we have an absolute
         # path here, so the second part of the check rules out a POSIX path that
@@ -641,8 +656,8 @@ def _find_module_shim(self, fullname):
     # return None.
     loader, portions = self.find_loader(fullname)
     if loader is None and len(portions):
-        msg = 'Not importing directory {}: missing __init__'
-        _warnings.warn(msg.format(portions[0]), ImportWarning)
+        msg = f'Not importing directory {portions[0]}: missing __init__'
+        _warnings.warn(msg, ImportWarning)
     return loader
 
 
@@ -740,7 +755,7 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
             _imp._fix_co_filename(code, source_path)
         return code
     else:
-        raise ImportError('Non-code object in {!r}'.format(bytecode_path),
+        raise ImportError(f'Non-code object in {bytecode_path!r}',
                           name=name, path=bytecode_path)
 
 
@@ -807,11 +822,10 @@ def spec_from_file_location(name, location=None, *, loader=None,
                 pass
     else:
         location = _os.fspath(location)
-        if not _path_isabs(location):
-            try:
-                location = _path_join(_os.getcwd(), location)
-            except OSError:
-                pass
+        try:
+            location = _path_abspath(location)
+        except OSError:
+            pass
 
     # If the location is on the filesystem, but doesn't actually exist,
     # we could return None here, indicating that the location is not
@@ -851,6 +865,54 @@ def spec_from_file_location(name, location=None, *, loader=None,
             spec.submodule_search_locations.append(dirname)
 
     return spec
+
+
+def _bless_my_loader(module_globals):
+    """Helper function for _warnings.c
+
+    See GH#97850 for details.
+    """
+    # 2022-10-06(warsaw): For now, this helper is only used in _warnings.c and
+    # that use case only has the module globals.  This function could be
+    # extended to accept either that or a module object.  However, in the
+    # latter case, it would be better to raise certain exceptions when looking
+    # at a module, which should have either a __loader__ or __spec__.loader.
+    # For backward compatibility, it is possible that we'll get an empty
+    # dictionary for the module globals, and that cannot raise an exception.
+    if not isinstance(module_globals, dict):
+        return None
+
+    missing = object()
+    loader = module_globals.get('__loader__', None)
+    spec = module_globals.get('__spec__', missing)
+
+    if loader is None:
+        if spec is missing:
+            # If working with a module:
+            # raise AttributeError('Module globals is missing a __spec__')
+            return None
+        elif spec is None:
+            raise ValueError('Module globals is missing a __spec__.loader')
+
+    spec_loader = getattr(spec, 'loader', missing)
+
+    if spec_loader in (missing, None):
+        if loader is None:
+            exc = AttributeError if spec_loader is missing else ValueError
+            raise exc('Module globals is missing a __spec__.loader')
+        _warnings.warn(
+            'Module globals is missing a __spec__.loader',
+            DeprecationWarning)
+        spec_loader = loader
+
+    assert spec_loader is not None
+    if loader is not None and loader != spec_loader:
+        _warnings.warn(
+            'Module globals; __loader__ != __spec__.loader',
+            DeprecationWarning)
+        return loader
+
+    return spec_loader
 
 
 # Loaders #####################################################################
@@ -942,8 +1004,8 @@ class _LoaderBasics:
         """Execute the module."""
         code = self.get_code(module.__name__)
         if code is None:
-            raise ImportError('cannot load module {!r} when get_code() '
-                              'returns None'.format(module.__name__))
+            raise ImportError(f'cannot load module {module.__name__!r} when '
+                              'get_code() returns None')
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
 
     def load_module(self, fullname):
@@ -1084,7 +1146,8 @@ class SourceLoader(_LoaderBasics):
                 source_mtime is not None):
             if hash_based:
                 if source_hash is None:
-                    source_hash = _imp.source_hash(source_bytes)
+                    source_hash = _imp.source_hash(_RAW_MAGIC_NUMBER,
+                                                   source_bytes)
                 data = _code_to_hash_pyc(code_object, source_hash, check_source)
             else:
                 data = _code_to_timestamp_pyc(code_object, source_mtime,
@@ -1328,7 +1391,7 @@ class _NamespacePath:
         return len(self._recalculate())
 
     def __repr__(self):
-        return '_NamespacePath({!r})'.format(self._path)
+        return f'_NamespacePath({self._path!r})'
 
     def __contains__(self, item):
         return item in self._recalculate()
@@ -1339,21 +1402,10 @@ class _NamespacePath:
 
 # This class is actually exposed publicly in a namespace package's __loader__
 # attribute, so it should be available through a non-private name.
-# https://bugs.python.org/issue35673
+# https://github.com/python/cpython/issues/92054
 class NamespaceLoader:
     def __init__(self, name, path, path_finder):
         self._path = _NamespacePath(name, path, path_finder)
-
-    @staticmethod
-    def module_repr(module):
-        """Return repr for the module.
-
-        The method is deprecated.  The import machinery does the job itself.
-
-        """
-        _warnings.warn("NamespaceLoader.module_repr() is deprecated and "
-                       "slated for removal in Python 3.12", DeprecationWarning)
-        return '<module {!r} (namespace)>'.format(module.__name__)
 
     def is_package(self, fullname):
         return True
@@ -1475,7 +1527,7 @@ class PathFinder:
         #  the list of paths that will become its __path__
         namespace_path = []
         for entry in path:
-            if not isinstance(entry, (str, bytes)):
+            if not isinstance(entry, str):
                 continue
             finder = cls._path_importer_cache(entry)
             if finder is not None:
@@ -1574,10 +1626,8 @@ class FileFinder:
         # Base (directory) path
         if not path or path == '.':
             self.path = _os.getcwd()
-        elif not _path_isabs(path):
-            self.path = _path_join(_os.getcwd(), path)
         else:
-            self.path = path
+            self.path = _path_abspath(path)
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()
@@ -1682,7 +1732,7 @@ class FileFinder:
             for item in contents:
                 name, dot, suffix = item.partition('.')
                 if dot:
-                    new_name = '{}.{}'.format(name, suffix.lower())
+                    new_name = f'{name}.{suffix.lower()}'
                 else:
                     new_name = name
                 lower_suffix_contents.add(new_name)
@@ -1709,7 +1759,7 @@ class FileFinder:
         return path_hook_for_FileFinder
 
     def __repr__(self):
-        return 'FileFinder({!r})'.format(self.path)
+        return f'FileFinder({self.path!r})'
 
 
 # Import setup ###############################################################
@@ -1727,6 +1777,8 @@ def _fix_up_module(ns, name, pathname, cpathname=None):
             loader = SourceFileLoader(name, pathname)
     if not spec:
         spec = spec_from_file_location(name, pathname, loader=loader)
+        if cpathname:
+            spec.cached = _path_abspath(cpathname)
     try:
         ns['__spec__'] = spec
         ns['__loader__'] = loader

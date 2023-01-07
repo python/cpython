@@ -4,6 +4,6 @@ about: Report a problem with the documentation
 labels: "docs"
 ---
 
-**Documentation**
+# Documentation
 
 (A clear and concise description of the issue.)

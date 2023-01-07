@@ -162,6 +162,7 @@ class FractionTest(unittest.TestCase):
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
         self.assertEqual((3, 2), _components(F("3/2")))
+        self.assertEqual((3, 2), _components(F("3 / 2")))
         self.assertEqual((3, 2), _components(F(" \n  +3/2")))
         self.assertEqual((-3, 2), _components(F("-3/2  ")))
         self.assertEqual((13, 2), _components(F("    013/02 \n  ")))
@@ -190,9 +191,6 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '/2'",
             F, "/2")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '3 /2'",
-            F, "3 /2")
         self.assertRaisesMessage(
             # Denominators don't need a sign.
             ValueError, "Invalid literal for Fraction: '3/+2'",
@@ -341,6 +339,19 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
+
+    def test_is_integer(self):
+        self.assertTrue(F(1, 1).is_integer())
+        self.assertTrue(F(-1, 1).is_integer())
+        self.assertTrue(F(1, -1).is_integer())
+        self.assertTrue(F(2, 2).is_integer())
+        self.assertTrue(F(-2, 2).is_integer())
+        self.assertTrue(F(2, -2).is_integer())
+
+        self.assertFalse(F(1, 2).is_integer())
+        self.assertFalse(F(-1, 2).is_integer())
+        self.assertFalse(F(1, -2).is_integer())
+        self.assertFalse(F(-1, -2).is_integer())
 
     def test_as_integer_ratio(self):
         self.assertEqual(F(4, 6).as_integer_ratio(), (2, 3))

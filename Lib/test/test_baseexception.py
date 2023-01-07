@@ -114,6 +114,31 @@ class ExceptionClassTests(unittest.TestCase):
                 [repr(exc), exc.__class__.__name__ + '()'])
         self.interface_test_driver(results)
 
+    def test_setstate_refcount_no_crash(self):
+        # gh-97591: Acquire strong reference before calling tp_hash slot
+        # in PyObject_SetAttr.
+        import gc
+        d = {}
+        class HashThisKeyWillClearTheDict(str):
+            def __hash__(self) -> int:
+                d.clear()
+                return super().__hash__()
+        class Value(str):
+            pass
+        exc = Exception()
+
+        d[HashThisKeyWillClearTheDict()] = Value()  # refcount of Value() is 1 now
+
+        # Exception.__setstate__ should aquire a strong reference of key and
+        # value in the dict. Otherwise, Value()'s refcount would go below
+        # zero in the tp_hash call in PyObject_SetAttr(), and it would cause
+        # crash in GC.
+        exc.__setstate__(d)  # __hash__() is called again here, clearing the dict.
+
+        # This GC would crash if the refcount of Value() goes below zero.
+        gc.collect()
+
+
 class UsageTests(unittest.TestCase):
 
     """Test usage of exceptions"""

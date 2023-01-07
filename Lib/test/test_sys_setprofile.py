@@ -437,12 +437,8 @@ class TestEdgeCases(unittest.TestCase):
                 sys.setprofile(bar)
 
         sys.setprofile(A())
-        with support.catch_unraisable_exception() as cm:
-            sys.setprofile(foo)
-            self.assertEqual(cm.unraisable.object, A.__del__)
-            self.assertIsInstance(cm.unraisable.exc_value, RuntimeError)
-
-        self.assertEqual(sys.getprofile(), foo)
+        sys.setprofile(foo)
+        self.assertEqual(sys.getprofile(), bar)
 
 
     def test_same_object(self):

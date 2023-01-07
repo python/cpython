@@ -44,7 +44,7 @@ Floating Point Objects
 
 .. c:function:: double PyFloat_AsDouble(PyObject *pyfloat)
 
-   Return a C :c:type:`double` representation of the contents of *pyfloat*.  If
+   Return a C :c:expr:`double` representation of the contents of *pyfloat*.  If
    *pyfloat* is not a Python floating point object but has a :meth:`__float__`
    method, this method will first be called to convert *pyfloat* into a float.
    If ``__float__()`` is not defined then it falls back to :meth:`__index__`.
@@ -57,7 +57,7 @@ Floating Point Objects
 
 .. c:function:: double PyFloat_AS_DOUBLE(PyObject *pyfloat)
 
-   Return a C :c:type:`double` representation of the contents of *pyfloat*, but
+   Return a C :c:expr:`double` representation of the contents of *pyfloat*, but
    without error checking.
 
 
@@ -70,12 +70,12 @@ Floating Point Objects
 
 .. c:function:: double PyFloat_GetMax()
 
-   Return the maximum representable finite float *DBL_MAX* as C :c:type:`double`.
+   Return the maximum representable finite float *DBL_MAX* as C :c:expr:`double`.
 
 
 .. c:function:: double PyFloat_GetMin()
 
-   Return the minimum normalized positive float *DBL_MIN* as C :c:type:`double`.
+   Return the minimum normalized positive float *DBL_MIN* as C :c:expr:`double`.
 
 
 Pack and Unpack functions
@@ -83,8 +83,8 @@ Pack and Unpack functions
 
 The pack and unpack functions provide an efficient platform-independent way to
 store floating-point values as byte strings. The Pack routines produce a bytes
-string from a C :c:type:`double`, and the Unpack routines produce a C
-:c:type:`double` from such a bytes string. The suffix (2, 4 or 8) specifies the
+string from a C :c:expr:`double`, and the Unpack routines produce a C
+:c:expr:`double` from such a bytes string. The suffix (2, 4 or 8) specifies the
 number of bytes in the bytes string.
 
 On platforms that appear to use IEEE 754 formats these functions work by
@@ -107,7 +107,7 @@ Pack functions
 --------------
 
 The pack routines write 2, 4 or 8 bytes, starting at *p*. *le* is an
-:c:type:`int` argument, non-zero if you want the bytes string in little-endian
+:c:expr:`int` argument, non-zero if you want the bytes string in little-endian
 format (exponent last, at ``p+1``, ``p+3``, or ``p+6`` ``p+7``), zero if you
 want big-endian format (exponent first, at *p*). The :c:data:`PY_BIG_ENDIAN`
 constant can be used to use the native endian: it is equal to ``1`` on big
@@ -138,7 +138,7 @@ Unpack functions
 ----------------
 
 The unpack routines read 2, 4 or 8 bytes, starting at *p*.  *le* is an
-:c:type:`int` argument, non-zero if the bytes string is in little-endian format
+:c:expr:`int` argument, non-zero if the bytes string is in little-endian format
 (exponent last, at ``p+1``, ``p+3`` or ``p+6`` and ``p+7``), zero if big-endian
 (exponent first, at *p*). The :c:data:`PY_BIG_ENDIAN` constant can be used to
 use the native endian: it is equal to ``1`` on big endian processor, or ``0``
