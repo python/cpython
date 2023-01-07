@@ -485,6 +485,7 @@ dumpSearchInfo(SearchInfo *search)
     DEBUG_BOOL(list);
     DEBUG_BOOL(listPaths);
     DEBUG_BOOL(help);
+    DEBUG_BOOL(version);
 #undef DEBUG_BOOL
 #undef DEBUG_2
 #undef DEBUG
@@ -2469,7 +2470,7 @@ process(int argc, wchar_t ** argv)
     }
 
     if (search.version) {
-        fwprintf(stdout, L"Python launcher for Windows %S\n", PY_VERSION);
+        fwprintf(stdout, L"Python Launcher for Windows Version %S\n", PY_VERSION);
         fflush(stdout);
     }
 
