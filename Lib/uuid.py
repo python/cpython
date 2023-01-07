@@ -615,7 +615,7 @@ def _random_getnode():
     # significant bit of the first octet".  This works out to be the 41st bit
     # counting from 1 being the least significant bit, or 1<<40.
     #
-    # See https://en.wikipedia.org/wiki/MAC_address#Unicast_vs._multicast_(I/G_bit)
+    # See https://en.wikipedia.org/w/index.php?title=MAC_address&oldid=1128764812#Universal_vs._local_(U/L_bit)
     import random
     return random.getrandbits(48) | (1 << 40)
 
