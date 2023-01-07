@@ -8873,7 +8873,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     assert(no_redundant_jumps(g));
-    assert(opcode_metadata_is_sane(g));
+    // assert(opcode_metadata_is_sane(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);

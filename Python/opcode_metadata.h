@@ -88,7 +88,7 @@ static const struct {
     [LOAD_DEREF] = { 0, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [STORE_DEREF] = { 1, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [COPY_FREE_VARS] = { 0, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
-    [BUILD_STRING] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
+    [BUILD_STRING] = { 1, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [BUILD_TUPLE] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [BUILD_LIST] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [LIST_EXTEND] = { 1, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },

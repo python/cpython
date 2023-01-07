@@ -311,15 +311,15 @@ def test_macro_instruction():
 
 def test_array_input():
     input = """
-        inst(OP, (values[oparg] --)) {
+        inst(OP, (values[oparg*2] --)) {
             spam();
         }
     """
     output = """
         TARGET(OP) {
-            PyObject **values = &PEEK(oparg);
+            PyObject **values = &PEEK(oparg*2);
             spam();
-            STACK_SHRINK(oparg);
+            STACK_SHRINK(oparg*2);
             DISPATCH();
         }
     """
@@ -327,7 +327,7 @@ def test_array_input():
 
 def test_array_output():
     input = """
-        inst(OP, (-- values[oparg])) {
+        inst(OP, (-- values[oparg*3])) {
             spam();
         }
     """
@@ -335,8 +335,8 @@ def test_array_output():
         TARGET(OP) {
             PyObject **values;
             spam();
-            STACK_GROW(oparg);
-            MOVE_ITEMS(values, &PEEK(oparg), oparg);
+            STACK_GROW(oparg*3);
+            MOVE_ITEMS(values, &PEEK(oparg*3), oparg*3);
             DISPATCH();
         }
     """

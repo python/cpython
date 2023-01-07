@@ -84,16 +84,18 @@ class Formatter:
         self.emit("}")
 
     def stack_adjust(self, diff: int, symbolic: list[str]):
+        # First emit all the pops, then all the pushes.
+        # The symbolic ones go at the ends.
+        for sym in symbolic:
+            if sym.startswith("-"):
+                self.emit(f"STACK_SHRINK({sym[1:]});")
+        if diff < 0:
+            self.emit(f"STACK_SHRINK({-diff});")
         if diff > 0:
             self.emit(f"STACK_GROW({diff});")
-        elif diff < 0:
-            self.emit(f"STACK_SHRINK({-diff});")
-        if symbolic:
-            for sym in symbolic:
-                if sym.startswith("-"):
-                    self.emit(f"STACK_SHRINK({sym[1:]});")
-                else:
-                    self.emit(f"STACK_GROW({sym});")
+        for sym in symbolic:
+            if not sym.startswith("-"):
+                self.emit(f"STACK_GROW({sym});")
 
     def declare(self, dst: StackEffect, src: StackEffect | None):
         if dst.name == UNUSED:

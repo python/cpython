@@ -1300,18 +1300,13 @@ dummy_func(
             }
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_STRING) {
-            PyObject *str;
-            str = _PyUnicode_JoinArray(&_Py_STR(empty),
-                                       stack_pointer - oparg, oparg);
+        inst(BUILD_STRING, (pieces[oparg] -- str)) {
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
             if (str == NULL)
                 goto error;
-            while (--oparg >= 0) {
-                PyObject *item = POP();
-                Py_DECREF(item);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(pieces[i]);
             }
-            PUSH(str);
         }
 
         // stack effect: (__array[oparg] -- __0)

@@ -1511,16 +1511,17 @@
         }
 
         TARGET(BUILD_STRING) {
+            PyObject **pieces = &PEEK(oparg);
             PyObject *str;
-            str = _PyUnicode_JoinArray(&_Py_STR(empty),
-                                       stack_pointer - oparg, oparg);
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
             if (str == NULL)
                 goto error;
-            while (--oparg >= 0) {
-                PyObject *item = POP();
-                Py_DECREF(item);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(pieces[i]);
             }
-            PUSH(str);
+            STACK_SHRINK(oparg);
+            STACK_GROW(1);
+            POKE(1, str);
             DISPATCH();
         }
 
