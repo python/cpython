@@ -174,21 +174,25 @@ range_dealloc(rangeobject *r)
 static unsigned long
 get_len_of_range(long lo, long hi, long step);
 
-/// Return the length as a long, or -1 on error
-static inline long compute_range_length_long(PyObject *start, PyObject *stop, PyObject *step) {
+/* Return the length as a long, or -1 on error
+ *
+ * On overflow -1 is returned, but no exception is set
+ */
+static long compute_range_length_long(PyObject *start,
+                PyObject *stop, PyObject *step) {
     int overflow = 0;
 
     long long_start = PyLong_AsLongAndOverflow(start, &overflow);
     if (overflow || (long_start==-1 && PyErr_Occurred()) ) {
-            return -1;
+        return -1;
     }
     long long_stop = PyLong_AsLongAndOverflow(stop, &overflow);
     if (overflow || (long_stop==-1 && PyErr_Occurred()) ) {
-            return -1;
+        return -1;
     }
     long long_step = PyLong_AsLongAndOverflow(step, &overflow);
     if (overflow || (long_step == -1 && PyErr_Occurred()) ) {
-            return -1;
+        return -1;
     }
     return get_len_of_range(long_start, long_stop, long_step);
 }
@@ -205,16 +209,17 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     on PyObjects (which are assumed to be PyLong objects).
     ---------------------------------------------------------------*/
 
-    // fast path when all arguments fit into a long integer
-    long len = compute_range_length_long(start, stop, step);
-    if (len>=0) {
-        return PyLong_FromLong(len);
-    }
     int cmp_result;
     PyObject *lo, *hi;
     PyObject *diff = NULL;
     PyObject *tmp1 = NULL, *tmp2 = NULL, *result;
                 /* holds sub-expression evaluations */
+
+    // fast path when all arguments fit into a long integer
+    long len = compute_range_length_long(start, stop, step);
+    if (len>=0) {
+        return PyLong_FromLong(len);
+    }
 
     PyObject *zero = _PyLong_GetZero();  // borrowed reference
     PyObject *one = _PyLong_GetOne();  // borrowed reference
