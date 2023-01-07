@@ -30,10 +30,13 @@
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"       // _PyFuture_FromAST()
+#include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject
+
+#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata
 
 
 #define DEFAULT_BLOCK_SIZE 16
@@ -131,9 +134,9 @@
          (opcode) == STORE_FAST__LOAD_FAST || \
          (opcode) == STORE_FAST__STORE_FAST)
 
-#define IS_TOP_LEVEL_AWAIT(c) ( \
-        (c->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
-        && (c->u->u_ste->ste_type == ModuleBlock))
+#define IS_TOP_LEVEL_AWAIT(C) ( \
+        ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
+        && ((C)->u->u_ste->ste_type == ModuleBlock))
 
 typedef _PyCompilerSrcLocation location;
 
@@ -479,7 +482,7 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-#define CFG_BUILDER(c) (&((c)->u->u_cfg_builder))
+#define CFG_BUILDER(C) (&((C)->u->u_cfg_builder))
 
 
 typedef struct {
@@ -1087,7 +1090,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -2;
 
         /* Unary operators */
-        case UNARY_POSITIVE:
         case UNARY_NEGATIVE:
         case UNARY_NOT:
         case UNARY_INVERT:
@@ -1113,18 +1115,13 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_ITER:
             return 0;
 
-        case PRINT_EXPR:
-            return -1;
         case LOAD_BUILD_CLASS:
             return 1;
 
         case RETURN_VALUE:
             return -1;
-        case IMPORT_STAR:
-            return -1;
         case SETUP_ANNOTATIONS:
             return 0;
-        case ASYNC_GEN_WRAP:
         case YIELD_VALUE:
             return 0;
         case POP_BLOCK:
@@ -1216,10 +1213,6 @@ stack_effect(int opcode, int oparg, int jump)
              * of __(a)enter__ and push 2 values before jumping to the handler
              * if an exception be raised. */
             return jump ? 1 : 0;
-
-        case STOPITERATION_ERROR:
-            return 0;
-
         case PREP_RERAISE_STAR:
              return -1;
         case RERAISE:
@@ -1249,7 +1242,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case CALL:
             return -1-oparg;
-
+        case CALL_INTRINSIC_1:
+            return 0;
         case CALL_FUNCTION_EX:
             return -2 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
@@ -1300,8 +1294,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case LOAD_ASSERTION_ERROR:
             return 1;
-        case LIST_TO_TUPLE:
-            return 0;
         case LIST_EXTEND:
         case SET_UPDATE:
         case DICT_MERGE:
@@ -1626,7 +1618,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
-        compiler_exit_scope(c); \
+        compiler_exit_scope(C); \
         return -1; \
     } \
 }
@@ -1692,7 +1684,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define VISIT_IN_SCOPE(C, TYPE, V) {\
     if (compiler_visit_ ## TYPE((C), (V)) < 0) { \
-        compiler_exit_scope(c); \
+        compiler_exit_scope(C); \
         return ERROR; \
     } \
 }
@@ -1713,7 +1705,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
         if (compiler_visit_ ## TYPE((C), elt) < 0) { \
-            compiler_exit_scope(c); \
+            compiler_exit_scope(C); \
             return ERROR; \
         } \
     } \
@@ -2260,7 +2252,7 @@ compiler_make_closure(struct compiler *c, location loc,
         qualname = co->co_name;
 
     if (co->co_nfreevars) {
-        int i = co->co_nlocals + co->co_nplaincellvars;
+        int i = PyCode_GetFirstFree(co);
         for (; i < co->co_nlocalsplus; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
@@ -2604,7 +2596,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
     ADDOP(c, NO_LOCATION, RETURN_VALUE);
     USE_LABEL(c, handler);
-    ADDOP(c, NO_LOCATION, STOPITERATION_ERROR);
+    ADDOP_I(c, NO_LOCATION, CALL_INTRINSIC_1, INTRINSIC_STOPITERATION_ERROR);
     ADDOP_I(c, NO_LOCATION, RERAISE, 1);
     return SUCCESS;
 }
@@ -3953,7 +3945,8 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
         if (i == 0 && PyUnicode_READ_CHAR(alias->name, 0) == '*') {
             assert(n == 1);
-            ADDOP(c, LOC(s), IMPORT_STAR);
+            ADDOP_I(c, LOC(s), CALL_INTRINSIC_1, INTRINSIC_IMPORT_STAR);
+            ADDOP(c, NO_LOCATION, POP_TOP);
             return SUCCESS;
         }
 
@@ -4005,7 +3998,8 @@ compiler_stmt_expr(struct compiler *c, location loc, expr_ty value)
 {
     if (c->c_interactive && c->c_nestlevel <= 1) {
         VISIT(c, expr, value);
-        ADDOP(c, loc, PRINT_EXPR);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PRINT);
+        ADDOP(c, NO_LOCATION, POP_TOP);
         return SUCCESS;
     }
 
@@ -4124,8 +4118,6 @@ unaryop(unaryop_ty op)
         return UNARY_INVERT;
     case Not:
         return UNARY_NOT;
-    case UAdd:
-        return UNARY_POSITIVE;
     case USub:
         return UNARY_NEGATIVE;
     default:
@@ -4193,7 +4185,7 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
 static int
 addop_yield(struct compiler *c, location loc) {
     if (c->u->u_ste->ste_generator && c->u->u_ste->ste_coroutine) {
-        ADDOP(c, loc, ASYNC_GEN_WRAP);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     }
     ADDOP_I(c, loc, YIELD_VALUE, 0);
     ADDOP_I(c, loc, RESUME, 1);
@@ -4360,7 +4352,7 @@ starunpack_helper(struct compiler *c, location loc,
             ADDOP_LOAD_CONST_NEW(c, loc, folded);
             ADDOP_I(c, loc, extend, 1);
             if (tuple) {
-                ADDOP(c, loc, LIST_TO_TUPLE);
+                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
             }
         }
         return SUCCESS;
@@ -4411,7 +4403,7 @@ starunpack_helper(struct compiler *c, location loc,
     }
     assert(sequence_built);
     if (tuple) {
-        ADDOP(c, loc, LIST_TO_TUPLE);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
     }
     return SUCCESS;
 }
@@ -5786,7 +5778,12 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case UnaryOp_kind:
         VISIT(c, expr, e->v.UnaryOp.operand);
-        ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
+        if (e->v.UnaryOp.op == UAdd) {
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_UNARY_POSITIVE);
+        }
+        else {
+            ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
+        }
         break;
     case Lambda_kind:
         return compiler_lambda(c, e);
@@ -8669,6 +8666,31 @@ no_redundant_jumps(cfg_builder *g) {
 }
 
 static bool
+opcode_metadata_is_sane(cfg_builder *g) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            int opcode = instr->i_opcode;
+            assert(opcode <= MAX_REAL_OPCODE); 
+            int pushed = _PyOpcode_opcode_metadata[opcode].n_pushed;
+            int popped = _PyOpcode_opcode_metadata[opcode].n_popped;
+            assert((pushed < 0) == (popped < 0));
+            if (pushed >= 0) {
+                assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
+                int effect = stack_effect(opcode, instr->i_oparg, -1);
+                if (effect != pushed - popped) {
+                   fprintf(stderr,
+                           "op=%d: stack_effect (%d) != pushed (%d) - popped (%d)\n",
+                           opcode, effect, pushed, popped);
+                   return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+static bool
 no_empty_basic_blocks(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused == 0) {
@@ -8851,6 +8873,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     assert(no_redundant_jumps(g));
+    assert(opcode_metadata_is_sane(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
