@@ -474,7 +474,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     data = self.run_py(["--version"], argv=f'{argv0} --version')
                     self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
                     self.assertEqual("3.100", data["SearchInfo.tag"])
-                    self.assertEqual(f'X.Y.exe --version', data["stdout"].strip())
+                    self.assertEqual("X.Y.exe --version", data["stdout"].strip())
 
     def test_py_default_in_list(self):
         data = self.run_py(["-0"], env=TEST_PY_ENV)
