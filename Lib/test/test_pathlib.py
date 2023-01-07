@@ -3004,13 +3004,22 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
 
         drive = os.path.splitdrive(BASE)[0]
         with os_helper.change_cwd(BASE):
-            # Relative path with drive
-            self.assertEqual(str(P(drive).absolute()), BASE)
-            self.assertEqual(str(P(drive + 'foo').absolute()), os.path.join(BASE, 'foo'))
-
             # Relative path with root
             self.assertEqual(str(P('\\').absolute()), drive + '\\')
             self.assertEqual(str(P('\\foo').absolute()), drive + '\\foo')
+
+            # Relative path on current drive
+            self.assertEqual(str(P(drive).absolute()), BASE)
+            self.assertEqual(str(P(drive + 'foo').absolute()), os.path.join(BASE, 'foo'))
+
+        with os_helper.subst_drive(BASE) as other_drive:
+            other_cwd = f'{other_drive}\\dirA'
+            with os_helper.change_cwd(other_cwd):
+                pass
+
+            # Relative path on another drive
+            self.assertEqual(str(P(other_drive).absolute()), other_cwd)
+            self.assertEqual(str(P(other_drive + 'foo').absolute()), other_cwd + '\\foo')
 
 
     def test_glob(self):
