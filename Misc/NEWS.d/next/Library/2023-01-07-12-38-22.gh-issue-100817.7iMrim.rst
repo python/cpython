@@ -1,0 +1,1 @@
+Speed up ``copy.deepcopy`` calls on ``slice`` instances.
