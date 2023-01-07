@@ -38,7 +38,7 @@ class Context(NamedTuple):
 
 @dataclass
 class Node:
-    context: Context | None = field(init=False, default=None)
+    context: Context | None = field(init=False, compare=False, default=None)
 
     @property
     def text(self) -> str:
