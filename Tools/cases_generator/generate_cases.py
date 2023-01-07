@@ -48,6 +48,53 @@ arg_parser.add_argument(
 )
 
 
+def effect_size(effect: StackEffect) -> tuple[int, str]:
+    if effect.size:
+        return 0, effect.size
+    else:
+        return 1, ""
+
+
+def list_effect_size(effects: list[StackEffect]) -> tuple[int, str]:
+    numeric = 0
+    symbolic: list[str] = []
+    for effect in effects:
+        diff, sym = effect_size(effect)
+        numeric += diff
+        if sym:
+            symbolic.append(sym)
+    return numeric, " + ".join(symbolic)
+
+
+def net_effect_size(input_effects: list[StackEffect], output_effects: list[StackEffect]) -> tuple[int, str]:
+    input_numeric, input_symbolic = list_effect_size(input_effects)
+    output_numeric, output_symbolic = list_effect_size(output_effects)
+    if "+" in input_symbolic:
+        input_symbolic = f"({input_symbolic})"
+    if input_symbolic and output_symbolic:
+        symbolic = f"{output_symbolic} - {input_symbolic}"
+    elif input_symbolic:
+        symbolic = f"-{input_symbolic}"
+    elif output_symbolic:
+        symbolic = output_symbolic
+    else:
+        symbolic = ""
+    return output_numeric - input_numeric, symbolic
+
+
+def string_effect_size(input_effects: list[StackEffect], output_effects: list[StackEffect]) -> str:
+    numeric, symbolic = net_effect_size(input_effects, output_effects)
+    if numeric and symbolic:
+        if symbolic.startswith("-"):
+            return f"{numeric} - {symbolic[1:]}"
+        else:
+            return f"{numeric} + {symbolic}"
+    elif symbolic:
+        return symbolic
+    else:
+        return str(numeric)
+
+
 class Formatter:
     """Wraps an output stream with the ability to indent etc."""
 
@@ -302,19 +349,21 @@ class Instruction:
                 # The code block is responsible for DECREF()ing them.
                 # NOTE: If the label doesn't exist, just add it to ceval.c.
                 if not self.register:
-                    ninputs = len(self.input_effects)
                     # Don't pop common input/output effects at the bottom!
                     # These aren't DECREF'ed so they can stay.
-                    for ieff, oeff in zip(self.input_effects, self.output_effects):
-                        if ieff.name == oeff.name:
-                            ninputs -= 1
-                        else:
-                            break
+                    ieffs = list(self.input_effects)
+                    oeffs = list(self.output_effects)
+                    while ieffs and oeffs and ieffs[0] == oeffs[0]:
+                        ieffs.pop(0)
+                        oeffs.pop(0)
+                    ninputs, symbolic = list_effect_size(ieffs)
+                    if ninputs:
+                        label = f"pop_{ninputs}_{label}"
                 else:
-                    ninputs = 0
-                if ninputs:
+                    symbolic = ""
+                if symbolic:
                     out.write_raw(
-                        f"{extra}{space}if ({cond}) goto pop_{ninputs}_{label};\n"
+                        f"{extra}{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
                     )
                 else:
                     out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")

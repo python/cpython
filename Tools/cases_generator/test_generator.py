@@ -4,6 +4,34 @@
 import tempfile
 
 import generate_cases
+from parser import StackEffect
+
+
+def test_effect_sizes():
+    input_effects = [
+        x := StackEffect("x", "", ""),
+        y := StackEffect("y", "", "oparg"),
+        z := StackEffect("z", "", "oparg*2"),
+    ]
+    output_effects = [
+        a := StackEffect("a", "", ""),
+        b := StackEffect("b", "", "oparg*4"),
+        c := StackEffect("c", "", ""),
+    ]
+    assert generate_cases.effect_size(x) == (1, "")
+    assert generate_cases.effect_size(y) == (0, "oparg")
+    assert generate_cases.effect_size(z) == (0, "oparg*2")
+
+    assert generate_cases.list_effect_size(input_effects) == (1, "oparg + oparg*2")
+    assert generate_cases.list_effect_size(output_effects) == (2, "oparg*4")
+
+    assert generate_cases.net_effect_size(input_effects, []) == (-1, "-(oparg + oparg*2)")
+    assert generate_cases.net_effect_size(input_effects, output_effects) == (1, "oparg*4 - (oparg + oparg*2)")
+    assert generate_cases.net_effect_size([], output_effects) == (2, "oparg*4")
+
+    assert generate_cases.string_effect_size(input_effects, []) == "-1 - (oparg + oparg*2)"
+    assert generate_cases.string_effect_size(input_effects, output_effects) == "1 + oparg*4 - (oparg + oparg*2)"
+    assert generate_cases.string_effect_size([], output_effects) == "2 + oparg*4"
 
 
 def run_cases_test(input: str, expected: str):
