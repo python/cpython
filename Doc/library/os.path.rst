@@ -309,7 +309,7 @@ the :mod:`glob` module.)
    Join one or more path segments intelligently.  The return value is the
    concatenation of *path* and all members of *\*paths*, with exactly one
    directory separator following each non-empty part except the last, meaning
-   that the result will only end in a separator if the last part is empty.  If
+   that the result will end in a separator if the last part is empty.  If
    a segment is an absolute path (which on Windows requires both a drive and a
    root), then all previous segments are ignored and joining continues from the
    absolute path segment.
