@@ -1,1 +1,1 @@
-Make ``email.message.Message.__contains__`` twice as fast.
+Make :meth:`email.message.Message.__contains__` twice as fast.
