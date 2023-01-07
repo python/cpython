@@ -653,7 +653,7 @@ class NonCallableMock(Base):
         elif _is_magic(name):
             raise AttributeError(name)
         if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
-            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in ATTRIB_DENY_LIST:
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
                     f"for the mock if {name!r} is meant to be an attribute.")
@@ -1063,7 +1063,11 @@ class NonCallableMock(Base):
 
 
 # Denylist for forbidden attribute names in safe mode
-ATTRIB_DENY_LIST = {name.removeprefix("assert_") for name in dir(NonCallableMock) if name.startswith("assert_")}
+_ATTRIB_DENY_LIST = frozenset({
+    name.removeprefix("assert_")
+    for name in dir(NonCallableMock)
+    if name.startswith("assert_")
+})
 
 
 class _AnyComparer(list):
