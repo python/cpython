@@ -33,7 +33,7 @@ by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 These tools and their built-in counterparts also work well with the high-speed
 functions in the :mod:`operator` module.  For example, the multiplication
 operator can be mapped across two vectors to form an efficient dot-product:
-``sum(map(operator.mul, vector1, vector2))``.
+``sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))``.
 
 
 **Infinite iterators:**
@@ -799,7 +799,7 @@ which incur interpreter overhead.
        "Returns the sequence elements n times"
        return chain.from_iterable(repeat(tuple(iterable), n))
 
-   def dotproduct(vec1, vec2):
+   def sumprod(vec1, vec2):
        "Compute a sum of products."
        return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
 
@@ -813,7 +813,7 @@ which incur interpreter overhead.
        window = collections.deque([0], maxlen=n) * n
        for x in chain(signal, repeat(0, n-1)):
            window.append(x)
-           yield dotproduct(kernel, window)
+           yield sumprod(kernel, window)
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
@@ -1181,7 +1181,7 @@ which incur interpreter overhead.
     >>> list(ncycles('abc', 3))
     ['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']
 
-    >>> dotproduct([1,2,3], [4,5,6])
+    >>> sumprod([1,2,3], [4,5,6])
     32
 
     >>> data = [20, 40, 24, 32, 20, 28, 16]
