@@ -2865,15 +2865,6 @@ dl_zero()
 {
     return (DoubleLength) {0.0, 0.0};
 }
-
-static inline DoubleLength
-dl_split(double x) {
-    double t = x * 134217729.0;  /* Veltkamp constant = float(0x8000001) */
-    double hi = t - (t - x);
-    double lo = x - hi;
-    return (DoubleLength) {hi, lo};
-}
-
 static inline DoubleLength
 dl_add(DoubleLength total, double x)
 {
@@ -2888,12 +2879,24 @@ dl_add(DoubleLength total, double x)
 }
 
 static inline DoubleLength
-dl_mul(double p, double q)
+dl_split(double x) {
+    double t = x * 134217729.0;  /* Veltkamp constant = float(0x8000001) */
+    double hi = t - (t - x);
+    double lo = x - hi;
+    return (DoubleLength) {hi, lo};
+}
+
+static inline DoubleLength
+dl_mul(double x, double y)
 {
-    DoubleLength pp = dl_split(p);
-    DoubleLength qq = dl_split(q);
-    DoubleLength product = {pp.hi * qq.hi, pp.lo * qq.lo};
-    return dl_add(product, pp.hi * qq.lo + pp.lo * qq.hi);
+    /* Dekker mul12().  Section (5.12) */
+    DoubleLength xx = dl_split(x);
+    DoubleLength yy = dl_split(y);
+    double p = xx.hi * yy.hi;
+    double q = xx.hi * yy.lo + xx.lo * yy.hi;
+    double z = p + q;
+    double zz = p - z + q + xx.lo * yy.lo;
+    return (DoubleLength) {z, zz};
 }
 
 static inline DoubleLength
