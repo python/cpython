@@ -1,0 +1,1 @@
+Show the version of Python Launcher for Windows running through the argument -V or --version
