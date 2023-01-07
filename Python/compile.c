@@ -2246,11 +2246,8 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
 
 static int
 compiler_make_closure(struct compiler *c, location loc,
-                      PyCodeObject *co, Py_ssize_t flags, PyObject *qualname)
+                      PyCodeObject *co, Py_ssize_t flags)
 {
-    if (qualname == NULL)
-        qualname = co->co_name;
-
     if (co->co_nfreevars) {
         int i = PyCode_GetFirstFree(co);
         for (; i < co->co_nlocalsplus; ++i) {
@@ -2605,7 +2602,7 @@ static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
-    PyObject *qualname, *docstring = NULL;
+    PyObject *docstring = NULL;
     arguments_ty args;
     expr_ty returns;
     identifier name;
@@ -2682,19 +2679,15 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
     co = assemble(c, 1);
-    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (co == NULL) {
-        Py_XDECREF(qualname);
         Py_XDECREF(co);
         return ERROR;
     }
-    if (compiler_make_closure(c, loc, co, funcflags, qualname) < 0) {
-        Py_DECREF(qualname);
+    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
-    Py_DECREF(qualname);
     Py_DECREF(co);
 
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
@@ -2794,7 +2787,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP(c, loc, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    if (compiler_make_closure(c, loc, co, 0, NULL) < 0) {
+    if (compiler_make_closure(c, loc, co, 0) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
@@ -3015,7 +3008,6 @@ static int
 compiler_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
-    PyObject *qualname;
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
@@ -3049,19 +3041,15 @@ compiler_lambda(struct compiler *c, expr_ty e)
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = assemble(c, 1);
     }
-    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (co == NULL) {
-        Py_DECREF(qualname);
         return ERROR;
     }
 
-    if (compiler_make_closure(c, loc, co, funcflags, qualname) < 0) {
-        Py_DECREF(qualname);
+    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
-    Py_DECREF(qualname);
     Py_DECREF(co);
 
     return SUCCESS;
@@ -5392,7 +5380,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 {
     PyCodeObject *co = NULL;
     comprehension_ty outermost;
-    PyObject *qualname = NULL;
     int scope_type = c->u->u_scope_type;
     int is_async_generator = 0;
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
@@ -5453,7 +5440,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     co = assemble(c, 1);
-    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (is_top_level_await && is_async_generator){
         c->u->u_ste->ste_coroutine = 1;
@@ -5463,10 +5449,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     loc = LOC(e);
-    if (compiler_make_closure(c, loc, co, 0, qualname) < 0) {
+    if (compiler_make_closure(c, loc, co, 0) < 0) {
         goto error;
     }
-    Py_DECREF(qualname);
     Py_DECREF(co);
 
     VISIT(c, expr, outermost->iter);
@@ -5490,7 +5475,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 error_in_scope:
     compiler_exit_scope(c);
 error:
-    Py_XDECREF(qualname);
     Py_XDECREF(co);
     return ERROR;
 }
@@ -8671,7 +8655,7 @@ opcode_metadata_is_sane(cfg_builder *g) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             int opcode = instr->i_opcode;
-            assert(opcode <= MAX_REAL_OPCODE); 
+            assert(opcode <= MAX_REAL_OPCODE);
             int pushed = _PyOpcode_opcode_metadata[opcode].n_pushed;
             int popped = _PyOpcode_opcode_metadata[opcode].n_popped;
             assert((pushed < 0) == (popped < 0));
