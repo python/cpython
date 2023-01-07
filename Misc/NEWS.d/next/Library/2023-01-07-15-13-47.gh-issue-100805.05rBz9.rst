@@ -1,2 +1,2 @@
-Modify `random.choice()` implementation to once again work with NumPy
+Modify :func:`random.choice` implementation to once again work with NumPy
 arrays.
