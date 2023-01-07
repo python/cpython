@@ -120,7 +120,7 @@ bytes(cdata)
 #define IS_INTRESOURCE(x) (((size_t)(x) >> 16) == 0)
 #endif
 #else
-#include "ctypes_dlfcn.h"
+#include <dlfcn.h>
 #endif
 #include "ctypes.h"
 
@@ -768,7 +768,7 @@ CDataType_in_dll(PyObject *type, PyObject *args)
         return NULL;
     }
 #else
-    address = (void *)ctypes_dlsym(handle, name);
+    address = (void *)dlsym(handle, name);
     if (!address) {
 #ifdef __CYGWIN__
 /* dlerror() isn't very helpful on cygwin */
@@ -776,7 +776,7 @@ CDataType_in_dll(PyObject *type, PyObject *args)
                      "symbol '%s' not found",
                      name);
 #else
-        PyErr_SetString(PyExc_ValueError, ctypes_dlerror());
+        PyErr_SetString(PyExc_ValueError, dlerror());
 #endif
         return NULL;
     }
@@ -3560,7 +3560,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #else
-    address = (PPROC)ctypes_dlsym(handle, name);
+    address = (PPROC)dlsym(handle, name);
     if (!address) {
 #ifdef __CYGWIN__
 /* dlerror() isn't very helpful on cygwin */
@@ -3568,7 +3568,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
                      "function '%s' not found",
                      name);
 #else
-        PyErr_SetString(PyExc_AttributeError, ctypes_dlerror());
+        PyErr_SetString(PyExc_AttributeError, dlerror());
 #endif
         Py_DECREF(ftuple);
         return NULL;
