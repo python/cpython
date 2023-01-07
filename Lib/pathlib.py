@@ -832,10 +832,8 @@ class Path(PurePath):
         if self.is_absolute():
             return self
         elif self._drv and _getfullpathname:
-            try:
-                cwd = _getfullpathname(self._drv)
-            except (ValueError, OSError):
-                cwd = os.getcwd()
+            # There is a CWD on each drive-letter drive.
+            cwd = _getfullpathname(self._drv)
         else:
             cwd = os.getcwd()
         return self._from_parts([cwd] + self._parts)
