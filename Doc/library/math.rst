@@ -291,6 +291,22 @@ Number-theoretic and representation functions
    .. versionadded:: 3.7
 
 
+.. function:: sumprod(p, q)
+
+   Return the sum of products of values from two iterables *p* and *q*.
+
+   Raises :exc:`ValueError` if the inputs do not have the same length.
+
+   Roughly equivalent to::
+
+       sum(itertools.starmap(operator.mul, zip(p, q, strict=true)))
+
+   For float and mixed int/float inputs, the intermediate products
+   and sums are computed with extended precision.
+
+   .. versionadded:: 3.12
+
+
 .. function:: trunc(x)
 
    Return *x* with the fractional part

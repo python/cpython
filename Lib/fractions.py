@@ -650,12 +650,12 @@ class Fraction(numbers.Rational):
 
     def __floor__(a):
         """math.floor(a)"""
-        return a.numerator // a.denominator
+        return a._numerator // a._denominator
 
     def __ceil__(a):
         """math.ceil(a)"""
         # The negations cleverly convince floordiv to return the ceiling.
-        return -(-a.numerator // a.denominator)
+        return -(-a._numerator // a._denominator)
 
     def __round__(self, ndigits=None):
         """round(self, ndigits)
@@ -663,10 +663,11 @@ class Fraction(numbers.Rational):
         Rounds half toward even.
         """
         if ndigits is None:
-            floor, remainder = divmod(self.numerator, self.denominator)
-            if remainder * 2 < self.denominator:
+            d = self._denominator
+            floor, remainder = divmod(self._numerator, d)
+            if remainder * 2 < d:
                 return floor
-            elif remainder * 2 > self.denominator:
+            elif remainder * 2 > d:
                 return floor + 1
             # Deal with the half case:
             elif floor % 2 == 0:
