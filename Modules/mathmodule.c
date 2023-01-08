@@ -2860,11 +2860,7 @@ dl_to_d() converts from extended precision to double precision.
 
 typedef struct{ double hi; double lo; } DoubleLength;
 
-static inline DoubleLength
-dl_zero()
-{
-    return (DoubleLength) {0.0, 0.0};
-}
+static const DoubleLength dl_zero = {0.0, 0.0};
 
 static inline DoubleLength
 twosum(double a, double b)
@@ -2948,7 +2944,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     bool int_path_enabled = true, int_total_in_use = false;
     bool flt_path_enabled = true, flt_total_in_use = false;
     long int_total = 0;
-    DoubleLength flt_total = dl_zero();
+    DoubleLength flt_total = dl_zero;
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -3108,7 +3104,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 Py_SETREF(total, new_total);
                 new_total = NULL;
                 Py_CLEAR(term_i);
-                flt_total = dl_zero();
+                flt_total = dl_zero;
                 flt_total_in_use = false;
             }
         }
