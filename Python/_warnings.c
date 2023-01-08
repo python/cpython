@@ -761,56 +761,99 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     return result;  /* Py_None or NULL. */
 }
 
-static int
-is_internal_frame(PyFrameObject *frame)
+static PyObject *
+get_frame_filename(PyFrameObject *frame)
 {
-    if (frame == NULL) {
-        return 0;
-    }
-
     PyCodeObject *code = PyFrame_GetCode(frame);
     PyObject *filename = code->co_filename;
     Py_DECREF(code);
+    return filename;
+}
 
-    if (filename == NULL) {
-        return 0;
-    }
+static bool
+is_internal_filename(PyObject *filename)
+{
     if (!PyUnicode_Check(filename)) {
-        return 0;
+        return false;
     }
 
     int contains = PyUnicode_Contains(filename, &_Py_ID(importlib));
     if (contains < 0) {
-        return 0;
+        return false;
     }
     else if (contains > 0) {
         contains = PyUnicode_Contains(filename, &_Py_ID(_bootstrap));
         if (contains < 0) {
-            return 0;
+            return false;
         }
         else if (contains > 0) {
-            return 1;
+            return true;
         }
     }
 
-    return 0;
+    return false;
+}
+
+static bool
+is_filename_to_skip(PyObject *filename, PyTupleObject *skip_file_prefixes)
+{
+    if (skip_file_prefixes) {
+        if (!PyUnicode_Check(filename)) {
+            return false;
+        }
+
+        Py_ssize_t prefixes = PyTuple_GET_SIZE(skip_file_prefixes);
+        for (Py_ssize_t idx = 0; idx < prefixes; ++idx)
+        {
+            PyObject *prefix = PyTuple_GET_ITEM(skip_file_prefixes, idx);
+            int found = PyUnicode_Tailmatch(filename, prefix, 0, -1, -1);
+            if (found == 1) {
+                return true;
+            }
+            if (found < 0) {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
+static bool
+is_internal_frame(PyFrameObject *frame)
+{
+    if (frame == NULL) {
+        return false;
+    }
+
+    PyObject *filename = get_frame_filename(frame);
+    if (filename == NULL) {
+        return false;
+    }
+
+    return is_internal_filename(filename);
 }
 
 static PyFrameObject *
-next_external_frame(PyFrameObject *frame)
+next_external_frame(PyFrameObject *frame, PyTupleObject *skip_file_prefixes)
 {
+    PyObject *frame_filename;
     do {
         PyFrameObject *back = PyFrame_GetBack(frame);
         Py_SETREF(frame, back);
-    } while (frame != NULL && is_internal_frame(frame));
+    } while (frame != NULL && (frame_filename = get_frame_filename(frame)) &&
+             (is_internal_filename(frame_filename) ||
+              is_filename_to_skip(frame_filename, skip_file_prefixes)));
 
     return frame;
 }
 
 /* filename, module, and registry are new refs, globals is borrowed */
+/* skip_file_prefixes is either NULL or a tuple of strs. */
 /* Returns 0 on error (no new refs), 1 on success */
 static int
-setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
+setup_context(Py_ssize_t stack_level,
+              PyTupleObject *skip_file_prefixes,
+              PyObject **filename, int *lineno,
               PyObject **module, PyObject **registry)
 {
     PyObject *globals;
@@ -819,6 +862,21 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     PyThreadState *tstate = get_current_tstate();
     if (tstate == NULL) {
         return 0;
+    }
+    if (skip_file_prefixes) {
+        /* Type check our data structure up front. Later code that uses it
+         * isn't structured to report errors. */
+        Py_ssize_t prefixes = PyTuple_GET_SIZE(skip_file_prefixes);
+        for (Py_ssize_t idx = 0; idx < prefixes; ++idx)
+        {
+            PyObject *prefix = PyTuple_GET_ITEM(skip_file_prefixes, idx);
+            if (!PyUnicode_Check(prefix)) {
+                PyErr_Format(PyExc_TypeError,
+                             "Found non-str '%s' in skip_file_prefixes.",
+                             Py_TYPE(prefix)->tp_name);
+                return 0;
+            }
+        }
     }
     PyInterpreterState *interp = tstate->interp;
     PyFrameObject *f = PyThreadState_GetFrame(tstate);
@@ -832,7 +890,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         while (--stack_level > 0 && f != NULL) {
-            f = next_external_frame(f);
+            f = next_external_frame(f, skip_file_prefixes);
         }
     }
 
@@ -925,7 +983,7 @@ get_category(PyObject *message, PyObject *category)
 
 static PyObject *
 do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
-        PyObject *source)
+        PyObject *source, PyTupleObject *skip_file_prefixes)
 {
     PyObject *filename, *module, *registry, *res;
     int lineno;
@@ -935,7 +993,8 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
         return NULL;
     }
 
-    if (!setup_context(stack_level, &filename, &lineno, &module, &registry))
+    if (!setup_context(stack_level, skip_file_prefixes,
+                       &filename, &lineno, &module, &registry))
         return NULL;
 
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
@@ -950,22 +1009,42 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
 warn as warnings_warn
 
     message: object
+      Text of the warning message.
     category: object = None
+      The Warning category subclass. Defaults to UserWarning.
     stacklevel: Py_ssize_t = 1
+      How far up the call stack to make this warning appear. A value of 2 for
+      example attributes the warning to the caller of the code calling warn().
     source: object = None
+      If supplied, the destroyed object which emitted a ResourceWarning
+    *
+    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type') = NULL
+      An optional tuple of module filename prefixes indicating frames to skip
+      during stacklevel computations for stack frame attribution.
 
 Issue a warning, or maybe ignore it or raise an exception.
 [clinic start generated code]*/
 
 static PyObject *
 warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
-                   Py_ssize_t stacklevel, PyObject *source)
-/*[clinic end generated code: output=31ed5ab7d8d760b2 input=bfdf5cf99f6c4edd]*/
+                   Py_ssize_t stacklevel, PyObject *source,
+                   PyTupleObject *skip_file_prefixes)
+/*[clinic end generated code: output=a68e0f6906c65f80 input=eb37c6a18bec4ea1]*/
 {
     category = get_category(message, category);
     if (category == NULL)
         return NULL;
-    return do_warn(message, category, stacklevel, source);
+    if (skip_file_prefixes) {
+        if (PyTuple_GET_SIZE(skip_file_prefixes) > 0) {
+            if (stacklevel < 2) {
+                stacklevel = 2;
+            }
+        } else {
+            Py_DECREF((PyObject *)skip_file_prefixes);
+            skip_file_prefixes = NULL;
+        }
+    }
+    return do_warn(message, category, stacklevel, source, skip_file_prefixes);
 }
 
 static PyObject *
@@ -1113,7 +1192,7 @@ warn_unicode(PyObject *category, PyObject *message,
     if (category == NULL)
         category = PyExc_RuntimeWarning;
 
-    res = do_warn(message, category, stack_level, source);
+    res = do_warn(message, category, stack_level, source, NULL);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
