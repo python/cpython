@@ -2866,6 +2866,7 @@ dl_zero()
     return (DoubleLength) {0.0, 0.0};
 }
 
+#if 0
 static inline DoubleLength
 fasttwosum(double a, double b)
 {
@@ -2886,6 +2887,29 @@ dl_add(DoubleLength total, double x)
     }
     return (DoubleLength) {s.hi, total.lo + s.lo};
 }
+
+#else
+
+static inline DoubleLength
+twosum(double a, double b)
+{
+    double s = a + b;
+    double ap = s - b;
+    double bp = s - a;
+    double da = (a - ap);
+    double db = (b - bp);
+    double t = da + db;
+    return  (DoubleLength) {s, t};
+}
+
+static inline DoubleLength
+dl_add(DoubleLength total, double x)
+{
+    DoubleLength s = twosum(total.hi, x);
+    return (DoubleLength) {s.hi, total.lo + s.lo};
+}
+
+#endif
 
 static inline DoubleLength
 dl_split(double x) {
