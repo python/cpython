@@ -2847,7 +2847,7 @@ based on ideas from three sources:
 
 The double length routines allow for quite a bit of instruction
 level parallelism.  On a 3.22 Ghz Apple M1 Max, the incremental
-cost of increasing the input vector size by one is 6.25 nsec.
+cost of increasing the input vector size by one is 6.0 nsec.
 
 dl_zero() returns an extended precision zero
 dl_split() exactly splits a double into two half precision components.
@@ -2860,22 +2860,25 @@ dl_to_d() converts from extended precision to double precision.
 
 typedef struct{ double hi; double lo; } DoubleLength;
 
+static const DoubleLength dl_zero = {0.0, 0.0};
+
 static inline DoubleLength
-dl_zero()
+twosum(double a, double b)
 {
-    return (DoubleLength) {0.0, 0.0};
+    double s = a + b;
+    double ap = s - b;
+    double bp = s - a;
+    double da = a - ap;
+    double db = b - bp;
+    double t = da + db;
+    return  (DoubleLength) {s, t};
 }
+
 static inline DoubleLength
 dl_add(DoubleLength total, double x)
 {
-    double s = total.hi + x;
-    double c = total.lo;
-    if (fabs(total.hi) >= fabs(x)) {
-        c += (total.hi - s) + x;
-    } else {
-        c += (x - s) + total.hi;
-    }
-    return (DoubleLength) {s, c};
+    DoubleLength s = twosum(total.hi, x);
+    return (DoubleLength) {s.hi, total.lo + s.lo};
 }
 
 static inline DoubleLength
@@ -2941,7 +2944,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     bool int_path_enabled = true, int_total_in_use = false;
     bool flt_path_enabled = true, flt_total_in_use = false;
     long int_total = 0;
-    DoubleLength flt_total = dl_zero();
+    DoubleLength flt_total = dl_zero;
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -3101,7 +3104,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 Py_SETREF(total, new_total);
                 new_total = NULL;
                 Py_CLEAR(term_i);
-                flt_total = dl_zero();
+                flt_total = dl_zero;
                 flt_total_in_use = false;
             }
         }
