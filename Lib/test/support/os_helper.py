@@ -722,15 +722,15 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
 try:
     import ctypes
     kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
-except (ImportError, AttributeError):
-    def subst_drive(path):
-        raise unittest.SkipTest('ctypes or kernel32 is not available')
-else:
+
     ERROR_FILE_NOT_FOUND = 2
     DDD_REMOVE_DEFINITION = 2
     DDD_EXACT_MATCH_ON_REMOVE = 4
     DDD_NO_BROADCAST_SYSTEM = 8
-
+except (ImportError, AttributeError):
+    def subst_drive(path):
+        raise unittest.SkipTest('ctypes or kernel32 is not available')
+else:
     @contextlib.contextmanager
     def subst_drive(path):
         """Temporarily yield a substitute drive for a given path."""
