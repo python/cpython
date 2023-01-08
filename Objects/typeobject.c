@@ -1289,9 +1289,12 @@ PyObject *
 _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
 {
     PyObject *obj;
-    const size_t size = _PyObject_VAR_SIZE(type, nitems+1);
-    /* note that we need to add one, for the sentinel */
-
+    size_t extra = 0;
+    if (type->tp_flags & Py_TPFLAGS_TYPE_SUBCLASS || type->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL) {
+        /* note that we need to add one, for the sentinel */
+        extra = 1;
+    }
+    const size_t size = _PyObject_VAR_SIZE(type, nitems + extra);
     const size_t presize = _PyType_PreHeaderSize(type);
     char *alloc = PyObject_Malloc(size + presize);
     if (alloc  == NULL) {
@@ -1309,7 +1312,7 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
         _PyObject_Init(obj, type);
     }
     else {
-        _PyObject_InitVar((PyVarObject *)obj, type, nitems);
+        _PyObject_InitVar((PyVarObject *)obj, type, nitems + extra);
     }
     return obj;
 }

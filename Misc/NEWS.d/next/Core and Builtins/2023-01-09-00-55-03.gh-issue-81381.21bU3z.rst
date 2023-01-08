@@ -1,0 +1,2 @@
+Reduce the extra allocation size of :c:func:`PyType_GenericAlloc` except the
+type is if a subtype of 'type'.
