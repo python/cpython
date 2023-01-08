@@ -1,11 +1,7 @@
 variables:
-  manylinux: false
   coverage: false
 
-resources:
-  containers:
-  - container: manylinux1
-    image: pyca/cryptography-manylinux1:x86_64
+pr: ['main', '3.11', '3.10', '3.9', '3.8', '3.7']
 
 jobs:
 - job: Prebuild
@@ -67,37 +63,6 @@ jobs:
   - template: ./posix-steps.yml
     parameters:
       dependencies: apt
-
-
-- job: ManyLinux1_PR_Tests
-  displayName: ManyLinux1 PR Tests
-  dependsOn: Prebuild
-  condition: |
-    and(
-        and(
-            succeeded(),
-            eq(variables['manylinux'], 'true')
-        ),
-        eq(dependencies.Prebuild.outputs['tests.run'], 'true')
-    )
-
-  pool:
-    vmImage: ubuntu-20.04
-
-  container: manylinux1
-
-  variables:
-    testRunTitle: '$(system.pullRequest.TargetBranch)-manylinux1'
-    testRunPlatform: manylinux1
-    openssl_version: ''
-
-  steps:
-  - template: ./posix-steps.yml
-    parameters:
-      dependencies: yum
-      sudo_dependencies: ''
-      xvfb: false
-      patchcheck: false
 
 
 - job: Ubuntu_Coverage_PR_Tests
