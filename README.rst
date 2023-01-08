@@ -22,7 +22,7 @@ This is Python version 3.9.16
    :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2022 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
