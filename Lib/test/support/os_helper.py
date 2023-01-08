@@ -724,7 +724,7 @@ try:
     kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 except (ImportError, AttributeError):
     def subst_drive(path):
-        raise NotImplementedError('ctypes or kernel32 is not available')
+        raise unittest.SkipTest('ctypes or kernel32 is not available')
 else:
     ERROR_FILE_NOT_FOUND = 2
     DDD_REMOVE_DEFINITION = 2
@@ -740,7 +740,7 @@ else:
                     ctypes.get_last_error() == ERROR_FILE_NOT_FOUND):
                 break
         else:
-            raise FileExistsError('no available logical drive')
+            raise unittest.SkipTest('no available logical drive')
         if not kernel32.DefineDosDeviceW(
                 DDD_NO_BROADCAST_SYSTEM, drive, path):
             raise ctypes.WinError(ctypes.get_last_error())

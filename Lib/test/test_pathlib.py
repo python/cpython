@@ -3014,8 +3014,10 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
 
         with os_helper.subst_drive(BASE) as other_drive:
             other_cwd = f'{other_drive}\\dirA'
-            with os_helper.change_cwd(other_cwd):
-                pass
+            # set the working directory on the substitute drive
+            saved_dir = os.getcwd()
+            os.chdir(other_cwd)
+            os.chdir(saved_dir)
 
             # Relative path on another drive
             self.assertEqual(str(P(other_drive).absolute()), other_cwd)
