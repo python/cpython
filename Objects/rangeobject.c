@@ -224,7 +224,7 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     PyObject *tmp1 = NULL, *tmp2 = NULL, *result;
                 /* holds sub-expression evaluations */
 
-    // fast path when all arguments fit into a long integer
+    /* fast path when all arguments fit into a long integer */
     long len = compute_range_length_long(start, stop, step);
     if (len>=0) {
         return PyLong_FromLong(len);
