@@ -262,6 +262,12 @@ dis
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
+math
+----
+
+* Added :func:`math.sumprod` for computing a sum of products.
+  (Contributed by Raymond Hettinger in :gh:`100485`.)
+
 os
 --
 

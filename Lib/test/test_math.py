@@ -1294,6 +1294,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(sumprod([0.1] * 20, [True, False] * 10), 1.0)
         self.assertEqual(sumprod([1.0, 10E100, 1.0, -10E100], [1.0]*4), 2.0)
 
+    @support.requires_resource('cpu')
     def test_sumprod_stress(self):
         sumprod = math.sumprod
         product = itertools.product
