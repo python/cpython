@@ -3013,16 +3013,15 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(str(P(drive + 'foo').absolute()), os.path.join(BASE, 'foo'))
 
         with os_helper.subst_drive(BASE) as other_drive:
+            # Set the working directory on the substitute drive
+            saved_cwd = os.getcwd()
             other_cwd = f'{other_drive}\\dirA'
-            # set the working directory on the substitute drive
-            saved_dir = os.getcwd()
             os.chdir(other_cwd)
-            os.chdir(saved_dir)
+            os.chdir(saved_cwd)
 
             # Relative path on another drive
             self.assertEqual(str(P(other_drive).absolute()), other_cwd)
             self.assertEqual(str(P(other_drive + 'foo').absolute()), other_cwd + '\\foo')
-
 
     def test_glob(self):
         P = self.cls
