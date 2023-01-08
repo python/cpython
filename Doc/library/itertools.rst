@@ -912,6 +912,19 @@ which incur interpreter overhead.
        "Flatten one level of nesting"
        return chain.from_iterable(list_of_lists)
 
+   def flat_map(func, iterable):
+       """Map func on iterable, then flatten.
+       The flattening process differs from flatten()
+       in that non-iterables are yielded directly,
+       instead of causing an error.
+       This resembles JavaScript's Array.flatMap().
+       """
+       for item in map(func, iterable): # step 1: map
+           try:
+               yield from item # step 2: flatten
+           except TypeError:
+               yield item
+
    def repeatfunc(func, times=None, *args):
        """Repeat calls to func with specified arguments.
 
@@ -1197,6 +1210,10 @@ which incur interpreter overhead.
     >>> a = [[1, 2, 3], [4, 5, 6]]
     >>> list(flatten(a))
     [1, 2, 3, 4, 5, 6]
+
+    >>> a = ["it's Sunny in", "", "California"]
+    >>> list(flat_map(str.split, a))
+    ["it's", 'Sunny', 'in', 'California']
 
     >>> list(repeatfunc(pow, 5, 2, 3))
     [8, 8, 8, 8, 8]
