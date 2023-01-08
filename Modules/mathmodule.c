@@ -2859,8 +2859,9 @@ dl_to_d() converts from extended precision to double precision.
 */
 
 typedef struct{ double hi; double lo; } DoubleLength;
+typedef struct{ double hi; double lo; double tiny; } TripleLength;
 
-static const DoubleLength dl_zero = {0.0, 0.0};
+static const TripleLength tl_zero = {0.0, 0.0, 0.0};
 
 static inline DoubleLength
 twosum(double a, double b)
@@ -2874,11 +2875,12 @@ twosum(double a, double b)
     return  (DoubleLength) {s, t};
 }
 
-static inline DoubleLength
-dl_add(DoubleLength total, double x)
+static inline TripleLength
+tl_add(TripleLength total, double x)
 {
     DoubleLength s = twosum(total.hi, x);
-    return (DoubleLength) {s.hi, total.lo + s.lo};
+    DoubleLength t = twosum(total.lo, s.lo);
+    return (TripleLength) {s.hi, t.hi, total.tiny + t.lo};
 }
 
 static inline DoubleLength
@@ -2902,18 +2904,18 @@ dl_mul(double x, double y)
     return (DoubleLength) {z, zz};
 }
 
-static inline DoubleLength
-dl_fma(DoubleLength total, double p, double q)
+static inline TripleLength
+tl_fma(TripleLength total, double p, double q)
 {
     DoubleLength product = dl_mul(p, q);
-    total = dl_add(total, product.hi);
-    return  dl_add(total, product.lo);
+    total = tl_add(total, product.hi);
+    return  tl_add(total, product.lo);
 }
 
 static inline double
-dl_to_d(DoubleLength total)
+tl_to_d(TripleLength total)
 {
-    return total.hi + total.lo;
+    return total.tiny + total.lo + total.hi;
 }
 
 /*[clinic input]
@@ -2944,7 +2946,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     bool int_path_enabled = true, int_total_in_use = false;
     bool flt_path_enabled = true, flt_total_in_use = false;
     long int_total = 0;
-    DoubleLength flt_total = dl_zero;
+    TripleLength flt_total = tl_zero;
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -3079,7 +3081,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 } else {
                     goto finalize_flt_path;
                 }
-                DoubleLength new_flt_total = dl_fma(flt_total, flt_p, flt_q);
+                TripleLength new_flt_total = tl_fma(flt_total, flt_p, flt_q);
                 if (isfinite(new_flt_total.hi)) {
                     flt_total = new_flt_total;
                     flt_total_in_use = true;
@@ -3093,7 +3095,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             // We're finished, overflowed, have a non-float, or got a non-finite value
             flt_path_enabled = false;
             if (flt_total_in_use) {
-                term_i = PyFloat_FromDouble(dl_to_d(flt_total));
+                term_i = PyFloat_FromDouble(tl_to_d(flt_total));
                 if (term_i == NULL) {
                     goto err_exit;
                 }
@@ -3104,7 +3106,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 Py_SETREF(total, new_total);
                 new_total = NULL;
                 Py_CLEAR(term_i);
-                flt_total = dl_zero;
+                flt_total = tl_zero;
                 flt_total_in_use = false;
             }
         }
