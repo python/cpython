@@ -1,1 +1,1 @@
-Show the version of Python Launcher for Windows running through the argument `-0v` or `--version-launcher`
+Show the version of Python Launcher for Windows running through the argument ``-0v`` or ``--version-launcher``
