@@ -82,8 +82,8 @@ def net_effect_size(input_effects: list[StackEffect], output_effects: list[Stack
     return output_numeric - input_numeric, symbolic
 
 
-def string_effect_size(input_effects: list[StackEffect], output_effects: list[StackEffect]) -> str:
-    numeric, symbolic = net_effect_size(input_effects, output_effects)
+def string_effect_size(arg: tuple[int, str]) -> str:
+    numeric, symbolic = arg
     if numeric and symbolic:
         if symbolic.startswith("-"):
             return f"{numeric} - {symbolic[1:]}"
@@ -130,19 +130,19 @@ class Formatter:
             yield
         self.emit("}")
 
-    def stack_adjust(self, diff: int, symbolic: list[str]):
-        # First emit all the pops, then all the pushes.
-        # The symbolic ones go at the ends.
-        for sym in symbolic:
-            if sym.startswith("-"):
-                self.emit(f"STACK_SHRINK({sym[1:]});")
+    def stack_adjust(self, diff: int, input_effects: list[StackEffect], output_effects: list[StackEffect]):
+        # TODO: Get rid of 'diff' parameter
+        shrink, isym = list_effect_size(input_effects)
+        grow, osym = list_effect_size(output_effects)
+        diff += grow - shrink
+        if isym and isym != osym:
+            self.emit(f"STACK_SHRINK({isym});")
         if diff < 0:
             self.emit(f"STACK_SHRINK({-diff});")
         if diff > 0:
             self.emit(f"STACK_GROW({diff});")
-        for sym in symbolic:
-            if not sym.startswith("-"):
-                self.emit(f"STACK_GROW({sym});")
+        if osym and osym != isym:
+            self.emit(f"STACK_GROW({osym});")
 
     def declare(self, dst: StackEffect, src: StackEffect | None):
         if dst.name == UNUSED:
@@ -159,13 +159,13 @@ class Formatter:
         if src.name == UNUSED:
             return
         cast = self.cast(dst, src)
-        if m := re.match(r"^PEEK\((\d+)\)$", dst.name):
+        if m := re.match(r"^PEEK\((.*)\)$", dst.name):
             self.emit(f"POKE({m.group(1)}, {cast}{src.name});")
         elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
-            # NOTE: MOVE_ITEMS() does not exist.
+            # NOTE: MOVE_ITEMS() does not actually exist.
             # The only supported output array forms are:
             # - unused[...]
-            # - X[...] where X[...] matches an input array form
+            # - X[...] where X[...] matches an i99nput array form
             self.emit(f"MOVE_ITEMS({src.name}, {dst.name}, {src.size});")
         elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
@@ -245,7 +245,6 @@ class Instruction:
     def write(self, out: Formatter) -> None:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
-
         if family := self.family:
             if self.name == family.members[0]:
                 if cache_size := family.size:
@@ -256,11 +255,14 @@ class Instruction:
 
         if not self.register:
             # Write input stack effect variable declarations and initializations
-            for i, ieffect in enumerate(reversed(self.input_effects), 1):
+            ieffects = list(reversed(self.input_effects))
+            for i in range(len(ieffects)):
+                ieffect = ieffects[i]
+                isize = string_effect_size(list_effect_size(ieffects[:i+1]))
                 if ieffect.size:
-                    src = StackEffect(f"&PEEK({ieffect.size})", "PyObject **")
+                    src = StackEffect(f"&PEEK({isize})", "PyObject **")
                 else:
-                    src = StackEffect(f"PEEK({i})", "")
+                    src = StackEffect(f"PEEK({isize})", "")
                 out.declare(ieffect, src)
         else:
             # Write input register variable declarations and initializations
@@ -284,28 +286,20 @@ class Instruction:
 
         if not self.register:
             # Write net stack growth/shrinkage
-            diff = 0
-            symbolic: list[str] = []
-            for ieff in self.input_effects:
-                if ieff.size:
-                    symbolic.append(f"-{ieff.size}")
-                else:
-                    diff -= 1
-            for oeff in self.output_effects:
-                if oeff.size:
-                    symbolic.append(oeff.size)
-                else:
-                    diff += 1
-            out.stack_adjust(diff, symbolic)
+            out.stack_adjust(0, self.input_effects, self.output_effects)
 
             # Write output stack effect assignments
-            for i, oeffect in enumerate(reversed(self.output_effects), 1):
-                if oeffect.name not in self.unmoved_names:
-                    if oeffect.size:
-                        dst = StackEffect(f"&PEEK({oeffect.size})", "PyObject **")
-                    else:
-                        dst = StackEffect(f"PEEK({i})", "")
-                    out.assign(dst, oeffect)
+            oeffects = list(reversed(self.output_effects))
+            for i in range(len(oeffects)):
+                oeffect = oeffects[i]
+                if oeffect.name in self.unmoved_names:
+                    continue
+                osize = string_effect_size(list_effect_size(oeffects[:i+1]))
+                if oeffect.size:
+                    dst = StackEffect(f"&PEEK({osize})", "PyObject **")
+                else:
+                    dst = StackEffect(f"PEEK({osize})", "")
+                out.assign(dst, oeffect)
         else:
             # Write output register assignments
             for oeffect, reg in zip(self.output_effects, self.output_registers):
@@ -684,6 +678,12 @@ class Analyzer:
         for thing in components:
             match thing:
                 case Instruction() as instr:
+                    if any(eff.size for eff in instr.input_effects + instr.output_effects):
+                        self.error(
+                            f"Instruction {instr.name!r} has variable-sized stack effect, "
+                            "which are not supported in super- or macro instructions",
+                            instr.inst,  # TODO: Pass name+location of super/macro
+                        )
                     current -= len(instr.input_effects)
                     lowest = min(lowest, current)
                     current += len(instr.output_effects)
@@ -924,7 +924,9 @@ class Analyzer:
 
             yield
 
-            self.out.stack_adjust(up.final_sp - up.initial_sp, [])
+            # TODO: Use slices of up.stack instead of numeric values
+            self.out.stack_adjust(up.final_sp - up.initial_sp, [], [])
+
             for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
                 dst = StackEffect(f"PEEK({i})", "")
                 self.out.assign(dst, var)
