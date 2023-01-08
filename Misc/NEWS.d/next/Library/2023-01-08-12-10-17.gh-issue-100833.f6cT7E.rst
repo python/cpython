@@ -1,1 +1,1 @@
-Speed up :func:`math.fsum` by removing defensive `volatile` qualifiers.
+Speed up :func:`math.fsum` by removing defensive ``volatile`` qualifiers.
