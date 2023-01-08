@@ -1247,11 +1247,8 @@ class ListTest(unittest.TestCase):
         self.assertEqual(l[:10], [1] * 10)
         self.assertEqual(l[-10:], [5] * 10)
 
-def test_main():
-    support.run_unittest(StrTest, BytesTest, BytearrayTest,
-        TupleTest, ListTest)
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         support.set_memlimit(sys.argv[1])
-    test_main()
+    unittest.main()

@@ -109,7 +109,7 @@ def formataddr(pair, charset='utf-8'):
 
 def getaddresses(fieldvalues):
     """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
-    all = COMMASPACE.join(fieldvalues)
+    all = COMMASPACE.join(str(v) for v in fieldvalues)
     a = _AddressList(all)
     return a.addresslist
 

@@ -12,7 +12,8 @@ steps:
   inputs:
     versionSpec: '>=3.6'
 
-- script: python -m pip install sphinx==2.2.0 blurb python-docs-theme
+- script: python -m pip install -r requirements.txt
+  workingDirectory: '$(build.sourcesDirectory)/Doc'
   displayName: 'Install build dependencies'
 
 - ${{ if ne(parameters.latex, 'true') }}:

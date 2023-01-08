@@ -6,7 +6,8 @@ import sys
 import tempfile
 import unittest
 
-from test.support import requires, verbose, SaveSignals
+from test.support import (requires, verbose, SaveSignals, cpython_only,
+                          check_disallow_instantiation)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -267,7 +268,12 @@ class TestCurses(unittest.TestCase):
         stdscr.echochar(b'A')
         stdscr.echochar(65)
         with self.assertRaises((UnicodeEncodeError, OverflowError)):
-            stdscr.echochar('\u20ac')
+            # Unicode is not fully supported yet, but at least it does
+            # not crash.
+            # It is supposed to fail because either the character is
+            # not encodable with the current encoding, or it is encoded to
+            # a multibyte sequence.
+            stdscr.echochar('\u0114')
         stdscr.echochar('A', curses.A_BOLD)
         self.assertIs(stdscr.is_wintouched(), False)
 
@@ -566,13 +572,12 @@ class TestCurses(unittest.TestCase):
     @requires_curses_window_meth('enclose')
     def test_enclose(self):
         win = curses.newwin(5, 15, 2, 5)
-        # TODO: Return bool instead of 1/0
-        self.assertTrue(win.enclose(2, 5))
-        self.assertFalse(win.enclose(1, 5))
-        self.assertFalse(win.enclose(2, 4))
-        self.assertTrue(win.enclose(6, 19))
-        self.assertFalse(win.enclose(7, 19))
-        self.assertFalse(win.enclose(6, 20))
+        self.assertIs(win.enclose(2, 5), True)
+        self.assertIs(win.enclose(1, 5), False)
+        self.assertIs(win.enclose(2, 4), False)
+        self.assertIs(win.enclose(6, 19), True)
+        self.assertIs(win.enclose(7, 19), False)
+        self.assertIs(win.enclose(6, 20), False)
 
     def test_putwin(self):
         win = curses.newwin(5, 12, 1, 2)
@@ -926,6 +931,13 @@ class TestCurses(unittest.TestCase):
             if (not curses.has_extended_color_support()
                     or (6, 1) <= curses.ncurses_version < (6, 2)):
                 pair_limit = min(pair_limit, SHORT_MAX)
+            # If use_default_colors() is called, the upper limit of the extended
+            # range may be restricted, so we need to check if the limit is still
+            # correct
+            try:
+                curses.init_pair(pair_limit - 1, 0, 0)
+            except ValueError:
+                pair_limit = curses.COLOR_PAIRS
         return pair_limit
 
     @requires_colors
@@ -1040,11 +1052,13 @@ class TestCurses(unittest.TestCase):
         panel.set_userptr(A())
         panel.set_userptr(None)
 
+    @cpython_only
     @requires_curses_func('panel')
-    def test_new_curses_panel(self):
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
         w = curses.newwin(10, 10)
         panel = curses.panel.new_panel(w)
-        self.assertRaises(TypeError, type(panel))
+        check_disallow_instantiation(self, type(panel))
 
     @requires_curses_func('is_term_resized')
     def test_is_term_resized(self):
@@ -1167,6 +1181,7 @@ class TestCurses(unittest.TestCase):
 
 class MiscTests(unittest.TestCase):
 
+    @requires_curses_func('update_lines_cols')
     def test_update_lines_cols(self):
         curses.update_lines_cols()
         lines, cols = curses.LINES, curses.COLS

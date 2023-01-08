@@ -26,14 +26,23 @@ always available.
 .. function:: addaudithook(hook)
 
    Append the callable *hook* to the list of active auditing hooks for the
-   current interpreter.
+   current (sub)interpreter.
 
    When an auditing event is raised through the :func:`sys.audit` function, each
    hook will be called in the order it was added with the event name and the
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
-   called first, followed by hooks added in the current interpreter.  Hooks
+   called first, followed by hooks added in the current (sub)interpreter.  Hooks
    can then log the event, raise an exception to abort the operation,
    or terminate the process entirely.
+
+   Note that audit hooks are primarily for collecting information about internal
+   or otherwise unobservable actions, whether by Python or libraries written in
+   Python. They are not suitable for implementing a "sandbox". In particular,
+   malicious code can trivially disable or bypass hooks added using this
+   function. At a minimum, any security-sensitive hooks must be added using the
+   C API :c:func:`PySys_AddAuditHook` before initialising the runtime, and any
+   modules allowing arbitrary memory modification (such as :mod:`ctypes`) should
+   be completely removed or closely monitored.
 
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
@@ -250,7 +259,8 @@ always available.
    Print low-level information to stderr about the state of CPython's memory
    allocator.
 
-   If Python is configured --with-pydebug, it also performs some expensive
+   If Python is :ref:`built in debug mode <debug-build>` (:option:`configure
+   --with-pydebug option <--with-pydebug>`), it also performs some expensive
    internal consistency checks.
 
    .. versionadded:: 3.3
@@ -313,13 +323,42 @@ always available.
    yourself to control bytecode file generation.
 
 
+.. data:: _emscripten_info
+
+   A :term:`named tuple` holding information about the environment on the
+   *wasm32-emscripten* platform. The named tuple is provisional and may change
+   in the future.
+
+   .. tabularcolumns:: |l|L|
+
+   +-----------------------------+----------------------------------------------+
+   | Attribute                   | Explanation                                  |
+   +=============================+==============================================+
+   | :const:`emscripten_version` | Emscripten version as tuple of ints          |
+   |                             | (major, minor, micro), e.g. ``(3, 1, 8)``.   |
+   +-----------------------------+----------------------------------------------+
+   | :const:`runtime`            | Runtime string, e.g. browser user agent,     |
+   |                             | ``'Node.js v14.18.2'``, or ``'UNKNOWN'``.    |
+   +-----------------------------+----------------------------------------------+
+   | :const:`pthreads`           | ``True`` if Python is compiled with          |
+   |                             | Emscripten pthreads support.                 |
+   +-----------------------------+----------------------------------------------+
+   | :const:`shared_memory`      | ``True`` if Python is compiled with shared   |
+   |                             | memory support.                              |
+   +-----------------------------+----------------------------------------------+
+
+   .. availability:: Emscripten.
+
+   .. versionadded:: 3.11
+
+
 .. data:: pycache_prefix
 
    If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
    files to (and read them from) a parallel directory tree rooted at this
    directory, rather than from ``__pycache__`` directories in the source code
    tree. Any ``__pycache__`` directories in the source code tree will be ignored
-   and new `.pyc` files written within the pycache prefix. Thus if you use
+   and new ``.pyc`` files written within the pycache prefix. Thus if you use
    :mod:`compileall` as a pre-build step, you must ensure you run it with the
    same pycache prefix (if any) that you will use at runtime.
 
@@ -377,27 +416,40 @@ always available.
    .. versionadded:: 3.8
       __unraisablehook__
 
+
+.. function:: exception()
+
+   This function, when called while an exception handler is executing (such as
+   an ``except`` or ``except*`` clause), returns the exception instance that
+   was caught by this handler. When exception handlers are nested within one
+   another, only the exception handled by the innermost handler is accessible.
+
+   If no exception handler is executing, this function returns ``None``.
+
+   .. versionadded:: 3.11
+
+
 .. function:: exc_info()
 
-   This function returns a tuple of three values that give information about the
-   exception that is currently being handled.  The information returned is specific
-   both to the current thread and to the current stack frame.  If the current stack
-   frame is not handling an exception, the information is taken from the calling
-   stack frame, or its caller, and so on until a stack frame is found that is
-   handling an exception.  Here, "handling an exception" is defined as "executing
-   an except clause."  For any stack frame, only information about the exception
-   being currently handled is accessible.
+   This function returns the old-style representation of the handled
+   exception. If an exception ``e`` is currently handled (so
+   :func:`exception` would return ``e``), :func:`exc_info` returns the
+   tuple ``(type(e), e, e.__traceback__)``.
+   That is, a tuple containing the type of the exception (a subclass of
+   :exc:`BaseException`), the exception itself, and a :ref:`traceback
+   object <traceback-objects>` which typically encapsulates the call
+   stack at the point where the exception last occurred.
 
    .. index:: object: traceback
 
-   If no exception is being handled anywhere on the stack, a tuple containing
-   three ``None`` values is returned.  Otherwise, the values returned are
-   ``(type, value, traceback)``.  Their meaning is: *type* gets the type of the
-   exception being handled (a subclass of :exc:`BaseException`); *value* gets
-   the exception instance (an instance of the exception type); *traceback* gets
-   a :ref:`traceback object <traceback-objects>` which encapsulates the call
-   stack at the point where the exception originally occurred.
+   If no exception is being handled anywhere on the stack, this function
+   return a tuple containing three ``None`` values.
 
+   .. versionchanged:: 3.11
+      The ``type`` and ``traceback`` fields are now derived from the ``value``
+      (the exception instance), so when an exception is modified while it is
+      being handled, the changes are reflected in the results of subsequent
+      calls to :func:`exc_info`.
 
 .. data:: exec_prefix
 
@@ -428,10 +480,7 @@ always available.
 
 .. function:: exit([arg])
 
-   Exit from Python.  This is implemented by raising the :exc:`SystemExit`
-   exception, so cleanup actions specified by finally clauses of :keyword:`try`
-   statements are honored, and it is possible to intercept the exit attempt at
-   an outer level.
+   Raise a :exc:`SystemExit` exception, signaling an intention to exit the interpreter.
 
    The optional argument *arg* can be an integer giving the exit status
    (defaulting to zero), or another type of object.  If it is an integer, zero
@@ -448,7 +497,8 @@ always available.
 
    Since :func:`exit` ultimately "only" raises an exception, it will only exit
    the process when called from the main thread, and the exception is not
-   intercepted.
+   intercepted. Cleanup actions specified by finally clauses of :keyword:`try` statements
+   are honored, and it is possible to intercept the exit attempt at an outer level.
 
    .. versionchanged:: 3.6
       If an error occurs in the cleanup after the Python interpreter
@@ -461,9 +511,9 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= ================================================================
+   ============================= ==============================================================================================================
    attribute                     flag
-   ============================= ================================================================
+   ============================= ==============================================================================================================
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
@@ -479,7 +529,9 @@ always available.
    :const:`hash_randomization`   :option:`-R`
    :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
    :const:`utf8_mode`            :option:`-X utf8 <-X>`
-   ============================= ================================================================
+   :const:`safe_path`            :option:`-P`
+   :const:`int_max_str_digits`   :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+   ============================= ==============================================================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -497,6 +549,12 @@ always available.
       Added the ``dev_mode`` attribute for the new :ref:`Python Development
       Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
       ``utf8`` flag.
+
+   .. versionchanged:: 3.11
+      Added the ``safe_path`` attribute for :option:`-P` option.
+
+   .. versionchanged:: 3.11
+      Added the ``int_max_str_digits`` attribute.
 
 
 .. data:: float_info
@@ -546,12 +604,18 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`rounds`     | FLT_ROUNDS     | integer constant representing the rounding mode  |
-   |                     |                | used for arithmetic operations.  This reflects   |
-   |                     |                | the value of the system FLT_ROUNDS macro at      |
-   |                     |                | interpreter startup time.  See section 5.2.4.2.2 |
-   |                     |                | of the C99 standard for an explanation of the    |
-   |                     |                | possible values and their meanings.              |
+   | :const:`rounds`     | FLT_ROUNDS     | integer representing the rounding mode for       |
+   |                     |                | floating-point arithmetic. This reflects the     |
+   |                     |                | value of the system FLT_ROUNDS macro at          |
+   |                     |                | interpreter startup time:                        |
+   |                     |                | ``-1`` indeterminable,                           |
+   |                     |                | ``0`` toward zero,                               |
+   |                     |                | ``1`` to nearest,                                |
+   |                     |                | ``2`` toward positive infinity,                  |
+   |                     |                | ``3`` toward negative infinity                   |
+   |                     |                |                                                  |
+   |                     |                | All other values for FLT_ROUNDS characterize     |
+   |                     |                | implementation-defined rounding behavior.        |
    +---------------------+----------------+--------------------------------------------------+
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
@@ -678,6 +742,13 @@ always available.
 
    .. versionadded:: 3.6
 
+.. function:: get_int_max_str_digits()
+
+   Returns the current value for the :ref:`integer string conversion length
+   limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`.
+
+   .. versionadded:: 3.11
+
 .. function:: getrefcount(object)
 
    Return the reference count of the *object*.  The count returned is generally one
@@ -729,7 +800,7 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   .. audit-event:: sys._getframe "" sys._getframe
+   .. audit-event:: sys._getframe frame sys._getframe
 
    .. impl-detail::
 
@@ -795,10 +866,15 @@ always available.
    Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
    about these fields.
 
-   *platform_version* returns the accurate major version, minor version and
+   *platform_version* returns the major version, minor version and
    build number of the current operating system, rather than the version that
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
+
+   .. note::
+      *platform_version* derives the version from kernel32.dll which can be of a different
+      version than the OS version. Please use :mod:`platform` module for achieving accurate
+      OS version.
 
    .. availability:: Windows.
 
@@ -813,7 +889,7 @@ always available.
 .. function:: get_asyncgen_hooks()
 
    Returns an *asyncgen_hooks* object, which is similar to a
-   :class:`~collections.namedtuple` of the form `(firstiter, finalizer)`,
+   :class:`~collections.namedtuple` of the form ``(firstiter, finalizer)``,
    where *firstiter* and *finalizer* are expected to be either ``None`` or
    functions which take an :term:`asynchronous generator iterator` as an
    argument, and are used to schedule finalization of an asynchronous
@@ -854,7 +930,7 @@ always available.
    +---------------------+--------------------------------------------------+
    | :const:`inf`        | hash value returned for a positive infinity      |
    +---------------------+--------------------------------------------------+
-   | :const:`nan`        | hash value returned for a nan                    |
+   | :const:`nan`        | (this attribute is no longer used)               |
    +---------------------+--------------------------------------------------+
    | :const:`imag`       | multiplier used for the imaginary part of a      |
    |                     | complex number                                   |
@@ -946,18 +1022,30 @@ always available.
 
    .. tabularcolumns:: |l|L|
 
-   +-------------------------+----------------------------------------------+
-   | Attribute               | Explanation                                  |
-   +=========================+==============================================+
-   | :const:`bits_per_digit` | number of bits held in each digit.  Python   |
-   |                         | integers are stored internally in base       |
-   |                         | ``2**int_info.bits_per_digit``               |
-   +-------------------------+----------------------------------------------+
-   | :const:`sizeof_digit`   | size in bytes of the C type used to          |
-   |                         | represent a digit                            |
-   +-------------------------+----------------------------------------------+
+   +----------------------------------------+-----------------------------------------------+
+   | Attribute                              | Explanation                                   |
+   +========================================+===============================================+
+   | :const:`bits_per_digit`                | number of bits held in each digit.  Python    |
+   |                                        | integers are stored internally in base        |
+   |                                        | ``2**int_info.bits_per_digit``                |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`sizeof_digit`                  | size in bytes of the C type used to           |
+   |                                        | represent a digit                             |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`default_max_str_digits`        | default value for                             |
+   |                                        | :func:`sys.get_int_max_str_digits` when it    |
+   |                                        | is not otherwise explicitly configured.       |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`str_digits_check_threshold`    | minimum non-zero value for                    |
+   |                                        | :func:`sys.set_int_max_str_digits`,           |
+   |                                        | :envvar:`PYTHONINTMAXSTRDIGITS`, or           |
+   |                                        | :option:`-X int_max_str_digits <-X>`.         |
+   +----------------------------------------+-----------------------------------------------+
 
    .. versionadded:: 3.1
+
+   .. versionchanged:: 3.11
+      Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
 
 
 .. data:: __interactivehook__
@@ -1037,7 +1125,8 @@ always available.
 
     A list of :term:`meta path finder` objects that have their
     :meth:`~importlib.abc.MetaPathFinder.find_spec` methods called to see if one
-    of the objects can find the module to be imported. The
+    of the objects can find the module to be imported. By default, it holds entries
+    that implement Python's default import semantics. The
     :meth:`~importlib.abc.MetaPathFinder.find_spec` method is called with at
     least the absolute name of the module being imported. If the module to be
     imported is contained in a package, then the parent package's :attr:`__path__`
@@ -1067,7 +1156,11 @@ always available.
    This is a dictionary that maps module names to modules which have already been
    loaded.  This can be manipulated to force reloading of modules and other tricks.
    However, replacing the dictionary will not necessarily work as expected and
-   deleting essential items from the dictionary may cause Python to fail.
+   deleting essential items from the dictionary may cause Python to fail.  If
+   you want to iterate over this global dictionary always use
+   ``sys.modules.copy()`` or ``tuple(sys.modules)`` to avoid exceptions as its
+   size may change during iteration as a side effect of code or activity in
+   other threads.
 
 
 .. data:: orig_argv
@@ -1088,23 +1181,28 @@ always available.
    the environment variable :envvar:`PYTHONPATH`, plus an installation-dependent
    default.
 
-   As initialized upon program startup, the first item of this list, ``path[0]``,
-   is the directory containing the script that was used to invoke the Python
-   interpreter.  If the script directory is not available (e.g.  if the interpreter
-   is invoked interactively or if the script is read from standard input),
-   ``path[0]`` is the empty string, which directs Python to search modules in the
-   current directory first.  Notice that the script directory is inserted *before*
-   the entries inserted as a result of :envvar:`PYTHONPATH`.
+   By default, as initialized upon program startup, a potentially unsafe path
+   is prepended to :data:`sys.path` (*before* the entries inserted as a result
+   of :envvar:`PYTHONPATH`):
+
+   * ``python -m module`` command line: prepend the current working
+     directory.
+   * ``python script.py`` command line: prepend the script's directory.
+     If it's a symbolic link, resolve symbolic links.
+   * ``python -c code`` and ``python`` (REPL) command lines: prepend an empty
+     string, which means the current working directory.
+
+   To not prepend this potentially unsafe path, use the :option:`-P` command
+   line option or the :envvar:`PYTHONSAFEPATH` environment variable.
 
    A program is free to modify this list for its own purposes.  Only strings
-   and bytes should be added to :data:`sys.path`; all other data types are
+   should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
    .. seealso::
-      Module :mod:`site` This describes how to use .pth files to extend
-      :data:`sys.path`.
-
+      * Module :mod:`site` This describes how to use .pth files to
+        extend :data:`sys.path`.
 
 .. data:: path_hooks
 
@@ -1154,7 +1252,9 @@ always available.
    System           ``platform`` value
    ================ ===========================
    AIX              ``'aix'``
+   Emscripten       ``'emscripten'``
    Linux            ``'linux'``
+   WASI             ``'wasi'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    macOS            ``'darwin'``
@@ -1206,13 +1306,10 @@ always available.
 .. data:: prefix
 
    A string giving the site-specific directory prefix where the platform
-   independent Python files are installed; by default, this is the string
+   independent Python files are installed; on Unix, the default is
    ``'/usr/local'``.  This can be set at build time with the ``--prefix``
-   argument to the :program:`configure` script.  The main collection of Python
-   library modules is installed in the directory :file:`{prefix}/lib/python{X.Y}`
-   while the platform independent header files (all except :file:`pyconfig.h`) are
-   stored in :file:`{prefix}/include/python{X.Y}`, where *X.Y* is the version
-   number of Python, for example ``3.2``.
+   argument to the :program:`configure` script.  See
+   :ref:`installation_paths` for derived paths.
 
    .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
       value will be changed in ``site.py`` to point to the virtual
@@ -1248,6 +1345,14 @@ always available.
    :data:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
+
+.. function:: set_int_max_str_digits(maxdigits)
+
+   Set the :ref:`integer string conversion length limitation
+   <int_max_str_digits>` used by this interpreter. See also
+   :func:`get_int_max_str_digits`.
+
+   .. versionadded:: 3.11
 
 .. function:: setprofile(profilefunc)
 
@@ -1465,6 +1570,38 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
+.. function:: activate_stack_trampoline(backend, /)
+
+   Activate the stack profiler trampoline *backend*.
+   The only supported backend is ``"perf"``.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      * :ref:`perf_profiling`
+      * https://perf.wiki.kernel.org
+
+.. function:: deactivate_stack_trampoline()
+
+   Deactivate the current stack profiler trampoline backend.
+
+   If no stack profiler is activated, this function has no effect.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+.. function:: is_stack_trampoline_active()
+
+   Return ``True`` if a stack profiler trampoline is active.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
@@ -1599,6 +1736,8 @@ always available.
    |                  |                                                         |
    |                  |  * ``'nt'``: Windows threads                            |
    |                  |  * ``'pthread'``: POSIX threads                         |
+   |                  |  * ``'pthread-stubs'``: stub POSIX threads              |
+   |                  |    (on WebAssembly platforms without threading support) |
    |                  |  * ``'solaris'``: Solaris threads                       |
    +------------------+---------------------------------------------------------+
    | :const:`lock`    | Name of the lock implementation:                        |
@@ -1738,4 +1877,4 @@ always available.
 
 .. rubric:: Citations
 
-.. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .
+.. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .

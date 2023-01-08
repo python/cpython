@@ -730,7 +730,7 @@ def join_alphabet_list_five(STR):
     for x in _RANGE_1000:
         sep_join(s2)
 
-@bench('"A".join(["Bob"]*100))',
+@bench('"A".join(["Bob"]*100)',
        "join list of 100 words, with 1 character sep", 1000)
 def join_100_words_single(STR):
     sep = STR("A")

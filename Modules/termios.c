@@ -82,7 +82,12 @@ termios_tcgetattr_impl(PyObject *module, int fd)
 {
     termiosmodulestate *state = PyModule_GetState(module);
     struct termios mode;
-    if (tcgetattr(fd, &mode) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcgetattr(fd, &mode); 
+    Py_END_ALLOW_THREADS
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -169,7 +174,12 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
     /* Get the old mode, in case there are any hidden fields... */
     termiosmodulestate *state = PyModule_GetState(module);
     struct termios mode;
-    if (tcgetattr(fd, &mode) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcgetattr(fd, &mode);
+    Py_END_ALLOW_THREADS
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -211,7 +221,12 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         return PyErr_SetFromErrno(state->TermiosError);
     if (cfsetospeed(&mode, (speed_t) ospeed) == -1)
         return PyErr_SetFromErrno(state->TermiosError);
-    if (tcsetattr(fd, when, &mode) == -1)
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcsetattr(fd, when, &mode);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1)
         return PyErr_SetFromErrno(state->TermiosError);
 
     Py_RETURN_NONE;
@@ -235,7 +250,13 @@ termios_tcsendbreak_impl(PyObject *module, int fd, int duration)
 /*[clinic end generated code: output=5945f589b5d3ac66 input=dc2f32417691f8ed]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcsendbreak(fd, duration) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcsendbreak(fd, duration);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -256,7 +277,13 @@ termios_tcdrain_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=5fd86944c6255955 input=c99241b140b32447]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcdrain(fd) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcdrain(fd);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -282,7 +309,13 @@ termios_tcflush_impl(PyObject *module, int fd, int queue)
 /*[clinic end generated code: output=2424f80312ec2f21 input=0f7d08122ddc07b5]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcflush(fd, queue) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcflush(fd, queue);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -308,11 +341,192 @@ termios_tcflow_impl(PyObject *module, int fd, int action)
 /*[clinic end generated code: output=afd10928e6ea66eb input=c6aff0640b6efd9c]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcflow(fd, action) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcflow(fd, action);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
     Py_RETURN_NONE;
+}
+
+/*[clinic input]
+termios.tcgetwinsize
+
+    fd: fildes
+    /
+
+Get the tty winsize for file descriptor fd.
+
+Returns a tuple (ws_row, ws_col).
+[clinic start generated code]*/
+
+static PyObject *
+termios_tcgetwinsize_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=31825977d5325fb6 input=5706c379d7fd984d]*/
+{
+#if defined(TIOCGWINSZ)
+    termiosmodulestate *state = PyModule_GetState(module);
+    struct winsize w;
+    int r; 
+
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCGWINSZ, &w);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    PyObject *v;
+    if (!(v = PyTuple_New(2))) {
+        return NULL;
+    }
+
+    PyTuple_SetItem(v, 0, PyLong_FromLong((long)w.ws_row));
+    PyTuple_SetItem(v, 1, PyLong_FromLong((long)w.ws_col));
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+#elif defined(TIOCGSIZE)
+    termiosmodulestate *state = PyModule_GetState(module);
+    struct ttysize s;
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCGSIZE, &s);
+    Py_END_ALLOW_THREADS
+    if (r == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    PyObject *v;
+    if (!(v = PyTuple_New(2))) {
+        return NULL;
+    }
+
+    PyTuple_SetItem(v, 0, PyLong_FromLong((long)s.ts_lines));
+    PyTuple_SetItem(v, 1, PyLong_FromLong((long)s.ts_cols));
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "requires termios.TIOCGWINSZ and/or termios.TIOCGSIZE");
+    return NULL;
+#endif /* defined(TIOCGWINSZ) */
+}
+
+/*[clinic input]
+termios.tcsetwinsize
+
+    fd: fildes
+    winsize as winsz: object
+    /
+
+Set the tty winsize for file descriptor fd.
+
+The winsize to be set is taken from the winsize argument, which
+is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().
+[clinic start generated code]*/
+
+static PyObject *
+termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
+/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=4a06424465b24aee]*/
+{
+    if (!PySequence_Check(winsz) || PySequence_Size(winsz) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+                     "tcsetwinsize, arg 2: must be a two-item sequence");
+        return NULL;
+    }
+
+    PyObject *tmp_item;
+    long winsz_0, winsz_1;
+    tmp_item = PySequence_GetItem(winsz, 0);
+    winsz_0 = PyLong_AsLong(tmp_item);
+    if (winsz_0 == -1 && PyErr_Occurred()) {
+        Py_XDECREF(tmp_item);
+        return NULL;
+    }
+    Py_XDECREF(tmp_item);
+    tmp_item = PySequence_GetItem(winsz, 1);
+    winsz_1 = PyLong_AsLong(tmp_item);
+    if (winsz_1 == -1 && PyErr_Occurred()) {
+        Py_XDECREF(tmp_item);
+        return NULL;
+    }
+    Py_XDECREF(tmp_item);
+
+    termiosmodulestate *state = PyModule_GetState(module);
+
+#if defined(TIOCGWINSZ) && defined(TIOCSWINSZ)
+    struct winsize w;
+    /* Get the old winsize because it might have
+       more fields such as xpixel, ypixel. */
+    if (ioctl(fd, TIOCGWINSZ, &w) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    w.ws_row = (unsigned short) winsz_0;
+    w.ws_col = (unsigned short) winsz_1;
+    if ((((long)w.ws_row) != winsz_0) || (((long)w.ws_col) != winsz_1)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "winsize value(s) out of range.");
+        return NULL;
+    }
+
+    int r;
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCSWINSZ, &w);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    Py_RETURN_NONE;
+#elif defined(TIOCGSIZE) && defined(TIOCSSIZE)
+    struct ttysize s;
+    int r;
+    /* Get the old ttysize because it might have more fields. */
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCGSIZE, &s);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    s.ts_lines = (int) winsz_0;
+    s.ts_cols = (int) winsz_1;
+    if ((((long)s.ts_lines) != winsz_0) || (((long)s.ts_cols) != winsz_1)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "winsize value(s) out of range.");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCSSIZE, &s);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "requires termios.TIOCGWINSZ, termios.TIOCSWINSZ and/or termios.TIOCGSIZE, termios.TIOCSSIZE");
+    return NULL;
+#endif /* defined(TIOCGWINSZ) && defined(TIOCSWINSZ) */
 }
 
 static PyMethodDef termios_methods[] =
@@ -323,6 +537,8 @@ static PyMethodDef termios_methods[] =
     TERMIOS_TCDRAIN_METHODDEF
     TERMIOS_TCFLUSH_METHODDEF
     TERMIOS_TCFLOW_METHODDEF
+    TERMIOS_TCGETWINSIZE_METHODDEF
+    TERMIOS_TCSETWINSIZE_METHODDEF
     {NULL, NULL}
 };
 
@@ -841,6 +1057,9 @@ static struct constant {
 #ifdef TIOCGSERIAL
     {"TIOCGSERIAL", TIOCGSERIAL},
 #endif
+#ifdef TIOCGSIZE
+    {"TIOCGSIZE", TIOCGSIZE},
+#endif
 #ifdef TIOCGSOFTCAR
     {"TIOCGSOFTCAR", TIOCGSOFTCAR},
 #endif
@@ -973,6 +1192,9 @@ static struct constant {
 #ifdef TIOCSSERIAL
     {"TIOCSSERIAL", TIOCSSERIAL},
 #endif
+#ifdef TIOCSSIZE
+    {"TIOCSSIZE", TIOCSSIZE},
+#endif
 #ifdef TIOCSSOFTCAR
     {"TIOCSSOFTCAR", TIOCSSOFTCAR},
 #endif
@@ -1004,7 +1226,7 @@ static void termiosmodule_free(void *m) {
     termiosmodule_clear((PyObject *)m);
 }
 
-static int 
+static int
 termios_exec(PyObject *mod)
 {
     struct constant *constant = termios_constants;
