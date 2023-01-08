@@ -2865,17 +2865,26 @@ dl_zero()
 {
     return (DoubleLength) {0.0, 0.0};
 }
+
+static inline DoubleLength
+fasttwosum(double a, double b)
+{
+    double x = a + b;
+    double y = (a - x) + b;
+    assert (fabs(a) >= fabs(b));
+    return (DoubleLength) {x, y};
+}
+
 static inline DoubleLength
 dl_add(DoubleLength total, double x)
 {
-    double s = total.hi + x;
-    double c = total.lo;
+    DoubleLength s;
     if (fabs(total.hi) >= fabs(x)) {
-        c += (total.hi - s) + x;
+        s = fasttwosum(total.hi, x);
     } else {
-        c += (x - s) + total.hi;
+        s = fasttwosum(x, total.hi);
     }
-    return (DoubleLength) {s, c};
+    return (DoubleLength) {s.hi, total.lo + s.lo};
 }
 
 static inline DoubleLength
