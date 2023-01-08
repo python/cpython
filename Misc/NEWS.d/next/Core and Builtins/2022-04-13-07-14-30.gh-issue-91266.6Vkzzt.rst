@@ -1,1 +1,0 @@
-Refactor the ``bytearray`` strip methods ``strip``, ``lstrip`` and ``rstrip`` to use a common implementation.

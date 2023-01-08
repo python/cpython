@@ -1,8 +1,8 @@
 .. highlight:: c
 
-.. _codeobjects:
-
 .. index:: object; code, code object
+
+.. _codeobjects:
 
 Code Objects
 ------------
@@ -76,3 +76,90 @@ bound into a function.
    information is not available for any particular element.
 
    Returns ``1`` if the function succeeds and 0 otherwise.
+
+.. c:function:: PyObject* PyCode_GetCode(PyCodeObject *co)
+
+   Equivalent to the Python code ``getattr(co, 'co_code')``.
+   Returns a strong reference to a :c:type:`PyBytesObject` representing the
+   bytecode in a code object. On error, ``NULL`` is returned and an exception
+   is raised.
+
+   This ``PyBytesObject`` may be created on-demand by the interpreter and does
+   not necessarily represent the bytecode actually executed by CPython. The
+   primary use case for this function is debuggers and profilers.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyCode_GetVarnames(PyCodeObject *co)
+
+   Equivalent to the Python code ``getattr(co, 'co_varnames')``.
+   Returns a new reference to a :c:type:`PyTupleObject` containing the names of
+   the local variables. On error, ``NULL`` is returned and an exception
+   is raised.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyCode_GetCellvars(PyCodeObject *co)
+
+   Equivalent to the Python code ``getattr(co, 'co_cellvars')``.
+   Returns a new reference to a :c:type:`PyTupleObject` containing the names of
+   the local variables that are referenced by nested functions. On error, ``NULL``
+   is returned and an exception is raised.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyCode_GetFreevars(PyCodeObject *co)
+
+   Equivalent to the Python code ``getattr(co, 'co_freevars')``.
+   Returns a new reference to a :c:type:`PyTupleObject` containing the names of
+   the free variables. On error, ``NULL`` is returned and an exception is raised.
+
+   .. versionadded:: 3.11
+
+.. c:function:: int PyCode_AddWatcher(PyCode_WatchCallback callback)
+
+   Register *callback* as a code object watcher for the current interpreter.
+   Return an ID which may be passed to :c:func:`PyCode_ClearWatcher`.
+   In case of error (e.g. no more watcher IDs available),
+   return ``-1`` and set an exception.
+
+   .. versionadded:: 3.12
+
+.. c:function:: int PyCode_ClearWatcher(int watcher_id)
+
+   Clear watcher identified by *watcher_id* previously returned from
+   :c:func:`PyCode_AddWatcher` for the current interpreter.
+   Return ``0`` on success, or ``-1`` and set an exception on error
+   (e.g. if the given *watcher_id* was never registered.)
+
+   .. versionadded:: 3.12
+
+.. c:type:: PyCodeEvent
+
+   Enumeration of possible code object watcher events:
+   - ``PY_CODE_EVENT_CREATE``
+   - ``PY_CODE_EVENT_DESTROY``
+
+   .. versionadded:: 3.12
+
+.. c:type:: int (*PyCode_WatchCallback)(PyCodeEvent event, PyCodeObject* co)
+
+   Type of a code object watcher callback function.
+
+   If *event* is ``PY_CODE_EVENT_CREATE``, then the callback is invoked
+   after `co` has been fully initialized. Otherwise, the callback is invoked
+   before the destruction of *co* takes place, so the prior state of *co*
+   can be inspected.
+
+   Users of this API should not rely on internal runtime implementation
+   details. Such details may include, but are not limited to, the exact
+   order and timing of creation and destruction of code objects. While
+   changes in these details may result in differences observable by watchers
+   (including whether a callback is invoked or not), it does not change
+   the semantics of the Python code being executed.
+
+   If the callback returns with an exception set, it must return ``-1``; this
+   exception will be printed as an unraisable exception using
+   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+
+   .. versionadded:: 3.12

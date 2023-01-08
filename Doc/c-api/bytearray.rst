@@ -77,9 +77,9 @@ These macros trade safety for speed and they don't check pointers.
 
 .. c:function:: char* PyByteArray_AS_STRING(PyObject *bytearray)
 
-   Macro version of :c:func:`PyByteArray_AsString`.
+   Similar to :c:func:`PyByteArray_AsString`, but without error checking.
 
 
 .. c:function:: Py_ssize_t PyByteArray_GET_SIZE(PyObject *bytearray)
 
-   Macro version of :c:func:`PyByteArray_Size`.
+   Similar to :c:func:`PyByteArray_Size`, but without error checking.

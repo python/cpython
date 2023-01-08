@@ -7,7 +7,7 @@
     <meta name="author" content="Katie Bell">
     <meta name="description" content="Simple REPL for Python WASM">
     <title>wasm-python terminal</title>
-    <link rel="stylesheet" href="https://unpkg.com/xterm@4.18.0/css/xterm.css" crossorigin/>
+    <link rel="stylesheet" href="https://unpkg.com/xterm@4.18.0/css/xterm.css" crossorigin integrity="sha384-4eEEn/eZgVHkElpKAzzPx/Kow/dTSgFk1BNe+uHdjHa+NkZJDh5Vqkq31+y7Eycd"/>
     <style>
         body {
             font-family: arial;
@@ -32,7 +32,7 @@
             padding: 6px 18px;
         }
     </style>
-    <script src="https://unpkg.com/xterm@4.18.0/lib/xterm.js" crossorigin></script>
+    <script src="https://unpkg.com/xterm@4.18.0/lib/xterm.js" crossorigin integrity="sha384-yYdNmem1ioP5Onm7RpXutin5A8TimLheLNQ6tnMi01/ZpxXdAwIm2t4fJMx1Djs+"/></script>
     <script type="module">
 class WorkerManager {
     constructor(workerURL, standardIO, readyCallBack) {
@@ -100,6 +100,7 @@ class WorkerManager {
 class WasmTerminal {
 
     constructor() {
+        this.inputBuffer = new BufferQueue();
         this.input = ''
         this.resolveInput = null
         this.activeInput = false
@@ -123,28 +124,47 @@ class WasmTerminal {
         this.xterm.open(container);
     }
 
-    handleReadComplete(lastChar) {
-        this.resolveInput(this.input + lastChar)
-        this.activeInput = false
-    }
-
     handleTermData = (data) => {
-        if (!this.activeInput) {
-            return
-        }
         const ord = data.charCodeAt(0);
-        let ofs;
+        data = data.replace(/\r(?!\n)/g, "\n")  // Convert lone CRs to LF
 
+        // Handle pasted data
+        if (data.length > 1 && data.includes("\n")) {
+            let alreadyWrittenChars = 0;
+            // If line already had data on it, merge pasted data with it
+            if (this.input != '') {
+                this.inputBuffer.addData(this.input);
+                alreadyWrittenChars = this.input.length;
+                this.input = '';
+            }
+            this.inputBuffer.addData(data);
+            // If input is active, write the first line
+            if (this.activeInput) {
+                let line = this.inputBuffer.nextLine();
+                this.writeLine(line.slice(alreadyWrittenChars));
+                this.resolveInput(line);
+                this.activeInput = false;
+            }
+        // When input isn't active, add to line buffer
+        } else if (!this.activeInput) {
+            // Skip non-printable characters
+            if (!(ord === 0x1b || ord == 0x7f || ord < 32)) {
+                this.inputBuffer.addData(data);
+            }
         // TODO: Handle ANSI escape sequences
-        if (ord === 0x1b) {
+        } else if (ord === 0x1b) {
         // Handle special characters
         } else if (ord < 32 || ord === 0x7f) {
             switch (data) {
-                case "\r": // ENTER
+                case "\x0c": // CTRL+L
+                    this.clear();
+                    break;
+                case "\n": // ENTER
                 case "\x0a": // CTRL+J
                 case "\x0d": // CTRL+M
-                    this.xterm.write('\r\n');
-                    this.handleReadComplete('\n');
+                    this.resolveInput(this.input + this.writeLine('\n'));
+                    this.input = '';
+                    this.activeInput = false;
                     break;
                 case "\x7F": // BACKSPACE
                 case "\x08": // CTRL+H
@@ -155,6 +175,12 @@ class WasmTerminal {
         } else {
             this.handleCursorInsert(data);
         }
+    }
+
+    writeLine(line) {
+        this.xterm.write(line.slice(0, -1))
+        this.xterm.write('\r\n');
+        return line;
     }
 
     handleCursorInsert(data) {
@@ -176,9 +202,19 @@ class WasmTerminal {
         this.activeInput = true
         // Hack to allow stdout/stderr to finish before we figure out where input starts
         setTimeout(() => {this.inputStartCursor = this.xterm.buffer.active.cursorX}, 1)
+        // If line buffer has a line ready, send it immediately
+        if (this.inputBuffer.hasLineReady()) {
+            return new Promise((resolve, reject) => {
+                resolve(this.writeLine(this.inputBuffer.nextLine()));
+                this.activeInput = false;
+            })
+        // If line buffer has an incomplete line, use it for the active line
+        } else if (this.inputBuffer.lastLineIsIncomplete()) {
+            // Hack to ensure cursor input start doesn't end up after user input
+            setTimeout(() => {this.handleCursorInsert(this.inputBuffer.nextLine())}, 1);
+        }
         return new Promise((resolve, reject) => {
             this.resolveInput = (value) => {
-                this.input = ''
                 resolve(value)
             }
         })
@@ -188,9 +224,44 @@ class WasmTerminal {
         this.xterm.clear();
     }
 
-    print(message) {
-        const normInput = message.replace(/[\r\n]+/g, "\n").replace(/\n/g, "\r\n");
-        this.xterm.write(normInput);
+    print(charCode) {
+        let array = [charCode];
+        if (charCode == 10) {
+            array = [13, 10];  // Replace \n with \r\n
+        }
+        this.xterm.write(new Uint8Array(array));
+    }
+}
+
+class BufferQueue {
+    constructor(xterm) {
+        this.buffer = []
+    }
+
+    isEmpty() {
+        return this.buffer.length == 0
+    }
+
+    lastLineIsIncomplete() {
+        return !this.isEmpty() && !this.buffer[this.buffer.length-1].endsWith("\n")
+    }
+
+    hasLineReady() {
+        return !this.isEmpty() && this.buffer[0].endsWith("\n")
+    }
+
+    addData(data) {
+        let lines = data.match(/.*(\n|$)/g)
+        if (this.lastLineIsIncomplete()) {
+            this.buffer[this.buffer.length-1] += lines.shift()
+        }
+        for (let line of lines) {
+            this.buffer.push(line)
+        }
+    }
+
+    nextLine() {
+        return this.buffer.shift()
     }
 }
 
@@ -202,8 +273,8 @@ window.onload = () => {
     terminal.open(document.getElementById('terminal'))
 
     const stdio = {
-        stdout: (s) => { terminal.print(s) },
-        stderr: (s) => { terminal.print(s) },
+        stdout: (charCode) => { terminal.print(charCode) },
+        stderr: (charCode) => { terminal.print(charCode) },
         stdin: async () => {
             return await terminal.prompt()
         }

@@ -17,7 +17,6 @@
            await asyncio.sleep(1)
            print('... World!')
 
-       # Python 3.7+
        asyncio.run(main())
 
 asyncio is a library to write **concurrent** code using
@@ -57,6 +56,7 @@ Additionally, there are **low-level** APIs for
 * :ref:`bridge <asyncio-futures>` callback-based libraries and code
   with async/await syntax.
 
+.. include:: ../includes/wasm-notavail.rst
 
 .. We use the "rubric" directive here to avoid creating
    the "Reference" subsection in the TOC.

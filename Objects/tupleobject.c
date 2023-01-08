@@ -61,8 +61,7 @@ tuple_alloc(Py_ssize_t size)
 static inline PyObject *
 tuple_get_empty(void)
 {
-    Py_INCREF(&_Py_SINGLETON(tuple_empty));
-    return (PyObject *)&_Py_SINGLETON(tuple_empty);
+    return Py_NewRef(&_Py_SINGLETON(tuple_empty));
 }
 
 PyObject *
@@ -171,8 +170,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
     items = result->ob_item;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
-        Py_INCREF(o);
-        items[i] = o;
+        items[i] = Py_NewRef(o);
     }
     va_end(vargs);
     _PyObject_GC_TRACK(result);
@@ -367,8 +365,7 @@ tupleitem(PyTupleObject *a, Py_ssize_t i)
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
         return NULL;
     }
-    Py_INCREF(a->ob_item[i]);
-    return a->ob_item[i];
+    return Py_NewRef(a->ob_item[i]);
 }
 
 PyObject *
@@ -385,8 +382,7 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
-        Py_INCREF(item);
-        dst[i] = item;
+        dst[i] = Py_NewRef(item);
     }
     _PyObject_GC_TRACK(tuple);
     return (PyObject *)tuple;
@@ -425,8 +421,7 @@ tupleslice(PyTupleObject *a, Py_ssize_t ilow,
     if (ihigh < ilow)
         ihigh = ilow;
     if (ilow == 0 && ihigh == Py_SIZE(a) && PyTuple_CheckExact(a)) {
-        Py_INCREF(a);
-        return (PyObject *)a;
+        return Py_NewRef(a);
     }
     return _PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
 }
@@ -449,8 +444,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     PyObject **src, **dest;
     PyTupleObject *np;
     if (Py_SIZE(a) == 0 && PyTuple_CheckExact(bb)) {
-        Py_INCREF(bb);
-        return bb;
+        return Py_NewRef(bb);
     }
     if (!PyTuple_Check(bb)) {
         PyErr_Format(PyExc_TypeError,
@@ -461,8 +455,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     PyTupleObject *b = (PyTupleObject *)bb;
 
     if (Py_SIZE(b) == 0 && PyTuple_CheckExact(a)) {
-        Py_INCREF(a);
-        return (PyObject *)a;
+        return Py_NewRef(a);
     }
     assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
@@ -478,15 +471,13 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     dest = np->ob_item;
     for (i = 0; i < Py_SIZE(a); i++) {
         PyObject *v = src[i];
-        Py_INCREF(v);
-        dest[i] = v;
+        dest[i] = Py_NewRef(v);
     }
     src = b->ob_item;
     dest = np->ob_item + Py_SIZE(a);
     for (i = 0; i < Py_SIZE(b); i++) {
         PyObject *v = src[i];
-        Py_INCREF(v);
-        dest[i] = v;
+        dest[i] = Py_NewRef(v);
     }
     _PyObject_GC_TRACK(np);
     return (PyObject *)np;
@@ -495,52 +486,46 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
 static PyObject *
 tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 {
-    Py_ssize_t size;
-    PyTupleObject *np;
-    if (Py_SIZE(a) == 0 || n == 1) {
+    const Py_ssize_t input_size = Py_SIZE(a);
+    if (input_size == 0 || n == 1) {
         if (PyTuple_CheckExact(a)) {
             /* Since tuples are immutable, we can return a shared
                copy in this case */
-            Py_INCREF(a);
-            return (PyObject *)a;
+            return Py_NewRef(a);
         }
     }
-    if (Py_SIZE(a) == 0 || n <= 0) {
+    if (input_size == 0 || n <= 0) {
         return tuple_get_empty();
     }
-    if (n > PY_SSIZE_T_MAX / Py_SIZE(a))
+    assert(n>0);
+
+    if (input_size > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
-    size = Py_SIZE(a) * n;
-    np = tuple_alloc(size);
+    Py_ssize_t output_size = input_size * n;
+
+    PyTupleObject *np = tuple_alloc(output_size);
     if (np == NULL)
         return NULL;
+
     PyObject **dest = np->ob_item;
-    PyObject **dest_end = dest + size;
-    if (Py_SIZE(a) == 1) {
+    if (input_size == 1) {
         PyObject *elem = a->ob_item[0];
-        Py_SET_REFCNT(elem, Py_REFCNT(elem) + n);
-#ifdef Py_REF_DEBUG
-        _Py_RefTotal += n;
-#endif
+        _Py_RefcntAdd(elem, n);
+        PyObject **dest_end = dest + output_size;
         while (dest < dest_end) {
             *dest++ = elem;
         }
     }
     else {
         PyObject **src = a->ob_item;
-        PyObject **src_end = src + Py_SIZE(a);
+        PyObject **src_end = src + input_size;
         while (src < src_end) {
-            Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
-#ifdef Py_REF_DEBUG
-            _Py_RefTotal += n;
-#endif
+            _Py_RefcntAdd(*src, n);
             *dest++ = *src++;
         }
-        // Now src chases after dest in the same buffer
-        src = np->ob_item;
-        while (dest < dest_end) {
-            *dest++ = *src++;
-        }
+
+        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
+                          sizeof(PyObject *)*input_size);
     }
     _PyObject_GC_TRACK(np);
     return (PyObject *) np;
@@ -752,8 +737,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
     }
     for (i = 0; i < n; i++) {
         item = PyTuple_GET_ITEM(tmp, i);
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(newobj, i, item);
+        PyTuple_SET_ITEM(newobj, i, Py_NewRef(item));
     }
     Py_DECREF(tmp);
 
@@ -804,8 +788,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
         else if (start == 0 && step == 1 &&
                  slicelength == PyTuple_GET_SIZE(self) &&
                  PyTuple_CheckExact(self)) {
-            Py_INCREF(self);
-            return (PyObject *)self;
+            return Py_NewRef(self);
         }
         else {
             PyTupleObject* result = tuple_alloc(slicelength);
@@ -815,8 +798,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             dest = result->ob_item;
             for (cur = start, i = 0; i < slicelength;
                  cur += step, i++) {
-                it = src[cur];
-                Py_INCREF(it);
+                it = Py_NewRef(src[cur]);
                 dest[i] = it;
             }
 
@@ -1013,14 +995,9 @@ _PyTuple_ClearFreeList(PyInterpreterState *interp)
 
 /*********************** Tuple Iterator **************************/
 
-typedef struct {
-    PyObject_HEAD
-    Py_ssize_t it_index;
-    PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
-} tupleiterobject;
 
 static void
-tupleiter_dealloc(tupleiterobject *it)
+tupleiter_dealloc(_PyTupleIterObject *it)
 {
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
@@ -1028,14 +1005,14 @@ tupleiter_dealloc(tupleiterobject *it)
 }
 
 static int
-tupleiter_traverse(tupleiterobject *it, visitproc visit, void *arg)
+tupleiter_traverse(_PyTupleIterObject *it, visitproc visit, void *arg)
 {
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-tupleiter_next(tupleiterobject *it)
+tupleiter_next(_PyTupleIterObject *it)
 {
     PyTupleObject *seq;
     PyObject *item;
@@ -1049,8 +1026,7 @@ tupleiter_next(tupleiterobject *it)
     if (it->it_index < PyTuple_GET_SIZE(seq)) {
         item = PyTuple_GET_ITEM(seq, it->it_index);
         ++it->it_index;
-        Py_INCREF(item);
-        return item;
+        return Py_NewRef(item);
     }
 
     it->it_seq = NULL;
@@ -1059,7 +1035,7 @@ tupleiter_next(tupleiterobject *it)
 }
 
 static PyObject *
-tupleiter_len(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_len(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -1070,7 +1046,7 @@ tupleiter_len(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_reduce(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq)
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
@@ -1080,7 +1056,7 @@ tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-tupleiter_setstate(tupleiterobject *it, PyObject *state)
+tupleiter_setstate(_PyTupleIterObject *it, PyObject *state)
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
@@ -1108,7 +1084,7 @@ static PyMethodDef tupleiter_methods[] = {
 PyTypeObject PyTupleIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "tuple_iterator",                           /* tp_name */
-    sizeof(tupleiterobject),                    /* tp_basicsize */
+    sizeof(_PyTupleIterObject),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)tupleiter_dealloc,              /* tp_dealloc */
@@ -1141,18 +1117,17 @@ PyTypeObject PyTupleIter_Type = {
 static PyObject *
 tuple_iter(PyObject *seq)
 {
-    tupleiterobject *it;
+    _PyTupleIterObject *it;
 
     if (!PyTuple_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(tupleiterobject, &PyTupleIter_Type);
+    it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
     if (it == NULL)
         return NULL;
     it->it_index = 0;
-    Py_INCREF(seq);
-    it->it_seq = (PyTupleObject *)seq;
+    it->it_seq = (PyTupleObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -1195,6 +1170,7 @@ maybe_freelist_pop(Py_ssize_t size)
 #endif
             _Py_NewReference((PyObject *)op);
             /* END inlined _PyObject_InitVar() */
+            OBJECT_STAT_INC(from_freelist);
             return op;
         }
     }
@@ -1224,6 +1200,7 @@ maybe_freelist_push(PyTupleObject *op)
         op->ob_item[0] = (PyObject *) STATE.free_list[index];
         STATE.free_list[index] = op;
         STATE.numfree[index]++;
+        OBJECT_STAT_INC(to_freelist);
         return 1;
     }
 #endif

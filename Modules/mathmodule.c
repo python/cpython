@@ -55,18 +55,20 @@ raised for division by zero and mod by zero.
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 /* For DBL_EPSILON in _math.h */
 #include <float.h>
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
 #include "_math.h"
+#include <stdbool.h>
 
 #include "clinic/mathmodule.c.h"
 
@@ -75,6 +77,20 @@ module math
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=76bc7002685dd942]*/
 
+
+typedef struct {
+    PyObject *str___ceil__;
+    PyObject *str___floor__;
+    PyObject *str___trunc__;
+} math_module_state;
+
+static inline math_module_state*
+get_math_module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (math_module_state *)state;
+}
 
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
@@ -1215,10 +1231,10 @@ static PyObject *
 math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
-    _Py_IDENTIFIER(__ceil__);
 
     if (!PyFloat_CheckExact(number)) {
-        PyObject *method = _PyObject_LookupSpecialId(number, &PyId___ceil__);
+        math_module_state *state = get_math_module_state(module);
+        PyObject *method = _PyObject_LookupSpecial(number, state->str___ceil__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -1283,14 +1299,13 @@ math_floor(PyObject *module, PyObject *number)
 {
     double x;
 
-    _Py_IDENTIFIER(__floor__);
-
     if (PyFloat_CheckExact(number)) {
         x = PyFloat_AS_DOUBLE(number);
     }
     else
     {
-        PyObject *method = _PyObject_LookupSpecialId(number, &PyId___floor__);
+        math_module_state *state = get_math_module_state(module);
+        PyObject *method = _PyObject_LookupSpecial(number, state->str___floor__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -2034,8 +2049,7 @@ factorial_odd_part(unsigned long n)
     inner = PyLong_FromLong(1);
     if (inner == NULL)
         return NULL;
-    outer = inner;
-    Py_INCREF(outer);
+    outer = Py_NewRef(inner);
 
     upper = 3;
     for (i = _Py_bit_length(n) - 2; i >= 0; i--) {
@@ -2056,8 +2070,7 @@ factorial_odd_part(unsigned long n)
         Py_DECREF(partial);
         if (tmp == NULL)
             goto error;
-        Py_DECREF(inner);
-        inner = tmp;
+        Py_SETREF(inner, tmp);
         /* Now inner is the product of all odd integers j in the range (0,
            n/2**i], giving the inner product in the formula above. */
 
@@ -2065,8 +2078,7 @@ factorial_odd_part(unsigned long n)
         tmp = PyNumber_Multiply(outer, inner);
         if (tmp == NULL)
             goto error;
-        Py_DECREF(outer);
-        outer = tmp;
+        Py_SETREF(outer, tmp);
     }
     Py_DECREF(inner);
     return outer;
@@ -2156,7 +2168,6 @@ static PyObject *
 math_trunc(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=34b9697b707e1031 input=2168b34e0a09134d]*/
 {
-    _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
 
     if (PyFloat_CheckExact(x)) {
@@ -2168,7 +2179,8 @@ math_trunc(PyObject *module, PyObject *x)
             return NULL;
     }
 
-    trunc = _PyObject_LookupSpecialId(x, &PyId___trunc__);
+    math_module_state *state = get_math_module_state(module);
+    trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
@@ -2312,7 +2324,7 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
-loghelper(PyObject* arg, double (*func)(double), const char *funcname)
+loghelper(PyObject* arg, double (*func)(double))
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
@@ -2372,11 +2384,11 @@ math_log_impl(PyObject *module, PyObject *x, int group_right_1,
     PyObject *num, *den;
     PyObject *ans;
 
-    num = loghelper(x, m_log, "log");
+    num = loghelper(x, m_log);
     if (num == NULL || base == NULL)
         return num;
 
-    den = loghelper(base, m_log, "log");
+    den = loghelper(base, m_log);
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2402,7 +2414,7 @@ static PyObject *
 math_log2(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=5425899a4d5d6acb input=08321262bae4f39b]*/
 {
-    return loghelper(x, m_log2, "log2");
+    return loghelper(x, m_log2);
 }
 
 
@@ -2419,7 +2431,7 @@ static PyObject *
 math_log10(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=be72a64617df9c6f input=b2469d02c6469e53]*/
 {
-    return loghelper(x, m_log10, "log10");
+    return loghelper(x, m_log10);
 }
 
 
@@ -2703,13 +2715,13 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     if (m != n) {
         PyErr_SetString(PyExc_ValueError,
                         "both points must have the same number of dimensions");
-        return NULL;
-
+        goto error_exit;
     }
     if (n > NUM_STACK_ELEMS) {
         diffs = (double *) PyObject_Malloc(n * sizeof(double));
         if (diffs == NULL) {
-            return PyErr_NoMemory();
+            PyErr_NoMemory();
+            goto error_exit;
         }
     }
     for (i=0 ; i<n ; i++) {
@@ -2807,6 +2819,332 @@ For example, the hypotenuse of a 3/4/5 right triangle is:\n\
     >>> hypot(3.0, 4.0)\n\
     5.0\n\
 ");
+
+/** sumprod() ***************************************************************/
+
+/* Forward declaration */
+static inline int _check_long_mult_overflow(long a, long b);
+
+static inline bool
+long_add_would_overflow(long a, long b)
+{
+    return (a > 0) ? (b > LONG_MAX - a) : (b < LONG_MIN - a);
+}
+
+/*
+Double length extended precision floating point arithmetic
+based on ideas from three sources:
+
+  Improved Kahan–Babuška algorithm by Arnold Neumaier
+  https://www.mat.univie.ac.at/~neum/scan/01.pdf
+
+  A Floating-Point Technique for Extending the Available Precision
+  by T. J. Dekker
+  https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+
+  Ultimately Fast Accurate Summation by Siegfried M. Rump
+  https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
+
+The double length routines allow for quite a bit of instruction
+level parallelism.  On a 3.22 Ghz Apple M1 Max, the incremental
+cost of increasing the input vector size by one is 6.0 nsec.
+
+dl_zero() returns an extended precision zero
+dl_split() exactly splits a double into two half precision components.
+dl_add() performs compensated summation to keep a running total.
+dl_mul() implements lossless multiplication of doubles.
+dl_fma() implements an extended precision fused-multiply-add.
+dl_to_d() converts from extended precision to double precision.
+
+*/
+
+typedef struct{ double hi; double lo; } DoubleLength;
+
+static const DoubleLength dl_zero = {0.0, 0.0};
+
+static inline DoubleLength
+twosum(double a, double b)
+{
+    double s = a + b;
+    double ap = s - b;
+    double bp = s - a;
+    double da = a - ap;
+    double db = b - bp;
+    double t = da + db;
+    return  (DoubleLength) {s, t};
+}
+
+static inline DoubleLength
+dl_add(DoubleLength total, double x)
+{
+    DoubleLength s = twosum(total.hi, x);
+    return (DoubleLength) {s.hi, total.lo + s.lo};
+}
+
+static inline DoubleLength
+dl_split(double x) {
+    double t = x * 134217729.0;  /* Veltkamp constant = float(0x8000001) */
+    double hi = t - (t - x);
+    double lo = x - hi;
+    return (DoubleLength) {hi, lo};
+}
+
+static inline DoubleLength
+dl_mul(double x, double y)
+{
+    /* Dekker mul12().  Section (5.12) */
+    DoubleLength xx = dl_split(x);
+    DoubleLength yy = dl_split(y);
+    double p = xx.hi * yy.hi;
+    double q = xx.hi * yy.lo + xx.lo * yy.hi;
+    double z = p + q;
+    double zz = p - z + q + xx.lo * yy.lo;
+    return (DoubleLength) {z, zz};
+}
+
+static inline DoubleLength
+dl_fma(DoubleLength total, double p, double q)
+{
+    DoubleLength product = dl_mul(p, q);
+    total = dl_add(total, product.hi);
+    return  dl_add(total, product.lo);
+}
+
+static inline double
+dl_to_d(DoubleLength total)
+{
+    return total.hi + total.lo;
+}
+
+/*[clinic input]
+math.sumprod
+
+    p: object
+    q: object
+    /
+
+Return the sum of products of values from two iterables p and q.
+
+Roughly equivalent to:
+
+    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
+
+For float and mixed int/float inputs, the intermediate products
+and sums are computed with extended precision.
+[clinic start generated code]*/
+
+static PyObject *
+math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
+/*[clinic end generated code: output=6722dbfe60664554 input=82be54fe26f87e30]*/
+{
+    PyObject *p_i = NULL, *q_i = NULL, *term_i = NULL, *new_total = NULL;
+    PyObject *p_it, *q_it, *total;
+    iternextfunc p_next, q_next;
+    bool p_stopped = false, q_stopped = false;
+    bool int_path_enabled = true, int_total_in_use = false;
+    bool flt_path_enabled = true, flt_total_in_use = false;
+    long int_total = 0;
+    DoubleLength flt_total = dl_zero;
+
+    p_it = PyObject_GetIter(p);
+    if (p_it == NULL) {
+        return NULL;
+    }
+    q_it = PyObject_GetIter(q);
+    if (q_it == NULL) {
+        Py_DECREF(p_it);
+        return NULL;
+    }
+    total = PyLong_FromLong(0);
+    if (total == NULL) {
+        Py_DECREF(p_it);
+        Py_DECREF(q_it);
+        return NULL;
+    }
+    p_next = *Py_TYPE(p_it)->tp_iternext;
+    q_next = *Py_TYPE(q_it)->tp_iternext;
+    while (1) {
+        bool finished;
+
+        assert (p_i == NULL);
+        assert (q_i == NULL);
+        assert (term_i == NULL);
+        assert (new_total == NULL);
+
+        assert (p_it != NULL);
+        assert (q_it != NULL);
+        assert (total != NULL);
+
+        p_i = p_next(p_it);
+        if (p_i == NULL) {
+            if (PyErr_Occurred()) {
+                if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                    goto err_exit;
+                }
+                PyErr_Clear();
+            }
+            p_stopped = true;
+        }
+        q_i = q_next(q_it);
+        if (q_i == NULL) {
+            if (PyErr_Occurred()) {
+                if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                    goto err_exit;
+                }
+                PyErr_Clear();
+            }
+            q_stopped = true;
+        }
+        if (p_stopped != q_stopped) {
+            PyErr_Format(PyExc_ValueError, "Inputs are not the same length");
+            goto err_exit;
+        }
+        finished = p_stopped & q_stopped;
+
+        if (int_path_enabled) {
+
+            if (!finished && PyLong_CheckExact(p_i) & PyLong_CheckExact(q_i)) {
+                int overflow;
+                long int_p, int_q, int_prod;
+
+                int_p = PyLong_AsLongAndOverflow(p_i, &overflow);
+                if (overflow) {
+                    goto finalize_int_path;
+                }
+                int_q = PyLong_AsLongAndOverflow(q_i, &overflow);
+                if (overflow) {
+                    goto finalize_int_path;
+                }
+                if (_check_long_mult_overflow(int_p, int_q)) {
+                    goto finalize_int_path;
+                }
+                int_prod = int_p * int_q;
+                if (long_add_would_overflow(int_total, int_prod)) {
+                    goto finalize_int_path;
+                }
+                int_total += int_prod;
+                int_total_in_use = true;
+                Py_CLEAR(p_i);
+                Py_CLEAR(q_i);
+                continue;
+            }
+
+          finalize_int_path:
+            //  # We're finished, overflowed, or have a non-int
+            int_path_enabled = false;
+            if (int_total_in_use) {
+                term_i = PyLong_FromLong(int_total);
+                if (term_i == NULL) {
+                    goto err_exit;
+                }
+                new_total = PyNumber_Add(total, term_i);
+                if (new_total == NULL) {
+                    goto err_exit;
+                }
+                Py_SETREF(total, new_total);
+                new_total = NULL;
+                Py_CLEAR(term_i);
+                int_total = 0;   // An ounce of prevention, ...
+                int_total_in_use = false;
+            }
+        }
+
+        if (flt_path_enabled) {
+
+            if (!finished) {
+                double flt_p, flt_q;
+                bool p_type_float = PyFloat_CheckExact(p_i);
+                bool q_type_float = PyFloat_CheckExact(q_i);
+                if (p_type_float && q_type_float) {
+                    flt_p = PyFloat_AS_DOUBLE(p_i);
+                    flt_q = PyFloat_AS_DOUBLE(q_i);
+                } else if (p_type_float && (PyLong_CheckExact(q_i) || PyBool_Check(q_i))) {
+                    /* We care about float/int pairs and int/float pairs because
+                       they arise naturally in several use cases such as price
+                       times quantity, measurements with integer weights, or
+                       data selected by a vector of bools. */
+                    flt_p = PyFloat_AS_DOUBLE(p_i);
+                    flt_q = PyLong_AsDouble(q_i);
+                    if (flt_q == -1.0 && PyErr_Occurred()) {
+                        PyErr_Clear();
+                        goto finalize_flt_path;
+                    }
+                } else if (q_type_float && (PyLong_CheckExact(p_i) || PyBool_Check(q_i))) {
+                    flt_q = PyFloat_AS_DOUBLE(q_i);
+                    flt_p = PyLong_AsDouble(p_i);
+                    if (flt_p == -1.0 && PyErr_Occurred()) {
+                        PyErr_Clear();
+                        goto finalize_flt_path;
+                    }
+                } else {
+                    goto finalize_flt_path;
+                }
+                DoubleLength new_flt_total = dl_fma(flt_total, flt_p, flt_q);
+                if (isfinite(new_flt_total.hi)) {
+                    flt_total = new_flt_total;
+                    flt_total_in_use = true;
+                    Py_CLEAR(p_i);
+                    Py_CLEAR(q_i);
+                    continue;
+                }
+            }
+
+          finalize_flt_path:
+            // We're finished, overflowed, have a non-float, or got a non-finite value
+            flt_path_enabled = false;
+            if (flt_total_in_use) {
+                term_i = PyFloat_FromDouble(dl_to_d(flt_total));
+                if (term_i == NULL) {
+                    goto err_exit;
+                }
+                new_total = PyNumber_Add(total, term_i);
+                if (new_total == NULL) {
+                    goto err_exit;
+                }
+                Py_SETREF(total, new_total);
+                new_total = NULL;
+                Py_CLEAR(term_i);
+                flt_total = dl_zero;
+                flt_total_in_use = false;
+            }
+        }
+
+        assert(!int_total_in_use);
+        assert(!flt_total_in_use);
+        if (finished) {
+            goto normal_exit;
+        }
+        term_i = PyNumber_Multiply(p_i, q_i);
+        if (term_i == NULL) {
+            goto err_exit;
+        }
+        new_total = PyNumber_Add(total, term_i);
+        if (new_total == NULL) {
+            goto err_exit;
+        }
+        Py_SETREF(total, new_total);
+        new_total = NULL;
+        Py_CLEAR(p_i);
+        Py_CLEAR(q_i);
+        Py_CLEAR(term_i);
+    }
+
+ normal_exit:
+    Py_DECREF(p_it);
+    Py_DECREF(q_it);
+    return total;
+
+ err_exit:
+    Py_DECREF(p_it);
+    Py_DECREF(q_it);
+    Py_DECREF(total);
+    Py_XDECREF(p_i);
+    Py_XDECREF(q_i);
+    Py_XDECREF(term_i);
+    Py_XDECREF(new_total);
+    return NULL;
+}
+
 
 /* pow can't use math_2, but needs its own wrapper: the problem is
    that an infinite result can arise either as a result of overflow
@@ -3141,8 +3479,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
         long i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
         if (overflow == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
         }
         /* Loop over all the items in the iterable until we finish, we overflow
          * or we found a non integer element */
@@ -3189,8 +3526,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     */
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
@@ -3239,8 +3575,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
         if (item == NULL) {
             /* error, or end-of-sequence */
             if (PyErr_Occurred()) {
-                Py_DECREF(result);
-                result = NULL;
+                Py_SETREF(result, NULL);
             }
             break;
         }
@@ -3507,8 +3842,7 @@ perm_comb(PyObject *n, unsigned long long k, int iscomb)
         return PyLong_FromLong(1);
     }
     if (k == 1) {
-        Py_INCREF(n);
-        return n;
+        return Py_NewRef(n);
     }
 
     /* P(n, k) = P(n, j) * P(n-j, k-j) */
@@ -3825,6 +4159,20 @@ math_ulp_impl(PyObject *module, double x)
 static int
 math_exec(PyObject *module)
 {
+
+    math_module_state *state = get_math_module_state(module);
+    state->str___ceil__ = PyUnicode_InternFromString("__ceil__");
+    if (state->str___ceil__ == NULL) {
+        return -1;
+    }
+    state->str___floor__ = PyUnicode_InternFromString("__floor__");
+    if (state->str___floor__ == NULL) {
+        return -1;
+    }
+    state->str___trunc__ = PyUnicode_InternFromString("__trunc__");
+    if (state->str___trunc__ == NULL) {
+        return -1;
+    }
     if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
@@ -3846,17 +4194,33 @@ math_exec(PyObject *module)
     return 0;
 }
 
+static int
+math_clear(PyObject *module)
+{
+    math_module_state *state = get_math_module_state(module);
+    Py_CLEAR(state->str___ceil__);
+    Py_CLEAR(state->str___floor__);
+    Py_CLEAR(state->str___trunc__);
+    return 0;
+}
+
+static void
+math_free(void *module)
+{
+    math_clear((PyObject *)module);
+}
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
-    {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
+    {"atan2",           _PyCFunction_CAST(math_atan2),     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
-    {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
+    {"copysign",        _PyCFunction_CAST(math_copysign),  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
@@ -3873,14 +4237,14 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    {"gcd",             (PyCFunction)(void(*)(void))math_gcd,       METH_FASTCALL,  math_gcd_doc},
-    {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
+    {"gcd",             _PyCFunction_CAST(math_gcd),       METH_FASTCALL,  math_gcd_doc},
+    {"hypot",           _PyCFunction_CAST(math_hypot),     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
-    {"lcm",             (PyCFunction)(void(*)(void))math_lcm,       METH_FASTCALL,  math_lcm_doc},
+    {"lcm",             _PyCFunction_CAST(math_lcm),       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
@@ -3890,12 +4254,13 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
-    {"remainder",       (PyCFunction)(void(*)(void))math_remainder, METH_FASTCALL,  math_remainder_doc},
+    {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},
     {"tan",             math_tan,       METH_O,         math_tan_doc},
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
+    MATH_SUMPROD_METHODDEF
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
     MATH_PERM_METHODDEF
@@ -3918,9 +4283,11 @@ static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "math",
     .m_doc = module_doc,
-    .m_size = 0,
+    .m_size = sizeof(math_module_state),
     .m_methods = math_methods,
     .m_slots = math_slots,
+    .m_clear = math_clear,
+    .m_free = math_free,
 };
 
 PyMODINIT_FUNC

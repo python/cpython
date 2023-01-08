@@ -1,1 +1,0 @@
-Replaced the ``__note__`` field of :exc:`BaseException` (added in an earlier version of 3.11) with the final design of :pep:`678`. Namely, :exc:`BaseException` gets an :meth:`add_note` method, and its ``__notes__`` field is created when necessary.

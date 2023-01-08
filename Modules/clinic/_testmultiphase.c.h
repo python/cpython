@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_testmultiphase_StateAccessType_get_defining_module__doc__,
 "get_defining_module($self, /)\n"
 "--\n"
@@ -12,7 +18,7 @@ PyDoc_STRVAR(_testmultiphase_StateAccessType_get_defining_module__doc__,
 "module.");
 
 #define _TESTMULTIPHASE_STATEACCESSTYPE_GET_DEFINING_MODULE_METHODDEF    \
-    {"get_defining_module", (PyCFunction)(void(*)(void))_testmultiphase_StateAccessType_get_defining_module, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_get_defining_module__doc__},
+    {"get_defining_module", _PyCFunction_CAST(_testmultiphase_StateAccessType_get_defining_module), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_get_defining_module__doc__},
 
 static PyObject *
 _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *self,
@@ -35,7 +41,7 @@ PyDoc_STRVAR(_testmultiphase_StateAccessType_getmodulebydef_bad_def__doc__,
 "Test that result of PyType_GetModuleByDef with a bad def is NULL.");
 
 #define _TESTMULTIPHASE_STATEACCESSTYPE_GETMODULEBYDEF_BAD_DEF_METHODDEF    \
-    {"getmodulebydef_bad_def", (PyCFunction)(void(*)(void))_testmultiphase_StateAccessType_getmodulebydef_bad_def, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_getmodulebydef_bad_def__doc__},
+    {"getmodulebydef_bad_def", _PyCFunction_CAST(_testmultiphase_StateAccessType_getmodulebydef_bad_def), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_getmodulebydef_bad_def__doc__},
 
 static PyObject *
 _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObject *self,
@@ -62,7 +68,7 @@ PyDoc_STRVAR(_testmultiphase_StateAccessType_increment_count_clinic__doc__,
 "This tests Argument Clinic support for defining_class.");
 
 #define _TESTMULTIPHASE_STATEACCESSTYPE_INCREMENT_COUNT_CLINIC_METHODDEF    \
-    {"increment_count_clinic", (PyCFunction)(void(*)(void))_testmultiphase_StateAccessType_increment_count_clinic, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_increment_count_clinic__doc__},
+    {"increment_count_clinic", _PyCFunction_CAST(_testmultiphase_StateAccessType_increment_count_clinic), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_increment_count_clinic__doc__},
 
 static PyObject *
 _testmultiphase_StateAccessType_increment_count_clinic_impl(StateAccessTypeObject *self,
@@ -73,8 +79,31 @@ static PyObject *
 _testmultiphase_StateAccessType_increment_count_clinic(StateAccessTypeObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(n), &_Py_ID(twice), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"n", "twice", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "increment_count_clinic", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "increment_count_clinic",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int n = 1;
@@ -118,7 +147,7 @@ PyDoc_STRVAR(_testmultiphase_StateAccessType_get_count__doc__,
 "Return the value of the module-state counter.");
 
 #define _TESTMULTIPHASE_STATEACCESSTYPE_GET_COUNT_METHODDEF    \
-    {"get_count", (PyCFunction)(void(*)(void))_testmultiphase_StateAccessType_get_count, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_get_count__doc__},
+    {"get_count", _PyCFunction_CAST(_testmultiphase_StateAccessType_get_count), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_get_count__doc__},
 
 static PyObject *
 _testmultiphase_StateAccessType_get_count_impl(StateAccessTypeObject *self,
@@ -133,4 +162,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
     }
     return _testmultiphase_StateAccessType_get_count_impl(self, cls);
 }
-/*[clinic end generated code: output=b41a400ef84f50af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=52ea97ab2f03bb6d input=a9049054013a1b77]*/

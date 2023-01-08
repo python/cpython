@@ -13,15 +13,14 @@ import time
 import typing
 import unittest
 import unittest.mock
-import os
 import weakref
 import gc
 from weakref import proxy
 import contextlib
+from inspect import Signature
 
 from test.support import import_helper
 from test.support import threading_helper
-from test.support.script_helper import assert_python_ok
 
 import functools
 
@@ -943,6 +942,10 @@ class TestCmpToKey:
         self.assertRaises(TypeError, hash, k)
         self.assertNotIsInstance(k, collections.abc.Hashable)
 
+    def test_cmp_to_signature(self):
+        self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
+                         '(mycmp)')
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestCmpToKeyC(TestCmpToKey, unittest.TestCase):
@@ -1855,6 +1858,13 @@ class TestLRU:
         for ref in refs:
             self.assertIsNone(ref())
 
+    def test_common_signatures(self):
+        def orig(): ...
+        lru = self.module.lru_cache(1)(orig)
+
+        self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
+        self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
+
 
 @py_functools.lru_cache()
 def py_cached_func(x, y):
@@ -2005,7 +2015,7 @@ class TestSingleDispatch(unittest.TestCase):
         c.MutableSequence.register(D)
         bases = [c.MutableSequence, c.MutableMapping]
         for haystack in permutations(bases):
-            m = mro(D, bases)
+            m = mro(D, haystack)
             self.assertEqual(m, [D, c.MutableSequence, c.Sequence, c.Reversible,
                                  collections.defaultdict, dict, c.MutableMapping, c.Mapping,
                                  c.Collection, c.Sized, c.Iterable, c.Container,
@@ -2791,6 +2801,49 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(b""), "typing.Union")
         self.assertEqual(f(1), "types.UnionType")
         self.assertEqual(f(1.0), "types.UnionType")
+
+    def test_union_conflict(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        @f.register
+        def _(arg: typing.Union[str, bytes]):
+            return "typing.Union"
+
+        @f.register
+        def _(arg: int | str):
+            return "types.UnionType"
+
+        self.assertEqual(f([]), "default")
+        self.assertEqual(f(""), "types.UnionType")  # last one wins
+        self.assertEqual(f(b""), "typing.Union")
+        self.assertEqual(f(1), "types.UnionType")
+
+    def test_union_None(self):
+        @functools.singledispatch
+        def typing_union(arg):
+            return "default"
+
+        @typing_union.register
+        def _(arg: typing.Union[str, None]):
+            return "typing.Union"
+
+        self.assertEqual(typing_union(1), "default")
+        self.assertEqual(typing_union(""), "typing.Union")
+        self.assertEqual(typing_union(None), "typing.Union")
+
+        @functools.singledispatch
+        def types_union(arg):
+            return "default"
+
+        @types_union.register
+        def _(arg: int | None):
+            return "types.UnionType"
+
+        self.assertEqual(types_union(""), "default")
+        self.assertEqual(types_union(1), "types.UnionType")
+        self.assertEqual(types_union(None), "types.UnionType")
 
     def test_register_genericalias(self):
         @functools.singledispatch

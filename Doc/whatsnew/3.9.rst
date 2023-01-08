@@ -2,8 +2,6 @@
   What's New In Python 3.9
 ****************************
 
-:Release: |release|
-:Date: |today|
 :Editor: Łukasz Langa
 
 .. Rules for maintenance:
@@ -45,7 +43,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.9, compared to 3.8.
-Python 3.9 was released on October 5th, 2020.
+Python 3.9 was released on October 5, 2020.
 
 For full details, see the :ref:`changelog <changelog>`.
 
@@ -500,7 +498,7 @@ Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
 the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
 :issue:`33962`.)
 
-Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+Apply syntax highlighting to ``.pyi`` files. (Contributed by Alex
 Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 imaplib
@@ -773,7 +771,7 @@ Optimizations
   Stinner in :issue:`38061`.)
 
 * :c:func:`PyLong_FromDouble` is now up to 1.87x faster for values that
-  fit into :c:type:`long`.
+  fit into :c:expr:`long`.
   (Contributed by Sergey Fedoseev in :issue:`37986`.)
 
 * A number of Python builtins (:class:`range`, :class:`tuple`, :class:`set`,

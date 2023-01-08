@@ -30,7 +30,6 @@ from pegen.grammar import (
     Alt,
     Cut,
     Forced,
-    Grammar,
     Group,
     Leaf,
     Lookahead,

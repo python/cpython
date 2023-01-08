@@ -25,6 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
+.. include:: ../includes/wasm-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -32,9 +33,6 @@ Using the :mod:`subprocess` Module
 The recommended approach to invoking subprocesses is to use the :func:`run`
 function for all use cases it can handle. For more advanced use cases, the
 underlying :class:`Popen` interface can be used directly.
-
-The :func:`run` function was added in Python 3.5; if you need to retain
-compatibility with older versions, see the :ref:`call-function-trio` section.
 
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
@@ -83,8 +81,10 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
-   behavior of inheriting the current process' environment. It is passed directly
-   to :class:`Popen`.
+   behavior of inheriting the current process' environment. It is passed
+   directly to :class:`Popen`. This mapping can be str to str on any platform
+   or bytes to bytes on POSIX platforms much like :data:`os.environ` or
+   :data:`os.environb`.
 
    Examples::
 
@@ -195,7 +195,10 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
     .. attribute:: output
 
         Output of the child process if it was captured by :func:`run` or
-        :func:`check_output`.  Otherwise, ``None``.
+        :func:`check_output`.  Otherwise, ``None``.  This is always
+        :class:`bytes` when any output was captured regardless of the
+        ``text=True`` setting.  It may remain ``None`` instead of ``b''``
+        when no output was observed.
 
     .. attribute:: stdout
 
@@ -204,7 +207,9 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
     .. attribute:: stderr
 
         Stderr output of the child process if it was captured by :func:`run`.
-        Otherwise, ``None``.
+        Otherwise, ``None``.  This is always :class:`bytes` when stderr output
+        was captured regardless of the ``text=True`` setting.  It may remain
+        ``None`` instead of ``b''`` when no stderr output was observed.
 
     .. versionadded:: 3.3
 
@@ -344,7 +349,8 @@ functions.
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
-                 encoding=None, errors=None, text=None, pipesize=-1)
+                 encoding=None, errors=None, text=None, pipesize=-1, \
+                 process_group=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
@@ -361,7 +367,7 @@ functions.
 
    .. warning::
 
-      For maximum reliability, use a fully-qualified path for the executable.
+      For maximum reliability, use a fully qualified path for the executable.
       To search for an unqualified name on :envvar:`PATH`, use
       :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
       is the recommended way to launch the current Python interpreter again,
@@ -500,18 +506,16 @@ functions.
 
    .. warning::
 
-      The *preexec_fn* parameter is not safe to use in the presence of threads
+      The *preexec_fn* parameter is NOT SAFE to use in the presence of threads
       in your application.  The child process could deadlock before exec is
       called.
-      If you must use it, keep it trivial!  Minimize the number of libraries
-      you call into.
 
    .. note::
 
       If you need to modify the environment for the child use the *env*
       parameter rather than doing it in a *preexec_fn*.
-      The *start_new_session* parameter can take the place of a previously
-      common use of *preexec_fn* to call os.setsid() in the child.
+      The *start_new_session* and *process_group* parameters should take the place of
+      code using *preexec_fn* to call :func:`os.setsid` or :func:`os.setpgid` in the child.
 
    .. versionchanged:: 3.8
 
@@ -568,11 +572,19 @@ functions.
    .. versionchanged:: 3.2
       *restore_signals* was added.
 
-   If *start_new_session* is true the setsid() system call will be made in the
-   child process prior to the execution of the subprocess.  (POSIX only)
+   If *start_new_session* is true the ``setsid()`` system call will be made in the
+   child process prior to the execution of the subprocess.
 
+   .. availability:: POSIX
    .. versionchanged:: 3.2
       *start_new_session* was added.
+
+   If *process_group* is a non-negative integer, the ``setpgid(0, value)`` system call will
+   be made in the child process prior to the execution of the subprocess.
+
+   .. availability:: POSIX
+   .. versionchanged:: 3.11
+      *process_group* was added.
 
    If *group* is not ``None``, the setregid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
@@ -609,7 +621,9 @@ functions.
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
-   behavior of inheriting the current process' environment.
+   behavior of inheriting the current process' environment. This mapping can be
+   str to str on any platform or bytes to bytes on POSIX platforms much like
+   :data:`os.environ` or :data:`os.environb`.
 
    .. note::
 
@@ -819,7 +833,7 @@ Instances of the :class:`Popen` class have the following methods:
 
       On Windows, SIGTERM is an alias for :meth:`terminate`. CTRL_C_EVENT and
       CTRL_BREAK_EVENT can be sent to processes started with a *creationflags*
-      parameter which includes `CREATE_NEW_PROCESS_GROUP`.
+      parameter which includes ``CREATE_NEW_PROCESS_GROUP``.
 
 
 .. method:: Popen.terminate()
@@ -1469,7 +1483,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/kill $$')
       (-15, '')
 
-   .. availability:: POSIX & Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3.4
       Windows support was added.
@@ -1491,7 +1505,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   .. availability:: POSIX & Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3.4
       Windows support added
@@ -1549,9 +1563,11 @@ On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 
-If you ever encounter a presumed highly-unusual situation where you need to
+If you ever encounter a presumed highly unusual situation where you need to
 prevent ``vfork()`` from being used by Python, you can set the
 :attr:`subprocess._USE_VFORK` attribute to a false value.
+
+::
 
    subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
 
@@ -1559,6 +1575,8 @@ Setting this has no impact on use of ``posix_spawn()`` which could use
 ``vfork()`` internally within its libc implementation.  There is a similar
 :attr:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
 that.
+
+::
 
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
 

@@ -211,7 +211,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
 
 .. data:: NAMESPACE_DNS
 
-   When this namespace is specified, the *name* string is a fully-qualified domain
+   When this namespace is specified, the *name* string is a fully qualified domain
    name.
 
 

@@ -153,6 +153,7 @@ def _copy_items(items):
 # Formatting Help
 # ===============
 
+
 class HelpFormatter(object):
     """Formatter for generating usage messages and argument help strings.
 
@@ -695,13 +696,25 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     """
 
     def _get_help_string(self, action):
+        """
+        Add the default value to the option help message.
+
+        ArgumentDefaultsHelpFormatter and BooleanOptionalAction when it isn't
+        already present. This code will do that, detecting cornercases to
+        prevent duplicates or cases where it wouldn't make sense to the end
+        user.
+        """
         help = action.help
-        if '%(default)' not in action.help:
+        if help is None:
+            help = ''
+
+        if '%(default)' not in help:
             if action.default is not SUPPRESS:
                 defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:
                     help += ' (default: %(default)s)'
         return help
+
 
 
 class MetavarTypeHelpFormatter(HelpFormatter):
@@ -717,7 +730,6 @@ class MetavarTypeHelpFormatter(HelpFormatter):
 
     def _get_default_metavar_for_positional(self, action):
         return action.type.__name__
-
 
 
 # =====================
@@ -754,7 +766,7 @@ class ArgumentError(Exception):
         if self.argument_name is None:
             format = '%(message)s'
         else:
-            format = 'argument %(argument_name)s: %(message)s'
+            format = _('argument %(argument_name)s: %(message)s')
         return format % dict(message=self.message,
                              argument_name=self.argument_name)
 
@@ -882,9 +894,6 @@ class BooleanOptionalAction(Action):
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
 
-        if help is not None and default is not None and default is not SUPPRESS:
-            help += " (default: %(default)s)"
-
         super().__init__(
             option_strings=_option_strings,
             dest=dest,
@@ -895,6 +904,7 @@ class BooleanOptionalAction(Action):
             required=required,
             help=help,
             metavar=metavar)
+
 
     def __call__(self, parser, namespace, values, option_string=None):
         if option_string in self.option_strings:
@@ -1987,7 +1997,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     # arguments, try to parse more single-dash options out
                     # of the tail of the option string
                     chars = self.prefix_chars
-                    if arg_count == 0 and option_string[1] not in chars:
+                    if (
+                        arg_count == 0
+                        and option_string[1] not in chars
+                        and explicit_arg != ''
+                    ):
                         action_tuples.append((action, [], option_string))
                         char = option_string[0]
                         option_string = char + explicit_arg[0]
@@ -2151,7 +2165,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # replace arguments referencing files with the file content
             else:
                 try:
-                    with open(arg_string[1:]) as args_file:
+                    with open(arg_string[1:],
+                              encoding=_sys.getfilesystemencoding(),
+                              errors=_sys.getfilesystemencodeerrors()) as args_file:
                         arg_strings = []
                         for arg_line in args_file.read().splitlines():
                             for arg in self.convert_arg_line_to_args(arg_line):
@@ -2465,9 +2481,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
               not action.option_strings):
             if action.default is not None:
                 value = action.default
+                self._check_value(action, value)
             else:
+                # since arg_strings is always [] at this point
+                # there is no need to use self._check_value(action, value)
                 value = arg_strings
-            self._check_value(action, value)
 
         # single argument or optional argument produces a single value
         elif len(arg_strings) == 1 and action.nargs in [None, OPTIONAL]:
@@ -2509,7 +2527,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # ArgumentTypeErrors indicate errors
         except ArgumentTypeError as err:
-            name = getattr(action.type, '__name__', repr(action.type))
             msg = str(err)
             raise ArgumentError(action, msg)
 

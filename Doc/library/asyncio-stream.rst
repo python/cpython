@@ -52,6 +52,7 @@ and work with streams:
                           limit=None, ssl=None, family=0, proto=0, \
                           flags=0, sock=None, local_addr=None, \
                           server_hostname=None, ssl_handshake_timeout=None, \
+                          ssl_shutdown_timeout=None, \
                           happy_eyeballs_delay=None, interleave=None)
 
    Establish a network connection and return a pair of
@@ -67,6 +68,12 @@ and work with streams:
    The rest of the arguments are passed directly to
    :meth:`loop.create_connection`.
 
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      :class:`StreamWriter` created. To close the socket, call its
+      :meth:`~asyncio.StreamWriter.close` method.
+
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* parameter.
 
@@ -76,6 +83,9 @@ and work with streams:
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
+
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
                           port=None, *, limit=None, \
@@ -83,7 +93,7 @@ and work with streams:
                           flags=socket.AI_PASSIVE, sock=None, \
                           backlog=100, ssl=None, reuse_address=None, \
                           reuse_port=None, ssl_handshake_timeout=None, \
-                          start_serving=True)
+                          ssl_shutdown_timeout=None, start_serving=True)
 
    Start a socket server.
 
@@ -103,18 +113,27 @@ and work with streams:
    The rest of the arguments are passed directly to
    :meth:`loop.create_server`.
 
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      server created. To close the socket, call the server's
+      :meth:`~asyncio.Server.close` method.
+
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* and *start_serving* parameters.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
+
 
 .. rubric:: Unix Sockets
 
 .. coroutinefunction:: open_unix_connection(path=None, *, limit=None, \
                         ssl=None, sock=None, server_hostname=None, \
-                        ssl_handshake_timeout=None)
+                        ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
 
    Establish a Unix socket connection and return a pair of
    ``(reader, writer)``.
@@ -122,6 +141,12 @@ and work with streams:
    Similar to :func:`open_connection` but operates on Unix sockets.
 
    See also the documentation of :meth:`loop.create_unix_connection`.
+
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      :class:`StreamWriter` created. To close the socket, call its
+      :meth:`~asyncio.StreamWriter.close` method.
 
    .. availability:: Unix.
 
@@ -132,16 +157,26 @@ and work with streams:
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+  .. versionchanged:: 3.11
+     Added the *ssl_shutdown_timeout* parameter.
+
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
                           *, limit=None, sock=None, backlog=100, ssl=None, \
-                          ssl_handshake_timeout=None, start_serving=True)
+                          ssl_handshake_timeout=None, \
+                          ssl_shutdown_timeout=None, start_serving=True)
 
    Start a Unix socket server.
 
    Similar to :func:`start_server` but works with Unix sockets.
 
    See also the documentation of :meth:`loop.create_unix_server`.
+
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      server created. To close the socket, call the server's
+      :meth:`~asyncio.Server.close` method.
 
    .. availability:: Unix.
 
@@ -152,6 +187,9 @@ and work with streams:
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
+
 
 StreamReader
 ============
@@ -159,7 +197,8 @@ StreamReader
 .. class:: StreamReader
 
    Represents a reader object that provides APIs to read data
-   from the IO stream.
+   from the IO stream. As an :term:`asynchronous iterable`, the
+   object supports the :keyword:`async for` statement.
 
    It is not recommended to instantiate *StreamReader* objects
    directly; use :func:`open_connection` and :func:`start_server`
@@ -192,7 +231,7 @@ StreamReader
       can be read.  Use the :attr:`IncompleteReadError.partial`
       attribute to get the partially read data.
 
-   .. coroutinemethod:: readuntil(separator=b'\\n')
+   .. coroutinemethod:: readuntil(separator=b'\n')
 
       Read data from the stream until *separator* is found.
 
@@ -311,7 +350,7 @@ StreamWriter
         handshake to complete before aborting the connection.  ``60.0`` seconds
         if ``None`` (default).
 
-      .. versionadded:: 3.8
+      .. versionadded:: 3.11
 
    .. method:: is_closing()
 

@@ -1,2 +1,0 @@
-Add an ``__unpacked__`` attribute to :class:`types.GenericAlias`. Patch by
-Jelle Zijlstra.
