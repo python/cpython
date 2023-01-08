@@ -395,8 +395,10 @@ class Fraction(numbers.Rational):
 
         """
         def forward(a, b):
-            if isinstance(b, (int, Fraction)):
+            if isinstance(b, Fraction):
                 return monomorphic_operator(a, b)
+            elif isinstance(b, int):
+                return monomorphic_operator(a, Fraction(b))
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
             elif isinstance(b, complex):
@@ -409,7 +411,7 @@ class Fraction(numbers.Rational):
         def reverse(b, a):
             if isinstance(a, numbers.Rational):
                 # Includes ints.
-                return monomorphic_operator(a, b)
+                return monomorphic_operator(Fraction(a), b)
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
             elif isinstance(a, numbers.Complex):
@@ -491,8 +493,8 @@ class Fraction(numbers.Rational):
 
     def _add(a, b):
         """a + b"""
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g = math.gcd(da, db)
         if g == 1:
             return Fraction(na * db + da * nb, da * db, _normalize=False)
@@ -507,8 +509,8 @@ class Fraction(numbers.Rational):
 
     def _sub(a, b):
         """a - b"""
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g = math.gcd(da, db)
         if g == 1:
             return Fraction(na * db - da * nb, da * db, _normalize=False)
@@ -523,8 +525,8 @@ class Fraction(numbers.Rational):
 
     def _mul(a, b):
         """a * b"""
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g1 = math.gcd(na, db)
         if g1 > 1:
             na //= g1
@@ -540,8 +542,8 @@ class Fraction(numbers.Rational):
     def _div(a, b):
         """a / b"""
         # Same as _mul(), with inversed b.
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g1 = math.gcd(na, nb)
         if g1 > 1:
             na //= g1
