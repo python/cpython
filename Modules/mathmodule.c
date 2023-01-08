@@ -1358,10 +1358,8 @@ FUNC1(tanh, tanh, 0,
    Dickinson's post at <http://bugs.python.org/file10357/msum4.py>.
    See those links for more details, proofs and other references.
 
-   Note 1: IEEE 754 floating point semantics with a rounding mode of
-   round-ties-to-even are assumed, but the current implementation does not
-   re-establish special value semantics across iterations (i.e. handling -Inf +
-   Inf).
+   Note 1: IEEE 754 floating-point semantics with a rounding mode of
+   roundTiesToEven are assumed.
 
    Note 2: No provision is made for intermediate overflow handling;
    therefore, fsum([1e+308, -1e+308, 1e+308]) returns 1e+308 while
@@ -1369,11 +1367,11 @@ FUNC1(tanh, tanh, 0,
    overflow of the first partial sum.
 
    Note 3: The algorithm has two potential sources of fragility. First, C
-   allows arithmetic operations on `double`s to be performed in an intermediate
-   format whose range and precision may be greater than those of `double` (see
-   for example C99 §5.2.4.2.2, paragraph 8). This can happen for example on
-   machines using the now largely historical x87 FPUs. In this case, `fsum` can
-   produce incorrect results. If `FLT_EVAL_METHOD` is `0` or `1`, or
+   permits arithmetic operations on `double`s to be performed in an
+   intermediate format whose range and precision may be greater than those of
+   `double` (see for example C99 §5.2.4.2.2, paragraph 8). This can happen for
+   example on machines using the now largely historical x87 FPUs. In this case,
+   `fsum` can produce incorrect results. If `FLT_EVAL_METHOD` is `0` or `1`, or
    `FLT_EVAL_METHOD` is `2` and `long double` is identical to `double`, then we
    should be safe from this source of errors. Second, an aggressively
    optimizing compiler can re-associate operations so that (for example) the
