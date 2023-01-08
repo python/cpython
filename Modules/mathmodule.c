@@ -2845,16 +2845,15 @@ based on ideas from three sources:
   Ultimately Fast Accurate Summation by Siegfried M. Rump
   https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
 
-The double length routines allow for quite a bit of instruction
-level parallelism.  On a 3.22 Ghz Apple M1 Max, the incremental
-cost of increasing the input vector size by one is 6.0 nsec.
+Double length API:
+* dl_split() exactly splits a C double into two half precision components.
+* dl_mul() implements lossless multiplication of two C doubles.
 
-dl_zero() returns an extended precision zero
-dl_split() exactly splits a double into two half precision components.
-dl_add() performs compensated summation to keep a running total.
-dl_mul() implements lossless multiplication of doubles.
-dl_fma() implements an extended precision fused-multiply-add.
-dl_to_d() converts from extended precision to double precision.
+Triple length API:
+* tl_zero is a triple length zero for starting or resetting an accumulation.
+* tl_add() adds a C double to a triple length number.
+* tl_fma() performs a triple length fused-multiply-add.
+* tl_to_d() converts from triple length number to a C double.
 
 */
 
