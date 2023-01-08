@@ -2427,6 +2427,19 @@ builtin_vars_impl(PyObject *module, PyObject *object)
     return d;
 }
 
+typedef struct{ double hi; double lo; } DoubleLength;
+
+static inline DoubleLength
+twosum(double a, double b)
+{
+    double s = a + b;
+    double ap = s - b;
+    double bp = s - a;
+    double da = a - ap;
+    double db = b - bp;
+    double t = da + db;
+    return (DoubleLength) {s, t};
+}
 
 /*[clinic input]
 sum as builtin_sum
@@ -2561,14 +2574,11 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             if (PyFloat_CheckExact(item)) {
                 // Improved Kahan–Babuška algorithm by Arnold Neumaier
                 // https://www.mat.univie.ac.at/~neum/scan/01.pdf
+                // but with Fast2Sum replaced with 2Sum.
                 double x = PyFloat_AS_DOUBLE(item);
-                double t = f_result + x;
-                if (fabs(f_result) >= fabs(x)) {
-                    c += (f_result - t) + x;
-                } else {
-                    c += (x - t) + f_result;
-                }
-                f_result = t;
+                DoubleLength t = twosum(f_result, x);
+                f_result = t.hi;
+                c += t.lo;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
