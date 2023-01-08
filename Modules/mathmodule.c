@@ -2877,9 +2877,17 @@ twosum(double a, double b)
 static inline TripleLength
 tl_add(TripleLength total, double x)
 {
-    DoubleLength s = twosum(total.hi, x);
-    DoubleLength t = twosum(total.lo, s.lo);
-    return (TripleLength) {s.hi, t.hi, total.tiny + t.lo};
+    /* Input:       x     total.hi   total.lo    total.tiny
+                   |--- twosum ---|
+                    s.hi      s.lo
+                             |--- twosum ---|
+                              t.hi      t.lo
+                                       |--- single sum ---|
+       Output:      s.hi     t.hi       tiny
+     */
+    DoubleLength s = twosum(x, total.hi);
+    DoubleLength t = twosum(s.lo, total.lo);
+    return (TripleLength) {s.hi, t.hi, t.lo + total.tiny};
 }
 
 static inline DoubleLength
