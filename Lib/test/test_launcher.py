@@ -476,6 +476,13 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     self.assertEqual("3.100", data["SearchInfo.tag"])
                     self.assertEqual("X.Y.exe --version", data["stdout"].strip())
 
+    def test_py_launcher_version(self):
+        PY_VERSION = sys.version.split(maxsplit=1)[0]
+        for argv in ["-0v", "--version-launcher"]:
+            with self.subTest(argv):
+                data = self.run_py([argv], env=TEST_PY_ENV)
+                self.assertEqual(f"Python Launcher for Windows Version {PY_VERSION}", data["stdout"].strip())
+
     def test_py_default_in_list(self):
         data = self.run_py(["-0"], env=TEST_PY_ENV)
         default = None
