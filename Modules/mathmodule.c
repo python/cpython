@@ -2832,7 +2832,7 @@ long_add_would_overflow(long a, long b)
 }
 
 /*
-Double length extended precision floating point arithmetic
+Double and triple length extended precision floating point arithmetic
 based on ideas from three sources:
 
   Improved Kahan–Babuška algorithm by Arnold Neumaier
@@ -2845,15 +2845,15 @@ based on ideas from three sources:
   Ultimately Fast Accurate Summation by Siegfried M. Rump
   https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
 
-Double length API:
-* dl_split() exactly splits a C double into two half precision components.
-* dl_mul() implements lossless multiplication of two C doubles.
+Double length functions:
+* dl_split() exact split of a C double into two half precision components.
+* dl_mul() exact multiplication of two C doubles.
 
-Triple length API:
+Triple length functions and constant:
 * tl_zero is a triple length zero for starting or resetting an accumulation.
-* tl_add() adds a C double to a triple length number.
+* tl_add() compensated addition of a C double to a triple length number.
 * tl_fma() performs a triple length fused-multiply-add.
-* tl_to_d() converts from triple length number to a C double.
+* tl_to_d() converts from triple length number back to a C double.
 
 */
 
