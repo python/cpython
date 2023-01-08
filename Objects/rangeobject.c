@@ -217,7 +217,6 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     Algorithm is equal to that of get_len_of_range(), but it operates
     on PyObjects (which are assumed to be PyLong objects).
     ---------------------------------------------------------------*/
-
     int cmp_result;
     PyObject *lo, *hi;
     PyObject *diff = NULL;
