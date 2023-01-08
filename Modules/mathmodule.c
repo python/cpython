@@ -2847,7 +2847,7 @@ based on ideas from three sources:
 
 The double length routines allow for quite a bit of instruction
 level parallelism.  On a 3.22 Ghz Apple M1 Max, the incremental
-cost of increasing the input vector size by one is 6.25 nsec.
+cost of increasing the input vector size by one is 6.0 nsec.
 
 dl_zero() returns an extended precision zero
 dl_split() exactly splits a double into two half precision components.
@@ -2866,38 +2866,14 @@ dl_zero()
     return (DoubleLength) {0.0, 0.0};
 }
 
-#if 0
-static inline DoubleLength
-fasttwosum(double a, double b)
-{
-    double x = a + b;
-    double y = (a - x) + b;
-    assert (fabs(a) >= fabs(b));
-    return (DoubleLength) {x, y};
-}
-
-static inline DoubleLength
-dl_add(DoubleLength total, double x)
-{
-    DoubleLength s;
-    if (fabs(total.hi) >= fabs(x)) {
-        s = fasttwosum(total.hi, x);
-    } else {
-        s = fasttwosum(x, total.hi);
-    }
-    return (DoubleLength) {s.hi, total.lo + s.lo};
-}
-
-#else
-
 static inline DoubleLength
 twosum(double a, double b)
 {
     double s = a + b;
     double ap = s - b;
     double bp = s - a;
-    double da = (a - ap);
-    double db = (b - bp);
+    double da = a - ap;
+    double db = b - bp;
     double t = da + db;
     return  (DoubleLength) {s, t};
 }
@@ -2908,8 +2884,6 @@ dl_add(DoubleLength total, double x)
     DoubleLength s = twosum(total.hi, x);
     return (DoubleLength) {s.hi, total.lo + s.lo};
 }
-
-#endif
 
 static inline DoubleLength
 dl_split(double x) {
