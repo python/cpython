@@ -336,7 +336,10 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        if not seq:
+
+        # As an accommodation for NumPy, we don't use "if not seq"
+        # because bool(numpy.array()) raises a ValueError.
+        if not len(seq):
             raise IndexError('Cannot choose from an empty sequence')
         return seq[self._randbelow(len(seq))]
 
