@@ -1467,7 +1467,7 @@ math_fsum(PyObject *module, PyObject *seq)
     Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
     double x, y, t, ps[NUM_PARTIALS], *p = ps;
     double xsave, special_sum = 0.0, inf_sum = 0.0;
-    double hi, yr, lo;
+    double hi, yr, lo = 0.0;
 
     iter = PyObject_GetIter(seq);
     if (iter == NULL)
