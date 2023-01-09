@@ -903,8 +903,11 @@ _Py_MakeCoro(PyFunctionObject *func)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        assert(_PyEval_GetFrame());
-        PyObject *cr_origin = compute_cr_origin(origin_depth, _PyEval_GetFrame()->previous);
+        _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+        assert(frame);
+        assert(_PyFrame_IsIncomplete(frame));
+        frame = _PyFrame_GetFirstComplete(frame->previous);
+        PyObject *cr_origin = compute_cr_origin(origin_depth, frame);
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
@@ -1286,7 +1289,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     /* First count how many frames we have */
     int frame_count = 0;
     for (; frame && frame_count < origin_depth; ++frame_count) {
-        frame = frame->previous;
+        frame = _PyFrame_GetFirstComplete(frame->previous);
     }
 
     /* Now collect them */
@@ -1305,7 +1308,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
             return NULL;
         }
         PyTuple_SET_ITEM(cr_origin, i, frameinfo);
-        frame = frame->previous;
+        frame = _PyFrame_GetFirstComplete(frame->previous);
     }
 
     return cr_origin;
