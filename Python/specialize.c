@@ -677,6 +677,7 @@ specialize_dict_access(
 static int specialize_attr_loadmethod(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name,
     PyObject* descr, DescriptorClassification kind);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
+static int set_available_type_method_cache(PyTypeObject *tp, PyObject *meth);
 
 void
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
@@ -697,6 +698,10 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             goto fail;
         }
         goto success;
+    }
+    if (!(type->tp_flags & _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE)) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
+        goto fail;
     }
     if (PyType_Check(owner)) {
         if (specialize_class_load_attr(owner, instr, name)) {
@@ -748,7 +753,11 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             assert(type->tp_version_tag != 0);
             write_u32(lm_cache->type_version, type->tp_version_tag);
             /* borrowed */
-            write_obj(lm_cache->descr, fget);
+            int type_index = set_available_type_method_cache(type, fget);
+            if (type_index < 0) {
+                goto fail;
+            }
+            lm_cache->type_index = (uint16_t)type_index;
             _py_set_opcode(instr, LOAD_ATTR_PROPERTY);
             goto success;
         }
@@ -807,9 +816,13 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 goto fail;
             }
             write_u32(lm_cache->keys_version, version);
-            /* borrowed */
-            write_obj(lm_cache->descr, descr);
             write_u32(lm_cache->type_version, type->tp_version_tag);
+            /* borrowed */
+            int type_index = set_available_type_method_cache(type, descr);
+            if (type_index < 0) {
+                goto fail;
+            }
+            lm_cache->type_index = (uint16_t)type_index;
             _py_set_opcode(instr, LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             goto success;
         }
@@ -999,7 +1012,11 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
         case METHOD:
         case NON_DESCRIPTOR:
             write_u32(cache->type_version, ((PyTypeObject *)owner)->tp_version_tag);
-            write_obj(cache->descr, descr);
+            int type_index = set_available_type_method_cache((PyTypeObject *)owner, descr);
+            if (type_index < 0) {
+                return -1;
+            }
+            cache->type_index = (uint16_t)type_index;
             _py_set_opcode(instr, LOAD_ATTR_CLASS);
             return 0;
 #ifdef Py_STATS
@@ -1011,6 +1028,45 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
             SPECIALIZATION_FAIL(LOAD_ATTR, load_attr_fail_kind(kind));
             return -1;
     }
+}
+
+/* Returns -1 on no free slot found, and the index if found */
+static int
+set_available_type_method_cache(PyTypeObject *tp, PyObject *meth)
+{
+    int size = tp->_tp_method_cache.size;
+    PyObject **attrs_cache = tp->_tp_method_cache.methods;
+    int idx = 0;
+    bool found = false;
+    /* Linear search. The assumption is that the attrs cache is not very big
+       as most types should have fewer than 100 methods. So a linear search
+       should be okay.
+    */
+    // First search if the method is already in our cache.
+    for (; idx < size; ++idx) {
+        if (attrs_cache[idx] == meth) {
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        assert(idx < size);
+        return (idx == (uint16_t)idx) ? idx : -1;
+    }
+    // If the method is not already in cache, search for an empty spot to place it.
+    idx = 0;
+    for (; idx < size; ++idx) {
+        if (attrs_cache[idx] == NULL) {
+            attrs_cache[idx] = meth;
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        assert(idx < size);
+        return (idx == (uint16_t)idx) ? idx : -1;
+    }
+    return -1;
 }
 
 typedef enum {
@@ -1113,7 +1169,11 @@ PyObject *descr, DescriptorClassification kind)
     *  working since Python 2.6 and it's battle-tested.
     */
     write_u32(cache->type_version, owner_cls->tp_version_tag);
-    write_obj(cache->descr, descr);
+    int type_index = set_available_type_method_cache(owner_cls, descr);
+    if (type_index < 0) {
+        goto fail;
+    }
+   cache->type_index = (uint16_t)type_index;
     return 1;
 fail:
     return 0;

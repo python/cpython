@@ -416,6 +416,11 @@ given type object has a specified feature.
 #define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
 #endif
 
+/* This undocumented flag is set internally by CPython after it has prepared a
+   per-class method cache for the type.
+*/
+#define _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE (1UL << 16)
+
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 

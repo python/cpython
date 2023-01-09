@@ -136,6 +136,11 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
+struct _type_method_cache {
+    int size;
+    PyObject **methods;
+};
+
 // If this structure is modified, Doc/includes/typestruct.h should be updated
 // as well.
 struct _typeobject {
@@ -221,6 +226,8 @@ struct _typeobject {
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
 
+    /* Per-type method cache. UNSTABLE: FOR INTERNAL CPYTHON USE ONLY. */
+    struct _type_method_cache _tp_method_cache;
     /* bitset of which type-watchers care about this type */
     char tp_watched;
 };

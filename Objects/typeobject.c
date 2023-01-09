@@ -4470,6 +4470,11 @@ _PyStaticType_Dealloc(PyTypeObject *type)
         static_builtin_state_clear(type);
         /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
     }
+
+    if (type->tp_flags & _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE) {
+        PyMem_Free(type->_tp_method_cache.methods);
+        type->tp_flags &= ~_Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
+    }
 }
 
 
@@ -4486,6 +4491,11 @@ type_dealloc(PyTypeObject *type)
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
     assert(Py_REFCNT(type) == 0);
     PyObject_ClearWeakRefs((PyObject *)type);
+
+    if (type->tp_flags & _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE) {
+        PyMem_Free(type->_tp_method_cache.methods);
+        type->tp_flags &= ~_Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
+    }
 
     Py_XDECREF(type->tp_base);
     Py_XDECREF(type->tp_dict);
@@ -6861,6 +6871,51 @@ type_ready_managed_dict(PyTypeObject *type)
 }
 
 static int
+type_ready_type_method_cache(PyTypeObject *type)
+{
+    Py_ssize_t attrs = 0;
+    // Heap types, get number of attributes from the shared keys.
+    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        PyHeapTypeObject *et = (PyHeapTypeObject *)type;
+        if (et->ht_cached_keys) {
+            // Add 3 to allow for space for dynamically added methods.
+            attrs = et->ht_cached_keys->dk_nentries + 3;
+        }
+        else {
+            // No ht_cached_keys yet, just guesstimate from tp_dict.
+            attrs = PyDict_Size(type->tp_dict);
+        }
+    }
+    else {
+        // Non-heap types
+        attrs = PyDict_Size(type->tp_dict);
+    }
+    assert(attrs >= 0);
+    if (attrs == 0) {
+        goto refuse;
+    }
+    if (attrs == (int)attrs) {
+        type->_tp_method_cache.size = (int)attrs;
+        PyObject **vector = PyMem_Malloc(attrs * sizeof(PyObject *));
+        if (vector == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        for (int i = 0; i < attrs; ++i) {
+            vector[i] = NULL;
+        }
+        type->_tp_method_cache.methods = vector;
+        type->tp_flags |= _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
+        return 0;
+    }
+    // Else, impossibly big.
+refuse:
+    type->_tp_method_cache.size = 0;
+    type->tp_flags |= _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
+    return 0;
+}
+
+static int
 type_ready_post_checks(PyTypeObject *type)
 {
     // bpo-44263: tp_traverse is required if Py_TPFLAGS_HAVE_GC is set.
@@ -6938,6 +6993,9 @@ type_ready(PyTypeObject *type)
         return -1;
     }
     if (type_ready_managed_dict(type) < 0) {
+        return -1;
+    }
+    if (type_ready_type_method_cache(type) < 0) {
         return -1;
     }
     if (type_ready_post_checks(type) < 0) {
