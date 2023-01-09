@@ -68,7 +68,7 @@ PyDoc_STRVAR(sys_get_int_max_str_digits__doc__,
 "get_int_max_str_digits($module, /)\n"
 "--\n"
 "\n"
-"Set the maximum string digits limit for non-binary int<->str conversions.");
+"Return the maximum string digits limit for non-binary int<->str conversions.");
 
 #define SYS_GET_INT_MAX_STR_DIGITS_METHODDEF    \
     {"get_int_max_str_digits", (PyCFunction)sys_get_int_max_str_digits, METH_NOARGS, sys_get_int_max_str_digits__doc__},
@@ -111,4 +111,4 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c566fcdbb8f6ae2c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5351eba7518cdf76 input=a9049054013a1b77]*/
