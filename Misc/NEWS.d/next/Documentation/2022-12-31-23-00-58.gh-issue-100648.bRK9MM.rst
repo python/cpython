@@ -1,1 +1,0 @@
-Update licence year to 2023 at all necessary places.
