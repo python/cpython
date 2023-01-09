@@ -14,9 +14,12 @@ import shutil
 import threading
 import unittest
 from unittest import mock
-from test.support import (
-    verbose, run_unittest, TESTFN, reap_threads,
-    forget, unlink, rmtree, start_threads)
+from test.support import verbose
+from test.support.import_helper import forget, mock_register_at_fork
+from test.support.os_helper import (TESTFN, unlink, rmtree)
+from test.support import script_helper, threading_helper
+
+threading_helper.requires_working_threading(module=True)
 
 def task(N, done, done_tasks, errors):
     try:
@@ -37,12 +40,6 @@ def task(N, done, done_tasks, errors):
         finished = len(done_tasks) == N
         if finished:
             done.set()
-
-def mock_register_at_fork(func):
-    # bpo-30599: Mock os.register_at_fork() when importing the random module,
-    # since this function doesn't allow to unregister callbacks and would leak
-    # memory.
-    return mock.patch('os.register_at_fork', create=True)(func)
 
 # Create a circular import structure: A -> C -> B -> D -> A
 # NOTE: `time` is already loaded and therefore doesn't threaten to deadlock.
@@ -124,9 +121,9 @@ class ThreadedImportTests(unittest.TestCase):
             done_tasks = []
             done.clear()
             t0 = time.monotonic()
-            with start_threads(threading.Thread(target=task,
-                                                args=(N, done, done_tasks, errors,))
-                               for i in range(N)):
+            with threading_helper.start_threads(
+                    threading.Thread(target=task, args=(N, done, done_tasks, errors,))
+                    for i in range(N)):
                 pass
             completed = done.wait(10 * 60)
             dt = time.monotonic() - t0
@@ -244,20 +241,29 @@ class ThreadedImportTests(unittest.TestCase):
         __import__(TESTFN)
         del sys.modules[TESTFN]
 
+    def test_concurrent_futures_circular_import(self):
+        # Regression test for bpo-43515
+        fn = os.path.join(os.path.dirname(__file__),
+                          'partial', 'cfimport.py')
+        script_helper.assert_python_ok(fn)
 
-@reap_threads
-def test_main():
-    old_switchinterval = None
+    def test_multiprocessing_pool_circular_import(self):
+        # Regression test for bpo-41567
+        fn = os.path.join(os.path.dirname(__file__),
+                          'partial', 'pool_in_threads.py')
+        script_helper.assert_python_ok(fn)
+
+
+def setUpModule():
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
     try:
         old_switchinterval = sys.getswitchinterval()
+        unittest.addModuleCleanup(sys.setswitchinterval, old_switchinterval)
         sys.setswitchinterval(1e-5)
     except AttributeError:
         pass
-    try:
-        run_unittest(ThreadedImportTests)
-    finally:
-        if old_switchinterval is not None:
-            sys.setswitchinterval(old_switchinterval)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

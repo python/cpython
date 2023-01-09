@@ -92,6 +92,12 @@ class TestGetLineIndent(unittest.TestCase):
                 )
 
 
+def insert(text, string):
+    text.delete('1.0', 'end')
+    text.insert('end', string)
+    text.update()  # Force update for colorizer to finish.
+
+
 class IndentAndNewlineTest(unittest.TestCase):
 
     @classmethod
@@ -112,13 +118,6 @@ class IndentAndNewlineTest(unittest.TestCase):
             cls.root.after_cancel(id)
         cls.root.destroy()
         del cls.root
-
-    def insert(self, text):
-        t = self.window.text
-        t.delete('1.0', 'end')
-        t.insert('end', text)
-        # Force update for colorizer to finish.
-        t.update()
 
     def test_indent_and_newline_event(self):
         eq = self.assertEqual
@@ -167,27 +166,45 @@ class IndentAndNewlineTest(unittest.TestCase):
                           '2.end'),
                  )
 
-        w.prompt_last_line = ''
         for test in tests:
             with self.subTest(label=test.label):
-                self.insert(test.text)
+                insert(text, test.text)
                 text.mark_set('insert', test.mark)
                 nl(event=None)
                 eq(get('1.0', 'end'), test.expected)
 
         # Selected text.
-        self.insert('  def f1(self, a, b):\n    return a + b')
+        insert(text, '  def f1(self, a, b):\n    return a + b')
         text.tag_add('sel', '1.17', '1.end')
         nl(None)
         # Deletes selected text before adding new line.
         eq(get('1.0', 'end'), '  def f1(self, a,\n         \n    return a + b\n')
 
-        # Preserves the whitespace in shell prompt.
-        w.prompt_last_line = '>>> '
-        self.insert('>>> \t\ta =')
-        text.mark_set('insert', '1.5')
-        nl(None)
-        eq(get('1.0', 'end'), '>>> \na =\n')
+
+class RMenuTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.window = Editor(root=cls.root)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.window._close()
+        del cls.window
+        cls.root.update_idletasks()
+        for id in cls.root.tk.call('after', 'info'):
+            cls.root.after_cancel(id)
+        cls.root.destroy()
+        del cls.root
+
+    class DummyRMenu:
+        def tk_popup(x, y): pass
+
+    def test_rclick(self):
+        pass
 
 
 if __name__ == '__main__':

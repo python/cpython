@@ -1,0 +1,4 @@
+Add new :opcode:`CALL_INSTRINSIC_1` instruction. Remove
+:opcode:`IMPORT_STAR`, :opcode:`PRINT_EXPR` and
+:opcode:`STOPITERATION_ERROR`, replacing them with the
+:opcode:`CALL_INSTRINSIC_1` instruction.

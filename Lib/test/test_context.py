@@ -6,6 +6,7 @@ import random
 import time
 import unittest
 import weakref
+from test.support import threading_helper
 
 try:
     from _testcapi import hamt
@@ -341,6 +342,7 @@ class ContextTest(unittest.TestCase):
         ctx1.run(ctx1_fun)
 
     @isolated_context
+    @threading_helper.requires_working_threading()
     def test_context_threads_1(self):
         cvar = contextvars.ContextVar('cvar')
 
@@ -357,10 +359,6 @@ class ContextTest(unittest.TestCase):
         finally:
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
-
-    def test_contextvar_getitem(self):
-        clss = contextvars.ContextVar
-        self.assertEqual(clss[str], clss)
 
 
 # HAMT Tests
@@ -536,6 +534,41 @@ class HamtTest(unittest.TestCase):
         self.assertEqual(len(h3), 2)
         self.assertEqual(len(h4), 2)
         self.assertEqual(len(h5), 3)
+
+    def test_hamt_collision_3(self):
+        # Test that iteration works with the deepest tree possible.
+        # https://github.com/python/cpython/issues/93065
+
+        C = HashKey(0b10000000_00000000_00000000_00000000, 'C')
+        D = HashKey(0b10000000_00000000_00000000_00000000, 'D')
+
+        E = HashKey(0b00000000_00000000_00000000_00000000, 'E')
+
+        h = hamt()
+        h = h.set(C, 'C')
+        h = h.set(D, 'D')
+        h = h.set(E, 'E')
+
+        # BitmapNode(size=2 count=1 bitmap=0b1):
+        #   NULL:
+        #     BitmapNode(size=2 count=1 bitmap=0b1):
+        #       NULL:
+        #         BitmapNode(size=2 count=1 bitmap=0b1):
+        #           NULL:
+        #             BitmapNode(size=2 count=1 bitmap=0b1):
+        #               NULL:
+        #                 BitmapNode(size=2 count=1 bitmap=0b1):
+        #                   NULL:
+        #                     BitmapNode(size=2 count=1 bitmap=0b1):
+        #                       NULL:
+        #                         BitmapNode(size=4 count=2 bitmap=0b101):
+        #                           <Key name:E hash:0>: 'E'
+        #                           NULL:
+        #                             CollisionNode(size=4 id=0x107a24520):
+        #                               <Key name:C hash:2147483648>: 'C'
+        #                               <Key name:D hash:2147483648>: 'D'
+
+        self.assertEqual({k.name for k in h.keys()}, {'C', 'D', 'E'})
 
     def test_hamt_stress(self):
         COLLECTION_SIZE = 7000

@@ -568,7 +568,7 @@ Make :func:`asyncio.create_subprocess_exec` accept path-like arguments.
 .. section: Library
 
 Change default *max_workers* of ``ThreadPoolExecutor`` from ``cpu_count() *
-5`` to ``min(32, cpu_count() + 4))``.  Previous value was unreasonably large
+5`` to ``min(32, cpu_count() + 4)``.  Previous value was unreasonably large
 on many cores machines.
 
 ..
@@ -1612,7 +1612,7 @@ versions.
 .. nonce: Zot4sx
 .. section: Documentation
 
-Improve documentation of the stdin, stdout, and stderr arguments of of the
+Improve documentation of the stdin, stdout, and stderr arguments of the
 ``asyncio.subprocess_exec`` function to specify which values are supported.
 Also mention that decoding as text is not supported.
 

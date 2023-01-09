@@ -64,6 +64,9 @@
  *  7. _Py_dg_strtod has been modified so that it doesn't accept strings with
  *     leading whitespace.
  *
+ *  8. A corner case where _Py_dg_dtoa didn't strip trailing zeros has been
+ *     fixed. (bugs.python.org/issue40780)
+ *
  ***************************************************************/
 
 /* Please send bug reports for the original dtoa.c code to David M. Gay (dmg
@@ -115,11 +118,13 @@
 /* Linking of Python's #defines to Gay's #defines starts here. */
 
 #include "Python.h"
-#include "pycore_dtoa.h"
+#include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
+#include "pycore_runtime.h"       // _PyRuntime
+#include <stdlib.h>               // exit()
 
-/* if PY_NO_SHORT_FLOAT_REPR is defined, then don't even try to compile
+/* if _PY_SHORT_FLOAT_REPR == 0, then don't even try to compile
    the following code */
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
 
 #include "float.h"
 
@@ -152,7 +157,7 @@
 #endif
 
 
-typedef uint32_t ULong;
+// ULong is defined in pycore_dtoa.h.
 typedef int32_t Long;
 typedef uint64_t ULLong;
 
@@ -166,12 +171,6 @@ typedef uint64_t ULLong;
 #ifdef DEBUG
 #define Bug(x) {fprintf(stderr, "%s\n", x); exit(1);}
 #endif
-
-#ifndef PRIVATE_MEM
-#define PRIVATE_MEM 2304
-#endif
-#define PRIVATE_mem ((PRIVATE_MEM+sizeof(double)-1)/sizeof(double))
-static double private_mem[PRIVATE_mem], *pmem_next = private_mem;
 
 #ifdef __cplusplus
 extern "C" {
@@ -294,8 +293,6 @@ BCinfo {
 
 #define FFFFFFFF 0xffffffffUL
 
-#define Kmax 7
-
 /* struct Bigint is used to represent arbitrary-precision integers.  These
    integers are stored in sign-magnitude format, with the magnitude stored as
    an array of base 2**32 digits.  Bigints are always normalized: if x is a
@@ -318,13 +315,7 @@ BCinfo {
        significant (x[0]) to most significant (x[wds-1]).
 */
 
-struct
-Bigint {
-    struct Bigint *next;
-    int k, maxwds, sign, wds;
-    ULong x[1];
-};
-
+// struct Bigint is defined in pycore_dtoa.h.
 typedef struct Bigint Bigint;
 
 #ifndef Py_USING_MEMORY_DEBUGGER
@@ -348,7 +339,9 @@ typedef struct Bigint Bigint;
    Bfree to PyMem_Free.  Investigate whether this has any significant
    performance on impact. */
 
-static Bigint *freelist[Kmax+1];
+#define freelist _PyRuntime.dtoa.freelist
+#define private_mem _PyRuntime.dtoa.preallocated
+#define pmem_next _PyRuntime.dtoa.preallocated_next
 
 /* Allocate space for a Bigint with up to 1<<k digits */
 
@@ -359,13 +352,15 @@ Balloc(int k)
     Bigint *rv;
     unsigned int len;
 
-    if (k <= Kmax && (rv = freelist[k]))
+    if (k <= Bigint_Kmax && (rv = freelist[k]))
         freelist[k] = rv->next;
     else {
         x = 1 << k;
         len = (sizeof(Bigint) + (x-1)*sizeof(ULong) + sizeof(double) - 1)
             /sizeof(double);
-        if (k <= Kmax && pmem_next - private_mem + len <= (Py_ssize_t)PRIVATE_mem) {
+        if (k <= Bigint_Kmax &&
+            pmem_next - private_mem + len <= (Py_ssize_t)Bigint_PREALLOC_SIZE
+        ) {
             rv = (Bigint*)pmem_next;
             pmem_next += len;
         }
@@ -387,7 +382,7 @@ static void
 Bfree(Bigint *v)
 {
     if (v) {
-        if (v->k > Kmax)
+        if (v->k > Bigint_Kmax)
             FREE((void*)v);
         else {
             v->next = freelist[v->k];
@@ -395,6 +390,10 @@ Bfree(Bigint *v)
         }
     }
 }
+
+#undef pmem_next
+#undef private_mem
+#undef freelist
 
 #else
 
@@ -674,10 +673,6 @@ mult(Bigint *a, Bigint *b)
 
 #ifndef Py_USING_MEMORY_DEBUGGER
 
-/* p5s is a linked list of powers of 5 of the form 5**(2**i), i >= 2 */
-
-static Bigint *p5s;
-
 /* multiply the Bigint b by 5**k.  Returns a pointer to the result, or NULL on
    failure; if the returned pointer is distinct from b then the original
    Bigint b will have been Bfree'd.   Ignores the sign of b. */
@@ -697,7 +692,7 @@ pow5mult(Bigint *b, int k)
 
     if (!(k >>= 2))
         return b;
-    p5 = p5s;
+    p5 = _PyRuntime.dtoa.p5s;
     if (!p5) {
         /* first time */
         p5 = i2b(625);
@@ -705,7 +700,7 @@ pow5mult(Bigint *b, int k)
             Bfree(b);
             return NULL;
         }
-        p5s = p5;
+        _PyRuntime.dtoa.p5s = p5;
         p5->next = 0;
     }
     for(;;) {
@@ -2563,6 +2558,14 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
                         }
                     ++*s++;
                 }
+                else {
+                    /* Strip trailing zeros. This branch was missing from the
+                       original dtoa.c, leading to surplus trailing zeros in
+                       some cases. See bugs.python.org/issue40780. */
+                    while (s > s0 && s[-1] == '0') {
+                        --s;
+                    }
+                }
                 break;
             }
         }
@@ -2845,4 +2848,4 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
 }
 #endif
 
-#endif  /* PY_NO_SHORT_FLOAT_REPR */
+#endif  // _PY_SHORT_FLOAT_REPR == 1

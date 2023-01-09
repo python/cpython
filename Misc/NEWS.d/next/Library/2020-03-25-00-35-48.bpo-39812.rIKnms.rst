@@ -1,4 +1,0 @@
-Removed daemon threads from :mod:`concurrent.futures` by adding
-an internal `threading._register_atexit()`, which calls registered functions
-prior to joining all non-daemon threads. This allows for compatibility
-with subinterpreters, which don't support daemon threads.

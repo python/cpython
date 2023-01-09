@@ -1,3 +1,0 @@
-``test.bisect_cmd`` now copies Python command line options like ``-O`` or
-``-W``. Moreover, emit a warning if ``test.bisect_cmd`` is used with
-``-w``/``--verbose2`` option.

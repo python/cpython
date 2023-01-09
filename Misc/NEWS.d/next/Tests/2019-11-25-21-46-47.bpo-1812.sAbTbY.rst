@@ -1,2 +1,0 @@
-Fix newline handling in doctest.testfile when loading from a package whose
-loader has a get_data method. Patch by Peter Donis.

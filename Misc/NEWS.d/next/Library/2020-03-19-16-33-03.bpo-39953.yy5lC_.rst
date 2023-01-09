@@ -1,1 +1,0 @@
-Update internal table of OpenSSL error codes in the ``ssl`` module.

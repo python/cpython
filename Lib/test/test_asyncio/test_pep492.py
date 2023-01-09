@@ -43,13 +43,12 @@ class BaseTest(test_utils.TestCase):
 class LockTests(BaseTest):
 
     def test_context_manager_async_with(self):
-        with self.assertWarns(DeprecationWarning):
-            primitives = [
-                asyncio.Lock(loop=self.loop),
-                asyncio.Condition(loop=self.loop),
-                asyncio.Semaphore(loop=self.loop),
-                asyncio.BoundedSemaphore(loop=self.loop),
-            ]
+        primitives = [
+            asyncio.Lock(),
+            asyncio.Condition(),
+            asyncio.Semaphore(),
+            asyncio.BoundedSemaphore(),
+        ]
 
         async def test(lock):
             await asyncio.sleep(0.01)
@@ -66,13 +65,12 @@ class LockTests(BaseTest):
             self.assertFalse(primitive.locked())
 
     def test_context_manager_with_await(self):
-        with self.assertWarns(DeprecationWarning):
-            primitives = [
-                asyncio.Lock(loop=self.loop),
-                asyncio.Condition(loop=self.loop),
-                asyncio.Semaphore(loop=self.loop),
-                asyncio.BoundedSemaphore(loop=self.loop),
-            ]
+        primitives = [
+            asyncio.Lock(),
+            asyncio.Condition(),
+            asyncio.Semaphore(),
+            asyncio.BoundedSemaphore(),
+        ]
 
         async def test(lock):
             await asyncio.sleep(0.01)
@@ -124,20 +122,6 @@ class CoroutineTests(BaseTest):
     def test_iscoroutinefunction(self):
         async def foo(): pass
         self.assertTrue(asyncio.iscoroutinefunction(foo))
-
-    def test_function_returning_awaitable(self):
-        class Awaitable:
-            def __await__(self):
-                return ('spam',)
-
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def func():
-                return Awaitable()
-
-        coro = func()
-        self.assertEqual(coro.send(None), 'spam')
-        coro.close()
 
     def test_async_def_coroutines(self):
         async def bar():
