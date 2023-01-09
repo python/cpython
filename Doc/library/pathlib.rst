@@ -118,16 +118,16 @@ we also call *flavours*:
       >>> PurePath()
       PurePosixPath('.')
 
-   When several absolute paths are given, the last is taken as an anchor
-   (mimicking :func:`os.path.join`'s behaviour)::
+   If a segment is an absolute path, all previous segments are ignored
+   (like :func:`os.path.join`)::
 
       >>> PurePath('/etc', '/usr', 'lib64')
       PurePosixPath('/usr/lib64')
       >>> PureWindowsPath('c:/Windows', 'd:bar')
       PureWindowsPath('d:bar')
 
-   However, in a Windows path, changing the local root doesn't discard the
-   previous drive setting::
+   On Windows, the drive is not reset when a rooted relative path
+   segment (e.g., ``r'\foo'``) is encountered::
 
       >>> PureWindowsPath('c:/Windows', '/Program Files')
       PureWindowsPath('c:/Program Files')
@@ -212,7 +212,10 @@ Paths of a different flavour compare unequal and cannot be ordered::
 Operators
 ^^^^^^^^^
 
-The slash operator helps create child paths, similarly to :func:`os.path.join`::
+The slash operator helps create child paths, like :func:`os.path.join`.
+If the argument is an absolute path, the previous path is ignored.
+On Windows, the drive is not reset when the argument is a rooted
+relative path (e.g., ``r'\foo'``)::
 
    >>> p = PurePath('/etc')
    >>> p
@@ -222,6 +225,10 @@ The slash operator helps create child paths, similarly to :func:`os.path.join`::
    >>> q = PurePath('bin')
    >>> '/usr' / q
    PurePosixPath('/usr/bin')
+   >>> p / '/an_absolute_path'
+   PurePosixPath('/an_absolute_path')
+   >>> PureWindowsPath('c:/Windows', '/Program Files')
+   PureWindowsPath('c:/Program Files')
 
 A path object can be used anywhere an object implementing :class:`os.PathLike`
 is accepted::

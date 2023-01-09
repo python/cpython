@@ -26,7 +26,7 @@ except ImportError:
 class _BaseFlavourTest(object):
 
     def _check_parse_parts(self, arg, expected):
-        f = self.flavour.parse_parts
+        f = self.cls._parse_parts
         sep = self.flavour.sep
         altsep = self.flavour.altsep
         actual = f([x.replace('/', sep) for x in arg])
@@ -65,7 +65,8 @@ class _BaseFlavourTest(object):
 
 
 class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
-    flavour = pathlib._posix_flavour
+    cls = pathlib.PurePosixPath
+    flavour = pathlib.PurePosixPath._flavour
 
     def test_parse_parts(self):
         check = self._check_parse_parts
@@ -80,7 +81,7 @@ class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['\\a'],                  ('', '', ['\\a']))
 
     def test_splitroot(self):
-        f = self.flavour.splitroot
+        f = self.cls._split_root
         self.assertEqual(f(''), ('', '', ''))
         self.assertEqual(f('a'), ('', '', 'a'))
         self.assertEqual(f('a/b'), ('', '', 'a/b'))
@@ -101,7 +102,8 @@ class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
 
 
 class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
-    flavour = pathlib._windows_flavour
+    cls = pathlib.PureWindowsPath
+    flavour = pathlib.PureWindowsPath._flavour
 
     def test_parse_parts(self):
         check = self._check_parse_parts
@@ -142,7 +144,7 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['c:/a/b', 'c:/x/y'], ('c:', '\\', ['c:\\', 'x', 'y']))
 
     def test_splitroot(self):
-        f = self.flavour.splitroot
+        f = self.cls._split_root
         self.assertEqual(f(''), ('', '', ''))
         self.assertEqual(f('a'), ('', '', 'a'))
         self.assertEqual(f('a\\b'), ('', '', 'a\\b'))
@@ -151,19 +153,12 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         self.assertEqual(f('c:a\\b'), ('c:', '', 'a\\b'))
         self.assertEqual(f('c:\\a\\b'), ('c:', '\\', 'a\\b'))
         # Redundant slashes in the root are collapsed.
-        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
-        self.assertEqual(f('\\\\\\a/b'), ('', '\\', 'a/b'))
         self.assertEqual(f('c:\\\\a'), ('c:', '\\', 'a'))
         self.assertEqual(f('c:\\\\\\a/b'), ('c:', '\\', 'a/b'))
         # Valid UNC paths.
         self.assertEqual(f('\\\\a\\b'), ('\\\\a\\b', '\\', ''))
         self.assertEqual(f('\\\\a\\b\\'), ('\\\\a\\b', '\\', ''))
         self.assertEqual(f('\\\\a\\b\\c\\d'), ('\\\\a\\b', '\\', 'c\\d'))
-        # These are non-UNC paths (according to ntpath.py and test_ntpath).
-        # However, command.com says such paths are invalid, so it's
-        # difficult to know what the right semantics are.
-        self.assertEqual(f('\\\\\\a\\b'), ('', '\\', 'a\\b'))
-        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
 
 
 #
@@ -182,8 +177,7 @@ class _BasePurePathTest(object):
             ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
             ],
         '/b/c/d': [
-            ('a', '/b/c', 'd'), ('a', '///b//c', 'd/'),
-            ('/a', '/b/c', 'd'),
+            ('a', '/b/c', 'd'), ('/a', '/b/c', 'd'),
             # Empty components get removed.
             ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
             ],
@@ -291,19 +285,26 @@ class _BasePurePathTest(object):
 
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            p = self.cls(pathstr)
-            clsname = p.__class__.__name__
-            r = repr(p)
-            # The repr() is in the form ClassName("forward-slashes path").
-            self.assertTrue(r.startswith(clsname + '('), r)
-            self.assertTrue(r.endswith(')'), r)
-            inner = r[len(clsname) + 1 : -1]
-            self.assertEqual(eval(inner), p.as_posix())
-            # The repr() roundtrips.
-            q = eval(r, pathlib.__dict__)
-            self.assertIs(q.__class__, p.__class__)
-            self.assertEqual(q, p)
-            self.assertEqual(repr(q), r)
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                clsname = p.__class__.__name__
+                r = repr(p)
+                # The repr() is in the form ClassName("forward-slashes path").
+                self.assertTrue(r.startswith(clsname + '('), r)
+                self.assertTrue(r.endswith(')'), r)
+                inner = r[len(clsname) + 1 : -1]
+                self.assertEqual(eval(inner), p.as_posix())
+
+    def test_repr_roundtrips(self):
+        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                r = repr(p)
+                # The repr() roundtrips.
+                q = eval(r, pathlib.__dict__)
+                self.assertIs(q.__class__, p.__class__)
+                self.assertEqual(q, p)
+                self.assertEqual(repr(q), r)
 
     def test_eq_common(self):
         P = self.cls
@@ -2412,9 +2413,9 @@ class _BasePathTest(object):
     def test_is_junction(self):
         P = self.cls(BASE)
 
-        with mock.patch.object(P._flavour, 'pathmod'):
-            self.assertEqual(P.is_junction(), P._flavour.pathmod.isjunction.return_value)
-            P._flavour.pathmod.isjunction.assert_called_once_with(P)
+        with mock.patch.object(P._flavour, 'isjunction'):
+            self.assertEqual(P.is_junction(), P._flavour.isjunction.return_value)
+            P._flavour.isjunction.assert_called_once_with(P)
 
     def test_is_fifo_false(self):
         P = self.cls(BASE)
@@ -3070,6 +3071,22 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             # bpo-38883: ignore `HOME` when set on windows
             env['HOME'] = 'C:\\Users\\eve'
             check()
+
+
+class PurePathSubclassTest(_BasePurePathTest, unittest.TestCase):
+    class cls(pathlib.PurePath):
+        pass
+
+    # repr() roundtripping is not supported in custom subclass.
+    test_repr_roundtrips = None
+
+
+class PathSubclassTest(_BasePathTest, unittest.TestCase):
+    class cls(pathlib.Path):
+        pass
+
+    # repr() roundtripping is not supported in custom subclass.
+    test_repr_roundtrips = None
 
 
 class CompatiblePathTest(unittest.TestCase):

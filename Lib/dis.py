@@ -666,7 +666,6 @@ def _find_imports(co):
     the corresponding args to __import__.
     """
     IMPORT_NAME = opmap['IMPORT_NAME']
-    LOAD_CONST = opmap['LOAD_CONST']
 
     consts = co.co_consts
     names = co.co_names

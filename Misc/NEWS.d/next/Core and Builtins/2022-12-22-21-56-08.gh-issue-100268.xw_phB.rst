@@ -1,0 +1,1 @@
+Add :meth:`int.is_integer` to improve duck type compatibility between :class:`int` and :class:`float`.

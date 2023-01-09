@@ -182,6 +182,13 @@ Other Language Changes
   arguments of any type instead of just :class:`bool` and :class:`int`.
   (Contributed by Serhiy Storchaka in :gh:`60203`.)
 
+* Variables used in the target part of comprehensions that are not stored to
+  can now be used in assignment expressions (``:=``).
+  For example, in ``[(b := 1) for a, b.prop in some_iter]``, the assignment to
+  ``b`` is now allowed. Note that assigning to variables stored to in the target
+  part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
+  (Contributed by Nikita Sobolev in :gh:`100581`.)
+
 
 New Modules
 ===========
@@ -225,6 +232,9 @@ asyncio
   a custom event loop factory.
   (Contributed by Kumar Aditya in :gh:`99388`.)
 
+* Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
+  (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
+
 inspect
 -------
 
@@ -258,6 +268,12 @@ dis
   but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
+
+math
+----
+
+* Added :func:`math.sumprod` for computing a sum of products.
+  (Contributed by Raymond Hettinger in :gh:`100485`.)
 
 os
 --
@@ -628,9 +644,11 @@ Removed
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
   (Contributed by Julien Palard in :gh:`98179`.)
 
-* Remove the *keyfile*, *certfile* and *check_hostname* parameters, deprecated
-  since Python 3.6, in modules: :mod:`ftplib`, :mod:`http.client`,
-  :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib`. Use the *context* parameter
+* Remove the *keyfile* and *certfile* parameters from the
+  :mod:`ftplib`, :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib` modules,
+  and the *key_file*, *cert_file* and *check_hostname* parameters from the
+  :mod:`http.client` module,
+  all deprecated since Python 3.6. Use the *context* parameter
   (*ssl_context* in :mod:`imaplib`) instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
@@ -936,7 +954,7 @@ Removed
   internals.
   (Contributed by Victor Stinner in :gh:`92651`.)
 
-* Leagcy Unicode APIs has been removed. See :pep:`623` for detail.
+* Legacy Unicode APIs has been removed. See :pep:`623` for detail.
 
    * :c:macro:`PyUnicode_WCHAR_KIND`
    * :c:func:`PyUnicode_AS_UNICODE`
@@ -951,6 +969,9 @@ Removed
 * Remove the ``PyUnicode_InternImmortal()`` function and the
   ``SSTATE_INTERNED_IMMORTAL`` macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
+
+* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
+  (Contributed by Nikita Sobolev in :gh:`99482`.)
 
 * Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
   from :mod:`ctypes` module.
