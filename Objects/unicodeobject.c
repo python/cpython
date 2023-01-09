@@ -1528,6 +1528,14 @@ unicode_dealloc(PyObject *unicode)
         _Py_FatalRefcountError("deallocating an Unicode singleton");
     }
 #endif
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref NotImplemented out of existence. Instead,
+     * since None is an immortal object, re-set the reference count.
+     */
+    if (PyUnicode_CHECK_INTERNED(unicode)) {
+        _Py_SetImmortal(unicode);
+        return;
+    }
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyObject_Free(_PyUnicode_UTF8(unicode));
     }

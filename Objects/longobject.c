@@ -3318,6 +3318,16 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+static void
+long_dealloc(PyObject *self)
+{
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref NotImplemented out of existence. Instead,
+     * since None is an immortal object, re-set the reference count.
+     */
+    _Py_SetImmortal(self);
+}
+
 static Py_hash_t
 long_hash(PyLongObject *v)
 {
@@ -6283,7 +6293,7 @@ PyTypeObject PyLong_Type = {
     "int",                                      /* tp_name */
     offsetof(PyLongObject, ob_digit),           /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    0,                                          /* tp_dealloc */
+    long_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

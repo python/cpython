@@ -1768,13 +1768,14 @@ notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_RETURN_NOTIMPLEMENTED;
 }
 
-static void _Py_NO_RETURN
-notimplemented_dealloc(PyObject* ignore)
+static void
+notimplemented_dealloc(PyObject *none)
 {
     /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref NotImplemented out of existence.
+     * we accidentally decref NotImplemented out of existence. Instead,
+     * since None is an immortal object, re-set the reference count.
      */
-    Py_FatalError("deallocating NotImplemented");
+    _Py_SetImmortal(none);
 }
 
 static int
