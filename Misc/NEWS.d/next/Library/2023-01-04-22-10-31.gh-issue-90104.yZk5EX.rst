@@ -1,0 +1,1 @@
+Avoid RecursionError on ``repr`` if a dataclass field definition has a cyclic reference.
