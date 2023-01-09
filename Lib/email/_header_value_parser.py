@@ -949,6 +949,7 @@ class _InvalidEwError(errors.HeaderParseError):
 # up other parse trees.  Maybe should have  tests for that, too.
 DOT = ValueTerminal('.', 'dot')
 ListSeparator = ValueTerminal(',', 'list-separator')
+ListSeparator.as_ew_allowed = False
 RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
 #
