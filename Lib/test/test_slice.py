@@ -252,7 +252,7 @@ class SliceTest(unittest.TestCase):
         c = copy.copy(s)
         self.assertIs(s, c)
 
-        # Corner case for mutable indicies:
+        # Corner case for mutable indices:
         s = slice([1, 2], [3, 4], [5, 6])
         c = copy.copy(s)
         self.assertIs(s, c)
@@ -271,7 +271,7 @@ class SliceTest(unittest.TestCase):
         self.assertIsNot(s, c)
         self.assertEqual(s, c)
 
-        # Corner case for mutable indicies:
+        # Corner case for mutable indices:
         s = slice([1, 2], [3, 4], [5, 6])
         c = copy.deepcopy(s)
         self.assertIsNot(s, c)
