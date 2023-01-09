@@ -253,6 +253,11 @@ dis
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
+netrc
+-----
+
+* Change the default file name for netrc to _netrc on Windows
+
 os
 --
 
