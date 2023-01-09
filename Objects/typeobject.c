@@ -6873,28 +6873,12 @@ type_ready_managed_dict(PyTypeObject *type)
 static int
 type_ready_type_method_cache(PyTypeObject *type)
 {
-    Py_ssize_t attrs = 0;
-    // Heap types, get number of attributes from the shared keys.
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        PyHeapTypeObject *et = (PyHeapTypeObject *)type;
-        if (et->ht_cached_keys) {
-            // Add 3 to allow for space for dynamically added methods.
-            attrs = et->ht_cached_keys->dk_nentries + 3;
-        }
-        else {
-            // No ht_cached_keys yet, just guesstimate from tp_dict.
-            attrs = PyDict_Size(type->tp_dict);
-        }
-    }
-    else {
-        // Non-heap types
-        attrs = PyDict_Size(type->tp_dict);
-    }
+    Py_ssize_t attrs = PyDict_Size(type->tp_dict);
     assert(attrs >= 0);
     if (attrs == 0) {
         goto refuse;
     }
-    if (attrs == (int)attrs) {
+    if (attrs == (uint16_t)attrs) {
         type->_tp_method_cache.size = (int)attrs;
         PyObject **vector = PyMem_Malloc(attrs * sizeof(PyObject *));
         if (vector == NULL) {
