@@ -3325,7 +3325,15 @@ long_dealloc(PyObject *self)
      * we accidentally decref NotImplemented out of existence. Instead,
      * since None is an immortal object, re-set the reference count.
      */
-    _Py_SetImmortal(self);
+    PyLongObject *pylong = (PyLongObject*)self;
+    if (pylong && IS_MEDIUM_VALUE(pylong)) {
+        stwodigits ival = medium_value(pylong);
+        if (IS_SMALL_INT(ival)) {
+            _Py_SetImmortal(self);
+            return;
+        }
+    }
+    Py_TYPE(self)->tp_free(self);
 }
 
 static Py_hash_t
