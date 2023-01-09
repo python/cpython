@@ -650,7 +650,7 @@ parseCommandLine(SearchInfo *search)
                 search->help = true;
                 // Do not update restOfCmdLine so that we trigger the help
                 // message from whichever interpreter we select
-            } else if (STARTSWITH(L"0v") || STARTSWITH(L"-version-launcher")) {
+            } else if (MATCHES(L"0v") || MATCHES(L"-version-launcher")) {
                 search->versionLauncher = true;
             }
         }
