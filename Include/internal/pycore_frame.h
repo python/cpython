@@ -167,7 +167,7 @@ _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 }
 
 static inline _PyInterpreterFrame *
-_PyFrame_GetComplete(_PyInterpreterFrame *frame)
+_PyFrame_GetFirstComplete(_PyInterpreterFrame *frame)
 {
     while (frame && _PyFrame_IsIncomplete(frame)) {
         frame = frame->previous;
@@ -178,7 +178,7 @@ _PyFrame_GetComplete(_PyInterpreterFrame *frame)
 static inline _PyInterpreterFrame *
 _PyThreadState_GetFrame(PyThreadState *tstate)
 {
-    return _PyFrame_GetComplete(tstate->cframe->current_frame);
+    return _PyFrame_GetFirstComplete(tstate->cframe->current_frame);
 }
 
 /* For use by _PyFrame_GetFrameObject

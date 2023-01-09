@@ -1428,7 +1428,7 @@ _PyThread_CurrentFrames(void)
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
             _PyInterpreterFrame *frame = t->cframe->current_frame;
-            frame = _PyFrame_GetComplete(frame);
+            frame = _PyFrame_GetFirstComplete(frame);
             if (frame == NULL) {
                 continue;
             }

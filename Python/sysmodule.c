@@ -1884,7 +1884,7 @@ sys__getframe_impl(PyObject *module, int depth)
 
     if (frame != NULL) {
         while (depth > 0) {
-            frame = _PyFrame_GetComplete(frame->previous);
+            frame = _PyFrame_GetFirstComplete(frame->previous);
             if (frame == NULL) {
                 break;
             }

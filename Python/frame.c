@@ -96,7 +96,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     }
     assert(!_PyFrame_IsIncomplete(frame));
     assert(f->f_back == NULL);
-    _PyInterpreterFrame *prev = _PyFrame_GetComplete(frame->previous);
+    _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
     frame->previous = NULL;
     if (prev) {
         assert(prev->owner != FRAME_OWNED_BY_CSTACK);
