@@ -2022,7 +2022,7 @@ def get_address_list(value):
             address_list.defects.append(errors.InvalidHeaderDefect(
                 "invalid address in address-list"))
         if value:  # Must be a , at this point.
-            address_list.append(ValueTerminal(',', 'list-separator'))
+            address_list.append(ListSeparator)
             value = value[1:]
     return address_list, value
 
