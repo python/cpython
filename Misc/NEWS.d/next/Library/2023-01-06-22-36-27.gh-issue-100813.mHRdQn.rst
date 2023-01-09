@@ -1,1 +1,1 @@
-Add IPv4 socket option constant IP_PKTINFO as socket module attribute.
+Add :data:`socket.IP_PKTINFO` constant.
