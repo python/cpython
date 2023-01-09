@@ -133,14 +133,16 @@ class Instruction:
     cache_effects: list[parser.CacheEffect]
     input_effects: list[StackEffect]
     output_effects: list[StackEffect]
-    # Parallel to input_effects
+    unmoved_names: frozenset[str]
+    instr_fmt: str
+
+    # Parallel to input_effects; set later
     input_registers: list[str] = dataclasses.field(repr=False)
     output_registers: list[str] = dataclasses.field(repr=False)
 
     # Set later
     family: parser.Family | None = None
     predicted: bool = False
-    unmoved_names: frozenset[str] = frozenset()
 
     def __init__(self, inst: parser.InstDef):
         self.inst = inst
@@ -165,6 +167,16 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
+        if self.register:
+            fmt = "IBBB"
+        else:
+            fmt = "IB"
+        cache = "C"
+        for ce in self.cache_effects:
+            for _ in range(ce.size):
+                fmt += cache
+                cache = "0"
+        self.instr_fmt = fmt
 
     def analyze_registers(self, a: "Analyzer") -> None:
         regs = iter(("REG(oparg1)", "REG(oparg2)", "REG(oparg3)"))
@@ -327,6 +339,7 @@ class SuperOrMacroInstruction:
     stack: list[StackEffect]
     initial_sp: int
     final_sp: int
+    instr_fmt: str
 
 
 @dataclasses.dataclass
@@ -343,6 +356,9 @@ class MacroInstruction(SuperOrMacroInstruction):
 
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
+
+
+INSTR_FMT_PREFIX = "INSTR_FMT_"
 
 
 class Analyzer:
@@ -529,28 +545,39 @@ class Analyzer:
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
         parts: list[Component] = []
+        format = ""
         for instr in components:
             part, sp = self.analyze_instruction(instr, stack, sp)
             parts.append(part)
+            format += instr.instr_fmt
         final_sp = sp
-        return SuperInstruction(super.name, stack, initial_sp, final_sp, super, parts)
+        return SuperInstruction(super.name, stack, initial_sp, final_sp, format, super, parts)
 
     def analyze_macro(self, macro: parser.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
         parts: list[Component | parser.CacheEffect] = []
+        format = "IB"  # Macros don't support register instructions yet
+        cache = "C"
         for component in components:
             match component:
                 case parser.CacheEffect() as ceffect:
                     parts.append(ceffect)
+                    for _ in range(ceffect.size):
+                        format += cache
+                        cache = "0"
                 case Instruction() as instr:
                     part, sp = self.analyze_instruction(instr, stack, sp)
                     parts.append(part)
+                    for ce in instr.cache_effects:
+                        for _ in range(ce.size):
+                            format += cache
+                            cache = "0"
                 case _:
                     typing.assert_never(component)
         final_sp = sp
-        return MacroInstruction(macro.name, stack, initial_sp, final_sp, macro, parts)
+        return MacroInstruction(macro.name, stack, initial_sp, final_sp, format, macro, parts)
 
     def analyze_instruction(
         self, instr: Instruction, stack: list[StackEffect], sp: int
@@ -622,6 +649,23 @@ class Analyzer:
 
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
+
+        # Compute the set of all instruction formats.
+        all_formats: set[str] = set()
+        for thing in self.everything:
+            match thing:
+                case parser.InstDef():
+                    format = self.instrs[thing.name].instr_fmt
+                case parser.Super():
+                    format = self.super_instrs[thing.name].instr_fmt
+                case parser.Macro():
+                    format = self.macro_instrs[thing.name].instr_fmt
+                case _:
+                    typing.assert_never(thing)
+            all_formats.add(format)
+        # Turn it into a list of enum definitions.
+        format_enums = [INSTR_FMT_PREFIX + format for format in sorted(all_formats)]
+
         with open(self.output_filename, "w") as f:
             # Write provenance header
             f.write(
@@ -635,6 +679,7 @@ class Analyzer:
 
             # Write variable definition
             self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
+            self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
             self.out.emit("static const struct {")
             with self.out.indent():
                 self.out.emit("short n_popped;")
@@ -643,7 +688,7 @@ class Analyzer:
                 self.out.emit("enum Direction dir_op2;")
                 self.out.emit("enum Direction dir_op3;")
                 self.out.emit("bool valid_entry;")
-                self.out.emit("char instr_format[10];")
+                self.out.emit("enum InstructionFormat instr_format;")
             self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
@@ -662,46 +707,6 @@ class Analyzer:
             # Write end of array
             self.out.emit("};")
 
-    def get_format(self, thing: Instruction | SuperInstruction | MacroInstruction) -> str:
-        """Get the format string for a single instruction."""
-        def instr_format(instr: Instruction) -> str:
-            if instr.register:
-                fmt = "IBBB"
-            else:
-                fmt = "IB"
-            cache = "C"
-            for ce in instr.cache_effects:
-                for _ in range(ce.size):
-                    fmt += cache
-                    cache = "0"
-            return fmt
-        match thing:
-            case Instruction():
-                format = instr_format(thing)
-            case SuperInstruction():
-                format = ""
-                for part in thing.parts:
-                    format += instr_format(part.instr)
-            case MacroInstruction():
-                # Macros don't support register instructions yet
-                format = "IB"
-                cache = "C"
-                for part in thing.parts:
-                    if isinstance(part, parser.CacheEffect):
-                        for _ in range(part.size):
-                            format += cache
-                            cache = "0"
-                    else:
-                        assert isinstance(part, Component)
-                        for ce in part.instr.cache_effects:
-                            for _ in range(ce.size):
-                                format += cache
-                                cache = "0"
-            case _:
-                typing.assert_never(thing)
-        assert len(format) < 10  # Else update the size of instr_format above
-        return format
-
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
@@ -717,9 +722,8 @@ class Analyzer:
                 directions.extend("DIR_WRITE" for _ in instr.output_effects)
                 directions.extend("DIR_NONE" for _ in range(3))
                 dir_op1, dir_op2, dir_op3 = directions[:3]
-        format = self.get_format(instr)
         self.out.emit(
-            f'    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, "{format}" }},'
+            f'    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},'
         )
 
     def write_metadata_for_super(self, sup: SuperInstruction) -> None:
@@ -727,9 +731,8 @@ class Analyzer:
         n_popped = sum(len(comp.instr.input_effects) for comp in sup.parts)
         n_pushed = sum(len(comp.instr.output_effects) for comp in sup.parts)
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
-        format = self.get_format(sup)
         self.out.emit(
-            f'    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, "{format}" }},'
+            f'    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},'
         )
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
@@ -738,9 +741,8 @@ class Analyzer:
         n_popped = sum(len(comp.instr.input_effects) for comp in parts)
         n_pushed = sum(len(comp.instr.output_effects) for comp in parts)
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
-        format = self.get_format(mac)
         self.out.emit(
-            f'    [{mac.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, "{format}" }},'
+            f'    [{mac.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},'
         )
 
     def write_instructions(self) -> None:
