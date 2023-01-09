@@ -679,6 +679,7 @@ class Analyzer:
             match thing:
                 case Instruction() as instr:
                     if any(eff.size for eff in instr.input_effects + instr.output_effects):
+                        # TODO: Eventually this will be needed, at least for macros.
                         self.error(
                             f"Instruction {instr.name!r} has variable-sized stack effect, "
                             "which are not supported in super- or macro instructions",
@@ -792,8 +793,11 @@ class Analyzer:
             n_popped = n_pushed = -1
             assert not instr.register
         else:
-            n_popped = len(instr.input_effects)
-            n_pushed = len(instr.output_effects)
+            n_popped, sym_popped = list_effect_size(instr.input_effects)
+            n_pushed, sym_pushed = list_effect_size(instr.output_effects)
+            if sym_popped or sym_pushed:
+                # TODO: Record symbolic effects (how?)
+                n_popped = n_pushed = -1
             if instr.register:
                 directions: list[str] = []
                 directions.extend("DIR_READ" for _ in instr.input_effects)
