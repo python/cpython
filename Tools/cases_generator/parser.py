@@ -231,7 +231,7 @@ class Parser(PLexer):
     @contextual
     def stack_effect(self) -> StackEffect | None:
         # IDENTIFIER [':' IDENTIFIER]
-        # TODO: Arrays, conditions
+        # TODO: Conditions
         if tkn := self.expect(lx.IDENTIFIER):
             if self.expect(lx.COLON):
                 typ = self.require(lx.IDENTIFIER)
