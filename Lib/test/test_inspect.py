@@ -96,17 +96,20 @@ class IsTestBase(unittest.TestCase):
                       inspect.isgenerator, inspect.isgeneratorfunction,
                       inspect.iscoroutine, inspect.iscoroutinefunction,
                       inspect.isasyncgen, inspect.isasyncgenfunction,
-                      inspect.ismethodwrapper])
+                      inspect.ismethodwrapper, inspect.ishashable])
 
     def istest(self, predicate, exp):
         obj = eval(exp)
         self.assertTrue(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
-
         for other in self.predicates - set([predicate]):
             if (predicate == inspect.isgeneratorfunction or \
                predicate == inspect.isasyncgenfunction or \
                predicate == inspect.iscoroutinefunction) and \
                other == inspect.isfunction:
+                continue
+            if other == inspect.ishashable and (
+                type(obj).__name__ in ["code", "frame", "traceback", "builtin_function_or_method", "type"]
+                ):
                 continue
             self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 

@@ -125,6 +125,7 @@ __all__ = [
     "ismodule",
     "isroutine",
     "istraceback",
+    "ishashable",
     "markcoroutinefunction",
     "signature",
     "stack",
@@ -292,6 +293,10 @@ def isclass(object):
 def ismethod(object):
     """Return true if the object is an instance method."""
     return isinstance(object, types.MethodType)
+
+def ishashable(object):
+    """Return true if the object is hashable."""
+    return isinstance(object, collections.abc.Hashable)
 
 def ismethoddescriptor(object):
     """Return true if the object is a method descriptor.
