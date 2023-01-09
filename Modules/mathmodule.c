@@ -68,6 +68,7 @@ raised for division by zero and mod by zero.
 #include <float.h>
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
 #include "_math.h"
+#include <stdbool.h>
 
 #include "clinic/mathmodule.c.h"
 
@@ -1357,30 +1358,30 @@ FUNC1(tanh, tanh, 0,
    Dickinson's post at <http://bugs.python.org/file10357/msum4.py>.
    See those links for more details, proofs and other references.
 
-   Note 1: IEEE 754R floating point semantics are assumed,
-   but the current implementation does not re-establish special
-   value semantics across iterations (i.e. handling -Inf + Inf).
+   Note 1: IEEE 754 floating-point semantics with a rounding mode of
+   roundTiesToEven are assumed.
 
-   Note 2:  No provision is made for intermediate overflow handling;
-   therefore, sum([1e+308, 1e-308, 1e+308]) returns 1e+308 while
-   sum([1e+308, 1e+308, 1e-308]) raises an OverflowError due to the
+   Note 2: No provision is made for intermediate overflow handling;
+   therefore, fsum([1e+308, -1e+308, 1e+308]) returns 1e+308 while
+   fsum([1e+308, 1e+308, -1e+308]) raises an OverflowError due to the
    overflow of the first partial sum.
 
-   Note 3: The intermediate values lo, yr, and hi are declared volatile so
-   aggressive compilers won't algebraically reduce lo to always be exactly 0.0.
-   Also, the volatile declaration forces the values to be stored in memory as
-   regular doubles instead of extended long precision (80-bit) values.  This
-   prevents double rounding because any addition or subtraction of two doubles
-   can be resolved exactly into double-sized hi and lo values.  As long as the
-   hi value gets forced into a double before yr and lo are computed, the extra
-   bits in downstream extended precision operations (x87 for example) will be
-   exactly zero and therefore can be losslessly stored back into a double,
-   thereby preventing double rounding.
+   Note 3: The algorithm has two potential sources of fragility. First, C
+   permits arithmetic operations on `double`s to be performed in an
+   intermediate format whose range and precision may be greater than those of
+   `double` (see for example C99 §5.2.4.2.2, paragraph 8). This can happen for
+   example on machines using the now largely historical x87 FPUs. In this case,
+   `fsum` can produce incorrect results. If `FLT_EVAL_METHOD` is `0` or `1`, or
+   `FLT_EVAL_METHOD` is `2` and `long double` is identical to `double`, then we
+   should be safe from this source of errors. Second, an aggressively
+   optimizing compiler can re-associate operations so that (for example) the
+   statement `yr = hi - x;` is treated as `yr = (x + y) - x` and then
+   re-associated as `yr = y + (x - x)`, giving `y = yr` and `lo = 0.0`. That
+   re-association would be in violation of the C standard, and should not occur
+   except possibly in the presence of unsafe optimizations (e.g., -ffast-math,
+   -fassociative-math). Such optimizations should be avoided for this module.
 
-   Note 4: A similar implementation is in Modules/cmathmodule.c.
-   Be sure to update both when making changes.
-
-   Note 5: The signature of math.fsum() differs from builtins.sum()
+   Note 4: The signature of math.fsum() differs from builtins.sum()
    because the start argument doesn't make sense in the context of
    accurate summation.  Since the partials table is collapsed before
    returning a result, sum(seq2, start=sum(seq1)) may not equal the
@@ -1466,7 +1467,7 @@ math_fsum(PyObject *module, PyObject *seq)
     Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
     double x, y, t, ps[NUM_PARTIALS], *p = ps;
     double xsave, special_sum = 0.0, inf_sum = 0.0;
-    volatile double hi, yr, lo;
+    double hi, yr, lo;
 
     iter = PyObject_GetIter(seq);
     if (iter == NULL)
@@ -2819,6 +2820,341 @@ For example, the hypotenuse of a 3/4/5 right triangle is:\n\
     5.0\n\
 ");
 
+/** sumprod() ***************************************************************/
+
+/* Forward declaration */
+static inline int _check_long_mult_overflow(long a, long b);
+
+static inline bool
+long_add_would_overflow(long a, long b)
+{
+    return (a > 0) ? (b > LONG_MAX - a) : (b < LONG_MIN - a);
+}
+
+/*
+Double and triple length extended precision floating point arithmetic
+based on ideas from three sources:
+
+  Improved Kahan–Babuška algorithm by Arnold Neumaier
+  https://www.mat.univie.ac.at/~neum/scan/01.pdf
+
+  A Floating-Point Technique for Extending the Available Precision
+  by T. J. Dekker
+  https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+
+  Ultimately Fast Accurate Summation by Siegfried M. Rump
+  https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
+
+Double length functions:
+* dl_split() exact split of a C double into two half precision components.
+* dl_mul() exact multiplication of two C doubles.
+
+Triple length functions and constant:
+* tl_zero is a triple length zero for starting or resetting an accumulation.
+* tl_add() compensated addition of a C double to a triple length number.
+* tl_fma() performs a triple length fused-multiply-add.
+* tl_to_d() converts from triple length number back to a C double.
+
+*/
+
+typedef struct{ double hi; double lo; } DoubleLength;
+typedef struct{ double hi; double lo; double tiny; } TripleLength;
+
+static const TripleLength tl_zero = {0.0, 0.0, 0.0};
+
+static inline DoubleLength
+twosum(double a, double b)
+{
+    double s = a + b;
+    double ap = s - b;
+    double bp = s - a;
+    double da = a - ap;
+    double db = b - bp;
+    double t = da + db;
+    return  (DoubleLength) {s, t};
+}
+
+static inline TripleLength
+tl_add(TripleLength total, double x)
+{
+    /* Input:       x     total.hi   total.lo    total.tiny
+                   |--- twosum ---|
+                    s.hi      s.lo
+                             |--- twosum ---|
+                              t.hi      t.lo
+                                       |--- single sum ---|
+       Output:      s.hi     t.hi       tiny
+     */
+    DoubleLength s = twosum(x, total.hi);
+    DoubleLength t = twosum(s.lo, total.lo);
+    return (TripleLength) {s.hi, t.hi, t.lo + total.tiny};
+}
+
+static inline DoubleLength
+dl_split(double x) {
+    double t = x * 134217729.0;  /* Veltkamp constant = float(0x8000001) */
+    double hi = t - (t - x);
+    double lo = x - hi;
+    return (DoubleLength) {hi, lo};
+}
+
+static inline DoubleLength
+dl_mul(double x, double y)
+{
+    /* Dekker mul12().  Section (5.12) */
+    DoubleLength xx = dl_split(x);
+    DoubleLength yy = dl_split(y);
+    double p = xx.hi * yy.hi;
+    double q = xx.hi * yy.lo + xx.lo * yy.hi;
+    double z = p + q;
+    double zz = p - z + q + xx.lo * yy.lo;
+    return (DoubleLength) {z, zz};
+}
+
+static inline TripleLength
+tl_fma(TripleLength total, double p, double q)
+{
+    DoubleLength product = dl_mul(p, q);
+    total = tl_add(total, product.hi);
+    return  tl_add(total, product.lo);
+}
+
+static inline double
+tl_to_d(TripleLength total)
+{
+    return total.tiny + total.lo + total.hi;
+}
+
+/*[clinic input]
+math.sumprod
+
+    p: object
+    q: object
+    /
+
+Return the sum of products of values from two iterables p and q.
+
+Roughly equivalent to:
+
+    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
+
+For float and mixed int/float inputs, the intermediate products
+and sums are computed with extended precision.
+[clinic start generated code]*/
+
+static PyObject *
+math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
+/*[clinic end generated code: output=6722dbfe60664554 input=82be54fe26f87e30]*/
+{
+    PyObject *p_i = NULL, *q_i = NULL, *term_i = NULL, *new_total = NULL;
+    PyObject *p_it, *q_it, *total;
+    iternextfunc p_next, q_next;
+    bool p_stopped = false, q_stopped = false;
+    bool int_path_enabled = true, int_total_in_use = false;
+    bool flt_path_enabled = true, flt_total_in_use = false;
+    long int_total = 0;
+    TripleLength flt_total = tl_zero;
+
+    p_it = PyObject_GetIter(p);
+    if (p_it == NULL) {
+        return NULL;
+    }
+    q_it = PyObject_GetIter(q);
+    if (q_it == NULL) {
+        Py_DECREF(p_it);
+        return NULL;
+    }
+    total = PyLong_FromLong(0);
+    if (total == NULL) {
+        Py_DECREF(p_it);
+        Py_DECREF(q_it);
+        return NULL;
+    }
+    p_next = *Py_TYPE(p_it)->tp_iternext;
+    q_next = *Py_TYPE(q_it)->tp_iternext;
+    while (1) {
+        bool finished;
+
+        assert (p_i == NULL);
+        assert (q_i == NULL);
+        assert (term_i == NULL);
+        assert (new_total == NULL);
+
+        assert (p_it != NULL);
+        assert (q_it != NULL);
+        assert (total != NULL);
+
+        p_i = p_next(p_it);
+        if (p_i == NULL) {
+            if (PyErr_Occurred()) {
+                if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                    goto err_exit;
+                }
+                PyErr_Clear();
+            }
+            p_stopped = true;
+        }
+        q_i = q_next(q_it);
+        if (q_i == NULL) {
+            if (PyErr_Occurred()) {
+                if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                    goto err_exit;
+                }
+                PyErr_Clear();
+            }
+            q_stopped = true;
+        }
+        if (p_stopped != q_stopped) {
+            PyErr_Format(PyExc_ValueError, "Inputs are not the same length");
+            goto err_exit;
+        }
+        finished = p_stopped & q_stopped;
+
+        if (int_path_enabled) {
+
+            if (!finished && PyLong_CheckExact(p_i) & PyLong_CheckExact(q_i)) {
+                int overflow;
+                long int_p, int_q, int_prod;
+
+                int_p = PyLong_AsLongAndOverflow(p_i, &overflow);
+                if (overflow) {
+                    goto finalize_int_path;
+                }
+                int_q = PyLong_AsLongAndOverflow(q_i, &overflow);
+                if (overflow) {
+                    goto finalize_int_path;
+                }
+                if (_check_long_mult_overflow(int_p, int_q)) {
+                    goto finalize_int_path;
+                }
+                int_prod = int_p * int_q;
+                if (long_add_would_overflow(int_total, int_prod)) {
+                    goto finalize_int_path;
+                }
+                int_total += int_prod;
+                int_total_in_use = true;
+                Py_CLEAR(p_i);
+                Py_CLEAR(q_i);
+                continue;
+            }
+
+          finalize_int_path:
+            //  # We're finished, overflowed, or have a non-int
+            int_path_enabled = false;
+            if (int_total_in_use) {
+                term_i = PyLong_FromLong(int_total);
+                if (term_i == NULL) {
+                    goto err_exit;
+                }
+                new_total = PyNumber_Add(total, term_i);
+                if (new_total == NULL) {
+                    goto err_exit;
+                }
+                Py_SETREF(total, new_total);
+                new_total = NULL;
+                Py_CLEAR(term_i);
+                int_total = 0;   // An ounce of prevention, ...
+                int_total_in_use = false;
+            }
+        }
+
+        if (flt_path_enabled) {
+
+            if (!finished) {
+                double flt_p, flt_q;
+                bool p_type_float = PyFloat_CheckExact(p_i);
+                bool q_type_float = PyFloat_CheckExact(q_i);
+                if (p_type_float && q_type_float) {
+                    flt_p = PyFloat_AS_DOUBLE(p_i);
+                    flt_q = PyFloat_AS_DOUBLE(q_i);
+                } else if (p_type_float && (PyLong_CheckExact(q_i) || PyBool_Check(q_i))) {
+                    /* We care about float/int pairs and int/float pairs because
+                       they arise naturally in several use cases such as price
+                       times quantity, measurements with integer weights, or
+                       data selected by a vector of bools. */
+                    flt_p = PyFloat_AS_DOUBLE(p_i);
+                    flt_q = PyLong_AsDouble(q_i);
+                    if (flt_q == -1.0 && PyErr_Occurred()) {
+                        PyErr_Clear();
+                        goto finalize_flt_path;
+                    }
+                } else if (q_type_float && (PyLong_CheckExact(p_i) || PyBool_Check(q_i))) {
+                    flt_q = PyFloat_AS_DOUBLE(q_i);
+                    flt_p = PyLong_AsDouble(p_i);
+                    if (flt_p == -1.0 && PyErr_Occurred()) {
+                        PyErr_Clear();
+                        goto finalize_flt_path;
+                    }
+                } else {
+                    goto finalize_flt_path;
+                }
+                TripleLength new_flt_total = tl_fma(flt_total, flt_p, flt_q);
+                if (isfinite(new_flt_total.hi)) {
+                    flt_total = new_flt_total;
+                    flt_total_in_use = true;
+                    Py_CLEAR(p_i);
+                    Py_CLEAR(q_i);
+                    continue;
+                }
+            }
+
+          finalize_flt_path:
+            // We're finished, overflowed, have a non-float, or got a non-finite value
+            flt_path_enabled = false;
+            if (flt_total_in_use) {
+                term_i = PyFloat_FromDouble(tl_to_d(flt_total));
+                if (term_i == NULL) {
+                    goto err_exit;
+                }
+                new_total = PyNumber_Add(total, term_i);
+                if (new_total == NULL) {
+                    goto err_exit;
+                }
+                Py_SETREF(total, new_total);
+                new_total = NULL;
+                Py_CLEAR(term_i);
+                flt_total = tl_zero;
+                flt_total_in_use = false;
+            }
+        }
+
+        assert(!int_total_in_use);
+        assert(!flt_total_in_use);
+        if (finished) {
+            goto normal_exit;
+        }
+        term_i = PyNumber_Multiply(p_i, q_i);
+        if (term_i == NULL) {
+            goto err_exit;
+        }
+        new_total = PyNumber_Add(total, term_i);
+        if (new_total == NULL) {
+            goto err_exit;
+        }
+        Py_SETREF(total, new_total);
+        new_total = NULL;
+        Py_CLEAR(p_i);
+        Py_CLEAR(q_i);
+        Py_CLEAR(term_i);
+    }
+
+ normal_exit:
+    Py_DECREF(p_it);
+    Py_DECREF(q_it);
+    return total;
+
+ err_exit:
+    Py_DECREF(p_it);
+    Py_DECREF(q_it);
+    Py_DECREF(total);
+    Py_XDECREF(p_i);
+    Py_XDECREF(q_i);
+    Py_XDECREF(term_i);
+    Py_XDECREF(new_total);
+    return NULL;
+}
+
+
 /* pow can't use math_2, but needs its own wrapper: the problem is
    that an infinite result can arise either as a result of overflow
    (in which case OverflowError should be raised) or as a result of
@@ -3933,6 +4269,7 @@ static PyMethodDef math_methods[] = {
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},
     {"tan",             math_tan,       METH_O,         math_tan_doc},
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
+    MATH_SUMPROD_METHODDEF
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
     MATH_PERM_METHODDEF
