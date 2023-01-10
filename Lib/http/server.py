@@ -1222,7 +1222,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
 
             # Receive client POST form in chunks, if the size is more than one chunk, use a temp file to store it.
             tmpdir = tempfile.gettempdir()
-            tmpfile = os.path.join(tmpdir, f'{p.pid}.tmp')
+            tmpfile = os.path.join(tmpdir, f'{self.__class__.__name__}_{tempfile.gettempprefix()}_{p.pid}.tmp')
 
             # log with frequency limit
             last_report = 0
