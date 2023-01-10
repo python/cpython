@@ -1567,8 +1567,8 @@
 
         TARGET(SET_UPDATE) {
             PyObject *iterable = PEEK(1);
-            PyObject *set = PEEK(oparg + 1);  // iterable is still on the stack
-            int err = _PySet_Update(set, iterable);
+            PyObject **stuff = &PEEK(1 + oparg);
+            int err = _PySet_Update(stuff[0], iterable);
             Py_DECREF(iterable);
             if (err < 0) goto pop_1_error;
             STACK_SHRINK(1);

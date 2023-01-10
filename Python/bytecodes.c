@@ -462,7 +462,7 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        // Ditto
+        // 'stuff' is a set object followed by (oparg - 1) unused values
         inst(SET_ADD,  (stuff[oparg], v -- stuff[oparg])) {
             int err = PySet_Add(stuff[0], v);
             Py_DECREF(v);
@@ -1344,9 +1344,9 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(SET_UPDATE, (iterable --)) {
-            PyObject *set = PEEK(oparg + 1);  // iterable is still on the stack
-            int err = _PySet_Update(set, iterable);
+        // 'stuff' is a set object followed by (oparg - 1) unused values
+        inst(SET_UPDATE, (stuff[oparg], iterable -- stuff[oparg])) {
+            int err = _PySet_Update(stuff[0], iterable);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
         }

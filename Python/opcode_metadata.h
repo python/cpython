@@ -92,7 +92,7 @@ static const struct {
     [BUILD_TUPLE] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [BUILD_LIST] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [LIST_EXTEND] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
-    [SET_UPDATE] = { 1, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
+    [SET_UPDATE] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [BUILD_SET] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [BUILD_MAP] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [SETUP_ANNOTATIONS] = { 0, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
