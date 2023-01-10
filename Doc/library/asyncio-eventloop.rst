@@ -65,8 +65,8 @@ an event loop:
       :exc:`DeprecationWarning` if there was no running event loop, even if
       the current loop was set on the policy.
       In Python versions 3.10.9, 3.11.1 and 3.12 they emit a
-      :exc:`DeprecationWarning` if there was no running event loop and no
-      current loop was set.
+      :exc:`DeprecationWarning` if there is no running event loop and no
+      current loop is set.
       In some future Python release this will become an error.
 
 .. function:: set_event_loop(loop)

@@ -115,7 +115,7 @@ asyncio ships with the following built-in policies:
    .. note::
       In Python versions 3.10.9, 3.11.1 and 3.12 this function emits a
       :exc:`DeprecationWarning` if there is no running event loop and no
-      current loop was set.
+      current loop is set.
       In some future Python release this will become an error.
 
 
