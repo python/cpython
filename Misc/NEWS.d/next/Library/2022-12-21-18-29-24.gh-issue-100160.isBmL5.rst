@@ -1,0 +1,2 @@
+Remove any deprecation warnings in :func:`asyncio.get_event_loop`. They are
+deferred to Python 3.12.
