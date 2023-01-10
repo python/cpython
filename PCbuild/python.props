@@ -63,8 +63,8 @@
     <libffiDir>$(ExternalsDir)libffi-3.3.0\</libffiDir>
     <libffiOutDir>$(ExternalsDir)libffi-3.3.0\$(ArchName)\</libffiOutDir>
     <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.1q\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1q\$(ArchName)\</opensslOutDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.1s\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1s\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.13\</zlibDir>
