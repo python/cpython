@@ -462,10 +462,9 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        // Alternative: (set, unused[oparg], v -- set, unused[oparg])
-        inst(SET_ADD, (v --)) {
-            PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
-            int err = PySet_Add(set, v);
+        // Ditto
+        inst(SET_ADD,  (stuff[oparg], v -- stuff[oparg])) {
+            int err = PySet_Add(stuff[0], v);
             Py_DECREF(v);
             ERROR_IF(err, error);
             PREDICT(JUMP_BACKWARD);

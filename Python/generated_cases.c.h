@@ -583,8 +583,8 @@
 
         TARGET(SET_ADD) {
             PyObject *v = PEEK(1);
-            PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
-            int err = PySet_Add(set, v);
+            PyObject **stuff = &PEEK(1 + oparg);
+            int err = PySet_Add(stuff[0], v);
             Py_DECREF(v);
             if (err) goto pop_1_error;
             STACK_SHRINK(1);

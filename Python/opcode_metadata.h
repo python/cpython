@@ -45,7 +45,7 @@ static const struct {
     [BINARY_SUBSCR_DICT] = { 2, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IBC000" },
     [BINARY_SUBSCR_GETITEM] = { 2, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IBC000" },
     [LIST_APPEND] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
-    [SET_ADD] = { 1, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
+    [SET_ADD] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, "IB" },
     [STORE_SUBSCR] = { 3, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, "IBC" },
     [STORE_SUBSCR_LIST_INT] = { 3, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, "IBC" },
     [STORE_SUBSCR_DICT] = { 3, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, "IBC" },
