@@ -1,0 +1,4 @@
+Double the speed of most :func:`dataclasses.dataclass` definitions by
+reusing code objects from methods of similar dataclasses. This idea was
+originally implemented by David Beazley in his `dataklasses proof-of-concept
+<https://github.com/dabeaz/dataklasses>`_.
