@@ -1514,11 +1514,10 @@
             PyObject **pieces = &PEEK(oparg);
             PyObject *str;
             str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
-            if (str == NULL)
-                goto error;
             for (int i = 0; i < oparg; i++) {
                 Py_DECREF(pieces[i]);
             }
+            if (str == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
             STACK_GROW(1);
             POKE(1, str);

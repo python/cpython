@@ -1300,11 +1300,10 @@ dummy_func(
 
         inst(BUILD_STRING, (pieces[oparg] -- str)) {
             str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
-            if (str == NULL)
-                goto error;
             for (int i = 0; i < oparg; i++) {
                 Py_DECREF(pieces[i]);
             }
+            ERROR_IF(str == NULL, error);
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
