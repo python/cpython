@@ -333,6 +333,43 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_sumprod__doc__,
+"sumprod($module, p, q, /)\n"
+"--\n"
+"\n"
+"Return the sum of products of values from two iterables p and q.\n"
+"\n"
+"Roughly equivalent to:\n"
+"\n"
+"    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))\n"
+"\n"
+"For float and mixed int/float inputs, the intermediate products\n"
+"and sums are computed with extended precision.");
+
+#define MATH_SUMPROD_METHODDEF    \
+    {"sumprod", _PyCFunction_CAST(math_sumprod), METH_FASTCALL, math_sumprod__doc__},
+
+static PyObject *
+math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q);
+
+static PyObject *
+math_sumprod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *p;
+    PyObject *q;
+
+    if (!_PyArg_CheckPositional("sumprod", nargs, 2, 2)) {
+        goto exit;
+    }
+    p = args[0];
+    q = args[1];
+    return_value = math_sumprod_impl(module, p, q);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_pow__doc__,
 "pow($module, x, y, /)\n"
 "--\n"
@@ -917,4 +954,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c2c2f42452d63734 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=899211ec70e4506c input=a9049054013a1b77]*/
