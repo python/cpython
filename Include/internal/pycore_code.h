@@ -41,7 +41,6 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
-    uint16_t mask;
 } _PyCompareOpCache;
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)

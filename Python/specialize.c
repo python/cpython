@@ -2016,29 +2016,17 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
     }
-    int compare_op = oparg >> 4;
-    assert(compare_op <= Py_GE);
-    int when_to_jump_mask = compare_masks[compare_op];
-    if (next_opcode == POP_JUMP_IF_FALSE) {
-        when_to_jump_mask = (1 | 2 | 4 | 8) & ~when_to_jump_mask;
-    }
-    if ((oparg & 15) != when_to_jump_mask) {
-        printf("%d %d %d\n", oparg, when_to_jump_mask, next_opcode);
-    }
-    assert((oparg & 15) == when_to_jump_mask);
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
         goto failure;
     }
     if (PyFloat_CheckExact(lhs)) {
         _py_set_opcode(instr, COMPARE_OP_FLOAT_JUMP);
-        cache->mask = when_to_jump_mask;
         goto success;
     }
     if (PyLong_CheckExact(lhs)) {
         if (Py_ABS(Py_SIZE(lhs)) <= 1 && Py_ABS(Py_SIZE(rhs)) <= 1) {
             _py_set_opcode(instr, COMPARE_OP_INT_JUMP);
-            cache->mask = when_to_jump_mask;
             goto success;
         }
         else {
@@ -2054,7 +2042,6 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         }
         else {
             _py_set_opcode(instr, COMPARE_OP_STR_JUMP);
-            cache->mask = when_to_jump_mask;
             goto success;
         }
     }
