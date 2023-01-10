@@ -127,7 +127,7 @@ to start a process.  These *start methods* are
     Available on POSIX systems.  The default on POSIX other than macOS.
 
     .. versionchanged:: 3.12
-       The implcit use of the *fork* start method as the default now raises a
+       The implicit use of the *fork* start method as the default now raises a
        :exc:`DeprecationWarning`. Code that requires it should explicitly
        specify *fork* via :func:`get_context` or :func:`set_start_method`.
        The default will change in 3.14.
