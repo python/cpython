@@ -1184,37 +1184,31 @@ lineiter_dealloc(lineiterator *li)
 }
 
 static PyObject *
+_source_offset_converter(int *value) {
+    if (*value == -1) {
+        Py_RETURN_NONE;
+    }
+    return PyLong_FromLong(*value);
+}
+
+static PyObject *
 lineiter_next(lineiterator *li)
 {
     PyCodeAddressRange *bounds = &li->li_line;
     if (!_PyLineTable_NextAddressRange(bounds)) {
         return NULL;
     }
-    PyObject *start = NULL;
-    PyObject *end = NULL;
-    PyObject *line = NULL;
-    PyObject *result = PyTuple_New(3);
-    start = PyLong_FromLong(bounds->ar_start);
-    end = PyLong_FromLong(bounds->ar_end);
-    if (bounds->ar_line < 0) {
-        line = Py_NewRef(Py_None);
+    int start = bounds->ar_start;
+    int line = bounds->ar_line;
+    // Merge overlapping entries:
+    while (_PyLineTable_NextAddressRange(bounds)) {
+        if (bounds->ar_line != line) {
+            _PyLineTable_PreviousAddressRange(bounds);
+            break;
+        }
     }
-    else {
-        line = PyLong_FromLong(bounds->ar_line);
-    }
-    if (result == NULL || start == NULL || end == NULL || line == NULL) {
-        goto error;
-    }
-    PyTuple_SET_ITEM(result, 0, start);
-    PyTuple_SET_ITEM(result, 1, end);
-    PyTuple_SET_ITEM(result, 2, line);
-    return result;
-error:
-    Py_XDECREF(start);
-    Py_XDECREF(end);
-    Py_XDECREF(line);
-    Py_XDECREF(result);
-    return result;
+    return Py_BuildValue("iiO&", start, bounds->ar_end,
+                         _source_offset_converter, &line);
 }
 
 PyTypeObject _PyLineIterator = {
@@ -1288,14 +1282,6 @@ positionsiter_dealloc(positionsiterator* pi)
 {
     Py_DECREF(pi->pi_code);
     Py_TYPE(pi)->tp_free(pi);
-}
-
-static PyObject*
-_source_offset_converter(int* value) {
-    if (*value == -1) {
-        Py_RETURN_NONE;
-    }
-    return PyLong_FromLong(*value);
 }
 
 static PyObject*
