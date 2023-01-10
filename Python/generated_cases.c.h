@@ -1537,11 +1537,13 @@
         }
 
         TARGET(BUILD_LIST) {
+            PyObject **values = &PEEK(oparg);
+            PyObject *list;
+            list = _PyList_FromArraySteal(values, oparg);
+            if (list == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
-            PyObject *list = _PyList_FromArraySteal(stack_pointer, oparg);
-            if (list == NULL)
-                goto error;
-            PUSH(list);
+            STACK_GROW(1);
+            POKE(1, list);
             DISPATCH();
         }
 

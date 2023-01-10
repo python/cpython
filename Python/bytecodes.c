@@ -1312,13 +1312,9 @@ dummy_func(
             ERROR_IF(tup == NULL, error);
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_LIST) {
-            STACK_SHRINK(oparg);
-            PyObject *list = _PyList_FromArraySteal(stack_pointer, oparg);
-            if (list == NULL)
-                goto error;
-            PUSH(list);
+        inst(BUILD_LIST, (values[oparg] -- list)) {
+            list = _PyList_FromArraySteal(values, oparg);
+            ERROR_IF(list == NULL, error);
         }
 
         // 'stuff' is a list object followed by (oparg - 1) unused values
