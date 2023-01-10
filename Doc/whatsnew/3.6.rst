@@ -162,10 +162,10 @@ Windows improvements:
 
 * A ``._pth`` file can be added to force isolated mode and fully specify
   all search paths to avoid registry and environment lookup. See
-  :ref:`the documentation <finding_modules>` for more information.
+  :ref:`the documentation <windows_finding_modules>` for more information.
 
 * A ``python36.zip`` file now works as a landmark to infer
-  :envvar:`PYTHONHOME`. See :ref:`the documentation <finding_modules>` for
+  :envvar:`PYTHONHOME`. See :ref:`the documentation <windows_finding_modules>` for
   more information.
 
 
@@ -722,8 +722,8 @@ for the following events in the interpreter:
 * line of code executed.
 
 This can be used to instrument running interpreters in production,
-without the need to recompile specific debug builds or providing
-application-specific profiling/debugging code.
+without the need to recompile specific :ref:`debug builds <debug-build>` or
+providing application-specific profiling/debugging code.
 
 More details in :ref:`instrumentation`.
 
@@ -960,8 +960,8 @@ contextlib
 
 The :class:`contextlib.AbstractContextManager` class has been added to
 provide an abstract base class for context managers.  It provides a
-sensible default implementation for `__enter__()` which returns
-``self`` and leaves `__exit__()` an abstract method.  A matching
+sensible default implementation for ``__enter__()`` which returns
+``self`` and leaves ``__exit__()`` an abstract method.  A matching
 class has been added to the :mod:`typing` module as
 :class:`typing.ContextManager`.
 (Contributed by Brett Cannon in :issue:`25609`.)
@@ -1012,7 +1012,7 @@ distutils
 ---------
 
 The ``default_format`` attribute has been removed from
-:class:`distutils.command.sdist.sdist` and the ``formats``
+``distutils.command.sdist.sdist`` and the ``formats``
 attribute defaults to ``['gztar']``. Although not anticipated,
 any code relying on the presence of ``default_format`` may
 need to be adapted. See :issue:`27819` for more details.
@@ -1388,7 +1388,7 @@ are treated as punctuation.
 site
 ----
 
-When specifying paths to add to :attr:`sys.path` in a `.pth` file,
+When specifying paths to add to :attr:`sys.path` in a ``.pth`` file,
 you may now specify file paths on top of directories (e.g. zip files).
 (Contributed by Wolfgang Langner in :issue:`26587`).
 
@@ -1422,7 +1422,7 @@ The socket module now supports the address family
 Victor Stinner.)
 
 New Linux constants ``TCP_USER_TIMEOUT`` and ``TCP_CONGESTION`` were added.
-(Contributed by Omar Sandoval, issue:`26273`).
+(Contributed by Omar Sandoval, :issue:`26273`).
 
 
 socketserver
@@ -1644,7 +1644,7 @@ unicodedata
 -----------
 
 The :mod:`unicodedata` module now uses data from `Unicode 9.0.0
-<http://unicode.org/versions/Unicode9.0.0/>`_.
+<https://unicode.org/versions/Unicode9.0.0/>`_.
 (Contributed by Benjamin Peterson.)
 
 
@@ -1986,7 +1986,7 @@ distutils
 ~~~~~~~~~
 
 The undocumented ``extra_path`` argument to the
-:class:`~distutils.Distribution` constructor is now considered deprecated
+``distutils.Distribution`` constructor is now considered deprecated
 and will raise a warning if set.   Support for this parameter will be
 removed in a future Python release.  See :issue:`27919` for details.
 
@@ -2051,6 +2051,8 @@ tkinter
 
 The :mod:`tkinter.tix` module is now deprecated.  :mod:`tkinter` users
 should use :mod:`tkinter.ttk` instead.
+
+.. _whatsnew36-venv:
 
 venv
 ~~~~
@@ -2117,7 +2119,8 @@ API and Feature Removals
   platform specific ``Lib/plat-*/`` directories, but were chronically out of
   date, inconsistently available across platforms, and unmaintained.  The
   script that created these modules is still available in the source
-  distribution at :source:`Tools/scripts/h2py.py`.
+  distribution at `Tools/scripts/h2py.py
+  <https://github.com/python/cpython/blob/v3.6.15/Tools/scripts/h2py.py>`_.
 
 * The deprecated ``asynchat.fifo`` class has been removed.
 
@@ -2242,7 +2245,7 @@ Changes in the Python API
   accepting additional keyword arguments will need to adjust their calls to
   :meth:`type.__new__` (whether direct or via :class:`super`) accordingly.
 
-* In :class:`distutils.command.sdist.sdist`, the ``default_format``
+* In ``distutils.command.sdist.sdist``, the ``default_format``
   attribute has been removed and is no longer honored. Instead, the
   gzipped tarfile format is the default on all platforms and no
   platform-specific selection is made.
@@ -2443,3 +2446,16 @@ because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
 details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
+
+Notable changes in Python 3.6.13
+================================
+
+Earlier Python versions allowed using both ``;`` and ``&`` as
+query parameter separators in :func:`urllib.parse.parse_qs` and
+:func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
+newer W3C recommendations, this has been changed to allow only a single
+separator key, with ``&`` as the default.  This change also affects
+:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+functions internally. For more details, please see their respective
+documentation.
+(Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

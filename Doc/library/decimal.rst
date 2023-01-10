@@ -30,7 +30,7 @@
 
 --------------
 
-The :mod:`decimal` module provides support for fast correctly-rounded
+The :mod:`decimal` module provides support for fast correctly rounded
 decimal floating point arithmetic. It offers several advantages over the
 :class:`float` datatype:
 
@@ -114,7 +114,7 @@ reset them before monitoring a calculation.
 .. seealso::
 
    * IBM's General Decimal Arithmetic Specification, `The General Decimal Arithmetic
-     Specification <http://speleotrove.com/decimal/decarith.html>`_.
+     Specification <https://speleotrove.com/decimal/decarith.html>`_.
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -571,15 +571,16 @@ Decimal objects
       >>> Decimal(321).exp()
       Decimal('2.561702493119680037517373933E+139')
 
-   .. method:: from_float(f)
+   .. classmethod:: from_float(f)
 
-      Classmethod that converts a float to a decimal number, exactly.
+      Alternative constructor that only accepts instances of :class:`float` or
+      :class:`int`.
 
-      Note `Decimal.from_float(0.1)` is not the same as `Decimal('0.1')`.
+      Note ``Decimal.from_float(0.1)`` is not the same as ``Decimal('0.1')``.
       Since 0.1 is not exactly representable in binary floating point, the
       value is stored as the nearest representable value which is
-      `0x1.999999999999ap-4`.  That equivalent value in decimal is
-      `0.1000000000000000055511151231257827021181583404541015625`.
+      ``0x1.999999999999ap-4``.  That equivalent value in decimal is
+      ``0.1000000000000000055511151231257827021181583404541015625``.
 
       .. note:: From Python 3.2 onwards, a :class:`Decimal` instance
          can also be constructed directly from a :class:`float`.
@@ -620,13 +621,6 @@ Decimal objects
 
       Return :const:`True` if the argument is either positive or negative
       infinity and :const:`False` otherwise.
-
-   .. method:: is_integer()
-
-      Return :const:`True` if the argument is a finite integral value and
-      :const:`False` otherwise.
-
-      .. versionadded:: 3.10
 
    .. method:: is_nan()
 
@@ -932,12 +926,13 @@ Each thread has its own current context which is accessed or changed using the
 You can also use the :keyword:`with` statement and the :func:`localcontext`
 function to temporarily change the active context.
 
-.. function:: localcontext(ctx=None)
+.. function:: localcontext(ctx=None, \*\*kwargs)
 
    Return a context manager that will set the current context for the active thread
    to a copy of *ctx* on entry to the with-statement and restore the previous context
    when exiting the with-statement. If no context is specified, a copy of the
-   current context is used.
+   current context is used.  The *kwargs* argument is used to set the attributes
+   of the new context.
 
    For example, the following code sets the current decimal precision to 42 places,
    performs a calculation, and then automatically restores the previous context::
@@ -948,6 +943,21 @@ function to temporarily change the active context.
           ctx.prec = 42   # Perform a high precision calculation
           s = calculate_something()
       s = +s  # Round the final result back to the default precision
+
+   Using keyword arguments, the code would be the following::
+
+      from decimal import localcontext
+
+      with localcontext(prec=42) as ctx:
+          s = calculate_something()
+      s = +s
+
+   Raises :exc:`TypeError` if *kwargs* supplies an attribute that :class:`Context` doesn't
+   support.  Raises either :exc:`TypeError` or :exc:`ValueError` if *kwargs* supplies an
+   invalid value for an attribute.
+
+   .. versionchanged:: 3.11
+      :meth:`localcontext` now supports setting context attributes through the use of keyword arguments.
 
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
@@ -1199,7 +1209,7 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: exp(x)
 
-      Returns `e ** x`.
+      Returns ``e ** x``.
 
 
    .. method:: fma(x, y, z)
@@ -1221,13 +1231,6 @@ In addition to the three supplied contexts, new contexts can be created with the
 
       Returns ``True`` if *x* is infinite; otherwise returns ``False``.
 
-
-   .. method:: is_integer(x)
-
-      Returns ``True`` if *x* is finite and integral; otherwise
-      returns ``False``.
-
-      .. versionadded:: 3.10
 
    .. method:: is_nan(x)
 
@@ -1368,16 +1371,16 @@ In addition to the three supplied contexts, new contexts can be created with the
       With two arguments, compute ``x**y``.  If ``x`` is negative then ``y``
       must be integral.  The result will be inexact unless ``y`` is integral and
       the result is finite and can be expressed exactly in 'precision' digits.
-      The rounding mode of the context is used. Results are always correctly-rounded
+      The rounding mode of the context is used. Results are always correctly rounded
       in the Python version.
 
       ``Decimal(0) ** Decimal(0)`` results in ``InvalidOperation``, and if ``InvalidOperation``
       is not trapped, then results in ``Decimal('NaN')``.
 
       .. versionchanged:: 3.3
-         The C module computes :meth:`power` in terms of the correctly-rounded
+         The C module computes :meth:`power` in terms of the correctly rounded
          :meth:`exp` and :meth:`ln` functions. The result is well-defined but
-         only "almost always correctly-rounded".
+         only "almost always correctly rounded".
 
       With three arguments, compute ``(x**y) % modulo``.  For the three argument
       form, the following restrictions on the arguments hold:
@@ -1498,7 +1501,8 @@ are also included in the pure Python version for compatibility.
 
 .. data:: HAVE_CONTEXTVAR
 
-   The default value is ``True``. If Python is compiled ``--without-decimal-contextvar``,
+   The default value is ``True``. If Python is :option:`configured using
+   the --without-decimal-contextvar option <--without-decimal-contextvar>`,
    the C version uses a thread-local rather than a coroutine-local context and the value
    is ``False``.  This is slightly faster in some nested context scenarios.
 
@@ -2053,6 +2057,7 @@ to handle the :meth:`quantize` step:
 
     >>> def mul(x, y, fp=TWOPLACES):
     ...     return (x * y).quantize(fp)
+    ...
     >>> def div(x, y, fp=TWOPLACES):
     ...     return (x / y).quantize(fp)
 
@@ -2147,7 +2152,7 @@ Q. Is the CPython implementation fast for large numbers?
 A. Yes.  In the CPython and PyPy3 implementations, the C/CFFI versions of
 the decimal module integrate the high speed `libmpdec
 <https://www.bytereef.org/mpdecimal/doc/libmpdec/index.html>`_ library for
-arbitrary precision correctly-rounded decimal floating point arithmetic [#]_.
+arbitrary precision correctly rounded decimal floating point arithmetic [#]_.
 ``libmpdec`` uses `Karatsuba multiplication
 <https://en.wikipedia.org/wiki/Karatsuba_algorithm>`_
 for medium-sized numbers and the `Number Theoretic Transform

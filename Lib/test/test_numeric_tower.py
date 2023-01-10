@@ -6,7 +6,6 @@ import math
 import sys
 import operator
 
-from numbers import Real, Rational, Integral
 from decimal import Decimal as D
 from fractions import Fraction as F
 
@@ -14,6 +13,27 @@ from fractions import Fraction as F
 # on the reduction of x modulo the prime _PyHASH_MODULUS.
 _PyHASH_MODULUS = sys.hash_info.modulus
 _PyHASH_INF = sys.hash_info.inf
+
+
+class DummyIntegral(int):
+    """Dummy Integral class to test conversion of the Rational to float."""
+
+    def __mul__(self, other):
+        return DummyIntegral(super().__mul__(other))
+    __rmul__ = __mul__
+
+    def __truediv__(self, other):
+        return NotImplemented
+    __rtruediv__ = __truediv__
+
+    @property
+    def numerator(self):
+        return DummyIntegral(self)
+
+    @property
+    def denominator(self):
+        return DummyIntegral(1)
+
 
 class HashTest(unittest.TestCase):
     def check_equal_hash(self, x, y):
@@ -122,6 +142,13 @@ class HashTest(unittest.TestCase):
         self.assertEqual(hash(F(7*_PyHASH_MODULUS, 1)), 0)
         self.assertEqual(hash(F(-_PyHASH_MODULUS, 1)), 0)
 
+        # The numbers ABC doesn't enforce that the "true" division
+        # of integers produces a float.  This tests that the
+        # Rational.__float__() method has required type conversions.
+        x = F(DummyIntegral(1), DummyIntegral(2), _normalize=False)
+        self.assertRaises(TypeError, lambda: x.numerator/x.denominator)
+        self.assertEqual(float(x), 0.5)
+
     def test_hash_normalization(self):
         # Test for a bug encountered while changing long_hash.
         #
@@ -197,36 +224,6 @@ class ComparisonTest(unittest.TestCase):
             for op in operator.le, operator.lt, operator.ge, operator.gt:
                 self.assertRaises(TypeError, op, z, v)
                 self.assertRaises(TypeError, op, v, z)
-
-
-class IsIntegerTest(unittest.TestCase):
-
-    def test_real_is_integer(self):
-        self.assertTrue(Real.is_integer(-1.0))
-        self.assertTrue(Real.is_integer(0.0))
-        self.assertTrue(Real.is_integer(1.0))
-        self.assertTrue(Real.is_integer(42.0))
-
-        self.assertFalse(Real.is_integer(-0.5))
-        self.assertFalse(Real.is_integer(4.2))
-
-    def test_rational_is_integer(self):
-        self.assertTrue(Rational.is_integer(F(-1, 1)))
-        self.assertTrue(Rational.is_integer(F(0, 1)))
-        self.assertTrue(Rational.is_integer(F(1, 1)))
-        self.assertTrue(Rational.is_integer(F(42, 1)))
-        self.assertTrue(Rational.is_integer(F(2, 2)))
-        self.assertTrue(Rational.is_integer(F(8, 4)))
-
-        self.assertFalse(Rational.is_integer(F(1, 2)))
-        self.assertFalse(Rational.is_integer(F(1, 3)))
-        self.assertFalse(Rational.is_integer(F(2, 3)))
-
-    def test_integral_is_integer(self):
-        self.assertTrue(Integral.is_integer(-1))
-        self.assertTrue(Integral.is_integer(0))
-        self.assertTrue(Integral.is_integer(1))
-        self.assertTrue(Integral.is_integer(1729))
 
 
 if __name__ == '__main__':

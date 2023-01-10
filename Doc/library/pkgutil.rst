@@ -26,7 +26,7 @@ support.
       __path__ = extend_path(__path__, __name__)
 
    This will add to the package's ``__path__`` all subdirectories of directories
-   on ``sys.path`` named after the package.  This is useful if one wants to
+   on :data:`sys.path` named after the package.  This is useful if one wants to
    distribute different parts of a single logical package as multiple
    directories.
 
@@ -128,9 +128,9 @@ support.
 
    Yield :term:`finder` objects for the given module name.
 
-   If fullname contains a '.', the finders will be for the package
+   If fullname contains a ``'.'``, the finders will be for the package
    containing fullname, otherwise they will be all registered top level
-   finders (i.e. those on both sys.meta_path and sys.path_hooks).
+   finders (i.e. those on both :data:`sys.meta_path` and :data:`sys.path_hooks`).
 
    If the named module is in a package, that package is imported as a side
    effect of invoking this function.
@@ -145,7 +145,7 @@ support.
 .. function:: iter_modules(path=None, prefix='')
 
    Yields :class:`ModuleInfo` for all submodules on *path*, or, if
-   *path* is ``None``, all top-level modules on ``sys.path``.
+   *path* is ``None``, all top-level modules on :data:`sys.path`.
 
    *path* should be either ``None`` or a list of paths to look for modules in.
 

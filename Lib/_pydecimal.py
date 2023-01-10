@@ -441,6 +441,10 @@ import contextvars
 
 _current_context_var = contextvars.ContextVar('decimal_context')
 
+_context_attributes = frozenset(
+    ['prec', 'Emin', 'Emax', 'capitals', 'clamp', 'rounding', 'flags', 'traps']
+)
+
 def getcontext():
     """Returns this thread's context.
 
@@ -464,7 +468,7 @@ def setcontext(context):
 
 del contextvars        # Don't contaminate the namespace
 
-def localcontext(ctx=None):
+def localcontext(ctx=None, **kwargs):
     """Return a context manager for a copy of the supplied context
 
     Uses a copy of the current context if no context is specified
@@ -500,8 +504,14 @@ def localcontext(ctx=None):
     >>> print(getcontext().prec)
     28
     """
-    if ctx is None: ctx = getcontext()
-    return _ContextManager(ctx)
+    if ctx is None:
+        ctx = getcontext()
+    ctx_manager = _ContextManager(ctx)
+    for key, value in kwargs.items():
+        if key not in _context_attributes:
+            raise TypeError(f"'{key}' is an invalid keyword argument for this function")
+        setattr(ctx_manager.new_context, key, value)
+    return ctx_manager
 
 
 ##### Decimal class #######################################################
@@ -951,7 +961,7 @@ class Decimal(object):
             if self.is_snan():
                 raise TypeError('Cannot hash a signaling NaN value.')
             elif self.is_nan():
-                return _PyHASH_NAN
+                return object.__hash__(self)
             else:
                 if self._sign:
                     return -_PyHASH_INF
@@ -2230,7 +2240,7 @@ class Decimal(object):
             if xe != 0 and len(str(abs(yc*xe))) <= -ye:
                 return None
             xc_bits = _nbits(xc)
-            if xc != 1 and len(str(abs(yc)*xc_bits)) <= -ye:
+            if len(str(abs(yc)*xc_bits)) <= -ye:
                 return None
             m, n = yc, 10**(-ye)
             while m % 2 == n % 2 == 0:
@@ -2243,7 +2253,7 @@ class Decimal(object):
         # compute nth root of xc*10**xe
         if n > 1:
             # if 1 < xc < 2**n then xc isn't an nth power
-            if xc != 1 and xc_bits <= n:
+            if xc_bits <= n:
                 return None
 
             xe, rem = divmod(xe, n)
@@ -3164,12 +3174,6 @@ class Decimal(object):
         """Return True if self is a zero; otherwise return False."""
         return not self._is_special and self._int == '0'
 
-    def is_integer(self):
-        """Return True is self is finite and integral; otherwise False."""
-        if self._is_special:
-            return False
-        return self.to_integral_value(rounding=ROUND_FLOOR) == self
-
     def _ln_exp_bound(self):
         """Compute a lower bound for the adjusted exponent of self.ln().
         In other words, compute r such that self.ln() >= 10**r.  Assumes
@@ -3801,6 +3805,10 @@ class Decimal(object):
         # represented in fixed point; rescale them to 0e0.
         if not self and self._exp > 0 and spec['type'] in 'fF%':
             self = self._rescale(0, rounding)
+        if not self and spec['no_neg_0'] and self._sign:
+            adjusted_sign = 0
+        else:
+            adjusted_sign = self._sign
 
         # figure out placement of the decimal point
         leftdigits = self._exp + len(self._int)
@@ -3831,7 +3839,7 @@ class Decimal(object):
 
         # done with the decimal-specific stuff;  hand over the rest
         # of the formatting to the _format_number function
-        return _format_number(self._sign, intpart, fracpart, exp, spec)
+        return _format_number(adjusted_sign, intpart, fracpart, exp, spec)
 
 def _dec_from_triple(sign, coefficient, exponent, special=False):
     """Create a decimal instance directly, without any validation,
@@ -4664,25 +4672,6 @@ class Context(object):
         """
         a = _convert_other(a, raiseit=True)
         return a.is_zero()
-
-    def is_integer(self, a):
-        """Return True if the operand is integral; otherwise return False.
-
-        >>> ExtendedContext.is_integer(Decimal('0'))
-        True
-        >>> ExtendedContext.is_integer(Decimal('2.50'))
-        False
-        >>> ExtendedContext.is_integer(Decimal('-0E+2'))
-        True
-        >>> ExtendedContext.is_integer(Decimal('-0.5'))
-        False
-        >>> ExtendedContext.is_integer(Decimal('NaN'))
-        False
-        >>> ExtendedContext.is_integer(10)
-        True
-        """
-        a = _convert_other(a, raiseit=True)
-        return a.is_integer()
 
     def ln(self, a):
         """Returns the natural (base e) logarithm of the operand.
@@ -6168,7 +6157,7 @@ _exact_half = re.compile('50*$').match
 #
 # A format specifier for Decimal looks like:
 #
-#   [[fill]align][sign][#][0][minimumwidth][,][.precision][type]
+#   [[fill]align][sign][z][#][0][minimumwidth][,][.precision][type]
 
 _parse_format_specifier_regex = re.compile(r"""\A
 (?:
@@ -6176,6 +6165,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
    (?P<align>[<>=^])
 )?
 (?P<sign>[-+ ])?
+(?P<no_neg_0>z)?
 (?P<alt>\#)?
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?

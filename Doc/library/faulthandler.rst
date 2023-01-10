@@ -76,6 +76,10 @@ Fault handler state
    .. versionchanged:: 3.6
       On Windows, a handler for Windows exception is also installed.
 
+   .. versionchanged:: 3.10
+      The dump now mentions if a garbage collector collection is running
+      if *all_threads* is true.
+
 .. function:: disable()
 
    Disable the fault handler: uninstall the signal handlers installed by
