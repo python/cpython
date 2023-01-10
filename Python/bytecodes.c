@@ -1307,13 +1307,9 @@ dummy_func(
             }
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_TUPLE) {
-            STACK_SHRINK(oparg);
-            PyObject *tup = _PyTuple_FromArraySteal(stack_pointer, oparg);
-            if (tup == NULL)
-                goto error;
-            PUSH(tup);
+        inst(BUILD_TUPLE, (values[oparg] -- tup)) {
+            tup = _PyTuple_FromArraySteal(values, oparg);
+            ERROR_IF(tup == NULL, error);
         }
 
         // stack effect: (__array[oparg] -- __0)

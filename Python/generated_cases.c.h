@@ -1526,11 +1526,13 @@
         }
 
         TARGET(BUILD_TUPLE) {
+            PyObject **values = &PEEK(oparg);
+            PyObject *tup;
+            tup = _PyTuple_FromArraySteal(values, oparg);
+            if (tup == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
-            PyObject *tup = _PyTuple_FromArraySteal(stack_pointer, oparg);
-            if (tup == NULL)
-                goto error;
-            PUSH(tup);
+            STACK_GROW(1);
+            POKE(1, tup);
             DISPATCH();
         }
 
