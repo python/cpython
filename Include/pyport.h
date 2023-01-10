@@ -663,6 +663,20 @@ extern char * _getpty(int *, int, mode_t, int);
 #  define WITH_THREAD
 #endif
 
+#ifdef WITH_THREAD
+#  ifndef thread_local
+#    if __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#      define thread_local _Thread_local
+#    elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#      define thread_local __declspec(thread)
+#    elif defined(__GNUC__)  /* includes clang */
+#      define thread_local __thread
+#    else
+#      error "no supported thread-local variable storage classifier"
+#    endif
+#  endif
+#endif
+
 /* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
    ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
 #if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
