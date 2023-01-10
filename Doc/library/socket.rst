@@ -717,8 +717,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    ``(host, port)``) and return the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
-   *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
-   a default reasonable value is chosen.
+   *backlog* is the queue size passed to :meth:`socket.listen`; if not specified
+   , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
    If *dualstack_ipv6* is true and the platform supports it the socket will

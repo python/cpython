@@ -951,6 +951,25 @@ keyword_only_parameter_impl(PyObject *module, PyObject *a)
 
 
 /*[clinic input]
+posonly_vararg
+
+    a: object
+    /
+    b: object
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_vararg_impl(PyObject *module, PyObject *a, PyObject *b,
+                    PyObject *args)
+/*[clinic end generated code: output=ee6713acda6b954e input=783427fe7ec2b67a]*/
+{
+    return pack_arguments_newref(3, a, b, args);
+}
+
+
+/*[clinic input]
 vararg_and_posonly
 
     a: object
@@ -964,6 +983,100 @@ vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
 /*[clinic end generated code: output=42792f799465a14d input=defe017b19ba52e8]*/
 {
     return pack_arguments_newref(2, a, args);
+}
+
+
+/*[clinic input]
+vararg
+
+    a: object
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_impl(PyObject *module, PyObject *a, PyObject *args)
+/*[clinic end generated code: output=91ab7a0efc52dd5e input=02c0f772d05f591e]*/
+{
+    return pack_arguments_newref(2, a, args);
+}
+
+
+/*[clinic input]
+vararg_with_default
+
+    a: object
+    *args: object
+    b: bool = False
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
+                         int b)
+/*[clinic end generated code: output=182c01035958ce92 input=68cafa6a79f89e36]*/
+{
+    PyObject *obj_b = b ? Py_True : Py_False;
+    return pack_arguments_newref(3, a, args, obj_b);
+}
+
+
+/*[clinic input]
+vararg_with_only_defaults
+
+    *args: object
+    b: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_only_defaults_impl(PyObject *module, PyObject *args, PyObject *b)
+/*[clinic end generated code: output=c06b1826d91f2f7b input=678c069bc67550e1]*/
+{
+    return pack_arguments_newref(2, args, b);
+}
+
+
+
+/*[clinic input]
+gh_32092_oob
+
+    pos1: object
+    pos2: object
+    *varargs: object
+    kw1: object = None
+    kw2: object = None
+
+Proof-of-concept of GH-32092 OOB bug.
+
+[clinic start generated code]*/
+
+static PyObject *
+gh_32092_oob_impl(PyObject *module, PyObject *pos1, PyObject *pos2,
+                  PyObject *varargs, PyObject *kw1, PyObject *kw2)
+/*[clinic end generated code: output=ee259c130054653f input=46d15c881608f8ff]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+gh_32092_kw_pass
+
+    pos: object
+    *args: object
+    kw: object = None
+
+Proof-of-concept of GH-32092 keyword args passing bug.
+
+[clinic start generated code]*/
+
+static PyObject *
+gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
+                      PyObject *kw)
+/*[clinic end generated code: output=4a2bbe4f7c8604e9 input=5c0bd5b9079a0cce]*/
+{
+    Py_RETURN_NONE;
 }
 
 
@@ -1046,7 +1159,13 @@ static PyMethodDef tester_methods[] = {
     POSONLY_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     POSONLY_OPT_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     KEYWORD_ONLY_PARAMETER_METHODDEF
+    POSONLY_VARARG_METHODDEF
     VARARG_AND_POSONLY_METHODDEF
+    VARARG_METHODDEF
+    VARARG_WITH_DEFAULT_METHODDEF
+    VARARG_WITH_ONLY_DEFAULTS_METHODDEF
+    GH_32092_OOB_METHODDEF
+    GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
     GH_99240_DOUBLE_FREE_METHODDEF
     {NULL, NULL}

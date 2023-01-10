@@ -1,0 +1,1 @@
+Fix a bug that caused an :exc:`AttributeError` to be raised in ``python-gdb.py`` when ``py-locals`` is used without a frame.

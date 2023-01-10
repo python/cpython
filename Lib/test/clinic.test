@@ -3327,6 +3327,9 @@ test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
     }
     a = args[0];
     __clinic_args = PyTuple_New(nargs - 1);
+    if (!__clinic_args) {
+        goto exit;
+    }
     for (Py_ssize_t i = 0; i < nargs - 1; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[1 + i]));
     }
@@ -3339,7 +3342,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=081a953b8cbe7617 input=08dc2bf7afbf1613]*/
+/*[clinic end generated code: output=79b75dc07decc8d6 input=08dc2bf7afbf1613]*/
 
 /*[clinic input]
 test_vararg
@@ -3368,7 +3371,6 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     static const char * const _keywords[] = {"a", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg", 0};
     PyObject *argsbuf[2];
-    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
 
@@ -3387,7 +3389,7 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=a2baf8c1fade41d2 input=81d33815ad1bae6e]*/
+/*[clinic end generated code: output=ce9334333757f6ea input=81d33815ad1bae6e]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -3418,7 +3420,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     static const char * const _keywords[] = {"a", "b", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg_with_default", 0};
     PyObject *argsbuf[3];
-    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
     int b = 0;
@@ -3447,7 +3449,7 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=3821d282c29f8616 input=6e110b54acd9b22d]*/
+/*[clinic end generated code: output=32fb19dd6bcf9185 input=6e110b54acd9b22d]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
