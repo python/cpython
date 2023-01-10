@@ -4330,11 +4330,18 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertTrue(fields(B)[0].kw_only)
         self.assertFalse(fields(B)[1].kw_only)
 
+
 def report_code_cache_stats():
     misses = len(dataclasses._code_cache)
     hits = dataclasses._code_cache_hits
     success = hits / (hits + misses)
-    print(f"Code cache: {hits:,} hits, {misses:,} misses, {success:.0%} success rate.")
+    print(
+        f"Code cache:",
+        f"{hits:,} hits,",
+        f"{misses:,} misses,",
+        f"{success:.0%} success rate.",
+    )
+
 
 if __name__ == '__main__':
     try:

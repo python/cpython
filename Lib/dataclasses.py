@@ -223,6 +223,9 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
+_PLACEHOLDER_PREFIX = "_field_"
+_PLACEHOLDER_RE = re.compile(rf"({_PLACEHOLDER_PREFIX}\w+)")
+
 # This function's logic is copied from "recursive_repr" function in
 # reprlib module to avoid dependency.
 def _recursive_repr(user_function):
@@ -416,7 +419,7 @@ def _fields_in_init_order(fields):
 def _tuple_str(obj_name, fields):
     # Return a string representing each field of obj_name as a tuple
     # member.  So, if fields is ['x', 'y'] and obj_name is "self",
-    # return "(self.$x$,self.$y$)".
+    # return "(self._field_x,self._field_y)".
 
     # Special case for the 0-tuple.
     if not fields:
@@ -436,57 +439,122 @@ def _create_fn(name, args, body, *, globals=None, locals=None):
         locals = {}
     args = ','.join(args)
     body = '\n'.join(f'  {b}' for b in body)
-    txt = f'def {name}({args}):\n{body}'
-    # Turn every illegal named placeholder ("$foo$", "$bar$", ...) in the
-    # source into a legal numbered identifier ("__field_0__", "__field_1__",
-    # ...). At the same time, build a mapping of these new identifiers to their
-    # final field names ({"__field_0__": "foo", "__field_1__": "bar", ...}):
-    # patches = {}
-    # for i, f in enumerate(fields):
-    #     named_placeholder = f._placeholder
-    #     numbered_identifier = f"__field_{i}__"
-    #     txt = txt.replace(named_placeholder, numbered_identifier)
-    #     patches[numbered_identifier] = f.name
-    patches = {}
-    for named_placeholder in dict.fromkeys(re.findall(r"\$\w+\$", txt)):
-        numbered_identifier = f"__field_{len(patches)}__"
-        field_name = named_placeholder[1:-1]
-        txt = txt.replace(named_placeholder, numbered_identifier)
-        patches[numbered_identifier] = field_name
-    key = txt
-    code = _code_cache.get(key)
-    if code is None:
-        # Free variables in exec are resolved in the global namespace.
-        # The global namespace we have is user-provided, so we can't modify it for
-        # our purposes. So we put the things we need into locals and introduce a
-        # scope to allow the function we're creating to close over them.
-        local_vars = ', '.join(locals.keys())
-        txt = f"def __create_fn__({local_vars}):\n {txt}\n return {name}"
-        ns = {}
-        exec(txt, globals, ns)
-        code = _code_cache[key] = ns['__create_fn__'](**locals).__code__
-    else:
+
+    # Compute the text of the entire function.
+    txt = f' def {name}({args}):\n{body}'
+
+    # exec is *really* slow, so we want to avoid using it whenever possible.
+    # Turns out, if we already have a code object that is the exact same as the
+    # one we want to create (except for the actual names of the fields), it's
+    # 2-3x faster to just copy the other code object, fix up the names, and
+    # create a function using the types.FunctionType constructor.
+    #
+    # In order for this to work, we need to be able to detect the names of the
+    # fields from the source. For this reason, it's *crucial* that anything
+    # building source strings uses field._placeholder, *not* field.name!
+    # 
+    # This trick requires two passes:
+    # - Strip out the field names from the source text, and replace them with
+    #   something else (like numbers). This is used to search for (or create)
+    #   cached code with the same structure. This happens in _extract_fields.
+    # - Make a copy of the cached code object, and fix up all of the stripped
+    #   names in the consts, names, and varnames. This happens in _patch_fields.
+    #
+    # This is surprisingly effective, since we generate lots of functions that
+    # differ *only* in the names of their fields (we avoid something like 95% of
+    # the exec calls in test_dataclasses.py). Credit for this neat idea goes to
+    # https://github.com/dabeaz/dataklasses.
+
+    patches, key = _extract_fields(txt)
+    if key in _code_cache:
         global _code_cache_hits
         _code_cache_hits += 1
+        code = _code_cache[key]
+    else:
+        code = _code_cache[key] = _create_code(name, key, globals, locals)
+    # Build the closure:
+    closure = []
+    for freevar in code.co_freevars:
+        closure.append(CellType(locals[freevar]))
+    # Build the function:
+    return FunctionType(
+        code=_patch_fields(patches, code),
+        globals=globals or {},
+        closure=tuple(closure),
+    )
+
+
+def _create_code(name, txt, globals, locals):
+    # Free variables in exec are resolved in the global namespace.
+    # The global namespace we have is user-provided, so we can't modify it for
+    # our purposes. So we put the things we need into locals and introduce a
+    # scope to allow the function we're creating to close over them.
+    local_vars = ', '.join(locals.keys())
+    txt = f"def __create_fn__({local_vars}):\n{txt}\n return {name}"
+    ns = {}
+    exec(txt, globals, ns)
+    return ns['__create_fn__'](**locals).__code__
+
+
+def _extract_fields(source):
+    """
+    Replace every named placeholder (like "_field_spam") in the source with a
+    numbered placeholder (like "_field_1"). At the same time, build a mapping
+    of these new numbered placeholders to their actual field names.
+
+    Return the mapping and the patched source.
+    """
+    named_to_numbered = {}  # {"_field_spam": "_field_1", ...}
+    numbered_to_field = {}  # {"_field_1": "spam", ...}
+    parts = _PLACEHOLDER_RE.split(source)
+    # Every other part is a named placeholder. Those are all that we care about:
+    for i in range(1, len(parts), 2):
+        named_placeholder = parts[i]
+        if named_placeholder in named_to_numbered:
+            parts[i] = named_to_numbered[named_placeholder]
+        else:
+            # Using i doesn't give us sequential field numbers, but that's okay:
+            parts[i] = numbered_placeholder = f"{_PLACEHOLDER_PREFIX}{i}"
+            field_name = named_placeholder.removeprefix(_PLACEHOLDER_PREFIX)
+            named_to_numbered[named_placeholder] = numbered_placeholder
+            numbered_to_field[numbered_placeholder] = field_name
+    return numbered_to_field, "".join(parts)
+
+
+def _patch_fields(patches, code):
+    """Copy the given code with its consts, names, and varnames patched."""
     consts = []
     for const in code.co_consts:
-        if isinstance(const, str):
-            for numbered_symbol, field_name in patches.items():
-                const = const.replace(numbered_symbol, field_name)
+        match code.co_name, const:
+            case "__init__", str() if const in patches:
+                # const is a field name:
+                const = patches[const]
+            case "__repr__", str():
+                # const may be a string *containing* field names:
+                unpatched = _PLACEHOLDER_RE.split(const)
+                patched = _apply_patches(patches, unpatched)
+                const = "".join(patched)
+            case "__delattr__" | "__setattr__", tuple():
+                # const may be a tuple *containing* field names:
+                patched = _apply_patches(patches, const)
+                const = tuple(patched)
         consts.append(const)
-    consts = tuple(consts)
-    names = tuple(patches.get(name, name) for name in code.co_names)
-    varnames = tuple(patches.get(name, name) for name in code.co_varnames)
-    closure = tuple(CellType(locals[freevar]) for freevar in code.co_freevars)
-    return FunctionType(
-        code=code.replace(
-            co_consts=consts,
-            co_names=names,
-            co_varnames=varnames,
-        ),
-        globals=globals or {},
-        closure=closure,
+    names = _apply_patches(patches, code.co_names)
+    varnames = _apply_patches(patches, code.co_varnames)
+    return code.replace(
+        co_consts=tuple(consts),
+        co_names=tuple(names),
+        co_varnames=tuple(varnames),
     )
+
+
+def _apply_patches(patches, unpatched):
+    patched = []
+    for item in unpatched:
+        if item in patches:
+            item = patches[item]
+        patched.append(item)
+    return patched
 
 
 def _field_assign(frozen, name, value, self_name):
@@ -560,6 +628,7 @@ def _field_init(f, frozen, globals, self_name, slots, i):
     # Now, actually generate the field assignment.
     return _field_assign(frozen, f._placeholder, value, self_name)
 
+
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
              self_name, globals, slots):
     # fields contains both real fields and InitVar pseudo-fields.
@@ -616,6 +685,15 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                    tuple(body_lines),
                    locals=locals,
                    globals=globals)
+    _add_init_dunders(f, std_fields, kw_only_fields)
+    return f
+
+
+def _add_init_dunders(init, std_fields, kw_only_fields):
+    """
+    Add __annotations__, __defaults__, and __kwdefaults__ to an __init__
+    function.
+    """
     annotations = {"return": None}
     defaults = []
     kwdefaults = {}
@@ -631,10 +709,9 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
             kwdefaults[field.name] = field.default
         elif field.default_factory is not MISSING:
             kwdefaults[field.name] = _HAS_DEFAULT_FACTORY
-    f.__annotations__ = annotations
-    f.__defaults__ = tuple(defaults) or None
-    f.__kwdefaults__ = kwdefaults or None
-    return f
+    init.__annotations__ = annotations
+    init.__defaults__ = tuple(defaults) or None
+    init.__kwdefaults__ = kwdefaults or None
 
 
 def _repr_fn(fields, globals):
@@ -651,17 +728,21 @@ def _repr_fn(fields, globals):
 def _frozen_get_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
-    fields_str = ' '.join(f._placeholder for f in fields)
+    if fields:
+        fields_str = '(' + ','.join(repr(f._placeholder) for f in fields) + ',)'
+    else:
+        # Special case for the zero-length tuple.
+        fields_str = '()'
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
-                      (f'if type(self) is cls or name in {fields_str!r}:',
+                      (f'if type(self) is cls or name in {fields_str}:',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
                        locals=locals,
                        globals=globals),
             _create_fn('__delattr__',
                       ('self', 'name'),
-                      (f'if type(self) is cls or name in {fields_str!r}:',
+                      (f'if type(self) is cls or name in {fields_str}:',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
                        locals=locals,
@@ -672,8 +753,8 @@ def _frozen_get_del_attr(cls, fields, globals):
 def _cmp_fn(name, op, self_tuple, other_tuple, globals):
     # Create a comparison function.  If the fields in the object are
     # named 'x' and 'y', then self_tuple is the string
-    # '(self.$x$,self.$y$)' and other_tuple is the string
-    # '(other.$x$,other.$y$)'.
+    # '(self._field_x,self._field_y)' and other_tuple is the string
+    # '(other._field_x,other._field_y)'.
 
     return _create_fn(name,
                       ('self', 'other'),
@@ -687,7 +768,7 @@ def _hash_fn(fields, globals):
     self_tuple = _tuple_str('self', fields)
     return _create_fn('__hash__',
                       ('self',),
-                      [f'return hash({self_tuple})',],
+                      [f'return hash({self_tuple})'],
                       globals=globals)
 
 
@@ -789,7 +870,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     f.name = a_name
     f.type = a_type
 
-    f._placeholder = f"${a_name}$"
+    f._placeholder = f"{_PLACEHOLDER_PREFIX}{a_name}"
 
     # Assume it's a normal field until proven otherwise.  We're next
     # going to decide if it's a ClassVar or InitVar, everything else
