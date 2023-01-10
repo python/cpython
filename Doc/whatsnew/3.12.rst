@@ -182,6 +182,13 @@ Other Language Changes
   arguments of any type instead of just :class:`bool` and :class:`int`.
   (Contributed by Serhiy Storchaka in :gh:`60203`.)
 
+* Variables used in the target part of comprehensions that are not stored to
+  can now be used in assignment expressions (``:=``).
+  For example, in ``[(b := 1) for a, b.prop in some_iter]``, the assignment to
+  ``b`` is now allowed. Note that assigning to variables stored to in the target
+  part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
+  (Contributed by Nikita Sobolev in :gh:`100581`.)
+
 
 New Modules
 ===========
@@ -261,6 +268,12 @@ dis
   but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
+
+math
+----
+
+* Added :func:`math.sumprod` for computing a sum of products.
+  (Contributed by Raymond Hettinger in :gh:`100485`.)
 
 os
 --

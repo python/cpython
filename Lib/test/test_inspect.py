@@ -3283,6 +3283,25 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', 10, ..., "positional_or_keyword"),),
                           ...))
 
+    def test_signature_on_mocks(self):
+        # https://github.com/python/cpython/issues/96127
+        for mock in (
+            unittest.mock.Mock(),
+            unittest.mock.AsyncMock(),
+            unittest.mock.MagicMock(),
+        ):
+            with self.subTest(mock=mock):
+                self.assertEqual(str(inspect.signature(mock)), '(*args, **kwargs)')
+
+    def test_signature_on_noncallable_mocks(self):
+        for mock in (
+            unittest.mock.NonCallableMock(),
+            unittest.mock.NonCallableMagicMock(),
+        ):
+            with self.subTest(mock=mock):
+                with self.assertRaises(TypeError):
+                    inspect.signature(mock)
+
     def test_signature_equality(self):
         def foo(a, *, b:int) -> float: pass
         self.assertFalse(inspect.signature(foo) == 42)
