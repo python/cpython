@@ -1131,7 +1131,7 @@ each request is handled by a thread:
                                                  'context can be used to '
                                                  'populate logs')
         aa = ap.add_argument
-        aa('--count', '-c', default=100, help='How many requests to simulate')
+        aa('--count', '-c', type=int, default=100, help='How many requests to simulate')
         options = ap.parse_args()
 
         # Create the dummy webapps and put them in a list which we can use to select
