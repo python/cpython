@@ -456,10 +456,9 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        // Alternative: (list, unused[oparg], v -- list, unused[oparg])
-        inst(LIST_APPEND, (v --)) {
-            PyObject *list = PEEK(oparg + 1);  // +1 to account for v staying on stack
-            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
+        // 'stuff' is a list object followed by (oparg - 1) unused values
+        inst(LIST_APPEND, (stuff[oparg], v -- stuff[oparg])) {
+            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)stuff[0], v) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
