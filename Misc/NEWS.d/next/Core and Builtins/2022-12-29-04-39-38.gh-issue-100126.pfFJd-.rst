@@ -1,0 +1,3 @@
+Fix an issue where "incomplete" frames could be briefly visible to C code
+while other frames are being torn down, possibly resulting in corruption or
+hard crashes of the interpreter while running finalizers.
