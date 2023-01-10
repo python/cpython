@@ -652,8 +652,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     """
 
-    index_pages = ["index.html", "index.htm"]
     server_version = "SimpleHTTP/" + __version__
+    index_pages = ("index.html", "index.htm")
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
         '.Z': 'application/octet-stream',
@@ -661,11 +661,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.xz': 'application/x-xz',
     }
 
-    def __init__(self, *args, directory=None, index_pages=None, **kwargs):
+    def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
-        if index_pages is not None:
-            self.index_pages = index_pages
         self.directory = os.fspath(directory)
         super().__init__(*args, **kwargs)
 
