@@ -446,20 +446,22 @@ def _create_fn(name, args, body, *, globals=None, locals=None):
     # exec is *really* slow, so we want to avoid using it whenever possible.
     # Turns out, if we already have a code object that is the exact same as the
     # one we want to create (except for the actual names of the fields), it's
-    # 2-3x faster to just copy the other code object, fix up the names, and
+    # twice as fast to just copy the other code object, fix up the names, and
     # create a function using the types.FunctionType constructor.
-    #
+
     # In order for this to work, we need to be able to detect the names of the
     # fields from the source. For this reason, it's *crucial* that anything
     # building source strings uses field._placeholder, *not* field.name!
-    # 
+
     # This trick requires two passes:
+
     # - Strip out the field names from the source text, and replace them with
     #   something else (like numbers). This is used to search for (or create)
     #   cached code with the same structure. This happens in _extract_fields.
+
     # - Make a copy of the cached code object, and fix up all of the stripped
     #   names in the consts, names, and varnames. This happens in _patch_fields.
-    #
+
     # This is surprisingly effective, since we generate lots of functions that
     # differ *only* in the names of their fields (we avoid something like 95% of
     # the exec calls in test_dataclasses.py). Credit for this neat idea goes to
