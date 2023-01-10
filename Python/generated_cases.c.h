@@ -2090,8 +2090,8 @@
             }
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            assert(oparg <= Py_GE);
-            res = PyObject_RichCompare(left, right, oparg);
+            assert((oparg >> 4) <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
             Py_DECREF(right);
             if (res == NULL) goto pop_2_error;
@@ -2155,7 +2155,7 @@
                 assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
                 Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
                 Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-                // 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
+                // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
                 int sign_ish = 1 << (2 * (ileft >= iright) + (ileft <= iright));
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -2183,19 +2183,19 @@
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
                 size_t jump;
-                uint16_t invert = read_u16(&next_instr[1].cache);
+                uint16_t when_to_jump_mask = read_u16(&next_instr[1].cache);
                 assert(cframe.use_tracing == 0);
                 // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
                 DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
                 STAT_INC(COMPARE_OP, hit);
                 int res = _PyUnicode_Equal(left, right);
-                assert(oparg == Py_EQ || oparg == Py_NE);
+                assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
                 _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
                 _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 assert(res == 0 || res == 1);
-                assert(invert == 0 || invert == 1);
-                jump = res ^ invert;
+                assert(when_to_jump_mask == 7 || when_to_jump_mask == 8);
+                jump = (res + 7) & when_to_jump_mask;
                 _tmp_2 = (PyObject *)jump;
             }
             JUMPBY(2);
