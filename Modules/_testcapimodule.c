@@ -1934,7 +1934,6 @@ exit:
         PyThread_free_lock(test_c_thread.start_event);
         test_c_thread.start_event = NULL;
     }
-
     if (test_c_thread.exit_event) {
         PyThread_free_lock(test_c_thread.exit_event);
         test_c_thread.exit_event = NULL;

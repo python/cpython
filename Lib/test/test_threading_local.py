@@ -201,7 +201,6 @@ class BaseLocalTest:
         # See https://github.com/python/cpython/issues/100892
 
         _testcapi = import_module('_testcapi')
-
         _testcapi.call_in_temporary_c_thread(lambda: None, False)
 
         for _ in range(1000):
