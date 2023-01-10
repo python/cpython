@@ -1,0 +1,2 @@
+``inspect.signature`` was raising ``TypeError`` on call with mock objects.
+Now it correctly returns ``(*args, **kwargs)`` as infered signature.

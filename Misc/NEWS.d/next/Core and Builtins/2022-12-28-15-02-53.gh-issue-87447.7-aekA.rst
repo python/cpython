@@ -1,0 +1,5 @@
+Fix :exc:`SyntaxError` on comprehension rebind checking with names that are
+not actually redefined.
+
+Now reassigning ``b`` in ``[(b := 1) for a, b.prop in some_iter]`` is allowed.
+Reassigning ``a`` is still disallowed as per :pep:`572`.
