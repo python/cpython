@@ -2463,7 +2463,7 @@ Transaction control via the ``autocommit`` attribute
 
 The recommended way of controlling transaction behaviour is through
 the :attr:`Connection.autocommit` attribute,
-which should preferrably be set using the *autocommit* parameter
+which should preferably be set using the *autocommit* parameter
 of :func:`connect`.
 
 It is suggested to set *autocommit* to ``False``,
