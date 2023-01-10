@@ -725,6 +725,7 @@ extern "C" {
     INIT_ID(__xor__), \
     INIT_ID(_abc_impl), \
     INIT_ID(_abstract_), \
+    INIT_ID(_active), \
     INIT_ID(_annotation), \
     INIT_ID(_anonymous_), \
     INIT_ID(_argtypes_), \
@@ -745,6 +746,7 @@ extern "C" {
     INIT_ID(_initializing), \
     INIT_ID(_is_text_encoding), \
     INIT_ID(_length_), \
+    INIT_ID(_limbo), \
     INIT_ID(_lock_unlock_module), \
     INIT_ID(_loop), \
     INIT_ID(_needs_com_addref_), \
@@ -978,6 +980,9 @@ extern "C" {
     INIT_ID(keyfile), \
     INIT_ID(keys), \
     INIT_ID(kind), \
+    INIT_ID(kw), \
+    INIT_ID(kw1), \
+    INIT_ID(kw2), \
     INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_node), \
@@ -1040,6 +1045,7 @@ extern "C" {
     INIT_ID(node_offset), \
     INIT_ID(ns), \
     INIT_ID(nstype), \
+    INIT_ID(nt), \
     INIT_ID(null), \
     INIT_ID(number), \
     INIT_ID(obj), \
@@ -1076,6 +1082,9 @@ extern "C" {
     INIT_ID(pid), \
     INIT_ID(policy), \
     INIT_ID(pos), \
+    INIT_ID(pos1), \
+    INIT_ID(pos2), \
+    INIT_ID(posix), \
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \

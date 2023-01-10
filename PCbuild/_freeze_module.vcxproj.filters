@@ -205,6 +205,9 @@
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\intrinsics.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\interpreteridobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -365,6 +368,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\thread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\timemodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\token.c">

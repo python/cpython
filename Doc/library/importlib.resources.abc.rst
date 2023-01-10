@@ -145,7 +145,7 @@
     :class:`importlib.resources.abc.ResourceReader` and provides
     concrete implementations of the :class:`importlib.resources.abc.ResourceReader`'s
     abstract methods. Therefore, any loader supplying
-    :class:`importlib.abc.TraversableReader` also supplies ResourceReader.
+    :class:`importlib.abc.TraversableResources` also supplies ResourceReader.
 
     Loaders that wish to support resource reading are expected to
     implement this interface.

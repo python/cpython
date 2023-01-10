@@ -556,7 +556,7 @@ py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
     Py_ssize_t end;
     Py_ssize_t next_end = -1;
     int strict = 1;
-    if (!PyArg_ParseTuple(args, "On|i:scanstring", &pystr, &end, &strict)) {
+    if (!PyArg_ParseTuple(args, "On|p:scanstring", &pystr, &end, &strict)) {
         return NULL;
     }
     if (PyUnicode_Check(pystr)) {
@@ -709,9 +709,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
             if (memokey == NULL) {
                 goto bail;
             }
-            Py_INCREF(memokey);
-            Py_DECREF(key);
-            key = memokey;
+            Py_SETREF(key, Py_NewRef(memokey));
             idx = next_idx;
 
             /* skip whitespace between key and : delimiter, read :, skip whitespace */
@@ -1321,9 +1319,10 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
     double i = PyFloat_AS_DOUBLE(obj);
     if (!Py_IS_FINITE(i)) {
         if (!s->allow_nan) {
-            PyErr_SetString(
+            PyErr_Format(
                     PyExc_ValueError,
-                    "Out of range float values are not JSON compliant"
+                    "Out of range float values are not JSON compliant: %R",
+                    obj
                     );
             return NULL;
         }
@@ -1572,10 +1571,9 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         */
     }
 
-    if (s->sort_keys) {
-
-        items = PyDict_Items(dct);
-        if (items == NULL || PyList_Sort(items) < 0)
+    if (s->sort_keys || !PyDict_CheckExact(dct)) {
+        items = PyMapping_Items(dct);
+        if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0))
             goto bail;
 
         for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {

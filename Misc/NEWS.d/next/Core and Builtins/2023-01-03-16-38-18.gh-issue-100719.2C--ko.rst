@@ -1,0 +1,2 @@
+Removed the co_nplaincellvars field from the code object, as it is
+redundant.

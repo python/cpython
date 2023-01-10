@@ -543,7 +543,7 @@ dis_asyncwith = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
-        >> STOPITERATION_ERROR
+        >> CALL_INTRINSIC_1         3
            RERAISE                  1
 ExceptionTable:
 12 rows
