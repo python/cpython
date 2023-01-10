@@ -1,2 +1,0 @@
-Use ``_MSVC_LANG >= 202002L`` instead of less-precise ``_MSC_VER >=1929``
-to more accurately test for C++20 support in :file:`PC/_wmimodule.cpp`.

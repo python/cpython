@@ -1,2 +1,0 @@
-Initialize frame->previous in frameobject.c to fix a segmentation fault when
-accessing frames created by :c:func:`PyFrame_New`.
