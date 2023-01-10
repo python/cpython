@@ -200,7 +200,13 @@ static long compute_range_length_long(PyObject *start,
     if (long_step==-1 && PyErr_Occurred()) {
         return -1;
     }
-    return get_len_of_range(long_start, long_stop, long_step);
+    long len = get_len_of_range(long_start, long_stop, long_step);
+
+    if (len<0) {
+        /* we have an overflow */
+        len = -2;
+    }
+    return len;
 }
 
 /* Return number of items in range (lo, hi, step) as a PyLong object,
