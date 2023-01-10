@@ -1,2 +1,0 @@
-Improve the output of ``co_lines`` by emitting only one entry for each line
-range.

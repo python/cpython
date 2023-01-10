@@ -1,2 +1,0 @@
-Remove :opcode:`UNARY_POSITIVE`, :opcode:`ASYNC_GEN_WRAP` and
-:opcode:`LIST_TO_TUPLE`, replacing them with intrinsics.
