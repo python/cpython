@@ -196,9 +196,7 @@ def splitdrive(p):
             return p, p[:0]
         index2 = normp.find(sep, index1 + 1)
         if index2 == -1:
-            index2 = len(p)
-        if index2 - index1 == 1:
-            return p[:index1], p[index1:]
+            return p, p[:0]
         return p[:index2], p[index2:]
     return p[:0], p
 
