@@ -14710,6 +14710,7 @@ fi
 { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+  { ac_cv_search_dbm_open=; unset ac_cv_search_dbm_open;}
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -14769,7 +14770,9 @@ $as_echo "$ac_cv_search_dbm_open" >&6; }
 ac_res=$ac_cv_search_dbm_open
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
+  have_gdbm_compat=yes
+else
+  have_gdbm_compat=no
 fi
 
 
