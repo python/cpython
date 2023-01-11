@@ -8,7 +8,10 @@ def get_obj_percentage_data(df):
     gen_data = []
     for generation in range(3):
         vals = df[df["generation_number"] == generation]
-        gen_data.append((vals["collected_cycles"] / vals["total_objects"]).values)
+        item = vals["collected_cycles"] / vals["total_objects"].values
+        if item.size == 0:
+            item = np.array([0])
+        gen_data.append(item)
     return gen_data
 
 
@@ -16,7 +19,10 @@ def get_gen_time_data(df):
     gen_data = []
     for generation in range(3):
         vals = df[df["generation_number"] == generation]
-        gen_data.append(vals["collection_time"])
+        item = vals["collection_time"].values
+        if item.size == 0:
+            item = np.array([0])
+        gen_data.append(item)
     return gen_data
 
 
@@ -24,9 +30,21 @@ def get_gen_time_data_per_obj(df):
     gen_data = []
     for generation in range(3):
         vals = df[df["generation_number"] == generation]
-        gen_data.append(vals["collection_time"] / vals["total_objects"])
+        item = vals["collection_time"] / vals["total_objects"].values
+        if item.size == 0:
+            item = np.array([0])
+        gen_data.append(item)
     return gen_data
 
+def get_gen_freq_per_us(df):
+    gen_data = []
+    for generation in range(3):
+        vals = df[df["generation_number"] == generation]
+        item = 1.0 / (vals["collection_time"] / vals["total_objects"]).values / 1.0e6
+        if item.size == 0:
+            item = np.array([0])
+        gen_data.append(item)
+    return gen_data
 
 def gen_plot(df, output_filename):
     def violinplot_with_custom_formatting(
@@ -49,8 +67,8 @@ def gen_plot(df, output_filename):
         ax.set_title(title)
 
     names = ["First generation", "Second generation", "Third generation"]
-    fig, (ax1, ax2, ax3) = plt.subplots(
-        3, 1, figsize=(8, (2 + len(names) * 0.3) * 3), layout="constrained"
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(
+        4, 1, figsize=(8, (2 + len(names) * 0.3) * 4), layout="constrained"
     )
 
     obj_percentage_data = get_obj_percentage_data(df)
@@ -86,6 +104,18 @@ def gen_plot(df, output_filename):
         (0, len(names) + 1),
         "time",
         "Generation Time per obj stats",
+        formatter=formatter,
+    )
+
+    formatter = lambda val, pos: f"{int(val)}obj/us"
+    gen_freq_per_us = get_gen_freq_per_us(df)
+    violinplot_with_custom_formatting(
+        ax4,
+        gen_freq_per_us,
+        names,
+        (0, len(names) + 1),
+        "time",
+        "Objects collected per us stats",
         formatter=formatter,
     )
 
