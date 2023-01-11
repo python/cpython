@@ -600,22 +600,26 @@ else:
         if executable_dir:
             if os_name == 'nt':
                 # QUIRK: For compatibility and security, do not search for DLLs
-                # directory. The fallback below will cover it
-                exec_prefix = executable_dir
+                # directory.
+                if isdir(joinpath(executable_dir, PLATSTDLIB_LANDMARK)):
+                    exec_prefix = executable_dir
             else:
                 exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
-        if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
+        if not exec_prefix:
             if os_name == 'nt':
                 # QUIRK: If DLLs is missing on Windows, don't warn, just assume
                 # that it's all the same as prefix.
-                # gh-98790: We set platstdlib_dir here to avoid adding "DLLs" into
-                # sys.path when it doesn't exist, which would give site-packages
-                # precedence over executable_dir, which is *probably* where our PYDs
-                # live. Ideally, whoever changes our layout will tell us what the
-                # layout is, but in the past this worked, so it should keep working.
-                platstdlib_dir = exec_prefix = prefix
+                exec_prefix = prefix
+                if not platstdlib_dir:
+                    # gh-98790: We set platstdlib_dir here to avoid adding "DLLs" into
+                    # sys.path when it doesn't exist in the platstdlib place, which
+                    # would give site-packages precedence over executable_dir where our
+                    # PYDs *probably* live. Ideally, whoever changes our layout will tell
+                    # us what the layout is, but in the past this worked, so it should
+                    # keep working.
+                    platstdlib_dir = exec_prefix
             else:
                 warn('Could not find platform dependent libraries <exec_prefix>')
 
@@ -720,13 +724,17 @@ elif not pythonpath_was_set:
             pythonpath.append(joinpath(prefix, p))
 
     # Then add stdlib_dir and platstdlib_dir
-    if os_name == 'nt' and venv_prefix:
-        # QUIRK: Windows generates paths differently in a venv
+    if os_name == 'nt':
+        # QUIRK: Windows generates paths differently
         if platstdlib_dir:
             pythonpath.append(platstdlib_dir)
         if stdlib_dir:
             pythonpath.append(stdlib_dir)
-        if executable_dir not in pythonpath:
+        if executable_dir and executable_dir not in pythonpath:
+            # QUIRK: the executable directory is on sys.path
+            # We keep it low priority, so that properly installed modules are
+            # found first. It may be earlier in the order if we found some
+            # reason to put it there.
             pythonpath.append(executable_dir)
     else:
         if stdlib_dir:
