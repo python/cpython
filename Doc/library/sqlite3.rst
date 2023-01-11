@@ -501,11 +501,7 @@ Module constants
 
    .. note::
 
-      The :mod:`!sqlite3` module supports ``qmark``, ``numeric``,
-      and ``named`` DB-API parameter styles,
-      because that is what the underlying SQLite library supports.
-      However, the DB-API does not allow multiple values for
-      the ``paramstyle`` attribute.
+      The ``named`` DB-API parameter style is also supported.
 
 .. data:: sqlite_version
 
@@ -2467,7 +2463,7 @@ Transaction control via the ``autocommit`` attribute
 
 The recommended way of controlling transaction behaviour is through
 the :attr:`Connection.autocommit` attribute,
-which should preferrably be set using the *autocommit* parameter
+which should preferably be set using the *autocommit* parameter
 of :func:`connect`.
 
 It is suggested to set *autocommit* to ``False``,
