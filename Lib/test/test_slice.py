@@ -263,12 +263,10 @@ class SliceTest(unittest.TestCase):
     def test_deepcopy(self):
         s = slice(1, 10)
         c = copy.deepcopy(s)
-        self.assertIsNot(s, c)
         self.assertEqual(s, c)
 
         s = slice(1, 10, 2)
         c = copy.deepcopy(s)
-        self.assertIsNot(s, c)
         self.assertEqual(s, c)
 
         # Corner case for mutable indices:
