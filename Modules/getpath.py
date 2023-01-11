@@ -709,7 +709,7 @@ elif not pythonpath_was_set:
                         i += 1
                     # Paths from the core key get appended last, but only
                     # when home was not set and we aren't in a build dir
-                    if not home_was_set and not build_prefix:
+                    if not home_was_set and not venv_prefix and not build_prefix:
                         v = winreg.QueryValue(key, None)
                         if isinstance(v, str):
                             pythonpath.extend(v.split(DELIM))
