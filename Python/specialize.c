@@ -262,18 +262,27 @@ do { \
 #define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
+static int compare_masks[] = {
+    [Py_LT] = COMPARISON_LESS_THAN,
+    [Py_LE] = COMPARISON_LESS_THAN | COMPARISON_EQUALS,
+    [Py_EQ] = COMPARISON_EQUALS,
+    [Py_NE] = COMPARISON_NOT_EQUALS,
+    [Py_GT] = COMPARISON_GREATER_THAN,
+    [Py_GE] = COMPARISON_GREATER_THAN | COMPARISON_EQUALS,
+};
+
 // Initialize warmup counters and insert superinstructions. This cannot fail.
 void
 _PyCode_Quicken(PyCodeObject *code)
 {
-    int previous_opcode = 0;
+    int opcode = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
+        int previous_opcode = opcode;
+        opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             instructions[i + 1].cache = adaptive_counter_warmup();
-            previous_opcode = 0;
             i += caches;
             continue;
         }
@@ -293,8 +302,19 @@ _PyCode_Quicken(PyCodeObject *code)
             case STORE_FAST << 8 | STORE_FAST:
                 instructions[i - 1].opcode = STORE_FAST__STORE_FAST;
                 break;
+            case COMPARE_OP << 8 | POP_JUMP_IF_TRUE:
+            case COMPARE_OP << 8 | POP_JUMP_IF_FALSE:
+            {
+                int oparg = instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg;
+                assert((oparg >> 4) <= Py_GE);
+                int mask = compare_masks[oparg >> 4];
+                if (opcode == POP_JUMP_IF_FALSE) {
+                    mask = mask ^ 0xf;
+                }
+                instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg = (oparg & 0xf0) | mask;
+                break;
+            }
         }
-        previous_opcode = opcode;
     }
 }
 
@@ -1977,20 +1997,6 @@ compare_op_fail_kind(PyObject *lhs, PyObject *rhs)
 }
 #endif
 
-
-static int compare_masks[] = {
-    // 1-bit: jump if unordered
-    // 2-bit: jump if less
-    // 4-bit: jump if greater
-    // 8-bit: jump if equal
-    [Py_LT] = 0 | 2 | 0 | 0,
-    [Py_LE] = 0 | 2 | 0 | 8,
-    [Py_EQ] = 0 | 0 | 0 | 8,
-    [Py_NE] = 1 | 2 | 4 | 0,
-    [Py_GT] = 0 | 0 | 4 | 0,
-    [Py_GE] = 0 | 0 | 4 | 8,
-};
-
 void
 _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                          int oparg)
@@ -2006,24 +2012,17 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
     }
-    assert(oparg <= Py_GE);
-    int when_to_jump_mask = compare_masks[oparg];
-    if (next_opcode == POP_JUMP_IF_FALSE) {
-        when_to_jump_mask = (1 | 2 | 4 | 8) & ~when_to_jump_mask;
-    }
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
         goto failure;
     }
     if (PyFloat_CheckExact(lhs)) {
         _py_set_opcode(instr, COMPARE_OP_FLOAT_JUMP);
-        cache->mask = when_to_jump_mask;
         goto success;
     }
     if (PyLong_CheckExact(lhs)) {
         if (Py_ABS(Py_SIZE(lhs)) <= 1 && Py_ABS(Py_SIZE(rhs)) <= 1) {
             _py_set_opcode(instr, COMPARE_OP_INT_JUMP);
-            cache->mask = when_to_jump_mask;
             goto success;
         }
         else {
@@ -2032,13 +2031,13 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         }
     }
     if (PyUnicode_CheckExact(lhs)) {
-        if (oparg != Py_EQ && oparg != Py_NE) {
+        int cmp = oparg >> 4;
+        if (cmp != Py_EQ && cmp != Py_NE) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_STRING);
             goto failure;
         }
         else {
             _py_set_opcode(instr, COMPARE_OP_STR_JUMP);
-            cache->mask = (when_to_jump_mask & 8) == 0;
             goto success;
         }
     }

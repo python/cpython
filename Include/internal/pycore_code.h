@@ -41,7 +41,6 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
-    uint16_t mask;
 } _PyCompareOpCache;
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
@@ -475,6 +474,27 @@ extern PyCodeObject *
 _Py_MakeShimCode(const _PyShimCodeDef *code);
 
 extern uint32_t _Py_next_func_version;
+
+
+/* Comparison bit masks. */
+
+/* Note this evaluates its arguments twice each */
+#define COMPARISON_BIT(x, y) (1 << (2 * ((x) >= (y)) + ((x) <= (y))))
+
+/*
+ * The following bits are chosen so that the value of
+ * COMPARSION_BIT(left, right)
+ * masked by the values below will be non-zero if the
+ * comparison is true, and zero if it is false */
+
+/* This is for values that are unordered, ie. NaN, not types that are unordered, e.g. sets */
+#define COMPARISON_UNORDERED 1
+
+#define COMPARISON_LESS_THAN 2
+#define COMPARISON_GREATER_THAN 4
+#define COMPARISON_EQUALS 8
+
+#define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
 
 
 #ifdef __cplusplus
