@@ -1943,12 +1943,13 @@ into the query by providing them as a :class:`tuple` of values to the second
 argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
 use one of two kinds of placeholders: question marks (qmark style) or named
 placeholders (named style). For the qmark style, ``parameters`` must be a
-:term:`sequence <sequence>`. For the named style, it can be either a
-:term:`sequence <sequence>` or :class:`dict` instance. The length of the
-:term:`sequence <sequence>` must match the number of placeholders, or a
-:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
-keys for all named parameters. Any extra items are ignored. Here's an example of
-both styles:
+:term:`sequence` whose length must match the number of placeholders,
+or a :exc:`ProgrammingError` is raised.
+For the named style, ``parameters`` should be a :class:`dict`,
+or a :class:`!dict` subclass,
+instance which must contain keys for all named parameters;
+any extra items are ignored.
+Here's an example of both styles:
 
 .. testcode::
 
@@ -1974,6 +1975,16 @@ both styles:
    :hide:
 
    [('C', 1972)]
+
+.. note::
+
+   :pep:`249` numeric placeholders are not supported.
+   If used, they will be interpreted as named placeholders.
+
+Although **strongly discouraged**, for the named style,
+``parameters`` can be supplied as a :term:`!sequence`.
+This will result in the parameters being blindly bound to the placeholders
+simply by index; parameter names will silently be ignored.
 
 
 .. _sqlite3-adapters:
