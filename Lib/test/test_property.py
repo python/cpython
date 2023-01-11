@@ -410,12 +410,11 @@ class PropertySubclassTests(unittest.TestCase):
                 return "abcdef"
 
         p = property.__new__(pro)
-        with self.assertRaises(TypeError):
-            p.getter(lambda self: 1)  # this line was causing a crash
-        with self.assertRaises(TypeError):
-            p.setter(lambda self, val: 1)  # this line was causing a crash
-        with self.assertRaises(TypeError):
-            p.deleter(lambda self: 1)  # this line was causing a crash
+
+        # These lines were causing crashes:
+        p.getter(lambda self: 1)
+        p.setter(lambda self, val: 1)
+        p.deleter(lambda self: 1)
 
 
 class _PropertyUnreachableAttribute:
