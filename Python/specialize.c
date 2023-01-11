@@ -432,19 +432,19 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 29
 
 /* COMPARE_OP */
-#define SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES 12
-#define SPEC_FAIL_COMPARE_OP_STRING 13
-#define SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP 14
-#define SPEC_FAIL_COMPARE_OP_BIG_INT 15
-#define SPEC_FAIL_COMPARE_OP_BYTES 16
-#define SPEC_FAIL_COMPARE_OP_TUPLE 17
-#define SPEC_FAIL_COMPARE_OP_LIST 18
-#define SPEC_FAIL_COMPARE_OP_SET 19
-#define SPEC_FAIL_COMPARE_OP_BOOL 20
-#define SPEC_FAIL_COMPARE_OP_BASEOBJECT 21
-#define SPEC_FAIL_COMPARE_OP_FLOAT_LONG 22
-#define SPEC_FAIL_COMPARE_OP_LONG_FLOAT 23
-#define SPEC_FAIL_COMPARE_OP_EXTENDED_ARG 24
+#define SPEC_FAIL_COMPARE_DIFFERENT_TYPES 12
+#define SPEC_FAIL_COMPARE_STRING 13
+#define SPEC_FAIL_COMPARE_NOT_FOLLOWED_BY_COND_JUMP 14
+#define SPEC_FAIL_COMPARE_BIG_INT 15
+#define SPEC_FAIL_COMPARE_BYTES 16
+#define SPEC_FAIL_COMPARE_TUPLE 17
+#define SPEC_FAIL_COMPARE_LIST 18
+#define SPEC_FAIL_COMPARE_SET 19
+#define SPEC_FAIL_COMPARE_BOOL 20
+#define SPEC_FAIL_COMPARE_BASEOBJECT 21
+#define SPEC_FAIL_COMPARE_FLOAT_LONG 22
+#define SPEC_FAIL_COMPARE_LONG_FLOAT 23
+#define SPEC_FAIL_COMPARE_EXTENDED_ARG 24
 
 /* FOR_ITER */
 #define SPEC_FAIL_FOR_ITER_GENERATOR 10
@@ -1969,30 +1969,30 @@ compare_op_fail_kind(PyObject *lhs, PyObject *rhs)
 {
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         if (PyFloat_CheckExact(lhs) && PyLong_CheckExact(rhs)) {
-            return SPEC_FAIL_COMPARE_OP_FLOAT_LONG;
+            return SPEC_FAIL_COMPARE_FLOAT_LONG;
         }
         if (PyLong_CheckExact(lhs) && PyFloat_CheckExact(rhs)) {
-            return SPEC_FAIL_COMPARE_OP_LONG_FLOAT;
+            return SPEC_FAIL_COMPARE_LONG_FLOAT;
         }
-        return SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES;
+        return SPEC_FAIL_COMPARE_DIFFERENT_TYPES;
     }
     if (PyBytes_CheckExact(lhs)) {
-        return SPEC_FAIL_COMPARE_OP_BYTES;
+        return SPEC_FAIL_COMPARE_BYTES;
     }
     if (PyTuple_CheckExact(lhs)) {
-        return SPEC_FAIL_COMPARE_OP_TUPLE;
+        return SPEC_FAIL_COMPARE_TUPLE;
     }
     if (PyList_CheckExact(lhs)) {
-        return SPEC_FAIL_COMPARE_OP_LIST;
+        return SPEC_FAIL_COMPARE_LIST;
     }
     if (PySet_CheckExact(lhs) || PyFrozenSet_CheckExact(lhs)) {
-        return SPEC_FAIL_COMPARE_OP_SET;
+        return SPEC_FAIL_COMPARE_SET;
     }
     if (PyBool_Check(lhs)) {
-        return SPEC_FAIL_COMPARE_OP_BOOL;
+        return SPEC_FAIL_COMPARE_BOOL;
     }
     if (Py_TYPE(lhs)->tp_richcompare == PyBaseObject_Type.tp_richcompare) {
-        return SPEC_FAIL_COMPARE_OP_BASEOBJECT;
+        return SPEC_FAIL_COMPARE_BASEOBJECT;
     }
     return SPEC_FAIL_OTHER;
 }
@@ -2033,14 +2033,14 @@ _Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *inst
             goto success;
         }
         else {
-            SPECIALIZATION_FAIL(COMPARE_AND_BRANCH, SPEC_FAIL_COMPARE_OP_BIG_INT);
+            SPECIALIZATION_FAIL(COMPARE_AND_BRANCH, SPEC_FAIL_COMPARE_BIG_INT);
             goto failure;
         }
     }
     if (PyUnicode_CheckExact(lhs)) {
         int cmp = oparg >> 4;
         if (cmp != Py_EQ && cmp != Py_NE) {
-            SPECIALIZATION_FAIL(COMPARE_AND_BRANCH, SPEC_FAIL_COMPARE_OP_STRING);
+            SPECIALIZATION_FAIL(COMPARE_AND_BRANCH, SPEC_FAIL_COMPARE_STRING);
             goto failure;
         }
         else {
