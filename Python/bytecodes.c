@@ -1910,8 +1910,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
-            assert((oparg & 15) == 7 || (oparg & 15) == 8);
-            jump = (res + 7) & oparg;
+            assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+            assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+            jump = (res + COMPARISON_NOT_EQUALS) & oparg;
         }
 
         super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_IF;

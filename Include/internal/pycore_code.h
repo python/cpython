@@ -476,6 +476,22 @@ _Py_MakeShimCode(const _PyShimCodeDef *code);
 extern uint32_t _Py_next_func_version;
 
 
+/* Comparison bit masks.
+ * The following bits are chosen so that the value
+ * 1 << (2 * (ileft >= iright) + (ileft <= iright));
+ * masked by the values below will be non-zero if the
+ * comparison is true, and zero if it is false */
+
+/* This is for values that are unordered, ie. NaN, not types that are unordered, e.g. sets */
+#define COMPARISON_UNORDERED 1
+
+#define COMPARISON_LESS_THAN 2
+#define COMPARISON_GREATER_THAN 4
+#define COMPARISON_EQUALS 8
+
+#define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
+
+
 #ifdef __cplusplus
 }
 #endif

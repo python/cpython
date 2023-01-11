@@ -263,16 +263,12 @@ do { \
 #endif
 
 static int compare_masks[] = {
-    // 1-bit: jump if unordered
-    // 2-bit: jump if less
-    // 4-bit: jump if greater
-    // 8-bit: jump if equal
-    [Py_LT] = 0 | 2 | 0 | 0,
-    [Py_LE] = 0 | 2 | 0 | 8,
-    [Py_EQ] = 0 | 0 | 0 | 8,
-    [Py_NE] = 1 | 2 | 4 | 0,
-    [Py_GT] = 0 | 0 | 4 | 0,
-    [Py_GE] = 0 | 0 | 4 | 8,
+    [Py_LT] = COMPARISON_LESS_THAN,
+    [Py_LE] = COMPARISON_LESS_THAN | COMPARISON_EQUALS,
+    [Py_EQ] = COMPARISON_EQUALS,
+    [Py_NE] = COMPARISON_NOT_EQUALS,
+    [Py_GT] = COMPARISON_GREATER_THAN,
+    [Py_GE] = COMPARISON_GREATER_THAN | COMPARISON_EQUALS,
 };
 
 // Initialize warmup counters and insert superinstructions. This cannot fail.
