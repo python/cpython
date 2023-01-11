@@ -235,8 +235,10 @@ class SliceTest(unittest.TestCase):
         self.assertEqual(tmp, [(slice(1, 2), 42)])
 
     def test_pickle(self):
+        import pickle
+
         s = slice(10, 20, 3)
-        for protocol in (0,1,2):
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
             t = loads(dumps(s, protocol))
             self.assertEqual(s, t)
             self.assertEqual(s.indices(15), t.indices(15))
