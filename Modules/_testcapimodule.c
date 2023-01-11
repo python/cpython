@@ -4239,12 +4239,19 @@ temporary_c_thread(void *data)
     PyThread_exit_thread();
 }
 
+static test_c_thread_t test_c_thread;
+
 static PyObject *
-call_in_temporary_c_thread(PyObject *self, PyObject *callback)
+call_in_temporary_c_thread(PyObject *self, PyObject *args)
 {
     PyObject *res = NULL;
-    test_c_thread_t test_c_thread;
+    PyObject *callback = NULL;
     long thread;
+    int wait = 1;
+    if (!PyArg_ParseTuple(args, "O|i", &callback, &wait))
+    {
+        return NULL;
+    }
 
     test_c_thread.start_event = PyThread_allocate_lock();
     test_c_thread.exit_event = PyThread_allocate_lock();
@@ -4271,6 +4278,10 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
     PyThread_acquire_lock(test_c_thread.start_event, 1);
     PyThread_release_lock(test_c_thread.start_event);
 
+    if (!wait) {
+        Py_RETURN_NONE;
+    }
+
     Py_BEGIN_ALLOW_THREADS
         PyThread_acquire_lock(test_c_thread.exit_event, 1);
         PyThread_release_lock(test_c_thread.exit_event);
@@ -4281,11 +4292,30 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
 
 exit:
     Py_CLEAR(test_c_thread.callback);
-    if (test_c_thread.start_event)
+    if (test_c_thread.start_event) {
         PyThread_free_lock(test_c_thread.start_event);
-    if (test_c_thread.exit_event)
+        test_c_thread.start_event = NULL;
+    }
+    if (test_c_thread.exit_event) {
         PyThread_free_lock(test_c_thread.exit_event);
+        test_c_thread.exit_event = NULL;
+    }
     return res;
+}
+
+static PyObject *
+join_temporary_c_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(test_c_thread.exit_event, 1);
+        PyThread_release_lock(test_c_thread.exit_event);
+    Py_END_ALLOW_THREADS
+    Py_CLEAR(test_c_thread.callback);
+    PyThread_free_lock(test_c_thread.start_event);
+    test_c_thread.start_event = NULL;
+    PyThread_free_lock(test_c_thread.exit_event);
+    test_c_thread.exit_event = NULL;
+    Py_RETURN_NONE;
 }
 
 /* marshal */
@@ -5532,8 +5562,9 @@ static PyMethodDef TestMethods[] = {
     {"docstring_with_signature_with_defaults",
         (PyCFunction)test_with_docstring, METH_NOARGS,
         docstring_with_signature_with_defaults},
-    {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
+    {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
+    {"join_temporary_c_thread", join_temporary_c_thread, METH_NOARGS},
     {"pymarshal_write_long_to_file",
         pymarshal_write_long_to_file, METH_VARARGS},
     {"pymarshal_write_object_to_file",
