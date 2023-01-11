@@ -1211,13 +1211,13 @@ iterations of the loop.
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
    * the code associated with the function (at TOS)
-   
+
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
       
    .. versionchanged:: 3.11
       Qualified name at TOS was removed in favor of co_qualname usage
-      
+
 
 .. opcode:: BUILD_SLICE (argc)
 
