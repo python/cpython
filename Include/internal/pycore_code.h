@@ -476,9 +476,14 @@ _Py_MakeShimCode(const _PyShimCodeDef *code);
 extern uint32_t _Py_next_func_version;
 
 
-/* Comparison bit masks.
- * The following bits are chosen so that the value
- * 1 << (2 * (ileft >= iright) + (ileft <= iright));
+/* Comparison bit masks. */
+
+/* Note this evaluates its arguments twice each */
+#define COMPARISON_BIT(x, y) (1 << (2 * ((x) >= (y)) + ((x) <= (y))))
+
+/*
+ * The following bits are chosen so that the value of
+ * COMPARSION_BIT(left, right)
  * masked by the values below will be non-zero if the
  * comparison is true, and zero if it is false */
 
