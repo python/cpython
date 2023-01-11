@@ -691,7 +691,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
     def test_literal_shebang_invalid_template(self):
         with self.script('#! /usr/bin/not-python arg1') as script:
             data = self.run_py([script])
-        expect = Path.cwd() / "/usr/bin/not-python"
+        expect = script.parent / "/usr/bin/not-python"
         self.assertEqual(
             f"{expect} arg1 {script}",
             data["stdout"].strip(),
