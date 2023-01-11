@@ -2116,7 +2116,7 @@
                 double dleft = PyFloat_AS_DOUBLE(left);
                 double dright = PyFloat_AS_DOUBLE(right);
                 // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
-                int sign_ish = 1 << (2 * (dleft >= dright) + (dleft <= dright));
+                int sign_ish = COMPARISON_BIT(dleft, dright);
                 _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
                 _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
                 jump = sign_ish & oparg;
@@ -2154,7 +2154,7 @@
                 Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
                 Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
                 // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
-                int sign_ish = 1 << (2 * (ileft >= iright) + (ileft <= iright));
+                int sign_ish = COMPARISON_BIT(ileft, iright);
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
                 jump = sign_ish & oparg;
@@ -2191,8 +2191,9 @@
                 _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
                 _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 assert(res == 0 || res == 1);
-                assert((oparg & 15) == 7 || (oparg & 15) == 8);
-                jump = (res + 7) & oparg;
+                assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+                assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+                jump = (res + COMPARISON_NOT_EQUALS) & oparg;
                 _tmp_2 = (PyObject *)jump;
             }
             JUMPBY(1);
