@@ -2887,7 +2887,8 @@ static int compiler_addcompare(struct compiler *c, location loc,
     default:
         Py_UNREACHABLE();
     }
-    /* cmp goes in top bits of the oparg, low bits are for the mask. */
+    /* cmp goes in top bits of the oparg, while the low bits are used by specialized
+     * versions of this opcode to store the comparison mask. */
     ADDOP_I(c, loc, COMPARE_OP, cmp << 4);
     return SUCCESS;
 }
