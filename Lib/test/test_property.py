@@ -403,6 +403,16 @@ class PropertySubclassTests(unittest.TestCase):
                 return 2
         self.assertEqual(Foo.spam.__doc__, "a new docstring")
 
+    def test_gh100942(self):
+        # See https://github.com/python/cpython/issues/100942
+        class pro(property):
+            def __new__(typ, *args, **kwargs):
+                return "abcdef"
+
+        p = property.__new__(pro)
+        with self.assertRaises(TypeError):
+            p.getter(lambda self: 1)  # this line was causing a crash
+
 
 class _PropertyUnreachableAttribute:
     msg_format = None

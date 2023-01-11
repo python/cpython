@@ -1711,6 +1711,11 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
     Py_DECREF(type);
     if (new == NULL)
         return NULL;
+    if (!PyObject_TypeCheck(new, &PyProperty_Type)) {
+        PyErr_Format(PyExc_TypeError, "property instance expected, got %.50s",
+                     Py_TYPE(new)->tp_name);
+        return NULL;
+    }
 
     Py_XSETREF(((propertyobject *) new)->prop_name, Py_XNewRef(pold->prop_name));
     return new;

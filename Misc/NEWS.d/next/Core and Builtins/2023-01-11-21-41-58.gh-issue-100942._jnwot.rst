@@ -1,0 +1,1 @@
+Fix crash on ``property`` subclasses with weird ``__new__`` methods.
