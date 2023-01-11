@@ -81,6 +81,8 @@ typedef struct _typeobject {
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
 
+    /* Per-type method cache. UNSTABLE: FOR INTERNAL CPYTHON USE ONLY. */
+    struct _type_method_cache _tp_method_cache;
     /* bitset of which type-watchers care about this type */
     char tp_watched;
 } PyTypeObject;

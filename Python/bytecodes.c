@@ -1674,12 +1674,13 @@ dummy_func(
             PyObject *cls = TOP();
             DEOPT_IF(!PyType_Check(cls), LOAD_ATTR);
             uint32_t type_version = read_u32(cache->type_version);
-            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version,
-                LOAD_ATTR);
+            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version, LOAD_ATTR);
             assert(type_version != 0);
 
             STAT_INC(LOAD_ATTR, hit);
-            PyObject *res = read_obj(cache->descr);
+            assert(cache->type_index < ((PyTypeObject *)cls)->_tp_method_cache.size);
+            assert(cache->type_index >= 0);
+            PyObject *res = ((PyTypeObject *)cls)->_tp_method_cache.methods[cache->type_index];
             assert(res != NULL);
             Py_INCREF(res);
             SET_TOP(NULL);
@@ -1700,7 +1701,7 @@ dummy_func(
             uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(type_version != 0);
-            PyObject *fget = read_obj(cache->descr);
+            PyObject *fget = cls->_tp_method_cache.methods[cache->type_index];
             assert(Py_IS_TYPE(fget, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)fget;
             uint32_t func_version = read_u32(cache->keys_version);
@@ -1710,6 +1711,9 @@ dummy_func(
             assert(code->co_argcount == 1);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
+
+            assert(cache->type_index < cls->_tp_method_cache.size);
+            assert(cache->type_index >= 0);
             Py_INCREF(fget);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
             SET_TOP(NULL);
@@ -1730,7 +1734,7 @@ dummy_func(
             uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(type_version != 0);
-            PyObject *getattribute = read_obj(cache->descr);
+            PyObject *getattribute = cls->_tp_method_cache.methods[cache->type_index];
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
             uint32_t func_version = read_u32(cache->keys_version);
@@ -1741,6 +1745,8 @@ dummy_func(
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
 
+            assert(cache->type_index < cls->_tp_method_cache.size);
+            assert(cache->type_index >= 0);
             PyObject *name = GETITEM(names, oparg >> 1);
             Py_INCREF(f);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2);
@@ -2499,7 +2505,10 @@ dummy_func(
             DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
                      read_u32(cache->keys_version), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            PyObject *res = read_obj(cache->descr);
+
+            assert(cache->type_index < self_cls->_tp_method_cache.size);
+            assert(cache->type_index >= 0);
+            PyObject *res = self_cls->_tp_method_cache.methods[cache->type_index];
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             SET_TOP(Py_NewRef(res));
@@ -2517,7 +2526,10 @@ dummy_func(
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
-            PyObject *res = read_obj(cache->descr);
+
+            assert(cache->type_index < self_cls->_tp_method_cache.size);
+            assert(cache->type_index >= 0);
+            PyObject *res = self_cls->_tp_method_cache.methods[cache->type_index];
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             SET_TOP(Py_NewRef(res));
@@ -2539,7 +2551,10 @@ dummy_func(
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            PyObject *res = read_obj(cache->descr);
+
+            assert(cache->type_index < self_cls->_tp_method_cache.size);
+            assert(cache->type_index >= 0);
+            PyObject *res = self_cls->_tp_method_cache.methods[cache->type_index];
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             SET_TOP(Py_NewRef(res));

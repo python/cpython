@@ -1,0 +1,1 @@
+Implement a per-class type cache.
