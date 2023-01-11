@@ -311,6 +311,7 @@ _PyCode_Quicken(PyCodeObject *code)
                 if (opcode == POP_JUMP_IF_FALSE) {
                     mask = mask ^ 0xf;
                 }
+                instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].opcode = COMPARE_AND_BRANCH;
                 instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg = (oparg & 0xf0) | mask;
                 break;
             }
@@ -2003,52 +2004,58 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
 {
     assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
+    SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
+    STAT_INC(COMPARE_OP, failure);
+    _py_set_opcode(instr, COMPARE_OP);
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+}
+
+void
+_Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
+                         int oparg)
+{
+    assert(_PyOpcode_Caches[COMPARE_AND_BRANCH] == INLINE_CACHE_ENTRIES_COMPARE_OP);
+    _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
     int next_opcode = _Py_OPCODE(instr[INLINE_CACHE_ENTRIES_COMPARE_OP + 1]);
-    if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
-        if (next_opcode == EXTENDED_ARG) {
-            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_EXTENDED_ARG);
-            goto failure;
-        }
-        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
-        goto failure;
-    }
+    assert(next_opcode == POP_JUMP_IF_FALSE || next_opcode == POP_JUMP_IF_TRUE);
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
-        SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
+        SPECIALIZATION_FAIL(COMPARE_AND_BRANCH, compare_op_fail_kind(lhs, rhs));
         goto failure;
     }
     if (PyFloat_CheckExact(lhs)) {
-        _py_set_opcode(instr, COMPARE_OP_FLOAT_JUMP);
+        _py_set_opcode(instr, COMPARE_AND_BRANCH_FLOAT);
         goto success;
     }
     if (PyLong_CheckExact(lhs)) {
         if (Py_ABS(Py_SIZE(lhs)) <= 1 && Py_ABS(Py_SIZE(rhs)) <= 1) {
-            _py_set_opcode(instr, COMPARE_OP_INT_JUMP);
+            _py_set_opcode(instr, COMPARE_AND_BRANCH_INT);
             goto success;
         }
         else {
-            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_BIG_INT);
+            SPECIALIZATION_FAIL(COMPARE_AND_BRANCH, SPEC_FAIL_COMPARE_OP_BIG_INT);
             goto failure;
         }
     }
     if (PyUnicode_CheckExact(lhs)) {
         int cmp = oparg >> 4;
         if (cmp != Py_EQ && cmp != Py_NE) {
-            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_STRING);
+            SPECIALIZATION_FAIL(COMPARE_AND_BRANCH, SPEC_FAIL_COMPARE_OP_STRING);
             goto failure;
         }
         else {
-            _py_set_opcode(instr, COMPARE_OP_STR_JUMP);
+            _py_set_opcode(instr, COMPARE_AND_BRANCH_STR);
             goto success;
         }
     }
-    SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
+    SPECIALIZATION_FAIL(COMPARE_AND_BRANCH, compare_op_fail_kind(lhs, rhs));
 failure:
-    STAT_INC(COMPARE_OP, failure);
-    _py_set_opcode(instr, COMPARE_OP);
+    STAT_INC(COMPARE_AND_BRANCH, failure);
+    _py_set_opcode(instr, COMPARE_AND_BRANCH);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;
 success:
-    STAT_INC(COMPARE_OP, success);
+    STAT_INC(COMPARE_AND_BRANCH, success);
     cache->counter = adaptive_counter_cooldown();
 }
 
