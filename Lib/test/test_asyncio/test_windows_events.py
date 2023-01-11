@@ -250,6 +250,38 @@ class ProactorTests(test_utils.TestCase):
             proactor.sendto(sock, b'abc', addr=bad_address)
         sock.close()
 
+    def test_client_pipe_stat(self):
+        res = self.loop.run_until_complete(self._test_client_pipe_stat())
+        self.assertEqual(res, 'done')
+
+    async def _test_client_pipe_stat(self):
+        ADDRESS = r'\\.\pipe\test_client_pipe_stat-%s' % os.getpid()
+
+        with self.assertRaises(FileNotFoundError):
+            os.stat(ADDRESS)
+
+        [server] = await self.loop.start_serving_pipe(
+            asyncio.Protocol, ADDRESS)
+        self.assertIsInstance(server, windows_events.PipeServer)
+
+        errors = []
+        self.loop.set_exception_handler(lambda *args: errors.append(args))
+
+        async def stat_it():
+            os.stat(ADDRESS)
+
+        for i in range(5):
+            await self.loop.create_task(stat_it())
+
+        self.assertEqual(len(errors), 0, errors)
+
+        server.close()
+
+        with self.assertRaises(FileNotFoundError):
+            os.stat(ADDRESS)
+
+        return "done"
+
 
 class WinPolicyTests(test_utils.TestCase):
 
