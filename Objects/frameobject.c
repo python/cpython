@@ -946,7 +946,7 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     Py_ssize_t res;
     res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = f->f_frame->f_code;
-    res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
+    res += _PyFrame_NumSlotsForCodeObject(code) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
 
@@ -1011,12 +1011,9 @@ static void
 init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, (PyFunctionObject*)Py_NewRef(func),
-                                Py_XNewRef(locals), code);
+    _PyFrame_Initialize(frame, (PyFunctionObject*)Py_NewRef(func),
+                        Py_XNewRef(locals), code, 0);
     frame->previous = NULL;
-    for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
-    }
 }
 
 PyFrameObject*
@@ -1119,7 +1116,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
 
     /* Free vars have not been initialized -- Do that */
     PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
-    int offset = co->co_nlocals + co->co_nplaincellvars;
+    int offset = PyCode_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);
         frame->localsplus[offset + i] = Py_NewRef(o);
@@ -1408,9 +1405,7 @@ PyFrame_GetBack(PyFrameObject *frame)
     PyFrameObject *back = frame->f_back;
     if (back == NULL) {
         _PyInterpreterFrame *prev = frame->f_frame->previous;
-        while (prev && _PyFrame_IsIncomplete(prev)) {
-            prev = prev->previous;
-        }
+        prev = _PyFrame_GetFirstComplete(prev);
         if (prev) {
             back = _PyFrame_GetFrameObject(prev);
         }

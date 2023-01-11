@@ -21,6 +21,9 @@ DEFAULT_INPUT = os.path.relpath(
 DEFAULT_OUTPUT = os.path.relpath(
     os.path.join(os.path.dirname(__file__), "../../Python/generated_cases.c.h")
 )
+DEFAULT_METADATA_OUTPUT = os.path.relpath(
+    os.path.join(os.path.dirname(__file__), "../../Python/opcode_metadata.h")
+)
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = r"^\s*(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*$"
@@ -36,6 +39,12 @@ arg_parser.add_argument(
 )
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
+)
+arg_parser.add_argument(
+    "-m",
+    "--metadata",
+    action="store_true",
+    help=f"Generate metadata instead, changes output default to {DEFAULT_METADATA_OUTPUT}",
 )
 
 
@@ -96,6 +105,8 @@ class Formatter:
         cast = self.cast(dst, src)
         if m := re.match(r"^PEEK\((\d+)\)$", dst.name):
             self.emit(f"POKE({m.group(1)}, {cast}{src.name});")
+        elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
+            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
         else:
             self.emit(f"{dst.name} = {cast}{src.name};")
 
@@ -109,7 +120,8 @@ class Instruction:
 
     # Parts of the underlying instruction definition
     inst: parser.InstDef
-    kind: typing.Literal["inst", "op"]
+    register: bool
+    kind: typing.Literal["inst", "op", "legacy"]  # Legacy means no (input -- output)
     name: str
     block: parser.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
@@ -121,14 +133,20 @@ class Instruction:
     cache_effects: list[parser.CacheEffect]
     input_effects: list[StackEffect]
     output_effects: list[StackEffect]
+    unmoved_names: frozenset[str]
+    instr_fmt: str
+
+    # Parallel to input_effects; set later
+    input_registers: list[str] = dataclasses.field(repr=False)
+    output_registers: list[str] = dataclasses.field(repr=False)
 
     # Set later
     family: parser.Family | None = None
     predicted: bool = False
-    unmoved_names: frozenset[str] = frozenset()
 
     def __init__(self, inst: parser.InstDef):
         self.inst = inst
+        self.register = inst.register
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
@@ -149,10 +167,35 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
+        if self.register:
+            fmt = "IBBB"
+        else:
+            fmt = "IB"
+        cache = "C"
+        for ce in self.cache_effects:
+            for _ in range(ce.size):
+                fmt += cache
+                cache = "0"
+        self.instr_fmt = fmt
+
+    def analyze_registers(self, a: "Analyzer") -> None:
+        regs = iter(("REG(oparg1)", "REG(oparg2)", "REG(oparg3)"))
+        try:
+            self.input_registers = [
+                next(regs) for ieff in self.input_effects if ieff.name != UNUSED
+            ]
+            self.output_registers = [
+                next(regs) for oeff in self.output_effects if oeff.name != UNUSED
+            ]
+        except StopIteration:  # Running out of registers
+            a.error(
+                f"Instruction {self.name} has too many register effects", node=self.inst
+            )
 
     def write(self, out: Formatter) -> None:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
+
         if family := self.family:
             if self.name == family.members[0]:
                 if cache_size := family.size:
@@ -161,10 +204,16 @@ class Instruction:
                         f'{self.cache_offset}, "incorrect cache size");'
                     )
 
-        # Write input stack effect variable declarations and initializations
-        for i, ieffect in enumerate(reversed(self.input_effects), 1):
-            src = StackEffect(f"PEEK({i})", "")
-            out.declare(ieffect, src)
+        if not self.register:
+            # Write input stack effect variable declarations and initializations
+            for i, ieffect in enumerate(reversed(self.input_effects), 1):
+                src = StackEffect(f"PEEK({i})", "")
+                out.declare(ieffect, src)
+        else:
+            # Write input register variable declarations and initializations
+            for ieffect, reg in zip(self.input_effects, self.input_registers):
+                src = StackEffect(reg, "")
+                out.declare(ieffect, src)
 
         # Write output stack effect variable declarations
         input_names = {ieffect.name for ieffect in self.input_effects}
@@ -172,20 +221,28 @@ class Instruction:
             if oeffect.name not in input_names:
                 out.declare(oeffect, None)
 
+        # out.emit(f"JUMPBY(OPSIZE({self.inst.name}) - 1);")
+
         self.write_body(out, 0)
 
         # Skip the rest if the block always exits
         if self.always_exits:
             return
 
-        # Write net stack growth/shrinkage
-        diff = len(self.output_effects) - len(self.input_effects)
-        out.stack_adjust(diff)
+        if not self.register:
+            # Write net stack growth/shrinkage
+            diff = len(self.output_effects) - len(self.input_effects)
+            out.stack_adjust(diff)
 
-        # Write output stack effect assignments
-        for i, oeffect in enumerate(reversed(self.output_effects), 1):
-            if oeffect.name not in self.unmoved_names:
-                dst = StackEffect(f"PEEK({i})", "")
+            # Write output stack effect assignments
+            for i, oeffect in enumerate(reversed(self.output_effects), 1):
+                if oeffect.name not in self.unmoved_names:
+                    dst = StackEffect(f"PEEK({i})", "")
+                    out.assign(dst, oeffect)
+        else:
+            # Write output register assignments
+            for oeffect, reg in zip(self.output_effects, self.output_registers):
+                dst = StackEffect(reg, "")
                 out.assign(dst, oeffect)
 
         # Write cache effect
@@ -209,7 +266,9 @@ class Instruction:
                 else:
                     typ = f"uint{bits}_t "
                     func = f"read_u{bits}"
-                out.emit(f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);")
+                out.emit(
+                    f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
+                )
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 
@@ -222,14 +281,17 @@ class Instruction:
                 # ERROR_IF() must pop the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.
                 # NOTE: If the label doesn't exist, just add it to ceval.c.
-                ninputs = len(self.input_effects)
-                # Don't pop common input/output effects at the bottom!
-                # These aren't DECREF'ed so they can stay.
-                for ieff, oeff in zip(self.input_effects, self.output_effects):
-                    if ieff.name == oeff.name:
-                        ninputs -= 1
-                    else:
-                        break
+                if not self.register:
+                    ninputs = len(self.input_effects)
+                    # Don't pop common input/output effects at the bottom!
+                    # These aren't DECREF'ed so they can stay.
+                    for ieff, oeff in zip(self.input_effects, self.output_effects):
+                        if ieff.name == oeff.name:
+                            ninputs -= 1
+                        else:
+                            break
+                else:
+                    ninputs = 0
                 if ninputs:
                     out.write_raw(
                         f"{extra}{space}if ({cond}) goto pop_{ninputs}_{label};\n"
@@ -237,10 +299,11 @@ class Instruction:
                 else:
                     out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*$", line):
-                space = m.group(1)
-                for ieff in self.input_effects:
-                    if ieff.name not in self.unmoved_names:
-                        out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
+                if not self.register:
+                    space = m.group(1)
+                    for ieff in self.input_effects:
+                        if ieff.name not in self.unmoved_names:
+                            out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
 
@@ -276,6 +339,7 @@ class SuperOrMacroInstruction:
     stack: list[StackEffect]
     initial_sp: int
     final_sp: int
+    instr_fmt: str
 
 
 @dataclasses.dataclass
@@ -292,6 +356,9 @@ class MacroInstruction(SuperOrMacroInstruction):
 
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
+
+
+INSTR_FMT_PREFIX = "INSTR_FMT_"
 
 
 class Analyzer:
@@ -392,6 +459,7 @@ class Analyzer:
         self.find_predictions()
         self.map_families()
         self.check_families()
+        self.analyze_register_instrs()
         self.analyze_supers_and_macros()
 
     def find_predictions(self) -> None:
@@ -458,6 +526,11 @@ class Analyzer:
                         family,
                     )
 
+    def analyze_register_instrs(self) -> None:
+        for instr in self.instrs.values():
+            if instr.register:
+                instr.analyze_registers(self)
+
     def analyze_supers_and_macros(self) -> None:
         """Analyze each super- and macro instruction."""
         self.super_instrs = {}
@@ -472,28 +545,39 @@ class Analyzer:
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
         parts: list[Component] = []
+        format = ""
         for instr in components:
             part, sp = self.analyze_instruction(instr, stack, sp)
             parts.append(part)
+            format += instr.instr_fmt
         final_sp = sp
-        return SuperInstruction(super.name, stack, initial_sp, final_sp, super, parts)
+        return SuperInstruction(super.name, stack, initial_sp, final_sp, format, super, parts)
 
     def analyze_macro(self, macro: parser.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
         parts: list[Component | parser.CacheEffect] = []
+        format = "IB"  # Macros don't support register instructions yet
+        cache = "C"
         for component in components:
             match component:
                 case parser.CacheEffect() as ceffect:
                     parts.append(ceffect)
+                    for _ in range(ceffect.size):
+                        format += cache
+                        cache = "0"
                 case Instruction() as instr:
                     part, sp = self.analyze_instruction(instr, stack, sp)
                     parts.append(part)
+                    for ce in instr.cache_effects:
+                        for _ in range(ce.size):
+                            format += cache
+                            cache = "0"
                 case _:
                     typing.assert_never(component)
         final_sp = sp
-        return MacroInstruction(macro.name, stack, initial_sp, final_sp, macro, parts)
+        return MacroInstruction(macro.name, stack, initial_sp, final_sp, format, macro, parts)
 
     def analyze_instruction(
         self, instr: Instruction, stack: list[StackEffect], sp: int
@@ -563,6 +647,104 @@ class Analyzer:
         ]
         return stack, -lowest
 
+    def write_metadata(self) -> None:
+        """Write instruction metadata to output file."""
+
+        # Compute the set of all instruction formats.
+        all_formats: set[str] = set()
+        for thing in self.everything:
+            match thing:
+                case parser.InstDef():
+                    format = self.instrs[thing.name].instr_fmt
+                case parser.Super():
+                    format = self.super_instrs[thing.name].instr_fmt
+                case parser.Macro():
+                    format = self.macro_instrs[thing.name].instr_fmt
+                case _:
+                    typing.assert_never(thing)
+            all_formats.add(format)
+        # Turn it into a list of enum definitions.
+        format_enums = [INSTR_FMT_PREFIX + format for format in sorted(all_formats)]
+
+        with open(self.output_filename, "w") as f:
+            # Write provenance header
+            f.write(
+                f"// This file is generated by {os.path.relpath(__file__)} --metadata\n"
+            )
+            f.write(f"// from {os.path.relpath(self.filename)}\n")
+            f.write(f"// Do not edit!\n")
+
+            # Create formatter; the rest of the code uses this
+            self.out = Formatter(f, 0)
+
+            # Write variable definition
+            self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
+            self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
+            self.out.emit("static const struct {")
+            with self.out.indent():
+                self.out.emit("short n_popped;")
+                self.out.emit("short n_pushed;")
+                self.out.emit("enum Direction dir_op1;")
+                self.out.emit("enum Direction dir_op2;")
+                self.out.emit("enum Direction dir_op3;")
+                self.out.emit("bool valid_entry;")
+                self.out.emit("enum InstructionFormat instr_format;")
+            self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
+
+            # Write metadata for each instruction
+            for thing in self.everything:
+                match thing:
+                    case parser.InstDef():
+                        if thing.kind != "op":
+                            self.write_metadata_for_inst(self.instrs[thing.name])
+                    case parser.Super():
+                        self.write_metadata_for_super(self.super_instrs[thing.name])
+                    case parser.Macro():
+                        self.write_metadata_for_macro(self.macro_instrs[thing.name])
+                    case _:
+                        typing.assert_never(thing)
+
+            # Write end of array
+            self.out.emit("};")
+
+    def write_metadata_for_inst(self, instr: Instruction) -> None:
+        """Write metadata for a single instruction."""
+        dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
+        if instr.kind == "legacy":
+            n_popped = n_pushed = -1
+            assert not instr.register
+        else:
+            n_popped = len(instr.input_effects)
+            n_pushed = len(instr.output_effects)
+            if instr.register:
+                directions: list[str] = []
+                directions.extend("DIR_READ" for _ in instr.input_effects)
+                directions.extend("DIR_WRITE" for _ in instr.output_effects)
+                directions.extend("DIR_NONE" for _ in range(3))
+                dir_op1, dir_op2, dir_op3 = directions[:3]
+        self.out.emit(
+            f'    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},'
+        )
+
+    def write_metadata_for_super(self, sup: SuperInstruction) -> None:
+        """Write metadata for a super-instruction."""
+        n_popped = sum(len(comp.instr.input_effects) for comp in sup.parts)
+        n_pushed = sum(len(comp.instr.output_effects) for comp in sup.parts)
+        dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
+        self.out.emit(
+            f'    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},'
+        )
+
+    def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
+        """Write metadata for a macro-instruction."""
+        parts = [comp for comp in mac.parts if isinstance(comp, Component)]
+        n_popped = sum(len(comp.instr.input_effects) for comp in parts)
+        n_pushed = sum(len(comp.instr.output_effects) for comp in parts)
+        dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
+        self.out.emit(
+            f'    [{mac.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},'
+        )
+
     def write_instructions(self) -> None:
         """Write instructions to output file."""
         with open(self.output_filename, "w") as f:
@@ -571,7 +753,7 @@ class Analyzer:
             f.write(f"// from {os.path.relpath(self.filename)}\n")
             f.write(f"// Do not edit!\n")
 
-            # Create formatter; the rest of the code uses this.
+            # Create formatter; the rest of the code uses this
             self.out = Formatter(f, 8)
 
             # Write and count instructions of all kinds
@@ -581,7 +763,7 @@ class Analyzer:
             for thing in self.everything:
                 match thing:
                     case parser.InstDef():
-                        if thing.kind == "inst":
+                        if thing.kind != "op":
                             n_instrs += 1
                             self.write_instr(self.instrs[thing.name])
                     case parser.Super():
@@ -616,9 +798,13 @@ class Analyzer:
         with self.wrap_super_or_macro(sup):
             first = True
             for comp in sup.parts:
-                if not first:
+                if first:
+                    pass
+                    # self.out.emit("JUMPBY(OPSIZE(opcode) - 1);")
+                else:
                     self.out.emit("NEXTOPARG();")
                     self.out.emit("JUMPBY(1);")
+                    # self.out.emit("JUMPBY(OPSIZE(opcode));")
                 first = False
                 comp.write_body(self.out, 0)
                 if comp.instr.cache_offset:
@@ -711,12 +897,18 @@ def always_exits(lines: list[str]) -> bool:
 def main():
     """Parse command line, parse input, analyze, write output."""
     args = arg_parser.parse_args()  # Prints message and sys.exit(2) on error
+    if args.metadata:
+        if args.output == DEFAULT_OUTPUT:
+            args.output = DEFAULT_METADATA_OUTPUT
     a = Analyzer(args.input, args.output)  # Raises OSError if input unreadable
     a.parse()  # Raises SyntaxError on failure
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
-    a.write_instructions()  # Raises OSError if output can't be written
+    if args.metadata:
+        a.write_metadata()
+    else:
+        a.write_instructions()  # Raises OSError if output can't be written
 
 
 if __name__ == "__main__":
