@@ -1335,7 +1335,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             stdlib = os.path.join(home, "Lib")
             # Because we are specifying 'home', module search paths
             # are fairly static
-            #expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
             expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
@@ -1364,7 +1363,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config['_is_python_build'] = 1
         exedir = os.path.dirname(sys.executable)
         with open(os.path.join(exedir, 'pybuilddir.txt'), encoding='utf8') as f:
-            expected_paths[1] = os.path.normpath(
+            expected_paths[1 if MS_WINDOWS else 2] = os.path.normpath(
                 os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0]))
         if not MS_WINDOWS:
             # PREFIX (default) is set when running in build directory
