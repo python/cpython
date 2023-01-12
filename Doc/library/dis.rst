@@ -433,6 +433,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    Push the i-th item to the top of the stack without removing it from its original
    location.::
 
+      assert i > 0
       STACK.append(STACK[-i])
 
    .. versionadded:: 3.11
@@ -932,7 +933,9 @@ iterations of the loop.
    Creates a tuple consuming *count* items from the stack, and pushes the
    resulting tuple onto the stack.::
 
-      STACK.append(tuple(STACK[-count:]))
+      assert count > 0
+      STACK, values = STACK[:-count], STACK[-count:]
+      STACK.append(tuple(values))
 
 
 .. opcode:: BUILD_LIST (count)
