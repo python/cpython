@@ -2057,7 +2057,7 @@ should use :mod:`tkinter.ttk` instead.
 venv
 ~~~~
 
-The ``pyvenv`` script has been deprecated in favour of ``python3 -m venv``.
+The ``pyvenv`` script has been deprecated in favour of ``python -m venv``.
 This prevents confusion as to what Python interpreter ``pyvenv`` is
 connected to and thus what Python interpreter will be used by the virtual
 environment.  (Contributed by Brett Cannon in :issue:`25154`.)

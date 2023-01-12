@@ -1082,7 +1082,7 @@ PyConfig
       without :option:`-c` or :option:`-m`. It is used by the
       :c:func:`Py_RunMain` function.
 
-      For example, it is set to ``script.py`` by the ``python3 script.py arg``
+      For example, it is set to ``script.py`` by the ``python script.py arg``
       command line.
 
       See also the :c:member:`PyConfig.skip_source_first_line` option.

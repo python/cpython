@@ -511,7 +511,7 @@ Miscellaneous options
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
-     application.  Typical usage is ``python3 -X importtime -c 'import
+     application.  Typical usage is ``python -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by

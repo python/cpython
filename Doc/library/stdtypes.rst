@@ -5579,7 +5579,7 @@ command line flag to configure the limit:
   ``PYTHONINTMAXSTRDIGITS=640 python3`` to set the limit to 640 or
   ``PYTHONINTMAXSTRDIGITS=0 python3`` to disable the limitation.
 * :option:`-X int_max_str_digits <-X>`, e.g.
-  ``python3 -X int_max_str_digits=640``
+  ``python -X int_max_str_digits=640``
 * :data:`sys.flags.int_max_str_digits` contains the value of
   :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
   If both the env var and the ``-X`` option are set, the ``-X`` option takes

@@ -222,7 +222,7 @@ Other Language Changes
   (Contributed by Ngalim Siregar in :issue:`37444`.)
 
 * Python now gets the absolute path of the script filename specified on
-  the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
+  the command line (ex: ``python script.py``): the ``__file__`` attribute of
   the :mod:`__main__` module became an absolute path, rather than a relative
   path. These paths now remain valid after the current directory is changed
   by :func:`os.chdir`. As a side effect, the traceback also displays the
