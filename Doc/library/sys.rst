@@ -1843,7 +1843,7 @@ always available.
 
    The version number used to form registry keys on Windows platforms. This is
    stored as string resource 1000 in the Python DLL.  The value is normally the
-   first three characters of :const:`version`.  It is provided in the :mod:`sys`
+   major and minor versions of the running Python interpreter.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python.
 
