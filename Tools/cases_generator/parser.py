@@ -230,7 +230,9 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        # IDENTIFIER [':' IDENTIFIER]
+        # IDENTIFIER
+        #   | IDENTIFIER ':' IDENTIFIER
+        #   | IDENTIFIER '[' dimension ']'
         # TODO: Conditions
         if tkn := self.expect(lx.IDENTIFIER):
             if self.expect(lx.COLON):
