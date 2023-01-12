@@ -75,7 +75,10 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         called_buf = bytearray(self.buffer_size)
         called_buf[:len(buf)] = buf
         self.loop._proactor.recv_into.assert_called_with(self.sock, called_buf)
-        self.protocol.data_received.assert_called_with(bytearray(buf))
+        self.protocol.data_received.assert_called_with(buf)
+        # assert_called_with maps bytearray and bytes to the same thing so check manually
+        # regression test for https://github.com/python/cpython/issues/99941
+        self.assertIsInstance(self.protocol.data_received.call_args.args[0], bytes)
 
     @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_loop_reading_no_data(self):
@@ -296,6 +299,27 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         # the resources held by protocol will never be freed
         # and waiters will never be notified leading to hang.
         self.assertTrue(self.protocol.connection_lost.called)
+
+    def test_force_close_protocol_connection_lost_once(self):
+        tr = self.socket_transport()
+        self.assertFalse(self.protocol.connection_lost.called)
+        tr._closing = True
+        # Calling _force_close twice should not call
+        # protocol.connection_lost twice
+        tr._force_close(None)
+        tr._force_close(None)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, self.protocol.connection_lost.call_count)
+
+    def test_close_protocol_connection_lost_once(self):
+        tr = self.socket_transport()
+        self.assertFalse(self.protocol.connection_lost.called)
+        # Calling close twice should not call
+        # protocol.connection_lost twice
+        tr.close()
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, self.protocol.connection_lost.call_count)
 
     def test_fatal_error_2(self):
         tr = self.socket_transport()

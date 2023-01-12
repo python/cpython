@@ -6,6 +6,8 @@
 
 .. moduleauthor:: Thomas Heller <theller@python.net>
 
+**Source code:** :source:`Lib/ctypes`
+
 --------------
 
 :mod:`ctypes` is a foreign function library for Python.  It provides C compatible
@@ -359,7 +361,7 @@ from within *IDLE* or *PythonWin*::
    >>> printf(b"%f bottles of beer\n", 42.5)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: Don't know how to convert parameter 2
+   ArgumentError: argument 2: TypeError: Don't know how to convert parameter 2
    >>>
 
 As has been mentioned before, all Python types except integers, strings, and
@@ -370,6 +372,26 @@ that they can be converted to the required C data type::
    An int 1234, a double 3.140000
    31
    >>>
+
+.. _ctypes-calling-variadic-functions:
+
+Calling varadic functions
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On a lot of platforms calling variadic functions through ctypes is exactly the same
+as calling functions with a fixed number of parameters. On some platforms, and in
+particular ARM64 for Apple Platforms, the calling convention for variadic functions
+is different than that for regular functions.
+
+On those platforms it is required to specify the *argtypes* attribute for the
+regular, non-variadic, function arguments:
+
+.. code-block:: python3
+
+   libc.printf.argtypes = [ctypes.c_char_p]
+
+Because specifying the attribute does inhibit portability it is advised to always
+specify ``argtypes`` for all variadic functions.
 
 
 .. _ctypes-calling-functions-with-own-custom-data-types:
@@ -422,7 +444,7 @@ prototype for a C function), and tries to convert the arguments to valid types::
    >>> printf(b"%d %d %d", 1, 2, 3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: wrong type
+   ArgumentError: argument 2: TypeError: wrong type
    >>> printf(b"%s %d %f\n", b"X", 2, 3)
    X 2 3.000000
    13
@@ -487,7 +509,7 @@ single character Python bytes object into a C char::
    >>> strchr(b"abcdef", b"def")
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: one character string expected
+   ArgumentError: argument 2: TypeError: one character string expected
    >>> print(strchr(b"abcdef", b"x"))
    None
    >>> strchr(b"abcdef", b"d")
@@ -1418,8 +1440,8 @@ copy of the windows error code.
 
 The *winmode* parameter is used on Windows to specify how the library is loaded
 (since *mode* is ignored). It takes any value that is valid for the Win32 API
-``LoadLibraryEx`` flags parameter. When omitted, the default is to use the flags
-that result in the most secure DLL load to avoiding issues such as DLL
+``LoadLibraryEx`` flags parameter. When omitted, the default is to use the
+flags that result in the most secure DLL load, which avoids issues such as DLL
 hijacking. Passing the full path to the DLL is the safest way to ensure the
 correct library and dependencies are loaded.
 

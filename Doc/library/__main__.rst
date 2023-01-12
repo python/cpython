@@ -61,7 +61,7 @@ The top-level code environment can be:
 
     .. code-block:: shell-session
 
-       $ python3 helloworld.py
+       $ python helloworld.py
        Hello, world!
 
 * the Python module or package passed to the Python interpreter with the
@@ -69,14 +69,14 @@ The top-level code environment can be:
 
     .. code-block:: shell-session
 
-       $ python3 -m tarfile
+       $ python -m tarfile
        usage: tarfile.py [-h] [-v] (...)
 
 * Python code read by the Python interpreter from standard input:
 
     .. code-block:: shell-session
 
-       $ echo "import this" | python3
+       $ echo "import this" | python
        The Zen of Python, by Tim Peters
 
        Beautiful is better than ugly.
@@ -87,7 +87,7 @@ The top-level code environment can be:
 
     .. code-block:: shell-session
 
-       $ python3 -c "import this"
+       $ python -c "import this"
        The Zen of Python, by Tim Peters
 
        Beautiful is better than ugly.
@@ -178,7 +178,7 @@ that your function will return some value acceptable as an input to
 returned if your function does not have a return statement).
 
 By proactively following this convention ourselves, our module will have the
-same behavior when run directly (i.e. ``python3 echo.py``) as it will have if
+same behavior when run directly (i.e. ``python echo.py``) as it will have if
 we later package it as a console script entry-point in a pip-installable
 package.
 
@@ -215,7 +215,7 @@ directly from the command line using the :option:`-m` flag. For example:
 
 .. code-block:: shell-session
 
-   $ python3 -m bandclass
+   $ python -m bandclass
 
 This command will cause ``__main__.py`` to run. How you utilize this mechanism
 will depend on the nature of the package you are writing, but in this
@@ -320,7 +320,7 @@ Now, if we started our program, the result would look like this:
 
 .. code-block:: shell-session
 
-   $ python3 start.py
+   $ python start.py
    Define the variable `my_name`!
 
 The exit code of the program would be 1, indicating an error. Uncommenting the
@@ -329,7 +329,7 @@ status code 0, indicating success:
 
 .. code-block:: shell-session
 
-   $ python3 start.py
+   $ python start.py
    Dinsdale found in file /path/to/start.py
 
 Note that importing ``__main__`` doesn't cause any issues with unintentionally

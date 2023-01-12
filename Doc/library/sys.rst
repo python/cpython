@@ -35,6 +35,15 @@ always available.
    can then log the event, raise an exception to abort the operation,
    or terminate the process entirely.
 
+   Note that audit hooks are primarily for collecting information about internal
+   or otherwise unobservable actions, whether by Python or libraries written in
+   Python. They are not suitable for implementing a "sandbox". In particular,
+   malicious code can trivially disable or bypass hooks added using this
+   function. At a minimum, any security-sensitive hooks must be added using the
+   C API :c:func:`PySys_AddAuditHook` before initialising the runtime, and any
+   modules allowing arbitrary memory modification (such as :mod:`ctypes`) should
+   be completely removed or closely monitored.
+
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
       Calling :func:`sys.addaudithook` will itself raise an auditing event
@@ -595,12 +604,18 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`rounds`     | FLT_ROUNDS     | integer constant representing the rounding mode  |
-   |                     |                | used for arithmetic operations.  This reflects   |
-   |                     |                | the value of the system FLT_ROUNDS macro at      |
-   |                     |                | interpreter startup time.  See section 5.2.4.2.2 |
-   |                     |                | of the C99 standard for an explanation of the    |
-   |                     |                | possible values and their meanings.              |
+   | :const:`rounds`     | FLT_ROUNDS     | integer representing the rounding mode for       |
+   |                     |                | floating-point arithmetic. This reflects the     |
+   |                     |                | value of the system FLT_ROUNDS macro at          |
+   |                     |                | interpreter startup time:                        |
+   |                     |                | ``-1`` indeterminable,                           |
+   |                     |                | ``0`` toward zero,                               |
+   |                     |                | ``1`` to nearest,                                |
+   |                     |                | ``2`` toward positive infinity,                  |
+   |                     |                | ``3`` toward negative infinity                   |
+   |                     |                |                                                  |
+   |                     |                | All other values for FLT_ROUNDS characterize     |
+   |                     |                | implementation-defined rounding behavior.        |
    +---------------------+----------------+--------------------------------------------------+
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
@@ -1178,7 +1193,7 @@ always available.
      string, which means the current working directory.
 
    To not prepend this potentially unsafe path, use the :option:`-P` command
-   line option or the :envvar:`PYTHONSAFEPATH` environment variable?
+   line option or the :envvar:`PYTHONSAFEPATH` environment variable.
 
    A program is free to modify this list for its own purposes.  Only strings
    should be added to :data:`sys.path`; all other data types are
@@ -1555,6 +1570,38 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
+.. function:: activate_stack_trampoline(backend, /)
+
+   Activate the stack profiler trampoline *backend*.
+   The only supported backend is ``"perf"``.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      * :ref:`perf_profiling`
+      * https://perf.wiki.kernel.org
+
+.. function:: deactivate_stack_trampoline()
+
+   Deactivate the current stack profiler trampoline backend.
+
+   If no stack profiler is activated, this function has no effect.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+.. function:: is_stack_trampoline_active()
+
+   Return ``True`` if a stack profiler trampoline is active.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
@@ -1796,7 +1843,7 @@ always available.
 
    The version number used to form registry keys on Windows platforms. This is
    stored as string resource 1000 in the Python DLL.  The value is normally the
-   first three characters of :const:`version`.  It is provided in the :mod:`sys`
+   major and minor versions of the running Python interpreter.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python.
 
