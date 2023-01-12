@@ -113,6 +113,8 @@ Yes.  The coding style required for standard library modules is documented as
 Core Language
 =============
 
+.. _faq-unboundlocalerror:
+
 Why am I getting an UnboundLocalError when the variable has a value?
 --------------------------------------------------------------------
 
@@ -1024,6 +1026,46 @@ What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
 See the :ref:`unicode-howto`.
 
 
+.. _faq-programming-raw-string-backslash:
+
+Can I end a raw string with an odd number of backslashes?
+---------------------------------------------------------
+
+A raw string ending with an odd number of backslashes will escape the string's quote::
+
+   >>> r'C:\this\will\not\work\'
+     File "<stdin>", line 1
+       r'C:\this\will\not\work\'
+            ^
+   SyntaxError: unterminated string literal (detected at line 1)
+
+There are several workarounds for this. One is to use regular strings and double
+the backslashes::
+
+   >>> 'C:\\this\\will\\work\\'
+   'C:\\this\\will\\work\\'
+
+Another is to concatenate a regular string containing an escaped backslash to the
+raw string::
+
+   >>> r'C:\this\will\work' '\\'
+   'C:\\this\\will\\work\\'
+
+It is also possible to use :func:`os.path.join` to append a backslash on Windows::
+
+   >>> os.path.join(r'C:\this\will\work', '')
+   'C:\\this\\will\\work\\'
+
+Note that while a backslash will "escape" a quote for the purposes of
+determining where the raw string ends, no escaping occurs when interpreting the
+value of the raw string. That is, the backslash remains present in the value of
+the raw string::
+
+   >>> r'backslash\'preserved'
+   "backslash\\'preserved"
+
+Also see the specification in the :ref:`language reference <strings>`.
+
 Performance
 ===========
 
@@ -1279,12 +1321,24 @@ Or, you can use an extension that provides a matrix datatype; `NumPy
 <https://numpy.org/>`_ is the best known.
 
 
-How do I apply a method to a sequence of objects?
--------------------------------------------------
+How do I apply a method or function to a sequence of objects?
+-------------------------------------------------------------
 
-Use a list comprehension::
+To call a method or function and accumulate the return values is a list,
+a :term:`list comprehension` is an elegant solution::
 
    result = [obj.method() for obj in mylist]
+
+   result = [function(obj) for obj in mylist]
+
+To just run the method or function without saving the return values,
+a plain :keyword:`for` loop will suffice::
+
+   for obj in mylist:
+       obj.method()
+
+   for obj in mylist:
+       function(obj)
 
 .. _faq-augmented-assignment-tuple-error:
 

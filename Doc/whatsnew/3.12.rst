@@ -75,6 +75,15 @@ Important deprecations, removals or restrictions:
 Improved Error Messages
 =======================
 
+* Modules from the standard library are now potentially suggested as part of
+  the error messages displayed by the interpreter when a :exc:`NameError` is
+  raised to the top level. Contributed by Pablo Galindo in :gh:`98254`.
+
+    >>> sys.version_info
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    NameError: name 'sys' is not defined. Did you forget to import 'sys'?
+
 * Improve the error suggestion for :exc:`NameError` exceptions for instances.
   Now if a :exc:`NameError` is raised in a method and the instance has an
   attribute that's exactly equal to the name in the exception, the suggestion
@@ -105,6 +114,16 @@ Improved Error Messages
         import a.y.z from b.y.z
         ^^^^^^^^^^^^^^^^^^^^^^^
     SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+* :exc:`ImportError` exceptions raised from failed ``from <module> import
+  <name>`` statements now include suggestions for the value of ``<name>`` based on the
+  available names in ``<module>``. Contributed by Pablo Galindo in :gh:`91058`.
+
+    >>> from collections import chainmap
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    ImportError: cannot import name 'chainmap' from 'collections'. Did you mean: 'ChainMap'?
+
 
 New Features
 ============
@@ -159,6 +178,17 @@ Other Language Changes
   In a future Python version they will be eventually a :exc:`SyntaxError`.
   (Contributed by Victor Stinner in :gh:`98401`.)
 
+* All builtin and extension callables expecting boolean parameters now accept
+  arguments of any type instead of just :class:`bool` and :class:`int`.
+  (Contributed by Serhiy Storchaka in :gh:`60203`.)
+
+* Variables used in the target part of comprehensions that are not stored to
+  can now be used in assignment expressions (``:=``).
+  For example, in ``[(b := 1) for a, b.prop in some_iter]``, the assignment to
+  ``b`` is now allowed. Note that assigning to variables stored to in the target
+  part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
+  (Contributed by Nikita Sobolev in :gh:`100581`.)
+
 
 New Modules
 ===========
@@ -184,8 +214,8 @@ asyncio
   (Contributed by Kumar Aditya in :gh:`98024`.)
 
 * The child watcher classes :class:`~asyncio.MultiLoopChildWatcher`,
-  :class:`~asyncio.FastChildWatcher` and
-  :class:`~asyncio.SafeChildWatcher` are deprecated and
+  :class:`~asyncio.FastChildWatcher`, :class:`~asyncio.AbstractChildWatcher`
+  and :class:`~asyncio.SafeChildWatcher` are deprecated and
   will be removed in Python 3.14. It is recommended to not manually
   configure a child watcher as the event loop now uses the best available
   child watcher for each platform (:class:`~asyncio.PidfdChildWatcher`
@@ -197,6 +227,20 @@ asyncio
   :meth:`asyncio.AbstractEventLoopPolicy.get_child_watcher` are deprecated
   and will be removed in Python 3.14.
   (Contributed by Kumar Aditya in :gh:`94597`.)
+
+* Add *loop_factory* parameter to :func:`asyncio.run` to allow specifying
+  a custom event loop factory.
+  (Contributed by Kumar Aditya in :gh:`99388`.)
+
+* Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
+  (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
+
+inspect
+-------
+
+* Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
+  a :term:`coroutine` for use with :func:`iscoroutinefunction`.
+  (Contributed Carlton Gibson in :gh:`99247`.)
 
 pathlib
 -------
@@ -210,6 +254,10 @@ pathlib
   more consistent with :func:`os.path.relpath`.
   (Contributed by Domenico Ragusa in :issue:`40358`.)
 
+* Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
+  (Contributed by Charles Machalow in :gh:`99547`.)
+
+
 dis
 ---
 
@@ -221,12 +269,26 @@ dis
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
+math
+----
+
+* Added :func:`math.sumprod` for computing a sum of products.
+  (Contributed by Raymond Hettinger in :gh:`100485`.)
+
 os
 --
 
 * Add :data:`os.PIDFD_NONBLOCK` to open a file descriptor
   for a process with :func:`os.pidfd_open` in non-blocking mode.
   (Contributed by Kumar Aditya in :gh:`93312`.)
+
+* Add :func:`os.path.isjunction` to check if a given path is a junction.
+  (Contributed by Charles Machalow in :gh:`99547`.)
+
+* :class:`os.DirEntry` now includes an :meth:`os.DirEntry.is_junction`
+  method to check if the entry is a junction.
+  (Contributed by Charles Machalow in :gh:`99547`.)
+
 
 shutil
 ------
@@ -243,6 +305,13 @@ sqlite3
 
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
+
+* Add the :attr:`~sqlite3.Connection.autocommit` attribute
+  to :class:`~sqlite3.Connection`
+  and the *autocommit* parameter to :func:`~sqlite3.connect`
+  to control :pep:`249`-compliant
+  :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
+  (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
 threading
 ---------
@@ -503,6 +572,12 @@ Removed
 
 .. _aiosmtpd: https://pypi.org/project/aiosmtpd/
 
+* ``asynchat`` and ``asyncore`` have been removed
+  according to the schedule in :pep:`594`,
+  having been deprecated in Python 3.6.
+  Use :mod:`asyncio` instead.
+  (Contributed by Nikita Sobolev in :gh:`96580`.)
+
 * Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
   3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
   function is a built-in function. Since Python 3.10, :func:`_pyio.open` is
@@ -569,9 +644,11 @@ Removed
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
   (Contributed by Julien Palard in :gh:`98179`.)
 
-* Remove the *keyfile*, *certfile* and *check_hostname* parameters, deprecated
-  since Python 3.6, in modules: :mod:`ftplib`, :mod:`http.client`,
-  :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib`. Use the *context* parameter
+* Remove the *keyfile* and *certfile* parameters from the
+  :mod:`ftplib`, :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib` modules,
+  and the *key_file*, *cert_file* and *check_hostname* parameters from the
+  :mod:`http.client` module,
+  all deprecated since Python 3.6. Use the *context* parameter
   (*ssl_context* in :mod:`imaplib`) instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
@@ -624,6 +701,27 @@ Changes in the Python API
   :class:`bytes` type is accepted for bytes strings.
   (Contributed by Victor Stinner in :gh:`98393`.)
 
+* :func:`syslog.openlog` and :func:`syslog.closelog` now fail if used in subinterpreters.
+  :func:`syslog.syslog` may still be used in subinterpreters,
+  but now only if :func:`syslog.openlog` has already been called in the main interpreter.
+  These new restrictions do not apply to the main interpreter,
+  so only a very small set of users might be affected.
+  This change helps with interpreter isolation.  Furthermore, :mod:`syslog` is a wrapper
+  around process-global resources, which are best managed from the main interpreter.
+  (Contributed by Dong-hee Na in :gh:`99127`.)
+
+* :func:`asyncio.get_event_loop` and many other :mod:`asyncio` functions like
+  :func:`~asyncio.ensure_future`, :func:`~asyncio.shield` or
+  :func:`~asyncio.gather`, and also the
+  :meth:`~asyncio.BaseDefaultEventLoopPolicy.get_event_loop` method of
+  :class:`~asyncio.BaseDefaultEventLoopPolicy` now raise a :exc:`RuntimeError`
+  if called when there is no running event loop and the current event loop was
+  not set.
+  Previously they implicitly created and set a new current event loop.
+  :exc:`DeprecationWarning` is no longer emitted if there is no running
+  event loop but the current event loop is set in the policy.
+  (Contributed by Serhiy Storchaka in :gh:`93453`.)
+
 
 Build Changes
 =============
@@ -642,6 +740,12 @@ Build Changes
 * CPython now uses the ThinLTO option as the default link time optimization policy
   if the Clang compiler accepts the flag.
   (Contributed by Dong-hee Na in :gh:`89536`.)
+
+* Add ``COMPILEALL_OPTS`` variable in Makefile to override :mod:`compileall`
+  options (default: ``-j0``) in ``make install``. Also merged the 3
+  ``compileall`` commands into a single command to build .pyc files for all
+  optimization levels (0, 1, 2) at once.
+  (Contributed by Victor Stinner in :gh:`99289`.)
 
 
 C API Changes
@@ -709,6 +813,14 @@ New Features
   callbacks to receive notification on changes to a type.
   (Contributed by Carl Meyer in :gh:`91051`.)
 
+* Added :c:func:`PyCode_AddWatcher` and :c:func:`PyCode_ClearWatcher`
+  APIs to register callbacks to receive notification on creation and
+  destruction of code objects.
+  (Contributed by Itamar Ostricher in :gh:`91054`.)
+
+* Add :c:func:`PyFrame_GetVar` and :c:func:`PyFrame_GetVarString` functions to
+  get a frame variable by its name.
+  (Contributed by Victor Stinner in :gh:`91248`.)
 
 Porting to Python 3.12
 ----------------------
@@ -763,6 +875,11 @@ Porting to Python 3.12
   :class:`bytes` type is accepted for bytes strings.
   (Contributed by Victor Stinner in :gh:`98393`.)
 
+* The :c:macro:`Py_CLEAR`, :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF`
+  macros now only evaluate their arguments once. If an argument has side
+  effects, these side effects are no longer duplicated.
+  (Contributed by Victor Stinner in :gh:`98724`.)
+
 Deprecated
 ----------
 
@@ -797,6 +914,37 @@ Deprecated
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases is deprecated and will be disabled in Python 3.14.
 
+* The ``structmember.h`` header is deprecated, though it continues to be
+  available and there are no plans to remove it.
+
+  Its contents are now available just by including ``Python.h``,
+  with a ``Py`` prefix added if it was missing:
+
+  - :c:struct:`PyMemberDef`, :c:func:`PyMember_GetOne` and
+    :c:func:`PyMember_SetOne`
+  - Type macros like :c:macro:`Py_T_INT`, :c:macro:`Py_T_DOUBLE`, etc.
+    (previously ``T_INT``, ``T_DOUBLE``, etc.)
+  - The flags :c:macro:`Py_READONLY` (previously ``READONLY``) and
+    :c:macro:`Py_AUDIT_READ` (previously all uppercase)
+
+  Several items are not exposed from ``Python.h``:
+
+  - :c:macro:`T_OBJECT` (use :c:macro:`Py_T_OBJECT_EX`)
+  - :c:macro:`T_NONE` (previously undocumented, and pretty quirky)
+  - The macro ``WRITE_RESTRICTED`` which does nothing.
+  - The macros ``RESTRICTED`` and ``READ_RESTRICTED``, equivalents of
+    :c:macro:`Py_AUDIT_READ`.
+  - In some configurations, ``<stddef.h>`` is not included from ``Python.h``.
+    It should be included manually when using ``offsetof()``.
+
+  The deprecated header continues to provide its original
+  contents under the original names.
+  Your old code can stay unchanged, unless the extra include and non-namespaced
+  macros bother you greatly.
+
+  (Contributed in :gh:`47146` by Petr Viktorin, based on
+  earlier work by Alexander Belopolsky and Matthias Braun.)
+
 
 Removed
 -------
@@ -806,7 +954,7 @@ Removed
   internals.
   (Contributed by Victor Stinner in :gh:`92651`.)
 
-* Leagcy Unicode APIs has been removed. See :pep:`623` for detail.
+* Legacy Unicode APIs has been removed. See :pep:`623` for detail.
 
    * :c:macro:`PyUnicode_WCHAR_KIND`
    * :c:func:`PyUnicode_AS_UNICODE`
@@ -821,3 +969,10 @@ Removed
 * Remove the ``PyUnicode_InternImmortal()`` function and the
   ``SSTATE_INTERNED_IMMORTAL`` macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
+
+* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
+  (Contributed by Nikita Sobolev in :gh:`99482`.)
+
+* Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
+  from :mod:`ctypes` module.
+  (Contributed by Nikita Sobolev in :gh:`99285`.)

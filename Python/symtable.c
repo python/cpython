@@ -74,8 +74,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_table = st;
     ste->ste_id = k; /* ste owns reference to k */
 
-    Py_INCREF(name);
-    ste->ste_name = name;
+    ste->ste_name = Py_NewRef(name);
 
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
@@ -286,8 +285,7 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         _PySymtable_Free(st);
         return NULL;
     }
-    Py_INCREF(filename);
-    st->st_filename = filename;
+    st->st_filename = Py_NewRef(filename);
     st->st_future = future;
 
     /* Setup recursion depth check counters */
@@ -375,17 +373,17 @@ PySymtable_Lookup(struct symtable *st, void *key)
     if (k == NULL)
         return NULL;
     v = PyDict_GetItemWithError(st->st_blocks, k);
+    Py_DECREF(k);
+
     if (v) {
         assert(PySTEntry_Check(v));
-        Py_INCREF(v);
     }
     else if (!PyErr_Occurred()) {
         PyErr_SetString(PyExc_KeyError,
                         "unknown symbol table entry");
     }
 
-    Py_DECREF(k);
-    return (PySTEntryObject *)v;
+    return (PySTEntryObject *)Py_XNewRef(v);
 }
 
 long
@@ -1490,7 +1488,8 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
          */
         if (ste->ste_comprehension) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
-            if (target_in_scope & DEF_COMP_ITER) {
+            if ((target_in_scope & DEF_COMP_ITER) &&
+                (target_in_scope & DEF_LOCAL)) {
                 PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_CONFLICT, target_name);
                 PyErr_RangedSyntaxLocationObject(st->st_filename,
                                                   e->lineno,
@@ -1541,7 +1540,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
     /* We should always find either a FunctionBlock, ModuleBlock or ClassBlock
        and should never fall to this case
     */
-    assert(0);
+    Py_UNREACHABLE();
     return 0;
 }
 
@@ -1949,8 +1948,7 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
             return 0;
     }
     else {
-        store_name = name;
-        Py_INCREF(store_name);
+        store_name = Py_NewRef(name);
     }
     if (!_PyUnicode_EqualToASCIIString(name, "*")) {
         int r = symtable_add_def(st, store_name, DEF_IMPORT, LOCATION(a));

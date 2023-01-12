@@ -46,8 +46,8 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1q",
-    "3.0.5"
+    "1.1.1s",
+    "3.0.7"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -402,15 +402,15 @@ class BuildOpenSSL(AbstractBuilder):
     depend_target = 'depend'
 
     def _post_install(self):
-        if self.version.startswith("3.0"):
-            self._post_install_300()
+        if self.version.startswith("3."):
+            self._post_install_3xx()
 
     def _build_src(self, config_args=()):
-        if self.version.startswith("3.0"):
+        if self.version.startswith("3."):
             config_args += ("enable-fips",)
         super()._build_src(config_args)
 
-    def _post_install_300(self):
+    def _post_install_3xx(self):
         # create ssl/ subdir with example configs
         # Install FIPS module
         self._subprocess_call(
