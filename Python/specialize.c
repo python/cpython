@@ -126,6 +126,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
     fprintf(out, "opcode[%d].specializable : 1\n", BINARY_SLICE);
+    fprintf(out, "opcode[%d].specializable : 1\n", COMPARE_OP);
     fprintf(out, "opcode[%d].specializable : 1\n", STORE_SLICE);
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Caches[i]) {
@@ -1997,19 +1998,6 @@ compare_op_fail_kind(PyObject *lhs, PyObject *rhs)
     return SPEC_FAIL_OTHER;
 }
 #endif
-
-void
-_Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                         int oparg)
-{
-    assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
-    _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
-    SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
-    STAT_INC(COMPARE_OP, failure);
-    _py_set_opcode(instr, COMPARE_OP);
-    cache->counter = adaptive_counter_backoff(cache->counter);
-    return;
-}
 
 void
 _Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
