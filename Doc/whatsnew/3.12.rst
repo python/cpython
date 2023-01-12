@@ -392,10 +392,10 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
-* The :meth:`~asyncio.DefaultEventLoopPolicy.get_event_loop` of the default
-  event loop policy now emits a :exc:`DeprecationWarning` if there
+* The :meth:`~asyncio.DefaultEventLoopPolicy.get_event_loop` method of the
+  default event loop policy now emits a :exc:`DeprecationWarning` if there
   is no current event loop set and it decides to create one.
-  (Contributed by Serhiy Storchaka and Łukasz Langa in :gh:`100160`.)
+  (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
 
 
 Pending Removal in Python 3.13

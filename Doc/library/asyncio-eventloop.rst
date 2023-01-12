@@ -61,7 +61,7 @@ an event loop:
 
    .. deprecated:: 3.12
       Deprecation warning is emitted if there is no current event loop.
-      In some future Python release it will become an error.
+      In some future Python release this will become an error.
 
 .. function:: set_event_loop(loop)
 
