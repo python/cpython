@@ -25,12 +25,7 @@ def test_effect_sizes():
     assert generate_cases.list_effect_size(input_effects) == (1, "oparg + oparg*2")
     assert generate_cases.list_effect_size(output_effects) == (2, "oparg*4")
 
-    assert generate_cases.net_effect_size(input_effects, []) == (-1, "-(oparg + oparg*2)")
-    assert generate_cases.net_effect_size(input_effects, output_effects) == (1, "oparg*4 - (oparg + oparg*2)")
-    assert generate_cases.net_effect_size([], output_effects) == (2, "oparg*4")
-
     assert generate_cases.string_effect_size(generate_cases.list_effect_size(input_effects)) == "1 + oparg + oparg*2"
-    assert generate_cases.string_effect_size(generate_cases.net_effect_size(input_effects, output_effects)) == "1 + oparg*4 - (oparg + oparg*2)"
     assert generate_cases.string_effect_size(generate_cases.list_effect_size(output_effects)) == "2 + oparg*4"
 
 

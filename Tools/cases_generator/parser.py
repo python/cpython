@@ -70,9 +70,7 @@ class StackEffect(Node):
 
 @dataclass
 class Dimension(Node):
-    # NAME ['*' NUMBER]
-    name: str
-    size: int = 1
+    size: str
 
 
 @dataclass
@@ -248,11 +246,11 @@ class Parser(PLexer):
 
     @contextual
     def dimension(self) -> Dimension | None:
-        if name := self.expect(lx.IDENTIFIER):
-            if self.expect(lx.TIMES):
-                if size := self.expect(lx.NUMBER):
-                    return Dimension(name.text, int(size.text))
-            return Dimension(name.text)
+        tokens: list[lx.Token] = []
+        while (tkn := self.peek()) and tkn.kind != lx.RBRACKET:
+            tokens.append(tkn)
+            self.next()
+        return Dimension(lx.to_text(tokens).strip())
 
     @contextual
     def super_def(self) -> Super | None:

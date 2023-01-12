@@ -66,29 +66,10 @@ def list_effect_size(effects: list[StackEffect]) -> tuple[int, str]:
     return numeric, " + ".join(symbolic)
 
 
-def net_effect_size(input_effects: list[StackEffect], output_effects: list[StackEffect]) -> tuple[int, str]:
-    input_numeric, input_symbolic = list_effect_size(input_effects)
-    output_numeric, output_symbolic = list_effect_size(output_effects)
-    if "+" in input_symbolic:
-        input_symbolic = f"({input_symbolic})"
-    if input_symbolic and output_symbolic:
-        symbolic = f"{output_symbolic} - {input_symbolic}"
-    elif input_symbolic:
-        symbolic = f"-{input_symbolic}"
-    elif output_symbolic:
-        symbolic = output_symbolic
-    else:
-        symbolic = ""
-    return output_numeric - input_numeric, symbolic
-
-
 def string_effect_size(arg: tuple[int, str]) -> str:
     numeric, symbolic = arg
     if numeric and symbolic:
-        if symbolic.startswith("-"):
-            return f"{numeric} - {symbolic[1:]}"
-        else:
-            return f"{numeric} + {symbolic}"
+        return f"{numeric} + {symbolic}"
     elif symbolic:
         return symbolic
     else:
