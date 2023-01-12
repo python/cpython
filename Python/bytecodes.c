@@ -88,7 +88,7 @@ static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc;
 static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
 static size_t jump;
 // Dummy variables for cache effects
-static uint16_t when_to_jump_mask, invert, counter, index, hint;
+static uint16_t invert, counter, index, hint;
 static uint32_t type_version;
 // Dummy opcode names for 'op' opcodes
 #define _COMPARE_OP_FLOAT 1003
@@ -1836,7 +1836,7 @@ dummy_func(
             _COMPARE_OP_STR,
         };
 
-        inst(COMPARE_OP, (unused/2, left, right -- res)) {
+        inst(COMPARE_OP, (unused/1, left, right -- res)) {
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -1846,15 +1846,15 @@ dummy_func(
             }
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            assert(oparg <= Py_GE);
-            res = PyObject_RichCompare(left, right, oparg);
+            assert((oparg >> 4) <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
             Py_DECREF(right);
             ERROR_IF(res == NULL, error);
         }
 
         // The result is an int disguised as an object pointer.
-        op(_COMPARE_OP_FLOAT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
+        op(_COMPARE_OP_FLOAT, (unused/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
@@ -1862,11 +1862,11 @@ dummy_func(
             STAT_INC(COMPARE_OP, hit);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
-            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
-            int sign_ish = 1 << (2 * (dleft >= dright) + (dleft <= dright));
+            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
+            int sign_ish = COMPARISON_BIT(dleft, dright);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            jump = sign_ish & when_to_jump_mask;
+            jump = sign_ish & oparg;
         }
         // The input is an int disguised as an object pointer!
         op(_JUMP_IF, (jump: size_t --)) {
@@ -1879,7 +1879,7 @@ dummy_func(
         super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_IF;
 
         // Similar to COMPARE_OP_FLOAT
-        op(_COMPARE_OP_INT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
+        op(_COMPARE_OP_INT, (unused/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
@@ -1890,29 +1890,31 @@ dummy_func(
             assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
             Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
             Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-            // 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
-            int sign_ish = 1 << (2 * (ileft >= iright) + (ileft <= iright));
+            // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
+            int sign_ish = COMPARISON_BIT(ileft, iright);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            jump = sign_ish & when_to_jump_mask;
+            jump = sign_ish & oparg;
         }
         super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_IF;
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
-        op(_COMPARE_OP_STR, (unused/1, invert/1, left, right -- jump: size_t)) {
+        op(_COMPARE_OP_STR, (unused/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             int res = _PyUnicode_Equal(left, right);
-            assert(oparg == Py_EQ || oparg == Py_NE);
+            assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
-            assert(invert == 0 || invert == 1);
-            jump = res ^ invert;
+            assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+            assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+            jump = (res + COMPARISON_NOT_EQUALS) & oparg;
         }
+
         super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_IF;
 
         inst(IS_OP, (left, right -- b)) {
