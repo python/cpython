@@ -599,15 +599,13 @@ else:
     if PLATSTDLIB_LANDMARK and not exec_prefix:
         if executable_dir:
             if os_name == 'nt':
-                # QUIRK: For compatibility and security, do not search for DLLs
-                # directory.
-                if isdir(joinpath(executable_dir, PLATSTDLIB_LANDMARK)):
-                    exec_prefix = executable_dir
+                # QUIRK: Windows always assumed these were the same
+                exec_prefix = prefix
             else:
                 exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
-        if not exec_prefix:
+        if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
             if os_name == 'nt':
                 # QUIRK: If DLLs is missing on Windows, don't warn, just assume
                 # that it's all the same as prefix.
