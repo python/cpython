@@ -1548,8 +1548,8 @@
 
         TARGET(LIST_EXTEND) {
             PyObject *iterable = PEEK(1);
-            PyObject **stuff = &PEEK(1 + oparg);
-            PyObject *none_val = _PyList_Extend((PyListObject *)stuff[0], iterable);
+            PyObject *list = PEEK(2 + oparg-1);
+            PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
                    (Py_TYPE(iterable)->tp_iter == NULL && !PySequence_Check(iterable)))

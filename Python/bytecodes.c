@@ -1316,9 +1316,8 @@ dummy_func(
             ERROR_IF(list == NULL, error);
         }
 
-        // 'stuff' is a list object followed by (oparg - 1) unused values
-        inst(LIST_EXTEND, (stuff[oparg], iterable -- stuff[oparg])) {
-            PyObject *none_val = _PyList_Extend((PyListObject *)stuff[0], iterable);
+        inst(LIST_EXTEND, (list, unused[oparg-1], iterable -- list, unused[oparg-1])) {
+            PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
                    (Py_TYPE(iterable)->tp_iter == NULL && !PySequence_Check(iterable)))
