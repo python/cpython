@@ -638,6 +638,19 @@ static PyMethodDef TestMethods[] = {
 };
 
 
+/* initialization function */
+
+static int
+module_exec(PyObject *module)
+{
+    if (PyModule_AddObject(module, "SIZEOF_PYGC_HEAD",
+                           PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testinternalcapi",
@@ -658,15 +671,9 @@ PyInit__testinternalcapi(void)
     if (module == NULL) {
         return NULL;
     }
-
-    if (PyModule_AddObject(module, "SIZEOF_PYGC_HEAD",
-                           PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
-        goto error;
+    if (module_exec(module) < 0) {
+        Py_DECREF(module);
+        return NULL;
     }
-
     return module;
-
-error:
-    Py_DECREF(module);
-    return NULL;
 }
