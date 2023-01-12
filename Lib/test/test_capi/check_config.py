@@ -32,6 +32,7 @@ def check(override):
     settings_noop = _testinternalcapi.get_interp_settings()
     enabled_restored = import_singlephase()
     return {
+        'override_requested': override,
         'settings_before': settings_before,
         'enabled_initial': enabled_initial,
         'override_initial': override_initial,

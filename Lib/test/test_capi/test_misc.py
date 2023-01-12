@@ -1374,6 +1374,7 @@ class SubinterpreterTest(unittest.TestCase):
             else:
                 enabled_after = (override > 0)
             expected = {
+                'override_requested': override,
                 'settings_before': settings,
                 'enabled_initial': enabled,
                 'override_initial': 0,
