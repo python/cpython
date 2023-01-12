@@ -144,19 +144,24 @@ def splitroot(p):
         splitdrive('/foo/bar') == ('', '/', 'foo/bar')
     """
     p = os.fspath(p)
-    sep = b'/' if isinstance(p, bytes) else '/'
+    if isinstance(p, bytes):
+        sep = b'/'
+        empty = b''
+    else:
+        sep = '/'
+        empty = ''
     if p[:1] != sep:
         # Relative path, e.g.: 'foo'
-        return p[:0], p[:0], p
+        return empty, empty, p
     elif p[1:2] != sep:
         # Absolute path, e.g.: '/foo'
-        return p[:0], p[:1], p[1:]
+        return empty, p[:1], p[1:]
     elif p[2:3] != sep:
         # Implementation defined per POSIX standard, e.g.: '//foo'
-        return p[:0], p[:2], p[2:]
+        return empty, p[:2], p[2:]
     else:
         # Absolute path with extraneous slashes, e.g.: '///foo', '////foo', etc.
-        return p[:0], p[:1], p[1:]
+        return empty, p[:1], p[1:]
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
