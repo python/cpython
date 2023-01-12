@@ -118,7 +118,7 @@ def gen_plot(df, output_filename):
         formatter=formatter,
     )
 
-    formatter = lambda val, pos: f"{val*1000:.0f}ms"
+    formatter = lambda val, pos: f"{val*1e3:.0f}ms"
     gen_time_data = get_gen_time_data(df)
     violinplot_with_custom_formatting(
         ax3,
@@ -130,7 +130,7 @@ def gen_plot(df, output_filename):
         formatter=formatter,
     )
 
-    formatter = lambda val, pos: f"{val*10.0e3:.0f}ms"
+    formatter = lambda val, pos: f"{val*1e3:.0f}ms"
     gen_time_data_per_obj = get_gen_time_data_per_obj(df)
     violinplot_with_custom_formatting(
         ax4,
