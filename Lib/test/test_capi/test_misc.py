@@ -1402,6 +1402,8 @@ class SubinterpreterTest(unittest.TestCase):
 
             self.assertEqual(results, expected)
 
+        self.maxDiff = None
+
         # setting: check disabled
         with self.subTest('config disabled, override disabled'):
             check(False, -1)
