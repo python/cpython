@@ -30,7 +30,7 @@ def get_gen_time_data_per_obj(df):
     gen_data = []
     for generation in range(3):
         vals = df[df["generation_number"] == generation]
-        item = vals["collection_time"] / vals["total_objects"].values
+        item = vals["collection_time"] / (1+vals["collected_cycles"]).values
         if item.size == 0:
             item = np.array([0])
         gen_data.append(item)
@@ -40,11 +40,22 @@ def get_gen_freq_per_us(df):
     gen_data = []
     for generation in range(3):
         vals = df[df["generation_number"] == generation]
-        item = 1.0 / (vals["collection_time"] / vals["total_objects"]).values / 1.0e6
+        item = 1.0 / (vals["collection_time"] / (1+vals["collected_cycles"])).values / 1.0e3
         if item.size == 0:
             item = np.array([0])
         gen_data.append(item)
     return gen_data
+
+def get_gc_summary(df):
+    gen_totals = []
+    for generation in range(3):
+        vals = df[df["generation_number"] == generation]
+        obj_collected = vals["collected_cycles"].sum()
+        total_time = vals["collection_time"].sum()
+        total_objs = vals["total_objects"].sum()
+        gen_totals.append((obj_collected, total_time, total_objs))
+    total_gc_time = df["collection_time"].sum()
+    return gen_totals, total_gc_time
 
 def gen_plot(df, output_filename):
     def violinplot_with_custom_formatting(
@@ -65,57 +76,81 @@ def gen_plot(df, output_filename):
         ax.xaxis.set_major_formatter(formatter)
         ax.grid()
         ax.set_title(title)
+    
+    def barplot_with_custom_formatting(ax, data, title, formatter):
+        ax.bar(names, data)
+        ax.set_ylabel(title)
+        ax.set_title(title)
+        ax.yaxis.set_major_formatter(formatter)
+        ax.grid()
 
     names = ["First generation", "Second generation", "Third generation"]
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(
-        4, 1, figsize=(8, (2 + len(names) * 0.3) * 4), layout="constrained"
-    )
+    # fig, (ax1, ax2, ax3, ax4) = plt.subplots(
+    #     5, 1, figsize=(8, (2 + len(names) * 0.3) * 4), layout="constrained"
+    # )
+    fig = plt.figure(figsize=(10, 10), layout="constrained")
+    ax0 = plt.subplot(7, 2, 1)
+    ax1 = plt.subplot(7, 2, 2)
+    ax2 = plt.subplot(7, 1, 3)
+    ax3 = plt.subplot(7, 1, 4)
+    ax4 = plt.subplot(7, 1, 5)
+    ax5 = plt.subplot(7, 1, 6)
+
+    figsize=(8, (2 + len(names) * 0.3) * 4)
+
+    running_time_data = [x.sum() for x in get_gen_time_data(df)]
+    formatter = lambda val, pos: f"{val*1000:.0f}ms"
+    barplot_with_custom_formatting(ax0, running_time_data, "Total running time", formatter)
+
+    object_number_data = [np.sum(df[df["generation_number"] == i]["total_objects"]/1000.0) for i in range(3)]
+    formatter = lambda val, pos: f"{int(val)}*10e3 obj"
+    barplot_with_custom_formatting(ax1, object_number_data, "Total object collected", formatter)
 
     obj_percentage_data = get_obj_percentage_data(df)
     formatter = lambda val, pos: f"{val*100:.0f}%"
     violinplot_with_custom_formatting(
-        ax1,
+        ax2,
         obj_percentage_data,
         names,
         (0, len(names) + 1),
         "efficiency",
-        "Generation efficiency stats",
+        "Generation efficiency",
         formatter=formatter,
     )
 
     formatter = lambda val, pos: f"{val*1000:.0f}ms"
     gen_time_data = get_gen_time_data(df)
     violinplot_with_custom_formatting(
-        ax2,
+        ax3,
         gen_time_data,
         names,
         (0, len(names) + 1),
         "time",
-        "Generation Time stats",
+        "Generation Time",
         formatter=formatter,
     )
 
-    formatter = lambda val, pos: f"{val*10.0e6:.0f}us"
+    formatter = lambda val, pos: f"{val*10.0e3:.0f}ms"
     gen_time_data_per_obj = get_gen_time_data_per_obj(df)
     violinplot_with_custom_formatting(
-        ax3,
+        ax4,
         gen_time_data_per_obj,
         names,
         (0, len(names) + 1),
         "time",
-        "Generation Time per obj stats",
+        "Time per obj collected",
         formatter=formatter,
     )
 
-    formatter = lambda val, pos: f"{int(val)}obj/us"
+    formatter = lambda val, pos: f"{int(val)} obj/ms"
     gen_freq_per_us = get_gen_freq_per_us(df)
     violinplot_with_custom_formatting(
-        ax4,
+        ax5,
         gen_freq_per_us,
         names,
         (0, len(names) + 1),
         "time",
-        "Objects collected per us stats",
+        "Objects collected per us",
         formatter=formatter,
     )
 
@@ -132,6 +167,11 @@ def main():
     df = pd.read_csv(args.file)
     gen_plot(df, args.output_filename)
 
+    gen_totals, total_gc_time = get_gc_summary(df)
+    for generation in range(3):
+        gen_data = gen_totals[generation]
+        print(f"Generation {generation}: {gen_data[0]} objects collected, {gen_data[1]:.2f} s, {gen_data[2]} total objects")
+    print("Total GC time: {:.2f} s".format(total_gc_time))
 
 if __name__ == "__main__":
     main()

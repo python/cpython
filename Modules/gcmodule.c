@@ -141,8 +141,18 @@ get_gc_state(void)
 }
 
 #ifdef Py_STATS
-int
+
+static inline int
+is_main_interpreter(void)
+{
+    return (PyInterpreterState_Get() == PyInterpreterState_Main());
+}
+
+static int
 _PyInitGCStats() {
+    if (!is_main_interpreter()) {
+        return 0;
+    }
 #define INIT_FIELD(field) \
     _pygc_stats_struct.field = PyList_New(0);\
     if (_pygc_stats_struct.field== NULL) {\
@@ -1370,25 +1380,32 @@ gc_collect_main(PyThreadState *tstate, int generation,
     { \
         PyObject* item = PyLong_FromLong(elem); \
         if (!item) { \
+            Py_FatalError("Arg!"); \
             _PyErr_WriteUnraisableMsg("in garbage collection", NULL); \
         } \
         if (item && PyList_Append(_pygc_stats_struct.field, item) < 0) { \
+            Py_FatalError("Arg2!"); \
             _PyErr_WriteUnraisableMsg("in garbage collection", NULL); \
         } \
+        Py_DECREF(item); \
     } \
 
-    _pygc_stats_struct.n_collections++;
-    ADD_ELEMENT(generation_number, generation);
-    ADD_ELEMENT(total_objects, t);
-    ADD_ELEMENT(uncollectable, n);
-    ADD_ELEMENT(collected_cycles, m);
-    double d = _PyTime_AsSecondsDouble(gc_t2 - gc_t1);
-    PyObject* item = PyFloat_FromDouble(d);
-    if (!item) {
-            _PyErr_WriteUnraisableMsg("in garbage collection", NULL); \
-    }
-    if (item && PyList_Append(_pygc_stats_struct.collection_time, item) < 0) {
-        _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
+    if (_pygc_stats_struct.generation_number) {
+        _pygc_stats_struct.n_collections++;
+        ADD_ELEMENT(generation_number, generation);
+        ADD_ELEMENT(total_objects, t);
+        ADD_ELEMENT(uncollectable, n);
+        ADD_ELEMENT(collected_cycles, m);
+        double d = _PyTime_AsSecondsDouble(gc_t2 - gc_t1);
+        PyObject* item = PyFloat_FromDouble(d);
+        if (!item) {
+                Py_FatalError("Arg3!");
+                _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
+        }
+        if (item && PyList_Append(_pygc_stats_struct.collection_time, item) < 0) {
+                Py_FatalError("Arg4!");
+            _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
+        }
     }
 #undef ADD_ELEMENT
 
@@ -2326,7 +2343,9 @@ void
 _PyGC_Fini(PyInterpreterState *interp)
 {
 #ifdef Py_STATS
-    _Py_PrintGCStats(1);
+    if (is_main_interpreter()) {
+        _Py_PrintGCStats(1);
+    }
 #endif
     GCState *gcstate = &interp->gc;
     Py_CLEAR(gcstate->garbage);
