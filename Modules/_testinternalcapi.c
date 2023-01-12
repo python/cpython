@@ -613,7 +613,7 @@ get_interp_settings(PyObject *self, PyObject *args)
 }
 
 
-static PyMethodDef TestMethods[] = {
+static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
@@ -651,29 +651,27 @@ module_exec(PyObject *module)
     return 0;
 }
 
+static struct PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, module_exec},
+    {0, NULL},
+};
+
 static struct PyModuleDef _testcapimodule = {
-    PyModuleDef_HEAD_INIT,
-    "_testinternalcapi",
-    NULL,
-    -1,
-    TestMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_testinternalcapi",
+    .m_doc = NULL,
+    .m_size = 0,
+    .m_methods = module_functions,
+    .m_slots = module_slots,
+    /* There is no module state (or globals) to traverse/clear/free. */
+    .m_traverse = NULL,
+    .m_clear = NULL,
+    .m_free = NULL,
 };
 
 
 PyMODINIT_FUNC
 PyInit__testinternalcapi(void)
 {
-    PyObject *module = PyModule_Create(&_testcapimodule);
-    if (module == NULL) {
-        return NULL;
-    }
-    if (module_exec(module) < 0) {
-        Py_DECREF(module);
-        return NULL;
-    }
-    return module;
+    return PyModuleDef_Init(&_testcapimodule);
 }
