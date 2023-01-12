@@ -272,19 +272,6 @@ class PurePath(object):
         return (self.__class__, tuple(self._parts))
 
     @classmethod
-    def _split_root(cls, part):
-        sep = cls._flavour.sep
-        rel = cls._flavour.splitdrive(part)[1].lstrip(sep)
-        anchor = part.removesuffix(rel)
-        if anchor:
-            anchor = cls._flavour.normpath(anchor)
-        drv, root = cls._flavour.splitdrive(anchor)
-        if drv.startswith(sep):
-            # UNC paths always have a root.
-            root = sep
-        return drv, root, rel
-
-    @classmethod
     def _parse_parts(cls, parts):
         if not parts:
             return '', '', []
@@ -293,7 +280,10 @@ class PurePath(object):
         path = cls._flavour.join(*parts)
         if altsep:
             path = path.replace(altsep, sep)
-        drv, root, rel = cls._split_root(path)
+        drv, root, rel = cls._flavour.splitroot(path)
+        if drv.startswith(sep):
+            # pathlib assumes that UNC paths always have a root.
+            root = sep
         unfiltered_parsed = [drv + root] + rel.split(sep)
         parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
