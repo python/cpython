@@ -1336,7 +1336,7 @@ class SubinterpreterTest(unittest.TestCase):
 
                 self.assertEqual(settings, expected)
 
-    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglphase module")
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_overridden_setting_extensions_subinterp_check(self):
         """
