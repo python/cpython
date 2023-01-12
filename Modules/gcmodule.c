@@ -40,7 +40,19 @@ module gc
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5c9690ecc842d79]*/
 
-#ifdef Py_STATS
+#define GC_STATS 1
+
+#ifdef GC_STATS
+
+typedef struct _gc_stats {
+    size_t n_collections;
+    PyObject* generation_number;
+    PyObject* total_objects;
+    PyObject* uncollectable;
+    PyObject* collected_cycles;
+    PyObject* collection_time;
+} PyGCStats;
+
 PyGCStats _pygc_stats_struct = { 0 };
 #endif
 
@@ -140,7 +152,7 @@ get_gc_state(void)
     return &interp->gc;
 }
 
-#ifdef Py_STATS
+#ifdef GC_STATS
 
 static inline int
 is_main_interpreter(void)
@@ -204,7 +216,7 @@ _PyGC_Init(PyInterpreterState *interp)
         return _PyStatus_NO_MEMORY();
     }
 
-#ifdef Py_STATS
+#ifdef GC_STATS
     if(_PyInitGCStats()) {
         Py_FatalError("Could not initialize GC stats");
     }
@@ -1232,7 +1244,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
-#ifdef Py_STATS
+#ifdef GC_STATS
     _PyTime_t gc_t1 = 0;
     _PyTime_t gc_t2 = 0;
     gc_t1 = _PyTime_GetPerfCounter();
@@ -1271,7 +1283,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
         old = young;
     validate_list(old, collecting_clear_unreachable_clear);
 
-#if Py_STATS
+#if GC_STATS
     Py_ssize_t t = 0; /* # total objects being collected */
     t = gc_list_size(young);
 #endif
@@ -1374,7 +1386,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
             _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
         }
     }
-#ifdef Py_STATS
+#ifdef GC_STATS
     gc_t2 = _PyTime_GetPerfCounter();
 #define ADD_ELEMENT(field, elem) \
     { \
@@ -2256,9 +2268,9 @@ gc_fini_untrack(PyGC_Head *list)
 
 
 
-#ifdef Py_STATS
+#ifdef GC_STATS
 static void
-print_stats(FILE *out, PyStats *stats) {
+print_stats(FILE *out) {
 #define WRITE_ITEM(collection, index) { \
         PyObject* item = PyList_GET_ITEM(_pygc_stats_struct.collection, index); \
         if (!item) { \
@@ -2325,7 +2337,7 @@ _Py_PrintGCStats(int to_file)
     else {
         fprintf(out, "GC stats:\n");
     }
-    print_stats(out, &_py_stats_struct);
+    print_stats(out);
     if (out != stderr) {
         fclose(out);
     }
@@ -2342,8 +2354,8 @@ _Py_PrintGCStats(int to_file)
 void
 _PyGC_Fini(PyInterpreterState *interp)
 {
-#ifdef Py_STATS
-    if (is_main_interpreter()) {
+#ifdef GC_STATS
+    if (is_main_interpreter() && Py_GETENV("PYTHON_GC_STATS")) {
         _Py_PrintGCStats(1);
     }
 #endif

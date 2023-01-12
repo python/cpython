@@ -80,15 +80,6 @@ typedef struct _stats {
     ObjectStats object_stats;
 } PyStats;
 
-typedef struct _gc_stats {
-    size_t n_collections;
-    PyObject* generation_number;
-    PyObject* total_objects;
-    PyObject* uncollectable;
-    PyObject* collected_cycles;
-    PyObject* collection_time;
-} PyGCStats;
-
 PyAPI_DATA(PyStats) _py_stats_struct;
 PyAPI_DATA(PyStats *) _py_stats;
 
