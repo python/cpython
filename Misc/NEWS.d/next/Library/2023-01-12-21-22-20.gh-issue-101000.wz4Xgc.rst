@@ -1,0 +1,2 @@
+Add :func:`os.path.splitroot()`, which splits a path into a triad of
+``(drive, root, tail)``.

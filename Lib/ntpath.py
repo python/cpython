@@ -24,7 +24,7 @@ import genericpath
 from genericpath import *
 
 
-__all__ = ["normcase","isabs","join","splitdrive","split","splitext",
+__all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
            "ismount", "expanduser","expandvars","normpath","abspath",
@@ -170,34 +170,57 @@ def splitdrive(p):
     Paths cannot contain both a drive letter and a UNC path.
 
     """
+    drive, root, tail = splitroot(p)
+    return drive, root + tail
+
+
+def splitroot(p):
+    """Split a pathname into drive, root and tail. The drive is defined
+    exactly as in splitdrive(). On Windows, the root may be a single path
+    separator or an empty string. The tail contains anything after the root.
+    For example:
+
+        splitroot('//server/share/') == ('//server/share', '/', '')
+        splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
+        splitroot('Windows') == ('', '', 'Windows')
+    """
     p = os.fspath(p)
-    if len(p) >= 2:
-        if isinstance(p, bytes):
-            sep = b'\\'
-            altsep = b'/'
-            colon = b':'
-            unc_prefix = b'\\\\?\\UNC\\'
-        else:
-            sep = '\\'
-            altsep = '/'
-            colon = ':'
-            unc_prefix = '\\\\?\\UNC\\'
-        normp = p.replace(altsep, sep)
-        if normp[0:2] == sep * 2:
+    if isinstance(p, bytes):
+        sep = b'\\'
+        altsep = b'/'
+        colon = b':'
+        unc_prefix = b'\\\\?\\UNC\\'
+    else:
+        sep = '\\'
+        altsep = '/'
+        colon = ':'
+        unc_prefix = '\\\\?\\UNC\\'
+    normp = p.replace(altsep, sep)
+    if normp[:1] == sep:
+        if normp[1:2] == sep:
             # UNC drives, e.g. \\server\share or \\?\UNC\server\share
             # Device drives, e.g. \\.\device or \\?\device
             start = 8 if normp[:8].upper() == unc_prefix else 2
             index = normp.find(sep, start)
             if index == -1:
-                return p, p[:0]
+                return p, p[:0], p[:0]
             index2 = normp.find(sep, index + 1)
             if index2 == -1:
-                return p, p[:0]
-            return p[:index2], p[index2:]
-        if normp[1:2] == colon:
-            # Drive-letter drives, e.g. X:
-            return p[:2], p[2:]
-    return p[:0], p
+                return p, p[:0], p[:0]
+            return p[:index2], p[index2:index2 + 1], p[index2 + 1:]
+        else:
+            # Relative path with root, e.g. \Windows
+            return p[:0], p[:1], p[1:]
+    elif normp[1:2] == colon:
+        if normp[2:3] == sep:
+            # Absolute drive-letter path, e.g. X:\Windows
+            return p[:2], p[2:3], p[3:]
+        else:
+            # Relative path with drive, e.g. X:Windows
+            return p[:2], p[:0], p[2:]
+    else:
+        # Relative path, e.g. Windows
+        return p[:0], p[:0], p
 
 
 # Split a path in head (everything up to the last '/') and tail (the

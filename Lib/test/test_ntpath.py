@@ -150,6 +150,22 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitdrive("//x")', ("//x", ""))  # non-empty server & missing share
         tester('ntpath.splitdrive("//x/")', ("//x/", ""))  # non-empty server & empty share
 
+    def test_splitroot(self):
+        tester("ntpath.splitroot('')", ('', '', ''))
+        tester("ntpath.splitroot('a')", ('', '', 'a'))
+        tester("ntpath.splitroot('a\\b')", ('', '', 'a\\b'))
+        tester("ntpath.splitroot('\\a')", ('', '\\', 'a'))
+        tester("ntpath.splitroot('\\a\\b')", ('', '\\', 'a\\b'))
+        tester("ntpath.splitroot('c:a\\b')", ('c:', '', 'a\\b'))
+        tester("ntpath.splitroot('c:\\a\\b')", ('c:', '\\', 'a\\b'))
+        # Redundant slashes are not included in the root.
+        tester("ntpath.splitroot('c:\\\\a')", ('c:', '\\', '\\a'))
+        tester("ntpath.splitroot('c:\\\\\\a/b')", ('c:', '\\', '\\\\a/b'))
+        # Valid UNC paths.
+        tester("ntpath.splitroot('\\\\a\\b')", ('\\\\a\\b', '', ''))
+        tester("ntpath.splitroot('\\\\a\\b\\')", ('\\\\a\\b', '\\', ''))
+        tester("ntpath.splitroot('\\\\a\\b\\c\\d')", ('\\\\a\\b', '\\', 'c\\d'))
+
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
         tester('ntpath.split("\\\\conky\\mountpoint\\foo\\bar")',

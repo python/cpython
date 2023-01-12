@@ -488,6 +488,26 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: splitroot(path)
+
+   Split the pathname *path* into a triad ``(drive, root, tail)`` where:
+
+   1. *drive* is an optional mount point, exactly like :func:`splitdrive`;
+   2. *root* is an optional sequence of separators following the drive; and
+   3. *tail* is anything after the root.
+
+   On Posix, *drive* is always empty. The *root* may be empty (relative path),
+   a single forward slash (absolute path), or two forward slashes
+   (implementation-defined per the POSIX standard).
+
+   On Windows, *drive* may be a UNC sharepoint or a traditional DOS drive. The
+   *root* may be empty, a forward slash, or a backward slash.
+
+   In all cases, ``drive + root + tail`` will be the same as *path*.
+
+   .. versionadded:: 3.12
+
+
 .. function:: splitext(path)
 
    Split the pathname *path* into a pair ``(root, ext)``  such that ``root + ext ==

@@ -28,7 +28,7 @@ import stat
 import genericpath
 from genericpath import *
 
-__all__ = ["normcase","isabs","join","splitdrive","split","splitext",
+__all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime","islink","exists","lexists","isdir","isfile",
            "ismount", "expanduser","expandvars","normpath","abspath",
@@ -133,6 +133,30 @@ def splitdrive(p):
     empty."""
     p = os.fspath(p)
     return p[:0], p
+
+
+def splitroot(p):
+    """Split a pathname into drive, root and tail. On Posix, drive is always
+    empty; the root may be empty, a single slash, or two slashes. The tail
+    contains anything after the root. For example:
+
+        splitdrive('foo/bar') == ('', '', 'foo/bar')
+        splitdrive('/foo/bar') == ('', '/', 'foo/bar')
+    """
+    p = os.fspath(p)
+    sep = b'/' if isinstance(p, bytes) else '/'
+    if p[:1] != sep:
+        # Relative path, e.g.: 'foo'
+        return p[:0], p[:0], p
+    elif p[1:2] != sep:
+        # Absolute path, e.g.: '/foo'
+        return p[:0], p[:1], p[1:]
+    elif p[2:3] != sep:
+        # Implementation defined per POSIX standard, e.g.: '//foo'
+        return p[:0], p[:2], p[2:]
+    else:
+        # Absolute path with extraneous slashes, e.g.: '///foo', '////foo', etc.
+        return p[:0], p[:1], p[1:]
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
