@@ -102,8 +102,8 @@ def gen_plot(df, output_filename):
     formatter = lambda val, pos: f"{val*1000:.0f}ms"
     barplot_with_custom_formatting(ax0, running_time_data, "Total running time", formatter)
 
-    object_number_data = [np.sum(df[df["generation_number"] == i]["total_objects"]/1000.0) for i in range(3)]
-    formatter = lambda val, pos: f"{int(val)}*10e3 obj"
+    object_number_data = [np.sum(df[df["generation_number"] == i]["collected_cycles"]/1000.0) for i in range(3)]
+    formatter = lambda val, pos: f"{int(val)}e3 obj"
     barplot_with_custom_formatting(ax1, object_number_data, "Total object collected", formatter)
 
     obj_percentage_data = get_obj_percentage_data(df)
@@ -150,7 +150,7 @@ def gen_plot(df, output_filename):
         names,
         (0, len(names) + 1),
         "time",
-        "Objects collected per us",
+        "Objects collected per ms",
         formatter=formatter,
     )
 
