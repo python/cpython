@@ -396,27 +396,18 @@ except ImportError:
             dotdot = '..'
         if path == empty:
             return dot
-        initial_slashes = path.startswith(sep)
-        # POSIX allows one or two initial slashes, but treats three or more
-        # as single slash.
-        # (see https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13)
-        if (initial_slashes and
-            path.startswith(sep*2) and not path.startswith(sep*3)):
-            initial_slashes = 2
+        _, root, path = splitroot(path)
         comps = path.split(sep)
         new_comps = []
         for comp in comps:
             if comp in (empty, dot):
                 continue
-            if (comp != dotdot or (not initial_slashes and not new_comps) or
+            if (comp != dotdot or (not root and not new_comps) or
                  (new_comps and new_comps[-1] == dotdot)):
                 new_comps.append(comp)
             elif new_comps:
                 new_comps.pop()
-        comps = new_comps
-        path = sep.join(comps)
-        if initial_slashes:
-            path = sep*initial_slashes + path
+        path = root + sep.join(new_comps)
         return path or dot
 
 else:
