@@ -18,7 +18,7 @@ def import_singlephase():
         return False
 
 
-def check_singlephase(override):
+def check_singlephase_override(override):
     # Check using the default setting.
     settings_initial = _testinternalcapi.get_interp_settings()
     allowed_initial = import_singlephase()
@@ -64,9 +64,17 @@ def check_singlephase(override):
     }, **noop)
 
 
-def run_singlephase_check(override, outfd):
+def run_singlephase_check(outfd):
     with os.fdopen(outfd, 'w') as outfile:
         sys.stdout = outfile
         sys.stderr = outfile
-        results = check_singlephase(override)
+        allowed = import_singlephase()
+        json.dump({'allowed': allowed}, outfile)
+
+
+def run_singlephase_override_check(override, outfd):
+    with os.fdopen(outfd, 'w') as outfile:
+        sys.stdout = outfile
+        sys.stderr = outfile
+        results = check_singlephase_override(override)
         json.dump(results, outfile)

@@ -1338,6 +1338,39 @@ class SubinterpreterTest(unittest.TestCase):
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_setting_extensions_subinterp_check(self):
+        """
+        This verifies that the interpreter's configured setting
+        is used during import.
+        """
+        import json
+
+        for enabled in (True, False):
+            label = 'enabled' if enabled else 'disabled'
+            with self.subTest(f'config: check {label}'):
+                kwargs = {
+                    'allow_fork': True,
+                    'allow_exec': True,
+                    'allow_threads': True,
+                    'allow_daemon_threads': True,
+                    'check_multi_interp_extensions': enabled,
+                }
+
+                r, w = os.pipe()
+                script = textwrap.dedent(f'''
+                    from test.test_capi import check_config
+                    check_config.run_singlephase_check({w})
+                    ''')
+                with os.fdopen(r) as stdout:
+                    ret = support.run_in_subinterp_with_config(script, **kwargs)
+                    self.assertEqual(ret, 0)
+                    out = stdout.read()
+                results = json.loads(out)
+
+                self.assertEqual(results, {'allowed': not enabled})
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_overridden_setting_extensions_subinterp_check(self):
         """
         PyInterpreterConfig.check_multi_interp_extensions can be overridden
@@ -1387,8 +1420,8 @@ class SubinterpreterTest(unittest.TestCase):
 
             r, w = os.pipe()
             script = textwrap.dedent(f'''
-                from test.test_capi.check_config import run_singlephase_check
-                run_singlephase_check({override}, {w})
+                from test.test_capi import check_config
+                check_config.run_singlephase_override_check({override}, {w})
                 ''')
             with os.fdopen(r) as stdout:
                 ret = support.run_in_subinterp_with_config(script, **kwargs)
