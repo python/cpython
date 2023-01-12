@@ -168,6 +168,10 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.isabs("\\foo")', 1)
         tester('ntpath.isabs("\\foo\\bar")', 1)
 
+        # gh-96290: normal UNC paths and device paths without trailing backslashes
+        tester('ntpath.isabs("\\\\conky\\mountpoint")', 1)
+        tester('ntpath.isabs("\\\\.\\C:")', 1)
+
     def test_commonprefix(self):
         tester('ntpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
                "/home/swen")
