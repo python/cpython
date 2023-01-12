@@ -639,18 +639,11 @@ class AST_Tests(unittest.TestCase):
 
     def test_pickling(self):
         import pickle
-        mods = [pickle]
-        try:
-            import cPickle
-            mods.append(cPickle)
-        except ImportError:
-            pass
-        protocols = [0, 1, 2]
-        for mod in mods:
-            for protocol in protocols:
-                for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
-                    ast2 = mod.loads(mod.dumps(ast, protocol))
-                    self.assertEqual(to_tuple(ast2), to_tuple(ast))
+
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
+                ast2 = pickle.loads(pickle.dumps(ast, protocol))
+                self.assertEqual(to_tuple(ast2), to_tuple(ast))
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)

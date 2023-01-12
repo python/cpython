@@ -224,7 +224,7 @@ def pretty(defname):
     return defname.replace("_", " ").lower()
 
 def kind_to_text(kind, defines, opname):
-    if kind <= 7:
+    if kind <= 8:
         return pretty(defines[kind][0])
     if opname.endswith("ATTR"):
         opname = "ATTR"
