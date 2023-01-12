@@ -1369,10 +1369,7 @@ class SubinterpreterTest(unittest.TestCase):
             settings = {
                 'feature_flags': flags,
             }
-            if override == 0:
-                enabled_after = enabled
-            else:
-                enabled_after = (override > 0)
+
             expected = {
                 'requested': override,
                 'override__initial': 0,
@@ -1383,9 +1380,9 @@ class SubinterpreterTest(unittest.TestCase):
                 'settings_after': settings,
                 'settings_restored': settings,
                 # These are the most likely values to be wrong.
-                'allowed__initial': enabled,
-                'allowed_after': enabled_after,
-                'allowed_restored': enabled,
+                'allowed__initial': not enabled,
+                'allowed_after': not ((override > 0) if override else enabled),
+                'allowed_restored': not enabled,
             }
 
             r, w = os.pipe()
