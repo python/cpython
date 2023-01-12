@@ -28,6 +28,60 @@
 
 #include "clinic/_testinternalcapi.c.h"
 
+
+#define MODULE_NAME "_testinternalcapi"
+
+
+static PyObject *
+_get_current_module(void)
+{
+    // We ensured it was imported in _run_script().
+    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    if (name == NULL) {
+        return NULL;
+    }
+    PyObject *mod = PyImport_GetModule(name);
+    Py_DECREF(name);
+    if (mod == NULL) {
+        return NULL;
+    }
+    assert(mod != Py_None);
+    return mod;
+}
+
+
+/* module state *************************************************************/
+
+typedef struct {
+    PyObject *record_list;
+} module_state;
+
+static inline module_state *
+get_module_state(PyObject *mod)
+{
+    assert(mod != NULL);
+    module_state *state = PyModule_GetState(mod);
+    assert(state != NULL);
+    return state;
+}
+
+static int
+traverse_module_state(module_state *state, visitproc visit, void *arg)
+{
+    Py_VISIT(state->record_list);
+    return 0;
+}
+
+static int
+clear_module_state(module_state *state)
+{
+    Py_CLEAR(state->record_list);
+    return 0;
+}
+
+
+/* module functions *********************************************************/
+
 /*[clinic input]
 module _testinternalcapi
 [clinic start generated code]*/
@@ -496,13 +550,12 @@ decode_locale_ex(PyObject *self, PyObject *args)
     return res;
 }
 
-static PyObject *record_list = NULL;
-
 static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    module_state *state = get_module_state(self);
     _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), _PyEval_EvalFrameDefault);
-    Py_CLEAR(record_list);
+    Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
 
@@ -510,7 +563,10 @@ static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
     if (PyFunction_Check(f->f_funcobj)) {
-        PyList_Append(record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
+        PyObject *module = _get_current_module();
+        assert(module != NULL);
+        module_state *state = get_module_state(module);
+        PyList_Append(state->record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
     }
     return _PyEval_EvalFrameDefault(tstate, f, exc);
 }
@@ -519,11 +575,12 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 static PyObject *
 set_eval_frame_record(PyObject *self, PyObject *list)
 {
+    module_state *state = get_module_state(self);
     if (!PyList_Check(list)) {
         PyErr_SetString(PyExc_TypeError, "argument must be a list");
         return NULL;
     }
-    Py_XSETREF(record_list, Py_NewRef(list));
+    Py_XSETREF(state->record_list, Py_NewRef(list));
     _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), record_eval);
     Py_RETURN_NONE;
 }
@@ -656,17 +713,42 @@ static struct PyModuleDef_Slot module_slots[] = {
     {0, NULL},
 };
 
+static int
+module_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    module_state *state = get_module_state(module);
+    assert(state != NULL);
+    traverse_module_state(state, visit, arg);
+    return 0;
+}
+
+static int
+module_clear(PyObject *module)
+{
+    module_state *state = get_module_state(module);
+    assert(state != NULL);
+    (void)clear_module_state(state);
+    return 0;
+}
+
+static void
+module_free(void *module)
+{
+    module_state *state = get_module_state(module);
+    assert(state != NULL);
+    (void)clear_module_state(state);
+}
+
 static struct PyModuleDef _testcapimodule = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_testinternalcapi",
+    .m_name = MODULE_NAME,
     .m_doc = NULL,
-    .m_size = 0,
+    .m_size = sizeof(module_state),
     .m_methods = module_functions,
     .m_slots = module_slots,
-    /* There is no module state (or globals) to traverse/clear/free. */
-    .m_traverse = NULL,
-    .m_clear = NULL,
-    .m_free = NULL,
+    .m_traverse = module_traverse,
+    .m_clear = module_clear,
+    .m_free = (freefunc)module_free,
 };
 
 
