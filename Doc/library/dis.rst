@@ -1493,9 +1493,8 @@ iterations of the loop.
 
 .. opcode:: CALL_INTRINSIC_1
 
-   Calls an intrinsic function with one argument. Passes the TOS as the argument
-   and sets TOS to the result. Used to implement functionality that is necessary
-   but not performance critical.
+   Calls an intrinsic function with one argument. Passes ``STACK[-1]`` as the
+   argument and sets ``STACK[-1]`` to the result. Used to implement functionality that is necessary but not performance critical.
 
     The operand determines which intrinsic function is called:
 
