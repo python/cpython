@@ -1404,19 +1404,19 @@ class SubinterpreterTest(unittest.TestCase):
         self.maxDiff = None
 
         # setting: check disabled
-        with self.subTest('config disabled, override disabled'):
+        with self.subTest('config: check disabled; override: disabled'):
             check(False, -1)
-        with self.subTest('config disabled, override cleared'):
+        with self.subTest('config: check disabled; override: use config'):
             check(False, 0)
-        with self.subTest('config disabled, override enabled'):
+        with self.subTest('config: check disabled; override: enabled'):
             check(False, 1)
 
         # setting: check enabled
-        with self.subTest('config enabled, override disabled'):
+        with self.subTest('config: check enabled; override: disabled'):
             check(True, -1)
-        with self.subTest('config enabled, override cleared'):
+        with self.subTest('config: check enabled; override: use config'):
             check(True, 0)
-        with self.subTest('config enabled, override enabled'):
+        with self.subTest('config: check enabled; override: enabled'):
             check(True, 1)
 
     def test_mutate_exception(self):
