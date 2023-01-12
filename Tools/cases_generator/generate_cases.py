@@ -169,13 +169,13 @@ class Instruction:
         self.unmoved_names = frozenset(unmoved_names)
         if self.register:
             num_regs = len(self.input_effects) + len(self.output_effects)
-            num_dummies = (num_regs // 2) * 2 + 2 - num_regs
-            fmt = "I" + "B"*num_regs + "_"*num_dummies
+            num_dummies = (num_regs // 2) * 2 + 1 - num_regs
+            fmt = "I" + "B"*num_regs + "X"*num_dummies
         else:
             if variable_used(inst.block, "oparg"):
                 fmt = "IB"
             else:
-                fmt = "I_"
+                fmt = "IX"
         cache = "C"
         for ce in self.cache_effects:
             for _ in range(ce.size):
