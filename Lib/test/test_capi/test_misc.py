@@ -1374,23 +1374,25 @@ class SubinterpreterTest(unittest.TestCase):
             else:
                 enabled_after = (override > 0)
             expected = {
-                'override_requested': override,
-                'settings_before': settings,
-                'enabled_initial': enabled,
-                'override_initial': 0,
+                'requested': override,
+                'override__initial': 0,
+                'override_after': override,
+                'override_noop': override,
+                'override_restored': 0,
+                'allowed__initial': enabled,
+                'allowed_after': enabled_after,
+                'allowed_noop': enabled_after,
+                'allowed_restored': enabled,
+                'settings__initial': settings,
                 'settings_after': settings,
-                'enabled_after': enabled_after,
-                'override_actual': override,
-                'settings_final': settings,
-                'override_noop': 0,
                 'settings_noop': settings,
-                'enabled_restored': enabled,
+                'settings_restored': settings,
             }
 
             r, w = os.pipe()
             script = textwrap.dedent(f'''
-                from test.test_capi.check_config import run_check
-                run_check({override}, {w})
+                from test.test_capi.check_config import run_singlephase_check
+                run_singlephase_check({override}, {w})
                 ''')
             with os.fdopen(r) as stdout:
                 ret = support.run_in_subinterp_with_config(script, **kwargs)
