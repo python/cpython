@@ -456,15 +456,13 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        // 'stuff' is a list object followed by (oparg - 1) unused values
-        inst(LIST_APPEND, (stuff[oparg], v -- stuff[oparg])) {
-            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)stuff[0], v) < 0, error);
+        inst(LIST_APPEND, (list, unused[oparg-1], v -- list, unused[oparg-1])) {
+            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
-        // 'stuff' is a set object followed by (oparg - 1) unused values
-        inst(SET_ADD,  (stuff[oparg], v -- stuff[oparg])) {
-            int err = PySet_Add(stuff[0], v);
+        inst(SET_ADD,  (set, unused[oparg-1], v -- set, unused[oparg-1])) {
+            int err = PySet_Add(set, v);
             Py_DECREF(v);
             ERROR_IF(err, error);
             PREDICT(JUMP_BACKWARD);
@@ -1334,9 +1332,8 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        // 'stuff' is a set object followed by (oparg - 1) unused values
-        inst(SET_UPDATE, (stuff[oparg], iterable -- stuff[oparg])) {
-            int err = _PySet_Update(stuff[0], iterable);
+        inst(SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1])) {
+            int err = _PySet_Update(set, iterable);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
         }

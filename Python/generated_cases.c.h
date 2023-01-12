@@ -574,8 +574,8 @@
 
         TARGET(LIST_APPEND) {
             PyObject *v = PEEK(1);
-            PyObject **stuff = &PEEK(1 + oparg);
-            if (_PyList_AppendTakeRef((PyListObject *)stuff[0], v) < 0) goto pop_1_error;
+            PyObject *list = PEEK(2 + oparg-1);
+            if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
             STACK_SHRINK(1);
             PREDICT(JUMP_BACKWARD);
             DISPATCH();
@@ -583,8 +583,8 @@
 
         TARGET(SET_ADD) {
             PyObject *v = PEEK(1);
-            PyObject **stuff = &PEEK(1 + oparg);
-            int err = PySet_Add(stuff[0], v);
+            PyObject *set = PEEK(2 + oparg-1);
+            int err = PySet_Add(set, v);
             Py_DECREF(v);
             if (err) goto pop_1_error;
             STACK_SHRINK(1);
@@ -1570,8 +1570,8 @@
 
         TARGET(SET_UPDATE) {
             PyObject *iterable = PEEK(1);
-            PyObject **stuff = &PEEK(1 + oparg);
-            int err = _PySet_Update(stuff[0], iterable);
+            PyObject *set = PEEK(2 + oparg-1);
+            int err = _PySet_Update(set, iterable);
             Py_DECREF(iterable);
             if (err < 0) goto pop_1_error;
             STACK_SHRINK(1);
