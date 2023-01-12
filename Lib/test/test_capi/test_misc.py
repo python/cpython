@@ -1377,15 +1377,12 @@ class SubinterpreterTest(unittest.TestCase):
                 'requested': override,
                 'override__initial': 0,
                 'override_after': override,
-                'override_noop': override,
                 'override_restored': 0,
                 'allowed__initial': enabled,
                 'allowed_after': enabled_after,
-                'allowed_noop': enabled_after,
                 'allowed_restored': enabled,
                 'settings__initial': settings,
                 'settings_after': settings,
-                'settings_noop': settings,
                 'settings_restored': settings,
             }
 
