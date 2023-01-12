@@ -1378,12 +1378,14 @@ class SubinterpreterTest(unittest.TestCase):
                 'override__initial': 0,
                 'override_after': override,
                 'override_restored': 0,
-                'allowed__initial': enabled,
-                'allowed_after': enabled_after,
-                'allowed_restored': enabled,
+                # The override should not affect the config or settings.
                 'settings__initial': settings,
                 'settings_after': settings,
                 'settings_restored': settings,
+                # These are the most likely values to be wrong.
+                'allowed__initial': enabled,
+                'allowed_after': enabled_after,
+                'allowed_restored': enabled,
             }
 
             r, w = os.pipe()
