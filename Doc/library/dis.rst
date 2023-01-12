@@ -954,7 +954,7 @@ iterations of the loop.
    ``cmp_op[opname]``.
 
 
-.. opcode:: COMPARE_OP (opname)
+.. opcode:: COMPARE_AND_BRANCH (opname)
 
    Compares the top two values on the stack, popping them, then branches.
    The direction and offset of the jump is embedded as a ``POP_JUMP_IF_TRUE``

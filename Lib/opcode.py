@@ -189,8 +189,9 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
-def_op('COMPARE_AND_BRANCH', 141)   # Comparison and jump
+jrel_op('COMPARE_AND_BRANCH', 141)   # Comparison and jump
 hascompare.append(141)
+
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
 def_op('EXTENDED_ARG', 144)
