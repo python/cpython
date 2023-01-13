@@ -198,8 +198,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         eventArgs = _Py_VaBuildValue_SizeT(argFormat, vargs);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
             PyObject *argTuple = PyTuple_Pack(1, eventArgs);
-            Py_DECREF(eventArgs);
-            eventArgs = argTuple;
+            Py_SETREF(eventArgs, argTuple);
         }
     }
     else {
@@ -431,6 +430,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
         if (interp->audit_hooks == NULL) {
             return NULL;
         }
+        /* Avoid having our list of hooks show up in the GC module */
+        PyObject_GC_UnTrack(interp->audit_hooks);
     }
 
     if (PyList_Append(interp->audit_hooks, hook) < 0) {
@@ -949,10 +950,6 @@ static int
 profile_trampoline(PyObject *self, PyFrameObject *frame,
                    int what, PyObject *arg)
 {
-    if (arg == NULL) {
-        arg = Py_None;
-    }
-
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *result = call_trampoline(tstate, self, frame, what, arg);
     if (result == NULL) {
@@ -1702,12 +1699,12 @@ sys_mdebug_impl(PyObject *module, int flag)
 /*[clinic input]
 sys.get_int_max_str_digits
 
-Set the maximum string digits limit for non-binary int<->str conversions.
+Return the maximum string digits limit for non-binary int<->str conversions.
 [clinic start generated code]*/
 
 static PyObject *
 sys_get_int_max_str_digits_impl(PyObject *module)
-/*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
+/*[clinic end generated code: output=0042f5e8ae0e8631 input=61bf9f99bc8b112d]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return PyLong_FromLong(interp->long_state.max_str_digits);
@@ -1887,12 +1884,9 @@ sys__getframe_impl(PyObject *module, int depth)
 
     if (frame != NULL) {
         while (depth > 0) {
-            frame = frame->previous;
+            frame = _PyFrame_GetFirstComplete(frame->previous);
             if (frame == NULL) {
                 break;
-            }
-            if (_PyFrame_IsIncomplete(frame)) {
-                continue;
             }
             --depth;
         }
@@ -2252,8 +2246,9 @@ list_builtin_module_names(void)
     if (list == NULL) {
         return NULL;
     }
-    for (Py_ssize_t i = 0; PyImport_Inittab[i].name != NULL; i++) {
-        PyObject *name = PyUnicode_FromString(PyImport_Inittab[i].name);
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
+        PyObject *name = PyUnicode_FromString(inittab[i].name);
         if (name == NULL) {
             goto error;
         }

@@ -161,9 +161,8 @@ if 1:
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 1)
-        lines = list(co.co_lines())
-        self.assertEqual(lines[0][2], 0)
-        self.assertEqual(lines[1][2], 257)
+        lines = [line for _, _, line in co.co_lines()]
+        self.assertEqual(lines, [0, 257])
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -955,9 +954,9 @@ if 1:
         for func in (no_code1, no_code2):
             with self.subTest(func=func):
                 code = func.__code__
-                lines = list(code.co_lines())
-                start, end, line = lines[0]
+                [(start, end, line)] = code.co_lines()
                 self.assertEqual(start, 0)
+                self.assertEqual(end, len(code.co_code))
                 self.assertEqual(line, code.co_firstlineno)
 
     def get_code_lines(self, code):
@@ -1146,6 +1145,17 @@ if 1:
                 with self.subTest(source):
                     self.assertEqual(actual_positions, expected_positions)
 
+    def test_if_expression_expression_empty_block(self):
+        # See regression in gh-99708
+        exprs = [
+            "assert (False if 1 else True)",
+            "def f():\n\tif not (False if 1 else True): raise AssertionError",
+            "def f():\n\tif not (False if 1 else True): return 12",
+        ]
+        for expr in exprs:
+            with self.subTest(expr=expr):
+                compile(expr, "<single>", "exec")
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1164,7 +1174,7 @@ class TestSourcePositions(unittest.TestCase):
         class SourceOffsetVisitor(ast.NodeVisitor):
             def generic_visit(self, node):
                 super().generic_visit(node)
-                if not isinstance(node, ast.expr) and not isinstance(node, ast.stmt):
+                if not isinstance(node, (ast.expr, ast.stmt, ast.pattern)):
                     return
                 lines.add(node.lineno)
                 end_lines.add(node.end_lineno)
@@ -1441,6 +1451,100 @@ async def f():
             line=2, end_line=3, column=5, end_column=11, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
+
+    def test_matchcase_sequence(self):
+        snippet = """\
+match x:
+    case a, b:
+        pass
+"""
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_SEQUENCE',
+            line=2, end_line=2, column=9, end_column=13, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'UNPACK_SEQUENCE',
+            line=2, end_line=2, column=9, end_column=13, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=13, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=13, occurrence=2)
+
+    def test_matchcase_sequence_wildcard(self):
+        snippet = """\
+match x:
+    case a, *b, c:
+        pass
+"""
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_SEQUENCE',
+            line=2, end_line=2, column=9, end_column=17, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'UNPACK_EX',
+            line=2, end_line=2, column=9, end_column=17, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=17, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=17, occurrence=2)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=17, occurrence=3)
+
+    def test_matchcase_mapping(self):
+        snippet = """\
+match x:
+    case {"a" : a, "b": b}:
+        pass
+"""
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_MAPPING',
+            line=2, end_line=2, column=9, end_column=26, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_KEYS',
+            line=2, end_line=2, column=9, end_column=26, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=26, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=26, occurrence=2)
+
+    def test_matchcase_mapping_wildcard(self):
+        snippet = """\
+match x:
+    case {"a" : a, "b": b, **c}:
+        pass
+"""
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_MAPPING',
+            line=2, end_line=2, column=9, end_column=31, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_KEYS',
+            line=2, end_line=2, column=9, end_column=31, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=31, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=31, occurrence=2)
+
+    def test_matchcase_class(self):
+        snippet = """\
+match x:
+    case C(a, b):
+        pass
+"""
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_CLASS',
+            line=2, end_line=2, column=9, end_column=16, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'UNPACK_SEQUENCE',
+            line=2, end_line=2, column=9, end_column=16, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=16, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'STORE_NAME',
+            line=2, end_line=2, column=9, end_column=16, occurrence=2)
+
+    def test_matchcase_or(self):
+        snippet = """\
+match x:
+    case C(1) | C(2):
+        pass
+"""
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_CLASS',
+            line=2, end_line=2, column=9, end_column=13, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_CLASS',
+            line=2, end_line=2, column=16, end_column=20, occurrence=2)
 
     def test_very_long_line_end_offset(self):
         # Make sure we get the correct column offset for offsets

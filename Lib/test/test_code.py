@@ -143,7 +143,7 @@ from test.support import (cpython_only,
                           gc_collect)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
-from opcode import opmap
+from opcode import opmap, opname
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
@@ -339,15 +339,19 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(list(new_code.co_lines()), [])
 
     def test_invalid_bytecode(self):
-        def foo(): pass
-        foo.__code__ = co = foo.__code__.replace(co_code=b'\xee\x00d\x00S\x00')
+        def foo():
+            pass
 
-        with self.assertRaises(SystemError) as se:
+        # assert that opcode 238 is invalid
+        self.assertEqual(opname[238], '<238>')
+
+        # change first opcode to 0xee (=238)
+        foo.__code__ = foo.__code__.replace(
+            co_code=b'\xee' + foo.__code__.co_code[1:])
+
+        msg = f"unknown opcode 238"
+        with self.assertRaisesRegex(SystemError, msg):
             foo()
-        self.assertEqual(
-            f"{co.co_filename}:{co.co_firstlineno}: unknown opcode 238",
-            str(se.exception))
-
 
     @requires_debug_ranges()
     def test_co_positions_artificial_instructions(self):
@@ -460,6 +464,32 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(code_b, code_c)
         self.assertNotEqual(code_b, code_d)
         self.assertNotEqual(code_c, code_d)
+
+    def test_code_hash_uses_firstlineno(self):
+        c1 = (lambda: 1).__code__
+        c2 = (lambda: 1).__code__
+        self.assertNotEqual(c1, c2)
+        self.assertNotEqual(hash(c1), hash(c2))
+        c3 = c1.replace(co_firstlineno=17)
+        self.assertNotEqual(c1, c3)
+        self.assertNotEqual(hash(c1), hash(c3))
+
+    def test_code_hash_uses_order(self):
+        # Swapping posonlyargcount and kwonlyargcount should change the hash.
+        c = (lambda x, y, *, z=1, w=1: 1).__code__
+        self.assertEqual(c.co_argcount, 2)
+        self.assertEqual(c.co_posonlyargcount, 0)
+        self.assertEqual(c.co_kwonlyargcount, 2)
+        swapped = c.replace(co_posonlyargcount=2, co_kwonlyargcount=0)
+        self.assertNotEqual(c, swapped)
+        self.assertNotEqual(hash(c), hash(swapped))
+
+    def test_code_hash_uses_bytecode(self):
+        c = (lambda x, y: x + y).__code__
+        d = (lambda x, y: x * y).__code__
+        c1 = c.replace(co_code=d.co_code)
+        self.assertNotEqual(c, c1)
+        self.assertNotEqual(hash(c), hash(c1))
 
 
 def isinterned(s):
@@ -672,7 +702,8 @@ class CodeLocationTest(unittest.TestCase):
 
     def check_lines(self, func):
         co = func.__code__
-        lines1 = list(dedup(l for (_, _, l) in co.co_lines()))
+        lines1 = [line for _, _, line in co.co_lines()]
+        self.assertEqual(lines1, list(dedup(lines1)))
         lines2 = list(lines_from_postions(positions_from_location_table(co)))
         for l1, l2 in zip(lines1, lines2):
             self.assertEqual(l1, l2)

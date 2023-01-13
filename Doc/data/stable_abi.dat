@@ -386,6 +386,8 @@ function,PyMem_Malloc,3.2,,
 function,PyMem_Realloc,3.2,,
 type,PyMemberDef,3.2,,full-abi
 var,PyMemberDescr_Type,3.2,,
+function,PyMember_GetOne,3.2,,
+function,PyMember_SetOne,3.2,,
 function,PyMemoryView_FromBuffer,3.11,,
 function,PyMemoryView_FromMemory,3.7,,
 function,PyMemoryView_FromObject,3.2,,

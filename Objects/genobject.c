@@ -341,8 +341,7 @@ _PyGen_yf(PyGenObject *gen)
             /* Not in a yield from */
             return NULL;
         }
-        yf = _PyFrame_StackPeek(frame);
-        Py_INCREF(yf);
+        yf = Py_NewRef(_PyFrame_StackPeek(frame));
     }
 
     return yf;
@@ -492,10 +491,8 @@ throw_here:
         }
         else {
             /* Normalize to raise <class>, <instance> */
-            Py_XDECREF(val);
-            val = typ;
-            typ = PyExceptionInstance_Class(typ);
-            Py_INCREF(typ);
+            Py_XSETREF(val, typ);
+            typ = Py_NewRef(PyExceptionInstance_Class(typ));
 
             if (tb == NULL)
                 /* Returns NULL if there's no traceback */
@@ -772,7 +769,7 @@ gen_sizeof(PyGenObject *gen, PyObject *Py_UNUSED(ignored))
     Py_ssize_t res;
     res = offsetof(PyGenObject, gi_iframe) + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = gen->gi_code;
-    res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
+    res += _PyFrame_NumSlotsForCodeObject(code) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
 
@@ -853,7 +850,7 @@ static PyObject *
 make_gen(PyTypeObject *type, PyFunctionObject *func)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    int slots = code->co_nlocalsplus + code->co_stacksize;
+    int slots = _PyFrame_NumSlotsForCodeObject(code);
     PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, slots);
     if (gen == NULL) {
         return NULL;
@@ -906,8 +903,11 @@ _Py_MakeCoro(PyFunctionObject *func)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        assert(_PyEval_GetFrame());
-        PyObject *cr_origin = compute_cr_origin(origin_depth, _PyEval_GetFrame()->previous);
+        _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+        assert(frame);
+        assert(_PyFrame_IsIncomplete(frame));
+        frame = _PyFrame_GetFirstComplete(frame->previous);
+        PyObject *cr_origin = compute_cr_origin(origin_depth, frame);
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
@@ -1289,7 +1289,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     /* First count how many frames we have */
     int frame_count = 0;
     for (; frame && frame_count < origin_depth; ++frame_count) {
-        frame = frame->previous;
+        frame = _PyFrame_GetFirstComplete(frame->previous);
     }
 
     /* Now collect them */
@@ -1308,7 +1308,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
             return NULL;
         }
         PyTuple_SET_ITEM(cr_origin, i, frameinfo);
-        frame = frame->previous;
+        frame = _PyFrame_GetFirstComplete(frame->previous);
     }
 
     return cr_origin;
@@ -1973,13 +1973,13 @@ PyTypeObject _PyAsyncGenWrappedValue_Type = {
 
 
 PyObject *
-_PyAsyncGenValueWrapperNew(PyObject *val)
+_PyAsyncGenValueWrapperNew(PyThreadState *tstate, PyObject *val)
 {
     _PyAsyncGenWrappedValue *o;
     assert(val);
 
 #if _PyAsyncGen_MAXFREELIST > 0
-    struct _Py_async_gen_state *state = get_async_gen_state();
+    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
 #ifdef Py_DEBUG
     // _PyAsyncGenValueWrapperNew() must not be called after _PyAsyncGen_Fini()
     assert(state->value_numfree != -1);

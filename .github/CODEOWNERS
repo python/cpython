@@ -8,7 +8,7 @@
 .github/**                    @ezio-melotti
 
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov @gvanrossum
+**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303
 
 # Core
 **/*context*                  @1st1
@@ -63,7 +63,7 @@ Python/traceback.c            @iritkatriel
 # bytecode.
 **/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 **/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-**/*importlib/resources/*      @jaraco @warsaw @brettcannon @FFY00
+**/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
@@ -144,7 +144,7 @@ Lib/ast.py                    @isidentical
 **/*cgi*                      @ethanfurman
 **/*tarfile*                  @ethanfurman
 
-**/*tomllib*                  @encukou
+**/*tomllib*                  @encukou @hauntsaninja
 
 **/*sysconfig*                @FFY00
 
@@ -153,4 +153,7 @@ Lib/ast.py                    @isidentical
 **/*osx_support*              @python/macos-team
 
 # pathlib
-**/*pathlib*                  @brettcannon
+**/*pathlib*                  @barneygale
+
+# zipfile.Path
+**/*zipfile/*_path.py         @jaraco

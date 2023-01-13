@@ -113,7 +113,7 @@ de_instrument(PyCodeObject *code, int offset, int event)
     if (deinstrumented) {
         base_opcode = _PyOpcode_Deopt[deinstrumented];
         assert(base_opcode != 0);
-        *instr = _Py_MAKECODEUNIT(base_opcode, _Py_OPARG(*instr));
+        instr->opcode = base_opcode;
     }
     else {
         /* TO DO -- handle INSTRUMENTED_INSTRUCTION */
@@ -126,7 +126,7 @@ de_instrument(PyCodeObject *code, int offset, int event)
         lines->original_opcode = base_opcode;
     }
     if (_PyOpcode_Caches[base_opcode]) {
-        instr[1] = adaptive_counter_warmup();
+        instr[1].cache = adaptive_counter_warmup();
     }
 }
 
@@ -144,14 +144,14 @@ de_instrument_line(PyCodeObject *code, int offset)
     assert(is_instrumented(original_opcode) || _PyOpcode_Deopt[original_opcode]);
     if (is_instrumented(original_opcode)) {
         /* Instrumented original */
-        *instr = _Py_MAKECODEUNIT(original_opcode,  _Py_OPARG(*instr));
+        instr->opcode = original_opcode;
     }
     else {
         int base_opcode = _PyOpcode_Deopt[original_opcode];
         assert(base_opcode != 0);
-        *instr = _Py_MAKECODEUNIT(base_opcode, _Py_OPARG(*instr));
+        instr->opcode = base_opcode;
         if (_PyOpcode_Caches[base_opcode]) {
-            instr[1] = adaptive_counter_warmup();
+            instr[1].cache = adaptive_counter_warmup();
         }
     }
     /* Mark instruction as candidate for line instrumentation */
@@ -174,9 +174,9 @@ instrument(PyCodeObject *code, int offset)
         opcode = _PyOpcode_Deopt[opcode];
         int instrumented = INSTRUMENTED_OPCODES[opcode];
         assert(instrumented);
-        *instr = _Py_MAKECODEUNIT(instrumented, _Py_OPARG(*instr));
+        instr->opcode = instrumented;
         if (_PyOpcode_Caches[opcode]) {
-            instr[1] = adaptive_counter_warmup();
+            instr[1].cache = adaptive_counter_warmup();
         }
     }
 }
@@ -203,7 +203,7 @@ instrument_line(PyCodeObject *code, int offset)
 
     }
     assert(lines->original_opcode > 0);
-    *instr = _Py_MAKECODEUNIT(INSTRUMENTED_LINE, _Py_OPARG(*instr));
+    instr->opcode = INSTRUMENTED_LINE;
     assert(code->_co_instrumentation.monitoring_data->lines[offset].original_opcode != 0);
 }
 

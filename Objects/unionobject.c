@@ -295,8 +295,7 @@ union_getitem(PyObject *self, PyObject *item)
         res = make_union(newargs);
     }
     else {
-        res = PyTuple_GET_ITEM(newargs, 0);
-        Py_INCREF(res);
+        res = Py_NewRef(PyTuple_GET_ITEM(newargs, 0));
         for (Py_ssize_t iarg = 1; iarg < nargs; iarg++) {
             PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
             Py_SETREF(res, PyNumber_Or(res, arg));
