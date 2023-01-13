@@ -196,8 +196,15 @@ _PyGC_InitState(GCState *gcstate)
     };
     gcstate->generation0 = GEN_HEAD(gcstate, 0);
     INIT_HEAD(gcstate->permanent_generation);
-
 #undef INIT_HEAD
+
+    char *s = Py_GETENV("PYTHONGCTHRESHOLD");
+    if (s) {
+        long n = atol(s);
+        if (n > 0) {
+            gcstate->generations[0].threshold = n;
+        }
+    }
 }
 
 
