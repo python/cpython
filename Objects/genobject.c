@@ -375,8 +375,8 @@ gen_close(PyGenObject *gen, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, msg);
         return NULL;
     }
-    if (PyErr_ExceptionMatches(PyExc_StopIteration)
-        || PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
+    if (PyErr_ExceptionMatches(PyExc_GeneratorExit)
+        || PyErr_ExceptionMatches(PyExc_StopIteration)) {
         PyErr_Clear();          /* ignore these errors */
         Py_RETURN_NONE;
     }
