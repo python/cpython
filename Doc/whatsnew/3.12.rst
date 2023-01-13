@@ -408,6 +408,11 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
+* The :meth:`~asyncio.DefaultEventLoopPolicy.get_event_loop` method of the
+  default event loop policy now emits a :exc:`DeprecationWarning` if there
+  is no current event loop set and it decides to create one.
+  (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -709,18 +714,6 @@ Changes in the Python API
   This change helps with interpreter isolation.  Furthermore, :mod:`syslog` is a wrapper
   around process-global resources, which are best managed from the main interpreter.
   (Contributed by Dong-hee Na in :gh:`99127`.)
-
-* :func:`asyncio.get_event_loop` and many other :mod:`asyncio` functions like
-  :func:`~asyncio.ensure_future`, :func:`~asyncio.shield` or
-  :func:`~asyncio.gather`, and also the
-  :meth:`~asyncio.BaseDefaultEventLoopPolicy.get_event_loop` method of
-  :class:`~asyncio.BaseDefaultEventLoopPolicy` now raise a :exc:`RuntimeError`
-  if called when there is no running event loop and the current event loop was
-  not set.
-  Previously they implicitly created and set a new current event loop.
-  :exc:`DeprecationWarning` is no longer emitted if there is no running
-  event loop but the current event loop is set in the policy.
-  (Contributed by Serhiy Storchaka in :gh:`93453`.)
 
 
 Build Changes
