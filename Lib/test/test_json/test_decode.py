@@ -50,6 +50,25 @@ class TestDecode:
         rval = self.loads('{   "key"    :    "value"    ,  "k":"v"    }')
         self.assertEqual(rval, {"key":"value", "k":"v"})
 
+    def test_comments_removal(self):
+        s = '''{
+    /*
+    "key": "val',
+    */
+    "key": "val", // comment goes here
+    // "key": "val"
+    "key with comment prefix//": "val2",
+    "key /* with multiline comment */ syntax": "val3",
+    "key2": /**/ "val after a comment"
+  }'''
+        rval = self.loads(s)
+        self.assertEqual(rval, {
+            "key": "val",
+            "key with comment prefix//": "val2",
+            "key /* with multiline comment */ syntax": "val3",
+            "key2": "val after a comment"
+        })
+
     def check_keys_reuse(self, source, loads):
         rval = loads(source)
         (a, b), (c, d) = sorted(rval[0]), sorted(rval[1])
