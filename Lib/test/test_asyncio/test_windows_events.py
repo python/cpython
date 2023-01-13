@@ -257,28 +257,35 @@ class ProactorTests(test_utils.TestCase):
     async def _test_client_pipe_stat(self):
         ADDRESS = r'\\.\pipe\test_client_pipe_stat-%s' % os.getpid()
 
-        with self.assertRaises(FileNotFoundError):
-            os.stat(ADDRESS)
+        async def probe():
+            # See https://github.com/python/cpython/pull/100959#discussion_r1068533658
+            h = _overlapped.ConnectPipe(ADDRESS)
+            try:
+                _winapi.CloseHandle(_overlapped.ConnectPipe(ADDRESS))
+            except OSError as e:
+                if e.winerror != _overlapped.ERROR_PIPE_BUSY:
+                    raise
+            finally:
+                _winapi.CloseHandle(h)
 
-        [server] = await self.loop.start_serving_pipe(
-            asyncio.Protocol, ADDRESS)
+        with self.assertRaises(FileNotFoundError):
+            await probe()
+
+        [server] = await self.loop.start_serving_pipe(asyncio.Protocol, ADDRESS)
         self.assertIsInstance(server, windows_events.PipeServer)
 
         errors = []
-        self.loop.set_exception_handler(lambda *args: errors.append(args))
-
-        async def stat_it():
-            os.stat(ADDRESS)
+        self.loop.set_exception_handler(lambda _, data: errors.append(data))
 
         for i in range(5):
-            await self.loop.create_task(stat_it())
+            await self.loop.create_task(probe())
 
         self.assertEqual(len(errors), 0, errors)
 
         server.close()
 
         with self.assertRaises(FileNotFoundError):
-            os.stat(ADDRESS)
+            await probe()
 
         return "done"
 
