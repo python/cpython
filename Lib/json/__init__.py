@@ -106,6 +106,7 @@ __author__ = 'Bob Ippolito <bob@redivi.com>'
 from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
 import codecs
+import re
 
 _default_encoder = JSONEncoder(
     skipkeys=False,
@@ -339,6 +340,9 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
             raise TypeError(f'the JSON object must be str, bytes or bytearray, '
                             f'not {s.__class__.__name__}')
         s = s.decode(detect_encoding(s), 'surrogatepass')
+
+    # Removes JSON Comments
+    s = re.sub(r"\/\/(?:[^\n])*\n|\/\*[\s\S]*?\*\/|(\"(?:\?\?'|\\[\\\"\n]|[^\"])*?\")|(?<=\n)\r?\n[ \t]*", r"\1", s)
 
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and
