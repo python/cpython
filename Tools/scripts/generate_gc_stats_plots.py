@@ -84,46 +84,57 @@ def gen_plot(df, output_filename):
         ax.grid()
         ax.set_title(title)
 
-    def barplot_with_custom_formatting(ax, data, title, formatter):
+    def barplot_with_custom_formatting(ax, data, title, ytitle, formatter):
         ax.bar(names, data)
-        ax.set_ylabel(title)
+        ax.set_ylabel(ytitle)
         ax.set_title(title)
         ax.yaxis.set_major_formatter(formatter)
         ax.grid()
 
-    names = ["First generation", "Second generation", "Third generation"]
+    # names = ["First generation", "Second generation", "Third generation"]
+    names = ["Gen-0", "Gen-1", "Gen-2"]
     # fig, (ax1, ax2, ax3, ax4) = plt.subplots(
     #     5, 1, figsize=(8, (2 + len(names) * 0.3) * 4), layout="constrained"
     # )
     fig = plt.figure(figsize=(10, 10), layout="constrained")
-    ax0 = plt.subplot(7, 2, 1)
-    ax1 = plt.subplot(7, 2, 2)
-    ax2 = plt.subplot(7, 1, 3)
-    ax3 = plt.subplot(7, 1, 4)
-    ax4 = plt.subplot(7, 1, 5)
-    ax5 = plt.subplot(7, 1, 6)
+
+    ax1_0 = plt.subplot(7, 3, 1)
+    ax1_1 = plt.subplot(7, 3, 2)
+    ax1_2 = plt.subplot(7, 3, 3)
+    ax2_2 = plt.subplot(7, 1, 3)
+    ax2_3 = plt.subplot(7, 1, 4)
+    ax2_4 = plt.subplot(7, 1, 5)
+    ax2_5 = plt.subplot(7, 1, 6)
 
     figsize = (8, (2 + len(names) * 0.3) * 4)
 
     running_time_data = [x.sum() for x in get_gen_time_data(df)]
-    formatter = lambda val, pos: f"{val*1000:.0f}ms"
+    formatter = lambda val, pos: f"{val*1000:.0f}"
     barplot_with_custom_formatting(
-        ax0, running_time_data, "Total running time", formatter
+        ax1_0, running_time_data, "Total running time", "[ms]", formatter
     )
 
     object_number_data = [
         np.sum(df[df["generation_number"] == i]["collected_cycles"] / 1000.0)
         for i in range(3)
     ]
-    formatter = lambda val, pos: f"{int(val)}e3 obj"
+    formatter = lambda val, pos: f"{val:.0f}"
     barplot_with_custom_formatting(
-        ax1, object_number_data, "Total object collected", formatter
+        ax1_1, object_number_data, "Total object collected", "[x1000 obj]", formatter
+    )
+
+    object_per_time = np.divide(
+        np.array(object_number_data), np.array(running_time_data)
+    )
+    formatter = lambda val, pos: f"{val:.0f}"
+    barplot_with_custom_formatting(
+        ax1_2, object_number_data, "Collected per run time", "[obj/ms]", formatter
     )
 
     obj_percentage_data = get_obj_percentage_data(df)
     formatter = lambda val, pos: f"{val*100:.0f}%"
     violinplot_with_custom_formatting(
-        ax2,
+        ax2_2,
         obj_percentage_data,
         names,
         (0, len(names) + 1),
@@ -135,7 +146,7 @@ def gen_plot(df, output_filename):
     formatter = lambda val, pos: f"{val*1e3:.0f}ms"
     gen_time_data = get_gen_time_data(df)
     violinplot_with_custom_formatting(
-        ax3,
+        ax2_3,
         gen_time_data,
         names,
         (0, len(names) + 1),
@@ -147,7 +158,7 @@ def gen_plot(df, output_filename):
     formatter = lambda val, pos: f"{val*1e3:.0f}ms"
     gen_time_data_per_obj = get_gen_time_data_per_obj(df)
     violinplot_with_custom_formatting(
-        ax4,
+        ax2_4,
         gen_time_data_per_obj,
         names,
         (0, len(names) + 1),
@@ -159,7 +170,7 @@ def gen_plot(df, output_filename):
     formatter = lambda val, pos: f"{int(val)} obj/ms"
     gen_freq_per_us = get_gen_freq_per_us(df)
     violinplot_with_custom_formatting(
-        ax5,
+        ax2_5,
         gen_freq_per_us,
         names,
         (0, len(names) + 1),
