@@ -61,7 +61,6 @@ def get_localsplus_counts(code: types.CodeType,
                           names: Tuple[str, ...],
                           kinds: bytes) -> Tuple[int, int, int, int]:
     nlocals = 0
-    nplaincellvars = 0
     ncellvars = 0
     nfreevars = 0
     assert len(names) == len(kinds)
@@ -72,15 +71,13 @@ def get_localsplus_counts(code: types.CodeType,
                 ncellvars += 1
         elif kind & CO_FAST_CELL:
             ncellvars += 1
-            nplaincellvars += 1
         elif kind & CO_FAST_FREE:
             nfreevars += 1
     assert nlocals == len(code.co_varnames) == code.co_nlocals, \
         (nlocals, len(code.co_varnames), code.co_nlocals)
     assert ncellvars == len(code.co_cellvars)
     assert nfreevars == len(code.co_freevars)
-    assert len(names) == nlocals + nplaincellvars + nfreevars
-    return nlocals, nplaincellvars, ncellvars, nfreevars
+    return nlocals, ncellvars, nfreevars
 
 
 PyUnicode_1BYTE_KIND = 1
@@ -243,7 +240,7 @@ class Printer:
         co_localsplusnames = self.generate(name + "_localsplusnames", localsplusnames)
         co_localspluskinds = self.generate(name + "_localspluskinds", localspluskinds)
         # Derived values
-        nlocals, nplaincellvars, ncellvars, nfreevars = \
+        nlocals, ncellvars, nfreevars = \
             get_localsplus_counts(code, localsplusnames, localspluskinds)
         co_code_adaptive = make_string_literal(code.co_code)
         self.write("static")
@@ -262,12 +259,12 @@ class Printer:
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
+            # The following should remain in sync with _PyFrame_NumSlotsForCodeObject
             self.write(f".co_framesize = {code.co_stacksize + len(localsplusnames)} + FRAME_SPECIALS_SIZE,")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
             self.write(f".co_nlocalsplus = {len(localsplusnames)},")
             self.field(code, "co_nlocals")
-            self.write(f".co_nplaincellvars = {nplaincellvars},")
             self.write(f".co_ncellvars = {ncellvars},")
             self.write(f".co_nfreevars = {nfreevars},")
             self.write(f".co_version = {next_code_version},")

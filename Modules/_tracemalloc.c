@@ -347,14 +347,8 @@ traceback_get_frames(traceback_t *traceback)
         return;
     }
 
-    _PyInterpreterFrame *pyframe = tstate->cframe->current_frame;
-    for (;;) {
-        while (pyframe && _PyFrame_IsIncomplete(pyframe)) {
-            pyframe = pyframe->previous;
-        }
-        if (pyframe == NULL) {
-            break;
-        }
+    _PyInterpreterFrame *pyframe = _PyThreadState_GetFrame(tstate);
+    while (pyframe) {
         if (traceback->nframe < tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
             assert(traceback->frames[traceback->nframe].filename != NULL);
@@ -363,8 +357,7 @@ traceback_get_frames(traceback_t *traceback)
         if (traceback->total_nframe < UINT16_MAX) {
             traceback->total_nframe++;
         }
-
-        pyframe = pyframe->previous;
+        pyframe = _PyFrame_GetFirstComplete(pyframe->previous);
     }
 }
 
