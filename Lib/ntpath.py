@@ -184,7 +184,7 @@ def splitroot(p):
 
         splitroot('//server/share/') == ('//server/share', '/', '')
         splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-        splitroot('C:///spam///ham') == ('C:', '/', '//spam///egg')
+        splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
         splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
     """
     p = os.fspath(p)
