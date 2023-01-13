@@ -597,23 +597,23 @@ else:
 
     # Detect exec_prefix by searching from executable for the platstdlib_dir
     if PLATSTDLIB_LANDMARK and not exec_prefix:
-        if executable_dir:
-            if os_name == 'nt':
-                # QUIRK: Windows always assumed these were the same
-                exec_prefix = prefix
-            else:
-                exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
+        if os_name == 'nt':
+            # QUIRK: Windows always assumed these were the same
+            # gh-100320: Our PYDs are assumed to be relative to the Lib directory
+            # (that is, prefix) rather than the executable (that is, executable_dir)
+            exec_prefix = prefix
+        if not exec_prefix and executable_dir:
+            exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
         if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
             if os_name == 'nt':
                 # QUIRK: If DLLs is missing on Windows, don't warn, just assume
-                # that it's all the same as prefix.
-                exec_prefix = prefix
+                # that they're in exec_prefix
                 if not platstdlib_dir:
                     # gh-98790: We set platstdlib_dir here to avoid adding "DLLs" into
                     # sys.path when it doesn't exist in the platstdlib place, which
-                    # would give site-packages precedence over executable_dir where our
+                    # would give Lib packages precedence over executable_dir where our
                     # PYDs *probably* live. Ideally, whoever changes our layout will tell
                     # us what the layout is, but in the past this worked, so it should
                     # keep working.
