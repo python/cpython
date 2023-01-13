@@ -255,6 +255,7 @@ class ProactorTests(test_utils.TestCase):
         self.assertEqual(res, 'done')
 
     async def _test_client_pipe_stat(self):
+        # Regression test for https://github.com/python/cpython/issues/100573
         ADDRESS = r'\\.\pipe\test_client_pipe_stat-%s' % os.getpid()
 
         async def probe():
