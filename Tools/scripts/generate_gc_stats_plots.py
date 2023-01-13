@@ -30,21 +30,27 @@ def get_gen_time_data_per_obj(df):
     gen_data = []
     for generation in range(3):
         vals = df[df["generation_number"] == generation]
-        item = vals["collection_time"] / (1+vals["collected_cycles"]).values
+        item = vals["collection_time"] / (1 + vals["collected_cycles"]).values
         if item.size == 0:
             item = np.array([0])
         gen_data.append(item)
     return gen_data
 
+
 def get_gen_freq_per_us(df):
     gen_data = []
     for generation in range(3):
         vals = df[df["generation_number"] == generation]
-        item = 1.0 / (vals["collection_time"] / (1+vals["collected_cycles"])).values / 1.0e3
+        item = (
+            1.0
+            / (vals["collection_time"] / (1 + vals["collected_cycles"])).values
+            / 1.0e3
+        )
         if item.size == 0:
             item = np.array([0])
         gen_data.append(item)
     return gen_data
+
 
 def get_gc_summary(df):
     gen_totals = []
@@ -56,6 +62,7 @@ def get_gc_summary(df):
         gen_totals.append((obj_collected, total_time, total_objs))
     total_gc_time = df["collection_time"].sum()
     return gen_totals, total_gc_time
+
 
 def gen_plot(df, output_filename):
     def violinplot_with_custom_formatting(
@@ -76,7 +83,7 @@ def gen_plot(df, output_filename):
         ax.xaxis.set_major_formatter(formatter)
         ax.grid()
         ax.set_title(title)
-    
+
     def barplot_with_custom_formatting(ax, data, title, formatter):
         ax.bar(names, data)
         ax.set_ylabel(title)
@@ -96,15 +103,22 @@ def gen_plot(df, output_filename):
     ax4 = plt.subplot(7, 1, 5)
     ax5 = plt.subplot(7, 1, 6)
 
-    figsize=(8, (2 + len(names) * 0.3) * 4)
+    figsize = (8, (2 + len(names) * 0.3) * 4)
 
     running_time_data = [x.sum() for x in get_gen_time_data(df)]
     formatter = lambda val, pos: f"{val*1000:.0f}ms"
-    barplot_with_custom_formatting(ax0, running_time_data, "Total running time", formatter)
+    barplot_with_custom_formatting(
+        ax0, running_time_data, "Total running time", formatter
+    )
 
-    object_number_data = [np.sum(df[df["generation_number"] == i]["collected_cycles"]/1000.0) for i in range(3)]
+    object_number_data = [
+        np.sum(df[df["generation_number"] == i]["collected_cycles"] / 1000.0)
+        for i in range(3)
+    ]
     formatter = lambda val, pos: f"{int(val)}e3 obj"
-    barplot_with_custom_formatting(ax1, object_number_data, "Total object collected", formatter)
+    barplot_with_custom_formatting(
+        ax1, object_number_data, "Total object collected", formatter
+    )
 
     obj_percentage_data = get_obj_percentage_data(df)
     formatter = lambda val, pos: f"{val*100:.0f}%"
@@ -170,8 +184,11 @@ def main():
     gen_totals, total_gc_time = get_gc_summary(df)
     for generation in range(3):
         gen_data = gen_totals[generation]
-        print(f"Generation {generation}: {gen_data[0]} objects collected, {gen_data[1]:.2f} s, {gen_data[2]} total objects")
+        print(
+            f"Generation {generation}: {gen_data[0]} objects collected, {gen_data[1]:.2f} s, {gen_data[2]} total objects"
+        )
     print("Total GC time: {:.2f} s".format(total_gc_time))
+
 
 if __name__ == "__main__":
     main()
