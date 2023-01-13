@@ -6676,7 +6676,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
     RELEASE_GETADDRINFO_LOCK  /* see comment in setipaddr() */
     if (error) {
-        res = NULL;  /* avoid unexpected free if res0 becomes not NULL */
+        res = NULL;  /* avoid unexpected free if res becomes not NULL */
         set_gaierror(error);
         goto fail;
     }
