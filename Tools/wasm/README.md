@@ -12,7 +12,12 @@ Users and developers are encouraged to use the script
 `Tools/wasm/wasm_build.py`. The tool automates the build process and provides
 assistance with installation of SDKs.
 
-## wasm32-emscripten build
+* [Build emscripten](https://github.com/python/cpython/tree/main/Tools/wasm#wasm32-emscripten-build)
+* [Serve Python WASM](https://github.com/python/cpython/tree/main/Tools/wasm#hosting-python-wasm-builds)
+* [Build WASI-SDK](https://github.com/python/cpython/tree/main/Tools/wasm#wasi-wasm32-wasi)
+* [Running Python in WASI]((https://github.com/python/cpython/tree/main/Tools/wasm#running-python-wasi)
+
+# wasm32-emscripten build
 
 For now the build system has two target flavors. The ``Emscripten/browser``
 target (``--with-emscripten-target=browser``) is optimized for browsers.
@@ -279,6 +284,50 @@ CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi \
 
 make -j$(nproc)
 popd
+```
+
+## Running Python in WASI
+
+Here is a simple script that can run a python script, it expects that the Python installation
+is at the root of the filesystem (and it appears that currently that is [required](https://github.com/python/cpython/issues/100307).
+
+```shell
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+    FILE=""
+    HOST_DIR=$PWD
+    GUEST_DIR=$PWD
+elif [[ "$1" = /* ]]; then
+    REAL_PATH=$(realpath $1)
+    HOST_DIR=$(dirname $REAL_PATH)
+    GUEST_DIR=$HOST_DIR
+    FILE=${REAL_PATH}
+else
+    HOST_DIR=$PWD
+    GUEST_DIR=$PWD
+    FILE="/$PWD/${@#}"
+fi
+
+PYTHON_WASI_ROOT=/Python-3.11.0-wasm32-wasi-16
+wasmtime run --dir  ${PYTHON_WASI_ROOT} \
+             --mapdir /::${PYTHON_WASI_ROOT} \
+             --dir ${HOST_DIR} \
+             --mapdir ${GUEST_DIR}::${HOST_DIR} \
+             -- ${PYTHON_WASI_ROOT}/python.wasm $FILE
+```
+
+Once you have that script installed somewhere and executable (e.g. `/usr/bin/python3-wasm`)
+
+```
+# Launch a REPL
+python3-wasm
+
+# Launch a python file
+python3-wasm some-python.py
+
+# Launch a directory
+python3-wasm some/directory/
 ```
 
 ## WASI limitations and issues (WASI SDK 15.0)
