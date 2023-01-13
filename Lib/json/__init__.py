@@ -118,6 +118,8 @@ _default_encoder = JSONEncoder(
     default=None,
 )
 
+JSON_COMMENT_REGEX = re.compile(r"\/\/(?:[^\n])*\n|\/\*[\s\S]*?\*\/|(\"(?:\?\?'|\\[\\\"\n]|[^\"])*?\")|(?<=\n)\r?\n[ \t]*")
+
 def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
         default=None, sort_keys=False, **kw):
@@ -342,7 +344,7 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
         s = s.decode(detect_encoding(s), 'surrogatepass')
 
     # Removes JSON Comments
-    s = re.sub(r"\/\/(?:[^\n])*\n|\/\*[\s\S]*?\*\/|(\"(?:\?\?'|\\[\\\"\n]|[^\"])*?\")|(?<=\n)\r?\n[ \t]*", r"\1", s)
+    s = JSON_COMMENT_REGEX.sub(r"\1", s)
 
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and
