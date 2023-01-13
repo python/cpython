@@ -140,8 +140,10 @@ def splitroot(p):
     empty; the root may be empty, a single slash, or two slashes. The tail
     contains anything after the root. For example:
 
-        splitdrive('foo/bar') == ('', '', 'foo/bar')
-        splitdrive('/foo/bar') == ('', '/', 'foo/bar')
+        splitroot('foo/bar') == ('', '', 'foo/bar')
+        splitroot('/foo/bar') == ('', '/', 'foo/bar')
+        splitroot('//foo/bar') == ('', '//', 'foo/bar')
+        splitroot('///foo/bar') == ('', '/', '//foo/bar')
     """
     p = os.fspath(p)
     if isinstance(p, bytes):
