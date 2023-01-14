@@ -390,7 +390,7 @@ regular, non-variadic, function arguments:
 
    libc.printf.argtypes = [ctypes.c_char_p]
 
-Because specifying the attribute does inhibit portability it is adviced to always
+Because specifying the attribute does inhibit portability it is advised to always
 specify ``argtypes`` for all variadic functions.
 
 
@@ -1440,8 +1440,8 @@ copy of the windows error code.
 
 The *winmode* parameter is used on Windows to specify how the library is loaded
 (since *mode* is ignored). It takes any value that is valid for the Win32 API
-``LoadLibraryEx`` flags parameter. When omitted, the default is to use the flags
-that result in the most secure DLL load to avoiding issues such as DLL
+``LoadLibraryEx`` flags parameter. When omitted, the default is to use the
+flags that result in the most secure DLL load, which avoids issues such as DLL
 hijacking. Passing the full path to the DLL is the safest way to ensure the
 correct library and dependencies are loaded.
 
