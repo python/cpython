@@ -1980,13 +1980,8 @@ Here's an example of both styles:
 
 .. note::
 
-   :pep:`249` numeric placeholders are not supported.
+   :pep:`249` numeric placeholders are _not_ supported.
    If used, they will be interpreted as named placeholders.
-
-Although **strongly discouraged**, for the named style,
-*parameters* can be supplied as a :term:`!sequence`.
-This will result in the parameters being blindly bound to the placeholders
-simply by index; parameter names will silently be ignored.
 
 
 .. _sqlite3-adapters:
