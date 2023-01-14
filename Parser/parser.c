@@ -23803,7 +23803,8 @@ _loop0_1_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
-                    p->error_indicator = 1;
+                    PyMem_Free(_children);
+                                        p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
                     return NULL;
