@@ -383,49 +383,29 @@ text
         collector = lambda: EventCollectorCharrefs()
         self.assertTrue(collector().convert_charrefs)
 
-        # do unescape numeric and hex char refs
+        # always unescape terminated entity refs, numeric and hex char refs:
+        # - regardless whether they are at start, middle, end of attribute
+        # - or followed by alphanumeric, non-alphanumeric, or equals char
+        charrefs = ['&cent;', '&#xa2;', '&#xa2', '&#162;', '&#162']
         expected = [('starttag', 'a',
-                     [('href', 'https://example.com?foo¢=bar¢&baz¢=bla¢')]),
-                    ('endtag', 'a')]
-        self._run_check('<a href="https://example.com?foo&#xa2;=bar&#xa2&baz&#162;=bla&#162"></a>', expected, collector=collector())
-
-        # do unescape entity matches not followed by ASCII alphanumeric
-        expected = [('starttag', 'a',
-                     [('href', 'https://example.com?foo¢¢ ¢+¢')]),
-                    ('endtag', 'a')]
-        self._run_check('<a href="https://example.com?foo&cent;&cent &cent+&cent"></a>', expected, collector=collector())
-
-        # do not unescape entity matches followed by ASCII alphanumeric
-        expected = [('starttag', 'a',
-                     [('href', 'https://example.com?foo&center&cent123')]),
-                    ('endtag', 'a')]
-        self._run_check('<a href="https://example.com?foo&center&cent123"></a>', expected, collector=collector())
-
-        # do not unescape entity matches followed by equals
-        expected = [('starttag', 'a',
-                     [('href', 'https://example.com?foo&cent=123')]),
-                    ('endtag', 'a')]
-        self._run_check('<a href="https://example.com?foo&cent=123"></a>', expected, collector=collector())
-
-        # do unescape terminated entity matches followed by equals
-        expected = [('starttag', 'a',
-                     [('href', 'https://example.com?foo¢=123')]),
-                    ('endtag', 'a')]
-        self._run_check('<a href="https://example.com?foo&cent;=123"></a>', expected, collector=collector())
-
-        # do unescape char refs in the middle of attributes
-        charrefs = ['&quot;', '&#34;', '&#x22;', '&quot', '&#34', '&#x22']
-        expected = [('starttag', 'a', [('href', 'foo " zar')]), ('endtag', 'a')]
-        for charref in charrefs:
-            self._run_check('<a href="foo {0} zar"></a>'.format(charref),
-                            expected, collector=collector())
-
-        # do unescape char refs at beginning and end of text attributes
-        expected = [('starttag', 'a', [('x', '"'), ('y', '"#'), ('z', '#"')]),
+                     [('x', '¢'), ('x', 'z¢'), ('x', '¢z'),
+                      ('x', 'z¢z'), ('x', '¢ z'), ('x', '¢=z')]),
                     ('endtag', 'a')]
         for charref in charrefs:
-            self._run_check('<a x="{0}" y="{0}#" z="#{0}"></a>'.format(charref),
-                            expected, collector=collector())
+            self._run_check('<a x="{0}" x="z{0}" x="{0}z" '
+                            '   x="z{0}z" x="{0} z" x="{0}=z"></a>'
+                            .format(charref), expected, collector=collector())
+
+        # only unescape unterminated entity matches if they are not followed by
+        # an alphanumeric or an equals sign
+        charref = '&cent'
+        expected = [('starttag', 'a',
+                     [('x', '¢'), ('x', 'z¢'), ('x', '&centz'),
+                      ('x', 'z&centz'), ('x', '¢ z'), ('x', '&cent=z')]),
+                    ('endtag', 'a')]
+        self._run_check('<a x="{0}" x="z{0}" x="{0}z" '
+                        '   x="z{0}z" x="{0} z" x="{0}=z"></a>'
+                        .format(charref), expected, collector=collector())
 
     # the remaining tests were for the "tolerant" parser (which is now
     # the default), and check various kind of broken markup
