@@ -1980,7 +1980,7 @@ Here's an example of both styles:
 
 .. note::
 
-   :pep:`249` numeric placeholders are _not_ supported.
+   :pep:`249` numeric placeholders are *not* supported.
    If used, they will be interpreted as named placeholders.
 
 
