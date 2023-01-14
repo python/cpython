@@ -118,7 +118,7 @@ _default_encoder = JSONEncoder(
     default=None,
 )
 
-JSON_COMMENT_REGEX = re.compile(r"\/\/(?:[^\n])*\n|\/\*[\s\S]*?\*\/|(\"(?:\?\?'|\\[\\\"\n]|[^\"])*?\")|(?<=\n)\r?\n[ \t]*")
+JSON_COMMENT_REGEX = re.compile(r"\/\/(?:[^\n])*\n|\/\*[\s\S]*?\*\/|(\"(?:\?\?'|\\[\\\"\n]|[^\"])*?\")")
 
 def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
