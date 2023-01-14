@@ -821,7 +821,7 @@ class ForwardRef(_Final, _root=True):
     __slots__ = ('__forward_arg__', '__forward_code__',
                  '__forward_evaluated__', '__forward_value__',
                  '__forward_is_argument__', '__forward_is_class__',
-                 '__forward_module__', '__forward_is_unpack__')
+                 '__forward_module__')
 
     def __init__(self, arg, is_argument=True, module=None, *, is_class=False):
         if not isinstance(arg, str):
@@ -831,11 +831,9 @@ class ForwardRef(_Final, _root=True):
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
         if arg[0] == '*':
-            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (tuple[int, int],)[0]
-            is_unpack = True
+            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
-            is_unpack = False
         try:
             code = compile(arg_to_compile, '<string>', 'eval')
         except SyntaxError:
@@ -848,7 +846,6 @@ class ForwardRef(_Final, _root=True):
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
-        self.__forward_is_unpack__ = is_unpack
 
     def _evaluate(self, globalns, localns, recursive_guard):
         if self.__forward_arg__ in recursive_guard:
@@ -873,11 +870,6 @@ class ForwardRef(_Final, _root=True):
             self.__forward_value__ = _eval_type(
                 type_, globalns, localns, recursive_guard | {self.__forward_arg__}
             )
-            if (
-                self.__forward_is_unpack__ and
-                not isinstance(self.__forward_value__, _UnpackGenericAlias)
-            ):
-                self.__forward_value__ = Unpack[self.__forward_value__]
             self.__forward_evaluated__ = True
         return self.__forward_value__
 
