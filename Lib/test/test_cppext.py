@@ -59,14 +59,18 @@ class TestCPPExt(unittest.TestCase):
             python = os.path.join(venv_dir, 'bin', python_exe)
 
         def run_cmd(operation, cmd):
+            env = os.environ.copy()
+            env['CPYTHON_TEST_CPP_STD'] = 'c++03' if std_cpp03 else 'c++11'
+            env['CPYTHON_TEST_EXT_NAME'] = extension_name
             if verbose:
                 print('Run:', ' '.join(cmd))
-                subprocess.run(cmd, check=True)
+                subprocess.run(cmd, check=True, env=env)
             else:
                 proc = subprocess.run(cmd,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT,
-                                      text=True)
+                                      text=True,
+                                      env=env)
                 if proc.returncode:
                     print(proc.stdout, end='')
                     self.fail(
@@ -75,8 +79,6 @@ class TestCPPExt(unittest.TestCase):
         # Build the C++ extension
         cmd = [python, '-X', 'dev',
                SETUP_TESTCPPEXT, 'build_ext', '--verbose']
-        if std_cpp03:
-            cmd.append('-std=c++03')
         run_cmd('Build', cmd)
 
         # Install the C++ extension
