@@ -202,7 +202,7 @@ class Element:
         warnings.warn(
             "The behavior of this method will change in future versions.  "
             "Use specific 'len(elem)' or 'elem is not None' test instead.",
-            FutureWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
             )
         return len(self._children) != 0 # emulate old behaviour, for now
 

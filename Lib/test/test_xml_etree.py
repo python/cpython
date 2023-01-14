@@ -3965,14 +3965,14 @@ class BoolTest(unittest.TestCase):
         msg = (
             r"The behavior of this method will change in future versions.  "
             r"Use specific 'len\(elem\)' or 'elem is not None' test instead.")
-        with self.assertWarnsRegex(FutureWarning, msg):
+        with self.assertWarnsRegex(DeprecationWarning, msg):
             result = bool(e)
         # Emulate prior behavior for now
         self.assertIs(result, False)
 
         # Element with children
         ET.SubElement(e, 'b')
-        with self.assertWarnsRegex(FutureWarning, msg):
+        with self.assertWarnsRegex(DeprecationWarning, msg):
             new_result = bool(e)
         self.assertIs(new_result, True)
 
