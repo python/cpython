@@ -1664,26 +1664,25 @@
         }
 
         TARGET(BUILD_CONST_KEY_MAP) {
+            PyObject *keys = PEEK(1);
+            PyObject **values = &PEEK(1 + oparg);
             PyObject *map;
-            PyObject *keys = TOP();
             if (!PyTuple_CheckExact(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad BUILD_CONST_KEY_MAP keys argument");
-                goto error;
+                goto error;  // Pop the keys and values.
             }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
-                    &PEEK(oparg + 1), 1, oparg);
-            if (map == NULL) {
-                goto error;
+                    values, 1, oparg);
+            Py_DECREF(keys);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(values[i]);
             }
-
-            Py_DECREF(POP());
-            while (oparg--) {
-                Py_DECREF(POP());
-            }
-            PUSH(map);
+            if (map == NULL) { STACK_SHRINK(oparg); goto pop_1_error; }
+            STACK_SHRINK(oparg);
+            POKE(1, map);
             DISPATCH();
         }
 
