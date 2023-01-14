@@ -46,7 +46,7 @@ directly specified in the ``InventoryItem`` definition shown above.
 Module contents
 ---------------
 
-.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
+.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
 
    This function is a :term:`decorator` that is used to add generated
    :term:`special method`\s to classes, as described below.
@@ -79,9 +79,10 @@ Module contents
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
+                match_args=True, kw_only=False, slots=False, weakref_slot=False)
      class C:
-        ...
+         ...
 
    The parameters to :func:`dataclass` are:
 
@@ -187,6 +188,23 @@ Module contents
      is raised.
 
     .. versionadded:: 3.10
+
+    .. versionchanged:: 3.11
+       If a field name is already included in the ``__slots__``
+       of a base class, it will not be included in the generated ``__slots__``
+       to prevent :ref:`overriding them <datamodel-note-slots>`.
+       Therefore, do not use ``__slots__`` to retrieve the field names of a
+       dataclass. Use :func:`fields` instead.
+       To be able to determine inherited slots,
+       base class ``__slots__`` may be any iterable, but *not* an iterator.
+
+
+   - ``weakref_slot``: If true (the default is ``False``), add a slot
+     named "__weakref__", which is required to make an instance
+     weakref-able.  It is an error to specify ``weakref_slot=True``
+     without also specifying ``slots=True``.
+
+    .. versionadded:: 3.11
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
@@ -371,7 +389,7 @@ Module contents
    :func:`astuple` raises :exc:`TypeError` if ``obj`` is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -380,8 +398,8 @@ Module contents
    or ``(name, type, Field)``.  If just ``name`` is supplied,
    ``typing.Any`` is used for ``type``.  The values of ``init``,
    ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
-   ``match_args``, ``kw_only``, and  ``slots`` have the same meaning as
-   they do in :func:`dataclass`.
+   ``match_args``, ``kw_only``, ``slots``, and ``weakref_slot`` have
+   the same meaning as they do in :func:`dataclass`.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can
@@ -465,15 +483,17 @@ Module contents
 
     @dataclass
     class Point:
-      x: float
-      _: KW_ONLY
-      y: float
-      z: float
+        x: float
+        _: KW_ONLY
+        y: float
+        z: float
 
     p = Point(0, y=1.5, z=2.0)
 
    In a single dataclass, it is an error to specify more than one
    field whose type is :const:`KW_ONLY`.
+
+   .. versionadded:: 3.10
 
 .. exception:: FrozenInstanceError
 
@@ -532,7 +552,7 @@ parameters to :meth:`__post_init__`.  Also see the warning about how
 Class variables
 ---------------
 
-One of two places where :func:`dataclass` actually inspects the type
+One of the few places where :func:`dataclass` actually inspects the type
 of a field is to determine if a field is a class variable as defined
 in :pep:`526`.  It does this by checking if the type of the field is
 ``typing.ClassVar``.  If a field is a ``ClassVar``, it is excluded
@@ -543,7 +563,7 @@ module-level :func:`fields` function.
 Init-only variables
 -------------------
 
-The other place where :func:`dataclass` inspects a type annotation is to
+Another place where :func:`dataclass` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
 if the type of a field is of type ``dataclasses.InitVar``.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only
@@ -559,8 +579,8 @@ value is not provided when creating the class::
   @dataclass
   class C:
       i: int
-      j: int = None
-      database: InitVar[DatabaseType] = None
+      j: int | None = None
+      database: InitVar[DatabaseType | None] = None
 
       def __post_init__(self, database):
           if self.j is None and database is not None:
@@ -730,3 +750,54 @@ mutable types as default values for fields::
    ``dict``, or ``set``, unhashable objects are now not allowed as
    default values.  Unhashability is used to approximate
    mutability.
+
+Descriptor-typed fields
+-----------------------
+
+Fields that are assigned :ref:`descriptor objects <descriptors>` as their
+default value have the following special behaviors:
+
+* The value for the field passed to the dataclass's ``__init__`` method is
+  passed to the descriptor's ``__set__`` method rather than overwriting the
+  descriptor object.
+* Similarly, when getting or setting the field, the descriptor's
+  ``__get__`` or ``__set__`` method is called rather than returning or
+  overwriting the descriptor object.
+* To determine whether a field contains a default value, ``dataclasses``
+  will call the descriptor's ``__get__`` method using its class access
+  form (i.e. ``descriptor.__get__(obj=None, type=cls)``.  If the
+  descriptor returns a value in this case, it will be used as the
+  field's default. On the other hand, if the descriptor raises
+  :exc:`AttributeError` in this situation, no default value will be
+  provided for the field.
+
+::
+
+  class IntConversionDescriptor:
+      def __init__(self, *, default):
+          self._default = default
+
+      def __set_name__(self, owner, name):
+          self._name = "_" + name
+
+      def __get__(self, obj, type):
+          if obj is None:
+              return self._default
+
+          return getattr(obj, self._name, self._default)
+
+      def __set__(self, obj, value):
+          setattr(obj, self._name, int(value))
+
+  @dataclass
+  class InventoryItem:
+      quantity_on_hand: IntConversionDescriptor = IntConversionDescriptor(default=100)
+
+  i = InventoryItem()
+  print(i.quantity_on_hand)   # 100
+  i.quantity_on_hand = 2.5    # calls __set__ with 2.5
+  print(i.quantity_on_hand)   # 2
+
+Note that if a field is annotated with a descriptor type, but is not assigned
+a descriptor object as its default value, the field will act like a normal
+field.

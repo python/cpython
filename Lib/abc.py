@@ -102,7 +102,7 @@ else:
         implementations defined by the registering ABC be callable (not
         even via super()).
         """
-        def __new__(mcls, name, bases, namespace, **kwargs):
+        def __new__(mcls, name, bases, namespace, /, **kwargs):
             cls = super().__new__(mcls, name, bases, namespace, **kwargs)
             _abc_init(cls)
             return cls

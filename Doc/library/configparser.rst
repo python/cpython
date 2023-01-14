@@ -33,13 +33,17 @@ can be customized by end users easily.
 
 .. seealso::
 
+   Module :mod:`tomllib`
+      TOML is a well-specified format for application configuration files.
+      It is specifically designed to be an improved version of INI.
+
    Module :mod:`shlex`
-      Support for creating Unix shell-like mini-languages which can be used as
-      an alternate format for application configuration files.
+      Support for creating Unix shell-like mini-languages which can also
+      be used for application configuration files.
 
    Module :mod:`json`
-      The json module implements a subset of JavaScript syntax which can also
-      be used for this purpose.
+      The ``json`` module implements a subset of JavaScript syntax which is
+      sometimes used for configuration, but does not support comments.
 
 
 .. testsetup::
@@ -267,6 +271,9 @@ out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
 
+By default,  a valid section name can be any string that does not contain '\\n' or ']'.
+To change this, see :attr:`ConfigParser.SECTCRE`.
+
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
 their own on an otherwise empty line, possibly indented. [1]_
@@ -344,7 +351,8 @@ from ``get()`` calls.
       my_pictures: %(my_dir)s/Pictures
 
       [Escape]
-      gain: 80%%  # use a %% to escape the % sign (% is the only character that needs to be escaped)
+      # use a %% to escape the % sign (% is the only character that needs to be escaped):
+      gain: 80%%
 
    In the example above, :class:`ConfigParser` with *interpolation* set to
    ``BasicInterpolation()`` would resolve ``%(home_dir)s`` to the value of
@@ -379,7 +387,8 @@ from ``get()`` calls.
       my_pictures: ${my_dir}/Pictures
 
       [Escape]
-      cost: $$80  # use a $$ to escape the $ sign ($ is the only character that needs to be escaped)
+      # use a $$ to escape the $ sign ($ is the only character that needs to be escaped):
+      cost: $$80
 
    Values from other sections can be fetched as well:
 
@@ -1201,28 +1210,6 @@ ConfigParser Objects
       names is stripped before :meth:`optionxform` is called.
 
 
-   .. method:: readfp(fp, filename=None)
-
-      .. deprecated:: 3.2
-         Use :meth:`read_file` instead.
-
-      .. versionchanged:: 3.2
-         :meth:`readfp` now iterates on *fp* instead of calling ``fp.readline()``.
-
-      For existing code calling :meth:`readfp` with arguments which don't
-      support iteration, the following generator may be used as a wrapper
-      around the file-like object::
-
-         def readline_generator(fp):
-             line = fp.readline()
-             while line:
-                 yield line
-                 line = fp.readline()
-
-      Instead of ``parser.readfp(fp)`` use
-      ``parser.read_file(readline_generator(fp))``.
-
-
 .. data:: MAX_INTERPOLATION_DEPTH
 
    The maximum depth for recursive interpolation for :meth:`get` when the *raw*
@@ -1356,10 +1343,9 @@ Exceptions
 
    Exception raised when errors occur attempting to parse a file.
 
-   .. versionchanged:: 3.2
-      The ``filename`` attribute and :meth:`__init__` argument were renamed to
-      ``source`` for consistency.
-
+.. versionchanged:: 3.12
+   The ``filename`` attribute and :meth:`__init__` constructor argument were
+   removed.  They have been available using the name ``source`` since 3.2.
 
 .. rubric:: Footnotes
 

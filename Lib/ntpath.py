@@ -23,13 +23,14 @@ import stat
 import genericpath
 from genericpath import *
 
+
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
            "ismount", "expanduser","expandvars","normpath","abspath",
            "curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
-           "samefile", "sameopenfile", "samestat", "commonpath"]
+           "samefile", "sameopenfile", "samestat", "commonpath", "isjunction"]
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -41,14 +42,39 @@ def _get_bothseps(path):
 # Other normalizations (such as optimizing '../' away) are not done
 # (this is done by normpath).
 
-def normcase(s):
-    """Normalize case of pathname.
+try:
+    from _winapi import (
+        LCMapStringEx as _LCMapStringEx,
+        LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
+        LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
 
-    Makes all characters lowercase and all slashes into backslashes."""
-    s = os.fspath(s)
-    if isinstance(s, bytes):
-        return s.replace(b'/', b'\\').lower()
-    else:
+    def normcase(s):
+        """Normalize case of pathname.
+
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        s = os.fspath(s)
+        if not s:
+            return s
+        if isinstance(s, bytes):
+            encoding = sys.getfilesystemencoding()
+            s = s.decode(encoding, 'surrogateescape').replace('/', '\\')
+            s = _LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                               _LCMAP_LOWERCASE, s)
+            return s.encode(encoding, 'surrogateescape')
+        else:
+            return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                                  _LCMAP_LOWERCASE,
+                                  s.replace('/', '\\'))
+except ImportError:
+    def normcase(s):
+        """Normalize case of pathname.
+
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        s = os.fspath(s)
+        if isinstance(s, bytes):
+            return os.fsencode(os.fsdecode(s).replace('/', '\\').lower())
         return s.replace('/', '\\').lower()
 
 
@@ -61,16 +87,20 @@ def normcase(s):
 def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
-    # Paths beginning with \\?\ are always absolute, but do not
-    # necessarily contain a drive.
     if isinstance(s, bytes):
-        if s.replace(b'/', b'\\').startswith(b'\\\\?\\'):
-            return True
+        sep = b'\\'
+        altsep = b'/'
+        colon_sep = b':\\'
     else:
-        if s.replace('/', '\\').startswith('\\\\?\\'):
-            return True
-    s = splitdrive(s)[1]
-    return len(s) > 0 and s[0] and s[0] in _get_bothseps(s)
+        sep = '\\'
+        altsep = '/'
+        colon_sep = ':\\'
+    s = s[:3].replace(altsep, sep)
+    # Absolute: UNC, device, and paths with a drive and root.
+    # LEGACY BUG: isabs("/x") should be false since the path has no drive.
+    if s.startswith(sep) or s.startswith(colon_sep, 1):
+        return True
+    return False
 
 
 # Join two (or more) paths.
@@ -146,28 +176,26 @@ def splitdrive(p):
             sep = b'\\'
             altsep = b'/'
             colon = b':'
+            unc_prefix = b'\\\\?\\UNC\\'
         else:
             sep = '\\'
             altsep = '/'
             colon = ':'
+            unc_prefix = '\\\\?\\UNC\\'
         normp = p.replace(altsep, sep)
-        if (normp[0:2] == sep*2) and (normp[2:3] != sep):
-            # is a UNC path:
-            # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
-            # \\machine\mountpoint\directory\etc\...
-            #           directory ^^^^^^^^^^^^^^^
-            index = normp.find(sep, 2)
+        if normp[0:2] == sep * 2:
+            # UNC drives, e.g. \\server\share or \\?\UNC\server\share
+            # Device drives, e.g. \\.\device or \\?\device
+            start = 8 if normp[:8].upper() == unc_prefix else 2
+            index = normp.find(sep, start)
             if index == -1:
-                return p[:0], p
+                return p, p[:0]
             index2 = normp.find(sep, index + 1)
-            # a UNC path can't have two slashes in a row
-            # (after the initial two)
-            if index2 == index + 1:
-                return p[:0], p
             if index2 == -1:
-                index2 = len(p)
+                return p, p[:0]
             return p[:index2], p[index2:]
         if normp[1:2] == colon:
+            # Drive-letter drives, e.g. X:
             return p[:2], p[2:]
     return p[:0], p
 
@@ -234,6 +262,24 @@ def islink(path):
     except (OSError, ValueError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
+
+
+# Is a path a junction?
+
+if hasattr(os.stat_result, 'st_reparse_tag'):
+    def isjunction(path):
+        """Test whether a path is a junction"""
+        try:
+            st = os.lstat(path)
+        except (OSError, ValueError, AttributeError):
+            return False
+        return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
+else:
+    def isjunction(path):
+        """Test whether a path is a junction"""
+        os.fspath(path)
+        return False
+
 
 # Being true for dangling symbolic links is also useful.
 
@@ -473,20 +519,11 @@ except ImportError:
             altsep = b'/'
             curdir = b'.'
             pardir = b'..'
-            special_prefixes = (b'\\\\.\\', b'\\\\?\\')
         else:
             sep = '\\'
             altsep = '/'
             curdir = '.'
             pardir = '..'
-            special_prefixes = ('\\\\.\\', '\\\\?\\')
-        if path.startswith(special_prefixes):
-            # in the case of paths with these prefixes:
-            # \\.\ -> device names
-            # \\?\ -> literal paths
-            # do not do any normalization, but return the path
-            # unchanged apart from the call to os.fspath()
-            return path
         path = path.replace(altsep, sep)
         prefix, path = splitdrive(path)
 
@@ -613,12 +650,15 @@ else:
         # 21: ERROR_NOT_READY (implies drive with no media)
         # 32: ERROR_SHARING_VIOLATION (probably an NTFS paging file)
         # 50: ERROR_NOT_SUPPORTED
+        # 53: ERROR_BAD_NETPATH
+        # 65: ERROR_NETWORK_ACCESS_DENIED
         # 67: ERROR_BAD_NET_NAME (implies remote server unavailable)
         # 87: ERROR_INVALID_PARAMETER
         # 123: ERROR_INVALID_NAME
+        # 161: ERROR_BAD_PATHNAME
         # 1920: ERROR_CANT_ACCESS_FILE
         # 1921: ERROR_CANT_RESOLVE_FILENAME (implies unfollowable symlink)
-        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 67, 87, 123, 1920, 1921
+        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 53, 65, 67, 87, 123, 161, 1920, 1921
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
@@ -700,9 +740,8 @@ else:
         return path
 
 
-# Win9x family and earlier have no Unicode filename support.
-supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
-                              sys.getwindowsversion()[3] >= 2)
+# All supported version have Unicode filename support.
+supports_unicode_filenames = True
 
 def relpath(path, start=None):
     """Return a relative version of a path"""

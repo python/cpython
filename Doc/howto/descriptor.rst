@@ -582,11 +582,18 @@ a pure Python equivalent:
 
 .. testcode::
 
+    def find_name_in_mro(cls, name, default):
+        "Emulate _PyType_Lookup() in Objects/typeobject.c"
+        for base in cls.__mro__:
+            if name in vars(base):
+                return vars(base)[name]
+        return default
+
     def object_getattribute(obj, name):
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
         null = object()
         objtype = type(obj)
-        cls_var = getattr(objtype, name, null)
+        cls_var = find_name_in_mro(objtype, name, null)
         descr_get = getattr(type(cls_var), '__get__', null)
         if descr_get is not null:
             if (hasattr(type(cls_var), '__set__')
@@ -663,6 +670,15 @@ a pure Python equivalent:
         def __getattr__(self, name):
             return ('getattr_hook', self, name)
 
+    class D1:
+        def __get__(self, obj, objtype=None):
+            return type(self), obj, objtype
+
+    class U1:
+        x = D1()
+
+    class U2(U1):
+        pass
 
 .. doctest::
     :hide:
@@ -696,10 +712,18 @@ a pure Python equivalent:
     >>> b.g == b['g'] == ('getattr_hook', b, 'g')
     True
 
+    >>> u2 = U2()
+    >>> object_getattribute(u2, 'x') == u2.x == (D1, u2, U2)
+    True
 
-Interestingly, attribute lookup doesn't call :meth:`object.__getattribute__`
-directly.  Instead, both the dot operator and the :func:`getattr` function
-perform attribute lookup by way of a helper function:
+Note, there is no :meth:`__getattr__` hook in the :meth:`__getattribute__`
+code.  That is why calling :meth:`__getattribute__` directly or with
+``super().__getattribute__`` will bypass :meth:`__getattr__` entirely.
+
+Instead, it is the dot operator and the :func:`getattr` function that are
+responsible for invoking :meth:`__getattr__` whenever :meth:`__getattribute__`
+raises an :exc:`AttributeError`.  Their logic is encapsulated in a helper
+function:
 
 .. testcode::
 
@@ -743,12 +767,6 @@ perform attribute lookup by way of a helper function:
     Traceback (most recent call last):
         ...
     AttributeError: 'ClassWithoutGetAttr' object has no attribute 'z'
-
-So if :meth:`__getattr__` exists, it is called whenever :meth:`__getattribute__`
-raises :exc:`AttributeError` (either directly or in one of the descriptor calls).
-
-Also, if a user calls :meth:`object.__getattribute__` directly, the
-:meth:`__getattr__` hook is bypassed entirely.
 
 
 Invocation from a class
@@ -829,7 +847,7 @@ afterwards, :meth:`__set_name__` will need to be called manually.
 ORM example
 -----------
 
-The following code is simplified skeleton showing how data descriptors could
+The following code is a simplified skeleton showing how data descriptors could
 be used to implement an `object relational mapping
 <https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping>`_.
 
@@ -991,17 +1009,17 @@ here is a pure Python equivalent:
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError(f'unreadable attribute {self._name}')
+                raise AttributeError(f"property '{self._name}' has no getter")
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(f"can't set attribute {self._name}")
+                raise AttributeError(f"property '{self._name}' has no setter")
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(f"can't delete attribute {self._name}")
+                raise AttributeError(f"property '{self._name}' has no deleter")
             self.fdel(obj)
 
         def getter(self, fget):
@@ -1351,6 +1369,8 @@ Using the non-data descriptor protocol, a pure Python version of
             if cls is None:
                 cls = type(obj)
             if hasattr(type(self.f), '__get__'):
+                # This code path was added in Python 3.9
+                # and was deprecated in Python 3.11.
                 return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
@@ -1388,7 +1408,7 @@ Using the non-data descriptor protocol, a pure Python version of
 The code path for ``hasattr(type(self.f), '__get__')`` was added in
 Python 3.9 and makes it possible for :func:`classmethod` to support
 chained decorators.  For example, a classmethod and property could be
-chained together:
+chained together.  In Python 3.11, this functionality was deprecated.
 
 .. testcode::
 
@@ -1456,7 +1476,7 @@ attributes stored in ``__slots__``:
     >>> mark.dept = 'Space Pirate'
     Traceback (most recent call last):
         ...
-    AttributeError: can't set attribute
+    AttributeError: property 'dept' of 'Immutable' object has no setter
     >>> mark.location = 'Mars'
     Traceback (most recent call last):
         ...
@@ -1515,6 +1535,8 @@ by member descriptors:
         def __get__(self, obj, objtype=None):
             'Emulate member_get() in Objects/descrobject.c'
             # Also see PyMember_GetOne() in Python/structmember.c
+            if obj is None:
+                return self
             value = obj._slotvalues[self.offset]
             if value is null:
                 raise AttributeError(self.name)
@@ -1543,13 +1565,13 @@ variables:
     class Type(type):
         'Simulate how the type metaclass adds member objects for slots'
 
-        def __new__(mcls, clsname, bases, mapping):
+        def __new__(mcls, clsname, bases, mapping, **kwargs):
             'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)
-            return type.__new__(mcls, clsname, bases, mapping)
+            return type.__new__(mcls, clsname, bases, mapping, **kwargs)
 
 The :meth:`object.__new__` method takes care of creating instances that have
 slots instead of an instance dictionary.  Here is a rough simulation in pure
@@ -1560,7 +1582,7 @@ Python:
     class Object:
         'Simulate how object.__new__() allocates memory for __slots__'
 
-        def __new__(cls, *args):
+        def __new__(cls, *args, **kwargs):
             'Emulate object_new() in Objects/typeobject.c'
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
@@ -1573,7 +1595,7 @@ Python:
             cls = type(self)
             if hasattr(cls, 'slot_names') and name not in cls.slot_names:
                 raise AttributeError(
-                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                    f'{cls.__name__!r} object has no attribute {name!r}'
                 )
             super().__setattr__(name, value)
 
@@ -1582,7 +1604,7 @@ Python:
             cls = type(self)
             if hasattr(cls, 'slot_names') and name not in cls.slot_names:
                 raise AttributeError(
-                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                    f'{cls.__name__!r} object has no attribute {name!r}'
                 )
             super().__delattr__(name)
 
