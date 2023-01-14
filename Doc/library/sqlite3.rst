@@ -1940,14 +1940,16 @@ close the single quote and inject ``OR TRUE`` to select all rows::
 Instead, use the DB-API's parameter substitution. To insert a variable into a
 query string, use a placeholder in the string, and substitute the actual values
 into the query by providing them as a :class:`tuple` of values to the second
-argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
-use one of two kinds of placeholders: question marks (qmark style) or named
-placeholders (named style). For the qmark style, ``parameters`` must be a
+argument of the cursor's :meth:`~Cursor.execute` method.
+
+An SQL statement may use one of two kinds of placeholders:
+question marks (qmark style) or named placeholders (named style).
+For the qmark style, *parameters* must be a
 :term:`sequence` whose length must match the number of placeholders,
 or a :exc:`ProgrammingError` is raised.
-For the named style, ``parameters`` should be a :class:`dict`,
-or a :class:`!dict` subclass,
-instance which must contain keys for all named parameters;
+For the named style, *parameters* should be
+an instance of a :class:`dict` (or a subclass),
+which must contain keys for all named parameters;
 any extra items are ignored.
 Here's an example of both styles:
 
@@ -1982,7 +1984,7 @@ Here's an example of both styles:
    If used, they will be interpreted as named placeholders.
 
 Although **strongly discouraged**, for the named style,
-``parameters`` can be supplied as a :term:`!sequence`.
+*parameters* can be supplied as a :term:`!sequence`.
 This will result in the parameters being blindly bound to the placeholders
 simply by index; parameter names will silently be ignored.
 
