@@ -518,9 +518,9 @@ child_exec(char *const exec_array[],
            int errpipe_read, int errpipe_write,
            int close_fds, int restore_signals,
            int call_setsid, pid_t pgid_to_set,
-           int call_setgid, gid_t gid,
-           int call_setgroups, size_t groups_size, const gid_t *groups,
-           int call_setuid, uid_t uid, int child_umask,
+           gid_t gid,
+           Py_ssize_t groups_size, const gid_t *groups,
+           uid_t uid, int child_umask,
            const void *child_sigmask,
            PyObject *py_fds_to_keep,
            PyObject *preexec_fn,
@@ -619,17 +619,17 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETGROUPS
-    if (call_setgroups)
+    if (groups_size > 0)
         POSIX_CALL(setgroups(groups_size, groups));
 #endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_SETREGID
-    if (call_setgid)
+    if (gid != (gid_t)-1)
         POSIX_CALL(setregid(gid, gid));
 #endif /* HAVE_SETREGID */
 
 #ifdef HAVE_SETREUID
-    if (call_setuid)
+    if (uid != (uid_t)-1)
         POSIX_CALL(setreuid(uid, uid));
 #endif /* HAVE_SETREUID */
 
@@ -724,9 +724,9 @@ do_fork_exec(char *const exec_array[],
              int errpipe_read, int errpipe_write,
              int close_fds, int restore_signals,
              int call_setsid, pid_t pgid_to_set,
-             int call_setgid, gid_t gid,
-             int call_setgroups, size_t groups_size, const gid_t *groups,
-             int call_setuid, uid_t uid, int child_umask,
+             gid_t gid,
+             Py_ssize_t groups_size, const gid_t *groups,
+             uid_t uid, int child_umask,
              const void *child_sigmask,
              PyObject *py_fds_to_keep,
              PyObject *preexec_fn,
@@ -738,9 +738,9 @@ do_fork_exec(char *const exec_array[],
 #ifdef VFORK_USABLE
     if (child_sigmask) {
         /* These are checked by our caller; verify them in debug builds. */
-        assert(!call_setuid);
-        assert(!call_setgid);
-        assert(!call_setgroups);
+        assert(uid == (uid_t)-1);
+        assert(gid == (gid_t)-1);
+        assert(groups_size < 0);
         assert(preexec_fn == Py_None);
 
         pid = vfork();
@@ -777,8 +777,8 @@ do_fork_exec(char *const exec_array[],
                p2cread, p2cwrite, c2pread, c2pwrite,
                errread, errwrite, errpipe_read, errpipe_write,
                close_fds, restore_signals, call_setsid, pgid_to_set,
-               call_setgid, gid, call_setgroups, groups_size, groups,
-               call_setuid, uid, child_umask, child_sigmask,
+               gid, groups_size, groups,
+               uid, child_umask, child_sigmask,
                py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
     _exit(255);
     return 0;  /* Dead code to avoid a potential compiler warning. */
@@ -799,9 +799,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     int errpipe_read, errpipe_write, close_fds, restore_signals;
     int call_setsid;
     pid_t pgid_to_set = -1;
-    int call_setgid = 0, call_setgroups = 0, call_setuid = 0;
-    uid_t uid;
-    gid_t gid, *groups = NULL;
+    gid_t *groups = NULL;
     int child_umask;
     PyObject *cwd_obj, *cwd_obj2 = NULL;
     const char *cwd;
@@ -899,9 +897,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 
     if (groups_list != Py_None) {
 #ifdef HAVE_SETGROUPS
-        Py_ssize_t i;
-        gid_t gid;
-
         if (!PyList_Check(groups_list)) {
             PyErr_SetString(PyExc_TypeError,
                     "setgroups argument must be a list");
@@ -917,13 +912,17 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             goto cleanup;
         }
 
-        if ((groups = PyMem_RawMalloc(num_groups * sizeof(gid_t))) == NULL) {
-            PyErr_SetString(PyExc_MemoryError,
-                    "failed to allocate memory for group list");
-            goto cleanup;
+        /* Deliberately keep groups == NULL for num_groups == 0 */
+        if (num_groups > 0) {
+            groups = PyMem_RawMalloc(num_groups * sizeof(gid_t));
+            if (groups == NULL) {
+                PyErr_SetString(PyExc_MemoryError,
+                        "failed to allocate memory for group list");
+                goto cleanup;
+            }
         }
 
-        for (i = 0; i < num_groups; i++) {
+        for (Py_ssize_t i = 0; i < num_groups; i++) {
             PyObject *elem;
             elem = PySequence_GetItem(groups_list, i);
             if (!elem)
@@ -934,6 +933,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                 Py_DECREF(elem);
                 goto cleanup;
             } else {
+                gid_t gid;
                 if (!_Py_Gid_Converter(elem, &gid)) {
                     Py_DECREF(elem);
                     PyErr_SetString(PyExc_ValueError, "invalid group id");
@@ -943,7 +943,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             }
             Py_DECREF(elem);
         }
-        call_setgroups = 1;
 
 #else /* HAVE_SETGROUPS */
         PyErr_BadInternalCall();
@@ -951,12 +950,11 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 #endif /* HAVE_SETGROUPS */
     }
 
+    gid_t gid = (gid_t)-1;
     if (gid_object != Py_None) {
 #ifdef HAVE_SETREGID
         if (!_Py_Gid_Converter(gid_object, &gid))
             goto cleanup;
-
-        call_setgid = 1;
 
 #else /* HAVE_SETREGID */
         PyErr_BadInternalCall();
@@ -964,12 +962,11 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 #endif /* HAVE_SETREUID */
     }
 
+    uid_t uid = (uid_t)-1;
     if (uid_object != Py_None) {
 #ifdef HAVE_SETREUID
         if (!_Py_Uid_Converter(uid_object, &uid))
             goto cleanup;
-
-        call_setuid = 1;
 
 #else /* HAVE_SETREUID */
         PyErr_BadInternalCall();
@@ -994,7 +991,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
     if (preexec_fn == Py_None && allow_vfork &&
-        !call_setuid && !call_setgid && !call_setgroups) {
+        uid == (uid_t)-1 && gid == (gid_t)-1 && num_groups < 0) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals
          * used internally by C libraries won't be blocked by
@@ -1017,8 +1014,8 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                        p2cread, p2cwrite, c2pread, c2pwrite,
                        errread, errwrite, errpipe_read, errpipe_write,
                        close_fds, restore_signals, call_setsid, pgid_to_set,
-                       call_setgid, gid, call_setgroups, num_groups, groups,
-                       call_setuid, uid, child_umask, old_sigmask,
+                       gid, num_groups, groups,
+                       uid, child_umask, old_sigmask,
                        py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
 
     /* Parent (original) process */
