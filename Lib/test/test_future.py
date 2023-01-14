@@ -437,8 +437,8 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         """))
 
         hints = namespace.pop('hints')
-        self.assertIsInstance(hints['args'],
-                              typing.Unpack[namespace['StarredC']])
+        self.assertEqual(hints['args'].__origin__, typing.Unpack)
+        self.assertIsInstance(hints['args'].__args__[0], namespace['StarredC'])
 
 
 if __name__ == "__main__":
