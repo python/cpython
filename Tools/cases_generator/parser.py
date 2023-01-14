@@ -338,13 +338,13 @@ class Parser(PLexer):
         tokens: list[lx.Token] = []
         level = 0
         while tkn := self.next(raw=True):
+            tokens.append(tkn)
             if tkn.kind in (lx.LBRACE, lx.LPAREN, lx.LBRACKET):
                 level += 1
             elif tkn.kind in (lx.RBRACE, lx.RPAREN, lx.RBRACKET):
                 level -= 1
                 if level <= 0:
                     break
-            tokens.append(tkn)
         return tokens
 
 
