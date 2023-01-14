@@ -379,9 +379,9 @@ provides three different variants:
       If the request was mapped to a file, it is opened. Any :exc:`OSError`
       exception in opening the requested file is mapped to a ``404``,
       ``'File not found'`` error. If the file's modified timestamp is less then
-      ``-43200``, the return value of the :func:`time.time()` function will be
-      used to avoid :exc:`OSError` exception on ``'win32'`` platform. If there
-      was a ``'If-Modified-Since'`` header in the request, and the file was not
+      ``-43200``, ``0`` will be used as the modified timestamp to avoid
+      :exc:`OSError` exception on ``'win32'`` platform. If there was a
+      ``'If-Modified-Since'`` header in the request, and the file was not
       modified after this time, a ``304``, ``'Not Modified'`` response is sent.
       Otherwise, the content type is guessed by calling the :meth:`guess_type`
       method, which in turn uses the *extensions_map* variable, and the file

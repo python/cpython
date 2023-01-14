@@ -738,7 +738,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             # might as well get the "updated" version.
             mtime = fs.st_mtime
             if sys.platform == 'win32' and mtime < -43200:
-                mtime = time.time()
+                mtime = 0
             # Use browser cache if possible
             if ("If-Modified-Since" in self.headers
                     and "If-None-Match" not in self.headers):
