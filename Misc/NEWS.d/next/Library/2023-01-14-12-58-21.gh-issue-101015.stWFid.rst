@@ -1,0 +1,2 @@
+Fix :class:`typing.ForwardRef` evaluation of ``'*tuple[...]'`` string. It
+must not drop the ``Unpack`` part.
