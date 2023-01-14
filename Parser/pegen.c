@@ -246,8 +246,8 @@ _PyPegen_fill_token(Parser *p)
 // The array counts the number of tokens skipped by memoization,
 // indexed by type.
 
-#define NSTATISTICS 2000
-static long memo_statistics[NSTATISTICS];
+#define NSTATISTICS _PYPEGEN_NSTATISTICS
+#define memo_statistics _PyRuntime.parser.memo_statistics
 
 void
 _PyPegen_clear_memo_statistics()
