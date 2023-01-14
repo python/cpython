@@ -419,6 +419,8 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             """))
 
     def test_get_type_hints_on_func_with_variadic_arg(self):
+        import typing
+
         # `typing.get_type_hints` might break on a function with a variadic
         # annotation (e.g. `f(*args: *Ts)`) if `from __future__ import
         # annotations`, because it could try to evaluate `*Ts` as an expression,
@@ -435,7 +437,8 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         """))
 
         hints = namespace.pop('hints')
-        self.assertIsInstance(hints['args'], namespace['StarredC'])
+        self.assertIsInstance(hints['args'],
+                              typing.Unpack[namespace['StarredC']])
 
 
 if __name__ == "__main__":
