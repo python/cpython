@@ -1,0 +1,2 @@
+Fix a potential memory leak when :func:`PyMem_Realloc` fails inside
+:func:`_loop0_1_rule`. Patch by Ruili Fang
