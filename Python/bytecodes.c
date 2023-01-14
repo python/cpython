@@ -533,7 +533,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__array[oparg] -- )
+        // This should remain a legacy instruction.
         inst(RAISE_VARARGS) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
