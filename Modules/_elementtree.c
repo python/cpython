@@ -1431,9 +1431,9 @@ element_bool(PyObject* self_)
         "Use specific 'len(elem)' or 'elem is not None' test instead.",
         2);
     if (self->extra ? self->extra->length : 0) {
-        return true;
+        return 1;
     }
-    return false;
+    return 0;
 }
 
 /*[clinic input]
