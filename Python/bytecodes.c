@@ -1353,20 +1353,19 @@ dummy_func(
             }
         }
 
-        // stack effect: (__array[oparg*2] -- __0)
-        inst(BUILD_MAP) {
-            PyObject *map = _PyDict_FromItems(
-                    &PEEK(2*oparg), 2,
-                    &PEEK(2*oparg - 1), 2,
+        inst(BUILD_MAP, (values[oparg*2] -- map)) {
+            map = _PyDict_FromItems(
+                    values, 2,
+                    values+1, 2,
                     oparg);
             if (map == NULL)
                 goto error;
 
-            while (oparg--) {
-                Py_DECREF(POP());
-                Py_DECREF(POP());
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(values[i*2]);
+                Py_DECREF(values[i*2+1]);
             }
-            PUSH(map);
+            ERROR_IF(map == NULL, error);
         }
 
         inst(SETUP_ANNOTATIONS, (--)) {

@@ -1600,18 +1600,23 @@
         }
 
         TARGET(BUILD_MAP) {
-            PyObject *map = _PyDict_FromItems(
-                    &PEEK(2*oparg), 2,
-                    &PEEK(2*oparg - 1), 2,
+            PyObject **values = &PEEK(oparg*2);
+            PyObject *map;
+            map = _PyDict_FromItems(
+                    values, 2,
+                    values+1, 2,
                     oparg);
             if (map == NULL)
                 goto error;
 
-            while (oparg--) {
-                Py_DECREF(POP());
-                Py_DECREF(POP());
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(values[i*2]);
+                Py_DECREF(values[i*2+1]);
             }
-            PUSH(map);
+            if (map == NULL) { STACK_SHRINK(oparg*2); goto error; }
+            STACK_SHRINK(oparg*2);
+            STACK_GROW(1);
+            POKE(1, map);
             DISPATCH();
         }
 
