@@ -346,15 +346,13 @@ text
         collector = lambda: EventCollectorCharrefs()
         self.assertTrue(collector().convert_charrefs)
         charrefs = ['&quot;', '&#34;', '&#x22;', '&quot', '&#34', '&#x22']
-        # check charrefs in the middle of the text/attributes
-        expected = [('starttag', 'a', [('href', 'foo " zar')]),
-                    ('data', 'a"z'), ('endtag', 'a')]
+        # check charrefs in the middle of the text
+        expected = [('starttag', 'a', []), ('data', 'a"z'), ('endtag', 'a')]
         for charref in charrefs:
-            self._run_check('<a href="foo {0} zar">a{0}z</a>'.format(charref),
+            self._run_check('<a>a{0}z</a>'.format(charref),
                             expected, collector=collector())
         # check charrefs at the beginning/end of the text
-        expected = [('data', '"'),
-                    ('starttag', 'a', []),
+        expected = [('data', '"'), ('starttag', 'a', []),
                     ('data', '"'), ('endtag', 'a'), ('data', '"')]
         for charref in charrefs:
             self._run_check('{0}<a>'
@@ -415,11 +413,18 @@ text
                     ('endtag', 'a')]
         self._run_check('<a href="https://example.com?foo&cent;=123"></a>', expected, collector=collector())
 
-        # do unescape char refs at beginning and end of text attributes
+        # do unescape char refs in the middle of attributes
         charrefs = ['&quot;', '&#34;', '&#x22;', '&quot', '&#34', '&#x22']
-        expected = [('starttag', 'a', [('x', '"'), ('y', '"-X'), ('z', 'X-"')]), ('endtag', 'a')]
+        expected = [('starttag', 'a', [('href', 'foo " zar')]), ('endtag', 'a')]
         for charref in charrefs:
-            self._run_check('<a x="{0}" y="{0}-X" z="X-{0}"></a>'.format(charref),
+            self._run_check('<a href="foo {0} zar"></a>'.format(charref),
+                            expected, collector=collector())
+
+        # do unescape char refs at beginning and end of text attributes
+        expected = [('starttag', 'a', [('x', '"'), ('y', '"#'), ('z', '#"')]),
+                    ('endtag', 'a')]
+        for charref in charrefs:
+            self._run_check('<a x="{0}" y="{0}#" z="#{0}"></a>'.format(charref),
                             expected, collector=collector())
 
     # the remaining tests were for the "tolerant" parser (which is now
