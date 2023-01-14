@@ -799,6 +799,15 @@ which incur interpreter overhead.
        "Returns the sequence elements n times"
        return chain.from_iterable(repeat(tuple(iterable), n))
 
+   def batched(iterable, n):
+       "Batch data into tuples of length n. The last batch may be shorter."
+       # batched('ABCDEFG', 3) --> ABC DEF G
+       if n < 1:
+           raise ValueError('n must be at least one')
+       it = iter(iterable)
+       while (batch := tuple(islice(it, n))):
+           yield batch
+
    def sumprod(vec1, vec2):
        "Compute a sum of products."
        return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
@@ -916,15 +925,6 @@ which incur interpreter overhead.
            return zip(*args)
        else:
            raise ValueError('Expected fill, strict, or ignore')
-
-   def batched(iterable, n):
-       "Batch data into tuples of length n. The last batch may be shorter."
-       # batched('ABCDEFG', 3) --> ABC DEF G
-       if n < 1:
-           raise ValueError('n must be at least one')
-       it = iter(iterable)
-       while (batch := tuple(islice(it, n))):
-           yield batch
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
