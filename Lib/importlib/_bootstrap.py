@@ -92,7 +92,7 @@ class _DeadlockError(RuntimeError):
 
 
 
-def _has_deadlocked(target_id, seen_ids, candidate_ids, blocking_on):
+def _has_deadlocked(target_id, *, seen_ids, candidate_ids, blocking_on):
     """Check if 'target_id' is holding the same lock as another thread(s).
 
     The search within 'blocking_on' starts with the threads listed in
@@ -115,8 +115,7 @@ def _has_deadlocked(target_id, seen_ids, candidate_ids, blocking_on):
 
     # Otherwise, try to reach the target_id from each of the given candidate_ids.
     for tid in candidate_ids:
-        candidate_blocking_on = blocking_on.get(tid)
-        if not candidate_blocking_on:
+        if not (candidate_blocking_on := blocking_on.get(tid)):
             # There are no edges out from this node, skip it.
             continue
         elif tid in seen_ids:
@@ -129,7 +128,8 @@ def _has_deadlocked(target_id, seen_ids, candidate_ids, blocking_on):
 
         # Follow the edges out from this thread.
         edges = [lock.owner for lock in candidate_blocking_on]
-        if _has_deadlocked(target_id, seen_ids, edges, blocking_on):
+        if _has_deadlocked(target_id, seen_ids=seen_ids, candidate_ids=edges,
+                blocking_on=blocking_on):
             return True
 
     return False
