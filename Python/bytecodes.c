@@ -1338,25 +1338,19 @@ dummy_func(
             ERROR_IF(err < 0, error);
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_SET) {
-            PyObject *set = PySet_New(NULL);
+        inst(BUILD_SET, (values[oparg] -- set)) {
+            set = PySet_New(NULL);
             int err = 0;
-            int i;
-            if (set == NULL)
-                goto error;
-            for (i = oparg; i > 0; i--) {
-                PyObject *item = PEEK(i);
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = values[i];
                 if (err == 0)
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
             }
-            STACK_SHRINK(oparg);
             if (err != 0) {
                 Py_DECREF(set);
-                goto error;
+                ERROR_IF(true, error);
             }
-            PUSH(set);
         }
 
         // stack effect: (__array[oparg*2] -- __0)

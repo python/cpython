@@ -1579,23 +1579,23 @@
         }
 
         TARGET(BUILD_SET) {
-            PyObject *set = PySet_New(NULL);
+            PyObject **values = &PEEK(oparg);
+            PyObject *set;
+            set = PySet_New(NULL);
             int err = 0;
-            int i;
-            if (set == NULL)
-                goto error;
-            for (i = oparg; i > 0; i--) {
-                PyObject *item = PEEK(i);
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = values[i];
                 if (err == 0)
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
             }
-            STACK_SHRINK(oparg);
             if (err != 0) {
                 Py_DECREF(set);
-                goto error;
+                if (true) { STACK_SHRINK(oparg); goto error; }
             }
-            PUSH(set);
+            STACK_SHRINK(oparg);
+            STACK_GROW(1);
+            POKE(1, set);
             DISPATCH();
         }
 
