@@ -504,9 +504,9 @@ are always available.  They are listed here in alphabetical order.
 
    Equivalent to::
 
-      def enumerate(sequence, start=0):
+      def enumerate(iterable, start=0):
           n = start
-          for elem in sequence:
+          for elem in iterable:
               yield n, elem
               n += 1
 
