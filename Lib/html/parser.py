@@ -62,22 +62,22 @@ endtagfind = re.compile(r'</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
 # See: https://html.spec.whatwg.org/multipage/parsing.html#named-character-reference-state
 attr_charref = re.compile(r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*)[;=]?')
 
-def replace_attr_charref(match):
+def _replace_attr_charref(match):
     ref = match.group(0)
     # Numeric / hex char refs must always be unescaped
-    if ref[1] == '#':
+    if ref.startswith('&#'):
         return unescape(ref)
     # Named character / entity references must only be unescaped
     # if they are an exact match, and they are not followed by an equals sign
-    terminates_with_equals = ref[-1:] == '='
+    terminates_with_equals = ref.endswith('=')
     exact_match = ref.lstrip('&').rstrip('=') in html5_entities
     if exact_match and not terminates_with_equals:
         return unescape(ref)
     # Otherwise do not unescape
     return ref
 
-def unescape_attrvalue(s):
-    return attr_charref.sub(replace_attr_charref, s)
+def _unescape_attrvalue(s):
+    return attr_charref.sub(_replace_attr_charref, s)
 
 
 class HTMLParser(_markupbase.ParserBase):
@@ -343,7 +343,7 @@ class HTMLParser(_markupbase.ParserBase):
                  attrvalue[:1] == '"' == attrvalue[-1:]:
                 attrvalue = attrvalue[1:-1]
             if attrvalue:
-                attrvalue = unescape_attrvalue(attrvalue)
+                attrvalue = _unescape_attrvalue(attrvalue)
             attrs.append((attrname.lower(), attrvalue))
             k = m.end()
 
