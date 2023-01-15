@@ -1723,9 +1723,10 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
     Py_DECREF(type);
     if (new == NULL)
         return NULL;
-
-    Py_XINCREF(pold->prop_name);
-    Py_XSETREF(((propertyobject *) new)->prop_name, pold->prop_name);
+    if (PyObject_TypeCheck((new), &PyProperty_Type)) {
+        Py_XINCREF(pold->prop_name);
+        Py_XSETREF(((propertyobject *) new)->prop_name, pold->prop_name);
+    }
     return new;
 }
 
