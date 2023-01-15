@@ -146,6 +146,77 @@ Node classes
     Snakes <https://greentreesnakes.readthedocs.io/en/latest/>`__ project and
     all its contributors.
 
+Root nodes
+^^^^^^^^^^
+
+.. class:: Module(body, type_ignores)
+
+   A Python module. Body contains a list of module's statements.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('x = 1'), indent=4))
+        Module(
+            body=[
+                Assign(
+                    targets=[
+                        Name(id='x', ctx=Store())],
+                    value=Constant(value=1))],
+            type_ignores=[])
+
+
+.. class:: Expression(body)
+
+   A single Python expression.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
+        Expression(
+            body=Constant(value=123))
+
+
+.. class:: Interactive(body)
+
+   A single Python interactive statement, just like in :ref:`tut-interac`.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('x = 1; y = 2', mode='single'), indent=4))
+        Interactive(
+            body=[
+                Assign(
+                    targets=[
+                        Name(id='x', ctx=Store())],
+                    value=Constant(value=1)),
+                Assign(
+                    targets=[
+                        Name(id='y', ctx=Store())],
+                    value=Constant(value=2))])
+
+
+.. class:: FunctionType(argtypes, returns)
+
+   Special type to represent old-style type comments for functions.
+
+   Python versions prior to 3.6 used to annotate functions like this::
+
+       def sum_two_number(a, b):
+           # type: (int, int) -> int
+           return a + b
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('(int, str) -> List[int]', mode='func_type'), indent=4))
+        FunctionType(
+            argtypes=[
+                Name(id='int', ctx=Load()),
+                Name(id='str', ctx=Load())],
+            returns=Subscript(
+                value=Name(id='List', ctx=Load()),
+                slice=Name(id='int', ctx=Load()),
+                ctx=Load()))
+
 Literals
 ^^^^^^^^
 
