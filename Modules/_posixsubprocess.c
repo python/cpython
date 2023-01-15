@@ -806,7 +806,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     pid_t pid = -1;
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t arg_num, num_groups = 0;
+    Py_ssize_t arg_num, extra_group_size = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
     int allow_vfork;
@@ -902,19 +902,19 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                     "setgroups argument must be a list");
             goto cleanup;
         }
-        num_groups = PySequence_Size(groups_list);
+        extra_group_size = PySequence_Size(groups_list);
 
-        if (num_groups < 0)
+        if (extra_group_size < 0)
             goto cleanup;
 
-        if (num_groups > MAX_GROUPS) {
+        if (extra_group_size > MAX_GROUPS) {
             PyErr_SetString(PyExc_ValueError, "too many extra_groups");
             goto cleanup;
         }
 
-        /* Deliberately keep extra_groups == NULL for num_groups == 0 */
-        if (num_groups > 0) {
-            extra_groups = PyMem_RawMalloc(num_groups * sizeof(gid_t));
+        /* Deliberately keep extra_groups == NULL for extra_group_size == 0 */
+        if (extra_group_size > 0) {
+            extra_groups = PyMem_RawMalloc(extra_group_size * sizeof(gid_t));
             if (extra_groups == NULL) {
                 PyErr_SetString(PyExc_MemoryError,
                         "failed to allocate memory for group list");
@@ -922,7 +922,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             }
         }
 
-        for (Py_ssize_t i = 0; i < num_groups; i++) {
+        for (Py_ssize_t i = 0; i < extra_group_size; i++) {
             PyObject *elem;
             elem = PySequence_GetItem(groups_list, i);
             if (!elem)
@@ -991,7 +991,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
     if (preexec_fn == Py_None && allow_vfork &&
-        uid == (uid_t)-1 && gid == (gid_t)-1 && num_groups < 0) {
+        uid == (uid_t)-1 && gid == (gid_t)-1 && extra_group_size < 0) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals
          * used internally by C libraries won't be blocked by
@@ -1014,7 +1014,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                        p2cread, p2cwrite, c2pread, c2pwrite,
                        errread, errwrite, errpipe_read, errpipe_write,
                        close_fds, restore_signals, call_setsid, pgid_to_set,
-                       gid, num_groups, extra_groups,
+                       gid, extra_group_size, extra_groups,
                        uid, child_umask, old_sigmask,
                        py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
 
