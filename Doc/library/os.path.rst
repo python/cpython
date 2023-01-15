@@ -492,16 +492,28 @@ the :mod:`glob` module.)
 
    Split the pathname *path* into a triad ``(drive, root, tail)`` where:
 
-   1. *drive* is an optional mount point, exactly like :func:`splitdrive`;
-   2. *root* is an optional sequence of separators following the drive; and
+   1. *drive* is a mount point or the empty string;
+   2. *root* is a sequence of separators following the drive or the empty string; and
    3. *tail* is anything after the root.
 
-   On Posix, *drive* is always empty. The *root* may be empty (relative path),
-   a single forward slash (absolute path), or two forward slashes
-   (implementation-defined per the POSIX standard).
+   On POSIX systems, *drive* is always empty. The *root* may be empty (if *path* is
+   relative), a single forward slash (if *path* is absolute), or two forward slashes
+   (implementation-defined per `IEEE Std 1003.1 2013 Edition; 4.13 Pathname Resolution
+   <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_.)
+   For example::
 
-   On Windows, *drive* may be a UNC sharepoint or a traditional DOS drive. The
-   *root* may be empty, a forward slash, or a backward slash.
+      >>> splitroot('/etc/hosts')
+      ('', '/', 'etc/hosts')
+
+   On Windows, *drive* may be a UNC sharepoint or a traditional drive-letter drive. The
+   *root* may be empty, a forward slash, or a backward slash. For example::
+
+      >>> splitroot('//server/share/')
+      ('//server/share', '/', '')
+      >>> splitroot('C:/Users/Barney')
+      ('C:', '/', 'Users/Barney')
+      >>> splitroot('Windows/notepad')
+      ('', '', 'Windows/notepad')
 
    In all cases, ``drive + root + tail`` will be the same as *path*.
 
