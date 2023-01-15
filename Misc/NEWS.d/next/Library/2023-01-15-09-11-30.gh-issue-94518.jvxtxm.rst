@@ -1,0 +1,1 @@
+``groups_size`` and ``groups`` variables of ``_posixsubprocess`` module are renamed into ``extra_group_size`` and ``extra_group`` to stress that they add group affinity, not replace it. Patch by Oleg Iarygin.
