@@ -839,11 +839,6 @@ local_traverse(localobject *self, visitproc visit, void *arg)
     return 0;
 }
 
-#define HEAD_LOCK(runtime) \
-    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
-#define HEAD_UNLOCK(runtime) \
-    PyThread_release_lock((runtime)->interpreters.mutex)
-
 static int
 local_clear(localobject *self)
 {
