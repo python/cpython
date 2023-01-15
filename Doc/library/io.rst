@@ -123,17 +123,19 @@ encoding is not UTF-8 for most Windows users. For example::
    with open("README.md") as f:
        long_description = f.read()
 
-Additionally, while there is no concrete plan as of yet, Python may change
-the default text file encoding to UTF-8 in the future.
-
 Accordingly, it is highly recommended that you specify the encoding
 explicitly when opening text files. If you want to use UTF-8, pass
 ``encoding="utf-8"``. To use the current locale encoding,
-``encoding="locale"`` is supported in Python 3.10.
+``encoding="locale"`` is supported since Python 3.10.
 
-When you need to run existing code on Windows that attempts to open
-UTF-8 files using the default locale encoding, you can enable the UTF-8
-mode. See :ref:`UTF-8 mode on Windows <win-utf8-mode>`.
+.. seealso::
+
+   :ref:`utf8-mode`
+      Python UTF-8 Mode can be used to change the default encoding to
+      UTF-8 from locale-specific encoding.
+
+   :pep:`686`
+      Python 3.15 will make :ref:`utf8-mode` default.
 
 .. _io-encoding-warning:
 
@@ -270,7 +272,7 @@ to provide an interface to files in the machine's file system.
 The :class:`BufferedIOBase` ABC extends :class:`IOBase`.  It deals with
 buffering on a raw binary stream (:class:`RawIOBase`).  Its subclasses,
 :class:`BufferedWriter`, :class:`BufferedReader`, and :class:`BufferedRWPair`
-buffer raw binary streams that are readable, writable, and both readable and writable,
+buffer raw binary streams that are writable, readable, and both readable and writable,
 respectively. :class:`BufferedRandom` provides a buffered interface to seekable streams.
 Another :class:`BufferedIOBase` subclass, :class:`BytesIO`, is a stream of
 in-memory bytes.
@@ -1053,10 +1055,10 @@ Text I/O
    The initial value of the buffer can be set by providing *initial_value*.
    If newline translation is enabled, newlines will be encoded as if by
    :meth:`~TextIOBase.write`.  The stream is positioned at the start of the
-   buffer which emulates opening an existing file in a `w+` mode, making it
+   buffer which emulates opening an existing file in a ``w+`` mode, making it
    ready for an immediate write from the beginning or for a write that
-   would overwrite the initial value.  To emulate opening a file in an `a+`
-   mode ready for appending, use `f.seek(0, io.SEEK_END)` to reposition the
+   would overwrite the initial value.  To emulate opening a file in an ``a+``
+   mode ready for appending, use ``f.seek(0, io.SEEK_END)`` to reposition the
    stream at the end of the buffer.
 
    The *newline* argument works like that of :class:`TextIOWrapper`,

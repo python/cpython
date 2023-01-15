@@ -28,6 +28,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   build_doc:
     name: 'Docs'
@@ -48,11 +52,6 @@ jobs:
       run: make -C Doc/ check
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
-    - name: 'Upload'
-      uses: actions/upload-artifact@v3
-      with:
-        name: doc-html
-        path: Doc/build/html
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:

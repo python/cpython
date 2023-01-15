@@ -166,10 +166,10 @@ handler:
 
 .. code-block:: shell-session
 
-    $ python3 -c "import ctypes; ctypes.string_at(0)"
+    $ python -c "import ctypes; ctypes.string_at(0)"
     Segmentation fault
 
-    $ python3 -q -X faulthandler
+    $ python -q -X faulthandler
     >>> import ctypes
     >>> ctypes.string_at(0)
     Fatal Python error: Segmentation fault

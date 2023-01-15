@@ -239,6 +239,7 @@ inserted data and retrieved values from it in multiple ways.
       * :ref:`sqlite3-adapters`
       * :ref:`sqlite3-converters`
       * :ref:`sqlite3-connection-context-manager`
+      * :ref:`sqlite3-howto-row-factory`
 
    * :ref:`sqlite3-explanation` for in-depth background on transaction control.
 
@@ -258,7 +259,8 @@ Module functions
 .. function:: connect(database, timeout=5.0, detect_types=0, \
                       isolation_level="DEFERRED", check_same_thread=True, \
                       factory=sqlite3.Connection, cached_statements=128, \
-                      uri=False)
+                      uri=False, \*, \
+                      autocommit=sqlite3.LEGACY_TRANSACTION_CONTROL)
 
    Open a connection to an SQLite database.
 
@@ -290,11 +292,13 @@ Module functions
        By default (``0``), type detection is disabled.
 
    :param isolation_level:
-       The :attr:`~Connection.isolation_level` of the connection,
-       controlling whether and how transactions are implicitly opened.
+       Control legacy transaction handling behaviour.
+       See :attr:`Connection.isolation_level` and
+       :ref:`sqlite3-transaction-control-isolation-level` for more information.
        Can be ``"DEFERRED"`` (default), ``"EXCLUSIVE"`` or ``"IMMEDIATE"``;
        or ``None`` to disable opening transactions implicitly.
-       See :ref:`sqlite3-controlling-transactions` for more.
+       Has no effect unless :attr:`Connection.autocommit` is set to
+       :data:`~sqlite3.LEGACY_TRANSACTION_CONTROL` (the default).
    :type isolation_level: str | None
 
    :param bool check_same_thread:
@@ -321,6 +325,15 @@ Module functions
        The query string allows passing parameters to SQLite,
        enabling various :ref:`sqlite3-uri-tricks`.
 
+   :param autocommit:
+       Control :pep:`249` transaction handling behaviour.
+       See :attr:`Connection.autocommit` and
+       :ref:`sqlite3-transaction-control-autocommit` for more information.
+       *autocommit* currently defaults to
+       :data:`~sqlite3.LEGACY_TRANSACTION_CONTROL`.
+       The default will change to ``False`` in a future Python release.
+   :type autocommit: bool
+
    :rtype: Connection
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
@@ -334,6 +347,9 @@ Module functions
 
    .. versionadded:: 3.10
       The ``sqlite3.connect/handle`` auditing event.
+
+   .. versionadded:: 3.12
+      The *autocommit* parameter.
 
 .. function:: complete_statement(statement)
 
@@ -381,6 +397,7 @@ Module functions
       >>> con = sqlite3.connect(":memory:")
       >>> def evil_trace(stmt):
       ...     5/0
+      ...
       >>> con.set_trace_callback(evil_trace)
       >>> def debug(unraisable):
       ...     print(f"{unraisable.exc_value!r} in callback {unraisable.object.__name__}")
@@ -417,6 +434,12 @@ Module functions
 
 Module constants
 ^^^^^^^^^^^^^^^^
+
+.. data:: LEGACY_TRANSACTION_CONTROL
+
+   Set :attr:`~Connection.autocommit` to this constant to select
+   old style (pre-Python 3.12) transaction control behaviour.
+   See :ref:`sqlite3-transaction-control-isolation-level` for more information.
 
 .. data:: PARSE_COLNAMES
 
@@ -478,10 +501,7 @@ Module constants
 
    .. note::
 
-      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
-      parameter styles, because that is what the underlying SQLite library
-      supports. However, the DB-API does not allow multiple values for
-      the ``paramstyle`` attribute.
+      The ``named`` DB-API parameter style is also supported.
 
 .. data:: sqlite_version
 
@@ -570,103 +590,6 @@ Connection objects
 
    An SQLite database connection has the following attributes and methods:
 
-   .. attribute:: isolation_level
-
-      This attribute controls the :ref:`transaction handling
-      <sqlite3-controlling-transactions>` performed by :mod:`!sqlite3`.
-      If set to ``None``, transactions are never implicitly opened.
-      If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
-      corresponding to the underlying `SQLite transaction behaviour`_,
-      implicit :ref:`transaction management
-      <sqlite3-controlling-transactions>` is performed.
-
-      If not overridden by the *isolation_level* parameter of :func:`connect`,
-      the default is ``""``, which is an alias for ``"DEFERRED"``.
-
-   .. attribute:: in_transaction
-
-      This read-only attribute corresponds to the low-level SQLite
-      `autocommit mode`_.
-
-      ``True`` if a transaction is active (there are uncommitted changes),
-      ``False`` otherwise.
-
-      .. versionadded:: 3.2
-
-   .. attribute:: row_factory
-
-      A callable that accepts two arguments,
-      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
-      and returns a custom object representing an SQLite row.
-
-      Example:
-
-      .. doctest::
-
-         >>> def dict_factory(cursor, row):
-         ...     col_names = [col[0] for col in cursor.description]
-         ...     return {key: value for key, value in zip(col_names, row)}
-         >>> con = sqlite3.connect(":memory:")
-         >>> con.row_factory = dict_factory
-         >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
-         ...     print(row)
-         {'a': 1, 'b': 2}
-
-      If returning a tuple doesn't suffice and you want name-based access to
-      columns, you should consider setting :attr:`row_factory` to the
-      highly optimized :class:`sqlite3.Row` type. :class:`Row` provides both
-      index-based and case-insensitive name-based access to columns with almost no
-      memory overhead. It will probably be better than your own custom
-      dictionary-based approach or even a db_row based solution.
-
-      .. XXX what's a db_row-based solution?
-
-   .. attribute:: text_factory
-
-      A callable that accepts a :class:`bytes` parameter and returns a text
-      representation of it.
-      The callable is invoked for SQLite values with the ``TEXT`` data type.
-      By default, this attribute is set to :class:`str`.
-      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
-
-      Example:
-
-      .. testcode::
-
-         con = sqlite3.connect(":memory:")
-         cur = con.cursor()
-
-         AUSTRIA = "Österreich"
-
-         # by default, rows are returned as str
-         cur.execute("SELECT ?", (AUSTRIA,))
-         row = cur.fetchone()
-         assert row[0] == AUSTRIA
-
-         # but we can make sqlite3 always return bytestrings ...
-         con.text_factory = bytes
-         cur.execute("SELECT ?", (AUSTRIA,))
-         row = cur.fetchone()
-         assert type(row[0]) is bytes
-         # the bytestrings will be encoded in UTF-8, unless you stored garbage in the
-         # database ...
-         assert row[0] == AUSTRIA.encode("utf-8")
-
-         # we can also implement a custom text_factory ...
-         # here we implement one that appends "foo" to all strings
-         con.text_factory = lambda x: x.decode("utf-8") + "foo"
-         cur.execute("SELECT ?", ("bar",))
-         row = cur.fetchone()
-         assert row[0] == "barfoo"
-
-         con.close()
-
-   .. attribute:: total_changes
-
-      Return the total number of database rows that have been modified, inserted, or
-      deleted since the database connection was opened.
-
-
    .. method:: cursor(factory=Cursor)
 
       Create and return a :class:`Cursor` object.
@@ -674,7 +597,7 @@ Connection objects
       supplied, this must be a callable returning an instance of :class:`Cursor`
       or its subclasses.
 
-   .. method:: blobopen(table, column, row, /, \*, readonly=False, name="main")
+   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
 
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
@@ -712,18 +635,27 @@ Connection objects
    .. method:: commit()
 
       Commit any pending transaction to the database.
-      If there is no open transaction, this method is a no-op.
+      If :attr:`autocommit` is ``True``, or there is no open transaction,
+      this method does nothing.
+      If :attr:`!autocommit` is ``False``, a new transaction is implicitly
+      opened if a pending transaction was committed by this method.
 
    .. method:: rollback()
 
       Roll back to the start of any pending transaction.
-      If there is no open transaction, this method is a no-op.
+      If :attr:`autocommit` is ``True``, or there is no open transaction,
+      this method does nothing.
+      If :attr:`!autocommit` is ``False``, a new transaction is implicitly
+      opened if a pending transaction was rolled back by this method.
 
    .. method:: close()
 
       Close the database connection.
-      Any pending transaction is not committed implicitly;
-      make sure to :meth:`commit` before closing
+      If :attr:`autocommit` is ``False``,
+      any pending transaction is implicitly rolled back.
+      If :attr:`!autocommit` is ``True`` or :data:`LEGACY_TRANSACTION_CONTROL`,
+      no implicit transaction control is executed.
+      Make sure to :meth:`commit` before closing
       to avoid losing pending changes.
 
    .. method:: execute(sql, parameters=(), /)
@@ -744,7 +676,7 @@ Connection objects
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
       Return the new cursor object.
 
-   .. method:: create_function(name, narg, func, \*, deterministic=False)
+   .. method:: create_function(name, narg, func, *, deterministic=False)
 
       Create or remove a user-defined SQL function.
 
@@ -1137,7 +1069,7 @@ Connection objects
          con.close()
 
 
-   .. method:: backup(target, \*, pages=-1, progress=None, name="main", sleep=0.250)
+   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
       Create a backup of an SQLite database.
 
@@ -1266,7 +1198,7 @@ Connection objects
    .. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
 
-   .. method:: serialize(\*, name="main")
+   .. method:: serialize(*, name="main")
 
       Serialize a database into a :class:`bytes` object.  For an
       ordinary on-disk database file, the serialization is just a copy of the
@@ -1288,7 +1220,7 @@ Connection objects
       .. versionadded:: 3.11
 
 
-   .. method:: deserialize(data, /, \*, name="main")
+   .. method:: deserialize(data, /, *, name="main")
 
       Deserialize a :meth:`serialized <serialize>` database into a
       :class:`Connection`.
@@ -1319,6 +1251,124 @@ Connection objects
          deserialize API.
 
       .. versionadded:: 3.11
+
+   .. attribute:: autocommit
+
+      This attribute controls :pep:`249`-compliant transaction behaviour.
+      :attr:`!autocommit` has three allowed values:
+
+      * ``False``: Select :pep:`249`-compliant transaction behaviour,
+        implying that :mod:`!sqlite3` ensures a transaction is always open.
+        Use :meth:`commit` and :meth:`rollback` to close transactions.
+
+        This is the recommended value of :attr:`!autocommit`.
+
+      * ``True``: Use SQLite's `autocommit mode`_.
+        :meth:`commit` and :meth:`rollback` have no effect in this mode.
+
+      * :data:`LEGACY_TRANSACTION_CONTROL`:
+        Pre-Python 3.12 (non-:pep:`249`-compliant) transaction control.
+        See :attr:`isolation_level` for more details.
+
+        This is currently the default value of :attr:`!autocommit`.
+
+      Changing :attr:`!autocommit` to ``False`` will open a new transaction,
+      and changing it to ``True`` will commit any pending transaction.
+
+      See :ref:`sqlite3-transaction-control-autocommit` for more details.
+
+      .. note::
+
+         The :attr:`isolation_level` attribute has no effect unless
+         :attr:`autocommit` is :data:`LEGACY_TRANSACTION_CONTROL`.
+
+      .. versionadded:: 3.12
+
+   .. attribute:: in_transaction
+
+      This read-only attribute corresponds to the low-level SQLite
+      `autocommit mode`_.
+
+      ``True`` if a transaction is active (there are uncommitted changes),
+      ``False`` otherwise.
+
+      .. versionadded:: 3.2
+
+   .. attribute:: isolation_level
+
+      Controls the :ref:`legacy transaction handling mode
+      <sqlite3-transaction-control-isolation-level>` of :mod:`!sqlite3`.
+      If set to ``None``, transactions are never implicitly opened.
+      If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
+      corresponding to the underlying `SQLite transaction behaviour`_,
+      :ref:`implicit transaction management
+      <sqlite3-transaction-control-isolation-level>` is performed.
+
+      If not overridden by the *isolation_level* parameter of :func:`connect`,
+      the default is ``""``, which is an alias for ``"DEFERRED"``.
+
+      .. note::
+
+         Using :attr:`autocommit` to control transaction handling is
+         recommended over using :attr:`!isolation_level`.
+         :attr:`!isolation_level` has no effect unless :attr:`autocommit` is
+         set to :data:`LEGACY_TRANSACTION_CONTROL` (the default).
+
+   .. attribute:: row_factory
+
+      The initial :attr:`~Cursor.row_factory`
+      for :class:`Cursor` objects created from this connection.
+      Assigning to this attribute does not affect the :attr:`!row_factory`
+      of existing cursors belonging to this connection, only new ones.
+      Is ``None`` by default,
+      meaning each row is returned as a :class:`tuple`.
+
+      See :ref:`sqlite3-howto-row-factory` for more details.
+
+   .. attribute:: text_factory
+
+      A callable that accepts a :class:`bytes` parameter and returns a text
+      representation of it.
+      The callable is invoked for SQLite values with the ``TEXT`` data type.
+      By default, this attribute is set to :class:`str`.
+      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
+
+      Example:
+
+      .. testcode::
+
+         con = sqlite3.connect(":memory:")
+         cur = con.cursor()
+
+         AUSTRIA = "Österreich"
+
+         # by default, rows are returned as str
+         cur.execute("SELECT ?", (AUSTRIA,))
+         row = cur.fetchone()
+         assert row[0] == AUSTRIA
+
+         # but we can make sqlite3 always return bytestrings ...
+         con.text_factory = bytes
+         cur.execute("SELECT ?", (AUSTRIA,))
+         row = cur.fetchone()
+         assert type(row[0]) is bytes
+         # the bytestrings will be encoded in UTF-8, unless you stored garbage in the
+         # database ...
+         assert row[0] == AUSTRIA.encode("utf-8")
+
+         # we can also implement a custom text_factory ...
+         # here we implement one that appends "foo" to all strings
+         con.text_factory = lambda x: x.decode("utf-8") + "foo"
+         cur.execute("SELECT ?", ("bar",))
+         row = cur.fetchone()
+         assert row[0] == "barfoo"
+
+         con.close()
+
+   .. attribute:: total_changes
+
+      Return the total number of database rows that have been modified, inserted, or
+      deleted since the database connection was opened.
 
 
 .. _sqlite3-cursor-objects:
@@ -1375,7 +1425,9 @@ Cursor objects
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
-      If :attr:`~Connection.isolation_level` is not ``None``,
+      If :attr:`~Connection.autocommit` is
+      :data:`LEGACY_TRANSACTION_CONTROL`,
+      :attr:`~Connection.isolation_level` is not ``None``,
       *sql* is an ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statement,
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
@@ -1403,7 +1455,9 @@ Cursor objects
    .. method:: executescript(sql_script, /)
 
       Execute the SQL statements in *sql_script*.
-      If there is a pending transaction,
+      If the :attr:`~Connection.autocommit` is
+      :data:`LEGACY_TRANSACTION_CONTROL`
+      and there is a pending transaction,
       an implicit ``COMMIT`` statement is executed first.
       No other implicit transaction control is performed;
       any transaction control must be added to *sql_script*.
@@ -1426,7 +1480,9 @@ Cursor objects
 
    .. method:: fetchone()
 
-      Return the next row of a query result set as a :class:`tuple`.
+      If :attr:`~Cursor.row_factory` is ``None``,
+      return the next row query result set as a :class:`tuple`.
+      Else, pass it to the row factory and return its result.
       Return ``None`` if no more data is available.
 
 
@@ -1468,13 +1524,32 @@ Cursor objects
 
       Required by the DB-API. Does nothing in :mod:`!sqlite3`.
 
-   .. attribute:: rowcount
+   .. attribute:: arraysize
 
-      Read-only attribute that provides the number of modified rows for
-      ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
-      is ``-1`` for other statements,
-      including :abbr:`CTE (Common Table Expression)` queries.
-      It is only updated by the :meth:`execute` and :meth:`executemany` methods.
+      Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
+      The default value is 1 which means a single row would be fetched per call.
+
+   .. attribute:: connection
+
+      Read-only attribute that provides the SQLite database :class:`Connection`
+      belonging to the cursor.  A :class:`Cursor` object created by
+      calling :meth:`con.cursor() <Connection.cursor>` will have a
+      :attr:`connection` attribute that refers to *con*:
+
+      .. doctest::
+
+         >>> con = sqlite3.connect(":memory:")
+         >>> cur = con.cursor()
+         >>> cur.connection == con
+         True
+
+   .. attribute:: description
+
+      Read-only attribute that provides the column names of the last query. To
+      remain compatible with the Python DB API, it returns a 7-tuple for each
+      column where the last six items of each tuple are ``None``.
+
+      It is set for ``SELECT`` statements without any matching rows as well.
 
    .. attribute:: lastrowid
 
@@ -1491,32 +1566,30 @@ Cursor objects
       .. versionchanged:: 3.6
          Added support for the ``REPLACE`` statement.
 
-   .. attribute:: arraysize
+   .. attribute:: rowcount
 
-      Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
-      The default value is 1 which means a single row would be fetched per call.
+      Read-only attribute that provides the number of modified rows for
+      ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
+      is ``-1`` for other statements,
+      including :abbr:`CTE (Common Table Expression)` queries.
+      It is only updated by the :meth:`execute` and :meth:`executemany` methods.
 
-   .. attribute:: description
+   .. attribute:: row_factory
 
-      Read-only attribute that provides the column names of the last query. To
-      remain compatible with the Python DB API, it returns a 7-tuple for each
-      column where the last six items of each tuple are ``None``.
+      Control how a row fetched from this :class:`!Cursor` is represented.
+      If ``None``, a row is represented as a :class:`tuple`.
+      Can be set to the included :class:`sqlite3.Row`;
+      or a :term:`callable` that accepts two arguments,
+      a :class:`Cursor` object and the :class:`!tuple` of row values,
+      and returns a custom object representing an SQLite row.
 
-      It is set for ``SELECT`` statements without any matching rows as well.
+      Defaults to what :attr:`Connection.row_factory` was set to
+      when the :class:`!Cursor` was created.
+      Assigning to this attribute does not affect
+      :attr:`Connection.row_factory` of the parent connection.
 
-   .. attribute:: connection
+      See :ref:`sqlite3-howto-row-factory` for more details.
 
-      Read-only attribute that provides the SQLite database :class:`Connection`
-      belonging to the cursor.  A :class:`Cursor` object created by
-      calling :meth:`con.cursor() <Connection.cursor>` will have a
-      :attr:`connection` attribute that refers to *con*:
-
-      .. doctest::
-
-         >>> con = sqlite3.connect(":memory:")
-         >>> cur = con.cursor()
-         >>> cur.connection == con
-         True
 
 .. The sqlite3.Row example used to be a how-to. It has now been incorporated
    into the Row reference. We keep the anchor here in order not to break
@@ -1535,7 +1608,10 @@ Row objects
    It supports iteration, equality testing, :func:`len`,
    and :term:`mapping` access by column name and index.
 
-   Two row objects compare equal if have equal columns and equal members.
+   Two :class:`!Row` objects compare equal
+   if they have identical column names and values.
+
+   See :ref:`sqlite3-howto-row-factory` for more details.
 
    .. method:: keys
 
@@ -1545,21 +1621,6 @@ Row objects
 
    .. versionchanged:: 3.5
       Added support of slicing.
-
-   Example:
-
-   .. doctest::
-
-      >>> con = sqlite3.connect(":memory:")
-      >>> con.row_factory = sqlite3.Row
-      >>> res = con.execute("SELECT 'Earth' AS name, 6378 AS radius")
-      >>> row = res.fetchone()
-      >>> row.keys()
-      ['name', 'radius']
-      >>> row[0], row["name"]  # Access by index and name.
-      ('Earth', 'Earth')
-      >>> row["RADIUS"]  # Column names are case-insensitive.
-      6378
 
 
 .. _sqlite3-blob-objects:
@@ -1831,8 +1892,13 @@ The deprecated default adapters and converters consist of:
 Command-line interface
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :mod:`!sqlite3` module can be invoked as a script
+The :mod:`!sqlite3` module can be invoked as a script,
+using the interpreter's :option:`-m` switch,
 in order to provide a simple SQLite shell.
+The argument signature is as follows::
+
+   python -m sqlite3 [-h] [-v] [filename] [sql]
+
 Type ``.quit`` or CTRL-D to exit the shell.
 
 .. program:: python -m sqlite3 [-h] [-v] [filename] [sql]
@@ -1860,25 +1926,32 @@ How to use placeholders to bind values in SQL queries
 
 SQL operations usually need to use values from Python variables. However,
 beware of using Python's string operations to assemble queries, as they
-are vulnerable to `SQL injection attacks`_ (see the `xkcd webcomic
-<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
+are vulnerable to `SQL injection attacks`_. For example, an attacker can simply
+close the single quote and inject ``OR TRUE`` to select all rows::
 
-   # Never do this -- insecure!
-   symbol = 'RHAT'
-   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
+   >>> # Never do this -- insecure!
+   >>> symbol = input()
+   ' OR TRUE; --
+   >>> sql = "SELECT * FROM stocks WHERE symbol = '%s'" % symbol
+   >>> print(sql)
+   SELECT * FROM stocks WHERE symbol = '' OR TRUE; --'
+   >>> cur.execute(sql)
 
 Instead, use the DB-API's parameter substitution. To insert a variable into a
 query string, use a placeholder in the string, and substitute the actual values
 into the query by providing them as a :class:`tuple` of values to the second
-argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
-use one of two kinds of placeholders: question marks (qmark style) or named
-placeholders (named style). For the qmark style, ``parameters`` must be a
-:term:`sequence <sequence>`. For the named style, it can be either a
-:term:`sequence <sequence>` or :class:`dict` instance. The length of the
-:term:`sequence <sequence>` must match the number of placeholders, or a
-:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
-keys for all named parameters. Any extra items are ignored. Here's an example of
-both styles:
+argument of the cursor's :meth:`~Cursor.execute` method.
+
+An SQL statement may use one of two kinds of placeholders:
+question marks (qmark style) or named placeholders (named style).
+For the qmark style, *parameters* must be a
+:term:`sequence` whose length must match the number of placeholders,
+or a :exc:`ProgrammingError` is raised.
+For the named style, *parameters* should be
+an instance of a :class:`dict` (or a subclass),
+which must contain keys for all named parameters;
+any extra items are ignored.
+Here's an example of both styles:
 
 .. testcode::
 
@@ -1904,6 +1977,11 @@ both styles:
    :hide:
 
    [('C', 1972)]
+
+.. note::
+
+   :pep:`249` numeric placeholders are *not* supported.
+   If used, they will be interpreted as named placeholders.
 
 
 .. _sqlite3-adapters:
@@ -2038,7 +2116,7 @@ The following example illustrates the implicit and explicit approaches:
            return f"Point({self.x}, {self.y})"
 
    def adapt_point(point):
-       return f"{point.x};{point.y}".encode("utf-8")
+       return f"{point.x};{point.y}"
 
    def convert_point(s):
        x, y = list(map(float, s.split(b";")))
@@ -2104,19 +2182,38 @@ This section shows recipes for common adapters and converters.
 
    def convert_date(val):
        """Convert ISO 8601 date to datetime.date object."""
-       return datetime.date.fromisoformat(val)
+       return datetime.date.fromisoformat(val.decode())
 
    def convert_datetime(val):
        """Convert ISO 8601 datetime to datetime.datetime object."""
-       return datetime.datetime.fromisoformat(val)
+       return datetime.datetime.fromisoformat(val.decode())
 
    def convert_timestamp(val):
        """Convert Unix epoch timestamp to datetime.datetime object."""
-       return datetime.datetime.fromtimestamp(val)
+       return datetime.datetime.fromtimestamp(int(val))
 
    sqlite3.register_converter("date", convert_date)
    sqlite3.register_converter("datetime", convert_datetime)
    sqlite3.register_converter("timestamp", convert_timestamp)
+
+.. testcode::
+   :hide:
+
+   dt = datetime.datetime(2019, 5, 18, 15, 17, 8, 123456)
+
+   assert adapt_date_iso(dt.date()) == "2019-05-18"
+   assert convert_date(b"2019-05-18") == dt.date()
+
+   assert adapt_datetime_iso(dt) == "2019-05-18T15:17:08.123456"
+   assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
+
+   # Using current time as fromtimestamp() returns local date/time.
+   # Droping microseconds as adapt_datetime_epoch truncates fractional second part.
+   now = datetime.datetime.now().replace(microsecond=0)
+   current_timestamp = int(now.timestamp())
+
+   assert adapt_datetime_epoch(now) == current_timestamp
+   assert convert_timestamp(str(current_timestamp).encode()) == now
 
 
 .. _sqlite3-connection-shortcuts:
@@ -2175,9 +2272,12 @@ the transaction is committed.
 If this commit fails,
 or if the body of the ``with`` statement raises an uncaught exception,
 the transaction is rolled back.
+If :attr:`~Connection.autocommit` is ``False``,
+a new transaction is implicitly opened after committing or rolling back.
 
 If there is no open transaction upon leaving the body of the ``with`` statement,
-the context manager is a no-op.
+or if :attr:`~Connection.autocommit` is ``True``,
+the context manager does nothing.
 
 .. note::
 
@@ -2257,24 +2357,174 @@ can be found in the `SQLite URI documentation`_.
 .. _SQLite URI documentation: https://www.sqlite.org/uri.html
 
 
+.. _sqlite3-howto-row-factory:
+
+How to create and use row factories
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, :mod:`!sqlite3` represents each row as a :class:`tuple`.
+If a :class:`!tuple` does not suit your needs,
+you can use the :class:`sqlite3.Row` class
+or a custom :attr:`~Cursor.row_factory`.
+
+While :attr:`!row_factory` exists as an attribute both on the
+:class:`Cursor` and the :class:`Connection`,
+it is recommended to set :class:`Connection.row_factory`,
+so all cursors created from the connection will use the same row factory.
+
+:class:`!Row` provides indexed and case-insensitive named access to columns,
+with minimal memory overhead and performance impact over a :class:`!tuple`.
+To use :class:`!Row` as a row factory,
+assign it to the :attr:`!row_factory` attribute:
+
+.. doctest::
+
+   >>> con = sqlite3.connect(":memory:")
+   >>> con.row_factory = sqlite3.Row
+
+Queries now return :class:`!Row` objects:
+
+.. doctest::
+
+   >>> res = con.execute("SELECT 'Earth' AS name, 6378 AS radius")
+   >>> row = res.fetchone()
+   >>> row.keys()
+   ['name', 'radius']
+   >>> row[0]         # Access by index.
+   'Earth'
+   >>> row["name"]    # Access by name.
+   'Earth'
+   >>> row["RADIUS"]  # Column names are case-insensitive.
+   6378
+
+You can create a custom :attr:`~Cursor.row_factory`
+that returns each row as a :class:`dict`, with column names mapped to values:
+
+.. testcode::
+
+   def dict_factory(cursor, row):
+       fields = [column[0] for column in cursor.description]
+       return {key: value for key, value in zip(fields, row)}
+
+Using it, queries now return a :class:`!dict` instead of a :class:`!tuple`:
+
+.. doctest::
+
+   >>> con = sqlite3.connect(":memory:")
+   >>> con.row_factory = dict_factory
+   >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
+   ...     print(row)
+   {'a': 1, 'b': 2}
+
+The following row factory returns a :term:`named tuple`:
+
+.. testcode::
+
+   from collections import namedtuple
+
+   def namedtuple_factory(cursor, row):
+       fields = [column[0] for column in cursor.description]
+       cls = namedtuple("Row", fields)
+       return cls._make(row)
+
+:func:`!namedtuple_factory` can be used as follows:
+
+.. doctest::
+
+   >>> con = sqlite3.connect(":memory:")
+   >>> con.row_factory = namedtuple_factory
+   >>> cur = con.execute("SELECT 1 AS a, 2 AS b")
+   >>> row = cur.fetchone()
+   >>> row
+   Row(a=1, b=2)
+   >>> row[0]  # Indexed access.
+   1
+   >>> row.b   # Attribute access.
+   2
+
+With some adjustments, the above recipe can be adapted to use a
+:class:`~dataclasses.dataclass`, or any other custom class,
+instead of a :class:`~collections.namedtuple`.
+
+
 .. _sqlite3-explanation:
 
 Explanation
 -----------
 
+.. _sqlite3-transaction-control:
 .. _sqlite3-controlling-transactions:
 
 Transaction control
 ^^^^^^^^^^^^^^^^^^^
 
-The :mod:`!sqlite3` module does not adhere to the transaction handling recommended
-by :pep:`249`.
+:mod:`!sqlite3` offers multiple methods of controlling whether,
+when and how database transactions are opened and closed.
+:ref:`sqlite3-transaction-control-autocommit` is recommended,
+while :ref:`sqlite3-transaction-control-isolation-level`
+retains the pre-Python 3.12 behaviour.
+
+.. _sqlite3-transaction-control-autocommit:
+
+Transaction control via the ``autocommit`` attribute
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+The recommended way of controlling transaction behaviour is through
+the :attr:`Connection.autocommit` attribute,
+which should preferably be set using the *autocommit* parameter
+of :func:`connect`.
+
+It is suggested to set *autocommit* to ``False``,
+which implies :pep:`249`-compliant transaction control.
+This means:
+
+* :mod:`!sqlite3` ensures that a transaction is always open,
+  so :func:`connect`, :meth:`Connection.commit`, and :meth:`Connection.rollback`
+  will implicitly open a new transaction
+  (immediately after closing the pending one, for the latter two).
+  :mod:`!sqlite3` uses ``BEGIN DEFERRED`` statements when opening transactions.
+* Transactions should be committed explicitly using :meth:`!commit`.
+* Transactions should be rolled back explicitly using :meth:`!rollback`.
+* An implicit rollback is performed if the database is
+  :meth:`~Connection.close`-ed with pending changes.
+
+Set *autocommit* to ``True`` to enable SQLite's `autocommit mode`_.
+In this mode, :meth:`Connection.commit` and :meth:`Connection.rollback`
+have no effect.
+Note that SQLite's autocommit mode is distinct from
+the :pep:`249`-compliant :attr:`Connection.autocommit` attribute;
+use :attr:`Connection.in_transaction` to query
+the low-level SQLite autocommit mode.
+
+Set *autocommit* to :data:`LEGACY_TRANSACTION_CONTROL`
+to leave transaction control behaviour to the
+:attr:`Connection.isolation_level` attribute.
+See :ref:`sqlite3-transaction-control-isolation-level` for more information.
+
+
+.. _sqlite3-transaction-control-isolation-level:
+
+Transaction control via the ``isolation_level`` attribute
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. note::
+
+   The recommended way of controlling transactions is via the
+   :attr:`~Connection.autocommit` attribute.
+   See :ref:`sqlite3-transaction-control-autocommit`.
+
+If :attr:`Connection.autocommit` is set to
+:data:`LEGACY_TRANSACTION_CONTROL` (the default),
+transaction behaviour is controlled using
+the :attr:`Connection.isolation_level` attribute.
+Otherwise, :attr:`!isolation_level` has no effect.
 
 If the connection attribute :attr:`~Connection.isolation_level`
 is not ``None``,
 new transactions are implicitly opened before
 :meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes
-``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements.
+``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements;
+for other statements, no implicit transaction handling is performed.
 Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
 to respectively commit and roll back pending transactions.
 You can choose the underlying `SQLite transaction behaviour`_ —
@@ -2297,6 +2547,10 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 .. versionchanged:: 3.6
    :mod:`!sqlite3` used to implicitly commit an open transaction before DDL
    statements.  This is no longer the case.
+
+.. versionchanged:: 3.12
+   The recommended way of controlling transactions is now via the
+   :attr:`~Connection.autocommit` attribute.
 
 .. _autocommit mode:
    https://www.sqlite.org/lang_transaction.html#implicit_versus_explicit_transactions

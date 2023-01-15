@@ -47,6 +47,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import asyncore
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -63,9 +64,6 @@ from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
 
 with warnings.catch_warnings():
     from . import smtpd
-
-asyncore = warnings_helper.import_deprecated('asyncore')
-
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes

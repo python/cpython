@@ -344,8 +344,6 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(len(returns), 1)
         self.check_lnotab(f)
 
-    @unittest.skip("Following gh-92228 the return has two predecessors "
-                   "and that prevents jump elimination.")
     def test_elim_jump_to_return(self):
         # JUMP_FORWARD to RETURN -->  RETURN
         def f(cond, true_value, false_value):
@@ -778,12 +776,83 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
         self.assertNotInBytecode(f, 'LOAD_FAST')
 
-    def test_setting_lineno_adds_check(self):
-        code = textwrap.dedent("""\
+    def test_load_fast_too_many_locals(self):
+        # When there get to be too many locals to analyze completely,
+        # later locals are all converted to LOAD_FAST_CHECK, except
+        # when a store or prior load occurred in the same basicblock.
+        def f():
+            a00 = a01 = a02 = a03 = a04 = a05 = a06 = a07 = a08 = a09 = 1
+            a10 = a11 = a12 = a13 = a14 = a15 = a16 = a17 = a18 = a19 = 1
+            a20 = a21 = a22 = a23 = a24 = a25 = a26 = a27 = a28 = a29 = 1
+            a30 = a31 = a32 = a33 = a34 = a35 = a36 = a37 = a38 = a39 = 1
+            a40 = a41 = a42 = a43 = a44 = a45 = a46 = a47 = a48 = a49 = 1
+            a50 = a51 = a52 = a53 = a54 = a55 = a56 = a57 = a58 = a59 = 1
+            a60 = a61 = a62 = a63 = a64 = a65 = a66 = a67 = a68 = a69 = 1
+            a70 = a71 = a72 = a73 = a74 = a75 = a76 = a77 = a78 = a79 = 1
+            del a72, a73
+            print(a73)
+            print(a70, a71, a72, a73)
+            while True:
+                print(a00, a01, a62, a63)
+                print(a64, a65, a78, a79)
+
+        for i in 0, 1, 62, 63:
+            # First 64 locals: analyze completely
+            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
+        for i in 64, 65, 78, 79:
+            # Locals >=64 not in the same basicblock
+            self.assertInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+        for i in 70, 71:
+            # Locals >=64 in the same basicblock
+            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
+        # del statements should invalidate within basicblocks.
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a72")
+        self.assertNotInBytecode(f, 'LOAD_FAST', "a72")
+        # previous checked loads within a basicblock enable unchecked loads
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a73")
+        self.assertInBytecode(f, 'LOAD_FAST', "a73")
+
+    def test_setting_lineno_no_undefined(self):
+        code = textwrap.dedent(f"""\
             def f():
-                x = 2
-                L = 3
-                L = 4
+                x = y = 2
+                if not x:
+                    return 4
+                for i in range(55):
+                    x + 6
+                L = 7
+                L = 8
+                L = 9
+                L = 10
+        """)
+        ns = {}
+        exec(code, ns)
+        f = ns['f']
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 9:
+                frame.f_lineno = 3
+                sys.settrace(None)
+                return None
+            return trace
+        sys.settrace(trace)
+        result = f()
+        self.assertIsNone(result)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
+
+    def test_setting_lineno_one_undefined(self):
+        code = textwrap.dedent(f"""\
+            def f():
+                x = y = 2
+                if not x:
+                    return 4
                 for i in range(55):
                     x + 6
                 del x
@@ -795,15 +864,56 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         exec(code, ns)
         f = ns['f']
         self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
         def trace(frame, event, arg):
             if event == 'line' and frame.f_lineno == 9:
-                frame.f_lineno = 2
+                frame.f_lineno = 3
                 sys.settrace(None)
                 return None
             return trace
-        sys.settrace(trace)
-        f()
-        self.assertNotInBytecode(f, "LOAD_FAST")
+        e = r"assigning None to 1 unbound local"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            result = f()
+        self.assertEqual(result, 4)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
+
+    def test_setting_lineno_two_undefined(self):
+        code = textwrap.dedent(f"""\
+            def f():
+                x = y = 2
+                if not x:
+                    return 4
+                for i in range(55):
+                    x + 6
+                del x, y
+                L = 8
+                L = 9
+                L = 10
+        """)
+        ns = {}
+        exec(code, ns)
+        f = ns['f']
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 9:
+                frame.f_lineno = 3
+                sys.settrace(None)
+                return None
+            return trace
+        e = r"assigning None to 2 unbound locals"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            result = f()
+        self.assertEqual(result, 4)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
 
     def make_function_with_no_checks(self):
         code = textwrap.dedent("""\
@@ -823,18 +933,22 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         return f
 
-    def test_deleting_local_adds_check(self):
+    def test_deleting_local_warns_and_assigns_none(self):
         f = self.make_function_with_no_checks()
+        co_code = f.__code__.co_code
         def trace(frame, event, arg):
             if event == 'line' and frame.f_lineno == 4:
                 del frame.f_locals["x"]
                 sys.settrace(None)
                 return None
             return trace
-        sys.settrace(trace)
-        f()
-        self.assertNotInBytecode(f, "LOAD_FAST")
-        self.assertInBytecode(f, "LOAD_FAST_CHECK")
+        e = r"assigning None to unbound local 'x'"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            f()
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
 
     def test_modifying_local_does_not_add_check(self):
         f = self.make_function_with_no_checks()
@@ -870,7 +984,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         if expected_consts is None:
             expected_consts = consts
         opt_insts, opt_consts = self.get_optimized(insts, consts)
-        self.compareInstructions(opt_insts, expected_insts)
+        self.assertInstructionsMatch(opt_insts, expected_insts)
         self.assertEqual(opt_consts, expected_consts)
 
     def test_conditional_jump_forward_non_const_condition(self):

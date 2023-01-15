@@ -765,6 +765,7 @@ Example of counting days to an event::
     >>> my_birthday = date(today.year, 6, 24)
     >>> if my_birthday < today:
     ...     my_birthday = my_birthday.replace(year=today.year + 1)
+    ...
     >>> my_birthday
     datetime.date(2008, 6, 24)
     >>> time_to_birthday = abs(my_birthday - today)
@@ -1769,7 +1770,7 @@ Other constructor:
    ISO 8601 format, with the following exceptions:
 
    1. Time zone offsets may have fractional seconds.
-   2. The leading `T`, normally required in cases where there may be ambiguity between
+   2. The leading ``T``, normally required in cases where there may be ambiguity between
       a date and a time, is not required.
    3. Fractional seconds may have any number of digits (anything beyond 6 will
       be truncated).
@@ -2265,7 +2266,7 @@ where historical changes have been made to civil time.
   two digits of ``offset.hours`` and ``offset.minutes`` respectively.
 
   .. versionchanged:: 3.6
-     Name generated from ``offset=timedelta(0)`` is now plain `'UTC'`, not
+     Name generated from ``offset=timedelta(0)`` is now plain ``'UTC'``, not
      ``'UTC+00:00'``.
 
 
@@ -2601,7 +2602,7 @@ Notes:
 
 (9)
    When used with the :meth:`strptime` method, the leading zero is optional
-   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%J``, ``%U``,
+   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
 .. rubric:: Footnotes

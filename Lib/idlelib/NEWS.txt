@@ -4,6 +4,11 @@ Released on 2022-10-03
 =========================
 
 
+gh-97527: Fix a bug in the previous bugfix that caused IDLE to not
+start when run with 3.10.8, 3.12.0a1, and at least Microsoft Python
+3.10.2288.0 installed without the Lib/test package.  3.11.0 was never
+affected.
+
 gh-65802: Document handling of extensions in Save As dialogs.
 
 gh-95191: Include prompts when saving Shell (interactive input/output).
