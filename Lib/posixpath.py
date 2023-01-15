@@ -155,15 +155,13 @@ def splitroot(p):
     if p[:1] != sep:
         # Relative path, e.g.: 'foo'
         return empty, empty, p
-    elif p[1:2] != sep:
-        # Absolute path, e.g.: '/foo'
-        return empty, p[:1], p[1:]
-    elif p[2:3] != sep:
-        # Implementation defined per POSIX standard, e.g.: '//foo'
-        return empty, p[:2], p[2:]
+    elif p[1:2] != sep or p[2:3] == sep:
+        # Absolute path, e.g.: '/foo', '///foo', '////foo', etc.
+        return empty, sep, p[1:]
     else:
-        # Absolute path with extraneous slashes, e.g.: '///foo', '////foo', etc.
-        return empty, p[:1], p[1:]
+        # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
+        # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
+        return empty, p[:2], p[2:]
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
