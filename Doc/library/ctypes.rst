@@ -1656,12 +1656,12 @@ They are instances of a private class:
    passed arguments.
 
 
-.. audit-event:: ctypes.seh_exception code foreign-functions
+.. audit-event:: ctypes.set_exception code foreign-functions
 
    On Windows, when a foreign function call raises a system exception (for
    example, due to an access violation), it will be captured and replaced with
    a suitable Python exception. Further, an auditing event
-   ``ctypes.seh_exception`` with argument ``code`` will be raised, allowing an
+   ``ctypes.set_exception`` with argument ``code`` will be raised, allowing an
    audit hook to replace the exception with its own.
 
 .. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
