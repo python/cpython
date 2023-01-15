@@ -552,8 +552,8 @@ except ImportError:
             pardir = '..'
         path = path.replace(altsep, sep)
         drive, root, path = splitroot(path)
-
-        comps = path.lstrip(sep).split(sep)
+        prefix = drive + root
+        comps = path.split(sep)
         i = 0
         while i < len(comps):
             if not comps[i] or comps[i] == curdir:
@@ -569,9 +569,9 @@ except ImportError:
             else:
                 i += 1
         # If the path is now empty, substitute '.'
-        if not drive and not root and not comps:
+        if not prefix and not comps:
             comps.append(curdir)
-        return drive + root + sep.join(comps)
+        return prefix + sep.join(comps)
 
 else:
     def normpath(path):
