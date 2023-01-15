@@ -1553,6 +1553,11 @@ class LongTest(unittest.TestCase):
             b = i.to_bytes(2, signed=True)
             self.assertIs(int.from_bytes(b, signed=True), i)
 
+    def test_is_integer(self):
+        self.assertTrue((-1).is_integer())
+        self.assertTrue((0).is_integer())
+        self.assertTrue((1).is_integer())
+
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that
         # ob_digit[0] was being incorrectly accessed for instances of a

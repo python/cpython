@@ -75,7 +75,10 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         called_buf = bytearray(self.buffer_size)
         called_buf[:len(buf)] = buf
         self.loop._proactor.recv_into.assert_called_with(self.sock, called_buf)
-        self.protocol.data_received.assert_called_with(bytearray(buf))
+        self.protocol.data_received.assert_called_with(buf)
+        # assert_called_with maps bytearray and bytes to the same thing so check manually
+        # regression test for https://github.com/python/cpython/issues/99941
+        self.assertIsInstance(self.protocol.data_received.call_args.args[0], bytes)
 
     @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_loop_reading_no_data(self):

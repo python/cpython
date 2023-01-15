@@ -501,6 +501,9 @@ PyDoc_STRVAR(os_chmod__doc__,
 "    If this functionality is unavailable, using it raises an exception.\n"
 "  mode\n"
 "    Operating-system mode bitfield.\n"
+"    Be careful when using number literals for *mode*. The conventional UNIX notation for\n"
+"    numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in\n"
+"    Python.\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
 "    and path should be relative; path will then be relative to that\n"
@@ -601,6 +604,14 @@ PyDoc_STRVAR(os_fchmod__doc__,
 "--\n"
 "\n"
 "Change the access permissions of the file given by file descriptor fd.\n"
+"\n"
+"  fd\n"
+"    The file descriptor of the file to be modified.\n"
+"  mode\n"
+"    Operating-system mode bitfield.\n"
+"    Be careful when using number literals for *mode*. The conventional UNIX notation for\n"
+"    numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in\n"
+"    Python.\n"
 "\n"
 "Equivalent to os.chmod(fd, mode).");
 
@@ -3110,8 +3121,8 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[5]) {
-        resetids = _PyLong_AsInt(args[5]);
-        if (resetids == -1 && PyErr_Occurred()) {
+        resetids = PyObject_IsTrue(args[5]);
+        if (resetids < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -3119,8 +3130,8 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[6]) {
-        setsid = _PyLong_AsInt(args[6]);
-        if (setsid == -1 && PyErr_Occurred()) {
+        setsid = PyObject_IsTrue(args[6]);
+        if (setsid < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -3260,8 +3271,8 @@ os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[5]) {
-        resetids = _PyLong_AsInt(args[5]);
-        if (resetids == -1 && PyErr_Occurred()) {
+        resetids = PyObject_IsTrue(args[5]);
+        if (resetids < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -3269,8 +3280,8 @@ os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[6]) {
-        setsid = _PyLong_AsInt(args[6]);
-        if (setsid == -1 && PyErr_Occurred()) {
+        setsid = PyObject_IsTrue(args[6]);
+        if (setsid < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -10225,8 +10236,8 @@ os_set_blocking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    blocking = _PyLong_AsInt(args[1]);
-    if (blocking == -1 && PyErr_Occurred()) {
+    blocking = PyObject_IsTrue(args[1]);
+    if (blocking < 0) {
         goto exit;
     }
     return_value = os_set_blocking_impl(module, fd, blocking);
@@ -11549,4 +11560,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=4192d8e09e216300 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41eab6c3523792a9 input=a9049054013a1b77]*/
