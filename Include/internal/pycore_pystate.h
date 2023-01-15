@@ -162,6 +162,12 @@ PyAPI_FUNC(int) _PyState_AddModule(
 
 PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
+#define HEAD_LOCK(runtime) \
+    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
+#define HEAD_UNLOCK(runtime) \
+    PyThread_release_lock((runtime)->interpreters.mutex)
+
+
 #ifdef __cplusplus
 }
 #endif
