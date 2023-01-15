@@ -793,7 +793,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     PyObject *env_list, *preexec_fn;
     PyObject *process_args, *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
-    PyObject *groups_list;
+    PyObject *extra_groups_packed;
     PyObject *uid_object, *gid_object;
     int p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite;
     int errpipe_read, errpipe_write, close_fds, restore_signals;
@@ -819,7 +819,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
             &restore_signals, &call_setsid, &pgid_to_set,
-            &gid_object, &groups_list, &uid_object, &child_umask,
+            &gid_object, &extra_groups_packed, &uid_object, &child_umask,
             &preexec_fn, &allow_vfork))
         return NULL;
 
@@ -895,14 +895,14 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
         cwd = NULL;
     }
 
-    if (groups_list != Py_None) {
+    if (extra_groups_packed != Py_None) {
 #ifdef HAVE_SETGROUPS
-        if (!PyList_Check(groups_list)) {
+        if (!PyList_Check(extra_groups_packed)) {
             PyErr_SetString(PyExc_TypeError,
                     "setgroups argument must be a list");
             goto cleanup;
         }
-        extra_group_size = PySequence_Size(groups_list);
+        extra_group_size = PySequence_Size(extra_groups_packed);
 
         if (extra_group_size < 0)
             goto cleanup;
@@ -924,7 +924,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 
         for (Py_ssize_t i = 0; i < extra_group_size; i++) {
             PyObject *elem;
-            elem = PySequence_GetItem(groups_list, i);
+            elem = PySequence_GetItem(extra_groups_packed, i);
             if (!elem)
                 goto cleanup;
             if (!PyLong_Check(elem)) {
@@ -1079,7 +1079,7 @@ PyDoc_STRVAR(subprocess_fork_exec_doc,
           p2cread, p2cwrite, c2pread, c2pwrite,\n\
           errread, errwrite, errpipe_read, errpipe_write,\n\
           restore_signals, call_setsid, pgid_to_set,\n\
-          gid, groups_list, uid,\n\
+          gid, extra_groups_packed, uid,\n\
           preexec_fn)\n\
 \n\
 Forks a child process, closes parent file descriptors as appropriate in the\n\
