@@ -1939,8 +1939,13 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
+  # -fno-reorder-blocks-and-partition is required for bolt to work.
+  # Possibly GCC only.
+  AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  ])
+
   # These flags are required for bolt to work:
-  CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
   # These flags are required to get good performance from bolt:
