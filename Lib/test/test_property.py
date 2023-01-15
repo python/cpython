@@ -214,6 +214,23 @@ class PropertyTests(unittest.TestCase):
             ):
                 p.__set_name__(*([0] * i))
 
+    def test_property_setname_on_property_subclass(self):
+        # https://github.com/python/cpython/issues/100942
+        # Copy was setting the name field without first
+        # verifying that the copy was an actual property
+        # instance.  As a result, the code below was
+        # causing a segfault.
+
+        class pro(property):
+            def __new__(typ, *args, **kwargs):
+                return "abcdef"
+
+        class A:
+            pass
+
+        p = property.__new__(pro)
+        p.__set_name__(A, 1)
+        np = p.getter(lambda self: 1)
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
 class PropertySub(property):
