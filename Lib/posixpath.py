@@ -35,7 +35,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath"]
+           "commonpath", "isjunction"]
 
 
 def _get_sep(path):
@@ -169,6 +169,16 @@ def islink(path):
         return False
     return stat.S_ISLNK(st.st_mode)
 
+
+# Is a path a junction?
+
+def isjunction(path):
+    """Test whether a path is a junction
+    Junctions are not a part of posix semantics"""
+    os.fspath(path)
+    return False
+
+
 # Being true for dangling symbolic links is also useful.
 
 def lexists(path):
@@ -195,6 +205,7 @@ def ismount(path):
         if stat.S_ISLNK(s1.st_mode):
             return False
 
+    path = os.fspath(path)
     if isinstance(path, bytes):
         parent = join(path, b'..')
     else:

@@ -1,4 +1,5 @@
 import os
+import shutil
 import signal
 import sys
 import unittest
@@ -174,6 +175,33 @@ class SubprocessMixin:
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(*args)
         )
+        proc.kill()
+        returncode = self.loop.run_until_complete(proc.wait())
+        if sys.platform == 'win32':
+            self.assertIsInstance(returncode, int)
+            # expect 1 but sometimes get 0
+        else:
+            self.assertEqual(-signal.SIGKILL, returncode)
+
+    def test_kill_issue43884(self):
+        if sys.platform == 'win32':
+            blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(2)"'
+        else:
+            blocking_shell_command = 'sleep 1; sleep 1'
+        creationflags = 0
+        if sys.platform == 'win32':
+            from subprocess import CREATE_NEW_PROCESS_GROUP
+            # On windows create a new process group so that killing process
+            # kills the process and all its children.
+            creationflags = CREATE_NEW_PROCESS_GROUP
+        proc = self.loop.run_until_complete(
+            asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
+            creationflags=creationflags)
+        )
+        self.loop.run_until_complete(asyncio.sleep(1))
+        if sys.platform == 'win32':
+            proc.send_signal(signal.CTRL_BREAK_EVENT)
+        # On windows it is an alias of terminate which sets the return code
         proc.kill()
         returncode = self.loop.run_until_complete(proc.wait())
         if sys.platform == 'win32':
@@ -402,6 +430,26 @@ class SubprocessMixin:
         self.assertEqual(output, None)
         self.assertEqual(exitcode, 0)
 
+    @unittest.skipIf(sys.platform != 'linux', "Don't have /dev/stdin")
+    def test_devstdin_input(self):
+
+        async def devstdin_input(message):
+            code = 'file = open("/dev/stdin"); data = file.read(); print(len(data))'
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                close_fds=False,
+            )
+            stdout, stderr = await proc.communicate(message)
+            exitcode = await proc.wait()
+            return (stdout, exitcode)
+
+        output, exitcode = self.loop.run_until_complete(devstdin_input(b'abc'))
+        self.assertEqual(output.rstrip(), b'3')
+        self.assertEqual(exitcode, 0)
+
     def test_cancel_process_wait(self):
         # Issue #23140: cancel Process.wait()
 
@@ -537,7 +585,9 @@ class SubprocessMixin:
         # manually to avoid a warning when the watcher is detached.
         if (sys.platform != 'win32' and
                 isinstance(self, SubprocessFastWatcherTests)):
-            asyncio.get_child_watcher()._callbacks.clear()
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                asyncio.get_child_watcher()._callbacks.clear()
 
     async def _test_popen_error(self, stdin):
         if sys.platform == 'win32':
@@ -636,6 +686,107 @@ class SubprocessMixin:
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
 
+    async def check_stdout_output(self, coro, output):
+        proc = await coro
+        stdout, _ = await proc.communicate()
+        self.assertEqual(stdout, output)
+        self.assertEqual(proc.returncode, 0)
+        task = asyncio.create_task(proc.wait())
+        await asyncio.sleep(0)
+        self.assertEqual(task.result(), proc.returncode)
+
+    def test_create_subprocess_env_shell(self) -> None:
+        async def main() -> None:
+            cmd = f'''{sys.executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
+            env = os.environ.copy()
+            env["FOO"] = "bar"
+            proc = await asyncio.create_subprocess_shell(
+                cmd, env=env, stdout=subprocess.PIPE
+            )
+            return proc
+
+        self.loop.run_until_complete(self.check_stdout_output(main(), b'bar'))
+
+    def test_create_subprocess_env_exec(self) -> None:
+        async def main() -> None:
+            cmd = [sys.executable, "-c",
+                   "import os, sys; sys.stdout.write(os.getenv('FOO'))"]
+            env = os.environ.copy()
+            env["FOO"] = "baz"
+            proc = await asyncio.create_subprocess_exec(
+                *cmd, env=env, stdout=subprocess.PIPE
+            )
+            return proc
+
+        self.loop.run_until_complete(self.check_stdout_output(main(), b'baz'))
+
+
+    def test_subprocess_concurrent_wait(self) -> None:
+        async def main() -> None:
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_CAT,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            stdout, _ = await proc.communicate(b'some data')
+            self.assertEqual(stdout, b"some data")
+            self.assertEqual(proc.returncode, 0)
+            self.assertEqual(await asyncio.gather(*[proc.wait() for _ in range(10)]),
+                             [proc.returncode] * 10)
+
+        self.loop.run_until_complete(main())
+
+    def test_subprocess_consistent_callbacks(self):
+        events = []
+        class MyProtocol(asyncio.SubprocessProtocol):
+            def __init__(self, exit_future: asyncio.Future) -> None:
+                self.exit_future = exit_future
+
+            def pipe_data_received(self, fd, data) -> None:
+                events.append(('pipe_data_received', fd, data))
+
+            def pipe_connection_lost(self, fd, exc) -> None:
+                events.append('pipe_connection_lost')
+
+            def process_exited(self) -> None:
+                events.append('process_exited')
+                self.exit_future.set_result(True)
+
+        async def main() -> None:
+            loop = asyncio.get_running_loop()
+            exit_future = asyncio.Future()
+            code = 'import sys; sys.stdout.write("stdout"); sys.stderr.write("stderr")'
+            transport, _ = await loop.subprocess_exec(lambda: MyProtocol(exit_future),
+                                                      sys.executable, '-c', code, stdin=None)
+            await exit_future
+            transport.close()
+            self.assertEqual(events, [
+                ('pipe_data_received', 1, b'stdout'),
+                ('pipe_data_received', 2, b'stderr'),
+                'pipe_connection_lost',
+                'pipe_connection_lost',
+                'process_exited',
+            ])
+
+        self.loop.run_until_complete(main())
+
+    def test_subprocess_communicate_stdout(self):
+        # See https://github.com/python/cpython/issues/100133
+        async def get_command_stdout(cmd, *args):
+            proc = await asyncio.create_subprocess_exec(
+                cmd, *args, stdout=asyncio.subprocess.PIPE,
+            )
+            stdout, _ = await proc.communicate()
+            return stdout.decode().strip()
+
+        async def main():
+            outputs = [f'foo{i}' for i in range(10)]
+            res = await asyncio.gather(*[get_command_stdout(sys.executable, '-c',
+                                        f'print({out!r})') for out in outputs])
+            self.assertEqual(res, outputs)
+
+        self.loop.run_until_complete(main())
+
 
 if sys.platform != 'win32':
     # Unix
@@ -649,65 +800,64 @@ if sys.platform != 'win32':
             self.loop = policy.new_event_loop()
             self.set_event_loop(self.loop)
 
-            watcher = self.Watcher()
+            watcher = self._get_watcher()
             watcher.attach_loop(self.loop)
-            policy.set_child_watcher(watcher)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                policy.set_child_watcher(watcher)
 
         def tearDown(self):
             super().tearDown()
             policy = asyncio.get_event_loop_policy()
-            watcher = policy.get_child_watcher()
-            policy.set_child_watcher(None)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                watcher = policy.get_child_watcher()
+                policy.set_child_watcher(None)
             watcher.attach_loop(None)
             watcher.close()
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
 
-        Watcher = unix_events.ThreadedChildWatcher
-
-    @unittest.skip("bpo-38323: MultiLoopChildWatcher has a race condition \
-                    and these tests can hang the test suite")
-    class SubprocessMultiLoopWatcherTests(SubprocessWatcherMixin,
-                                          test_utils.TestCase):
-
-        Watcher = unix_events.MultiLoopChildWatcher
+        def _get_watcher(self):
+            return unix_events.ThreadedChildWatcher()
 
     class SubprocessSafeWatcherTests(SubprocessWatcherMixin,
                                      test_utils.TestCase):
 
-        Watcher = unix_events.SafeChildWatcher
+        def _get_watcher(self):
+            with self.assertWarns(DeprecationWarning):
+                return unix_events.SafeChildWatcher()
+
+    class MultiLoopChildWatcherTests(test_utils.TestCase):
+
+        def test_warns(self):
+            with self.assertWarns(DeprecationWarning):
+                unix_events.MultiLoopChildWatcher()
 
     class SubprocessFastWatcherTests(SubprocessWatcherMixin,
                                      test_utils.TestCase):
 
-        Watcher = unix_events.FastChildWatcher
-
-    def has_pidfd_support():
-        if not hasattr(os, 'pidfd_open'):
-            return False
-        try:
-            os.close(os.pidfd_open(os.getpid()))
-        except OSError:
-            return False
-        return True
+        def _get_watcher(self):
+            with self.assertWarns(DeprecationWarning):
+                return unix_events.FastChildWatcher()
 
     @unittest.skipUnless(
-        has_pidfd_support(),
+        unix_events.can_use_pidfd(),
         "operating system does not support pidfds",
     )
     class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
                                       test_utils.TestCase):
-        Watcher = unix_events.PidfdChildWatcher
+
+        def _get_watcher(self):
+            return unix_events.PidfdChildWatcher()
 
 
     class GenericWatcherTests(test_utils.TestCase):
 
         def test_create_subprocess_fails_with_inactive_watcher(self):
-            watcher = mock.create_autospec(
-                asyncio.AbstractChildWatcher,
-                **{"__enter__.return_value.is_active.return_value": False}
-            )
+            watcher = mock.create_autospec(asyncio.AbstractChildWatcher)
+            watcher.is_active.return_value = False
 
             async def execute():
                 asyncio.set_child_watcher(watcher)
@@ -719,13 +869,45 @@ if sys.platform != 'win32':
                 watcher.add_child_handler.assert_not_called()
 
             with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
-                self.assertIsNone(runner.run(execute()))
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    self.assertIsNone(runner.run(execute()))
             self.assertListEqual(watcher.mock_calls, [
                 mock.call.__enter__(),
-                mock.call.__enter__().is_active(),
+                mock.call.is_active(),
                 mock.call.__exit__(RuntimeError, mock.ANY, mock.ANY),
-            ])
+            ], watcher.mock_calls)
 
+
+        @unittest.skipUnless(
+            unix_events.can_use_pidfd(),
+            "operating system does not support pidfds",
+        )
+        def test_create_subprocess_with_pidfd(self):
+            async def in_thread():
+                proc = await asyncio.create_subprocess_exec(
+                    *PROGRAM_CAT,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                )
+                stdout, stderr = await proc.communicate(b"some data")
+                return proc.returncode, stdout
+
+            async def main():
+                # asyncio.Runner did not call asyncio.set_event_loop()
+                with self.assertRaises(RuntimeError):
+                    asyncio.get_event_loop_policy().get_event_loop()
+                return await asyncio.to_thread(asyncio.run, in_thread())
+            with self.assertWarns(DeprecationWarning):
+                asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
+            try:
+                with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
+                    returncode, stdout = runner.run(main())
+                self.assertEqual(returncode, 0)
+                self.assertEqual(stdout, b'some data')
+            finally:
+                with self.assertWarns(DeprecationWarning):
+                    asyncio.set_child_watcher(None)
 else:
     # Windows
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):

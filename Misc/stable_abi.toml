@@ -2,7 +2,7 @@
 # Please append new items at the end.
 
 # The syntax of this file is not fixed.
-# It is designed to be read only by Tools/stable_abi.py, which can change
+# It is designed to be read only by Tools/build/stable_abi.py, which can change
 # without notice.
 
 # For the history of the stable ABI prior to this file,
@@ -13,13 +13,8 @@
 # The current format is TOML.
 
 # There are these kinds of top-level "items":
-# - struct: A C struct. Currently this file does not distinguish between:
-#   - opaque structs, which the Limited API only handles via pointers
-#     (so these can change at any time)
-#   - structs where only certain members are part of the stable ABI (e.g.
-#     PyObject)
-#   - structs which must not be changed at all (e.g. PyType_Slot, which is
-#     fully defined and used in arrays)
+# - struct: A C struct. See `struct_abi_kind` for how much of the struct is
+#   exposed.
 # - function: A function that must be kept available (and exported, i.e. not
 #   converted to a macro).
 # - const: A simple value, defined with `#define`.
@@ -42,6 +37,18 @@
 #     of the stable ABI.
 #   - a combination of the above (functions that were called by macros that
 #     were public in the past)
+# - struct_abi_kind: for `struct`, defines how much of the struct is exposed:
+#   - 'full-abi': All of the struct is part of the ABI, including the size
+#     (users may define arrays of these structs).
+#     Typically used for initalization, rather than at runtime.
+#   - 'opaque': No members are part of the ABI, nor is the size. The Limited
+#     API only handles these via pointers. The C definition should be
+#     incomplete (opaque).
+#   - 'members': Only specific members are part of the stable ABI.
+#     The struct's size may change, so it can't be used in arrays.
+#     Do not add new structs of this kind without an extremely good reason.
+# - members: For `struct` with struct_abi_kind = 'members', a list of the
+#   exposed members.
 # - doc: for `feature_macro`, the blurb added in documentation
 # - windows: for `feature_macro`, this macro is defined on Windows.
 #   (This info is used to generate the DLL manifest and needs to be available
@@ -87,7 +94,7 @@
     added = '3.2'
     struct_abi_kind = 'full-abi'
 [struct.PyMemberDef]
-    added = '3.2'
+    added = '3.2'  # Before 3.12, PyMemberDef required #include "structmember.h"
     struct_abi_kind = 'full-abi'
 [struct.PyGetSetDef]
     added = '3.2'
@@ -1770,11 +1777,9 @@
     added = '3.2'
     abi_only = true
 [function.PyMember_GetOne]
-    added = '3.2'
-    abi_only = true
+    added = '3.2'  # Before 3.12, available in "structmember.h"
 [function.PyMember_SetOne]
-    added = '3.2'
-    abi_only = true
+    added = '3.2'  # Before 3.12, available in "structmember.h"
 
 # TLS api is deprecated; superseded by TSS API
 
@@ -2266,6 +2271,50 @@
 [function.PyMemoryView_FromBuffer]
     added = '3.11'
 
+# Constants for Py_buffer API added to this list in Python 3.11.1 (https://github.com/python/cpython/issues/98680)
+# (they were available with 3.11.0)
+[const.PyBUF_MAX_NDIM]
+    added = '3.11'
+[const.PyBUF_SIMPLE]
+    added = '3.11'
+[const.PyBUF_WRITABLE]
+    added = '3.11'
+[const.PyBUF_FORMAT]
+    added = '3.11'
+[const.PyBUF_ND]
+    added = '3.11'
+[const.PyBUF_STRIDES]
+    added = '3.11'
+[const.PyBUF_C_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_F_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_ANY_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_INDIRECT]
+    added = '3.11'
+[const.PyBUF_CONTIG]
+    added = '3.11'
+[const.PyBUF_CONTIG_RO]
+    added = '3.11'
+[const.PyBUF_STRIDED]
+    added = '3.11'
+[const.PyBUF_STRIDED_RO]
+    added = '3.11'
+[const.PyBUF_RECORDS]
+    added = '3.11'
+[const.PyBUF_RECORDS_RO]
+    added = '3.11'
+[const.PyBUF_FULL]
+    added = '3.11'
+[const.PyBUF_FULL_RO]
+    added = '3.11'
+[const.PyBUF_READ]
+    added = '3.11'
+[const.PyBUF_WRITE]
+    added = '3.11'
+
+
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
 
@@ -2286,3 +2335,54 @@
     added = '3.12'
 [typedef.vectorcallfunc]
     added = '3.12'
+[function.PyObject_Vectorcall]
+    added = '3.12'
+[function.PyObject_VectorcallMethod]
+    added = '3.12'
+[macro.PY_VECTORCALL_ARGUMENTS_OFFSET]
+    added = '3.12'
+[typedef.getbufferproc]
+    added = '3.12'
+[typedef.releasebufferproc]
+    added = '3.12'
+
+[const.Py_T_BYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_SHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_INT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_LONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_LONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_UBYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_UINT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_USHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_ULONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_ULONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_PYSSIZET]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_FLOAT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_DOUBLE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_BOOL]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_STRING]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_STRING_INPLACE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_CHAR]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_OBJECT_EX]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_READONLY]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_AUDIT_READ]
+    added = '3.12'  # Before 3.12, available in "structmember.h"

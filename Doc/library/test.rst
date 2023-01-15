@@ -1011,6 +1011,16 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.10
 
 
+.. function:: adjust_int_max_str_digits(max_digits)
+
+   This function returns a context manager that will change the global
+   :func:`sys.set_int_max_str_digits` setting for the duration of the
+   context to allow execution of test code that needs a different limit
+   on the number of digits when converting between an integer and string.
+
+   .. versionadded:: 3.11
+
+
 The :mod:`test.support` module defines the following classes:
 
 
@@ -1118,7 +1128,7 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
 
 .. function:: bind_unix_socket(sock, addr)
 
-   Bind a unix socket, raising :exc:`unittest.SkipTest` if
+   Bind a Unix socket, raising :exc:`unittest.SkipTest` if
    :exc:`PermissionError` is raised.
 
 

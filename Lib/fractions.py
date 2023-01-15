@@ -4,6 +4,7 @@
 """Fraction, infinite-precision, rational numbers."""
 
 from decimal import Decimal
+import functools
 import math
 import numbers
 import operator
@@ -20,13 +21,46 @@ _PyHASH_MODULUS = sys.hash_info.modulus
 # _PyHASH_MODULUS.
 _PyHASH_INF = sys.hash_info.inf
 
+@functools.lru_cache(maxsize = 1 << 14)
+def _hash_algorithm(numerator, denominator):
+
+    # To make sure that the hash of a Fraction agrees with the hash
+    # of a numerically equal integer, float or Decimal instance, we
+    # follow the rules for numeric hashes outlined in the
+    # documentation.  (See library docs, 'Built-in Types').
+
+    try:
+        dinv = pow(denominator, -1, _PyHASH_MODULUS)
+    except ValueError:
+        # ValueError means there is no modular inverse.
+        hash_ = _PyHASH_INF
+    else:
+        # The general algorithm now specifies that the absolute value of
+        # the hash is
+        #    (|N| * dinv) % P
+        # where N is self._numerator and P is _PyHASH_MODULUS.  That's
+        # optimized here in two ways:  first, for a non-negative int i,
+        # hash(i) == i % P, but the int hash implementation doesn't need
+        # to divide, and is faster than doing % P explicitly.  So we do
+        #    hash(|N| * dinv)
+        # instead.  Second, N is unbounded, so its product with dinv may
+        # be arbitrarily expensive to compute.  The final answer is the
+        # same if we use the bounded |N| % P instead, which can again
+        # be done with an int hash() call.  If 0 <= i < P, hash(i) == i,
+        # so this nested hash() call wastes a bit of time making a
+        # redundant copy when |N| < P, but can save an arbitrarily large
+        # amount of computation for large |N|.
+        hash_ = hash(hash(abs(numerator)) * dinv)
+    result = hash_ if numerator >= 0 else -hash_
+    return -2 if result == -1 else result
+
 _RATIONAL_FORMAT = re.compile(r"""
     \A\s*                                 # optional whitespace at the start,
     (?P<sign>[-+]?)                       # an optional sign, then
     (?=\d|\.\d)                           # lookahead for digit or .digit
     (?P<num>\d*|\d+(_\d+)*)               # numerator (possibly empty)
     (?:                                   # followed by
-       (?:/(?P<denom>\d+(_\d+)*))?        # an optional denominator
+       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?  # an optional denominator
     |                                     # or
        (?:\.(?P<decimal>d*|\d+(_\d+)*))?  # an optional fractional part
        (?:E(?P<exp>[-+]?\d+(_\d+)*))?     # and optional exponent
@@ -190,6 +224,10 @@ class Fraction(numbers.Rational):
                 "%s.from_decimal() only takes Decimals, not %r (%s)" %
                 (cls.__name__, dec, type(dec).__name__))
         return cls(*dec.as_integer_ratio())
+
+    def is_integer(self):
+        """Return True if the Fraction is an integer."""
+        return self._denominator == 1
 
     def as_integer_ratio(self):
         """Return the integer ratio as a tuple.
@@ -357,8 +395,10 @@ class Fraction(numbers.Rational):
 
         """
         def forward(a, b):
-            if isinstance(b, (int, Fraction)):
+            if isinstance(b, Fraction):
                 return monomorphic_operator(a, b)
+            elif isinstance(b, int):
+                return monomorphic_operator(a, Fraction(b))
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
             elif isinstance(b, complex):
@@ -371,7 +411,7 @@ class Fraction(numbers.Rational):
         def reverse(b, a):
             if isinstance(a, numbers.Rational):
                 # Includes ints.
-                return monomorphic_operator(a, b)
+                return monomorphic_operator(Fraction(a), b)
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
             elif isinstance(a, numbers.Complex):
@@ -453,8 +493,8 @@ class Fraction(numbers.Rational):
 
     def _add(a, b):
         """a + b"""
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g = math.gcd(da, db)
         if g == 1:
             return Fraction(na * db + da * nb, da * db, _normalize=False)
@@ -469,8 +509,8 @@ class Fraction(numbers.Rational):
 
     def _sub(a, b):
         """a - b"""
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g = math.gcd(da, db)
         if g == 1:
             return Fraction(na * db - da * nb, da * db, _normalize=False)
@@ -485,8 +525,8 @@ class Fraction(numbers.Rational):
 
     def _mul(a, b):
         """a * b"""
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g1 = math.gcd(na, db)
         if g1 > 1:
             na //= g1
@@ -502,8 +542,8 @@ class Fraction(numbers.Rational):
     def _div(a, b):
         """a / b"""
         # Same as _mul(), with inversed b.
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g1 = math.gcd(na, nb)
         if g1 > 1:
             na //= g1
@@ -612,12 +652,12 @@ class Fraction(numbers.Rational):
 
     def __floor__(a):
         """math.floor(a)"""
-        return a.numerator // a.denominator
+        return a._numerator // a._denominator
 
     def __ceil__(a):
         """math.ceil(a)"""
         # The negations cleverly convince floordiv to return the ceiling.
-        return -(-a.numerator // a.denominator)
+        return -(-a._numerator // a._denominator)
 
     def __round__(self, ndigits=None):
         """round(self, ndigits)
@@ -625,10 +665,11 @@ class Fraction(numbers.Rational):
         Rounds half toward even.
         """
         if ndigits is None:
-            floor, remainder = divmod(self.numerator, self.denominator)
-            if remainder * 2 < self.denominator:
+            d = self._denominator
+            floor, remainder = divmod(self._numerator, d)
+            if remainder * 2 < d:
                 return floor
-            elif remainder * 2 > self.denominator:
+            elif remainder * 2 > d:
                 return floor + 1
             # Deal with the half case:
             elif floor % 2 == 0:
@@ -646,36 +687,7 @@ class Fraction(numbers.Rational):
 
     def __hash__(self):
         """hash(self)"""
-
-        # To make sure that the hash of a Fraction agrees with the hash
-        # of a numerically equal integer, float or Decimal instance, we
-        # follow the rules for numeric hashes outlined in the
-        # documentation.  (See library docs, 'Built-in Types').
-
-        try:
-            dinv = pow(self._denominator, -1, _PyHASH_MODULUS)
-        except ValueError:
-            # ValueError means there is no modular inverse.
-            hash_ = _PyHASH_INF
-        else:
-            # The general algorithm now specifies that the absolute value of
-            # the hash is
-            #    (|N| * dinv) % P
-            # where N is self._numerator and P is _PyHASH_MODULUS.  That's
-            # optimized here in two ways:  first, for a non-negative int i,
-            # hash(i) == i % P, but the int hash implementation doesn't need
-            # to divide, and is faster than doing % P explicitly.  So we do
-            #    hash(|N| * dinv)
-            # instead.  Second, N is unbounded, so its product with dinv may
-            # be arbitrarily expensive to compute.  The final answer is the
-            # same if we use the bounded |N| % P instead, which can again
-            # be done with an int hash() call.  If 0 <= i < P, hash(i) == i,
-            # so this nested hash() call wastes a bit of time making a
-            # redundant copy when |N| < P, but can save an arbitrarily large
-            # amount of computation for large |N|.
-            hash_ = hash(hash(abs(self._numerator)) * dinv)
-        result = hash_ if self._numerator >= 0 else -hash_
-        return -2 if result == -1 else result
+        return _hash_algorithm(self._numerator, self._denominator)
 
     def __eq__(a, b):
         """a == b"""

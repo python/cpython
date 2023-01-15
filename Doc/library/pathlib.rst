@@ -118,16 +118,16 @@ we also call *flavours*:
       >>> PurePath()
       PurePosixPath('.')
 
-   When several absolute paths are given, the last is taken as an anchor
-   (mimicking :func:`os.path.join`'s behaviour)::
+   If a segment is an absolute path, all previous segments are ignored
+   (like :func:`os.path.join`)::
 
       >>> PurePath('/etc', '/usr', 'lib64')
       PurePosixPath('/usr/lib64')
       >>> PureWindowsPath('c:/Windows', 'd:bar')
       PureWindowsPath('d:bar')
 
-   However, in a Windows path, changing the local root doesn't discard the
-   previous drive setting::
+   On Windows, the drive is not reset when a rooted relative path
+   segment (e.g., ``r'\foo'``) is encountered::
 
       >>> PureWindowsPath('c:/Windows', '/Program Files')
       PureWindowsPath('c:/Program Files')
@@ -212,7 +212,10 @@ Paths of a different flavour compare unequal and cannot be ordered::
 Operators
 ^^^^^^^^^
 
-The slash operator helps create child paths, similarly to :func:`os.path.join`::
+The slash operator helps create child paths, like :func:`os.path.join`.
+If the argument is an absolute path, the previous path is ignored.
+On Windows, the drive is not reset when the argument is a rooted
+relative path (e.g., ``r'\foo'``)::
 
    >>> p = PurePath('/etc')
    >>> p
@@ -222,6 +225,10 @@ The slash operator helps create child paths, similarly to :func:`os.path.join`::
    >>> q = PurePath('bin')
    >>> '/usr' / q
    PurePosixPath('/usr/bin')
+   >>> p / '/an_absolute_path'
+   PurePosixPath('/an_absolute_path')
+   >>> PureWindowsPath('c:/Windows', '/Program Files')
+   PureWindowsPath('c:/Program Files')
 
 A path object can be used anywhere an object implementing :class:`os.PathLike`
 is accepted::
@@ -391,7 +398,7 @@ Pure paths provide the following methods and properties:
 
       If you want to walk an arbitrary filesystem path upwards, it is
       recommended to first call :meth:`Path.resolve` so as to resolve
-      symlinks and eliminate `".."` components.
+      symlinks and eliminate ``".."`` components.
 
 
 .. data:: PurePath.name
@@ -490,7 +497,7 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.is_relative_to(*other)
+.. method:: PurePath.is_relative_to(other)
 
    Return whether or not this path is relative to the *other* path.
 
@@ -502,6 +509,10 @@ Pure paths provide the following methods and properties:
 
    .. versionadded:: 3.9
 
+   .. deprecated-removed:: 3.12 3.14
+
+      Passing additional arguments is deprecated; if supplied, they are joined
+      with *other*.
 
 .. method:: PurePath.is_reserved()
 
@@ -564,10 +575,10 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.relative_to(*other)
+.. method:: PurePath.relative_to(other, walk_up=False)
 
    Compute a version of this path relative to the path represented by
-   *other*.  If it's impossible, ValueError is raised::
+   *other*.  If it's impossible, :exc:`ValueError` is raised::
 
       >>> p = PurePosixPath('/etc/passwd')
       >>> p.relative_to('/')
@@ -577,12 +588,38 @@ Pure paths provide the following methods and properties:
       >>> p.relative_to('/usr')
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
-        File "pathlib.py", line 694, in relative_to
-          .format(str(self), str(formatted)))
-      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
+        File "pathlib.py", line 941, in relative_to
+          raise ValueError(error_message.format(str(self), str(formatted)))
+      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
 
-   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
+   When *walk_up* is False (the default), the path must start with *other*.
+   When the argument is True, ``..`` entries may be added to form the
+   relative path. In all other cases, such as the paths referencing
+   different drives, :exc:`ValueError` is raised.::
 
+      >>> p.relative_to('/usr', walk_up=True)
+      PurePosixPath('../etc/passwd')
+      >>> p.relative_to('foo', walk_up=True)
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "pathlib.py", line 941, in relative_to
+          raise ValueError(error_message.format(str(self), str(formatted)))
+      ValueError: '/etc/passwd' is not on the same drive as 'foo' OR one path is relative and the other is absolute.
+
+   .. warning::
+      This function is part of :class:`PurePath` and works with strings.
+      It does not check or access the underlying file structure.
+      This can impact the *walk_up* option as it assumes that no symlinks
+      are present in the path; call :meth:`~Path.resolve` first if
+      necessary to resolve symlinks.
+
+   .. versionadded:: 3.12
+      The *walk_up* argument (old behavior is the same as ``walk_up=False``).
+
+   .. deprecated-removed:: 3.12 3.14
+
+      Passing additional positional arguments is deprecated; if supplied,
+      they are joined with *other*.
 
 .. method:: PurePath.with_name(name)
 
@@ -869,6 +906,14 @@ call fails (for example because the path doesn't exist).
    other errors (such as permission errors) are propagated.
 
 
+.. method:: Path.is_junction()
+
+   Return ``True`` if the path points to a junction, and ``False`` for any other
+   type of file. Currently only Windows supports junctions.
+
+   .. versionadded:: 3.12
+
+
 .. method:: Path.is_mount()
 
    Return ``True`` if the path is a :dfn:`mount point`: a point in a
@@ -1038,7 +1083,7 @@ call fails (for example because the path doesn't exist).
       # Delete everything reachable from the directory "top".
       # CAUTION:  This is dangerous! For example, if top == Path('/'),
       # it could delete all of your files.
-      for root, dirs, files in top.walk(topdown=False):
+      for root, dirs, files in top.walk(top_down=False):
           for name in files:
               (root / name).unlink()
           for name in dirs:
@@ -1163,6 +1208,8 @@ call fails (for example because the path doesn't exist).
    The target path may be absolute or relative. Relative paths are interpreted
    relative to the current working directory, *not* the directory of the Path
    object.
+
+   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
 
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.

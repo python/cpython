@@ -1,6 +1,0 @@
-:source:`Lib/test/test_asyncio/test_ssl.py` exposed a bug in the macOS
-kernel where intense concurrent load on non-blocking sockets occasionally
-causes :const:`errno.ENOBUFS` ("No buffer space available") to be emitted.
-FB11063974 filed with Apple, in the mean time as a workaround buffer size
-used in tests on macOS is decreased to avoid intermittent failures.  Patch
-by Fantix King.

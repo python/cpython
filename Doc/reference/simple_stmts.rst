@@ -330,7 +330,7 @@ statement, of a variable or attribute annotation and an optional assignment stat
    annotated_assignment_stmt: `augtarget` ":" `expression`
                             : ["=" (`starred_expression` | `yield_expression`)]
 
-The difference from normal :ref:`assignment` is that only single target is allowed.
+The difference from normal :ref:`assignment` is that only a single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
@@ -365,8 +365,8 @@ target, then the interpreter evaluates the target except for the last
       IDEs.
 
 .. versionchanged:: 3.8
-   Now annotated assignments allow same expressions in the right hand side as
-   the regular assignments. Previously, some expressions (like un-parenthesized
+   Now annotated assignments allow the same expressions in the right hand side as
+   regular assignments. Previously, some expressions (like un-parenthesized
    tuple expressions) caused a syntax error.
 
 
@@ -756,7 +756,7 @@ commas) the two steps are carried out separately for each clause, just
 as though the clauses had been separated out into individual import
 statements.
 
-The details of the first step, finding and loading modules are described in
+The details of the first step, finding and loading modules, are described in
 greater detail in the section on the :ref:`import system <importsystem>`,
 which also describes the various types of packages and modules that can
 be imported, as well as all the hooks that can be used to customize
@@ -994,19 +994,11 @@ The :keyword:`!nonlocal` statement
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-.. XXX add when implemented
-                : ["=" (`target_list` "=")+ starred_expression]
-                : | "nonlocal" identifier augop expression_list
-
 The :keyword:`nonlocal` statement causes the listed identifiers to refer to
 previously bound variables in the nearest enclosing scope excluding globals.
 This is important because the default behavior for binding is to search the
 local namespace first.  The statement allows encapsulated code to rebind
 variables outside of the local scope besides the global (module) scope.
-
-.. XXX not implemented
-   The :keyword:`nonlocal` statement may prepend an assignment or augmented
-   assignment, but not an expression.
 
 Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
 :keyword:`global` statement, must refer to pre-existing bindings in an

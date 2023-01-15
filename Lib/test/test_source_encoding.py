@@ -1,4 +1,4 @@
-# -*- coding: koi8-r -*-
+# -*- coding: utf-8 -*-
 
 import unittest
 from test.support import script_helper, captured_stdout, requires_subprocess
@@ -12,15 +12,14 @@ import tempfile
 
 class MiscSourceEncodingTest(unittest.TestCase):
 
-    def test_pep263(self):
-        self.assertEqual(
-            "Питон".encode("utf-8"),
-            b'\xd0\x9f\xd0\xb8\xd1\x82\xd0\xbe\xd0\xbd'
-        )
-        self.assertEqual(
-            "\П".encode("utf-8"),
-            b'\\\xd0\x9f'
-        )
+    def test_import_encoded_module(self):
+        from test.encoded_modules import test_strings
+        # Make sure we're actually testing something
+        self.assertGreaterEqual(len(test_strings), 1)
+        for modname, encoding, teststr in test_strings:
+            mod = importlib.import_module('test.encoded_modules.'
+                                          'module_' + modname)
+            self.assertEqual(teststr, mod.test)
 
     def test_compilestring(self):
         # see #1882
@@ -148,6 +147,30 @@ class MiscSourceEncodingTest(unittest.TestCase):
         self.assertTrue(c.exception.args[0].startswith(expected),
                         msg=c.exception.args[0])
 
+    def test_file_parse_error_multiline(self):
+        # gh96611:
+        with open(TESTFN, "wb") as fd:
+            fd.write(b'print("""\n\xb1""")\n')
+
+        try:
+            retcode, stdout, stderr = script_helper.assert_python_failure(TESTFN)
+
+            self.assertGreater(retcode, 0)
+            self.assertIn(b"Non-UTF-8 code starting with '\\xb1'", stderr)
+        finally:
+            os.unlink(TESTFN)
+
+    def test_tokenizer_fstring_warning_in_first_line(self):
+        source = "0b1and 2"
+        with open(TESTFN, "w") as fd:
+            fd.write("{}".format(source))
+        try:
+            retcode, stdout, stderr = script_helper.assert_python_ok(TESTFN)
+            self.assertIn(b"SyntaxWarning: invalid binary litera", stderr)
+            self.assertEqual(stderr.count(source.encode()), 1)
+        finally:
+            os.unlink(TESTFN)
+
 
 class AbstractSourceEncodingTest:
 
@@ -236,8 +259,10 @@ class UTF8ValidatorTest(unittest.TestCase):
         # test it is to write actual files to disk.
 
         # Each example is put inside a string at the top of the file so
-        # it's an otherwise valid Python source file.
-        template = b'"%s"\n'
+        # it's an otherwise valid Python source file. Put some newlines
+        # beforehand so we can assert that the error is reported on the
+        # correct line.
+        template = b'\n\n\n"%s"\n'
 
         fn = TESTFN
         self.addCleanup(unlink, fn)
@@ -245,7 +270,12 @@ class UTF8ValidatorTest(unittest.TestCase):
         def check(content):
             with open(fn, 'wb') as fp:
                 fp.write(template % content)
-            script_helper.assert_python_failure(fn)
+            rc, stdout, stderr = script_helper.assert_python_failure(fn)
+            # We want to assert that the python subprocess failed gracefully,
+            # not via a signal.
+            self.assertGreaterEqual(rc, 1)
+            self.assertIn(b"Non-UTF-8 code starting with", stderr)
+            self.assertIn(b"on line 4", stderr)
 
         # continuation bytes in a sequence of 2, 3, or 4 bytes
         continuation_bytes = [bytes([x]) for x in range(0x80, 0xC0)]
