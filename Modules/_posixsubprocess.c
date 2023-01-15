@@ -755,7 +755,7 @@ do_fork_exec(char *const exec_array[],
              PyObject *preexec_fn_args_tuple)
 {
 
-    pid_t pid = 0;
+    pid_t pid;
 
 #ifdef VFORK_USABLE
     if (child_sigmask) {
