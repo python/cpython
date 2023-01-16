@@ -722,7 +722,7 @@ profile-pgo-apply-stamp: profile-pgo-analyze-stamp
 # passes.
 
 # List of binaries that BOLT runs on.
-BOLT_BINARIES = $(BUILDPYTHON)
+BOLT_BINARIES = @BOLT_BINARIES@
 
 BOLT_INSTRUMENT_FLAGS ?= @BOLT_INSTRUMENT_FLAGS@
 BOLT_APPLY_FLAGS ?= @BOLT_APPLY_FLAGS@
@@ -734,8 +734,6 @@ clean-bolt:
 	find . -name '*.bolt_inst' -exec rm -f {} ';'
 	# The data files they produce.
 	find . -name '*.fdata' -exec rm -f {} ';'
-	# Copied of binaries before BOLT application.
-	find . -name '*.prebolt' -exec rm -f {} ';'
 
 # BOLTs dependencies are a bit wonky.
 #
@@ -753,28 +751,36 @@ profile-bolt-prebuild-stamp: @MAKE_BOLT_NATIVE_DEPENDENCY@
 
 profile-bolt-instrument-stamp: profile-bolt-prebuild-stamp
 	for bin in $(BOLT_BINARIES); do \
-	    if [ -e "$${bin}.prebolt" ]; then \
-	        echo "Restoring pre-BOLT binary $${bin}.prebolt"; \
+	    prebolt="$${bin}.prebolt"; \
+	    if [ -e "$${prebolt}" ]; then \
+	        echo "Restoring pre-BOLT binary $${prebolt}"; \
 	        mv "$${bin}.prebolt" "$${bin}"; \
-	    fi \
+	    fi; \
+	    cp "$${bin}" "$${prebolt}"; \
 	done
 	# Ensure prior BOLT state is purged.
 	$(MAKE) clean-bolt
-	@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst $(BOLT_INSTRUMENT_FLAGS)
+	for bin in $(BOLT_BINARIES); do \
+	    @LLVM_BOLT@ $${bin} -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $${bin}.bolt) -o $${bin}.bolt_inst $(BOLT_INSTRUMENT_FLAGS); \
+	    mv "$${bin}.bolt_inst" "$${bin}"; \
+    done
 	touch $@
 
 profile-bolt-run-stamp: profile-bolt-instrument-stamp
-	$(RUNSHARED) ./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true
+	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
 	touch $@
 
 profile-bolt-analyze-stamp: profile-bolt-run-stamp
-	@MERGE_FDATA@ $(BUILDPYTHON).*.fdata > $(BUILDPYTHON).fdata
+	for bin in $(BOLT_BINARIES); do \
+	    @MERGE_FDATA@ $${bin}.*.fdata > $${bin}.fdata; \
+	done
 	touch $@
 
 profile-bolt-apply-stamp: profile-bolt-analyze-stamp
-	@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata $(BOLT_APPLY_FLAGS)
-	mv $(BUILDPYTHON) $(BUILDPYTHON).prebolt
-	mv $(BUILDPYTHON).bolt $(BUILDPYTHON)
+	for bin in $(BOLT_BINARIES); do \
+	    @LLVM_BOLT@ "$${bin}.prebolt" -o "$${bin}.bolt" -data="$${bin}.fdata" $(BOLT_APPLY_FLAGS); \
+	    mv "$${bin}.bolt" "$${bin}"; \
+	done
 	touch $@
 
 # End of profile-based optimization rules.

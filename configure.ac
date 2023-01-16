@@ -2083,6 +2083,23 @@ if test "$Py_BOLT" = 'true' ; then
   fi
 fi
 
+# Enable BOLT optimizations of libpython. Optional for now due to known
+# crashes on LLVM 15. Seems to be fixed in LLVM 16.
+AC_SUBST(BOLT_BINARIES)
+BOLT_BINARIES='$(BUILDPYTHON)'
+
+AC_MSG_CHECKING(for --with-bolt-libpython)
+AC_ARG_WITH(bolt_libpython,
+            AS_HELP_STRING([--with-bolt-libpython], [enable BOLT optimization of libpython (WARNING: known to crash BOLT)]),
+            [with_bolt_libpython="yes"],
+            [with_bolt_libpython="no"])
+AC_MSG_RESULT($with_bolt_libpython)
+
+if test "${enable_shared}" = "yes" -a "${with_bolt_libpython}" = "yes"
+then
+  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+fi
+
 AC_ARG_VAR(BOLT_INSTRUMENT_FLAGS, Arguments to llvm-bolt when instrumenting binaries)
 AC_MSG_CHECKING(BOLT_INSTRUMENT_FLAGS)
 if test -z "${BOLT_INSTRUMENT_FLAGS}"

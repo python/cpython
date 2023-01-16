@@ -885,6 +885,7 @@ CFLAGS_ALIASING
 OPT
 BOLT_APPLY_FLAGS
 BOLT_INSTRUMENT_FLAGS
+BOLT_BINARIES
 MERGE_FDATA
 LLVM_BOLT
 ac_ct_READELF
@@ -1060,6 +1061,7 @@ with_assertions
 enable_optimizations
 with_lto
 enable_bolt
+with_bolt_libpython
 with_strict_overflow
 with_dsymutil
 with_address_sanitizer
@@ -1834,6 +1836,8 @@ Optional Packages:
   --with-lto=[full|thin|no|yes]
                           enable Link-Time-Optimization in any build (default
                           is no)
+  --with-bolt-libpython   enable BOLT optimization of libpython (WARNING:
+                          known to crash BOLT)
   --with-strict-overflow  if 'yes', add -fstrict-overflow to CFLAGS, else add
                           -fno-strict-overflow (default is no)
   --with-dsymutil         link debug information into final executable with
@@ -8498,6 +8502,29 @@ $as_echo "\"Found merge-fdata\"" >&6; }
   else
     as_fn_error $? "merge-fdata is required for a --enable-bolt build but could not be found." "$LINENO" 5
   fi
+fi
+
+# Enable BOLT optimizations of libpython. Optional for now due to known
+# crashes on LLVM 15. Seems to be fixed in LLVM 16.
+
+BOLT_BINARIES='$(BUILDPYTHON)'
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-bolt-libpython" >&5
+$as_echo_n "checking for --with-bolt-libpython... " >&6; }
+
+# Check whether --with-bolt_libpython was given.
+if test "${with_bolt_libpython+set}" = set; then :
+  withval=$with_bolt_libpython; with_bolt_libpython="yes"
+else
+  with_bolt_libpython="no"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_bolt_libpython" >&5
+$as_echo "$with_bolt_libpython" >&6; }
+
+if test "${enable_shared}" = "yes" -a "${with_bolt_libpython}" = "yes"
+then
+  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
 fi
 
 
