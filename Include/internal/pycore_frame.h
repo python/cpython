@@ -97,10 +97,18 @@ static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
 static inline int
 _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 {
-    /* This function needs to remain in sync with the calculation of
-     * co_framesize in Tools/build/deepfreeze.py */
     assert(code->co_framesize >= FRAME_SPECIALS_SIZE);
     return code->co_framesize - FRAME_SPECIALS_SIZE;
+}
+
+static inline PyObject**
+_PyFrame_ConstRegisters(_PyInterpreterFrame *f) {
+    // the consts are placed in the last nconsts slots
+    PyCodeObject *co = f->f_code;
+    int nslots = _PyFrame_NumSlotsForCodeObject(co);
+    int nconsts = (int)PyTuple_Size(co->co_consts);
+    assert(nslots >= nconsts);
+    return f->localsplus + (nslots - nconsts);
 }
 
 void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
@@ -127,6 +135,13 @@ _PyFrame_Initialize(
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
+    }
+
+    int nconsts = (int)PyTuple_Size(code->co_consts);
+    if (nconsts > 0) {
+        PyObject **const_regs = _PyFrame_ConstRegisters(frame);
+        PyObject **consts = &PyTuple_GET_ITEM(code->co_consts, 0);
+        memcpy(const_regs, consts, sizeof(PyObject*) * nconsts);
     }
 }
 

@@ -235,6 +235,21 @@ is_tstate_valid(PyThreadState *tstate)
     assert(!_PyMem_IsPtrFreed(tstate->interp));
     return 1;
 }
+
+/* ensure that const registers are equal to the code object consts */
+static int
+const_registers_are_correct(_PyInterpreterFrame *frame)
+{
+    PyCodeObject *co = frame->f_code;
+    PyObject **const_regs = _PyFrame_ConstRegisters(frame);
+    Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
+    for (Py_ssize_t i = 0; i < nconsts; i++) {
+        PyObject *co_const = PyTuple_GET_ITEM(co->co_consts, i);
+        PyObject *reg = const_regs[i];
+        assert(co_const == reg);
+    }
+    return 1;
+}
 #endif
 
 
@@ -1143,6 +1158,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         consts = co->co_consts; \
     } \
     assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
+    assert(const_registers_are_correct(frame)); \
     /* Jump back to the last instruction executed... */ \
     next_instr = frame->prev_instr + 1; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \

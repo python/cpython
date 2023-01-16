@@ -1443,7 +1443,7 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        check(x, size('3Pi3c7P2ic??2P'))
+        check(x, size('3Pi3c7P2ic??2PP'))
         # function
         def func(): pass
         check(func, size('14Pi'))
@@ -1460,7 +1460,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('P2P4P4c7P2ic??2P'))
+        check(get_gen(), size('P2P4P4c7P2ic??2PPP'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator

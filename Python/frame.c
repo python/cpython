@@ -68,8 +68,9 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 void
 _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
-    assert(src->stacktop >= src->f_code->co_nlocalsplus);
-    Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
+    int nslots = _PyFrame_NumSlotsForCodeObject(src->f_code);
+    assert(nslots >= 0);
+    Py_ssize_t size = ((char*)&src->localsplus[nslots]) - (char *)src;
     memcpy(dest, src, size);
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:

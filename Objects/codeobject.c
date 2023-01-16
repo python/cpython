@@ -395,7 +395,11 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* derived values */
     co->co_nlocalsplus = nlocalsplus;
     co->co_nlocals = nlocals;
-    co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
+    Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
+    /* The following must remain in sync with the calculation of
+     * co_framesize in Tools/build/deepfreeze.py */
+    co->co_framesize = (nlocalsplus + con->stacksize + nconsts +
+                        FRAME_SPECIALS_SIZE);
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     co->co_version = _Py_next_func_version;

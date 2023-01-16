@@ -1020,7 +1020,7 @@ PyFrameObject*
 _PyFrame_New_NoTrack(PyCodeObject *code)
 {
     CALL_STAT_INC(frame_objects_created);
-    int slots = code->co_nlocalsplus + code->co_stacksize;
+    int slots = _PyFrame_NumSlotsForCodeObject(code);
     PyFrameObject *f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, slots);
     if (f == NULL) {
         return NULL;
