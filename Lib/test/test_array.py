@@ -192,6 +192,12 @@ class ArrayReconstructorTest(unittest.TestCase):
             self.assertEqual(a, b,
                 msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
 
+    def test_memoryview(self):
+        a = array.array("Q", [1, 2, 3])
+        untyped_buf = memoryview(a).cast("B")
+        b = array.array("Q", untyped_buf)
+        self.assertEqual(a, b)
+
 
 class BaseTest:
     # Required class attributes (provided by subclasses
