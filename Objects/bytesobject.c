@@ -441,8 +441,10 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     len = strlen(p);
     if (writer != NULL) {
         str = _PyBytesWriter_Prepare(writer, str, len);
-        if (str == NULL)
+        if (str == NULL) {
+            PyMem_Free(p);
             return NULL;
+        }
         memcpy(str, p, len);
         PyMem_Free(p);
         str += len;
