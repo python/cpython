@@ -505,7 +505,7 @@ the :mod:`glob` module.)
       >>> splitroot('/etc/hosts')
       ('', '/', 'etc/hosts')
 
-   On Windows, *drive* may be a drive-letter name, a UNC share, or a device
+   On Windows, *drive* may be empty, a drive-letter name, a UNC share, or a device
    name. The *root* may be empty, a forward slash, or a backward slash. For
    example::
 
