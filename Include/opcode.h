@@ -95,6 +95,7 @@ extern "C" {
 #define STORE_DEREF                            138
 #define DELETE_DEREF                           139
 #define JUMP_BACKWARD                          140
+#define COMPARE_AND_BRANCH                     141
 #define CALL_FUNCTION_EX                       142
 #define EXTENDED_ARG                           144
 #define LIST_APPEND                            145
@@ -153,9 +154,9 @@ extern "C" {
 #define CALL_NO_KW_STR_1                        45
 #define CALL_NO_KW_TUPLE_1                      46
 #define CALL_NO_KW_TYPE_1                       47
-#define COMPARE_OP_FLOAT_JUMP                   48
-#define COMPARE_OP_INT_JUMP                     56
-#define COMPARE_OP_STR_JUMP                     57
+#define COMPARE_AND_BRANCH_FLOAT                48
+#define COMPARE_AND_BRANCH_INT                  56
+#define COMPARE_AND_BRANCH_STR                  57
 #define FOR_ITER_LIST                           58
 #define FOR_ITER_TUPLE                          59
 #define FOR_ITER_RANGE                          62
@@ -179,12 +180,12 @@ extern "C" {
 #define STORE_ATTR_SLOT                         87
 #define STORE_ATTR_WITH_HINT                   113
 #define STORE_FAST__LOAD_FAST                  121
-#define STORE_FAST__STORE_FAST                 141
-#define STORE_SUBSCR_DICT                      143
-#define STORE_SUBSCR_LIST_INT                  153
-#define UNPACK_SEQUENCE_LIST                   154
-#define UNPACK_SEQUENCE_TUPLE                  158
-#define UNPACK_SEQUENCE_TWO_TUPLE              159
+#define STORE_FAST__STORE_FAST                 143
+#define STORE_SUBSCR_DICT                      153
+#define STORE_SUBSCR_LIST_INT                  154
+#define UNPACK_SEQUENCE_LIST                   158
+#define UNPACK_SEQUENCE_TUPLE                  159
+#define UNPACK_SEQUENCE_TWO_TUPLE              160
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\

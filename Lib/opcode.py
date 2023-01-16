@@ -189,6 +189,8 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
+def_op('COMPARE_AND_BRANCH', 141)   # Comparison and jump
+hascompare.append(141)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -309,10 +311,10 @@ _specializations = {
         "CALL_NO_KW_TUPLE_1",
         "CALL_NO_KW_TYPE_1",
     ],
-    "COMPARE_OP": [
-        "COMPARE_OP_FLOAT_JUMP",
-        "COMPARE_OP_INT_JUMP",
-        "COMPARE_OP_STR_JUMP",
+    "COMPARE_AND_BRANCH": [
+        "COMPARE_AND_BRANCH_FLOAT",
+        "COMPARE_AND_BRANCH_INT",
+        "COMPARE_AND_BRANCH_STR",
     ],
     "FOR_ITER": [
         "FOR_ITER_LIST",
@@ -390,6 +392,9 @@ _cache_format = {
         "counter": 1,
     },
     "COMPARE_OP": {
+        "counter": 1,
+    },
+    "COMPARE_AND_BRANCH": {
         "counter": 1,
     },
     "BINARY_SUBSCR": {

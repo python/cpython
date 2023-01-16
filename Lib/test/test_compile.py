@@ -1121,11 +1121,11 @@ if 1:
         check_op_count(aug, "BUILD_SLICE", 0)
 
     def test_compare_positions(self):
-        for opname, op in [
-            ("COMPARE_OP", "<"),
-            ("COMPARE_OP", "<="),
-            ("COMPARE_OP", ">"),
-            ("COMPARE_OP", ">="),
+        for opname_prefix, op in [
+            ("COMPARE_", "<"),
+            ("COMPARE_", "<="),
+            ("COMPARE_", ">"),
+            ("COMPARE_", ">="),
             ("CONTAINS_OP", "in"),
             ("CONTAINS_OP", "not in"),
             ("IS_OP", "is"),
@@ -1140,7 +1140,7 @@ if 1:
                 actual_positions = [
                     instruction.positions
                     for instruction in dis.get_instructions(code)
-                    if instruction.opname == opname
+                    if instruction.opname.startswith(opname_prefix)
                 ]
                 with self.subTest(source):
                     self.assertEqual(actual_positions, expected_positions)
@@ -1270,7 +1270,7 @@ if (a or
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_FALSE',
             line=2, end_line=2, column=15, end_column=16, occurrence=2)
         # compare d and 0
-        self.assertOpcodeSourcePositionIs(compiled_code, 'COMPARE_OP',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'COMPARE_AND_BRANCH',
             line=4, end_line=4, column=8, end_column=13, occurrence=1)
         # jump if comparison it True
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
