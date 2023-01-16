@@ -1961,16 +1961,16 @@ Here's an example of both styles:
    # This is the qmark style:
    cur.execute("INSERT INTO lang VALUES(?, ?)", ("C", 1972))
 
-   # The qmark style used with executemany():
-   lang_list = [
-       ("Fortran", 1957),
-       ("Python", 1991),
-       ("Go", 2009),
-   ]
-   cur.executemany("INSERT INTO lang VALUES(?, ?)", lang_list)
+   # The named style used with executemany():
+   lang_list = (
+       {"name": "Fortran", "year": 1957},
+       {"name": "Python", "year": 1991},
+       {"name": "Go", "year": 2009},
+   )
+   cur.executemany("INSERT INTO lang VALUES(:name, :year)", lang_list)
 
-   # And this is the named style:
-   cur.execute("SELECT * FROM lang WHERE first_appeared = :year", {"year": 1972})
+   # This is the qmark style used in a query:
+   cur.execute("SELECT * FROM lang WHERE first_appeared = ?", 1972)
    print(cur.fetchall())
 
 .. testoutput::
