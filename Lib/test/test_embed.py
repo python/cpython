@@ -714,8 +714,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if MS_WINDOWS:
             value = config.get(key := 'program_name')
             if value and isinstance(value, str):
-                ext = '_d.exe' if debug_build(sys.executable) else '.exe'
-                config[key] = value[:len(value.lower().removesuffix(ext))]
+                value = value[:len(value.lower().removesuffix('.exe'))]
+                if debug_build(sys.executable):
+                    value = value[:len(value.lower().removesuffix('_d'))]
+                config[key] = value
         for key, value in list(expected.items()):
             if value is self.IGNORE_CONFIG:
                 config.pop(key, None)
@@ -1292,7 +1294,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             stdlib = os.path.join(home, "Lib")
             # Because we are specifying 'home', module search paths
             # are fairly static
-            expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
+            expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
@@ -1333,7 +1335,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             stdlib = os.path.join(home, "Lib")
             # Because we are specifying 'home', module search paths
             # are fairly static
-            expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
+            expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
@@ -1361,7 +1363,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config['_is_python_build'] = 1
         exedir = os.path.dirname(sys.executable)
         with open(os.path.join(exedir, 'pybuilddir.txt'), encoding='utf8') as f:
-            expected_paths[2] = os.path.normpath(
+            expected_paths[1 if MS_WINDOWS else 2] = os.path.normpath(
                 os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0]))
         if not MS_WINDOWS:
             # PREFIX (default) is set when running in build directory
@@ -1438,8 +1440,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             module_search_paths = self.module_search_paths()
             module_search_paths[-3] = os.path.join(tmpdir, os.path.basename(module_search_paths[-3]))
-            module_search_paths[-2] = stdlibdir
-            module_search_paths[-1] = tmpdir
+            module_search_paths[-2] = tmpdir
+            module_search_paths[-1] = stdlibdir
 
             executable = self.test_exe
             config = {
