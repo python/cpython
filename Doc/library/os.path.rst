@@ -498,7 +498,7 @@ the :mod:`glob` module.)
 
    On POSIX systems, *drive* is always empty. The *root* may be empty (if *path* is
    relative), a single forward slash (if *path* is absolute), or two forward slashes
-   (implementation-defined per `IEEE Std 1003.1 2013 Edition; 4.13 Pathname Resolution
+   (implementation-defined per `IEEE Std 1003.1-2017; 4.13 Pathname Resolution
    <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_.)
    For example::
 
