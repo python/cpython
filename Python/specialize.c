@@ -2005,8 +2005,10 @@ _Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *inst
 {
     assert(_PyOpcode_Caches[COMPARE_AND_BRANCH] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
+#ifndef NDEBUG
     int next_opcode = _Py_OPCODE(instr[INLINE_CACHE_ENTRIES_COMPARE_OP + 1]);
     assert(next_opcode == POP_JUMP_IF_FALSE || next_opcode == POP_JUMP_IF_TRUE);
+#endif
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_AND_BRANCH, compare_op_fail_kind(lhs, rhs));
         goto failure;
