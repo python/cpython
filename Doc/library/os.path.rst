@@ -515,8 +515,8 @@ the :mod:`glob` module.)
       ('C:', '/', 'Users/Barney')
       >>> splitroot('//server/share/')
       ('//server/share', '/', '')
-      >>> splitroot('//?/Volume{12345678-1234-1234-1234-123456781234}/')
-      ('//?/Volume{12345678-1234-1234-1234-123456781234}', '/', '')
+      >>> splitroot('//?/UNC/server/share/')
+      ('//?/UNC/server/share', '/', '')
 
    In all cases, ``drive + root + tail`` will be the same as *path*.
 
