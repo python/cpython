@@ -3418,45 +3418,99 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_JUMP_IF_TRUE_OR_POP, ( -- )) {
-            int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            PyObject *cond = TOP();
+            int err = PyObject_IsTrue(cond);
+            ERROR_IF(err < 0, error);
+            _Py_CODEUNIT *here = next_instr-1;
+            assert(err == 0 || err == 1);
+            _Py_CODEUNIT *there = next_instr + err*oparg;
+            err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
             ERROR_IF(err, error);
-            GO_TO_INSTRUCTION(JUMP_IF_TRUE_OR_POP);
+            if (err == 0) {
+                STACK_SHRINK(1);
+                Py_DECREF(cond);
+            }
+            next_instr = there;
         }
 
         inst(INSTRUMENTED_JUMP_IF_FALSE_OR_POP, ( -- )) {
-            int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            PyObject *cond = TOP();
+            int err = PyObject_IsTrue(cond);
+            ERROR_IF(err < 0, error);
+            _Py_CODEUNIT *here = next_instr-1;
+            assert(err == 0 || err == 1);
+            _Py_CODEUNIT *there = next_instr + (1-err)*oparg;
+            err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
             ERROR_IF(err, error);
-            GO_TO_INSTRUCTION(JUMP_IF_FALSE_OR_POP);
+            if (err) {
+                STACK_SHRINK(1);
+                Py_DECREF(cond);
+            }
+            next_instr = there;
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
-            int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            PyObject *cond = POP();
+            int err = PyObject_IsTrue(cond);
+            ERROR_IF(err < 0, error);
+            _Py_CODEUNIT *here = next_instr-1;
+            assert(err == 0 || err == 1);
+            _Py_CODEUNIT *there = next_instr + err*oparg;
+            err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
             ERROR_IF(err, error);
-            GO_TO_INSTRUCTION(POP_JUMP_IF_TRUE);
+            next_instr = there;
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, ( -- )) {
-            int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+            PyObject *cond = POP();
+            int err = PyObject_IsTrue(cond);
+            ERROR_IF(err < 0, error);
+            _Py_CODEUNIT *here = next_instr-1;
+            assert(err == 0 || err == 1);
+            _Py_CODEUNIT *there = next_instr + (1-err)*oparg;
+            err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
             ERROR_IF(err, error);
-            GO_TO_INSTRUCTION(POP_JUMP_IF_FALSE);
+            next_instr = there;
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, ( -- )) {
+            PyObject *value = POP();
+            _Py_CODEUNIT *here = next_instr-1;
+            _Py_CODEUNIT *there;
+            if (Py_IsNone(value)) {
+                _Py_DECREF_NO_DEALLOC(value);
+                there = next_instr + oparg;
+            }
+            else {
+                Py_DECREF(value);
+                there = next_instr;
+            }
             int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
             ERROR_IF(err, error);
-            GO_TO_INSTRUCTION(POP_JUMP_IF_NONE);
+            next_instr = there;
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, ( -- )) {
+            PyObject *value = POP();
+            _Py_CODEUNIT *here = next_instr-1;
+            _Py_CODEUNIT *there;
+            if (Py_IsNone(value)) {
+                _Py_DECREF_NO_DEALLOC(value);
+                there = next_instr;
+            }
+            else {
+                Py_DECREF(value);
+                there = next_instr + oparg;
+            }
             int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
             ERROR_IF(err, error);
-            GO_TO_INSTRUCTION(POP_JUMP_IF_NOT_NONE);
+            next_instr = there;
         }
 
         // stack effect: ( -- )
