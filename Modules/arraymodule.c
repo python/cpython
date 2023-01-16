@@ -2637,6 +2637,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!(initial == NULL || PyList_Check(initial)
           || PyByteArray_Check(initial)
           || PyBytes_Check(initial)
+          || PyMemoryView_Check(initial)
           || PyTuple_Check(initial)
           || ((c=='u') && PyUnicode_Check(initial))
           || (array_Check(initial, state)
@@ -2687,7 +2688,8 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 }
             }
             else if (initial != NULL && (PyByteArray_Check(initial) ||
-                               PyBytes_Check(initial))) {
+                               PyBytes_Check(initial) ||
+                               PyMemoryView_Check(initial))) {
                 PyObject *v;
                 v = array_array_frombytes((arrayobject *)a,
                                           initial);
