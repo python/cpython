@@ -509,14 +509,14 @@ the :mod:`glob` module.)
    name. The *root* may be empty, a forward slash, or a backward slash. For
    example::
 
+      >>> splitroot('Windows/notepad')
+      ('', '', 'Windows/notepad')
       >>> splitroot('C:/Users/Barney')
       ('C:', '/', 'Users/Barney')
       >>> splitroot('//server/share/')
       ('//server/share', '/', '')
       >>> splitroot('//?/Volume{12345678-1234-1234-1234-123456781234}/')
       ('//?/Volume{12345678-1234-1234-1234-123456781234}', '/', '')
-      >>> splitroot('Windows/notepad')
-      ('', '', 'Windows/notepad')
 
    In all cases, ``drive + root + tail`` will be the same as *path*.
 
