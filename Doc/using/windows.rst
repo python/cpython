@@ -880,14 +880,15 @@ The environment variable :envvar:`PYLAUNCHER_NO_SEARCH_PATH` may be set
 Shebang lines that do not match any of these patterns are looked up in the
 ``[commands]`` section of the launcher's :ref:`.INI file <launcher-ini>`.
 This may be used to handle certain commands in a way that makes sense for your
-system. The name of the command must be a single argument (no spaces),
-and the value substituted is the full path to the executable (no arguments
-may be added).
+system. The name of the command must be a single argument (no spaces in the
+shebang executable), and the value substituted is the full path to the
+executable (additional arguments specified in the .INI will be quoted as part
+of the filename).
 
 .. code-block:: ini
 
    [commands]
-   /bin/sh=C:\Program Files\Bash\bash.exe
+   /bin/xpython=C:\Program Files\XPython\python.exe
 
 Any commands not found in the .INI file are treated as **Windows** executable
 paths that are absolute or relative to the directory containing the script file.
