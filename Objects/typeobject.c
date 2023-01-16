@@ -1289,8 +1289,13 @@ PyObject *
 _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
 {
     PyObject *obj;
+    /* The +1 on nitems is needed for most types but not all. We could save a
+     * bit of space by allocating one less item in certain cases, depending on
+     * the type. However, given the extra complexity (e.g. an additional type
+     * flag to indicate when that is safe) it does not seem worth the memory
+     * savings. An example type that doesn't need the +1 is a subclass of
+     * tuple. See GH-100659 and GH-81381. */
     const size_t size = _PyObject_VAR_SIZE(type, nitems+1);
-    /* note that we need to add one, for the sentinel */
 
     const size_t presize = _PyType_PreHeaderSize(type);
     char *alloc = PyObject_Malloc(size + presize);

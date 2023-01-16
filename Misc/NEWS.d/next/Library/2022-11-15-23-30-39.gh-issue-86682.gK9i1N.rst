@@ -1,0 +1,2 @@
+Ensure runtime-created collections have the correct module name using
+the newly added (internal) :func:`sys._getframemodulename`.
