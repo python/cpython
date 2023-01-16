@@ -146,12 +146,19 @@ Node classes
     Snakes <https://greentreesnakes.readthedocs.io/en/latest/>`__ project and
     all its contributors.
 
+
+.. _ast-root-nodes:
+
 Root nodes
 ^^^^^^^^^^
 
 .. class:: Module(body, type_ignores)
 
-   A Python module. Body contains a list of module's statements.
+   A Python module.
+
+   *body* is a :class:`list` of the module's :ref:`ast-statements`.
+   *type_ignores* is a :class:`list` of the module's type ignore comments,
+   see :func:`ast.parse` for more details.
 
    .. doctest::
 
@@ -169,6 +176,8 @@ Root nodes
 
    A single Python expression.
 
+   *body* is a single :ref:`ast-expressions` node.
+
    .. doctest::
 
         >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
@@ -179,6 +188,8 @@ Root nodes
 .. class:: Interactive(body)
 
    A single Python interactive statement, just like in :ref:`tut-interac`.
+
+   *body* is a :class:`list` of :ref:`ast-statements` nodes.
 
    .. doctest::
 
@@ -197,13 +208,17 @@ Root nodes
 
 .. class:: FunctionType(argtypes, returns)
 
-   Special type to represent old-style type comments for functions.
+   Special type to represent old-style type comments for functions,
+   as Python versions prior to 3.5 didn't support :pep:`484` annotations.
 
-   Python versions prior to 3.6 used to annotate functions like this::
+   Such type comments would look like this::
 
        def sum_two_number(a, b):
            # type: (int, int) -> int
            return a + b
+
+   *argtypes* is a :class:`list` of :ref:`ast-expressions` nodes.
+   *returns* is a single :ref:`ast-expressions` node.
 
    .. doctest::
 
@@ -216,6 +231,9 @@ Root nodes
                 value=Name(id='List', ctx=Load()),
                 slice=Name(id='int', ctx=Load()),
                 ctx=Load()))
+
+   .. versionadded:: 3.8
+
 
 Literals
 ^^^^^^^^
@@ -414,6 +432,8 @@ Variables
                     value=Name(id='it', ctx=Load()))],
             type_ignores=[])
 
+
+.. _ast-expressions:
 
 Expressions
 ^^^^^^^^^^^
@@ -805,6 +825,9 @@ Comprehensions
                         iter=Name(id='soc', ctx=Load()),
                         ifs=[],
                         is_async=1)]))
+
+
+.. _ast-statements:
 
 Statements
 ^^^^^^^^^^
