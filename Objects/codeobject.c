@@ -1876,6 +1876,7 @@ static PyMemberDef code_memberlist[] = {
     {"co_posonlyargcount", T_INT,    OFF(co_posonlyargcount), READONLY},
     {"co_kwonlyargcount",  T_INT,    OFF(co_kwonlyargcount),  READONLY},
     {"co_stacksize",       T_INT,    OFF(co_stacksize),       READONLY},
+    {"co_ntmps",           T_INT,    OFF(co_ntmps),           READONLY},
     {"co_flags",           T_INT,    OFF(co_flags),           READONLY},
     {"co_nlocals",         T_INT,    OFF(co_nlocals),         READONLY},
     {"co_consts",          T_OBJECT, OFF(co_consts),          READONLY},

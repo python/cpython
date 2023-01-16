@@ -226,6 +226,7 @@ class CodeTest(unittest.TestCase):
                         co.co_kwonlyargcount,
                         co.co_nlocals,
                         co.co_stacksize,
+                        co.co_ntmps,
                         co.co_flags,
                         co.co_code,
                         co.co_consts,
@@ -303,6 +304,7 @@ class CodeTest(unittest.TestCase):
                          # This is the only change.
                          co.co_nlocals + diff,
                          co.co_stacksize,
+                         co.co_ntmps,
                          co.co_flags,
                          co.co_code,
                          co.co_consts,
