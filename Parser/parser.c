@@ -22065,6 +22065,7 @@ _loop0_1_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -22134,6 +22135,7 @@ _loop0_2_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -22212,6 +22214,7 @@ _loop0_4_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -22332,6 +22335,7 @@ _loop0_6_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -22452,6 +22456,7 @@ _loop0_8_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -22572,6 +22577,7 @@ _loop0_10_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -22683,6 +22689,7 @@ _loop1_11_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -22766,6 +22773,7 @@ _loop0_13_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -23349,6 +23357,7 @@ _loop1_22_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -23548,6 +23557,7 @@ _loop0_26_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -23668,6 +23678,7 @@ _loop0_28_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -23884,6 +23895,7 @@ _loop0_31_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -23953,6 +23965,7 @@ _loop1_32_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24036,6 +24049,7 @@ _loop0_34_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24203,6 +24217,7 @@ _loop0_37_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24370,6 +24385,7 @@ _loop0_40_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24490,6 +24506,7 @@ _loop0_42_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24610,6 +24627,7 @@ _loop0_44_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24730,6 +24748,7 @@ _loop0_46_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24918,6 +24937,7 @@ _loop1_48_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25039,6 +25059,7 @@ _loop1_50_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25122,6 +25143,7 @@ _loop0_52_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25512,6 +25534,7 @@ _loop0_58_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25632,6 +25655,7 @@ _loop0_60_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25810,6 +25834,7 @@ _loop0_63_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25930,6 +25955,7 @@ _loop0_65_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26224,6 +26250,7 @@ _loop0_70_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26293,6 +26320,7 @@ _loop0_71_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26362,6 +26390,7 @@ _loop0_72_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26431,6 +26460,7 @@ _loop1_73_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26505,6 +26535,7 @@ _loop0_74_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26574,6 +26605,7 @@ _loop1_75_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26648,6 +26680,7 @@ _loop1_76_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26722,6 +26755,7 @@ _loop1_77_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26796,6 +26830,7 @@ _loop0_78_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26865,6 +26900,7 @@ _loop1_79_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26939,6 +26975,7 @@ _loop0_80_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27008,6 +27045,7 @@ _loop1_81_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27082,6 +27120,7 @@ _loop0_82_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27151,6 +27190,7 @@ _loop1_83_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27225,6 +27265,7 @@ _loop1_84_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27349,6 +27390,7 @@ _loop1_86_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27432,6 +27474,7 @@ _loop0_88_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27543,6 +27586,7 @@ _loop1_89_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27617,6 +27661,7 @@ _loop0_90_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27686,6 +27731,7 @@ _loop0_91_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27755,6 +27801,7 @@ _loop0_92_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27824,6 +27871,7 @@ _loop1_93_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27898,6 +27946,7 @@ _loop0_94_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27967,6 +28016,7 @@ _loop1_95_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28041,6 +28091,7 @@ _loop1_96_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28115,6 +28166,7 @@ _loop1_97_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28189,6 +28241,7 @@ _loop0_98_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28258,6 +28311,7 @@ _loop1_99_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28332,6 +28386,7 @@ _loop0_100_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28401,6 +28456,7 @@ _loop1_101_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28475,6 +28531,7 @@ _loop0_102_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28544,6 +28601,7 @@ _loop1_103_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28618,6 +28676,7 @@ _loop1_104_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28692,6 +28751,7 @@ _loop1_105_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28766,6 +28826,7 @@ _loop1_106_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28893,6 +28954,7 @@ _loop0_109_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29282,6 +29344,7 @@ _loop1_114_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29533,6 +29596,7 @@ _loop0_119_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29644,6 +29708,7 @@ _loop1_120_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29718,6 +29783,7 @@ _loop0_121_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29787,6 +29853,7 @@ _loop0_122_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29865,6 +29932,7 @@ _loop0_124_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30033,6 +30101,7 @@ _loop0_127_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30153,6 +30222,7 @@ _loop0_129_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30273,6 +30343,7 @@ _loop0_131_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30393,6 +30464,7 @@ _loop0_133_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30504,6 +30576,7 @@ _loop0_134_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30582,6 +30655,7 @@ _loop0_136_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30693,6 +30767,7 @@ _loop1_137_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30817,6 +30892,7 @@ _loop0_140_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31477,6 +31553,7 @@ _loop0_149_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31546,6 +31623,7 @@ _loop0_150_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31615,6 +31693,7 @@ _loop0_151_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31935,6 +32014,7 @@ _loop0_156_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32004,6 +32084,7 @@ _loop1_157_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32078,6 +32159,7 @@ _loop0_158_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32147,6 +32229,7 @@ _loop1_159_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32429,6 +32512,7 @@ _loop0_164_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32549,6 +32633,7 @@ _loop0_166_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32669,6 +32754,7 @@ _loop0_168_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32789,6 +32875,7 @@ _loop0_170_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -33269,6 +33356,7 @@ _loop0_180_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
