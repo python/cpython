@@ -38,7 +38,6 @@ CC=		@CC@
 CXX=		@CXX@
 LINKCC=		@LINKCC@
 AR=		@AR@
-READELF=	@READELF@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
 LIBPYTHON=	@LIBPYTHON@
@@ -601,12 +600,26 @@ LIBHACL_SHA2_HEADERS= \
 #########################################################################
 # Rules
 
-# Default target
-all:		@DEF_MAKE_ALL_RULE@
+# Default target.
+# Likely either `build-plain` or `build-optimized`.
+all: @MAKE_TARGET_ALL@
 
 # First target in Makefile is implicit default. So .PHONY needs to come after
 # all.
 .PHONY: all
+
+# Build without any optimizations or instrumented binaries.
+.PHONY: build-plain
+build-plain: @MAKE_TARGET_BUILD_PLAIN@
+
+# Build with optimizations (PGO, BOLT, etc).
+.PHONY: build-optimized
+build-optimized: @MAKE_TARGET_BUILD_OPTIMIZED@
+
+.PHONY: build-optimized-not-enabled
+build-optimized-not-enabled:
+	@echo "build-optimized requires --enable-optimizations in configure; aborting"
+	@exit 1
 
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
@@ -629,69 +642,145 @@ check-clean-src:
 		exit 1; \
 	fi
 
-# Profile generation build must start from a clean tree.
+# Profile-based optimization.
+#
+# PGO and BOLT profile-based optimization is supported. For each optimization,
+# roughly the following steps are done:
+#
+# 1. "Instrument" binaries with run-time data collection (e.g. build or modify
+#    a variant of the binary.)
+# 2. "Run" instrumented binaries (via subset of test suite) to collect data.
+# 3. "Analyze" / collect / merge data files from previous step.
+# 4. "Apply" collected data from above. (e.g. rebuild or modify a binary).
+#
+# 0, 1, or multiple profile based optimizations can be enabled.
+#
+# We track the progress of profile-based optimization using various "stamp"
+# files. An empty stamp file tracks the stage of optimization we're in.
+# Each *-stamp rule that follows is defined in execution / dependency order.
+
+# Remove files produced by or used for tracking profile-guided optimization.
+.PHONY: profile-remove
+profile-remove: clean-bolt
+	find . -name '*.gc??' -exec rm -f {} ';'
+	find . -name '*.profclang?' -exec rm -f {} ';'
+	find . -name '*.dyn' -exec rm -f {} ';'
+	rm -f $(COVERAGE_INFO)
+	rm -rf $(COVERAGE_REPORT)
+	# Remove all progress tracking stamps to ensure a clean slate.
+	rm -f profile-*-stamp
+
+# Profile-based optimization requires a fresh build environment.
 profile-clean-stamp:
-	$(MAKE) clean
+	$(MAKE) clean profile-remove
 	touch $@
 
-# Compile with profile generation enabled.
-profile-gen-stamp: profile-clean-stamp
+# Build with PGO instrumentation enabled.
+profile-pgo-instrument-stamp: profile-clean-stamp
 	@if [ $(LLVM_PROF_ERR) = yes ]; then \
 		echo "Error: Cannot perform PGO build because llvm-profdata was not found in PATH" ;\
 		echo "Please add it to PATH and run ./configure again" ;\
 		exit 1;\
 	fi
 	@echo "Building with support for profile generation:"
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
+	$(MAKE) @MAKE_TARGET_BUILD_PLAIN@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
 	touch $@
 
-# Run task with profile generation build to create profile information.
-profile-run-stamp:
+# Run PGO instrumented binaries and collect profile data.
+profile-pgo-run-stamp: profile-pgo-instrument-stamp
 	@echo "Running code to generate profile data (this can take a while):"
-	# First, we need to create a clean build with profile generation
-	# enabled.
-	$(MAKE) profile-gen-stamp
-	# Next, run the profile task to generate the profile information.
 	@ # FIXME: can't run for a cross build
 	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
+	touch $@
+
+# Collect data files produced by running PGO instrumented binaries.
+profile-pgo-analyze-stamp: profile-pgo-run-stamp
 	$(LLVM_PROF_MERGER)
 	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean-retain-profile
-	# This is an expensive target to build and it does not have proper
-	# makefile dependency information.  So, we create a "stamp" file
-	# to record its completion and avoid re-running it.
 	touch $@
 
-# Compile Python binary with profile guided optimization.
-# To force re-running of the profile task, remove the profile-run-stamp file.
-.PHONY: profile-opt
-profile-opt: profile-run-stamp
+# Use collected PGO data to influence rebuild of binaries.
+profile-pgo-apply-stamp: profile-pgo-analyze-stamp
 	@echo "Rebuilding with profile guided optimizations:"
-	-rm -f profile-clean-stamp
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_USE_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST)"
+	# Need to purge PGO instrumented build to force a rebuild.
+	$(MAKE) clean-retain-profile
+	$(MAKE) @MAKE_TARGET_BUILD_PLAIN@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_USE_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST)"
+	touch $@
 
-.PHONY: bolt-opt
-bolt-opt: @PREBOLT_RULE@
-	rm -f *.fdata
-	@if $(READELF) -p .note.bolt_info $(BUILDPYTHON) | grep BOLT > /dev/null; then\
-		echo "skip: $(BUILDPYTHON) is already BOLTed."; \
-	else \
-		@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst; \
-		./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true; \
-		@MERGE_FDATA@ $(BUILDPYTHON).*.fdata > $(BUILDPYTHON).fdata; \
-		@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot; \
-		rm -f *.fdata; \
-		rm -f $(BUILDPYTHON).bolt_inst; \
-		mv $(BUILDPYTHON).bolt $(BUILDPYTHON); \
+# BOLT supports instrumenting and applying changes to standalone binaries
+# without having to recompile.
+#
+# BOLT can run independently or in addition to PGO. If running with PGO,
+# it always runs after PGO. Care needs to be taken to preserve PGO state
+# when running BOLT so make doesn't re-apply PGO.
+#
+# BOLT also can't instrument binaries that have already had BOLT applied
+# to them. So we make an attempt to preserve and re-use the pristine
+# pre-BOLT binaries so developers can iterate on just BOLT optimization
+# passes.
+
+# List of binaries that BOLT runs on.
+BOLT_BINARIES = $(BUILDPYTHON)
+
+# Remove traces of bolt.
+.PHONY: clean-bolt
+clean-bolt:
+	# Instrumented binaries.
+	find . -name '*.bolt_inst' -exec rm -f {} ';'
+	# The data files they produce.
+	find . -name '*.fdata' -exec rm -f {} ';'
+	# Copied of binaries before BOLT application.
+	find . -name '*.prebolt' -exec rm -f {} ';'
+
+# BOLTs dependencies are a bit wonky.
+#
+# If PGO is enabled, we can take a native rule dependency on a stamp file.
+# If PGO isn't enabled, we don't have a stamp to key off of and the phony
+# target (e.g. build_all) will always force rebuilds. So we call out to
+# make externally to sidestep the dependency.
+#
+# We can simplify this hack if we ever get stamp files for plain builds.
+profile-bolt-prebuild-stamp: @MAKE_BOLT_NATIVE_DEPENDENCY@
+	if [ -n "@MAKE_BOLT_MAKE_DEPENDENCY@" ]; then \
+	    $(MAKE) @MAKE_BOLT_MAKE_DEPENDENCY@; \
 	fi
+	touch $@
 
+profile-bolt-instrument-stamp: profile-bolt-prebuild-stamp
+	for bin in $(BOLT_BINARIES); do \
+	    if [ -e "$${bin}.prebolt" ]; then \
+	        echo "Restoring pre-BOLT binary $${bin}.prebolt"; \
+	        mv "$${bin}.prebolt" "$${bin}"; \
+	    fi \
+	done
+	# Ensure prior BOLT state is purged.
+	$(MAKE) clean-bolt
+	@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst
+	touch $@
+
+profile-bolt-run-stamp: profile-bolt-instrument-stamp
+	./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true
+	touch $@
+
+profile-bolt-analyze-stamp: profile-bolt-run-stamp
+	@MERGE_FDATA@ $(BUILDPYTHON).*.fdata > $(BUILDPYTHON).fdata
+	touch $@
+
+profile-bolt-apply-stamp: profile-bolt-analyze-stamp
+	@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions=3 -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=all -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot
+	mv $(BUILDPYTHON) $(BUILDPYTHON).prebolt
+	mv $(BUILDPYTHON).bolt $(BUILDPYTHON)
+	touch $@
+
+# End of profile-based optimization rules.
 
 # Compile and run with gcov
 .PHONY: coverage
 coverage:
 	@echo "Building with support for coverage checking:"
 	$(MAKE) clean
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg --coverage" LDFLAGS="$(LDFLAGS) --coverage"
+	$(MAKE) @MAKE_SIMPLE_BUILD_TARGET@ CFLAGS="$(CFLAGS) -O0 -pg --coverage" LDFLAGS="$(LDFLAGS) --coverage"
 
 .PHONY: coverage-lcov
 coverage-lcov:
@@ -2610,23 +2699,9 @@ clean-retain-profile: pycremoval
 	-rm -f Python/frozen_modules/MANIFEST
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
-	-rm -f profile-gen-stamp
-
-.PHONY: profile-removal
-profile-removal:
-	find . -name '*.gc??' -exec rm -f {} ';'
-	find . -name '*.profclang?' -exec rm -f {} ';'
-	find . -name '*.dyn' -exec rm -f {} ';'
-	rm -f $(COVERAGE_INFO)
-	rm -rf $(COVERAGE_REPORT)
-	rm -f profile-run-stamp
 
 .PHONY: clean
 clean: clean-retain-profile
-	@if test @DEF_MAKE_ALL_RULE@ = profile-opt; then \
-		rm -f profile-gen-stamp profile-clean-stamp; \
-		$(MAKE) profile-removal; \
-	fi
 
 .PHONY: clobber
 clobber: clean
