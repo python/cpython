@@ -464,7 +464,6 @@ Pending Removal in Python 3.14
 
   Use :mod:`importlib.resources.abc` classes instead:
 
-  * :class:`importlib.resources.abc.TraversableResources`
   * :class:`importlib.resources.abc.Traversable`
   * :class:`importlib.resources.abc.TraversableResources`
 
