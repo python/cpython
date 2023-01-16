@@ -764,7 +764,7 @@ profile-bolt-instrument-stamp: profile-bolt-prebuild-stamp
 	touch $@
 
 profile-bolt-run-stamp: profile-bolt-instrument-stamp
-	./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true
+	$(RUNSHARED) ./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true
 	touch $@
 
 profile-bolt-analyze-stamp: profile-bolt-run-stamp
