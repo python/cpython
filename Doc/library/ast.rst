@@ -187,7 +187,7 @@ Root nodes
 
 .. class:: Interactive(body)
 
-   A single Python interactive statement, just like in :ref:`tut-interac`.
+   A single Python interactive statement, like in :ref:`tut-interac`.
 
    *body* is a :class:`list` of :ref:`ast-statements` nodes.
 
