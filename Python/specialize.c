@@ -851,11 +851,31 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                                 SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
             goto fail;
         case NON_DESCRIPTOR:
-            SPECIALIZATION_FAIL(LOAD_ATTR,
-                                (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) ?
-                                SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE :
-                                SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
-            goto fail;
+            if (!(type->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
+                goto fail;
+            }
+            PyDictOrValues maybe_values = *_PyObject_DictOrValuesPointer(owner);
+            if (!_PyDictOrValues_IsValues(maybe_values)) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_HAS_MANAGED_DICT);
+                goto fail;
+            }
+            PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
+            if (_PyDictKeys_StringLookup(keys, name) != DKIX_EMPTY) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SHADOWED);
+                goto fail;
+            }
+            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
+            if (keys_version == 0) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+                goto fail;
+            }
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
+            write_u32(cache->type_version, type->tp_version_tag);
+            write_u32(cache->keys_version, keys->dk_version);
+            write_obj(cache->descr, descr);
+            _py_set_opcode(instr, LOAD_ATTR_CLASS_FROM_INSTANCE);
+            goto success;
         case ABSENT:
             if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
                                     LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))

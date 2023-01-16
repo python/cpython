@@ -1637,6 +1637,32 @@ dummy_func(
         }
 
         // error: LOAD_ATTR has irregular stack effect
+        inst(LOAD_ATTR_CLASS_FROM_INSTANCE) {
+            assert(cframe.use_tracing == 0);
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
+            PyObject *self = TOP();
+            PyTypeObject *cls = Py_TYPE(self);
+            uint32_t type_version = read_u32(cache->type_version);
+            DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            assert(cls->tp_version_tag);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            PyDictKeysObject *keys = ((PyHeapTypeObject *)cls)->ht_cached_keys;
+            uint32_t keys_version = read_u32(cache->keys_version);
+            DEOPT_IF(keys->dk_version != keys_version, LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
+            PyObject *res = read_obj(cache->descr);
+            assert(res);
+            Py_INCREF(res);
+            SET_TOP(NULL);
+            STACK_GROW((oparg & 1));
+            SET_TOP(res);
+            Py_DECREF(self);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+        }
+
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_PROPERTY) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
