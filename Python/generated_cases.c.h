@@ -2077,19 +2077,10 @@
         }
 
         TARGET(COMPARE_OP) {
-            PREDICTED(COMPARE_OP);
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *res;
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
-                next_instr--;
-                _Py_Specialize_CompareOp(left, right, next_instr, oparg);
-                DISPATCH_SAME_OPARG();
-            }
             STAT_INC(COMPARE_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             assert((oparg >> 4) <= Py_GE);
             res = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
@@ -2101,112 +2092,108 @@
             DISPATCH();
         }
 
-        TARGET(COMPARE_OP_FLOAT_JUMP) {
-            PyObject *_tmp_1 = PEEK(1);
-            PyObject *_tmp_2 = PEEK(2);
-            {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                size_t jump;
+        TARGET(COMPARE_AND_BRANCH) {
+            PREDICTED(COMPARE_AND_BRANCH);
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
-                DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
-                DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
-                STAT_INC(COMPARE_OP, hit);
-                double dleft = PyFloat_AS_DOUBLE(left);
-                double dright = PyFloat_AS_DOUBLE(right);
-                // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
-                int sign_ish = COMPARISON_BIT(dleft, dright);
-                _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-                _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-                jump = sign_ish & oparg;
-                _tmp_2 = (PyObject *)jump;
+                next_instr--;
+                _Py_Specialize_CompareAndBranch(left, right, next_instr, oparg);
+                DISPATCH_SAME_OPARG();
             }
-            JUMPBY(1);
-            NEXTOPARG();
-            JUMPBY(1);
-            {
-                size_t jump = (size_t)_tmp_2;
-                assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-                if (jump) {
-                    JUMPBY(oparg);
-                }
+            STAT_INC(COMPARE_AND_BRANCH, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            assert((oparg >> 4) <= Py_GE);
+            PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (cond == NULL) goto pop_2_error;
+            assert(_Py_OPCODE(next_instr[1]) == POP_JUMP_IF_FALSE ||
+                   _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE);
+            bool jump_on_true = _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE;
+            int offset = _Py_OPARG(next_instr[1]);
+            int err = PyObject_IsTrue(cond);
+            Py_DECREF(cond);
+            if (err < 0) {
+                goto error;
+            }
+            if (jump_on_true == (err != 0)) {
+                JUMPBY(offset);
             }
             STACK_SHRINK(2);
+            JUMPBY(2);
             DISPATCH();
         }
 
-        TARGET(COMPARE_OP_INT_JUMP) {
-            PyObject *_tmp_1 = PEEK(1);
-            PyObject *_tmp_2 = PEEK(2);
-            {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                size_t jump;
-                assert(cframe.use_tracing == 0);
-                // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
-                DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
-                DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
-                DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_OP);
-                DEOPT_IF((size_t)(Py_SIZE(right) + 1) > 2, COMPARE_OP);
-                STAT_INC(COMPARE_OP, hit);
-                assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
-                Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
-                Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-                // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
-                int sign_ish = COMPARISON_BIT(ileft, iright);
-                _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-                _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-                jump = sign_ish & oparg;
-                _tmp_2 = (PyObject *)jump;
-            }
-            JUMPBY(1);
-            NEXTOPARG();
-            JUMPBY(1);
-            {
-                size_t jump = (size_t)_tmp_2;
-                assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-                if (jump) {
-                    JUMPBY(oparg);
-                }
+        TARGET(COMPARE_AND_BRANCH_FLOAT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_AND_BRANCH);
+            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_AND_BRANCH);
+            STAT_INC(COMPARE_AND_BRANCH, hit);
+            double dleft = PyFloat_AS_DOUBLE(left);
+            double dright = PyFloat_AS_DOUBLE(right);
+            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
+            int sign_ish = COMPARISON_BIT(dleft, dright);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            if (sign_ish & oparg) {
+                int offset = _Py_OPARG(next_instr[1]);
+                JUMPBY(offset);
             }
             STACK_SHRINK(2);
+            JUMPBY(2);
             DISPATCH();
         }
 
-        TARGET(COMPARE_OP_STR_JUMP) {
-            PyObject *_tmp_1 = PEEK(1);
-            PyObject *_tmp_2 = PEEK(2);
-            {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                size_t jump;
-                assert(cframe.use_tracing == 0);
-                // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
-                DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
-                DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
-                STAT_INC(COMPARE_OP, hit);
-                int res = _PyUnicode_Equal(left, right);
-                assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
-                _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-                _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-                assert(res == 0 || res == 1);
-                assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
-                assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
-                jump = (res + COMPARISON_NOT_EQUALS) & oparg;
-                _tmp_2 = (PyObject *)jump;
-            }
-            JUMPBY(1);
-            NEXTOPARG();
-            JUMPBY(1);
-            {
-                size_t jump = (size_t)_tmp_2;
-                assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-                if (jump) {
-                    JUMPBY(oparg);
-                }
+        TARGET(COMPARE_AND_BRANCH_INT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_AND_BRANCH);
+            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_AND_BRANCH);
+            DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_AND_BRANCH);
+            DEOPT_IF((size_t)(Py_SIZE(right) + 1) > 2, COMPARE_AND_BRANCH);
+            STAT_INC(COMPARE_AND_BRANCH, hit);
+            assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
+            Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
+            Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
+            // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
+            int sign_ish = COMPARISON_BIT(ileft, iright);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            if (sign_ish & oparg) {
+                int offset = _Py_OPARG(next_instr[1]);
+                JUMPBY(offset);
             }
             STACK_SHRINK(2);
+            JUMPBY(2);
+            DISPATCH();
+        }
+
+        TARGET(COMPARE_AND_BRANCH_STR) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_AND_BRANCH);
+            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_AND_BRANCH);
+            STAT_INC(COMPARE_AND_BRANCH, hit);
+            int res = _PyUnicode_Equal(left, right);
+            assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+            assert(res == 0 || res == 1);
+            assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+            assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+            if ((res + COMPARISON_NOT_EQUALS) & oparg) {
+                int offset = _Py_OPARG(next_instr[1]);
+                JUMPBY(offset);
+            }
+            STACK_SHRINK(2);
+            JUMPBY(2);
             DISPATCH();
         }
 
