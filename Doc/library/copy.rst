@@ -53,10 +53,10 @@ copy operations:
 
 The :func:`deepcopy` function avoids these problems by:
 
-* keeping a ``memo`` dictionary of objects already copied during the current
-  copying pass; and
+* Keeping a ``memo`` dictionary of objects already copied during the current
+  copying pass.
 
-* letting user-defined classes override the copying operation or the set of
+* Letting user-defined classes override the copying operation or the set of
   components copied.
 
 This module does not copy types like module, method, stack trace, stack frame,
