@@ -492,7 +492,7 @@ the :mod:`glob` module.)
 
    Split the pathname *path* into a triad ``(drive, root, tail)`` where:
 
-   1. *drive* is a mount point or the empty string;
+   1. *drive* is a device name, mount point or the empty string;
    2. *root* is a sequence of separators following the drive or the empty string; and
    3. *tail* is anything after the root.
 
@@ -505,13 +505,16 @@ the :mod:`glob` module.)
       >>> splitroot('/etc/hosts')
       ('', '/', 'etc/hosts')
 
-   On Windows, *drive* may be a UNC sharepoint or a traditional drive-letter drive. The
-   *root* may be empty, a forward slash, or a backward slash. For example::
+   On Windows, *drive* may be a drive-letter name, a UNC share, or a device
+   name. The *root* may be empty, a forward slash, or a backward slash. For
+   example::
 
-      >>> splitroot('//server/share/')
-      ('//server/share', '/', '')
       >>> splitroot('C:/Users/Barney')
       ('C:', '/', 'Users/Barney')
+      >>> splitroot('//server/share/')
+      ('//server/share', '/', '')
+      >>> splitroot('//?/Volume{12345678-1234-1234-1234-123456781234}/')
+      ('//?/Volume{12345678-1234-1234-1234-123456781234}', '/', '')
       >>> splitroot('Windows/notepad')
       ('', '', 'Windows/notepad')
 
