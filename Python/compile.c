@@ -8300,6 +8300,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyObject *consts = NULL;
     PyObject *localsplusnames = NULL;
     PyObject *localspluskinds = NULL;
+    int ntmps = 0;
 
     names = dict_keys_inorder(c->u->u_names, 0);
     if (!names) {
@@ -8356,6 +8357,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .kwonlyargcount = kwonlyargcount,
 
         .stacksize = maxdepth,
+        .ntmps = ntmps,
 
         .exceptiontable = a->a_except_table,
     };

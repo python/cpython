@@ -171,6 +171,7 @@ struct _PyCodeConstructor {
     int kwonlyargcount;
 
     /* needed to create the frame */
+    int ntmps;
     int stacksize;
 
     /* used by the eval loop */

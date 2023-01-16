@@ -324,6 +324,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(co_name)
         STRUCT_FOR_ID(co_names)
         STRUCT_FOR_ID(co_nlocals)
+        STRUCT_FOR_ID(co_ntmps)
         STRUCT_FOR_ID(co_posonlyargcount)
         STRUCT_FOR_ID(co_qualname)
         STRUCT_FOR_ID(co_stacksize)

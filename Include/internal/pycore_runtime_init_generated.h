@@ -830,6 +830,7 @@ extern "C" {
     INIT_ID(co_name), \
     INIT_ID(co_names), \
     INIT_ID(co_nlocals), \
+    INIT_ID(co_ntmps), \
     INIT_ID(co_posonlyargcount), \
     INIT_ID(co_qualname), \
     INIT_ID(co_stacksize), \

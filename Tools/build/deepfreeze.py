@@ -260,8 +260,9 @@ class Printer:
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
             # The following should remain in sync with _PyFrame_NumSlotsForCodeObject
-            self.write(f".co_framesize = {len(localsplusnames)} + {code.co_stacksize}"
-                       f" + {len(code.co_consts)} + FRAME_SPECIALS_SIZE,")
+            self.write(f".co_framesize = {len(localsplusnames)} + {code.co_ntmps} +"
+                       f"{code.co_stacksize} + {len(code.co_consts)} + "
+                       "FRAME_SPECIALS_SIZE,")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
             self.write(f".co_nlocalsplus = {len(localsplusnames)},")

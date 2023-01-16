@@ -388,6 +388,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_posonlyargcount = con->posonlyargcount;
     co->co_kwonlyargcount = con->kwonlyargcount;
 
+    co->co_ntmps = con->ntmps;
     co->co_stacksize = con->stacksize;
 
     co->co_exceptiontable = Py_NewRef(con->exceptiontable);
@@ -398,8 +399,8 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
     /* The following must remain in sync with the calculation of
      * co_framesize in Tools/build/deepfreeze.py */
-    co->co_framesize = (nlocalsplus + con->stacksize + nconsts +
-                        FRAME_SPECIALS_SIZE);
+    co->co_framesize = (nlocalsplus + con->ntmps + con->stacksize +
+                        nconsts + FRAME_SPECIALS_SIZE);
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     co->co_version = _Py_next_func_version;
@@ -572,7 +573,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
 
 PyCodeObject *
 PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
-                          int nlocals, int stacksize, int flags,
+                          int nlocals, int stacksize, int ntmps, int flags,
                           PyObject *code, PyObject *consts, PyObject *names,
                           PyObject *varnames, PyObject *freevars, PyObject *cellvars,
                           PyObject *filename, PyObject *name,
@@ -668,6 +669,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         .kwonlyargcount = kwonlyargcount,
 
         .stacksize = stacksize,
+        .ntmps = ntmps,
 
         .exceptiontable = exceptiontable,
     };
@@ -696,7 +698,7 @@ error:
 
 PyCodeObject *
 PyCode_New(int argcount, int kwonlyargcount,
-           int nlocals, int stacksize, int flags,
+           int nlocals, int stacksize, int ntmps, int flags,
            PyObject *code, PyObject *consts, PyObject *names,
            PyObject *varnames, PyObject *freevars, PyObject *cellvars,
            PyObject *filename, PyObject *name, PyObject *qualname,
@@ -705,7 +707,7 @@ PyCode_New(int argcount, int kwonlyargcount,
            PyObject *exceptiontable)
 {
     return PyCode_NewWithPosOnlyArgs(argcount, 0, kwonlyargcount, nlocals,
-                                     stacksize, flags, code, consts, names,
+                                     stacksize, ntmps, flags, code, consts, names,
                                      varnames, freevars, cellvars, filename,
                                      name, qualname, firstlineno,
                                      linetable,
@@ -773,6 +775,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         .localspluskinds = emptystring,
         .exceptiontable = emptystring,
         .stacksize = 1,
+        .ntmps = 0,
     };
     result = _PyCode_New(&con);
 
@@ -1563,6 +1566,7 @@ code.__new__ as code_new
     kwonlyargcount: int
     nlocals: int
     stacksize: int
+    ntmps: int
     flags: int
     codestring as code: object(subclass_of="&PyBytes_Type")
     constants as consts: object(subclass_of="&PyTuple_Type")
@@ -1583,13 +1587,14 @@ Create a code object.  Not for the faint of heart.
 
 static PyObject *
 code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
-              int kwonlyargcount, int nlocals, int stacksize, int flags,
-              PyObject *code, PyObject *consts, PyObject *names,
+              int kwonlyargcount, int nlocals, int stacksize, int ntmps,
+              int flags, PyObject *code, PyObject *consts, PyObject *names,
               PyObject *varnames, PyObject *filename, PyObject *name,
               PyObject *qualname, int firstlineno, PyObject *linetable,
               PyObject *exceptiontable, PyObject *freevars,
               PyObject *cellvars)
-/*[clinic end generated code: output=069fa20d299f9dda input=e31da3c41ad8064a]*/
+/*[clinic end generated code: output=f3020e283ee5667e input=98fae0fdad36b800]*/
+
 {
     PyObject *co = NULL;
     PyObject *ournames = NULL;
@@ -1651,7 +1656,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
 
     co = (PyObject *)PyCode_NewWithPosOnlyArgs(argcount, posonlyargcount,
                                                kwonlyargcount,
-                                               nlocals, stacksize, flags,
+                                               nlocals, stacksize, ntmps, flags,
                                                code, consts, ournames,
                                                ourvarnames, ourfreevars,
                                                ourcellvars, filename,
@@ -1961,6 +1966,7 @@ code.replace
     co_kwonlyargcount: int(c_default="self->co_kwonlyargcount") = -1
     co_nlocals: int(c_default="self->co_nlocals") = -1
     co_stacksize: int(c_default="self->co_stacksize") = -1
+    co_ntmps: int(c_default="self->co_ntmps") = -1
     co_flags: int(c_default="self->co_flags") = -1
     co_firstlineno: int(c_default="self->co_firstlineno") = -1
     co_code: PyBytesObject(c_default="NULL") = None
@@ -1981,15 +1987,15 @@ Return a copy of the code object with new values for the specified fields.
 static PyObject *
 code_replace_impl(PyCodeObject *self, int co_argcount,
                   int co_posonlyargcount, int co_kwonlyargcount,
-                  int co_nlocals, int co_stacksize, int co_flags,
-                  int co_firstlineno, PyBytesObject *co_code,
+                  int co_nlocals, int co_stacksize, int co_ntmps,
+                  int co_flags, int co_firstlineno, PyBytesObject *co_code,
                   PyObject *co_consts, PyObject *co_names,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
                   PyObject *co_name, PyObject *co_qualname,
                   PyBytesObject *co_linetable,
                   PyBytesObject *co_exceptiontable)
-/*[clinic end generated code: output=b6cd9988391d5711 input=f6f68e03571f8d7c]*/
+/*[clinic end generated code: output=b48d785f84887e83 input=1ed18d66b7069f9b]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -2052,7 +2058,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
     co = PyCode_NewWithPosOnlyArgs(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
-        co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
+        co_stacksize, co_ntmps, co_flags, (PyObject*)co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,
         co_qualname, co_firstlineno,
         (PyObject*)co_linetable, (PyObject*)co_exceptiontable);

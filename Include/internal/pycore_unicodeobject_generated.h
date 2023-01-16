@@ -554,6 +554,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(co_nlocals);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(co_ntmps);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(co_posonlyargcount);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(co_qualname);

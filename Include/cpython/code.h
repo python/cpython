@@ -55,6 +55,7 @@ typedef struct {
      * - co_kwonlyargcount                                                     \
      * - co_nlocals                                                            \
      * - co_stacksize                                                          \
+     * - co_ntmps                                                              \
      * - co_flags                                                              \
      * - co_firstlineno                                                        \
      * - co_consts                                                             \
@@ -80,6 +81,7 @@ typedef struct {
     int co_posonlyargcount;       /* #positional only arguments */             \
     int co_kwonlyargcount;        /* #keyword only arguments */                \
     int co_stacksize;             /* #entries needed for evaluation stack */   \
+    int co_ntmps;                 /* #slots needed for tmp registers */        \
     int co_firstlineno;           /* first source line number */               \
                                                                                \
     /* redundant values (derived from co_localsplusnames and                   \
@@ -166,13 +168,13 @@ static inline int PyCode_GetFirstFree(PyCodeObject *op) {
 
 /* Public interface */
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
-        int, int, int, int, int, PyObject *, PyObject *,
+        int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
         PyObject *);
 
 PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
-        int, int, int, int, int, int, PyObject *, PyObject *,
+        int, int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
         PyObject *);

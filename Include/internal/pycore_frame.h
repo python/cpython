@@ -71,18 +71,47 @@ typedef struct _PyInterpreterFrame {
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
 
+#define FRAME_SPECIALS_SIZE ((int)((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *)))
+
+/* The slots are arranged as: [localsplus, tmps, stack, consts] */
+
+static inline int PyFrame_FirstTmpSlotForCodeObject(PyCodeObject *co) {
+    assert(PyCode_Check(co));
+    return co->co_nlocalsplus;
+}
+
+static inline int PyFrame_FirstStackSlotForCodeObject(PyCodeObject *co) {
+    assert(PyCode_Check(co));
+    return PyFrame_FirstTmpSlotForCodeObject(co) + co->co_ntmps;
+}
+
+static inline int PyFrame_FirstConstSlotForCodeObject(PyCodeObject *co) {
+    assert(PyCode_Check(co));
+    return PyFrame_FirstStackSlotForCodeObject(co) + co->co_stacksize;
+}
+
+static inline int _PyFrame_NumSlotsForCodeObject(PyCodeObject *co)
+{
+    assert(PyCode_Check(co));
+    return PyFrame_FirstConstSlotForCodeObject(co) +
+           PyTuple_Size(co->co_consts);
+}
+
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
-    return f->localsplus + f->f_code->co_nlocalsplus;
+    PyCodeObject *co = f->f_code;
+    int first_stack = PyFrame_FirstStackSlotForCodeObject(co);
+    assert(first_stack >= 0 && first_stack < _PyFrame_NumSlotsForCodeObject(co));
+    return f->localsplus + first_stack;
 }
 
 static inline PyObject *_PyFrame_StackPeek(_PyInterpreterFrame *f) {
-    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->stacktop > PyFrame_FirstStackSlotForCodeObject(f->f_code));
     assert(f->localsplus[f->stacktop-1] != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
 static inline PyObject *_PyFrame_StackPop(_PyInterpreterFrame *f) {
-    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->stacktop > PyFrame_FirstStackSlotForCodeObject(f->f_code));
     f->stacktop--;
     return f->localsplus[f->stacktop];
 }
@@ -92,23 +121,20 @@ static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
     f->stacktop++;
 }
 
-#define FRAME_SPECIALS_SIZE ((int)((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *)))
-
-static inline int
-_PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
-{
-    assert(code->co_framesize >= FRAME_SPECIALS_SIZE);
-    return code->co_framesize - FRAME_SPECIALS_SIZE;
+static inline PyObject**
+_PyFrame_TmpRegisters(_PyInterpreterFrame *f) {
+    PyCodeObject *co = f->f_code;
+    int first_tmp = PyFrame_FirstTmpSlotForCodeObject(co);
+    assert(first_tmp >= 0 && first_tmp < _PyFrame_NumSlotsForCodeObject(co));
+    return f->localsplus + first_tmp;
 }
 
 static inline PyObject**
 _PyFrame_ConstRegisters(_PyInterpreterFrame *f) {
-    // the consts are placed in the last nconsts slots
     PyCodeObject *co = f->f_code;
-    int nslots = _PyFrame_NumSlotsForCodeObject(co);
-    int nconsts = (int)PyTuple_Size(co->co_consts);
-    assert(nslots >= nconsts);
-    return f->localsplus + (nslots - nconsts);
+    int first_const = PyFrame_FirstConstSlotForCodeObject(co);
+    assert(first_const >= 0 && first_const <= _PyFrame_NumSlotsForCodeObject(co));
+    return f->localsplus + first_const;
 }
 
 void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
@@ -127,13 +153,13 @@ _PyFrame_Initialize(
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
     frame->f_locals = locals;
-    frame->stacktop = code->co_nlocalsplus;
+    frame->stacktop = PyFrame_FirstStackSlotForCodeObject(code);
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
-    for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
+    for (int i = null_locals_from; i < frame->stacktop; i++) {
         frame->localsplus[i] = NULL;
     }
 
@@ -157,7 +183,7 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 static inline PyObject**
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    return frame->localsplus+frame->stacktop;
+    return frame->localsplus + frame->stacktop;
 }
 
 static inline void
