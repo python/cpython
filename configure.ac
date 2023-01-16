@@ -1722,8 +1722,18 @@ else
 fi
 
 # Enable optimization flags
-AC_SUBST(DEF_MAKE_ALL_RULE)
-AC_SUBST(DEF_MAKE_RULE)
+# Which target `all` (the default make target) depends on.
+AC_SUBST(MAKE_TARGET_ALL)
+# Which target to evaluate for non-optimized builds.
+AC_SUBST(MAKE_TARGET_BUILD_PLAIN)
+AC_SUBST(MAKE_TARGET_BUILD_OPTIMIZED)
+
+# Do a non-optimized generic build by default. Build configurations below
+# can override as appropriate.
+MAKE_TARGET_ALL="build-plain"
+MAKE_TARGET_BUILD_PLAIN="build_all"
+MAKE_TARGET_BUILD_OPTIMIZED="build-optimized-not-enabled"
+
 Py_OPT='false'
 AC_MSG_CHECKING(for --enable-optimizations)
 AC_ARG_ENABLE(optimizations, AS_HELP_STRING(
@@ -1741,13 +1751,15 @@ fi],
 [AC_MSG_RESULT(no)])
 
 if test "$Py_OPT" = 'true' ; then
+  # PGO is implied by optimizations mode.
+  PGO_ENABLED=1
+  MAKE_TARGET_ALL="build-optimized"
+  MAKE_TARGET_BUILD_OPTIMIZED="profile-pgo-apply-stamp"
+
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
   # who want LTO need to use --with-lto themselves.
-  DEF_MAKE_ALL_RULE="profile-opt"
-  REQUIRE_PGO="yes"
-  DEF_MAKE_RULE="build_all"
   case $CC in
     *gcc*)
       AX_CHECK_COMPILE_FLAG([-fno-semantic-interposition],[
@@ -1759,13 +1771,7 @@ if test "$Py_OPT" = 'true' ; then
 elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
   dnl Emscripten does not support shared extensions yet. Build
   dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
-  DEF_MAKE_ALL_RULE="build_wasm"
-  REQUIRE_PGO="no"
-  DEF_MAKE_RULE="all"
-else
-  DEF_MAKE_ALL_RULE="build_all"
-  REQUIRE_PGO="no"
-  DEF_MAKE_RULE="all"
+  MAKE_TARGET_BUILD_PLAIN="build_wasm"
 fi
 
 AC_ARG_VAR(PROFILE_TASK, Python args for PGO generation task)
@@ -1967,7 +1973,8 @@ case $CC in
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
-      if test "${REQUIRE_PGO}" = "yes"
+
+      if test -n "${ENABLE_PGO}"
       then
         AC_MSG_ERROR([llvm-profdata is required for a --enable-optimizations build but could not be found.])
       fi
@@ -1983,10 +1990,10 @@ case $CC in
         if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
-          if test "${REQUIRE_PGO}" = "yes"
-	  then
-	    AC_MSG_ERROR([llvm-profdata is required for a --enable-optimizations build but could not be found.])
-	  fi
+          if test -n "${ENABLE_PGO}"
+          then
+            AC_MSG_ERROR([llvm-profdata is required for a --enable-optimizations build but could not be found.])
+          fi
         fi
         ;;
       *)
@@ -2022,11 +2029,20 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
-AC_SUBST(PREBOLT_RULE)
+AC_SUBST(MAKE_BOLT_NATIVE_DEPENDENCY)
+AC_SUBST(MAKE_BOLT_MAKE_DEPENDENCY)
+
 if test "$Py_BOLT" = 'true' ; then
-  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
-  DEF_MAKE_ALL_RULE="bolt-opt"
-  DEF_MAKE_RULE="build_all"
+  MAKE_TARGET_BUILD_OPTIMIZED="profile-bolt-apply-stamp"
+
+  # Hook up make dependencies differently depending on whether PGO is
+  # enabled. See inline comment in Makefile.pre.in for how this works.
+  if test -n "${PGO_ENABLED}"
+  then
+    MAKE_BOLT_NATIVE_DEPENDENCY="profile-pgo-apply-stamp"
+  else
+    MAKE_BOLT_MAKE_DEPENDENCY="${MAKE_TARGET_BUILD_PLAIN}"
+  fi
 
   AC_SUBST(READELF)
   AC_CHECK_TOOLS(READELF, [readelf], "notfound")
