@@ -883,6 +883,8 @@ CFLAGS_NODIST
 BASECFLAGS
 CFLAGS_ALIASING
 OPT
+BOLT_APPLY_FLAGS
+BOLT_INSTRUMENT_FLAGS
 MERGE_FDATA
 LLVM_BOLT
 ac_ct_READELF
@@ -1107,6 +1109,8 @@ CPPFLAGS
 CPP
 HOSTRUNNER
 PROFILE_TASK
+BOLT_INSTRUMENT_FLAGS
+BOLT_APPLY_FLAGS
 LIBUUID_CFLAGS
 LIBUUID_LIBS
 LIBFFI_CFLAGS
@@ -1918,6 +1922,10 @@ Some influential environment variables:
   HOSTRUNNER  Program to run CPython for the host platform
   PROFILE_TASK
               Python args for PGO generation task
+  BOLT_INSTRUMENT_FLAGS
+              Arguments to llvm-bolt when instrumenting binaries
+  BOLT_APPLY_FLAGS
+              Arguments to llvm-bolt when creating a BOLT optimized binary
   LIBUUID_CFLAGS
               C compiler flags for LIBUUID, overriding pkg-config
   LIBUUID_LIBS
@@ -8491,6 +8499,26 @@ $as_echo "\"Found merge-fdata\"" >&6; }
     as_fn_error $? "merge-fdata is required for a --enable-bolt build but could not be found." "$LINENO" 5
   fi
 fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking BOLT_INSTRUMENT_FLAGS" >&5
+$as_echo_n "checking BOLT_INSTRUMENT_FLAGS... " >&6; }
+if test -z "${BOLT_INSTRUMENT_FLAGS}"
+then
+    BOLT_INSTRUMENT_FLAGS=
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOLT_INSTRUMENT_FLAGS" >&5
+$as_echo "$BOLT_INSTRUMENT_FLAGS" >&6; }
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking BOLT_APPLY_FLAGS" >&5
+$as_echo_n "checking BOLT_APPLY_FLAGS... " >&6; }
+if test -z "${BOLT_APPLY_FLAGS}"
+then
+    BOLT_APPLY_FLAGS="-update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions=3 -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=all -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot"
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
+$as_echo "$BOLT_APPLY_FLAGS" >&6; }
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?

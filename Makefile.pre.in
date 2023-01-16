@@ -724,6 +724,9 @@ profile-pgo-apply-stamp: profile-pgo-analyze-stamp
 # List of binaries that BOLT runs on.
 BOLT_BINARIES = $(BUILDPYTHON)
 
+BOLT_INSTRUMENT_FLAGS ?= @BOLT_INSTRUMENT_FLAGS@
+BOLT_APPLY_FLAGS ?= @BOLT_APPLY_FLAGS@
+
 # Remove traces of bolt.
 .PHONY: clean-bolt
 clean-bolt:
@@ -757,7 +760,7 @@ profile-bolt-instrument-stamp: profile-bolt-prebuild-stamp
 	done
 	# Ensure prior BOLT state is purged.
 	$(MAKE) clean-bolt
-	@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst
+	@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst $(BOLT_INSTRUMENT_FLAGS)
 	touch $@
 
 profile-bolt-run-stamp: profile-bolt-instrument-stamp
@@ -769,7 +772,7 @@ profile-bolt-analyze-stamp: profile-bolt-run-stamp
 	touch $@
 
 profile-bolt-apply-stamp: profile-bolt-analyze-stamp
-	@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions=3 -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=all -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot
+	@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata $(BOLT_APPLY_FLAGS)
 	mv $(BUILDPYTHON) $(BUILDPYTHON).prebolt
 	mv $(BUILDPYTHON).bolt $(BUILDPYTHON)
 	touch $@
