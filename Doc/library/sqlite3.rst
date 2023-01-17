@@ -1958,19 +1958,18 @@ Here's an example of both styles:
    con = sqlite3.connect(":memory:")
    cur = con.execute("CREATE TABLE lang(name, first_appeared)")
 
-   # This is the qmark style:
-   cur.execute("INSERT INTO lang VALUES(?, ?)", ("C", 1972))
-
-   # The named style used with executemany():
-   lang_list = (
+   # This is the named style used with executemany():
+   data = (
+       {"name": "C", "year": 1972},
        {"name": "Fortran", "year": 1957},
        {"name": "Python", "year": 1991},
        {"name": "Go", "year": 2009},
    )
-   cur.executemany("INSERT INTO lang VALUES(:name, :year)", lang_list)
+   cur.executemany("INSERT INTO lang VALUES(:name, :year)", data)
 
-   # This is the qmark style used in a query:
-   cur.execute("SELECT * FROM lang WHERE first_appeared = ?", (1972,))
+   # This is the qmark style used in a SELECT query:
+   params = (1972,)
+   cur.execute("SELECT * FROM lang WHERE first_appeared = ?", params)
    print(cur.fetchall())
 
 .. testoutput::
