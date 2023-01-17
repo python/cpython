@@ -617,7 +617,7 @@ Data Types
 
 .. class:: ReprEnum
 
-   :class:`!ReprEum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
+   :class:`!ReprEnum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
    but the :class:`str() <str>` of the mixed-in data type:
 
       * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
