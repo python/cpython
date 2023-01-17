@@ -4,6 +4,7 @@
 
 #include <stddef.h>
 #include "Python.h"
+#include "opcode.h"
 #include "pycore_ceval.h"
 #include "pycore_instruments.h"
 #include "pycore_pyerrors.h"
@@ -231,6 +232,9 @@ sys_trace_handled_exception(
     assert(args[0] == (PyObject *)iframe->f_code);
     int offset = _PyLong_AsInt(args[1]);
     assert(offset >= 0);
+    if (_PyCode_CODE(iframe->f_code)[offset].opcode == END_ASYNC_FOR) {
+        Py_RETURN_NONE;
+    }
     int line = _Py_Instrumentation_GetLine(iframe->f_code, offset);
     if (line < 0) {
         Py_RETURN_NONE;
@@ -265,6 +269,12 @@ sys_trace_branch_func(
     if (from > to) {
         /* Backwards jump -- always trace */
         tstate->trace_info.code = NULL;
+    }
+    else {
+        int from_line = _Py_Instrumentation_GetLine(iframe->f_code, from);
+        if (to_line == from_line) {
+            Py_RETURN_NONE;
+        }
     }
     return trace_line(tstate, iframe, self, frame, to_line);
 }
