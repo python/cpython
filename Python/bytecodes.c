@@ -451,16 +451,12 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        // Alternative: (list, unused[oparg], v -- list, unused[oparg])
-        inst(LIST_APPEND, (v --)) {
-            PyObject *list = PEEK(oparg + 1);  // +1 to account for v staying on stack
+        inst(LIST_APPEND, (list, unused[oparg-1], v -- list, unused[oparg-1])) {
             ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
-        // Alternative: (set, unused[oparg], v -- set, unused[oparg])
-        inst(SET_ADD, (v --)) {
-            PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
+        inst(SET_ADD,  (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             int err = PySet_Add(set, v);
             Py_DECREF(v);
             ERROR_IF(err, error);
@@ -532,7 +528,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__array[oparg] -- )
+        // This should remain a legacy instruction.
         inst(RAISE_VARARGS) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
@@ -1295,40 +1291,25 @@ dummy_func(
             }
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_STRING) {
-            PyObject *str;
-            str = _PyUnicode_JoinArray(&_Py_STR(empty),
-                                       stack_pointer - oparg, oparg);
-            if (str == NULL)
-                goto error;
-            while (--oparg >= 0) {
-                PyObject *item = POP();
-                Py_DECREF(item);
+        inst(BUILD_STRING, (pieces[oparg] -- str)) {
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(pieces[i]);
             }
-            PUSH(str);
+            ERROR_IF(str == NULL, error);
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_TUPLE) {
-            STACK_SHRINK(oparg);
-            PyObject *tup = _PyTuple_FromArraySteal(stack_pointer, oparg);
-            if (tup == NULL)
-                goto error;
-            PUSH(tup);
+        inst(BUILD_TUPLE, (values[oparg] -- tup)) {
+            tup = _PyTuple_FromArraySteal(values, oparg);
+            ERROR_IF(tup == NULL, error);
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_LIST) {
-            STACK_SHRINK(oparg);
-            PyObject *list = _PyList_FromArraySteal(stack_pointer, oparg);
-            if (list == NULL)
-                goto error;
-            PUSH(list);
+        inst(BUILD_LIST, (values[oparg] -- list)) {
+            list = _PyList_FromArraySteal(values, oparg);
+            ERROR_IF(list == NULL, error);
         }
 
-        inst(LIST_EXTEND, (iterable -- )) {
-            PyObject *list = PEEK(oparg + 1);  // iterable is still on the stack
+        inst(LIST_EXTEND, (list, unused[oparg-1], iterable -- list, unused[oparg-1])) {
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1346,48 +1327,40 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(SET_UPDATE, (iterable --)) {
-            PyObject *set = PEEK(oparg + 1);  // iterable is still on the stack
+        inst(SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1])) {
             int err = _PySet_Update(set, iterable);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_SET) {
-            PyObject *set = PySet_New(NULL);
+        inst(BUILD_SET, (values[oparg] -- set)) {
+            set = PySet_New(NULL);
             int err = 0;
-            int i;
-            if (set == NULL)
-                goto error;
-            for (i = oparg; i > 0; i--) {
-                PyObject *item = PEEK(i);
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = values[i];
                 if (err == 0)
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
             }
-            STACK_SHRINK(oparg);
             if (err != 0) {
                 Py_DECREF(set);
-                goto error;
+                ERROR_IF(true, error);
             }
-            PUSH(set);
         }
 
-        // stack effect: (__array[oparg*2] -- __0)
-        inst(BUILD_MAP) {
-            PyObject *map = _PyDict_FromItems(
-                    &PEEK(2*oparg), 2,
-                    &PEEK(2*oparg - 1), 2,
+        inst(BUILD_MAP, (values[oparg*2] -- map)) {
+            map = _PyDict_FromItems(
+                    values, 2,
+                    values+1, 2,
                     oparg);
             if (map == NULL)
                 goto error;
 
-            while (oparg--) {
-                Py_DECREF(POP());
-                Py_DECREF(POP());
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(values[i*2]);
+                Py_DECREF(values[i*2+1]);
             }
-            PUSH(map);
+            ERROR_IF(map == NULL, error);
         }
 
         inst(SETUP_ANNOTATIONS, (--)) {
@@ -1432,28 +1405,21 @@ dummy_func(
             }
         }
 
-        // stack effect: (__array[oparg] -- )
-        inst(BUILD_CONST_KEY_MAP) {
-            PyObject *map;
-            PyObject *keys = TOP();
+        inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
             if (!PyTuple_CheckExact(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad BUILD_CONST_KEY_MAP keys argument");
-                goto error;
+                goto error;  // Pop the keys and values.
             }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
-                    &PEEK(oparg + 1), 1, oparg);
-            if (map == NULL) {
-                goto error;
+                    values, 1, oparg);
+            Py_DECREF(keys);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(values[i]);
             }
-
-            Py_DECREF(POP());
-            while (oparg--) {
-                Py_DECREF(POP());
-            }
-            PUSH(map);
+            ERROR_IF(map == NULL, error);
         }
 
         inst(DICT_UPDATE, (update --)) {
