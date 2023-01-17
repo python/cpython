@@ -391,7 +391,7 @@ def test_array_output():
             STACK_GROW(2);
             STACK_GROW(oparg*3);
             POKE(1, above);
-            MOVE_ITEMS(values, &PEEK(1 + oparg*3), oparg*3);
+            MOVE_ITEMS(&PEEK(1 + oparg*3), values, oparg*3);
             POKE(2 + oparg*3, below);
             DISPATCH();
         }
@@ -411,7 +411,7 @@ def test_array_input_output():
             PyObject *above;
             spam();
             POKE(1, above);
-            MOVE_ITEMS(values, &PEEK(1 + oparg), oparg);
+            MOVE_ITEMS(&PEEK(1 + oparg), values, oparg);
             DISPATCH();
         }
     """
