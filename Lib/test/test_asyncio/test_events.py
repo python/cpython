@@ -2614,8 +2614,33 @@ class PolicyTests(unittest.TestCase):
     def test_get_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
         self.assertIsNone(policy._local._loop)
-        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
-            policy.get_event_loop()
+        with self.assertWarns(DeprecationWarning) as cm:
+            loop = policy.get_event_loop()
+        self.assertEqual(cm.filename, __file__)
+        self.assertIsInstance(loop, asyncio.AbstractEventLoop)
+
+        self.assertIs(policy._local._loop, loop)
+        self.assertIs(loop, policy.get_event_loop())
+        loop.close()
+
+    def test_get_event_loop_calls_set_event_loop(self):
+        policy = asyncio.DefaultEventLoopPolicy()
+
+        with mock.patch.object(
+                policy, "set_event_loop",
+                wraps=policy.set_event_loop) as m_set_event_loop:
+
+            with self.assertWarns(DeprecationWarning) as cm:
+                loop = policy.get_event_loop()
+            self.addCleanup(loop.close)
+            self.assertEqual(cm.filename, __file__)
+
+            # policy._local._loop must be set through .set_event_loop()
+            # (the unix DefaultEventLoopPolicy needs this call to attach
+            # the child watcher correctly)
+            m_set_event_loop.assert_called_with(loop)
+
+        loop.close()
 
     def test_get_event_loop_after_set_none(self):
         policy = asyncio.DefaultEventLoopPolicy()
@@ -2801,8 +2826,10 @@ class GetEventLoopTestsMixin:
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
-            with self.assertRaisesRegex(RuntimeError, 'no current'):
-                asyncio.get_event_loop()
+            with self.assertWarns(DeprecationWarning) as cm:
+                loop2 = asyncio.get_event_loop()
+            self.addCleanup(loop2.close)
+            self.assertEqual(cm.filename, __file__)
             asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()

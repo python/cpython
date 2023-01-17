@@ -1351,7 +1351,7 @@ Instance methods:
 
       Because naive ``datetime`` objects are treated by many ``datetime`` methods
       as local times, it is preferred to use aware datetimes to represent times
-      in UTC; as a result, using ``utcfromtimetuple`` may give misleading
+      in UTC; as a result, using :meth:`datetime.utctimetuple` may give misleading
       results. If you have a naive ``datetime`` representing UTC, use
       ``datetime.replace(tzinfo=timezone.utc)`` to make it aware, at which point
       you can use :meth:`.datetime.timetuple`.
