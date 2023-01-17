@@ -187,6 +187,9 @@ static void monitor_unwind(PyThreadState *tstate,
 static void monitor_handled(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr, PyObject *exc);
+static void monitor_throw(PyThreadState *tstate,
+                 _PyInterpreterFrame *frame,
+                 _Py_CODEUNIT *instr);
 
 static PyObject * import_name(PyThreadState *, _PyInterpreterFrame *,
                               PyObject *, PyObject *, PyObject *);
@@ -998,6 +1001,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         /* Because this avoids the RESUME,
          * we need to update instrumentation */
         _Py_Instrument(frame->f_code, tstate->interp);
+        monitor_throw(tstate, frame, frame->prev_instr);
         /* TO DO -- Monitor throw entry. */
         goto resume_with_error;
     }
@@ -1225,9 +1229,9 @@ exception_unwind:
                 PyException_SetTraceback(val, Py_None);
             Py_XDECREF(tb);
             Py_XDECREF(exc);
-            monitor_handled(tstate, frame, next_instr-1, val);
             PUSH(val);
             JUMPTO(handler);
+            monitor_handled(tstate, frame, next_instr, val);
             /* Resume normal execution */
             DISPATCH();
         }
@@ -2269,6 +2273,17 @@ monitor_handled(PyThreadState *tstate,
         return;
     }
     _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
+}
+
+static void
+monitor_throw(PyThreadState *tstate,
+                 _PyInterpreterFrame *frame,
+                 _Py_CODEUNIT *instr)
+{
+    if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_PY_THROW] == 0) {
+        return;
+    }
+    _Py_call_instrumentation_exc(tstate, PY_MONITORING_EVENT_PY_THROW, frame, instr, NULL);
 }
 
 void

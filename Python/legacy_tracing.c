@@ -159,6 +159,9 @@ static PyObject *
 trace_line(PyThreadState *tstate, _PyInterpreterFrame *iframe,
     _PyLegacyEventHandler *self, PyFrameObject* frame, int line
 ) {
+    if (line < 0) {
+        Py_RETURN_NONE;
+    }
     if (tstate->trace_info.code == iframe->f_code &&
         tstate->trace_info.line == line) {
         /* Already traced this line */
@@ -229,6 +232,9 @@ sys_trace_handled_exception(
     int offset = _PyLong_AsInt(args[1]);
     assert(offset >= 0);
     int line = _Py_Instrumentation_GetLine(iframe->f_code, offset);
+    if (line < 0) {
+        Py_RETURN_NONE;
+    }
     return trace_line(tstate, iframe, self, frame, line);
 }
 
@@ -412,6 +418,11 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             return -1;
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+            (vectorcallfunc)sys_trace_func2, PyTrace_CALL,
+                        PY_MONITORING_EVENT_PY_THROW, -1)) {
+            return -1;
+        }
+        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
             (vectorcallfunc)sys_trace_func3, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_RETURN, PY_MONITORING_EVENT_PY_YIELD)) {
             return -1;
@@ -424,6 +435,11 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
             (vectorcallfunc)sys_trace_line_func, PyTrace_LINE,
                         PY_MONITORING_EVENT_LINE, -1)) {
+            return -1;
+        }
+        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+            (vectorcallfunc)sys_trace_func2, PyTrace_RETURN,
+                        PY_MONITORING_EVENT_PY_UNWIND, -1)) {
             return -1;
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
@@ -449,7 +465,8 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
             (1 << PY_MONITORING_EVENT_RAISE) | (1 << PY_MONITORING_EVENT_LINE) |
             (1 << PY_MONITORING_EVENT_JUMP) | (1 << PY_MONITORING_EVENT_BRANCH) |
-            (1 << PY_MONITORING_EVENT_EXCEPTION_HANDLED);
+            (1 << PY_MONITORING_EVENT_EXCEPTION_HANDLED | (1 << PY_MONITORING_EVENT_PY_UNWIND) |
+            (1 << PY_MONITORING_EVENT_PY_THROW));
         /* TO DO -- opcode events */
         if (tstate->interp->f_opcode_trace_set && false) {
             events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);

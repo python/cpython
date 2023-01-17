@@ -574,15 +574,23 @@ _Py_call_instrumentation_exc(
 
 /* Line delta.
  * 8 bit value.
- * if line_delta != -128:
- *     line = first_line  + (offset >> 3) + line_delta;
- * else:
+ * if line_delta == -128:
+ *     line = None # represented as -1
+ * elif line == -127:
  *     line = PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
+ * else:
+ *     line = first_line  + (offset >> 3) + line_delta;
  */
 
 static int8_t
 compute_line_delta(PyCodeObject *code, int offset, int line)
 {
+    if (line < 0) {
+        return -128;
+    }
+    assert(line >= code->co_firstlineno);
+    assert(offset >= code->_co_firsttraceable);
+    assert(offset < Py_SIZE(code));
     int delta = line - code->co_firstlineno - (offset >> 3);
     if (delta < 128 && delta > -128) {
         return delta;
@@ -593,12 +601,18 @@ compute_line_delta(PyCodeObject *code, int offset, int line)
 static int
 compute_line(PyCodeObject *code, int offset, int8_t line_delta)
 {
-    assert(line_delta != -128);
-    if (line_delta == -127) {
+    if (line_delta > -127) {
+        assert((offset >> 3) + line_delta >= 0);
+        return code->co_firstlineno + (offset >> 3) + line_delta;
+    }
+    if (line_delta == -128) {
+        return -1;
+    }
+    else {
+        assert(line_delta == -127);
         /* Compute from table */
         return PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
     }
-    return code->co_firstlineno + (offset >> 3) + line_delta;
 }
 
 int
@@ -607,6 +621,8 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
     _PyCoInstrumentation *instrumentation = &code->_co_instrumentation;
     assert(instrumentation->monitoring_data != NULL);
     assert(instrumentation->monitoring_data->lines != NULL);
+    assert(index >= code->_co_firsttraceable);
+    assert(index < Py_SIZE(code));
     _PyCoLineInstrumentationData *line_data = &instrumentation->monitoring_data->lines[index];
     int8_t line_delta = line_data->line_delta;
     int line = compute_line(code, index, line_delta);
@@ -859,14 +875,18 @@ initialize_lines(PyCodeObject *code)
         if (is_new_line(i, current_line, &range, opcode)) {
             line_data[i].original_opcode = 255;
             current_line = range.ar_line;
-            line_data[i].line_delta = compute_line_delta(code, i, current_line);
         }
         else {
             /* Mark as not being an instrumentation point */
             line_data[i].original_opcode = 0;
-            line_data[i].line_delta = compute_line_delta(code, i, current_line);
         }
-        i += _PyOpcode_Caches[opcode];
+        assert(range.ar_line < 0 || range.ar_line >= code->co_firstlineno);
+        line_data[i].line_delta = compute_line_delta(code, i, range.ar_line);
+        for (int j = 0; j < _PyOpcode_Caches[opcode]; j++) {
+            i++;
+            line_data[i].original_opcode = 0;
+            line_data[i].line_delta = -128;
+        }
     }
 }
 
@@ -1002,7 +1022,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
             int8_t event;
             if (base_opcode == RESUME) {
                 int oparg = _Py_OPARG(*instr);
-                event = oparg;
+                event = oparg > 0;
             }
             else {
                 event = EVENT_FOR_OPCODE[base_opcode];
