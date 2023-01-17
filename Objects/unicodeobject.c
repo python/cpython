@@ -1529,8 +1529,8 @@ unicode_dealloc(PyObject *unicode)
     }
 #endif
     /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref NotImplemented out of existence. Instead,
-     * since None is an immortal object, re-set the reference count.
+     * we accidentally decref the string out of existence. Instead,
+     * since the string is an immortal object, re-set the reference count.
      */
     if (PyUnicode_CHECK_INTERNED(unicode)) {
         _Py_SetImmortal(unicode);

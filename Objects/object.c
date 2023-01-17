@@ -1627,10 +1627,14 @@ none_repr(PyObject *op)
     return PyUnicode_FromString("None");
 }
 
-static void _Py_NO_RETURN
-none_dealloc(PyObject* Py_UNUSED(ignore))
+static void
+none_dealloc(PyObject* none)
 {
-    _Py_FatalRefcountError("deallocating None");
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref None out of existence. Instead,
+     * since None is an immortal object, re-set the reference count.
+     */
+    _Py_SetImmortal(none);
 }
 
 static PyObject *
@@ -1696,7 +1700,7 @@ PyTypeObject _PyNone_Type = {
     "NoneType",
     0,
     0,
-    none_dealloc,       /*tp_dealloc*/ /*never called*/
+    none_dealloc,       /*tp_dealloc*/
     0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
@@ -1769,13 +1773,13 @@ notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 }
 
 static void
-notimplemented_dealloc(PyObject *none)
+notimplemented_dealloc(PyObject *notimplemented)
 {
     /* This should never get called, but we also don't want to SEGV if
      * we accidentally decref NotImplemented out of existence. Instead,
-     * since None is an immortal object, re-set the reference count.
+     * since Notimplemented is an immortal object, re-set the reference count.
      */
-    _Py_SetImmortal(none);
+    _Py_SetImmortal(notimplemented);
 }
 
 static int
