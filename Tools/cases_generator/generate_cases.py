@@ -49,6 +49,15 @@ arg_parser.add_argument(
 
 
 def effect_size(effect: StackEffect) -> tuple[int, str]:
+    """Return the 'size' impact of a stack effect.
+
+    Returns a tuple (numeric, symbolic) where:
+
+    - numeric is an int giving the statically analyzable size of the effect
+    - symbolic is a string representing a variable effect (e.g. 'oparg*2')
+
+    At most one of these will be non-zero / non-empty.
+    """
     if effect.size:
         return 0, effect.size
     else:
