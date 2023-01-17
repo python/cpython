@@ -3207,7 +3207,7 @@ dummy_func(
                 func->func_kwdefaults = POP();
             }
             if (oparg & 0x01) {
-                assert(PyTuple_CheckExact(TOP()));
+                assert(PyTuple_Check(TOP()));
                 func->func_defaults = POP();
             }
 
