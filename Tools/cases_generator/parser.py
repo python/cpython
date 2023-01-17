@@ -51,12 +51,23 @@ class Node:
         tokens = context.owner.tokens
         begin = context.begin
         end = context.end
-        return lx.to_text(tokens[begin:end], dedent)
+        return lx.to_text(self.tokens, dedent)
+
+    @property
+    def tokens(self) -> list[lx.Token]:
+        context = self.context
+        if not context:
+            return []
+        tokens = context.owner.tokens
+        begin = context.begin
+        end = context.end
+        return tokens[begin:end]
 
 
 @dataclass
 class Block(Node):
-    tokens: list[lx.Token]
+    # This just holds a context which has the list of tokens.
+    pass
 
 
 @dataclass
@@ -354,8 +365,8 @@ class Parser(PLexer):
 
     @contextual
     def block(self) -> Block:
-        tokens = self.c_blob()
-        return Block(tokens)
+        if self.c_blob():
+            return Block()
 
     def c_blob(self) -> list[lx.Token]:
         tokens: list[lx.Token] = []

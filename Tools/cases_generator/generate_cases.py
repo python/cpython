@@ -215,7 +215,7 @@ class Instruction:
             num_dummies = (num_regs // 2) * 2 + 1 - num_regs
             fmt = "I" + "B"*num_regs + "X"*num_dummies
         else:
-            if variable_used(inst.block, "oparg"):
+            if variable_used(inst, "oparg"):
                 fmt = "IB"
             else:
                 fmt = "IX"
@@ -965,9 +965,9 @@ def always_exits(lines: list[str]) -> bool:
     )
 
 
-def variable_used(block: parser.Block, name: str) -> bool:
-    """Determine whether a variable with a given name is used in a block."""
-    return any(token.kind == "IDENTIFIER" and token.text == name for token in block.tokens)
+def variable_used(node: parser.Node, name: str) -> bool:
+    """Determine whether a variable with a given name is used in a node."""
+    return any(token.kind == "IDENTIFIER" and token.text == name for token in node.tokens)
 
 
 def main():
