@@ -64,6 +64,18 @@ def effect_size(effect: StackEffect) -> tuple[int, str]:
         return 1, ""
 
 
+def maybe_parenthesize(sym: str) -> str:
+    """Add parentheses around a string if it contains an operator.
+
+    An exception is made for '*' which is common and harmless
+    in the context where the symbolic size is used.
+    """
+    if re.match(r"^[\s\w*]+$", sym):
+        return sym
+    else:
+        return f"({sym})"
+
+
 def list_effect_size(effects: list[StackEffect]) -> tuple[int, str]:
     numeric = 0
     symbolic: list[str] = []
@@ -71,7 +83,7 @@ def list_effect_size(effects: list[StackEffect]) -> tuple[int, str]:
         diff, sym = effect_size(effect)
         numeric += diff
         if sym:
-            symbolic.append(sym)
+            symbolic.append(maybe_parenthesize(sym))
     return numeric, " + ".join(symbolic)
 
 

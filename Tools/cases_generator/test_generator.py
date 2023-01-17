@@ -18,15 +18,22 @@ def test_effect_sizes():
         b := StackEffect("b", "", "oparg*4"),
         c := StackEffect("c", "", ""),
     ]
+    other_effects = [
+        p := StackEffect("p", "", "oparg<<1"),
+        q := StackEffect("q", "", ""),
+        r := StackEffect("r", "", ""),
+    ]
     assert generate_cases.effect_size(x) == (1, "")
     assert generate_cases.effect_size(y) == (0, "oparg")
     assert generate_cases.effect_size(z) == (0, "oparg*2")
 
     assert generate_cases.list_effect_size(input_effects) == (1, "oparg + oparg*2")
     assert generate_cases.list_effect_size(output_effects) == (2, "oparg*4")
+    assert generate_cases.list_effect_size(other_effects) == (2, "(oparg<<1)")
 
     assert generate_cases.string_effect_size(generate_cases.list_effect_size(input_effects)) == "1 + oparg + oparg*2"
     assert generate_cases.string_effect_size(generate_cases.list_effect_size(output_effects)) == "2 + oparg*4"
+    assert generate_cases.string_effect_size(generate_cases.list_effect_size(other_effects)) == "2 + (oparg<<1)"
 
 
 def run_cases_test(input: str, expected: str):
