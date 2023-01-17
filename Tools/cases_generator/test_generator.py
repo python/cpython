@@ -4,6 +4,36 @@
 import tempfile
 
 import generate_cases
+from parser import StackEffect
+
+
+def test_effect_sizes():
+    input_effects = [
+        x := StackEffect("x", "", ""),
+        y := StackEffect("y", "", "oparg"),
+        z := StackEffect("z", "", "oparg*2"),
+    ]
+    output_effects = [
+        a := StackEffect("a", "", ""),
+        b := StackEffect("b", "", "oparg*4"),
+        c := StackEffect("c", "", ""),
+    ]
+    other_effects = [
+        p := StackEffect("p", "", "oparg<<1"),
+        q := StackEffect("q", "", ""),
+        r := StackEffect("r", "", ""),
+    ]
+    assert generate_cases.effect_size(x) == (1, "")
+    assert generate_cases.effect_size(y) == (0, "oparg")
+    assert generate_cases.effect_size(z) == (0, "oparg*2")
+
+    assert generate_cases.list_effect_size(input_effects) == (1, "oparg + oparg*2")
+    assert generate_cases.list_effect_size(output_effects) == (2, "oparg*4")
+    assert generate_cases.list_effect_size(other_effects) == (2, "(oparg<<1)")
+
+    assert generate_cases.string_effect_size(generate_cases.list_effect_size(input_effects)) == "1 + oparg + oparg*2"
+    assert generate_cases.string_effect_size(generate_cases.list_effect_size(output_effects)) == "2 + oparg*4"
+    assert generate_cases.string_effect_size(generate_cases.list_effect_size(other_effects)) == "2 + (oparg<<1)"
 
 
 def run_cases_test(input: str, expected: str):
@@ -118,6 +148,24 @@ def test_binary_op():
             spam();
             STACK_SHRINK(1);
             POKE(1, res);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_overlap():
+    input = """
+        inst(OP, (left, right -- left, result)) {
+            spam();
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *result;
+            spam();
+            POKE(1, result);
             DISPATCH();
         }
     """
@@ -304,6 +352,84 @@ def test_macro_instruction():
             }
             JUMPBY(5);
             STACK_SHRINK(2);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_array_input():
+    input = """
+        inst(OP, (below, values[oparg*2], above --)) {
+            spam();
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject *above = PEEK(1);
+            PyObject **values = &PEEK(1 + oparg*2);
+            PyObject *below = PEEK(2 + oparg*2);
+            spam();
+            STACK_SHRINK(oparg*2);
+            STACK_SHRINK(2);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_array_output():
+    input = """
+        inst(OP, (-- below, values[oparg*3], above)) {
+            spam();
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject *below;
+            PyObject **values;
+            PyObject *above;
+            spam();
+            STACK_GROW(2);
+            STACK_GROW(oparg*3);
+            POKE(1, above);
+            MOVE_ITEMS(&PEEK(1 + oparg*3), values, oparg*3);
+            POKE(2 + oparg*3, below);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_array_input_output():
+    input = """
+        inst(OP, (below, values[oparg] -- values[oparg], above)) {
+            spam();
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject **values = &PEEK(oparg);
+            PyObject *below = PEEK(1 + oparg);
+            PyObject *above;
+            spam();
+            POKE(1, above);
+            MOVE_ITEMS(&PEEK(1 + oparg), values, oparg);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_array_error_if():
+    input = """
+        inst(OP, (extra, values[oparg] --)) {
+            ERROR_IF(oparg == 0, somewhere);
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject **values = &PEEK(oparg);
+            PyObject *extra = PEEK(1 + oparg);
+            if (oparg == 0) { STACK_SHRINK(oparg); goto pop_1_somewhere; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
             DISPATCH();
         }
     """
