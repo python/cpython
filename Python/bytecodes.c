@@ -1436,7 +1436,7 @@ dummy_func(
         inst(BUILD_CONST_KEY_MAP) {
             PyObject *map;
             PyObject *keys = TOP();
-            if (!PyTuple_CheckExact(keys) ||
+            if (!PyTuple_Check(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad BUILD_CONST_KEY_MAP keys argument");

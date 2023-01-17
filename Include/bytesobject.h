@@ -25,6 +25,7 @@ functions should be applied to NULL pointer.
 */
 
 PyAPI_DATA(PyTypeObject) PyBytes_Type;
+PyAPI_DATA(PyTypeObject) PyDeepFreezeBytes_Type;
 PyAPI_DATA(PyTypeObject) PyBytesIter_Type;
 
 #define PyBytes_Check(op) \

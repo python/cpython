@@ -21,6 +21,7 @@ returned item's reference count.
 */
 
 PyAPI_DATA(PyTypeObject) PyTuple_Type;
+PyAPI_DATA(PyTypeObject) PyDeepFreezeTuple_Type;
 PyAPI_DATA(PyTypeObject) PyTupleIter_Type;
 
 #define PyTuple_Check(op) \

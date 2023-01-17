@@ -165,7 +165,7 @@ class Printer:
                 self.write("Py_hash_t ob_shash;")
                 self.write(f"char ob_sval[{len(b) + 1}];")
         with self.block(f"{name} =", ";"):
-            self.object_var_head("PyBytes_Type", len(b))
+            self.object_var_head("PyDeepFreezeBytes_Type", len(b))
             self.write(".ob_shash = -1,")
             self.write(f".ob_sval = {make_string_literal(b)},")
         return f"& {name}.ob_base.ob_base"
@@ -301,7 +301,7 @@ class Printer:
                         self.write(f"PyObject *ob_item[{len(t)}];")
         with self.block(f"{name} =", ";"):
             with self.block("._object =", ","):
-                self.object_var_head("PyTuple_Type", len(t))
+                self.object_var_head("PyDeepFreezeTuple_Type", len(t))
                 if items:
                     with self.block(f".ob_item =", ","):
                         for item in items:
@@ -321,7 +321,7 @@ class Printer:
                 self.write("PyObject_VAR_HEAD")
                 self.write(f"digit ob_digit[{max(1, len(digits))}];")
         with self.block(f"{name} =", ";"):
-            self.object_var_head("PyLong_Type", sign*len(digits))
+            self.object_var_head("PyDeepFreezeLong_Type", sign*len(digits))
             if digits:
                 ds = ", ".join(map(str, digits))
                 self.write(f".ob_digit = {{ {ds} }},")

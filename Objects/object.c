@@ -1966,12 +1966,15 @@ static PyTypeObject* static_types[] = {
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
-    &PyBool_Type,         // base=&PyLong_Type
-    &PyCMethod_Type,      // base=&PyCFunction_Type
-    &PyODictItems_Type,   // base=&PyDictItems_Type
-    &PyODictKeys_Type,    // base=&PyDictKeys_Type
-    &PyODictValues_Type,  // base=&PyDictValues_Type
-    &PyODict_Type,        // base=&PyDict_Type
+    &PyBool_Type,             // base=&PyLong_Type
+    &PyCMethod_Type,          // base=&PyCFunction_Type
+    &PyODictItems_Type,       // base=&PyDictItems_Type
+    &PyODictKeys_Type,        // base=&PyDictKeys_Type
+    &PyODictValues_Type,      // base=&PyDictValues_Type
+    &PyODict_Type,            // base=&PyDict_Type
+    &PyDeepFreezeBytes_Type,  // base=&PyBytes_Type
+    &PyDeepFreezeLong_Type,   // base=&PyLong_Type
+    &PyDeepFreezeTuple_Type,  // base=&PyTuple_Type
 };
 
 
