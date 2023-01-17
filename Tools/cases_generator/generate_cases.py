@@ -167,7 +167,7 @@ class Formatter:
             # NOTE: MOVE_ITEMS() does not actually exist.
             # The only supported output array forms are:
             # - unused[...]
-            # - X[...] where X[...] matches an i99nput array form
+            # - X[...] where X[...] matches an input array exactly
             self.emit(f"MOVE_ITEMS({src.name}, {dst.name}, {src.size});")
         elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
