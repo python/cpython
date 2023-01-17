@@ -1093,7 +1093,7 @@ PyObject *descr, DescriptorClassification kind)
             }
         }
     }
-    if (dictkind == MANAGED_VALUES || dictkind == OFFSET_DICT) {
+    if (dictkind == MANAGED_VALUES) {
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         if (index != DKIX_EMPTY) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SHADOWED);
