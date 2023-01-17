@@ -1103,6 +1103,7 @@ PKG_CONFIG
 PKG_CONFIG_PATH
 PKG_CONFIG_LIBDIR
 MACHDEP
+_PYTHON_HOST_PLATFORM
 CC
 CFLAGS
 LDFLAGS
@@ -1915,6 +1916,14 @@ Some influential environment variables:
   PKG_CONFIG_LIBDIR
               path overriding pkg-config's built-in search path
   MACHDEP     name for machine-dependent library files
+  _PYTHON_HOST_PLATFORM
+              Forces a platform tag value for use in sysconfig data. This will
+              be calculated automatically in non-cross builds by running
+              sysconfig code in the bootstrapped interpreter. In cross builds,
+              an attempt will be made to derive an appropriate value in
+              configure. But some targets may derive incorrect values. This
+              variable can be set to force a value. Example values:
+              linux-x86_64, macosx-10.9-universal2, win-amd64
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -3928,33 +3937,41 @@ fi
 $as_echo "\"$MACHDEP\"" >&6; }
 
 
-if test "$cross_compiling" = yes; then
-	case "$host" in
-	*-*-linux*)
-		case "$host_cpu" in
-		arm*)
-			_host_cpu=arm
-			;;
-		*)
-			_host_cpu=$host_cpu
-		esac
-		;;
-	*-*-cygwin*)
-		_host_cpu=
-		;;
-	*-*-vxworks*)
-		_host_cpu=$host_cpu
-		;;
-	wasm32-*-* | wasm64-*-*)
-		_host_cpu=$host_cpu
-		;;
-	*)
-		# for now, limit cross builds to known configurations
-		MACHDEP="unknown"
-		as_fn_error $? "cross build not supported for $host" "$LINENO" 5
-	esac
-	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking _PYTHON_HOST_PLATFORM" >&5
+$as_echo_n "checking _PYTHON_HOST_PLATFORM... " >&6; }
+
+if test -z "${_PYTHON_HOST_PLATFORM}"; then
+    if test "$cross_compiling" = yes; then
+        case "$host" in
+        *-*-linux*)
+            case "$host_cpu" in
+            arm*)
+                _host_cpu=arm
+                ;;
+            *)
+                _host_cpu=$host_cpu
+            esac
+            ;;
+        *-*-cygwin*)
+            _host_cpu=
+            ;;
+        *-*-vxworks*)
+            _host_cpu=$host_cpu
+            ;;
+        wasm32-*-* | wasm64-*-*)
+            _host_cpu=$host_cpu
+            ;;
+        *)
+            # for now, limit cross builds to known configurations
+            MACHDEP="unknown"
+            as_fn_error $? "cross build not supported for $host" "$LINENO" 5
+        esac
+        _PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+    fi
 fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $_PYTHON_HOST_PLATFORM" >&5
+$as_echo "$_PYTHON_HOST_PLATFORM" >&6; }
 
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
 # disable features if it is defined, without any means to access these

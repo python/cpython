@@ -584,34 +584,46 @@ then
 fi
 AC_MSG_RESULT("$MACHDEP")
 
-AC_SUBST(_PYTHON_HOST_PLATFORM)
-if test "$cross_compiling" = yes; then
-	case "$host" in
-	*-*-linux*)
-		case "$host_cpu" in
-		arm*)
-			_host_cpu=arm
-			;;
-		*)
-			_host_cpu=$host_cpu
-		esac
-		;;
-	*-*-cygwin*)
-		_host_cpu=
-		;;
-	*-*-vxworks*)
-		_host_cpu=$host_cpu
-		;;
-	wasm32-*-* | wasm64-*-*)
-		_host_cpu=$host_cpu
-		;;
-	*)
-		# for now, limit cross builds to known configurations
-		MACHDEP="unknown"
-		AC_MSG_ERROR([cross build not supported for $host])
-	esac
-	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+AC_ARG_VAR(_PYTHON_HOST_PLATFORM, [
+  Forces a platform tag value for use in sysconfig data. This will be calculated
+  automatically in non-cross builds by running sysconfig code in the
+  bootstrapped interpreter. In cross builds, an attempt will be made to
+  derive an appropriate value in configure. But some targets may derive
+  incorrect values. This variable can be set to force a value. Example
+  values: linux-x86_64, macosx-10.9-universal2, win-amd64])
+AC_MSG_CHECKING(_PYTHON_HOST_PLATFORM)
+
+if test -z "${_PYTHON_HOST_PLATFORM}"; then
+    if test "$cross_compiling" = yes; then
+        case "$host" in
+        *-*-linux*)
+            case "$host_cpu" in
+            arm*)
+                _host_cpu=arm
+                ;;
+            *)
+                _host_cpu=$host_cpu
+            esac
+            ;;
+        *-*-cygwin*)
+            _host_cpu=
+            ;;
+        *-*-vxworks*)
+            _host_cpu=$host_cpu
+            ;;
+        wasm32-*-* | wasm64-*-*)
+            _host_cpu=$host_cpu
+            ;;
+        *)
+            # for now, limit cross builds to known configurations
+            MACHDEP="unknown"
+            AC_MSG_ERROR([cross build not supported for $host])
+        esac
+        _PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+    fi
 fi
+
+AC_MSG_RESULT([$_PYTHON_HOST_PLATFORM])
 
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
 # disable features if it is defined, without any means to access these
