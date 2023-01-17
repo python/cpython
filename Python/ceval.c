@@ -3347,7 +3347,7 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int oparg)
 
 
 Py_ssize_t
-_PyEval_RequestCodeExtraIndex(freefunc free)
+PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t new_index;

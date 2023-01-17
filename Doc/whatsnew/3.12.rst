@@ -753,7 +753,16 @@ New Features
   warnings.
   Its contents are marked by the ``PyUnstable_`` prefix in names.
 
-  (List TBD)
+  Code object constructors:
+
+  - ``PyUnstable_Code_New()`` (renamed from ``PyCode_New``)
+  - ``PyUnstable_Code_NewWithPosOnlyArgs()`` (renamed from ``PyCode_NewWithPosOnlyArgs``)
+
+  Extra storage for code objects (:pep:`523`):
+
+  - ``PyUnstable_Eval_RequestCodeExtraIndex()`` (renamed from ``_PyEval_RequestCodeExtraIndex``)
+  - ``PyUnstable_Code_GetExtra()`` (renamed from ``_PyCode_GetExtra``)
+  - ``PyUnstable_Code_SetExtra()`` (renamed from ``_PyCode_SetExtra``)
 
   The original names will continue to be available until the respective
   API changes.
