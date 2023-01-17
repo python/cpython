@@ -746,6 +746,20 @@ C API Changes
 New Features
 ------------
 
+
+* :pep:`697`: Introduced the :ref:`Unstable C API tier <unstable-c-api>`,
+  intended for low-level tools like debuggers and JIT compilers.
+  This API may change in each minor release of CPython without deprecation
+  warnings.
+  Its contents are marked by the ``PyUnstable_`` prefix in names.
+
+  (List TBD)
+
+  The original names will continue to be available until the respective
+  API changes.
+
+  (Contributed by Petr Viktorin in :gh:`101101`.)
+
 * Added the new limited C API function :c:func:`PyType_FromMetaclass`,
   which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
   an additional metaclass argument.
