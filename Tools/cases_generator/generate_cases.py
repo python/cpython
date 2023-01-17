@@ -275,8 +275,7 @@ class Instruction:
         if not self.register:
             # Write input stack effect variable declarations and initializations
             ieffects = list(reversed(self.input_effects))
-            for i in range(len(ieffects)):
-                ieffect = ieffects[i]
+            for i, ieffect in enumerate(ieffects):
                 isize = string_effect_size(list_effect_size(ieffects[:i+1]))
                 if ieffect.size:
                     src = StackEffect(f"&PEEK({isize})", "PyObject **")
@@ -309,8 +308,7 @@ class Instruction:
 
             # Write output stack effect assignments
             oeffects = list(reversed(self.output_effects))
-            for i in range(len(oeffects)):
-                oeffect = oeffects[i]
+            for i, oeffect in enumerate(oeffects):
                 if oeffect.name in self.unmoved_names:
                     continue
                 osize = string_effect_size(list_effect_size(oeffects[:i+1]))
