@@ -157,7 +157,8 @@ Root nodes
    A Python module.
 
    *body* is a :class:`list` of the module's :ref:`ast-statements`.
-   *type_ignores* is a :class:`list` of the module's type ignore comments,
+
+   *type_ignores* is a :class:`list` of the module's type ignore comments;
    see :func:`ast.parse` for more details.
 
    .. doctest::
@@ -176,7 +177,8 @@ Root nodes
 
    A single Python expression.
 
-   *body* is a single :ref:`ast-expressions` node.
+   *body* is a single node,
+   one of the :ref:`expression types <ast-expressions>`.
 
    .. doctest::
 
@@ -187,9 +189,9 @@ Root nodes
 
 .. class:: Interactive(body)
 
-   A single Python interactive statement, like in :ref:`tut-interac`.
+   A single Python interactive line, like in :ref:`tut-interac`.
 
-   *body* is a :class:`list` of :ref:`ast-statements` nodes.
+   *body* is a :class:`list` of :ref:`statement nodes <ast-statements>`.
 
    .. doctest::
 
@@ -208,7 +210,7 @@ Root nodes
 
 .. class:: FunctionType(argtypes, returns)
 
-   Special type to represent old-style type comments for functions,
+   A representation of an old-style type comments for functions,
    as Python versions prior to 3.5 didn't support :pep:`484` annotations.
 
    Such type comments would look like this::
@@ -217,8 +219,9 @@ Root nodes
            # type: (int, int) -> int
            return a + b
 
-   *argtypes* is a :class:`list` of :ref:`ast-expressions` nodes.
-   *returns* is a single :ref:`ast-expressions` node.
+   *argtypes* is a :class:`list` of :ref:`expression nodes <ast-expressions>`.
+
+   *returns* is a single :ref:`expression node <ast-expressions>`.
 
    .. doctest::
 
