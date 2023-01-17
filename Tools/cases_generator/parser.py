@@ -261,6 +261,8 @@ class Parser(PLexer):
         while (tkn := self.peek()) and tkn.kind != lx.RBRACKET:
             tokens.append(tkn)
             self.next()
+        if not tokens:
+            return None
         return Dimension(lx.to_text(tokens).strip())
 
     @contextual
