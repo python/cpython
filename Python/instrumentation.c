@@ -22,12 +22,13 @@ static const uint8_t DE_INSTRUMENT[256] = {
     [INSTRUMENTED_YIELD_VALUE] = YIELD_VALUE,
     [INSTRUMENTED_JUMP_FORWARD] = JUMP_FORWARD,
     [INSTRUMENTED_JUMP_BACKWARD] = INSTRUMENTED_JUMP_BACKWARD,
-    [INSTRUMENTED_JUMP_IF_FALSE_OR_POP] = INSTRUMENTED_JUMP_IF_FALSE_OR_POP,
-    [INSTRUMENTED_JUMP_IF_TRUE_OR_POP] = INSTRUMENTED_JUMP_IF_TRUE_OR_POP,
-    [INSTRUMENTED_POP_JUMP_IF_FALSE] = INSTRUMENTED_POP_JUMP_IF_FALSE,
-    [INSTRUMENTED_POP_JUMP_IF_TRUE] = INSTRUMENTED_POP_JUMP_IF_TRUE,
-    [INSTRUMENTED_POP_JUMP_IF_NONE] = INSTRUMENTED_POP_JUMP_IF_NONE,
-    [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = INSTRUMENTED_POP_JUMP_IF_NOT_NONE,
+    [INSTRUMENTED_JUMP_IF_FALSE_OR_POP] = JUMP_IF_FALSE_OR_POP,
+    [INSTRUMENTED_JUMP_IF_TRUE_OR_POP] = JUMP_IF_TRUE_OR_POP,
+    [INSTRUMENTED_POP_JUMP_IF_FALSE] = POP_JUMP_IF_FALSE,
+    [INSTRUMENTED_POP_JUMP_IF_TRUE] = POP_JUMP_IF_TRUE,
+    [INSTRUMENTED_POP_JUMP_IF_NONE] = POP_JUMP_IF_NONE,
+    [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = POP_JUMP_IF_NOT_NONE,
+    [INSTRUMENTED_COMPARE_AND_BRANCH] = COMPARE_AND_BRANCH,
 };
 
 static const uint8_t INSTRUMENTED_OPCODES[256] = {
@@ -57,9 +58,93 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
     [INSTRUMENTED_POP_JUMP_IF_NONE] = INSTRUMENTED_POP_JUMP_IF_NONE,
     [POP_JUMP_IF_NOT_NONE] = INSTRUMENTED_POP_JUMP_IF_NOT_NONE,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = INSTRUMENTED_POP_JUMP_IF_NOT_NONE,
+    [COMPARE_AND_BRANCH] = INSTRUMENTED_COMPARE_AND_BRANCH,
+    [INSTRUMENTED_COMPARE_AND_BRANCH] = INSTRUMENTED_COMPARE_AND_BRANCH,
 
     [INSTRUMENTED_LINE] = INSTRUMENTED_LINE,
 };
+
+static void
+dump_instrumentation_data_tools(PyCodeObject *code, uint8_t *tools, int i, FILE*out)
+{
+    if (tools == NULL) {
+        fprintf(out, "tools = NULL");
+    }
+    else {
+        fprintf(out, "tools = %d", tools[i]);
+    }
+}
+
+static void
+dump_instrumentation_data_lines(PyCodeObject *code, _PyCoLineInstrumentationData *lines, int i, FILE*out)
+{
+    if (lines == NULL) {
+        fprintf(out, ", lines = NULL");
+    }
+    else if (lines[i].original_opcode == 0) {
+        fprintf(out, ", lines = {original_opcode = No LINE (0), line_delta = %d)", lines[i].line_delta);
+    }
+    else if (lines[i].original_opcode == 255) {
+        fprintf(out, ", lines = {original_opcode = LINE_MARKER, line_delta = %d)", lines[i].line_delta);
+    }
+    else {
+        fprintf(out, ", lines = {original_opcode = %s, line_delta = %d)", _PyOpcode_OpName[lines[i].original_opcode], lines[i].line_delta);
+    }
+}
+
+static void
+dump_instrumentation_data_line_tools(PyCodeObject *code, uint8_t *line_tools, int i, FILE*out)
+{
+    if (line_tools == NULL) {
+        fprintf(out, ", line_tools = NULL");
+    }
+    else {
+        fprintf(out, ", line_tools = %d", line_tools[i]);
+    }
+}
+
+
+/* No error checking -- Don't use this for anything but experimental debugging */
+static void
+dump_instrumentation_data(PyCodeObject *code, _PyCoInstrumentationData *data, int star, FILE*out)
+{
+    if (data == NULL) {
+        fprintf(out, "NULL\n");
+        return;
+    }
+    int code_len = (int)Py_SIZE(code);
+    bool starred = false;
+    for (int i = 0; i < code_len; i++) {
+        _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+        int opcode = instr->opcode;
+        int base_opcode;
+        if (DE_INSTRUMENT[opcode]) {
+            base_opcode = _PyOpcode_Deopt[DE_INSTRUMENT[opcode]];
+        }
+        else {
+            base_opcode = _PyOpcode_Deopt[opcode];
+        }
+        /* TO DO -- Use instruction length, not cache count */
+        i += _PyOpcode_Caches[base_opcode];
+        if (i == star) {
+            fprintf(out, "**  ");
+            starred = true;
+        }
+        fprintf(out, "Offset: %d, Instruction: %s: ", i, _PyOpcode_OpName[opcode]);
+        dump_instrumentation_data_tools(code, data->tools, i, out);
+        dump_instrumentation_data_lines(code, data->lines, i, out);
+        dump_instrumentation_data_line_tools(code, data->line_tools, i, out);
+        /* TO DO -- per instruction data */
+        fprintf(out, "\n");
+    }
+    if (!starred && star >= 0) {
+        fprintf(out, "Error offset not at valid instruction offset: %d\n", star);
+        fprintf(out, "    ");
+        dump_instrumentation_data_tools(code, data->tools, star, out);
+        dump_instrumentation_data_lines(code, data->lines, star, out);
+        dump_instrumentation_data_line_tools(code, data->line_tools, star, out);
+    }
+}
 
 _PyInstrumentationOffsets
 get_offsets(PyCodeObject *code) {
@@ -103,7 +188,12 @@ int _Py_GetBaseOpcode(PyCodeObject *code, int offset)
     */
     if (opcode == INSTRUMENTED_LINE) {
         opcode = code->_co_instrumentation.monitoring_data->lines[offset].original_opcode;
+        deinstrumented = DE_INSTRUMENT[opcode];
+        if (deinstrumented) {
+            return deinstrumented;
+        }
     }
+    assert(!is_instrumented(opcode));
     assert(_PyOpcode_Deopt[opcode]);
     return _PyOpcode_Deopt[opcode];
 }
@@ -187,6 +277,7 @@ instrument(PyCodeObject *code, int offset)
         }
         assert(instrumented);
         instr->opcode = instrumented;
+        /* TO DO -- Use instruction length, not cache count */
         if (_PyOpcode_Caches[opcode]) {
             instr[1].cache = adaptive_counter_warmup();
         }
@@ -203,6 +294,9 @@ instrument_line(PyCodeObject *code, int offset)
         return;
     }
     _PyCoLineInstrumentationData *lines = &code->_co_instrumentation.monitoring_data->lines[offset];
+    if (lines->original_opcode != 255) {
+        dump_instrumentation_data(code, code->_co_instrumentation.monitoring_data, offset, stderr);
+    }
     assert(lines->original_opcode == 255);
     if (is_instrumented(opcode)) {
         lines->original_opcode = opcode;
@@ -598,6 +692,7 @@ static const int8_t EVENT_FOR_OPCODE[256] = {
     [POP_JUMP_IF_TRUE] = PY_MONITORING_EVENT_BRANCH,
     [POP_JUMP_IF_NONE] = PY_MONITORING_EVENT_BRANCH,
     [POP_JUMP_IF_NOT_NONE] = PY_MONITORING_EVENT_BRANCH,
+    [COMPARE_AND_BRANCH] = PY_MONITORING_EVENT_BRANCH,
 };
 
 static const bool OPCODE_HAS_EVENT[256] = {
@@ -619,6 +714,7 @@ static const bool OPCODE_HAS_EVENT[256] = {
     [POP_JUMP_IF_TRUE] = true,
     [POP_JUMP_IF_NONE] = true,
     [POP_JUMP_IF_NOT_NONE] = true,
+    [COMPARE_AND_BRANCH] = true,
 };
 
 static inline _Py_MonitoringMatrix
@@ -751,13 +847,13 @@ initialize_lines(PyCodeObject *code)
     _PyCoLineInstrumentationData *line_data = code->_co_instrumentation.monitoring_data->lines;
     assert(line_data != NULL);
     int code_len = (int)Py_SIZE(code);
-    int current_line = -1;
     PyCodeAddressRange range;
     _PyCode_InitAddressRange(code, &range);
-    for (int i = 0; i <= code->_co_firsttraceable; i++) {
+    for (int i = 0; i <= code->_co_firsttraceable && i < code_len; i++) {
         line_data[i].original_opcode = 0;
         line_data[i].line_delta = -128;
     }
+    int current_line = -1;
     for (int i = code->_co_firsttraceable + 1; i < code_len; i++) {
         int opcode = _Py_GetBaseOpcode(code, i);
         if (is_new_line(i, current_line, &range, opcode)) {
@@ -792,11 +888,16 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     bool restarted = interp->last_restart_version > code->_co_instrumentation.monitoring_version;
     int code_len = (int)Py_SIZE(code);
     if (code->_co_instrumentation.monitoring_data == NULL) {
-        code->_co_instrumentation.monitoring_data = PyMem_Calloc(sizeof(_PyCoInstrumentationData), 1);
+        code->_co_instrumentation.monitoring_data = PyMem_Malloc(sizeof(_PyCoInstrumentationData));
         if (code->_co_instrumentation.monitoring_data == NULL) {
             PyErr_NoMemory();
             return -1;
         }
+        code->_co_instrumentation.monitoring_data->tools = NULL;
+        code->_co_instrumentation.monitoring_data->lines = NULL;
+        code->_co_instrumentation.monitoring_data->line_tools = NULL;
+        code->_co_instrumentation.monitoring_data->per_instruction_opcodes = NULL;
+        code->_co_instrumentation.monitoring_data->per_instruction_tools = NULL;
     }
     if (new_layout.offsets.multi_tools && code->_co_instrumentation.monitoring_data->tools == NULL) {
         code->_co_instrumentation.monitoring_data->tools = PyMem_Malloc(code_len);
@@ -831,6 +932,20 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     assert(new_layout.offsets.instructions == 0);
     code->_co_instrumentation.layout.bits = new_layout.bits;
     return 0;
+}
+
+static bool super_instructions[256] = {
+    [LOAD_FAST__LOAD_FAST] = true,
+    [LOAD_FAST__LOAD_CONST] = true,
+    [STORE_FAST__LOAD_FAST] = true,
+    [STORE_FAST__STORE_FAST] = true,
+    [LOAD_CONST__LOAD_FAST] = true,
+};
+
+/* Should use instruction metadata for this */
+static bool
+is_super_instruction(int opcode) {
+    return super_instructions[opcode];
 }
 
 int
@@ -880,6 +995,9 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         else {
             base_opcode = _PyOpcode_Deopt[opcode];
         }
+        if (is_super_instruction(opcode)) {
+            instr->opcode = base_opcode;
+        }
         if (OPCODE_HAS_EVENT[base_opcode]) {
             int8_t event;
             if (base_opcode == RESUME) {
@@ -899,7 +1017,15 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
                 add_tools(code, i, event, new_tools);
             }
         }
+        /* TO DO -- Use instruction length, not cache count */
         i += _PyOpcode_Caches[base_opcode];
+        if (base_opcode == COMPARE_AND_BRANCH) {
+            /* Skip over following POP_JUMP_IF */
+            assert(instr[2].opcode == POP_JUMP_IF_FALSE ||
+                   instr[2].opcode == POP_JUMP_IF_TRUE);
+            i++;
+        }
+
     }
     uint8_t new_line_tools = new_events.tools[PY_MONITORING_EVENT_LINE];
     uint8_t removed_line_tools = removed_events.tools[PY_MONITORING_EVENT_LINE];
@@ -915,7 +1041,12 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
                 }
             }
             int opcode = _Py_GetBaseOpcode(code, i);
+            /* TO DO -- Use instruction length, not cache count */
             i += _PyOpcode_Caches[opcode];
+            if (opcode == COMPARE_AND_BRANCH) {
+                /* Skip over following POP_JUMP_IF */
+                i++;
+            }
         }
     }
     return 0;

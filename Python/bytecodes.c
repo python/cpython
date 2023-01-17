@@ -91,11 +91,6 @@ static size_t jump;
 // Dummy variables for cache effects
 static uint16_t invert, counter, index, hint;
 static uint32_t type_version;
-// Dummy opcode names for 'op' opcodes
-#define _COMPARE_OP_FLOAT 1003
-#define _COMPARE_OP_INT 1004
-#define _COMPARE_OP_STR 1005
-#define _JUMP_IF 1006
 
 static PyObject *
 dummy_func(
@@ -1838,22 +1833,8 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        family(compare_op) = {
-            COMPARE_OP,
-            _COMPARE_OP_FLOAT,
-            _COMPARE_OP_INT,
-            _COMPARE_OP_STR,
-        };
-
         inst(COMPARE_OP, (unused/1, left, right -- res)) {
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
-                _Py_Specialize_CompareOp(left, right, next_instr, oparg);
-                DISPATCH_SAME_OPARG();
-            }
             STAT_INC(COMPARE_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             assert((oparg >> 4) <= Py_GE);
             res = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
@@ -1861,38 +1842,88 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // The result is an int disguised as an object pointer.
-        op(_COMPARE_OP_FLOAT, (unused/1, left, right -- jump: size_t)) {
-            // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
-            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
+        family(compare_and_branch) = {
+            COMPARE_AND_BRANCH,
+            COMPARE_AND_BRANCH_FLOAT,
+            COMPARE_AND_BRANCH_INT,
+            COMPARE_AND_BRANCH_STR,
+        };
+
+        inst(COMPARE_AND_BRANCH, (unused/2, left, right -- )) {
+            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                next_instr--;
+                _Py_Specialize_CompareAndBranch(left, right, next_instr, oparg);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(COMPARE_AND_BRANCH, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            assert((oparg >> 4) <= Py_GE);
+            PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            ERROR_IF(cond == NULL, error);
+            assert(_Py_OPCODE(next_instr[1]) == POP_JUMP_IF_FALSE ||
+                   _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE);
+            bool jump_on_true = _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE;
+            int offset = _Py_OPARG(next_instr[1]);
+            int err = PyObject_IsTrue(cond);
+            Py_DECREF(cond);
+            ERROR_IF(err < 0, error);
+            if (jump_on_true == (err != 0)) {
+                JUMPBY(offset);
+            }
+        }
+
+        inst(INSTRUMENTED_COMPARE_AND_BRANCH, (unused/2, left, right -- )) {
+            assert((oparg >> 4) <= Py_GE);
+            PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            ERROR_IF(cond == NULL, error);
+            assert(_Py_OPCODE(next_instr[1]) == POP_JUMP_IF_FALSE ||
+                   _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE);
+            bool jump_on_true = _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE;
+            int offset = _Py_OPARG(next_instr[1]);
+            int err = PyObject_IsTrue(cond);
+            Py_DECREF(cond);
+            ERROR_IF(err < 0, error);
+            _Py_CODEUNIT *target;
+            if (jump_on_true == (err != 0)) {
+                target = next_instr + offset + 2;
+                JUMPBY(offset);
+            }
+            else {
+                target = next_instr + 2;
+            }
+            err = _Py_call_instrumentation_jump(
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, target);
+            ERROR_IF(err, error);
+        }
+
+        inst(COMPARE_AND_BRANCH_FLOAT, (unused/2, left, right -- )) {
+            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_AND_BRANCH);
+            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_AND_BRANCH);
+            STAT_INC(COMPARE_AND_BRANCH, hit);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
             // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
             int sign_ish = COMPARISON_BIT(dleft, dright);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            jump = sign_ish & oparg;
-        }
-        // The input is an int disguised as an object pointer!
-        op(_JUMP_IF, (jump: size_t --)) {
-            assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            if (jump) {
-                JUMPBY(oparg);
+            if (sign_ish & oparg) {
+                int offset = _Py_OPARG(next_instr[1]);
+                JUMPBY(offset);
             }
         }
-        // We're praying that the compiler optimizes the flags manipuations.
-        super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_IF;
 
-        // Similar to COMPARE_OP_FLOAT
-        op(_COMPARE_OP_INT, (unused/1, left, right -- jump: size_t)) {
-            // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
-            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
-            DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_OP);
-            DEOPT_IF((size_t)(Py_SIZE(right) + 1) > 2, COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
+        // Similar to COMPARE_AND_BRANCH_FLOAT
+        inst(COMPARE_AND_BRANCH_INT, (unused/2, left, right -- )) {
+            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_AND_BRANCH);
+            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_AND_BRANCH);
+            DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_AND_BRANCH);
+            DEOPT_IF((size_t)(Py_SIZE(right) + 1) > 2, COMPARE_AND_BRANCH);
+            STAT_INC(COMPARE_AND_BRANCH, hit);
             assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
             Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
             Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
@@ -1900,16 +1931,17 @@ dummy_func(
             int sign_ish = COMPARISON_BIT(ileft, iright);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            jump = sign_ish & oparg;
+            if (sign_ish & oparg) {
+                int offset = _Py_OPARG(next_instr[1]);
+                JUMPBY(offset);
+            }
         }
-        super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_IF;
 
-        // Similar to COMPARE_OP_FLOAT, but for ==, != only
-        op(_COMPARE_OP_STR, (unused/1, left, right -- jump: size_t)) {
-            // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
-            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
+        // Similar to COMPARE_AND_BRANCH_FLOAT, but for ==, != only
+        inst(COMPARE_AND_BRANCH_STR, (unused/2, left, right -- )) {
+            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_AND_BRANCH);
+            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_AND_BRANCH);
+            STAT_INC(COMPARE_AND_BRANCH, hit);
             int res = _PyUnicode_Equal(left, right);
             assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
@@ -1917,10 +1949,11 @@ dummy_func(
             assert(res == 0 || res == 1);
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
-            jump = (res + COMPARISON_NOT_EQUALS) & oparg;
+            if ((res + COMPARISON_NOT_EQUALS) & oparg) {
+                int offset = _Py_OPARG(next_instr[1]);
+                JUMPBY(offset);
+            }
         }
-
-        super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_IF;
 
         inst(IS_OP, (left, right -- b)) {
             int res = Py_Is(left, right) ^ oparg;
@@ -3411,7 +3444,7 @@ dummy_func(
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
             assert(oparg < INSTR_OFFSET());
             int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
+                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr-oparg);
             ERROR_IF(err, error);
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
@@ -3423,15 +3456,17 @@ dummy_func(
             ERROR_IF(err < 0, error);
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
-            _Py_CODEUNIT *there = next_instr + err*oparg;
+            _Py_CODEUNIT *target = next_instr + err*oparg;
             err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, target);
             ERROR_IF(err, error);
-            if (err == 0) {
+            if (err) {
+                JUMPBY(oparg);
+            }
+            else {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
             }
-            next_instr = there;
         }
 
         inst(INSTRUMENTED_JUMP_IF_FALSE_OR_POP, ( -- )) {
@@ -3440,15 +3475,17 @@ dummy_func(
             ERROR_IF(err < 0, error);
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
-            _Py_CODEUNIT *there = next_instr + (1-err)*oparg;
+            _Py_CODEUNIT *target = next_instr + err*oparg;
             err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, target);
             ERROR_IF(err, error);
-            if (err) {
+            if (err == 0) {
+                JUMPBY(oparg);
+            }
+            else {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
             }
-            next_instr = there;
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
@@ -3457,11 +3494,11 @@ dummy_func(
             ERROR_IF(err < 0, error);
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
-            _Py_CODEUNIT *there = next_instr + err*oparg;
+            int offset = err*oparg;
             err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, next_instr + offset);
             ERROR_IF(err, error);
-            next_instr = there;
+            JUMPBY(offset);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, ( -- )) {
@@ -3470,47 +3507,47 @@ dummy_func(
             ERROR_IF(err < 0, error);
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
-            _Py_CODEUNIT *there = next_instr + (1-err)*oparg;
+            int offset = (1-err)*oparg;
             err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, next_instr + offset);
             ERROR_IF(err, error);
-            next_instr = there;
+            JUMPBY(offset);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, ( -- )) {
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
-            _Py_CODEUNIT *there;
+            int offset;
             if (Py_IsNone(value)) {
                 _Py_DECREF_NO_DEALLOC(value);
-                there = next_instr + oparg;
+                offset = oparg;
             }
             else {
                 Py_DECREF(value);
-                there = next_instr;
+                offset = 0;
             }
             int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, next_instr + offset);
             ERROR_IF(err, error);
-            next_instr = there;
+            JUMPBY(offset);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, ( -- )) {
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
-            _Py_CODEUNIT *there;
+            int offset;
             if (Py_IsNone(value)) {
                 _Py_DECREF_NO_DEALLOC(value);
-                there = next_instr;
+                offset = 0;
             }
             else {
                 Py_DECREF(value);
-                there = next_instr + oparg;
+                 offset = oparg;
             }
             int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, there);
+                tstate, PY_MONITORING_EVENT_JUMP, frame, here, next_instr + offset);
             ERROR_IF(err, error);
-            next_instr = there;
+            JUMPBY(offset);
         }
 
         // stack effect: ( -- )

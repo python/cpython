@@ -168,9 +168,14 @@ class Instruction:
                 break
         self.unmoved_names = frozenset(unmoved_names)
         if self.register:
-            fmt = "IBBB"
+            num_regs = len(self.input_effects) + len(self.output_effects)
+            num_dummies = (num_regs // 2) * 2 + 1 - num_regs
+            fmt = "I" + "B"*num_regs + "X"*num_dummies
         else:
-            fmt = "IB"
+            if variable_used(inst.block, "oparg"):
+                fmt = "IB"
+            else:
+                fmt = "IX"
         cache = "C"
         for ce in self.cache_effects:
             for _ in range(ce.size):
@@ -892,6 +897,11 @@ def always_exits(lines: list[str]) -> bool:
     return line.startswith(
         ("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()")
     )
+
+
+def variable_used(block: parser.Block, name: str) -> bool:
+    """Determine whether a variable with a given name is used in a block."""
+    return any(token.kind == "IDENTIFIER" and token.text == name for token in block.tokens)
 
 
 def main():

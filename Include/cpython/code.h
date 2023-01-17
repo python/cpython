@@ -69,7 +69,7 @@ typedef struct {
     uint8_t *tools;
     _PyCoLineInstrumentationData *lines;
     uint8_t *line_tools;
-    uint8_t *per_instruction_opcode;
+    uint8_t *per_instruction_opcodes;
     uint8_t *per_instruction_tools;
 } _PyCoInstrumentationData;
 

@@ -1513,13 +1513,11 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
 {
     Py_ssize_t len = Py_SIZE(code);
     for (int i = 0; i < len; i++) {
-        _Py_CODEUNIT instruction = instructions[i];
         int opcode = _Py_GetBaseOpcode(code, i);
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].opcode = opcode;
         while (caches--) {
-            instructions[++i].opcode = CACHE;
-            instructions[i].oparg = 0;
+            instructions[++i].cache = 0;
         }
     }
 }
