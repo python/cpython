@@ -10,7 +10,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
-#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sysmodule.h"
 
@@ -391,7 +391,8 @@ PyInterpreterState *
 PyInterpreterState_New(void)
 {
     PyInterpreterState *interp;
-    PyThreadState *tstate = _PyThreadState_GET();
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = current_fast_get(runtime);
 
     /* tstate is NULL when Py_InitializeFromConfig() calls
        PyInterpreterState_New() to create the main interpreter. */
@@ -408,7 +409,6 @@ PyInterpreterState_New(void)
     }
 
     /* Don't get runtime from tstate since tstate can be NULL. */
-    _PyRuntimeState *runtime = &_PyRuntime;
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
     /* We completely serialize creation of multiple interpreters, since
@@ -556,7 +556,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     // Use the current Python thread state to call audit hooks and to collect
     // garbage. It can be different than the current Python thread state
     // of 'interp'.
-    PyThreadState *current_tstate = _PyThreadState_GET();
+    PyThreadState *current_tstate = current_fast_get(interp->runtime);
 
     interpreter_clear(interp, current_tstate);
 }
@@ -672,7 +672,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 PyInterpreterState *
 PyInterpreterState_Get(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+    PyThreadState *tstate = current_fast_get(&_PyRuntime);
     _Py_EnsureTstateNotNULL(tstate);
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -1040,7 +1040,7 @@ PyState_AddModule(PyObject* module, PyModuleDef* def)
         return -1;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
+    PyThreadState *tstate = current_fast_get(&_PyRuntime);
     PyInterpreterState *interp = tstate->interp;
     Py_ssize_t index = def->m_base.m_index;
     if (interp->modules_by_index &&
@@ -1056,7 +1056,7 @@ PyState_AddModule(PyObject* module, PyModuleDef* def)
 int
 PyState_RemoveModule(PyModuleDef* def)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+    PyThreadState *tstate = current_fast_get(&_PyRuntime);
     PyInterpreterState *interp = tstate->interp;
 
     if (def->m_slots) {
@@ -1282,14 +1282,14 @@ _PyThreadState_DeleteExcept(_PyRuntimeState *runtime, PyThreadState *tstate)
 PyThreadState *
 _PyThreadState_UncheckedGet(void)
 {
-    return _PyThreadState_GET();
+    return current_fast_get(&_PyRuntime);
 }
 
 
 PyThreadState *
 PyThreadState_Get(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+    PyThreadState *tstate = current_fast_get(&_PyRuntime);
     _Py_EnsureTstateNotNULL(tstate);
     return tstate;
 }
@@ -1355,7 +1355,7 @@ _PyThreadState_GetDict(PyThreadState *tstate)
 PyObject *
 PyThreadState_GetDict(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+    PyThreadState *tstate = current_fast_get(&_PyRuntime);
     if (tstate == NULL) {
         return NULL;
     }
@@ -1478,7 +1478,8 @@ PyThreadState_Next(PyThreadState *tstate) {
 PyObject *
 _PyThread_CurrentFrames(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = current_fast_get(runtime);
     if (_PySys_Audit(tstate, "sys._current_frames", NULL) < 0) {
         return NULL;
     }
@@ -1494,7 +1495,6 @@ _PyThread_CurrentFrames(void)
      * Because these lists can mutate even when the GIL is held, we
      * need to grab head_mutex for the duration.
      */
-    _PyRuntimeState *runtime = tstate->interp->runtime;
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
@@ -1534,7 +1534,8 @@ done:
 PyObject *
 _PyThread_CurrentExceptions(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = current_fast_get(runtime);
 
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -1553,7 +1554,6 @@ _PyThread_CurrentExceptions(void)
      * Because these lists can mutate even when the GIL is held, we
      * need to grab head_mutex for the duration.
      */
-    _PyRuntimeState *runtime = tstate->interp->runtime;
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
@@ -1983,7 +1983,8 @@ _PyObject_CheckCrossInterpreterData(PyObject *obj)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = current_fast_get(runtime);
 #ifdef Py_DEBUG
     // The caller must hold the GIL
     _Py_EnsureTstateNotNULL(tstate);
@@ -2391,8 +2392,9 @@ _PyInterpreterState_GetConfigCopy(PyConfig *config)
 const PyConfig*
 _Py_GetConfig(void)
 {
+    _PyRuntimeState *runtime = &_PyRuntime;
     assert(PyGILState_Check());
-    PyThreadState *tstate = _PyThreadState_GET();
+    PyThreadState *tstate = current_fast_get(runtime);
     _Py_EnsureTstateNotNULL(tstate);
     return _PyInterpreterState_GetConfig(tstate->interp);
 }
