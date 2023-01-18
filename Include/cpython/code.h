@@ -49,23 +49,13 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
-typedef struct _PyInstrumentationOffsets {
-    int8_t multi_tools;
-    int8_t lines;
-    int8_t instructions;
-} _PyInstrumentationOffsets;
-
-typedef union _PyInstrumentationLayout {
-    _PyInstrumentationOffsets offsets;
-    int32_t bits;
-} _PyInstrumentationLayout;
-
 typedef struct {
     uint8_t original_opcode;
     int8_t line_delta;
 } _PyCoLineInstrumentationData;
 
 typedef struct {
+    _Py_MonitoringMatrix matrix;
     uint8_t *tools;
     _PyCoLineInstrumentationData *lines;
     uint8_t *line_tools;
@@ -75,8 +65,6 @@ typedef struct {
 
 typedef struct {
     uint64_t monitoring_version; /* current instrumentation version */
-    _PyInstrumentationLayout layout;
-    _Py_MonitoringMatrix monitoring_matrix;
     _PyCoInstrumentationData *monitoring_data; /* data for monitoring */
 } _PyCoInstrumentation;
 

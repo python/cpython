@@ -1897,7 +1897,7 @@ dummy_func(
                 target = next_instr + 2;
             }
             err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, target);
+                tstate, PY_MONITORING_EVENT_BRANCH, frame, next_instr-1, target);
             ERROR_IF(err, error);
         }
 
@@ -3458,7 +3458,7 @@ dummy_func(
             assert(err == 0 || err == 1);
             _Py_CODEUNIT *target = next_instr + err*oparg;
             err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, target);
+                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, target);
             ERROR_IF(err, error);
             if (err) {
                 JUMPBY(oparg);
@@ -3477,7 +3477,7 @@ dummy_func(
             assert(err == 0 || err == 1);
             _Py_CODEUNIT *target = next_instr + err*oparg;
             err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, target);
+                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, target);
             ERROR_IF(err, error);
             if (err == 0) {
                 JUMPBY(oparg);
@@ -3496,7 +3496,7 @@ dummy_func(
             assert(err == 0 || err == 1);
             int offset = err*oparg;
             err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, next_instr + offset);
+                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
             ERROR_IF(err, error);
             JUMPBY(offset);
         }
@@ -3509,7 +3509,7 @@ dummy_func(
             assert(err == 0 || err == 1);
             int offset = (1-err)*oparg;
             err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, next_instr + offset);
+                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
             ERROR_IF(err, error);
             JUMPBY(offset);
         }
@@ -3527,7 +3527,7 @@ dummy_func(
                 offset = 0;
             }
             int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, next_instr + offset);
+                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
             ERROR_IF(err, error);
             JUMPBY(offset);
         }
@@ -3545,7 +3545,7 @@ dummy_func(
                  offset = oparg;
             }
             int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, here, next_instr + offset);
+                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
             ERROR_IF(err, error);
             JUMPBY(offset);
         }

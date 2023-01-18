@@ -315,7 +315,6 @@ init_interpreter(PyInterpreterState *interp,
             interp->tools[t].instrument_callables[i] = NULL;
         }
     }
-    interp->instrumentation_layout.offsets = (_PyInstrumentationOffsets){ 0, 0, 0 };
     interp->f_opcode_trace_set = false;
     interp->_initialized = 1;
 }

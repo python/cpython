@@ -402,12 +402,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     if (_Py_next_func_version != 0) {
         _Py_next_func_version++;
     }
-    for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
-        co->_co_instrumentation.monitoring_matrix.tools[e] = 0;
-    }
-    co->_co_instrumentation.layout.offsets.multi_tools = 0;
-    co->_co_instrumentation.layout.offsets.lines = 0;
-    co->_co_instrumentation.layout.offsets.instructions = 0;
     co->_co_instrumentation.monitoring_data = NULL;
     co->_co_instrumentation.monitoring_version = 0;
     /* not set */
