@@ -639,10 +639,10 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_log__doc__,
-"log($module, z, base=<unrepresentable>, /)\n"
+"log($module, z, base=cmath.e, /)\n"
 "--\n"
 "\n"
-"log(z[, base]) -> the logarithm of z to the given base.\n"
+"Return the logarithm of z to the given base.\n"
 "\n"
 "If the base not specified, returns the natural logarithm (base e) of z.");
 
@@ -982,4 +982,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0146c656e67f5d5f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bbc937dc64f3520b input=a9049054013a1b77]*/
