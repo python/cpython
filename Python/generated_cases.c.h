@@ -2120,6 +2120,7 @@
             PREDICTED(COMPARE_AND_BRANCH);
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
+            #if ENABLE_SPECIALIZATION
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2129,6 +2130,7 @@
             }
             STAT_INC(COMPARE_AND_BRANCH, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             assert((oparg >> 4) <= Py_GE);
             PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
