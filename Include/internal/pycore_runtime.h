@@ -41,9 +41,6 @@ struct _gilstate_runtime_state {
     /* bpo-26558: Flag to disable PyGILState_Check().
        If set to non-zero, PyGILState_Check() always return 1. */
     int check_enabled;
-    /* Assuming the current thread holds the GIL, this is the
-       PyThreadState for the current thread. */
-    _Py_atomic_address tstate_current;
     /* The single PyInterpreterState used by this process'
        GILState implementation
     */
@@ -123,6 +120,10 @@ typedef struct pyruntimestate {
     } xidregistry;
 
     unsigned long main_thread;
+
+    /* Assuming the current thread holds the GIL, this is the
+       PyThreadState for the current thread. */
+    _Py_atomic_address tstate_current;
 
     PyWideStringList orig_argv;
 

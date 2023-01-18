@@ -48,8 +48,7 @@ static inline PyThreadState *
 current_fast_get(_PyRuntimeState *runtime)
 {
     // The GIL must be held by the current thread.
-    return (PyThreadState*)_Py_atomic_load_relaxed(
-                &runtime->gilstate.tstate_current);
+    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->tstate_current);
 }
 
 static inline void
@@ -57,16 +56,14 @@ current_fast_set(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
     // The GIL must be held by the current thread.
     assert(tstate != NULL);
-    _Py_atomic_store_relaxed(&runtime->gilstate.tstate_current,
-                             (uintptr_t)tstate);
+    _Py_atomic_store_relaxed(&runtime->tstate_current, (uintptr_t)tstate);
 }
 
 static inline void
 current_fast_clear(_PyRuntimeState *runtime)
 {
     // The GIL must be held by the current thread.
-    _Py_atomic_store_relaxed(&runtime->gilstate.tstate_current,
-                             (uintptr_t)NULL);
+    _Py_atomic_store_relaxed(&runtime->tstate_current, (uintptr_t)NULL);
 }
 
 
