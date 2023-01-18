@@ -502,21 +502,21 @@ the :mod:`glob` module.)
    <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_.)
    For example::
 
-      >>> splitroot('/etc/hosts')
-      ('', '/', 'etc/hosts')
+      >>> splitroot('/home/eryk')
+      ('', '/', 'home/eryk')
+      >>> splitroot('//home/eryk')
+      ('', '//', 'home/eryk')
+      >>> splitroot('///home/eryk')
+      ('', '/', '//home/eryk')
 
    On Windows, *drive* may be empty, a drive-letter name, a UNC share, or a device
    name. The *root* may be empty, a forward slash, or a backward slash. For
    example::
 
-      >>> splitroot('Windows/notepad')
-      ('', '', 'Windows/notepad')
-      >>> splitroot('C:/Users/Barney')
-      ('C:', '/', 'Users/Barney')
-      >>> splitroot('//server/share/')
-      ('//server/share', '/', '')
-      >>> splitroot('//?/UNC/server/share/')
-      ('//?/UNC/server/share', '/', '')
+      >>> splitroot('C:/Users/Eryk')
+      ('C:', '/', 'Users/Eryk')
+      >>> splitroot('//Server/Share/Users/Eryk')
+      ('//Server/Share', '/', 'Users/Eryk')
 
    In all cases, ``drive + root + tail`` will be the same as *path*.
 
