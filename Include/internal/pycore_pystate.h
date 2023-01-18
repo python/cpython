@@ -142,7 +142,7 @@ _PyThreadState_UpdateTracingState(PyThreadState *tstate)
 /* Other */
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
-    struct _gilstate_runtime_state *gilstate,
+    _PyRuntimeState *runtime,
     PyThreadState *newts);
 
 PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
