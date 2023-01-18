@@ -29,14 +29,14 @@ noted otherwise, all return values are floats.
 Number-theoretic and representation functions
 ---------------------------------------------
 
-.. function:: ceil(x)
+.. function:: ceil(x, /)
 
    Return the ceiling of *x*, the smallest integer greater than or equal to *x*.
    If *x* is not a float, delegates to :meth:`x.__ceil__ <object.__ceil__>`,
    which should return an :class:`~numbers.Integral` value.
 
 
-.. function:: comb(n, k)
+.. function:: comb(n, k, /)
 
    Return the number of ways to choose *k* items from *n* items without repetition
    and without order.
@@ -54,19 +54,19 @@ Number-theoretic and representation functions
    .. versionadded:: 3.8
 
 
-.. function:: copysign(x, y)
+.. function:: copysign(x, y, /)
 
    Return a float with the magnitude (absolute value) of *x* but the sign of
    *y*.  On platforms that support signed zeros, ``copysign(1.0, -0.0)``
    returns *-1.0*.
 
 
-.. function:: fabs(x)
+.. function:: fabs(x, /)
 
    Return the absolute value of *x*.
 
 
-.. function:: factorial(n)
+.. function:: factorial(n, /)
 
    Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
    is negative.
@@ -75,14 +75,14 @@ Number-theoretic and representation functions
       Accepting floats with integral values (like ``5.0``) is deprecated.
 
 
-.. function:: floor(x)
+.. function:: floor(x, /)
 
    Return the floor of *x*, the largest integer less than or equal to *x*.  If
    *x* is not a float, delegates to :meth:`x.__floor__ <object.__floor__>`, which
    should return an :class:`~numbers.Integral` value.
 
 
-.. function:: fmod(x, y)
+.. function:: fmod(x, y, /)
 
    Return ``fmod(x, y)``, as defined by the platform C library. Note that the
    Python expression ``x % y`` may not return the same result.  The intent of the C
@@ -97,7 +97,7 @@ Number-theoretic and representation functions
    floats, while Python's ``x % y`` is preferred when working with integers.
 
 
-.. function:: frexp(x)
+.. function:: frexp(x, /)
 
    Return the mantissa and exponent of *x* as the pair ``(m, e)``.  *m* is a float
    and *e* is an integer such that ``x == m * 2**e`` exactly. If *x* is zero,
@@ -105,7 +105,7 @@ Number-theoretic and representation functions
    apart" the internal representation of a float in a portable way.
 
 
-.. function:: fsum(iterable)
+.. function:: fsum(iterable, /)
 
    Return an accurate floating point sum of values in the iterable.  Avoids
    loss of precision by tracking multiple intermediate partial sums.
@@ -168,7 +168,7 @@ Number-theoretic and representation functions
       :pep:`485` -- A function for testing approximate equality
 
 
-.. function:: isfinite(x)
+.. function:: isfinite(x, /)
 
    Return ``True`` if *x* is neither an infinity nor a NaN, and
    ``False`` otherwise.  (Note that ``0.0`` *is* considered finite.)
@@ -176,18 +176,18 @@ Number-theoretic and representation functions
    .. versionadded:: 3.2
 
 
-.. function:: isinf(x)
+.. function:: isinf(x, /)
 
    Return ``True`` if *x* is a positive or negative infinity, and
    ``False`` otherwise.
 
 
-.. function:: isnan(x)
+.. function:: isnan(x, /)
 
    Return ``True`` if *x* is a NaN (not a number), and ``False`` otherwise.
 
 
-.. function:: isqrt(n)
+.. function:: isqrt(n, /)
 
    Return the integer square root of the nonnegative integer *n*. This is the
    floor of the exact square root of *n*, or equivalently the greatest integer
@@ -212,19 +212,19 @@ Number-theoretic and representation functions
    .. versionadded:: 3.9
 
 
-.. function:: ldexp(x, i)
+.. function:: ldexp(x, i, /)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
    :func:`frexp`.
 
 
-.. function:: modf(x)
+.. function:: modf(x, /)
 
    Return the fractional and integer parts of *x*.  Both results carry the sign
    of *x* and are floats.
 
 
-.. function:: nextafter(x, y)
+.. function:: nextafter(x, y, /)
 
    Return the next floating-point value after *x* towards *y*.
 
@@ -241,7 +241,7 @@ Number-theoretic and representation functions
 
    .. versionadded:: 3.9
 
-.. function:: perm(n, k=None)
+.. function:: perm(n, k=None, /)
 
    Return the number of ways to choose *k* items from *n* items
    without repetition and with order.
@@ -258,7 +258,7 @@ Number-theoretic and representation functions
    .. versionadded:: 3.8
 
 
-.. function:: prod(iterable, *, start=1)
+.. function:: prod(iterable, /, *, start=1)
 
    Calculate the product of all the elements in the input *iterable*.
    The default *start* value for the product is ``1``.
@@ -270,7 +270,7 @@ Number-theoretic and representation functions
    .. versionadded:: 3.8
 
 
-.. function:: remainder(x, y)
+.. function:: remainder(x, y, /)
 
    Return the IEEE 754-style remainder of *x* with respect to *y*.  For
    finite *x* and finite nonzero *y*, this is the difference ``x - n*y``,
@@ -291,7 +291,7 @@ Number-theoretic and representation functions
    .. versionadded:: 3.7
 
 
-.. function:: sumprod(p, q)
+.. function:: sumprod(p, q, /)
 
    Return the sum of products of values from two iterables *p* and *q*.
 
@@ -307,7 +307,7 @@ Number-theoretic and representation functions
    .. versionadded:: 3.12
 
 
-.. function:: trunc(x)
+.. function:: trunc(x, /)
 
    Return *x* with the fractional part
    removed, leaving the integer part.  This rounds toward 0: ``trunc()`` is
@@ -315,7 +315,7 @@ Number-theoretic and representation functions
    for negative *x*. If *x* is not a float, delegates to :meth:`x.__trunc__
    <object.__trunc__>`, which should return an :class:`~numbers.Integral` value.
 
-.. function:: ulp(x)
+.. function:: ulp(x, /)
 
    Return the value of the least significant bit of the float *x*:
 
@@ -355,28 +355,28 @@ necessarily has no fractional bits.
 Power and logarithmic functions
 -------------------------------
 
-.. function:: cbrt(x)
+.. function:: cbrt(x, /)
 
    Return the cube root of *x*.
 
    .. versionadded:: 3.11
 
 
-.. function:: exp(x)
+.. function:: exp(x, /)
 
    Return *e* raised to the power *x*, where *e* = 2.718281... is the base
    of natural logarithms.  This is usually more accurate than ``math.e ** x``
    or ``pow(math.e, x)``.
 
 
-.. function:: exp2(x)
+.. function:: exp2(x, /)
 
    Return *2* raised to the power *x*.
 
    .. versionadded:: 3.11
 
 
-.. function:: expm1(x)
+.. function:: expm1(x, /)
 
    Return *e* raised to the power *x*, minus 1.  Here *e* is the base of natural
    logarithms.  For small floats *x*, the subtraction in ``exp(x) - 1``
@@ -401,13 +401,13 @@ Power and logarithmic functions
    calculated as ``log(x)/log(base)``.
 
 
-.. function:: log1p(x)
+.. function:: log1p(x, /)
 
    Return the natural logarithm of *1+x* (base *e*). The
    result is calculated in a way which is accurate for *x* near zero.
 
 
-.. function:: log2(x)
+.. function:: log2(x, /)
 
    Return the base-2 logarithm of *x*. This is usually more accurate than
    ``log(x, 2)``.
@@ -420,13 +420,13 @@ Power and logarithmic functions
       an integer in binary, excluding the sign and leading zeros.
 
 
-.. function:: log10(x)
+.. function:: log10(x, /)
 
    Return the base-10 logarithm of *x*.  This is usually more accurate
    than ``log(x, 10)``.
 
 
-.. function:: pow(x, y)
+.. function:: pow(x, y, /)
 
    Return ``x`` raised to the power ``y``.  Exceptional cases follow
    the IEEE 754 standard as far as possible.  In particular,
@@ -445,7 +445,7 @@ Power and logarithmic functions
       for consistency with IEEE 754.
 
 
-.. function:: sqrt(x)
+.. function:: sqrt(x, /)
 
    Return the square root of *x*.
 
@@ -453,25 +453,25 @@ Power and logarithmic functions
 Trigonometric functions
 -----------------------
 
-.. function:: acos(x)
+.. function:: acos(x, /)
 
    Return the arc cosine of *x*, in radians. The result is between ``0`` and
    ``pi``.
 
 
-.. function:: asin(x)
+.. function:: asin(x, /)
 
    Return the arc sine of *x*, in radians. The result is between ``-pi/2`` and
    ``pi/2``.
 
 
-.. function:: atan(x)
+.. function:: atan(x, /)
 
    Return the arc tangent of *x*, in radians. The result is between ``-pi/2`` and
    ``pi/2``.
 
 
-.. function:: atan2(y, x)
+.. function:: atan2(y, x, /)
 
    Return ``atan(y / x)``, in radians. The result is between ``-pi`` and ``pi``.
    The vector in the plane from the origin to point ``(x, y)`` makes this angle
@@ -481,12 +481,12 @@ Trigonometric functions
    -1)`` is ``-3*pi/4``.
 
 
-.. function:: cos(x)
+.. function:: cos(x, /)
 
    Return the cosine of *x* radians.
 
 
-.. function:: dist(p, q)
+.. function:: dist(p, q, /)
 
    Return the Euclidean distance between two points *p* and *q*, each
    given as a sequence (or iterable) of coordinates.  The two points
@@ -519,12 +519,12 @@ Trigonometric functions
       is almost always correctly rounded to within 1/2 ulp.
 
 
-.. function:: sin(x)
+.. function:: sin(x, /)
 
    Return the sine of *x* radians.
 
 
-.. function:: tan(x)
+.. function:: tan(x, /)
 
    Return the tangent of *x* radians.
 
@@ -532,12 +532,12 @@ Trigonometric functions
 Angular conversion
 ------------------
 
-.. function:: degrees(x)
+.. function:: degrees(x, /)
 
    Convert angle *x* from radians to degrees.
 
 
-.. function:: radians(x)
+.. function:: radians(x, /)
 
    Convert angle *x* from degrees to radians.
 
@@ -549,32 +549,32 @@ Hyperbolic functions
 are analogs of trigonometric functions that are based on hyperbolas
 instead of circles.
 
-.. function:: acosh(x)
+.. function:: acosh(x, /)
 
    Return the inverse hyperbolic cosine of *x*.
 
 
-.. function:: asinh(x)
+.. function:: asinh(x, /)
 
    Return the inverse hyperbolic sine of *x*.
 
 
-.. function:: atanh(x)
+.. function:: atanh(x, /)
 
    Return the inverse hyperbolic tangent of *x*.
 
 
-.. function:: cosh(x)
+.. function:: cosh(x, /)
 
    Return the hyperbolic cosine of *x*.
 
 
-.. function:: sinh(x)
+.. function:: sinh(x, /)
 
    Return the hyperbolic sine of *x*.
 
 
-.. function:: tanh(x)
+.. function:: tanh(x, /)
 
    Return the hyperbolic tangent of *x*.
 
@@ -582,7 +582,7 @@ instead of circles.
 Special functions
 -----------------
 
-.. function:: erf(x)
+.. function:: erf(x, /)
 
    Return the `error function <https://en.wikipedia.org/wiki/Error_function>`_ at
    *x*.
@@ -598,7 +598,7 @@ Special functions
    .. versionadded:: 3.2
 
 
-.. function:: erfc(x)
+.. function:: erfc(x, /)
 
    Return the complementary error function at *x*.  The `complementary error
    function <https://en.wikipedia.org/wiki/Error_function>`_ is defined as
@@ -609,7 +609,7 @@ Special functions
    .. versionadded:: 3.2
 
 
-.. function:: gamma(x)
+.. function:: gamma(x, /)
 
    Return the `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_ at
    *x*.
@@ -617,7 +617,7 @@ Special functions
    .. versionadded:: 3.2
 
 
-.. function:: lgamma(x)
+.. function:: lgamma(x, /)
 
    Return the natural logarithm of the absolute value of the Gamma
    function at *x*.
