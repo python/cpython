@@ -1,0 +1,1 @@
+Fix signature for :func:`math.log` and :func:`cmath.log`.
