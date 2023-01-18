@@ -617,7 +617,7 @@ Data Types
 
 .. class:: ReprEnum
 
-   :class:`!ReprEum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
+   :class:`!ReprEnum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
    but the :class:`str() <str>` of the mixed-in data type:
 
       * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
@@ -827,7 +827,7 @@ Utilities and Decorators
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
 
-   .. note:: in 3.13 the default ``"generate_next_value_`` will always return
+   .. note:: in 3.13 the default ``_generate_next_value_`` will always return
              the highest member value incremented by 1, and will fail if any
              member is an incompatible type.
 

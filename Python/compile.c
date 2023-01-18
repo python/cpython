@@ -1195,6 +1195,9 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_JUMP_IF_TRUE:
             return -1;
 
+        case COMPARE_AND_BRANCH:
+            return -2;
+
         case LOAD_GLOBAL:
             return (oparg & 1) + 1;
 
