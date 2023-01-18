@@ -2193,7 +2193,8 @@ static PyType_Spec elementiter_spec = {
        have such a type. */
     .name = "_elementtree._element_iterator",
     .basicsize = sizeof(ElementIterObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = elementiter_slots,
 };
 
@@ -4120,7 +4121,8 @@ static PyType_Slot element_slots[] = {
 static PyType_Spec element_spec = {
     .name = "xml.etree.ElementTree.Element",
     .basicsize = sizeof(ElementObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = element_slots,
 };
 
@@ -4148,7 +4150,7 @@ static PyType_Slot treebuilder_slots[] = {
 static PyType_Spec treebuilder_spec = {
     .name = "xml.etree.ElementTree.TreeBuilder",
     .basicsize = sizeof(TreeBuilderObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = treebuilder_slots,
 };
 
@@ -4176,7 +4178,8 @@ static PyType_Slot xmlparser_slots[] = {
 static PyType_Spec xmlparser_spec = {
     .name = "xml.etree.ElementTree.XMLParser",
     .basicsize = sizeof(XMLParserObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = xmlparser_slots,
 };
 

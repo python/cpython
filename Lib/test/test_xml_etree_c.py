@@ -181,6 +181,20 @@ class MiscTests(unittest.TestCase):
         r = e.get(X())
         self.assertIsNone(r)
 
+    @support.cpython_only
+    def test_immutable_types(self):
+        root = cET.fromstring('<a></a>')
+        dataset = (
+            cET.Element,
+            cET.TreeBuilder,
+            cET.XMLParser,
+            type(root.iter()),
+        )
+        for tp in dataset:
+            with self.subTest(tp=tp):
+                with self.assertRaisesRegex(TypeError, "immutable"):
+                    tp.foo = 1
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):
