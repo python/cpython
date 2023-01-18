@@ -2761,17 +2761,40 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     return NULL;
 }
 
-/* AC: cannot convert yet, waiting for *args support */
+
+/*[clinic input]
+math.hypot
+
+    *coordinates as args: object
+
+Multidimensional Euclidean distance from the origin to a point.
+
+Roughly equivalent to:
+    sqrt(sum(x**2 for x in coordinates))
+
+For a two dimensional point (x, y), gives the hypotenuse
+using the Pythagorean theorem:  sqrt(x*x + y*y).
+
+For example, the hypotenuse of a 3/4/5 right triangle is:
+
+    >>> hypot(3.0, 4.0)
+    5.0
+
+[clinic start generated code]*/
+
 static PyObject *
-math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+math_hypot_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=ace3a23188b6798e input=ff33f88cd8b1f06d]*/
 {
-    Py_ssize_t i;
+    Py_ssize_t i, nargs;
     PyObject *item;
     double max = 0.0;
     double x, result;
     int found_nan = 0;
     double coord_on_stack[NUM_STACK_ELEMS];
     double *coordinates = coord_on_stack;
+
+    nargs = PyTuple_GET_SIZE(args);
 
     if (nargs > NUM_STACK_ELEMS) {
         coordinates = (double *) PyObject_Malloc(nargs * sizeof(double));
@@ -2780,7 +2803,7 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     for (i = 0; i < nargs; i++) {
-        item = args[i];
+        item = PyTuple_GetItem(args, i);
         ASSIGN_DOUBLE(x, item, error_exit);
         x = fabs(x);
         coordinates[i] = x;
@@ -2803,22 +2826,6 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 }
 
 #undef NUM_STACK_ELEMS
-
-PyDoc_STRVAR(math_hypot_doc,
-             "hypot(*coordinates) -> value\n\n\
-Multidimensional Euclidean distance from the origin to a point.\n\
-\n\
-Roughly equivalent to:\n\
-    sqrt(sum(x**2 for x in coordinates))\n\
-\n\
-For a two dimensional point (x, y), gives the hypotenuse\n\
-using the Pythagorean theorem:  sqrt(x*x + y*y).\n\
-\n\
-For example, the hypotenuse of a 3/4/5 right triangle is:\n\
-\n\
-    >>> hypot(3.0, 4.0)\n\
-    5.0\n\
-");
 
 /** sumprod() ***************************************************************/
 
@@ -4234,6 +4241,7 @@ static PyMethodDef math_methods[] = {
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
     MATH_DIST_METHODDEF
+    MATH_HYPOT_METHODDEF
     {"erf",             math_erf,       METH_O,         math_erf_doc},
     {"erfc",            math_erfc,      METH_O,         math_erfc_doc},
     {"exp",             math_exp,       METH_O,         math_exp_doc},
@@ -4247,7 +4255,6 @@ static PyMethodDef math_methods[] = {
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     {"gcd",             _PyCFunction_CAST(math_gcd),       METH_FASTCALL,  math_gcd_doc},
-    {"hypot",           _PyCFunction_CAST(math_hypot),     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF

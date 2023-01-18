@@ -333,6 +333,52 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_hypot__doc__,
+"hypot($module, /, *coordinates)\n"
+"--\n"
+"\n"
+"Multidimensional Euclidean distance from the origin to a point.\n"
+"\n"
+"Roughly equivalent to:\n"
+"    sqrt(sum(x**2 for x in coordinates))\n"
+"\n"
+"For a two dimensional point (x, y), gives the hypotenuse\n"
+"using the Pythagorean theorem:  sqrt(x*x + y*y).\n"
+"\n"
+"For example, the hypotenuse of a 3/4/5 right triangle is:\n"
+"\n"
+"    >>> hypot(3.0, 4.0)\n"
+"    5.0");
+
+#define MATH_HYPOT_METHODDEF    \
+    {"hypot", _PyCFunction_CAST(math_hypot), METH_FASTCALL, math_hypot__doc__},
+
+static PyObject *
+math_hypot_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("hypot", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = math_hypot_impl(module, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(math_sumprod__doc__,
 "sumprod($module, p, q, /)\n"
 "--\n"
@@ -954,4 +1000,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=899211ec70e4506c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9dec5aa0e8febbff input=a9049054013a1b77]*/
