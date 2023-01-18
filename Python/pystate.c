@@ -231,10 +231,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 }
 #endif
 
-#define HEAD_LOCK(runtime) \
-    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
-#define HEAD_UNLOCK(runtime) \
-    PyThread_release_lock((runtime)->interpreters.mutex)
 
 /* Forward declaration */
 static void _PyGILState_NoteThreadState(
@@ -1302,10 +1298,7 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    _PyInterpreterFrame *f = tstate->cframe->current_frame;
-    while (f && _PyFrame_IsIncomplete(f)) {
-        f = f->previous;
-    }
+    _PyInterpreterFrame *f = _PyThreadState_GetFrame(tstate);
     if (f == NULL) {
         return NULL;
     }
@@ -1431,9 +1424,7 @@ _PyThread_CurrentFrames(void)
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
             _PyInterpreterFrame *frame = t->cframe->current_frame;
-            while (frame && _PyFrame_IsIncomplete(frame)) {
-                frame = frame->previous;
-            }
+            frame = _PyFrame_GetFirstComplete(frame);
             if (frame == NULL) {
                 continue;
             }
