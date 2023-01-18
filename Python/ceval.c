@@ -97,11 +97,6 @@
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
 #endif
 
-#define HEAD_LOCK(runtime) \
-    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
-#define HEAD_UNLOCK(runtime) \
-    PyThread_release_lock((runtime)->interpreters.mutex)
-
 /* Forward declarations */
 static PyObject *trace_call_function(
     PyThreadState *tstate, PyObject *callable, PyObject **stack,
@@ -1974,11 +1969,8 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_InitializeSpecials(frame, func, locals, code);
+    _PyFrame_Initialize(frame, func, locals, code, 0);
     PyObject **localsarray = &frame->localsplus[0];
-    for (int i = 0; i < code->co_nlocalsplus; i++) {
-        localsarray[i] = NULL;
-    }
     if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
         assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
         _PyEvalFrameClearAndPop(tstate, frame);
@@ -2752,16 +2744,13 @@ _PyInterpreterFrame *
 _PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return tstate->cframe->current_frame;
+    return _PyThreadState_GetFrame(tstate);
 }
 
 PyFrameObject *
 PyEval_GetFrame(void)
 {
     _PyInterpreterFrame *frame = _PyEval_GetFrame();
-    while (frame && _PyFrame_IsIncomplete(frame)) {
-        frame = frame->previous;
-    }
     if (frame == NULL) {
         return NULL;
     }
@@ -2775,7 +2764,7 @@ PyEval_GetFrame(void)
 PyObject *
 _PyEval_GetBuiltins(PyThreadState *tstate)
 {
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
     if (frame != NULL) {
         return frame->f_builtins;
     }
@@ -2814,7 +2803,7 @@ PyObject *
 PyEval_GetLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-     _PyInterpreterFrame *current_frame = tstate->cframe->current_frame;
+     _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
@@ -2833,7 +2822,7 @@ PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *current_frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
         return NULL;
     }

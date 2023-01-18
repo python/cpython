@@ -1090,7 +1090,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -2;
 
         /* Unary operators */
-        case UNARY_POSITIVE:
         case UNARY_NEGATIVE:
         case UNARY_NOT:
         case UNARY_INVERT:
@@ -1123,7 +1122,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case SETUP_ANNOTATIONS:
             return 0;
-        case ASYNC_GEN_WRAP:
         case YIELD_VALUE:
             return 0;
         case POP_BLOCK:
@@ -1196,6 +1194,9 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_JUMP_IF_FALSE:
         case POP_JUMP_IF_TRUE:
             return -1;
+
+        case COMPARE_AND_BRANCH:
+            return -2;
 
         case LOAD_GLOBAL:
             return (oparg & 1) + 1;
@@ -1296,8 +1297,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case LOAD_ASSERTION_ERROR:
             return 1;
-        case LIST_TO_TUPLE:
-            return 0;
         case LIST_EXTEND:
         case SET_UPDATE:
         case DICT_MERGE:
@@ -2250,11 +2249,8 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
 
 static int
 compiler_make_closure(struct compiler *c, location loc,
-                      PyCodeObject *co, Py_ssize_t flags, PyObject *qualname)
+                      PyCodeObject *co, Py_ssize_t flags)
 {
-    if (qualname == NULL)
-        qualname = co->co_name;
-
     if (co->co_nfreevars) {
         int i = PyCode_GetFirstFree(co);
         for (; i < co->co_nlocalsplus; ++i) {
@@ -2609,7 +2605,7 @@ static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
-    PyObject *qualname, *docstring = NULL;
+    PyObject *docstring = NULL;
     arguments_ty args;
     expr_ty returns;
     identifier name;
@@ -2686,19 +2682,15 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
     co = assemble(c, 1);
-    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (co == NULL) {
-        Py_XDECREF(qualname);
         Py_XDECREF(co);
         return ERROR;
     }
-    if (compiler_make_closure(c, loc, co, funcflags, qualname) < 0) {
-        Py_DECREF(qualname);
+    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
-    Py_DECREF(qualname);
     Py_DECREF(co);
 
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
@@ -2798,7 +2790,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP(c, loc, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    if (compiler_make_closure(c, loc, co, 0, NULL) < 0) {
+    if (compiler_make_closure(c, loc, co, 0) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
@@ -2898,7 +2890,9 @@ static int compiler_addcompare(struct compiler *c, location loc,
     default:
         Py_UNREACHABLE();
     }
-    ADDOP_I(c, loc, COMPARE_OP, cmp);
+    /* cmp goes in top bits of the oparg, while the low bits are used by quickened
+     * versions of this opcode to store the comparison mask. */
+    ADDOP_I(c, loc, COMPARE_OP, cmp << 4);
     return SUCCESS;
 }
 
@@ -3019,7 +3013,6 @@ static int
 compiler_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
-    PyObject *qualname;
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
@@ -3053,19 +3046,15 @@ compiler_lambda(struct compiler *c, expr_ty e)
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = assemble(c, 1);
     }
-    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (co == NULL) {
-        Py_DECREF(qualname);
         return ERROR;
     }
 
-    if (compiler_make_closure(c, loc, co, funcflags, qualname) < 0) {
-        Py_DECREF(qualname);
+    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
-    Py_DECREF(qualname);
     Py_DECREF(co);
 
     return SUCCESS;
@@ -4122,8 +4111,6 @@ unaryop(unaryop_ty op)
         return UNARY_INVERT;
     case Not:
         return UNARY_NOT;
-    case UAdd:
-        return UNARY_POSITIVE;
     case USub:
         return UNARY_NEGATIVE;
     default:
@@ -4191,7 +4178,7 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
 static int
 addop_yield(struct compiler *c, location loc) {
     if (c->u->u_ste->ste_generator && c->u->u_ste->ste_coroutine) {
-        ADDOP(c, loc, ASYNC_GEN_WRAP);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     }
     ADDOP_I(c, loc, YIELD_VALUE, 0);
     ADDOP_I(c, loc, RESUME, 1);
@@ -4358,7 +4345,7 @@ starunpack_helper(struct compiler *c, location loc,
             ADDOP_LOAD_CONST_NEW(c, loc, folded);
             ADDOP_I(c, loc, extend, 1);
             if (tuple) {
-                ADDOP(c, loc, LIST_TO_TUPLE);
+                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
             }
         }
         return SUCCESS;
@@ -4409,7 +4396,7 @@ starunpack_helper(struct compiler *c, location loc,
     }
     assert(sequence_built);
     if (tuple) {
-        ADDOP(c, loc, LIST_TO_TUPLE);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
     }
     return SUCCESS;
 }
@@ -5398,7 +5385,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 {
     PyCodeObject *co = NULL;
     comprehension_ty outermost;
-    PyObject *qualname = NULL;
     int scope_type = c->u->u_scope_type;
     int is_async_generator = 0;
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
@@ -5459,7 +5445,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     co = assemble(c, 1);
-    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (is_top_level_await && is_async_generator){
         c->u->u_ste->ste_coroutine = 1;
@@ -5469,10 +5454,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     loc = LOC(e);
-    if (compiler_make_closure(c, loc, co, 0, qualname) < 0) {
+    if (compiler_make_closure(c, loc, co, 0) < 0) {
         goto error;
     }
-    Py_DECREF(qualname);
     Py_DECREF(co);
 
     VISIT(c, expr, outermost->iter);
@@ -5496,7 +5480,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 error_in_scope:
     compiler_exit_scope(c);
 error:
-    Py_XDECREF(qualname);
     Py_XDECREF(co);
     return ERROR;
 }
@@ -5784,7 +5767,12 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case UnaryOp_kind:
         VISIT(c, expr, e->v.UnaryOp.operand);
-        ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
+        if (e->v.UnaryOp.op == UAdd) {
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_UNARY_POSITIVE);
+        }
+        else {
+            ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
+        }
         break;
     case Lambda_kind:
         return compiler_lambda(c, e);
@@ -8672,7 +8660,7 @@ opcode_metadata_is_sane(cfg_builder *g) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             int opcode = instr->i_opcode;
-            assert(opcode <= MAX_REAL_OPCODE); 
+            assert(opcode <= MAX_REAL_OPCODE);
             int pushed = _PyOpcode_opcode_metadata[opcode].n_pushed;
             int popped = _PyOpcode_opcode_metadata[opcode].n_popped;
             assert((pushed < 0) == (popped < 0));

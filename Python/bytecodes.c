@@ -88,13 +88,8 @@ static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc;
 static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
 static size_t jump;
 // Dummy variables for cache effects
-static uint16_t when_to_jump_mask, invert, counter, index, hint;
+static uint16_t invert, counter, index, hint;
 static uint32_t type_version;
-// Dummy opcode names for 'op' opcodes
-#define _COMPARE_OP_FLOAT 1003
-#define _COMPARE_OP_INT 1004
-#define _COMPARE_OP_STR 1005
-#define _JUMP_IF 1006
 
 static PyObject *
 dummy_func(
@@ -172,12 +167,6 @@ dummy_func(
         }
 
         macro(END_FOR) = POP_TOP + POP_TOP;
-
-        inst(UNARY_POSITIVE, (value -- res)) {
-            res = PyNumber_Positive(value);
-            DECREF_INPUTS();
-            ERROR_IF(res == NULL, error);
-        }
 
         inst(UNARY_NEGATIVE, (value -- res)) {
             res = PyNumber_Negative(value);
@@ -454,27 +443,20 @@ dummy_func(
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             Py_INCREF(getitem);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2);
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            for (int i = 2; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
-            }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             DISPATCH_INLINED(new_frame);
         }
 
-        // Alternative: (list, unused[oparg], v -- list, unused[oparg])
-        inst(LIST_APPEND, (v --)) {
-            PyObject *list = PEEK(oparg + 1);  // +1 to account for v staying on stack
+        inst(LIST_APPEND, (list, unused[oparg-1], v -- list, unused[oparg-1])) {
             ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
-        // Alternative: (set, unused[oparg], v -- set, unused[oparg])
-        inst(SET_ADD, (v --)) {
-            PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
+        inst(SET_ADD,  (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             int err = PySet_Add(set, v);
             Py_DECREF(v);
             ERROR_IF(err, error);
@@ -546,7 +528,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__array[oparg] -- )
+        // This should remain a legacy instruction.
         inst(RAISE_VARARGS) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
@@ -755,13 +737,6 @@ dummy_func(
                 assert(retval != NULL);
                 PUSH(retval);
             }
-        }
-
-        inst(ASYNC_GEN_WRAP, (v -- w)) {
-            assert(frame->f_code->co_flags & CO_ASYNC_GENERATOR);
-            w = _PyAsyncGenValueWrapperNew(v);
-            DECREF_INPUTS();
-            ERROR_IF(w == NULL, error);
         }
 
         inst(YIELD_VALUE, (retval -- unused)) {
@@ -1316,46 +1291,25 @@ dummy_func(
             }
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_STRING) {
-            PyObject *str;
-            str = _PyUnicode_JoinArray(&_Py_STR(empty),
-                                       stack_pointer - oparg, oparg);
-            if (str == NULL)
-                goto error;
-            while (--oparg >= 0) {
-                PyObject *item = POP();
-                Py_DECREF(item);
+        inst(BUILD_STRING, (pieces[oparg] -- str)) {
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(pieces[i]);
             }
-            PUSH(str);
+            ERROR_IF(str == NULL, error);
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_TUPLE) {
-            STACK_SHRINK(oparg);
-            PyObject *tup = _PyTuple_FromArraySteal(stack_pointer, oparg);
-            if (tup == NULL)
-                goto error;
-            PUSH(tup);
+        inst(BUILD_TUPLE, (values[oparg] -- tup)) {
+            tup = _PyTuple_FromArraySteal(values, oparg);
+            ERROR_IF(tup == NULL, error);
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_LIST) {
-            STACK_SHRINK(oparg);
-            PyObject *list = _PyList_FromArraySteal(stack_pointer, oparg);
-            if (list == NULL)
-                goto error;
-            PUSH(list);
+        inst(BUILD_LIST, (values[oparg] -- list)) {
+            list = _PyList_FromArraySteal(values, oparg);
+            ERROR_IF(list == NULL, error);
         }
 
-        inst(LIST_TO_TUPLE, (list -- tuple)) {
-            tuple = PyList_AsTuple(list);
-            DECREF_INPUTS();
-            ERROR_IF(tuple == NULL, error);
-        }
-
-        inst(LIST_EXTEND, (iterable -- )) {
-            PyObject *list = PEEK(oparg + 1);  // iterable is still on the stack
+        inst(LIST_EXTEND, (list, unused[oparg-1], iterable -- list, unused[oparg-1])) {
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1373,48 +1327,40 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(SET_UPDATE, (iterable --)) {
-            PyObject *set = PEEK(oparg + 1);  // iterable is still on the stack
+        inst(SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1])) {
             int err = _PySet_Update(set, iterable);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
         }
 
-        // stack effect: (__array[oparg] -- __0)
-        inst(BUILD_SET) {
-            PyObject *set = PySet_New(NULL);
+        inst(BUILD_SET, (values[oparg] -- set)) {
+            set = PySet_New(NULL);
             int err = 0;
-            int i;
-            if (set == NULL)
-                goto error;
-            for (i = oparg; i > 0; i--) {
-                PyObject *item = PEEK(i);
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = values[i];
                 if (err == 0)
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
             }
-            STACK_SHRINK(oparg);
             if (err != 0) {
                 Py_DECREF(set);
-                goto error;
+                ERROR_IF(true, error);
             }
-            PUSH(set);
         }
 
-        // stack effect: (__array[oparg*2] -- __0)
-        inst(BUILD_MAP) {
-            PyObject *map = _PyDict_FromItems(
-                    &PEEK(2*oparg), 2,
-                    &PEEK(2*oparg - 1), 2,
+        inst(BUILD_MAP, (values[oparg*2] -- map)) {
+            map = _PyDict_FromItems(
+                    values, 2,
+                    values+1, 2,
                     oparg);
             if (map == NULL)
                 goto error;
 
-            while (oparg--) {
-                Py_DECREF(POP());
-                Py_DECREF(POP());
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(values[i*2]);
+                Py_DECREF(values[i*2+1]);
             }
-            PUSH(map);
+            ERROR_IF(map == NULL, error);
         }
 
         inst(SETUP_ANNOTATIONS, (--)) {
@@ -1459,28 +1405,21 @@ dummy_func(
             }
         }
 
-        // stack effect: (__array[oparg] -- )
-        inst(BUILD_CONST_KEY_MAP) {
-            PyObject *map;
-            PyObject *keys = TOP();
+        inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
             if (!PyTuple_CheckExact(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad BUILD_CONST_KEY_MAP keys argument");
-                goto error;
+                goto error;  // Pop the keys and values.
             }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
-                    &PEEK(oparg + 1), 1, oparg);
-            if (map == NULL) {
-                goto error;
+                    values, 1, oparg);
+            Py_DECREF(keys);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(values[i]);
             }
-
-            Py_DECREF(POP());
-            while (oparg--) {
-                Py_DECREF(POP());
-            }
-            PUSH(map);
+            ERROR_IF(map == NULL, error);
         }
 
         inst(DICT_UPDATE, (update --)) {
@@ -1733,14 +1672,11 @@ dummy_func(
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(fget);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
             SET_TOP(NULL);
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
             new_frame->localsplus[0] = owner;
-            for (int i = 1; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
-            }
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH_INLINED(new_frame);
         }
@@ -1768,15 +1704,12 @@ dummy_func(
 
             PyObject *name = GETITEM(names, oparg >> 1);
             Py_INCREF(f);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2);
             SET_TOP(NULL);
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
-            for (int i = 2; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
-            }
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH_INLINED(new_frame);
         }
@@ -1857,91 +1790,107 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        family(compare_op) = {
-            COMPARE_OP,
-            _COMPARE_OP_FLOAT,
-            _COMPARE_OP_INT,
-            _COMPARE_OP_STR,
-        };
-
-        inst(COMPARE_OP, (unused/2, left, right -- res)) {
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
-                next_instr--;
-                _Py_Specialize_CompareOp(left, right, next_instr, oparg);
-                DISPATCH_SAME_OPARG();
-            }
+        inst(COMPARE_OP, (unused/1, left, right -- res)) {
             STAT_INC(COMPARE_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            assert(oparg <= Py_GE);
-            res = PyObject_RichCompare(left, right, oparg);
+            assert((oparg >> 4) <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
             Py_DECREF(right);
             ERROR_IF(res == NULL, error);
         }
 
-        // The result is an int disguised as an object pointer.
-        op(_COMPARE_OP_FLOAT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
-            assert(cframe.use_tracing == 0);
-            // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
-            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
-            double dleft = PyFloat_AS_DOUBLE(left);
-            double dright = PyFloat_AS_DOUBLE(right);
-            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
-            int sign_ish = 1 << (2 * (dleft >= dright) + (dleft <= dright));
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            jump = sign_ish & when_to_jump_mask;
-        }
-        // The input is an int disguised as an object pointer!
-        op(_JUMP_IF, (jump: size_t --)) {
-            assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            if (jump) {
-                JUMPBY(oparg);
+        family(compare_and_branch) = {
+            COMPARE_AND_BRANCH,
+            COMPARE_AND_BRANCH_FLOAT,
+            COMPARE_AND_BRANCH_INT,
+            COMPARE_AND_BRANCH_STR,
+        };
+
+        inst(COMPARE_AND_BRANCH, (unused/2, left, right -- )) {
+            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                next_instr--;
+                _Py_Specialize_CompareAndBranch(left, right, next_instr, oparg);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(COMPARE_AND_BRANCH, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            assert((oparg >> 4) <= Py_GE);
+            PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            ERROR_IF(cond == NULL, error);
+            assert(_Py_OPCODE(next_instr[1]) == POP_JUMP_IF_FALSE ||
+                   _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE);
+            bool jump_on_true = _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE;
+            int offset = _Py_OPARG(next_instr[1]);
+            int err = PyObject_IsTrue(cond);
+            Py_DECREF(cond);
+            if (err < 0) {
+                goto error;
+            }
+            if (jump_on_true == (err != 0)) {
+                JUMPBY(offset);
             }
         }
-        // We're praying that the compiler optimizes the flags manipuations.
-        super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_IF;
 
-        // Similar to COMPARE_OP_FLOAT
-        op(_COMPARE_OP_INT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
+        inst(COMPARE_AND_BRANCH_FLOAT, (unused/2, left, right -- )) {
             assert(cframe.use_tracing == 0);
-            // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
-            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
-            DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_OP);
-            DEOPT_IF((size_t)(Py_SIZE(right) + 1) > 2, COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
+            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_AND_BRANCH);
+            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_AND_BRANCH);
+            STAT_INC(COMPARE_AND_BRANCH, hit);
+            double dleft = PyFloat_AS_DOUBLE(left);
+            double dright = PyFloat_AS_DOUBLE(right);
+            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
+            int sign_ish = COMPARISON_BIT(dleft, dright);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            if (sign_ish & oparg) {
+                int offset = _Py_OPARG(next_instr[1]);
+                JUMPBY(offset);
+            }
+        }
+
+        // Similar to COMPARE_AND_BRANCH_FLOAT
+        inst(COMPARE_AND_BRANCH_INT, (unused/2, left, right -- )) {
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_AND_BRANCH);
+            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_AND_BRANCH);
+            DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_AND_BRANCH);
+            DEOPT_IF((size_t)(Py_SIZE(right) + 1) > 2, COMPARE_AND_BRANCH);
+            STAT_INC(COMPARE_AND_BRANCH, hit);
             assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
             Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
             Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-            // 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
-            int sign_ish = 1 << (2 * (ileft >= iright) + (ileft <= iright));
+            // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
+            int sign_ish = COMPARISON_BIT(ileft, iright);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            jump = sign_ish & when_to_jump_mask;
+            if (sign_ish & oparg) {
+                int offset = _Py_OPARG(next_instr[1]);
+                JUMPBY(offset);
+            }
         }
-        super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_IF;
 
-        // Similar to COMPARE_OP_FLOAT, but for ==, != only
-        op(_COMPARE_OP_STR, (unused/1, invert/1, left, right -- jump: size_t)) {
+        // Similar to COMPARE_AND_BRANCH_FLOAT, but for ==, != only
+        inst(COMPARE_AND_BRANCH_STR, (unused/2, left, right -- )) {
             assert(cframe.use_tracing == 0);
-            // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
-            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
+            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_AND_BRANCH);
+            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_AND_BRANCH);
+            STAT_INC(COMPARE_AND_BRANCH, hit);
             int res = _PyUnicode_Equal(left, right);
-            assert(oparg == Py_EQ || oparg == Py_NE);
+            assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
-            assert(invert == 0 || invert == 1);
-            jump = res ^ invert;
+            assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+            assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+            if ((res + COMPARISON_NOT_EQUALS) & oparg) {
+                int offset = _Py_OPARG(next_instr[1]);
+                JUMPBY(offset);
+            }
         }
-        super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_IF;
 
         inst(IS_OP, (left, right -- b)) {
             int res = Py_Is(left, right) ^ oparg;
@@ -2691,13 +2640,10 @@ dummy_func(
             DEOPT_IF(code->co_argcount != argcount, CALL);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
-            }
-            for (int i = argcount; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
@@ -2721,7 +2667,7 @@ dummy_func(
             DEOPT_IF(argcount < minargs, CALL);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, code->co_argcount);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -2730,9 +2676,6 @@ dummy_func(
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults,
                                                  i - minargs);
                 new_frame->localsplus[i] = Py_NewRef(def);
-            }
-            for (int i = code->co_argcount; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);

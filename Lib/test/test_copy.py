@@ -59,7 +59,8 @@ class TestCopy:
         self.assertRaises(TypeError, self.copy_module.copy, x)
         copyreg.pickle(C, pickle_C, C)
         y = self.copy_module.copy(x)
-        self.assertIsInstance(y, C)
+        self.assertIsNot(x, y)
+        self.assertEqual(type(y), C)
         self.assertEqual(y.foo, x.foo)
 
     def test_copy_reduce_ex(self):
@@ -323,7 +324,8 @@ class TestDeepcopy:
         self.assertRaises(TypeError, self.copy_module.deepcopy, x)
         copyreg.pickle(C, pickle_C, C)
         y = self.copy_module.deepcopy(x)
-        self.assertIsInstance(y, C)
+        self.assertIsNot(x, y)
+        self.assertEqual(type(y), C)
         self.assertEqual(y.foo, x.foo)
 
     def test_deepcopy_reduce_ex(self):
@@ -366,8 +368,8 @@ class TestDeepcopy:
             pass
         def f():
             pass
-        tests = [None, 42, 2**100, 3.14, True, False, 1j,
-                 "hello", "hello\u1234", f.__code__,
+        tests = [None, ..., NotImplemented, 42, 2**100, 3.14, True, False, 1j,
+                 b"bytes", "hello", "hello\u1234", f.__code__,
                  NewStyle, range(10), max, property()]
         for x in tests:
             self.assertIs(self.copy_module.deepcopy(x), x)

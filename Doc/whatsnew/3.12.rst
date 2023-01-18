@@ -182,6 +182,13 @@ Other Language Changes
   arguments of any type instead of just :class:`bool` and :class:`int`.
   (Contributed by Serhiy Storchaka in :gh:`60203`.)
 
+* Variables used in the target part of comprehensions that are not stored to
+  can now be used in assignment expressions (``:=``).
+  For example, in ``[(b := 1) for a, b.prop in some_iter]``, the assignment to
+  ``b`` is now allowed. Note that assigning to variables stored to in the target
+  part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
+  (Contributed by Nikita Sobolev in :gh:`100581`.)
+
 
 New Modules
 ===========
@@ -261,6 +268,12 @@ dis
   but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
+
+math
+----
+
+* Added :func:`math.sumprod` for computing a sum of products.
+  (Contributed by Raymond Hettinger in :gh:`100485`.)
 
 os
 --
@@ -395,6 +408,11 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
+* The :meth:`~asyncio.DefaultEventLoopPolicy.get_event_loop` method of the
+  default event loop policy now emits a :exc:`DeprecationWarning` if there
+  is no current event loop set and it decides to create one.
+  (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -446,7 +464,6 @@ Pending Removal in Python 3.14
 
   Use :mod:`importlib.resources.abc` classes instead:
 
-  * :class:`importlib.resources.abc.TraversableResources`
   * :class:`importlib.resources.abc.Traversable`
   * :class:`importlib.resources.abc.TraversableResources`
 
@@ -696,18 +713,6 @@ Changes in the Python API
   This change helps with interpreter isolation.  Furthermore, :mod:`syslog` is a wrapper
   around process-global resources, which are best managed from the main interpreter.
   (Contributed by Dong-hee Na in :gh:`99127`.)
-
-* :func:`asyncio.get_event_loop` and many other :mod:`asyncio` functions like
-  :func:`~asyncio.ensure_future`, :func:`~asyncio.shield` or
-  :func:`~asyncio.gather`, and also the
-  :meth:`~asyncio.BaseDefaultEventLoopPolicy.get_event_loop` method of
-  :class:`~asyncio.BaseDefaultEventLoopPolicy` now raise a :exc:`RuntimeError`
-  if called when there is no running event loop and the current event loop was
-  not set.
-  Previously they implicitly created and set a new current event loop.
-  :exc:`DeprecationWarning` is no longer emitted if there is no running
-  event loop but the current event loop is set in the policy.
-  (Contributed by Serhiy Storchaka in :gh:`93453`.)
 
 
 Build Changes

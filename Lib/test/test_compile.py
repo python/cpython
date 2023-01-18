@@ -161,9 +161,8 @@ if 1:
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 1)
-        lines = list(co.co_lines())
-        self.assertEqual(lines[0][2], 0)
-        self.assertEqual(lines[1][2], 257)
+        lines = [line for _, _, line in co.co_lines()]
+        self.assertEqual(lines, [0, 257])
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -955,9 +954,9 @@ if 1:
         for func in (no_code1, no_code2):
             with self.subTest(func=func):
                 code = func.__code__
-                lines = list(code.co_lines())
-                start, end, line = lines[0]
+                [(start, end, line)] = code.co_lines()
                 self.assertEqual(start, 0)
+                self.assertEqual(end, len(code.co_code))
                 self.assertEqual(line, code.co_firstlineno)
 
     def get_code_lines(self, code):
@@ -1122,11 +1121,11 @@ if 1:
         check_op_count(aug, "BUILD_SLICE", 0)
 
     def test_compare_positions(self):
-        for opname, op in [
-            ("COMPARE_OP", "<"),
-            ("COMPARE_OP", "<="),
-            ("COMPARE_OP", ">"),
-            ("COMPARE_OP", ">="),
+        for opname_prefix, op in [
+            ("COMPARE_", "<"),
+            ("COMPARE_", "<="),
+            ("COMPARE_", ">"),
+            ("COMPARE_", ">="),
             ("CONTAINS_OP", "in"),
             ("CONTAINS_OP", "not in"),
             ("IS_OP", "is"),
@@ -1141,7 +1140,7 @@ if 1:
                 actual_positions = [
                     instruction.positions
                     for instruction in dis.get_instructions(code)
-                    if instruction.opname == opname
+                    if instruction.opname.startswith(opname_prefix)
                 ]
                 with self.subTest(source):
                     self.assertEqual(actual_positions, expected_positions)
@@ -1271,7 +1270,7 @@ if (a or
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_FALSE',
             line=2, end_line=2, column=15, end_column=16, occurrence=2)
         # compare d and 0
-        self.assertOpcodeSourcePositionIs(compiled_code, 'COMPARE_OP',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'COMPARE_AND_BRANCH',
             line=4, end_line=4, column=8, end_column=13, occurrence=1)
         # jump if comparison it True
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
