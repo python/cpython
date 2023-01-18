@@ -34,13 +34,13 @@
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
+#define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
 
 /* Flow control macros */
 #define DEOPT_IF(cond, instname) ((void)0)
 #define ERROR_IF(cond, labelname) ((void)0)
 #define GO_TO_INSTRUCTION(instname) ((void)0)
-#define DISPATCH_SAME_OPARG() ((void)0)
 #define PREDICT(opname) ((void)0)
 
 #define inst(name, ...) case name:
@@ -48,8 +48,6 @@
 #define macro(name) static int MACRO_##name
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
-
-static void *opcode_targets[256];
 
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
@@ -3309,6 +3307,7 @@ dummy_func(
 // END BYTECODES //
 
     }
+ dispatch_opcode:
  error:
  exception_unwind:
  exit_unwind:
