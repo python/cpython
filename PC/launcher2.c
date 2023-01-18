@@ -1294,34 +1294,65 @@ _compareTag(const wchar_t *x, const wchar_t *y)
 
 
 int
-addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo *node)
+_compareArch(const wchar_t *x, const wchar_t *y)
+{
+    if (!x && !y) {
+        return 0;
+    } else if (!x) {
+        return -1;
+    } else if (!y) {
+        return 1;
+    }
+
+    bool is64X = 0 == _compare(x, -1, L"64bit", -1);
+    bool is64Y = 0 == _compare(y, -1, L"64bit", -1);
+    if (is64X) {
+        return is64Y ? 0 : -1;
+    } else if (is64Y) {
+        return 1;
+    }
+    return _compare(x, -1, y, -1);
+}
+
+
+int
+addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo* parent, EnvironmentInfo *node)
 {
     EnvironmentInfo *r = *root;
     if (!r) {
         *root = node;
-        node->parent = NULL;
+        node->parent = parent;
         return 0;
     }
     // Sort by company name
     switch (_compareCompany(node->company, r->company)) {
     case -1:
-        return addEnvironmentInfo(&r->prev, node);
+        return addEnvironmentInfo(&r->prev, r, node);
     case 1:
-        return addEnvironmentInfo(&r->next, node);
+        return addEnvironmentInfo(&r->next, r, node);
     case 0:
         break;
     }
     // Then by tag (descending)
     switch (_compareTag(node->tag, r->tag)) {
     case -1:
-        return addEnvironmentInfo(&r->next, node);
+        return addEnvironmentInfo(&r->next, r, node);
     case 1:
-        return addEnvironmentInfo(&r->prev, node);
+        return addEnvironmentInfo(&r->prev, r, node);
+    case 0:
+        break;
+    }
+    // Then by architecture
+    switch (_compareArch(node->architecture, r->architecture)) {
+    case -1:
+        return addEnvironmentInfo(&r->prev, r, node);
+    case 1:
+        return addEnvironmentInfo(&r->next, r, node);
     case 0:
         break;
     }
     // Then keep the one with the lowest internal sort key
-    if (r->internalSortKey < node->internalSortKey) {
+    if (node->internalSortKey < r->internalSortKey) {
         // Replace the current node
         node->parent = r->parent;
         if (node->parent) {
@@ -1334,9 +1365,16 @@ addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo *node)
                 freeEnvironmentInfo(node);
                 return RC_INTERNAL_ERROR;
             }
+        } else {
+            // If node has no parent, then it is the root.
+            *root = node;
         }
+
         node->next = r->next;
         node->prev = r->prev;
+
+        debug(L"# replaced %s/%s/%i in tree\n", node->company, node->tag, node->internalSortKey);
+        freeEnvironmentInfo(r);
     } else {
         debug(L"# not adding %s/%s/%i to tree\n", node->company, node->tag, node->internalSortKey);
         return RC_DUPLICATE_ITEM;
@@ -1486,7 +1524,7 @@ _registrySearchTags(const SearchInfo *search, EnvironmentInfo **result, HKEY roo
                 freeEnvironmentInfo(env);
                 exitCode = 0;
             } else if (!exitCode) {
-                exitCode = addEnvironmentInfo(result, env);
+                exitCode = addEnvironmentInfo(result, NULL, env);
                 if (exitCode) {
                     freeEnvironmentInfo(env);
                     if (exitCode == RC_DUPLICATE_ITEM) {
@@ -1574,7 +1612,7 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
         copyWstr(&env->displayName, buffer);
     }
 
-    int exitCode = addEnvironmentInfo(result, env);
+    int exitCode = addEnvironmentInfo(result, NULL, env);
     if (exitCode) {
         freeEnvironmentInfo(env);
         if (exitCode == RC_DUPLICATE_ITEM) {
@@ -1612,7 +1650,7 @@ explicitOverrideSearch(const SearchInfo *search, EnvironmentInfo **result)
     if (exitCode) {
         goto abort;
     }
-    exitCode = addEnvironmentInfo(result, env);
+    exitCode = addEnvironmentInfo(result, NULL, env);
     if (exitCode) {
         goto abort;
     }
@@ -1661,7 +1699,7 @@ virtualenvSearch(const SearchInfo *search, EnvironmentInfo **result)
     if (exitCode) {
         goto abort;
     }
-    exitCode = addEnvironmentInfo(result, env);
+    exitCode = addEnvironmentInfo(result, NULL, env);
     if (exitCode) {
         goto abort;
     }
@@ -2116,6 +2154,14 @@ _listAllEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, Environmen
             buffer[0] = L'\0';
         } else if (0 == _compare(env->company, -1, L"PythonCore", -1)) {
             swprintf_s(buffer, bufferSize, L"-V:%s", env->tag);
+
+            // append "-32" to PythonCore 32-bit environments if it isn't already specified in the tag name
+            if (0 == _compare(env->architecture, -1, L"32bit", -1)) {
+                int tagLength = wcslen(env->tag);
+                if (tagLength <= 3 || 0 != _compare(&env->tag[tagLength - 3], 3, L"-32", 3)) {
+                    wcscat_s(buffer, bufferSize, L"-32");
+                }
+            }
         } else {
             swprintf_s(buffer, bufferSize, L"-V:%s/%s", env->company, env->tag);
         }
