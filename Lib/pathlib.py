@@ -713,6 +713,10 @@ class Path(PurePath):
     __slots__ = ()
 
     def __new__(cls, *args, **kwargs):
+        if kwargs:
+            msg = ("support for supplying keyword arguments to pathlib.PurePath "
+                   "is deprecated and scheduled for removal in Python {remove}")
+            warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
         self = cls._from_parts(args)

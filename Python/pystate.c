@@ -231,10 +231,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 }
 #endif
 
-#define HEAD_LOCK(runtime) \
-    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
-#define HEAD_UNLOCK(runtime) \
-    PyThread_release_lock((runtime)->interpreters.mutex)
 
 /* Forward declaration */
 static void _PyGILState_NoteThreadState(
