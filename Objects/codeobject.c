@@ -1849,7 +1849,7 @@ code_hash(PyCodeObject *co)
     SCRAMBLE_IN(co->co_firstlineno);
     SCRAMBLE_IN(Py_SIZE(co));
     for (int i = 0; i < Py_SIZE(co); i++) {
-        int deop = _PyOpcode_Deopt[_Py_OPCODE(_PyCode_CODE(co)[i])];
+        int deop = _Py_GetBaseOpcode(co, i);
         SCRAMBLE_IN(deop);
         SCRAMBLE_IN(_Py_OPARG(_PyCode_CODE(co)[i]));
         i += _PyOpcode_Caches[deop];

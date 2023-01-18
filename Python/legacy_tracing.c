@@ -259,6 +259,12 @@ sys_trace_branch_func(
     _PyInterpreterFrame *iframe = _PyEval_GetFrame();
     assert(iframe);
     PyFrameObject* frame = _PyFrame_GetFrameObject(iframe);
+    if (frame == NULL) {
+        return NULL;
+    }
+    if (!frame->f_trace_lines) {
+        Py_RETURN_NONE;
+    }
     int from = _PyLong_AsInt(args[1]);
     assert(from >= 0);
     int to = _PyLong_AsInt(args[2]);

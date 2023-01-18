@@ -8,12 +8,18 @@ import functools
 import types
 import collections
 
+PAIR = (0,1)
+
 def f1():
     pass
 
 def f2():
     len([])
     sys.getsizeof(0)
+
+def floop():
+    for item in PAIR:
+        pass
 
 def gen():
     yield
@@ -162,6 +168,7 @@ caught.events = [
     "start",
     "raise",
     "exception_handled",
+    "branch",
     "return",
 ]
 
@@ -311,7 +318,6 @@ class RecorderWithDisable:
 
     def __call__(self, code, event):
         self.events.append(event)
-        print(len(self.events))
         if self.disable:
             return sys.monitoring.DISABLE
 
@@ -481,16 +487,61 @@ class LineMontoringTest(unittest.TestCase):
         try:
             self.assertEqual(sys.monitoring._all_events(), {})
             events = []
-            counter = RecorderWithDisable(events)
-            sys.monitoring.register_callback(TEST_TOOL, E.LINE, counter)
+            recorder = RecorderWithDisable(events)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, recorder)
             sys.monitoring.set_events(TEST_TOOL, E.LINE)
             f1()
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
-            self.assertEqual(events, [487, 12, 488])
+            self.assertEqual(events, [493, 14, 494])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
+
+    def test_lines_loop(self):
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            events = []
+            recorder = RecorderWithDisable(events)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, recorder)
+            sys.monitoring.set_events(TEST_TOOL, E.LINE)
+            floop()
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+            self.assertEqual(events, [510, 21, 22, 22, 21, 511])
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+            self.assertEqual(sys.monitoring._all_events(), {})
+            sys.monitoring.restart_events()
+
+    def test_lines_two(self):
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            events = []
+            recorder = RecorderWithDisable(events)
+            events2 = []
+            recorder2 = RecorderWithDisable(events2)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, recorder)
+            sys.monitoring.register_callback(TEST_TOOL2, E.LINE, recorder2)
+            sys.monitoring.set_events(TEST_TOOL, E.LINE); sys.monitoring.set_events(TEST_TOOL2, E.LINE)
+            f1()
+            sys.monitoring.set_events(TEST_TOOL, 0); sys.monitoring.set_events(TEST_TOOL2, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+            sys.monitoring.register_callback(TEST_TOOL2, E.LINE, None)
+            expected = [530, 14, 531]
+            self.assertEqual(events, expected)
+            self.assertEqual(events2, expected)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL2, 0)
+            sys.monitoring.set_events(TEST_TOOL2, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+            sys.monitoring.register_callback(TEST_TOOL2, E.LINE, None)
+            self.assertEqual(sys.monitoring._all_events(), {})
+            sys.monitoring.restart_events()
+
+
+
 
