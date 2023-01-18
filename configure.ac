@@ -2288,6 +2288,10 @@ yes)
     AS_VAR_IF([ac_cv_disable_unused_parameter_warning], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"])
 
+    PY_CHECK_CC_WARNING([disable], [int-conversion])
+    AS_VAR_IF([ac_cv_disable_int_conversion], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-int-conversion"])
+
     PY_CHECK_CC_WARNING([disable], [missing-field-initializers])
     AS_VAR_IF([ac_cv_disable_missing_field_initializers_warning], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"])
