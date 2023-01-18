@@ -1111,11 +1111,14 @@ tstate_delete_common(PyThreadState *tstate,
     }
     HEAD_UNLOCK(runtime);
 
+    // XXX Do this in PyThreadState_Swap() (and assert not-equal here)?
     if (gilstate->autoInterpreterState &&
         PyThread_tss_get(&gilstate->autoTSSkey) == tstate)
     {
         PyThread_tss_set(&gilstate->autoTSSkey, NULL);
     }
+
+    // XXX Move to PyThreadState_Clear()?
     _PyStackChunk *chunk = tstate->datastack_chunk;
     tstate->datastack_chunk = NULL;
     while (chunk != NULL) {
