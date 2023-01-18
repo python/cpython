@@ -17,7 +17,7 @@
 #include <Python.h>
 
 
-#if _MSC_VER >= 1929
+#if _MSVC_LANG >= 202002L
 // We can use clinic directly when the C++ compiler supports C++20
 #include "clinic/_wmimodule.cpp.h"
 #else
@@ -96,9 +96,9 @@ _query_thread(LPVOID param)
     }
     if (SUCCEEDED(hr)) {
         hr = services->ExecQuery(
-            bstr_t("WQL"), 
+            bstr_t("WQL"),
             bstrQuery,
-            WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, 
+            WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
             NULL,
             &enumerator
         );

@@ -2288,6 +2288,10 @@ yes)
     AS_VAR_IF([ac_cv_disable_unused_parameter_warning], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"])
 
+    PY_CHECK_CC_WARNING([disable], [int-conversion])
+    AS_VAR_IF([ac_cv_disable_int_conversion], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-int-conversion"])
+
     PY_CHECK_CC_WARNING([disable], [missing-field-initializers])
     AS_VAR_IF([ac_cv_disable_missing_field_initializers_warning], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"])
@@ -2653,11 +2657,10 @@ fi
 
 # If we have set a CC compiler flag for thread support then
 # check if it works for CXX, too.
-ac_cv_cxx_thread=no
 if test ! -z "$CXX"
 then
-AC_MSG_CHECKING(whether $CXX also accepts flags for thread support)
-ac_save_cxx="$CXX"
+AC_CACHE_CHECK([whether $CXX also accepts flags for thread support], [ac_cv_cxx_thread],
+[ac_save_cxx="$CXX"
 
 if test "$ac_cv_kpthread" = "yes"
 then
@@ -2671,6 +2674,8 @@ elif test "$ac_cv_pthread" = "yes"
 then
   CXX="$CXX -pthread"
   ac_cv_cxx_thread=yes
+else
+  ac_cv_cxx_thread=no
 fi
 
 if test $ac_cv_cxx_thread = yes
@@ -2686,9 +2691,10 @@ then
   fi
   rm -fr conftest*
 fi
-AC_MSG_RESULT($ac_cv_cxx_thread)
+CXX="$ac_save_cxx"])
+else
+  ac_cv_cxx_thread=no
 fi
-CXX="$ac_save_cxx"
 
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
@@ -4118,8 +4124,9 @@ AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+  AS_UNSET([ac_cv_search_dbm_open])
   WITH_SAVE_ENV([
-    AC_SEARCH_LIBS([dbm_open], [gdbm_compat])
+    AC_SEARCH_LIBS([dbm_open], [gdbm_compat], [have_gdbm_compat=yes], [have_gdbm_compat=no])
   ])
 fi
 

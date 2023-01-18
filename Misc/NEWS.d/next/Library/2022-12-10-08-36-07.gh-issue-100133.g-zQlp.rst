@@ -1,1 +1,0 @@
-Fix regression in :mod:`asyncio` where a subprocess would sometimes lose data received from pipe.
