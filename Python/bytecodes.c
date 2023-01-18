@@ -34,41 +34,14 @@
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
-void _PyFloat_ExactDealloc(PyObject *);
-void _PyUnicode_ExactDealloc(PyObject *);
-
-/* Stack effect macros
- * These will be mostly replaced by stack effect descriptions,
- * but the tooling need to recognize them.
- */
-#define SET_TOP(v)        (stack_pointer[-1] = (v))
-#define SET_SECOND(v)     (stack_pointer[-2] = (v))
-#define PEEK(n)           (stack_pointer[-(n)])
-#define POKE(n, v)        (stack_pointer[-(n)] = (v))
-#define PUSH(val)         (*(stack_pointer++) = (val))
-#define POP()             (*(--stack_pointer))
-#define TOP()             PEEK(1)
-#define SECOND()          PEEK(2)
-#define STACK_GROW(n)     (stack_pointer += (n))
-#define STACK_SHRINK(n)   (stack_pointer -= (n))
-#define EMPTY()           1
-#define STACK_LEVEL()     2
-
-/* Local variable macros */
-#define GETLOCAL(i)     (frame->localsplus[i])
-#define SETLOCAL(i, val)  \
-do { \
-    PyObject *_tmp = frame->localsplus[i]; \
-    frame->localsplus[i] = (val); \
-    Py_XDECREF(_tmp); \
-} while (0)
+#define USE_COMPUTED_GOTOS 0
+#include "ceval_macros.h"
 
 /* Flow control macros */
 #define DEOPT_IF(cond, instname) ((void)0)
 #define ERROR_IF(cond, labelname) ((void)0)
-#define JUMPBY(offset) ((void)0)
 #define GO_TO_INSTRUCTION(instname) ((void)0)
-#define DISPATCH_SAME_OPARG() ((void)0)
+#define PREDICT(opname) ((void)0)
 
 #define inst(name, ...) case name:
 #define op(name, ...) /* NAME is ignored */
@@ -76,16 +49,14 @@ do { \
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
 
-#define NAME_ERROR_MSG \
-    "name '%.200s' is not defined"
-
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
-static PyObject *list, *tuple, *dict, *owner;
+static PyObject *list, *tuple, *dict, *owner, *set, *str, *tup, *map, *keys;
 static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
 static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc;
 static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
+static PyObject **pieces, **values;
 static size_t jump;
 // Dummy variables for cache effects
 static uint16_t invert, counter, index, hint;
@@ -456,7 +427,7 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        inst(SET_ADD,  (set, unused[oparg-1], v -- set, unused[oparg-1])) {
+        inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             int err = PySet_Add(set, v);
             Py_DECREF(v);
             ERROR_IF(err, error);
@@ -3336,8 +3307,10 @@ dummy_func(
 // END BYTECODES //
 
     }
+ dispatch_opcode:
  error:
  exception_unwind:
+ exit_unwind:
  handle_eval_breaker:
  resume_frame:
  resume_with_error:
