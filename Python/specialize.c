@@ -318,6 +318,8 @@ _PyCode_Quicken(PyCodeObject *code)
             }
             case LOAD_CONST << 8 | MAKE_FUNCTION:
             {
+                // EXPERIMENT: Make MAKE_FUNCTION_FROM_CODE a separate opcode.
+                // This is mostly an exercise to understand the details.
                 assert(caches == 0);
                 int index = instructions[i - 1].oparg;
                 int flags = instructions[i].oparg;
@@ -326,6 +328,11 @@ _PyCode_Quicken(PyCodeObject *code)
                 instructions[i - 1].oparg = flags;
                 instructions[i].opcode = CACHE;  // XXX Don't?
                 instructions[i].oparg = index;
+                // Patch a preceding EXTENDED_ARG.
+                // (If there are two preceding EXTENDED_ARG instructions,
+                // only the last one needs to be patched.)
+                // TODO: Do this in the compiler so EXTENDED_ARG_3
+                // can extend all three opargs.
                 if (i >= 2 && instructions[i - 2].opcode == EXTENDED_ARG) {
                     instructions[i - 2].opcode = EXTENDED_ARG_3;
                 }
