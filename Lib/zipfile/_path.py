@@ -241,7 +241,7 @@ class Path:
         self.root = FastLookup.make(root)
         self.at = at
 
-    def open(self, mode='r', encoding=None, *args, pwd=None, **kwargs):
+    def open(self, mode='r', *args, pwd=None, **kwargs):
         """
         Open this entry as text or binary following the semantics
         of ``pathlib.Path.open()`` by passing arguments through
@@ -254,12 +254,24 @@ class Path:
             raise FileNotFoundError(self)
         stream = self.root.open(self.at, zip_mode, pwd=pwd)
         if 'b' in mode:
-            if encoding is not None or args or kwargs:
+            if args or kwargs:
                 raise ValueError("encoding args invalid for binary operation")
             return stream
-        else:
-            encoding = io.text_encoding(encoding)
-        return io.TextIOWrapper(stream, *args, encoding=encoding, **kwargs)
+        # Text mode:
+        encoding = None
+        if args:
+            # Per io.TextIOWrapper, encoding is the first positional arg.
+            # Our API is to pass all *args and **kwargs to TextIOWrapper.
+            # Extract it so we can process it.
+            encoding = args[0]
+            args = args[1:]
+            # We must check this manually as we extract it for processing.
+            if "encoding" in kwargs:
+                raise TypeError(
+                        "argument ('encoding') given by name and position (1)")
+        encoding = kwargs.pop("encoding", encoding)
+        encoding = io.text_encoding(encoding)
+        return io.TextIOWrapper(stream, encoding, *args, **kwargs)
 
     @property
     def name(self):

@@ -165,6 +165,22 @@ class TestPath(unittest.TestCase):
             data = strm.read()
         self.assertEqual(data, "This was utf-16")
 
+    def test_read_text_encoding_errors(self):
+        in_memory_file = io.BytesIO()
+        zf = zipfile.ZipFile(in_memory_file, "w")
+        zf.writestr("path/bad-utf8.bin", b"invalid utf-8: \xff\xff.")
+        zf.filename = "test_read_text_encoding_errors.zip"
+        root = zipfile.Path(zf)
+        path, = root.iterdir()
+        u16 = path.joinpath("bad-utf8.bin")
+        with self.assertRaises(UnicodeDecodeError):
+            u16.read_text(encoding="utf-8", errors="strict")  # both keywords
+        data = u16.read_text("utf-8", errors="ignore")  # errors keyword
+        self.assertEqual(data, "invalid utf-8: .")
+        # encoding= both positional and keyword is an error; gh-101144.
+        with self.assertRaisesRegex(TypeError, "encoding"):
+            data = u16.read_text("utf-8", encoding="utf-8")
+
     def test_open_write(self):
         """
         If the zipfile is open for write, it should be possible to
