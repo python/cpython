@@ -545,6 +545,14 @@ can be overridden by the local file.
 
    Print the return value for the last return of a function.
 
+.. seealso::
+
+   Module :mod:`faulthandler`
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout, or on a user signal.
+
+   Module :mod:`pdb`
+      Interactive source code debugger for Python programs.
+
 .. rubric:: Footnotes
 
 .. [1] Whether a frame is considered to originate in a certain module

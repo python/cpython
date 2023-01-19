@@ -52,6 +52,8 @@ Dumping the traceback
    Dump the tracebacks of all threads into *file*. If *all_threads* is
    ``False``, dump only the current thread.
 
+   See also :func:`traceback.print_tb` which can be used to print a traceback object.
+
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
 
@@ -179,3 +181,7 @@ handler:
       File "<stdin>", line 1 in <module>
     Segmentation fault
 
+.. seealso::
+
+   Module :mod:`pdb`
+      Interactive source code debugger for Python programs.
