@@ -30,6 +30,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"     // _PyThreadState_GET()
+#include "cpython/genobject.h"
 #include "pydtrace.h"
 
 typedef struct _gc_runtime_state GCState;
@@ -1043,6 +1044,7 @@ clear_freelists(PyInterpreterState *interp)
     _PyDict_ClearFreeList(interp);
     _PyAsyncGen_ClearFreeLists(interp);
     _PyContext_ClearFreeList(interp);
+    _PyGen_ClearFreeList();
 }
 
 // Show stats for objects in each generations

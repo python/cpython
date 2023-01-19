@@ -2356,3 +2356,20 @@ async_gen_athrow_new(PyAsyncGenObject *gen, PyObject *args)
     _PyObject_GC_TRACK((PyObject*)o);
     return (PyObject*)o;
 }
+
+void
+_PyGen_ClearFreeList(void)
+{
+    for (int i = 0; i < FREE_LIST_MAX; i++) {
+        for (int j = 0; j < MAX_SLOTS; j++) {
+            gen_free_list *free_list = &freelists[i][j];
+
+            while (free_list->free_list != NULL) {
+                PyGenObject *gen = free_list->free_list;
+                free_list->free_list = (PyGenObject *)gen->gi_code;
+                PyObject_GC_Del(gen);
+                --free_list->numfree;
+            }
+        }
+    }
+}

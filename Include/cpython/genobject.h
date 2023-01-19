@@ -78,6 +78,7 @@ PyAPI_FUNC(PyObject *) PyAsyncGen_New(PyFrameObject *,
 
 #define PyAsyncGen_CheckExact(op) Py_IS_TYPE((op), &PyAsyncGen_Type)
 
+PyAPI_FUNC(void) _PyGen_ClearFreeList(void);
 
 #undef _PyGenObject_HEAD
 
