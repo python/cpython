@@ -773,8 +773,11 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     _PyRuntimeState *runtime = interp->runtime;
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
-    /* Unset current thread.  After this, many C API calls become crashy. */
-    _PyThreadState_Swap(runtime, NULL);
+    PyThreadState *tcur = current_fast_get(runtime);
+    if (tcur != NULL && interp == tcur->interp) {
+        /* Unset current thread.  After this, many C API calls become crashy. */
+        _PyThreadState_Swap(runtime, NULL);
+    }
 
     zapthreads(interp, 0);
 
