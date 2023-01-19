@@ -537,3 +537,11 @@ This last example demonstrates the final few formatting functions:
    >>> an_error = IndexError('tuple index out of range')
    >>> traceback.format_exception_only(type(an_error), an_error)
    ['IndexError: tuple index out of range\n']
+
+.. seealso::
+
+   Module :mod:`faulthandler`
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout, or on a user signal.
+
+   Module :mod:`pdb`
+      Interactive source code debugger for Python programs.

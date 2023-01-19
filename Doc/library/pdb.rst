@@ -548,10 +548,8 @@ can be overridden by the local file.
 .. seealso::
 
    Module :mod:`faulthandler`
-      Used to dump Python tracebacks explicitly, on a fault, after a timeout, or on a user signal.
-
-   Module :mod:`pdb`
-      Interactive source code debugger for Python programs.
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout,
+      or on a user signal.
 
 .. rubric:: Footnotes
 
