@@ -1984,6 +1984,12 @@ Using a rotator and namer to customize log rotation processing
 An example of how you can define a namer and rotator is given in the following
 snippet, which shows gzip compression of the log file::
 
+    import gzip
+    import logging
+    import logging.handlers
+    import os
+    import shutil
+
     def namer(name):
         return name + ".gz"
 
@@ -1993,9 +1999,30 @@ snippet, which shows gzip compression of the log file::
                 shutil.copyfileobj(f_in, f_out)
         os.remove(source)
 
-    rh = logging.handlers.RotatingFileHandler(...)
+
+    rh = logging.handlers.RotatingFileHandler('rotated.log', maxBytes=1024, backupCount=5)
     rh.rotator = rotator
     rh.namer = namer
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.addHandler(rh)
+    f = logging.Formatter('%(asctime)s %(message)s')
+    rh.setFormatter(f)
+    for i in range(1000):
+        root.info(f'Message no. {i + 1}')
+
+After running this, you will see six new files, five of which are compressed:
+
+.. code-block:: shell-session
+
+    $ ls rotated.log*
+    rotated.log       rotated.log.2.gz  rotated.log.4.gz
+    rotated.log.1.gz  rotated.log.3.gz  rotated.log.5.gz
+    $ zcat rotated.log.1.gz
+    2023-01-20 02:02:39,673 Message no. 984
+    2023-01-20 02:02:39,674 Message no. 985
+    2023-01-20 02:02:39,674 Message no. 986
+    2023-01-20 02:02:39,674 Message no. 987
 
 A more elaborate multiprocessing example
 ----------------------------------------
