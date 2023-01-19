@@ -1359,9 +1359,11 @@ PyThreadState_DeleteCurrent(void)
  * be kept in those other interpreters.
  */
 void
-_PyThreadState_DeleteExcept(_PyRuntimeState *runtime, PyThreadState *tstate)
+_PyThreadState_DeleteExcept(PyThreadState *tstate)
 {
+    assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
+    _PyRuntimeState *runtime = interp->runtime;
 
     HEAD_LOCK(runtime);
     /* Remove all thread states, except tstate, from the linked list of

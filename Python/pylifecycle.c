@@ -1867,7 +1867,7 @@ Py_FinalizeEx(void)
        _PyRuntimeState_SetFinalizing() has been called, no other Python thread
        can take the GIL at this point: if they try, they will exit
        immediately. */
-    _PyThreadState_DeleteExcept(runtime, tstate);
+    _PyThreadState_DeleteExcept(tstate);
 
     /* Flush sys.stdout and sys.stderr */
     if (flush_std_files() < 0) {

@@ -124,9 +124,7 @@ PyAPI_FUNC(void) _PyThreadState_Bind(PyThreadState *tstate);
 // We keep this around exclusively for stable ABI compatibility.
 PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);
-PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
-    _PyRuntimeState *runtime,
-    PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
 
 static inline void
