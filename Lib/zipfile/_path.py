@@ -148,6 +148,10 @@ class FastLookup(CompleteDirs):
         return self.__lookup
 
 
+def _extract_text_encoding(encoding=None, *args, **kwargs):
+    return io.text_encoding(encoding, 3), args, kwargs
+
+
 class Path:
     """
     A pathlib-compatible interface for zip files.
@@ -258,19 +262,7 @@ class Path:
                 raise ValueError("encoding args invalid for binary operation")
             return stream
         # Text mode:
-        encoding = None
-        if args:
-            # Per io.TextIOWrapper, encoding is the first positional arg.
-            # Our API is to pass all *args and **kwargs to TextIOWrapper.
-            # Extract it so we can process it.
-            encoding = args[0]
-            args = args[1:]
-            # We must check this manually as we extract it for processing.
-            if "encoding" in kwargs:
-                raise TypeError(
-                        "argument ('encoding') given by name and position (1)")
-        encoding = kwargs.pop("encoding", encoding)
-        encoding = io.text_encoding(encoding)
+        encoding, args, kwargs = _extract_text_encoding(*args, **kwargs)
         return io.TextIOWrapper(stream, encoding, *args, **kwargs)
 
     @property
@@ -294,7 +286,8 @@ class Path:
         return pathlib.Path(self.root.filename).joinpath(self.at)
 
     def read_text(self, *args, **kwargs):
-        with self.open('r', *args, **kwargs) as strm:
+        encoding, args, kwargs = _extract_text_encoding(*args, **kwargs)
+        with self.open('r', encoding, *args, **kwargs) as strm:
             return strm.read()
 
     def read_bytes(self):

@@ -165,7 +165,7 @@ class TestPath(unittest.TestCase):
             data = strm.read()
         self.assertEqual(data, "This was utf-16")
 
-    def test_read_text_encoding_errors(self):
+    def test_open_encoding_errors(self):
         in_memory_file = io.BytesIO()
         zf = zipfile.ZipFile(in_memory_file, "w")
         zf.writestr("path/bad-utf8.bin", b"invalid utf-8: \xff\xff.")
@@ -173,13 +173,22 @@ class TestPath(unittest.TestCase):
         root = zipfile.Path(zf)
         path, = root.iterdir()
         u16 = path.joinpath("bad-utf8.bin")
-        with self.assertRaises(UnicodeDecodeError):
-            u16.read_text(encoding="utf-8", errors="strict")  # both keywords
-        data = u16.read_text("utf-8", errors="ignore")  # errors keyword
+
+        # encoding= as a positional argument for gh-101144.
+        data = u16.read_text("utf-8", errors="ignore")
         self.assertEqual(data, "invalid utf-8: .")
+        with u16.open("r", "utf-8", errors="surrogateescape") as f:
+            self.assertEqual(f.read(), "invalid utf-8: \udcff\udcff.")
+
         # encoding= both positional and keyword is an error; gh-101144.
         with self.assertRaisesRegex(TypeError, "encoding"):
             data = u16.read_text("utf-8", encoding="utf-8")
+
+        # both keyword arguments work.
+        with u16.open("r", encoding="utf-8", errors="strict") as f:
+            # error during decoding with wrong codec.
+            with self.assertRaises(UnicodeDecodeError):
+                f.read()
 
     def test_open_write(self):
         """
