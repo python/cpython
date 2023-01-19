@@ -434,3 +434,22 @@ def test_array_error_if():
         }
     """
     run_cases_test(input, output)
+
+def test_long_instr():
+    input = """
+        inst(OP, (--)) {
+            oparg, oparg2, oparg3;
+        }
+    """
+    output = """
+        TARGET(OP) {
+            // Decode rest of instruction
+            oparg2 = next_instr[0].opcode;
+            oparg3 = next_instr[0].oparg;
+            next_instr++;
+        into_op:;  // For EXTENDED_ARG_3
+            oparg, oparg2, oparg3;
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)

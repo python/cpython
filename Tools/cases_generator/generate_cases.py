@@ -123,6 +123,13 @@ class Formatter:
         self.prefix = self.prefix[:-4]
 
     @contextlib.contextmanager
+    def outdent(self):
+        assert self.prefix.endswith("    ")
+        self.prefix = self.prefix[:-4]
+        yield
+        self.prefix += "    "
+
+    @contextlib.contextmanager
     def block(self, head: str):
         if head:
             self.emit(head + " {")
@@ -269,6 +276,24 @@ class Instruction:
 
     def write(self, out: Formatter) -> None:
         """Write one instruction, sans prologue and epilogue."""
+
+        # Write additional instruction decoding if > 1 word
+        if self.instr_fmt.startswith(("IBBB", "IBXB", "IBBX")):
+            out.emit("// Decode rest of instruction")
+            if self.instr_fmt[2] == "B":
+                out.emit("oparg2 = next_instr[0].opcode;")
+            else:
+                out.emit("// (oparg2 is unused)")
+            if self.instr_fmt[3] == "B":
+                out.emit("oparg3 = next_instr[0].oparg;")
+            else:
+                out.emit("// (oparg3 is unused)")
+            out.emit("next_instr++;")
+            with out.outdent():
+                # Need ';' because the next line may be a declaration.
+                # Declarations are not statements, only statements can have labels.
+                out.emit(f"into_{self.name.lower()}:;  // For EXTENDED_ARG_3")
+
         # Write a static assertion that a family's cache size is correct
         if family := self.family:
             if self.name == family.members[0]:

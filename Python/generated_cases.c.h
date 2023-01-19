@@ -3537,11 +3537,11 @@
         }
 
         TARGET(MAKE_FUNCTION_FROM_CODE) {
-            // Decode second word
-            // (oparg2 is not used)
-            oparg3 = _Py_OPARG(*next_instr);
+            // Decode rest of instruction
+            // (oparg2 is unused)
+            oparg3 = next_instr[0].oparg;
             next_instr++;
-        into_make_function_from_code:;  // EXTENDED_ARG_3 jumps here
+        into_make_function_from_code:;  // For EXTENDED_ARG_3
             PyObject *codeobj = GETITEM(consts, oparg3);
             assert(PyCode_Check(codeobj));
             PyFunctionObject *func = (PyFunctionObject *)
