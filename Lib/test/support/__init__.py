@@ -1079,7 +1079,8 @@ def requires_limited_api(test):
         _testcapi.LIMITED_API_AVAILABLE, 'needs Limited API support')(test)
 
 def requires_specialization(test):
-    return unittest.skipUnless(opcode.ENABLE_SPECIALIZATION, "requires specialization")
+    return unittest.skipUnless(
+        opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 def _filter_suite(suite, pred):
     """Recursively filter test cases in a suite based on a predicate."""
