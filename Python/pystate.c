@@ -152,6 +152,7 @@ static void
 bind_tstate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
+    assert(tstate->_status == PyThreadState_INITIALIZED);
     assert(tstate->thread_id == 0);
     assert(tstate->native_thread_id == 0);
     _PyRuntimeState *runtime = tstate->interp->runtime;
@@ -183,12 +184,15 @@ bind_tstate(PyThreadState *tstate)
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
+
+    tstate->_status = PyThreadState_BOUND;
 }
 
 static void
 unbind_tstate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
+    assert(tstate->_status == PyThreadState_BOUND);
     assert(tstate->thread_id > 0);
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     assert(tstate->native_thread_id > 0);
@@ -201,9 +205,12 @@ unbind_tstate(PyThreadState *tstate)
         current_tss_clear(runtime);
     }
 
-    // -1 makes sure the thread state won't be re-bound.
-    tstate->thread_id = -1;
-    tstate->native_thread_id = -1;
+    // We leave thread_id and native_thraed_id alone
+    // since they can be useful for debugging.
+    // Check the `_status` field to know if these values
+    // are still valid.
+
+    tstate->_status = PyThreadState_UNBOUND;
 }
 
 /* This is not exported, as it is not reliable!  It can only
@@ -984,7 +991,7 @@ init_threadstate(PyThreadState *tstate,
                  PyInterpreterState *interp, uint64_t id,
                  PyThreadState *next)
 {
-    if (tstate->_initialized) {
+    if (tstate->_status != PyThreadState_UNINITIALIZED) {
         Py_FatalError("thread state already initialized");
     }
 
@@ -1020,7 +1027,7 @@ init_threadstate(PyThreadState *tstate,
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
 
-    tstate->_initialized = 1;
+    tstate->_status = PyThreadState_INITIALIZED;
 }
 
 static PyThreadState *
