@@ -37,9 +37,6 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
-/* Forward declarations */
-static void _PyThreadState_Delete(PyThreadState *tstate);
-
 
 /****************************************/
 /* helpers for the current thread state */
@@ -768,20 +765,7 @@ _PyInterpreterState_Clear(PyThreadState *tstate)
 }
 
 
-static void
-zapthreads(PyInterpreterState *interp, int check_current)
-{
-    PyThreadState *tstate;
-    /* No need to lock the mutex here because this should only happen
-       when the threads are all really dead (XXX famous last words). */
-    while ((tstate = interp->threads.head) != NULL) {
-        if (check_current) {
-            tstate_verify_not_active(tstate);
-        }
-        _PyThreadState_Delete(tstate);
-    }
-}
-
+static void zapthreads(PyInterpreterState *interp, int check_current);
 
 void
 PyInterpreterState_Delete(PyInterpreterState *interp)
@@ -1322,11 +1306,20 @@ tstate_delete_common(PyThreadState *tstate)
     }
 }
 
+
 static void
-_PyThreadState_Delete(PyThreadState *tstate)
+zapthreads(PyInterpreterState *interp, int check_current)
 {
-    tstate_delete_common(tstate);
-    free_threadstate(tstate);
+    PyThreadState *tstate;
+    /* No need to lock the mutex here because this should only happen
+       when the threads are all really dead (XXX famous last words). */
+    while ((tstate = interp->threads.head) != NULL) {
+        if (check_current) {
+            tstate_verify_not_active(tstate);
+        }
+        tstate_delete_common(tstate);
+        free_threadstate(tstate);
+    }
 }
 
 
@@ -1335,7 +1328,8 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
     tstate_verify_not_active(tstate);
-    _PyThreadState_Delete(tstate);
+    tstate_delete_common(tstate);
+    free_threadstate(tstate);
 }
 
 
