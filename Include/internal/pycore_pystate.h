@@ -67,12 +67,12 @@ _Py_ThreadCanHandlePendingCalls(void)
 static inline PyThreadState*
 _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 {
-    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->gilstate.tstate_current);
+    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->tstate_current);
 }
 
 /* Get the current Python thread state.
 
-   Efficient macro reading directly the 'gilstate.tstate_current' atomic
+   Efficient macro reading directly the 'tstate_current' atomic
    variable. The macro is unsafe: it does not check for error and it can
    return NULL.
 
@@ -120,7 +120,7 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
-PyAPI_FUNC(void) _PyThreadState_SetCurrent(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_Bind(PyThreadState *tstate);
 // We keep this around exclusively for stable ABI compatibility.
 PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);
@@ -139,17 +139,28 @@ _PyThreadState_UpdateTracingState(PyThreadState *tstate)
 }
 
 
+/* PyThreadState status */
+
+#define PyThreadState_UNINITIALIZED 0
+/* Has been initialized to a safe state.
+
+   In order to be effective, this must be set to 0 during or right
+   after allocation. */
+#define PyThreadState_INITIALIZED 1
+#define PyThreadState_BOUND 2
+#define PyThreadState_UNBOUND 3
+
+
 /* Other */
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
-    struct _gilstate_runtime_state *gilstate,
+    _PyRuntimeState *runtime,
     PyThreadState *newts);
 
 PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 
 #ifdef HAVE_FORK
 extern PyStatus _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
-extern PyStatus _PyGILState_Reinit(_PyRuntimeState *runtime);
 extern void _PySignal_AfterFork(void);
 #endif
 
