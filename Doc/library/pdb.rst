@@ -551,6 +551,9 @@ can be overridden by the local file.
       Used to dump Python tracebacks explicitly, on a fault, after a timeout,
       or on a user signal.
 
+   Module :mod:`traceback`
+     Standard interface to extract, format and print stack traces of Python programs.
+
 .. rubric:: Footnotes
 
 .. [1] Whether a frame is considered to originate in a certain module

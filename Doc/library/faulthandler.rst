@@ -185,3 +185,6 @@ handler:
 
    Module :mod:`pdb`
       Interactive source code debugger for Python programs.
+
+   Module :mod:`traceback`
+     Standard interface to extract, format and print stack traces of Python programs.
