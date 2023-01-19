@@ -2000,9 +2000,10 @@ snippet, which shows gzip compression of the log file::
         os.remove(source)
 
 
-    rh = logging.handlers.RotatingFileHandler('rotated.log', maxBytes=1024, backupCount=5)
+    rh = logging.handlers.RotatingFileHandler('rotated.log', maxBytes=128, backupCount=5)
     rh.rotator = rotator
     rh.namer = namer
+
     root = logging.getLogger()
     root.setLevel(logging.INFO)
     root.addHandler(rh)
@@ -2019,10 +2020,9 @@ After running this, you will see six new files, five of which are compressed:
     rotated.log       rotated.log.2.gz  rotated.log.4.gz
     rotated.log.1.gz  rotated.log.3.gz  rotated.log.5.gz
     $ zcat rotated.log.1.gz
-    2023-01-20 02:02:39,673 Message no. 984
-    2023-01-20 02:02:39,674 Message no. 985
-    2023-01-20 02:02:39,674 Message no. 986
-    2023-01-20 02:02:39,674 Message no. 987
+    2023-01-20 02:28:17,767 Message no. 996
+    2023-01-20 02:28:17,767 Message no. 997
+    2023-01-20 02:28:17,767 Message no. 998
 
 A more elaborate multiprocessing example
 ----------------------------------------
