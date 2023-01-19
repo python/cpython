@@ -490,7 +490,7 @@ the :mod:`glob` module.)
 
 .. function:: splitroot(path)
 
-   Split the pathname *path* into a triad ``(drive, root, tail)`` where:
+   Split the pathname *path* into a 3-item tuple ``(drive, root, tail)`` where:
 
    1. *drive* is a device name, mount point or the empty string;
    2. *root* is a sequence of separators following the drive or the empty string; and
