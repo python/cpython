@@ -36,6 +36,9 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
+
 
 #ifdef Py_DEBUG
    /* For debugging the interpreter: */
@@ -6232,6 +6235,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
         return -1;
     }
     f->f_lineno = _PyCode_LineNumberFromArray(frame->f_code, _PyInterpreterFrame_LASTI(frame));
+    // stack_content(frame, _PyFrame_GetStackPointer(frame));
     result = func(obj, f, what, arg);
     f->f_lineno = 0;
     PyThreadState_LeaveTracing(tstate);
@@ -6256,6 +6260,50 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
     tstate->cframe->use_tracing = save_use_tracing;
     return result;
 }
+
+int
+trace_stack_content(PyObject *op, char *fp)
+{
+    int ret = 0;
+    if (PyErr_CheckSignals())
+        return -1;
+    if (op == NULL) {
+        sprintf(fp, "<nil>");
+    }
+    else {
+        if (Py_REFCNT(op) <= 0) {
+            sprintf(fp, "<refcnt %zd at %p>", Py_REFCNT(op), (void *)op);
+        }
+        else {
+            PyObject *s = PyObject_Repr(op);
+            if (s == NULL)
+                ret = -1;
+            else if (PyBytes_Check(s)) {
+                sprintf(fp, PyBytes_AS_STRING(s));
+            }
+            else if (PyUnicode_Check(s)) {
+                PyObject *t;
+                t = PyUnicode_AsEncodedString(s, "utf-8", "backslashreplace");
+                if (t == NULL) {
+                    ret = -1;
+                }
+                else {
+                    sprintf(fp, PyBytes_AS_STRING(t));
+                    Py_DECREF(t);
+                }
+            }
+            else {
+                PyErr_Format(PyExc_TypeError,
+                             "str() or repr() returned '%.100s'",
+                             Py_TYPE(s)->tp_name);
+                ret = -1;
+            }
+            Py_XDECREF(s);
+        }
+    }
+    return ret;
+}
+
 
 /* See Objects/lnotab_notes.txt for a description of how tracing works. */
 static int
@@ -6296,7 +6344,29 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     }
     /* Always emit an opcode event if we're tracing all opcodes. */
     if (f->f_trace_opcodes && result == 0) {
-        result = call_trace(func, obj, tstate, frame, PyTrace_OPCODE, Py_None);
+
+        PyObject **stack_base = _PyFrame_Stackbase(frame);
+        PyObject *type, *value, *traceback;
+        PyObject **stack_pointer =  _PyFrame_GetStackPointer(frame);
+        PyErr_Fetch(&type, &value, &traceback);
+        char buffer[1000] = "";
+        strcat(buffer,"[");
+        for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
+            if (ptr != stack_base) {
+                strcat(buffer,"; ");
+            }
+            char temp[400] = "";
+            int log = trace_stack_content(*ptr, temp);
+            
+            // if (log != 0) {
+            //     sprintf(temp, "<%s object at %p>",
+            //         Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
+            strcat(buffer,temp);
+        }
+        strcat(buffer,"]");
+        result = call_trace(func, obj, tstate, frame, PyTrace_OPCODE, PyBytes_FromString(buffer));
+        buffer[0] = '\0';
+
     }
     return result;
 }
