@@ -195,6 +195,12 @@ class MiscTests(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, "immutable"):
                     tp.foo = 1
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        root = cET.fromstring('<a></a>')
+        iter_type = type(root.iter())
+        support.check_disallow_instantiation(self, iter_type)
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):

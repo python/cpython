@@ -2194,7 +2194,7 @@ static PyType_Spec elementiter_spec = {
     .name = "_elementtree._element_iterator",
     .basicsize = sizeof(ElementIterObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = elementiter_slots,
 };
 
