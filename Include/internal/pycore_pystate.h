@@ -137,18 +137,6 @@ _PyThreadState_UpdateTracingState(PyThreadState *tstate)
 }
 
 
-/* PyThreadState status */
-
-#define PyThreadState_UNINITIALIZED 0
-/* Has been initialized to a safe state.
-
-   In order to be effective, this must be set to 0 during or right
-   after allocation. */
-#define PyThreadState_INITIALIZED 1
-#define PyThreadState_BOUND 2
-#define PyThreadState_UNBOUND 3
-
-
 /* Other */
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(

@@ -119,7 +119,22 @@ struct _ts {
     PyThreadState *next;
     PyInterpreterState *interp;
 
-    int _status;
+    struct {
+        /* Has been initialized to a safe state.
+
+           In order to be effective, this must be set to 0 during or right
+           after allocation. */
+        unsigned int initialized:1;
+        /* Has been bound to an OS thread. */
+        unsigned int bound:1;
+        /* Has been unbound from its OS thread. */
+        unsigned int unbound:1;
+        // XXX finalizing
+        // XXX cleared
+        // XXX finalized
+        /* padding to align to 4 bytes */
+        unsigned int :29;
+    } _status;
 
     int py_recursion_remaining;
     int py_recursion_limit;
