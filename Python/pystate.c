@@ -671,17 +671,34 @@ error:
 static void
 interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
+    assert(interp != NULL && tstate != NULL);
     _PyRuntimeState *runtime = interp->runtime;
+
+    /* XXX Conditions we need to enforce:
+
+       * the GIL must be held by the current thread
+       * tstate must be the "current" thread state (current_fast_get())
+       * tstate->interp must be interp
+       * for the main interpreter, tstate must be the main thread
+     */
 
     if (_PySys_Audit(tstate, "cpython.PyInterpreterState_Clear", NULL) < 0) {
         _PyErr_Clear(tstate);
     }
 
     HEAD_LOCK(runtime);
+    // XXX Clear the current/main thread state last.
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         PyThreadState_Clear(p);
     }
     HEAD_UNLOCK(runtime);
+
+    /* It is possible that any of the objects below have a finalizer
+       that runs Python code or otherwise relies on a thread state
+       or even the interpreter state.  For now we trust that isn't
+       a problem.
+     */
+    // XXX Make sure we properly deal with problematic finalizers.
 
     Py_CLEAR(interp->audit_hooks);
 
@@ -753,7 +770,6 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     // garbage. It can be different than the current Python thread state
     // of 'interp'.
     PyThreadState *current_tstate = current_fast_get(interp->runtime);
-
     interpreter_clear(interp, current_tstate);
 }
 
@@ -1226,6 +1242,10 @@ _PyThreadState_Init(PyThreadState *tstate)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
+    // The GIL must be held by the current thread,
+    // which must not be the target.
+    // XXX Enforce that (check current_fast_get()).
+
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
     if (verbose && tstate->cframe->current_frame != NULL) {
@@ -1270,6 +1290,9 @@ PyThreadState_Clear(PyThreadState *tstate)
     if (tstate->on_delete != NULL) {
         tstate->on_delete(tstate->on_delete_data);
     }
+
+    // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
+    // XXX Do it as early in the function as possible.
 }
 
 

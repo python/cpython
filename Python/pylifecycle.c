@@ -1821,6 +1821,8 @@ Py_FinalizeEx(void)
 
     /* Get current thread state and interpreter pointer */
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    // XXX assert(_Py_IsMainInterpreter(tstate->interp));
+    // XXX assert(_Py_IsMainThread());
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
@@ -1868,6 +1870,22 @@ Py_FinalizeEx(void)
        can take the GIL at this point: if they try, they will exit
        immediately. */
     _PyThreadState_DeleteExcept(tstate);
+
+    /* At this point no Python code should be running at all.
+       The only thread state left should be the main thread of the main
+       interpreter (AKA tstate), in which this code is running right now.
+       There may be other OS threads running but none of them will have
+       thread states associated with them, nor will be able to create
+       new thread states.
+
+       Thus tstate is the only possible thread state from here on out.
+       It may still be used during finalization to run Python code as
+       needed or provide runtime state (e.g. sys.modules) but that will
+       happen sparingly.  Furthermore, the order of finalization aims
+       to not need a thread (or interpreter) state as soon as possible.
+     */
+    // XXX Make sure we are preventing the creating of any new thread states
+    // (or interpreters).
 
     /* Flush sys.stdout and sys.stderr */
     if (flush_std_files() < 0) {
@@ -1957,6 +1975,20 @@ Py_FinalizeEx(void)
         _Py_PrintReferences(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
+
+    /* At this point there's almost no other Python code that will run,
+       nor interpreter state needed.  The only possibility is the
+       finalizers of the objects stored on tstate (and tstate->interp),
+       which are triggered via finalize_interp_clear().
+
+       For now we operate as though none of those finalizers actually
+       need an operational thread state or interpreter.  In reality,
+       those finalizers may rely on some part of tstate or
+       tstate->interp, and/or may raise exceptions
+       or otherwise fail.
+     */
+    // XXX Do this sooner during finalization.
+    // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate->interp);
