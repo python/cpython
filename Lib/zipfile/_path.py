@@ -241,7 +241,7 @@ class Path:
         self.root = FastLookup.make(root)
         self.at = at
 
-    def open(self, mode='r', *args, pwd=None, **kwargs):
+    def open(self, mode='r', encoding=None, *args, pwd=None, **kwargs):
         """
         Open this entry as text or binary following the semantics
         of ``pathlib.Path.open()`` by passing arguments through
@@ -254,13 +254,12 @@ class Path:
             raise FileNotFoundError(self)
         stream = self.root.open(self.at, zip_mode, pwd=pwd)
         if 'b' in mode:
-            if args or kwargs:
+            if encoding is not None or args or kwargs:
                 raise ValueError("encoding args invalid for binary operation")
             return stream
         else:
-            if "encoding" in kwargs:
-                kwargs["encoding"] = io.text_encoding(kwargs["encoding"])
-        return io.TextIOWrapper(stream, *args, **kwargs)
+            encoding = io.text_encoding(encoding)
+        return io.TextIOWrapper(stream, *args, encoding=encoding, **kwargs)
 
     @property
     def name(self):
@@ -282,10 +281,9 @@ class Path:
     def filename(self):
         return pathlib.Path(self.root.filename).joinpath(self.at)
 
-    def read_text(self, *args, **kwargs):
-        if "encoding" in kwargs:
-            kwargs["encoding"] = io.text_encoding(kwargs["encoding"])
-        with self.open('r', *args, **kwargs) as strm:
+    def read_text(self, encoding=None, *args, **kwargs):
+        encoding = io.text_encoding(encoding)
+        with self.open('r', *args, encoding=encoding, **kwargs) as strm:
             return strm.read()
 
     def read_bytes(self):
