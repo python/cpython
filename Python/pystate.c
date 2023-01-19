@@ -206,6 +206,26 @@ unbind_tstate(PyThreadState *tstate)
     tstate->native_thread_id = -1;
 }
 
+/* This is not exported, as it is not reliable!  It can only
+   ever be compared to the state for the *current* thread.
+   * If not equal, then it doesn't matter that the actual
+     value may change immediately after comparison, as it can't
+     possibly change to the current thread's state.
+   * If equal, then the current thread holds the lock, so the value can't
+     change until we yield the lock.
+*/
+static int
+holds_gil(PyThreadState *tstate)
+{
+    // XXX Fall back to tstate->interp->runtime->ceval.gil.last_holder
+    // (and tstate->interp->runtime->ceval.gil.locked).
+    assert(tstate != NULL);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+    /* Must be the tstate for this thread */
+    assert(tstate == current_tss_get(runtime));
+    return tstate == current_fast_get(runtime);
+}
+
 
 /* the global runtime */
 
@@ -1410,6 +1430,7 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
        to be used for a thread.  Check this the best we can in debug
        builds.
     */
+    // XXX The above isn't true when multiple interpreters are involved.
 #if defined(Py_DEBUG)
     if (newts && current_tss_initialized(runtime)) {
         /* This can be called from PyEval_RestoreThread(). Similar
@@ -1692,24 +1713,6 @@ done:
 
 /* Python "auto thread state" API. */
 
-/* Keep this as a static, as it is not reliable!  It can only
-   ever be compared to the state for the *current* thread.
-   * If not equal, then it doesn't matter that the actual
-     value may change immediately after comparison, as it can't
-     possibly change to the current thread's state.
-   * If equal, then the current thread holds the lock, so the value can't
-     change until we yield the lock.
-*/
-static int
-PyThreadState_IsCurrent(PyThreadState *tstate)
-{
-    assert(tstate != NULL);
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    /* Must be the tstate for this thread */
-    assert(tstate == current_tss_get(runtime));
-    return tstate == current_fast_get(runtime);
-}
-
 /* Internal initialization/finalization functions called by
    Py_Initialize/Py_FinalizeEx
 */
@@ -1817,7 +1820,7 @@ PyGILState_Ensure(void)
     assert(runtime->gilstate.autoInterpreterState != NULL);
 
     PyThreadState *tcur = current_tss_get(runtime);
-    int current;
+    int has_gil;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
         tcur = PyThreadState_New(runtime->gilstate.autoInterpreterState);
@@ -1829,13 +1832,13 @@ PyGILState_Ensure(void)
            matching call to PyGILState_Release(). */
         assert(tcur->gilstate_counter == 1);
         tcur->gilstate_counter = 0;
-        current = 0; /* new thread state is never current */
+        has_gil = 0; /* new thread state is never current */
     }
     else {
-        current = PyThreadState_IsCurrent(tcur);
+        has_gil = holds_gil(tcur);
     }
 
-    if (current == 0) {
+    if (!has_gil) {
         PyEval_RestoreThread(tcur);
     }
 
@@ -1846,7 +1849,7 @@ PyGILState_Ensure(void)
     */
     ++tcur->gilstate_counter;
 
-    return current ? PyGILState_LOCKED : PyGILState_UNLOCKED;
+    return has_gil ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }
 
 void
@@ -1864,12 +1867,12 @@ PyGILState_Release(PyGILState_STATE oldstate)
        but while this is very new (April 2003), the extra check
        by release-only users can't hurt.
     */
-    if (!PyThreadState_IsCurrent(tstate)) {
+    if (!holds_gil(tstate)) {
         _Py_FatalErrorFormat(__func__,
                              "thread state %p must be current when releasing",
                              tstate);
     }
-    assert(PyThreadState_IsCurrent(tstate));
+    assert(holds_gil(tstate));
     --tstate->gilstate_counter;
     assert(tstate->gilstate_counter >= 0); /* illegal counter value */
 
@@ -1889,8 +1892,9 @@ PyGILState_Release(PyGILState_STATE oldstate)
         _PyThreadState_DeleteCurrent(tstate);
     }
     /* Release the lock if necessary */
-    else if (oldstate == PyGILState_UNLOCKED)
+    else if (oldstate == PyGILState_UNLOCKED) {
         PyEval_SaveThread();
+    }
 }
 
 
