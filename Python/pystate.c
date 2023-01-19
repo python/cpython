@@ -1276,10 +1276,6 @@ PyThreadState_Clear(PyThreadState *tstate)
        * for the main interpreter, current_fast_get() must be the main thread
      */
 
-    // The GIL must be held by the current thread,
-    // which must not be the target.
-    // XXX Enforce that (check current_fast_get()).
-
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
     if (verbose && tstate->cframe->current_frame != NULL) {
@@ -1536,6 +1532,26 @@ PyThreadState_GetID(PyThreadState *tstate)
 }
 
 
+static inline void
+tstate_activate(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
+    assert(!tstate->_status.active);
+    tstate->_status.active = 1;
+}
+
+static inline void
+tstate_deactivate(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate_is_bound(tstate));
+    // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
+    assert(tstate->_status.active);
+    tstate->_status.active = 0;
+}
+
+
 //----------
 // other API
 //----------
@@ -1612,8 +1628,11 @@ PyThreadState *
 _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
 {
     PyThreadState *oldts = current_fast_get(runtime);
-    // XXX assert(oldts == NULL || tstate_is_alive(oldts));
     // XXX tstate_is_bound(oldts)
+    if (oldts != NULL) {
+        // XXX assert(oldts == NULL || tstate_is_alive(oldts));
+        tstate_deactivate(oldts);
+    }
 
     if (newts == NULL) {
         current_fast_clear(runtime);
@@ -1621,6 +1640,7 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
     else {
         assert(tstate_is_alive(newts) && tstate_is_bound(newts));
         current_fast_set(runtime, newts);
+        tstate_activate(newts);
     }
 
     /* It should not be possible for more than one thread state

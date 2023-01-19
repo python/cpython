@@ -130,6 +130,8 @@ struct _ts {
         unsigned int bound:1;
         /* Has been unbound from its OS thread. */
         unsigned int unbound:1;
+        /* Currently in use (maybe holds the GIL). */
+        unsigned int active:1;
 
         /* various stages of finalization */
         unsigned int finalizing:1;
