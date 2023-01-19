@@ -155,7 +155,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
         fobj == NULL ||
         !PyFunction_Check(fobj)
     ) {
-        // printf("Resuming frame.\n");
+        printf("\nResuming frame.\n");
         return;
     }
     PyFunctionObject *f = (PyFunctionObject *)fobj;
@@ -165,7 +165,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
     if (name == NULL) {
         name = f->func_name;
     }
-    printf("Resuming frame");
+    printf("\nResuming frame");
     if (name) {
         printf(" for ");
         if (PyObject_Print(name, stdout, 0) < 0) {
