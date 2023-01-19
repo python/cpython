@@ -70,14 +70,14 @@ current_fast_clear(_PyRuntimeState *runtime)
 static int
 current_tss_initialized(_PyRuntimeState *runtime)
 {
-    return PyThread_tss_is_created(&runtime->gilstate.autoTSSkey);
+    return PyThread_tss_is_created(&runtime->autoTSSkey);
 }
 
 static PyStatus
 current_tss_init(_PyRuntimeState *runtime)
 {
     assert(!current_tss_initialized(runtime));
-    if (PyThread_tss_create(&runtime->gilstate.autoTSSkey) != 0) {
+    if (PyThread_tss_create(&runtime->autoTSSkey) != 0) {
         return _PyStatus_NO_MEMORY();
     }
     return _PyStatus_OK();
@@ -87,14 +87,14 @@ static void
 current_tss_fini(_PyRuntimeState *runtime)
 {
     assert(current_tss_initialized(runtime));
-    PyThread_tss_delete(&runtime->gilstate.autoTSSkey);
+    PyThread_tss_delete(&runtime->autoTSSkey);
 }
 
 static inline PyThreadState *
 current_tss_get(_PyRuntimeState *runtime)
 {
     assert(current_tss_initialized(runtime));
-    return (PyThreadState *)PyThread_tss_get(&runtime->gilstate.autoTSSkey);
+    return (PyThreadState *)PyThread_tss_get(&runtime->autoTSSkey);
 }
 
 static inline int
@@ -102,7 +102,7 @@ _current_tss_set(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
     assert(tstate != NULL);
     assert(current_tss_initialized(runtime));
-    return PyThread_tss_set(&runtime->gilstate.autoTSSkey, (void *)tstate);
+    return PyThread_tss_set(&runtime->autoTSSkey, (void *)tstate);
 }
 static inline void
 current_tss_set(_PyRuntimeState *runtime, PyThreadState *tstate)
@@ -116,7 +116,7 @@ static inline void
 current_tss_clear(_PyRuntimeState *runtime)
 {
     assert(current_tss_initialized(runtime));
-    if (PyThread_tss_set(&runtime->gilstate.autoTSSkey, NULL) != 0) {
+    if (PyThread_tss_set(&runtime->autoTSSkey, NULL) != 0) {
         Py_FatalError("failed to clear current tstate (TSS)");
     }
 }

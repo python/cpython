@@ -46,7 +46,6 @@ struct _gilstate_runtime_state {
     */
     /* TODO: Given interp_main, it may be possible to kill this ref */
     PyInterpreterState *autoInterpreterState;
-    Py_tss_t autoTSSkey;
 };
 
 /* Runtime audit hook state */
@@ -124,6 +123,8 @@ typedef struct pyruntimestate {
     /* Assuming the current thread holds the GIL, this is the
        PyThreadState for the current thread. */
     _Py_atomic_address tstate_current;
+    /* Used for the thread state bound to the current thread. */
+    Py_tss_t autoTSSkey;
 
     PyWideStringList orig_argv;
 
