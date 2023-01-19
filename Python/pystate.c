@@ -74,21 +74,21 @@ current_tss_fini(_PyRuntimeState *runtime)
     PyThread_tss_delete(&runtime->gilstate.autoTSSkey);
 }
 
-static PyThreadState *
+static inline PyThreadState *
 current_tss_get(_PyRuntimeState *runtime)
 {
     assert(current_tss_initialized(runtime));
     return (PyThreadState *)PyThread_tss_get(&runtime->gilstate.autoTSSkey);
 }
 
-static int
+static inline int
 _current_tss_set(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
     assert(tstate != NULL);
     assert(current_tss_initialized(runtime));
     return PyThread_tss_set(&runtime->gilstate.autoTSSkey, (void *)tstate);
 }
-static void
+static inline void
 current_tss_set(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
     if (_current_tss_set(runtime, tstate) != 0) {
@@ -96,7 +96,7 @@ current_tss_set(_PyRuntimeState *runtime, PyThreadState *tstate)
     }
 }
 
-static void
+static inline void
 current_tss_clear(_PyRuntimeState *runtime)
 {
     assert(current_tss_initialized(runtime));
