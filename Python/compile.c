@@ -1077,6 +1077,7 @@ stack_effect(int opcode, int oparg, int jump)
     switch (opcode) {
         case NOP:
         case EXTENDED_ARG:
+        case EXTENDED_ARG_3:
         case RESUME:
         case CACHE:
             return 0;
@@ -1250,6 +1251,7 @@ stack_effect(int opcode, int oparg, int jump)
         case CALL_FUNCTION_EX:
             return -2 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
+        case MAKE_FUNCTION_FROM_CODE:
             return 0 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
                 ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
         case BUILD_SLICE:
