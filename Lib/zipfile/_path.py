@@ -281,9 +281,8 @@ class Path:
     def filename(self):
         return pathlib.Path(self.root.filename).joinpath(self.at)
 
-    def read_text(self, encoding=None, *args, **kwargs):
-        encoding = io.text_encoding(encoding)
-        with self.open('r', *args, encoding=encoding, **kwargs) as strm:
+    def read_text(self, *args, **kwargs):
+        with self.open('r', *args, **kwargs) as strm:
             return strm.read()
 
     def read_bytes(self):
