@@ -258,7 +258,8 @@ class Path:
                 raise ValueError("encoding args invalid for binary operation")
             return stream
         else:
-            kwargs["encoding"] = io.text_encoding(kwargs.get("encoding"))
+            if "encoding" in kwargs:
+                kwargs["encoding"] = io.text_encoding(kwargs["encoding"])
         return io.TextIOWrapper(stream, *args, **kwargs)
 
     @property
@@ -282,7 +283,8 @@ class Path:
         return pathlib.Path(self.root.filename).joinpath(self.at)
 
     def read_text(self, *args, **kwargs):
-        kwargs["encoding"] = io.text_encoding(kwargs.get("encoding"))
+        if "encoding" in kwargs:
+            kwargs["encoding"] = io.text_encoding(kwargs["encoding"])
         with self.open('r', *args, **kwargs) as strm:
             return strm.read()
 

@@ -145,7 +145,10 @@ class TestPath(unittest.TestCase):
         a, b, g = root.iterdir()
         with a.open(encoding="utf-8") as strm:
             data = strm.read()
-        assert data == "content of a"
+        self.assertEqual(data, "content of a")
+        with a.open('r', "utf-8") as strm:  # No gh-101144 TypeError
+            data = strm.read()
+        self.assertEqual(data, "content of a")
 
     def test_open_write(self):
         """
@@ -187,6 +190,7 @@ class TestPath(unittest.TestCase):
         root = zipfile.Path(alpharep)
         a, b, g = root.iterdir()
         assert a.read_text(encoding="utf-8") == "content of a"
+        a.read_text("utf-8")  # No TypeError per gh-101144.
         assert a.read_bytes() == b"content of a"
 
     @pass_alpharep
