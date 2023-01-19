@@ -3538,12 +3538,10 @@
 
         TARGET(MAKE_FUNCTION_FROM_CODE) {
             // Decode second word
-            oparg2 = _Py_OPCODE(*next_instr);
+            // (oparg2 is not used)
             oparg3 = _Py_OPARG(*next_instr);
             next_instr++;
-        into_make_function_from_code:  // EXTENDED_ARG_3 jumps here
-            assert(oparg2 == CACHE);
-
+        into_make_function_from_code:;  // EXTENDED_ARG_3 jumps here
             PyObject *codeobj = GETITEM(consts, oparg3);
             assert(PyCode_Check(codeobj));
             PyFunctionObject *func = (PyFunctionObject *)
@@ -3732,14 +3730,15 @@
             assert(oparg);
             oparg3 = oparg;
             assert(cframe.use_tracing == 0);
+            PRE_DISPATCH_GOTO();
             // Decode the next two-word instruction
             opcode = _Py_OPCODE(*next_instr);
             oparg = _Py_OPARG(*next_instr);
             next_instr++;
-            oparg2 = _Py_OPCODE(*next_instr);
+            // oparg2 = _Py_OPCODE(*next_instr);  // Nothing uses it yet
             oparg3 = oparg3 << 8 | _Py_OPARG(*next_instr);
             next_instr++;
-            // PRE_DISPATCH_GOTO();  TODO: It's complicated
+            // Jump into the middle of that instruction
             switch (opcode) {
                 case MAKE_FUNCTION_FROM_CODE:
                     goto into_make_function_from_code;

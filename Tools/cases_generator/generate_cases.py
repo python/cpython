@@ -240,6 +240,12 @@ class Instruction:
                 fmt = "IB"
             else:
                 fmt = "IX"
+            if inst.name != "EXTENDED_ARG_3":
+                extra2 = "B" if variable_used(inst, "oparg2") else "X"
+                extra3 = "B" if variable_used(inst, "oparg3") else "X"
+                extra = extra2 + extra3
+                if extra != "XX":
+                    fmt += extra
         cache = "C"
         for ce in self.cache_effects:
             for _ in range(ce.size):
