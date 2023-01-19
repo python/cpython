@@ -133,7 +133,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
                     _Py_CODEUNIT *next_instr)
 {
-    dump_stack(frame, stack_pointer);
+    // dump_stack(frame, stack_pointer);
     int oparg = _Py_OPARG(*next_instr);
     int opcode = _Py_OPCODE(*next_instr);
     const char *opname = _PyOpcode_OpName[opcode];
@@ -155,7 +155,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
         fobj == NULL ||
         !PyFunction_Check(fobj)
     ) {
-        printf("\nResuming frame.");
+        // printf("Resuming frame.\n");
         return;
     }
     PyFunctionObject *f = (PyFunctionObject *)fobj;
@@ -165,7 +165,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
     if (name == NULL) {
         name = f->func_name;
     }
-    printf("\nResuming frame");
+    printf("Resuming frame");
     if (name) {
         printf(" for ");
         if (PyObject_Print(name, stdout, 0) < 0) {

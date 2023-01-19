@@ -173,7 +173,7 @@ static void *opcode_targets[256] = {
     &&TARGET_CALL,
     &&TARGET_KW_NAMES,
     &&TARGET_CALL_INTRINSIC_1,
-    &&_unknown_opcode,
+    &&TARGET_MAKE_FUNCTION_FROM_CODE,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,

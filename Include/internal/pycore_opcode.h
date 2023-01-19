@@ -174,6 +174,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [LOAD_NAME] = LOAD_NAME,
     [MAKE_CELL] = MAKE_CELL,
     [MAKE_FUNCTION] = MAKE_FUNCTION,
+    [MAKE_FUNCTION_FROM_CODE] = MAKE_FUNCTION_FROM_CODE,
     [MAP_ADD] = MAP_ADD,
     [MATCH_CLASS] = MATCH_CLASS,
     [MATCH_KEYS] = MATCH_KEYS,
@@ -402,7 +403,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [CALL] = "CALL",
     [KW_NAMES] = "KW_NAMES",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
-    [174] = "<174>",
+    [MAKE_FUNCTION_FROM_CODE] = "MAKE_FUNCTION_FROM_CODE",
     [175] = "<175>",
     [176] = "<176>",
     [177] = "<177>",
@@ -501,7 +502,6 @@ static const char *const _PyOpcode_OpName[263] = {
     case 168: \
     case 169: \
     case 170: \
-    case 174: \
     case 175: \
     case 176: \
     case 177: \

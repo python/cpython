@@ -3536,6 +3536,60 @@
             DISPATCH();
         }
 
+        TARGET(MAKE_FUNCTION_FROM_CODE) {
+            int flags = oparg;
+            _Py_CODEUNIT word = *next_instr++;
+            assert(word.opcode == CACHE);
+            int index = word.oparg;
+
+            PyObject *codeobj = GETITEM(consts, index);
+            if (PyCode_Check(codeobj)) {
+                // fprintf(stderr,
+                //         "MAKE_FUNCTION_FROM_CODE: %p, %s, flags=%d, index=%d\n",
+                //         codeobj,
+                //         PyUnicode_AsUTF8(((PyCodeObject *)codeobj)->co_name),
+                //         flags,
+                //         index);
+            }
+            else {
+                fprintf(stderr,
+                        "MAKE_FUNCTION_FROM_CODE: %p, %p=%s, flags=%d, index=%d\n",
+                        codeobj,
+                        codeobj->ob_type,
+                        "?", // PyUnicode_AsUTF8(codeobj->ob_type->tp_name),
+                        flags,
+                        index);
+            }
+            assert(PyCode_Check(codeobj));
+            PyFunctionObject *func = (PyFunctionObject *)
+                PyFunction_New(codeobj, GLOBALS());
+
+            if (func == NULL) {
+                goto error;
+            }
+
+            if (flags & 0x08) {
+                assert(PyTuple_CheckExact(TOP()));
+                func->func_closure = POP();
+            }
+            if (flags & 0x04) {
+                assert(PyTuple_CheckExact(TOP()));
+                func->func_annotations = POP();
+            }
+            if (flags & 0x02) {
+                assert(PyDict_CheckExact(TOP()));
+                func->func_kwdefaults = POP();
+            }
+            if (flags & 0x01) {
+                assert(PyTuple_CheckExact(TOP()));
+                func->func_defaults = POP();
+            }
+
+            func->func_version = ((PyCodeObject *)codeobj)->co_version;
+            PUSH((PyObject *)func);
+            DISPATCH();
+        }
+
         TARGET(RETURN_GENERATOR) {
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;

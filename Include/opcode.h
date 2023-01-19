@@ -116,6 +116,7 @@ extern "C" {
 #define CALL                                   171
 #define KW_NAMES                               172
 #define CALL_INTRINSIC_1                       173
+#define MAKE_FUNCTION_FROM_CODE                174
 #define MIN_PSEUDO_OPCODE                      256
 #define SETUP_FINALLY                          256
 #define SETUP_CLEANUP                          257

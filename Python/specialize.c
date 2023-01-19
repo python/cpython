@@ -316,6 +316,21 @@ _PyCode_Quicken(PyCodeObject *code)
                 instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg = (oparg & 0xf0) | mask;
                 break;
             }
+            case LOAD_CONST << 8 | MAKE_FUNCTION:
+            {
+                assert(caches == 0);
+                if (i >= 2 && instructions[i - 2].opcode == EXTENDED_ARG) {
+                    break;
+                }
+                int index = instructions[i - 1].oparg;
+                int flags = instructions[i].oparg;
+                assert(flags < 16);
+                instructions[i - 1].opcode = MAKE_FUNCTION_FROM_CODE;
+                instructions[i - 1].oparg = flags;
+                instructions[i].opcode = CACHE;  // XXX Don't?
+                instructions[i].oparg = index;
+                break;
+            }
         }
     }
 }

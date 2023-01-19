@@ -413,6 +413,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a7 3492 (make POP_JUMP_IF_NONE/NOT_NONE/TRUE/FALSE relative)
 #     Python 3.11a7 3493 (Make JUMP_IF_TRUE_OR_POP/JUMP_IF_FALSE_OR_POP relative)
 #     Python 3.11a7 3494 (New location info table)
+
 #     Python 3.12a1 3500 (Remove PRECALL opcode)
 #     Python 3.12a1 3501 (YIELD_VALUE oparg == stack_depth)
 #     Python 3.12a1 3502 (LOAD_FAST_CHECK, no NULL-check in LOAD_FAST)
@@ -423,13 +424,14 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3507 (Set lineno of module's RESUME to 0)
 #     Python 3.12a1 3508 (Add CLEANUP_THROW)
 #     Python 3.12a1 3509 (Conditional jumps only jump forward)
-#     Python 3.12a1 3510 (FOR_ITER leaves iterator on the stack)
-#     Python 3.12a1 3511 (Add STOPITERATION_ERROR instruction)
-#     Python 3.12a1 3512 (Remove all unused consts from code objects)
-#     Python 3.12a1 3513 (Add CALL_INTRINSIC_1 instruction, removed STOPITERATION_ERROR, PRINT_EXPR, IMPORT_STAR)
-#     Python 3.12a1 3514 (Remove ASYNC_GEN_WRAP, LIST_TO_TUPLE, and UNARY_POSITIVE)
-#     Python 3.12a1 3515 (Embed jump mask in COMPARE_OP oparg)
-#     Python 3.12a1 3516 (Add COMAPRE_AND_BRANCH instruction)
+#     Python 3.12a2 3510 (FOR_ITER leaves iterator on the stack)
+#     Python 3.12a2 3511 (Add STOPITERATION_ERROR instruction)
+#     Python 3.12a2 3512 (Remove all unused consts from code objects)
+#     Python 3.12a4 3513 (Add CALL_INTRINSIC_1 instruction, removed STOPITERATION_ERROR, PRINT_EXPR, IMPORT_STAR)
+#     Python 3.12a4 3514 (Remove ASYNC_GEN_WRAP, LIST_TO_TUPLE, and UNARY_POSITIVE)
+#     Python 3.12a5 3515 (Embed jump mask in COMPARE_OP oparg)
+#     Python 3.12a5 3516 (Add COMPARE_AND_BRANCH instruction)
+#     Python 3.12a5 3518 (Add MAKE_FUNCTION_FROM_CODE instruction)
 
 #     Python 3.13 will start with 3550
 
@@ -442,7 +444,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3516).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3518).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
