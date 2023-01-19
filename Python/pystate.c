@@ -38,7 +38,6 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
 
 
@@ -148,6 +147,64 @@ current_tss_reinit(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 #endif
+
+static void
+bind_tstate(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate->thread_id == 0);
+    assert(tstate->native_thread_id == 0);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+
+    /* Stick the thread state for this thread in thread specific storage.
+
+       The only situation where you can legitimately have more than one
+       thread state for an OS level thread is when there are multiple
+       interpreters.
+
+       You shouldn't really be using the PyGILState_ APIs anyway (see issues
+       #10915 and #15751).
+
+       The first thread state created for that given OS level thread will
+       "win", which seems reasonable behaviour.
+    */
+    /* When a thread state is created for a thread by some mechanism
+       other than PyGILState_Ensure(), it's important that the GILState
+       machinery knows about it so it doesn't try to create another
+       thread state for the thread.
+       (This is a better fix for SF bug #1010677 than the first one attempted.)
+    */
+    // XXX Skipping like this does not play nice with multiple interpreters.
+    if (current_tss_get(runtime) == NULL) {
+        current_tss_set(runtime, tstate);
+    }
+
+    tstate->thread_id = PyThread_get_thread_ident();
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    tstate->native_thread_id = PyThread_get_thread_native_id();
+#endif
+}
+
+static void
+unbind_tstate(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate->thread_id > 0);
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    assert(tstate->native_thread_id > 0);
+#endif
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+
+    if (current_tss_initialized(runtime) &&
+        tstate == current_tss_get(runtime))
+    {
+        current_tss_clear(runtime);
+    }
+
+    // -1 makes sure the thread state won't be re-bound.
+    tstate->thread_id = -1;
+    tstate->native_thread_id = -1;
+}
 
 
 /* the global runtime */
@@ -926,16 +983,17 @@ init_threadstate(PyThreadState *tstate,
     tstate->next = next;
     assert(tstate->prev == NULL);
 
-    tstate->thread_id = PyThread_get_thread_ident();
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    tstate->native_thread_id = PyThread_get_thread_native_id();
-#endif
+    // thread_id and native_thread_id are set in bind_tstate().
 
     tstate->py_recursion_limit = interp->ceval.recursion_limit,
     tstate->py_recursion_remaining = interp->ceval.recursion_limit,
     tstate->c_recursion_remaining = C_RECURSION_LIMIT;
 
     tstate->exc_info = &tstate->exc_state;
+
+    // PyGILState_Release must not try to delete this thread state.
+    // This is cleared when PyGILState_Ensure() creates the thread sate.
+    tstate->gilstate_counter = 1;
 
     tstate->cframe = &tstate->root_cframe;
     tstate->datastack_chunk = NULL;
@@ -1001,11 +1059,12 @@ PyThreadState_New(PyInterpreterState *interp)
 {
     PyThreadState *tstate = new_threadstate(interp);
     if (tstate) {
-        _PyThreadState_SetCurrent(tstate);
+        bind_tstate(tstate);
     }
     return tstate;
 }
 
+// This must be followed by a call to _PyThreadState_Bind();
 PyThreadState *
 _PyThreadState_Prealloc(PyInterpreterState *interp)
 {
@@ -1021,10 +1080,9 @@ _PyThreadState_Init(PyThreadState *tstate)
 }
 
 void
-_PyThreadState_SetCurrent(PyThreadState *tstate)
+_PyThreadState_Bind(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
-    _PyGILState_NoteThreadState(tstate);
+    bind_tstate(tstate);
 }
 
 PyObject*
@@ -1229,11 +1287,7 @@ tstate_delete_common(PyThreadState *tstate)
     HEAD_UNLOCK(runtime);
 
     // XXX Do this in PyThreadState_Swap() (and assert not-equal here)?
-    if (current_tss_initialized(runtime) &&
-        tstate == current_tss_get(runtime))
-    {
-        current_tss_clear(runtime);
-    }
+    unbind_tstate(tstate);
 
     // XXX Move to PyThreadState_Clear()?
     _PyStackChunk *chunk = tstate->datastack_chunk;
@@ -1714,38 +1768,6 @@ _PyGILState_GetInterpreterStateUnsafe(void)
     return _PyRuntime.gilstate.autoInterpreterState;
 }
 
-/* When a thread state is created for a thread by some mechanism other than
-   PyGILState_Ensure, it's important that the GILState machinery knows about
-   it so it doesn't try to create another thread state for the thread (this is
-   a better fix for SF bug #1010677 than the first one attempted).
-*/
-static void
-_PyGILState_NoteThreadState(PyThreadState* tstate)
-{
-    assert(tstate != NULL);
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    assert(current_tss_initialized(runtime));
-
-    /* Stick the thread state for this thread in thread specific storage.
-
-       The only situation where you can legitimately have more than one
-       thread state for an OS level thread is when there are multiple
-       interpreters.
-
-       You shouldn't really be using the PyGILState_ APIs anyway (see issues
-       #10915 and #15751).
-
-       The first thread state created for that given OS level thread will
-       "win", which seems reasonable behaviour.
-    */
-    if (current_tss_get(runtime) == NULL) {
-        current_tss_set(runtime, tstate);
-    }
-
-    /* PyGILState_Release must not try to delete this thread state. */
-    tstate->gilstate_counter = 1;
-}
-
 /* The public functions */
 
 PyThreadState *
@@ -1805,6 +1827,7 @@ PyGILState_Ensure(void)
 
         /* This is our thread state!  We'll need to delete it in the
            matching call to PyGILState_Release(). */
+        assert(tcur->gilstate_counter == 1);
         tcur->gilstate_counter = 0;
         current = 0; /* new thread state is never current */
     }
