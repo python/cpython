@@ -1242,6 +1242,13 @@ _PyThreadState_Init(PyThreadState *tstate)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
+    /* XXX Conditions we need to enforce:
+
+       * the GIL must be held by the current thread
+       * current_fast_get()->interp must match tstate->interp
+       * for the main interpreter, current_fast_get() must be the main thread
+     */
+
     // The GIL must be held by the current thread,
     // which must not be the target.
     // XXX Enforce that (check current_fast_get()).
@@ -1259,6 +1266,17 @@ PyThreadState_Clear(PyThreadState *tstate)
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a frame\n");
     }
+
+    /* At this point tstate shouldn't be used any more,
+       neither to run Python code nor for other uses.
+
+       This is tricky when current_fast_get() == tstate, in the same way
+       as noted in interpreter_clear() above.  The below finalizers
+       can possibly run Python code or otherwise use the partially
+       cleared thread state.  For now we trust that isn't a problem
+       in practice.
+     */
+    // XXX Deal with the possibility of problematic finalizers.
 
     /* Don't clear tstate->pyframe: it is a borrowed reference */
 
