@@ -1987,7 +1987,7 @@ snippet, which shows zlib-based compression of the log file::
     def namer(name):
         return name + ".gz"
 
-    def rotator(source, dest):        
+    def rotator(source, dest):
         with open(source, 'rb') as f_in:
             with gzip.open(dest, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
