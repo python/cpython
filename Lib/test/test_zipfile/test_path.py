@@ -146,9 +146,24 @@ class TestPath(unittest.TestCase):
         with a.open(encoding="utf-8") as strm:
             data = strm.read()
         self.assertEqual(data, "content of a")
-        with a.open('r', "utf-8") as strm:  # No gh-101144 TypeError
+        with a.open('r', "utf-8") as strm:  # not a kw, no gh-101144 TypeError
             data = strm.read()
         self.assertEqual(data, "content of a")
+
+    def test_open_encoding_utf16(self):
+        in_memory_file = io.BytesIO()
+        zf = zipfile.ZipFile(in_memory_file, "w")
+        zf.writestr("path/16.txt", "This was utf-16".encode("utf-16"))
+        zf.filename = "test_open_utf16.zip"
+        root = zipfile.Path(zf)
+        path, = root.iterdir()
+        u16 = path.joinpath("16.txt")
+        with u16.open('r', "utf-16") as strm:
+            data = strm.read()
+        self.assertEqual(data, "This was utf-16")
+        with u16.open(encoding="utf-16") as strm:
+            data = strm.read()
+        self.assertEqual(data, "This was utf-16")
 
     def test_open_write(self):
         """
@@ -190,7 +205,7 @@ class TestPath(unittest.TestCase):
         root = zipfile.Path(alpharep)
         a, b, g = root.iterdir()
         assert a.read_text(encoding="utf-8") == "content of a"
-        a.read_text("utf-8")  # No TypeError per gh-101144.
+        a.read_text("utf-8")  # No positional arg TypeError per gh-101144.
         assert a.read_bytes() == b"content of a"
 
     @pass_alpharep
