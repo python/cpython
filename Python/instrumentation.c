@@ -690,9 +690,12 @@ call_one_instrument(
     if (instrument == NULL) {
        return 0;
     }
+    int old_what = tstate->what_event;
+    tstate->what_event = event;
     tstate->tracing++;
     PyObject *res = PyObject_Vectorcall(instrument, args, nargsf, NULL);
     tstate->tracing--;
+    tstate->what_event = old_what;
     if (res == NULL) {
         return -1;
     }
@@ -877,8 +880,9 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
 }
 
 int
-_Py_call_instrumentation_line(PyThreadState *tstate, PyCodeObject *code, _Py_CODEUNIT *instr)
+_Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
+    PyCodeObject *code = frame->f_code;
     assert(is_instrumentation_up_to_date(code, tstate->interp));
     assert(matrix_equals(code->_co_instrumentation.monitoring_data->matrix, tstate->interp->monitoring_matrix));
     int offset = instr - _PyCode_CODE(code);
@@ -891,6 +895,11 @@ _Py_call_instrumentation_line(PyThreadState *tstate, PyCodeObject *code, _Py_COD
     PyInterpreterState *interp = tstate->interp;
     int8_t line_delta = line_data->line_delta;
     int line = compute_line(code, offset, line_delta);
+    if (tstate->trace_info.code == frame->f_code &&
+        tstate->trace_info.line == line) {
+        /* Already traced this line */
+        return original_opcode;
+    }
     uint8_t tools = code->_co_instrumentation.monitoring_data->line_tools != NULL ?
         code->_co_instrumentation.monitoring_data->line_tools[offset] :
         interp->monitoring_matrix.tools[PY_MONITORING_EVENT_LINE];
@@ -920,6 +929,8 @@ _Py_call_instrumentation_line(PyThreadState *tstate, PyCodeObject *code, _Py_COD
             remove_line_tools(code, offset, 1 << tool);
         }
     }
+    tstate->trace_info.code = frame->f_code;
+    tstate->trace_info.line = line;
     Py_DECREF(line_obj);
     assert(original_opcode != 0);
     assert(_PyOpcode_Deopt[original_opcode] == original_opcode);
@@ -992,6 +1003,8 @@ static bool is_new_line(int index, int current_line, PyCodeAddressRange *bounds,
     return line >= 0 && line != current_line;
 }
 
+#define LINE_MARKER 255
+
 static void
 initialize_lines(PyCodeObject *code)
 {
@@ -1005,31 +1018,62 @@ initialize_lines(PyCodeObject *code)
         line_data[i].line_delta = -127;
     }
     int current_line = -1;
+    int extended_arg = 0;
+    _Py_CODEUNIT *bytecode = _PyCode_CODE(code);
+    for (int i = code->_co_firsttraceable; i < code_len; i++) {
+        line_data[i].original_opcode = 0;
+    }
     for (int i = code->_co_firsttraceable; i < code_len; i++) {
         int opcode = _Py_GetBaseOpcode(code, i);
-        /* END_FOR cannot start a line, as it is skipped by FOR_ITER
-         * RESUME must not be instrumented with INSTRUMENT_LINE */
-        if (opcode == END_FOR || opcode == RESUME) {
-            line_data[i].original_opcode = 0;
-            line_data[i].line_delta = -127;
-        }
-        else {
-            if (is_new_line(i, current_line, &range, opcode)) {
-                line_data[i].original_opcode = 255;
-                current_line = range.ar_line;
-            }
-            else {
-                /* Mark as not being an instrumentation point */
+        switch (opcode) {
+            case END_FOR:
+            case RESUME:
+                /* END_FOR cannot start a line, as it is skipped by FOR_ITER
+                * RESUME must not be instrumented with INSTRUMENT_LINE */
                 line_data[i].original_opcode = 0;
+                line_data[i].line_delta = -127;
+                extended_arg = 0;
+                continue;
+            case EXTENDED_ARG:
+                extended_arg = (extended_arg << 8) + bytecode[i].oparg;
+                line_data[i].line_delta = -127;
+                continue;
+            case JUMP_IF_FALSE_OR_POP:
+            case JUMP_IF_TRUE_OR_POP:
+            case POP_JUMP_IF_FALSE:
+            case POP_JUMP_IF_TRUE:
+            case JUMP_FORWARD:
+            /* COMPARE_AND_BRANCH is handled by the following POP_JUMP_IF_FALSE/TRUE */
+            {
+                int offset = (extended_arg << 8) + bytecode[i].oparg;
+                line_data[i+1+offset].original_opcode = LINE_MARKER;
+                break;
             }
-            // assert(range.ar_line < 0 || range.ar_line >= code->co_firstlineno);
-            line_data[i].line_delta = compute_line_delta(code, i, range.ar_line);
+            case FOR_ITER:
+            {
+                /* Skip over END_FOR */
+                int offset = (extended_arg << 8) + bytecode[i].oparg + 1;
+                line_data[i+1+offset].original_opcode = LINE_MARKER;
+                break;
+            }
+            case JUMP_BACKWARD:
+            {
+                int offset = (extended_arg << 8) + bytecode[i].oparg;
+                line_data[i+1-offset].original_opcode = LINE_MARKER;
+                break;
+            }
         }
+        if (is_new_line(i, current_line, &range, opcode)) {
+            line_data[i].original_opcode = LINE_MARKER;
+            current_line = range.ar_line;
+        }
+        line_data[i].line_delta = compute_line_delta(code, i, range.ar_line);
         for (int j = 0; j < _PyOpcode_Caches[opcode]; j++) {
             i++;
             line_data[i].original_opcode = 0;
             line_data[i].line_delta = -128;
         }
+        extended_arg = 0;
     }
 }
 

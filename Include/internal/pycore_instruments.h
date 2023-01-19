@@ -67,8 +67,8 @@ _Py_call_instrumentation(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
 
 extern int
-_Py_call_instrumentation_line(PyThreadState *tstate,
-                              PyCodeObject *code, _Py_CODEUNIT *instr);
+_Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
+                              _Py_CODEUNIT *instr);
 
 int
 _Py_call_instrumentation_jump(

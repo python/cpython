@@ -686,31 +686,47 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
      * In addition, jumps are forbidden when not tracing,
      * as this is a debugging feature.
      */
-    switch(PyThreadState_GET()->tracing_what) {
-        case PyTrace_EXCEPTION:
-            PyErr_SetString(PyExc_ValueError,
-                "can only jump from a 'line' trace event");
-            return -1;
-        case PyTrace_CALL:
-            PyErr_Format(PyExc_ValueError,
-                     "can't jump from the 'call' trace event of a new frame");
-            return -1;
-        case PyTrace_LINE:
-            break;
-        case PyTrace_RETURN:
-            if (state == FRAME_SUSPENDED) {
-                break;
-            }
-            /* fall through */
-        default:
-            PyErr_SetString(PyExc_ValueError,
-                "can only jump from a 'line' trace event");
-            return -1;
-    }
-    if (!f->f_trace) {
+    int what_event = PyThreadState_GET()->what_event;
+    if (what_event < 0) {
         PyErr_Format(PyExc_ValueError,
-                    "f_lineno can only be set by a trace function");
+                    "f_lineno can only be set by a debugger");
         return -1;
+    }
+    switch(what_event) {
+        case PY_MONITORING_EVENT_PY_START:
+            PyErr_Format(PyExc_ValueError,
+                     "can't jump from the 'call' event of a new frame");
+            return -1;
+        case PY_MONITORING_EVENT_PY_RESUME:
+            break;
+        case PY_MONITORING_EVENT_PY_RETURN:
+            PyErr_SetString(PyExc_ValueError,
+                "can't jump from a 'return' event");
+            return -1;
+        case PY_MONITORING_EVENT_PY_YIELD:
+            break;
+        case PY_MONITORING_EVENT_CALL:
+        case PY_MONITORING_EVENT_C_RETURN:
+            PyErr_SetString(PyExc_ValueError,
+                "can't jump during a call");
+            return -1;
+        case PY_MONITORING_EVENT_LINE:
+            break;
+        case PY_MONITORING_EVENT_PY_UNWIND:
+        case PY_MONITORING_EVENT_PY_THROW:
+        case PY_MONITORING_EVENT_RAISE:
+        case PY_MONITORING_EVENT_C_RAISE:
+        case PY_MONITORING_EVENT_JUMP:
+        case PY_MONITORING_EVENT_BRANCH:
+        case PY_MONITORING_EVENT_INSTRUCTION:
+        case PY_MONITORING_EVENT_EXCEPTION_HANDLED:
+            PyErr_Format(PyExc_ValueError,
+                     "can only jump from 'line' event");
+            return -1;
+        default:
+            PyErr_SetString(PyExc_SystemError,
+                "unexpected event type");
+            return -1;
     }
 
     int new_lineno;

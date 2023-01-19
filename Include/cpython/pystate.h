@@ -129,7 +129,7 @@ struct _ts {
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
     int tracing;
-    int tracing_what; /* The event currently being traced, if any. */
+    int what_event; /* The event currently being monitored, if any. */
     uint8_t monitoring;
 
     /* Pointer to current _PyCFrame in the C stack frame of the currently,

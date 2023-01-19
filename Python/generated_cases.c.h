@@ -16,9 +16,17 @@
                 next_instr--;
             }
             else {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
                         tstate, oparg != 0, frame, next_instr-1);
                 if (err) goto error;
+                if (frame->prev_instr != next_instr-1) {
+                    fprintf(stderr, "Jump has happened\n");
+                    /* Instrumentation has jumped */
+                    next_instr = frame->prev_instr;
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    DISPATCH();
+                }
                 if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                     goto handle_eval_breaker;
                 }
@@ -928,10 +936,18 @@
 
         TARGET(INSTRUMENTED_YIELD_VALUE) {
             PyObject *val = TOP();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, next_instr-1, val);
             if (err) goto error;
+            if (frame->prev_instr != next_instr-1) {
+                fprintf(stderr, "Jump has happened\n");
+                /* Instrumentation has jumped */
+                next_instr = frame->prev_instr;
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                DISPATCH();
+            }
             GO_TO_INSTRUCTION(YIELD_VALUE);
         }
 
@@ -3739,7 +3755,7 @@
         TARGET(INSTRUMENTED_LINE) {
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int original_opcode = _Py_call_instrumentation_line(
-                    tstate, frame->f_code, next_instr-1);
+                    tstate, frame, next_instr-1);
             if (original_opcode < 0) goto error;
             next_instr--;
             if (frame->prev_instr != next_instr) {
