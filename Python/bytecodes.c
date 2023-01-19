@@ -454,7 +454,7 @@ dummy_func(
             _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #else
-            assert(counter >= 0); /* prevent compiler warning */
+            (void)counter;  // Unused.
             #endif  /* ENABLE_SPECIALIZATION */
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
@@ -976,7 +976,7 @@ dummy_func(
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #else
-            assert(counter >= 0); /* prevent compiler warning */
+            (void)counter;  // Unused.
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(names, oparg);
             int err = PyObject_SetAttr(owner, name, v);
