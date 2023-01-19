@@ -94,7 +94,7 @@ static inline int _PyFrame_NumSlotsForCodeObject(PyCodeObject *co)
 {
     assert(PyCode_Check(co));
     return PyFrame_FirstConstSlotForCodeObject(co) +
-           PyTuple_Size(co->co_consts);
+           PyTuple_GET_SIZE(co->co_consts);
 }
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
@@ -163,7 +163,7 @@ _PyFrame_Initialize(
         frame->localsplus[i] = NULL;
     }
 
-    int nconsts = (int)PyTuple_Size(code->co_consts);
+    int nconsts = (int)PyTuple_GET_SIZE(code->co_consts);
     if (nconsts > 0) {
         PyObject **const_regs = _PyFrame_ConstRegisters(frame);
         PyObject **consts = &PyTuple_GET_ITEM(code->co_consts, 0);
