@@ -1456,6 +1456,7 @@ PyThreadState_GetID(PyThreadState *tstate)
    existing async exception.  This raises no exceptions. */
 
 // XXX Move this to Python/ceval_gil.c?
+// XXX Deprecate this.
 int
 PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 {
