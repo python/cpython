@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
+static void _PyThreadState_Delete(PyThreadState *tstate);
 
 
 /****************************************/
@@ -775,7 +775,10 @@ zapthreads(PyInterpreterState *interp, int check_current)
     /* No need to lock the mutex here because this should only happen
        when the threads are all really dead (XXX famous last words). */
     while ((tstate = interp->threads.head) != NULL) {
-        _PyThreadState_Delete(tstate, check_current);
+        if (check_current) {
+            tstate_verify_not_active(tstate);
+        }
+        _PyThreadState_Delete(tstate);
     }
 }
 
@@ -1320,12 +1323,8 @@ tstate_delete_common(PyThreadState *tstate)
 }
 
 static void
-_PyThreadState_Delete(PyThreadState *tstate, int check_current)
+_PyThreadState_Delete(PyThreadState *tstate)
 {
-    _Py_EnsureTstateNotNULL(tstate);
-    if (check_current) {
-        tstate_verify_not_active(tstate);
-    }
     tstate_delete_common(tstate);
     free_threadstate(tstate);
 }
@@ -1334,7 +1333,9 @@ _PyThreadState_Delete(PyThreadState *tstate, int check_current)
 void
 PyThreadState_Delete(PyThreadState *tstate)
 {
-    _PyThreadState_Delete(tstate, 1);
+    _Py_EnsureTstateNotNULL(tstate);
+    tstate_verify_not_active(tstate);
+    _PyThreadState_Delete(tstate);
 }
 
 
