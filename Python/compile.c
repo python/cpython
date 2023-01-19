@@ -3586,16 +3586,15 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    []                                         POP_BLOCK
    []                                         JUMP                  L0
 
-   [exc]                            L1:       COPY 1       )  save copy of the original exception
-   [orig, exc]                                BUILD_LIST   )  list for raised/reraised excs ("result")
-   [orig, exc, res]                           SWAP 2
+   [exc]                            L1:       BUILD_LIST   )  list for raised/reraised excs ("result")
+   [orig, res]                                COPY 2       )  make a copy of the original EG
 
    [orig, res, exc]                           <evaluate E1>
    [orig, res, exc, E1]                       CHECK_EG_MATCH
-   [orig, red, rest/exc, match?]              COPY 1
-   [orig, red, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
-   [orig, red, exc, None]                     POP_TOP
-   [orig, red, exc]                           JUMP L2
+   [orig, res, rest/exc, match?]              COPY 1
+   [orig, res, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
+   [orig, res, exc, None]                     POP_TOP
+   [orig, res, exc]                           JUMP L2
 
    [orig, res, rest, match]         H1:       <assign to V1>  (or POP if no V1)
 
@@ -3664,21 +3663,17 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         except = next_except;
         NEW_JUMP_TARGET_LABEL(c, handle_match);
         if (i == 0) {
-            /* Push the original EG into the stack */
-            /*
-               [exc]            COPY 1
-               [orig, exc]
-            */
-            ADDOP_I(c, loc, COPY, 1);
-
             /* create empty list for exceptions raised/reraise in the except* blocks */
             /*
-               [orig, exc]       BUILD_LIST
-               [orig, exc, []]   SWAP 2
+               [orig]       BUILD_LIST
+            */
+            /* Creat a copy of the original EG */
+            /*
+               [orig, []]   COPY 2
                [orig, [], exc]
             */
             ADDOP_I(c, loc, BUILD_LIST, 0);
-            ADDOP_I(c, loc, SWAP, 2);
+            ADDOP_I(c, loc, COPY, 2);
         }
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
