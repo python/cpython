@@ -319,9 +319,6 @@ _PyCode_Quicken(PyCodeObject *code)
             case LOAD_CONST << 8 | MAKE_FUNCTION:
             {
                 assert(caches == 0);
-                if (i >= 2 && instructions[i - 2].opcode == EXTENDED_ARG) {
-                    break;
-                }
                 int index = instructions[i - 1].oparg;
                 int flags = instructions[i].oparg;
                 assert(flags < 16);
@@ -329,6 +326,9 @@ _PyCode_Quicken(PyCodeObject *code)
                 instructions[i - 1].oparg = flags;
                 instructions[i].opcode = CACHE;  // XXX Don't?
                 instructions[i].oparg = index;
+                if (i >= 2 && instructions[i - 2].opcode == EXTENDED_ARG) {
+                    instructions[i - 2].opcode = EXTENDED_ARG_3;
+                }
                 break;
             }
         }

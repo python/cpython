@@ -122,6 +122,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [END_ASYNC_FOR] = END_ASYNC_FOR,
     [END_FOR] = END_FOR,
     [EXTENDED_ARG] = EXTENDED_ARG,
+    [EXTENDED_ARG_3] = EXTENDED_ARG_3,
     [FORMAT_VALUE] = FORMAT_VALUE,
     [FOR_ITER] = FOR_ITER,
     [FOR_ITER_GEN] = FOR_ITER,
@@ -404,7 +405,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [KW_NAMES] = "KW_NAMES",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
     [MAKE_FUNCTION_FROM_CODE] = "MAKE_FUNCTION_FROM_CODE",
-    [175] = "<175>",
+    [EXTENDED_ARG_3] = "EXTENDED_ARG_3",
     [176] = "<176>",
     [177] = "<177>",
     [178] = "<178>",
@@ -502,7 +503,6 @@ static const char *const _PyOpcode_OpName[263] = {
     case 168: \
     case 169: \
     case 170: \
-    case 175: \
     case 176: \
     case 177: \
     case 178: \

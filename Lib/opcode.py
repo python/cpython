@@ -220,6 +220,7 @@ def_op('KW_NAMES', 172)
 hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
 def_op('MAKE_FUNCTION_FROM_CODE', 174)
+def_op('EXTENDED_ARG_3', 175)
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 

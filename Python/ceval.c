@@ -133,7 +133,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
                     _Py_CODEUNIT *next_instr)
 {
-    // dump_stack(frame, stack_pointer);
+    dump_stack(frame, stack_pointer);
     int oparg = _Py_OPARG(*next_instr);
     int opcode = _Py_OPCODE(*next_instr);
     const char *opname = _PyOpcode_OpName[opcode];
@@ -726,6 +726,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     // for the big switch below (in combination with the EXTRA_CASES macro).
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
+    int oparg2;        /* Second opcode argument (from second word, if any) */
+    int oparg3;        /* Third opcode argument (from second word, if any) */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 #ifdef LLTRACE
     int lltrace = 0;

@@ -180,5 +180,6 @@ static const struct {
     [BINARY_OP] = { 2, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [SWAP] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [EXTENDED_ARG] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [EXTENDED_ARG_3] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CACHE] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
 };

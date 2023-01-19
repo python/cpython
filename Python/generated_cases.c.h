@@ -3537,29 +3537,14 @@
         }
 
         TARGET(MAKE_FUNCTION_FROM_CODE) {
-            int flags = oparg;
-            _Py_CODEUNIT word = *next_instr++;
-            assert(word.opcode == CACHE);
-            int index = word.oparg;
+            // Decode second word
+            oparg2 = _Py_OPCODE(*next_instr);
+            oparg3 = _Py_OPARG(*next_instr);
+            next_instr++;
+        into_make_function_from_code:  // EXTENDED_ARG_3 jumps here
+            assert(oparg2 == CACHE);
 
-            PyObject *codeobj = GETITEM(consts, index);
-            if (PyCode_Check(codeobj)) {
-                // fprintf(stderr,
-                //         "MAKE_FUNCTION_FROM_CODE: %p, %s, flags=%d, index=%d\n",
-                //         codeobj,
-                //         PyUnicode_AsUTF8(((PyCodeObject *)codeobj)->co_name),
-                //         flags,
-                //         index);
-            }
-            else {
-                fprintf(stderr,
-                        "MAKE_FUNCTION_FROM_CODE: %p, %p=%s, flags=%d, index=%d\n",
-                        codeobj,
-                        codeobj->ob_type,
-                        "?", // PyUnicode_AsUTF8(codeobj->ob_type->tp_name),
-                        flags,
-                        index);
-            }
+            PyObject *codeobj = GETITEM(consts, oparg3);
             assert(PyCode_Check(codeobj));
             PyFunctionObject *func = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
@@ -3568,19 +3553,19 @@
                 goto error;
             }
 
-            if (flags & 0x08) {
+            if (oparg & 0x08) {
                 assert(PyTuple_CheckExact(TOP()));
                 func->func_closure = POP();
             }
-            if (flags & 0x04) {
+            if (oparg & 0x04) {
                 assert(PyTuple_CheckExact(TOP()));
                 func->func_annotations = POP();
             }
-            if (flags & 0x02) {
+            if (oparg & 0x02) {
                 assert(PyDict_CheckExact(TOP()));
                 func->func_kwdefaults = POP();
             }
-            if (flags & 0x01) {
+            if (oparg & 0x01) {
                 assert(PyTuple_CheckExact(TOP()));
                 func->func_defaults = POP();
             }
@@ -3741,6 +3726,28 @@
             oparg = oparg << 8 | _Py_OPARG(*next_instr);
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
+        }
+
+        TARGET(EXTENDED_ARG_3) {
+            assert(oparg);
+            oparg3 = oparg;
+            assert(cframe.use_tracing == 0);
+            // Decode the next two-word instruction
+            opcode = _Py_OPCODE(*next_instr);
+            oparg = _Py_OPARG(*next_instr);
+            next_instr++;
+            oparg2 = _Py_OPCODE(*next_instr);
+            oparg3 = oparg3 << 8 | _Py_OPARG(*next_instr);
+            next_instr++;
+            // PRE_DISPATCH_GOTO();  TODO: It's complicated
+            switch (opcode) {
+                case MAKE_FUNCTION_FROM_CODE:
+                    goto into_make_function_from_code;
+                default:
+                    Py_FatalError("Unexpected opcode in EXTENDED_ARG_3");
+                    while (1) { abort(); }
+            }
+            DISPATCH();
         }
 
         TARGET(CACHE) {
