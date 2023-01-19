@@ -7,7 +7,8 @@ import re
 import sys
 import types
 import unittest
-from test.support import captured_stdout, requires_debug_ranges, cpython_only
+from test.support import (captured_stdout, requires_debug_ranges,
+                          requires_specialization, cpython_only)
 from test.support.bytecode_helper import BytecodeTestCase
 
 import opcode
@@ -1086,12 +1087,14 @@ class DisTests(DisTestBase):
             f()
 
     @cpython_only
+    @requires_specialization
     def test_super_instructions(self):
         self.code_quicken(lambda: load_test(0, 0))
         got = self.get_disassembly(load_test, adaptive=True)
         self.do_disassembly_compare(got, dis_load_test_quickened_code, True)
 
     @cpython_only
+    @requires_specialization
     def test_binary_specialize(self):
         binary_op_quicken = """\
   0           0 RESUME                   0
@@ -1130,6 +1133,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, binary_subscr_quicken % "BINARY_SUBSCR_DICT", True)
 
     @cpython_only
+    @requires_specialization
     def test_load_attr_specialize(self):
         load_attr_quicken = """\
   0           0 RESUME                   0
@@ -1144,6 +1148,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, load_attr_quicken, True)
 
     @cpython_only
+    @requires_specialization
     def test_call_specialize(self):
         call_quicken = """\
   0        RESUME                   0
@@ -1160,6 +1165,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, call_quicken)
 
     @cpython_only
+    @requires_specialization
     def test_loop_quicken(self):
         # Loop can trigger a quicken where the loop is located
         self.code_quicken(loop_test, 1)
