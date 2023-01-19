@@ -81,6 +81,11 @@ current_fast_clear(_PyRuntimeState *runtime)
     _Py_atomic_store_relaxed(&runtime->tstate_current, (uintptr_t)NULL);
 }
 
+#define tstate_verify_not_active(tstate) \
+    if (tstate == current_fast_get((tstate)->interp->runtime)) { \
+        _Py_FatalErrorFormat(__func__, "tstate %p is still current", tstate); \
+    }
+
 
 //------------------------------------------------
 // the thread state bound to the current OS thread
@@ -780,11 +785,13 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 {
     _PyRuntimeState *runtime = interp->runtime;
     struct pyinterpreters *interpreters = &runtime->interpreters;
+
     zapthreads(interp, 0);
 
     _PyEval_FiniState(&interp->ceval);
 
-    /* Delete current thread. After this, many C API calls become crashy. */
+    // XXX Move this above zapthreads().
+    /* Unset current thread.  After this, many C API calls become crashy. */
     _PyThreadState_Swap(runtime, NULL);
 
     HEAD_LOCK(runtime);
@@ -1281,7 +1288,6 @@ PyThreadState_Clear(PyThreadState *tstate)
 static void
 tstate_delete_common(PyThreadState *tstate)
 {
-    _Py_EnsureTstateNotNULL(tstate);
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
         Py_FatalError("NULL interpreter");
@@ -1316,10 +1322,9 @@ tstate_delete_common(PyThreadState *tstate)
 static void
 _PyThreadState_Delete(PyThreadState *tstate, int check_current)
 {
+    _Py_EnsureTstateNotNULL(tstate);
     if (check_current) {
-        if (tstate == current_fast_get(tstate->interp->runtime)) {
-            _Py_FatalErrorFormat(__func__, "tstate %p is still current", tstate);
-        }
+        tstate_verify_not_active(tstate);
     }
     tstate_delete_common(tstate);
     free_threadstate(tstate);
