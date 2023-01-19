@@ -1987,21 +1987,15 @@ snippet, which shows zlib-based compression of the log file::
     def namer(name):
         return name + ".gz"
 
-    def rotator(source, dest):
-        with open(source, "rb") as sf:
-            data = sf.read()
-            compressed = zlib.compress(data, 9)
-            with open(dest, "wb") as df:
-                df.write(compressed)
+    def rotator(source, dest):        
+        with open(source, 'rb') as f_in:
+            with gzip.open(dest, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
         os.remove(source)
 
     rh = logging.handlers.RotatingFileHandler(...)
     rh.rotator = rotator
     rh.namer = namer
-
-These are not "true" .gz files, as they are bare compressed data, with no
-"container" such as you’d find in an actual gzip file. This snippet is just
-for illustration purposes.
 
 A more elaborate multiprocessing example
 ----------------------------------------
