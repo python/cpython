@@ -765,7 +765,7 @@ _PyInterpreterState_Clear(PyThreadState *tstate)
 }
 
 
-static void zapthreads(PyInterpreterState *interp, int check_current);
+static void zapthreads(PyInterpreterState *interp);
 
 void
 PyInterpreterState_Delete(PyInterpreterState *interp)
@@ -779,7 +779,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         _PyThreadState_Swap(runtime, NULL);
     }
 
-    zapthreads(interp, 0);
+    zapthreads(interp);
 
     _PyEval_FiniState(&interp->ceval);
 
@@ -840,7 +840,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
         }
 
         PyInterpreterState_Clear(interp);  // XXX must activate?
-        zapthreads(interp, 1);
+        zapthreads(interp);
         if (interp->id_mutex != NULL) {
             PyThread_free_lock(interp->id_mutex);
         }
@@ -1310,15 +1310,13 @@ tstate_delete_common(PyThreadState *tstate)
 
 
 static void
-zapthreads(PyInterpreterState *interp, int check_current)
+zapthreads(PyInterpreterState *interp)
 {
     PyThreadState *tstate;
     /* No need to lock the mutex here because this should only happen
        when the threads are all really dead (XXX famous last words). */
     while ((tstate = interp->threads.head) != NULL) {
-        if (check_current) {
-            tstate_verify_not_active(tstate);
-        }
+        tstate_verify_not_active(tstate);
         tstate_delete_common(tstate);
         free_threadstate(tstate);
     }
