@@ -737,9 +737,9 @@ dummy_func(
                     retval = PyObject_CallMethodOneArg(receiver, &_Py_ID(send), v);
                 }
                 if (retval == NULL) {
-                    if (tstate->c_tracefunc != NULL
-                            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
+                    if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         monitor_raise(tstate, frame, next_instr-1);
+                    }
                     if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                         gen_status = PYGEN_RETURN;
                     }
@@ -2311,9 +2311,7 @@ dummy_func(
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    else if (tstate->c_tracefunc != NULL) {
-                        monitor_raise(tstate, frame, next_instr-1);
-                    }
+                    monitor_raise(tstate, frame, next_instr-1);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
