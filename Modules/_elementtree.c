@@ -2289,6 +2289,7 @@ typedef struct {
 
     char insert_comments;
     char insert_pis;
+    elementtreestate *state;
 } TreeBuilderObject;
 
 #define TreeBuilder_CheckExact(st, op) Py_IS_TYPE((op), (st)->TreeBuilder_Type)
@@ -2322,6 +2323,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->start_ns_event_obj = t->end_ns_event_obj = NULL;
         t->comment_event_obj = t->pi_event_obj = NULL;
         t->insert_comments = t->insert_pis = 0;
+        t->state = ET_STATE_GLOBAL;
     }
     return (PyObject *)t;
 }
@@ -2353,7 +2355,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
     }
 
     if (comment_factory == Py_None) {
-        elementtreestate *st = ET_STATE_GLOBAL;
+        elementtreestate *st = self->state;
         comment_factory = st->comment_factory;
     }
     if (comment_factory) {
@@ -2547,7 +2549,7 @@ treebuilder_flush_data(TreeBuilderObject* self)
     if (!self->data) {
         return 0;
     }
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (!self->last_for_tail) {
         PyObject *element = self->last;
         return treebuilder_extend_element_text_or_tail(
@@ -2607,7 +2609,7 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 {
     PyObject* node;
     PyObject* this;
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
 
     if (treebuilder_flush_data(self) < 0) {
         return NULL;
