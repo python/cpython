@@ -759,7 +759,7 @@ _elementtree_Element___copy___impl(ElementObject *self)
 }
 
 /* Helper for a deep copy. */
-LOCAL(PyObject *) deepcopy(PyObject *, PyObject *);
+LOCAL(PyObject *) deepcopy(elementtreestate *, PyObject *, PyObject *);
 
 /*[clinic input]
 _elementtree.Element.__deepcopy__
@@ -781,12 +781,13 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     PyObject* tail;
     PyObject* id;
 
-    tag = deepcopy(self->tag, memo);
+    elementtreestate *st = ET_STATE_GLOBAL;
+    tag = deepcopy(st, self->tag, memo);
     if (!tag)
         return NULL;
 
     if (self->extra && self->extra->attrib) {
-        attrib = deepcopy(self->extra->attrib, memo);
+        attrib = deepcopy(st, self->extra->attrib, memo);
         if (!attrib) {
             Py_DECREF(tag);
             return NULL;
@@ -795,7 +796,6 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         attrib = NULL;
     }
 
-    elementtreestate *st = ET_STATE_GLOBAL;
     element = (ElementObject*) create_new_element(st, tag, attrib);
 
     Py_DECREF(tag);
@@ -804,12 +804,12 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     if (!element)
         return NULL;
 
-    text = deepcopy(JOIN_OBJ(self->text), memo);
+    text = deepcopy(st, JOIN_OBJ(self->text), memo);
     if (!text)
         goto error;
     _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
 
-    tail = deepcopy(JOIN_OBJ(self->tail), memo);
+    tail = deepcopy(st, JOIN_OBJ(self->tail), memo);
     if (!tail)
         goto error;
     _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
@@ -820,7 +820,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
             goto error;
 
         for (i = 0; i < self->extra->length; i++) {
-            PyObject* child = deepcopy(self->extra->children[i], memo);
+            PyObject* child = deepcopy(st, self->extra->children[i], memo);
             if (!child || !Element_Check(st, child)) {
                 if (child) {
                     raise_type_error(child);
@@ -856,10 +856,9 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 }
 
 LOCAL(PyObject *)
-deepcopy(PyObject *object, PyObject *memo)
+deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
 {
     /* do a deep copy of the given object */
-    elementtreestate *st = ET_STATE_GLOBAL;
     PyObject *stack[2];
 
     /* Fast paths */
