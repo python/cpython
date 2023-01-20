@@ -1,2 +1,0 @@
-Support C extensions using managed dictionaries by setting the
-``Py_TPFLAGS_MANAGED_DICT`` flag.

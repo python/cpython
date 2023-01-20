@@ -276,6 +276,211 @@ choose a different directory name for the log - just ensure that the directory e
 and that you have the permissions to create and update files in it.
 
 
+.. _custom-level-handling:
+
+Custom handling of levels
+-------------------------
+
+Sometimes, you might want to do something slightly different from the standard
+handling of levels in handlers, where all levels above a threshold get
+processed by a handler. To do this, you need to use filters. Let's look at a
+scenario where you want to arrange things as follows:
+
+* Send messages of severity ``INFO`` and ``WARNING`` to ``sys.stdout``
+* Send messages of severity ``ERROR`` and above to ``sys.stderr``
+* Send messages of severity ``DEBUG`` and above to file ``app.log``
+
+Suppose you configure logging with the following JSON:
+
+.. code-block:: json
+
+    {
+        "version": 1,
+        "disable_existing_loggers": false,
+        "formatters": {
+            "simple": {
+                "format": "%(levelname)-8s - %(message)s"
+            }
+        },
+        "handlers": {
+            "stdout": {
+                "class": "logging.StreamHandler",
+                "level": "INFO",
+                "formatter": "simple",
+                "stream": "ext://sys.stdout",
+            },
+            "stderr": {
+                "class": "logging.StreamHandler",
+                "level": "ERROR",
+                "formatter": "simple",
+                "stream": "ext://sys.stderr"
+            },
+            "file": {
+                "class": "logging.FileHandler",
+                "formatter": "simple",
+                "filename": "app.log",
+                "mode": "w"
+            }
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "stderr",
+                "stdout",
+                "file"
+            ]
+        }
+    }
+
+This configuration does *almost* what we want, except that ``sys.stdout`` would
+show messages of severity ``ERROR`` and above as well as ``INFO`` and
+``WARNING`` messages. To prevent this, we can set up a filter which excludes
+those messages and add it to the relevant handler. This can be configured by
+adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
+
+.. code-block:: json
+
+    "filters": {
+        "warnings_and_below": {
+            "()" : "__main__.filter_maker",
+            "level": "WARNING"
+        }
+    }
+
+and changing the section on the ``stdout`` handler to add it:
+
+.. code-block:: json
+
+    "stdout": {
+        "class": "logging.StreamHandler",
+        "level": "INFO",
+        "formatter": "simple",
+        "stream": "ext://sys.stdout",
+        "filters": ["warnings_and_below"]
+    }
+
+A filter is just a function, so we can define the ``filter_maker`` (a factory
+function) as follows:
+
+.. code-block:: python
+
+    def filter_maker(level):
+        level = getattr(logging, level)
+
+        def filter(record):
+            return record.levelno <= level
+
+        return filter
+
+This converts the string argument passed in to a numeric level, and returns a
+function which only returns ``True`` if the level of the passed in record is
+at or below the specified level. Note that in this example I have defined the
+``filter_maker`` in a test script ``main.py`` that I run from the command line,
+so its module will be ``__main__`` - hence the ``__main__.filter_maker`` in the
+filter configuration. You will need to change that if you define it in a
+different module.
+
+With the filter added, we can run ``main.py``, which in full is:
+
+.. code-block:: python
+
+    import json
+    import logging
+    import logging.config
+
+    CONFIG = '''
+    {
+        "version": 1,
+        "disable_existing_loggers": false,
+        "formatters": {
+            "simple": {
+                "format": "%(levelname)-8s - %(message)s"
+            }
+        },
+        "filters": {
+            "warnings_and_below": {
+                "()" : "__main__.filter_maker",
+                "level": "WARNING"
+            }
+        },
+        "handlers": {
+            "stdout": {
+                "class": "logging.StreamHandler",
+                "level": "INFO",
+                "formatter": "simple",
+                "stream": "ext://sys.stdout",
+                "filters": ["warnings_and_below"]
+            },
+            "stderr": {
+                "class": "logging.StreamHandler",
+                "level": "ERROR",
+                "formatter": "simple",
+                "stream": "ext://sys.stderr"
+            },
+            "file": {
+                "class": "logging.FileHandler",
+                "formatter": "simple",
+                "filename": "app.log",
+                "mode": "w"
+            }
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "stderr",
+                "stdout",
+                "file"
+            ]
+        }
+    }
+    '''
+
+    def filter_maker(level):
+        level = getattr(logging, level)
+
+        def filter(record):
+            return record.levelno <= level
+
+        return filter
+
+    logging.config.dictConfig(json.loads(CONFIG))
+    logging.debug('A DEBUG message')
+    logging.info('An INFO message')
+    logging.warning('A WARNING message')
+    logging.error('An ERROR message')
+    logging.critical('A CRITICAL message')
+
+And after running it like this:
+
+.. code-block:: shell
+
+    python main.py 2>stderr.log >stdout.log
+
+We can see the results are as expected:
+
+.. code-block:: shell
+
+    $ more *.log
+    ::::::::::::::
+    app.log
+    ::::::::::::::
+    DEBUG    - A DEBUG message
+    INFO     - An INFO message
+    WARNING  - A WARNING message
+    ERROR    - An ERROR message
+    CRITICAL - A CRITICAL message
+    ::::::::::::::
+    stderr.log
+    ::::::::::::::
+    ERROR    - An ERROR message
+    CRITICAL - A CRITICAL message
+    ::::::::::::::
+    stdout.log
+    ::::::::::::::
+    INFO     - An INFO message
+    WARNING  - A WARNING message
+
+
 Configuration server example
 ----------------------------
 
@@ -560,13 +765,71 @@ serialization.
 Running a logging socket listener in production
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To run a logging listener in production, you may need to use a process-management tool
-such as `Supervisor <http://supervisord.org/>`_. `Here
-<https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
-provides the bare-bones files to run the above functionality using Supervisor: you
-will need to change the ``/path/to/`` parts in the Gist to reflect the actual paths you
-want to use.
+.. _socket-listener-gist: https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b
 
+To run a logging listener in production, you may need to use a
+process-management tool such as `Supervisor <http://supervisord.org/>`_.
+`Here is a Gist <socket-listener-gist_>`__
+which provides the bare-bones files to run the above functionality using
+Supervisor. It consists of the following files:
+
++-------------------------+----------------------------------------------------+
+| File                    | Purpose                                            |
++=========================+====================================================+
+| :file:`prepare.sh`      | A Bash script to prepare the environment for       |
+|                         | testing                                            |
++-------------------------+----------------------------------------------------+
+| :file:`supervisor.conf` | The Supervisor configuration file, which has       |
+|                         | entries for the listener and a multi-process web   |
+|                         | application                                        |
++-------------------------+----------------------------------------------------+
+| :file:`ensure_app.sh`   | A Bash script to ensure that Supervisor is running |
+|                         | with the above configuration                       |
++-------------------------+----------------------------------------------------+
+| :file:`log_listener.py` | The socket listener program which receives log     |
+|                         | events and records them to a file                  |
++-------------------------+----------------------------------------------------+
+| :file:`main.py`         | A simple web application which performs logging    |
+|                         | via a socket connected to the listener             |
++-------------------------+----------------------------------------------------+
+| :file:`webapp.json`     | A JSON configuration file for the web application  |
++-------------------------+----------------------------------------------------+
+| :file:`client.py`       | A Python script to exercise the web application    |
++-------------------------+----------------------------------------------------+
+
+The web application uses `Gunicorn <https://gunicorn.org/>`_, which is a
+popular web application server that starts multiple worker processes to handle
+requests. This example setup shows how the workers can write to the same log file
+without conflicting with one another --- they all go through the socket listener.
+
+To test these files, do the following in a POSIX environment:
+
+#. Download `the Gist <socket-listener-gist_>`__
+   as a ZIP archive using the :guilabel:`Download ZIP` button.
+
+#. Unzip the above files from the archive into a scratch directory.
+
+#. In the scratch directory, run ``bash prepare.sh`` to get things ready.
+   This creates a :file:`run` subdirectory to contain Supervisor-related and
+   log files, and a :file:`venv` subdirectory to contain a virtual environment
+   into which ``bottle``, ``gunicorn`` and ``supervisor`` are installed.
+
+#. Run ``bash ensure_app.sh`` to ensure that Supervisor is running with
+   the above configuration.
+
+#. Run ``venv/bin/python client.py`` to exercise the web application,
+   which will lead to records being written to the log.
+
+#. Inspect the log files in the :file:`run` subdirectory. You should see the
+   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
+   any particular order, since they have been handled concurrently by different
+   worker processes in a non-deterministic way.
+
+#. You can shut down the listener and the web application by running
+   ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
+
+You may need to tweak the configuration files in the unlikely event that the
+configured ports clash with something else in your test environment.
 
 .. _context-info:
 
@@ -868,7 +1131,7 @@ each request is handled by a thread:
                                                  'context can be used to '
                                                  'populate logs')
         aa = ap.add_argument
-        aa('--count', '-c', default=100, help='How many requests to simulate')
+        aa('--count', '-c', type=int, default=100, help='How many requests to simulate')
         options = ap.parse_args()
 
         # Create the dummy webapps and put them in a list which we can use to select
@@ -1719,26 +1982,47 @@ Using a rotator and namer to customize log rotation processing
 --------------------------------------------------------------
 
 An example of how you can define a namer and rotator is given in the following
-snippet, which shows zlib-based compression of the log file::
+runnable script, which shows gzip compression of the log file::
+
+    import gzip
+    import logging
+    import logging.handlers
+    import os
+    import shutil
 
     def namer(name):
         return name + ".gz"
 
     def rotator(source, dest):
-        with open(source, "rb") as sf:
-            data = sf.read()
-            compressed = zlib.compress(data, 9)
-            with open(dest, "wb") as df:
-                df.write(compressed)
+        with open(source, 'rb') as f_in:
+            with gzip.open(dest, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
         os.remove(source)
 
-    rh = logging.handlers.RotatingFileHandler(...)
+
+    rh = logging.handlers.RotatingFileHandler('rotated.log', maxBytes=128, backupCount=5)
     rh.rotator = rotator
     rh.namer = namer
 
-These are not "true" .gz files, as they are bare compressed data, with no
-"container" such as you’d find in an actual gzip file. This snippet is just
-for illustration purposes.
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.addHandler(rh)
+    f = logging.Formatter('%(asctime)s %(message)s')
+    rh.setFormatter(f)
+    for i in range(1000):
+        root.info(f'Message no. {i + 1}')
+
+After running this, you will see six new files, five of which are compressed:
+
+.. code-block:: shell-session
+
+    $ ls rotated.log*
+    rotated.log       rotated.log.2.gz  rotated.log.4.gz
+    rotated.log.1.gz  rotated.log.3.gz  rotated.log.5.gz
+    $ zcat rotated.log.1.gz
+    2023-01-20 02:28:17,767 Message no. 996
+    2023-01-20 02:28:17,767 Message no. 997
+    2023-01-20 02:28:17,767 Message no. 998
 
 A more elaborate multiprocessing example
 ----------------------------------------
@@ -3503,9 +3787,74 @@ instance). Then, you'd get this kind of result:
     WARNING:demo:Bar
     >>>
 
-Of course, these above examples show output according to the format used by
+Of course, the examples above show output according to the format used by
 :func:`~logging.basicConfig`, but you can use a different formatter when you
 configure logging.
+
+Note that with the above scheme, you are somewhat at the mercy of buffering and
+the sequence of write calls which you are intercepting. For example, with the
+definition of ``LoggerWriter`` above, if you have the snippet
+
+.. code-block:: python
+
+    sys.stderr = LoggerWriter(logger, logging.WARNING)
+    1 / 0
+
+then running the script results in
+
+.. code-block:: text
+
+    WARNING:demo:Traceback (most recent call last):
+
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/test.py", line 53, in <module>
+
+    WARNING:demo:
+    WARNING:demo:main()
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/test.py", line 49, in main
+
+    WARNING:demo:
+    WARNING:demo:1 / 0
+    WARNING:demo:ZeroDivisionError
+    WARNING:demo::
+    WARNING:demo:division by zero
+
+As you can see, this output isn't ideal. That's because the underlying code
+which writes to ``sys.stderr`` makes mutiple writes, each of which results in a
+separate logged line (for example, the last three lines above). To get around
+this problem, you need to buffer things and only output log lines when newlines
+are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
+
+.. code-block:: python
+
+    class BufferingLoggerWriter(LoggerWriter):
+        def __init__(self, logger, level):
+            super().__init__(logger, level)
+            self.buffer = ''
+
+        def write(self, message):
+            if '\n' not in message:
+                self.buffer += message
+            else:
+                parts = message.split('\n')
+                if self.buffer:
+                    s = self.buffer + parts.pop(0)
+                    self.logger.log(self.level, s)
+                self.buffer = parts.pop()
+                for part in parts:
+                    self.logger.log(self.level, part)
+
+This just buffers up stuff until a newline is seen, and then logs complete
+lines. With this approach, you get better output:
+
+.. code-block:: text
+
+    WARNING:demo:Traceback (most recent call last):
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/main.py", line 55, in <module>
+    WARNING:demo:    main()
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/main.py", line 52, in main
+    WARNING:demo:    1/0
+    WARNING:demo:ZeroDivisionError: division by zero
+
 
 .. patterns-to-avoid:
 
@@ -3516,7 +3865,6 @@ Although the preceding sections have described ways of doing things you might
 need to do or deal with, it is worth mentioning some usage patterns which are
 *unhelpful*, and which should therefore be avoided in most cases. The following
 sections are in no particular order.
-
 
 Opening the same log file multiple times
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3566,7 +3914,6 @@ that in other languages such as Java and C#, loggers are often static class
 attributes. However, this pattern doesn't make sense in Python, where the
 module (and not the class) is the unit of software decomposition.
 
-
 Adding handlers other than :class:`NullHandler` to a logger in a library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -3574,7 +3921,6 @@ Configuring logging by adding handlers, formatters and filters is the
 responsibility of the application developer, not the library developer. If you
 are maintaining a library, ensure that you don't add handlers to any of your
 loggers other than a :class:`~logging.NullHandler` instance.
-
 
 Creating a lot of loggers
 ^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -749,7 +749,7 @@ PyDoc_STRVAR(sys_get_int_max_str_digits__doc__,
 "get_int_max_str_digits($module, /)\n"
 "--\n"
 "\n"
-"Set the maximum string digits limit for non-binary int<->str conversions.");
+"Return the maximum string digits limit for non-binary int<->str conversions.");
 
 #define SYS_GET_INT_MAX_STR_DIGITS_METHODDEF    \
     {"get_int_max_str_digits", (PyCFunction)sys_get_int_max_str_digits, METH_NOARGS, sys_get_int_max_str_digits__doc__},
@@ -883,33 +883,6 @@ exit:
 }
 
 #endif /* defined(Py_REF_DEBUG) */
-
-PyDoc_STRVAR(sys__getquickenedcount__doc__,
-"_getquickenedcount($module, /)\n"
-"--\n"
-"\n");
-
-#define SYS__GETQUICKENEDCOUNT_METHODDEF    \
-    {"_getquickenedcount", (PyCFunction)sys__getquickenedcount, METH_NOARGS, sys__getquickenedcount__doc__},
-
-static Py_ssize_t
-sys__getquickenedcount_impl(PyObject *module);
-
-static PyObject *
-sys__getquickenedcount(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
-
-    _return_value = sys__getquickenedcount_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromSsize_t(_return_value);
-
-exit:
-    return return_value;
-}
 
 PyDoc_STRVAR(sys_getallocatedblocks__doc__,
 "getallocatedblocks($module, /)\n"
@@ -1231,7 +1204,7 @@ PyDoc_STRVAR(sys_activate_stack_trampoline__doc__,
 "activate_stack_trampoline($module, backend, /)\n"
 "--\n"
 "\n"
-"Activate the perf profiler trampoline.");
+"Activate stack profiler trampoline *backend*.");
 
 #define SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
     {"activate_stack_trampoline", (PyCFunction)sys_activate_stack_trampoline, METH_O, sys_activate_stack_trampoline__doc__},
@@ -1268,7 +1241,9 @@ PyDoc_STRVAR(sys_deactivate_stack_trampoline__doc__,
 "deactivate_stack_trampoline($module, /)\n"
 "--\n"
 "\n"
-"Dectivate the perf profiler trampoline.");
+"Deactivate the current stack profiler trampoline backend.\n"
+"\n"
+"If no stack profiler is activated, this function has no effect.");
 
 #define SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
     {"deactivate_stack_trampoline", (PyCFunction)sys_deactivate_stack_trampoline, METH_NOARGS, sys_deactivate_stack_trampoline__doc__},
@@ -1286,7 +1261,7 @@ PyDoc_STRVAR(sys_is_stack_trampoline_active__doc__,
 "is_stack_trampoline_active($module, /)\n"
 "--\n"
 "\n"
-"Returns *True* if the perf profiler trampoline is active.");
+"Return *True* if a stack profiler trampoline is active.");
 
 #define SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF    \
     {"is_stack_trampoline_active", (PyCFunction)sys_is_stack_trampoline_active, METH_NOARGS, sys_is_stack_trampoline_active__doc__},
@@ -1298,6 +1273,75 @@ static PyObject *
 sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return sys_is_stack_trampoline_active_impl(module);
+}
+
+PyDoc_STRVAR(sys__getframemodulename__doc__,
+"_getframemodulename($module, /, depth=0)\n"
+"--\n"
+"\n"
+"Return the name of the module for a calling frame.\n"
+"\n"
+"The default depth returns the module containing the call to this API.\n"
+"A more typical use in a library will pass a depth of 1 to get the user\'s\n"
+"module rather than the library module.\n"
+"\n"
+"If no frame, module, or name can be found, returns None.");
+
+#define SYS__GETFRAMEMODULENAME_METHODDEF    \
+    {"_getframemodulename", _PyCFunction_CAST(sys__getframemodulename), METH_FASTCALL|METH_KEYWORDS, sys__getframemodulename__doc__},
+
+static PyObject *
+sys__getframemodulename_impl(PyObject *module, int depth);
+
+static PyObject *
+sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(depth), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"depth", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_getframemodulename",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int depth = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    depth = _PyLong_AsInt(args[0]);
+    if (depth == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = sys__getframemodulename_impl(module, depth);
+
+exit:
+    return return_value;
 }
 
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
@@ -1343,4 +1387,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=15318cdd96b62b06 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c761f14326ced54 input=a9049054013a1b77]*/

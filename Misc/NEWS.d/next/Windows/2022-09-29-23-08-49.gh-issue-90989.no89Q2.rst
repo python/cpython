@@ -1,2 +1,0 @@
-Made :ref:`launcher` install per-user by default (unless an all users
-install already exists), and clarify some text in the installer.

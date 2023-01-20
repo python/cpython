@@ -1,1 +1,0 @@
-In :mod:`inspect`, fix overeager replacement of "``typing.``" in formatting annotations.

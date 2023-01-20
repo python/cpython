@@ -1,2 +1,0 @@
-Fix incorrect source location info for some multi-line attribute accesses
-and method calls.

@@ -1,3 +1,0 @@
-:func:`shlex.split`: Passing ``None`` for *s* argument now raises an exception,
-rather than reading :data:`sys.stdin`. The feature was deprecated in Python
-3.9. Patch by Victor Stinner.
