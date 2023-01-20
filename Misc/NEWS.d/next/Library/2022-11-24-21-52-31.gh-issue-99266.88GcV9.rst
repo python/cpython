@@ -1,1 +1,1 @@
-Preserve a more detailed exception in ``_ctypes._SimpleCData.from_param``.
+Make ctypes fundamental data types preserve a more detail exception in `from_param`.
