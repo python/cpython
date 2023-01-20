@@ -675,12 +675,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
                           const PyConfig *src_config,
                           PyThreadState **tstate_p)
 {
-    /* Auto-thread-state API */
-    PyStatus status = _PyGILState_Init(runtime);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
+    PyStatus status;
     PyInterpreterState *interp = PyInterpreterState_New();
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
@@ -688,6 +683,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     assert(_Py_IsMainInterpreter(interp));
 
     status = _PyConfig_Copy(&interp->config, src_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    /* Auto-thread-state API */
+    status = _PyGILState_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1795,10 +1796,8 @@ finalize_interp_clear(PyThreadState *tstate)
 static void
 finalize_interp_delete(PyInterpreterState *interp)
 {
-    if (_Py_IsMainInterpreter(interp)) {
-        /* Cleanup auto-thread-state */
-        _PyGILState_Fini(interp);
-    }
+    /* Cleanup auto-thread-state */
+    _PyGILState_Fini(interp);
 
     /* We can't call _PyEval_FiniGIL() here because destroying the GIL lock can
        fail when it is being awaited by another running daemon thread (see
