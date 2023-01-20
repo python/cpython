@@ -240,9 +240,11 @@ class Instruction:
                 break
         self.unmoved_names = frozenset(unmoved_names)
         if self.register:
-            num_regs = len(self.input_effects) + len(self.output_effects)
-            num_dummies = (num_regs // 2) * 2 + 1 - num_regs
-            fmt = "I" + "B"*num_regs + "X"*num_dummies
+            fmt = "I"
+            for effect in self.input_effects + self.output_effects:
+                fmt += "X" if effect.name == UNUSED else "B"
+            if len(fmt) % 2 != 0:
+                fmt += "X"
         else:
             if variable_used(inst, "oparg"):
                 fmt = "IB"
@@ -262,7 +264,7 @@ class Instruction:
         self.instr_fmt = fmt
 
     def analyze_registers(self, a: "Analyzer") -> None:
-        regs = iter(("REG(oparg1)", "REG(oparg2)", "REG(oparg3)"))
+        regs = iter(("REG(oparg)", "REG(oparg2)", "REG(oparg3)"))
         try:
             self.input_registers = [
                 next(regs) for ieff in self.input_effects if ieff.name != UNUSED

@@ -512,3 +512,42 @@ def test_extended_cases():
         }
     """
     run_cases_test(input, output)
+
+def test_long_register():
+    input = """
+        register inst(OP1, (left, right -- result)) {
+            result = spam(left, right);
+        }
+        register inst(OP2, (left, unused -- result)) {
+            result = spam(left, NULL);
+        }
+    """
+    output = """
+        TARGET(OP1) {
+            // Decode rest of instruction
+            oparg2 = next_instr[0].opcode;
+            oparg3 = next_instr[0].oparg;
+            frame->prev_instr = next_instr++;
+        into_op1:;  // For EXTENDED_ARG_3
+            PyObject *left = REG(oparg);
+            PyObject *right = REG(oparg2);
+            PyObject *result;
+            result = spam(left, right);
+            Py_XSETREF(REG(oparg3), result);
+            DISPATCH();
+        }
+
+        TARGET(OP2) {
+            // Decode rest of instruction
+            // (oparg2 is unused)
+            oparg3 = next_instr[0].oparg;
+            frame->prev_instr = next_instr++;
+        into_op2:;  // For EXTENDED_ARG_3
+            PyObject *left = REG(oparg);
+            PyObject *result;
+            result = spam(left, NULL);
+            Py_XSETREF(REG(oparg2), result);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
