@@ -866,6 +866,8 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
             continue;
         }
 
+        // XXX Won't this fail since PyInterpreterState_Clear() requires
+        // the "current" tstate to be set?
         PyInterpreterState_Clear(interp);  // XXX must activate?
         zapthreads(interp);
         if (interp->id_mutex != NULL) {
