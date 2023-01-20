@@ -509,7 +509,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Added support for text and binary modes for open. Default
       mode is now text.
 
-   .. versionchanged:: 3.11.2
+   .. versionchanged:: 3.10.10
       The ``encoding`` parameter can be supplied as a positional argument
       without causing a :exc:`TypeError`. As it could in 3.9. Code needing to
       be compatible with unpatched 3.10 and 3.11 versions must pass all
@@ -539,7 +539,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
    :class:`io.TextIOWrapper` (except ``buffer``, which is
    implied by the context).
 
-   .. versionchanged:: 3.11.2
+   .. versionchanged:: 3.10.10
       The ``encoding`` parameter can be supplied as a positional argument
       without causing a :exc:`TypeError`. As it could in 3.9. Code needing to
       be compatible with unpatched 3.10 and 3.11 versions must pass all
