@@ -552,10 +552,10 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       mode is now text.
 
    .. versionchanged:: 3.11.2
-      The ``encoding`` parameter can be supplied as the first positional
-      argument again without causing a :exc:`TypeError`. As it could in 3.9 and
-      earlier. Code needing to be compatible with unpatched 3.10 and 3.11
-      versions should always pass ``encoding=`` as a keyword argument.
+      The ``encoding`` parameter can be supplied as a positional argument
+      without causing a :exc:`TypeError`. As it could in 3.9 and earlier. Code
+      needing to be compatible with unpatched 3.10 and 3.11 versions should
+      always pass ``encoding=`` as a keyword argument.
 
 .. method:: Path.iterdir()
 
@@ -603,10 +603,10 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
    implied by the context).
 
    .. versionchanged:: 3.11.2
-      The ``encoding`` parameter can be supplied as the first positional
-      argument again without causing a :exc:`TypeError`. As it could in 3.9 and
-      earlier. Code needing to be compatible with unpatched 3.10 and 3.11
-      versions should always pass ``encoding=`` as a keyword argument.
+      The ``encoding`` parameter can be supplied as a positional argument
+      without causing a :exc:`TypeError`. As it could in 3.9 and earlier. Code
+      needing to be compatible with unpatched 3.10 and 3.11 versions should
+      always pass ``encoding=`` as a keyword argument.
 
 .. method:: Path.read_bytes()
 
