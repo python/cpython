@@ -187,6 +187,8 @@ static struct jump_target_label_ NO_LABEL = {-1};
 struct instr {
     int i_opcode;
     int i_oparg;
+    int i_oparg2;
+    int i_oparg3;
     location i_loc;
     /* The following fields should not be set by the front-end: */
     struct basicblock_ *i_target; /* target block (if jump instruction) */
@@ -262,6 +264,12 @@ instr_size(struct instr *instruction)
     assert(HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
+    // TODO: Switch on opcode_metadata.instr_format
+    if (opcode == MAKE_FUNCTION_FROM_CODE) {
+        int oparg3 = instruction->i_oparg3;
+        extended_args = (0xFFFFFF < oparg3) + (0xFFFF < oparg3) + (0xFF < oparg3);
+        caches += 1;
+    }
     return extended_args + 1 + caches;
 }
 
@@ -273,6 +281,10 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int oparg = instruction->i_oparg;
     assert(HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
+    // TODO: Switch on opcode_metadata.instr_format
+    if (opcode == MAKE_FUNCTION_FROM_CODE) {
+        caches += 1;
+    }
     switch (ilen - caches) {
         case 4:
             codestr->opcode = EXTENDED_ARG;
@@ -290,12 +302,23 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
             codestr++;
             /* fall through */
         case 1:
+            if (opcode == MAKE_FUNCTION_FROM_CODE) {
+                if (codestr[-1].opcode == EXTENDED_ARG) {
+                    codestr[-1].opcode = EXTENDED_ARG_3;
+                }
+            }
             codestr->opcode = opcode;
             codestr->oparg = oparg & 0xFF;
             codestr++;
             break;
         default:
             Py_UNREACHABLE();
+    }
+    // TODO: Switch on opcode_metadata.instr_format
+    if (opcode == MAKE_FUNCTION_FROM_CODE) {
+        codestr->opcode = instruction->i_oparg2;
+        codestr->oparg = instruction->i_oparg3;
+        codestr++;
     }
     while (caches--) {
         codestr->opcode = CACHE;
@@ -1252,7 +1275,7 @@ stack_effect(int opcode, int oparg, int jump)
             return -2 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
         case MAKE_FUNCTION_FROM_CODE:
-            return 0 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
+            return (opcode == MAKE_FUNCTION_FROM_CODE) - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
                 ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
         case BUILD_SLICE:
             if (oparg == 3)
@@ -1337,7 +1360,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 static int
-basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
+basicblock_addop_long(basicblock *b, int opcode, int oparg, int oparg2, int oparg3, location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1351,10 +1374,18 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
+    i->i_oparg2 = oparg2;
+    i->i_oparg3 = oparg3;
     i->i_target = NULL;
     i->i_loc = loc;
 
     return SUCCESS;
+}
+
+static int
+basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
+{
+    return basicblock_addop_long(b, opcode, oparg, 0, 0, loc);
 }
 
 static bool
@@ -1383,12 +1414,18 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
 }
 
 static int
-cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
+cfg_builder_addop_long(cfg_builder *g, int opcode, int oparg, int oparg2, int oparg3, location loc)
 {
     if (cfg_builder_maybe_start_new_block(g) != 0) {
         return -1;
     }
-    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
+    return basicblock_addop_long(g->g_curblock, opcode, oparg, oparg2, oparg3, loc);
+}
+
+static int
+cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
+{
+    return cfg_builder_addop_long(g, opcode, oparg, 0, 0, loc);
 }
 
 static int
@@ -1679,6 +1716,9 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADDOP_YIELD(C, LOC) \
     RETURN_IF_ERROR(addop_yield((C), (LOC)))
+
+#define ADDOP_LONG(C, LOC, OP, ARG, ARG2, ARG3) \
+    RETURN_IF_ERROR(cfg_builder_addop_long(CFG_BUILDER(C), (OP), (ARG), (ARG2), (ARG3), (LOC)))
 
 /* VISIT and VISIT_SEQ takes an ASDL type as their second argument.  They use
    the ASDL name to synthesize the name of the C type and the visit function.
@@ -2299,8 +2339,9 @@ compiler_make_closure(struct compiler *c, location loc,
         flags |= 0x08;
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
-    ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
-    ADDOP_I(c, loc, MAKE_FUNCTION, flags);
+    Py_ssize_t arg;
+    RETURN_IF_ERROR((arg = compiler_add_const(c, (PyObject*)co)));
+    ADDOP_LONG(c, loc, MAKE_FUNCTION_FROM_CODE, flags, 0, (int)arg);
     return SUCCESS;
 }
 
@@ -7134,6 +7175,7 @@ stackdepth(basicblock *entryblock, int code_flags)
     while (sp != stack) {
         basicblock *b = *--sp;
         int depth = b->b_startdepth;
+        // fprintf(stderr, "START: depth=%d\n", depth);
         assert(depth >= 0);
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
@@ -7146,6 +7188,9 @@ stackdepth(basicblock *entryblock, int code_flags)
                 return -1;
             }
             int new_depth = depth + effect;
+            // fprintf(stderr,
+            //         "%4d: opcode=%s: new_depth=%d = depth=%d + effect=%d\n",
+            //         i, _PyOpcode_OpName[instr->i_opcode], new_depth, depth, effect);
             assert(new_depth >= 0); /* invalid code or bug in stackdepth() */
             if (new_depth > maxdepth) {
                 maxdepth = new_depth;
@@ -9773,6 +9818,10 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
                 int index = b->b_instr[i].i_oparg;
                 index_map[index] = index;
             }
+            else if (b->b_instr[i].i_opcode == MAKE_FUNCTION_FROM_CODE) {
+                int index = b->b_instr[i].i_oparg3;
+                index_map[index] = index;
+            }
         }
     }
     /* now index_map[i] == i if consts[i] is used, -1 otherwise */
@@ -9831,6 +9880,12 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
                 b->b_instr[i].i_oparg = (int)reverse_index_map[index];
+            }
+            else if (b->b_instr[i].i_opcode == MAKE_FUNCTION_FROM_CODE) {
+                int index = b->b_instr[i].i_oparg3;
+                assert(reverse_index_map[index] >= 0);
+                assert(reverse_index_map[index] < n_used_consts);
+                b->b_instr[i].i_oparg3 = (int)reverse_index_map[index];
             }
         }
     }
