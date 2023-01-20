@@ -954,6 +954,9 @@ _Py_call_instrumentation(
     assert(matrix_equals(code->_co_instrumentation.monitoring_data->matrix, tstate->interp->monitoring_matrix));
     int instruction_offset = instr - _PyCode_CODE(code);
     PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
+    if (instruction_offset_obj == NULL) {
+        return -1;
+    }
     PyObject *args[3] = { NULL, (PyObject *)code, instruction_offset_obj };
     int err = call_instrument(tstate, code, event, &args[1], 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, instr);
     Py_DECREF(instruction_offset_obj);
@@ -970,6 +973,9 @@ _Py_call_instrumentation_arg(
     assert(matrix_equals(code->_co_instrumentation.monitoring_data->matrix, tstate->interp->monitoring_matrix));
     int instruction_offset = instr - _PyCode_CODE(code);
     PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
+    if (instruction_offset_obj == NULL) {
+        return -1;
+    }
     PyObject *args[4] = { NULL, (PyObject *)code, instruction_offset_obj, arg };
     int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, instr);
     Py_DECREF(instruction_offset_obj);
