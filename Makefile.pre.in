@@ -1466,8 +1466,12 @@ regen-cases:
 		-o $(srcdir)/Python/opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_metadata.h $(srcdir)/Python/opcode_metadata.h.new
 
-Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h $(srcdir)/Python/generated_cases.c.h
-
+Python/ceval.o: \
+		$(srcdir)/Python/ceval_macros.h \
+		$(srcdir)/Python/condvar.h \
+		$(srcdir)/Python/generated_cases.c.h \
+		$(srcdir)/Python/opcode_metadata.h \
+		$(srcdir)/Python/opcode_targets.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 

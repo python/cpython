@@ -120,6 +120,18 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->elementpath_obj);
     Py_CLEAR(st->comment_factory);
     Py_CLEAR(st->pi_factory);
+
+    // Interned strings
+    Py_CLEAR(st->str_append);
+    Py_CLEAR(st->str_find);
+    Py_CLEAR(st->str_findall);
+    Py_CLEAR(st->str_findtext);
+    Py_CLEAR(st->str_iterfind);
+    Py_CLEAR(st->str_tail);
+    Py_CLEAR(st->str_text);
+    Py_CLEAR(st->str_doctype);
+
+    // Heap types
     Py_CLEAR(st->Element_Type);
     Py_CLEAR(st->ElementIter_Type);
     Py_CLEAR(st->TreeBuilder_Type);
@@ -4278,41 +4290,41 @@ PyInit__elementtree(void)
 
     st->str_append = PyUnicode_InternFromString("append");
     if (st->str_append == NULL) {
-        return NULL;
+        goto error;
     }
     st->str_find = PyUnicode_InternFromString("find");
     if (st->str_find == NULL) {
-        return NULL;
+        goto error;
     }
     st->str_findall = PyUnicode_InternFromString("findall");
     if (st->str_findall == NULL) {
-        return NULL;
+        goto error;
     }
     st->str_findtext = PyUnicode_InternFromString("findtext");
     if (st->str_findtext == NULL) {
-        return NULL;
+        goto error;
     }
     st->str_iterfind = PyUnicode_InternFromString("iterfind");
     if (st->str_iterfind == NULL) {
-        return NULL;
+        goto error;
     }
     st->str_tail = PyUnicode_InternFromString("tail");
     if (st->str_tail == NULL) {
-        return NULL;
+        goto error;
     }
     st->str_text = PyUnicode_InternFromString("text");
     if (st->str_text == NULL) {
-        return NULL;
+        goto error;
     }
     st->str_doctype = PyUnicode_InternFromString("doctype");
     if (st->str_doctype == NULL) {
-        return NULL;
+        goto error;
     }
     st->parseerror_obj = PyErr_NewException(
         "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
         );
     if (PyModule_AddObjectRef(m, "ParseError", st->parseerror_obj) < 0) {
-        return NULL;
+        goto error;
     }
 
     PyTypeObject *types[] = {
