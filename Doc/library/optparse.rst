@@ -404,7 +404,7 @@ Other actions
 Some other actions supported by :mod:`optparse` are:
 
 ``"store_const"``
-   store a constant value
+   store a constant value, pre-set via :attr:`Option.const`
 
 ``"append"``
    append this option's argument to a list
@@ -925,7 +925,7 @@ The canonical way to create an :class:`Option` instance is with the
       store this option's argument (default)
 
    ``"store_const"``
-      store a constant value
+      store a constant value, pre-set via :attr:`Option.const`
 
    ``"store_true"``
       store ``True``
@@ -937,7 +937,7 @@ The canonical way to create an :class:`Option` instance is with the
       append this option's argument to a list
 
    ``"append_const"``
-      append a constant value to a list
+      append a constant value to a list, pre-set via :attr:`Option.const`
 
    ``"count"``
       increment a counter by one
