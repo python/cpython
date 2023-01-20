@@ -125,15 +125,19 @@ struct _ts {
            In order to be effective, this must be set to 0 during or right
            after allocation. */
         unsigned int initialized:1;
+
         /* Has been bound to an OS thread. */
         unsigned int bound:1;
         /* Has been unbound from its OS thread. */
         unsigned int unbound:1;
-        // XXX finalizing
-        // XXX cleared
-        // XXX finalized
+
+        /* various stages of finalization */
+        unsigned int finalizing:1;
+        unsigned int cleared:1;
+        unsigned int finalized:1;
+
         /* padding to align to 4 bytes */
-        unsigned int :29;
+        unsigned int :26;
     } _status;
 
     int py_recursion_remaining;

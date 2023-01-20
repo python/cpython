@@ -176,13 +176,20 @@ current_tss_reinit(_PyRuntimeState *runtime)
 }
 #endif
 
+static inline int tstate_is_alive(PyThreadState *tstate);
+
+static inline int
+tstate_is_bound(PyThreadState *tstate)
+{
+    return tstate->_status.bound && !tstate->_status.unbound;
+}
 
 static void
 bind_tstate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    assert(tstate->_status.initialized && !tstate->_status.bound);
-    // XXX tstate_alive()
+    assert(tstate_is_alive(tstate) && !tstate->_status.bound);
+    assert(!tstate->_status.unbound);  // just in case
     assert(tstate->thread_id == 0);
     assert(tstate->native_thread_id == 0);
     _PyRuntimeState *runtime = tstate->interp->runtime;
@@ -222,8 +229,8 @@ static void
 unbind_tstate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    assert(tstate->_status.bound && !tstate->_status.unbound);
-    // XXX tstate_alive()
+    assert(tstate_is_bound(tstate));
+    // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
     assert(tstate->thread_id > 0);
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     assert(tstate->native_thread_id > 0);
@@ -1078,6 +1085,16 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
 /* the per-thread runtime state */
 /********************************/
 
+static inline int
+tstate_is_alive(PyThreadState *tstate)
+{
+    return (tstate->_status.initialized &&
+            !tstate->_status.finalized &&
+            !tstate->_status.cleared &&
+            !tstate->_status.finalizing);
+}
+
+
 //----------
 // lifecycle
 //----------
@@ -1246,6 +1263,10 @@ _PyThreadState_Init(PyThreadState *tstate)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
+    assert(tstate->_status.initialized && !tstate->_status.cleared);
+    // XXX !tstate->_status.bound || tstate->_status.unbound
+    tstate->_status.finalizing = 1;  // just in case
+
     /* XXX Conditions we need to enforce:
 
        * the GIL must be held by the current thread
@@ -1313,6 +1334,8 @@ PyThreadState_Clear(PyThreadState *tstate)
         tstate->on_delete(tstate->on_delete_data);
     }
 
+    tstate->_status.cleared = 1;
+
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
     // XXX Do it as early in the function as possible.
 }
@@ -1322,6 +1345,8 @@ PyThreadState_Clear(PyThreadState *tstate)
 static void
 tstate_delete_common(PyThreadState *tstate)
 {
+    assert(tstate->_status.cleared && !tstate->_status.finalized);
+
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
         Py_FatalError("NULL interpreter");
@@ -1351,6 +1376,8 @@ tstate_delete_common(PyThreadState *tstate)
         _PyObject_VirtualFree(chunk, chunk->size);
         chunk = prev;
     }
+
+    tstate->_status.finalized = 1;
 }
 
 
@@ -1583,13 +1610,17 @@ PyThreadState *
 _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
 {
     PyThreadState *oldts = current_fast_get(runtime);
+    // XXX assert(oldts == NULL || tstate_is_alive(oldts));
+    // XXX tstate_is_bound(oldts)
 
     if (newts == NULL) {
         current_fast_clear(runtime);
     }
     else {
+        assert(tstate_is_alive(newts) && tstate_is_bound(newts));
         current_fast_set(runtime, newts);
     }
+
     /* It should not be possible for more than one thread state
        to be used for a thread.  Check this the best we can in debug
        builds.
