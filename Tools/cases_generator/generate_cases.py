@@ -215,8 +215,9 @@ class Instruction:
     family: parser.Family | None = None
     predicted: bool = False
 
-    def __init__(self, inst: parser.InstDef):
+    def __init__(self, inst: parser.InstDef, a: "Analyzer"):
         self.inst = inst
+        self.analyzer = a
         self.register = inst.register
         self.kind = inst.kind
         self.name = inst.name
@@ -278,7 +279,7 @@ class Instruction:
         """Write one instruction, sans prologue and epilogue."""
 
         # Write additional instruction decoding if > 1 word
-        if self.instr_fmt.startswith(("IBBB", "IBXB", "IBBX")):
+        if self.instr_fmt.startswith(("IBB", "IBX")):
             out.emit("// Decode rest of instruction")
             if self.instr_fmt[2] == "B":
                 out.emit("oparg2 = next_instr[0].opcode;")
@@ -288,7 +289,8 @@ class Instruction:
                 out.emit("oparg3 = next_instr[0].oparg;")
             else:
                 out.emit("// (oparg3 is unused)")
-            out.emit("next_instr++;")
+            # Update prev_instr, since it must equal next_instr - 1.
+            out.emit("frame->prev_instr = next_instr++;")
             with out.outdent():
                 # Need ';' because the next line may be a declaration.
                 # Declarations are not statements, only statements can have labels.
@@ -415,6 +417,13 @@ class Instruction:
                     for ieff in self.input_effects:
                         if ieff.name not in self.unmoved_names:
                             out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
+            elif m := re.match(r"(\s*)INSERT_EXTENDED_CASES\(\);\s*$", line):
+                assert self.name == "EXTENDED_ARG_3", self.name
+                space = m.group(1)
+                for instr in self.analyzer.instrs.values():
+                    if instr.instr_fmt.startswith(("IBB", "IBX")):
+                        out.write_raw(f"{extra}{space}case {instr.name}:\n")
+                        out.write_raw(f"{extra}{space}    goto into_{instr.name.lower()};\n")
             else:
                 out.write_raw(extra + line)
 
@@ -540,7 +549,7 @@ class Analyzer:
         while thing := psr.definition():
             match thing:
                 case parser.InstDef(name=name):
-                    self.instrs[name] = Instruction(thing)
+                    self.instrs[name] = Instruction(thing, self)
                     self.everything.append(thing)
                 case parser.Super(name):
                     self.supers[name] = thing

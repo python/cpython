@@ -3540,7 +3540,7 @@
             // Decode rest of instruction
             // (oparg2 is unused)
             oparg3 = next_instr[0].oparg;
-            next_instr++;
+            frame->prev_instr = next_instr++;
         into_make_function_from_code:;  // For EXTENDED_ARG_3
             PyObject *codeobj = GETITEM(consts, oparg3);
             assert(PyCode_Check(codeobj));
@@ -3737,7 +3737,7 @@
             next_instr++;
             // oparg2 = _Py_OPCODE(*next_instr);  // Nothing uses it yet
             oparg3 = oparg3 << 8 | _Py_OPARG(*next_instr);
-            next_instr++;
+            frame->prev_instr = next_instr++;
             // Jump into the middle of that instruction
             switch (opcode) {
                 case MAKE_FUNCTION_FROM_CODE:

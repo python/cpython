@@ -3346,11 +3346,10 @@ dummy_func(
             next_instr++;
             // oparg2 = _Py_OPCODE(*next_instr);  // Nothing uses it yet
             oparg3 = oparg3 << 8 | _Py_OPARG(*next_instr);
-            next_instr++;
+            frame->prev_instr = next_instr++;
             // Jump into the middle of that instruction
             switch (opcode) {
-                case MAKE_FUNCTION_FROM_CODE:
-                    goto into_make_function_from_code;
+                INSERT_EXTENDED_CASES();
                 default:
                     Py_FatalError("Unexpected opcode in EXTENDED_ARG_3");
                     while (1) { abort(); }

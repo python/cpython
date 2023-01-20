@@ -446,9 +446,68 @@ def test_long_instr():
             // Decode rest of instruction
             oparg2 = next_instr[0].opcode;
             oparg3 = next_instr[0].oparg;
-            next_instr++;
+            frame->prev_instr = next_instr++;
         into_op:;  // For EXTENDED_ARG_3
             oparg, oparg2, oparg3;
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_extended_cases():
+    input = """
+        inst(OP, (--)) {
+            oparg;
+        }
+        inst(OP1, (--)) {
+            oparg, oparg2;
+        }
+        inst(OP2, (--)) {
+            oparg, oparg3;
+        }
+        inst(EXTENDED_ARG_3) {
+            switch (x) {
+                INSERT_EXTENDED_CASES();
+                default:
+                    abort();
+            }
+        }
+    """
+    output = """
+        TARGET(OP) {
+            oparg;
+            DISPATCH();
+        }
+
+        TARGET(OP1) {
+            // Decode rest of instruction
+            oparg2 = next_instr[0].opcode;
+            // (oparg3 is unused)
+            frame->prev_instr = next_instr++;
+        into_op1:;  // For EXTENDED_ARG_3
+            oparg, oparg2;
+            DISPATCH();
+        }
+
+        TARGET(OP2) {
+            // Decode rest of instruction
+            // (oparg2 is unused)
+            oparg3 = next_instr[0].oparg;
+            frame->prev_instr = next_instr++;
+        into_op2:;  // For EXTENDED_ARG_3
+            oparg, oparg3;
+            DISPATCH();
+        }
+
+        TARGET(EXTENDED_ARG_3) {
+            switch (x) {
+                case OP1:
+                    goto into_op1;
+                case OP2:
+                    goto into_op2;
+                default:
+                    abort();
+            }
             DISPATCH();
         }
     """
