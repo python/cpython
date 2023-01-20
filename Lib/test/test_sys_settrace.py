@@ -1705,6 +1705,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
         def g(frame, event, arg):
             if (event == 'exception'):
                 type, exception, trace = arg
+                print(arg)
                 self.assertIsInstance(exception, Exception)
             return g
 

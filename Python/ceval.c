@@ -217,6 +217,19 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
     "cannot access free variable '%s' where it is not associated with a" \
     " value in enclosing scope"
 
+#define UPDATE_NEXT_OR_JUMP(offset) \
+do { \
+    assert(frame->stacktop >= 0); \
+    if (frame->prev_instr != next_instr-1) { \
+        next_instr = frame->prev_instr; \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+    } \
+    else { \
+        assert(stack_pointer == _PyFrame_GetStackPointer(frame)); \
+        JUMPBY(offset); \
+    } \
+    frame->stacktop = -1; \
+} while (0)
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -912,6 +925,22 @@ static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
 static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
 }
+
+// If a trace function sets a new f_lineno and
+// *then* raises, we use the destination when searching
+// for an exception handler, displaying the traceback, and so on
+#define INSTRUMENTED_JUMP(src, dest, event) \
+do { \
+    _PyFrame_SetStackPointer(frame, stack_pointer); \
+    int err = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+    stack_pointer = _PyFrame_GetStackPointer(frame); \
+    frame->stacktop = -1; \
+    if (err) { \
+        next_instr = (dest)+1; \
+        goto error; \
+    } \
+    next_instr = frame->prev_instr; \
+} while (0);
 
 
 // GH-89279: Must be a macro to be sure it's inlined by MSVC.
@@ -2234,6 +2263,7 @@ monitor_raise(PyThreadState *tstate,
     }
     _PyErr_NormalizeException(tstate, &type, &value, &orig_traceback);
     traceback = (orig_traceback != NULL) ? orig_traceback : Py_None;
+    assert(value != NULL && value != Py_None);
     arg = PyTuple_Pack(3, type, value, traceback);
     if (arg == NULL) {
         _PyErr_Restore(tstate, type, value, orig_traceback);

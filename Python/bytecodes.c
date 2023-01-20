@@ -776,13 +776,6 @@ dummy_func(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, next_instr-1, val);
             ERROR_IF(err, error);
-            if (frame->prev_instr != next_instr-1) {
-                fprintf(stderr, "Jump has happened\n");
-                /* Instrumentation has jumped */
-                next_instr = frame->prev_instr;
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                DISPATCH();
-            }
             GO_TO_INSTRUCTION(YIELD_VALUE);
         }
 
@@ -1891,8 +1884,10 @@ dummy_func(
             }
         }
 
-        inst(INSTRUMENTED_COMPARE_AND_BRANCH, (unused/2, left, right -- )) {
+        inst(INSTRUMENTED_COMPARE_AND_BRANCH, ( -- )) {
             assert((oparg >> 4) <= Py_GE);
+            PyObject *right = POP();
+            PyObject *left = POP();
             PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1900,21 +1895,15 @@ dummy_func(
             assert(_Py_OPCODE(next_instr[1]) == POP_JUMP_IF_FALSE ||
                    _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE);
             bool jump_on_true = _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE;
-            int offset = _Py_OPARG(next_instr[1]);
+            int offset = 0;
             int err = PyObject_IsTrue(cond);
+            _Py_CODEUNIT *here = next_instr-1;
             Py_DECREF(cond);
             ERROR_IF(err < 0, error);
-            _Py_CODEUNIT *target;
             if (jump_on_true == (err != 0)) {
-                target = next_instr + offset + 2;
-                JUMPBY(offset);
+                offset = _Py_OPARG(next_instr[1]);
             }
-            else {
-                target = next_instr + 2;
-            }
-            err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_BRANCH, frame, next_instr-1, target);
-            ERROR_IF(err, error);
+            INSTRUMENTED_JUMP(here, next_instr + 2 + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
         inst(COMPARE_AND_BRANCH_FLOAT, (unused/2, left, right -- )) {
@@ -3426,19 +3415,19 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_LINE, ( -- )) {
+            _Py_CODEUNIT *here = next_instr-1;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int original_opcode = _Py_call_instrumentation_line(
-                    tstate, frame, next_instr-1);
-            ERROR_IF(original_opcode < 0, error);
-            next_instr--;
-            if (frame->prev_instr != next_instr) {
-                fprintf(stderr, "Jump has happened\n");
-                /* Instrumentation has jumped */
-                next_instr = frame->prev_instr;
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                    tstate, frame, here);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (original_opcode < 0) {
+                next_instr = here+1;
+                goto error;
+            }
+            next_instr = frame->prev_instr;
+            if (next_instr != here) {
                 DISPATCH();
             }
-            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
             if (_PyOpcode_Caches[original_opcode]) {
                 _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
                 INCREMENT_ADAPTIVE_COUNTER(cache->counter);
@@ -3464,19 +3453,12 @@ dummy_func(
 
         // stack effect: ( -- )
         inst(INSTRUMENTED_JUMP_FORWARD, ( -- )) {
-            int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
-            ERROR_IF(err, error);
-            JUMPBY(oparg);
+            INSTRUMENTED_JUMP(next_instr-1, next_instr+oparg, PY_MONITORING_EVENT_JUMP);
         }
 
         // stack effect: ( -- )
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
-            assert(oparg < INSTR_OFFSET());
-            int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr-oparg);
-            ERROR_IF(err, error);
-            JUMPBY(-oparg);
+            INSTRUMENTED_JUMP(next_instr-1, next_instr-oparg, PY_MONITORING_EVENT_JUMP);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3487,8 +3469,10 @@ dummy_func(
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
             _Py_CODEUNIT *target = next_instr + err*oparg;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             err = _Py_call_instrumentation_jump(
                 tstate, PY_MONITORING_EVENT_BRANCH, frame, here, target);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
             ERROR_IF(err, error);
             if (err) {
                 JUMPBY(oparg);
@@ -3506,8 +3490,10 @@ dummy_func(
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
             _Py_CODEUNIT *target = next_instr + err*oparg;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             err = _Py_call_instrumentation_jump(
                 tstate, PY_MONITORING_EVENT_BRANCH, frame, here, target);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
             ERROR_IF(err, error);
             if (err == 0) {
                 JUMPBY(oparg);
@@ -3525,8 +3511,10 @@ dummy_func(
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
             int offset = err*oparg;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             err = _Py_call_instrumentation_jump(
                 tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
             ERROR_IF(err, error);
             JUMPBY(offset);
         }
@@ -3538,8 +3526,10 @@ dummy_func(
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
             int offset = (1-err)*oparg;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             err = _Py_call_instrumentation_jump(
                 tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
             ERROR_IF(err, error);
             JUMPBY(offset);
         }

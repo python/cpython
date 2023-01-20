@@ -693,15 +693,17 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
     switch(what_event) {
+        case PY_MONITORING_EVENT_PY_RESUME:
+        case PY_MONITORING_EVENT_JUMP:
+        case PY_MONITORING_EVENT_BRANCH:
+        case PY_MONITORING_EVENT_LINE:
+        case PY_MONITORING_EVENT_PY_YIELD:
+            /* OK */
+            break;
         case PY_MONITORING_EVENT_PY_START:
             PyErr_Format(PyExc_ValueError,
                      "can't jump from the 'call' trace event of a new frame");
             return -1;
-        case PY_MONITORING_EVENT_PY_RESUME:
-            break;
-        case PY_MONITORING_EVENT_LINE:
-        case PY_MONITORING_EVENT_PY_YIELD:
-            break;
         case PY_MONITORING_EVENT_CALL:
         case PY_MONITORING_EVENT_C_RETURN:
             PyErr_SetString(PyExc_ValueError,
@@ -712,8 +714,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         case PY_MONITORING_EVENT_PY_THROW:
         case PY_MONITORING_EVENT_RAISE:
         case PY_MONITORING_EVENT_C_RAISE:
-        case PY_MONITORING_EVENT_JUMP:
-        case PY_MONITORING_EVENT_BRANCH:
         case PY_MONITORING_EVENT_INSTRUCTION:
         case PY_MONITORING_EVENT_EXCEPTION_HANDLED:
             PyErr_Format(PyExc_ValueError,

@@ -56,8 +56,7 @@ sys_profile_func2(
     size_t nargsf, PyObject *kwnames
 ) {
     assert(kwnames == NULL);
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 2);
+    assert(PyVectorcall_NARGS(nargsf) == 2);
     return call_profile_func(self, Py_None);
 }
 
@@ -67,8 +66,7 @@ sys_profile_func3(
     size_t nargsf, PyObject *kwnames
 ) {
     assert(kwnames == NULL);
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 3);
+    assert(PyVectorcall_NARGS(nargsf) == 3);
     return call_profile_func(self, args[2]);
 }
 
@@ -78,8 +76,7 @@ sys_profile_call_or_return(
     size_t nargsf, PyObject *kwnames
 ) {
     assert(kwnames == NULL);
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 3);
+    assert(PyVectorcall_NARGS(nargsf) == 3);
     PyObject *callable = args[2];
     if (!PyCFunction_Check(callable) && Py_TYPE(callable) != &PyMethodDescr_Type) {
         Py_RETURN_NONE;
@@ -111,15 +108,10 @@ sys_trace_exception_func(
     size_t nargsf, PyObject *kwnames
 ) {
     assert(kwnames == NULL);
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 3);
-    _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
-    PyObject *arg = _PyErr_StackItemToExcInfoTuple(err_info);
-    if (arg == NULL) {
-        return NULL;
-    }
+    assert(PyVectorcall_NARGS(nargsf) == 3);
+    PyObject *arg = args[2];
+    assert(PyTuple_CheckExact(arg));
     PyObject *res = call_trace_func(self, arg);
-    Py_DECREF(arg);
     return res;
 }
 
@@ -129,8 +121,7 @@ sys_trace_func2(
     size_t nargsf, PyObject *kwnames
 ) {
     assert(kwnames == NULL);
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 2);
+    assert(PyVectorcall_NARGS(nargsf) == 2);
     return call_trace_func(self, Py_None);
 }
 
@@ -140,8 +131,7 @@ sys_trace_func3(
     size_t nargsf, PyObject *kwnames
 ) {
     assert(kwnames == NULL);
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 3);
+    assert(PyVectorcall_NARGS(nargsf) == 3);
     return call_trace_func(self, args[2]);
 }
 
@@ -151,8 +141,7 @@ sys_trace_instruction_func(
     size_t nargsf, PyObject *kwnames
 ) {
     assert(kwnames == NULL);
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 2);
+    assert(PyVectorcall_NARGS(nargsf) == 2);
     PyFrameObject* frame = PyEval_GetFrame();
     if (frame == NULL) {
         return NULL;
@@ -201,8 +190,7 @@ sys_trace_line_func(
     if (tstate->c_tracefunc == NULL) {
         Py_RETURN_NONE;
     }
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 2);
+    assert(PyVectorcall_NARGS(nargsf) == 2);
     _PyInterpreterFrame *iframe = _PyEval_GetFrame();
     assert(iframe);
     assert(args[0] == (PyObject *)iframe->f_code);
@@ -234,20 +222,11 @@ sys_trace_jump_func(
     if (tstate->c_tracefunc == NULL) {
         Py_RETURN_NONE;
     }
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 3);
+    assert(PyVectorcall_NARGS(nargsf) == 3);
     int from = _PyLong_AsInt(args[1]);
     assert(from >= 0);
     int to = _PyLong_AsInt(args[2]);
     assert(to >= 0);
-    /* Forward jumps should have been handled by the line instrumentation.
-     * PEP 669 only generates events when a new line is seen.
-     * Legacy tracing generates events for all backward jumps even on
-     * the same line. We handle that case here. */
-    if (to > from) {
-        /* Forwards jump */
-        Py_RETURN_NONE;
-    }
     _PyInterpreterFrame *iframe = _PyEval_GetFrame();
     assert(iframe);
     PyFrameObject* frame = _PyFrame_GetFrameObject(iframe);
@@ -258,8 +237,22 @@ sys_trace_jump_func(
         Py_RETURN_NONE;
     }
     /* We can call _Py_Instrumentation_GetLine because we always set
-     * line events for tracing */
+    * line events for tracing */
     int to_line = _Py_Instrumentation_GetLine(iframe->f_code, to);
+    /* Backward jump: Always generate event
+     * Forward jump: Only generate event if jumping to different line. */
+    if (to > from) {
+        /* Forwards jump */
+        if (tstate->trace_info.code == iframe->f_code &&
+            tstate->trace_info.line == to_line) {
+            /* Already traced this line */
+            Py_RETURN_NONE;
+        }
+        int from_line = _Py_Instrumentation_GetLine(iframe->f_code, from);
+        if (from_line == to_line) {
+            Py_RETURN_NONE;
+        }
+    }
     return trace_line(tstate, iframe, self, frame, to_line);
 }
 
@@ -438,7 +431,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
             (vectorcallfunc)sys_trace_jump_func, PyTrace_LINE,
-                        PY_MONITORING_EVENT_JUMP, -1)) {
+                        PY_MONITORING_EVENT_JUMP, PY_MONITORING_EVENT_BRANCH)) {
             return -1;
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
@@ -453,8 +446,8 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
             (1 << PY_MONITORING_EVENT_RAISE) | (1 << PY_MONITORING_EVENT_LINE) |
-            (1 << PY_MONITORING_EVENT_JUMP)| (1 << PY_MONITORING_EVENT_PY_UNWIND) |
-            (1 << PY_MONITORING_EVENT_PY_THROW);
+            (1 << PY_MONITORING_EVENT_JUMP) | (1 << PY_MONITORING_EVENT_BRANCH) |
+            (1 << PY_MONITORING_EVENT_PY_UNWIND) | (1 << PY_MONITORING_EVENT_PY_THROW);
         if (tstate->interp->f_opcode_trace_set) {
             events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);
         }
