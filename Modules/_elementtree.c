@@ -3798,7 +3798,6 @@ expat_parse(elementtreestate *st, XMLParserObject *self, const char *data,
         return NULL;
 
     if (!ok) {
-        elementtreestate *st = ET_STATE_GLOBAL;
         expat_set_error(
             st,
             EXPAT(GetErrorCode)(self->parser),
