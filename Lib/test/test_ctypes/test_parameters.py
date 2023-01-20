@@ -100,7 +100,6 @@ class SimpleTypesTestCase(unittest.TestCase):
             c_wchar.from_param(123)
         self.assertEqual(str(cm.exception),
                          "unicode string expected instead of int instance")
-        
 
     def test_int_pointers(self):
         from ctypes import c_short, c_uint, c_int, c_long, POINTER, pointer

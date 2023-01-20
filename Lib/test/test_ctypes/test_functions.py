@@ -65,7 +65,7 @@ class FunctionTestCase(unittest.TestCase):
 
         with self.assertRaises(ArgumentError) as cm:
             callback(b"abc")
-        
+
         self.assertEqual(str(cm.exception),
                          "argument 1: TypeError: one character bytes, "
                          "bytearray or integer expected")
