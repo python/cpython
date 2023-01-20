@@ -973,7 +973,8 @@ _elementtree_Element___getstate___impl(ElementObject *self)
 }
 
 static PyObject *
-element_setstate_from_attributes(ElementObject *self,
+element_setstate_from_attributes(elementtreestate *st,
+                                 ElementObject *self,
                                  PyObject *tag,
                                  PyObject *attrib,
                                  PyObject *text,
@@ -1031,7 +1032,6 @@ element_setstate_from_attributes(ElementObject *self,
         }
 
         /* Copy children */
-        elementtreestate *st = ET_STATE_GLOBAL;
         for (i = 0; i < nchildren; i++) {
             PyObject *child = PyList_GET_ITEM(children, i);
             if (!Element_Check(st, child)) {
@@ -1077,9 +1077,10 @@ element_setstate_from_Python(ElementObject *self, PyObject *state)
     if (!args)
         return NULL;
 
+    elementtreestate *st = ET_STATE_GLOBAL;
     if (PyArg_ParseTupleAndKeywords(args, state, "|$OOOOO", kwlist, &tag,
                                     &attrib, &text, &tail, &children))
-        retval = element_setstate_from_attributes(self, tag, attrib, text,
+        retval = element_setstate_from_attributes(st, self, tag, attrib, text,
                                                   tail, children);
     else
         retval = NULL;
