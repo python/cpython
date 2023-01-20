@@ -1266,7 +1266,7 @@ void
 PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
-    // XXX !tstate->_status.bound || tstate->_status.unbound
+    // XXX assert(!tstate->_status.bound || tstate->_status.unbound);
     tstate->_status.finalizing = 1;  // just in case
 
     /* XXX Conditions we need to enforce:
