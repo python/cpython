@@ -895,7 +895,7 @@ class DisTests(DisTestBase):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
                             'INSTRUMENTED_CALL_FUNCTION_EX'])
         for opcode, opname in enumerate(dis.opname):
-            if opname in long_opcodes:
+            if opname in long_opcodes or opname.startswith("INSTRUMENTED"):
                 continue
             with self.subTest(opname=opname):
                 width = dis._OPNAME_WIDTH

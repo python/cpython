@@ -343,13 +343,13 @@ class CodeTest(unittest.TestCase):
             pass
 
         # assert that opcode 238 is invalid
-        self.assertEqual(opname[238], '<238>')
+        self.assertEqual(opname[235], '<235>')
 
-        # change first opcode to 0xee (=238)
+        # change first opcode to 0xeb (=235)
         foo.__code__ = foo.__code__.replace(
-            co_code=b'\xee' + foo.__code__.co_code[1:])
+            co_code=b'\xeb' + foo.__code__.co_code[1:])
 
-        msg = f"unknown opcode 238"
+        msg = f"unknown opcode 235"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
