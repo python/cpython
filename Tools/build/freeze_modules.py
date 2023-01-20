@@ -32,6 +32,9 @@ PCBUILD_PYTHONCORE = os.path.join(ROOT_DIR, 'PCbuild', 'pythoncore.vcxproj')
 OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
 
 # These are modules that get frozen.
+# If you're debugging new bytecode instructions,
+# you can delete all sections except 'import system'.
+# This also speeds up building somewhat.
 TESTS_SECTION = 'Test module'
 FROZEN = [
     # See parse_frozen_spec() for the format.
@@ -520,7 +523,7 @@ def regen_frozen(modules, frozen_modules: bool):
 
     for lines in (bootstraplines, stdliblines, testlines):
         # TODO: Is this necessary any more?
-        if not lines[0]:
+        if lines and not lines[0]:
             del lines[0]
         for i, line in enumerate(lines):
             if line:
