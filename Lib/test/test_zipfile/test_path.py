@@ -1,11 +1,12 @@
 import io
-import zipfile
+import itertools
 import contextlib
 import pathlib
-import unittest
-import string
 import pickle
-import itertools
+import string
+from test.support.script_helper import assert_python_ok
+import unittest
+import zipfile
 
 from ._test_params import parameterize, Invoked
 from ._functools import compose
@@ -189,6 +190,25 @@ class TestPath(unittest.TestCase):
             # error during decoding with wrong codec.
             with self.assertRaises(UnicodeDecodeError):
                 f.read()
+
+    def test_encoding_warnings(self):
+        """EncodingWarning must blame the read_text and open calls."""
+        code = '''\
+import io, zipfile
+with zipfile.ZipFile(io.BytesIO(), "w") as zf:
+    zf.filename = '<test_encoding_warnings in memory zip file>'
+    zf.writestr("path/file.txt", b"Spanish Inquisition")
+    root = zipfile.Path(zf)
+    path, = root.iterdir()
+    file_path = path.joinpath("file.txt")
+    unused = file_path.read_text()  # should warn
+    file_path.open("r").close()  # should warn
+'''
+        proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
+        warnings = proc.err.splitlines()
+        self.assertEqual(len(warnings), 2, proc.err)
+        self.assertRegex(warnings[0], rb"^<string>:8: EncodingWarning:")
+        self.assertRegex(warnings[1], rb"^<string>:9: EncodingWarning:")
 
     def test_open_write(self):
         """

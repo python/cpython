@@ -149,6 +149,7 @@ class FastLookup(CompleteDirs):
 
 
 def _extract_text_encoding(encoding=None, *args, **kwargs):
+    # stacklevel=3 so that the caller of the caller see any warning.
     return io.text_encoding(encoding, 3), args, kwargs
 
 
