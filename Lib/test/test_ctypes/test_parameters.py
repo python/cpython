@@ -78,6 +78,16 @@ class SimpleTypesTestCase(unittest.TestCase):
         pa = c_wchar_p.from_param(c_wchar_p("123"))
         self.assertEqual(type(pa), c_wchar_p)
 
+    def test_c_char(self):
+        from ctypes import c_char
+
+        with self.assertRaises(TypeError) as cm:
+            c_char.from_param(b"abc")
+
+        self.assertEqual(str(cm.exception),
+                         "one character bytes, bytearray or integer expected")
+
+
     def test_int_pointers(self):
         from ctypes import c_short, c_uint, c_int, c_long, POINTER, pointer
         LPINT = POINTER(c_int)
