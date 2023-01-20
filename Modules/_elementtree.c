@@ -2287,7 +2287,7 @@ typedef struct {
     char insert_pis;
 } TreeBuilderObject;
 
-#define TreeBuilder_CheckExact(op) Py_IS_TYPE((op), ET_STATE_GLOBAL->TreeBuilder_Type)
+#define TreeBuilder_CheckExact(st, op) Py_IS_TYPE((op), (st)->TreeBuilder_Type)
 
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
@@ -3137,7 +3137,8 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
     value = PyDict_GetItemWithError(self->entity, key);
 
     if (value) {
-        if (TreeBuilder_CheckExact(self->target))
+        elementtreestate *st = ET_STATE_GLOBAL;
+        if (TreeBuilder_CheckExact(st, self->target))
             res = treebuilder_handle_data(
                 (TreeBuilderObject*) self->target, value
                 );
@@ -3209,7 +3210,8 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
         attrib = NULL;
     }
 
-    if (TreeBuilder_CheckExact(self->target)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut */
         res = treebuilder_handle_start((TreeBuilderObject*) self->target,
                                        tag, attrib);
@@ -3247,7 +3249,8 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
     if (!data)
         return; /* parser will look for errors */
 
-    if (TreeBuilder_CheckExact(self->target))
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (TreeBuilder_CheckExact(st, self->target))
         /* shortcut */
         res = treebuilder_handle_data((TreeBuilderObject*) self->target, data);
     else if (self->handle_data)
@@ -3269,7 +3272,8 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
     if (PyErr_Occurred())
         return;
 
-    if (TreeBuilder_CheckExact(self->target))
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (TreeBuilder_CheckExact(st, self->target))
         /* shortcut */
         /* the standard tree builder doesn't look at the end tag */
         res = treebuilder_handle_end(
@@ -3303,7 +3307,8 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
     if (!prefix_in)
         prefix_in = "";
 
-    if (TreeBuilder_CheckExact(self->target)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut - TreeBuilder does not actually implement .start_ns() */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
 
@@ -3353,7 +3358,8 @@ expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
     if (!prefix_in)
         prefix_in = "";
 
-    if (TreeBuilder_CheckExact(self->target)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut - TreeBuilder does not actually implement .end_ns() */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
 
@@ -3381,7 +3387,8 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
     if (PyErr_Occurred())
         return;
 
-    if (TreeBuilder_CheckExact(self->target)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
 
@@ -3474,7 +3481,8 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
     if (PyErr_Occurred())
         return;
 
-    if (TreeBuilder_CheckExact(self->target)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
 
@@ -3784,7 +3792,8 @@ _elementtree_XMLParser_close_impl(XMLParserObject *self)
     if (!res)
         return NULL;
 
-    if (TreeBuilder_CheckExact(self->target)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (TreeBuilder_CheckExact(st, self->target)) {
         Py_DECREF(res);
         return treebuilder_done((TreeBuilderObject*) self->target);
     }
@@ -3923,7 +3932,8 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
 
     res = expat_parse(self, "", 0, 1);
 
-    if (res && TreeBuilder_CheckExact(self->target)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (res && TreeBuilder_CheckExact(st, self->target)) {
         Py_DECREF(res);
         return treebuilder_done((TreeBuilderObject*) self->target);
     }
@@ -3954,7 +3964,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     if (!_check_xmlparser(self)) {
         return NULL;
     }
-    if (!TreeBuilder_CheckExact(self->target)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (!TreeBuilder_CheckExact(st, self->target)) {
         PyErr_SetString(
             PyExc_TypeError,
             "event handling only supported for ElementTree.TreeBuilder "
