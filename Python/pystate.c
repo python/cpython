@@ -190,6 +190,7 @@ bind_tstate(PyThreadState *tstate)
     assert(tstate != NULL);
     assert(tstate_is_alive(tstate) && !tstate->_status.bound);
     assert(!tstate->_status.unbound);  // just in case
+    assert(!tstate->_status.active);
     assert(tstate->thread_id == 0);
     assert(tstate->native_thread_id == 0);
     _PyRuntimeState *runtime = tstate->interp->runtime;
@@ -231,6 +232,7 @@ unbind_tstate(PyThreadState *tstate)
     assert(tstate != NULL);
     assert(tstate_is_bound(tstate));
     // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
+    // XXX assert(!tstate->_status.active);
     assert(tstate->thread_id > 0);
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     assert(tstate->native_thread_id > 0);
