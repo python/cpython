@@ -148,6 +148,8 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->elementpath_obj);
     Py_VISIT(st->comment_factory);
     Py_VISIT(st->pi_factory);
+
+    // Heap types
     Py_VISIT(st->Element_Type);
     Py_VISIT(st->ElementIter_Type);
     Py_VISIT(st->TreeBuilder_Type);
