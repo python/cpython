@@ -232,7 +232,7 @@ typedef struct {
 
 
 #define Element_CheckExact(st, op) Py_IS_TYPE(op, (st)->Element_Type)
-#define Element_Check(op) PyObject_TypeCheck(op, ET_STATE_GLOBAL->Element_Type)
+#define Element_Check(st, op) PyObject_TypeCheck(op, (st)->Element_Type)
 
 
 /* -------------------------------------------------------------------- */
@@ -505,8 +505,8 @@ LOCAL(int)
 element_add_subelement(ElementObject* self, PyObject* element)
 {
     /* add a child element to a parent */
-
-    if (!Element_Check(element)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (!Element_Check(st, element)) {
         raise_type_error(element);
         return -1;
     }
@@ -816,9 +816,10 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         if (element_resize(element, self->extra->length) < 0)
             goto error;
 
+        elementtreestate *st = ET_STATE_GLOBAL;
         for (i = 0; i < self->extra->length; i++) {
             PyObject* child = deepcopy(self->extra->children[i], memo);
-            if (!child || !Element_Check(child)) {
+            if (!child || !Element_Check(st, child)) {
                 if (child) {
                     raise_type_error(child);
                     Py_DECREF(child);
@@ -1029,9 +1030,10 @@ element_setstate_from_attributes(ElementObject *self,
         }
 
         /* Copy children */
+        elementtreestate *st = ET_STATE_GLOBAL;
         for (i = 0; i < nchildren; i++) {
             PyObject *child = PyList_GET_ITEM(children, i);
-            if (!Element_Check(child)) {
+            if (!Element_Check(st, child)) {
                 raise_type_error(child);
                 self->extra->length = i;
                 dealloc_extra(oldextra);
@@ -1229,7 +1231,7 @@ _elementtree_Element_find_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         int rc;
-        assert(Element_Check(item));
+        assert(Element_Check(st, item));
         Py_INCREF(item);
         rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc > 0)
@@ -1273,7 +1275,7 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject *item = self->extra->children[i];
         int rc;
-        assert(Element_Check(item));
+        assert(Element_Check(st, item));
         Py_INCREF(item);
         rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc > 0) {
@@ -1327,7 +1329,7 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         int rc;
-        assert(Element_Check(item));
+        assert(Element_Check(st, item));
         Py_INCREF(item);
         rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc != 0 && (rc < 0 || PyList_Append(out, item) < 0)) {
@@ -1677,7 +1679,8 @@ element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
     old = self->extra->children[index];
 
     if (item) {
-        if (!Element_Check(item)) {
+        elementtreestate *st = ET_STATE_GLOBAL;
+        if (!Element_Check(st, item)) {
             raise_type_error(item);
             return -1;
         }
@@ -1874,9 +1877,10 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
             }
         }
 
+        elementtreestate *st = ET_STATE_GLOBAL;
         for (i = 0; i < newlen; i++) {
             PyObject *element = PySequence_Fast_GET_ITEM(seq, i);
-            if (!Element_Check(element)) {
+            if (!Element_Check(st, element)) {
                 raise_type_error(element);
                 Py_DECREF(seq);
                 return -1;
@@ -2149,7 +2153,8 @@ elementiter_next(ElementIterObject *it)
                 continue;
             }
 
-            assert(Element_Check(extra->children[child_index]));
+            elementtreestate *st = ET_STATE_GLOBAL;
+            assert(Element_Check(st, extra->children[child_index]));
             elem = (ElementObject *)Py_NewRef(extra->children[child_index]);
             item->child_index++;
         }
