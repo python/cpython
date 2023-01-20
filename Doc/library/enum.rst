@@ -424,9 +424,9 @@ Data Types
       Using :class:`auto` with :class:`IntEnum` results in integers of increasing
       value, starting with ``1``.
 
-   .. versionchanged:: 3.11 :meth:`!__str__` is now :meth:`!int.__str__` to
+   .. versionchanged:: 3.11 :meth:`~object.__str__` is now :meth:`!int.__str__` to
       better support the *replacement of existing constants* use-case.
-      :meth:`!__format__` was already :meth:`!int.__format__` for that same reason.
+      :meth:`~object.__format__` was already :meth:`!int.__format__` for that same reason.
 
 
 .. class:: StrEnum
@@ -761,10 +761,10 @@ Data Types
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
-:attr:`!__members__` is a read-only ordered mapping of ``member_name``:``member``
+:attr:`~EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`!__new__`, if specified, must create and return the enum members; it is
+:meth:`~object.__new__`, if specified, must create and return the enum members; it is
 also a very good idea to set the member's :attr:`!_value_` appropriately.  Once
 all the members are created it is no longer used.
 
@@ -847,7 +847,7 @@ Utilities and Decorators
 .. decorator:: unique
 
    A :keyword:`class` decorator specifically for enumerations.  It searches an
-   enumeration's :attr:`!__members__`, gathering any aliases it finds; if any are
+   enumeration's :attr:`~EnumType.__members__`, gathering any aliases it finds; if any are
    found :exc:`ValueError` is raised with the details::
 
       >>> from enum import Enum, unique
