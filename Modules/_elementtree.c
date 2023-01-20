@@ -2781,10 +2781,10 @@ treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
             return NULL;
 
         this = self->this;
-        elementtreestate *st = ET_STATE_GLOBAL;
         if (self->insert_comments && this != Py_None) {
-            if (treebuilder_add_subelement(st, this, comment) < 0)
+            if (treebuilder_add_subelement(self->state, this, comment) < 0) {
                 goto error;
+            }
             Py_XSETREF(self->last_for_tail, Py_NewRef(comment));
         }
     } else {
@@ -2821,9 +2821,8 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
         }
 
         this = self->this;
-        elementtreestate *st = ET_STATE_GLOBAL;
         if (self->insert_pis && this != Py_None) {
-            if (treebuilder_add_subelement(st, this, pi) < 0)
+            if (treebuilder_add_subelement(self->state, this, pi) < 0)
                 goto error;
             Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
         }
@@ -3784,7 +3783,8 @@ _check_xmlparser(XMLParserObject* self)
 }
 
 LOCAL(PyObject*)
-expat_parse(XMLParserObject* self, const char* data, int data_len, int final)
+expat_parse(elementtreestate *st, XMLParserObject *self, const char *data,
+            int data_len, int final)
 {
     int ok;
 
@@ -3795,7 +3795,6 @@ expat_parse(XMLParserObject* self, const char* data, int data_len, int final)
         return NULL;
 
     if (!ok) {
-        elementtreestate *st = ET_STATE_GLOBAL;
         expat_set_error(
             st,
             EXPAT(GetErrorCode)(self->parser),
@@ -3825,11 +3824,11 @@ _elementtree_XMLParser_close_impl(XMLParserObject *self)
     if (!_check_xmlparser(self)) {
         return NULL;
     }
-    res = expat_parse(self, "", 0, 1);
+    elementtreestate *st = self->state;
+    res = expat_parse(st, self, "", 0, 1);
     if (!res)
         return NULL;
 
-    elementtreestate *st = self->state;
     if (TreeBuilder_CheckExact(st, self->target)) {
         Py_DECREF(res);
         return treebuilder_done((TreeBuilderObject*) self->target);
@@ -3860,6 +3859,7 @@ _elementtree_XMLParser_feed(XMLParserObject *self, PyObject *data)
     if (!_check_xmlparser(self)) {
         return NULL;
     }
+    elementtreestate *st = self->state;
     if (PyUnicode_Check(data)) {
         Py_ssize_t data_len;
         const char *data_ptr = PyUnicode_AsUTF8AndSize(data, &data_len);
@@ -3871,7 +3871,8 @@ _elementtree_XMLParser_feed(XMLParserObject *self, PyObject *data)
         }
         /* Explicitly set UTF-8 encoding. Return code ignored. */
         (void)EXPAT(SetEncoding)(self->parser, "utf-8");
-        return expat_parse(self, data_ptr, (int)data_len, 0);
+
+        return expat_parse(st, self, data_ptr, (int)data_len, 0);
     }
     else {
         Py_buffer view;
@@ -3883,7 +3884,7 @@ _elementtree_XMLParser_feed(XMLParserObject *self, PyObject *data)
             PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");
             return NULL;
         }
-        res = expat_parse(self, view.buf, (int)view.len, 0);
+        res = expat_parse(st, self, view.buf, (int)view.len, 0);
         PyBuffer_Release(&view);
         return res;
     }
@@ -3915,6 +3916,7 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
         return NULL;
 
     /* read from open file object */
+    elementtreestate *st = self->state;
     for (;;) {
 
         buffer = PyObject_CallFunction(reader, "i", 64*1024);
@@ -3952,8 +3954,8 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
             return NULL;
         }
         res = expat_parse(
-            self, PyBytes_AS_STRING(buffer), (int)PyBytes_GET_SIZE(buffer), 0
-            );
+            st, self, PyBytes_AS_STRING(buffer), (int)PyBytes_GET_SIZE(buffer),
+            0);
 
         Py_DECREF(buffer);
 
@@ -3967,9 +3969,8 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
 
     Py_DECREF(reader);
 
-    res = expat_parse(self, "", 0, 1);
+    res = expat_parse(st, self, "", 0, 1);
 
-    elementtreestate *st = self->state;
     if (res && TreeBuilder_CheckExact(st, self->target)) {
         Py_DECREF(res);
         return treebuilder_done((TreeBuilderObject*) self->target);
