@@ -1079,7 +1079,6 @@ element_setstate_from_Python(elementtreestate *st, ElementObject *self,
     if (!args)
         return NULL;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
     if (PyArg_ParseTupleAndKeywords(args, state, "|$OOOOO", kwlist, &tag,
                                     &attrib, &text, &tail, &children))
         retval = element_setstate_from_attributes(st, self, tag, attrib, text,
