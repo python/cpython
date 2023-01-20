@@ -1829,7 +1829,7 @@ Optional Packages:
   --with-lto=[full|thin|no|yes]
                           enable Link-Time-Optimization in any build (default
                           is no)
-  --with-strict-overflow  choose between -fstrict-overflow or
+  --with-strict-overflow  if 'yes', add -fstrict-overflow to CFLAGS, else add
                           -fno-strict-overflow (default is no)
   --with-dsymutil         link debug information into final executable with
                           dsymutil in macOS (default is no)
