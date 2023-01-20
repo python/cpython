@@ -1982,7 +1982,7 @@ Using a rotator and namer to customize log rotation processing
 --------------------------------------------------------------
 
 An example of how you can define a namer and rotator is given in the following
-snippet, which shows gzip compression of the log file::
+runnable script, which shows gzip compression of the log file::
 
     import gzip
     import logging
