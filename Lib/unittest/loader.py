@@ -95,7 +95,7 @@ class TestLoader(object):
         """Return a suite of all test cases contained in the given module"""
         tests = []
         if pattern is not None and not fnmatch(
-            os.path.basename(module.__file__), pattern):
+                os.path.basename(module.__file__), pattern):
             return self.suiteClass(tests)
 
         for name in dir(module):
