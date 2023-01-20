@@ -552,7 +552,7 @@ can be overridden by the local file.
       or on a user signal.
 
    Module :mod:`traceback`
-     Standard interface to extract, format and print stack traces of Python programs.
+      Standard interface to extract, format and print stack traces of Python programs.
 
 .. rubric:: Footnotes
 
