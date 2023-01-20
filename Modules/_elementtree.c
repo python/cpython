@@ -122,6 +122,16 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->elementpath_obj);
     Py_CLEAR(st->comment_factory);
     Py_CLEAR(st->pi_factory);
+
+    // Interned strings
+    Py_CLEAR(st->str_append);
+    Py_CLEAR(st->str_find);
+    Py_CLEAR(st->str_findall);
+    Py_CLEAR(st->str_findtext);
+    Py_CLEAR(st->str_iterfind);
+    Py_CLEAR(st->str_tail);
+    Py_CLEAR(st->str_text);
+    Py_CLEAR(st->str_doctype);
     return 0;
 }
 
