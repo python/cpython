@@ -8743,6 +8743,44 @@ fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC int-conversion warning" >&5
+$as_echo_n "checking if we can disable $CC int-conversion warning... " >&6; }
+if ${ac_cv_disable_int_conversion_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wint-conversion -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_disable_int_conversion_warning=yes
+else
+  ac_cv_disable_int_conversion_warning=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_int_conversion_warning" >&5
+$as_echo "$ac_cv_disable_int_conversion_warning" >&6; }
+
+
+    if test "x$ac_cv_disable_int_conversion" = xyes; then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wno-int-conversion"
+fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC missing-field-initializers warning" >&5
 $as_echo_n "checking if we can disable $CC missing-field-initializers warning... " >&6; }
 if ${ac_cv_disable_missing_field_initializers_warning+:} false; then :
@@ -9395,12 +9433,14 @@ fi
 
 # If we have set a CC compiler flag for thread support then
 # check if it works for CXX, too.
-ac_cv_cxx_thread=no
 if test ! -z "$CXX"
 then
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CXX also accepts flags for thread support" >&5
 $as_echo_n "checking whether $CXX also accepts flags for thread support... " >&6; }
-ac_save_cxx="$CXX"
+if ${ac_cv_cxx_thread+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_save_cxx="$CXX"
 
 if test "$ac_cv_kpthread" = "yes"
 then
@@ -9414,6 +9454,8 @@ elif test "$ac_cv_pthread" = "yes"
 then
   CXX="$CXX -pthread"
   ac_cv_cxx_thread=yes
+else
+  ac_cv_cxx_thread=no
 fi
 
 if test $ac_cv_cxx_thread = yes
@@ -9429,10 +9471,13 @@ then
   fi
   rm -fr conftest*
 fi
+CXX="$ac_save_cxx"
+fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_thread" >&5
 $as_echo "$ac_cv_cxx_thread" >&6; }
+else
+  ac_cv_cxx_thread=no
 fi
-CXX="$ac_save_cxx"
 
 
 
@@ -14703,6 +14748,7 @@ fi
 { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+  { ac_cv_search_dbm_open=; unset ac_cv_search_dbm_open;}
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -14762,7 +14808,9 @@ $as_echo "$ac_cv_search_dbm_open" >&6; }
 ac_res=$ac_cv_search_dbm_open
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
+  have_gdbm_compat=yes
+else
+  have_gdbm_compat=no
 fi
 
 

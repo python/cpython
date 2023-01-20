@@ -223,6 +223,10 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.iscoroutinefunction(Cl))
         # instances with async def __call__ are NOT recognised.
         self.assertFalse(inspect.iscoroutinefunction(Cl()))
+        # unless explicitly marked.
+        self.assertTrue(inspect.iscoroutinefunction(
+            inspect.markcoroutinefunction(Cl())
+        ))
 
         class Cl2:
             @inspect.markcoroutinefunction
@@ -232,6 +236,10 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.iscoroutinefunction(Cl2))
         # instances with marked __call__ are NOT recognised.
         self.assertFalse(inspect.iscoroutinefunction(Cl2()))
+        # unless explicitly marked.
+        self.assertTrue(inspect.iscoroutinefunction(
+            inspect.markcoroutinefunction(Cl2())
+        ))
 
         class Cl3:
             @inspect.markcoroutinefunction
@@ -3282,6 +3290,25 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature((lambda a=10: a)),
                          ((('a', 10, ..., "positional_or_keyword"),),
                           ...))
+
+    def test_signature_on_mocks(self):
+        # https://github.com/python/cpython/issues/96127
+        for mock in (
+            unittest.mock.Mock(),
+            unittest.mock.AsyncMock(),
+            unittest.mock.MagicMock(),
+        ):
+            with self.subTest(mock=mock):
+                self.assertEqual(str(inspect.signature(mock)), '(*args, **kwargs)')
+
+    def test_signature_on_noncallable_mocks(self):
+        for mock in (
+            unittest.mock.NonCallableMock(),
+            unittest.mock.NonCallableMagicMock(),
+        ):
+            with self.subTest(mock=mock):
+                with self.assertRaises(TypeError):
+                    inspect.signature(mock)
 
     def test_signature_equality(self):
         def foo(a, *, b:int) -> float: pass

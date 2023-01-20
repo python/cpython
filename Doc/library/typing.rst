@@ -2777,10 +2777,6 @@ Introspection helpers
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
 
-   .. versionchanged:: 3.10
-      Calling ``get_type_hints()`` on a class no longer returns the annotations
-      of its base classes.
-
    .. versionchanged:: 3.11
       Previously, ``Optional[t]`` was added for function and method annotations
       if a default value equal to ``None`` was set.
