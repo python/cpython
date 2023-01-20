@@ -1879,7 +1879,7 @@ _PyGILState_SetTstate(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
-#ifdef NDEBUG
+#ifndef NDEBUG
     _PyRuntimeState *runtime = tstate->interp->runtime;
 
     assert(runtime->gilstate.autoInterpreterState == tstate->interp);
