@@ -297,11 +297,10 @@ clear_extra(ElementObject* self)
  * tag and attributes.
 */
 LOCAL(PyObject*)
-create_new_element(PyObject* tag, PyObject* attrib)
+create_new_element(elementtreestate *st, PyObject *tag, PyObject *attrib)
 {
     ElementObject* self;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
     self = PyObject_GC_New(ElementObject, st->Element_Type);
     if (self == NULL)
         return NULL;
@@ -614,7 +613,7 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
         /* no attrib arg, no kwds, so no attribute */
     }
 
-    elem = create_new_element(tag, attrib);
+    elem = create_new_element(st, tag, attrib);
     Py_XDECREF(attrib);
     if (elem == NULL)
         return NULL;
@@ -728,9 +727,10 @@ _elementtree_Element___copy___impl(ElementObject *self)
 {
     Py_ssize_t i;
     ElementObject* element;
+    elementtreestate *st = ET_STATE_GLOBAL;
 
     element = (ElementObject*) create_new_element(
-        self->tag, self->extra ? self->extra->attrib : NULL);
+        st, self->tag, self->extra ? self->extra->attrib : NULL);
     if (!element)
         return NULL;
 
@@ -795,7 +795,8 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         attrib = NULL;
     }
 
-    element = (ElementObject*) create_new_element(tag, attrib);
+    elementtreestate *st = ET_STATE_GLOBAL;
+    element = (ElementObject*) create_new_element(st, tag, attrib);
 
     Py_DECREF(tag);
     Py_XDECREF(attrib);
@@ -818,7 +819,6 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         if (element_resize(element, self->extra->length) < 0)
             goto error;
 
-        elementtreestate *st = ET_STATE_GLOBAL;
         for (i = 0; i < self->extra->length; i++) {
             PyObject* child = deepcopy(self->extra->children[i], memo);
             if (!child || !Element_Check(st, child)) {
@@ -1567,7 +1567,8 @@ _elementtree_Element_makeelement_impl(ElementObject *self, PyObject *tag,
     if (!attrib)
         return NULL;
 
-    elem = create_new_element(tag, attrib);
+    elementtreestate *st = ET_STATE_GLOBAL;
+    elem = create_new_element(st, tag, attrib);
 
     Py_DECREF(attrib);
 
@@ -2633,7 +2634,7 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     }
 
     if (!self->element_factory) {
-        node = create_new_element(tag, attrib);
+        node = create_new_element(st, tag, attrib);
     } else if (attrib == NULL) {
         attrib = PyDict_New();
         if (!attrib)
