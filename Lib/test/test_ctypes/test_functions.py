@@ -79,6 +79,18 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(result, 139)
         self.assertEqual(type(result), int)
 
+        with self.assertRaises(ArgumentError) as cm:
+            f(1, 2, 3, 4, 5.0, 6.0)
+        self.assertEqual(str(cm.exception),
+                         "argument 2: TypeError: unicode string expected "
+                         "instead of int instance")
+
+        with self.assertRaises(ArgumentError) as cm:
+            f(1, "abc", 3, 4, 5.0, 6.0)
+        self.assertEqual(str(cm.exception),
+                         "argument 2: TypeError: one character unicode string "
+                         "expected")
+
     @need_symbol('c_wchar')
     def test_wchar_result(self):
         f = dll._testfunc_i_bhilfd
