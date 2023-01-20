@@ -1391,7 +1391,8 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
 }
 
 static PyObject *
-create_elementiter(ElementObject *self, PyObject *tag, int gettext);
+create_elementiter(elementtreestate *st, ElementObject *self, PyObject *tag,
+                   int gettext);
 
 
 /*[clinic input]
@@ -1416,7 +1417,8 @@ _elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
             tag = Py_None;
     }
 
-    return create_elementiter(self, tag, 0);
+    elementtreestate *st = ET_STATE_GLOBAL;
+    return create_elementiter(st, self, tag, 0);
 }
 
 
@@ -1429,7 +1431,8 @@ static PyObject *
 _elementtree_Element_itertext_impl(ElementObject *self)
 /*[clinic end generated code: output=5fa34b2fbcb65df6 input=af8f0e42cb239c89]*/
 {
-    return create_elementiter(self, Py_None, 1);
+    elementtreestate *st = ET_STATE_GLOBAL;
+    return create_elementiter(st, self, Py_None, 1);
 }
 
 
@@ -2247,11 +2250,11 @@ static PyType_Spec elementiter_spec = {
 #define INIT_PARENT_STACK_SIZE 8
 
 static PyObject *
-create_elementiter(ElementObject *self, PyObject *tag, int gettext)
+create_elementiter(elementtreestate *st, ElementObject *self, PyObject *tag,
+                   int gettext)
 {
     ElementIterObject *it;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
     it = PyObject_GC_New(ElementIterObject, st->ElementIter_Type);
     if (!it)
         return NULL;
