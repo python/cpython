@@ -1425,7 +1425,7 @@ _registryBackCompat(const SearchInfo *search, EnvironmentInfo *env, const wchar_
     }
 
     int versionMajor, versionMinor;
-    int n = swscanf(env->tag, L"%d.%d", &versionMajor, &versionMinor);
+    int n = swscanf_s(env->tag, L"%d.%d", &versionMajor, &versionMinor);
     if (n != 2) {
         debug(L"# %s/%s has an invalid version tag\n", env->company, env->tag);
         return RC_NO_PYTHON;
@@ -1465,9 +1465,9 @@ _registryBackCompat(const SearchInfo *search, EnvironmentInfo *env, const wchar_
     }
 
     if (0 == _compare(env->architecture, -1, L"32bit", -1)) {
-        int tagLength = wcslen(env->tag);
+        size_t tagLength = wcslen(env->tag);
         if (tagLength <= 3 || 0 != _compare(&env->tag[tagLength - 3], 3, L"-32", 3)) {
-            wchar_t *rawTag = env->tag;
+            const wchar_t *rawTag = env->tag;
             wchar_t *realTag = (wchar_t*) malloc(sizeof(wchar_t) * (tagLength + 4));
             if (!realTag) {
                 return RC_NO_MEMORY;
@@ -1480,9 +1480,11 @@ _registryBackCompat(const SearchInfo *search, EnvironmentInfo *env, const wchar_
             }
 
             env->tag = realTag;
-            free(rawTag);
+            free((void*)rawTag);
         }
     }
+
+    return 0;
 }
 
 
