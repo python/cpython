@@ -559,6 +559,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_argcount, p);
         w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
+        w_long(co->co_ntmps, p);
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
         w_object(co_code, p);
@@ -1341,6 +1342,7 @@ r_object(RFILE *p)
             int argcount;
             int posonlyargcount;
             int kwonlyargcount;
+            int ntmps;
             int stacksize;
             int flags;
             PyObject *code = NULL;
@@ -1370,6 +1372,9 @@ r_object(RFILE *p)
                 goto code_error;
             }
             kwonlyargcount = (int)r_long(p);
+            if (PyErr_Occurred())
+                goto code_error;
+            ntmps = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
             stacksize = (int)r_long(p);
@@ -1432,6 +1437,7 @@ r_object(RFILE *p)
                 .posonlyargcount = posonlyargcount,
                 .kwonlyargcount = kwonlyargcount,
 
+                .ntmps = ntmps,
                 .stacksize = stacksize,
 
                 .exceptiontable = exceptiontable,

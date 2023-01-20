@@ -71,18 +71,23 @@ typedef struct _PyInterpreterFrame {
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
 
+static inline int _PyFrame_StackbaseIndex(_PyInterpreterFrame *f) {
+    PyCodeObject *code = f->f_code;
+    return code->co_nlocalsplus + code->co_ntmps;
+}
+
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
-    return f->localsplus + f->f_code->co_nlocalsplus;
+    return f->localsplus + _PyFrame_StackbaseIndex(f);
 }
 
 static inline PyObject *_PyFrame_StackPeek(_PyInterpreterFrame *f) {
-    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->stacktop > _PyFrame_StackbaseIndex(f));
     assert(f->localsplus[f->stacktop-1] != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
 static inline PyObject *_PyFrame_StackPop(_PyInterpreterFrame *f) {
-    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->stacktop > _PyFrame_StackbaseIndex(f));
     f->stacktop--;
     return f->localsplus[f->stacktop];
 }
@@ -97,10 +102,10 @@ static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
 static inline int
 _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 {
-    /* This function needs to remain in sync with the calculation of
-     * co_framesize in Tools/build/deepfreeze.py */
     assert(code->co_framesize >= FRAME_SPECIALS_SIZE);
-    return code->co_framesize - FRAME_SPECIALS_SIZE;
+    int nslots = code->co_framesize - FRAME_SPECIALS_SIZE;
+    assert(nslots == code->co_nlocalsplus + code->co_ntmps + code->co_stacksize);
+    return nslots;
 }
 
 void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
@@ -119,13 +124,14 @@ _PyFrame_Initialize(
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
     frame->f_locals = locals;
-    frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
-    for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
+    int stack_start = _PyFrame_StackbaseIndex(frame);
+    frame->stacktop = stack_start;
+    for (int i = null_locals_from; i < stack_start; i++) {
         frame->localsplus[i] = NULL;
     }
 }
@@ -142,7 +148,7 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 static inline PyObject**
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    return frame->localsplus+frame->stacktop;
+    return frame->localsplus + frame->stacktop;
 }
 
 static inline void

@@ -922,7 +922,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
                       PyObject *name, PyObject *qualname)
 {
     PyCodeObject *code = f->f_frame->f_code;
-    int size = code->co_nlocalsplus + code->co_stacksize;
+    int size = _PyFrame_NumSlotsForCodeObject(code);
     PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, size);
     if (gen == NULL) {
         Py_DECREF(f);

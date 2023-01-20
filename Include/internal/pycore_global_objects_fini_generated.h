@@ -838,6 +838,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(co_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(co_names));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(co_nlocals));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(co_ntmps));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(co_posonlyargcount));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(co_qualname));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(co_stacksize));

@@ -171,6 +171,7 @@ struct _PyCodeConstructor {
     int kwonlyargcount;
 
     /* needed to create the frame */
+    int ntmps;
     int stacksize;
 
     /* used by the eval loop */
@@ -466,6 +467,7 @@ _PyCode_LineNumberFromArray(PyCodeObject *co, int index)
 typedef struct _PyShimCodeDef {
     const uint8_t *code;
     int codelen;
+    int ntmps;
     int stacksize;
     const char *cname;
 } _PyShimCodeDef;

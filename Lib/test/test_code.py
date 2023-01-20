@@ -225,6 +225,7 @@ class CodeTest(unittest.TestCase):
                         co.co_posonlyargcount,
                         co.co_kwonlyargcount,
                         co.co_nlocals,
+                        co.co_ntmps,
                         co.co_stacksize,
                         co.co_flags,
                         co.co_code,
@@ -264,6 +265,7 @@ class CodeTest(unittest.TestCase):
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
             ("co_nlocals", 1),
+            ("co_ntmps", 13),
             ("co_stacksize", 0),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
@@ -302,6 +304,7 @@ class CodeTest(unittest.TestCase):
                          co.co_kwonlyargcount,
                          # This is the only change.
                          co.co_nlocals + diff,
+                         co.co_ntmps,
                          co.co_stacksize,
                          co.co_flags,
                          co.co_code,

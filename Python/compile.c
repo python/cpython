@@ -8353,6 +8353,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .posonlyargcount = posonlyargcount,
         .kwonlyargcount = kwonlyargcount,
 
+        .ntmps = 0,  /* TODO: ntmps is not used yet */
         .stacksize = maxdepth,
 
         .exceptiontable = a->a_except_table,

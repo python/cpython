@@ -259,8 +259,9 @@ class Printer:
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
-            # The following should remain in sync with _PyFrame_NumSlotsForCodeObject
-            self.write(f".co_framesize = {code.co_stacksize + len(localsplusnames)} + FRAME_SPECIALS_SIZE,")
+            # The following should remain in sync with the calculation of co_framesize in codeobject.c:init_code()
+            self.write(f".co_framesize = {code.co_stacksize + code.co_ntmps + len(localsplusnames)} + FRAME_SPECIALS_SIZE,")
+            self.field(code, "co_ntmps")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
             self.write(f".co_nlocalsplus = {len(localsplusnames)},")

@@ -137,7 +137,7 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
         }
         Py_DECREF(f);
     }
-    assert(frame->stacktop >= 0);
+    assert(frame->stacktop >= _PyFrame_StackbaseIndex(frame));
     for (int i = 0; i < frame->stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }

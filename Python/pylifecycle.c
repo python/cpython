@@ -803,7 +803,8 @@ static const uint8_t INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
 static const _PyShimCodeDef INTERPRETER_TRAMPOLINE_CODEDEF = {
     INTERPRETER_TRAMPOLINE_INSTRUCTIONS,
     sizeof(INTERPRETER_TRAMPOLINE_INSTRUCTIONS),
-    1,
+    0,  /* ntmps */
+    1,  /* stacksize */
     "<interpreter trampoline>"
 };
 

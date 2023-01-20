@@ -756,7 +756,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_code = tstate->interp->interpreter_trampoline;
     entry_frame.prev_instr =
         _PyCode_CODE(tstate->interp->interpreter_trampoline);
-    entry_frame.stacktop = 0;
+    entry_frame.stacktop = entry_frame.f_code->co_ntmps;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.yield_offset = 0;
     /* Push frame */
