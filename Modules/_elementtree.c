@@ -2586,9 +2586,9 @@ treebuilder_flush_data(TreeBuilderObject* self)
 }
 
 static int
-treebuilder_add_subelement(PyObject *element, PyObject *child)
+treebuilder_add_subelement(elementtreestate *st, PyObject *element,
+                           PyObject *child)
 {
-    elementtreestate *st = ET_STATE_GLOBAL;
     if (Element_CheckExact(st, element)) {
         ElementObject *elem = (ElementObject *) element;
         return element_add_subelement(elem, child);
@@ -2658,7 +2658,7 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     Py_CLEAR(self->last_for_tail);
 
     if (this != Py_None) {
-        if (treebuilder_add_subelement(this, node) < 0)
+        if (treebuilder_add_subelement(st, this, node) < 0)
             goto error;
     } else {
         if (self->root) {
@@ -2777,8 +2777,9 @@ treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
             return NULL;
 
         this = self->this;
+        elementtreestate *st = ET_STATE_GLOBAL;
         if (self->insert_comments && this != Py_None) {
-            if (treebuilder_add_subelement(this, comment) < 0)
+            if (treebuilder_add_subelement(st, this, comment) < 0)
                 goto error;
             Py_XSETREF(self->last_for_tail, Py_NewRef(comment));
         }
@@ -2816,8 +2817,9 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
         }
 
         this = self->this;
+        elementtreestate *st = ET_STATE_GLOBAL;
         if (self->insert_pis && this != Py_None) {
-            if (treebuilder_add_subelement(this, pi) < 0)
+            if (treebuilder_add_subelement(st, this, pi) < 0)
                 goto error;
             Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
         }
