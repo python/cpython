@@ -1065,7 +1065,8 @@ element_setstate_from_attributes(elementtreestate *st,
  */
 
 static PyObject *
-element_setstate_from_Python(ElementObject *self, PyObject *state)
+element_setstate_from_Python(elementtreestate *st, ElementObject *self,
+                             PyObject *state)
 {
     static char *kwlist[] = {PICKLED_TAG, PICKLED_ATTRIB, PICKLED_TEXT,
                              PICKLED_TAIL, PICKLED_CHILDREN, 0};
@@ -1078,7 +1079,6 @@ element_setstate_from_Python(ElementObject *self, PyObject *state)
     if (!args)
         return NULL;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
     if (PyArg_ParseTupleAndKeywords(args, state, "|$OOOOO", kwlist, &tag,
                                     &attrib, &text, &tail, &children))
         retval = element_setstate_from_attributes(st, self, tag, attrib, text,
@@ -1108,8 +1108,10 @@ _elementtree_Element___setstate__(ElementObject *self, PyObject *state)
                      state);
         return NULL;
     }
-    else
-        return element_setstate_from_Python(self, state);
+    else {
+        elementtreestate *st = ET_STATE_GLOBAL;
+        return element_setstate_from_Python(st, self, state);
+    }
 }
 
 LOCAL(int)
