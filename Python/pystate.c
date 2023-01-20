@@ -1878,11 +1878,14 @@ _PyGILState_SetTstate(PyThreadState *tstate)
          * interpreter is responsible to initialize it. */
         return _PyStatus_OK();
     }
+
+#ifndef NDEBUG
     _PyRuntimeState *runtime = tstate->interp->runtime;
 
     assert(runtime->gilstate.autoInterpreterState == tstate->interp);
     assert(current_tss_get(runtime) == tstate);
     assert(tstate->gilstate_counter == 1);
+#endif
 
     return _PyStatus_OK();
 }
