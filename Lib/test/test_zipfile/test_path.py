@@ -157,7 +157,7 @@ class TestPath(unittest.TestCase):
         zf.writestr("path/16.txt", "This was utf-16".encode("utf-16"))
         zf.filename = "test_open_utf16.zip"
         root = zipfile.Path(zf)
-        path, = root.iterdir()
+        (path,) = root.iterdir()
         u16 = path.joinpath("16.txt")
         with u16.open('r', "utf-16") as strm:
             data = strm.read()
@@ -172,7 +172,7 @@ class TestPath(unittest.TestCase):
         zf.writestr("path/bad-utf8.bin", b"invalid utf-8: \xff\xff.")
         zf.filename = "test_read_text_encoding_errors.zip"
         root = zipfile.Path(zf)
-        path, = root.iterdir()
+        (path,) = root.iterdir()
         u16 = path.joinpath("bad-utf8.bin")
 
         # encoding= as a positional argument for gh-101144.
@@ -199,7 +199,7 @@ with zipfile.ZipFile(io.BytesIO(), "w") as zf:
     zf.filename = '<test_encoding_warnings in memory zip file>'
     zf.writestr("path/file.txt", b"Spanish Inquisition")
     root = zipfile.Path(zf)
-    path, = root.iterdir()
+    (path,) = root.iterdir()
     file_path = path.joinpath("file.txt")
     unused = file_path.read_text()  # should warn
     file_path.open("r").close()  # should warn
