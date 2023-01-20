@@ -3448,6 +3448,20 @@ dummy_func(
             DISPATCH_GOTO();
         }
 
+        inst(INSTRUMENTED_INSTRUCTION, ( -- )) {
+            int next_opcode = _Py_call_instrumentation_instruction(
+                tstate, frame, next_instr-1);
+            ERROR_IF(next_opcode < 0, error);
+            next_instr--;
+            if (_PyOpcode_Caches[next_opcode]) {
+                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
+                INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+            }
+            assert(next_opcode > 0 && next_opcode < 256);
+            opcode = next_opcode;
+            DISPATCH_GOTO();
+        }
+
         // stack effect: ( -- )
         inst(INSTRUMENTED_JUMP_FORWARD, ( -- )) {
             int err = _Py_call_instrumentation_jump(

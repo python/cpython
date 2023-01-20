@@ -116,6 +116,7 @@ extern "C" {
 #define CALL                                   171
 #define KW_NAMES                               172
 #define CALL_INTRINSIC_1                       173
+#define INSTRUMENTED_INSTRUCTION               238
 #define INSTRUMENTED_COMPARE_AND_BRANCH        239
 #define INSTRUMENTED_RESUME                    240
 #define INSTRUMENTED_CALL                      241

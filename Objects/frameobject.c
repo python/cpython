@@ -689,20 +689,17 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     int what_event = PyThreadState_GET()->what_event;
     if (what_event < 0) {
         PyErr_Format(PyExc_ValueError,
-                    "f_lineno can only be set by a debugger");
+                    "f_lineno can only be set in a trace function");
         return -1;
     }
     switch(what_event) {
         case PY_MONITORING_EVENT_PY_START:
             PyErr_Format(PyExc_ValueError,
-                     "can't jump from the 'call' event of a new frame");
+                     "can't jump from the 'call' trace event of a new frame");
             return -1;
         case PY_MONITORING_EVENT_PY_RESUME:
             break;
-        case PY_MONITORING_EVENT_PY_RETURN:
-            PyErr_SetString(PyExc_ValueError,
-                "can't jump from a 'return' event");
-            return -1;
+        case PY_MONITORING_EVENT_LINE:
         case PY_MONITORING_EVENT_PY_YIELD:
             break;
         case PY_MONITORING_EVENT_CALL:
@@ -710,8 +707,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             PyErr_SetString(PyExc_ValueError,
                 "can't jump during a call");
             return -1;
-        case PY_MONITORING_EVENT_LINE:
-            break;
+        case PY_MONITORING_EVENT_PY_RETURN:
         case PY_MONITORING_EVENT_PY_UNWIND:
         case PY_MONITORING_EVENT_PY_THROW:
         case PY_MONITORING_EVENT_RAISE:
@@ -721,7 +717,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         case PY_MONITORING_EVENT_INSTRUCTION:
         case PY_MONITORING_EVENT_EXCEPTION_HANDLED:
             PyErr_Format(PyExc_ValueError,
-                     "can only jump from 'line' event");
+                "can only jump from a 'line' trace event");
             return -1;
         default:
             PyErr_SetString(PyExc_SystemError,

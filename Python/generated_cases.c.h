@@ -3775,6 +3775,20 @@
             DISPATCH_GOTO();
         }
 
+        TARGET(INSTRUMENTED_INSTRUCTION) {
+            int next_opcode = _Py_call_instrumentation_instruction(
+                tstate, frame, next_instr-1);
+            if (next_opcode < 0) goto error;
+            next_instr--;
+            if (_PyOpcode_Caches[next_opcode]) {
+                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
+                INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+            }
+            assert(next_opcode > 0 && next_opcode < 256);
+            opcode = next_opcode;
+            DISPATCH_GOTO();
+        }
+
         TARGET(INSTRUMENTED_JUMP_FORWARD) {
             int err = _Py_call_instrumentation_jump(
                 tstate, PY_MONITORING_EVENT_JUMP, frame, next_instr-1, next_instr+oparg);
