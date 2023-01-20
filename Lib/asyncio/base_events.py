@@ -1858,7 +1858,6 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def _add_callback(self, handle):
         """Add a Handle to _ready."""
-        assert isinstance(handle, events.Handle), 'A Handle is required here'
         if not handle._cancelled:
             self._ready.append(handle)
 
