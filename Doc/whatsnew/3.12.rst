@@ -946,7 +946,7 @@ Removed
   internals.
   (Contributed by Victor Stinner in :gh:`92651`.)
 
-* Legacy Unicode APIs has been removed. See :pep:`623` for detail.
+* Legacy Unicode APIs have been removed. See :pep:`623` for detail.
 
    * :c:macro:`PyUnicode_WCHAR_KIND`
    * :c:func:`PyUnicode_AS_UNICODE`
