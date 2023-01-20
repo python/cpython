@@ -52,7 +52,7 @@ are not normal Python classes.  See
 
 .. note:: Nomenclature
 
-   - The class :class:`!Color` (or *enum*)
+   - The class :class:`!Color` is an *enumeration* (or *enum*)
    - The attributes :attr:`!Color.RED`, :attr:`!Color.GREEN`, etc., are
      *enumeration members* (or *members*) and are functionally constants.
    - The enum members have *names* and *values* (the name of
