@@ -2510,11 +2510,11 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
 }
 
 static int
-treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
-                                        PyObject **dest, PyObject *name)
+treebuilder_extend_element_text_or_tail(elementtreestate *st, PyObject *element,
+                                        PyObject **data, PyObject **dest,
+                                        PyObject *name)
 {
     /* Fast paths for the "almost always" cases. */
-    elementtreestate *st = ET_STATE_GLOBAL;
     if (Element_CheckExact(st, element)) {
         PyObject *dest_obj = JOIN_OBJ(*dest);
         if (dest_obj == Py_None) {
@@ -2574,13 +2574,13 @@ treebuilder_flush_data(TreeBuilderObject* self)
     if (!self->last_for_tail) {
         PyObject *element = self->last;
         return treebuilder_extend_element_text_or_tail(
-                element, &self->data,
+                st, element, &self->data,
                 &((ElementObject *) element)->text, st->str_text);
     }
     else {
         PyObject *element = self->last_for_tail;
         return treebuilder_extend_element_text_or_tail(
-                element, &self->data,
+                st, element, &self->data,
                 &((ElementObject *) element)->tail, st->str_tail);
     }
 }
