@@ -52,7 +52,7 @@ Dumping the traceback
    Dump the tracebacks of all threads into *file*. If *all_threads* is
    ``False``, dump only the current thread.
 
-   See also :func:`traceback.print_tb` which can be used to print a traceback object.
+   .. seealso:: :func:`traceback.print_tb`, which can be used to print a traceback object.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
