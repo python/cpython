@@ -1294,28 +1294,6 @@ _compareTag(const wchar_t *x, const wchar_t *y)
 
 
 int
-_compareArch(const wchar_t *x, const wchar_t *y)
-{
-    if (!x && !y) {
-        return 0;
-    } else if (!x) {
-        return -1;
-    } else if (!y) {
-        return 1;
-    }
-
-    bool is64X = 0 == _compare(x, -1, L"64bit", -1);
-    bool is64Y = 0 == _compare(y, -1, L"64bit", -1);
-    if (is64X) {
-        return is64Y ? 0 : -1;
-    } else if (is64Y) {
-        return 1;
-    }
-    return _compare(x, -1, y, -1);
-}
-
-
-int
 addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo* parent, EnvironmentInfo *node)
 {
     EnvironmentInfo *r = *root;
@@ -1339,15 +1317,6 @@ addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo* parent, EnvironmentI
         return addEnvironmentInfo(&r->next, r, node);
     case 1:
         return addEnvironmentInfo(&r->prev, r, node);
-    case 0:
-        break;
-    }
-    // Then by architecture
-    switch (_compareArch(node->architecture, r->architecture)) {
-    case -1:
-        return addEnvironmentInfo(&r->prev, r, node);
-    case 1:
-        return addEnvironmentInfo(&r->next, r, node);
     case 0:
         break;
     }
@@ -1429,6 +1398,93 @@ _combineWithInstallDir(const wchar_t **dest, const wchar_t *installDir, const wc
     return copyWstr(dest, buffer);
 }
 
+// There is one notable situation which I'm not sure how to handle:
+// Python 3.5 has an executablePath but no windowedExecutablePath.
+// With the code as written, running pyw -3.5 will launch python.exe rather than pythonw.exe.
+
+    // if
+    // * PythonCore and
+    // * legacyVersion
+    //   * 2.X or
+    //   * 3.X where X < 5 or X <= 5 (todo: which?)
+    // then
+    // call back-compat function
+    // * if fallbackArch is not null, (move the above code to here?)
+    // * if fallbackArch is null, set env->architecture from checking the executable's binary type
+    // * if env->architecture is 32bit, update tag by appending "-32"
+int
+_registryBackCompat(const SearchInfo *search, EnvironmentInfo *env, const wchar_t *fallbackArch)
+{
+    // Support backwards-compatibility for old PythonCore versions which do not implement PEP 514.
+    // These are specifically 2.X and 3.0 - 3.5.
+
+    // Non-PythonCore versions and PythonCore versions which already have an architecture
+    // require no compatibility handling.
+    if (0 != _compare(env->company, -1, L"PythonCore", -1) || env->architecture) {
+        return 0;
+    }
+
+    int versionMajor, versionMinor;
+    int n = swscanf(env->tag, L"%d.%d", &versionMajor, &versionMinor);
+    if (n != 2) {
+        debug(L"# %s/%s has an invalid version tag\n", env->company, env->tag);
+        return RC_NO_PYTHON;
+    }
+
+    bool isLegacyVersion =
+        versionMajor == 2 ||
+        (versionMajor == 3 && versionMinor >= 0 && versionMinor <= 5);
+
+    if (!isLegacyVersion) {
+        debug(L"# %s/%s does not follow PEP 514, but is not a known legacy version\n", env->company, env->tag);
+        return RC_NO_PYTHON;
+    }
+
+    // TODO: Ensure executablePath is set by this point, or else
+    // GetBinaryType will not work.
+
+    if (fallbackArch) {
+        copyWstr(&env->architecture, fallbackArch);
+    } else {
+        DWORD binaryType;
+        BOOL success = GetBinaryTypeW(env->executablePath, &binaryType);
+        if (!success) {
+            return RC_NO_PYTHON;
+        }
+
+        switch (binaryType) {
+        case SCS_32BIT_BINARY:
+            copyWstr(&env->architecture, L"32bit");
+            break;
+        case SCS_64BIT_BINARY:
+            copyWstr(&env->architecture, L"64bit");
+            break;
+        default:
+            return RC_NO_PYTHON;
+        }
+    }
+
+    if (0 == _compare(env->architecture, -1, L"32bit", -1)) {
+        int tagLength = wcslen(env->tag);
+        if (tagLength <= 3 || 0 != _compare(&env->tag[tagLength - 3], 3, L"-32", 3)) {
+            wchar_t *rawTag = env->tag;
+            wchar_t *realTag = (wchar_t*) malloc(sizeof(wchar_t) * (tagLength + 4));
+            if (!realTag) {
+                return RC_NO_MEMORY;
+            }
+
+            int count = swprintf_s(realTag, tagLength + 4, L"%s-32", env->tag);
+            if (count == -1) {
+                free(realTag);
+                return RC_INTERNAL_ERROR;
+            }
+
+            env->tag = realTag;
+            free(rawTag);
+        }
+    }
+}
+
 
 int
 _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *env, const wchar_t *fallbackArch)
@@ -1495,6 +1551,7 @@ _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *e
         debug(L"# %s/%s has no executable path\n", env->company, env->tag);
         return RC_NO_PYTHON;
     }
+
 
     return 0;
 }
@@ -2155,13 +2212,13 @@ _listAllEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, Environmen
         } else if (0 == _compare(env->company, -1, L"PythonCore", -1)) {
             swprintf_s(buffer, bufferSize, L"-V:%s", env->tag);
 
-            // append "-32" to PythonCore 32-bit environments if it isn't already specified in the tag name
-            if (0 == _compare(env->architecture, -1, L"32bit", -1)) {
-                int tagLength = wcslen(env->tag);
-                if (tagLength <= 3 || 0 != _compare(&env->tag[tagLength - 3], 3, L"-32", 3)) {
-                    wcscat_s(buffer, bufferSize, L"-32");
-                }
-            }
+            //// append "-32" to PythonCore 32-bit environments if it isn't already specified in the tag name
+            //if (0 == _compare(env->architecture, -1, L"32bit", -1)) {
+            //    int tagLength = wcslen(env->tag);
+            //    if (tagLength <= 3 || 0 != _compare(&env->tag[tagLength - 3], 3, L"-32", 3)) {
+            //        wcscat_s(buffer, bufferSize, L"-32");
+            //    }
+            //}
         } else {
             swprintf_s(buffer, bufferSize, L"-V:%s/%s", env->company, env->tag);
         }
