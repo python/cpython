@@ -231,7 +231,7 @@ typedef struct {
 } ElementObject;
 
 
-#define Element_CheckExact(op) Py_IS_TYPE(op, ET_STATE_GLOBAL->Element_Type)
+#define Element_CheckExact(st, op) Py_IS_TYPE(op, (st)->Element_Type)
 #define Element_Check(op) PyObject_TypeCheck(op, ET_STATE_GLOBAL->Element_Type)
 
 
@@ -856,7 +856,7 @@ LOCAL(PyObject *)
 deepcopy(PyObject *object, PyObject *memo)
 {
     /* do a deep copy of the given object */
-    elementtreestate *st;
+    elementtreestate *st = ET_STATE_GLOBAL;
     PyObject *stack[2];
 
     /* Fast paths */
@@ -879,14 +879,13 @@ deepcopy(PyObject *object, PyObject *memo)
                 return PyDict_Copy(object);
             /* Fall through to general case */
         }
-        else if (Element_CheckExact(object)) {
+        else if (Element_CheckExact(st, object)) {
             return _elementtree_Element___deepcopy___impl(
                 (ElementObject *)object, memo);
         }
     }
 
     /* General case */
-    st = ET_STATE_GLOBAL;
     if (!st->deepcopy_obj) {
         PyErr_SetString(PyExc_RuntimeError,
                         "deepcopy helper not found");
@@ -2483,7 +2482,8 @@ treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
                                         PyObject **dest, PyObject *name)
 {
     /* Fast paths for the "almost always" cases. */
-    if (Element_CheckExact(element)) {
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (Element_CheckExact(st, element)) {
         PyObject *dest_obj = JOIN_OBJ(*dest);
         if (dest_obj == Py_None) {
             *dest = JOIN_SET(*data, PyList_CheckExact(*data));
@@ -2557,7 +2557,7 @@ static int
 treebuilder_add_subelement(PyObject *element, PyObject *child)
 {
     elementtreestate *st = ET_STATE_GLOBAL;
-    if (Element_CheckExact(element)) {
+    if (Element_CheckExact(st, element)) {
         ElementObject *elem = (ElementObject *) element;
         return element_add_subelement(elem, child);
     }
