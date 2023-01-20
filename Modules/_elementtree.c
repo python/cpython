@@ -3091,11 +3091,10 @@ makeuniversal(XMLParserObject* self, const char* string)
  * message string is the default for the given error_code.
 */
 static void
-expat_set_error(enum XML_Error error_code, Py_ssize_t line, Py_ssize_t column,
-                const char *message)
+expat_set_error(elementtreestate *st, enum XML_Error error_code,
+                Py_ssize_t line, Py_ssize_t column, const char *message)
 {
     PyObject *errmsg, *error, *position, *code;
-    elementtreestate *st = ET_STATE_GLOBAL;
 
     errmsg = PyUnicode_FromFormat("%s: line %zd, column %zd",
                 message ? message : EXPAT(ErrorString)(error_code),
@@ -3160,8 +3159,8 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
 
     value = PyDict_GetItemWithError(self->entity, key);
 
+    elementtreestate *st = self->state;
     if (value) {
-        elementtreestate *st = self->state;
         if (TreeBuilder_CheckExact(st, self->target))
             res = treebuilder_handle_data(
                 (TreeBuilderObject*) self->target, value
@@ -3176,6 +3175,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
         char message[128] = "undefined entity ";
         strncat(message, data_in, data_len < 100?data_len:100);
         expat_set_error(
+            st,
             XML_ERROR_UNDEFINED_ENTITY,
             EXPAT(GetErrorLineNumber)(self->parser),
             EXPAT(GetErrorColumnNumber)(self->parser),
@@ -3785,7 +3785,9 @@ expat_parse(XMLParserObject* self, const char* data, int data_len, int final)
         return NULL;
 
     if (!ok) {
+        elementtreestate *st = ET_STATE_GLOBAL;
         expat_set_error(
+            st,
             EXPAT(GetErrorCode)(self->parser),
             EXPAT(GetErrorLineNumber)(self->parser),
             EXPAT(GetErrorColumnNumber)(self->parser),
