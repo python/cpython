@@ -1,1 +1,1 @@
-Make ctypes fundamental data types preserve a more detail exception in ```from_param``.
+Make ctypes fundamental data types preserve a more detail exception in ``from_param``.
