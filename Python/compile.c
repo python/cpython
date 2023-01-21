@@ -2339,9 +2339,11 @@ compiler_make_closure(struct compiler *c, location loc,
         flags |= 0x08;
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
-    Py_ssize_t arg;
-    RETURN_IF_ERROR((arg = compiler_add_const(c, (PyObject*)co)));
-    ADDOP_LONG(c, loc, MAKE_FUNCTION_FROM_CODE, flags, 0, (int)arg);
+    // Py_ssize_t arg;
+    // RETURN_IF_ERROR((arg = compiler_add_const(c, (PyObject*)co)));
+    // ADDOP_LONG(c, loc, MAKE_FUNCTION_FROM_CODE, flags, 0, (int)arg);
+    ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
+    ADDOP_I(c, loc, MAKE_FUNCTION, flags);
     return SUCCESS;
 }
 
