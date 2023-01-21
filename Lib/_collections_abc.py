@@ -746,7 +746,8 @@ class MutableSet(Set):
         return self
 
     def __iand__(self, it):
-        for value in (self - it):
+        values_to_discard = set([v for v in self if v not in it])
+        for value in values_to_discard:
             self.discard(value)
         return self
 
