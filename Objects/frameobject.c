@@ -397,6 +397,9 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     assert(pop_value(next_stack) == EMPTY_STACK);
                     assert(top_of_stack(next_stack) == Object);
                     break;
+                case RETURN_VALUE_R:
+                    assert(next_stack == EMPTY_STACK);
+                    break;
                 case RAISE_VARARGS:
                     break;
                 case RERAISE:

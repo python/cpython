@@ -9354,7 +9354,8 @@ jump_thread(struct instr *inst, struct instr *target, int opcode)
 }
 
 /* Maximum size of basic block that should be copied in optimizer */
-#define MAX_COPY_SIZE 4
+/* TODO: temporarily bumped from 4 to 6 while RETURN_VALUE_R needs a preceding STORE_FAST */
+#define MAX_COPY_SIZE 6
 
 /* Optimization */
 static int

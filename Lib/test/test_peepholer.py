@@ -340,7 +340,7 @@ class TestTranforms(BytecodeTestCase):
             return x
         self.assertNotInBytecode(f, 'LOAD_CONST', None)
         returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE']
+                          if instr.opname == 'RETURN_VALUE_R']
         self.assertEqual(len(returns), 1)
         self.check_lnotab(f)
 
@@ -354,7 +354,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertNotInBytecode(f, 'JUMP_FORWARD')
         self.assertNotInBytecode(f, 'JUMP_BACKWARD')
         returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE']
+                          if instr.opname == 'RETURN_VALUE_R']
         self.assertEqual(len(returns), 2)
         self.check_lnotab(f)
 
