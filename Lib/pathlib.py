@@ -1225,10 +1225,10 @@ class Path(PurePath):
                 continue
 
             # We may not have read permission for self, in which case we can't
-            # get a list of the files the directory contains. os.walk
-            # always suppressed the exception then, rather than blow up for a
-            # minor reason when (say) a thousand readable directories are still
-            # left to visit. That logic is copied here.
+            # get a list of the files the directory contains. os.walk()
+            # always suppressed the exception in that instance, rather than
+            # blow up for a minor reason when (say) a thousand readable
+            # directories are still left to visit. That logic is copied here.
             try:
                 scandir_it = path._scandir()
             except OSError as error:
