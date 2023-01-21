@@ -2155,8 +2155,10 @@ elementiter_next(ElementIterObject *it)
                 continue;
             }
 
+#ifndef NDEBUG
             elementtreestate *st = ET_STATE_GLOBAL;
             assert(Element_Check(st, extra->children[child_index]));
+#endif
             elem = (ElementObject *)Py_NewRef(extra->children[child_index]);
             item->child_index++;
         }
