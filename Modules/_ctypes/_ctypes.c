@@ -2256,11 +2256,12 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
         Py_XDECREF(tb);
         return value;
     }
-    if (exc)
+    if (exc) {
         PyErr_Restore(exc, val, tb);
-    else
-        PyErr_SetString(PyExc_TypeError,
-                        "wrong type");
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "wrong type");
+    }
     return NULL;
 }
 
