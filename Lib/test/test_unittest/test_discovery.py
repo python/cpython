@@ -499,6 +499,15 @@ class TestDiscovery(unittest.TestCase):
         with self.assertRaises(ImportError):
             test.test_this_does_not_exist()
 
+    # no files that don't follow a default or supplied pattern should be
+    # considered in the test.
+    def test_discover_ignores_files_not_following_pattern(self):
+        loader = unittest.TestLoader()
+
+        suites = loader.discover('dummymodule')
+        for suite in list(suites):
+            self.assertEqual(list(suite), [])
+
     def test_discover_with_init_modules_that_fail_to_import(self):
         vfs = {abspath('/foo'): ['my_package'],
                abspath('/foo/my_package'): ['__init__.py', 'test_module.py']}
