@@ -726,6 +726,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     // for the big switch below (in combination with the EXTRA_CASES macro).
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
+    int oparg1;        /* Current opcode argument, if any */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 #ifdef LLTRACE
     int lltrace = 0;
@@ -930,6 +931,7 @@ handle_eval_breaker:
             INSTRUCTION_START(EXTENDED_ARG);
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            oparg1 = oparg;
             // Make sure the next instruction isn't a RESUME, since that needs
             // to trace properly (and shouldn't have an EXTENDED_ARG, anyways):
             assert(opcode != RESUME);

@@ -144,7 +144,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
-        oparg = _Py_OPARG(word); \
+        oparg1 = oparg = _Py_OPARG(word); \
     } while (0)
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
 #define JUMPBY(x)       (next_instr += (x))
@@ -249,6 +249,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define SETLOCAL(i, value)      do { PyObject *tmp = GETLOCAL(i); \
                                      GETLOCAL(i) = value; \
                                      Py_XDECREF(tmp); } while (0)
+
+/* Access a register */
+#define REG(n)            (frame->localsplus[n])
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 

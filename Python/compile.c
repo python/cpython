@@ -124,6 +124,7 @@
 
 #define IS_SCOPE_EXIT_OPCODE(opcode) \
         ((opcode) == RETURN_VALUE || \
+         (opcode) == RETURN_VALUE_R || \
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
@@ -184,31 +185,71 @@ static struct jump_target_label_ NO_LABEL = {-1};
         return 0; \
     }
 
+enum oparg_type {
+    OPARG_TYPE_UNUSED,
+    OPARG_TYPE_EXPLICIT, /* int value */
+    OPARG_TYPE_CONST,    /* index of const */
+    OPARG_TYPE_NAME,     /* index of name */
+    OPARG_TYPE_TMP,      /* index of tmp */
+};
+
+typedef struct oparg_ {
+    enum oparg_type type;
+    int value; /* logical value set by codegen */
+    int final; /* actual reg value, resolved in assembly */
+} oparg_t;
+
+#define UNUSED_OPARG      ((const oparg_t){.value=(0), .type=OPARG_TYPE_UNUSED})
+#define EXPLICIT_OPARG(V) ((const oparg_t){.value=(V), .type=OPARG_TYPE_EXPLICIT})
+#define CONST_OPARG(V)    ((const oparg_t){.value=(V), .type=OPARG_TYPE_CONST})
+#define NAME_OPARG(V)     ((const oparg_t){.value=(V), .type=OPARG_TYPE_NAME})
+#define TMP_OPARG(V)      ((const oparg_t){.value=(V), .type=OPARG_TYPE_TMP})
+
+#define IS_UNUSED(OPARG) ((OPARG).type == OPARG_TYPE_UNUSED)
+#define SAME_REGISTER(R1, R2) (((R1).type == (R2).type) && ((R1).value == (R2).value))
+
+typedef struct instr_opargs_ {
+    oparg_t arg1;
+} instr_opargs;
+
+#define NO_OPARGS ((const instr_opargs){UNUSED_OPARG})
+#define OPARGS1(A1) ((const instr_opargs){(A1)})
+
+
 struct instr {
     int i_opcode;
     int i_oparg;
+    instr_opargs i_opargs;
     location i_loc;
     /* The following fields should not be set by the front-end: */
     struct basicblock_ *i_target; /* target block (if jump instruction) */
     struct basicblock_ *i_except; /* target block when exception is raised */
 };
 
-/* One arg*/
-#define INSTR_SET_OP1(I, OP, ARG) \
-    do { \
-        assert(HAS_ARG(OP)); \
-        struct instr *_instr__ptr_ = (I); \
-        _instr__ptr_->i_opcode = (OP); \
-        _instr__ptr_->i_oparg = (ARG); \
-    } while (0);
+#define IS_REGISTER_INSTR(I) (!IS_UNUSED((I)->i_opargs.arg1))
 
-/* No args*/
+ /* No args*/
 #define INSTR_SET_OP0(I, OP) \
     do { \
         assert(!HAS_ARG(OP)); \
+        int _opcode_ = (OP); \
         struct instr *_instr__ptr_ = (I); \
-        _instr__ptr_->i_opcode = (OP); \
+        _instr__ptr_->i_opcode = _opcode_; \
         _instr__ptr_->i_oparg = 0; \
+        _instr__ptr_->i_opargs = NO_OPARGS; \
+    } while (0);
+
+/* One arg*/
+#define INSTR_SET_OP1(I, OP, ARG, OPARG1) \
+    do { \
+        assert(HAS_ARG(OP)); \
+        int _opcode_ = (OP); \
+        int _oparg_ = (ARG); \
+        oparg_t _oparg1_ = (OPARG1); \
+        struct instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_opcode = _opcode_; \
+        _instr__ptr_->i_oparg = _oparg_; \
+        _instr__ptr_->i_opargs = OPARGS1(_oparg1_); \
     } while (0);
 
 typedef struct exceptstack {
@@ -254,11 +295,11 @@ is_jump(struct instr *i)
 }
 
 static int
-instr_size(struct instr *instruction)
+instr_size(struct instr *instr)
 {
-    int opcode = instruction->i_opcode;
+    int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = instruction->i_oparg;
+    int oparg = IS_REGISTER_INSTR(instr) ? instr->i_opargs.arg1.final : instr->i_oparg;
     assert(HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
@@ -266,11 +307,11 @@ instr_size(struct instr *instruction)
 }
 
 static void
-write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
+write_instr(_Py_CODEUNIT *codestr, struct instr *instr, int ilen)
 {
-    int opcode = instruction->i_opcode;
+    int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = instruction->i_oparg;
+    int oparg = IS_REGISTER_INSTR(instr) ? instr->i_opargs.arg1.final : instr->i_oparg;
     assert(HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
@@ -356,7 +397,7 @@ basicblock_last_instr(const basicblock *b) {
 static inline int
 basicblock_returns(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE;
+    return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_VALUE_R);
 }
 
 static inline int
@@ -452,6 +493,8 @@ struct compiler_unit {
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
 
     int u_firstlineno; /* the first lineno of the block */
+    int u_ntmps; /* 1+highest index of a tmp used in this code unit */
+    int u_next_free_tmp; /* index of the first tmp register which is no longer in use */
 };
 
 /* This struct captures the global state of a compilation.
@@ -480,6 +523,7 @@ struct compiler {
     struct compiler_unit *u; /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
+    bool c_regcode;              /* produce regmachine code for this file */
 };
 
 #define CFG_BUILDER(C) (&((C)->u->u_cfg_builder))
@@ -652,6 +696,17 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
 
     c->c_filename = Py_NewRef(filename);
     c->c_arena = arena;
+
+    const char *f = PyUnicode_AsUTF8(c->c_filename);
+    if (f == NULL) {
+        PyErr_Clear();
+        c->c_regcode = false;
+    }
+    else {
+        c->c_regcode = strstr(f, "mytest");
+    }
+    c->c_regcode = true;
+
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return ERROR;
     }
@@ -870,6 +925,30 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_private);
     PyObject_Free(u);
 }
+
+static int
+compiler_unit_get_free_tmp(struct compiler_unit *u)
+{
+    int tmp = u->u_next_free_tmp++;
+    if (u->u_next_free_tmp > u->u_ntmps) {
+        u->u_ntmps = u->u_next_free_tmp;
+    }
+    return tmp;
+}
+
+static void
+compiler_unit_release_tmps(struct compiler_unit *u, int release_from)
+{
+    assert(release_from >= 0);
+    u->u_next_free_tmp = release_from;
+}
+
+#define ALLOCATE_TMP(C) TMP_OPARG(compiler_unit_get_free_tmp((C)->u))
+#define RELEASE_TMPS(C, I) compiler_unit_release_tmps((C)->u, (I))
+/* Note: RELEASE_TMPS frees index I so that it can be reused, but
+ * it doesn't decref the value of the register (this currently happens
+ * when the tmp is reused, or when the frame is cleared).
+ */
 
 static int
 compiler_set_qualname(struct compiler *c)
@@ -1120,6 +1199,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case RETURN_VALUE:
             return -1;
+        case RETURN_VALUE_R:
+            return 0;
         case SETUP_ANNOTATIONS:
             return 0;
         case YIELD_VALUE:
@@ -1335,7 +1416,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 static int
-basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
+basicblock_addop(basicblock *b, int opcode, int oparg, instr_opargs opargs,
+                 location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1349,6 +1431,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
+    i->i_opargs = opargs;
     i->i_target = NULL;
     i->i_loc = loc;
 
@@ -1381,19 +1464,20 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
 }
 
 static int
-cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
+cfg_builder_addop(cfg_builder *g, int opcode, int oparg, instr_opargs opargs,
+                  location loc)
 {
     if (cfg_builder_maybe_start_new_block(g) != 0) {
         return -1;
     }
-    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
+    return basicblock_addop(g->g_curblock, opcode, oparg, opargs, loc);
 }
 
 static int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, loc);
+    return cfg_builder_addop(g, opcode, 0, NO_OPARGS, loc);
 }
 
 static Py_ssize_t
@@ -1604,7 +1688,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, loc);
+    return cfg_builder_addop(g, opcode, oparg_, NO_OPARGS, loc);
 }
 
 static int
@@ -1613,11 +1697,14 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, target.id, loc);
+    return cfg_builder_addop(g, opcode, target.id, NO_OPARGS, loc);
 }
 
 #define ADDOP(C, LOC, OP) \
     RETURN_IF_ERROR(cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)))
+
+#define ADDOP_REGS(C, LOC, OP, ARGS) \
+     RETURN_IF_ERROR(cfg_builder_addop(CFG_BUILDER(C), (OP), 0, (ARGS), (LOC)))
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
@@ -1671,6 +1758,16 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADD_YIELD_FROM(C, LOC, await) \
     RETURN_IF_ERROR(compiler_add_yield_from((C), (LOC), (await)))
+
+#define ADD_RETURN_VALUE(C, LOC) \
+    RETURN_IF_ERROR(compiler_add_return_value((C), (LOC)));
+
+#define ADD_RETURN_VALUE_IN_SCOPE(C, LOC) { \
+    if (compiler_add_return_value((C), (LOC)) < 0) { \
+        compiler_exit_scope(C); \
+        return -1; \
+    } \
+}
 
 #define POP_EXCEPT_AND_RERAISE(C, LOC) \
     RETURN_IF_ERROR(compiler_pop_except_and_reraise((C), (LOC)))
@@ -2568,6 +2665,21 @@ compiler_check_debug_args(struct compiler *c, arguments_ty args)
     return SUCCESS;
 }
 
+static int
+compiler_add_return_value(struct compiler *c, location loc)
+{
+    if (c->c_regcode) {
+        oparg_t val = ALLOCATE_TMP(c);
+        ADDOP_REGS(c, loc, STORE_FAST, OPARGS1(val));
+        ADDOP_REGS(c, loc, RETURN_VALUE_R, OPARGS1(val));
+        RELEASE_TMPS(c, val.value);
+    }
+    else {
+        ADDOP(c, loc, RETURN_VALUE);
+    }
+    return SUCCESS;
+}
+
 static inline int
 insert_instruction(basicblock *block, int pos, struct instr *instr) {
     RETURN_IF_ERROR(basicblock_next_instr(block));
@@ -2594,7 +2706,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
         insert_instruction(c->u->u_cfg_builder.g_entryblock, 0, &setup));
 
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-    ADDOP(c, NO_LOCATION, RETURN_VALUE);
+    ADD_RETURN_VALUE(c, NO_LOCATION);
     USE_LABEL(c, handler);
     ADDOP_I(c, NO_LOCATION, CALL_INTRINSIC_1, INTRINSIC_STOPITERATION_ERROR);
     ADDOP_I(c, NO_LOCATION, RERAISE, 1);
@@ -2774,7 +2886,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             assert(PyDict_GET_SIZE(c->u->u_cellvars) == 0);
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
-        ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
+        ADD_RETURN_VALUE_IN_SCOPE(c, NO_LOCATION);
         /* create the code object */
         co = assemble(c, 1);
     }
@@ -3043,7 +3155,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
     }
     else {
         location loc = LOCATION(e->lineno, e->lineno, 0, 0);
-        ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+        ADD_RETURN_VALUE_IN_SCOPE(c, loc);
         co = assemble(c, 1);
     }
     compiler_exit_scope(c);
@@ -3237,7 +3349,7 @@ compiler_return(struct compiler *c, stmt_ty s)
     else if (!preserve_tos) {
         ADDOP_LOAD_CONST(c, loc, s->v.Return.value->v.Constant.value);
     }
-    ADDOP(c, loc, RETURN_VALUE);
+    ADD_RETURN_VALUE(c, loc);
 
     return SUCCESS;
 }
@@ -5431,7 +5543,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     if (type != COMP_GENEXP) {
-        ADDOP(c, LOC(e), RETURN_VALUE);
+        ADD_RETURN_VALUE(c, LOC(e));
     }
     if (type == COMP_GENEXP) {
         if (wrap_in_stopiteration_handler(c) < 0) {
@@ -7480,7 +7592,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label, NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label, NO_OPARGS, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
@@ -7881,7 +7993,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return -1;
     }
-    basicblock_addop(backwards_jump, JUMP, target->b_label, NO_LOCATION);
+    basicblock_addop(backwards_jump, JUMP, target->b_label, NO_OPARGS, NO_LOCATION);
     backwards_jump->b_instr[0].i_target = target;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -8353,7 +8465,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .posonlyargcount = posonlyargcount,
         .kwonlyargcount = kwonlyargcount,
 
-        .ntmps = 0,  /* TODO: ntmps is not used yet */
+        .ntmps = c->u->u_ntmps,
         .stacksize = maxdepth,
 
         .exceptiontable = a->a_except_table,
@@ -8560,7 +8672,7 @@ guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
             continue;
         }
         if (last->i_loc.lineno < 0) {
-            if (last->i_opcode == RETURN_VALUE) {
+            if (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_VALUE_R) {
                 for (int i = 0; i < b->b_iused; i++) {
                     assert(b->b_instr[i].i_loc.lineno < 0);
 
@@ -8755,9 +8867,48 @@ add_return_at_end_of_block(struct compiler *c, int addNone)
         if (addNone) {
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
-        ADDOP(c, NO_LOCATION, RETURN_VALUE);
+        ADD_RETURN_VALUE(c, NO_LOCATION);
     }
     return SUCCESS;
+}
+
+static int
+resolve_register(oparg_t *oparg, int nlocalsplus, int ntmps)
+{
+    switch(oparg->type) {
+        case OPARG_TYPE_UNUSED:
+            oparg->final = 0;
+            break;
+        case OPARG_TYPE_EXPLICIT:
+            oparg->final = oparg->value;
+            break;
+        case OPARG_TYPE_NAME:
+            assert(oparg->value >= 0 && oparg->value < nlocalsplus);
+            oparg->final = oparg->value;
+            break;
+        case OPARG_TYPE_TMP: {
+            assert(oparg->value >= 0 && oparg->value < ntmps);
+            oparg->final = nlocalsplus + oparg->value;
+            break;
+        }
+        default:
+            Py_UNREACHABLE();
+    }
+    return SUCCESS;
+}
+
+static int
+resolve_registers(cfg_builder *g, int nlocalsplus, int ntmps)
+{
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *inst = &b->b_instr[i];
+            if (resolve_register(&inst->i_opargs.arg1, nlocalsplus, ntmps) < 0) {
+                return -1;
+            }
+        }
+    }
+    return 0;
 }
 
 static PyCodeObject *
@@ -8862,6 +9013,10 @@ assemble(struct compiler *c, int addNone)
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
+
+    if (resolve_registers(g, nlocalsplus, c->u->u_ntmps) < 0) {
+        goto error;
+    }
 
     /* Create assembler */
     if (assemble_init(&a, c->u->u_firstlineno) < 0) {
@@ -9008,7 +9163,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     for (int i = 0; i < n; i++) {
         INSTR_SET_OP0(&inst[i], NOP);
     }
-    INSTR_SET_OP1(&inst[n], LOAD_CONST, (int)index);
+    INSTR_SET_OP1(&inst[n], LOAD_CONST, (int)index, UNUSED_OPARG);
     return 0;
 }
 
@@ -9967,7 +10122,7 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
             if (PyErr_Occurred()) {
                 return -1;
             }
-            if (cfg_builder_addop(g, opcode, oparg, loc) < 0) {
+            if (cfg_builder_addop(g, opcode, oparg, NO_OPARGS, loc) < 0) {
                 return -1;
             }
         }

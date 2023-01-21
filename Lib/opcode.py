@@ -197,6 +197,8 @@ hascompare.append(141)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
+def_op('RETURN_VALUE_R', 143)
+
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
