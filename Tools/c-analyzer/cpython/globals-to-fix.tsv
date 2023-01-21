@@ -425,10 +425,6 @@ Modules/_decimal/_decimal.c	-	PyDecContextManager_Type	-
 Modules/_decimal/_decimal.c	-	PyDecContext_Type	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDictMixin_Type	-
 Modules/_decimal/_decimal.c	-	PyDec_Type	-
-Modules/_elementtree.c	-	ElementIter_Type	-
-Modules/_elementtree.c	-	Element_Type	-
-Modules/_elementtree.c	-	TreeBuilder_Type	-
-Modules/_elementtree.c	-	XMLParser_Type	-
 Modules/_pickle.c	-	Pdata_Type	-
 Modules/_pickle.c	-	PicklerMemoProxyType	-
 Modules/_pickle.c	-	Pickler_Type	-
