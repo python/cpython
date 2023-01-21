@@ -1265,8 +1265,7 @@ dummy_func(
         inst(COPY_FREE_VARS, (--)) {
             /* Copy closure variables to free variables */
             PyCodeObject *co = frame->f_code;
-            assert(PyFunction_Check(frame->f_funcobj));
-            PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
+            PyObject *closure = frame->f_closure;
             assert(oparg == co->co_nfreevars);
             int offset = co->co_nlocalsplus - oparg;
             for (int i = 0; i < oparg; ++i) {
@@ -2515,6 +2514,23 @@ dummy_func(
             kwnames = GETITEM(consts, oparg);
         }
 
+        // stack effect: (__0, __1, __array[oparg] --)
+        inst(COMPREHENSION) {
+            PyObject *code = PEEK(2);
+            PyObject *closure = oparg ? PEEK(3) : NULL;
+            _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+                tstate, Py_NewRef(frame->f_funcobj), code, closure, NULL,
+                stack_pointer - 1, 1, NULL
+            );
+            Py_XDECREF(code);
+            Py_XDECREF(closure);
+            STACK_SHRINK(oparg + 2);
+            if (new_frame == NULL) {
+                goto error;
+            }
+            DISPATCH_INLINED(new_frame);
+        }
+
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL) {
             #if ENABLE_SPECIALIZATION
@@ -2553,8 +2569,9 @@ dummy_func(
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(function));
                 STACK_SHRINK(total_args);
+                PyFunctionObject *func = (PyFunctionObject *)function;
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)function, locals,
+                    tstate, func, func->func_code, func->func_closure, locals,
                     stack_pointer, positional_args, kwnames
                 );
                 kwnames = NULL;

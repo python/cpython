@@ -113,6 +113,7 @@ extern "C" {
 #define SET_UPDATE                             163
 #define DICT_MERGE                             164
 #define DICT_UPDATE                            165
+#define COMPREHENSION                          170
 #define CALL                                   171
 #define KW_NAMES                               172
 #define CALL_INTRINSIC_1                       173

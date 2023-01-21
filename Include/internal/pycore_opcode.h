@@ -108,6 +108,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [COMPARE_AND_BRANCH_INT] = COMPARE_AND_BRANCH,
     [COMPARE_AND_BRANCH_STR] = COMPARE_AND_BRANCH,
     [COMPARE_OP] = COMPARE_OP,
+    [COMPREHENSION] = COMPREHENSION,
     [CONTAINS_OP] = CONTAINS_OP,
     [COPY] = COPY,
     [COPY_FREE_VARS] = COPY_FREE_VARS,
@@ -398,7 +399,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [167] = "<167>",
     [168] = "<168>",
     [169] = "<169>",
-    [170] = "<170>",
+    [COMPREHENSION] = "COMPREHENSION",
     [CALL] = "CALL",
     [KW_NAMES] = "KW_NAMES",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
@@ -500,7 +501,6 @@ static const char *const _PyOpcode_OpName[263] = {
     case 167: \
     case 168: \
     case 169: \
-    case 170: \
     case 174: \
     case 175: \
     case 176: \

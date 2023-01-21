@@ -75,6 +75,7 @@ The specials sections contains the following pointers:
 * Builtins dict
 * Locals dict (not the "fast" locals, but the locals for eval and class creation)
 * Code object
+* Closure tuple of cells for free variables, if any.
 * Heap allocated `PyFrameObject` for this activation record, if any.
 * The function.
 

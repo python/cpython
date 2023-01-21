@@ -170,10 +170,9 @@ dis_bug1333982 = """\
 
 %3d        LOAD_ASSERTION_ERROR
            LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
-           MAKE_FUNCTION            0
            LOAD_FAST                0 (x)
            GET_ITER
-           CALL                     0
+           COMPREHENSION            0
 
 %3d        LOAD_CONST               2 (1)
 
@@ -675,10 +674,9 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 %3d        LOAD_CLOSURE             0 (x)
            BUILD_TUPLE              1
            LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
-           MAKE_FUNCTION            8 (closure)
            LOAD_DEREF               1 (y)
            GET_ITER
-           CALL                     0
+           COMPREHENSION            1
            RETURN_VALUE
 """ % (dis_nested_0,
        __file__,

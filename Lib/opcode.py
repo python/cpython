@@ -218,6 +218,7 @@ def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 
+def_op('COMPREHENSION', 170)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)

@@ -882,6 +882,7 @@ frame_dealloc(PyFrameObject *f)
         frame->f_code = NULL;
         Py_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
+        Py_CLEAR(frame->f_closure);
         PyObject **locals = _PyFrame_GetLocalsArray(frame);
         for (int i = 0; i < frame->stacktop; i++) {
             Py_CLEAR(locals[i]);
@@ -1020,7 +1021,7 @@ init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyFrame_Initialize(frame, (PyFunctionObject*)Py_NewRef(func),
-                        Py_XNewRef(locals), code, 0);
+                        Py_XNewRef(locals), code, func->func_closure, 0);
     frame->previous = NULL;
 }
 
@@ -1123,7 +1124,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     }
 
     /* Free vars have not been initialized -- Do that */
-    PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
+    PyObject *closure = frame->f_closure;
     int offset = PyCode_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);

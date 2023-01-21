@@ -1243,6 +1243,8 @@ stack_effect(int opcode, int oparg, int jump)
         /* Functions and calls */
         case KW_NAMES:
             return 0;
+        case COMPREHENSION:
+            return -1-oparg;
         case CALL:
             return -1-oparg;
         case CALL_INTRINSIC_1:
@@ -2249,53 +2251,63 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
 
 static int
 compiler_make_closure(struct compiler *c, location loc,
-                      PyCodeObject *co, Py_ssize_t flags)
+                      PyCodeObject *co)
+{
+    int i = PyCode_GetFirstFree(co);
+    for (; i < co->co_nlocalsplus; ++i) {
+        /* Bypass com_addop_varname because it will generate
+            LOAD_DEREF but LOAD_CLOSURE is needed.
+        */
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+
+        /* Special case: If a class contains a method with a
+            free variable that has the same name as a method,
+            the name will be considered free *and* local in the
+            class.  It should be handled by the closure, as
+            well as by the normal name lookup logic.
+        */
+        int reftype = get_ref_type(c, name);
+        if (reftype == -1) {
+            return ERROR;
+        }
+        int arg;
+        if (reftype == CELL) {
+            arg = compiler_lookup_arg(c->u->u_cellvars, name);
+        }
+        else {
+            arg = compiler_lookup_arg(c->u->u_freevars, name);
+        }
+        if (arg == -1) {
+            PyObject *freevars = _PyCode_GetFreevars(co);
+            if (freevars == NULL) {
+                PyErr_Clear();
+            }
+            PyErr_Format(PyExc_SystemError,
+                "compiler_lookup_arg(name=%R) with reftype=%d failed in %S; "
+                "freevars of code %S: %R",
+                name,
+                reftype,
+                c->u->u_name,
+                co->co_name,
+                freevars);
+            Py_DECREF(freevars);
+            return ERROR;
+        }
+        ADDOP_I(c, loc, LOAD_CLOSURE, arg);
+    }
+    ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
+    return SUCCESS;
+}
+
+static int
+compiler_make_function(struct compiler *c, location loc,
+                       PyCodeObject *co, Py_ssize_t flags)
 {
     if (co->co_nfreevars) {
-        int i = PyCode_GetFirstFree(co);
-        for (; i < co->co_nlocalsplus; ++i) {
-            /* Bypass com_addop_varname because it will generate
-               LOAD_DEREF but LOAD_CLOSURE is needed.
-            */
-            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-
-            /* Special case: If a class contains a method with a
-               free variable that has the same name as a method,
-               the name will be considered free *and* local in the
-               class.  It should be handled by the closure, as
-               well as by the normal name lookup logic.
-            */
-            int reftype = get_ref_type(c, name);
-            if (reftype == -1) {
-                return ERROR;
-            }
-            int arg;
-            if (reftype == CELL) {
-                arg = compiler_lookup_arg(c->u->u_cellvars, name);
-            }
-            else {
-                arg = compiler_lookup_arg(c->u->u_freevars, name);
-            }
-            if (arg == -1) {
-                PyObject *freevars = _PyCode_GetFreevars(co);
-                if (freevars == NULL) {
-                    PyErr_Clear();
-                }
-                PyErr_Format(PyExc_SystemError,
-                    "compiler_lookup_arg(name=%R) with reftype=%d failed in %S; "
-                    "freevars of code %S: %R",
-                    name,
-                    reftype,
-                    c->u->u_name,
-                    co->co_name,
-                    freevars);
-                Py_DECREF(freevars);
-                return ERROR;
-            }
-            ADDOP_I(c, loc, LOAD_CLOSURE, arg);
+        if(compiler_make_closure(c, loc, co) < 0) {
+            return ERROR;
         }
         flags |= 0x08;
-        ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
     ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
     ADDOP_I(c, loc, MAKE_FUNCTION, flags);
@@ -2687,7 +2699,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         Py_XDECREF(co);
         return ERROR;
     }
-    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
+    if (compiler_make_function(c, loc, co, funcflags) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
@@ -2790,7 +2802,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP(c, loc, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    if (compiler_make_closure(c, loc, co, 0) < 0) {
+    if (compiler_make_function(c, loc, co, 0) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
@@ -3051,7 +3063,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return ERROR;
     }
 
-    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
+    if (compiler_make_function(c, loc, co, funcflags) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
@@ -5449,9 +5461,24 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     loc = LOC(e);
-    if (compiler_make_closure(c, loc, co, 0) < 0) {
-        goto error;
+    int oparg = 0;
+    int opcode = COMPREHENSION;
+
+    if (type == COMP_GENEXP || is_async_generator) {
+        opcode = CALL;
+        if (compiler_make_function(c, loc, co, 0) < 0) {
+            goto error;
+        }
+    } else {
+        if (co->co_nfreevars) {
+            oparg = 1;
+            if (compiler_make_closure(c, loc, co) < 0) {
+                goto error;
+            }
+        }
+        ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
     }
+
     Py_DECREF(co);
 
     VISIT(c, expr, outermost->iter);
@@ -5463,7 +5490,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, loc, GET_ITER);
     }
 
-    ADDOP_I(c, loc, CALL, 0);
+    ADDOP_I(c, loc, opcode, oparg);
 
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP_I(c, loc, GET_AWAITABLE, 0);

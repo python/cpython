@@ -1304,6 +1304,20 @@ iterations of the loop.
    * 2: ``raise STACK[-2] from STACK[-1]`` (raise exception instance or type at
      ``STACK[-2]`` with ``__cause__`` set to ``STACK[-1]``)
 
+.. opcode:: COMPREHENSION (flag)
+
+   Calls a comprehension code object, without creating and throwing away a
+   single-use function object. ``flag`` must be either ``0`` or ``1``, the
+   latter indicating the comprehension has free variables and a closure tuple
+   will be on the stack.
+
+   The stack should contain, from bottom to top:
+
+   * a tuple containing cells for free variables, if ``flag`` is set
+   * the code object for the comprehension
+   * the single "argument" to the comprehension (the iterated object)
+
+   .. versionadded:: 3.12
 
 .. opcode:: CALL (argc)
 

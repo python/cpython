@@ -210,8 +210,8 @@ static void format_awaitable_error(PyThreadState *, PyTypeObject *, int);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, PyObject* const* args,
-                        size_t argcount, PyObject *kwnames);
+                        PyObject *code, PyObject *closure, PyObject *locals,
+                        PyObject* const* args, size_t argcount, PyObject *kwnames);
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
@@ -752,6 +752,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.frame_obj = (PyFrameObject*)0xaaa2;
     entry_frame.f_globals = (PyObject*)0xaaa3;
     entry_frame.f_builtins = (PyObject*)0xaaa4;
+    entry_frame.f_closure = (PyObject*)0xaaa5;
 #endif
     entry_frame.f_code = tstate->interp->interpreter_trampoline;
     entry_frame.prev_instr =
@@ -1388,10 +1389,9 @@ get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, i
 
 static int
 initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
-    PyObject **localsplus, PyObject *const *args,
+    PyCodeObject *co, PyObject **localsplus, PyObject *const *args,
     Py_ssize_t argcount, PyObject *kwnames)
 {
-    PyCodeObject *co = (PyCodeObject*)func->func_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
 
     /* Create a dictionary for keyword parameters (**kwags) */
@@ -1613,18 +1613,19 @@ fail_post_args:
 /* Consumes references to func, locals and all the args */
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, PyObject* const* args,
-                        size_t argcount, PyObject *kwnames)
+                        PyObject *codeobj, PyObject *closure, PyObject *locals,
+                        PyObject* const* args, size_t argcount, PyObject *kwnames)
 {
-    PyCodeObject * code = (PyCodeObject *)func->func_code;
     CALL_STAT_INC(frames_pushed);
+    assert(PyCode_Check(codeobj));
+    PyCodeObject *code = (PyCodeObject *)codeobj;
     _PyInterpreterFrame *frame = _PyThreadState_PushFrame(tstate, code->co_framesize);
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_Initialize(frame, func, locals, code, 0);
+    _PyFrame_Initialize(frame, func, locals, code, closure, 0);
     PyObject **localsarray = &frame->localsplus[0];
-    if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
+    if (initialize_locals(tstate, func, code, localsarray, args, argcount, kwnames)) {
         assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
         _PyEvalFrameClearAndPop(tstate, frame);
         return NULL;
@@ -1708,7 +1709,8 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
         }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
-        tstate, func, locals, args, argcount, kwnames);
+        tstate, func, func->func_code, func->func_closure, locals,
+        args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
     }

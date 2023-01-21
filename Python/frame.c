@@ -15,6 +15,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->f_locals);
     Py_VISIT(frame->f_funcobj);
     Py_VISIT(frame->f_code);
+    Py_VISIT(frame->f_closure);
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
     int i = 0;
@@ -145,6 +146,7 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_funcobj);
     Py_DECREF(frame->f_code);
+    Py_XDECREF(frame->f_closure);
 }
 
 int

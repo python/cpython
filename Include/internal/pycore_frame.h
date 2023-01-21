@@ -52,6 +52,9 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
+    // For comprehensions, f_closure and f_code may not match func_closure and
+    // func_code from f_funcobj above; f_funcobj will be the calling function.
+    PyObject *f_closure; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     /* Linkage section */
@@ -112,12 +115,14 @@ void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
 static inline void
 _PyFrame_Initialize(
     _PyInterpreterFrame *frame, PyFunctionObject *func,
-    PyObject *locals, PyCodeObject *code, int null_locals_from)
+    PyObject *locals, PyCodeObject *code, PyObject *closure,
+    int null_locals_from)
 {
     frame->f_funcobj = (PyObject *)func;
     frame->f_code = (PyCodeObject *)Py_NewRef(code);
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
+    frame->f_closure = Py_XNewRef(closure);
     frame->f_locals = locals;
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
@@ -250,7 +255,7 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
-    _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from);
+    _PyFrame_Initialize(new_frame, func, NULL, code, func->func_closure, null_locals_from);
     return new_frame;
 }
 
