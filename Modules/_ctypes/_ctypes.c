@@ -2240,6 +2240,9 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     if (as_parameter) {
         if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
+            Py_XDECREF(exc);
+            Py_XDECREF(val);
+            Py_XDECREF(tb);
             return NULL;
         }
         value = PyCSimpleType_from_param(type, as_parameter);
