@@ -1,0 +1,2 @@
+Avoid unexpected ``freeaddrinfo`` when :mod:`socket.socket.getaddrinfo`
+fails. Patch by Sergey G. Brester.
