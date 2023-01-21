@@ -1079,7 +1079,7 @@ PyDoc_STRVAR(subprocess_fork_exec_doc,
           p2cread, p2cwrite, c2pread, c2pwrite,\n\
           errread, errwrite, errpipe_read, errpipe_write,\n\
           restore_signals, call_setsid, pgid_to_set,\n\
-          gid, extra_groups_packed, uid,\n\
+          gid, extra_groups, uid,\n\
           preexec_fn)\n\
 \n\
 Forks a child process, closes parent file descriptors as appropriate in the\n\
