@@ -560,12 +560,12 @@ dummy_func(
 
         register inst(RETURN_VALUE_R, (retval --)) {
             assert(EMPTY());
+            Py_XINCREF(retval);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame != &entry_frame);
-            Py_XINCREF(retval);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = cframe.current_frame = dying->previous;
