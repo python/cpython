@@ -1,2 +1,2 @@
-Added the PEP-699 Implementation, `ma_version_tag` is deprecated for extension modules you can continue using it for the core code.
-The deprecation warning will pop up for extension modules. 
+Added the PEP-699 Implementation, :meth:`ma_version_tag` is deprecated for extension modules you can continue using it for the core code.
+The deprecation warning will pop up for extension modules.
