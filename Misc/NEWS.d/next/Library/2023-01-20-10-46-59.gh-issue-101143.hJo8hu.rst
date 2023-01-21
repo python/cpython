@@ -1,2 +1,2 @@
-Remove unused references to TimerHandle in
-asyncio.base_events.BaseEventLoop._add_callback
+Remove unused references to :class:`~asyncio.TimerHandle` in
+``asyncio.base_events.BaseEventLoop._add_callback``.
