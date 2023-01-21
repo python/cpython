@@ -1,0 +1,1 @@
+Update _collections_abc.py collections.abc.MutableSet __iand__ method does not work for some user defined classes inherited from MutableSet
