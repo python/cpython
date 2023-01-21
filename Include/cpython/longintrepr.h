@@ -71,6 +71,9 @@ typedef long stwodigits; /* signed variant of twodigits */
         0 <= ob_digit[i] <= MASK.
    The allocation function takes care of allocating extra memory
    so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
+   We always allocate memory for at least one digit, so accessing ob_digit[0]
+   is always safe. However, in the case ob_size == 0, the contents of
+   ob_digit[0] may be undefined.
 
    CAUTION:  Generic code manipulating subtypes of PyVarObject has to
    aware that ints abuse  ob_size's sign bit.
