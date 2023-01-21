@@ -546,8 +546,10 @@ Pure paths provide the following methods and properties:
 
 .. method:: PurePath.match(pattern)
 
-   Match this path against the provided glob-style pattern.  Return ``True``
-   if matching is successful, ``False`` otherwise.
+   Match this path against the provided glob-style pattern. The pattern uses
+   the same format as in :func:`Path.glob`, except that "``**``" wildcards
+   behaves just like "``*``". Return ``True`` if matching is successful,
+   ``False`` otherwise.
 
    If *pattern* is relative, the path can be either relative or absolute,
    and matching is done from the right::
@@ -573,7 +575,6 @@ Pure paths provide the following methods and properties:
       False
       >>> PureWindowsPath('b.py').match('*.PY')
       True
-
 
 .. method:: PurePath.relative_to(other, walk_up=False)
 
@@ -861,7 +862,7 @@ call fails (for example because the path doesn't exist).
       >>> sorted(Path('.').glob('*/*.py'))
       [PosixPath('docs/conf.py')]
 
-   Patterns are the same as for :mod:`fnmatch`, with the addition of "``**``"
+   Pattern segments are the same as for :mod:`fnmatch`, with the addition of "``**``"
    which means "this directory and all subdirectories, recursively".  In other
    words, it enables recursive globbing::
 
@@ -871,6 +872,22 @@ call fails (for example because the path doesn't exist).
        PosixPath('pathlib.py'),
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
+
+   The following wildcards are available:
+
+      +------------+----------------------------------------------------------+
+      | Pattern    | Meaning                                                  |
+      +============+==========================================================+
+      | ``**``     | matches any number of nested directories                 |
+      +------------+----------------------------------------------------------+
+      | ``*``      | matches any part of a file or directory name             |
+      +------------+----------------------------------------------------------+
+      | ``?``      | matches any single character in a file or directory name |
+      +------------+----------------------------------------------------------+
+      | ``[seq]``  | matches any character in seq                             |
+      +------------+----------------------------------------------------------+
+      | ``[!seq]`` | matches any character not in seq                         |
+      +------------+----------------------------------------------------------+
 
    .. note::
       Using the "``**``" pattern in large directory trees may consume
@@ -1270,8 +1287,7 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.rglob(pattern)
 
    Glob the given relative *pattern* recursively.  This is like calling
-   :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
-   *patterns* are the same as for :mod:`fnmatch`::
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
