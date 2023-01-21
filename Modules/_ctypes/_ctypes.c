@@ -2235,6 +2235,9 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     Py_DECREF(parg);
 
     if (_PyObject_LookupAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
+        Py_XDECREF(exc);
+        Py_XDECREF(val);
+        Py_XDECREF(tb);
         return NULL;
     }
     if (as_parameter) {
