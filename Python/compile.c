@@ -3667,7 +3667,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             /*
                [orig]       BUILD_LIST
             */
-            /* Creat a copy of the original EG */
+            /* Create a copy of the original EG */
             /*
                [orig, []]   COPY 2
                [orig, [], exc]
