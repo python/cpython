@@ -1,2 +1,3 @@
-Added the PEP-699 Implementation, :meth:`ma_version_tag` is deprecated for extension modules you can continue using it for the core code.
-The deprecation warning will pop up for extension modules.
+In accordance with PEP 699, the ``ma_version_tag`` field in :c:type:`PyDictObject`
+is deprecated for extension modules. Accessing this field will generate a compiler
+warning at compile time. This field will be removed in Python 3.13.
