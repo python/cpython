@@ -677,13 +677,13 @@ Changes in the Python API
   contain ASCII letters and digits and underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
-* Removed randrange() functionality deprecated since Python 3.10.  Formerly,
-  randrange(10.0) losslessly converted to randrange(10). Now, it raises a
-  TypeError. Also, the exception raised for non-integral values such as
-  randrange(10.5) or randrange('10') has been changed from ValueError to
-  TypeError.  This also prevents bugs where ``randrange(1e25)`` would silently
+* Removed ``randrange()`` functionality deprecated since Python 3.10.  Formerly,
+  ``randrange(10.0)`` losslessly converted to ``randrange(10)``. Now, it raises a
+  :exc:`TypeError`. Also, the exception raised for non-integral values such as
+  ``randrange(10.5)`` or ``randrange('10')`` has been changed from :exc:`ValueError` to
+  :exc:`TypeError`.  This also prevents bugs where ``randrange(1e25)`` would silently
   select from a larger range than ``randrange(10**25)``.
-  (Originally suggested by Serhiy Storchaka gh-86388.)
+  (Originally suggested by Serhiy Storchaka :gh:`86388`.)
 
 * :class:`argparse.ArgumentParser` changed encoding and error handler
   for reading arguments from file (e.g. ``fromfile_prefix_chars`` option)
