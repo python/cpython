@@ -1,1 +1,0 @@
-:meth:`gzip.GzipFile.read` reads 10% faster.

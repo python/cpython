@@ -176,7 +176,9 @@ native_types = [
     ## arrays and pointers
 
     (c_double * 4,              "<d",                   (4,),           c_double),
+    (c_double * 0,              "<d",                   (0,),           c_double),
     (c_float * 4 * 3 * 2,       "<f",                   (2,3,4),        c_float),
+    (c_float * 4 * 0 * 2,       "<f",                   (2,0,4),        c_float),
     (POINTER(c_short) * 2,      "&<" + s_short,         (2,),           POINTER(c_short)),
     (POINTER(c_short) * 2 * 3,  "&<" + s_short,         (3,2,),         POINTER(c_short)),
     (POINTER(c_short * 2),      "&(2)<" + s_short,      (),             POINTER(c_short)),

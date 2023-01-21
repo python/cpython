@@ -1,2 +1,0 @@
-A :meth:`~logging.handlers.SysLogHandler.createSocket` method was added to
-:class:`~logging.handlers.SysLogHandler`.

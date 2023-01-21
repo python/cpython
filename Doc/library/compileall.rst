@@ -199,7 +199,7 @@ Public functions
 
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
-   They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+   They may be specified as ``str`` or :py:class:`os.PathLike`.
 
    If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
    level have the same content, use hard links to consolidate duplicate files.
@@ -269,7 +269,7 @@ Public functions
 
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
-   They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+   They may be specified as ``str`` or :py:class:`os.PathLike`.
 
    If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
    level have the same content, use hard links to consolidate duplicate files.

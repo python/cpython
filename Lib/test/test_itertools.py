@@ -161,11 +161,11 @@ class TestBasicOps(unittest.TestCase):
 
     def test_batched(self):
         self.assertEqual(list(batched('ABCDEFG', 3)),
-                             [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']])
+                             [('A', 'B', 'C'), ('D', 'E', 'F'), ('G',)])
         self.assertEqual(list(batched('ABCDEFG', 2)),
-                             [['A', 'B'], ['C', 'D'], ['E', 'F'], ['G']])
+                             [('A', 'B'), ('C', 'D'), ('E', 'F'), ('G',)])
         self.assertEqual(list(batched('ABCDEFG', 1)),
-                             [['A'], ['B'], ['C'], ['D'], ['E'], ['F'], ['G']])
+                            [('A',), ('B',), ('C',), ('D',), ('E',), ('F',), ('G',)])
 
         with self.assertRaises(TypeError):          # Too few arguments
             list(batched('ABCDEFG'))
@@ -188,8 +188,8 @@ class TestBasicOps(unittest.TestCase):
                 with self.subTest(s=s, n=n, batches=batches):
                     # Order is preserved and no data is lost
                     self.assertEqual(''.join(chain(*batches)), s)
-                    # Each batch is an exact list
-                    self.assertTrue(all(type(batch) is list for batch in batches))
+                    # Each batch is an exact tuple
+                    self.assertTrue(all(type(batch) is tuple for batch in batches))
                     # All but the last batch is of size n
                     if batches:
                         last_batch = batches.pop()
@@ -675,6 +675,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, cycle, 5)
         self.assertEqual(list(islice(cycle(gen3()),10)), [0,1,2,0,1,2,0,1,2,0])
 
+    def test_cycle_copy_pickle(self):
         # check copy, deepcopy, pickle
         c = cycle('abc')
         self.assertEqual(next(c), 'a')
@@ -709,6 +710,37 @@ class TestBasicOps(unittest.TestCase):
             p = pickle.dumps(c, proto)
             d = pickle.loads(p)                  # rebuild the cycle object
             self.assertEqual(take(20, d), list('cdeabcdeabcdeabcdeab'))
+
+    def test_cycle_unpickle_compat(self):
+        testcases = [
+            b'citertools\ncycle\n(c__builtin__\niter\n((lI1\naI2\naI3\natRI1\nbtR((lI1\naI0\ntb.',
+            b'citertools\ncycle\n(c__builtin__\niter\n(](K\x01K\x02K\x03etRK\x01btR(]K\x01aK\x00tb.',
+            b'\x80\x02citertools\ncycle\nc__builtin__\niter\n](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01aK\x00\x86b.',
+            b'\x80\x03citertools\ncycle\ncbuiltins\niter\n](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01aK\x00\x86b.',
+            b'\x80\x04\x95=\x00\x00\x00\x00\x00\x00\x00\x8c\titertools\x8c\x05cycle\x93\x8c\x08builtins\x8c\x04iter\x93](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01aK\x00\x86b.',
+
+            b'citertools\ncycle\n(c__builtin__\niter\n((lp0\nI1\naI2\naI3\natRI1\nbtR(g0\nI1\ntb.',
+            b'citertools\ncycle\n(c__builtin__\niter\n(]q\x00(K\x01K\x02K\x03etRK\x01btR(h\x00K\x01tb.',
+            b'\x80\x02citertools\ncycle\nc__builtin__\niter\n]q\x00(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00K\x01\x86b.',
+            b'\x80\x03citertools\ncycle\ncbuiltins\niter\n]q\x00(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00K\x01\x86b.',
+            b'\x80\x04\x95<\x00\x00\x00\x00\x00\x00\x00\x8c\titertools\x8c\x05cycle\x93\x8c\x08builtins\x8c\x04iter\x93]\x94(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00K\x01\x86b.',
+
+            b'citertools\ncycle\n(c__builtin__\niter\n((lI1\naI2\naI3\natRI1\nbtR((lI1\naI00\ntb.',
+            b'citertools\ncycle\n(c__builtin__\niter\n(](K\x01K\x02K\x03etRK\x01btR(]K\x01aI00\ntb.',
+            b'\x80\x02citertools\ncycle\nc__builtin__\niter\n](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01a\x89\x86b.',
+            b'\x80\x03citertools\ncycle\ncbuiltins\niter\n](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01a\x89\x86b.',
+            b'\x80\x04\x95<\x00\x00\x00\x00\x00\x00\x00\x8c\titertools\x8c\x05cycle\x93\x8c\x08builtins\x8c\x04iter\x93](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01a\x89\x86b.',
+
+            b'citertools\ncycle\n(c__builtin__\niter\n((lp0\nI1\naI2\naI3\natRI1\nbtR(g0\nI01\ntb.',
+            b'citertools\ncycle\n(c__builtin__\niter\n(]q\x00(K\x01K\x02K\x03etRK\x01btR(h\x00I01\ntb.',
+            b'\x80\x02citertools\ncycle\nc__builtin__\niter\n]q\x00(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00\x88\x86b.',
+            b'\x80\x03citertools\ncycle\ncbuiltins\niter\n]q\x00(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00\x88\x86b.',
+            b'\x80\x04\x95;\x00\x00\x00\x00\x00\x00\x00\x8c\titertools\x8c\x05cycle\x93\x8c\x08builtins\x8c\x04iter\x93]\x94(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00\x88\x86b.',
+        ]
+        assert len(testcases) == 20
+        for t in testcases:
+            it = pickle.loads(t)
+            self.assertEqual(take(10, it), [2, 3, 1, 2, 3, 1, 2, 3, 1, 2])
 
     def test_cycle_setstate(self):
         # Verify both modes for restoring state
@@ -1777,12 +1809,12 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
 
     def test_batched_recipe(self):
         def batched_recipe(iterable, n):
-            "Batch data into lists of length n. The last batch may be shorter."
+            "Batch data into tuples of length n. The last batch may be shorter."
             # batched('ABCDEFG', 3) --> ABC DEF G
             if n < 1:
                 raise ValueError('n must be at least one')
             it = iter(iterable)
-            while (batch := list(islice(it, n))):
+            while (batch := tuple(islice(it, n))):
                 yield batch
 
         for iterable, n in product(
@@ -2012,6 +2044,20 @@ class E:
     def __next__(self):
         3 // 0
 
+class E2:
+    'Test propagation of exceptions after two iterations'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if self.i == 2:
+            raise ZeroDivisionError
+        v = self.seqn[self.i]
+        self.i += 1
+        return v
+
 class S:
     'Test immediate stop'
     def __init__(self, seqn):
@@ -2041,7 +2087,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
 
     def test_batched(self):
         s = 'abcde'
-        r = [['a', 'b'], ['c', 'd'], ['e']]
+        r = [('a', 'b'), ('c', 'd'), ('e',)]
         n = 2
         for g in (G, I, Ig, L, R):
             with self.subTest(g=g):
@@ -2050,6 +2096,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
         self.assertRaises(TypeError, batched, X(s), 2)
         self.assertRaises(TypeError, batched, N(s), 2)
         self.assertRaises(ZeroDivisionError, list, batched(E(s), 2))
+        self.assertRaises(ZeroDivisionError, list, batched(E2(s), 4))
 
     def test_chain(self):
         for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):

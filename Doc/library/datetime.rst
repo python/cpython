@@ -765,6 +765,7 @@ Example of counting days to an event::
     >>> my_birthday = date(today.year, 6, 24)
     >>> if my_birthday < today:
     ...     my_birthday = my_birthday.replace(year=today.year + 1)
+    ...
     >>> my_birthday
     datetime.date(2008, 6, 24)
     >>> time_to_birthday = abs(my_birthday - today)
@@ -1350,7 +1351,7 @@ Instance methods:
 
       Because naive ``datetime`` objects are treated by many ``datetime`` methods
       as local times, it is preferred to use aware datetimes to represent times
-      in UTC; as a result, using ``utcfromtimetuple`` may give misleading
+      in UTC; as a result, using :meth:`datetime.utctimetuple` may give misleading
       results. If you have a naive ``datetime`` representing UTC, use
       ``datetime.replace(tzinfo=timezone.utc)`` to make it aware, at which point
       you can use :meth:`.datetime.timetuple`.
@@ -2601,7 +2602,7 @@ Notes:
 
 (9)
    When used with the :meth:`strptime` method, the leading zero is optional
-   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%J``, ``%U``,
+   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
 .. rubric:: Footnotes

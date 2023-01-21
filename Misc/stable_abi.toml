@@ -94,7 +94,7 @@
     added = '3.2'
     struct_abi_kind = 'full-abi'
 [struct.PyMemberDef]
-    added = '3.2'
+    added = '3.2'  # Before 3.12, PyMemberDef required #include "structmember.h"
     struct_abi_kind = 'full-abi'
 [struct.PyGetSetDef]
     added = '3.2'
@@ -1777,11 +1777,9 @@
     added = '3.2'
     abi_only = true
 [function.PyMember_GetOne]
-    added = '3.2'
-    abi_only = true
+    added = '3.2'  # Before 3.12, available in "structmember.h"
 [function.PyMember_SetOne]
-    added = '3.2'
-    abi_only = true
+    added = '3.2'  # Before 3.12, available in "structmember.h"
 
 # TLS api is deprecated; superseded by TSS API
 
@@ -2273,6 +2271,50 @@
 [function.PyMemoryView_FromBuffer]
     added = '3.11'
 
+# Constants for Py_buffer API added to this list in Python 3.11.1 (https://github.com/python/cpython/issues/98680)
+# (they were available with 3.11.0)
+[const.PyBUF_MAX_NDIM]
+    added = '3.11'
+[const.PyBUF_SIMPLE]
+    added = '3.11'
+[const.PyBUF_WRITABLE]
+    added = '3.11'
+[const.PyBUF_FORMAT]
+    added = '3.11'
+[const.PyBUF_ND]
+    added = '3.11'
+[const.PyBUF_STRIDES]
+    added = '3.11'
+[const.PyBUF_C_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_F_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_ANY_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_INDIRECT]
+    added = '3.11'
+[const.PyBUF_CONTIG]
+    added = '3.11'
+[const.PyBUF_CONTIG_RO]
+    added = '3.11'
+[const.PyBUF_STRIDED]
+    added = '3.11'
+[const.PyBUF_STRIDED_RO]
+    added = '3.11'
+[const.PyBUF_RECORDS]
+    added = '3.11'
+[const.PyBUF_RECORDS_RO]
+    added = '3.11'
+[const.PyBUF_FULL]
+    added = '3.11'
+[const.PyBUF_FULL_RO]
+    added = '3.11'
+[const.PyBUF_READ]
+    added = '3.11'
+[const.PyBUF_WRITE]
+    added = '3.11'
+
+
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
 
@@ -2293,3 +2335,54 @@
     added = '3.12'
 [typedef.vectorcallfunc]
     added = '3.12'
+[function.PyObject_Vectorcall]
+    added = '3.12'
+[function.PyObject_VectorcallMethod]
+    added = '3.12'
+[macro.PY_VECTORCALL_ARGUMENTS_OFFSET]
+    added = '3.12'
+[typedef.getbufferproc]
+    added = '3.12'
+[typedef.releasebufferproc]
+    added = '3.12'
+
+[const.Py_T_BYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_SHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_INT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_LONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_LONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_UBYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_UINT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_USHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_ULONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_ULONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_PYSSIZET]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_FLOAT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_DOUBLE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_BOOL]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_STRING]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_STRING_INPLACE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_CHAR]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_OBJECT_EX]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_READONLY]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_AUDIT_READ]
+    added = '3.12'  # Before 3.12, available in "structmember.h"

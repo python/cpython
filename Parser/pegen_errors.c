@@ -169,6 +169,10 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     for (;;) {
         switch (_PyTokenizer_Get(p->tok, &new_token)) {
             case ERRORTOKEN:
+                if (PyErr_Occurred()) {
+                    ret = -1;
+                    goto exit;
+                }
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
                     if (current_err_line > error_lineno) {

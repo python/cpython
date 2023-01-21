@@ -450,8 +450,8 @@ _codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -520,8 +520,8 @@ _codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -590,8 +590,8 @@ _codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -660,8 +660,8 @@ _codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -730,8 +730,8 @@ _codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -809,8 +809,8 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 4) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[3]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[3]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -879,8 +879,8 @@ _codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -949,8 +949,8 @@ _codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -1019,8 +1019,8 @@ _codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -1098,8 +1098,8 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 4) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[3]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[3]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -1178,8 +1178,8 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -1258,8 +1258,8 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -1521,8 +1521,8 @@ _codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -1595,8 +1595,8 @@ _codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -1674,8 +1674,8 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 4) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[3]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[3]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -2869,4 +2869,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=e885abad241bc54d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=603da07cf8dfeb4b input=a9049054013a1b77]*/

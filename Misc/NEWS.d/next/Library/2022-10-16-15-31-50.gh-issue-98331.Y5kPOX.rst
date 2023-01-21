@@ -1,1 +1,0 @@
-Update the bundled copies of pip and setuptools to versions 22.3 and 65.5.0 respectively.

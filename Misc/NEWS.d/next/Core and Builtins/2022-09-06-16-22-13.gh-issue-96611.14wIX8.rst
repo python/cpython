@@ -1,2 +1,0 @@
-When loading a file with invalid UTF-8 inside a multi-line string, a correct
-SyntaxError is emitted.

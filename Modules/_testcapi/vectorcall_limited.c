@@ -32,6 +32,105 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
     return self;
 }
 
+static PyObject *
+call_vectorcall(PyObject* self, PyObject *callable)
+{
+    PyObject *args[3] = { NULL, NULL, NULL };
+    PyObject *kwname = NULL, *kwnames = NULL, *result = NULL;
+
+    args[1] = PyUnicode_FromString("foo");
+    if (!args[1]) {
+        goto leave;
+    }
+
+    args[2] = PyUnicode_FromString("bar");
+    if (!args[2]) {
+        goto leave;
+    }
+
+    kwname = PyUnicode_InternFromString("baz");
+    if (!kwname) {
+        goto leave;
+    }
+
+    kwnames = PyTuple_New(1);
+    if (!kwnames) {
+        goto leave;
+    }
+
+    if (PyTuple_SetItem(kwnames, 0, kwname)) {
+        goto leave;
+    }
+
+    result = PyObject_Vectorcall(
+        callable,
+        args + 1,
+        1 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames
+    );
+
+leave:
+    Py_XDECREF(args[1]);
+    Py_XDECREF(args[2]);
+    Py_XDECREF(kwnames);
+
+    return result;
+}
+
+static PyObject *
+call_vectorcall_method(PyObject* self, PyObject *callable)
+{
+    PyObject *args[3] = { NULL, NULL, NULL };
+    PyObject *name = NULL, *kwname = NULL,
+             *kwnames = NULL, *result = NULL;
+
+    name = PyUnicode_FromString("f");
+    if (!name) {
+        goto leave;
+    }
+
+    args[0] = callable;
+    args[1] = PyUnicode_FromString("foo");
+    if (!args[1]) {
+        goto leave;
+    }
+
+    args[2] = PyUnicode_FromString("bar");
+    if (!args[2]) {
+        goto leave;
+    }
+
+    kwname = PyUnicode_InternFromString("baz");
+    if (!kwname) {
+        goto leave;
+    }
+
+    kwnames = PyTuple_New(1);
+    if (!kwnames) {
+        goto leave;
+    }
+
+    if (PyTuple_SetItem(kwnames, 0, kwname)) {
+        goto leave;
+    }
+
+
+    result = PyObject_VectorcallMethod(
+        name,
+        args,
+        2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames
+    );
+
+leave:
+    Py_XDECREF(name);
+    Py_XDECREF(args[1]);
+    Py_XDECREF(args[2]);
+    Py_XDECREF(kwnames);
+
+    return result;
+}
+
 static PyMemberDef LimitedVectorCallClass_members[] = {
     {"__vectorcalloffset__", T_PYSSIZET, sizeof(PyObject), READONLY},
     {NULL}
@@ -54,10 +153,8 @@ static PyType_Spec LimitedVectorCallClass_spec = {
 };
 
 static PyMethodDef TestMethods[] = {
-    /* Add module methods here.
-     * (Empty list left here as template/example, since using
-     * PyModule_AddFunctions isn't very common.)
-     */
+    {"call_vectorcall", call_vectorcall, METH_O},
+    {"call_vectorcall_method", call_vectorcall_method, METH_O},
     {NULL},
 };
 
