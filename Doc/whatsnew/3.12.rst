@@ -413,10 +413,10 @@ Deprecated
   is no current event loop set and it decides to create one.
   (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
 
-* Added the PEP-699 Implementation, :meth:`ma_version_tag` is deprecated for extension modules
-  you can continue using it for the core code. The deprecation warning will pop up for extension modules.
-  (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`.)
-
+* In accordance with PEP 699, the ``ma_version_tag`` field in :c:type:`PyDictObject`
+  is deprecated for extension modules. Accessing this field will generate a compiler
+  warning at compile time. This field will be removed in Python 3.13.
+  (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
 
 Pending Removal in Python 3.13
 ------------------------------
