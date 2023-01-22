@@ -155,8 +155,8 @@ _FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     (?P<minimumwidth>0|[1-9][0-9]*)?
     (?P<thousands_sep>[,_])?
     (?:\.(?P<precision>0|[1-9][0-9]*))?
-    (?P<presentation_type>[efg%])
-""", re.DOTALL | re.IGNORECASE | re.VERBOSE).fullmatch
+    (?P<presentation_type>[eEfFgG%])
+""", re.DOTALL | re.VERBOSE).fullmatch
 
 
 class Fraction(numbers.Rational):

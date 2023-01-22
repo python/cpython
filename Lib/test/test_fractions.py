@@ -1211,6 +1211,8 @@ class FractionTest(unittest.TestCase):
             ".f",
             ".g",
             ".%",
+            # Z instead of z for negative zero suppression
+            'Z.2f'
         ]
         for spec in invalid_specs:
             with self.subTest(spec=spec):
