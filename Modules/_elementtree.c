@@ -2392,7 +2392,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->start_ns_event_obj = t->end_ns_event_obj = NULL;
         t->comment_event_obj = t->pi_event_obj = NULL;
         t->insert_comments = t->insert_pis = 0;
-        t->state = ET_STATE_GLOBAL;
+        t->state = get_elementtree_state_by_type(type);
     }
     return (PyObject *)t;
 }
