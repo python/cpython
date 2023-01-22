@@ -1,2 +1,0 @@
-Avoid unexpected ``freeaddrinfo`` when :meth:`socket.socket.getaddrinfo`
-fails. Patch by Sergey G. Brester.
