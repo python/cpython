@@ -4312,19 +4312,6 @@ static PyMethodDef _functions[] = {
     {NULL, NULL}
 };
 
-
-static struct PyModuleDef elementtreemodule = {
-    PyModuleDef_HEAD_INIT,
-    "_elementtree",
-    NULL,
-    sizeof(elementtreestate),
-    _functions,
-    NULL,
-    elementtree_traverse,
-    elementtree_clear,
-    elementtree_free
-};
-
 #define CREATE_TYPE(module, type, spec) \
 do {                                                                     \
     if (type != NULL) {                                                  \
@@ -4336,21 +4323,10 @@ do {                                                                     \
     }                                                                    \
 } while (0)
 
-PyMODINIT_FUNC
-PyInit__elementtree(void)
+static int
+module_exec(PyObject *m)
 {
-    PyObject *m = NULL;
-    elementtreestate *st = NULL;
-
-    m = PyState_FindModule(&elementtreemodule);
-    if (m) {
-        return Py_NewRef(m);
-    }
-
-    m = PyModule_Create(&elementtreemodule);
-    if (!m)
-        goto error;
-    st = get_elementtree_state(m);
+    elementtreestate *st = get_elementtree_state(m);
 
     /* Initialize object types */
     CREATE_TYPE(m, st->ElementIter_Type, &elementiter_spec);
@@ -4435,9 +4411,30 @@ PyInit__elementtree(void)
         }
     }
 
-    return m;
+    return 0;
 
 error:
-    Py_XDECREF(m);
-    return NULL;
+    return -1;
+}
+
+static struct PyModuleDef_Slot elementtree_slots[] = {
+    {Py_mod_exec, module_exec},
+    {0, NULL},
+};
+
+static struct PyModuleDef elementtreemodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_elementtree",
+    .m_size = sizeof(elementtreestate),
+    .m_methods = _functions,
+    .m_slots = elementtree_slots,
+    .m_traverse = elementtree_traverse,
+    .m_clear = elementtree_clear,
+    .m_free = elementtree_free,
+};
+
+PyMODINIT_FUNC
+PyInit__elementtree(void)
+{
+    return PyModuleDef_Init(&elementtreemodule);
 }
