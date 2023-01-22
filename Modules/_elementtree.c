@@ -585,7 +585,7 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject* elem;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state(self);
     ElementObject* parent;
     PyObject* tag;
     PyObject* attrib = NULL;
@@ -2481,7 +2481,7 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
                                  PyObject *pi_factory)
 /*[clinic end generated code: output=813b408adee26535 input=99d17627aea7fb3b]*/
 {
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state(module);
     PyObject *old;
 
     if (!PyCallable_Check(comment_factory) && comment_factory != Py_None) {
