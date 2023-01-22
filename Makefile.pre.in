@@ -198,9 +198,6 @@ LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
 # Flags to lipo to produce an intel-64-only universal executable
 LIPO_INTEL64_FLAGS=@LIPO_INTEL64_FLAGS@
 
-# Options to enable prebinding (for fast startup prior to Mac OS X 10.3)
-OTHER_LIBTOOL_OPT=@OTHER_LIBTOOL_OPT@
-
 # Environment to run shared python without installed libraries
 RUNSHARED=       @RUNSHARED@
 
