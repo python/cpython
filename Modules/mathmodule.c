@@ -3022,7 +3022,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             }
 
           finalize_int_path:
-            //  We're finished, overflowed, or have a non-int
+            // We're finished, overflowed, or have a non-int
             int_path_enabled = false;
             if (int_total_in_use) {
                 term_i = PyLong_FromLong(int_total);
