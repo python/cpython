@@ -9,9 +9,7 @@ import struct, sys, time, os
 import zlib
 import builtins
 import io
-import _pyio as pyio
 import _compression
-import errno
 
 __all__ = ["BadGzipFile", "GzipFile", "open", "compress", "decompress"]
 
@@ -122,6 +120,21 @@ class BadGzipFile(OSError):
     """Exception raised in some cases for invalid gzip files."""
 
 
+class _WriteBufferStream(io.RawIOBase):
+    """Minimal object to pass WriteBuffer flushes into GzipFile"""
+    def __init__(self, gzip_file):
+        self.gzip_file = gzip_file
+
+    def write(self, data):
+        return self.gzip_file._write_raw(data)
+
+    def seekable(self):
+        return False
+
+    def writable(self):
+        return True
+
+
 class GzipFile(_compression.BaseStream):
     """The GzipFile class simulates most of the methods of a file object with
     the exception of the truncate() method.
@@ -208,6 +221,7 @@ class GzipFile(_compression.BaseStream):
                                              zlib.DEF_MEM_LEVEL,
                                              0)
             self._write_mtime = mtime
+            self._buffer = io.BufferedWriter(_WriteBufferStream(self))
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
 
@@ -232,6 +246,11 @@ class GzipFile(_compression.BaseStream):
         self.writebuf = []
         self.bufsize = 0
         self.offset = 0  # Current file offset for seek(), tell(), etc
+
+    def tell(self):
+        self._check_not_closed()
+        self._buffer.flush()
+        return super().tell()
 
     def _write_gzip_header(self, compresslevel):
         self.fileobj.write(b'\037\213')             # magic header
@@ -274,6 +293,9 @@ class GzipFile(_compression.BaseStream):
         if self.fileobj is None:
             raise ValueError("write() on closed GzipFile object")
 
+        return self._buffer.write(data)
+
+    def _write_raw(self, data):
         if isinstance(data, (bytes, bytearray)):
             length = len(data)
         else:
@@ -324,9 +346,9 @@ class GzipFile(_compression.BaseStream):
         fileobj = self.fileobj
         if fileobj is None:
             return
-        self.fileobj = None
         try:
             if self.mode == WRITE:
+                self._buffer.flush()
                 fileobj.write(self.compress.flush())
                 write32u(fileobj, self.crc)
                 # self.size may exceed 2 GiB, or even 4 GiB
@@ -334,6 +356,7 @@ class GzipFile(_compression.BaseStream):
             elif self.mode == READ:
                 self._buffer.close()
         finally:
+            self.fileobj = None
             myfileobj = self.myfileobj
             if myfileobj:
                 self.myfileobj = None
@@ -343,7 +366,7 @@ class GzipFile(_compression.BaseStream):
         self._check_not_closed()
         if self.mode == WRITE:
             # Ensure the compressor's buffer is flushed
-            self.fileobj.write(self.compress.flush(zlib_mode))
+            self._buffer.flush()
             self.fileobj.flush()
 
     def fileno(self):
@@ -381,8 +404,7 @@ class GzipFile(_compression.BaseStream):
                 raise OSError('Negative seek in write mode')
             count = offset - self.offset
             chunk = b'\0' * 1024
-            for i in range(count // 1024):
-                self.write(chunk)
+            self.write(chunk * (count // 1024))
             self.write(b'\0' * (count % 1024))
         elif self.mode == READ:
             self._check_not_closed()
@@ -446,115 +468,6 @@ def _read_gzip_header(fp):
     if flag & FHCRC:
         _read_exact(fp, 2)     # Read & discard the 16-bit header CRC
     return last_mtime
-
-class _Writable():
-    def writable(self):
-        return True
-
-class GzipWriter(pyio.BufferedWriter):
-    def __init__(self, fp, compresslevel=_COMPRESS_LEVEL_BEST, buffer_size=pyio.DEFAULT_BUFFER_SIZE, mtime=None):
-        super().__init__(fp, buffer_size=buffer_size)
-
-        self.fileobj = fp
-        self.crc = zlib.crc32(b"")
-        self.size = 0
-        self.writebuf = []
-        self.bufsize = 0
-        self.offset = 0  # Current file offset for seek(), tell(), etc
-        self.compress = zlib.compressobj(compresslevel,
-                                         zlib.DEFLATED,
-                                         -zlib.MAX_WBITS,
-                                         zlib.DEF_MEM_LEVEL,
-                                         0)
-        self._write_mtime = mtime
-
-        self._write_gzip_header(compresslevel)
-
-    def close(self):
-        fileobj = self.fileobj
-        self.flush()
-        fileobj.write(self.compress.flush())
-        write32u(fileobj, self.crc)
-        # self.size may exceed 2 GiB, or even 4 GiB
-        write32u(fileobj, self.size & 0xffffffff)
-        self.fileobj.close()
-
-    def write(self, data):
-        super().write(data)
-
-    def _flush_unlocked(self):
-        if self.closed:
-            raise ValueError("flush on closed file")
-        while self._write_buf:
-            try:
-                #n = self.raw.write(self._write_buf)
-                n = self.compress_and_write(self._write_buf)
-            except BlockingIOError:
-                raise RuntimeError("self.raw should implement RawIOBase: it "
-                                   "should not raise BlockingIOError")
-            if n is None:
-                raise BlockingIOError(
-                    errno.EAGAIN,
-                    "write could not complete without blocking", 0)
-            if n > len(self._write_buf) or n < 0:
-                raise OSError("write() returned incorrect number of bytes")
-            del self._write_buf[:n]
-
-    def compress_and_write(self,data):
-        self._check_not_closed()
-        if self.fileobj is None:
-            raise ValueError("write() on closed GzipFile object")
-
-        if isinstance(data, (bytes, bytearray)):
-            length = len(data)
-        else:
-            # accept any data that supports the buffer protocol
-            data = memoryview(data)
-            length = data.nbytes
-
-        if length > 0:
-            self.fileobj.write(self.compress.compress(data))
-            self.size += length
-            self.crc = zlib.crc32(data, self.crc)
-            self.offset += length
-
-        return length
-
-    def _write_gzip_header(self, compresslevel):
-        self.fileobj.write(b'\037\213')             # magic header
-        self.fileobj.write(b'\010')                 # compression method
-        try:
-            # RFC 1952 requires the FNAME field to be Latin-1. Do not
-            # include filenames that cannot be represented that way.
-            fname = os.path.basename(self.name)
-            if not isinstance(fname, bytes):
-                fname = fname.encode('latin-1')
-            if fname.endswith(b'.gz'):
-                fname = fname[:-3]
-        except UnicodeEncodeError:
-            fname = b''
-        flags = 0
-        if fname:
-            flags = FNAME
-        self.fileobj.write(chr(flags).encode('latin-1'))
-        mtime = self._write_mtime
-        if mtime is None:
-            mtime = time.time()
-        write32u(self.fileobj, int(mtime))
-        if compresslevel == _COMPRESS_LEVEL_BEST:
-            xfl = b'\002'
-        elif compresslevel == _COMPRESS_LEVEL_FAST:
-            xfl = b'\004'
-        else:
-            xfl = b'\000'
-        self.fileobj.write(xfl)
-        self.fileobj.write(b'\377')
-        if fname:
-            self.fileobj.write(fname + b'\000')
-
-    def _check_not_closed(self):
-        return self.fileobj.closed
-
 
 
 class _GzipReader(_compression.DecompressReader):
