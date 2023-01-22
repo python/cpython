@@ -185,8 +185,11 @@ static struct jump_target_label_ NO_LABEL = {-1};
     }
 
 typedef enum {
-    UNUSED_ARG, /* No oparg */
-    UNTYPED_ARG, /* Legacy arg, this type will be eventually removed */
+    UNUSED_ARG_TYPE,      /* No oparg */
+    UNKNOWN_ARG_TYPE,     /* Used in tests when translating bytecode to CFG */
+    EXPLICIT_ARG_TYPE,    /* An int value */
+    CONST_ARG_TYPE,       /* Index into co_consts */
+    JUMP_TARGET_ARG_TYPE, /* ID of a jump target block */
 } oparg_type;
 
 typedef struct {
@@ -197,10 +200,18 @@ typedef struct {
 #define OPARG_VALUE(O) ((O).value)
 #define OPARG(V, T) ((const oparg_t){.value = (V), .type = (T)})
 
-#define UNUSED_OPARG OPARG(0, UNUSED_ARG)
-#define UNTYPED_OPARG(V) OPARG((V), UNTYPED_ARG)
+#define UNUSED_OPARG OPARG(0, UNUSED_ARG_TYPE)
+#define UNKNOWN_OPARG(V) OPARG((V), UNKNOWN_ARG_TYPE)
+#define EXPLICIT_OPARG(V) OPARG((V), EXPLICIT_ARG_TYPE)
+#define CONST_OPARG(V) OPARG((V), CONST_ARG_TYPE)
+#define JUMP_TARGET_OPARG(V) OPARG((V), JUMP_TARGET_ARG_TYPE)
 
-#define IS_UNUSED(O) ((O).type == UNUSED_ARG)
+#define IS_UNUSED(O) ((O).type == UNUSED_ARG_TYPE)
+
+static bool
+oparg_type_matches(oparg_t oparg, oparg_type arg_type) {
+    return oparg.type == arg_type || oparg.type == UNKNOWN_ARG_TYPE;
+}
 
 struct instr {
     int i_opcode;
@@ -533,7 +544,7 @@ static int basicblock_next_instr(basicblock *);
 
 static basicblock *cfg_builder_new_block(cfg_builder *g);
 static int cfg_builder_maybe_start_new_block(cfg_builder *g);
-static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc);
+static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, oparg_type arg_type, location loc);
 
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, location loc, const char *, ...);
@@ -1570,7 +1581,7 @@ compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
     if (arg < 0) {
         return ERROR;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, loc);
+    return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, CONST_ARG_TYPE, loc);
 }
 
 static int
@@ -1581,7 +1592,7 @@ compiler_addop_o(struct compiler *c, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc);
+    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, EXPLICIT_ARG_TYPE, loc);
 }
 
 static int
@@ -1607,12 +1618,12 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 1;
         arg |= 1;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc);
+    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, EXPLICIT_ARG_TYPE, loc);
 }
 
 /* Add an opcode with an integer argument */
 static int
-cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
+cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, oparg_type arg_type, location loc)
 {
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1623,7 +1634,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, UNTYPED_OPARG(oparg_), loc);
+    return cfg_builder_addop(g, opcode, OPARG(oparg_, arg_type), loc);
 }
 
 static int
@@ -1632,7 +1643,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, UNTYPED_OPARG(target.id), loc);
+    return cfg_builder_addop(g, opcode, JUMP_TARGET_OPARG(target.id), loc);
 }
 
 #define ADDOP(C, LOC, OP) \
@@ -1647,6 +1658,9 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADDOP_LOAD_CONST(C, LOC, O) \
     RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)))
+
+#define ADDOP_KW_NAMES(C, LOC, I) \
+    RETURN_IF_ERROR(cfg_builder_addop_i(CFG_BUILDER(C), KW_NAMES, (I), CONST_ARG_TYPE, (LOC)))
 
 /* Same as ADDOP_LOAD_CONST, but steals a reference. */
 #define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
@@ -1674,7 +1688,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)))
 
 #define ADDOP_I(C, LOC, OP, O) \
-    RETURN_IF_ERROR(cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), (LOC)))
+    RETURN_IF_ERROR(cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), EXPLICIT_ARG_TYPE, (LOC)))
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
     RETURN_IF_ERROR(cfg_builder_addop_j(CFG_BUILDER(C), (LOC), (OP), (O)))
@@ -2605,7 +2619,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
     /* Insert SETUP_CLEANUP at start */
     struct instr setup = {
         .i_opcode = SETUP_CLEANUP,
-        .i_oparg = UNTYPED_OPARG(handler.id),
+        .i_oparg = JUMP_TARGET_OPARG(handler.id),
         .i_loc = NO_LOCATION,
         .i_target = NULL,
     };
@@ -4297,7 +4311,7 @@ compiler_nameop(struct compiler *c, location loc,
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, loc);
+    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, EXPLICIT_ARG_TYPE, loc);
 }
 
 static int
@@ -5045,7 +5059,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
         return ERROR;
     }
     Py_DECREF(names);
-    ADDOP_I(c, loc, KW_NAMES, arg);
+    ADDOP_KW_NAMES(c, loc, arg);
     return SUCCESS;
 }
 
@@ -6756,7 +6770,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (cfg_builder_addop_i(CFG_BUILDER(c), COPY, 1, LOC(alt)) < 0 ||
+        if (cfg_builder_addop_i(CFG_BUILDER(c), COPY, 1, EXPLICIT_ARG_TYPE, LOC(alt)) < 0 ||
             compiler_pattern(c, alt, pc) < 0) {
             goto error;
         }
@@ -7183,7 +7197,7 @@ stackdepth(basicblock *entryblock, int code_flags)
                 break;
             }
             if (instr->i_opcode == YIELD_VALUE) {
-                instr->i_oparg = UNTYPED_OPARG(depth);
+                instr->i_oparg = EXPLICIT_OPARG(depth);
             }
         }
         if (next != NULL) {
@@ -7500,7 +7514,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, UNTYPED_OPARG(b->b_next->b_label), NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, JUMP_TARGET_OPARG(b->b_next->b_label), NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
@@ -7901,7 +7915,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return -1;
     }
-    basicblock_addop(backwards_jump, JUMP, UNTYPED_OPARG(target->b_label), NO_LOCATION);
+    basicblock_addop(backwards_jump, JUMP, JUMP_TARGET_OPARG(target->b_label), NO_LOCATION);
     backwards_jump->b_instr[0].i_target = target;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -7954,22 +7968,24 @@ assemble_jump_offsets(basicblock *entryblock)
                 */
                 bsize += isize;
                 if (is_jump(instr)) {
-                    instr->i_oparg = UNTYPED_OPARG(instr->i_target->b_offset);
+                    assert(oparg_type_matches(instr->i_oparg, JUMP_TARGET_ARG_TYPE));
+                    int oparg = instr->i_target->b_offset;
                     if (is_relative_jump(instr)) {
-                        if (OPARG_VALUE(instr->i_oparg) < bsize) {
+                        if (oparg < bsize) {
                             assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                            instr->i_oparg = UNTYPED_OPARG(
-                                bsize - OPARG_VALUE(instr->i_oparg));
+                            oparg = bsize - oparg;
                         }
                         else {
                             assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                            instr->i_oparg = UNTYPED_OPARG(
-                                OPARG_VALUE(instr->i_oparg) - bsize);
+                            oparg -= bsize;
                         }
                     }
                     else {
                         assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                     }
+
+                    instr->i_oparg = JUMP_TARGET_OPARG(oparg);
+
                     if (instr_size(instr) != isize) {
                         extended_arg_recompile = 1;
                     }
@@ -8539,7 +8555,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             struct instr make_cell = {
                 .i_opcode = MAKE_CELL,
                 // This will get fixed in offset_derefs().
-                .i_oparg = UNTYPED_OPARG(oldindex),
+                .i_oparg = EXPLICIT_OPARG(oldindex),
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
             };
@@ -8554,7 +8570,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
     if (nfreevars) {
         struct instr copy_frees = {
             .i_opcode = COPY_FREE_VARS,
-            .i_oparg = UNTYPED_OPARG(nfreevars),
+            .i_oparg = EXPLICIT_OPARG(nfreevars),
             .i_loc = NO_LOCATION,
             .i_target = NULL,
         };
@@ -8632,7 +8648,8 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
                     assert(oldoffset >= 0);
                     assert(oldoffset < noffsets);
                     assert(fixedmap[oldoffset] >= 0);
-                    inst->i_oparg = UNTYPED_OPARG(fixedmap[oldoffset]);
+                    assert(oparg_type_matches(inst->i_oparg, EXPLICIT_ARG_TYPE));
+                    inst->i_oparg = EXPLICIT_OPARG(fixedmap[oldoffset]);
             }
         }
     }
@@ -9029,7 +9046,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     for (int i = 0; i < n; i++) {
         INSTR_SET_OP0(&inst[i], NOP);
     }
-    INSTR_SET_OP1(&inst[n], LOAD_CONST, UNTYPED_OPARG((int)index));
+    INSTR_SET_OP1(&inst[n], LOAD_CONST, CONST_OPARG((int)index));
     return 0;
 }
 
@@ -9112,7 +9129,7 @@ swaptimize(basicblock *block, int *ix)
                 assert(0 <= current);
                 // SWAPs are 1-indexed:
                 instructions[current].i_opcode = SWAP;
-                instructions[current--].i_oparg = UNTYPED_OPARG(j + 1);
+                instructions[current--].i_oparg = EXPLICIT_OPARG(j + 1);
             }
             if (stack[j] == VISITED) {
                 // Completed the cycle:
@@ -9448,8 +9465,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             case PUSH_NULL:
                 if (nextop == LOAD_GLOBAL && (inst[1].i_opcode & 1) == 0) {
                     INSTR_SET_OP0(inst, NOP);
-                    inst[1].i_oparg = UNTYPED_OPARG(
-                        OPARG_VALUE(inst[1].i_oparg) | 1);
+                    inst[1].i_oparg.value |= 1;
                 }
                 break;
             default:
@@ -9692,11 +9708,15 @@ translate_jump_labels_to_targets(basicblock *entryblock)
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_target == NULL);
             if (HAS_TARGET(instr->i_opcode)) {
+                assert(oparg_type_matches(instr->i_oparg, JUMP_TARGET_ARG_TYPE));
                 int lbl = OPARG_VALUE(instr->i_oparg);
                 assert(lbl >= 0 && lbl <= max_label);
                 instr->i_target = label2block[lbl];
                 assert(instr->i_target != NULL);
                 assert(instr->i_target->b_label == lbl);
+            }
+            else {
+                assert(instr->i_oparg.type != JUMP_TARGET_ARG_TYPE);
             }
         }
     }
@@ -9788,6 +9808,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
             if (b->b_instr[i].i_opcode == LOAD_CONST ||
                 b->b_instr[i].i_opcode == KW_NAMES) {
 
+                assert(oparg_type_matches(b->b_instr[i].i_oparg, CONST_ARG_TYPE));
                 int index = OPARG_VALUE(b->b_instr[i].i_oparg);
                 index_map[index] = index;
             }
@@ -9845,10 +9866,14 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
             if (b->b_instr[i].i_opcode == LOAD_CONST ||
                 b->b_instr[i].i_opcode == KW_NAMES) {
 
+                assert(oparg_type_matches(b->b_instr[i].i_oparg, CONST_ARG_TYPE));
                 int index = OPARG_VALUE(b->b_instr[i].i_oparg);
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
-                b->b_instr[i].i_oparg = UNTYPED_OPARG((int)reverse_index_map[index]);
+                b->b_instr[i].i_oparg = CONST_OPARG((int)reverse_index_map[index]);
+            }
+            else {
+                assert(b->b_instr[i].i_oparg.type != CONST_ARG_TYPE);
             }
         }
     }
@@ -9991,7 +10016,7 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
             if (PyErr_Occurred()) {
                 return -1;
             }
-            if (cfg_builder_addop(g, opcode, UNTYPED_OPARG(oparg), loc) < 0) {
+            if (cfg_builder_addop(g, opcode, UNKNOWN_OPARG(oparg), loc) < 0) {
                 return -1;
             }
         }
