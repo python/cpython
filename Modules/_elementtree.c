@@ -1457,13 +1457,16 @@ _elementtree_Element_iter_impl(ElementObject *self, PyTypeObject *cls,
 /*[clinic input]
 _elementtree.Element.itertext
 
+    cls: defining_class
+    /
+
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_itertext_impl(ElementObject *self)
-/*[clinic end generated code: output=5fa34b2fbcb65df6 input=af8f0e42cb239c89]*/
+_elementtree_Element_itertext_impl(ElementObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=fdeb2a3bca0ae063 input=a1ef1f0fc872a586]*/
 {
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
     return create_elementiter(st, self, Py_None, 1);
 }
 

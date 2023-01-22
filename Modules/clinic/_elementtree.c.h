@@ -635,15 +635,19 @@ PyDoc_STRVAR(_elementtree_Element_itertext__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_ITERTEXT_METHODDEF    \
-    {"itertext", (PyCFunction)_elementtree_Element_itertext, METH_NOARGS, _elementtree_Element_itertext__doc__},
+    {"itertext", _PyCFunction_CAST(_elementtree_Element_itertext), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_itertext__doc__},
 
 static PyObject *
-_elementtree_Element_itertext_impl(ElementObject *self);
+_elementtree_Element_itertext_impl(ElementObject *self, PyTypeObject *cls);
 
 static PyObject *
-_elementtree_Element_itertext(ElementObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_Element_itertext(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _elementtree_Element_itertext_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "itertext() takes no arguments");
+        return NULL;
+    }
+    return _elementtree_Element_itertext_impl(self, cls);
 }
 
 PyDoc_STRVAR(_elementtree_Element_insert__doc__,
@@ -1199,4 +1203,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee894eaced621f70 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6bef56ff48978efd input=a9049054013a1b77]*/
