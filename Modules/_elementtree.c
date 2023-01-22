@@ -4159,7 +4159,7 @@ static PyGetSetDef xmlparser_getsetlist[] = {
     {NULL},
 };
 
-#define clinic_state() (ET_STATE_GLOBAL)
+#define clinic_state() (get_elementtree_state_by_type(Py_TYPE(self)))
 #include "clinic/_elementtree.c.h"
 #undef clinic_state
 
