@@ -149,8 +149,8 @@ _FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     (?P<sign>[-+ ]?)
     (?P<no_neg_zero>z)?
     (?P<alt>\#)?
-    # lookahead so that a single '0' is treated as a minimum width rather
-    # than a zeropad flag
+    # A '0' that's *not* followed by another digit is parsed as a minimum width
+    # rather than a zeropad flag.
     (?P<zeropad>0(?=[0-9]))?
     (?P<minimumwidth>0|[1-9][0-9]*)?
     (?P<thousands_sep>[,_])?
