@@ -1326,19 +1326,21 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
 /*[clinic input]
 _elementtree.Element.findall
 
+    cls: defining_class
+    /
     path: object
     namespaces: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
-                                  PyObject *namespaces)
-/*[clinic end generated code: output=1a0bd9f5541b711d input=4d9e6505a638550c]*/
+_elementtree_Element_findall_impl(ElementObject *self, PyTypeObject *cls,
+                                  PyObject *path, PyObject *namespaces)
+/*[clinic end generated code: output=65e39a1208f3b59e input=7aa0db45673fc9a5]*/
 {
     Py_ssize_t i;
     PyObject* out;
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
 
     if (checkpath(path) || namespaces != Py_None) {
         return PyObject_CallMethodObjArgs(

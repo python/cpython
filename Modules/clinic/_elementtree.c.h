@@ -389,14 +389,14 @@ PyDoc_STRVAR(_elementtree_Element_findall__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_FINDALL_METHODDEF    \
-    {"findall", _PyCFunction_CAST(_elementtree_Element_findall), METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findall__doc__},
+    {"findall", _PyCFunction_CAST(_elementtree_Element_findall), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findall__doc__},
 
 static PyObject *
-_elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
-                                  PyObject *namespaces);
+_elementtree_Element_findall_impl(ElementObject *self, PyTypeObject *cls,
+                                  PyObject *path, PyObject *namespaces);
 
 static PyObject *
-_elementtree_Element_findall(ElementObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_findall(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -439,7 +439,7 @@ _elementtree_Element_findall(ElementObject *self, PyObject *const *args, Py_ssiz
     }
     namespaces = args[1];
 skip_optional_pos:
-    return_value = _elementtree_Element_findall_impl(self, path, namespaces);
+    return_value = _elementtree_Element_findall_impl(self, cls, path, namespaces);
 
 exit:
     return return_value;
@@ -1198,4 +1198,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0c2792695fd75b84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0b47404198faddc input=a9049054013a1b77]*/
