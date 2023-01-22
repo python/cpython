@@ -1106,14 +1106,16 @@ element_setstate_from_Python(elementtreestate *st, ElementObject *self,
 /*[clinic input]
 _elementtree.Element.__setstate__
 
+    cls: defining_class
     state: object
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element___setstate__(ElementObject *self, PyObject *state)
-/*[clinic end generated code: output=ea28bf3491b1f75e input=aaf80abea7c1e3b9]*/
+_elementtree_Element___setstate___impl(ElementObject *self,
+                                       PyTypeObject *cls, PyObject *state)
+/*[clinic end generated code: output=598bfb5730f71509 input=13830488d35d51f7]*/
 {
     if (!PyDict_CheckExact(state)) {
         PyErr_Format(PyExc_TypeError,
@@ -1122,7 +1124,7 @@ _elementtree_Element___setstate__(ElementObject *self, PyObject *state)
         return NULL;
     }
     else {
-        elementtreestate *st = ET_STATE_GLOBAL;
+        elementtreestate *st = get_elementtree_state_by_cls(cls);
         return element_setstate_from_Python(st, self, state);
     }
 }

@@ -171,7 +171,42 @@ PyDoc_STRVAR(_elementtree_Element___setstate____doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT___SETSTATE___METHODDEF    \
-    {"__setstate__", (PyCFunction)_elementtree_Element___setstate__, METH_O, _elementtree_Element___setstate____doc__},
+    {"__setstate__", _PyCFunction_CAST(_elementtree_Element___setstate__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element___setstate____doc__},
+
+static PyObject *
+_elementtree_Element___setstate___impl(ElementObject *self,
+                                       PyTypeObject *cls, PyObject *state);
+
+static PyObject *
+_elementtree_Element___setstate__(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__setstate__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *state;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    state = args[0];
+    return_value = _elementtree_Element___setstate___impl(self, cls, state);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_elementtree_Element_extend__doc__,
 "extend($self, elements, /)\n"
@@ -1128,4 +1163,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=259a069f1ce2204e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d946f9608b497cd9 input=a9049054013a1b77]*/
