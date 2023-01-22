@@ -1058,9 +1058,7 @@ Element Objects
          print("element not found")
 
    .. versionchanged:: 3.12
-      Prior to Python 3.12, this usage was discouraged by documentation, and
-      in the Python implementation with :exc:`FutureWarning`. Now, both
-      Python and (default) C implementations emit :exc:`DeprecationWarning`.
+      Testing the truth value of an Element emits :exc:`DeprecationWarning`.
 
    Prior to Python 3.8, the serialisation order of the XML attributes of
    elements was artificially made predictable by sorting the attributes by

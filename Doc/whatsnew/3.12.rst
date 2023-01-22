@@ -480,11 +480,8 @@ Pending Removal in Python 3.14
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
 
-* Testing the truth value of an :class:`xml.etree.ElementTree.Element`,
-  discouraged by :mod:`xml.etree.ElementTree` documentation since Python 2.6
-  and by :exc:`FutureWarning` in the Python implementation since Python 2.7,
-  is now deprecated in both Python and (default) C implementations by
-  :exc:`DeprecationWarning` and will raise an exception in Python 3.14.
+* Testing the truth value of an :class:`xml.etree.ElementTree.Element`
+  is deprecated and will raise an exception in Python 3.14.
 
 
 Pending Removal in Future Versions
