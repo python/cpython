@@ -1,1 +1,1 @@
-UUID module now has a command line interface.
+:mod:`uuid` now has a command line interface. Try ``python -m uuid -h``.
