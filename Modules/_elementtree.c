@@ -503,10 +503,10 @@ raise_type_error(PyObject *element)
 }
 
 LOCAL(int)
-element_add_subelement(ElementObject* self, PyObject* element)
+element_add_subelement(elementtreestate *st, ElementObject *self,
+                       PyObject *element)
 {
     /* add a child element to a parent */
-    elementtreestate *st = ET_STATE_GLOBAL;
     if (!Element_Check(st, element)) {
         raise_type_error(element);
         return -1;
@@ -618,7 +618,7 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
     if (elem == NULL)
         return NULL;
 
-    if (element_add_subelement(parent, elem) < 0) {
+    if (element_add_subelement(st, parent, elem) < 0) {
         Py_DECREF(elem);
         return NULL;
     }
@@ -693,7 +693,8 @@ static PyObject *
 _elementtree_Element_append_impl(ElementObject *self, PyObject *subelement)
 /*[clinic end generated code: output=54a884b7cf2295f4 input=439f2bd777288fb6]*/
 {
-    if (element_add_subelement(self, subelement) < 0)
+    elementtreestate *st = ET_STATE_GLOBAL;
+    if (element_add_subelement(st, self, subelement) < 0)
         return NULL;
 
     Py_RETURN_NONE;
@@ -1190,9 +1191,10 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
         return NULL;
     }
 
+    elementtreestate *st = ET_STATE_GLOBAL;
     for (i = 0; i < PySequence_Fast_GET_SIZE(seq); i++) {
         PyObject* element = Py_NewRef(PySequence_Fast_GET_ITEM(seq, i));
-        if (element_add_subelement(self, element) < 0) {
+        if (element_add_subelement(st, self, element) < 0) {
             Py_DECREF(seq);
             Py_DECREF(element);
             return NULL;
@@ -2591,7 +2593,7 @@ treebuilder_add_subelement(elementtreestate *st, PyObject *element,
 {
     if (Element_CheckExact(st, element)) {
         ElementObject *elem = (ElementObject *) element;
-        return element_add_subelement(elem, child);
+        return element_add_subelement(st, elem, child);
     }
     else {
         PyObject *res;
