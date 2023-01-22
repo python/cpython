@@ -2865,7 +2865,7 @@ twosum(double a, double b)
 
 static inline DoubleLength
 dl_split(double x) {
-    double t = x * 134217729.0;  /* Veltkamp constant = float(0x8000001) */
+    double t = x * 134217729.0;  // Veltkamp constant = 2.0 ** 27 + 1
     double hi = t - (t - x);
     double lo = x - hi;
     return (DoubleLength) {hi, lo};
