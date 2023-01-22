@@ -78,15 +78,19 @@ PyDoc_STRVAR(_elementtree_Element___copy____doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT___COPY___METHODDEF    \
-    {"__copy__", (PyCFunction)_elementtree_Element___copy__, METH_NOARGS, _elementtree_Element___copy____doc__},
+    {"__copy__", _PyCFunction_CAST(_elementtree_Element___copy__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element___copy____doc__},
 
 static PyObject *
-_elementtree_Element___copy___impl(ElementObject *self);
+_elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls);
 
 static PyObject *
-_elementtree_Element___copy__(ElementObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_Element___copy__(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _elementtree_Element___copy___impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
+        return NULL;
+    }
+    return _elementtree_Element___copy___impl(self, cls);
 }
 
 PyDoc_STRVAR(_elementtree_Element___deepcopy____doc__,
@@ -1124,4 +1128,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a511c031a165ce5b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=259a069f1ce2204e input=a9049054013a1b77]*/

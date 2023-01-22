@@ -730,15 +730,18 @@ _elementtree_Element_clear_impl(ElementObject *self)
 /*[clinic input]
 _elementtree.Element.__copy__
 
+    cls: defining_class
+    /
+
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element___copy___impl(ElementObject *self)
-/*[clinic end generated code: output=2c701ebff7247781 input=ad87aaebe95675bf]*/
+_elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=da22894421ff2b36 input=91edb92d9f441213]*/
 {
     Py_ssize_t i;
     ElementObject* element;
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
 
     element = (ElementObject*) create_new_element(
         st, self->tag, self->extra ? self->extra->attrib : NULL);
