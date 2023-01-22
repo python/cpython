@@ -2842,10 +2842,13 @@ based on ideas from three sources:
   by T. J. Dekker
   https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 
-  Ultimately Fast Accurate Summation by Siegfried M. Rump
-  https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
+  Accurate Sum and Dot Product
+  by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
+  https://doi.org/10.1137/030601818
+  https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
 
 Double length functions:
+* twosum() error-free transformation of the sum of two C doubles
 * dl_split() exact split of a C double into two half precision components.
 * dl_mul() exact multiplication of two C doubles.
 
@@ -2874,22 +2877,6 @@ twosum(double a, double b)
     return  (DoubleLength) {s, t};
 }
 
-static inline TripleLength
-tl_add(TripleLength total, double x)
-{
-    /* Input:       x     total.hi   total.lo    total.tiny
-                   |--- twosum ---|
-                    s.hi      s.lo
-                             |--- twosum ---|
-                              t.hi      t.lo
-                                       |--- single sum ---|
-       Output:      s.hi     t.hi       tiny
-     */
-    DoubleLength s = twosum(x, total.hi);
-    DoubleLength t = twosum(s.lo, total.lo);
-    return (TripleLength) {s.hi, t.hi, t.lo + total.tiny};
-}
-
 static inline DoubleLength
 dl_split(double x) {
     double t = x * 134217729.0;  /* Veltkamp constant = float(0x8000001) */
@@ -2912,6 +2899,22 @@ dl_mul(double x, double y)
 }
 
 static inline TripleLength
+tl_add(TripleLength total, double x)
+{
+    /* Input:       x     total.hi   total.lo    total.tiny
+                   |--- twosum ---|
+                    s.hi      s.lo
+                             |--- twosum ---|
+                              t.hi      t.lo
+                                       |--- single sum ---|
+       Output:      s.hi     t.hi       tiny
+     */
+    DoubleLength s = twosum(x, total.hi);
+    DoubleLength t = twosum(s.lo, total.lo);
+    return (TripleLength) {s.hi, t.hi, t.lo + total.tiny};
+}
+
+static inline TripleLength
 tl_fma(TripleLength total, double p, double q)
 {
     DoubleLength product = dl_mul(p, q);
@@ -2922,7 +2925,8 @@ tl_fma(TripleLength total, double p, double q)
 static inline double
 tl_to_d(TripleLength total)
 {
-    return total.tiny + total.lo + total.hi;
+    DoubleLength last = twosum(total.lo, total.hi);
+    return total.tiny + last.lo + last.hi;
 }
 
 /*[clinic input]
