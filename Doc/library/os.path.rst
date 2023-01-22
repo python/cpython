@@ -518,7 +518,6 @@ the :mod:`glob` module.)
       >>> splitroot('//Server/Share/Users/Sam')
       ('//Server/Share', '/', 'Users/Sam')
 
-
    .. versionadded:: 3.12
 
 
