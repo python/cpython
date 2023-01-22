@@ -125,7 +125,6 @@ SYMBOL_NAMES = (
     "PyComplex_RealAsDouble",
     "PyComplex_Type",
     "PyDeepFreezeBytes_Type",
-    "PyDeepFreezeCode_Type",
     "PyDeepFreezeComplex_Type",
     "PyDeepFreezeFloat_Type",
     "PyDeepFreezeLong_Type",
