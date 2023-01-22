@@ -184,14 +184,33 @@ static struct jump_target_label_ NO_LABEL = {-1};
         return 0; \
     }
 
+typedef enum {
+    UNUSED_ARG, /* No oparg */
+    UNTYPED_ARG, /* Legacy arg, this type will be eventually removed */
+} oparg_type;
+
+typedef struct {
+    oparg_type type;
+    int value;
+} oparg_t;
+
+#define OPARG_VALUE(O) ((O).value)
+#define OPARG(V, T) ((const oparg_t){.value = (V), .type = (T)})
+
+#define UNUSED_OPARG OPARG(0, UNUSED_ARG)
+#define UNTYPED_OPARG(V) OPARG((V), UNTYPED_ARG)
+
+#define IS_UNUSED(O) ((O).type == UNUSED_ARG)
+
 struct instr {
     int i_opcode;
-    int i_oparg;
+    oparg_t i_oparg;
     location i_loc;
     /* The following fields should not be set by the front-end: */
     struct basicblock_ *i_target; /* target block (if jump instruction) */
     struct basicblock_ *i_except; /* target block when exception is raised */
 };
+
 
 /* One arg*/
 #define INSTR_SET_OP1(I, OP, ARG) \
@@ -208,7 +227,7 @@ struct instr {
         assert(!HAS_ARG(OP)); \
         struct instr *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
-        _instr__ptr_->i_oparg = 0; \
+        _instr__ptr_->i_oparg = UNUSED_OPARG; \
     } while (0);
 
 typedef struct exceptstack {
@@ -254,11 +273,11 @@ is_jump(struct instr *i)
 }
 
 static int
-instr_size(struct instr *instruction)
+instr_size(struct instr *instr)
 {
-    int opcode = instruction->i_opcode;
+    int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = instruction->i_oparg;
+    int oparg = OPARG_VALUE(instr->i_oparg);
     assert(HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
@@ -266,11 +285,11 @@ instr_size(struct instr *instruction)
 }
 
 static void
-write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
+write_instr(_Py_CODEUNIT *codestr, struct instr *instr, int ilen)
 {
-    int opcode = instruction->i_opcode;
+    int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = instruction->i_oparg;
+    int oparg = OPARG_VALUE(instr->i_oparg);
     assert(HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
@@ -1335,12 +1354,12 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 static int
-basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
+basicblock_addop(basicblock *b, int opcode, oparg_t oparg, location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
-    assert(0 <= oparg && oparg < (1 << 30));
+    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || IS_UNUSED(oparg));
+    assert(0 <= OPARG_VALUE(oparg) && OPARG_VALUE(oparg) < (1 << 30));
 
     int off = basicblock_next_instr(b);
     if (off < 0) {
@@ -1381,7 +1400,7 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
 }
 
 static int
-cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
+cfg_builder_addop(cfg_builder *g, int opcode, oparg_t oparg, location loc)
 {
     if (cfg_builder_maybe_start_new_block(g) != 0) {
         return -1;
@@ -1393,7 +1412,7 @@ static int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, loc);
+    return cfg_builder_addop(g, opcode, UNUSED_OPARG, loc);
 }
 
 static Py_ssize_t
@@ -1604,7 +1623,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, loc);
+    return cfg_builder_addop(g, opcode, UNTYPED_OPARG(oparg_), loc);
 }
 
 static int
@@ -1613,7 +1632,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, target.id, loc);
+    return cfg_builder_addop(g, opcode, UNTYPED_OPARG(target.id), loc);
 }
 
 #define ADDOP(C, LOC, OP) \
@@ -2586,7 +2605,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
     /* Insert SETUP_CLEANUP at start */
     struct instr setup = {
         .i_opcode = SETUP_CLEANUP,
-        .i_oparg = handler.id,
+        .i_oparg = UNTYPED_OPARG(handler.id),
         .i_loc = NO_LOCATION,
         .i_target = NULL,
     };
@@ -7131,11 +7150,12 @@ stackdepth(basicblock *entryblock, int code_flags)
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
-            int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
+            int oparg = OPARG_VALUE(instr->i_oparg);
+            int effect = stack_effect(instr->i_opcode, oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
                 PyErr_Format(PyExc_SystemError,
                              "compiler stack_effect(opcode=%d, arg=%i) failed",
-                             instr->i_opcode, instr->i_oparg);
+                             instr->i_opcode, oparg);
                 return -1;
             }
             int new_depth = depth + effect;
@@ -7144,7 +7164,7 @@ stackdepth(basicblock *entryblock, int code_flags)
                 maxdepth = new_depth;
             }
             if (HAS_TARGET(instr->i_opcode)) {
-                effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
+                effect = stack_effect(instr->i_opcode, oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
                 int target_depth = depth + effect;
                 assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
@@ -7163,7 +7183,7 @@ stackdepth(basicblock *entryblock, int code_flags)
                 break;
             }
             if (instr->i_opcode == YIELD_VALUE) {
-                instr->i_oparg = depth;
+                instr->i_oparg = UNTYPED_OPARG(depth);
             }
         }
         if (next != NULL) {
@@ -7480,7 +7500,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label, NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, UNTYPED_OPARG(b->b_next->b_label), NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
@@ -7881,7 +7901,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return -1;
     }
-    basicblock_addop(backwards_jump, JUMP, target->b_label, NO_LOCATION);
+    basicblock_addop(backwards_jump, JUMP, UNTYPED_OPARG(target->b_label), NO_LOCATION);
     backwards_jump->b_instr[0].i_target = target;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -7934,15 +7954,17 @@ assemble_jump_offsets(basicblock *entryblock)
                 */
                 bsize += isize;
                 if (is_jump(instr)) {
-                    instr->i_oparg = instr->i_target->b_offset;
+                    instr->i_oparg = UNTYPED_OPARG(instr->i_target->b_offset);
                     if (is_relative_jump(instr)) {
-                        if (instr->i_oparg < bsize) {
+                        if (OPARG_VALUE(instr->i_oparg) < bsize) {
                             assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                            instr->i_oparg = bsize - instr->i_oparg;
+                            instr->i_oparg = UNTYPED_OPARG(
+                                bsize - OPARG_VALUE(instr->i_oparg));
                         }
                         else {
                             assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                            instr->i_oparg -= bsize;
+                            instr->i_oparg = UNTYPED_OPARG(
+                                OPARG_VALUE(instr->i_oparg) - bsize);
                         }
                     }
                     else {
@@ -8004,11 +8026,11 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
         if (instr->i_except != NULL) {
             maybe_push(instr->i_except, unsafe_mask, sp);
         }
-        if (instr->i_oparg >= 64) {
+        if (OPARG_VALUE(instr->i_oparg) >= 64) {
             continue;
         }
-        assert(instr->i_oparg >= 0);
-        uint64_t bit = (uint64_t)1 << instr->i_oparg;
+        assert(OPARG_VALUE(instr->i_oparg) >= 0);
+        uint64_t bit = (uint64_t)1 << OPARG_VALUE(instr->i_oparg);
         switch (instr->i_opcode) {
             case DELETE_FAST:
                 unsafe_mask |= bit;
@@ -8057,7 +8079,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_opcode != EXTENDED_ARG);
             assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
-            int arg = instr->i_oparg;
+            int arg = OPARG_VALUE(instr->i_oparg);
             if (arg < 64) {
                 continue;
             }
@@ -8393,10 +8415,10 @@ dump_instr(struct instr *i)
 
     *arg = '\0';
     if (HAS_ARG(i->i_opcode)) {
-        sprintf(arg, "arg: %d ", i->i_oparg);
+        sprintf(arg, "arg: %d ", OPARG_VALUE(i->i_oparg));
     }
     if (HAS_TARGET(i->i_opcode)) {
-        sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
+        sprintf(arg, "target: %p [%d] ", i->i_target, OPARG_VALUE(i->i_oparg));
     }
     fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
                     i->i_loc.lineno, i->i_opcode, arg, jabs, jrel);
@@ -8476,7 +8498,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
     if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         struct instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
-            .i_oparg = 0,
+            .i_oparg = UNUSED_OPARG,
             .i_loc = LOCATION(c->u->u_firstlineno, c->u->u_firstlineno, -1, -1),
             .i_target = NULL,
         };
@@ -8485,7 +8507,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         }
         struct instr pop_top = {
             .i_opcode = POP_TOP,
-            .i_oparg = 0,
+            .i_oparg = UNUSED_OPARG,
             .i_loc = NO_LOCATION,
             .i_target = NULL,
         };
@@ -8517,7 +8539,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             struct instr make_cell = {
                 .i_opcode = MAKE_CELL,
                 // This will get fixed in offset_derefs().
-                .i_oparg = oldindex,
+                .i_oparg = UNTYPED_OPARG(oldindex),
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
             };
@@ -8532,7 +8554,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
     if (nfreevars) {
         struct instr copy_frees = {
             .i_opcode = COPY_FREE_VARS,
-            .i_oparg = nfreevars,
+            .i_oparg = UNTYPED_OPARG(nfreevars),
             .i_loc = NO_LOCATION,
             .i_target = NULL,
         };
@@ -8599,7 +8621,7 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
             struct instr *inst = &b->b_instr[i];
             // This is called before extended args are generated.
             assert(inst->i_opcode != EXTENDED_ARG);
-            int oldoffset = inst->i_oparg;
+            int oldoffset = OPARG_VALUE(inst->i_oparg);
             switch(inst->i_opcode) {
                 case MAKE_CELL:
                 case LOAD_CLOSURE:
@@ -8610,7 +8632,7 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
                     assert(oldoffset >= 0);
                     assert(oldoffset < noffsets);
                     assert(fixedmap[oldoffset] >= 0);
-                    inst->i_oparg = fixedmap[oldoffset];
+                    inst->i_oparg = UNTYPED_OPARG(fixedmap[oldoffset]);
             }
         }
     }
@@ -8661,7 +8683,7 @@ opcode_metadata_is_sane(cfg_builder *g) {
             assert((pushed < 0) == (popped < 0));
             if (pushed >= 0) {
                 assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
-                int effect = stack_effect(opcode, instr->i_oparg, -1);
+                int effect = stack_effect(opcode, OPARG_VALUE(instr->i_oparg), -1);
                 if (effect != pushed - popped) {
                    fprintf(stderr,
                            "op=%d: stack_effect (%d) != pushed (%d) - popped (%d)\n",
@@ -8959,7 +8981,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     assert(inst[n].i_opcode == BUILD_TUPLE);
-    assert(inst[n].i_oparg == n);
+    assert(OPARG_VALUE(inst[n].i_oparg) == n);
 
     for (int i = 0; i < n; i++) {
         if (!HAS_CONST(inst[i].i_opcode)) {
@@ -8974,7 +8996,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     }
     for (int i = 0; i < n; i++) {
         int op = inst[i].i_opcode;
-        int arg = inst[i].i_oparg;
+        int arg = OPARG_VALUE(inst[i].i_oparg);
         PyObject *constant = get_const_value(op, arg, consts);
         if (constant == NULL) {
             return -1;
@@ -9007,7 +9029,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     for (int i = 0; i < n; i++) {
         INSTR_SET_OP0(&inst[i], NOP);
     }
-    INSTR_SET_OP1(&inst[n], LOAD_CONST, (int)index);
+    INSTR_SET_OP1(&inst[n], LOAD_CONST, UNTYPED_OPARG((int)index));
     return 0;
 }
 
@@ -9025,14 +9047,14 @@ swaptimize(basicblock *block, int *ix)
     // Find the length of the current sequence of SWAPs and NOPs, and record the
     // maximum depth of the stack manipulations:
     assert(instructions[0].i_opcode == SWAP);
-    int depth = instructions[0].i_oparg;
+    int depth = OPARG_VALUE(instructions[0].i_oparg);
     int len = 0;
     int more = false;
     int limit = block->b_iused - *ix;
     while (++len < limit) {
         int opcode = instructions[len].i_opcode;
         if (opcode == SWAP) {
-            depth = Py_MAX(depth, instructions[len].i_oparg);
+            depth = Py_MAX(depth, OPARG_VALUE(instructions[len].i_oparg));
             more = true;
         }
         else if (opcode != NOP) {
@@ -9056,7 +9078,7 @@ swaptimize(basicblock *block, int *ix)
     // our "stack":
     for (int i = 0; i < len; i++) {
         if (instructions[i].i_opcode == SWAP) {
-            int oparg = instructions[i].i_oparg;
+            int oparg = OPARG_VALUE(instructions[i].i_oparg);
             int top = stack[0];
             // SWAPs are 1-indexed:
             stack[0] = stack[oparg - 1];
@@ -9090,7 +9112,7 @@ swaptimize(basicblock *block, int *ix)
                 assert(0 <= current);
                 // SWAPs are 1-indexed:
                 instructions[current].i_opcode = SWAP;
-                instructions[current--].i_oparg = j + 1;
+                instructions[current--].i_oparg = UNTYPED_OPARG(j + 1);
             }
             if (stack[j] == VISITED) {
                 // Completed the cycle:
@@ -9163,7 +9185,7 @@ apply_static_swaps(basicblock *block, int i)
         }
         int k = j;
         int lineno = block->b_instr[j].i_loc.lineno;
-        for (int count = swap->i_oparg - 1; 0 < count; count--) {
+        for (int count = OPARG_VALUE(swap->i_oparg) - 1; 0 < count; count--) {
             k = next_swappable_instruction(block, k, lineno);
             if (k < 0) {
                 return;
@@ -9211,7 +9233,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
     struct instr *target;
     for (int i = 0; i < bb->b_iused; i++) {
         struct instr *inst = &bb->b_instr[i];
-        int oparg = inst->i_oparg;
+        int oparg = OPARG_VALUE(inst->i_oparg);
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
         if (HAS_TARGET(inst->i_opcode)) {
             assert(inst->i_target->b_iused > 0);
@@ -9277,7 +9299,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         }
                         int jump_op = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
                         if (Py_IsNone(cnt) && (jump_op == POP_JUMP_IF_FALSE || jump_op == POP_JUMP_IF_TRUE)) {
-                            unsigned char nextarg = bb->b_instr[i+1].i_oparg;
+                            unsigned char nextarg = OPARG_VALUE(bb->b_instr[i+1].i_oparg);
                             INSTR_SET_OP0(inst, NOP);
                             INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                             bb->b_instr[i+2].i_opcode = nextarg ^ (jump_op == POP_JUMP_IF_FALSE) ?
@@ -9294,7 +9316,9 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                    Replace BUILD_TUPLE(2) UNPACK_SEQUENCE(2) with SWAP(2).
                    Replace BUILD_TUPLE(3) UNPACK_SEQUENCE(3) with SWAP(3). */
             case BUILD_TUPLE:
-                if (nextop == UNPACK_SEQUENCE && oparg == bb->b_instr[i+1].i_oparg) {
+                if (nextop == UNPACK_SEQUENCE &&
+                    oparg == OPARG_VALUE(bb->b_instr[i+1].i_oparg))
+                {
                     switch(oparg) {
                         case 1:
                             INSTR_SET_OP0(inst, NOP);
@@ -9424,7 +9448,8 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             case PUSH_NULL:
                 if (nextop == LOAD_GLOBAL && (inst[1].i_opcode & 1) == 0) {
                     INSTR_SET_OP0(inst, NOP);
-                    inst[1].i_oparg |= 1;
+                    inst[1].i_oparg = UNTYPED_OPARG(
+                        OPARG_VALUE(inst[1].i_oparg) | 1);
                 }
                 break;
             default:
@@ -9667,7 +9692,7 @@ translate_jump_labels_to_targets(basicblock *entryblock)
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_target == NULL);
             if (HAS_TARGET(instr->i_opcode)) {
-                int lbl = instr->i_oparg;
+                int lbl = OPARG_VALUE(instr->i_oparg);
                 assert(lbl >= 0 && lbl <= max_label);
                 instr->i_target = label2block[lbl];
                 assert(instr->i_target != NULL);
@@ -9763,7 +9788,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
             if (b->b_instr[i].i_opcode == LOAD_CONST ||
                 b->b_instr[i].i_opcode == KW_NAMES) {
 
-                int index = b->b_instr[i].i_oparg;
+                int index = OPARG_VALUE(b->b_instr[i].i_oparg);
                 index_map[index] = index;
             }
         }
@@ -9820,10 +9845,10 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
             if (b->b_instr[i].i_opcode == LOAD_CONST ||
                 b->b_instr[i].i_opcode == KW_NAMES) {
 
-                int index = b->b_instr[i].i_oparg;
+                int index = OPARG_VALUE(b->b_instr[i].i_oparg);
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
-                b->b_instr[i].i_oparg = (int)reverse_index_map[index];
+                b->b_instr[i].i_oparg = UNTYPED_OPARG((int)reverse_index_map[index]);
             }
         }
     }
@@ -9966,7 +9991,7 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
             if (PyErr_Occurred()) {
                 return -1;
             }
-            if (cfg_builder_addop(g, opcode, oparg, loc) < 0) {
+            if (cfg_builder_addop(g, opcode, UNTYPED_OPARG(oparg), loc) < 0) {
                 return -1;
             }
         }
@@ -9999,7 +10024,7 @@ cfg_to_instructions(cfg_builder *g)
             struct instr *instr = &b->b_instr[i];
             location loc = instr->i_loc;
             int arg = HAS_TARGET(instr->i_opcode) ?
-                      instr->i_target->b_label : instr->i_oparg;
+                      instr->i_target->b_label : OPARG_VALUE(instr->i_oparg);
 
             PyObject *inst_tuple = Py_BuildValue(
                 "(iiiiii)", instr->i_opcode, arg,
