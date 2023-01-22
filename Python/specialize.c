@@ -281,6 +281,11 @@ _PyCode_Quicken(PyCodeObject *code)
     for (int i = 0; i < Py_SIZE(code); i++) {
         int previous_opcode = opcode;
         opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
+        // TODO: Less special-casing
+        if (opcode == MAKE_FUNCTION_FROM_CODE) {
+            i += 1;  // This is a long instruction
+            continue;
+        }
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             instructions[i + 1].cache = adaptive_counter_warmup();

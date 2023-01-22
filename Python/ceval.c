@@ -925,6 +925,8 @@ handle_eval_breaker:
         }
         NEXTOPARG();
         PRE_DISPATCH_GOTO();
+        // TODO: Support EXTENDED_ARG_3.
+        assert(opcode != EXTENDED_ARG_3);
         // No _PyOpcode_Deopt here, since EXTENDED_ARG has no optimized forms:
         while (opcode == EXTENDED_ARG) {
             // CPython hasn't ever traced the instruction after an EXTENDED_ARG.

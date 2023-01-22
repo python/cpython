@@ -283,7 +283,9 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int caches = _PyOpcode_Caches[opcode];
     // TODO: Switch on opcode_metadata.instr_format
     if (opcode == MAKE_FUNCTION_FROM_CODE) {
+        // TODO: These are horrible hacks!
         caches += 1;
+        oparg = instruction->i_oparg3;
     }
     switch (ilen - caches) {
         case 4:
@@ -297,18 +299,13 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
             codestr++;
             /* fall through */
         case 2:
-            codestr->opcode = EXTENDED_ARG;
+            codestr->opcode = opcode == MAKE_FUNCTION_FROM_CODE ? EXTENDED_ARG_3 : EXTENDED_ARG;
             codestr->oparg = (oparg >> 8) & 0xFF;
             codestr++;
             /* fall through */
         case 1:
-            if (opcode == MAKE_FUNCTION_FROM_CODE) {
-                if (codestr[-1].opcode == EXTENDED_ARG) {
-                    codestr[-1].opcode = EXTENDED_ARG_3;
-                }
-            }
             codestr->opcode = opcode;
-            codestr->oparg = oparg & 0xFF;
+            codestr->oparg = instruction->i_oparg & 0xFF;
             codestr++;
             break;
         default:
@@ -317,7 +314,7 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     // TODO: Switch on opcode_metadata.instr_format
     if (opcode == MAKE_FUNCTION_FROM_CODE) {
         codestr->opcode = instruction->i_oparg2;
-        codestr->oparg = instruction->i_oparg3;
+        codestr->oparg = instruction->i_oparg3 & 0xFF;
         codestr++;
     }
     while (caches--) {
@@ -2339,11 +2336,9 @@ compiler_make_closure(struct compiler *c, location loc,
         flags |= 0x08;
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
-    // Py_ssize_t arg;
-    // RETURN_IF_ERROR((arg = compiler_add_const(c, (PyObject*)co)));
-    // ADDOP_LONG(c, loc, MAKE_FUNCTION_FROM_CODE, flags, 0, (int)arg);
-    ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
-    ADDOP_I(c, loc, MAKE_FUNCTION, flags);
+    Py_ssize_t arg;
+    RETURN_IF_ERROR((arg = compiler_add_const(c, (PyObject*)co)));
+    ADDOP_LONG(c, loc, MAKE_FUNCTION_FROM_CODE, flags, 0, (int)arg);
     return SUCCESS;
 }
 
@@ -8053,7 +8048,7 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
     uint64_t unsafe_mask = b->b_unsafe_locals_mask;
     for (int i = 0; i < b->b_iused; i++) {
         struct instr *instr = &b->b_instr[i];
-        assert(instr->i_opcode != EXTENDED_ARG);
+        assert(instr->i_opcode != EXTENDED_ARG && instr->i_opcode != EXTENDED_ARG_3);
         assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
         if (instr->i_except != NULL) {
             maybe_push(instr->i_except, unsafe_mask, sp);
@@ -8109,7 +8104,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
         blocknum++;
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
-            assert(instr->i_opcode != EXTENDED_ARG);
+            assert(instr->i_opcode != EXTENDED_ARG && instr->i_opcode != EXTENDED_ARG_3);
             assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
             int arg = instr->i_oparg;
             if (arg < 64) {
@@ -8652,7 +8647,7 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *inst = &b->b_instr[i];
             // This is called before extended args are generated.
-            assert(inst->i_opcode != EXTENDED_ARG);
+            assert(inst->i_opcode != EXTENDED_ARG && inst->i_opcode != EXTENDED_ARG_3);
             int oldoffset = inst->i_oparg;
             switch(inst->i_opcode) {
                 case MAKE_CELL:

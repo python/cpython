@@ -112,6 +112,10 @@ get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
 {
     _Py_CODEUNIT word;
     unsigned int oparg = _Py_OPARG(codestr[i]);
+    if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG_3) {
+        // TODO: Support EXTENDED_ARG_3
+        Py_FatalError("EXTENDED_ARG_3 not supported in get_arg()");
+    }
     if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG) {
         oparg |= _Py_OPARG(word) << 8;
         if (i >= 2 && _Py_OPCODE(word = codestr[i-2]) == EXTENDED_ARG) {

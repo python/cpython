@@ -1508,6 +1508,10 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].opcode = opcode;
+        // TODO: Generalize this
+        if (opcode == MAKE_FUNCTION_FROM_CODE) {
+            i++;
+        }
         while (caches--) {
             instructions[++i].opcode = CACHE;
             instructions[i].oparg = 0;
