@@ -1075,7 +1075,7 @@ class FractionTest(unittest.TestCase):
             # is being inserted programmatically: spec = f'{width}.2f'.
             (F('12.34'), '0.2f', '12.34'),
             (F('12.34'), 'X>0.2f', '12.34'),
-            # "F" should work identically to "f"
+            # 'F' should work identically to 'f'
             (F(22, 7), '.5F', '3.14286'),
             # %-specifier
             (F(22, 7), '.2%', '314.29%'),
@@ -1181,23 +1181,23 @@ class FractionTest(unittest.TestCase):
             format(fraction, None)
 
         invalid_specs = [
-            "Q6f",  # regression test
+            'Q6f',  # regression test
             # illegal to use fill or alignment when zero padding
-            "X>010f",
-            "X<010f",
-            "X^010f",
-            "X=010f",
-            "0>010f",
-            "0<010f",
-            "0^010f",
-            "0=010f",
-            ">010f",
-            "<010f",
-            "^010f",
-            "=010e",
-            "=010f",
-            "=010g",
-            "=010%",
+            'X>010f',
+            'X<010f',
+            'X^010f',
+            'X=010f',
+            '0>010f',
+            '0<010f',
+            '0^010f',
+            '0=010f',
+            '>010f',
+            '<010f',
+            '^010f',
+            '=010e',
+            '=010f',
+            '=010g',
+            '=010%',
             '>00.2f',
             '>00f',
             # Too many zeros - minimum width should not have leading zeros
@@ -1207,10 +1207,10 @@ class FractionTest(unittest.TestCase):
             '.02f',
             '.000f',
             # Missing precision
-            ".e",
-            ".f",
-            ".g",
-            ".%",
+            '.e',
+            '.f',
+            '.g',
+            '.%',
             # Z instead of z for negative zero suppression
             'Z.2f'
         ]
