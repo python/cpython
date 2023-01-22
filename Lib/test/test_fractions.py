@@ -848,6 +848,8 @@ class FractionTest(unittest.TestCase):
         testcases = [
             (F(1, 3), '', '1/3'),
             (F(-1, 3), '', '-1/3'),
+            (F(3), '', '3'),
+            (F(-3), '', '-3'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
