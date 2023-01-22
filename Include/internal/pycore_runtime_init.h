@@ -33,6 +33,9 @@ extern "C" {
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
+           in accordance with the specification. */ \
+        .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .imports = { \
             .lock = { \
@@ -49,9 +52,6 @@ extern "C" {
         }, \
         .gilstate = { \
             .check_enabled = 1, \
-            /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
-               in accordance with the specification. */ \
-            .autoTSSkey = Py_tss_NEEDS_INIT, \
         }, \
         .dtoa = _dtoa_runtime_state_INIT(runtime), \
         .fileutils = { \

@@ -410,6 +410,7 @@
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
             PyObject *res;
+            #if ENABLE_SPECIALIZATION
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -419,6 +420,7 @@
             }
             STAT_INC(BINARY_SUBSCR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
@@ -574,7 +576,7 @@
 
         TARGET(LIST_APPEND) {
             PyObject *v = PEEK(1);
-            PyObject *list = PEEK(oparg + 1);  // +1 to account for v staying on stack
+            PyObject *list = PEEK(2 + (oparg-1));
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
             STACK_SHRINK(1);
             PREDICT(JUMP_BACKWARD);
@@ -583,7 +585,7 @@
 
         TARGET(SET_ADD) {
             PyObject *v = PEEK(1);
-            PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
+            PyObject *set = PEEK(2 + (oparg-1));
             int err = PySet_Add(set, v);
             Py_DECREF(v);
             if (err) goto pop_1_error;
@@ -598,6 +600,7 @@
             PyObject *container = PEEK(2);
             PyObject *v = PEEK(3);
             uint16_t counter = read_u16(&next_instr[0].cache);
+            #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
@@ -607,6 +610,9 @@
             STAT_INC(STORE_SUBSCR, deferred);
             _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #else
+            (void)counter;  // Unused.
+            #endif  /* ENABLE_SPECIALIZATION */
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
@@ -1092,6 +1098,7 @@
 
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
+            #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -1102,6 +1109,7 @@
             }
             STAT_INC(UNPACK_SEQUENCE, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             PyObject *seq = POP();
             PyObject **top = stack_pointer + oparg;
             if (!unpack_iterable(tstate, seq, oparg, -1, top)) {
@@ -1174,6 +1182,7 @@
             PyObject *owner = PEEK(1);
             PyObject *v = PEEK(2);
             uint16_t counter = read_u16(&next_instr[0].cache);
+            #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg);
@@ -1184,6 +1193,9 @@
             STAT_INC(STORE_ATTR, deferred);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #else
+            (void)counter;  // Unused.
+            #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(names, oparg);
             int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
@@ -1296,6 +1308,7 @@
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
+            #if ENABLE_SPECIALIZATION
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -1306,6 +1319,7 @@
             }
             STAT_INC(LOAD_GLOBAL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             int push_null = oparg & 1;
             PEEK(0) = NULL;
             PyObject *name = GETITEM(names, oparg>>1);
@@ -1511,40 +1525,44 @@
         }
 
         TARGET(BUILD_STRING) {
+            PyObject **pieces = &PEEK(oparg);
             PyObject *str;
-            str = _PyUnicode_JoinArray(&_Py_STR(empty),
-                                       stack_pointer - oparg, oparg);
-            if (str == NULL)
-                goto error;
-            while (--oparg >= 0) {
-                PyObject *item = POP();
-                Py_DECREF(item);
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(pieces[i]);
             }
-            PUSH(str);
+            if (str == NULL) { STACK_SHRINK(oparg); goto error; }
+            STACK_SHRINK(oparg);
+            STACK_GROW(1);
+            POKE(1, str);
             DISPATCH();
         }
 
         TARGET(BUILD_TUPLE) {
+            PyObject **values = &PEEK(oparg);
+            PyObject *tup;
+            tup = _PyTuple_FromArraySteal(values, oparg);
+            if (tup == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
-            PyObject *tup = _PyTuple_FromArraySteal(stack_pointer, oparg);
-            if (tup == NULL)
-                goto error;
-            PUSH(tup);
+            STACK_GROW(1);
+            POKE(1, tup);
             DISPATCH();
         }
 
         TARGET(BUILD_LIST) {
+            PyObject **values = &PEEK(oparg);
+            PyObject *list;
+            list = _PyList_FromArraySteal(values, oparg);
+            if (list == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
-            PyObject *list = _PyList_FromArraySteal(stack_pointer, oparg);
-            if (list == NULL)
-                goto error;
-            PUSH(list);
+            STACK_GROW(1);
+            POKE(1, list);
             DISPATCH();
         }
 
         TARGET(LIST_EXTEND) {
             PyObject *iterable = PEEK(1);
-            PyObject *list = PEEK(oparg + 1);  // iterable is still on the stack
+            PyObject *list = PEEK(2 + (oparg-1));
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1566,7 +1584,7 @@
 
         TARGET(SET_UPDATE) {
             PyObject *iterable = PEEK(1);
-            PyObject *set = PEEK(oparg + 1);  // iterable is still on the stack
+            PyObject *set = PEEK(2 + (oparg-1));
             int err = _PySet_Update(set, iterable);
             Py_DECREF(iterable);
             if (err < 0) goto pop_1_error;
@@ -1575,39 +1593,44 @@
         }
 
         TARGET(BUILD_SET) {
-            PyObject *set = PySet_New(NULL);
+            PyObject **values = &PEEK(oparg);
+            PyObject *set;
+            set = PySet_New(NULL);
             int err = 0;
-            int i;
-            if (set == NULL)
-                goto error;
-            for (i = oparg; i > 0; i--) {
-                PyObject *item = PEEK(i);
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = values[i];
                 if (err == 0)
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
             }
-            STACK_SHRINK(oparg);
             if (err != 0) {
                 Py_DECREF(set);
-                goto error;
+                if (true) { STACK_SHRINK(oparg); goto error; }
             }
-            PUSH(set);
+            STACK_SHRINK(oparg);
+            STACK_GROW(1);
+            POKE(1, set);
             DISPATCH();
         }
 
         TARGET(BUILD_MAP) {
-            PyObject *map = _PyDict_FromItems(
-                    &PEEK(2*oparg), 2,
-                    &PEEK(2*oparg - 1), 2,
+            PyObject **values = &PEEK(oparg*2);
+            PyObject *map;
+            map = _PyDict_FromItems(
+                    values, 2,
+                    values+1, 2,
                     oparg);
             if (map == NULL)
                 goto error;
 
-            while (oparg--) {
-                Py_DECREF(POP());
-                Py_DECREF(POP());
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(values[i*2]);
+                Py_DECREF(values[i*2+1]);
             }
-            PUSH(map);
+            if (map == NULL) { STACK_SHRINK(oparg*2); goto error; }
+            STACK_SHRINK(oparg*2);
+            STACK_GROW(1);
+            POKE(1, map);
             DISPATCH();
         }
 
@@ -1655,26 +1678,25 @@
         }
 
         TARGET(BUILD_CONST_KEY_MAP) {
+            PyObject *keys = PEEK(1);
+            PyObject **values = &PEEK(1 + oparg);
             PyObject *map;
-            PyObject *keys = TOP();
             if (!PyTuple_Check(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad BUILD_CONST_KEY_MAP keys argument");
-                goto error;
+                goto error;  // Pop the keys and values.
             }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
-                    &PEEK(oparg + 1), 1, oparg);
-            if (map == NULL) {
-                goto error;
+                    values, 1, oparg);
+            Py_DECREF(keys);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(values[i]);
             }
-
-            Py_DECREF(POP());
-            while (oparg--) {
-                Py_DECREF(POP());
-            }
-            PUSH(map);
+            if (map == NULL) { STACK_SHRINK(oparg); goto pop_1_error; }
+            STACK_SHRINK(oparg);
+            POKE(1, map);
             DISPATCH();
         }
 
@@ -1725,6 +1747,7 @@
 
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
+            #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -1736,6 +1759,7 @@
             }
             STAT_INC(LOAD_ATTR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(names, oparg >> 1);
             PyObject *owner = TOP();
             if (oparg & 1) {
@@ -2096,6 +2120,7 @@
             PREDICTED(COMPARE_AND_BRANCH);
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
+            #if ENABLE_SPECIALIZATION
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2105,6 +2130,7 @@
             }
             STAT_INC(COMPARE_AND_BRANCH, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             assert((oparg >> 4) <= Py_GE);
             PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
@@ -2563,6 +2589,7 @@
 
         TARGET(FOR_ITER) {
             PREDICTED(FOR_ITER);
+            #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2572,6 +2599,7 @@
             }
             STAT_INC(FOR_ITER, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
@@ -2893,6 +2921,7 @@
 
         TARGET(CALL) {
             PREDICTED(CALL);
+            #if ENABLE_SPECIALIZATION
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2905,6 +2934,7 @@
             }
             STAT_INC(CALL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             int total_args, is_meth;
             is_meth = is_method(stack_pointer, oparg);
             PyObject *function = PEEK(oparg + 1);
@@ -3642,6 +3672,7 @@
             PyObject *rhs = PEEK(1);
             PyObject *lhs = PEEK(2);
             PyObject *res;
+            #if ENABLE_SPECIALIZATION
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -3651,6 +3682,7 @@
             }
             STAT_INC(BINARY_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             assert(0 <= oparg);
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);

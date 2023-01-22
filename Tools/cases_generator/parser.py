@@ -38,7 +38,7 @@ class Context(NamedTuple):
 
 @dataclass
 class Node:
-    context: Context | None = field(init=False, default=None)
+    context: Context | None = field(init=False, compare=False, default=None)
 
     @property
     def text(self) -> str:
@@ -51,19 +51,37 @@ class Node:
         tokens = context.owner.tokens
         begin = context.begin
         end = context.end
-        return lx.to_text(tokens[begin:end], dedent)
+        return lx.to_text(self.tokens, dedent)
+
+    @property
+    def tokens(self) -> list[lx.Token]:
+        context = self.context
+        if not context:
+            return []
+        tokens = context.owner.tokens
+        begin = context.begin
+        end = context.end
+        return tokens[begin:end]
 
 
 @dataclass
 class Block(Node):
-    tokens: list[lx.Token]
+    # This just holds a context which has the list of tokens.
+    pass
 
 
 @dataclass
 class StackEffect(Node):
     name: str
-    type: str = ""
-    # TODO: array, condition
+    type: str = ""  # Optional `:type`
+    size: str = ""  # Optional `[size]`
+    # Note: we can have type or size but not both
+    # TODO: condition (can be combined with type but not size)
+
+
+@dataclass
+class Dimension(Node):
+    size: str
 
 
 @dataclass
@@ -221,13 +239,31 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        # IDENTIFIER [':' IDENTIFIER]
-        # TODO: Arrays, conditions
+        # IDENTIFIER
+        #   | IDENTIFIER ':' IDENTIFIER
+        #   | IDENTIFIER '[' dimension ']'
+        # TODO: Conditions
         if tkn := self.expect(lx.IDENTIFIER):
-            type = ""
             if self.expect(lx.COLON):
-                type = self.require(lx.IDENTIFIER).text
-            return StackEffect(tkn.text, type)
+                typ = self.require(lx.IDENTIFIER)
+                return StackEffect(tkn.text, typ.text)
+            elif self.expect(lx.LBRACKET):
+                if not (dim := self.dimension()):
+                    raise self.make_syntax_error("Expected dimension")
+                self.require(lx.RBRACKET)
+                return StackEffect(tkn.text, "PyObject **", dim.text.strip())
+            else:
+                return StackEffect(tkn.text)
+
+    @contextual
+    def dimension(self) -> Dimension | None:
+        tokens: list[lx.Token] = []
+        while (tkn := self.peek()) and tkn.kind != lx.RBRACKET:
+            tokens.append(tkn)
+            self.next()
+        if not tokens:
+            return None
+        return Dimension(lx.to_text(tokens).strip())
 
     @contextual
     def super_def(self) -> Super | None:
@@ -331,8 +367,8 @@ class Parser(PLexer):
 
     @contextual
     def block(self) -> Block:
-        tokens = self.c_blob()
-        return Block(tokens)
+        if self.c_blob():
+            return Block()
 
     def c_blob(self) -> list[lx.Token]:
         tokens: list[lx.Token] = []

@@ -114,11 +114,7 @@ struct _ts {
     PyThreadState *next;
     PyInterpreterState *interp;
 
-    /* Has been initialized to a safe state.
-
-       In order to be effective, this must be set to 0 during or right
-       after allocation. */
-    int _initialized;
+    int _status;
 
     int py_recursion_remaining;
     int py_recursion_limit;
