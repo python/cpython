@@ -440,7 +440,9 @@ class Fraction(numbers.Rational):
         exponent_indicator = "E" if presentation_type in "EFG" else "e"
 
         # Round to get the digits we need, figure out where to place the point,
-        # and decide whether to use scientific notation.
+        # and decide whether to use scientific notation. 'point_pos' is the
+        # relative to the _end_ of the digit string: that is, it's the number
+        # of digits that should follow the point.
         if presentation_type in "fF%":
             exponent = -precision
             if presentation_type == "%":
@@ -464,7 +466,7 @@ class Fraction(numbers.Rational):
             )
             point_pos = figures - 1 if scientific else -exponent
 
-        # Get the suffix - the part following the digits.
+        # Get the suffix - the part following the digits, if any.
         if presentation_type == "%":
             suffix = "%"
         elif scientific:
@@ -472,11 +474,13 @@ class Fraction(numbers.Rational):
         else:
             suffix = ""
 
-        # Assemble the output: before padding, it has the form
-        # f"{sign}{leading}{trailing}", where `leading` includes thousands
-        # separators if necessary, and `trailing` includes the decimal
-        # separator where appropriate.
+        # String of output digits, padded sufficiently with zeros on the left
+        # so that we'll have at least one digit before the decimal point.
         digits = f"{significand:0{point_pos + 1}d}"
+
+        # Before padding, the output has the form f"{sign}{leading}{trailing}",
+        # where `leading` includes thousands separators if necessary and
+        # `trailing` includes the decimal separator where appropriate.
         sign = "-" if negative else pos_sign
         leading = digits[: len(digits) - point_pos]
         frac_part = digits[len(digits) - point_pos :]
@@ -502,10 +506,9 @@ class Fraction(numbers.Rational):
                 for pos in range(first_pos, len(leading), 3)
             )
 
-        # We now have a sign and a body.
+        # We now have a sign and a body. Pad with fill character if necessary
+        # and return.
         body = leading + trailing
-
-        # Pad with fill character if necessary and return.
         padding = fill * (minimumwidth - len(sign) - len(body))
         if align == ">":
             return padding + sign + body
