@@ -1427,13 +1427,16 @@ create_elementiter(elementtreestate *st, ElementObject *self, PyObject *tag,
 /*[clinic input]
 _elementtree.Element.iter
 
+    cls: defining_class
+    /
     tag: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
-/*[clinic end generated code: output=3f49f9a862941cc5 input=774d5b12e573aedd]*/
+_elementtree_Element_iter_impl(ElementObject *self, PyTypeObject *cls,
+                               PyObject *tag)
+/*[clinic end generated code: output=bff29dc5d4566c68 input=f6944c48d3f84c58]*/
 {
     if (PyUnicode_Check(tag)) {
         if (PyUnicode_READY(tag) < 0)
@@ -1446,7 +1449,7 @@ _elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
             tag = Py_None;
     }
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
     return create_elementiter(st, self, tag, 0);
 }
 

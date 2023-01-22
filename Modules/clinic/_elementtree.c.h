@@ -575,13 +575,14 @@ PyDoc_STRVAR(_elementtree_Element_iter__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_ITER_METHODDEF    \
-    {"iter", _PyCFunction_CAST(_elementtree_Element_iter), METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_iter__doc__},
+    {"iter", _PyCFunction_CAST(_elementtree_Element_iter), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_iter__doc__},
 
 static PyObject *
-_elementtree_Element_iter_impl(ElementObject *self, PyObject *tag);
+_elementtree_Element_iter_impl(ElementObject *self, PyTypeObject *cls,
+                               PyObject *tag);
 
 static PyObject *
-_elementtree_Element_iter(ElementObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_iter(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -622,7 +623,7 @@ _elementtree_Element_iter(ElementObject *self, PyObject *const *args, Py_ssize_t
     }
     tag = args[0];
 skip_optional_pos:
-    return_value = _elementtree_Element_iter_impl(self, tag);
+    return_value = _elementtree_Element_iter_impl(self, cls, tag);
 
 exit:
     return return_value;
@@ -1198,4 +1199,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=29404d5d9d4f99cc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee894eaced621f70 input=a9049054013a1b77]*/
