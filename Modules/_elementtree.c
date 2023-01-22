@@ -121,12 +121,6 @@ get_elementtree_state_by_type(PyTypeObject *tp)
     return get_elementtree_state(mod);
 }
 
-/* Find the module instance imported in the currently running sub-interpreter
- * and get its state.
- */
-#define ET_STATE_GLOBAL \
-    ((elementtreestate *) PyModule_GetState(PyState_FindModule(&elementtreemodule)))
-
 static int
 elementtree_clear(PyObject *m)
 {
