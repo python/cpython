@@ -165,6 +165,12 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.splitroot('\\\\a\\b')", ('\\\\a\\b', '', ''))
         tester("ntpath.splitroot('\\\\a\\b\\')", ('\\\\a\\b', '\\', ''))
         tester("ntpath.splitroot('\\\\a\\b\\c\\d')", ('\\\\a\\b', '\\', 'c\\d'))
+        # Mixed path separators
+        tester("ntpath.splitroot('c:/\\')", ('c:', '/', '\\'))
+        tester("ntpath.splitroot('c:\\/')", ('c:', '\\', '/'))
+        tester("ntpath.splitroot('/\\a/b\\/\\')", ('/\\a/b', '\\', '/\\'))
+        tester("ntpath.splitroot('\\/a\\b/\\/')", ('\\/a\\b', '/', '\\/'))
+
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
