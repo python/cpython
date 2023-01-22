@@ -214,7 +214,42 @@ PyDoc_STRVAR(_elementtree_Element_extend__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_EXTEND_METHODDEF    \
-    {"extend", (PyCFunction)_elementtree_Element_extend, METH_O, _elementtree_Element_extend__doc__},
+    {"extend", _PyCFunction_CAST(_elementtree_Element_extend), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_extend__doc__},
+
+static PyObject *
+_elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
+                                 PyObject *elements);
+
+static PyObject *
+_elementtree_Element_extend(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "extend",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *elements;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    elements = args[0];
+    return_value = _elementtree_Element_extend_impl(self, cls, elements);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_elementtree_Element_find__doc__,
 "find($self, /, path, namespaces=None)\n"
@@ -1163,4 +1198,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d946f9608b497cd9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=338ae4e86a39206e input=a9049054013a1b77]*/

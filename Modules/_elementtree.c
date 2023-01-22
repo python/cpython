@@ -1187,14 +1187,16 @@ checkpath(PyObject* tag)
 /*[clinic input]
 _elementtree.Element.extend
 
+    cls: defining_class
     elements: object
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_extend(ElementObject *self, PyObject *elements)
-/*[clinic end generated code: output=f6e67fc2ff529191 input=807bc4f31c69f7c0]*/
+_elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
+                                 PyObject *elements)
+/*[clinic end generated code: output=3e86d37fac542216 input=6479b1b5379d09ae]*/
 {
     PyObject* seq;
     Py_ssize_t i;
@@ -1208,7 +1210,7 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
         return NULL;
     }
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
     for (i = 0; i < PySequence_Fast_GET_SIZE(seq); i++) {
         PyObject* element = Py_NewRef(PySequence_Fast_GET_ITEM(seq, i));
         if (element_add_subelement(st, self, element) < 0) {
