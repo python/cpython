@@ -939,7 +939,15 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
         }
         return 0;
     }
-    if (tp->tp_getattro != NULL) {
+    if (tp->tp_getattro == (getattrofunc)_Py_type_getattro) {
+        int supress_missing_attribute_exception = 0;
+        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
+        if (supress_missing_attribute_exception) {
+            // return 0 without having to clear the exception
+            return 0;
+        }
+    }
+    else if (tp->tp_getattro != NULL) {
         *result = (*tp->tp_getattro)(v, name);
     }
     else if (tp->tp_getattr != NULL) {
@@ -1043,22 +1051,25 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 PyObject **
 _PyObject_ComputedDictPointer(PyObject *obj)
 {
-    Py_ssize_t dictoffset;
     PyTypeObject *tp = Py_TYPE(obj);
-
     assert((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
-    dictoffset = tp->tp_dictoffset;
-    if (dictoffset == 0)
+
+    Py_ssize_t dictoffset = tp->tp_dictoffset;
+    if (dictoffset == 0) {
         return NULL;
+    }
+
     if (dictoffset < 0) {
         assert(dictoffset != -1);
+
         Py_ssize_t tsize = Py_SIZE(obj);
         if (tsize < 0) {
             tsize = -tsize;
         }
         size_t size = _PyObject_VAR_SIZE(tp, tsize);
+        assert(size <= (size_t)PY_SSIZE_T_MAX);
+        dictoffset += (Py_ssize_t)size;
 
-        dictoffset += (long)size;
         _PyObject_ASSERT(obj, dictoffset > 0);
         _PyObject_ASSERT(obj, dictoffset % SIZEOF_VOID_P == 0);
     }
@@ -1638,6 +1649,11 @@ none_bool(PyObject *v)
     return 0;
 }
 
+static Py_hash_t none_hash(PyObject *v)
+{
+    return 0xFCA86420;
+}
+
 static PyNumberMethods none_as_number = {
     0,                          /* nb_add */
     0,                          /* nb_subtract */
@@ -1689,7 +1705,7 @@ PyTypeObject _PyNone_Type = {
     &none_as_number,    /*tp_as_number*/
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash */
+    (hashfunc)none_hash,/*tp_hash */
     0,                  /*tp_call */
     0,                  /*tp_str */
     0,                  /*tp_getattro */
@@ -2001,7 +2017,7 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
 void
 _Py_NewReference(PyObject *op)
 {
-    if (_Py_tracemalloc_config.tracing) {
+    if (_PyRuntime.tracemalloc.config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
 #ifdef Py_REF_DEBUG

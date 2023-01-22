@@ -473,8 +473,7 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
             goto error;
 
         /* assign to obj */
-        Py_DECREF(obj);
-        obj = tmp;
+        Py_SETREF(obj, tmp);
     }
     /* end of iterator, this is the non-error case */
     if (ok == 1)
@@ -825,8 +824,7 @@ output_markup(SubString *field_name, SubString *format_spec,
             goto done;
 
         /* do the assignment, transferring ownership: fieldobj = tmp */
-        Py_DECREF(fieldobj);
-        fieldobj = tmp;
+        Py_SETREF(fieldobj, tmp);
         tmp = NULL;
     }
 

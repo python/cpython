@@ -54,7 +54,6 @@ extern void _PyIO_Fini(void);
 
 #ifdef MS_WINDOWS
 #  undef BYTE
-#  include "windows.h"
 
    extern PyTypeObject PyWindowsConsoleIO_Type;
 #  define PyWindowsConsoleIO_Check(op) \
@@ -77,12 +76,14 @@ static PyStatus init_sys_streams(PyThreadState *tstate);
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
-int _Py_UnhandledKeyboardInterrupt = 0;
-
 /* The following places the `_PyRuntime` structure in a location that can be
  * found without any external information. This is meant to ease access to the
  * interpreter state for various runtime debugging tools, but is *not* an
  * officially supported feature */
+
+/* Suppress deprecation warning for PyBytesObject.ob_shash */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
 #if defined(MS_WINDOWS)
 
@@ -97,9 +98,6 @@ __attribute__((
 
 #endif
 
-/* Suppress deprecation warning for PyBytesObject.ob_shash */
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
@@ -600,7 +598,14 @@ pycore_init_runtime(_PyRuntimeState *runtime,
      */
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
+    _Py_InitVersion();
+
     status = _Py_HashRandomization_Init(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyTime_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -670,12 +675,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
                           const PyConfig *src_config,
                           PyThreadState **tstate_p)
 {
-    /* Auto-thread-state API */
-    PyStatus status = _PyGILState_Init(runtime);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
+    PyStatus status;
     PyInterpreterState *interp = PyInterpreterState_New();
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
@@ -683,6 +683,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     assert(_Py_IsMainInterpreter(interp));
 
     status = _PyConfig_Copy(&interp->config, src_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    /* Auto-thread-state API */
+    status = _PyGILState_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1790,10 +1796,8 @@ finalize_interp_clear(PyThreadState *tstate)
 static void
 finalize_interp_delete(PyInterpreterState *interp)
 {
-    if (_Py_IsMainInterpreter(interp)) {
-        /* Cleanup auto-thread-state */
-        _PyGILState_Fini(interp);
-    }
+    /* Cleanup auto-thread-state */
+    _PyGILState_Fini(interp);
 
     /* We can't call _PyEval_FiniGIL() here because destroying the GIL lock can
        fail when it is being awaited by another running daemon thread (see

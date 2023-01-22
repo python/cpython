@@ -377,7 +377,7 @@ class Server(events.AbstractServer):
             self._serving_forever_fut = None
 
     async def wait_closed(self):
-        if self._sockets is None or self._waiters is None:
+        if self._waiters is None or self._active_count == 0:
             return
         waiter = self._loop.create_future()
         self._waiters.append(waiter)
@@ -961,7 +961,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             sock = socket.socket(family=family, type=type_, proto=proto)
             sock.setblocking(False)
             if local_addr_infos is not None:
-                for _, _, _, _, laddr in local_addr_infos:
+                for lfamily, _, _, _, laddr in local_addr_infos:
+                    # skip local addresses of different family
+                    if lfamily != family:
+                        continue
                     try:
                         sock.bind(laddr)
                         break
@@ -974,7 +977,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                         exc = OSError(exc.errno, msg)
                         my_exceptions.append(exc)
                 else:  # all bind attempts failed
-                    raise my_exceptions.pop()
+                    if my_exceptions:
+                        raise my_exceptions.pop()
+                    else:
+                        raise OSError(f"no matching local address with {family=} found")
             await self.sock_connect(sock, address)
             return sock
         except OSError as exc:
@@ -986,6 +992,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             if sock is not None:
                 sock.close()
             raise
+        finally:
+            exceptions = my_exceptions = None
 
     async def create_connection(
             self, protocol_factory, host=None, port=None,
@@ -1084,19 +1092,22 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
-                if all_errors:
-                    raise ExceptionGroup("create_connection failed", exceptions)
-                if len(exceptions) == 1:
-                    raise exceptions[0]
-                else:
-                    # If they all have the same str(), raise one.
-                    model = str(exceptions[0])
-                    if all(str(exc) == model for exc in exceptions):
+                try:
+                    if all_errors:
+                        raise ExceptionGroup("create_connection failed", exceptions)
+                    if len(exceptions) == 1:
                         raise exceptions[0]
-                    # Raise a combined exception so the user can see all
-                    # the various error messages.
-                    raise OSError('Multiple exceptions: {}'.format(
-                        ', '.join(str(exc) for exc in exceptions)))
+                    else:
+                        # If they all have the same str(), raise one.
+                        model = str(exceptions[0])
+                        if all(str(exc) == model for exc in exceptions):
+                            raise exceptions[0]
+                        # Raise a combined exception so the user can see all
+                        # the various error messages.
+                        raise OSError('Multiple exceptions: {}'.format(
+                            ', '.join(str(exc) for exc in exceptions)))
+                finally:
+                    exceptions = None
 
         else:
             if sock is None:
@@ -1846,12 +1857,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                  exc_info=True)
 
     def _add_callback(self, handle):
-        """Add a Handle to _scheduled (TimerHandle) or _ready."""
-        assert isinstance(handle, events.Handle), 'A Handle is required here'
-        if handle._cancelled:
-            return
-        assert not isinstance(handle, events.TimerHandle)
-        self._ready.append(handle)
+        """Add a Handle to _ready."""
+        if not handle._cancelled:
+            self._ready.append(handle)
 
     def _add_callback_signalsafe(self, handle):
         """Like _add_callback() but called from a signal handler."""
@@ -1904,6 +1912,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         event_list = self._selector.select(timeout)
         self._process_events(event_list)
+        # Needed to break cycles when an exception occurs.
+        event_list = None
 
         # Handle 'later' callbacks that are ready.
         end_time = self.time() + self._clock_resolution

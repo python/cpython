@@ -67,7 +67,7 @@
 #include <windows.h>
 #include <tchar.h>
 #else
-#include "ctypes_dlfcn.h"
+#include <dlfcn.h>
 #endif
 
 #ifdef __APPLE__
@@ -100,6 +100,7 @@
 #include "pycore_global_objects.h"  // _Py_ID()
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
+
 
 static void pymem_destructor(PyObject *ptr)
 {
@@ -285,7 +286,7 @@ static WCHAR *FormatError(DWORD code)
 #ifndef DONT_USE_SEH
 static void SetException(DWORD code, EXCEPTION_RECORD *pr)
 {
-    if (PySys_Audit("ctypes.seh_exception", "I", code) < 0) {
+    if (PySys_Audit("ctypes.set_exception", "I", code) < 0) {
         /* An exception was set by the audit hook */
         return;
     }
@@ -671,8 +672,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
     if (PyCArg_CheckExact(obj)) {
         PyCArgObject *carg = (PyCArgObject *)obj;
         pa->ffi_type = carg->pffi_type;
-        Py_INCREF(obj);
-        pa->keep = obj;
+        pa->keep = Py_NewRef(obj);
         memcpy(&pa->value, &carg->value, sizeof(pa->value));
         return 0;
     }
@@ -702,8 +702,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
     if (PyBytes_Check(obj)) {
         pa->ffi_type = &ffi_type_pointer;
         pa->value.p = PyBytes_AsString(obj);
-        Py_INCREF(obj);
-        pa->keep = obj;
+        pa->keep = Py_NewRef(obj);
         return 0;
     }
 
@@ -833,7 +832,11 @@ static int _call_function_pointer(int flags,
 #endif
 
 #   ifdef USING_APPLE_OS_LIBFFI
+#    ifdef HAVE_BUILTIN_AVAILABLE
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#    else
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME (ffi_prep_cif_var != NULL)
+#    endif
 #   elif HAVE_FFI_PREP_CIF_VAR
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
 #   else
@@ -1446,8 +1449,13 @@ copy_com_pointer(PyObject *self, PyObject *args)
 #else
 #ifdef __APPLE__
 #ifdef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
-#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
-    __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+#  ifdef HAVE_BUILTIN_AVAILABLE
+#    define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+        __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+#  else
+#    define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+         (_dyld_shared_cache_contains_path != NULL)
+#  endif
 #else
 // Support the deprecated case of compiling on an older macOS version
 static void *libsystem_b_handle;
@@ -1529,10 +1537,10 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlopen", "O", name) < 0) {
         return NULL;
     }
-    handle = ctypes_dlopen(name_str, mode);
+    handle = dlopen(name_str, mode);
     Py_XDECREF(name2);
     if (!handle) {
-        const char *errmsg = ctypes_dlerror();
+        const char *errmsg = dlerror();
         if (!errmsg)
             errmsg = "dlopen() error";
         PyErr_SetString(PyExc_OSError,
@@ -1550,7 +1558,7 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
         return NULL;
     if (dlclose(handle)) {
         PyErr_SetString(PyExc_OSError,
-                               ctypes_dlerror());
+                               dlerror());
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1568,10 +1576,10 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlsym/handle", "O", args) < 0) {
         return NULL;
     }
-    ptr = ctypes_dlsym((void*)handle, name);
+    ptr = dlsym((void*)handle, name);
     if (!ptr) {
         PyErr_SetString(PyExc_OSError,
-                               ctypes_dlerror());
+                               dlerror());
         return NULL;
     }
     return PyLong_FromVoidPtr(ptr);
@@ -1733,8 +1741,7 @@ byref(PyObject *self, PyObject *args)
 
     parg->tag = 'P';
     parg->pffi_type = &ffi_type_pointer;
-    Py_INCREF(obj);
-    parg->obj = obj;
+    parg->obj = Py_NewRef(obj);
     parg->value.p = (char *)((CDataObject *)obj)->b_ptr + offset;
     return (PyObject *)parg;
 }
@@ -1774,8 +1781,7 @@ My_PyObj_FromPtr(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.PyObj_FromPtr", "(O)", ob) < 0) {
         return NULL;
     }
-    Py_INCREF(ob);
-    return ob;
+    return Py_NewRef(ob);
 }
 
 static PyObject *
@@ -1884,29 +1890,20 @@ POINTER(PyObject *self, PyObject *cls)
     PyObject *result;
     PyTypeObject *typ;
     PyObject *key;
-    char *buf;
 
     result = PyDict_GetItemWithError(_ctypes_ptrtype_cache, cls);
     if (result) {
-        Py_INCREF(result);
-        return result;
+        return Py_NewRef(result);
     }
     else if (PyErr_Occurred()) {
         return NULL;
     }
     if (PyUnicode_CheckExact(cls)) {
-        const char *name = PyUnicode_AsUTF8(cls);
-        if (name == NULL)
-            return NULL;
-        buf = PyMem_Malloc(strlen(name) + 3 + 1);
-        if (buf == NULL)
-            return PyErr_NoMemory();
-        sprintf(buf, "LP_%s", name);
+        PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
-                                       "s(O){}",
-                                       buf,
+                                       "N(O){}",
+                                       name,
                                        &PyCPointer_Type);
-        PyMem_Free(buf);
         if (result == NULL)
             return result;
         key = PyLong_FromVoidPtr(result);
@@ -1916,20 +1913,15 @@ POINTER(PyObject *self, PyObject *cls)
         }
     } else if (PyType_Check(cls)) {
         typ = (PyTypeObject *)cls;
-        buf = PyMem_Malloc(strlen(typ->tp_name) + 3 + 1);
-        if (buf == NULL)
-            return PyErr_NoMemory();
-        sprintf(buf, "LP_%s", typ->tp_name);
+        PyObject *name = PyUnicode_FromFormat("LP_%s", typ->tp_name);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
-                                       "s(O){sO}",
-                                       buf,
+                                       "N(O){sO}",
+                                       name,
                                        &PyCPointer_Type,
                                        "_type_", cls);
-        PyMem_Free(buf);
         if (result == NULL)
             return result;
-        Py_INCREF(cls);
-        key = cls;
+        key = Py_NewRef(cls);
     } else {
         PyErr_SetString(PyExc_TypeError, "must be a ctypes type");
         return NULL;
