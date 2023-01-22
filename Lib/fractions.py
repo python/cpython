@@ -139,9 +139,9 @@ def _round_to_figures(n, d, figures):
     return sign, significand, exponent
 
 
-# Pattern for matching format specification; supports 'e', 'E', 'f', 'F',
-# 'g', 'G' and '%' presentation types.
-_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
+# Pattern for matching float-style format specifications;
+# supports 'e', 'E', 'f', 'F', 'g', 'G' and '%' presentation types.
+_FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     (?:
         (?P<fill>.)?
         (?P<align>[<>=^])
@@ -412,7 +412,7 @@ class Fraction(numbers.Rational):
             return str(self)
 
         # Validate and parse the format specifier.
-        match = _FORMAT_SPECIFICATION_MATCHER(format_spec)
+        match = _FLOAT_FORMAT_SPECIFICATION_MATCHER(format_spec)
         if match is None:
             raise ValueError(
                 f"Invalid format specifier {format_spec!r} "
