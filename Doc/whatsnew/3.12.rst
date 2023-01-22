@@ -327,6 +327,12 @@ unicodedata
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
 
+uuid
+----
+
+* Add a :ref:`command-line interface <uuid-cli>`.
+  (Contributed by Adam Chhina in :gh:`88597`.)
+
 tempfile
 --------
 
