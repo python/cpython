@@ -1229,18 +1229,20 @@ _elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
 /*[clinic input]
 _elementtree.Element.find
 
+    cls: defining_class
+    /
     path: object
     namespaces: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_find_impl(ElementObject *self, PyObject *path,
-                               PyObject *namespaces)
-/*[clinic end generated code: output=41b43f0f0becafae input=359b6985f6489d2e]*/
+_elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
+                               PyObject *path, PyObject *namespaces)
+/*[clinic end generated code: output=18f77d393c9fef1b input=94df8a83f956acc6]*/
 {
     Py_ssize_t i;
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
 
     if (checkpath(path) || namespaces != Py_None) {
         return PyObject_CallMethodObjArgs(

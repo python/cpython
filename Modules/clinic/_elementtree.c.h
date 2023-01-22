@@ -257,14 +257,14 @@ PyDoc_STRVAR(_elementtree_Element_find__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_FIND_METHODDEF    \
-    {"find", _PyCFunction_CAST(_elementtree_Element_find), METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_find__doc__},
+    {"find", _PyCFunction_CAST(_elementtree_Element_find), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_find__doc__},
 
 static PyObject *
-_elementtree_Element_find_impl(ElementObject *self, PyObject *path,
-                               PyObject *namespaces);
+_elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
+                               PyObject *path, PyObject *namespaces);
 
 static PyObject *
-_elementtree_Element_find(ElementObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_find(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -307,7 +307,7 @@ _elementtree_Element_find(ElementObject *self, PyObject *const *args, Py_ssize_t
     }
     namespaces = args[1];
 skip_optional_pos:
-    return_value = _elementtree_Element_find_impl(self, path, namespaces);
+    return_value = _elementtree_Element_find_impl(self, cls, path, namespaces);
 
 exit:
     return return_value;
@@ -1198,4 +1198,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=338ae4e86a39206e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1fdddb436fe20e59 input=a9049054013a1b77]*/
