@@ -113,6 +113,14 @@ get_elementtree_state_by_cls(PyTypeObject *cls)
     return (elementtreestate *)state;
 }
 
+static inline elementtreestate *
+get_elementtree_state_by_type(PyTypeObject *tp)
+{
+    PyObject *mod = PyType_GetModuleByDef(tp, &elementtreemodule);
+    assert(mod != NULL);
+    return get_elementtree_state(mod);
+}
+
 /* Find the module instance imported in the currently running sub-interpreter
  * and get its state.
  */
