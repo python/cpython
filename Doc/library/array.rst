@@ -70,8 +70,7 @@ The module defines the following item:
    A string with all available type codes.
 
 
-The module defines the following type:
-
+Constructor:
 
 .. class:: array(typecode[, initializer])
 
@@ -94,7 +93,7 @@ value must be an array object with the same type code; in all other cases,
 :exc:`TypeError` is raised. Array objects also implement the buffer interface,
 and may be used wherever :term:`bytes-like objects <bytes-like object>` are supported.
 
-The following data items and methods are also supported:
+Class attributes:
 
 .. attribute:: array.typecode
 
@@ -105,13 +104,14 @@ The following data items and methods are also supported:
 
    The length in bytes of one array item in the internal representation.
 
+Class methods:
 
-.. method:: array.append(x)
+.. classmethod:: array.append(x)
 
    Append a new item with value *x* to the end of the array.
 
 
-.. method:: array.buffer_info()
+.. classmethod:: array.buffer_info()
 
    Return a tuple ``(address, length)`` giving the current memory address and the
    length in elements of the buffer used to hold array's contents.  The size of the
@@ -130,7 +130,7 @@ The following data items and methods are also supported:
       documented in :ref:`bufferobjects`.
 
 
-.. method:: array.byteswap()
+.. classmethod:: array.byteswap()
 
    "Byteswap" all items of the array.  This is only supported for values which are
    1, 2, 4, or 8 bytes in size; for other types of values, :exc:`RuntimeError` is
@@ -138,12 +138,12 @@ The following data items and methods are also supported:
    different byte order.
 
 
-.. method:: array.count(x)
+.. classmethod:: array.count(x)
 
    Return the number of occurrences of *x* in the array.
 
 
-.. method:: array.extend(iterable)
+.. classmethod:: array.extend(iterable)
 
    Append items from *iterable* to the end of the array.  If *iterable* is another
    array, it must have *exactly* the same type code; if not, :exc:`TypeError` will
@@ -151,7 +151,7 @@ The following data items and methods are also supported:
    must be the right type to be appended to the array.
 
 
-.. method:: array.frombytes(s)
+.. classmethod:: array.frombytes(s)
 
    Appends items from the string, interpreting the string as an array of machine
    values (as if it had been read from a file using the :meth:`fromfile` method).
@@ -160,7 +160,7 @@ The following data items and methods are also supported:
       :meth:`fromstring` is renamed to :meth:`frombytes` for clarity.
 
 
-.. method:: array.fromfile(f, n)
+.. classmethod:: array.fromfile(f, n)
 
    Read *n* items (as machine values) from the :term:`file object` *f* and append
    them to the end of the array.  If less than *n* items are available,
@@ -168,13 +168,13 @@ The following data items and methods are also supported:
    inserted into the array.
 
 
-.. method:: array.fromlist(list)
+.. classmethod:: array.fromlist(list)
 
    Append items from the list.  This is equivalent to ``for x in list:
    a.append(x)`` except that if there is a type error, the array is unchanged.
 
 
-.. method:: array.fromunicode(s)
+.. classmethod:: array.fromunicode(s)
 
    Extends this array with data from the given unicode string.  The array must
    be a type ``'u'`` array; otherwise a :exc:`ValueError` is raised.  Use
@@ -182,7 +182,7 @@ The following data items and methods are also supported:
    array of some other type.
 
 
-.. method:: array.index(x[, start[, stop]])
+.. classmethod:: array.index(x[, start[, stop]])
 
    Return the smallest *i* such that *i* is the index of the first occurrence of
    *x* in the array.  The optional arguments *start* and *stop* can be
@@ -192,30 +192,30 @@ The following data items and methods are also supported:
    .. versionchanged:: 3.10
       Added optional *start* and *stop* parameters.
 
-.. method:: array.insert(i, x)
+.. classmethod:: array.insert(i, x)
 
    Insert a new item with value *x* in the array before position *i*. Negative
    values are treated as being relative to the end of the array.
 
 
-.. method:: array.pop([i])
+.. classmethod:: array.pop([i])
 
    Removes the item with the index *i* from the array and returns it. The optional
    argument defaults to ``-1``, so that by default the last item is removed and
    returned.
 
 
-.. method:: array.remove(x)
+.. classmethod:: array.remove(x)
 
    Remove the first occurrence of *x* from the array.
 
 
-.. method:: array.reverse()
+.. classmethod:: array.reverse()
 
    Reverse the order of the items in the array.
 
 
-.. method:: array.tobytes()
+.. classmethod:: array.tobytes()
 
    Convert the array to an array of machine values and return the bytes
    representation (the same sequence of bytes that would be written to a file by
@@ -225,17 +225,17 @@ The following data items and methods are also supported:
       :meth:`tostring` is renamed to :meth:`tobytes` for clarity.
 
 
-.. method:: array.tofile(f)
+.. classmethod:: array.tofile(f)
 
    Write all items (as machine values) to the :term:`file object` *f*.
 
 
-.. method:: array.tolist()
+.. classmethod:: array.tolist()
 
    Convert the array to an ordinary list with the same items.
 
 
-.. method:: array.tounicode()
+.. classmethod:: array.tounicode()
 
    Convert the array to a unicode string.  The array must be a type ``'u'`` array;
    otherwise a :exc:`ValueError` is raised. Use ``array.tobytes().decode(enc)`` to
