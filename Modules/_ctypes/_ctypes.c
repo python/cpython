@@ -120,7 +120,7 @@ bytes(cdata)
 #define IS_INTRESOURCE(x) (((size_t)(x) >> 16) == 0)
 #endif
 #else
-#include "ctypes_dlfcn.h"
+#include <dlfcn.h>
 #endif
 #include "ctypes.h"
 
@@ -768,7 +768,7 @@ CDataType_in_dll(PyObject *type, PyObject *args)
         return NULL;
     }
 #else
-    address = (void *)ctypes_dlsym(handle, name);
+    address = (void *)dlsym(handle, name);
     if (!address) {
 #ifdef __CYGWIN__
 /* dlerror() isn't very helpful on cygwin */
@@ -776,7 +776,7 @@ CDataType_in_dll(PyObject *type, PyObject *args)
                      "symbol '%s' not found",
                      name);
 #else
-        PyErr_SetString(PyExc_ValueError, ctypes_dlerror());
+        PyErr_SetString(PyExc_ValueError, dlerror());
 #endif
         return NULL;
     }
@@ -2197,6 +2197,7 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     struct fielddesc *fd;
     PyObject *as_parameter;
     int res;
+    PyObject *exc, *val, *tb;
 
     /* If the value is already an instance of the requested type,
        we can use it as is */
@@ -2230,24 +2231,37 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     parg->obj = fd->setfunc(&parg->value, value, 0);
     if (parg->obj)
         return (PyObject *)parg;
-    PyErr_Clear();
+    PyErr_Fetch(&exc, &val, &tb);
     Py_DECREF(parg);
 
     if (_PyObject_LookupAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
+        Py_XDECREF(exc);
+        Py_XDECREF(val);
+        Py_XDECREF(tb);
         return NULL;
     }
     if (as_parameter) {
         if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
+            Py_XDECREF(exc);
+            Py_XDECREF(val);
+            Py_XDECREF(tb);
             return NULL;
         }
         value = PyCSimpleType_from_param(type, as_parameter);
         _Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
+        Py_XDECREF(exc);
+        Py_XDECREF(val);
+        Py_XDECREF(tb);
         return value;
     }
-    PyErr_SetString(PyExc_TypeError,
-                    "wrong type");
+    if (exc) {
+        PyErr_Restore(exc, val, tb);
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "wrong type");
+    }
     return NULL;
 }
 
@@ -2731,11 +2745,33 @@ static PyMemberDef PyCData_members[] = {
     { NULL },
 };
 
-static int PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
+/* Find the innermost type of an array type, returning a borrowed reference */
+static PyObject *
+PyCData_item_type(PyObject *type)
+{
+    if (PyCArrayTypeObject_Check(type)) {
+        StgDictObject *stg_dict;
+        PyObject *elem_type;
+
+        /* asserts used here as these are all guaranteed by construction */
+        stg_dict = PyType_stgdict(type);
+        assert(stg_dict);
+        elem_type = stg_dict->proto;
+        assert(elem_type);
+        return PyCData_item_type(elem_type);
+    }
+    else {
+        return type;
+    }
+}
+
+static int
+PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
 {
     CDataObject *self = (CDataObject *)myself;
     StgDictObject *dict = PyObject_stgdict(myself);
-    Py_ssize_t i;
+    PyObject *item_type = PyCData_item_type((PyObject*)Py_TYPE(myself));
+    StgDictObject *item_dict = PyType_stgdict(item_type);
 
     if (view == NULL) return 0;
 
@@ -2747,12 +2783,7 @@ static int PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     view->format = dict->format ? dict->format : "B";
     view->ndim = dict->ndim;
     view->shape = dict->shape;
-    view->itemsize = self->b_size;
-    if (view->itemsize) {
-        for (i = 0; i < view->ndim; ++i) {
-            view->itemsize /= dict->shape[i];
-        }
-    }
+    view->itemsize = item_dict->size;
     view->strides = NULL;
     view->suboffsets = NULL;
     view->internal = NULL;
@@ -3543,7 +3574,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #else
-    address = (PPROC)ctypes_dlsym(handle, name);
+    address = (PPROC)dlsym(handle, name);
     if (!address) {
 #ifdef __CYGWIN__
 /* dlerror() isn't very helpful on cygwin */
@@ -3551,7 +3582,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
                      "function '%s' not found",
                      name);
 #else
-        PyErr_SetString(PyExc_AttributeError, ctypes_dlerror());
+        PyErr_SetString(PyExc_AttributeError, dlerror());
 #endif
         Py_DECREF(ftuple);
         return NULL;

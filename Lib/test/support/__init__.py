@@ -6,6 +6,7 @@ if __name__ != 'test.support':
 import contextlib
 import functools
 import getpass
+import opcode
 import os
 import re
 import stat
@@ -46,7 +47,7 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
-    "requires_limited_api",
+    "requires_limited_api", "requires_specialization",
     # sys
     "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -505,6 +506,7 @@ def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
 requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
                         'requires legacy Unicode C API')
 
+# Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
@@ -736,8 +738,6 @@ def gc_collect():
     """
     import gc
     gc.collect()
-    if is_jython:
-        time.sleep(0.1)
     gc.collect()
     gc.collect()
 
@@ -1078,6 +1078,9 @@ def requires_limited_api(test):
     return unittest.skipUnless(
         _testcapi.LIMITED_API_AVAILABLE, 'needs Limited API support')(test)
 
+def requires_specialization(test):
+    return unittest.skipUnless(
+        opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 def _filter_suite(suite, pred):
     """Recursively filter test cases in a suite based on a predicate."""

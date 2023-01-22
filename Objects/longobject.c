@@ -5638,6 +5638,11 @@ long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
     n = Py_SIZE(tmp);
     if (n < 0)
         n = -n;
+    /* Fast operations for single digit integers (including zero)
+     * assume that there is always at least one digit present. */
+    if (n == 0) {
+        n = 1;
+    }
     newobj = (PyLongObject *)type->tp_alloc(type, n);
     if (newobj == NULL) {
         Py_DECREF(tmp);
@@ -5879,7 +5884,10 @@ int___sizeof___impl(PyObject *self)
 {
     Py_ssize_t res;
 
-    res = offsetof(PyLongObject, ob_digit) + Py_ABS(Py_SIZE(self))*sizeof(digit);
+    res = offsetof(PyLongObject, ob_digit)
+        /* using Py_MAX(..., 1) because we always allocate space for at least
+           one digit, even though the integer zero has a Py_SIZE of 0 */
+        + Py_MAX(Py_ABS(Py_SIZE(self)), 1)*sizeof(digit);
     return res;
 }
 
@@ -6168,6 +6176,19 @@ long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
     return long_long(self);
 }
 
+/*[clinic input]
+int.is_integer
+
+Returns True. Exists for duck type compatibility with float.is_integer.
+[clinic start generated code]*/
+
+static PyObject *
+int_is_integer_impl(PyObject *self)
+/*[clinic end generated code: output=90f8e794ce5430ef input=7e41c4d4416e05f2]*/
+{
+    Py_RETURN_TRUE;
+}
+
 static PyMethodDef long_methods[] = {
     {"conjugate",       long_long_meth, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
@@ -6186,6 +6207,7 @@ static PyMethodDef long_methods[] = {
     INT___GETNEWARGS___METHODDEF
     INT___FORMAT___METHODDEF
     INT___SIZEOF___METHODDEF
+    INT_IS_INTEGER_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
