@@ -2847,23 +2847,9 @@ based on ideas from three sources:
   https://doi.org/10.1137/030601818
   https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
 
-Double length functions:
-* twosum() error-free transformation of the sum of two C doubles
-* dl_split() exact split of a C double into two half precision components.
-* dl_mul() exact multiplication of two C doubles.
-
-Triple length functions and constant:
-* tl_zero is a triple length zero for starting or resetting an accumulation.
-* tl_add() compensated addition of a C double to a triple length number.
-* tl_fma() performs a triple length fused-multiply-add.
-* tl_to_d() converts from triple length number back to a C double.
-
 */
 
 typedef struct{ double hi; double lo; } DoubleLength;
-typedef struct{ double hi; double lo; double tiny; } TripleLength;
-
-static const TripleLength tl_zero = {0.0, 0.0, 0.0};
 
 static inline DoubleLength
 twosum(double a, double b)
@@ -2897,6 +2883,10 @@ dl_mul(double x, double y)
     double zz = p - z + q + xx.lo * yy.lo;
     return (DoubleLength) {z, zz};
 }
+
+typedef struct{ double hi; double lo; double tiny; } TripleLength;
+
+static const TripleLength tl_zero = {0.0, 0.0, 0.0};
 
 static inline TripleLength
 tl_add(TripleLength total, double x)
