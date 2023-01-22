@@ -1375,18 +1375,20 @@ _elementtree_Element_findall_impl(ElementObject *self, PyTypeObject *cls,
 /*[clinic input]
 _elementtree.Element.iterfind
 
+    cls: defining_class
+    /
     path: object
     namespaces: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_iterfind_impl(ElementObject *self, PyObject *path,
-                                   PyObject *namespaces)
-/*[clinic end generated code: output=ecdd56d63b19d40f input=abb974e350fb65c7]*/
+_elementtree_Element_iterfind_impl(ElementObject *self, PyTypeObject *cls,
+                                   PyObject *path, PyObject *namespaces)
+/*[clinic end generated code: output=be5c3f697a14e676 input=88766875a5c9a88b]*/
 {
     PyObject* tag = path;
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
 
     return PyObject_CallMethodObjArgs(
         st->elementpath_obj, st->str_iterfind, self, tag, namespaces, NULL);
