@@ -6719,7 +6719,6 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     error = getaddrinfo(hptr, pptr, &hints, &res0);
     Py_END_ALLOW_THREADS
     if (error) {
-        res0 = NULL;  /* avoid unexpected free if res0 becomes not NULL */
         set_gaierror(error);
         goto err;
     }
@@ -6816,7 +6815,6 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     error = getaddrinfo(hostp, pbuf, &hints, &res);
     Py_END_ALLOW_THREADS
     if (error) {
-        res = NULL;  /* avoid unexpected free if res becomes not NULL */
         set_gaierror(error);
         goto fail;
     }
