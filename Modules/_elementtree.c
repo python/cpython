@@ -692,16 +692,18 @@ element_dealloc(ElementObject* self)
 /*[clinic input]
 _elementtree.Element.append
 
+    cls: defining_class
     subelement: object(subclass_of='clinic_state()->Element_Type')
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_append_impl(ElementObject *self, PyObject *subelement)
-/*[clinic end generated code: output=54a884b7cf2295f4 input=439f2bd777288fb6]*/
+_elementtree_Element_append_impl(ElementObject *self, PyTypeObject *cls,
+                                 PyObject *subelement)
+/*[clinic end generated code: output=d00923711ea317fc input=8baf92679f9717b8]*/
 {
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
     if (element_add_subelement(st, self, subelement) < 0)
         return NULL;
 
