@@ -2833,10 +2833,7 @@ long_add_would_overflow(long a, long b)
 
 /*
 Double and triple length extended precision floating point arithmetic
-based on ideas from three sources:
-
-  Improved Kahan–Babuška algorithm by Arnold Neumaier
-  https://www.mat.univie.ac.at/~neum/scan/01.pdf
+based on ideas:
 
   A Floating-Point Technique for Extending the Available Precision
   by T. J. Dekker
