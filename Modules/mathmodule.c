@@ -2901,14 +2901,6 @@ dl_mul(double x, double y)
 static inline TripleLength
 tl_add(TripleLength total, double x)
 {
-    /* Input:       x     total.hi   total.lo    total.tiny
-                   |--- twosum ---|
-                    s.hi      s.lo
-                             |--- twosum ---|
-                              t.hi      t.lo
-                                       |--- single sum ---|
-       Output:      s.hi     t.hi       tiny
-     */
     DoubleLength s = twosum(x, total.hi);
     DoubleLength t = twosum(s.lo, total.lo);
     return (TripleLength) {s.hi, t.hi, t.lo + total.tiny};
