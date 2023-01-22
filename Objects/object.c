@@ -1969,6 +1969,7 @@ static PyTypeObject* static_types[] = {
     &PyBool_Type,               // base=&PyLong_Type
     &PyCMethod_Type,            // base=&PyCFunction_Type
     &PyDeepFreezeBytes_Type,    // base=&PyBytes_Type
+    &PyDeepFreezeCode_Type,     // base=&PyCode_Type
     &PyDeepFreezeComplex_Type,  // base=&PyComplex_Type
     &PyDeepFreezeFloat_Type,    // base=&PyFloat_Type
     &PyDeepFreezeLong_Type,     // base=&PyLong_Type

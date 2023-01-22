@@ -148,6 +148,7 @@ struct PyCodeObject _PyCode_DEF(1);
 #define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
 
 PyAPI_DATA(PyTypeObject) PyCode_Type;
+PyAPI_DATA(PyTypeObject) PyDeepFreezeCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE((op), &PyCode_Type)
 
