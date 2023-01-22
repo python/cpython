@@ -1747,7 +1747,8 @@ element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
     old = self->extra->children[index];
 
     if (item) {
-        elementtreestate *st = ET_STATE_GLOBAL;
+        PyTypeObject *tp = Py_TYPE(self);
+        elementtreestate *st = get_elementtree_state_by_type(tp);
         if (!Element_Check(st, item)) {
             raise_type_error(item);
             return -1;
