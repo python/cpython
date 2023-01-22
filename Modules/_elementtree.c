@@ -2224,7 +2224,8 @@ elementiter_next(ElementIterObject *it)
             }
 
 #ifndef NDEBUG
-            elementtreestate *st = ET_STATE_GLOBAL;
+            PyTypeObject *tp = Py_TYPE(it);
+            elementtreestate *st = get_elementtree_state_by_type(tp);
             assert(Element_Check(st, extra->children[child_index]));
 #endif
             elem = (ElementObject *)Py_NewRef(extra->children[child_index]);
