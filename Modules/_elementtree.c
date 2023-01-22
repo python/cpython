@@ -803,7 +803,8 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     PyObject* tail;
     PyObject* id;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    PyTypeObject *tp = Py_TYPE(self);
+    elementtreestate *st = get_elementtree_state_by_type(tp);
     tag = deepcopy(st, self->tag, memo);
     if (!tag)
         return NULL;
