@@ -946,6 +946,9 @@ class PathLikeTests(NtpathTestCase):
     def test_path_splitdrive(self):
         self._check_function(self.path.splitdrive)
 
+    def test_path_splitroot(self):
+        self._check_function(self.path.splitroot)
+
     def test_path_basename(self):
         self._check_function(self.path.basename)
 
