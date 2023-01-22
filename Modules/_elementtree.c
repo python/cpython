@@ -1272,6 +1272,8 @@ _elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
 /*[clinic input]
 _elementtree.Element.findtext
 
+    cls: defining_class
+    /
     path: object
     default: object = None
     namespaces: object = None
@@ -1279,13 +1281,13 @@ _elementtree.Element.findtext
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
-                                   PyObject *default_value,
+_elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
+                                   PyObject *path, PyObject *default_value,
                                    PyObject *namespaces)
-/*[clinic end generated code: output=83b3ba4535d308d2 input=b53a85aa5aa2a916]*/
+/*[clinic end generated code: output=6af7a2d96aac32cb input=32f252099f62a3d2]*/
 {
     Py_ssize_t i;
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
 
     if (checkpath(path) || namespaces != Py_None)
         return PyObject_CallMethodObjArgs(

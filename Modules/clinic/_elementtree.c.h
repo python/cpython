@@ -319,15 +319,15 @@ PyDoc_STRVAR(_elementtree_Element_findtext__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_FINDTEXT_METHODDEF    \
-    {"findtext", _PyCFunction_CAST(_elementtree_Element_findtext), METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findtext__doc__},
+    {"findtext", _PyCFunction_CAST(_elementtree_Element_findtext), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findtext__doc__},
 
 static PyObject *
-_elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
-                                   PyObject *default_value,
+_elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
+                                   PyObject *path, PyObject *default_value,
                                    PyObject *namespaces);
 
 static PyObject *
-_elementtree_Element_findtext(ElementObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_findtext(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -377,7 +377,7 @@ _elementtree_Element_findtext(ElementObject *self, PyObject *const *args, Py_ssi
     }
     namespaces = args[2];
 skip_optional_pos:
-    return_value = _elementtree_Element_findtext_impl(self, path, default_value, namespaces);
+    return_value = _elementtree_Element_findtext_impl(self, cls, path, default_value, namespaces);
 
 exit:
     return return_value;
@@ -1198,4 +1198,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1fdddb436fe20e59 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c2792695fd75b84 input=a9049054013a1b77]*/
