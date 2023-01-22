@@ -735,20 +735,35 @@ PyDoc_STRVAR(_elementtree_Element_makeelement__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_MAKEELEMENT_METHODDEF    \
-    {"makeelement", _PyCFunction_CAST(_elementtree_Element_makeelement), METH_FASTCALL, _elementtree_Element_makeelement__doc__},
+    {"makeelement", _PyCFunction_CAST(_elementtree_Element_makeelement), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_makeelement__doc__},
 
 static PyObject *
-_elementtree_Element_makeelement_impl(ElementObject *self, PyObject *tag,
-                                      PyObject *attrib);
+_elementtree_Element_makeelement_impl(ElementObject *self, PyTypeObject *cls,
+                                      PyObject *tag, PyObject *attrib);
 
 static PyObject *
-_elementtree_Element_makeelement(ElementObject *self, PyObject *const *args, Py_ssize_t nargs)
+_elementtree_Element_makeelement(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "makeelement",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *tag;
     PyObject *attrib;
 
-    if (!_PyArg_CheckPositional("makeelement", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     tag = args[0];
@@ -757,7 +772,7 @@ _elementtree_Element_makeelement(ElementObject *self, PyObject *const *args, Py_
         goto exit;
     }
     attrib = args[1];
-    return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
+    return_value = _elementtree_Element_makeelement_impl(self, cls, tag, attrib);
 
 exit:
     return return_value;
@@ -1203,4 +1218,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6bef56ff48978efd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=40767b1a98e54b60 input=a9049054013a1b77]*/

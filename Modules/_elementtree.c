@@ -1588,6 +1588,7 @@ element_length(ElementObject* self)
 /*[clinic input]
 _elementtree.Element.makeelement
 
+    cls: defining_class
     tag: object
     attrib: object(subclass_of='&PyDict_Type')
     /
@@ -1595,9 +1596,9 @@ _elementtree.Element.makeelement
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_makeelement_impl(ElementObject *self, PyObject *tag,
-                                      PyObject *attrib)
-/*[clinic end generated code: output=4109832d5bb789ef input=2279d974529c3861]*/
+_elementtree_Element_makeelement_impl(ElementObject *self, PyTypeObject *cls,
+                                      PyObject *tag, PyObject *attrib)
+/*[clinic end generated code: output=d50bb17a47077d47 input=589829dab92f26e8]*/
 {
     PyObject* elem;
 
@@ -1605,7 +1606,7 @@ _elementtree_Element_makeelement_impl(ElementObject *self, PyObject *tag,
     if (!attrib)
         return NULL;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = get_elementtree_state_by_cls(cls);
     elem = create_new_element(st, tag, attrib);
 
     Py_DECREF(attrib);
