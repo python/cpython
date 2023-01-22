@@ -9800,12 +9800,17 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* mark used consts */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_opcode == LOAD_CONST ||
-                b->b_instr[i].i_opcode == KW_NAMES) {
+            if (b->b_instr[i].i_oparg.type == CONST_ARG) {
+                assert(b->b_instr[i].i_opcode == LOAD_CONST ||
+                       b->b_instr[i].i_opcode == KW_NAMES);
 
                 assert(oparg_type_matches(b->b_instr[i].i_oparg, CONST_ARG));
                 int index = OPARG_VALUE(b->b_instr[i].i_oparg);
                 index_map[index] = index;
+            }
+            else {
+                assert(b->b_instr[i].i_opcode != LOAD_CONST &&
+                       b->b_instr[i].i_opcode != KW_NAMES);
             }
         }
     }
@@ -9858,8 +9863,9 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
 
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_opcode == LOAD_CONST ||
-                b->b_instr[i].i_opcode == KW_NAMES) {
+            if (b->b_instr[i].i_oparg.type == CONST_ARG) {
+                assert(b->b_instr[i].i_opcode == LOAD_CONST ||
+                       b->b_instr[i].i_opcode == KW_NAMES);
 
                 assert(oparg_type_matches(b->b_instr[i].i_oparg, CONST_ARG));
                 int index = OPARG_VALUE(b->b_instr[i].i_oparg);
@@ -9868,7 +9874,8 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
                 b->b_instr[i].i_oparg = OPARG((int)reverse_index_map[index], CONST_ARG);
             }
             else {
-                assert(b->b_instr[i].i_oparg.type != CONST_ARG);
+                assert(b->b_instr[i].i_opcode != LOAD_CONST &&
+                       b->b_instr[i].i_opcode != KW_NAMES);
             }
         }
     }
