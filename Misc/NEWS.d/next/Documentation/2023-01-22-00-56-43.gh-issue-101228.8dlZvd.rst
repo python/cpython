@@ -1,0 +1,1 @@
+Fix typo in docstring for read method of _io.TextIOWrapper class
