@@ -349,13 +349,13 @@ class Printer:
 
     def generate_float(self, name: str, x: float) -> str:
         with self.block(f"static PyFloatObject {name} =", ";"):
-            self.object_head("PyFloat_Type")
+            self.object_head("PyDeepFreezeFloat_Type")
             self.write(f".ob_fval = {x},")
         return f"&{name}.ob_base"
 
     def generate_complex(self, name: str, z: complex) -> str:
         with self.block(f"static PyComplexObject {name} =", ";"):
-            self.object_head("PyComplex_Type")
+            self.object_head("PyDeepFreezeComplex_Type")
             self.write(f".cval = {{ {z.real}, {z.imag} }},")
         return f"&{name}.ob_base"
 

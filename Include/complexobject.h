@@ -9,6 +9,7 @@ extern "C" {
 /* Complex object interface */
 
 PyAPI_DATA(PyTypeObject) PyComplex_Type;
+PyAPI_DATA(PyTypeObject) PyDeepFreezeComplex_Type;
 
 #define PyComplex_Check(op) PyObject_TypeCheck((op), &PyComplex_Type)
 #define PyComplex_CheckExact(op) Py_IS_TYPE((op), &PyComplex_Type)
