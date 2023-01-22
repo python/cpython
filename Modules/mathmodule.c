@@ -2833,7 +2833,7 @@ long_add_would_overflow(long a, long b)
 
 /*
 Double and triple length extended precision floating point arithmetic
-based on ideas:
+based on:
 
   A Floating-Point Technique for Extending the Available Precision
   by T. J. Dekker
