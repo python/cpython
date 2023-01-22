@@ -1946,7 +1946,8 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
             }
         }
 
-        elementtreestate *st = ET_STATE_GLOBAL;
+        PyTypeObject *tp = Py_TYPE(self);
+        elementtreestate *st = get_elementtree_state_by_type(tp);
         for (i = 0; i < newlen; i++) {
             PyObject *element = PySequence_Fast_GET_ITEM(seq, i);
             if (!Element_Check(st, element)) {
