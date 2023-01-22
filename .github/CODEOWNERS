@@ -7,6 +7,9 @@
 # GitHub
 .github/**                    @ezio-melotti
 
+# Build system
+configure*                    @erlend-aasland
+
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303
 
