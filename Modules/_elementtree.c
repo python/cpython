@@ -3614,7 +3614,7 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->handle_start = self->handle_data = self->handle_end = NULL;
         self->handle_comment = self->handle_pi = self->handle_close = NULL;
         self->handle_doctype = NULL;
-        self->state = ET_STATE_GLOBAL;
+        self->state = get_elementtree_state_by_type(type);
     }
     return (PyObject *)self;
 }
