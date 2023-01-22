@@ -1454,10 +1454,10 @@ element_bool(PyObject* self_)
 {
     ElementObject* self = (ElementObject*) self_;
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "DeprecationWarning: The behavior of this method will "
-                     "change in future versions.  Use specific 'len(elem)' or "
+                     "Testing an element's truth value will raise an exception "
+                     "in future versions.  Use specific 'len(elem)' or "
                      "'elem is not None' test instead.",
-                     2) < 0) {
+                     1) < 0) {
         return -1;
     };
     if (self->extra ? self->extra->length : 0) {

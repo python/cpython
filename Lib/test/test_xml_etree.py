@@ -3963,7 +3963,8 @@ class BoolTest(unittest.TestCase):
     def test_warning(self):
         e = ET.fromstring('<a style="new"></a>')
         msg = (
-            r"The behavior of this method will change in future versions.  "
+            r"Testing an element's truth value will raise an exception in "
+            r"future versions.  "
             r"Use specific 'len\(elem\)' or 'elem is not None' test instead.")
         with self.assertWarnsRegex(DeprecationWarning, msg):
             result = bool(e)
