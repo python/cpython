@@ -1,0 +1,2 @@
+Fix potential memory underallocation issue for instances of :class:`int`
+subclasses with value zero.
