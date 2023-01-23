@@ -7,7 +7,8 @@
 #include "pycore_opcode.h"
 #include "pycore_pyerrors.h"
 
-#define INSTRUMENT_DEBUG 1
+/* Uncomment this to dump debugging output when assertions fail */
+//#define INSTRUMENT_DEBUG 1
 
 static PyObject DISABLE =
 {
