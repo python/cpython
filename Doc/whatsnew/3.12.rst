@@ -425,6 +425,11 @@ Deprecated
   is no current event loop set and it decides to create one.
   (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
 
+* The :mod:`xml.etree.ElementTree` module now emits :exc:`DeprecationWarning`
+  when testing the truth value of an :class:`xml.etree.ElementTree.Element`.
+  Before, the Python implementation emitted :exc:`FutureWarning`, and the C
+  implementation emitted nothing.
+
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -486,6 +491,9 @@ Pending Removal in Python 3.14
 
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
+
+* Testing the truth value of an :class:`xml.etree.ElementTree.Element`
+  is deprecated and will raise an exception in Python 3.14.
 
 
 Pending Removal in Future Versions

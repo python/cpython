@@ -1449,6 +1449,23 @@ element_getitem(PyObject* self_, Py_ssize_t index)
     return Py_NewRef(self->extra->children[index]);
 }
 
+static int
+element_bool(PyObject* self_)
+{
+    ElementObject* self = (ElementObject*) self_;
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "Testing an element's truth value will raise an exception "
+                     "in future versions.  Use specific 'len(elem)' or "
+                     "'elem is not None' test instead.",
+                     1) < 0) {
+        return -1;
+    };
+    if (self->extra ? self->extra->length : 0) {
+        return 1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 _elementtree.Element.insert
 
@@ -2289,6 +2306,7 @@ typedef struct {
 
     char insert_comments;
     char insert_pis;
+    elementtreestate *state;
 } TreeBuilderObject;
 
 #define TreeBuilder_CheckExact(st, op) Py_IS_TYPE((op), (st)->TreeBuilder_Type)
@@ -2322,6 +2340,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->start_ns_event_obj = t->end_ns_event_obj = NULL;
         t->comment_event_obj = t->pi_event_obj = NULL;
         t->insert_comments = t->insert_pis = 0;
+        t->state = ET_STATE_GLOBAL;
     }
     return (PyObject *)t;
 }
@@ -2353,7 +2372,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
     }
 
     if (comment_factory == Py_None) {
-        elementtreestate *st = ET_STATE_GLOBAL;
+        elementtreestate *st = self->state;
         comment_factory = st->comment_factory;
     }
     if (comment_factory) {
@@ -2365,7 +2384,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
     }
 
     if (pi_factory == Py_None) {
-        elementtreestate *st = ET_STATE_GLOBAL;
+        elementtreestate *st = self->state;
         pi_factory = st->pi_factory;
     }
     if (pi_factory) {
@@ -2547,7 +2566,7 @@ treebuilder_flush_data(TreeBuilderObject* self)
     if (!self->data) {
         return 0;
     }
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (!self->last_for_tail) {
         PyObject *element = self->last;
         return treebuilder_extend_element_text_or_tail(
@@ -2607,7 +2626,7 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 {
     PyObject* node;
     PyObject* this;
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
 
     if (treebuilder_flush_data(self) < 0) {
         return NULL;
@@ -2996,6 +3015,7 @@ typedef struct {
 
     PyObject *handle_close;
 
+    elementtreestate *state;
 } XMLParserObject;
 
 /* helpers */
@@ -3141,7 +3161,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
     value = PyDict_GetItemWithError(self->entity, key);
 
     if (value) {
-        elementtreestate *st = ET_STATE_GLOBAL;
+        elementtreestate *st = self->state;
         if (TreeBuilder_CheckExact(st, self->target))
             res = treebuilder_handle_data(
                 (TreeBuilderObject*) self->target, value
@@ -3214,7 +3234,7 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
         attrib = NULL;
     }
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut */
         res = treebuilder_handle_start((TreeBuilderObject*) self->target,
@@ -3253,7 +3273,7 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
     if (!data)
         return; /* parser will look for errors */
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (TreeBuilder_CheckExact(st, self->target))
         /* shortcut */
         res = treebuilder_handle_data((TreeBuilderObject*) self->target, data);
@@ -3276,7 +3296,7 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
     if (PyErr_Occurred())
         return;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (TreeBuilder_CheckExact(st, self->target))
         /* shortcut */
         /* the standard tree builder doesn't look at the end tag */
@@ -3311,7 +3331,7 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
     if (!prefix_in)
         prefix_in = "";
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut - TreeBuilder does not actually implement .start_ns() */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
@@ -3362,7 +3382,7 @@ expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
     if (!prefix_in)
         prefix_in = "";
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut - TreeBuilder does not actually implement .end_ns() */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
@@ -3391,7 +3411,7 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
     if (PyErr_Occurred())
         return;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
@@ -3452,7 +3472,7 @@ expat_start_doctype_handler(XMLParserObject *self,
         pubid_obj = Py_NewRef(Py_None);
     }
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     /* If the target has a handler for doctype, call it. */
     if (self->handle_doctype) {
         res = PyObject_CallFunctionObjArgs(self->handle_doctype,
@@ -3485,7 +3505,7 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
     if (PyErr_Occurred())
         return;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (TreeBuilder_CheckExact(st, self->target)) {
         /* shortcut */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
@@ -3538,6 +3558,7 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->handle_start = self->handle_data = self->handle_end = NULL;
         self->handle_comment = self->handle_pi = self->handle_close = NULL;
         self->handle_doctype = NULL;
+        self->state = ET_STATE_GLOBAL;
     }
     return (PyObject *)self;
 }
@@ -3594,7 +3615,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
     if (target != Py_None) {
         Py_INCREF(target);
     } else {
-        elementtreestate *st = ET_STATE_GLOBAL;
+        elementtreestate *st = self->state;
         target = treebuilder_new(st->TreeBuilder_Type, NULL, NULL);
         if (!target) {
             Py_CLEAR(self->entity);
@@ -3796,7 +3817,7 @@ _elementtree_XMLParser_close_impl(XMLParserObject *self)
     if (!res)
         return NULL;
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (TreeBuilder_CheckExact(st, self->target)) {
         Py_DECREF(res);
         return treebuilder_done((TreeBuilderObject*) self->target);
@@ -3936,7 +3957,7 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
 
     res = expat_parse(self, "", 0, 1);
 
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (res && TreeBuilder_CheckExact(st, self->target)) {
         Py_DECREF(res);
         return treebuilder_done((TreeBuilderObject*) self->target);
@@ -3968,7 +3989,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     if (!_check_xmlparser(self)) {
         return NULL;
     }
-    elementtreestate *st = ET_STATE_GLOBAL;
+    elementtreestate *st = self->state;
     if (!TreeBuilder_CheckExact(st, self->target)) {
         PyErr_SetString(
             PyExc_TypeError,
@@ -4156,6 +4177,7 @@ static PyType_Slot element_slots[] = {
     {Py_sq_length, element_length},
     {Py_sq_item, element_getitem},
     {Py_sq_ass_item, element_setitem},
+    {Py_nb_bool, element_bool},
     {Py_mp_length, element_length},
     {Py_mp_subscript, element_subscr},
     {Py_mp_ass_subscript, element_ass_subscr},
