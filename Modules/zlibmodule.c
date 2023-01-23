@@ -763,6 +763,9 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     else
         hard_limit = max_length;
 
+    if (max_length && obuflen > max_length)
+        obuflen = max_length;
+
     ENTER_ZLIB(self);
 
     self->zst.next_in = data->buf;
