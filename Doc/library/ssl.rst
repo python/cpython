@@ -1054,7 +1054,7 @@ SSL Sockets
 
    .. versionchanged:: 3.5
       The :meth:`shutdown` does not reset the socket timeout each time bytes
-      are received or sent. The socket timeout is now to maximum total duration
+      are received or sent. The socket timeout is now the maximum total duration
       of the shutdown.
 
    .. deprecated:: 3.6
@@ -1087,8 +1087,8 @@ SSL sockets also have the following additional methods and attributes:
    cause write operations.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time bytes are received or sent.
-      The socket timeout is now to maximum total duration to read up to *len*
+      The socket timeout is no longer reset each time bytes are received or sent.
+      The socket timeout is now the maximum total duration to read up to *len*
       bytes.
 
    .. deprecated:: 3.6
@@ -1106,8 +1106,8 @@ SSL sockets also have the following additional methods and attributes:
    also cause read operations.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time bytes are received or sent.
-      The socket timeout is now to maximum total duration to write *buf*.
+      The socket timeout is no longer reset each time bytes are received or sent.
+      The socket timeout is now the maximum total duration to write *buf*.
 
    .. deprecated:: 3.6
       Use :meth:`~SSLSocket.send` instead of :meth:`~SSLSocket.write`.
@@ -1134,14 +1134,14 @@ SSL sockets also have the following additional methods and attributes:
       :attr:`~SSLSocket.context` is true.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time bytes are received or sent.
-      The socket timeout is now to maximum total duration of the handshake.
+      The socket timeout is no longer reset each time bytes are received or sent.
+      The socket timeout is now the maximum total duration of the handshake.
 
    .. versionchanged:: 3.7
       Hostname or IP address is matched by OpenSSL during handshake. The
       function :func:`match_hostname` is no longer used. In case OpenSSL
       refuses a hostname or IP address, the handshake is aborted early and
-      a TLS alert message is send to the peer.
+      a TLS alert message is sent to the peer.
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 

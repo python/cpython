@@ -874,8 +874,6 @@ LDSHARED
 SHLIB_SUFFIX
 DSYMUTIL_PATH
 DSYMUTIL
-LIBTOOL_CRUFT
-OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
@@ -10910,97 +10908,6 @@ fi
 
 CC="$ac_save_cc"
 
-
-case $ac_sys_system/$ac_sys_release in
-  Darwin/[01567]\..*)
-    OTHER_LIBTOOL_OPT="-prebind -seg1addr 0x10000000"
-    ;;
-  Darwin/*)
-    OTHER_LIBTOOL_OPT=""
-    ;;
-esac
-
-
-
-case $ac_sys_system/$ac_sys_release in
-  Darwin/[01567]\..*)
-    LIBTOOL_CRUFT="-framework System -lcc_dynamic"
-    if test "${enable_universalsdk}"; then
-	    :
-    else
-        LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `/usr/bin/arch`"
-    fi
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
-  Darwin/*)
-    gcc_version=`gcc -dumpversion`
-    if test ${gcc_version} '<' 4.0
-        then
-            LIBTOOL_CRUFT="-lcc_dynamic"
-        else
-            LIBTOOL_CRUFT=""
-    fi
-    if test "$cross_compiling" = yes; then :
-  ac_osx_32bit=yes
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-    #include <unistd.h>
-    int main(int argc, char*argv[])
-    {
-      if (sizeof(long) == 4) {
-    	  return 0;
-      } else {
-      	  return 1;
-      }
-    }
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_osx_32bit=yes
-else
-  ac_osx_32bit=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-
-    if test "${ac_osx_32bit}" = "yes"; then
-    	case `/usr/bin/arch` in
-    	i386)
-    		MACOSX_DEFAULT_ARCH="i386"
-    		;;
-    	ppc)
-    		MACOSX_DEFAULT_ARCH="ppc"
-    		;;
-    	*)
-    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
-    		;;
-    	esac
-    else
-    	case `/usr/bin/arch` in
-    	i386)
-    		MACOSX_DEFAULT_ARCH="x86_64"
-    		;;
-    	ppc)
-    		MACOSX_DEFAULT_ARCH="ppc64"
-		;;
-    	arm64)
-    		MACOSX_DEFAULT_ARCH="arm64"
-    		;;
-    	*)
-    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
-    		;;
-    	esac
-
-    fi
-
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT" -lSystem -lSystemStubs -arch_only ${MACOSX_DEFAULT_ARCH}"
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
-esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-framework" >&5
 $as_echo_n "checking for --enable-framework... " >&6; }
 if test "$enable_framework"
