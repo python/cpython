@@ -185,7 +185,7 @@ static struct jump_target_label_ NO_LABEL = {-1};
     }
 
 typedef enum {
-    UNUSED_ARG_TYPE,  /* No oparg */
+    UNUSED_ARG,       /* No oparg */
     EXPLICIT_ARG,     /* An int value */
     CONST_ARG,        /* Index into co_consts */
     JUMP_TARGET_ARG,  /* ID of a jump target block */
@@ -199,8 +199,8 @@ typedef struct {
 #define OPARG_VALUE(O) ((O).value)
 #define OPARG(V, T) ((const oparg_t){.value = (V), .type = (T)})
 
-#define UNUSED_OPARG OPARG(0, UNUSED_ARG_TYPE)
-#define IS_UNUSED(O) ((O).type == UNUSED_ARG_TYPE)
+#define UNUSED_OPARG OPARG(0, UNUSED_ARG)
+#define IS_UNUSED(O) ((O).type == UNUSED_ARG)
 
 
 struct instr {
@@ -286,7 +286,7 @@ opcode_to_oparg_type(int opcode) {
         return EXPLICIT_ARG;
     }
     else {
-        return UNUSED_ARG_TYPE;
+        return UNUSED_ARG;
     }
     Py_UNREACHABLE();
 }
