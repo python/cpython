@@ -1449,6 +1449,23 @@ element_getitem(PyObject* self_, Py_ssize_t index)
     return Py_NewRef(self->extra->children[index]);
 }
 
+static int
+element_bool(PyObject* self_)
+{
+    ElementObject* self = (ElementObject*) self_;
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "Testing an element's truth value will raise an exception "
+                     "in future versions.  Use specific 'len(elem)' or "
+                     "'elem is not None' test instead.",
+                     1) < 0) {
+        return -1;
+    };
+    if (self->extra ? self->extra->length : 0) {
+        return 1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 _elementtree.Element.insert
 
@@ -4156,6 +4173,7 @@ static PyType_Slot element_slots[] = {
     {Py_sq_length, element_length},
     {Py_sq_item, element_getitem},
     {Py_sq_ass_item, element_setitem},
+    {Py_nb_bool, element_bool},
     {Py_mp_length, element_length},
     {Py_mp_subscript, element_subscr},
     {Py_mp_ass_subscript, element_ass_subscr},
