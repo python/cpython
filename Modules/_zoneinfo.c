@@ -2624,25 +2624,12 @@ new_weak_cache(void)
 static int
 initialize_caches(zoneinfo_state *state)
 {
-    // TODO: Move to a PyModule_GetState / PEP 573 based caching system.
-    if (state->TIMEDELTA_CACHE == NULL) {
-        state->TIMEDELTA_CACHE = PyDict_New();
-    }
-    else {
-        Py_INCREF(state->TIMEDELTA_CACHE);
-    }
-
+    state->TIMEDELTA_CACHE = PyDict_New();
     if (state->TIMEDELTA_CACHE == NULL) {
         return -1;
     }
 
-    if (state->ZONEINFO_WEAK_CACHE == NULL) {
-        state->ZONEINFO_WEAK_CACHE = new_weak_cache();
-    }
-    else {
-        Py_INCREF(state->ZONEINFO_WEAK_CACHE);
-    }
-
+    state->ZONEINFO_WEAK_CACHE = new_weak_cache();
     if (state->ZONEINFO_WEAK_CACHE == NULL) {
         return -1;
     }
