@@ -292,8 +292,9 @@ opcode_to_oparg_type(int opcode) {
 }
 
 #ifdef Py_DEBUG
+
 static bool
-arg_types_are_compatible(struct instr *instr) {
+arg_type_is_compatible(struct instr *instr) {
     int opcode = instr->i_opcode;
     oparg_t oparg = instr->i_oparg;
     oparg_type expected = opcode_to_oparg_type(opcode);
@@ -312,7 +313,7 @@ instr_size(struct instr *instr)
 {
     int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    assert(arg_types_are_compatible(instr));
+    assert(arg_type_is_compatible(instr));
     int oparg = OPARG_VALUE(instr->i_oparg);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
@@ -324,7 +325,7 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instr, int ilen)
 {
     int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    assert(arg_types_are_compatible(instr));
+    assert(arg_type_is_compatible(instr));
     int oparg = OPARG_VALUE(instr->i_oparg);
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
@@ -7202,6 +7203,7 @@ stackdepth(basicblock *entryblock, int code_flags)
                 maxdepth = new_depth;
             }
             if (instr->i_oparg.type == JUMP_TARGET_ARG) {
+                assert(HAS_TARGET(instr->i_opcode));
                 effect = stack_effect(instr->i_opcode, oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
                 int target_depth = depth + effect;
@@ -9829,16 +9831,12 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_oparg.type == CONST_ARG) {
-                assert(b->b_instr[i].i_opcode == LOAD_CONST ||
-                       b->b_instr[i].i_opcode == KW_NAMES);
-
-                assert(b->b_instr[i].i_oparg.type ==  CONST_ARG);
+                assert(HAS_CONST(b->b_instr[i].i_opcode));
                 int index = OPARG_VALUE(b->b_instr[i].i_oparg);
                 index_map[index] = index;
             }
             else {
-                assert(b->b_instr[i].i_opcode != LOAD_CONST &&
-                       b->b_instr[i].i_opcode != KW_NAMES);
+                assert(!HAS_CONST(b->b_instr[i].i_opcode));
             }
         }
     }
@@ -9892,18 +9890,14 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_oparg.type == CONST_ARG) {
-                assert(b->b_instr[i].i_opcode == LOAD_CONST ||
-                       b->b_instr[i].i_opcode == KW_NAMES);
-
-                assert(b->b_instr[i].i_oparg.type == CONST_ARG);
+                assert(HAS_CONST(b->b_instr[i].i_opcode));
                 int index = OPARG_VALUE(b->b_instr[i].i_oparg);
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
                 b->b_instr[i].i_oparg = OPARG((int)reverse_index_map[index], CONST_ARG);
             }
             else {
-                assert(b->b_instr[i].i_opcode != LOAD_CONST &&
-                       b->b_instr[i].i_opcode != KW_NAMES);
+                assert(!HAS_CONST(b->b_instr[i].i_opcode));
             }
         }
     }
