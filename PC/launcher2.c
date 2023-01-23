@@ -2203,14 +2203,6 @@ _listAllEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, Environmen
             buffer[0] = L'\0';
         } else if (0 == _compare(env->company, -1, L"PythonCore", -1)) {
             swprintf_s(buffer, bufferSize, L"-V:%s", env->tag);
-
-            //// append "-32" to PythonCore 32-bit environments if it isn't already specified in the tag name
-            //if (0 == _compare(env->architecture, -1, L"32bit", -1)) {
-            //    int tagLength = wcslen(env->tag);
-            //    if (tagLength <= 3 || 0 != _compare(&env->tag[tagLength - 3], 3, L"-32", 3)) {
-            //        wcscat_s(buffer, bufferSize, L"-32");
-            //    }
-            //}
         } else {
             swprintf_s(buffer, bufferSize, L"-V:%s/%s", env->company, env->tag);
         }
