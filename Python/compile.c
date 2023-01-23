@@ -186,7 +186,6 @@ static struct jump_target_label_ NO_LABEL = {-1};
 
 typedef enum {
     UNUSED_ARG_TYPE,  /* No oparg */
-    UNKNOWN_ARG_TYPE, /* Used in tests when translating bytecode to CFG */
     EXPLICIT_ARG,     /* An int value */
     CONST_ARG,        /* Index into co_consts */
     JUMP_TARGET_ARG,  /* ID of a jump target block */
@@ -203,10 +202,6 @@ typedef struct {
 #define UNUSED_OPARG OPARG(0, UNUSED_ARG_TYPE)
 #define IS_UNUSED(O) ((O).type == UNUSED_ARG_TYPE)
 
-static bool
-oparg_type_matches(oparg_t oparg, oparg_type arg_type) {
-    return oparg.type == arg_type || oparg.type == UNKNOWN_ARG_TYPE;
-}
 
 struct instr {
     int i_opcode;
@@ -278,44 +273,36 @@ is_jump(struct instr *i)
     return IS_JUMP_OPCODE(i->i_opcode);
 }
 
+static oparg_type
+opcode_to_oparg_type(int opcode) {
+    if (HAS_TARGET(opcode)) {
+        return JUMP_TARGET_ARG;
+    }
+    else if (HAS_CONST(opcode)) {
+        return CONST_ARG;
+    }
+    else if (HAS_ARG(opcode)) {
+        return EXPLICIT_ARG;
+    }
+    else {
+        return UNUSED_ARG_TYPE;
+    }
+    Py_UNREACHABLE();
+}
+
 #ifdef Py_DEBUG
 static bool
 arg_types_are_compatible(struct instr *instr) {
-    bool result = true;
-    oparg_type expected = UNUSED_ARG_TYPE;
-
     int opcode = instr->i_opcode;
     oparg_t oparg = instr->i_oparg;
-    if (HAS_TARGET(opcode)) {
-        if (!oparg_type_matches(oparg, JUMP_TARGET_ARG)) {
-            result = false;
-            expected = JUMP_TARGET_ARG;
-        }
-    }
-    else if (HAS_CONST(opcode)) {
-        if (!oparg_type_matches(oparg, CONST_ARG)) {
-            result = false;
-            expected = CONST_ARG;
-        }
-    }
-    else if (HAS_ARG(opcode)) {
-        if (!oparg_type_matches(oparg, EXPLICIT_ARG)) {
-            result = false;
-            expected = EXPLICIT_ARG;
-        }
-    }
-    else {
-        if (!oparg_type_matches(oparg, UNUSED_ARG_TYPE)) {
-            result = false;
-            expected = UNUSED_ARG_TYPE;
-        }
-    }
-    if (!result) {
+    oparg_type expected = opcode_to_oparg_type(opcode);
+    if (oparg.type != expected) {
         fprintf(stderr,
                 "opcode = %d oparg.type = %d expected %d\n",
                 opcode, oparg.type, expected);
+        return false;
     }
-    return result;
+    return true;
 }
 #endif
 
@@ -1405,7 +1392,7 @@ basicblock_addop(basicblock *b, int opcode, oparg_t oparg, location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || IS_UNUSED(oparg));
+    assert(opcode_to_oparg_type(opcode) == oparg.type);
     assert(0 <= OPARG_VALUE(oparg) && OPARG_VALUE(oparg) < (1 << 30));
 
     int off = basicblock_next_instr(b);
@@ -7213,7 +7200,7 @@ stackdepth(basicblock *entryblock, int code_flags)
             if (new_depth > maxdepth) {
                 maxdepth = new_depth;
             }
-            if (HAS_TARGET(instr->i_opcode)) {
+            if (instr->i_oparg.type == JUMP_TARGET_ARG) {
                 effect = stack_effect(instr->i_opcode, oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
                 int target_depth = depth + effect;
@@ -8004,7 +7991,7 @@ assemble_jump_offsets(basicblock *entryblock)
                 */
                 bsize += isize;
                 if (is_jump(instr)) {
-                    assert(oparg_type_matches(instr->i_oparg, JUMP_TARGET_ARG));
+                    assert(instr->i_oparg.type == JUMP_TARGET_ARG);
                     int oparg = instr->i_target->b_offset;
                     if (is_relative_jump(instr)) {
                         if (oparg < bsize) {
@@ -8466,10 +8453,10 @@ dump_instr(struct instr *i)
     char arg[128];
 
     *arg = '\0';
-    if (HAS_ARG(i->i_opcode)) {
+    if (!IS_UNUSED(i->i_oparg)) {
         sprintf(arg, "arg: %d ", OPARG_VALUE(i->i_oparg));
     }
-    if (HAS_TARGET(i->i_opcode)) {
+    if (i->i_oparg.type == JUMP_TARGET_ARG) {
         sprintf(arg, "target: %p [%d] ", i->i_target, OPARG_VALUE(i->i_oparg));
     }
     fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
@@ -8684,7 +8671,7 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
                     assert(oldoffset >= 0);
                     assert(oldoffset < noffsets);
                     assert(fixedmap[oldoffset] >= 0);
-                    assert(oparg_type_matches(inst->i_oparg, EXPLICIT_ARG));
+                    assert(inst->i_oparg.type == EXPLICIT_ARG);
                     inst->i_oparg = OPARG(fixedmap[oldoffset], EXPLICIT_ARG);
             }
         }
@@ -9288,7 +9275,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
         struct instr *inst = &bb->b_instr[i];
         int oparg = OPARG_VALUE(inst->i_oparg);
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
-        if (HAS_TARGET(inst->i_opcode)) {
+        if (inst->i_oparg.type == JUMP_TARGET_ARG) {
             assert(inst->i_target->b_iused > 0);
             target = &inst->i_target->b_instr[0];
             assert(!IS_ASSEMBLER_OPCODE(target->i_opcode));
@@ -9662,7 +9649,7 @@ eliminate_empty_basic_blocks(cfg_builder *g) {
         assert(b->b_iused > 0);
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
-            if (HAS_TARGET(instr->i_opcode)) {
+            if (instr->i_oparg.type == JUMP_TARGET_ARG) {
                 basicblock *target = instr->i_target;
                 while (target->b_iused == 0) {
                     target = target->b_next;
@@ -9743,8 +9730,8 @@ translate_jump_labels_to_targets(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_target == NULL);
-            if (HAS_TARGET(instr->i_opcode)) {
-                assert(oparg_type_matches(instr->i_oparg, JUMP_TARGET_ARG));
+            if (instr->i_oparg.type == JUMP_TARGET_ARG) {
+                assert(instr->i_oparg.type == JUMP_TARGET_ARG);
                 int lbl = OPARG_VALUE(instr->i_oparg);
                 assert(lbl >= 0 && lbl <= max_label);
                 instr->i_target = label2block[lbl];
@@ -9845,7 +9832,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
                 assert(b->b_instr[i].i_opcode == LOAD_CONST ||
                        b->b_instr[i].i_opcode == KW_NAMES);
 
-                assert(oparg_type_matches(b->b_instr[i].i_oparg, CONST_ARG));
+                assert(b->b_instr[i].i_oparg.type ==  CONST_ARG);
                 int index = OPARG_VALUE(b->b_instr[i].i_oparg);
                 index_map[index] = index;
             }
@@ -9908,7 +9895,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
                 assert(b->b_instr[i].i_opcode == LOAD_CONST ||
                        b->b_instr[i].i_opcode == KW_NAMES);
 
-                assert(oparg_type_matches(b->b_instr[i].i_oparg, CONST_ARG));
+                assert(b->b_instr[i].i_oparg.type == CONST_ARG);
                 int index = OPARG_VALUE(b->b_instr[i].i_oparg);
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
@@ -10059,7 +10046,8 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
             if (PyErr_Occurred()) {
                 return -1;
             }
-            if (cfg_builder_addop(g, opcode, OPARG(oparg, UNKNOWN_ARG_TYPE), loc) < 0) {
+            oparg_type arg_type = opcode_to_oparg_type(opcode);
+            if (cfg_builder_addop(g, opcode, OPARG(oparg, arg_type), loc) < 0) {
                 return -1;
             }
         }
@@ -10091,7 +10079,7 @@ cfg_to_instructions(cfg_builder *g)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             location loc = instr->i_loc;
-            int arg = HAS_TARGET(instr->i_opcode) ?
+            int arg = instr->i_oparg.type == JUMP_TARGET_ARG ?
                       instr->i_target->b_label : OPARG_VALUE(instr->i_oparg);
 
             PyObject *inst_tuple = Py_BuildValue(
