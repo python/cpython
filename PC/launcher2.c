@@ -1398,50 +1398,41 @@ _combineWithInstallDir(const wchar_t **dest, const wchar_t *installDir, const wc
     return copyWstr(dest, buffer);
 }
 
-// There is one notable situation which I'm not sure how to handle:
-// Python 3.5 has an executablePath but no windowedExecutablePath.
-// With the code as written, running pyw -3.5 will launch python.exe rather than pythonw.exe.
 
-    // if
-    // * PythonCore and
-    // * legacyVersion
-    //   * 2.X or
-    //   * 3.X where X < 5 or X <= 5 (todo: which?)
-    // then
-    // call back-compat function
-    // * if fallbackArch is not null, (move the above code to here?)
-    // * if fallbackArch is null, set env->architecture from checking the executable's binary type
-    // * if env->architecture is 32bit, update tag by appending "-32"
-int
-_registryBackCompat(const SearchInfo *search, EnvironmentInfo *env, const wchar_t *fallbackArch)
+bool
+_isLegacyVersion(EnvironmentInfo *env)
 {
-    // Support backwards-compatibility for old PythonCore versions which do not implement PEP 514.
-    // These are specifically 2.X and 3.0 - 3.5.
-
-    // Non-PythonCore versions and PythonCore versions which already have an architecture
-    // require no compatibility handling.
-    if (0 != _compare(env->company, -1, L"PythonCore", -1) || env->architecture) {
-        return 0;
+    // Check if backwards-compatibility is required.
+    // Specifically PythonCore versions 2.X and 3.0 - 3.5 do not implement PEP 514.
+    if (0 != _compare(env->company, -1, L"PythonCore", -1)) {
+        return false;
     }
 
     int versionMajor, versionMinor;
     int n = swscanf_s(env->tag, L"%d.%d", &versionMajor, &versionMinor);
     if (n != 2) {
         debug(L"# %s/%s has an invalid version tag\n", env->company, env->tag);
-        return RC_NO_PYTHON;
+        return false;
     }
 
-    bool isLegacyVersion =
-        versionMajor == 2 ||
-        (versionMajor == 3 && versionMinor >= 0 && versionMinor <= 5);
+    return versionMajor == 2
+        || (versionMajor == 3 && versionMinor >= 0 && versionMinor <= 5);
+}
 
-    if (!isLegacyVersion) {
-        debug(L"# %s/%s does not follow PEP 514, but is not a known legacy version\n", env->company, env->tag);
-        return RC_NO_PYTHON;
+// Backwards-compatibility for old PythonCore versions which do not implement PEP 514.
+// These are specifically 2.X and 3.0 - 3.5.
+int
+_registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *env, const wchar_t *fallbackArch)
+{
+    int exitCode = _combineWithInstallDir(
+        &env->executablePath,
+        env->installDir,
+        search->executable,
+        search->executableLength
+    );
+    if (exitCode) {
+        return exitCode;
     }
-
-    // TODO: Ensure executablePath is set by this point, or else
-    // GetBinaryType will not work.
 
     if (fallbackArch) {
         copyWstr(&env->architecture, fallbackArch);
@@ -1484,6 +1475,20 @@ _registryBackCompat(const SearchInfo *search, EnvironmentInfo *env, const wchar_
         }
     }
 
+    wchar_t buffer[MAXLEN];
+    if (swprintf_s(buffer, MAXLEN, L"Python %s", env->tag)) {
+        copyWstr(&env->displayName, buffer);
+    }
+
+    if (search->windowed) {
+        exitCode = _registryReadString(&env->executableArgs, root, L"InstallPath", L"WindowedExecutableArguments");
+    } else {
+        exitCode = _registryReadString(&env->executableArgs, root, L"InstallPath", L"ExecutableArguments");
+    }
+    if (exitCode) {
+        return exitCode;
+    }
+
     return 0;
 }
 
@@ -1497,6 +1502,10 @@ _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *e
     }
     if (!env->installDir) {
         return RC_NO_PYTHON;
+    }
+
+    if (_isLegacyVersion(env)) {
+        return _registryReadLegacyEnvironment(search, root, env, fallbackArch);
     }
 
     // If pythonw.exe requested, check specific value
@@ -1521,6 +1530,11 @@ _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *e
         return exitCode;
     }
 
+    if (!env->executablePath) {
+        debug(L"# %s/%s has no executable path\n", env->company, env->tag);
+        return RC_NO_PYTHON;
+    }
+
     exitCode = _registryReadString(&env->architecture, root, NULL, L"SysArchitecture");
     if (exitCode) {
         return exitCode;
@@ -1530,30 +1544,6 @@ _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *e
     if (exitCode) {
         return exitCode;
     }
-
-    // Only PythonCore entries will infer executablePath from installDir and architecture from the binary
-    if (0 == _compare(env->company, -1, L"PythonCore", -1)) {
-        if (!env->executablePath) {
-            exitCode = _combineWithInstallDir(
-                &env->executablePath,
-                env->installDir,
-                search->executable,
-                search->executableLength
-            );
-            if (exitCode) {
-                return exitCode;
-            }
-        }
-        if (!env->architecture && env->executablePath && fallbackArch) {
-            copyWstr(&env->architecture, fallbackArch);
-        }
-    }
-
-    if (!env->executablePath) {
-        debug(L"# %s/%s has no executable path\n", env->company, env->tag);
-        return RC_NO_PYTHON;
-    }
-
 
     return 0;
 }
