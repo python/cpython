@@ -2642,7 +2642,8 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 
     if (!self->element_factory) {
         node = create_new_element(st, tag, attrib);
-    } else if (attrib == NULL) {
+    }
+    else if (attrib == NULL) {
         attrib = PyDict_New();
         if (!attrib)
             return NULL;
@@ -2662,8 +2663,9 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     Py_CLEAR(self->last_for_tail);
 
     if (this != Py_None) {
-        if (treebuilder_add_subelement(st, this, node) < 0)
+        if (treebuilder_add_subelement(st, this, node) < 0) {
             goto error;
+        }
     } else {
         if (self->root) {
             PyErr_SetString(
@@ -2822,8 +2824,9 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
 
         this = self->this;
         if (self->insert_pis && this != Py_None) {
-            if (treebuilder_add_subelement(self->state, this, pi) < 0)
+            if (treebuilder_add_subelement(self->state, this, pi) < 0) {
                 goto error;
+            }
             Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
         }
     } else {
