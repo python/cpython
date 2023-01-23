@@ -8391,7 +8391,8 @@ $as_echo_n "checking for --with-strict-overflow... " >&6; }
 if test "${with_strict_overflow+set}" = set; then :
   withval=$with_strict_overflow;
     if test "x$ac_cv_cc_supports_fstrict_overflow" = xno; then :
-  as_fn_error $? "--with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" "$LINENO" 5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&5
+$as_echo "$as_me: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&2;}
 fi
 
 else

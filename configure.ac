@@ -2102,7 +2102,7 @@ AC_ARG_WITH([strict-overflow],
   [
     AS_VAR_IF(
       [ac_cv_cc_supports_fstrict_overflow], [no],
-      [AC_MSG_ERROR([--with-strict-overflow=yes requires a compiler that supports -fstrict-overflow])],
+      [AC_MSG_WARN([--with-strict-overflow=yes requires a compiler that supports -fstrict-overflow])],
       []
     )
   ],
