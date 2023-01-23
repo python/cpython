@@ -1043,6 +1043,15 @@ iterations of the loop.
    ``cmp_op[opname]``.
 
 
+.. opcode:: COMPARE_AND_BRANCH (opname)
+
+   Compares the top two values on the stack, popping them, then branches.
+   The direction and offset of the jump is embedded as a ``POP_JUMP_IF_TRUE``
+   or ``POP_JUMP_IF_FALSE`` instruction immediately following the cache.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: IS_OP (invert)
 
    Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.

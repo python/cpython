@@ -808,6 +808,22 @@ always available.
       It is not guaranteed to exist in all implementations of Python.
 
 
+.. function:: _getframemodulename([depth])
+
+   Return the name of a module from the call stack.  If optional integer *depth*
+   is given, return the module that many calls below the top of the stack.  If
+   that is deeper than the call stack, or if the module is unidentifiable,
+   ``None`` is returned.  The default for *depth* is zero, returning the
+   module at the top of the call stack.
+
+   .. audit-event:: sys._getframemodulename depth sys._getframemodulename
+
+   .. impl-detail::
+
+      This function should be used for internal and specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
+
+
 .. function:: getprofile()
 
    .. index::

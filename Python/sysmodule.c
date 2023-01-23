@@ -2172,6 +2172,43 @@ sys_is_stack_trampoline_active_impl(PyObject *module)
 }
 
 
+/*[clinic input]
+sys._getframemodulename
+
+    depth: int = 0
+
+Return the name of the module for a calling frame.
+
+The default depth returns the module containing the call to this API.
+A more typical use in a library will pass a depth of 1 to get the user's
+module rather than the library module.
+
+If no frame, module, or name can be found, returns None.
+[clinic start generated code]*/
+
+static PyObject *
+sys__getframemodulename_impl(PyObject *module, int depth)
+/*[clinic end generated code: output=1d70ef691f09d2db input=d4f1a8ed43b8fb46]*/
+{
+    if (PySys_Audit("sys._getframemodulename", "i", depth) < 0) {
+        return NULL;
+    }
+    _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
+    while (f && (_PyFrame_IsIncomplete(f) || depth-- > 0)) {
+        f = f->previous;
+    }
+    if (f == NULL || f->f_funcobj == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *r = PyFunction_GetModule(f->f_funcobj);
+    if (!r) {
+        PyErr_Clear();
+        r = Py_None;
+    }
+    return Py_NewRef(r);
+}
+
+
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
@@ -2200,6 +2237,7 @@ static PyMethodDef sys_methods[] = {
     {"getsizeof", _PyCFunction_CAST(sys_getsizeof),
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
     SYS__GETFRAME_METHODDEF
+    SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS_INTERN_METHODDEF

@@ -566,6 +566,7 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
         PyObject *module = _get_current_module();
         assert(module != NULL);
         module_state *state = get_module_state(module);
+        Py_DECREF(module);
         PyList_Append(state->record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
     }
     return _PyEval_EvalFrameDefault(tstate, f, exc);

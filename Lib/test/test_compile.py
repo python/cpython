@@ -10,7 +10,8 @@ import types
 import textwrap
 import warnings
 from test import support
-from test.support import script_helper, requires_debug_ranges
+from test.support import (script_helper, requires_debug_ranges,
+                          requires_specialization)
 from test.support.os_helper import FakePath
 
 
@@ -1121,11 +1122,11 @@ if 1:
         check_op_count(aug, "BUILD_SLICE", 0)
 
     def test_compare_positions(self):
-        for opname, op in [
-            ("COMPARE_OP", "<"),
-            ("COMPARE_OP", "<="),
-            ("COMPARE_OP", ">"),
-            ("COMPARE_OP", ">="),
+        for opname_prefix, op in [
+            ("COMPARE_", "<"),
+            ("COMPARE_", "<="),
+            ("COMPARE_", ">"),
+            ("COMPARE_", ">="),
             ("CONTAINS_OP", "in"),
             ("CONTAINS_OP", "not in"),
             ("IS_OP", "is"),
@@ -1140,7 +1141,7 @@ if 1:
                 actual_positions = [
                     instruction.positions
                     for instruction in dis.get_instructions(code)
-                    if instruction.opname == opname
+                    if instruction.opname.startswith(opname_prefix)
                 ]
                 with self.subTest(source):
                     self.assertEqual(actual_positions, expected_positions)
@@ -1251,6 +1252,7 @@ f(
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=1)
 
+    @requires_specialization
     def test_multiline_boolean_expression(self):
         snippet = """\
 if (a or
@@ -1270,7 +1272,7 @@ if (a or
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_FALSE',
             line=2, end_line=2, column=15, end_column=16, occurrence=2)
         # compare d and 0
-        self.assertOpcodeSourcePositionIs(compiled_code, 'COMPARE_OP',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'COMPARE_AND_BRANCH',
             line=4, end_line=4, column=8, end_column=13, occurrence=1)
         # jump if comparison it True
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
