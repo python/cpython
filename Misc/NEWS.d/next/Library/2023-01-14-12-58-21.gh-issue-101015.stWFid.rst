@@ -1,2 +1,2 @@
-Fix :class:`typing.ForwardRef` evaluation of ``'*tuple[...]'`` string. It
-must not drop the ``Unpack`` part.
+Fix :func:`typing.get_type_hints` on ``'*tuple[...]'`` and ``*tuple[...]``.
+It must not drop the ``Unpack`` part.
