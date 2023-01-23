@@ -1,0 +1,1 @@
+When a worker process terminates unexpectedly, ``concurrent.futures.ProcessPoolExecutor`` no longer shares one ``BrokenProcessPool`` exception instance among all failed futures. This was unsafe because exceptions are mutable. Malformed (repeated) tracebacks were the most common symptom of this bug.
