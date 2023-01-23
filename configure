@@ -8355,7 +8355,6 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
 int
 main ()
 {
@@ -8363,17 +8362,11 @@ main ()
   ;
   return 0;
 }
-
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-      STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
-      NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
-
+  ac_cv_cc_supports_fstrict_overflow=yes
 else
-
-      STRICT_OVERFLOW_CFLAGS=""
-      NO_STRICT_OVERFLOW_CFLAGS=""
+  ac_cv_cc_supports_fstrict_overflow=no
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -8383,14 +8376,27 @@ fi
 $as_echo "$ac_cv_cc_supports_fstrict_overflow" >&6; }
 CFLAGS=$save_CFLAGS
 
+if test "x$ac_cv_cc_supports_fstrict_overflow" = xyes; then :
+  STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
+           NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
+else
+  STRICT_OVERFLOW_CFLAGS=""
+           NO_STRICT_OVERFLOW_CFLAGS=""
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-strict-overflow" >&5
 $as_echo_n "checking for --with-strict-overflow... " >&6; }
 
 # Check whether --with-strict-overflow was given.
 if test "${with_strict_overflow+set}" = set; then :
   withval=$with_strict_overflow;
+    if test "x$ac_cv_cc_supports_fstrict_overflow" = xno; then :
+  as_fn_error $? "--with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" "$LINENO" 5
+fi
+
 else
   with_strict_overflow=no
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_strict_overflow" >&5

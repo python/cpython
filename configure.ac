@@ -2080,24 +2080,34 @@ CFLAGS="-fstrict-overflow -fno-strict-overflow"
 AC_CACHE_CHECK([if $CC supports -fstrict-overflow and -fno-strict-overflow],
                [ac_cv_cc_supports_fstrict_overflow],
   AC_COMPILE_IFELSE(
-    [
-      AC_LANG_PROGRAM([[]], [[]])
-    ],[
-      STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
-      NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
-    ],[
-      STRICT_OVERFLOW_CFLAGS=""
-      NO_STRICT_OVERFLOW_CFLAGS=""
-    ])
+    [AC_LANG_PROGRAM([[]], [[]])],
+    [ac_cv_cc_supports_fstrict_overflow=yes],
+    [ac_cv_cc_supports_fstrict_overflow=no]
+  )
 )
 _RESTORE_VAR([CFLAGS])
+
+AS_VAR_IF([ac_cv_cc_supports_fstrict_overflow], [yes],
+          [STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
+           NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"],
+          [STRICT_OVERFLOW_CFLAGS=""
+           NO_STRICT_OVERFLOW_CFLAGS=""])
 
 AC_MSG_CHECKING([for --with-strict-overflow])
 AC_ARG_WITH([strict-overflow],
   AS_HELP_STRING(
     [--with-strict-overflow],
-    [if 'yes', add -fstrict-overflow to CFLAGS, else add -fno-strict-overflow (default is no)]),[],
-    [with_strict_overflow=no])
+    [if 'yes', add -fstrict-overflow to CFLAGS, else add -fno-strict-overflow (default is no)]
+  ),
+  [
+    AS_VAR_IF(
+      [ac_cv_cc_supports_fstrict_overflow], [no],
+      [AC_MSG_ERROR([--with-strict-overflow=yes requires a compiler that supports -fstrict-overflow])],
+      []
+    )
+  ],
+  [with_strict_overflow=no]
+)
 AC_MSG_RESULT([$with_strict_overflow])
 
 # Check if CC supports -Og optimization level
