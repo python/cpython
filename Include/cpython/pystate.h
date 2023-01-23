@@ -266,8 +266,6 @@ struct _ts {
 // Alias for backward compatibility with Python 3.8
 #define _PyInterpreterState_Get PyInterpreterState_Get
 
-PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
-
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);

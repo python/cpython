@@ -1251,7 +1251,7 @@ PyThreadState_New(PyInterpreterState *interp)
 
 // This must be followed by a call to _PyThreadState_Bind();
 PyThreadState *
-_PyThreadState_Prealloc(PyInterpreterState *interp)
+_PyThreadState_New(PyInterpreterState *interp)
 {
     return new_threadstate(interp);
 }
@@ -2066,10 +2066,11 @@ PyGILState_Ensure(void)
     int has_gil;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
-        tcur = PyThreadState_New(runtime->gilstate.autoInterpreterState);
+        tcur = new_threadstate(runtime->gilstate.autoInterpreterState);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
         }
+        bind_tstate(tcur);
 
         /* This is our thread state!  We'll need to delete it in the
            matching call to PyGILState_Release(). */

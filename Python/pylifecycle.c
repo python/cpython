@@ -696,10 +696,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
     init_interp_settings(interp, &config);
 
-    PyThreadState *tstate = PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
+    _PyThreadState_Bind(tstate);
     (void) PyThreadState_Swap(tstate);
 
     status = init_interp_create_gil(tstate);
@@ -2074,12 +2075,13 @@ new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
         return _PyStatus_OK();
     }
 
-    PyThreadState *tstate = PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp);
     if (tstate == NULL) {
         PyInterpreterState_Delete(interp);
         *tstate_p = NULL;
         return _PyStatus_OK();
     }
+    _PyThreadState_Bind(tstate);
 
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
