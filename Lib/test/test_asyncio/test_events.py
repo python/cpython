@@ -670,6 +670,47 @@ class EventLoopTestsMixin:
             self.assertEqual(port, expected)
             tr.close()
 
+    def test_create_connection_local_addr_skip_different_family(self):
+        # See https://github.com/python/cpython/issues/86508
+        port1 = socket_helper.find_unused_port()
+        port2 = socket_helper.find_unused_port()
+        getaddrinfo_orig = self.loop.getaddrinfo
+
+        async def getaddrinfo(host, port, *args, **kwargs):
+            if port == port2:
+                return [(socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 0, 0, 0)),
+                        (socket.AF_INET, socket.SOCK_STREAM, 0, '', ('127.0.0.1', 0))]
+            return await getaddrinfo_orig(host, port, *args, **kwargs)
+
+        self.loop.getaddrinfo = getaddrinfo
+
+        f = self.loop.create_connection(
+            lambda: MyProto(loop=self.loop),
+            'localhost', port1, local_addr=('localhost', port2))
+
+        with self.assertRaises(OSError):
+            self.loop.run_until_complete(f)
+
+    def test_create_connection_local_addr_nomatch_family(self):
+        # See https://github.com/python/cpython/issues/86508
+        port1 = socket_helper.find_unused_port()
+        port2 = socket_helper.find_unused_port()
+        getaddrinfo_orig = self.loop.getaddrinfo
+
+        async def getaddrinfo(host, port, *args, **kwargs):
+            if port == port2:
+                return [(socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 0, 0, 0))]
+            return await getaddrinfo_orig(host, port, *args, **kwargs)
+
+        self.loop.getaddrinfo = getaddrinfo
+
+        f = self.loop.create_connection(
+            lambda: MyProto(loop=self.loop),
+            'localhost', port1, local_addr=('localhost', port2))
+
+        with self.assertRaises(OSError):
+            self.loop.run_until_complete(f)
+
     def test_create_connection_local_addr_in_use(self):
         with test_utils.run_test_server() as httpd:
             f = self.loop.create_connection(
@@ -2573,8 +2614,33 @@ class PolicyTests(unittest.TestCase):
     def test_get_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
         self.assertIsNone(policy._local._loop)
-        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
-            policy.get_event_loop()
+        with self.assertWarns(DeprecationWarning) as cm:
+            loop = policy.get_event_loop()
+        self.assertEqual(cm.filename, __file__)
+        self.assertIsInstance(loop, asyncio.AbstractEventLoop)
+
+        self.assertIs(policy._local._loop, loop)
+        self.assertIs(loop, policy.get_event_loop())
+        loop.close()
+
+    def test_get_event_loop_calls_set_event_loop(self):
+        policy = asyncio.DefaultEventLoopPolicy()
+
+        with mock.patch.object(
+                policy, "set_event_loop",
+                wraps=policy.set_event_loop) as m_set_event_loop:
+
+            with self.assertWarns(DeprecationWarning) as cm:
+                loop = policy.get_event_loop()
+            self.addCleanup(loop.close)
+            self.assertEqual(cm.filename, __file__)
+
+            # policy._local._loop must be set through .set_event_loop()
+            # (the unix DefaultEventLoopPolicy needs this call to attach
+            # the child watcher correctly)
+            m_set_event_loop.assert_called_with(loop)
+
+        loop.close()
 
     def test_get_event_loop_after_set_none(self):
         policy = asyncio.DefaultEventLoopPolicy()
@@ -2760,8 +2826,10 @@ class GetEventLoopTestsMixin:
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
-            with self.assertRaisesRegex(RuntimeError, 'no current'):
-                asyncio.get_event_loop()
+            with self.assertWarns(DeprecationWarning) as cm:
+                loop2 = asyncio.get_event_loop()
+            self.addCleanup(loop2.close)
+            self.assertEqual(cm.filename, __file__)
             asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()

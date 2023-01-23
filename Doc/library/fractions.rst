@@ -101,6 +101,11 @@ another rational number, or from a string.
    .. versionchanged:: 3.12
       Space is allowed around the slash for string inputs: ``Fraction('2 / 3')``.
 
+   .. versionchanged:: 3.12
+      :class:`Fraction` instances now support float-style formatting, with
+      presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
+      and ``"%""``.
+
    .. attribute:: numerator
 
       Numerator of the Fraction in lowest term.
@@ -192,6 +197,29 @@ another rational number, or from a string.
       nearest multiple of ``Fraction(1, 10**ndigits)`` (logically, if
       ``ndigits`` is negative), again rounding half toward even.  This
       method can also be accessed through the :func:`round` function.
+
+   .. method:: __format__(format_spec, /)
+
+      Provides support for float-style formatting of :class:`Fraction`
+      instances via the :meth:`str.format` method, the :func:`format` built-in
+      function, or :ref:`Formatted string literals <f-strings>`. The
+      presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
+      and ``"%"`` are supported. For these presentation types, formatting for a
+      :class:`Fraction` object ``x`` follows the rules outlined for
+      the :class:`float` type in the :ref:`formatspec` section.
+
+      Here are some examples::
+
+         >>> from fractions import Fraction
+         >>> format(Fraction(1, 7), '.40g')
+         '0.1428571428571428571428571428571428571429'
+         >>> format(Fraction('1234567.855'), '_.2f')
+         '1_234_567.86'
+         >>> f"{Fraction(355, 113):*>20.6e}"
+         '********3.141593e+00'
+         >>> old_price, new_price = 499, 672
+         >>> "{:.2%} price increase".format(Fraction(new_price, old_price) - 1)
+         '34.67% price increase'
 
 
 .. seealso::

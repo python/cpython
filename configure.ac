@@ -2288,6 +2288,10 @@ yes)
     AS_VAR_IF([ac_cv_disable_unused_parameter_warning], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"])
 
+    PY_CHECK_CC_WARNING([disable], [int-conversion])
+    AS_VAR_IF([ac_cv_disable_int_conversion], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-int-conversion"])
+
     PY_CHECK_CC_WARNING([disable], [missing-field-initializers])
     AS_VAR_IF([ac_cv_disable_missing_field_initializers_warning], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"])
@@ -2653,11 +2657,10 @@ fi
 
 # If we have set a CC compiler flag for thread support then
 # check if it works for CXX, too.
-ac_cv_cxx_thread=no
 if test ! -z "$CXX"
 then
-AC_MSG_CHECKING(whether $CXX also accepts flags for thread support)
-ac_save_cxx="$CXX"
+AC_CACHE_CHECK([whether $CXX also accepts flags for thread support], [ac_cv_cxx_thread],
+[ac_save_cxx="$CXX"
 
 if test "$ac_cv_kpthread" = "yes"
 then
@@ -2671,6 +2674,8 @@ elif test "$ac_cv_pthread" = "yes"
 then
   CXX="$CXX -pthread"
   ac_cv_cxx_thread=yes
+else
+  ac_cv_cxx_thread=no
 fi
 
 if test $ac_cv_cxx_thread = yes
@@ -2686,9 +2691,10 @@ then
   fi
   rm -fr conftest*
 fi
-AC_MSG_RESULT($ac_cv_cxx_thread)
+CXX="$ac_save_cxx"])
+else
+  ac_cv_cxx_thread=no
 fi
-CXX="$ac_save_cxx"
 
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
@@ -2958,82 +2964,6 @@ AS_VAR_IF([ac_cv_pthread_key_t_is_arithmetic_type], [yes], [
 
 CC="$ac_save_cc"
 
-AC_SUBST(OTHER_LIBTOOL_OPT)
-case $ac_sys_system/$ac_sys_release in
-  Darwin/@<:@01567@:>@\..*)
-    OTHER_LIBTOOL_OPT="-prebind -seg1addr 0x10000000"
-    ;;
-  Darwin/*)
-    OTHER_LIBTOOL_OPT=""
-    ;;
-esac
-
-
-AC_SUBST(LIBTOOL_CRUFT)
-case $ac_sys_system/$ac_sys_release in
-  Darwin/@<:@01567@:>@\..*)
-    LIBTOOL_CRUFT="-framework System -lcc_dynamic"
-    if test "${enable_universalsdk}"; then
-	    :
-    else
-        LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `/usr/bin/arch`"
-    fi
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
-  Darwin/*)
-    gcc_version=`gcc -dumpversion`
-    if test ${gcc_version} '<' 4.0
-        then
-            LIBTOOL_CRUFT="-lcc_dynamic"
-        else
-            LIBTOOL_CRUFT=""
-    fi
-    AC_RUN_IFELSE([AC_LANG_SOURCE([[
-    #include <unistd.h>
-    int main(int argc, char*argv[])
-    {
-      if (sizeof(long) == 4) {
-    	  return 0;
-      } else {
-      	  return 1;
-      }
-    }
-    ]])],[ac_osx_32bit=yes],[ac_osx_32bit=no],[ac_osx_32bit=yes])
-
-    if test "${ac_osx_32bit}" = "yes"; then
-    	case `/usr/bin/arch` in
-    	i386)
-    		MACOSX_DEFAULT_ARCH="i386"
-    		;;
-    	ppc)
-    		MACOSX_DEFAULT_ARCH="ppc"
-    		;;
-    	*)
-    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
-    		;;
-    	esac
-    else
-    	case `/usr/bin/arch` in
-    	i386)
-    		MACOSX_DEFAULT_ARCH="x86_64"
-    		;;
-    	ppc)
-    		MACOSX_DEFAULT_ARCH="ppc64"
-		;;
-    	arm64)
-    		MACOSX_DEFAULT_ARCH="arm64"
-    		;;
-    	*)
-    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
-    		;;
-    	esac
-
-    fi
-
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT" -lSystem -lSystemStubs -arch_only ${MACOSX_DEFAULT_ARCH}"
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
-esac
 AC_MSG_CHECKING(for --enable-framework)
 if test "$enable_framework"
 then
@@ -4118,8 +4048,9 @@ AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+  AS_UNSET([ac_cv_search_dbm_open])
   WITH_SAVE_ENV([
-    AC_SEARCH_LIBS([dbm_open], [gdbm_compat])
+    AC_SEARCH_LIBS([dbm_open], [gdbm_compat], [have_gdbm_compat=yes], [have_gdbm_compat=no])
   ])
 fi
 

@@ -1,3 +1,0 @@
-:meth:`winreg.SetValueEx` now leaves the target value untouched in the case of conversion errors.
-Previously, ``-1`` would be written in case of such errors.
-
