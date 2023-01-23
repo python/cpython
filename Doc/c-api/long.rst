@@ -318,3 +318,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    with :c:func:`PyLong_FromVoidPtr`.
 
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
+
+If you want to convert to or from a binary big integer array of bytes
+representation, call the Python :meth:`int.to_bytes` or :meth:`int.from_bytes`
+methods using one of the :func:`PyObject_CallMethod` C APIs.
+
