@@ -43,6 +43,13 @@ Python is deadlocked.
 The :ref:`Python Development Mode <devmode>` calls :func:`faulthandler.enable`
 at Python startup.
 
+.. seealso::
+
+   Module :mod:`pdb`
+      Interactive source code debugger for Python programs.
+
+   Module :mod:`traceback`
+      Standard interface to extract, format and print stack traces of Python programs.
 
 Dumping the traceback
 ---------------------
@@ -180,11 +187,3 @@ handler:
       File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
       File "<stdin>", line 1 in <module>
     Segmentation fault
-
-.. seealso::
-
-   Module :mod:`pdb`
-      Interactive source code debugger for Python programs.
-
-   Module :mod:`traceback`
-      Standard interface to extract, format and print stack traces of Python programs.
