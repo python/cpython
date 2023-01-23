@@ -66,7 +66,7 @@ You can experiment with an ``asyncio`` concurrent context in the REPL:
    Type "help", "copyright", "credits" or "license" for more information.
    >>> import asyncio
    >>> await asyncio.sleep(10, result='hello')
-   hello
+   'hello'
 
 .. include:: ../includes/wasm-notavail.rst
 
