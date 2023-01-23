@@ -278,13 +278,54 @@ is_jump(struct instr *i)
     return IS_JUMP_OPCODE(i->i_opcode);
 }
 
+#ifdef Py_DEBUG
+static bool
+arg_types_are_compatible(struct instr *instr) {
+    bool result = true;
+    oparg_type expected = UNUSED_ARG_TYPE;
+
+    int opcode = instr->i_opcode;
+    oparg_t oparg = instr->i_oparg;
+    if (HAS_TARGET(opcode)) {
+        if (!oparg_type_matches(oparg, JUMP_TARGET_ARG)) {
+            result = false;
+            expected = JUMP_TARGET_ARG;
+        }
+    }
+    else if (HAS_CONST(opcode)) {
+        if (!oparg_type_matches(oparg, CONST_ARG)) {
+            result = false;
+            expected = CONST_ARG;
+        }
+    }
+    else if (HAS_ARG(opcode)) {
+        if (!oparg_type_matches(oparg, EXPLICIT_ARG)) {
+            result = false;
+            expected = EXPLICIT_ARG;
+        }
+    }
+    else {
+        if (!oparg_type_matches(oparg, UNUSED_ARG_TYPE)) {
+            result = false;
+            expected = UNUSED_ARG_TYPE;
+        }
+    }
+    if (!result) {
+        fprintf(stderr,
+                "opcode = %d oparg.type = %d expected %d\n",
+                opcode, oparg.type, expected);
+    }
+    return result;
+}
+#endif
+
 static int
 instr_size(struct instr *instr)
 {
     int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
+    assert(arg_types_are_compatible(instr));
     int oparg = OPARG_VALUE(instr->i_oparg);
-    assert(HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
     return extended_args + 1 + caches;
@@ -295,8 +336,8 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instr, int ilen)
 {
     int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
+    assert(arg_types_are_compatible(instr));
     int oparg = OPARG_VALUE(instr->i_oparg);
-    assert(HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
