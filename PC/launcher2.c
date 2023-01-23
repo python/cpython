@@ -1419,11 +1419,10 @@ _isLegacyVersion(EnvironmentInfo *env)
         || (versionMajor == 3 && versionMinor >= 0 && versionMinor <= 5);
 }
 
-// Backwards-compatibility for old PythonCore versions which do not implement PEP 514.
-// These are specifically 2.X and 3.0 - 3.5.
 int
 _registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *env, const wchar_t *fallbackArch)
 {
+    // Backwards-compatibility for PythonCore versions which do not implement PEP 514.
     int exitCode = _combineWithInstallDir(
         &env->executablePath,
         env->installDir,
