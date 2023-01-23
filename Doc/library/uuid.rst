@@ -295,7 +295,7 @@ The following options are accepted:
    addressed by namespace name. Such as ``@dns``, ``@url``, ``@oid``, and ``@x500``.
    Only required for :func:`uuid3` / :func:`uuid5` functions.
 
-.. cmdoption:: -n <name>
+.. cmdoption:: -N <name>
                --name <name>
 
    The name used as part of generating the uuid. Only required for
