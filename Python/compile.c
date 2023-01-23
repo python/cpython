@@ -9090,12 +9090,14 @@ swaptimize(basicblock *block, int *ix)
     // maximum depth of the stack manipulations:
     assert(instructions[0].i_opcode == SWAP);
     int depth = OPARG_VALUE(instructions[0].i_oparg);
+    assert(instructions[0].i_oparg.type == EXPLICIT_ARG);
     int len = 0;
     int more = false;
     int limit = block->b_iused - *ix;
     while (++len < limit) {
         int opcode = instructions[len].i_opcode;
         if (opcode == SWAP) {
+            assert(instructions[len].i_oparg.type == EXPLICIT_ARG);
             depth = Py_MAX(depth, OPARG_VALUE(instructions[len].i_oparg));
             more = true;
         }
