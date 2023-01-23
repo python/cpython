@@ -1043,6 +1043,17 @@ If the ``nargs`` keyword argument is not provided, the number of arguments consu
 is determined by the action_.  Generally this means a single command-line argument
 will be consumed and a single item (not a list) will be produced.
 
+* ``'...'``. The remaining command-line args are gathered into a list,
+  including optional arguments.  If there are no remaining arguments,
+  an empty list is returned.  For example::
+
+     >>> parser = argparse.ArgumentParser()
+     >>> parser.add_argument('cmd')
+     >>> parser.add_argument('args', nargs='...')
+     >>> parser.parse_args('script.sh -v -n'.split())
+     Namespace(cmd=['script.sh'], args=['-v', '-n'])
+     >>> parser.parse_args('script.sh'.split())
+     Namespace(cmd=['script.sh'], args=[])
 
 .. _const:
 
