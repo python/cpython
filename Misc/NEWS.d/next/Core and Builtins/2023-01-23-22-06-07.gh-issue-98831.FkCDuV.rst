@@ -1,0 +1,2 @@
+Rewrite the implementation of :opcode:`CHECK_EG_MATCH` in the instruction
+definition DSL.
