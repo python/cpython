@@ -10,7 +10,8 @@ import types
 import textwrap
 import warnings
 from test import support
-from test.support import script_helper, requires_debug_ranges
+from test.support import (script_helper, requires_debug_ranges,
+                          requires_specialization)
 from test.support.os_helper import FakePath
 
 
@@ -1251,6 +1252,7 @@ f(
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=1)
 
+    @requires_specialization
     def test_multiline_boolean_expression(self):
         snippet = """\
 if (a or
