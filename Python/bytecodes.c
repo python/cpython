@@ -3124,6 +3124,7 @@ dummy_func(
 
         // error: MAKE_FUNCTION has irregular stack effect
         inst(MAKE_FUNCTION) {
+            Py_FatalError("MAKE_FUNCTION should not be used");
             PyObject *codeobj = POP();
             PyFunctionObject *func = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
