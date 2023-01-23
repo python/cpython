@@ -1433,6 +1433,16 @@ _registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentI
         return exitCode;
     }
 
+    if (search->windowed) {
+        exitCode = _registryReadString(&env->executableArgs, root, L"InstallPath", L"WindowedExecutableArguments");
+    }
+    else {
+        exitCode = _registryReadString(&env->executableArgs, root, L"InstallPath", L"ExecutableArguments");
+    }
+    if (exitCode) {
+        return exitCode;
+    }
+
     if (fallbackArch) {
         copyWstr(&env->architecture, fallbackArch);
     } else {
@@ -1477,15 +1487,6 @@ _registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentI
     wchar_t buffer[MAXLEN];
     if (swprintf_s(buffer, MAXLEN, L"Python %s", env->tag)) {
         copyWstr(&env->displayName, buffer);
-    }
-
-    if (search->windowed) {
-        exitCode = _registryReadString(&env->executableArgs, root, L"InstallPath", L"WindowedExecutableArguments");
-    } else {
-        exitCode = _registryReadString(&env->executableArgs, root, L"InstallPath", L"ExecutableArguments");
-    }
-    if (exitCode) {
-        return exitCode;
     }
 
     return 0;
