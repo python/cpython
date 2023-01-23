@@ -217,6 +217,7 @@ struct instr {
 #define INSTR_SET_OP1(I, OP, ARG) \
     do { \
         assert(HAS_ARG(OP)); \
+        assert(!IS_UNUSED(ARG)); \
         struct instr *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = (ARG); \
@@ -8990,12 +8991,12 @@ assemble(struct compiler *c, int addNone)
 }
 
 static PyObject*
-get_const_value(int opcode, int oparg, PyObject *co_consts)
+get_const_value(int opcode, oparg_t oparg, PyObject *co_consts)
 {
     PyObject *constant = NULL;
-    assert(HAS_CONST(opcode));
+    assert(oparg.type == CONST_ARG);
     if (opcode == LOAD_CONST) {
-        constant = PyList_GET_ITEM(co_consts, oparg);
+        constant = PyList_GET_ITEM(co_consts, OPARG_VALUE(oparg));
     }
 
     if (constant == NULL) {
@@ -9024,7 +9025,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     assert(OPARG_VALUE(inst[n].i_oparg) == n);
 
     for (int i = 0; i < n; i++) {
-        if (!HAS_CONST(inst[i].i_opcode)) {
+        if (inst[i].i_oparg.type != CONST_ARG) {
             return 0;
         }
     }
@@ -9036,8 +9037,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     }
     for (int i = 0; i < n; i++) {
         int op = inst[i].i_opcode;
-        int arg = OPARG_VALUE(inst[i].i_oparg);
-        PyObject *constant = get_const_value(op, arg, consts);
+        PyObject *constant = get_const_value(op, inst[i].i_oparg, consts);
         if (constant == NULL) {
             return -1;
         }
@@ -9294,7 +9294,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 switch(nextop) {
                     case POP_JUMP_IF_FALSE:
                     case POP_JUMP_IF_TRUE:
-                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        cnt = get_const_value(inst->i_opcode, inst->i_oparg, consts);
                         if (cnt == NULL) {
                             goto error;
                         }
@@ -9314,7 +9314,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         break;
                     case JUMP_IF_FALSE_OR_POP:
                     case JUMP_IF_TRUE_OR_POP:
-                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        cnt = get_const_value(inst->i_opcode, inst->i_oparg, consts);
                         if (cnt == NULL) {
                             goto error;
                         }
@@ -9333,7 +9333,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         }
                         break;
                     case IS_OP:
-                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        cnt = get_const_value(inst->i_opcode, inst->i_oparg, consts);
                         if (cnt == NULL) {
                             goto error;
                         }
@@ -9492,8 +9492,8 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             default:
-                /* All HAS_CONST opcodes should be handled with LOAD_CONST */
-                assert (!HAS_CONST(inst->i_opcode));
+                /* All HAS_CONST opcodes should be handled */
+                assert (inst->i_oparg.type != CONST_ARG);
         }
     }
     return 0;
