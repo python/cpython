@@ -3334,6 +3334,7 @@ dummy_func(
             assert(cframe.use_tracing == 0);
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            oparg1 = oparg;
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
         }

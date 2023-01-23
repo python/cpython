@@ -144,7 +144,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
-        oparg1 = oparg = _Py_OPARG(word); \
+        oparg = _Py_OPARG(word); \
+        oparg1 = oparg; \
     } while (0)
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
 #define JUMPBY(x)       (next_instr += (x))
@@ -186,6 +187,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         opcode = _Py_OPCODE(word) | cframe.use_tracing OR_DTRACE_LINE; \
         if (opcode == op) { \
             oparg = _Py_OPARG(word); \
+            oparg1 = oparg; \
             INSTRUCTION_START(op); \
             goto PREDICT_ID(op); \
         } \
