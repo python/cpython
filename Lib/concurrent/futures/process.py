@@ -471,17 +471,15 @@ class _ExecutorManagerThread(threading.Thread):
             executor._shutdown_thread = True
             executor = None
 
-        # All pending tasks are to be marked failed with the following
-        # BrokenProcessPool error
-        bpe = BrokenProcessPool("A process in the process pool was "
-                                "terminated abruptly while the future was "
-                                "running or pending.")
-        if cause is not None:
-            bpe.__cause__ = _RemoteTraceback(
-                f"\n'''\n{''.join(cause)}'''")
-
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
+            bpe = BrokenProcessPool(
+                "A process in the process pool was "
+                "terminated abruptly while the future was "
+                "running or pending.")
+            if cause is not None:
+                bpe.__cause__ = _RemoteTraceback(
+                    f"\n'''\n{''.join(cause)}'''")
             work_item.future.set_exception(bpe)
             # Delete references to object. See issue16284
             del work_item
@@ -762,7 +760,8 @@ class ProcessPoolExecutor(_base.Executor):
     def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock:
             if self._broken:
-                raise BrokenProcessPool(self._broken)
+                raise BrokenProcessPool(
+                    'cannot schedule new futures after process pool has broken')
             if self._shutdown_thread:
                 raise RuntimeError('cannot schedule new futures after shutdown')
             if _global_shutdown:
