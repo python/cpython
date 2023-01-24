@@ -51,6 +51,13 @@ static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
 static PyTypeObject pairwise_type;
 
+typedef struct {
+} itertools_state;
+
+static itertools_state global_state;
+
+#define GLOBAL_STATE (&global_state)
+
 #include "clinic/itertoolsmodule.c.h"
 
 /* batched object ************************************************************/
@@ -5029,15 +5036,12 @@ static PyMethodDef module_methods[] = {
 
 
 static struct PyModuleDef itertoolsmodule = {
-    PyModuleDef_HEAD_INIT,
-    "itertools",
-    module_doc,
-    0,
-    module_methods,
-    itertoolsmodule_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "itertools",
+    .m_doc = module_doc,
+    .m_size = sizeof(itertools_state),
+    .m_methods = module_methods,
+    .m_slots = itertoolsmodule_slots,
 };
 
 PyMODINIT_FUNC
