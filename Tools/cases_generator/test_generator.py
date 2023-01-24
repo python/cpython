@@ -344,7 +344,8 @@ def test_macro_instruction():
             {
                 PyObject *arg1 = _tmp_1;
                 PyObject *interim;
-                uint16_t counter = read_u16(&next_instr[0].cache);
+                uint16_t counter = re
+                ad_u16(&next_instr[0].cache);
                 interim = op1(arg1);
                 _tmp_1 = interim;
             }
@@ -437,6 +438,26 @@ def test_array_error_if():
             if (oparg == 0) { STACK_SHRINK(oparg); goto pop_1_somewhere; }
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_register():
+    input = """
+        register inst(OP, (counter/1, left, right -- result)) {
+            result = op(left, right);
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject *left = REG(oparg1);
+            PyObject *right = REG(oparg2);
+            PyObject *result;
+            uint16_t counter = read_u16(&next_instr[0].cache);
+            result = op(left, right);
+            Py_XSETREF(REG(oparg3), result);
+            JUMPBY(1);
             DISPATCH();
         }
     """
