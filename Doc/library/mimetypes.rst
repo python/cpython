@@ -304,8 +304,8 @@ The following options are accepted:
 
    Additionally search for some common, but non-standard types.
 
-The script scans the internal database and converts file extensions to
-MIME types if ``--extension`` option is specified, or vice versa if not.
+The script converts file extensions to MIME types if ``--extension`` option
+is specified, or vice versa if not.
 
 For each ``type`` entry, the script writes a line into the standard output
 stream. For an unknown type, it writes an error message into a standard error
