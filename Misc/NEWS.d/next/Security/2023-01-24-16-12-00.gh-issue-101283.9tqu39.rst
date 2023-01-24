@@ -1,0 +1,3 @@
+:meth:`subprocess.Popen.__init__` no-``COMSPEC`` fallback now looks for an
+absolute path ``C:\\WINDOWS\\system32\\cmd.exe`` before falling back further
+to an old ``cmd.exe``. Patch by Oleg Iarygin.
