@@ -323,7 +323,7 @@ line interface:
 .. code-block:: shell
 
    # get a MIME type by a file name
-   $ python -m mimetypes filename.png
+   python -m mimetypes filename.png
    type: image/png encoding: None
 
    # get a MIME type by a URL
@@ -335,33 +335,33 @@ line interface:
    type: application/x-tar encoding: gzip
 
    # get a MIME type for a rare file extension
-   $ python -m mimetypes filename.pict
+   python -m mimetypes filename.pict
    error: unknown extension of filename.pict
 
    # now look in the extended database built into Python
-   $ python -m mimetypes -l filename.pict
+   python -m mimetypes -l filename.pict
    type: image/pict encoding: None
 
    # get a file extension by a MIME type
-   $ python -m mimetypes -e text/javascript
+   python -m mimetypes -e text/javascript
    .js
 
    # get a file extension by a rare MIME type
-   $ python -m mimetypes -e text/xul
+   python -m mimetypes -e text/xul
    error: unknown type text/xul
 
    # now look in the extended database again
-   $ python -m mimetypes -e -l text/xul
+   python -m mimetypes -e -l text/xul
    .xul
 
    # try to feed an unknown file extension
-   $ python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
+   python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
    type: application/x-sh encoding: None
    type: application/x-netcdf encoding: None
    error: unknown extension of filename.xxx
 
    # try to feed an unknown MIME type
-   $ python -m mimetypes -e audio/aac audio/opus audio/future audio/x-wav
+   python -m mimetypes -e audio/aac audio/opus audio/future audio/x-wav
    .aac
    .opus
    error: unknown type audio/future
