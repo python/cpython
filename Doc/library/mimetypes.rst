@@ -308,6 +308,11 @@ The script scans the internal database and converts either file extensions to
 MIME types or vice versa depending on whether ``--extension`` option is
 specified.
 
+The script processes input types in supplied order. For each input type, it
+writes a line into the standard output stream. For an unknown type, it writes
+an error message into a standard error stream end exits with return code
+``1``.
+
 
 .. mimetypes-cli-example:
 
@@ -331,7 +336,7 @@ line interface:
    python -m mimetypes filename.tar.gz
    type: application/x-tar encoding: gzip
 
-   # get a MIME type for a rare file format
+   # get a MIME type for a rare file extension
    $ python -m mimetypes filename.pict
    I don't know anything about type filename.pict
 
@@ -350,3 +355,15 @@ line interface:
    # now look in the extended database again
    $ python -m mimetypes -e -l text/xul
    .xul
+
+   # try to feed an unknown file extension
+   $ python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
+   type: application/x-sh encoding: None
+   type: application/x-netcdf encoding: None
+   I don't know anything about type filename.xxx
+
+   # try to feed an unknown MIME type
+   $ python -m mimetypes -e audio/aac audio/opus audio/future audio/x-wav
+   .aac
+   .opus
+   I don't know anything about type audio/future
