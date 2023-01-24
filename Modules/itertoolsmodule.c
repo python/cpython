@@ -24,6 +24,7 @@ typedef struct {
     PyTypeObject *_grouper_type;
     PyTypeObject *pairwise_type;
     PyTypeObject *permutations_type;
+    PyTypeObject *product_type;
     PyTypeObject *starmap_type;
     PyTypeObject *takewhile_type;
     PyTypeObject *ziplongest_type;
@@ -2281,8 +2282,6 @@ typedef struct {
     int stopped;            /* set to 1 when the iterator is exhausted */
 } productobject;
 
-static PyTypeObject product_type;
-
 static PyObject *
 product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -2369,12 +2368,14 @@ error:
 static void
 product_dealloc(productobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->pools);
     Py_XDECREF(lz->result);
     if (lz->indices != NULL)
         PyMem_Free(lz->indices);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -2390,6 +2391,7 @@ PyDoc_STRVAR(sizeof_doc, "Returns size in memory, in bytes.");
 static int
 product_traverse(productobject *lz, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->pools);
     Py_VISIT(lz->result);
     return 0;
@@ -2581,48 +2583,25 @@ product(A, repeat=4) means the same as product(A, A, A, A).\n\n\
 product('ab', range(3)) --> ('a',0) ('a',1) ('a',2) ('b',0) ('b',1) ('b',2)\n\
 product((0,1), (0,1), (0,1)) --> (0,0,0) (0,0,1) (0,1,0) (0,1,1) (1,0,0) ...");
 
-static PyTypeObject product_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.product",                /* tp_name */
-    sizeof(productobject),              /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)product_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    product_doc,                        /* tp_doc */
-    (traverseproc)product_traverse,     /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)product_next,         /* tp_iternext */
-    product_methods,                    /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    product_new,                        /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot product_slots[] = {
+    {Py_tp_dealloc, product_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)product_doc},
+    {Py_tp_traverse, product_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, product_next},
+    {Py_tp_methods, product_methods},
+    {Py_tp_new, product_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec product_spec = {
+    .name = "itertools.product",
+    .basicsize = sizeof(productobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = product_slots,
 };
 
 
@@ -4727,6 +4706,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->_grouper_type);
     Py_VISIT(state->pairwise_type);
     Py_VISIT(state->permutations_type);
+    Py_VISIT(state->product_type);
     Py_VISIT(state->starmap_type);
     Py_VISIT(state->takewhile_type);
     Py_VISIT(state->ziplongest_type);
@@ -4749,6 +4729,7 @@ itertoolsmodule_clear(PyObject *mod)
     Py_CLEAR(state->_grouper_type);
     Py_CLEAR(state->pairwise_type);
     Py_CLEAR(state->permutations_type);
+    Py_CLEAR(state->product_type);
     Py_CLEAR(state->starmap_type);
     Py_CLEAR(state->takewhile_type);
     Py_CLEAR(state->ziplongest_type);
@@ -4788,6 +4769,7 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->_grouper_type, &_grouper_spec);
     ADD_TYPE(mod, state->pairwise_type, &pairwise_spec);
     ADD_TYPE(mod, state->permutations_type, &permutations_spec);
+    ADD_TYPE(mod, state->product_type, &product_spec);
     ADD_TYPE(mod, state->starmap_type, &starmap_spec);
     ADD_TYPE(mod, state->takewhile_type, &takewhile_spec);
     ADD_TYPE(mod, state->ziplongest_type, &ziplongest_spec);
@@ -4796,7 +4778,6 @@ itertoolsmodule_exec(PyObject *mod)
         &batched_type,
         &islice_type,
         &chain_type,
-        &product_type,
         &repeat_type,
         &tee_type,
         &teedataobject_type
