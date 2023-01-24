@@ -345,7 +345,7 @@ static PyObject *
 itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &cycle_type;
+    PyTypeObject *base_tp = clinic_state()->cycle_type;
     PyObject *iterable;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
@@ -913,4 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c3069caac417e165 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64eabf8df5172fb2 input=a9049054013a1b77]*/
