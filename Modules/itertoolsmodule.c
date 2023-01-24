@@ -2206,7 +2206,8 @@ static PyType_Slot chain_slots[] = {
 static PyType_Spec chain_spec = {
     .name = "itertools.chain",
     .basicsize = sizeof(chainobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = chain_slots,
 };
 
@@ -4316,7 +4317,8 @@ static PyType_Slot repeat_slots[] = {
 static PyType_Spec repeat_spec = {
     .name = "itertools.repeat",
     .basicsize = sizeof(repeatobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = repeat_slots,
 };
 
