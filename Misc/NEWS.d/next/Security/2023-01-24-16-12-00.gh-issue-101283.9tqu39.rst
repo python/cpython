@@ -1,3 +1,6 @@
-:meth:`subprocess.Popen.__init__` no-``COMSPEC`` fallback now looks for an
-absolute path ``C:\\WINDOWS\\system32\\cmd.exe`` before falling back further
-to an old ``cmd.exe``. Patch by Oleg Iarygin.
+Windows version of :meth:`subprocess.Popen.__init__` with
+``shell=True`` made its shell search algorithm protected from dropping
+a program named ``cmd.exe`` into a current directory. Now the current
+directory is used as the last resort if system environment variables
+are totally stripped and Windows is installed not into ``C\Windows``.
+Patch by Eryk Sun.
