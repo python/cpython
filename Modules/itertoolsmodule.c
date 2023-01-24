@@ -18,6 +18,7 @@ typedef struct {
     PyTypeObject *dropwhile_type;
     PyTypeObject *groupby_type;
     PyTypeObject *_grouper_type;
+    PyTypeObject *permutations_type;
     PyTypeObject *starmap_type;
     PyTypeObject *takewhile_type;
 } itertools_state;
@@ -63,19 +64,18 @@ class itertools.starmap "starmapobject *" "clinic_state()->starmap_type"
 class itertools.chain "chainobject *" "&chain_type"
 class itertools.combinations "combinationsobject *" "clinic_state()->combinations_type"
 class itertools.combinations_with_replacement "cwr_object *" "clinic_state()->cwr_type"
-class itertools.permutations "permutationsobject *" "&permutations_type"
+class itertools.permutations "permutationsobject *" "clinic_state()->permutations_type"
 class itertools.accumulate "accumulateobject *" "&accumulate_type"
 class itertools.compress "compressobject *" "&compress_type"
 class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d44fee9ebae461fb]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1790ac655869a651]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
 static PyTypeObject batched_type;
-static PyTypeObject permutations_type;
 static PyTypeObject accumulate_type;
 static PyTypeObject compress_type;
 static PyTypeObject filterfalse_type;
@@ -3356,12 +3356,14 @@ error:
 static void
 permutations_dealloc(permutationsobject *po)
 {
+    PyTypeObject *tp = Py_TYPE(po);
     PyObject_GC_UnTrack(po);
     Py_XDECREF(po->pool);
     Py_XDECREF(po->result);
     PyMem_Free(po->indices);
     PyMem_Free(po->cycles);
-    Py_TYPE(po)->tp_free(po);
+    tp->tp_free(po);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -3376,6 +3378,7 @@ permutations_sizeof(permutationsobject *po, void *unused)
 static int
 permutations_traverse(permutationsobject *po, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(po));
     Py_VISIT(po->pool);
     Py_VISIT(po->result);
     return 0;
@@ -3581,48 +3584,25 @@ static PyMethodDef permuations_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject permutations_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.permutations",           /* tp_name */
-    sizeof(permutationsobject),         /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)permutations_dealloc,   /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_permutations__doc__,      /* tp_doc */
-    (traverseproc)permutations_traverse,/* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)permutations_next,    /* tp_iternext */
-    permuations_methods,                /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_permutations,             /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot permutations_slots[] = {
+    {Py_tp_dealloc, permutations_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_permutations__doc__},
+    {Py_tp_traverse, permutations_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, permutations_next},
+    {Py_tp_methods, permuations_methods},
+    {Py_tp_new, itertools_permutations},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec permutations_spec = {
+    .name = "itertools.permutations",
+    .basicsize = sizeof(permutationsobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = permutations_slots,
 };
 
 
@@ -4861,6 +4841,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->dropwhile_type);
     Py_VISIT(state->groupby_type);
     Py_VISIT(state->_grouper_type);
+    Py_VISIT(state->permutations_type);
     Py_VISIT(state->starmap_type);
     Py_VISIT(state->takewhile_type);
     return 0;
@@ -4876,6 +4857,7 @@ itertoolsmodule_clear(PyObject *mod)
     Py_CLEAR(state->dropwhile_type);
     Py_CLEAR(state->groupby_type);
     Py_CLEAR(state->_grouper_type);
+    Py_CLEAR(state->permutations_type);
     Py_CLEAR(state->starmap_type);
     Py_CLEAR(state->takewhile_type);
     return 0;
@@ -4908,6 +4890,7 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->dropwhile_type, &dropwhile_spec);
     ADD_TYPE(mod, state->groupby_type, &groupby_spec);
     ADD_TYPE(mod, state->_grouper_type, &_grouper_spec);
+    ADD_TYPE(mod, state->permutations_type, &permutations_spec);
     ADD_TYPE(mod, state->starmap_type, &starmap_spec);
     ADD_TYPE(mod, state->takewhile_type, &takewhile_spec);
 
@@ -4921,7 +4904,6 @@ itertoolsmodule_exec(PyObject *mod)
         &count_type,
         &ziplongest_type,
         &pairwise_type,
-        &permutations_type,
         &product_type,
         &repeat_type,
         &tee_type,
