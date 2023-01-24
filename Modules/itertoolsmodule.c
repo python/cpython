@@ -14,6 +14,7 @@
 
 typedef struct {
     PyTypeObject *accumulate_type;
+    PyTypeObject *batched_type;
     PyTypeObject *chain_type;
     PyTypeObject *combinations_type;
     PyTypeObject *compress_type;
@@ -68,7 +69,7 @@ class itertools.groupby "groupbyobject *" "clinic_state()->groupby_type"
 class itertools._grouper "_grouperobject *" "clinic_state()->_grouper_type"
 class itertools.teedataobject "teedataobject *" "clinic_state()->teedataobject_type"
 class itertools._tee "teeobject *" "clinic_state()->tee_type"
-class itertools.batched "batchedobject *" "&batched_type"
+class itertools.batched "batchedobject *" "clinic_state()->batched_type"
 class itertools.cycle "cycleobject *" "clinic_state()->cycle_type"
 class itertools.dropwhile "dropwhileobject *" "clinic_state()->dropwhile_type"
 class itertools.takewhile "takewhileobject *" "clinic_state()->takewhile_type"
@@ -83,9 +84,7 @@ class itertools.filterfalse "filterfalseobject *" "clinic_state()->filterfalse_t
 class itertools.count "countobject *" "clinic_state()->count_type"
 class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=419423f2d82cf388]*/
-
-static PyTypeObject batched_type;
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=aa48fe4de9d4080f]*/
 
 #define clinic_state() (find_state_by_type(type))
 #define clinic_state_by_cls() (get_module_state_by_cls(base_tp))
@@ -166,17 +165,18 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
 static void
 batched_dealloc(batchedobject *bo)
 {
+    PyTypeObject *tp = Py_TYPE(bo);
     PyObject_GC_UnTrack(bo);
     Py_XDECREF(bo->it);
-    Py_TYPE(bo)->tp_free(bo);
+    tp->tp_free(bo);
+    Py_DECREF(tp);
 }
 
 static int
 batched_traverse(batchedobject *bo, visitproc visit, void *arg)
 {
-    if (bo->it != NULL) {
-        Py_VISIT(bo->it);
-    }
+    Py_VISIT(Py_TYPE(bo));
+    Py_VISIT(bo->it);
     return 0;
 }
 
@@ -226,48 +226,25 @@ batched_next(batchedobject *bo)
     return result;
 }
 
-static PyTypeObject batched_type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "itertools.batched",            /* tp_name */
-    sizeof(batchedobject),          /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    /* methods */
-    (destructor)batched_dealloc,    /* tp_dealloc */
-    0,                              /* tp_vectorcall_offset */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_as_async */
-    0,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    0,                              /* tp_as_sequence */
-    0,                              /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    0,                              /* tp_str */
-    PyObject_GenericGetAttr,        /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,        /* tp_flags */
-    batched_new__doc__,             /* tp_doc */
-    (traverseproc)batched_traverse, /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    PyObject_SelfIter,              /* tp_iter */
-    (iternextfunc)batched_next,     /* tp_iternext */
-    0,                              /* tp_methods */
-    0,                              /* tp_members */
-    0,                              /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    batched_new,                    /* tp_new */
-    PyObject_GC_Del,                /* tp_free */
+static PyType_Slot batched_slots[] = {
+    {Py_tp_dealloc, batched_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)batched_new__doc__},
+    {Py_tp_traverse, batched_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, batched_next},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, batched_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec batched_spec = {
+    .name = "itertools.batched",
+    .basicsize = sizeof(batchedobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = batched_slots,
 };
 
 
@@ -4612,6 +4589,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     itertools_state *state = get_module_state(mod);
     Py_VISIT(state->accumulate_type);
+    Py_VISIT(state->batched_type);
     Py_VISIT(state->chain_type);
     Py_VISIT(state->combinations_type);
     Py_VISIT(state->compress_type);
@@ -4639,6 +4617,7 @@ itertoolsmodule_clear(PyObject *mod)
 {
     itertools_state *state = get_module_state(mod);
     Py_CLEAR(state->accumulate_type);
+    Py_CLEAR(state->batched_type);
     Py_CLEAR(state->chain_type);
     Py_CLEAR(state->combinations_type);
     Py_CLEAR(state->compress_type);
@@ -4683,6 +4662,7 @@ itertoolsmodule_exec(PyObject *mod)
 {
     itertools_state *state = get_module_state(mod);
     ADD_TYPE(mod, state->accumulate_type, &accumulate_spec);
+    ADD_TYPE(mod, state->batched_type, &batched_spec);
     ADD_TYPE(mod, state->chain_type, &chain_spec);
     ADD_TYPE(mod, state->combinations_type, &combinations_spec);
     ADD_TYPE(mod, state->compress_type, &compress_spec);
@@ -4704,18 +4684,7 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->teedataobject_type, &teedataobject_spec);
     ADD_TYPE(mod, state->ziplongest_type, &ziplongest_spec);
 
-    PyTypeObject *typelist[] = {
-        &batched_type,
-    };
-
     Py_SET_TYPE(state->teedataobject_type, &PyType_Type);
-
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
-        if (PyModule_AddType(mod, typelist[i]) < 0) {
-            return -1;
-        }
-    }
-
     return 0;
 }
 
