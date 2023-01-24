@@ -744,7 +744,8 @@ error:
 static void
 interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
-    assert(interp != NULL && tstate != NULL);
+    assert(interp != NULL);
+    assert(tstate != NULL);
     _PyRuntimeState *runtime = interp->runtime;
 
     /* XXX Conditions we need to enforce:
@@ -754,6 +755,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
        * tstate->interp must be interp
        * for the main interpreter, tstate must be the main thread
      */
+    // XXX Ideally, we would not rely on any thread state in this function
+    // (and we would drop the "tstate" argument).
 
     if (_PySys_Audit(tstate, "cpython.PyInterpreterState_Clear", NULL) < 0) {
         _PyErr_Clear(tstate);
@@ -862,6 +865,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     _PyRuntimeState *runtime = interp->runtime;
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
+    // XXX Clearing the "current" thread state should happen before
+    // we start finalizing the interpreter (or the current thread state).
     PyThreadState *tcur = current_fast_get(runtime);
     if (tcur != NULL && interp == tcur->interp) {
         /* Unset current thread.  After this, many C API calls become crashy. */
@@ -1612,8 +1617,8 @@ static inline void
 tstate_deactivate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
+    // XXX assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
-    // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
     assert(tstate->_status.active);
 
     tstate->_status.active = 0;
