@@ -2495,11 +2495,9 @@
                 // Success!
                 assert(PyTuple_CheckExact(attrs));
             }
-            else if (_PyErr_Occurred(tstate)) {
-                // Error!
-                if (true) goto pop_3_error;
-            }
             else {
+                // Error!
+                if (_PyErr_Occurred(tstate)) goto pop_3_error;
                 // Failure!
                 attrs = Py_NewRef(Py_None);
             }

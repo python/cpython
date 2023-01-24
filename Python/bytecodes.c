@@ -2103,11 +2103,9 @@ dummy_func(
                 // Success!
                 assert(PyTuple_CheckExact(attrs));
             }
-            else if (_PyErr_Occurred(tstate)) {
-                // Error!
-                ERROR_IF(true, error);
-            }
             else {
+                // Error!
+                ERROR_IF(_PyErr_Occurred(tstate), error);
                 // Failure!
                 attrs = Py_NewRef(Py_None);
             }
