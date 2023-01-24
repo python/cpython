@@ -450,7 +450,12 @@ itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
+<<<<<<< HEAD
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+=======
+    if ((type == clinic_state()->starmap_type ||
+         type->tp_init == clinic_state()->starmap_type->tp_init) &&
+>>>>>>> 610c52202a (gh-101277: Add starmap type to module state)
         !_PyArg_NoKeywords("starmap", kwargs)) {
         goto exit;
     }
@@ -919,7 +924,11 @@ exit:
     return return_value;
 }
 <<<<<<< HEAD
-/*[clinic end generated code: output=c3b4c4dba10fc911 input=a9049054013a1b77]*/
+<<<<<<< HEAD
+/*[clinic end generated code: output=bef66ff0bff0a951 input=a9049054013a1b77]*/
 =======
 /*[clinic end generated code: output=165d47c9da0e01d3 input=a9049054013a1b77]*/
 >>>>>>> 4e23243ee8 (gh-101277: Add takewhile type to module state)
+=======
+/*[clinic end generated code: output=874770ce22a5cca2 input=a9049054013a1b77]*/
+>>>>>>> 610c52202a (gh-101277: Add starmap type to module state)
