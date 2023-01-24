@@ -596,6 +596,7 @@ _default_mime_types()
 
 
 def _main():
+    """Run the mimetypes command line interface."""
     from argparse import ArgumentParser
     parser = ArgumentParser(description='map filename extensions to MIME types')
     parser.add_argument(

@@ -280,7 +280,6 @@ Command-Line Usage
 ------------------
 
 The :mod:`mimetypes` module can be executed as a script from the command line.
-It is as simple as:
 
 .. code-block:: sh
 
@@ -290,18 +289,55 @@ The following options are accepted:
 
 .. program:: mimetypes
 
-.. cmdoption:: -h, --help
+.. cmdoption:: -h
+               --help
 
    Show the help message and exit.
 
-.. cmdoption:: -e, --extension
+.. cmdoption:: -e
+               --extension
 
    Guess extension instead of type.
 
-.. cmdoption:: -l, --lenient
+.. cmdoption:: -l
+               --lenient
 
-   Additionally search of some common, but non-standard types.
+   Additionally search for some common, but non-standard types.s
 
 The script scans the internal database and converts either file extensions to
 MIME types or vice versa depending on whether ``--extension`` option is
 specified.
+
+.. mimetypes-cli-example:
+
+Command-Line Example
+--------------------
+
+Here are some examples of typical usage of the :mod:`mimetypes` command
+line interface:
+
+.. code-block:: shell
+
+   # get a MIME type by a file name
+   $ python -m mimetypes filename.png
+   type: image/png encoding: None
+
+   # get a MIME type for a rare file format
+   $ python -m mimetypes filename.pict
+   I don't know anything about type filename.pict
+
+   # now look in the extended database built into Python
+   $ python -m mimetypes -l filename.pict
+   type: image/pict encoding: None
+
+   # get a file extension by a MIME type
+   $ python -m mimetypes -e text/javascript
+   .js
+
+   # get a file extension by a rare MIME type
+   $ python -m mimetypes -e text/xul
+   I don't know anything about type text/xul
+
+   # now look in the extended database again
+   $ python -m mimetypes -e -l text/xul
+   .xul
