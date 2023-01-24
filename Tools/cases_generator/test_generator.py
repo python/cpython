@@ -319,20 +319,21 @@ def test_super_instruction():
 
 def test_macro_instruction():
     input = """
-        inst(OP1, (counter/1, arg --)) {
-            op1();
+        inst(OP1, (counter/1, arg1 -- interim)) {
+            interim = op1(arg1);
         }
-        op(OP2, (extra/2, arg --)) {
-            op2();
+        op(OP2, (extra/2, arg2, interim -- res)) {
+            res = op2(arg2, interim);
         }
         macro(OP) = OP1 + cache/2 + OP2;
     """
     output = """
         TARGET(OP1) {
-            PyObject *arg = PEEK(1);
+            PyObject *arg1 = PEEK(1);
+            PyObject *interim;
             uint16_t counter = read_u16(&next_instr[0].cache);
-            op1();
-            STACK_SHRINK(1);
+            interim = op1(arg1);
+            POKE(1, interim);
             JUMPBY(1);
             DISPATCH();
         }
@@ -341,17 +342,23 @@ def test_macro_instruction():
             PyObject *_tmp_1 = PEEK(1);
             PyObject *_tmp_2 = PEEK(2);
             {
-                PyObject *arg = _tmp_1;
+                PyObject *arg1 = _tmp_1;
+                PyObject *interim;
                 uint16_t counter = read_u16(&next_instr[0].cache);
-                op1();
+                interim = op1(arg1);
+                _tmp_1 = interim;
             }
             {
-                PyObject *arg = _tmp_2;
+                PyObject *interim = _tmp_1;
+                PyObject *arg2 = _tmp_2;
+                PyObject *res;
                 uint32_t extra = read_u32(&next_instr[3].cache);
-                op2();
+                res = op2(arg2, interim);
+                _tmp_2 = res;
             }
             JUMPBY(5);
-            STACK_SHRINK(2);
+            STACK_SHRINK(1);
+            POKE(1, _tmp_2);
             DISPATCH();
         }
     """
