@@ -14,6 +14,7 @@
 typedef struct {
     PyTypeObject *accumulate_type;
     PyTypeObject *combinations_type;
+    PyTypeObject *compress_type;
     PyTypeObject *cwr_type;
     PyTypeObject *cycle_type;
     PyTypeObject *dropwhile_type;
@@ -67,17 +68,16 @@ class itertools.combinations "combinationsobject *" "clinic_state()->combination
 class itertools.combinations_with_replacement "cwr_object *" "clinic_state()->cwr_type"
 class itertools.permutations "permutationsobject *" "clinic_state()->permutations_type"
 class itertools.accumulate "accumulateobject *" "clinic_state()->accumulate_type"
-class itertools.compress "compressobject *" "&compress_type"
+class itertools.compress "compressobject *" "clinic_state()->compress_type"
 class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e0155dd6d01d40dd]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=18f0df1fc6fbed08]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
 static PyTypeObject batched_type;
-static PyTypeObject compress_type;
 static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
 static PyTypeObject pairwise_type;
@@ -3844,15 +3844,18 @@ fail:
 static void
 compress_dealloc(compressobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->data);
     Py_XDECREF(lz->selectors);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
 compress_traverse(compressobject *lz, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->data);
     Py_VISIT(lz->selectors);
     return 0;
@@ -3907,48 +3910,25 @@ static PyMethodDef compress_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject compress_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.compress",               /* tp_name */
-    sizeof(compressobject),             /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)compress_dealloc,       /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_compress__doc__,          /* tp_doc */
-    (traverseproc)compress_traverse,    /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)compress_next,        /* tp_iternext */
-    compress_methods,                   /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_compress,                 /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot compress_slots[] = {
+    {Py_tp_dealloc, compress_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_compress__doc__},
+    {Py_tp_traverse, compress_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, compress_next},
+    {Py_tp_methods, compress_methods},
+    {Py_tp_new, itertools_compress},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec compress_spec = {
+    .name = "itertools.compress",
+    .basicsize = sizeof(compressobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = compress_slots,
 };
 
 
@@ -4817,6 +4797,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     itertools_state *state = get_module_state(mod);
     Py_VISIT(state->accumulate_type);
     Py_VISIT(state->combinations_type);
+    Py_VISIT(state->compress_type);
     Py_VISIT(state->cwr_type);
     Py_VISIT(state->cycle_type);
     Py_VISIT(state->dropwhile_type);
@@ -4834,6 +4815,7 @@ itertoolsmodule_clear(PyObject *mod)
     itertools_state *state = get_module_state(mod);
     Py_CLEAR(state->accumulate_type);
     Py_CLEAR(state->combinations_type);
+    Py_CLEAR(state->compress_type);
     Py_CLEAR(state->cwr_type);
     Py_CLEAR(state->cycle_type);
     Py_CLEAR(state->dropwhile_type);
@@ -4868,6 +4850,7 @@ itertoolsmodule_exec(PyObject *mod)
     itertools_state *state = get_module_state(mod);
     ADD_TYPE(mod, state->accumulate_type, &accumulate_spec);
     ADD_TYPE(mod, state->combinations_type, &combinations_spec);
+    ADD_TYPE(mod, state->compress_type, &compress_spec);
     ADD_TYPE(mod, state->cwr_type, &cwr_spec);
     ADD_TYPE(mod, state->cycle_type, &cycle_spec);
     ADD_TYPE(mod, state->dropwhile_type, &dropwhile_spec);
@@ -4881,7 +4864,6 @@ itertoolsmodule_exec(PyObject *mod)
         &batched_type,
         &islice_type,
         &chain_type,
-        &compress_type,
         &filterfalse_type,
         &count_type,
         &ziplongest_type,
