@@ -886,6 +886,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 
         if (err == Z_STREAM_ERROR) {
             zlib_error(state, self->zst, err, "while flushing");
+            Py_CLEAR(return_value);
             goto error;
         }
     } while (self->zst.avail_out == 0);
@@ -898,6 +899,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
         err = deflateEnd(&self->zst);
         if (err != Z_OK) {
             zlib_error(state, self->zst, err, "while finishing compression");
+            Py_CLEAR(return_value);
             goto error;
         }
         else
@@ -909,6 +911,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
         */
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(state, self->zst, err, "while flushing");
+        Py_CLEAR(return_value);
         goto error;
     }
 
