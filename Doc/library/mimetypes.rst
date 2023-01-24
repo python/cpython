@@ -302,16 +302,14 @@ The following options are accepted:
 .. cmdoption:: -l
                --lenient
 
-   Additionally search for some common, but non-standard types.s
+   Additionally search for some common, but non-standard types.
 
-The script scans the internal database and converts either file extensions to
-MIME types or vice versa depending on whether ``--extension`` option is
-specified.
+The script scans the internal database and converts file extensions to
+MIME types if ``--extension`` option is specified, or vice versa if not.
 
-The script processes input types in supplied order. For each input type, it
-writes a line into the standard output stream. For an unknown type, it writes
-an error message into a standard error stream end exits with return code
-``1``.
+For each ``type`` entry, the script writes a line into the standard output
+stream. For an unknown type, it writes an error message into a standard error
+stream end exits with the return code ``1``.
 
 
 .. mimetypes-cli-example:
