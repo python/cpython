@@ -1,3 +1,3 @@
-Command-line :mod:`mimetypes` now exits with ``1`` instead of ``0``
-on failure and ``2`` instead of ``1`` on incorrect command line parameters.
+Command-line :mod:`mimetypes` now exits with ``1`` on failure instead of ``0``
+and ``2`` on incorrect command line parameters instead of ``1``.
 Also, errors are printed to stderr instead of stdout. Patch by Oleg Iarygin.
