@@ -700,7 +700,10 @@ iterations of the loop.
    Yields ``STACK.pop()`` from a :term:`generator`.
 
     .. versionchanged:: 3.11
-       oparg set to be the stack depth, for efficient handling on frames.
+       oparg set to be the stack depth.
+
+    .. versionchanged:: 3.12
+       oparg set to be the exception block depth, for efficient closing of generators.
 
 
 .. opcode:: SETUP_ANNOTATIONS
