@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _howto-clinic:
+
 **********************
 Argument Clinic How-To
 **********************
@@ -84,7 +86,7 @@ If you run that script, specifying a C file as an argument:
 
 .. code-block:: shell-session
 
-    $ python3 Tools/clinic/clinic.py foo.c
+    $ python Tools/clinic/clinic.py foo.c
 
 Argument Clinic will scan over the file looking for lines that
 look exactly like this:
@@ -539,9 +541,17 @@ Let's dive in!
         };
 
 
-16. Compile, then run the relevant portions of the regression-test suite.
+16. Argument Clinic may generate new instances of ``_Py_ID``. For example::
+
+        &_Py_ID(new_unique_py_id)
+
+    If it does, you'll have to run ``Tools/scripts/generate_global_objects.py``
+    to regenerate the list of precompiled identifiers at this point.
+
+
+17. Compile, then run the relevant portions of the regression-test suite.
     This change should not introduce any new compile-time warnings or errors,
-    and there should be no externally-visible change to Python's behavior.
+    and there should be no externally visible change to Python's behavior.
 
     Well, except for one difference: ``inspect.signature()`` run on your function
     should now provide a valid signature!
@@ -1070,11 +1080,6 @@ None of these take parameters.  For the first three, return -1 to indicate
 error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a ``NULL``
 pointer to indicate an error.
 
-(There's also an experimental ``NoneType`` converter, which lets you
-return ``Py_None`` on success or ``NULL`` on failure, without having
-to increment the reference count on ``Py_None``.  I'm not sure it adds
-enough clarity to be worth using.)
-
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),
 just run ``Tools/clinic/clinic.py --converters`` for the full list.
@@ -1117,7 +1122,7 @@ Here's the syntax for cloning a function::
 ``module.class`` in the sample just to illustrate that you must
 use the full path to *both* functions.)
 
-Sorry, there's no syntax for partially-cloning a function, or cloning a function
+Sorry, there's no syntax for partially cloning a function, or cloning a function
 then modifying it.  Cloning is an all-or nothing proposition.
 
 Also, the function you are cloning from must have been previously defined
@@ -1315,7 +1320,7 @@ to specify in your subclass.  Here's the current list:
     there is no default, but not specifying a default may
     result in an "uninitialized variable" warning.  This can
     easily happen when using option groups—although
-    properly-written code will never actually use this value,
+    properly written code will never actually use this value,
     the variable does get passed in to the impl, and the
     C compiler will complain about the "use" of the
     uninitialized value.  This value should always be a

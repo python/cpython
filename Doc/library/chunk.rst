@@ -17,7 +17,7 @@
    single: Real Media File Format
    single: RMFF
 
-.. deprecated:: 3.11
+.. deprecated-removed:: 3.11 3.13
    The :mod:`chunk` module is deprecated
    (see :pep:`PEP 594 <594#chunk>` for details).
 

@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_winapi_Overlapped_GetOverlappedResult__doc__,
 "GetOverlappedResult($self, wait, /)\n"
 "--\n"
@@ -106,8 +112,31 @@ static PyObject *
 _winapi_ConnectNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(handle), &_Py_ID(overlapped), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"handle", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "|i:ConnectNamedPipe", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "" F_HANDLE "|p:ConnectNamedPipe",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     HANDLE handle;
     int use_overlapped = 0;
 
@@ -192,7 +221,7 @@ _winapi_CreateFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t na
     DWORD protect;
     DWORD max_size_high;
     DWORD max_size_low;
-    LPCWSTR name;
+    LPCWSTR name = NULL;
     HANDLE _return_value;
 
     if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_POINTER "kkkO&:CreateFileMapping",
@@ -231,8 +260,8 @@ static PyObject *
 _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCWSTR src_path;
-    LPCWSTR dst_path;
+    LPCWSTR src_path = NULL;
+    LPCWSTR dst_path = NULL;
 
     if (!_PyArg_CheckPositional("CreateJunction", nargs, 2, 2)) {
         goto exit;
@@ -380,14 +409,14 @@ static PyObject *
 _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *application_name;
+    const Py_UNICODE *application_name = NULL;
     PyObject *command_line;
     PyObject *proc_attrs;
     PyObject *thread_attrs;
     BOOL inherit_handles;
     DWORD creation_flags;
     PyObject *env_mapping;
-    const Py_UNICODE *current_directory;
+    const Py_UNICODE *current_directory = NULL;
     PyObject *startup_info;
 
     if (!_PyArg_ParseStack(args, nargs, "O&OOOikOO&O:CreateProcess",
@@ -713,6 +742,32 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_UnmapViewOfFile__doc__,
+"UnmapViewOfFile($module, address, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_UNMAPVIEWOFFILE_METHODDEF    \
+    {"UnmapViewOfFile", (PyCFunction)_winapi_UnmapViewOfFile, METH_O, _winapi_UnmapViewOfFile__doc__},
+
+static PyObject *
+_winapi_UnmapViewOfFile_impl(PyObject *module, LPCVOID address);
+
+static PyObject *
+_winapi_UnmapViewOfFile(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    LPCVOID address;
+
+    if (!PyArg_Parse(arg, "" F_POINTER ":UnmapViewOfFile", &address)) {
+        goto exit;
+    }
+    return_value = _winapi_UnmapViewOfFile_impl(module, address);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_OpenFileMapping__doc__,
 "OpenFileMapping($module, desired_access, inherit_handle, name, /)\n"
 "--\n"
@@ -731,7 +786,7 @@ _winapi_OpenFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *return_value = NULL;
     DWORD desired_access;
     BOOL inherit_handle;
-    LPCWSTR name;
+    LPCWSTR name = NULL;
     HANDLE _return_value;
 
     if (!_PyArg_ParseStack(args, nargs, "kiO&:OpenFileMapping",
@@ -820,6 +875,66 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_LCMapStringEx__doc__,
+"LCMapStringEx($module, /, locale, flags, src)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_LCMAPSTRINGEX_METHODDEF    \
+    {"LCMapStringEx", _PyCFunction_CAST(_winapi_LCMapStringEx), METH_FASTCALL|METH_KEYWORDS, _winapi_LCMapStringEx__doc__},
+
+static PyObject *
+_winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
+                           LPCWSTR src);
+
+static PyObject *
+_winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(locale), &_Py_ID(flags), &_Py_ID(src), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"locale", "flags", "src", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "O&kO&:LCMapStringEx",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    LPCWSTR locale = NULL;
+    DWORD flags;
+    LPCWSTR src = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        _PyUnicode_WideCharString_Converter, &locale, &flags, _PyUnicode_WideCharString_Converter, &src)) {
+        goto exit;
+    }
+    return_value = _winapi_LCMapStringEx_impl(module, locale, flags, src);
+
+exit:
+    /* Cleanup for locale */
+    PyMem_Free((void *)locale);
+    /* Cleanup for src */
+    PyMem_Free((void *)src);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_ReadFile__doc__,
 "ReadFile($module, /, handle, size, overlapped=False)\n"
 "--\n"
@@ -836,8 +951,31 @@ static PyObject *
 _winapi_ReadFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(handle), &_Py_ID(size), &_Py_ID(overlapped), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "k|i:ReadFile", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "" F_HANDLE "k|p:ReadFile",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     HANDLE handle;
     DWORD size;
     int use_overlapped = 0;
@@ -1061,8 +1199,31 @@ static PyObject *
 _winapi_WriteFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(handle), &_Py_ID(buffer), &_Py_ID(overlapped), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"handle", "buffer", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "O|i:WriteFile", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "" F_HANDLE "O|p:WriteFile",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     HANDLE handle;
     PyObject *buffer;
     int use_overlapped = 0;
@@ -1110,8 +1271,31 @@ static PyObject *
 _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(handle), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"handle", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE ":GetFileType", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "" F_HANDLE ":GetFileType",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     HANDLE handle;
     DWORD _return_value;
 
@@ -1149,8 +1333,31 @@ static PyObject *
 _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(on_type_read), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"on_type_read", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_mimetypes_read_windows_registry", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_mimetypes_read_windows_registry",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *on_type_read;
 
@@ -1164,4 +1371,4 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b007dde2e7f2fff8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=edb1a9d1bbfd6394 input=a9049054013a1b77]*/

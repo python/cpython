@@ -215,7 +215,7 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
 There are three distinct numeric types: :dfn:`integers`, :dfn:`floating
 point numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a
 subtype of integers.  Integers have unlimited precision.  Floating point
-numbers are usually implemented using :c:type:`double` in C; information
+numbers are usually implemented using :c:expr:`double` in C; information
 about the precision and internal representation of floating point
 numbers for the machine on which your program is running is available
 in :data:`sys.float_info`.  Complex numbers have a real and imaginary
@@ -353,7 +353,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See https://www.unicode.org/Public/14.0.0/ucd/extracted/DerivedNumericType.txt
+   See `the Unicode Standard <https://unicode.org/Public/UNIDATA/extracted/DerivedNumericType.txt>`_
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -608,6 +608,12 @@ class`. In addition, it provides a few more methods:
    denominator.
 
    .. versionadded:: 3.8
+
+.. method:: int.is_integer()
+
+   Returns ``True``. Exists for duck type compatibility with :meth:`float.is_integer`.
+
+   .. versionadded:: 3.12
 
 Additional Methods on Float
 ---------------------------
@@ -1453,7 +1459,7 @@ objects that compare equal might have different :attr:`~range.start`,
 
 .. seealso::
 
-   * The `linspace recipe <http://code.activestate.com/recipes/579000/>`_
+   * The `linspace recipe <https://code.activestate.com/recipes/579000/>`_
      shows how to implement a lazy version of range suitable for floating
      point applications.
 
@@ -1522,7 +1528,7 @@ multiple fragments.
    printable string representation of *object*.  For string objects, this is
    the string itself.  If *object* does not have a :meth:`~object.__str__`
    method, then :func:`str` falls back to returning
-   :meth:`repr(object) <repr>`.
+   :func:`repr(object) <repr>`.
 
    .. index::
       single: buffer protocol; str (built-in class)
@@ -1597,8 +1603,9 @@ expression support in the :mod:`re` module).
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
 
-   The casefolding algorithm is described in section 3.13 of the Unicode
-   Standard.
+   The casefolding algorithm is
+   `described in section 3.13 of the Unicode Standard
+   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G53253>`__.
 
    .. versionadded:: 3.3
 
@@ -1617,28 +1624,34 @@ expression support in the :mod:`re` module).
    range [*start*, *end*].  Optional arguments *start* and *end* are
    interpreted as in slice notation.
 
+   If *sub* is empty, returns the number of empty strings between characters
+   which is the length of the string plus one.
+
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
-   Return an encoded version of the string as a bytes object. Default encoding
-   is ``'utf-8'``. *errors* may be given to set a different error handling scheme.
-   The default for *errors* is ``'strict'``, meaning that encoding errors raise
-   a :exc:`UnicodeError`. Other possible
-   values are ``'ignore'``, ``'replace'``, ``'xmlcharrefreplace'``,
-   ``'backslashreplace'`` and any other name registered via
-   :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
-   list of possible encodings, see section :ref:`standard-encodings`.
+   Return the string encoded to :class:`bytes`.
 
-   By default, the *errors* argument is not checked for best performances, but
-   only used at the first encoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check
-   *errors*.
+   *encoding* defaults to ``'utf-8'``;
+   see :ref:`standard-encodings` for possible values.
+
+   *errors* controls how encoding errors are handled.
+   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
+   Other possible values are ``'ignore'``,
+   ``'replace'``, ``'xmlcharrefreplace'``, ``'backslashreplace'`` and any
+   other name registered via :func:`codecs.register_error`.
+   See :ref:`error-handlers` for details.
+
+   For performance reasons, the value of *errors* is not checked for validity
+   unless an encoding error actually occurs,
+   :ref:`devmode` is enabled
+   or a :ref:`debug build <debug-build>` is used.
 
    .. versionchanged:: 3.1
-      Support for keyword arguments added.
+      Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and
+      The value of the *errors* argument is now checked in :ref:`devmode` and
       in :ref:`debug mode <debug-build>`.
 
 
@@ -1754,7 +1767,8 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the "Alphabetic" property defined in the Unicode Standard.
+   from the `Alphabetic property defined in the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G91002>`_.
 
 
 .. method:: str.isascii()
@@ -1791,7 +1805,7 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
-   Call :func:`keyword.iskeyword` to test whether string ``s`` is a reserved
+   :func:`keyword.iskeyword` can be used to test whether string ``s`` is a reserved
    identifier, such as :keyword:`def` and :keyword:`class`.
 
    Example:
@@ -1866,6 +1880,8 @@ expression support in the :mod:`re` module).
 
 
 
+.. _meth-str-join:
+
 .. method:: str.join(iterable)
 
    Return a string which is the concatenation of the strings in *iterable*.
@@ -1886,8 +1902,9 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
-   The lowercasing algorithm used is described in section 3.13 of the Unicode
-   Standard.
+   The lowercasing algorithm used is
+   `described in section 3.13 of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2231,8 +2248,9 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
-   The uppercasing algorithm used is described in section 3.13 of the Unicode
-   Standard.
+   The uppercasing algorithm used is
+   `described in section 3.13 of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
 
 
 .. method:: str.zfill(width)
@@ -2546,9 +2564,10 @@ data and are closely related to string objects in a variety of other ways.
 
       If you want to make the hex string easier to read, you can specify a
       single character separator *sep* parameter to include in the output.
-      By default between each byte.  A second optional *bytes_per_sep*
-      parameter controls the spacing.  Positive values calculate the
-      separator position from the right, negative values from the left.
+      By default, this separator will be included between each byte.
+      A second optional *bytes_per_sep* parameter controls the spacing.
+      Positive values calculate the separator position from the right,
+      negative values from the left.
 
       >>> value = b'\xf0\xf1\xf2'
       >>> value.hex('-')
@@ -2695,6 +2714,9 @@ arbitrary binary data.
    The subsequence to search for may be any :term:`bytes-like object` or an
    integer in the range 0 to 255.
 
+   If *sub* is empty, returns the number of empty slices between characters
+   which is the length of the bytes object plus one.
+
    .. versionchanged:: 3.3
       Also accept an integer in the range 0 to 255 as the subsequence.
 
@@ -2746,29 +2768,32 @@ arbitrary binary data.
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
 
-   Return a string decoded from the given bytes.  Default encoding is
-   ``'utf-8'``. *errors* may be given to set a different
-   error handling scheme.  The default for *errors* is ``'strict'``, meaning
-   that encoding errors raise a :exc:`UnicodeError`.  Other possible values are
-   ``'ignore'``, ``'replace'`` and any other name registered via
-   :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
-   list of possible encodings, see section :ref:`standard-encodings`.
+   Return the bytes decoded to a :class:`str`.
 
-   By default, the *errors* argument is not checked for best performances, but
-   only used at the first decoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check *errors*.
+   *encoding* defaults to ``'utf-8'``;
+   see :ref:`standard-encodings` for possible values.
+
+   *errors* controls how decoding errors are handled.
+   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
+   Other possible values are ``'ignore'``, ``'replace'``,
+   and any other name registered via :func:`codecs.register_error`.
+   See :ref:`error-handlers` for details.
+
+   For performance reasons, the value of *errors* is not checked for validity
+   unless a decoding error actually occurs,
+   :ref:`devmode` is enabled or a :ref:`debug build <debug-build>` is used.
 
    .. note::
 
       Passing the *encoding* argument to :class:`str` allows decoding any
       :term:`bytes-like object` directly, without needing to make a temporary
-      bytes or bytearray object.
+      :class:`!bytes` or :class:`!bytearray` object.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and
+      The value of the *errors* argument is now checked in :ref:`devmode` and
       in :ref:`debug mode <debug-build>`.
 
 
@@ -4367,11 +4392,9 @@ type, the :dfn:`dictionary`.  (For other containers see the built-in
 A dictionary's keys are *almost* arbitrary values.  Values that are not
 :term:`hashable`, that is, values containing lists, dictionaries or other
 mutable types (that are compared by value rather than by object identity) may
-not be used as keys.  Numeric types used for keys obey the normal rules for
-numeric comparison: if two numbers compare equal (such as ``1`` and ``1.0``)
-then they can be used interchangeably to index the same dictionary entry.  (Note
-however, that since computers store floating-point numbers as approximations it
-is usually unwise to use them as dictionary keys.)
+not be used as keys.
+Values that compare equal (such as ``1``, ``1.0``, and ``True``)
+can be used interchangeably to index the same dictionary entry.
 
 .. class:: dict(**kwargs)
            dict(mapping, **kwargs)
@@ -4448,6 +4471,7 @@ is usually unwise to use them as dictionary keys.)
           >>> class Counter(dict):
           ...     def __missing__(self, key):
           ...         return 0
+          ...
           >>> c = Counter()
           >>> c['red']
           0
@@ -4691,7 +4715,9 @@ values are hashable, so that ``(key, value)`` pairs are unique and hashable,
 then the items view is also set-like.  (Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the
 operations defined for the abstract base class :class:`collections.abc.Set` are
-available (for example, ``==``, ``<``, or ``^``).
+available (for example, ``==``, ``<``, or ``^``).  While using set operators,
+set-like views accept any iterable as the other operand, unlike sets which only
+accept sets as the input.
 
 An example of dictionary view usage::
 
@@ -4703,6 +4729,7 @@ An example of dictionary view usage::
    >>> n = 0
    >>> for val in values:
    ...     n += val
+   ...
    >>> print(n)
    504
 
@@ -4723,10 +4750,12 @@ An example of dictionary view usage::
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
+   >>> keys | ['juice', 'juice', 'juice']
+   {'juice', 'sausage', 'bacon', 'spam', 'eggs'}
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
-   mappingproxy({'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500})
+   mappingproxy({'bacon': 1, 'spam': 500})
    >>> values.mapping['spam']
    500
 
@@ -5451,6 +5480,165 @@ types, where they are relevant.  Some of these are not reported by the
 
       >>> int.__subclasses__()
       [<class 'bool'>]
+
+
+.. _int_max_str_digits:
+
+Integer string conversion length limitation
+===========================================
+
+CPython has a global limit for converting between :class:`int` and :class:`str`
+to mitigate denial of service attacks. This limit *only* applies to decimal or
+other non-power-of-two number bases. Hexadecimal, octal, and binary conversions
+are unlimited. The limit can be configured.
+
+The :class:`int` type in CPython is an arbitrary length number stored in binary
+form (commonly known as a "bignum"). There exists no algorithm that can convert
+a string to a binary integer or a binary integer to a string in linear time,
+*unless* the base is a power of 2. Even the best known algorithms for base 10
+have sub-quadratic complexity. Converting a large value such as ``int('1' *
+500_000)`` can take over a second on a fast CPU.
+
+Limiting conversion size offers a practical way to avoid `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+
+The limit is applied to the number of digit characters in the input or output
+string when a non-linear conversion algorithm would be involved.  Underscores
+and the sign are not counted towards the limit.
+
+When an operation would exceed the limit, a :exc:`ValueError` is raised:
+
+.. doctest::
+
+   >>> import sys
+   >>> sys.set_int_max_str_digits(4300)  # Illustrative, this is the default.
+   >>> _ = int('2' * 5432)
+   Traceback (most recent call last):
+   ...
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
+   >>> i = int('2' * 4300)
+   >>> len(str(i))
+   4300
+   >>> i_squared = i*i
+   >>> len(str(i_squared))
+   Traceback (most recent call last):
+   ...
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
+   >>> len(hex(i_squared))
+   7144
+   >>> assert int(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.
+
+The default limit is 4300 digits as provided in
+:data:`sys.int_info.default_max_str_digits <sys.int_info>`.
+The lowest limit that can be configured is 640 digits as provided in
+:data:`sys.int_info.str_digits_check_threshold <sys.int_info>`.
+
+Verification:
+
+.. doctest::
+
+   >>> import sys
+   >>> assert sys.int_info.default_max_str_digits == 4300, sys.int_info
+   >>> assert sys.int_info.str_digits_check_threshold == 640, sys.int_info
+   >>> msg = int('578966293710682886880994035146873798396722250538762761564'
+   ...           '9252925514383915483333812743580549779436104706260696366600'
+   ...           '571186405732').to_bytes(53, 'big')
+   ...
+
+.. versionadded:: 3.11
+
+Affected APIs
+-------------
+
+The limitation only applies to potentially slow conversions between :class:`int`
+and :class:`str` or :class:`bytes`:
+
+* ``int(string)`` with default base 10.
+* ``int(string, base)`` for all bases that are not a power of 2.
+* ``str(integer)``.
+* ``repr(integer)``.
+* any other string conversion to base 10, for example ``f"{integer}"``,
+  ``"{}".format(integer)``, or ``b"%d" % integer``.
+
+The limitations do not apply to functions with a linear algorithm:
+
+* ``int(string, base)`` with base 2, 4, 8, 16, or 32.
+* :func:`int.from_bytes` and :func:`int.to_bytes`.
+* :func:`hex`, :func:`oct`, :func:`bin`.
+* :ref:`formatspec` for hex, octal, and binary numbers.
+* :class:`str` to :class:`float`.
+* :class:`str` to :class:`decimal.Decimal`.
+
+Configuring the limit
+---------------------
+
+Before Python starts up you can use an environment variable or an interpreter
+command line flag to configure the limit:
+
+* :envvar:`PYTHONINTMAXSTRDIGITS`, e.g.
+  ``PYTHONINTMAXSTRDIGITS=640 python3`` to set the limit to 640 or
+  ``PYTHONINTMAXSTRDIGITS=0 python3`` to disable the limitation.
+* :option:`-X int_max_str_digits <-X>`, e.g.
+  ``python3 -X int_max_str_digits=640``
+* :data:`sys.flags.int_max_str_digits` contains the value of
+  :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
+  If both the env var and the ``-X`` option are set, the ``-X`` option takes
+  precedence. A value of *-1* indicates that both were unset, thus a value of
+  :data:`sys.int_info.default_max_str_digits` was used during initialization.
+
+From code, you can inspect the current limit and set a new one using these
+:mod:`sys` APIs:
+
+* :func:`sys.get_int_max_str_digits` and :func:`sys.set_int_max_str_digits` are
+  a getter and setter for the interpreter-wide limit. Subinterpreters have
+  their own limit.
+
+Information about the default and minimum can be found in :attr:`sys.int_info`:
+
+* :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
+  default limit.
+* :data:`sys.int_info.str_digits_check_threshold <sys.int_info>` is the lowest
+  accepted value for the limit (other than 0 which disables it).
+
+.. versionadded:: 3.11
+
+.. caution::
+
+   Setting a low limit *can* lead to problems. While rare, code exists that
+   contains integer constants in decimal in their source that exceed the
+   minimum threshold. A consequence of setting the limit is that Python source
+   code containing decimal integer literals longer than the limit will
+   encounter an error during parsing, usually at startup time or import time or
+   even at installation time - anytime an up to date ``.pyc`` does not already
+   exist for the code. A workaround for source that contains such large
+   constants is to convert them to ``0x`` hexadecimal form as it has no limit.
+
+   Test your application thoroughly if you use a low limit. Ensure your tests
+   run with the limit set early via the environment or flag so that it applies
+   during startup and even during any installation step that may invoke Python
+   to precompile ``.py`` sources to ``.pyc`` files.
+
+Recommended configuration
+-------------------------
+
+The default :data:`sys.int_info.default_max_str_digits` is expected to be
+reasonable for most applications. If your application requires a different
+limit, set it from your main entry point using Python version agnostic code as
+these APIs were added in security patch releases in versions before 3.12.
+
+Example::
+
+   >>> import sys
+   >>> if hasattr(sys, "set_int_max_str_digits"):
+   ...     upper_bound = 68000
+   ...     lower_bound = 4004
+   ...     current_limit = sys.get_int_max_str_digits()
+   ...     if current_limit == 0 or current_limit > upper_bound:
+   ...         sys.set_int_max_str_digits(upper_bound)
+   ...     elif current_limit < lower_bound:
+   ...         sys.set_int_max_str_digits(lower_bound)
+
+If you need to disable it entirely, set it to ``0``.
 
 
 .. rubric:: Footnotes

@@ -1,22 +1,15 @@
 from __future__ import annotations
 
-from abc import abstractmethod
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
-    Dict,
     Iterable,
     Iterator,
     List,
     Optional,
-    Set,
     Tuple,
     Union,
 )
-
-if TYPE_CHECKING:
-    from pegen.parser_generator import ParserGenerator
 
 
 class GrammarError(Exception):

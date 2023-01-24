@@ -144,12 +144,6 @@ This module offers the following functions:
 
    Deletes the specified key.
 
-   .. note::
-      The :func:`DeleteKeyEx` function is implemented with the RegDeleteKeyEx
-      Windows API function, which is specific to 64-bit versions of Windows.
-      See the `RegDeleteKeyEx documentation
-      <https://msdn.microsoft.com/en-us/library/ms724847%28VS.85%29.aspx>`__.
-
    *key* is an already open key, or one of the predefined
    :ref:`HKEY_* constants <hkey-constants>`.
 
@@ -159,9 +153,10 @@ This module offers the following functions:
 
    *reserved* is a reserved integer, and must be zero. The default is zero.
 
-   *access* is an integer that specifies an access mask that describes the desired
-   security access for the key.  Default is :const:`KEY_WOW64_64KEY`.  See
-   :ref:`Access Rights <access-rights>` for other allowed values.
+   *access* is an integer that specifies an access mask that describes the
+   desired security access for the key.  Default is :const:`KEY_WOW64_64KEY`.
+   On 32-bit Windows, the WOW64 constants are ignored.
+   See :ref:`Access Rights <access-rights>` for other allowed values.
 
    *This method can not delete keys with subkeys.*
 
@@ -658,13 +653,12 @@ For more information, see `Accessing an Alternate Registry View
 .. data:: KEY_WOW64_64KEY
 
    Indicates that an application on 64-bit Windows should operate on
-   the 64-bit registry view.
+   the 64-bit registry view. On 32-bit Windows, this constant is ignored.
 
 .. data:: KEY_WOW64_32KEY
 
    Indicates that an application on 64-bit Windows should operate on
-   the 32-bit registry view.
-
+   the 32-bit registry view. On 32-bit Windows, this constant is ignored.
 
 .. _value-types:
 

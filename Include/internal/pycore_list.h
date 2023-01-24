@@ -35,7 +35,7 @@ struct _Py_list_state {
 #endif
 };
 
-#define _PyList_ITEMS(op) (_PyList_CAST(op)->ob_item)
+#define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)
 
 extern int
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem);
@@ -55,6 +55,27 @@ _PyList_AppendTakeRef(PyListObject *self, PyObject *newitem)
     }
     return _PyList_AppendTakeRefListResize(self, newitem);
 }
+
+// Repeat the bytes of a buffer in place
+static inline void
+_Py_memory_repeat(char* dest, Py_ssize_t len_dest, Py_ssize_t len_src)
+{
+    assert(len_src > 0);
+    Py_ssize_t copied = len_src;
+    while (copied < len_dest) {
+        Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);
+        memcpy(dest + copied, dest, bytes_to_copy);
+        copied += bytes_to_copy;
+    }
+}
+
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t it_index;
+    PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
+} _PyListIterObject;
+
+extern PyObject *_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
 
 #ifdef __cplusplus
 }

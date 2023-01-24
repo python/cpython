@@ -203,7 +203,7 @@ def internalTk():
 
 # Do we use 8.6.8 when building our own copy
 # of Tcl/Tk or a modern version.
-#   We use the old version when buildin on
+#   We use the old version when building on
 #   old versions of macOS due to build issues.
 def useOldTk():
     return getBuildTuple() < (10, 15)
@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1n",
-              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
-              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
+              name="OpenSSL 1.1.1s",
+              url="https://www.openssl.org/source/openssl-1.1.1s.tar.gz",
+              checksum='c5ac01e760ee6ff0dab61d6b2bbd30146724d063eb322180c6f18a6f74e4b6aa',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -359,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.38.4",
-              url="https://sqlite.org/2022/sqlite-autoconf-3380400.tar.gz",
-              checksum="34c0b92a0609ed4ce78582e8dc1ed45a",
+              name="SQLite 3.39.4",
+              url="https://sqlite.org/2022/sqlite-autoconf-3390400.tar.gz",
+              checksum="44b7e6691b0954086f717a6c43b622a5",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -797,10 +797,16 @@ def verifyThirdPartyFile(url, checksum, fname):
         print("Downloading %s"%(name,))
         downloadURL(url, fname)
         print("Archive for %s stored as %s"%(name, fname))
+    if len(checksum) == 32:
+        algo = 'md5'
+    elif len(checksum) == 64:
+        algo = 'sha256'
+    else:
+        raise ValueError(checksum)
     if os.system(
-            'MD5=$(openssl md5 %s) ; test "${MD5##*= }" = "%s"'
-                % (shellQuote(fname), checksum) ):
-        fatal('MD5 checksum mismatch for file %s' % fname)
+            'CHECKSUM=$(openssl %s %s) ; test "${CHECKSUM##*= }" = "%s"'
+                % (algo, shellQuote(fname), checksum) ):
+        fatal('%s checksum mismatch for file %s' % (algo, fname))
 
 def build_universal_openssl(basedir, archList):
     """

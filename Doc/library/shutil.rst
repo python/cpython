@@ -194,7 +194,7 @@ Directory and files operations
 
    When *follow_symlinks* is false, and *src* is a symbolic
    link, :func:`copy2` attempts to copy all metadata from the
-   *src* symbolic link to the newly-created *dst* symbolic link.
+   *src* symbolic link to the newly created *dst* symbolic link.
    However, this functionality is not available on all platforms.
    On platforms where some or all of this functionality is
    unavailable, :func:`copy2` will preserve all the metadata
@@ -574,12 +574,19 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. note::
 
-      This function is not thread-safe.
+      This function is not thread-safe when custom archivers registered
+      with :func:`register_archive_format` do not support the *root_dir*
+      argument.  In this case it
+      temporarily changes the current working directory of the process
+      to *root_dir* to perform archiving.
 
    .. versionchanged:: 3.8
       The modern pax (POSIX.1-2001) format is now used instead of
       the legacy GNU format for archives created with ``format="tar"``.
 
+   .. versionchanged:: 3.10.6
+      This function is now made thread-safe during creation of standard
+      ``.zip`` and tar archives.
 
 .. function:: get_archive_formats()
 
@@ -608,11 +615,20 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Further arguments are passed as keyword arguments: *owner*, *group*,
    *dry_run* and *logger* (as passed in :func:`make_archive`).
 
+   If *function* has the custom attribute ``function.supports_root_dir`` set to ``True``,
+   the *root_dir* argument is passed as a keyword argument.
+   Otherwise the current working directory of the process is temporarily
+   changed to *root_dir* before calling *function*.
+   In this case :func:`make_archive` is not thread-safe.
+
    If given, *extra_args* is a sequence of ``(name, value)`` pairs that will be
    used as extra keywords arguments when the archiver callable is used.
 
    *description* is used by :func:`get_archive_formats` which returns the
    list of archivers.  Defaults to an empty string.
+
+   .. versionchanged:: 3.12
+      Added support for functions supporting the *root_dir* argument.
 
 
 .. function:: unregister_archive_format(name)
@@ -795,4 +811,4 @@ Querying the size of the output terminal
    http://www.manpagez.com/man/3/copyfile/
 
 .. _`Other Environment Variables`:
-   http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
+   https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003

@@ -986,6 +986,23 @@ class PyShell(OutputWindow):
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
 
+    def get_prompt_text(self, first, last):
+        """Return text between first and last with prompts added."""
+        text = self.text.get(first, last)
+        lineno_range = range(
+            int(float(first)),
+            int(float(last))
+         )
+        prompts = [
+            self.shell_sidebar.line_prompts.get(lineno)
+            for lineno in lineno_range
+        ]
+        return "\n".join(
+            line if prompt is None else f"{prompt} {line}"
+            for prompt, line in zip(prompts, text.splitlines())
+        ) + "\n"
+
+
     def copy_with_prompts_callback(self, event=None):
         """Copy selected lines to the clipboard, with prompts.
 
@@ -996,31 +1013,15 @@ class PyShell(OutputWindow):
         and/or last lines is selected.
         """
         text = self.text
-
-        selection_indexes = (
-            self.text.index("sel.first linestart"),
-            self.text.index("sel.last +1line linestart"),
-        )
-        if selection_indexes[0] is None:
-            # There is no selection, so do nothing.
-            return
-
-        selected_text = self.text.get(*selection_indexes)
-        selection_lineno_range = range(
-            int(float(selection_indexes[0])),
-            int(float(selection_indexes[1]))
-        )
-        prompts = [
-            self.shell_sidebar.line_prompts.get(lineno)
-            for lineno in selection_lineno_range
-        ]
-        selected_text_with_prompts = "\n".join(
-            line if prompt is None else f"{prompt} {line}"
-            for prompt, line in zip(prompts, selected_text.splitlines())
-        ) + "\n"
-
+        selfirst = text.index('sel.first linestart')
+        if selfirst is None:  # Should not be possible.
+            return  # No selection, do nothing.
+        sellast = text.index('sel.last')
+        if sellast[-1] != '0':
+            sellast = text.index("sel.last+1line linestart")
         text.clipboard_clear()
-        text.clipboard_append(selected_text_with_prompts)
+        prompt_text = self.get_prompt_text(selfirst, sellast)
+        text.clipboard_append(prompt_text)
 
     reading = False
     executing = False

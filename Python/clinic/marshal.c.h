@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(marshal_dump__doc__,
 "dump($module, value, file, version=version, /)\n"
 "--\n"
@@ -155,4 +161,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=b9e838edee43fe87 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=12082d61d2942473 input=a9049054013a1b77]*/
