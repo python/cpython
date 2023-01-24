@@ -13,6 +13,11 @@ All integers are implemented as "long" integer objects of arbitrary size.
 On error, most ``PyLong_As*`` APIs return ``(return type)-1`` which cannot be
 distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
+.. seealso:: Python methods :meth:`int.to_bytes` and :meth:`int.from_bytes`
+   (called via one of the :c:func:`PyObject_CallMethod` APIs),
+   to convert a :c:type:`PyLongObject` of arbitrary size
+   to or from an array of bytes.
+
 .. c:type:: PyLongObject
 
    This subtype of :c:type:`PyObject` represents a Python integer object.
@@ -318,9 +323,3 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    with :c:func:`PyLong_FromVoidPtr`.
 
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
-
-
-If you want to convert to or from a binary big integer array of bytes
-representation, call the Python :meth:`int.to_bytes` or :meth:`int.from_bytes`
-methods using one of the :c:func:`PyObject_CallMethod` C APIs.
-
