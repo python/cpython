@@ -1952,9 +1952,6 @@ if test "$Py_BOLT" = 'true' ; then
   CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
   # We want to add these no-pie flags to linking executables but not shared libraries:
   LINKCC="$LINKCC -fno-pie -no-pie"
-  # Designate the DWARF version into 4 since the LLVM-BOLT does not support DWARF5 yet.
-  CFLAGS="$CFLAGS -gdwarf-4"
-  LDFLAGS="$LDFLAGS -gdwarf-4"
   AC_SUBST(LLVM_BOLT)
   AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
   if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
