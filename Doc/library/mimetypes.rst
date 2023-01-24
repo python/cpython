@@ -308,6 +308,7 @@ The script scans the internal database and converts either file extensions to
 MIME types or vice versa depending on whether ``--extension`` option is
 specified.
 
+
 .. mimetypes-cli-example:
 
 Command-Line Example
@@ -321,6 +322,14 @@ line interface:
    # get a MIME type by a file name
    $ python -m mimetypes filename.png
    type: image/png encoding: None
+
+   # get a MIME type by a URL
+   python -m mimetypes http://example.com/filename.txt
+   type: text/plain encoding: None
+
+   # get a complex MIME type
+   python -m mimetypes filename.tar.gz
+   type: application/x-tar encoding: gzip
 
    # get a MIME type for a rare file format
    $ python -m mimetypes filename.pict
