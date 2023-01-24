@@ -581,8 +581,7 @@ PyEval_AcquireThread(PyThreadState *tstate)
 
     take_gil(tstate);
 
-    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
-    if (_PyThreadState_Swap(gilstate, tstate) != NULL) {
+    if (_PyThreadState_Swap(tstate->interp->runtime, tstate) != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
 }
@@ -593,7 +592,7 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     assert(is_tstate_valid(tstate));
 
     _PyRuntimeState *runtime = tstate->interp->runtime;
-    PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
+    PyThreadState *new_tstate = _PyThreadState_Swap(runtime, NULL);
     if (new_tstate != tstate) {
         Py_FatalError("wrong thread state");
     }
@@ -643,7 +642,7 @@ PyThreadState *
 PyEval_SaveThread(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
+    PyThreadState *tstate = _PyThreadState_Swap(runtime, NULL);
     _Py_EnsureTstateNotNULL(tstate);
 
     struct _ceval_runtime_state *ceval = &runtime->ceval;
@@ -660,8 +659,7 @@ PyEval_RestoreThread(PyThreadState *tstate)
 
     take_gil(tstate);
 
-    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
-    _PyThreadState_Swap(gilstate, tstate);
+    _PyThreadState_Swap(tstate->interp->runtime, tstate);
 }
 
 
@@ -965,7 +963,7 @@ _Py_HandlePending(PyThreadState *tstate)
     /* GIL drop request */
     if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->gil_drop_request)) {
         /* Give another thread a chance */
-        if (_PyThreadState_Swap(&runtime->gilstate, NULL) != tstate) {
+        if (_PyThreadState_Swap(runtime, NULL) != tstate) {
             Py_FatalError("tstate mix-up");
         }
         drop_gil(ceval, interp_ceval_state, tstate);
@@ -974,7 +972,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
         take_gil(tstate);
 
-        if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
+        if (_PyThreadState_Swap(runtime, tstate) != NULL) {
             Py_FatalError("orphan tstate");
         }
     }

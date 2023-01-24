@@ -17,7 +17,7 @@ class MIMEImage(MIMENonMultipart):
                  _encoder=encoders.encode_base64, *, policy=None, **_params):
         """Create an image/* type MIME document.
 
-        _imagedata is a string containing the raw image data.  If the data
+        _imagedata contains the bytes for the raw image data.  If the data
         type can be detected (jpeg, png, gif, tiff, rgb, pbm, pgm, ppm,
         rast, xbm, bmp, webp, and exr attempted), then the subtype will be
         automatically included in the Content-Type header. Otherwise, you can

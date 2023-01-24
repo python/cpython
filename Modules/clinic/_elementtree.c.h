@@ -25,8 +25,8 @@ _elementtree_Element_append(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyObject_TypeCheck(arg, &Element_Type)) {
-        _PyArg_BadArgument("append", "argument", (&Element_Type)->tp_name, arg);
+    if (!PyObject_TypeCheck(arg, clinic_state()->Element_Type)) {
+        _PyArg_BadArgument("append", "argument", (clinic_state()->Element_Type)->tp_name, arg);
         goto exit;
     }
     subelement = arg;
@@ -106,20 +106,20 @@ PyDoc_STRVAR(_elementtree_Element___sizeof____doc__,
 #define _ELEMENTTREE_ELEMENT___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)_elementtree_Element___sizeof__, METH_NOARGS, _elementtree_Element___sizeof____doc__},
 
-static Py_ssize_t
+static size_t
 _elementtree_Element___sizeof___impl(ElementObject *self);
 
 static PyObject *
 _elementtree_Element___sizeof__(ElementObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
+    size_t _return_value;
 
     _return_value = _elementtree_Element___sizeof___impl(self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
+    if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromSsize_t(_return_value);
+    return_value = PyLong_FromSize_t(_return_value);
 
 exit:
     return return_value;
@@ -586,8 +586,8 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
         }
         index = ival;
     }
-    if (!PyObject_TypeCheck(args[1], &Element_Type)) {
-        _PyArg_BadArgument("insert", "argument 2", (&Element_Type)->tp_name, args[1]);
+    if (!PyObject_TypeCheck(args[1], clinic_state()->Element_Type)) {
+        _PyArg_BadArgument("insert", "argument 2", (clinic_state()->Element_Type)->tp_name, args[1]);
         goto exit;
     }
     subelement = args[1];
@@ -682,8 +682,8 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyObject_TypeCheck(arg, &Element_Type)) {
-        _PyArg_BadArgument("remove", "argument", (&Element_Type)->tp_name, arg);
+    if (!PyObject_TypeCheck(arg, clinic_state()->Element_Type)) {
+        _PyArg_BadArgument("remove", "argument", (clinic_state()->Element_Type)->tp_name, arg);
         goto exit;
     }
     subelement = arg;
@@ -1105,4 +1105,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=67a80531eaf43815 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d380adb43d8f4a62 input=a9049054013a1b77]*/
