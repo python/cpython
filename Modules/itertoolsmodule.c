@@ -18,6 +18,7 @@ typedef struct {
     PyTypeObject *cwr_type;
     PyTypeObject *cycle_type;
     PyTypeObject *dropwhile_type;
+    PyTypeObject *filterfalse_type;
     PyTypeObject *groupby_type;
     PyTypeObject *_grouper_type;
     PyTypeObject *permutations_type;
@@ -69,16 +70,15 @@ class itertools.combinations_with_replacement "cwr_object *" "clinic_state()->cw
 class itertools.permutations "permutationsobject *" "clinic_state()->permutations_type"
 class itertools.accumulate "accumulateobject *" "clinic_state()->accumulate_type"
 class itertools.compress "compressobject *" "clinic_state()->compress_type"
-class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
+class itertools.filterfalse "filterfalseobject *" "clinic_state()->filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=18f0df1fc6fbed08]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=041cf92c608e0a3b]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
 static PyTypeObject batched_type;
-static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
 static PyTypeObject pairwise_type;
 
@@ -3978,15 +3978,18 @@ itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 static void
 filterfalse_dealloc(filterfalseobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
 filterfalse_traverse(filterfalseobject *lz, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
     return 0;
@@ -4038,48 +4041,25 @@ static PyMethodDef filterfalse_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject filterfalse_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.filterfalse",            /* tp_name */
-    sizeof(filterfalseobject),          /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)filterfalse_dealloc,    /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_filterfalse__doc__,       /* tp_doc */
-    (traverseproc)filterfalse_traverse, /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)filterfalse_next,     /* tp_iternext */
-    filterfalse_methods,                /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_filterfalse,              /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot filterfalse_slots[] = {
+    {Py_tp_dealloc, filterfalse_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_filterfalse__doc__},
+    {Py_tp_traverse, filterfalse_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, filterfalse_next},
+    {Py_tp_methods, filterfalse_methods},
+    {Py_tp_new, itertools_filterfalse},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec filterfalse_spec = {
+    .name = "itertools.filterfalse",
+    .basicsize = sizeof(filterfalseobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = filterfalse_slots,
 };
 
 
@@ -4801,6 +4781,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->cwr_type);
     Py_VISIT(state->cycle_type);
     Py_VISIT(state->dropwhile_type);
+    Py_VISIT(state->filterfalse_type);
     Py_VISIT(state->groupby_type);
     Py_VISIT(state->_grouper_type);
     Py_VISIT(state->permutations_type);
@@ -4819,6 +4800,7 @@ itertoolsmodule_clear(PyObject *mod)
     Py_CLEAR(state->cwr_type);
     Py_CLEAR(state->cycle_type);
     Py_CLEAR(state->dropwhile_type);
+    Py_CLEAR(state->filterfalse_type);
     Py_CLEAR(state->groupby_type);
     Py_CLEAR(state->_grouper_type);
     Py_CLEAR(state->permutations_type);
@@ -4854,6 +4836,7 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->cwr_type, &cwr_spec);
     ADD_TYPE(mod, state->cycle_type, &cycle_spec);
     ADD_TYPE(mod, state->dropwhile_type, &dropwhile_spec);
+    ADD_TYPE(mod, state->filterfalse_type, &filterfalse_spec);
     ADD_TYPE(mod, state->groupby_type, &groupby_spec);
     ADD_TYPE(mod, state->_grouper_type, &_grouper_spec);
     ADD_TYPE(mod, state->permutations_type, &permutations_spec);
@@ -4864,7 +4847,6 @@ itertoolsmodule_exec(PyObject *mod)
         &batched_type,
         &islice_type,
         &chain_type,
-        &filterfalse_type,
         &count_type,
         &ziplongest_type,
         &pairwise_type,

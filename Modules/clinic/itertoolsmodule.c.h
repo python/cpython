@@ -821,7 +821,7 @@ static PyObject *
 itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &filterfalse_type;
+    PyTypeObject *base_tp = clinic_state()->filterfalse_type;
     PyObject *func;
     PyObject *seq;
 
@@ -913,4 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b86fcd99bd32145e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5dca56efff825e7f input=a9049054013a1b77]*/
