@@ -1480,8 +1480,11 @@ class Popen:
             if shell:
                 startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow = _winapi.SW_HIDE
-                # gh-101283: with no full path, Windows looks into a
-                # current directory first so no plain "cmd.exe".
+                # gh-101283: without a fully-qualified path, before Windows
+                # checks the system directories, it first looks in the
+                # application directory, and also the current directory if
+                # NeedCurrentDirectoryForExePathW(ExeName) is true, so try
+                # to avoid executing unqualified "cmd.exe".
                 comspec = os.environ.get('ComSpec')
                 if not comspec:
                     system_drive = os.environ.get('SystemDrive') or 'C:'
