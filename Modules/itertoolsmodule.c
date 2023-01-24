@@ -26,6 +26,7 @@ typedef struct {
     PyTypeObject *permutations_type;
     PyTypeObject *starmap_type;
     PyTypeObject *takewhile_type;
+    PyTypeObject *ziplongest_type;
 } itertools_state;
 
 static inline itertools_state *
@@ -4437,8 +4438,6 @@ typedef struct {
     PyObject *fillvalue;
 } ziplongestobject;
 
-static PyTypeObject ziplongest_type;
-
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -4510,16 +4509,19 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 zip_longest_dealloc(ziplongestobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->ittuple);
     Py_XDECREF(lz->result);
     Py_XDECREF(lz->fillvalue);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
 zip_longest_traverse(ziplongestobject *lz, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->ittuple);
     Py_VISIT(lz->result);
     Py_VISIT(lz->fillvalue);
@@ -4653,48 +4655,25 @@ are exhausted, the fillvalue is substituted in their place.  The fillvalue\n\
 defaults to None or can be specified by a keyword argument.\n\
 ");
 
-static PyTypeObject ziplongest_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.zip_longest",            /* tp_name */
-    sizeof(ziplongestobject),           /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)zip_longest_dealloc,    /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    zip_longest_doc,                    /* tp_doc */
-    (traverseproc)zip_longest_traverse, /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)zip_longest_next,     /* tp_iternext */
-    zip_longest_methods,                /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    zip_longest_new,                    /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot ziplongest_slots[] = {
+    {Py_tp_dealloc, zip_longest_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)zip_longest_doc},
+    {Py_tp_traverse, zip_longest_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, zip_longest_next},
+    {Py_tp_methods, zip_longest_methods},
+    {Py_tp_new, zip_longest_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec ziplongest_spec = {
+    .name = "itertools.zip_longest",
+    .basicsize = sizeof(ziplongestobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = ziplongest_slots,
 };
 
 
@@ -4750,6 +4729,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->permutations_type);
     Py_VISIT(state->starmap_type);
     Py_VISIT(state->takewhile_type);
+    Py_VISIT(state->ziplongest_type);
     return 0;
 }
 
@@ -4771,6 +4751,7 @@ itertoolsmodule_clear(PyObject *mod)
     Py_CLEAR(state->permutations_type);
     Py_CLEAR(state->starmap_type);
     Py_CLEAR(state->takewhile_type);
+    Py_CLEAR(state->ziplongest_type);
     return 0;
 }
 
@@ -4809,12 +4790,12 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->permutations_type, &permutations_spec);
     ADD_TYPE(mod, state->starmap_type, &starmap_spec);
     ADD_TYPE(mod, state->takewhile_type, &takewhile_spec);
+    ADD_TYPE(mod, state->ziplongest_type, &ziplongest_spec);
 
     PyTypeObject *typelist[] = {
         &batched_type,
         &islice_type,
         &chain_type,
-        &ziplongest_type,
         &product_type,
         &repeat_type,
         &tee_type,
