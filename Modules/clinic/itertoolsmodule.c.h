@@ -377,7 +377,7 @@ static PyObject *
 itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &dropwhile_type;
+    PyTypeObject *base_tp = clinic_state()->dropwhile_type;
     PyObject *func;
     PyObject *seq;
 
@@ -913,4 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=64eabf8df5172fb2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3b4c4dba10fc911 input=a9049054013a1b77]*/

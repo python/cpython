@@ -13,6 +13,7 @@
 
 typedef struct {
     PyTypeObject *cycle_type;
+    PyTypeObject *dropwhile_type;
     PyTypeObject *groupby_type;
     PyTypeObject *_grouper_type;
 } itertools_state;
@@ -52,7 +53,7 @@ class itertools.teedataobject "teedataobject *" "&teedataobject_type"
 class itertools._tee "teeobject *" "&tee_type"
 class itertools.batched "batchedobject *" "&batched_type"
 class itertools.cycle "cycleobject *" "clinic_state()->cycle_type"
-class itertools.dropwhile "dropwhileobject *" "&dropwhile_type"
+class itertools.dropwhile "dropwhileobject *" "clinic_state()->dropwhile_type"
 class itertools.takewhile "takewhileobject *" "&takewhile_type"
 class itertools.starmap "starmapobject *" "&starmap_type"
 class itertools.chain "chainobject *" "&chain_type"
@@ -65,12 +66,11 @@ class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b73cdca8e1fddfb5]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ef6f5c44c6837d9e]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
 static PyTypeObject batched_type;
-static PyTypeObject dropwhile_type;
 static PyTypeObject takewhile_type;
 static PyTypeObject starmap_type;
 static PyTypeObject combinations_type;
@@ -1454,15 +1454,18 @@ itertools_dropwhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 static void
 dropwhile_dealloc(dropwhileobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
 dropwhile_traverse(dropwhileobject *lz, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
     return 0;
@@ -1525,48 +1528,25 @@ static PyMethodDef dropwhile_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject dropwhile_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.dropwhile",              /* tp_name */
-    sizeof(dropwhileobject),            /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)dropwhile_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_dropwhile__doc__,         /* tp_doc */
-    (traverseproc)dropwhile_traverse,   /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)dropwhile_next,       /* tp_iternext */
-    dropwhile_methods,                  /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_dropwhile,                /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot dropwhile_slots[] = {
+    {Py_tp_dealloc, dropwhile_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_dropwhile__doc__},
+    {Py_tp_traverse, dropwhile_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, dropwhile_next},
+    {Py_tp_methods, dropwhile_methods},
+    {Py_tp_new, itertools_dropwhile},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec dropwhile_spec = {
+    .name = "itertools.dropwhile",
+    .basicsize = sizeof(dropwhileobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = dropwhile_slots,
 };
 
 
@@ -4956,6 +4936,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     itertools_state *state = get_module_state(mod);
     Py_VISIT(state->cycle_type);
+    Py_VISIT(state->dropwhile_type);
     Py_VISIT(state->groupby_type);
     Py_VISIT(state->_grouper_type);
     return 0;
@@ -4966,6 +4947,7 @@ itertoolsmodule_clear(PyObject *mod)
 {
     itertools_state *state = get_module_state(mod);
     Py_CLEAR(state->cycle_type);
+    Py_CLEAR(state->dropwhile_type);
     Py_CLEAR(state->groupby_type);
     Py_CLEAR(state->_grouper_type);
     return 0;
@@ -4993,6 +4975,7 @@ itertoolsmodule_exec(PyObject *mod)
 {
     itertools_state *state = get_module_state(mod);
     ADD_TYPE(mod, state->cycle_type, &cycle_spec);
+    ADD_TYPE(mod, state->dropwhile_type, &dropwhile_spec);
     ADD_TYPE(mod, state->groupby_type, &groupby_spec);
     ADD_TYPE(mod, state->_grouper_type, &_grouper_spec);
 
@@ -5001,7 +4984,6 @@ itertoolsmodule_exec(PyObject *mod)
         &batched_type,
         &combinations_type,
         &cwr_type,
-        &dropwhile_type,
         &takewhile_type,
         &islice_type,
         &starmap_type,
