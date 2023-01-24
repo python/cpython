@@ -283,8 +283,9 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
     err = deflateEnd(&zst);
     if (err == Z_OK) {
         if (_PyBytes_Resize(&return_value, zst.next_out -
-                            (Byte *)PyBytes_AS_STRING(return_value)) < 0)
+                            (Byte *)PyBytes_AS_STRING(return_value)) < 0) {
             goto error;
+        }
         return return_value;
     }
     else
@@ -401,9 +402,9 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
     }
 
     if (_PyBytes_Resize(&return_value, zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(return_value)) < 0)
+                        (Byte *)PyBytes_AS_STRING(return_value)) < 0) {
         goto error;
-
+    }
     return return_value;
 
  error:
@@ -665,9 +666,9 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
     } while (ibuflen != 0);
 
     if (_PyBytes_Resize(&return_value, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(return_value)) == 0)
+                        (Byte *)PyBytes_AS_STRING(return_value)) == 0) {
         goto success;
-
+    }
  error:
     Py_CLEAR(return_value);
  success:
@@ -829,9 +830,9 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     }
 
     if (_PyBytes_Resize(&return_value, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(return_value)) == 0)
+                        (Byte *)PyBytes_AS_STRING(return_value)) == 0) {
         goto success;
-
+    }
  abort:
     Py_CLEAR(return_value);
  success:
@@ -912,9 +913,9 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
     }
 
     if (_PyBytes_Resize(&return_value, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(return_value)) < 0)
+                        (Byte *)PyBytes_AS_STRING(return_value)) < 0) {
         Py_CLEAR(return_value);
-
+    }
  error:
     LEAVE_ZLIB(self);
     return return_value;
@@ -1181,9 +1182,9 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     }
 
     if (_PyBytes_Resize(&return_value, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(return_value)) == 0)
+                        (Byte *)PyBytes_AS_STRING(return_value)) == 0) {
         goto success;
-
+    }
  abort:
     Py_CLEAR(return_value);
  success:
