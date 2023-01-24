@@ -2093,61 +2093,42 @@ dummy_func(
             PUSH(len_o);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(MATCH_CLASS) {
+        inst(MATCH_CLASS, (subject, type, names -- attrs)) {
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
-            PyObject *names = POP();
-            PyObject *type = POP();
-            PyObject *subject = TOP();
             assert(PyTuple_CheckExact(names));
-            PyObject *attrs = match_class(tstate, subject, type, oparg, names);
-            Py_DECREF(names);
-            Py_DECREF(type);
+            attrs = match_class(tstate, subject, type, oparg, names);
+            DECREF_INPUTS();
             if (attrs) {
                 // Success!
                 assert(PyTuple_CheckExact(attrs));
-                SET_TOP(attrs);
             }
             else if (_PyErr_Occurred(tstate)) {
                 // Error!
-                goto error;
+                ERROR_IF(true, error);
             }
             else {
                 // Failure!
-                SET_TOP(Py_NewRef(Py_None));
+                attrs = Py_NewRef(Py_None);
             }
-            Py_DECREF(subject);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_MAPPING) {
-            PyObject *subject = TOP();
+        inst(MATCH_MAPPING, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_SEQUENCE) {
-            PyObject *subject = TOP();
+        inst(MATCH_SEQUENCE, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_KEYS) {
+        inst(MATCH_KEYS, (subject, keys -- subject, keys, values_or_none)) {
             // On successful match, PUSH(values). Otherwise, PUSH(None).
-            PyObject *keys = TOP();
-            PyObject *subject = SECOND();
-            PyObject *values_or_none = match_keys(tstate, subject, keys);
-            if (values_or_none == NULL) {
-                goto error;
-            }
-            PUSH(values_or_none);
+            values_or_none = match_keys(tstate, subject, keys);
+            ERROR_IF(values_or_none == NULL, error);
         }
 
         // stack effect: ( -- )

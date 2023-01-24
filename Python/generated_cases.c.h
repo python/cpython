@@ -2480,59 +2480,65 @@
         }
 
         TARGET(MATCH_CLASS) {
+            PyObject *names = PEEK(1);
+            PyObject *type = PEEK(2);
+            PyObject *subject = PEEK(3);
+            PyObject *attrs;
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
-            PyObject *names = POP();
-            PyObject *type = POP();
-            PyObject *subject = TOP();
             assert(PyTuple_CheckExact(names));
-            PyObject *attrs = match_class(tstate, subject, type, oparg, names);
-            Py_DECREF(names);
+            attrs = match_class(tstate, subject, type, oparg, names);
+            Py_DECREF(subject);
             Py_DECREF(type);
+            Py_DECREF(names);
             if (attrs) {
                 // Success!
                 assert(PyTuple_CheckExact(attrs));
-                SET_TOP(attrs);
             }
             else if (_PyErr_Occurred(tstate)) {
                 // Error!
-                goto error;
+                if (true) goto pop_3_error;
             }
             else {
                 // Failure!
-                SET_TOP(Py_NewRef(Py_None));
+                attrs = Py_NewRef(Py_None);
             }
-            Py_DECREF(subject);
+            STACK_SHRINK(2);
+            POKE(1, attrs);
             DISPATCH();
         }
 
         TARGET(MATCH_MAPPING) {
-            PyObject *subject = TOP();
+            PyObject *subject = PEEK(1);
+            PyObject *res;
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
+            STACK_GROW(1);
+            POKE(1, res);
             PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
 
         TARGET(MATCH_SEQUENCE) {
-            PyObject *subject = TOP();
+            PyObject *subject = PEEK(1);
+            PyObject *res;
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
+            STACK_GROW(1);
+            POKE(1, res);
             PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
 
         TARGET(MATCH_KEYS) {
+            PyObject *keys = PEEK(1);
+            PyObject *subject = PEEK(2);
+            PyObject *values_or_none;
             // On successful match, PUSH(values). Otherwise, PUSH(None).
-            PyObject *keys = TOP();
-            PyObject *subject = SECOND();
-            PyObject *values_or_none = match_keys(tstate, subject, keys);
-            if (values_or_none == NULL) {
-                goto error;
-            }
-            PUSH(values_or_none);
+            values_or_none = match_keys(tstate, subject, keys);
+            if (values_or_none == NULL) goto error;
+            STACK_GROW(1);
+            POKE(1, values_or_none);
             DISPATCH();
         }
 
