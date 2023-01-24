@@ -12,6 +12,7 @@
 */
 
 typedef struct {
+    PyTypeObject *accumulate_type;
     PyTypeObject *combinations_type;
     PyTypeObject *cwr_type;
     PyTypeObject *cycle_type;
@@ -65,18 +66,17 @@ class itertools.chain "chainobject *" "&chain_type"
 class itertools.combinations "combinationsobject *" "clinic_state()->combinations_type"
 class itertools.combinations_with_replacement "cwr_object *" "clinic_state()->cwr_type"
 class itertools.permutations "permutationsobject *" "clinic_state()->permutations_type"
-class itertools.accumulate "accumulateobject *" "&accumulate_type"
+class itertools.accumulate "accumulateobject *" "clinic_state()->accumulate_type"
 class itertools.compress "compressobject *" "&compress_type"
 class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1790ac655869a651]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e0155dd6d01d40dd]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
 static PyTypeObject batched_type;
-static PyTypeObject accumulate_type;
 static PyTypeObject compress_type;
 static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
@@ -3658,17 +3658,20 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
 static void
 accumulate_dealloc(accumulateobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->binop);
     Py_XDECREF(lz->total);
     Py_XDECREF(lz->it);
     Py_XDECREF(lz->initial);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
 accumulate_traverse(accumulateobject *lz, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->binop);
     Py_VISIT(lz->it);
     Py_VISIT(lz->total);
@@ -3762,48 +3765,25 @@ static PyMethodDef accumulate_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject accumulate_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.accumulate",             /* tp_name */
-    sizeof(accumulateobject),           /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)accumulate_dealloc,     /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_accumulate__doc__,        /* tp_doc */
-    (traverseproc)accumulate_traverse,  /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)accumulate_next,      /* tp_iternext */
-    accumulate_methods,                 /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_accumulate,               /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot accumulate_slots[] = {
+    {Py_tp_dealloc, accumulate_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_accumulate__doc__},
+    {Py_tp_traverse, accumulate_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, accumulate_next},
+    {Py_tp_methods, accumulate_methods},
+    {Py_tp_new, itertools_accumulate},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec accumulate_spec = {
+    .name = "itertools.accumulate",
+    .basicsize = sizeof(accumulateobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = accumulate_slots,
 };
 
 
@@ -4835,6 +4815,7 @@ static int
 itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     itertools_state *state = get_module_state(mod);
+    Py_VISIT(state->accumulate_type);
     Py_VISIT(state->combinations_type);
     Py_VISIT(state->cwr_type);
     Py_VISIT(state->cycle_type);
@@ -4851,6 +4832,7 @@ static int
 itertoolsmodule_clear(PyObject *mod)
 {
     itertools_state *state = get_module_state(mod);
+    Py_CLEAR(state->accumulate_type);
     Py_CLEAR(state->combinations_type);
     Py_CLEAR(state->cwr_type);
     Py_CLEAR(state->cycle_type);
@@ -4884,6 +4866,7 @@ static int
 itertoolsmodule_exec(PyObject *mod)
 {
     itertools_state *state = get_module_state(mod);
+    ADD_TYPE(mod, state->accumulate_type, &accumulate_spec);
     ADD_TYPE(mod, state->combinations_type, &combinations_spec);
     ADD_TYPE(mod, state->cwr_type, &cwr_spec);
     ADD_TYPE(mod, state->cycle_type, &cycle_spec);
@@ -4895,7 +4878,6 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->takewhile_type, &takewhile_spec);
 
     PyTypeObject *typelist[] = {
-        &accumulate_type,
         &batched_type,
         &islice_type,
         &chain_type,
