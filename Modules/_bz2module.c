@@ -111,11 +111,12 @@ catch_bz2_error(int bzerror)
 static int
 grow_buffer(PyObject **buf, Py_ssize_t max_length)
 {
-    /* Expand the buffer by an amount proportional to the current size,
-       giving us amortized linear-time behavior. Use a less-than-double
-       growth factor to avoid excessive allocation. */
+    /* Expand the buffer by doubling it. Previously this was done by a growth
+       factor but this results in more calls to _PyBytes_Resize for larger
+       buffers. Since resizing is costly, doubling the buffer is more
+       efficient while the cost of overallocation is small on small buffers. */
     size_t size = PyBytes_GET_SIZE(*buf);
-    size_t new_size = size + (size >> 3) + 6;
+    size_t new_size = size << 1;
 
     if (max_length > 0 && new_size > (size_t) max_length) {
         new_size = (size_t) max_length;
