@@ -354,7 +354,7 @@ class Instruction:
         assert dedent <= 0
         extra = " " * -dedent
         for line in self.block_text:
-            if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*$", line):
+            if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*(?://.*)?$", line):
                 space, cond, label = m.groups()
                 # ERROR_IF() must pop the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.

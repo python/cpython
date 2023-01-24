@@ -2099,14 +2099,11 @@ dummy_func(
             attrs = match_class(tstate, subject, type, oparg, names);
             DECREF_INPUTS();
             if (attrs) {
-                // Success!
-                assert(PyTuple_CheckExact(attrs));
+                assert(PyTuple_CheckExact(attrs));  // Success!
             }
             else {
-                // Error!
-                ERROR_IF(_PyErr_Occurred(tstate), error);
-                // Failure!
-                attrs = Py_NewRef(Py_None);
+                ERROR_IF(_PyErr_Occurred(tstate), error);  // Error!
+                attrs = Py_NewRef(Py_None);  // Failure!
             }
         }
 

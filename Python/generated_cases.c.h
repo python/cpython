@@ -2491,14 +2491,11 @@
             Py_DECREF(type);
             Py_DECREF(names);
             if (attrs) {
-                // Success!
-                assert(PyTuple_CheckExact(attrs));
+                assert(PyTuple_CheckExact(attrs));  // Success!
             }
             else {
-                // Error!
                 if (_PyErr_Occurred(tstate)) goto pop_3_error;
-                // Failure!
-                attrs = Py_NewRef(Py_None);
+                attrs = Py_NewRef(Py_None);  // Failure!
             }
             STACK_SHRINK(2);
             POKE(1, attrs);
