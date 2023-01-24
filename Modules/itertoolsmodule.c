@@ -22,6 +22,7 @@ typedef struct {
     PyTypeObject *filterfalse_type;
     PyTypeObject *groupby_type;
     PyTypeObject *_grouper_type;
+    PyTypeObject *islice_type;
     PyTypeObject *pairwise_type;
     PyTypeObject *permutations_type;
     PyTypeObject *product_type;
@@ -1683,8 +1684,6 @@ typedef struct {
     Py_ssize_t cnt;
 } isliceobject;
 
-static PyTypeObject islice_type;
-
 static PyObject *
 islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1694,9 +1693,11 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t numargs;
     isliceobject *lz;
 
-    if ((type == &islice_type || type->tp_init == islice_type.tp_init) &&
-        !_PyArg_NoKeywords("islice", kwds))
+    itertools_state *st = find_state_by_type(type);
+    if ((type == st->islice_type || type->tp_init == st->islice_type->tp_init)
+        && !_PyArg_NoKeywords("islice", kwds)) {
         return NULL;
+    }
 
     if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
         return NULL;
@@ -1773,14 +1774,17 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 islice_dealloc(isliceobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->it);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
 islice_traverse(isliceobject *lz, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     return 0;
 }
@@ -1886,48 +1890,25 @@ specified as another value, step determines how many values are\n\
 skipped between successive calls.  Works like a slice() on a list\n\
 but returns an iterator.");
 
-static PyTypeObject islice_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.islice",                 /* tp_name */
-    sizeof(isliceobject),               /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)islice_dealloc,         /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    islice_doc,                         /* tp_doc */
-    (traverseproc)islice_traverse,      /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)islice_next,          /* tp_iternext */
-    islice_methods,                     /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    islice_new,                         /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot islice_slots[] = {
+    {Py_tp_dealloc, islice_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)islice_doc},
+    {Py_tp_traverse, islice_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, islice_next},
+    {Py_tp_methods, islice_methods},
+    {Py_tp_new, islice_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec islice_spec = {
+    .name = "itertools.islice",
+    .basicsize = sizeof(isliceobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = islice_slots,
 };
 
 
@@ -3693,8 +3674,6 @@ accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
 
         if (PyType_Ready(&chain_type) < 0)
             return NULL;
-        if (PyType_Ready(&islice_type) < 0)
-            return NULL;
         it = PyObject_CallFunction((PyObject *)&chain_type, "(O)O",
                                    lz->total, lz->it);
         if (it == NULL)
@@ -3703,7 +3682,10 @@ accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
                                    it, lz->binop ? lz->binop : Py_None);
         if (it == NULL)
             return NULL;
-        return Py_BuildValue("O(NiO)", &islice_type, it, 1, Py_None);
+
+        PyTypeObject *tp = Py_TYPE(lz);
+        itertools_state *state = find_state_by_type(tp);
+        return Py_BuildValue("O(NiO)", state->islice_type, it, 1, Py_None);
     }
     return Py_BuildValue("O(OO)O", Py_TYPE(lz),
                             lz->it, lz->binop?lz->binop:Py_None,
@@ -4683,6 +4665,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->filterfalse_type);
     Py_VISIT(state->groupby_type);
     Py_VISIT(state->_grouper_type);
+    Py_VISIT(state->islice_type);
     Py_VISIT(state->pairwise_type);
     Py_VISIT(state->permutations_type);
     Py_VISIT(state->product_type);
@@ -4707,6 +4690,7 @@ itertoolsmodule_clear(PyObject *mod)
     Py_CLEAR(state->filterfalse_type);
     Py_CLEAR(state->groupby_type);
     Py_CLEAR(state->_grouper_type);
+    Py_CLEAR(state->islice_type);
     Py_CLEAR(state->pairwise_type);
     Py_CLEAR(state->permutations_type);
     Py_CLEAR(state->product_type);
@@ -4748,6 +4732,7 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->filterfalse_type, &filterfalse_spec);
     ADD_TYPE(mod, state->groupby_type, &groupby_spec);
     ADD_TYPE(mod, state->_grouper_type, &_grouper_spec);
+    ADD_TYPE(mod, state->islice_type, &islice_spec);
     ADD_TYPE(mod, state->pairwise_type, &pairwise_spec);
     ADD_TYPE(mod, state->permutations_type, &permutations_spec);
     ADD_TYPE(mod, state->product_type, &product_spec);
@@ -4758,7 +4743,6 @@ itertoolsmodule_exec(PyObject *mod)
 
     PyTypeObject *typelist[] = {
         &batched_type,
-        &islice_type,
         &chain_type,
         &tee_type,
         &teedataobject_type
