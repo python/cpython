@@ -13,11 +13,6 @@ All integers are implemented as "long" integer objects of arbitrary size.
 On error, most ``PyLong_As*`` APIs return ``(return type)-1`` which cannot be
 distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
-.. seealso:: Python methods :meth:`int.to_bytes` and :meth:`int.from_bytes`
-   (called via one of the :c:func:`PyObject_CallMethod` APIs),
-   to convert a :c:type:`PyLongObject` of arbitrary size
-   to or from an array of bytes.
-
 .. c:type:: PyLongObject
 
    This subtype of :c:type:`PyObject` represents a Python integer object.
@@ -98,6 +93,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    whitespace and single underscores after a base specifier and between digits are
    ignored.  If there are no digits or *str* is not NULL-terminated following the
    digits and trailing whitespace, :exc:`ValueError` will be raised.
+
+   .. seealso:: Python methods :meth:`int.to_bytes` and :meth:`int.from_bytes`
+      to convert a :c:type:`PyLongObject` to or from an array of bytes in base
+      ``256``. You can call those from C using :c:func:`PyObject_CallMethod`.
 
 
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
