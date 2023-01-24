@@ -336,7 +336,7 @@ line interface:
 
    # get a MIME type for a rare file extension
    $ python -m mimetypes filename.pict
-   I don't know anything about type filename.pict
+   error: unknown extension filename.pict
 
    # now look in the extended database built into Python
    $ python -m mimetypes -l filename.pict
@@ -348,7 +348,7 @@ line interface:
 
    # get a file extension by a rare MIME type
    $ python -m mimetypes -e text/xul
-   I don't know anything about type text/xul
+   error: unknown type text/xul
 
    # now look in the extended database again
    $ python -m mimetypes -e -l text/xul
@@ -358,10 +358,10 @@ line interface:
    $ python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
    type: application/x-sh encoding: None
    type: application/x-netcdf encoding: None
-   I don't know anything about type filename.xxx
+   error: unknown extension filename.xxx
 
    # try to feed an unknown MIME type
    $ python -m mimetypes -e audio/aac audio/opus audio/future audio/x-wav
    .aac
    .opus
-   I don't know anything about type audio/future
+   error: unknown type audio/future
