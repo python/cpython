@@ -1480,7 +1480,16 @@ class Popen:
             if shell:
                 startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow = _winapi.SW_HIDE
-                comspec = os.environ.get("COMSPEC", "cmd.exe")
+                # gh-101283: with no full path, Windows looks into a
+                # current directory first, so no plain "cmd.exe". 
+                default_shell = "C:\\WINDOWS\\system32\\cmd.exe"
+                comspec = os.environ.get("COMSPEC", default_shell)
+                if not os.path.isfile(comspec):
+                    # Windows is installed into a non-standard location
+                    # or a system environment variable is broken.
+                    # It's highly unlikely and we cannot help here.
+                    comspec = "cmd.exe"
+
                 args = '{} /c "{}"'.format (comspec, args)
 
             if cwd is not None:
