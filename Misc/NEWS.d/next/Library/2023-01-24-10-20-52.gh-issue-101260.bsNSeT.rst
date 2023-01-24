@@ -1,0 +1,5 @@
+In Python 3.10 a change was made that enhanced the performance of the zlib,
+bz2 and lzma modules when operating on large (multiple megabytes) in-memory
+buffers. However this came at the cost of a performance degradation for
+smaller buffers. Since smaller buffers are used more often, particularly
+during streaming, the change was reverted.
