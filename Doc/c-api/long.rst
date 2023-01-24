@@ -95,7 +95,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    digits and trailing whitespace, :exc:`ValueError` will be raised.
 
    .. seealso:: Python methods :meth:`int.to_bytes` and :meth:`int.from_bytes`
-      to convert a :c:type:`PyLongObject` to or from an array of bytes in base
+      to convert a :c:type:`PyLongObject` to/from an array of bytes in base
       ``256``. You can call those from C using :c:func:`PyObject_CallMethod`.
 
 
