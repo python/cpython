@@ -287,7 +287,6 @@ class MiscTestCase(unittest.TestCase):
 
 class MimetypesCliTestCase(unittest.TestCase):
 
-    @classmethod
     def mimetypes_cmd(cls, *args, **kwargs):
         result, _ = run_python_until_end('-m', 'mimetypes', *args)
         return result.rc, result.out.decode(), result.err.decode()
@@ -313,7 +312,7 @@ class MimetypesCliTestCase(unittest.TestCase):
         retcode, out, err = self.mimetypes_cmd('-e', 'image/jpg')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, f"I don't know anything about type image/jpg{linesep}")
+        self.assertEqual(err, f'error: unknown type image/jpg{linesep}')
 
         retcode, out, err = self.mimetypes_cmd('-e', 'image/jpeg')
         self.assertEqual(retcode, 0)
@@ -334,7 +333,7 @@ class MimetypesCliTestCase(unittest.TestCase):
         retcode, out, err = self.mimetypes_cmd('foo.webp')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, f"I don't know anything about type foo.webp{linesep}")
+        self.assertEqual(err, f'error: unknown extension of foo.webp{linesep}')
 
 if __name__ == "__main__":
     unittest.main()
