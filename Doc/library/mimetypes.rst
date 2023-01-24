@@ -308,8 +308,8 @@ The script converts file extensions to MIME types if ``--extension`` option
 is specified, or vice versa if not.
 
 For each ``type`` entry, the script writes a line into the standard output
-stream. For an unknown type, it writes an error message into a standard error
-stream end exits with the return code ``1``.
+stream. If an unknown type occurs, it writes an error message into the
+standard error stream and aborts with the return code ``1``.
 
 
 .. mimetypes-cli-example:
