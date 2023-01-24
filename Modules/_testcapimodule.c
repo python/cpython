@@ -2148,7 +2148,10 @@ dict_get_version(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
         return NULL;
 
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS    
     version = dict->ma_version_tag;
+    _Py_COMP_DIAG_POP
 
     static_assert(sizeof(unsigned long long) >= sizeof(version),
                   "version is larger than unsigned long long");
