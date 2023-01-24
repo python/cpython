@@ -88,64 +88,46 @@ current_fast_clear(_PyRuntimeState *runtime)
 // the thread state bound to the current OS thread
 //------------------------------------------------
 
-/*
-   The stored thread state is set by bind_tstate() (AKA PyThreadState_Bind().
-
-   The GIL does no need to be held for these.
-  */
-
-static int
-current_tss_initialized(_PyRuntimeState *runtime)
+static inline int
+tstate_tss_initialized(Py_tss_t *key)
 {
-    return PyThread_tss_is_created(&runtime->autoTSSkey);
-}
-
-static PyStatus
-current_tss_init(_PyRuntimeState *runtime)
-{
-    assert(!current_tss_initialized(runtime));
-    if (PyThread_tss_create(&runtime->autoTSSkey) != 0) {
-        return _PyStatus_NO_MEMORY();
-    }
-    return _PyStatus_OK();
-}
-
-static void
-current_tss_fini(_PyRuntimeState *runtime)
-{
-    assert(current_tss_initialized(runtime));
-    PyThread_tss_delete(&runtime->autoTSSkey);
-}
-
-static inline PyThreadState *
-current_tss_get(_PyRuntimeState *runtime)
-{
-    assert(current_tss_initialized(runtime));
-    return (PyThreadState *)PyThread_tss_get(&runtime->autoTSSkey);
+    return PyThread_tss_is_created(key);
 }
 
 static inline int
-_current_tss_set(_PyRuntimeState *runtime, PyThreadState *tstate)
+tstate_tss_init(Py_tss_t *key)
 {
-    assert(tstate != NULL);
-    assert(current_tss_initialized(runtime));
-    return PyThread_tss_set(&runtime->autoTSSkey, (void *)tstate);
-}
-static inline void
-current_tss_set(_PyRuntimeState *runtime, PyThreadState *tstate)
-{
-    if (_current_tss_set(runtime, tstate) != 0) {
-        Py_FatalError("failed to set current tstate (TSS)");
-    }
+    assert(!tstate_tss_initialized(key));
+    return PyThread_tss_create(key);
 }
 
 static inline void
-current_tss_clear(_PyRuntimeState *runtime)
+tstate_tss_fini(Py_tss_t *key)
 {
-    assert(current_tss_initialized(runtime));
-    if (PyThread_tss_set(&runtime->autoTSSkey, NULL) != 0) {
-        Py_FatalError("failed to clear current tstate (TSS)");
-    }
+    assert(tstate_tss_initialized(key));
+    PyThread_tss_delete(key);
+}
+
+static inline PyThreadState *
+tstate_tss_get(Py_tss_t *key)
+{
+    assert(tstate_tss_initialized(key));
+    return (PyThreadState *)PyThread_tss_get(key);
+}
+
+static inline int
+tstate_tss_set(Py_tss_t *key, PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate_tss_initialized(key));
+    return PyThread_tss_set(key, (void *)tstate);
+}
+
+static inline int
+tstate_tss_clear(Py_tss_t *key)
+{
+    assert(tstate_tss_initialized(key));
+    return PyThread_tss_set(key, (void *)NULL);
 }
 
 #ifdef HAVE_FORK
@@ -154,27 +136,66 @@ current_tss_clear(_PyRuntimeState *runtime)
  * don't reset TSS upon fork(), see issue #10517.
  */
 static PyStatus
-current_tss_reinit(_PyRuntimeState *runtime)
+tstate_tss_reinit(Py_tss_t *key)
 {
-    if (!current_tss_initialized(runtime)) {
+    if (!tstate_tss_initialized(key)) {
         return _PyStatus_OK();
     }
-    PyThreadState *tstate = current_tss_get(runtime);
+    PyThreadState *tstate = tstate_tss_get(key);
 
-    current_tss_fini(runtime);
-    PyStatus status = current_tss_init(runtime);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    tstate_tss_fini(key);
+    if (tstate_tss_init(key) != 0) {
+        return _PyStatus_NO_MEMORY();
     }
 
     /* If the thread had an associated auto thread state, reassociate it with
      * the new key. */
-    if (tstate && _current_tss_set(runtime, tstate) != 0) {
-        return _PyStatus_ERR("failed to set autoTSSkey");
+    if (tstate && tstate_tss_set(key, tstate) != 0) {
+        return _PyStatus_ERR("failed to re-set autoTSSkey");
     }
     return _PyStatus_OK();
 }
 #endif
+
+
+/*
+   The stored thread state is set by bind_tstate() (AKA PyThreadState_Bind().
+
+   The GIL does no need to be held for these.
+  */
+
+#define current_tss_initialized(runtime) \
+    tstate_tss_initialized(&(runtime)->autoTSSkey)
+#define current_tss_init(runtime) \
+    tstate_tss_init(&(runtime)->autoTSSkey)
+#define current_tss_fini(runtime) \
+    tstate_tss_fini(&(runtime)->autoTSSkey)
+#define current_tss_get(runtime) \
+    tstate_tss_get(&(runtime)->autoTSSkey)
+#define _current_tss_set(runtime, tstate) \
+    tstate_tss_set(&(runtime)->autoTSSkey, tstate)
+#define _current_tss_clear(runtime) \
+    tstate_tss_clear(&(runtime)->autoTSSkey)
+#define current_tss_reinit(runtime) \
+    tstate_tss_reinit(&(runtime)->autoTSSkey)
+
+static inline void
+current_tss_set(_PyRuntimeState *runtime, PyThreadState *tstate)
+{
+    assert(tstate != NULL && tstate->interp->runtime == runtime);
+    if (_current_tss_set(runtime, tstate) != 0) {
+        Py_FatalError("failed to set current tstate (TSS)");
+    }
+}
+
+static inline void
+current_tss_clear(_PyRuntimeState *runtime)
+{
+    if (_current_tss_clear(runtime) != 0) {
+        Py_FatalError("failed to clear current tstate (TSS)");
+    }
+}
+
 
 static inline int tstate_is_alive(PyThreadState *tstate);
 
@@ -409,10 +430,9 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
         memcpy(runtime, &initial, sizeof(*runtime));
     }
 
-    PyStatus status = current_tss_init(runtime);
-    if (_PyStatus_EXCEPTION(status)) {
+    if (current_tss_init(runtime) != 0) {
         _PyRuntimeState_Fini(runtime);
-        return status;
+        return _PyStatus_NO_MEMORY();
     }
 
     if (PyThread_tss_create(&runtime->trashTSSkey) != 0) {
