@@ -117,8 +117,9 @@ grow_buffer(PyObject **buf, Py_ssize_t max_length)
     size_t size = PyBytes_GET_SIZE(*buf);
     size_t new_size = size + (size >> 3) + 6;
 
-    if (max_length > 0 && new_size > (size_t) max_length)
+    if (max_length > 0 && new_size > (size_t) max_length) {
         new_size = (size_t) max_length;
+    }
 
     if (new_size > size) {
         return _PyBytes_Resize(buf, new_size);
@@ -145,7 +146,7 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
     c->bzs.next_out = PyBytes_AS_STRING(result);
     c->bzs.avail_out = INITIAL_BUFFER_SIZE;
 
-    for (;;) {
+    while (1) {
         char *this_out;
         int bzerror;
 
@@ -157,8 +158,9 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
         }
 
         /* In regular compression mode, stop when input data is exhausted. */
-        if (action == BZ_RUN && c->bzs.avail_in == 0)
+        if (action == BZ_RUN && c->bzs.avail_in == 0) {
             break;
+        }
 
         if (c->bzs.avail_out == 0) {
             size_t buffer_left = PyBytes_GET_SIZE(result) - data_size;
@@ -176,8 +178,9 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
         Py_END_ALLOW_THREADS
         data_size += c->bzs.next_out - this_out;
 
-        if (catch_bz2_error(bzerror))
+        if (catch_bz2_error(bzerror)) {
             goto error;
+        }
 
         /* In flushing mode, stop when all buffered data has been flushed. */
         if (action == BZ_FINISH && bzerror == BZ_STREAM_END)
@@ -260,10 +263,12 @@ _bz2_BZ2Compressor_flush_impl(BZ2Compressor *self)
 static void*
 BZ2_Malloc(void* ctx, int items, int size)
 {
-    if (items < 0 || size < 0)
+    if (items < 0 || size < 0) {
         return NULL;
-    if (size != 0 && (size_t)items > (size_t)PY_SSIZE_T_MAX / (size_t)size)
+    }
+    if (size != 0 && (size_t)items > (size_t)PY_SSIZE_T_MAX / (size_t)size) {
         return NULL;
+    }
     /* PyMem_Malloc() cannot be used: compress() and decompress()
        release the GIL */
     return PyMem_RawMalloc((size_t)items * (size_t)size);
@@ -299,9 +304,9 @@ _bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel)
     self->bzs.bzalloc = BZ2_Malloc;
     self->bzs.bzfree = BZ2_Free;
     bzerror = BZ2_bzCompressInit(&self->bzs, compresslevel, 0, 0);
-    if (catch_bz2_error(bzerror))
+    if (catch_bz2_error(bzerror)) {
         goto error;
-
+    }
     return 0;
 
 error:
@@ -408,16 +413,17 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
     Py_ssize_t data_size = 0;
     PyObject *result;
     bz_stream *bzs = &d->bzs;
-    if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE)
+    if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE) {
         result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
-    else
+    } else {
         result = PyBytes_FromStringAndSize(NULL, max_length);
-    if (result == NULL)
+    }
+    if (result == NULL) {
         return NULL;
-
+    }
     bzs->next_out = PyBytes_AS_STRING(result);
 
-    for (;;) {
+    while (1) {
         int bzret;
         size_t avail;
         /* On a 64-bit system, buffer length might not fit in avail_out, so we
@@ -436,8 +442,9 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
         data_size = bzs->next_out - PyBytes_AS_STRING(result);
         d->bzs_avail_in_real += bzs->avail_in;
 
-        if (catch_bz2_error(bzret))
+        if (catch_bz2_error(bzret)) {
             goto error;
+        }
         if (bzret == BZ_STREAM_END) {
             d->eof = 1;
             break;
@@ -527,8 +534,9 @@ decompress(BZ2Decompressor *d, char *data, size_t len, Py_ssize_t max_length)
         if (d->bzs_avail_in_real > 0) {
             Py_XSETREF(d->unused_data,
                       PyBytes_FromStringAndSize(bzs->next_in, d->bzs_avail_in_real));
-            if (d->unused_data == NULL)
+            if (d->unused_data == NULL) {
                 goto error;
+            }
         }
     }
     else if (d->bzs_avail_in_real == 0) {
@@ -604,10 +612,11 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
     PyObject *result = NULL;
 
     ACQUIRE_LOCK(self);
-    if (self->eof)
+    if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
-    else
+    } else {
         result = decompress(self, data->buf, data->len, max_length);
+    }
     RELEASE_LOCK(self);
     return result;
 }
@@ -634,9 +643,9 @@ _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
     Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
-    if (self->unused_data == NULL)
+    if (self->unused_data == NULL) {
         goto error;
-
+    }
     bzerror = BZ2_bzDecompressInit(&self->bzs, 0, 0);
     if (catch_bz2_error(bzerror))
         goto error;
