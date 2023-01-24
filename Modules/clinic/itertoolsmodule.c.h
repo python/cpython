@@ -413,7 +413,12 @@ itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
+<<<<<<< HEAD
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+=======
+    if ((type == clinic_state()->takewhile_type ||
+         type->tp_init == clinic_state()->takewhile_type->tp_init) &&
+>>>>>>> 4e23243ee8 (gh-101277: Add takewhile type to module state)
         !_PyArg_NoKeywords("takewhile", kwargs)) {
         goto exit;
     }
@@ -913,4 +918,8 @@ skip_optional_pos:
 exit:
     return return_value;
 }
+<<<<<<< HEAD
 /*[clinic end generated code: output=c3b4c4dba10fc911 input=a9049054013a1b77]*/
+=======
+/*[clinic end generated code: output=165d47c9da0e01d3 input=a9049054013a1b77]*/
+>>>>>>> 4e23243ee8 (gh-101277: Add takewhile type to module state)
