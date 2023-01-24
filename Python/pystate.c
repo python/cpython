@@ -1704,16 +1704,14 @@ PyThreadState *
 _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
 {
     PyThreadState *oldts = current_fast_get(runtime);
-    // XXX tstate_is_bound(oldts)
+
+    current_fast_clear(runtime);
+
     if (oldts != NULL) {
-        // XXX assert(oldts == NULL || tstate_is_alive(oldts));
+        // XXX assert(tstate_is_alive(oldts) && tstate_is_bound(oldts));
         tstate_deactivate(oldts);
     }
-
-    if (newts == NULL) {
-        current_fast_clear(runtime);
-    }
-    else {
+    if (newts != NULL) {
         assert(tstate_is_alive(newts) && tstate_is_bound(newts));
         current_fast_set(runtime, newts);
         tstate_activate(newts);
@@ -1731,8 +1729,10 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
         */
         int err = errno;
         PyThreadState *check = gilstate_tss_get(runtime);
-        if (check && check->interp == newts->interp && check != newts) {
-            Py_FatalError("Invalid thread state for this thread");
+        if (check != newts) {
+            if (check && check->interp == newts->interp) {
+                Py_FatalError("Invalid thread state for this thread");
+            }
         }
         errno = err;
     }
