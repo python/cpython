@@ -232,7 +232,7 @@ static PyObject *
 itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &teedataobject_type;
+    PyTypeObject *base_tp = clinic_state()->teedataobject_type;
     PyObject *it;
     PyObject *values;
     PyObject *next;
@@ -913,4 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3fa47c27849bd6e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=111cbd102c2a23c9 input=a9049054013a1b77]*/
