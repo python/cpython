@@ -2251,43 +2251,32 @@
         }
 
         TARGET(CHECK_EG_MATCH) {
-            PyObject *match_type = POP();
+            PyObject *match_type = PEEK(1);
+            PyObject *exc_value = PEEK(2);
+            PyObject *rest;
+            PyObject *match;
             if (check_except_star_type_valid(tstate, match_type) < 0) {
+                Py_DECREF(exc_value);
                 Py_DECREF(match_type);
-                goto error;
+                if (true) goto pop_2_error;
             }
 
-            PyObject *exc_value = TOP();
-            PyObject *match = NULL, *rest = NULL;
+            match = NULL;
+            rest = NULL;
             int res = exception_group_match(exc_value, match_type,
                                             &match, &rest);
+            Py_DECREF(exc_value);
             Py_DECREF(match_type);
-            if (res < 0) {
-                goto error;
-            }
+            if (res < 0) goto pop_2_error;
 
-            if (match == NULL || rest == NULL) {
-                assert(match == NULL);
-                assert(rest == NULL);
-                goto error;
-            }
-            if (Py_IsNone(match)) {
-                PUSH(match);
-                Py_XDECREF(rest);
-            }
-            else {
-                /* Total or partial match - update the stack from
-                 * [val]
-                 * to
-                 * [rest, match]
-                 * (rest can be Py_None)
-                 */
+            assert((match == NULL) == (rest == NULL));
+            if (match == NULL) goto pop_2_error;
 
-                SET_TOP(rest);
-                PUSH(match);
+            if (!Py_IsNone(match)) {
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
-                Py_DECREF(exc_value);
             }
+            POKE(1, match);
+            POKE(2, rest);
             DISPATCH();
         }
 

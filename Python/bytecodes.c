@@ -1894,44 +1894,24 @@ dummy_func(
             b = Py_NewRef((res^oparg) ? Py_True : Py_False);
         }
 
-        // stack effect: ( -- )
-        inst(CHECK_EG_MATCH) {
-            PyObject *match_type = POP();
+        inst(CHECK_EG_MATCH, (exc_value, match_type -- rest, match)) {
             if (check_except_star_type_valid(tstate, match_type) < 0) {
-                Py_DECREF(match_type);
-                goto error;
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
 
-            PyObject *exc_value = TOP();
-            PyObject *match = NULL, *rest = NULL;
+            match = NULL;
+            rest = NULL;
             int res = exception_group_match(exc_value, match_type,
                                             &match, &rest);
-            Py_DECREF(match_type);
-            if (res < 0) {
-                goto error;
-            }
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
 
-            if (match == NULL || rest == NULL) {
-                assert(match == NULL);
-                assert(rest == NULL);
-                goto error;
-            }
-            if (Py_IsNone(match)) {
-                PUSH(match);
-                Py_XDECREF(rest);
-            }
-            else {
-                /* Total or partial match - update the stack from
-                 * [val]
-                 * to
-                 * [rest, match]
-                 * (rest can be Py_None)
-                 */
+            assert((match == NULL) == (rest == NULL));
+            ERROR_IF(match == NULL, error);
 
-                SET_TOP(rest);
-                PUSH(match);
+            if (!Py_IsNone(match)) {
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
-                Py_DECREF(exc_value);
             }
         }
 
