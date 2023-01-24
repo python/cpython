@@ -625,7 +625,7 @@ def _main():
             if guess:
                 print('type:', guess, 'encoding:', encoding)
             else:
-                sys.exit(f"error: unknown extension {gtype}")
+                sys.exit(f"error: unknown extension of {gtype}")
 
 
 if __name__ == '__main__':
