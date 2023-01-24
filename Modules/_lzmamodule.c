@@ -314,9 +314,10 @@ lzma_filter_converter(_lzma_state *state, PyObject *spec, void *ptr)
     }
     id_obj = PyMapping_GetItemString(spec, "id");
     if (id_obj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_KeyError))
+        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetString(PyExc_ValueError,
                             "Filter specifier must have an \"id\" entry");
+        }
         return 0;
     }
     f->id = PyLong_AsUnsignedLongLong(id_obj);
@@ -523,7 +524,7 @@ compress(Compressor *c, uint8_t *data, size_t len, lzma_action action)
     c->lzs.next_out = (uint8_t *)PyBytes_AS_STRING(result);
     c->lzs.avail_out = PyBytes_GET_SIZE(result);
 
-    for (;;) {
+    while(1) {
         lzma_ret lzret;
 
         Py_BEGIN_ALLOW_THREADS
@@ -902,17 +903,19 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
     _lzma_state *state = PyType_GetModuleState(Py_TYPE(d));
     assert(state != NULL);
 
-    if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE)
+    if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE) {
         result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
-    else
+    } else {
         result = PyBytes_FromStringAndSize(NULL, max_length);
-    if (result == NULL)
+    }
+    if (result == NULL) {
         return NULL;
+    }
 
     lzs->next_out = (uint8_t *)PyBytes_AS_STRING(result);
     lzs->avail_out = PyBytes_GET_SIZE(result);
 
-    for (;;) {
+    while(1) {
         lzma_ret lzret;
 
         Py_BEGIN_ALLOW_THREADS
@@ -937,10 +940,12 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
                Maybe lzs's internal state still have a few bytes
                can be output, grow the output buffer and continue
                if max_lengh < 0. */
-            if (data_size == max_length)
+            if (data_size == max_length) {
                 break;
-            if (grow_buffer(&result, max_length) == -1)
+            }
+            if (grow_buffer(&result, max_length) == -1) {
                 goto error;
+            }
             lzs->next_out = (uint8_t *)PyBytes_AS_STRING(result) + data_size;
             lzs->avail_out = PyBytes_GET_SIZE(result) - data_size;
         } else if (lzs->avail_in == 0) {
@@ -1111,10 +1116,11 @@ _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
     PyObject *result = NULL;
 
     ACQUIRE_LOCK(self);
-    if (self->eof)
+    if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "Already at end of stream");
-    else
+    } else {
         result = decompress(self, data->buf, data->len, max_length);
+    }
     RELEASE_LOCK(self);
     return result;
 }
@@ -1267,9 +1273,7 @@ error:
 static void
 Decompressor_dealloc(Decompressor *self)
 {
-    if(self->input_buffer != NULL)
-        PyMem_Free(self->input_buffer);
-
+    PyMem_Free(self->input_buffer);
     lzma_end(&self->lzs);
     Py_CLEAR(self->unused_data);
     if (self->lock != NULL) {
