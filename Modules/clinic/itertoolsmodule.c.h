@@ -102,7 +102,7 @@ static PyObject *
 pairwise_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &pairwise_type;
+    PyTypeObject *base_tp = clinic_state()->pairwise_type;
     PyObject *iterable;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
@@ -913,4 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5dca56efff825e7f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a08b58d7dac825da input=a9049054013a1b77]*/

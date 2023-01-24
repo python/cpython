@@ -22,6 +22,7 @@ typedef struct {
     PyTypeObject *filterfalse_type;
     PyTypeObject *groupby_type;
     PyTypeObject *_grouper_type;
+    PyTypeObject *pairwise_type;
     PyTypeObject *permutations_type;
     PyTypeObject *starmap_type;
     PyTypeObject *takewhile_type;
@@ -73,14 +74,13 @@ class itertools.accumulate "accumulateobject *" "clinic_state()->accumulate_type
 class itertools.compress "compressobject *" "clinic_state()->compress_type"
 class itertools.filterfalse "filterfalseobject *" "clinic_state()->filterfalse_type"
 class itertools.count "countobject *" "clinic_state()->count_type"
-class itertools.pairwise "pairwiseobject *" "&pairwise_type"
+class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=338b4d26465f3eb1]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=28ffff5c0c93eed7]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
 static PyTypeObject batched_type;
-static PyTypeObject pairwise_type;
 
 #define clinic_state_by_cls() (get_module_state_by_cls(base_tp))
 #include "clinic/itertoolsmodule.c.h"
@@ -308,15 +308,18 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
 static void
 pairwise_dealloc(pairwiseobject *po)
 {
+    PyTypeObject *tp = Py_TYPE(po);
     PyObject_GC_UnTrack(po);
     Py_XDECREF(po->it);
     Py_XDECREF(po->old);
-    Py_TYPE(po)->tp_free(po);
+    tp->tp_free(po);
+    Py_DECREF(tp);
 }
 
 static int
 pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(po));
     Py_VISIT(po->it);
     Py_VISIT(po->old);
     return 0;
@@ -351,48 +354,25 @@ pairwise_next(pairwiseobject *po)
     return result;
 }
 
-static PyTypeObject pairwise_type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "itertools.pairwise",           /* tp_name */
-    sizeof(pairwiseobject),         /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    /* methods */
-    (destructor)pairwise_dealloc,   /* tp_dealloc */
-    0,                              /* tp_vectorcall_offset */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_as_async */
-    0,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    0,                              /* tp_as_sequence */
-    0,                              /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    0,                              /* tp_str */
-    PyObject_GenericGetAttr,        /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,        /* tp_flags */
-    pairwise_new__doc__,            /* tp_doc */
-    (traverseproc)pairwise_traverse,    /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    PyObject_SelfIter,              /* tp_iter */
-    (iternextfunc)pairwise_next,    /* tp_iternext */
-    0,                              /* tp_methods */
-    0,                              /* tp_members */
-    0,                              /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    pairwise_new,                   /* tp_new */
-    PyObject_GC_Del,                /* tp_free */
+static PyType_Slot pairwise_slots[] = {
+    {Py_tp_dealloc, pairwise_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)pairwise_new__doc__},
+    {Py_tp_traverse, pairwise_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, pairwise_next},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, pairwise_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec pairwise_spec = {
+    .name = "itertools.pairwise",
+    .basicsize = sizeof(pairwiseobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pairwise_slots,
 };
 
 
@@ -4766,6 +4746,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->filterfalse_type);
     Py_VISIT(state->groupby_type);
     Py_VISIT(state->_grouper_type);
+    Py_VISIT(state->pairwise_type);
     Py_VISIT(state->permutations_type);
     Py_VISIT(state->starmap_type);
     Py_VISIT(state->takewhile_type);
@@ -4786,6 +4767,7 @@ itertoolsmodule_clear(PyObject *mod)
     Py_CLEAR(state->filterfalse_type);
     Py_CLEAR(state->groupby_type);
     Py_CLEAR(state->_grouper_type);
+    Py_CLEAR(state->pairwise_type);
     Py_CLEAR(state->permutations_type);
     Py_CLEAR(state->starmap_type);
     Py_CLEAR(state->takewhile_type);
@@ -4823,6 +4805,7 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->filterfalse_type, &filterfalse_spec);
     ADD_TYPE(mod, state->groupby_type, &groupby_spec);
     ADD_TYPE(mod, state->_grouper_type, &_grouper_spec);
+    ADD_TYPE(mod, state->pairwise_type, &pairwise_spec);
     ADD_TYPE(mod, state->permutations_type, &permutations_spec);
     ADD_TYPE(mod, state->starmap_type, &starmap_spec);
     ADD_TYPE(mod, state->takewhile_type, &takewhile_spec);
@@ -4832,7 +4815,6 @@ itertoolsmodule_exec(PyObject *mod)
         &islice_type,
         &chain_type,
         &ziplongest_type,
-        &pairwise_type,
         &product_type,
         &repeat_type,
         &tee_type,
