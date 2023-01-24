@@ -1750,6 +1750,9 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
             if (check && check->interp == newts->interp) {
                 Py_FatalError("Invalid thread state for this thread");
             }
+            // Make sure the "autoTSS" thread state matches the current one.
+            // XXX Call bind_gilstate_tstate() instead?
+            giltstate_tss_set(runtime, newts);
         }
     }
     errno = err;
