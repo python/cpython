@@ -130,6 +130,8 @@ struct _ts {
         unsigned int bound:1;
         /* Has been unbound from its OS thread. */
         unsigned int unbound:1;
+        /* Has been bound aa current for the GILState API. */
+        unsigned int bound_gilstate:1;
         /* Currently in use (maybe holds the GIL). */
         unsigned int active:1;
 
@@ -139,7 +141,7 @@ struct _ts {
         unsigned int finalized:1;
 
         /* padding to align to 4 bytes */
-        unsigned int :26;
+        unsigned int :25;
     } _status;
 
     int py_recursion_remaining;

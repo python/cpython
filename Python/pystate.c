@@ -205,15 +205,73 @@ tstate_is_bound(PyThreadState *tstate)
     return tstate->_status.bound && !tstate->_status.unbound;
 }
 
+static void bind_gilstate_tstate(PyThreadState *);
+static void unbind_gilstate_tstate(PyThreadState *);
+
 static void
 bind_tstate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
     assert(tstate_is_alive(tstate) && !tstate->_status.bound);
     assert(!tstate->_status.unbound);  // just in case
+    assert(!tstate->_status.bound_gilstate);
+    assert(tstate != gilstate_tss_get(tstate->interp->runtime));
     assert(!tstate->_status.active);
     assert(tstate->thread_id == 0);
     assert(tstate->native_thread_id == 0);
+
+    // Currently we don't necessarily store the thread state
+    // in thread-local storage (e.g. per-interpreter).
+
+    tstate->thread_id = PyThread_get_thread_ident();
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    tstate->native_thread_id = PyThread_get_thread_native_id();
+#endif
+
+    tstate->_status.bound = 1;
+
+    // This make sure there's a gilstate tstate bound
+    // as soon as possible.
+    if (gilstate_tss_get(tstate->interp->runtime) == NULL) {
+        bind_gilstate_tstate(tstate);
+    }
+}
+
+static void
+unbind_tstate(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    // XXX assert(tstate_is_alive(tstate));
+    assert(tstate_is_bound(tstate));
+    // XXX assert(!tstate->_status.active);
+    assert(tstate->thread_id > 0);
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    assert(tstate->native_thread_id > 0);
+#endif
+
+    if (tstate->_status.bound_gilstate) {
+        unbind_gilstate_tstate(tstate);
+    }
+
+    // We leave thread_id and native_thraed_id alone
+    // since they can be useful for debugging.
+    // Check the `_status` field to know if these values
+    // are still valid.
+
+    // We leave tstate->_status.bound set to 1
+    // to indicate it was previously bound.
+    tstate->_status.unbound = 1;
+}
+
+
+static void
+bind_gilstate_tstate(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate_is_alive(tstate));
+    assert(tstate_is_bound(tstate));
+    // XXX assert(!tstate->_status.active);
+    // XXX assert(!tstate->_status.bound_gilstate);
     _PyRuntimeState *runtime = tstate->interp->runtime;
 
     /* Stick the thread state for this thread in thread specific storage.
@@ -238,42 +296,24 @@ bind_tstate(PyThreadState *tstate)
     if (gilstate_tss_get(runtime) == NULL) {
         gilstate_tss_set(runtime, tstate);
     }
-
-    tstate->thread_id = PyThread_get_thread_ident();
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    tstate->native_thread_id = PyThread_get_thread_native_id();
-#endif
-
-    tstate->_status.bound = 1;
+    tstate->_status.bound_gilstate = 1;
 }
 
 static void
-unbind_tstate(PyThreadState *tstate)
+unbind_gilstate_tstate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
+    // XXX assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
-    // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
     // XXX assert(!tstate->_status.active);
-    assert(tstate->thread_id > 0);
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    assert(tstate->native_thread_id > 0);
-#endif
-    _PyRuntimeState *runtime = tstate->interp->runtime;
+    assert(tstate->_status.bound_gilstate);
+    // XXX assert(tstate == gilstate_tss_get(tstate->interp->runtime));
 
-    if (gilstate_tss_initialized(runtime) &&
-        tstate == gilstate_tss_get(runtime))
-    {
-        gilstate_tss_clear(runtime);
+    // XXX This check *should* always succeed.
+    if (tstate == gilstate_tss_get(tstate->interp->runtime)) {
+        gilstate_tss_clear(tstate->interp->runtime);
     }
-
-    // We leave thread_id and native_thraed_id alone
-    // since they can be useful for debugging.
-    // Check the `_status` field to know if these values
-    // are still valid.
-
-    // We leave tstate->_status.bound set to 1
-    // to indicate it was previously bound.
-    tstate->_status.unbound = 1;
+    tstate->_status.bound_gilstate = 0;
 }
 
 
@@ -1560,6 +1600,11 @@ tstate_activate(PyThreadState *tstate)
     assert(tstate != NULL);
     assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
     assert(!tstate->_status.active);
+
+    if (!tstate->_status.bound_gilstate) {
+        bind_gilstate_tstate(tstate);
+    }
+
     tstate->_status.active = 1;
 }
 
@@ -1570,7 +1615,11 @@ tstate_deactivate(PyThreadState *tstate)
     assert(tstate_is_bound(tstate));
     // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
     assert(tstate->_status.active);
+
     tstate->_status.active = 0;
+
+    // We do not unbind the gilstate tstate here.
+    // It will still be used in PyGILState_Ensure().
 }
 
 
@@ -2091,6 +2140,7 @@ PyGILState_Ensure(void)
             Py_FatalError("Couldn't create thread-state for new thread");
         }
         bind_tstate(tcur);
+        bind_gilstate_tstate(tcur);
 
         /* This is our thread state!  We'll need to delete it in the
            matching call to PyGILState_Release(). */
@@ -2146,6 +2196,7 @@ PyGILState_Release(PyGILState_STATE oldstate)
     if (tstate->gilstate_counter == 0) {
         /* can't have been locked when we created it */
         assert(oldstate == PyGILState_UNLOCKED);
+        // XXX Unbind tstate here.
         PyThreadState_Clear(tstate);
         /* Delete the thread-state.  Note this releases the GIL too!
          * It's vital that the GIL be held here, to avoid shutdown
