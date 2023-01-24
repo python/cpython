@@ -1481,7 +1481,7 @@ class Popen:
                 startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow = _winapi.SW_HIDE
                 # gh-101283: with no full path, Windows looks into a
-                # current directory first so no plain "cmd.exe". 
+                # current directory first so no plain "cmd.exe".
                 default_shell = "C:\\WINDOWS\\system32\\cmd.exe"
                 comspec = os.environ.get("COMSPEC", default_shell)
                 if not os.path.isfile(comspec):
