@@ -430,6 +430,11 @@ Deprecated
   Before, the Python implementation emitted :exc:`FutureWarning`, and the C
   implementation emitted nothing.
 
+* In accordance with :pep:`699`, the ``ma_version_tag`` field in :c:type:`PyDictObject`
+  is deprecated for extension modules. Accessing this field will generate a compiler
+  warning at compile time. This field will be removed in Python 3.14.
+  (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
