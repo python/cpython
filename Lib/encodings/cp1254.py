@@ -301,6 +301,7 @@ decoding_table = (
     '\u0131'   #  0xFD -> LATIN SMALL LETTER DOTLESS I
     '\u015f'   #  0xFE -> LATIN SMALL LETTER S WITH CEDILLA
     '\xff'     #  0xFF -> LATIN SMALL LETTER Y WITH DIAERESIS
+    '\xdd'     #  0xDD -> LATIN SMALL LETTER Y WITH ACUTE
 )
 
 ### Encoding table
