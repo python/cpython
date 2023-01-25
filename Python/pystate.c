@@ -1711,6 +1711,12 @@ PyThreadState_Get(void)
 PyThreadState *
 _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
 {
+#if defined(Py_DEBUG)
+    /* This can be called from PyEval_RestoreThread(). Similar
+       to it, we need to ensure errno doesn't change.
+    */
+    int err = errno;
+#endif
     PyThreadState *oldts = current_fast_get(runtime);
 
     current_fast_clear(runtime);
@@ -1733,18 +1739,14 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
     // XXX The above isn't true when multiple interpreters are involved.
 #if defined(Py_DEBUG)
     if (newts && gilstate_tss_initialized(runtime)) {
-        /* This can be called from PyEval_RestoreThread(). Similar
-           to it, we need to ensure errno doesn't change.
-        */
-        int err = errno;
         PyThreadState *check = gilstate_tss_get(runtime);
         if (check != newts) {
             if (check && check->interp == newts->interp) {
                 Py_FatalError("Invalid thread state for this thread");
             }
         }
-        errno = err;
     }
+    errno = err;
 #endif
     return oldts;
 }
