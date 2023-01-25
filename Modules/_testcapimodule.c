@@ -633,7 +633,7 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_DECREF(tp_name);
 
     tp_name = PyType_GetName(&PyModule_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_name), "module") == 0);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "ModuleType") == 0);
     Py_DECREF(tp_name);
 
     PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);

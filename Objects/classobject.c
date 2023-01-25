@@ -12,9 +12,9 @@
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
 /*[clinic input]
-class method "PyMethodObject *" "&PyMethod_Type"
+class MethodType "PyMethodObject *" "&PyMethod_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b16e47edf6107c23]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=23d815bbfe0db041]*/
 
 
 PyObject *
@@ -121,12 +121,12 @@ PyMethod_New(PyObject *func, PyObject *self)
 }
 
 /*[clinic input]
-method.__reduce__
+MethodType.__reduce__
 [clinic start generated code]*/
 
 static PyObject *
-method___reduce___impl(PyMethodObject *self)
-/*[clinic end generated code: output=6c04506d0fa6fdcb input=143a0bf5e96de6e8]*/
+MethodType___reduce___impl(PyMethodObject *self)
+/*[clinic end generated code: output=ce1c37b9022af4df input=c1b5dbc4739fccfb]*/
 {
     PyObject *funcself = PyMethod_GET_SELF(self);
     PyObject *func = PyMethod_GET_FUNCTION(self);
@@ -139,7 +139,7 @@ method___reduce___impl(PyMethodObject *self)
 }
 
 static PyMethodDef method_methods[] = {
-    METHOD___REDUCE___METHODDEF
+    METHODTYPE___REDUCE___METHODDEF
     {NULL, NULL}
 };
 
@@ -202,7 +202,7 @@ method_getattro(PyObject *obj, PyObject *name)
 
 /*[clinic input]
 @classmethod
-method.__new__ as method_new
+MethodType.__new__ as method_new
     function: object
     instance: object
     /
@@ -212,7 +212,7 @@ Create a bound instance method object.
 
 static PyObject *
 method_new_impl(PyTypeObject *type, PyObject *function, PyObject *instance)
-/*[clinic end generated code: output=d33ef4ebf702e1f7 input=4e32facc3c3108ae]*/
+/*[clinic end generated code: output=d33ef4ebf702e1f7 input=9e26d1b4a248c3c5]*/
 {
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
@@ -318,7 +318,7 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
 
 PyTypeObject PyMethod_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "method",
+    .tp_name = "types.MethodType",
     .tp_basicsize = sizeof(PyMethodObject),
     .tp_dealloc = (destructor)method_dealloc,
     .tp_vectorcall_offset = offsetof(PyMethodObject, vectorcall),

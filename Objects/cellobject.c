@@ -18,7 +18,7 @@ PyCell_New(PyObject *obj)
 }
 
 PyDoc_STRVAR(cell_new_doc,
-"cell([contents])\n"
+"types.CellType([contents])\n"
 "--\n"
 "\n"
 "Create a new cell object.\n"
@@ -35,11 +35,11 @@ cell_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *obj = NULL;
 
-    if (!_PyArg_NoKeywords("cell", kwargs)) {
+    if (!_PyArg_NoKeywords("CellType", kwargs)) {
         goto exit;
     }
     /* min = 0: we allow the cell to be empty */
-    if (!PyArg_UnpackTuple(args, "cell", 0, 1, &obj)) {
+    if (!PyArg_UnpackTuple(args, "CellType", 0, 1, &obj)) {
         goto exit;
     }
     return_value = PyCell_New(obj);
@@ -151,7 +151,7 @@ static PyGetSetDef cell_getsetlist[] = {
 
 PyTypeObject PyCell_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "cell",
+    "types.CellType",
     sizeof(PyCellObject),
     0,
     (destructor)cell_dealloc,                   /* tp_dealloc */

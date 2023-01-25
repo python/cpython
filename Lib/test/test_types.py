@@ -1388,7 +1388,7 @@ class ClassCreationTests(unittest.TestCase):
                 return None
         with self.assertRaisesRegex(TypeError,
                                     r'^BadMeta\.__prepare__\(\) must '
-                                    r'return a mapping, not NoneType$'):
+                                    r'return a mapping, not types.NoneType$'):
             class Foo(metaclass=BadMeta):
                 pass
         # Also test the case in which the metaclass is not a type.
@@ -1398,7 +1398,7 @@ class ClassCreationTests(unittest.TestCase):
                 return None
         with self.assertRaisesRegex(TypeError,
                                     r'^<metaclass>\.__prepare__\(\) must '
-                                    r'return a mapping, not NoneType$'):
+                                    r'return a mapping, not types.NoneType$'):
             class Bar(metaclass=BadMeta()):
                 pass
 

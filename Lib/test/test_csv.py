@@ -1040,7 +1040,7 @@ class TestDialectValidity(unittest.TestCase):
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"delimiter" must be string, not NoneType')
+                         '"delimiter" must be string, not types.NoneType')
 
     def test_escapechar(self):
         class mydialect(csv.Dialect):

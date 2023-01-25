@@ -816,7 +816,7 @@ func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 
 PyTypeObject PyFunction_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "function",
+    "types.FunctionType",
     sizeof(PyFunctionObject),
     0,
     (destructor)func_dealloc,                   /* tp_dealloc */

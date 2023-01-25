@@ -9,10 +9,10 @@ preserve
 
 
 PyDoc_STRVAR(code_new__doc__,
-"code(argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,\n"
-"     flags, codestring, constants, names, varnames, filename, name,\n"
-"     qualname, firstlineno, linetable, exceptiontable, freevars=(),\n"
-"     cellvars=(), /)\n"
+"CodeType(argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,\n"
+"         flags, codestring, constants, names, varnames, filename, name,\n"
+"         qualname, firstlineno, linetable, exceptiontable, freevars=(),\n"
+"         cellvars=(), /)\n"
 "--\n"
 "\n"
 "Create a code object.  Not for the faint of heart.");
@@ -51,10 +51,10 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     if ((type == &PyCode_Type ||
          type->tp_init == PyCode_Type.tp_init) &&
-        !_PyArg_NoKeywords("code", kwargs)) {
+        !_PyArg_NoKeywords("CodeType", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("code", PyTuple_GET_SIZE(args), 16, 18)) {
+    if (!_PyArg_CheckPositional("CodeType", PyTuple_GET_SIZE(args), 16, 18)) {
         goto exit;
     }
     argcount = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
@@ -82,27 +82,27 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!PyBytes_Check(PyTuple_GET_ITEM(args, 6))) {
-        _PyArg_BadArgument("code", "argument 7", "bytes", PyTuple_GET_ITEM(args, 6));
+        _PyArg_BadArgument("CodeType", "argument 7", "bytes", PyTuple_GET_ITEM(args, 6));
         goto exit;
     }
     code = PyTuple_GET_ITEM(args, 6);
     if (!PyTuple_Check(PyTuple_GET_ITEM(args, 7))) {
-        _PyArg_BadArgument("code", "argument 8", "tuple", PyTuple_GET_ITEM(args, 7));
+        _PyArg_BadArgument("CodeType", "argument 8", "tuple", PyTuple_GET_ITEM(args, 7));
         goto exit;
     }
     consts = PyTuple_GET_ITEM(args, 7);
     if (!PyTuple_Check(PyTuple_GET_ITEM(args, 8))) {
-        _PyArg_BadArgument("code", "argument 9", "tuple", PyTuple_GET_ITEM(args, 8));
+        _PyArg_BadArgument("CodeType", "argument 9", "tuple", PyTuple_GET_ITEM(args, 8));
         goto exit;
     }
     names = PyTuple_GET_ITEM(args, 8);
     if (!PyTuple_Check(PyTuple_GET_ITEM(args, 9))) {
-        _PyArg_BadArgument("code", "argument 10", "tuple", PyTuple_GET_ITEM(args, 9));
+        _PyArg_BadArgument("CodeType", "argument 10", "tuple", PyTuple_GET_ITEM(args, 9));
         goto exit;
     }
     varnames = PyTuple_GET_ITEM(args, 9);
     if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 10))) {
-        _PyArg_BadArgument("code", "argument 11", "str", PyTuple_GET_ITEM(args, 10));
+        _PyArg_BadArgument("CodeType", "argument 11", "str", PyTuple_GET_ITEM(args, 10));
         goto exit;
     }
     if (PyUnicode_READY(PyTuple_GET_ITEM(args, 10)) == -1) {
@@ -110,7 +110,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     filename = PyTuple_GET_ITEM(args, 10);
     if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 11))) {
-        _PyArg_BadArgument("code", "argument 12", "str", PyTuple_GET_ITEM(args, 11));
+        _PyArg_BadArgument("CodeType", "argument 12", "str", PyTuple_GET_ITEM(args, 11));
         goto exit;
     }
     if (PyUnicode_READY(PyTuple_GET_ITEM(args, 11)) == -1) {
@@ -118,7 +118,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     name = PyTuple_GET_ITEM(args, 11);
     if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 12))) {
-        _PyArg_BadArgument("code", "argument 13", "str", PyTuple_GET_ITEM(args, 12));
+        _PyArg_BadArgument("CodeType", "argument 13", "str", PyTuple_GET_ITEM(args, 12));
         goto exit;
     }
     if (PyUnicode_READY(PyTuple_GET_ITEM(args, 12)) == -1) {
@@ -130,12 +130,12 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!PyBytes_Check(PyTuple_GET_ITEM(args, 14))) {
-        _PyArg_BadArgument("code", "argument 15", "bytes", PyTuple_GET_ITEM(args, 14));
+        _PyArg_BadArgument("CodeType", "argument 15", "bytes", PyTuple_GET_ITEM(args, 14));
         goto exit;
     }
     linetable = PyTuple_GET_ITEM(args, 14);
     if (!PyBytes_Check(PyTuple_GET_ITEM(args, 15))) {
-        _PyArg_BadArgument("code", "argument 16", "bytes", PyTuple_GET_ITEM(args, 15));
+        _PyArg_BadArgument("CodeType", "argument 16", "bytes", PyTuple_GET_ITEM(args, 15));
         goto exit;
     }
     exceptiontable = PyTuple_GET_ITEM(args, 15);
@@ -143,7 +143,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional;
     }
     if (!PyTuple_Check(PyTuple_GET_ITEM(args, 16))) {
-        _PyArg_BadArgument("code", "argument 17", "tuple", PyTuple_GET_ITEM(args, 16));
+        _PyArg_BadArgument("CodeType", "argument 17", "tuple", PyTuple_GET_ITEM(args, 16));
         goto exit;
     }
     freevars = PyTuple_GET_ITEM(args, 16);
@@ -151,7 +151,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional;
     }
     if (!PyTuple_Check(PyTuple_GET_ITEM(args, 17))) {
-        _PyArg_BadArgument("code", "argument 18", "tuple", PyTuple_GET_ITEM(args, 17));
+        _PyArg_BadArgument("CodeType", "argument 18", "tuple", PyTuple_GET_ITEM(args, 17));
         goto exit;
     }
     cellvars = PyTuple_GET_ITEM(args, 17);
@@ -162,7 +162,7 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(code_replace__doc__,
+PyDoc_STRVAR(types_CodeType_replace__doc__,
 "replace($self, /, *, co_argcount=-1, co_posonlyargcount=-1,\n"
 "        co_kwonlyargcount=-1, co_nlocals=-1, co_stacksize=-1,\n"
 "        co_flags=-1, co_firstlineno=-1, co_code=None, co_consts=None,\n"
@@ -173,23 +173,23 @@ PyDoc_STRVAR(code_replace__doc__,
 "\n"
 "Return a copy of the code object with new values for the specified fields.");
 
-#define CODE_REPLACE_METHODDEF    \
-    {"replace", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS, code_replace__doc__},
+#define TYPES_CODETYPE_REPLACE_METHODDEF    \
+    {"replace", _PyCFunction_CAST(types_CodeType_replace), METH_FASTCALL|METH_KEYWORDS, types_CodeType_replace__doc__},
 
 static PyObject *
-code_replace_impl(PyCodeObject *self, int co_argcount,
-                  int co_posonlyargcount, int co_kwonlyargcount,
-                  int co_nlocals, int co_stacksize, int co_flags,
-                  int co_firstlineno, PyBytesObject *co_code,
-                  PyObject *co_consts, PyObject *co_names,
-                  PyObject *co_varnames, PyObject *co_freevars,
-                  PyObject *co_cellvars, PyObject *co_filename,
-                  PyObject *co_name, PyObject *co_qualname,
-                  PyBytesObject *co_linetable,
-                  PyBytesObject *co_exceptiontable);
+types_CodeType_replace_impl(PyCodeObject *self, int co_argcount,
+                            int co_posonlyargcount, int co_kwonlyargcount,
+                            int co_nlocals, int co_stacksize, int co_flags,
+                            int co_firstlineno, PyBytesObject *co_code,
+                            PyObject *co_consts, PyObject *co_names,
+                            PyObject *co_varnames, PyObject *co_freevars,
+                            PyObject *co_cellvars, PyObject *co_filename,
+                            PyObject *co_name, PyObject *co_qualname,
+                            PyBytesObject *co_linetable,
+                            PyBytesObject *co_exceptiontable);
 
 static PyObject *
-code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+types_CodeType_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -423,13 +423,13 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     co_exceptiontable = (PyBytesObject *)args[17];
 skip_optional_kwonly:
-    return_value = code_replace_impl(self, co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_firstlineno, co_code, co_consts, co_names, co_varnames, co_freevars, co_cellvars, co_filename, co_name, co_qualname, co_linetable, co_exceptiontable);
+    return_value = types_CodeType_replace_impl(self, co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_firstlineno, co_code, co_consts, co_names, co_varnames, co_freevars, co_cellvars, co_filename, co_name, co_qualname, co_linetable, co_exceptiontable);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(code__varname_from_oparg__doc__,
+PyDoc_STRVAR(types_CodeType__varname_from_oparg__doc__,
 "_varname_from_oparg($self, /, oparg)\n"
 "--\n"
 "\n"
@@ -437,14 +437,14 @@ PyDoc_STRVAR(code__varname_from_oparg__doc__,
 "\n"
 "WARNING: this method is for internal use only and may change or go away.");
 
-#define CODE__VARNAME_FROM_OPARG_METHODDEF    \
-    {"_varname_from_oparg", _PyCFunction_CAST(code__varname_from_oparg), METH_FASTCALL|METH_KEYWORDS, code__varname_from_oparg__doc__},
+#define TYPES_CODETYPE__VARNAME_FROM_OPARG_METHODDEF    \
+    {"_varname_from_oparg", _PyCFunction_CAST(types_CodeType__varname_from_oparg), METH_FASTCALL|METH_KEYWORDS, types_CodeType__varname_from_oparg__doc__},
 
 static PyObject *
-code__varname_from_oparg_impl(PyCodeObject *self, int oparg);
+types_CodeType__varname_from_oparg_impl(PyCodeObject *self, int oparg);
 
 static PyObject *
-code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+types_CodeType__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -483,9 +483,9 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
     if (oparg == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = code__varname_from_oparg_impl(self, oparg);
+    return_value = types_CodeType__varname_from_oparg_impl(self, oparg);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b6c98f17c60ace53 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2540ad099c750c9 input=a9049054013a1b77]*/

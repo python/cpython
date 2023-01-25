@@ -345,7 +345,7 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(output, ["Exception: projector\n"])
 
     def test_exception_is_None(self):
-        NONE_EXC_STRING = 'NoneType: None\n'
+        NONE_EXC_STRING = 'types.NoneType: None\n'
         excfile = StringIO()
         traceback.print_exception(None, file=excfile)
         self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)

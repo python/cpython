@@ -258,16 +258,16 @@ class MiscTest(unittest.TestCase):
             pass
 
         tests = [
-            (lambda: 42 < None, r"'<' .* of 'int' and 'NoneType'"),
-            (lambda: None < 42, r"'<' .* of 'NoneType' and 'int'"),
-            (lambda: 42 > None, r"'>' .* of 'int' and 'NoneType'"),
-            (lambda: "foo" < None, r"'<' .* of 'str' and 'NoneType'"),
+            (lambda: 42 < None, r"'<' .* of 'int' and 'types.NoneType'"),
+            (lambda: None < 42, r"'<' .* of 'types.NoneType' and 'int'"),
+            (lambda: 42 > None, r"'>' .* of 'int' and 'types.NoneType'"),
+            (lambda: "foo" < None, r"'<' .* of 'str' and 'types.NoneType'"),
             (lambda: "foo" >= 666, r"'>=' .* of 'str' and 'int'"),
-            (lambda: 42 <= None, r"'<=' .* of 'int' and 'NoneType'"),
-            (lambda: 42 >= None, r"'>=' .* of 'int' and 'NoneType'"),
+            (lambda: 42 <= None, r"'<=' .* of 'int' and 'types.NoneType'"),
+            (lambda: 42 >= None, r"'>=' .* of 'int' and 'types.NoneType'"),
             (lambda: 42 < [], r"'<' .* of 'int' and 'list'"),
             (lambda: () > [], r"'>' .* of 'tuple' and 'list'"),
-            (lambda: None >= None, r"'>=' .* of 'NoneType' and 'NoneType'"),
+            (lambda: None >= None, r"'>=' .* of 'types.NoneType' and 'types.NoneType'"),
             (lambda: Spam() < 42, r"'<' .* of 'Spam' and 'int'"),
             (lambda: 42 < Spam(), r"'<' .* of 'int' and 'Spam'"),
             (lambda: Spam() <= Spam(), r"'<=' .* of 'Spam' and 'Spam'"),

@@ -1546,13 +1546,14 @@ PyCode_GetCode(PyCodeObject *co)
  ******************/
 
 /*[clinic input]
-class code "PyCodeObject *" "&PyCode_Type"
+module types
+class types.CodeType "PyCodeObject *" "&PyCode_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=78aa5d576683bb4b]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5bdfe35a3b23672e]*/
 
 /*[clinic input]
 @classmethod
-code.__new__ as code_new
+types.CodeType.__new__ as code_new
 
     argcount: int
     posonlyargcount: int
@@ -1585,7 +1586,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
               PyObject *qualname, int firstlineno, PyObject *linetable,
               PyObject *exceptiontable, PyObject *freevars,
               PyObject *cellvars)
-/*[clinic end generated code: output=069fa20d299f9dda input=e31da3c41ad8064a]*/
+/*[clinic end generated code: output=069fa20d299f9dda input=bb23c6787f447b63]*/
 {
     PyObject *co = NULL;
     PyObject *ournames = NULL;
@@ -1593,7 +1594,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
     PyObject *ourfreevars = NULL;
     PyObject *ourcellvars = NULL;
 
-    if (PySys_Audit("code.__new__", "OOOiiiiii",
+    if (PySys_Audit("types.CodeType.__new__", "OOOiiiiii",
                     code, filename, name, argcount, posonlyargcount,
                     kwonlyargcount, nlocals, stacksize, flags) < 0) {
         goto cleanup;
@@ -1949,7 +1950,7 @@ code_linesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
 }
 
 /*[clinic input]
-code.replace
+types.CodeType.replace
 
     *
     co_argcount: int(c_default="self->co_argcount") = -1
@@ -1975,17 +1976,17 @@ Return a copy of the code object with new values for the specified fields.
 [clinic start generated code]*/
 
 static PyObject *
-code_replace_impl(PyCodeObject *self, int co_argcount,
-                  int co_posonlyargcount, int co_kwonlyargcount,
-                  int co_nlocals, int co_stacksize, int co_flags,
-                  int co_firstlineno, PyBytesObject *co_code,
-                  PyObject *co_consts, PyObject *co_names,
-                  PyObject *co_varnames, PyObject *co_freevars,
-                  PyObject *co_cellvars, PyObject *co_filename,
-                  PyObject *co_name, PyObject *co_qualname,
-                  PyBytesObject *co_linetable,
-                  PyBytesObject *co_exceptiontable)
-/*[clinic end generated code: output=b6cd9988391d5711 input=f6f68e03571f8d7c]*/
+types_CodeType_replace_impl(PyCodeObject *self, int co_argcount,
+                            int co_posonlyargcount, int co_kwonlyargcount,
+                            int co_nlocals, int co_stacksize, int co_flags,
+                            int co_firstlineno, PyBytesObject *co_code,
+                            PyObject *co_consts, PyObject *co_names,
+                            PyObject *co_varnames, PyObject *co_freevars,
+                            PyObject *co_cellvars, PyObject *co_filename,
+                            PyObject *co_name, PyObject *co_qualname,
+                            PyBytesObject *co_linetable,
+                            PyBytesObject *co_exceptiontable)
+/*[clinic end generated code: output=476976595896e057 input=71d4a98105cab87b]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -2013,7 +2014,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         co_code = (PyBytesObject *)code;
     }
 
-    if (PySys_Audit("code.__new__", "OOOiiiiii",
+    if (PySys_Audit("types.CodeType.__new__", "OOOiiiiii",
                     co_code, co_filename, co_name, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,
                     co_stacksize, co_flags) < 0) {
@@ -2062,7 +2063,7 @@ error:
 }
 
 /*[clinic input]
-code._varname_from_oparg
+types.CodeType._varname_from_oparg
 
     oparg: int
 
@@ -2072,8 +2073,8 @@ WARNING: this method is for internal use only and may change or go away.
 [clinic start generated code]*/
 
 static PyObject *
-code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
-/*[clinic end generated code: output=1fd1130413184206 input=c5fa3ee9bac7d4ca]*/
+types_CodeType__varname_from_oparg_impl(PyCodeObject *self, int oparg)
+/*[clinic end generated code: output=92172b43d4b576c0 input=bd29af426db28423]*/
 {
     PyObject *name = PyTuple_GetItem(self->co_localsplusnames, oparg);
     if (name == NULL) {
@@ -2088,15 +2089,15 @@ static struct PyMethodDef code_methods[] = {
     {"__sizeof__", (PyCFunction)code_sizeof, METH_NOARGS},
     {"co_lines", (PyCFunction)code_linesiterator, METH_NOARGS},
     {"co_positions", (PyCFunction)code_positionsiterator, METH_NOARGS},
-    CODE_REPLACE_METHODDEF
-    CODE__VARNAME_FROM_OPARG_METHODDEF
+    TYPES_CODETYPE_REPLACE_METHODDEF
+    TYPES_CODETYPE__VARNAME_FROM_OPARG_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 
 
 PyTypeObject PyCode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "code",
+    "types.CodeType",
     offsetof(PyCodeObject, co_code_adaptive),
     sizeof(_Py_CODEUNIT),
     (destructor)code_dealloc,           /* tp_dealloc */

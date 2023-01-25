@@ -1989,6 +1989,13 @@ class AbstractPickleTests:
                     s = self.dumps(t, proto)
                     self.assertIs(self.loads(s), t)
 
+    def test_types_types(self):
+        for t in types.__dict__.values():
+            if isinstance(t, type):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    self.assertIs(self.loads(s), t)
+
     def test_builtin_exceptions(self):
         for t in builtins.__dict__.values():
             if isinstance(t, type) and issubclass(t, BaseException):

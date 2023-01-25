@@ -548,7 +548,7 @@ The :mod:`functools` module defines the following functions:
    attribute::
 
     >>> fun.registry.keys()
-    dict_keys([<class 'NoneType'>, <class 'int'>, <class 'object'>,
+    dict_keys([<class 'types.NoneType'>, <class 'int'>, <class 'object'>,
               <class 'decimal.Decimal'>, <class 'list'>,
               <class 'float'>])
     >>> fun.registry[float]

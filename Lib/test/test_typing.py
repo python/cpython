@@ -1699,7 +1699,7 @@ class UnionTests(BaseTestCase):
         u = Union[str, None]
         self.assertEqual(repr(u), 'typing.Optional[str]')
         u = Union[None, str, int]
-        self.assertEqual(repr(u), 'typing.Union[NoneType, str, int]')
+        self.assertEqual(repr(u), 'typing.Union[types.NoneType, str, int]')
         u = Optional[str]
         self.assertEqual(repr(u), 'typing.Optional[str]')
 
