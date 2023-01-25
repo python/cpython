@@ -107,6 +107,11 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+struct _py_trashcan {
+    int delete_nesting;
+    PyObject *delete_later;
+};
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -114,11 +119,7 @@ struct _ts {
     PyThreadState *next;
     PyInterpreterState *interp;
 
-    /* Has been initialized to a safe state.
-
-       In order to be effective, this must be set to 0 during or right
-       after allocation. */
-    int _initialized;
+    int _status;
 
     int py_recursion_remaining;
     int py_recursion_limit;
@@ -164,8 +165,7 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
-    int trash_delete_nesting;
-    PyObject *trash_delete_later;
+    struct _py_trashcan trash;
 
     /* Called when a thread state is deleted normally, but not when it
      * is destroyed after fork().

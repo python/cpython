@@ -78,6 +78,29 @@ class SimpleTypesTestCase(unittest.TestCase):
         pa = c_wchar_p.from_param(c_wchar_p("123"))
         self.assertEqual(type(pa), c_wchar_p)
 
+    def test_c_char(self):
+        from ctypes import c_char
+
+        with self.assertRaises(TypeError) as cm:
+            c_char.from_param(b"abc")
+        self.assertEqual(str(cm.exception),
+                         "one character bytes, bytearray or integer expected")
+
+    @need_symbol('c_wchar')
+    def test_c_wchar(self):
+        from ctypes import c_wchar
+
+        with self.assertRaises(TypeError) as cm:
+            c_wchar.from_param("abc")
+        self.assertEqual(str(cm.exception),
+                         "one character unicode string expected")
+
+
+        with self.assertRaises(TypeError) as cm:
+            c_wchar.from_param(123)
+        self.assertEqual(str(cm.exception),
+                         "unicode string expected instead of int instance")
+
     def test_int_pointers(self):
         from ctypes import c_short, c_uint, c_int, c_long, POINTER, pointer
         LPINT = POINTER(c_int)
