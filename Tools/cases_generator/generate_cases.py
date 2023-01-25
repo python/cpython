@@ -774,7 +774,8 @@ class Analyzer:
             pushed_data.append( (instr, pushed) )
 
         def write_function(direction: str, data: list[tuple[Instruction, str]]) -> None:
-            self.out.emit("\nstatic int");
+            self.out.emit("\n#ifndef NDEBUG");
+            self.out.emit("static int");
             self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg) {{")
             self.out.emit("    switch(opcode) {");
             for instr, effect in data:
@@ -784,6 +785,7 @@ class Analyzer:
             self.out.emit("            Py_UNREACHABLE();")
             self.out.emit("    }")
             self.out.emit("}")
+            self.out.emit("#endif");
 
         write_function('popped', popped_data)
         write_function('pushed', pushed_data)
@@ -1023,7 +1025,7 @@ def always_exits(lines: list[str]) -> bool:
         return False
     line = line[12:]
     return line.startswith(
-        ("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()")
+        ("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()", "ERROR_IF(true, ")
     )
 
 
