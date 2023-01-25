@@ -43,6 +43,19 @@ medium_value(PyLongObject *x)
 #define WITH_PYLONG_MODULE 1
 
 static inline void
+_PyLong_SetSignAndSize(PyLongObject *op, bool negative, Py_ssize_t size)
+{
+    int sign = 1-negative*2;
+    assert(sign == -1 || sign == 1);
+    op->long_value.ob_size = sign * size;
+}
+
+static inline void
+_PyLong_FlipSign(PyLongObject *op) {
+    op->long_value.ob_size = -op->long_value.ob_size;
+}
+
+static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
@@ -132,7 +145,7 @@ long_normalize(PyLongObject *v)
     while (i > 0 && v->long_value.ob_digit[i-1] == 0)
         --i;
     if (i != j) {
-        Py_SET_SIZE(v, (Py_SIZE(v) < 0) ? -(i) : i);
+        _PyLong_SetSignAndSize(v, _PyLong_IsNegative(v), i);
     }
     return v;
 }
@@ -228,18 +241,18 @@ static PyObject *
 _PyLong_FromLarge(stwodigits ival)
 {
     twodigits abs_ival;
-    int sign;
+    bool negative;
     assert(!is_medium_int(ival));
 
     if (ival < 0) {
         /* negate: can't write this as abs_ival = -ival since that
            invokes undefined behaviour when ival is LONG_MIN */
         abs_ival = 0U-(twodigits)ival;
-        sign = -1;
+        negative = true;
     }
     else {
         abs_ival = (twodigits)ival;
-        sign = 1;
+        negative = false;
     }
     /* Must be at least two digits */
     assert(abs_ival >> PyLong_SHIFT != 0);
@@ -252,7 +265,7 @@ _PyLong_FromLarge(stwodigits ival)
     PyLongObject *v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->long_value.ob_digit;
-        Py_SET_SIZE(v, ndigits * sign);
+        _PyLong_SetSignAndSize(v, negative, ndigits);
         t = abs_ival;
         while (t) {
             *p++ = Py_SAFE_DOWNCAST(
@@ -318,7 +331,7 @@ _PyLong_Negate(PyLongObject **x_p)
 
     x = (PyLongObject *)*x_p;
     if (Py_REFCNT(x) == 1) {
-        Py_SET_SIZE(x, -Py_SIZE(x));
+         _PyLong_FlipSign(x);
         return;
     }
 
@@ -357,7 +370,7 @@ PyLong_FromLong(long ival)
     v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->long_value.ob_digit;
-        Py_SET_SIZE(v, ival < 0 ? -ndigits : ndigits);
+        _PyLong_SetSignAndSize(v, ival < 0, ndigits);
         t = abs_ival;
         while (t) {
             *p++ = (digit)(t & PyLong_MASK);
@@ -467,7 +480,7 @@ PyLong_FromDouble(double dval)
         frac = ldexp(frac, PyLong_SHIFT);
     }
     if (neg) {
-        Py_SET_SIZE(v, -(Py_SIZE(v)));
+        _PyLong_FlipSign(v);
     }
     return (PyObject *)v;
 }
@@ -962,7 +975,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
         }
     }
 
-    Py_SET_SIZE(v, is_signed ? -idigit : idigit);
+    _PyLong_SetSignAndSize(v, is_signed, idigit);
     return (PyObject *)maybe_small_long(long_normalize(v));
 }
 
@@ -1184,7 +1197,7 @@ PyLong_FromLongLong(long long ival)
     v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->long_value.ob_digit;
-        Py_SET_SIZE(v, ival < 0 ? -ndigits : ndigits);
+        _PyLong_SetSignAndSize(v, ival < 0, ndigits);
         t = abs_ival;
         while (t) {
             *p++ = (digit)(t & PyLong_MASK);
@@ -1227,7 +1240,7 @@ PyLong_FromSsize_t(Py_ssize_t ival)
     v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->long_value.ob_digit;
-        Py_SET_SIZE(v, negative ? -ndigits : ndigits);
+        _PyLong_SetSignAndSize(v, negative, ndigits);
         t = abs_ival;
         while (t) {
             *p++ = (digit)(t & PyLong_MASK);
@@ -2542,7 +2555,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
         *res = NULL;
         return 0;
     }
-    Py_SET_SIZE(z, 0);
+    _PyLong_SetSignAndSize(z, false, 0);
 
     /* `convwidth` consecutive input digits are treated as a single
      * digit in base `convmultmax`.
@@ -2593,7 +2606,8 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
             assert(c < PyLong_BASE);
             if (Py_SIZE(z) < size_z) {
                 *pz = (digit)c;
-                Py_SET_SIZE(z, Py_SIZE(z) + 1);
+                assert(!_PyLong_IsNegative(z));
+                _PyLong_SetSignAndSize(z, false, Py_SIZE(z) + 1);
             }
             else {
                 PyLongObject *tmp;
@@ -2809,7 +2823,7 @@ PyLong_FromString(const char *str, char **pend, int base)
 
     /* Set sign and normalize */
     if (sign < 0) {
-        Py_SET_SIZE(z, -(Py_SIZE(z)));
+        _PyLong_FlipSign(z);
     }
     long_normalize(z);
     z = maybe_small_long(z);
@@ -3472,7 +3486,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
     }
     assert(borrow == 0);
     if (sign < 0) {
-        Py_SET_SIZE(z, -Py_SIZE(z));
+        _PyLong_FlipSign(z);
     }
     return maybe_small_long(long_normalize(z));
 }
@@ -3494,7 +3508,7 @@ _PyLong_Add(PyLongObject *a, PyLongObject *b)
                    That also means z is not an element of
                    small_ints, so negating it in-place is safe. */
                 assert(Py_REFCNT(z) == 1);
-                Py_SET_SIZE(z, -(Py_SIZE(z)));
+                _PyLong_FlipSign(z);
             }
         }
         else
@@ -3532,7 +3546,7 @@ _PyLong_Subtract(PyLongObject *a, PyLongObject *b)
             z = x_add(a, b);
             if (z != NULL) {
                 assert(Py_SIZE(z) == 0 || Py_REFCNT(z) == 1);
-                Py_SET_SIZE(z, -(Py_SIZE(z)));
+                _PyLong_FlipSign(z);
             }
         }
     }
@@ -3943,7 +3957,8 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
         /* Multiply the next slice of b by a. */
         memcpy(bslice->long_value.ob_digit, b->long_value.ob_digit + nbdone,
                nbtouse * sizeof(digit));
-        Py_SET_SIZE(bslice, nbtouse);
+        assert(nbtouse >= 0);
+        _PyLong_SetSignAndSize(bslice, false, nbtouse);
         product = k_mul(a, bslice);
         if (product == NULL)
             goto fail;
@@ -4914,7 +4929,7 @@ long_neg(PyLongObject *v)
         return _PyLong_FromSTwoDigits(-medium_value(v));
     z = (PyLongObject *)_PyLong_Copy(v);
     if (z != NULL)
-        Py_SET_SIZE(z, -(Py_SIZE(v)));
+        _PyLong_FlipSign(z);
     return (PyObject *)z;
 }
 
@@ -5034,7 +5049,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
             significant `wordshift` digits of `a` is nonzero. Digit `wordshift`
             of `2**shift - 1` has value `PyLong_MASK >> hishift`.
         */
-        Py_SET_SIZE(z, -newsize);
+        _PyLong_SetSignAndSize(z, true, newsize);
 
         digit sticky = 0;
         for (Py_ssize_t j = 0; j < wordshift; j++) {
@@ -5115,7 +5130,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         return NULL;
     if (Py_SIZE(a) < 0) {
         assert(Py_REFCNT(z) == 1);
-        Py_SET_SIZE(z, -Py_SIZE(z));
+        _PyLong_FlipSign(z);
     }
     for (i = 0; i < wordshift; i++)
         z->long_value.ob_digit[i] = 0;
@@ -5299,7 +5314,7 @@ long_bitwise(PyLongObject *a,
 
     /* Complement result if negative. */
     if (negz) {
-        Py_SET_SIZE(z, -(Py_SIZE(z)));
+        _PyLong_FlipSign(z);
         z->long_value.ob_digit[size_z] = PyLong_MASK;
         v_complement(z->long_value.ob_digit, z->long_value.ob_digit, size_z+1);
     }
@@ -5456,7 +5471,8 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             T = -C; C = -D; D = T;
         }
         if (c != NULL) {
-            Py_SET_SIZE(c, size_a);
+            assert(size_a >= 0);
+            _PyLong_SetSignAndSize(c, false, size_a);
         }
         else if (Py_REFCNT(a) == 1) {
             c = (PyLongObject*)Py_NewRef(a);
@@ -5469,11 +5485,13 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
         }
 
         if (d != NULL) {
-            Py_SET_SIZE(d, size_a);
+            assert(size_a >= 0);
+            _PyLong_SetSignAndSize(d, false, size_a);
         }
         else if (Py_REFCNT(b) == 1 && size_a <= alloc_b) {
             d = (PyLongObject*)Py_NewRef(b);
-            Py_SET_SIZE(d, size_a);
+            assert(size_a >= 0);
+            _PyLong_SetSignAndSize(d, false, size_a);
         }
         else {
             alloc_b = size_a;
@@ -5659,7 +5677,7 @@ long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
         return NULL;
     }
     assert(PyLong_Check(newobj));
-    Py_SET_SIZE(newobj, Py_SIZE(tmp));
+    newobj->long_value.ob_size = tmp->long_value.ob_size;
     for (i = 0; i < n; i++) {
         newobj->long_value.ob_digit[i] = tmp->long_value.ob_digit[i];
     }
