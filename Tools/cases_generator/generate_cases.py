@@ -825,10 +825,7 @@ class Analyzer:
                 self.out.emit("enum Direction dir_op3;")
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
-            self.out.emit("};")
-            self.out.emit("\nstatic struct opcode_metadata")
-            self.out.emit("_PyOpcode_opcode_metadata(int opcode, int oparg) {")
-            self.out.emit("    struct opcode_metadata metadata[256] = {")
+            self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
             for thing in self.everything:
@@ -844,9 +841,7 @@ class Analyzer:
                         typing.assert_never(thing)
 
             # Write end of array
-            self.out.emit("    };")
-            self.out.emit("    return metadata[opcode];")
-            self.out.emit("}")
+            self.out.emit("};")
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""

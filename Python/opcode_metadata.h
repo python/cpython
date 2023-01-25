@@ -697,11 +697,7 @@ struct opcode_metadata {
     enum Direction dir_op3;
     bool valid_entry;
     enum InstructionFormat instr_format;
-};
-
-static struct opcode_metadata
-_PyOpcode_opcode_metadata(int opcode, int oparg) {
-    struct opcode_metadata metadata[256] = {
+} _PyOpcode_opcode_metadata[256] = {
     [NOP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [RESUME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_CLOSURE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
@@ -870,6 +866,4 @@ _PyOpcode_opcode_metadata(int opcode, int oparg) {
     [SWAP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [EXTENDED_ARG] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CACHE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
-    };
-    return metadata[opcode];
-}
+};

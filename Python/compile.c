@@ -36,7 +36,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject
 
-#include "opcode_metadata.h"      // _PyOpcode_num_popped/pushed
+#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 
 
 #define DEFAULT_BLOCK_SIZE 16
@@ -8662,7 +8662,7 @@ opcode_metadata_is_sane(cfg_builder *g) {
             int pushed = _PyOpcode_num_pushed(opcode, oparg);
             assert((pushed < 0) == (popped < 0));
             if (pushed >= 0) {
-                assert(_PyOpcode_opcode_metadata(opcode, oparg).valid_entry);
+                assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
                 int effect = stack_effect(opcode, instr->i_oparg, -1);
                 if (effect != pushed - popped) {
                    fprintf(stderr,
