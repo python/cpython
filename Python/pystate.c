@@ -1613,6 +1613,8 @@ tstate_activate(PyThreadState *tstate)
     assert(tstate_is_bound(tstate));
     assert(!tstate->_status.active);
 
+    assert(!tstate->_status.bound_gilstate ||
+           tstate == gilstate_tss_get((tstate->interp->runtime)));
     if (!tstate->_status.bound_gilstate) {
         bind_gilstate_tstate(tstate);
     }
