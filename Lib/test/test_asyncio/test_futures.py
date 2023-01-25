@@ -612,9 +612,9 @@ class BaseFutureTests:
                             Exception, Exception("elephant"), 32)
             self.assertRaises(TypeError, fi.throw,
                             Exception("elephant"), Exception("elephant"))
+            # https://github.com/python/cpython/issues/101326
+            self.assertRaises(ValueError, fi.throw, ValueError, None, None)
         self.assertRaises(TypeError, fi.throw, list)
-        # https://github.com/python/cpython/issues/101326
-        self.assertRaises(ValueError, fi.throw, ValueError, None, None)
 
     def test_future_del_collect(self):
         class Evil:
