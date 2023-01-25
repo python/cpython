@@ -121,7 +121,7 @@ Module contents
      :meth:`__le__`, :meth:`__gt__`, or :meth:`__ge__`, then
      :exc:`TypeError` is raised.
 
-   - ``unsafe_hash``: If ``False`` (the default), a :meth:`__hash__` method
+   - ``unsafe_hash``: If false (the default), a :meth:`__hash__` method
      is generated according to how ``eq`` and ``frozen`` are set.
 
      :meth:`__hash__` is used by built-in :meth:`hash()`, and when objects are
