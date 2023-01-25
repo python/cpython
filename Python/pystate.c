@@ -264,6 +264,24 @@ unbind_tstate(PyThreadState *tstate)
 }
 
 
+/* Stick the thread state for this thread in thread specific storage.
+
+   When a thread state is created for a thread by some mechanism
+   other than PyGILState_Ensure(), it's important that the GILState
+   machinery knows about it so it doesn't try to create another
+   thread state for the thread.
+   (This is a better fix for SF bug #1010677 than the first one attempted.)
+
+   The only situation where you can legitimately have more than one
+   thread state for an OS level thread is when there are multiple
+   interpreters.
+
+   The PyGILState_*() APIs don't work with multiple
+   interpreters (see bpo-10915 and bpo-15751), so this function
+   sets TSS only once.  Thus, the first thread state created for that
+   given OS level thread will "win", which seems reasonable behaviour.
+*/
+
 static void
 bind_gilstate_tstate(PyThreadState *tstate)
 {
@@ -274,24 +292,6 @@ bind_gilstate_tstate(PyThreadState *tstate)
     // XXX assert(!tstate->_status.bound_gilstate);
     _PyRuntimeState *runtime = tstate->interp->runtime;
 
-    /* Stick the thread state for this thread in thread specific storage.
-
-       The only situation where you can legitimately have more than one
-       thread state for an OS level thread is when there are multiple
-       interpreters.
-
-       You shouldn't really be using the PyGILState_ APIs anyway (see issues
-       #10915 and #15751).
-
-       The first thread state created for that given OS level thread will
-       "win", which seems reasonable behaviour.
-    */
-    /* When a thread state is created for a thread by some mechanism
-       other than PyGILState_Ensure(), it's important that the GILState
-       machinery knows about it so it doesn't try to create another
-       thread state for the thread.
-       (This is a better fix for SF bug #1010677 than the first one attempted.)
-    */
     // XXX Skipping like this does not play nice with multiple interpreters.
     if (gilstate_tss_get(runtime) == NULL) {
         gilstate_tss_set(runtime, tstate);
