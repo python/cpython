@@ -229,12 +229,6 @@ bind_tstate(PyThreadState *tstate)
 #endif
 
     tstate->_status.bound = 1;
-
-    // This make sure there's a gilstate tstate bound
-    // as soon as possible.
-    if (gilstate_tss_get(tstate->interp->runtime) == NULL) {
-        bind_gilstate_tstate(tstate);
-    }
 }
 
 static void
@@ -1310,6 +1304,11 @@ PyThreadState_New(PyInterpreterState *interp)
     PyThreadState *tstate = new_threadstate(interp);
     if (tstate) {
         bind_tstate(tstate);
+        // This make sure there's a gilstate tstate bound
+        // as soon as possible.
+        if (gilstate_tss_get(tstate->interp->runtime) == NULL) {
+            bind_gilstate_tstate(tstate);
+        }
     }
     return tstate;
 }
@@ -1762,6 +1761,11 @@ void
 _PyThreadState_Bind(PyThreadState *tstate)
 {
     bind_tstate(tstate);
+    // This make sure there's a gilstate tstate bound
+    // as soon as possible.
+    if (gilstate_tss_get(tstate->interp->runtime) == NULL) {
+        bind_gilstate_tstate(tstate);
+    }
 }
 
 
