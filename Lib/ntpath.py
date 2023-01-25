@@ -852,9 +852,9 @@ def commonpath(paths):
 
 
 try:
-    # The genericpath's isdir and isfile implementations uses os.stat internally.
-    # This is overkill on Windows - just pass the path to GetFileAttributesW
-    # and check the attribute from there.
+    # The isdir(), isfile(), and exists() implementations in genericpath use
+    # os.stat(). This is overkill on Windows. Use simpler builtin functions
+    # if they are available.
     from nt import _isdir as isdir
     from nt import _isfile as isfile
     from nt import _exists as exists
