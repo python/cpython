@@ -1,0 +1,1 @@
+New COMPREHENSION bytecode instruction executes a comprehension more efficiently, without allocating a single-use function object.
