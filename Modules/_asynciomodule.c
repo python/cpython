@@ -1666,7 +1666,12 @@ FutureIter_throw(futureiterobject *self, PyObject *const *args, Py_ssize_t nargs
         val = args[1];
     }
 
-    if (tb != NULL && !PyTraceBack_Check(tb)) {
+    if (val == Py_None) {
+        val = NULL;
+    }
+    if (tb == Py_None ) {
+        tb = NULL;
+    } else if (tb != NULL && !PyTraceBack_Check(tb)) {
         PyErr_SetString(PyExc_TypeError, "throw() third argument must be a traceback");
         return NULL;
     }
