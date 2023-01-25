@@ -5,6 +5,7 @@
 #include "pycore_ast.h"           // _PyAST_Validate()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_long.h"          // _PyLong_SingleDigitValue
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -2506,12 +2507,11 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 long b;
                 overflow = 0;
                 /* Single digits are common, fast, and cannot overflow on unpacking. */
-                switch (Py_SIZE(item)) {
-                    case -1: b = -(sdigit) ((PyLongObject*)item)->long_value.ob_digit[0]; break;
-                    // Note: the continue goes to the top of the "while" loop that iterates over the elements
-                    case  0: Py_DECREF(item); continue;
-                    case  1: b = ((PyLongObject*)item)->long_value.ob_digit[0]; break;
-                    default: b = PyLong_AsLongAndOverflow(item, &overflow); break;
+                if (_PyLong_IsSingleDigit(item)) {
+                    b = _PyLong_SingleDigitValue((PyLongObject *)item);
+                }
+                else {
+                    b = PyLong_AsLongAndOverflow(item, &overflow);
                 }
                 if (overflow == 0 &&
                     (i_result >= 0 ? (b <= LONG_MAX - i_result)
