@@ -890,6 +890,11 @@ class TestNtpath(NtpathTestCase):
                 self.assertFalse(ntpath.isjunction('tmpdir'))
                 self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
 
+    @unittest.skipIf(sys.platform != 'win32', "drive letters are a windows concept")
+    def test_isfile_driveletter(self):
+        current_drive = os.path.splitdrive(os.path.abspath(__file__))[0] + "\\"
+        self.assertFalse(os.path.isfile(current_drive))
+
     @unittest.skipIf(sys.platform != 'win32', "Fast paths are only for win32")
     @cpython_only
     def test_fast_paths_in_use(self):

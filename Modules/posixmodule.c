@@ -15065,13 +15065,10 @@ os__isfile_impl(PyObject *module, PyObject *path)
                             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     }
     if (hfile != INVALID_HANDLE_VALUE) {
-        GetFileInformationByHandleEx(hfile, FileBasicInfo, &info, sizeof(info));
-        result = !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-        if (result) {
-            fileType = GetFileType(hfile);
-            if (fileType != FILE_TYPE_DISK) {
-                result = 0;
-            }
+        if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info, sizeof(info))) {
+            result = !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+        } else {
+            result = 0;
         }
         if (close_file) {
             CloseHandle(hfile);
