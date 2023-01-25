@@ -15042,7 +15042,6 @@ os__isfile_impl(PyObject *module, PyObject *path)
     HANDLE hfile;
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info = { 0 };
-    DWORD fileType;
     path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 1);
     int result;
 
