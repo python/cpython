@@ -1,0 +1,2 @@
+Avoid expensive ``gen.throw()`` call when closing generators (and
+coroutines) that can be closed trivially.
