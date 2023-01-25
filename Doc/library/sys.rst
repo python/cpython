@@ -582,7 +582,7 @@ always available.
    | :const:`mant_dig`   | DBL_MANT_DIG   | float precision: the number of base-``radix``    |
    |                     |                | digits in the significand of a float             |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max`        | DBL_MAX        | maximum representable positive finite float      |
+   | max                 | DBL_MAX        | maximum representable positive finite float      |
    +---------------------+----------------+--------------------------------------------------+
    | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer *e* such that ``radix**(e-1)`` is|
    |                     |                | a representable finite float                     |
@@ -590,7 +590,7 @@ always available.
    | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer *e* such that ``10**e`` is in the|
    |                     |                | range of representable finite floats             |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min`        | DBL_MIN        | minimum representable positive *normalized* float|
+   | min                 | DBL_MIN        | minimum representable positive *normalized* float|
    |                     |                |                                                  |
    |                     |                | Use :func:`math.ulp(0.0) <math.ulp>` to get the  |
    |                     |                | smallest positive *denormalized* representable   |
