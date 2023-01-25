@@ -290,8 +290,11 @@ bind_gilstate_tstate(PyThreadState *tstate)
     assert(tstate != tcur);
 
     if (tcur != NULL) {
+        // The original gilstate implementation only respects the
+        // first thread state set.
         // XXX Skipping like this does not play nice with multiple interpreters.
         return;
+        tcur->_status.bound_gilstate = 0;
     }
     gilstate_tss_set(runtime, tstate);
     tstate->_status.bound_gilstate = 1;
