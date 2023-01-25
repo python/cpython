@@ -21,8 +21,8 @@ lognormal, negative exponential, gamma, and beta distributions. For generating
 distributions of angles, the von Mises distribution is available.
 
 Almost all module functions depend on the basic function :func:`.random`, which
-generates a random float uniformly in the semi-open range [0.0, 1.0).  Python
-uses the Mersenne Twister as the core generator.  It produces 53-bit precision
+generates a random float uniformly in the half-open range ``0.0 <= X < 1.0``.
+Python uses the Mersenne Twister as the core generator.  It produces 53-bit precision
 floats and has a period of 2\*\*19937-1.  The underlying implementation in C is
 both fast and threadsafe.  The Mersenne Twister is one of the most extensively
 tested random number generators in existence.  However, being completely
@@ -294,7 +294,7 @@ be found in any statistics text.
 
 .. function:: random()
 
-   Return the next random floating point number in the range [0.0, 1.0).
+   Return the next random floating point number in the range ``0.0 <= X < 1.0``
 
 
 .. function:: uniform(a, b)

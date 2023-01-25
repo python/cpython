@@ -1,10 +1,5 @@
 /* Execute compiled code */
 
-/* XXX TO DO:
-   XXX speed up searching for keywords by using a dictionary
-   XXX document it!
-   */
-
 #define _PY_INTERPRETER
 
 #include "Python.h"
@@ -133,6 +128,9 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
                     _Py_CODEUNIT *next_instr)
 {
+    /* This dump_stack() operation is risky, since the repr() of some
+       objects enters the interpreter recursively. It is also slow.
+       So you might want to comment it out. */
     dump_stack(frame, stack_pointer);
     int oparg = _Py_OPARG(*next_instr);
     int opcode = _Py_OPCODE(*next_instr);
@@ -155,7 +153,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
         fobj == NULL ||
         !PyFunction_Check(fobj)
     ) {
-        printf("\nResuming frame.");
+        printf("\nResuming frame.\n");
         return;
     }
     PyFunctionObject *f = (PyFunctionObject *)fobj;
@@ -1946,7 +1944,7 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
     }
     /* no match */
     *match = Py_NewRef(Py_None);
-    *rest = Py_NewRef(Py_None);
+    *rest = Py_NewRef(exc_value);
     return 0;
 }
 

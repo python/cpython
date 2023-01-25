@@ -354,6 +354,13 @@ gen_close(PyGenObject *gen, PyObject *args)
     PyObject *yf = _PyGen_yf(gen);
     int err = 0;
 
+    if (gen->gi_frame_state == FRAME_CREATED) {
+        gen->gi_frame_state = FRAME_COMPLETED;
+        Py_RETURN_NONE;
+    }
+    if (gen->gi_frame_state >= FRAME_COMPLETED) {
+        Py_RETURN_NONE;
+    }
     if (yf) {
         PyFrameState state = gen->gi_frame_state;
         gen->gi_frame_state = FRAME_EXECUTING;
@@ -361,8 +368,23 @@ gen_close(PyGenObject *gen, PyObject *args)
         gen->gi_frame_state = state;
         Py_DECREF(yf);
     }
-    if (err == 0)
+    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
+    /* It is possible for the previous instruction to not be a
+     * YIELD_VALUE if the debugger has changed the lineno. */
+    if (err == 0 && frame->prev_instr->opcode == YIELD_VALUE) {
+        assert(frame->prev_instr[1].opcode == RESUME);
+        int exception_handler_depth = frame->prev_instr->oparg;
+        assert(exception_handler_depth > 0);
+        /* We can safely ignore the outermost try block
+         * as it automatically generated to handle
+         * StopIteration. */
+        if (exception_handler_depth == 1) {
+            Py_RETURN_NONE;
+        }
+    }
+    if (err == 0) {
         PyErr_SetNone(PyExc_GeneratorExit);
+    }
     retval = gen_send_ex(gen, Py_None, 1, 1);
     if (retval) {
         const char *msg = "generator ignored GeneratorExit";

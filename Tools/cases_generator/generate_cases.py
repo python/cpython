@@ -26,7 +26,7 @@ DEFAULT_METADATA_OUTPUT = os.path.relpath(
 )
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
-RE_PREDICTED = r"^\s*(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*$"
+RE_PREDICTED = r"^\s*(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
@@ -354,7 +354,7 @@ class Instruction:
         assert dedent <= 0
         extra = " " * -dedent
         for line in self.block_text:
-            if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*$", line):
+            if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*(?://.*)?$", line):
                 space, cond, label = m.groups()
                 # ERROR_IF() must pop the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.
@@ -378,7 +378,7 @@ class Instruction:
                     )
                 else:
                     out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
-            elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*$", line):
+            elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 if not self.register:
                     space = m.group(1)
                     for ieff in self.input_effects:
@@ -810,6 +810,7 @@ class Analyzer:
                 directions.extend("DIR_WRITE" for _ in instr.output_effects)
                 directions.extend("DIR_NONE" for _ in range(3))
                 dir_op1, dir_op2, dir_op3 = directions[:3]
+                n_popped = n_pushed = 0
         self.out.emit(
             f'    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},'
         )
@@ -963,7 +964,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
 
     # Separate PREDICT(...) macros from end
     predictions: list[str] = []
-    while blocklines and (m := re.match(r"^\s*PREDICT\((\w+)\);\s*$", blocklines[-1])):
+    while blocklines and (m := re.match(r"^\s*PREDICT\((\w+)\);\s*(?://.*)?$", blocklines[-1])):
         predictions.insert(0, m.group(1))
         blocklines.pop()
 

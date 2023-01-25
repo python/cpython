@@ -52,11 +52,11 @@ are not normal Python classes.  See
 
 .. note:: Nomenclature
 
-   - The class :class:`Color` is an *enumeration* (or *enum*)
-   - The attributes :attr:`Color.RED`, :attr:`Color.GREEN`, etc., are
+   - The class :class:`!Color` is an *enumeration* (or *enum*)
+   - The attributes :attr:`!Color.RED`, :attr:`!Color.GREEN`, etc., are
      *enumeration members* (or *members*) and are functionally constants.
    - The enum members have *names* and *values* (the name of
-     :attr:`Color.RED` is ``RED``, the value of :attr:`Color.BLUE` is
+     :attr:`!Color.RED` is ``RED``, the value of :attr:`!Color.BLUE` is
      ``3``, etc.)
 
 ---------------
@@ -165,8 +165,8 @@ Data Types
    to subclass *EnumType* -- see :ref:`Subclassing EnumType <enumtype-examples>`
    for details.
 
-   *EnumType* is responsible for setting the correct :meth:`__repr__`,
-   :meth:`__str__`, :meth:`__format__`, and :meth:`__reduce__` methods on the
+   *EnumType* is responsible for setting the correct :meth:`!__repr__`,
+   :meth:`!__str__`, :meth:`!__format__`, and :meth:`!__reduce__` methods on the
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
@@ -424,9 +424,9 @@ Data Types
       Using :class:`auto` with :class:`IntEnum` results in integers of increasing
       value, starting with ``1``.
 
-   .. versionchanged:: 3.11 :meth:`__str__` is now :func:`int.__str__` to
+   .. versionchanged:: 3.11 :meth:`~object.__str__` is now :meth:`!int.__str__` to
       better support the *replacement of existing constants* use-case.
-      :meth:`__format__` was already :func:`int.__format__` for that same reason.
+      :meth:`~object.__format__` was already :meth:`!int.__format__` for that same reason.
 
 
 .. class:: StrEnum
@@ -761,11 +761,11 @@ Data Types
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
-:attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
+:attr:`~EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`__new__`, if specified, must create and return the enum members; it is
-also a very good idea to set the member's :attr:`_value_` appropriately.  Once
+:meth:`~object.__new__`, if specified, must create and return the enum members; it is
+also a very good idea to set the member's :attr:`!_value_` appropriately.  Once
 all the members are created it is no longer used.
 
 
@@ -804,7 +804,7 @@ Utilities and Decorators
 .. class:: auto
 
    *auto* can be used in place of a value.  If used, the *Enum* machinery will
-   call an *Enum*'s :meth:`_generate_next_value_` to get an appropriate value.
+   call an *Enum*'s :meth:`~Enum._generate_next_value_` to get an appropriate value.
    For *Enum* and *IntEnum* that appropriate value will be the last value plus
    one; for *Flag* and *IntFlag* it will be the first power-of-two greater
    than the highest value; for *StrEnum* it will be the lower-cased version of
@@ -847,7 +847,7 @@ Utilities and Decorators
 .. decorator:: unique
 
    A :keyword:`class` decorator specifically for enumerations.  It searches an
-   enumeration's :attr:`__members__`, gathering any aliases it finds; if any are
+   enumeration's :attr:`~EnumType.__members__`, gathering any aliases it finds; if any are
    found :exc:`ValueError` is raised with the details::
 
       >>> from enum import Enum, unique
