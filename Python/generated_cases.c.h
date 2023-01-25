@@ -2273,8 +2273,8 @@
             if (!Py_IsNone(match)) {
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
             }
-            POKE(1, match);
             POKE(2, rest);
+            POKE(1, match);
             DISPATCH();
         }
 

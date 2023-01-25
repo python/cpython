@@ -74,6 +74,8 @@ class StackEffect(Node):
     cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
+    # 'manual' is used to decide between PEEK() and POP()
+    manual: bool = field(init=False, compare=False, default=False)
 
 
 @dataclass

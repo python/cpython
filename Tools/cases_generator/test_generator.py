@@ -411,9 +411,9 @@ def test_array_output():
             spam();
             STACK_GROW(2);
             STACK_GROW(oparg*3);
-            POKE(1, above);
-            MOVE_ITEMS(&PEEK(1 + oparg*3), values, oparg*3);
             POKE(2 + oparg*3, below);
+            MOVE_ITEMS(&PEEK(1 + oparg*3), values, oparg*3);
+            POKE(1, above);
             DISPATCH();
         }
     """
@@ -431,8 +431,8 @@ def test_array_input_output():
             PyObject *below = PEEK(1 + oparg);
             PyObject *above;
             spam();
-            POKE(1, above);
             MOVE_ITEMS(&PEEK(1 + oparg), values, oparg);
+            POKE(1, above);
             DISPATCH();
         }
     """
@@ -478,17 +478,22 @@ def test_register():
 
 def test_cond_effect():
     input = """
-        inst(OP, (input if (oparg & 1) -- output if (oparg & 2))) {
+        inst(OP, (aa, input if (oparg & 1), cc -- xx, output if (oparg & 2), zz)) {
             output = spam(oparg, input);
         }
     """
     output = """
         TARGET(OP) {
-            PyObject *input = NULL;
-            if (oparg & 1) { input = POP(); }
+            PyObject *cc = POP();
+            PyObject *input = (oparg & 1) ? POP() : NULL;
+            PyObject *aa = PEEK(1);
+            PyObject *xx;
             PyObject *output;
+            PyObject *zz;
             output = spam(oparg, input);
+            POKE(1, xx);
             if (oparg & 2) { PUSH(output); }
+            PUSH(zz);
             DISPATCH();
         }
     """

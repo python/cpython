@@ -163,6 +163,11 @@ class Formatter:
         cast = self.cast(dst, src)
         if m := re.match(r"^PEEK\((.*)\)$", dst.name):
             self.emit(f"POKE({m.group(1)}, {cast}{src.name});")
+        elif m := re.match(r"^POP\(\)$", dst.name):
+            if src.cond:
+                self.emit(f"if ({src.cond}) {{ PUSH({cast}{src.name}); }}")
+            else:
+                self.emit(f"PUSH({cast}{src.name});")
         elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
             # NOTE: MOVE_ITEMS() does not actually exist.
             # The only supported output array forms are:
@@ -220,10 +225,23 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
+
         self.input_effects = [
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
+        manual = False
+        for effect in self.input_effects:
+            if effect.cond:
+                manual = True
+            effect.manual = manual
+
         self.output_effects = inst.outputs  # For consistency/completeness
+        manual = False
+        for effect in self.output_effects:
+            if effect.cond:
+                manual = True
+            effect.manual = manual
+
         unmoved_names: set[str] = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):
             if ieffect.name == oeffect.name:
@@ -276,15 +294,26 @@ class Instruction:
             # Write input stack effect variable declarations and initializations
             ieffects = list(reversed(self.input_effects))
             for i, ieffect in enumerate(ieffects):
-                isize = string_effect_size(list_effect_size(ieffects[:i+1]))
+                isize = string_effect_size(list_effect_size([ieff for ieff in ieffects[:i+1] if not ieff.manual]))
                 if ieffect.size:
+                    assert not ieffect.manual, "Manual array effects not yet supported"
                     src = StackEffect(f"&PEEK({isize})", "PyObject **")
                 else:
-                    src = StackEffect(f"PEEK({isize})", "")
+                    if ieffect.manual:
+                        if ieffect.cond:
+                            src = StackEffect(f"({ieffect.cond}) ? POP() : NULL", "")            
+                        else:
+                            src = StackEffect(f"POP()", "")            
+                    else:
+                        src = StackEffect(f"PEEK({isize})", "")            
                 out.declare(ieffect, src)
+                # if ieffect.cond:
+                #     assert ieffect.manual, "Conditional effects must be manual"
+                #     out.emit(f"if ({ieffect.cond}) {{ {ieffect.name} = POP(); }}")
         else:
             # Write input register variable declarations and initializations
             for ieffect, reg in zip(self.input_effects, self.input_registers):
+                assert not ieffect.manual, "Manual register effects not yet supported"
                 src = StackEffect(reg, "")
                 out.declare(ieffect, src)
 
@@ -304,22 +333,33 @@ class Instruction:
 
         if not self.register:
             # Write net stack growth/shrinkage
-            out.stack_adjust(0, self.input_effects, self.output_effects)
+            out.stack_adjust(0,
+                [ieff for ieff in self.input_effects if not ieff.manual],
+                [oeff for oeff in self.output_effects if not oeff.manual])
 
             # Write output stack effect assignments
             oeffects = list(reversed(self.output_effects))
+            real_oeffects: list[tuple[StackEffect, StackEffect]] = []
             for i, oeffect in enumerate(oeffects):
                 if oeffect.name in self.unmoved_names:
                     continue
-                osize = string_effect_size(list_effect_size(oeffects[:i+1]))
+                osize = string_effect_size(list_effect_size([oeff for oeff in oeffects[:i+1] if not oeff.manual]))
                 if oeffect.size:
+                    assert not oeffect.manual, "Manual array effects not yet supported"
                     dst = StackEffect(f"&PEEK({osize})", "PyObject **")
                 else:
-                    dst = StackEffect(f"PEEK({osize})", "")
+                    if oeffect.manual:
+                        dst = StackEffect(f"POP()", "")
+                    else:
+                        dst = StackEffect(f"PEEK({osize})", "")
+                real_oeffects.append((dst, oeffect))
+            for dst, oeffect in reversed(real_oeffects):
                 out.assign(dst, oeffect)
         else:
             # Write output register assignments
             for oeffect, reg in zip(self.output_effects, self.output_registers):
+                assert not oeffect.manual, "Manual register effects not yet supported"
+                src = StackEffect(reg, "")
                 dst = StackEffect(reg, "")
                 out.assign(dst, oeffect)
 
