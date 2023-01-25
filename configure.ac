@@ -1939,17 +1939,19 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
+  # -fno-reorder-blocks-and-partition is required for bolt to work.
+  # Possibly GCC only.
+  AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  ])
+
   # These flags are required for bolt to work:
-  CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
   # These flags are required to get good performance from bolt:
   CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
   # We want to add these no-pie flags to linking executables but not shared libraries:
   LINKCC="$LINKCC -fno-pie -no-pie"
-  # Designate the DWARF version into 4 since the LLVM-BOLT does not support DWARF5 yet.
-  CFLAGS="$CFLAGS -gdwarf-4"
-  LDFLAGS="$LDFLAGS -gdwarf-4"
   AC_SUBST(LLVM_BOLT)
   AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
   if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"

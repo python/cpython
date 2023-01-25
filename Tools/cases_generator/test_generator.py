@@ -215,6 +215,20 @@ def test_error_if_plain():
     """
     run_cases_test(input, output)
 
+def test_error_if_plain_with_comment():
+    input = """
+        inst(OP, (--)) {
+            ERROR_IF(cond, label);  // Comment is ok
+        }
+    """
+    output = """
+        TARGET(OP) {
+            if (cond) goto label;
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
 def test_error_if_pop():
     input = """
         inst(OP, (left, right -- res)) {
