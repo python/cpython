@@ -529,44 +529,57 @@ def relpath(path, start=None):
         raise
 
 
-# Return the longest common sub-path of the sequence of paths given as input.
+# Return the longest common sub-path of the iterable of paths given as input.
 # The paths are not normalized before comparing them (this is the
 # responsibility of the caller). Any trailing separator is stripped from the
 # returned path.
 
 def commonpath(paths):
-    """Given a sequence of path names, returns the longest common sub-path."""
+    """Given an iterable of path names, returns the longest common sub-path."""
+    try:
+        paths = iter(paths)
+    except TypeError:
+        # TODO: should be a TypeError, but not backward compatible.
+        raise ValueError('commonpath() arg cannot be iterated') from None
 
-    if not paths:
-        raise ValueError('commonpath() arg is an empty sequence')
+    try:
+        paths_0 = next(paths)
+    except StopIteration:
+        raise ValueError('commonpath() arg is an empty sequence') from None
 
-    paths = tuple(map(os.fspath, paths))
-    if isinstance(paths[0], bytes):
+    paths_0 = os.fspath(paths_0)
+    paths_rest = map(os.fspath, paths)
+
+    if isinstance(paths_0, bytes):
         sep = b'/'
         curdir = b'.'
     else:
         sep = '/'
         curdir = '.'
 
+    isabs = paths_0[:1] == sep
+    min_parts = max_parts = [p for p in paths_0.split(sep) if p and p != curdir]
+
     try:
-        split_paths = [path.split(sep) for path in paths]
+        for paths_i in paths_rest:
+            parts = [p for p in paths_i.split(sep) if p and p != curdir]
 
-        try:
-            isabs, = set(p[:1] == sep for p in paths)
-        except ValueError:
-            raise ValueError("Can't mix absolute and relative paths") from None
+            if (paths_i[:1] == sep) != isabs:
+                raise ValueError("Can't mix absolute and relative paths")
 
-        split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
-        s1 = min(split_paths)
-        s2 = max(split_paths)
-        common = s1
-        for i, c in enumerate(s1):
-            if c != s2[i]:
-                common = s1[:i]
+            if parts < min_parts:
+                min_parts = parts
+            elif parts > max_parts:
+                max_parts = parts
+
+        common_parts = min_parts
+        for i, p in enumerate(common_parts):
+            if p != max_parts[i]:
+                del common_parts[i:]
                 break
 
         prefix = sep if isabs else sep[:0]
-        return prefix + sep.join(common)
+        return prefix + sep.join(common_parts)
     except (TypeError, AttributeError):
-        genericpath._check_arg_types('commonpath', *paths)
+        genericpath._check_arg_types('commonpath', paths_0, paths_i)
         raise

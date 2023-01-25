@@ -662,10 +662,12 @@ class PosixPathTest(unittest.TestCase):
     def test_commonpath(self):
         def check(paths, expected):
             self.assertEqual(posixpath.commonpath(paths), expected)
+            self.assertEqual(posixpath.commonpath(iter(paths)), expected)
             self.assertEqual(posixpath.commonpath([os.fsencode(p) for p in paths]),
                              os.fsencode(expected))
         def check_error(exc, paths):
             self.assertRaises(exc, posixpath.commonpath, paths)
+            self.assertRaises(exc, posixpath.commonpath, iter(paths))
             self.assertRaises(exc, posixpath.commonpath,
                               [os.fsencode(p) for p in paths])
 

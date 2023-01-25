@@ -800,13 +800,22 @@ def relpath(path, start=None):
 # stripped from the returned path.
 
 def commonpath(paths):
-    """Given a sequence of path names, returns the longest common sub-path."""
+    """Given an iterable of path names, returns the longest common sub-path."""
+    try:
+        paths = iter(paths)
+    except TypeError:
+        # TODO: should be a TypeError, but not backward compatible.
+        raise ValueError('commonpath() arg is not iteratable') from None
 
-    if not paths:
-        raise ValueError('commonpath() arg is an empty sequence')
+    try:
+        paths_0 = next(paths)
+    except StopIteration:
+        raise ValueError('commonpath() arg is an empty sequence') from None
 
-    paths = tuple(map(os.fspath, paths))
-    if isinstance(paths[0], bytes):
+    paths_0 = os.fspath(paths_0)
+    paths_rest = map(os.fspath, paths)
+
+    if isinstance(paths_0, bytes):
         sep = b'\\'
         altsep = b'/'
         curdir = b'.'
@@ -815,39 +824,38 @@ def commonpath(paths):
         altsep = '/'
         curdir = '.'
 
+    common_drive, path = splitdrive(paths_0.replace(altsep, sep))
+    common_parts = [c for c in path.split(sep) if c and c != curdir]
+    common_drive_lower, common_parts_lower = common_drive.lower(), [c.lower() for c in common_parts]
+    min_parts_lower = max_parts_lower = common_parts_lower
+    isabs = path[:1] == sep
+
     try:
-        drivesplits = [splitdrive(p.replace(altsep, sep).lower()) for p in paths]
-        split_paths = [p.split(sep) for d, p in drivesplits]
+        for paths_i in paths_rest:
+            drive_lower, path_lower = splitdrive(paths_i.replace(altsep, sep).lower())
+            parts_lower = [c for c in path_lower.split(sep) if c and c != curdir]
 
-        try:
-            isabs, = set(p[:1] == sep for d, p in drivesplits)
-        except ValueError:
-            raise ValueError("Can't mix absolute and relative paths") from None
+            if (path_lower[:1] == sep) != isabs:
+                raise ValueError("Can't mix absolute and relative paths")
+            elif drive_lower != common_drive_lower:
+                raise ValueError("Paths don't have the same drive")
 
-        # Check that all drive letters or UNC paths match. The check is made only
-        # now otherwise type errors for mixing strings and bytes would not be
-        # caught.
-        if len(set(d for d, p in drivesplits)) != 1:
-            raise ValueError("Paths don't have the same drive")
+            if parts_lower < min_parts_lower:
+                min_parts_lower = parts_lower
+            elif parts_lower > max_parts_lower:
+                max_parts_lower = parts_lower
 
-        drive, path = splitdrive(paths[0].replace(altsep, sep))
-        common = path.split(sep)
-        common = [c for c in common if c and c != curdir]
-
-        split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
-        s1 = min(split_paths)
-        s2 = max(split_paths)
-        for i, c in enumerate(s1):
-            if c != s2[i]:
-                common = common[:i]
+        for i, c in enumerate(min_parts_lower):
+            if c != max_parts_lower[i]:
+                del common_parts[i:]
                 break
         else:
-            common = common[:len(s1)]
+            del common_parts[len(min_parts_lower):]
 
-        prefix = drive + sep if isabs else drive
-        return prefix + sep.join(common)
+        prefix = (common_drive + sep) if isabs else common_drive
+        return prefix + sep.join(common_parts)
     except (TypeError, AttributeError):
-        genericpath._check_arg_types('commonpath', *paths)
+        genericpath._check_arg_types('commonpath', paths_0, paths_i)
         raise
 
 

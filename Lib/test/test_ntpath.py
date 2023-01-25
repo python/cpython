@@ -724,8 +724,11 @@ class TestNtpath(NtpathTestCase):
         def check(paths, expected):
             tester(('ntpath.commonpath(%r)' % paths).replace('\\\\', '\\'),
                    expected)
+            tester(('ntpath.commonpath(iter(%r))' % paths).replace('\\\\', '\\'),
+                   expected)
         def check_error(exc, paths):
             self.assertRaises(exc, ntpath.commonpath, paths)
+            self.assertRaises(exc, ntpath.commonpath, iter(paths))
             self.assertRaises(exc, ntpath.commonpath,
                               [os.fsencode(p) for p in paths])
 
