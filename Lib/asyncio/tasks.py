@@ -78,27 +78,16 @@ def _set_task_name(task, name):
 
 @contextlib.contextmanager
 def shield_scope():
-    shield = object()  # just for making sure shields closed in order
-    # if __enter__ and __exit__ called directly
     task = current_task()
-    task.shields.append(shield)
+    task.shields += 1
     try:
         yield
     finally:
-        if task.shields.pop() is not shield:
+        task.shields -= 1
+        if task.shields < 0:
             raise RuntimeError(
                 f"Unbalanced enter/exit of shield scopes for task {task!r}"
             )
-
-
-def shielded(func):
-    """Decorator to shield the call of a async function or method,
-    wrapping it in a shield_scope()."""
-    @functools.wraps(func)
-    async def _shielded(*args, **kwargs):
-        with shield_scope():
-            return await func(*args, **kwargs)
-    return _shielded
 
 
 class Task(futures._PyFuture):  # Inherit Python Task implementation
@@ -121,7 +110,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def __init__(self, coro, *, loop=None, name=None, context=None):
         super().__init__(loop=loop)
-        self.shields = []
+        self.shields = 0
         if self._source_traceback:
             del self._source_traceback[-1]
         if not coroutines.iscoroutine(coro):
