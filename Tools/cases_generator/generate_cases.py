@@ -981,7 +981,7 @@ def always_exits(lines: list[str]) -> bool:
         return False
     line = line[12:]
     return line.startswith(
-        ("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()")
+        ("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()", "ERROR_IF(true, ")
     )
 
 

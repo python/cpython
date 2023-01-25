@@ -709,8 +709,6 @@
                 break;
             }
             if (true) { STACK_SHRINK(oparg); goto error; }
-            STACK_SHRINK(oparg);
-            DISPATCH();
         }
 
         TARGET(INTERPRETER_EXIT) {
