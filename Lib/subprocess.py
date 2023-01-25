@@ -1478,8 +1478,9 @@ class Popen:
                     close_fds = False
 
             if shell:
-                startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = _winapi.SW_HIDE
+                if not startupinfo.dwFlags & _winapi.STARTF_USESHOWWINDOW:
+                    startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
+                    startupinfo.wShowWindow = _winapi.SW_HIDE
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = '{} /c "{}"'.format (comspec, args)
 
