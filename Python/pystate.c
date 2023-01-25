@@ -1730,6 +1730,7 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
         // XXX assert(tstate_is_alive(oldts) && tstate_is_bound(oldts));
         tstate_deactivate(oldts);
     }
+
     if (newts != NULL) {
         // XXX assert(tstate_is_alive(newts));
         assert(tstate_is_bound(newts));
