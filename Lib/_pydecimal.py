@@ -1059,18 +1059,26 @@ class Decimal(object):
         # dotplace is number of digits of self._int to the left of the
         # decimal point in the mantissa of the output string (that is,
         # after adjusting the exponent)
-        if self._exp <= 0 and leftdigits > -6:
-            # no exponent required
-            dotplace = leftdigits
-        elif not eng:
-            # usual scientific notation: 1 digit on left of the point
-            dotplace = 1
-        elif self._int == '0':
-            # engineering notation, zero
-            dotplace = (leftdigits + 1) % 3 - 1
+
+        if eng:
+            # engineering notation
+            if self._exp <= 0 and leftdigits > 0:
+                # no exponent required
+                dotplace = leftdigits
+            elif self._int == '0':
+                # zero
+                dotplace = (leftdigits + 1) % 3 - 1
+            else:
+                # nonzero
+                dotplace = (leftdigits - 1) % 3 + 1
         else:
-            # engineering notation, nonzero
-            dotplace = (leftdigits - 1) % 3 + 1
+            # scientific notation
+            if self._exp <= 0 and leftdigits > -6:
+                # no exponent required
+                dotplace = leftdigits
+            else:
+                # usual scientific notation: 1 digit on left of the point
+                dotplace = 1
 
         if dotplace <= 0:
             intpart = '0'
