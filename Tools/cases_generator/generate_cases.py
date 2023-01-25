@@ -734,8 +734,11 @@ class Analyzer:
         ]
         return stack, -lowest
 
-    def get_stack_effect_info(self, thing):
-        def effect_str(effect):
+    def get_stack_effect_info(
+        self, thing: parser.InstDef | parser.Super | parser.Macro
+    ) -> tuple[Instruction, str, str]:
+
+        def effect_str(effect: list[StackEffect]) -> str:
             if getattr(thing, 'kind', None) == 'legacy':
                 return str(-1)
             n_effect, sym_effect = list_effect_size(effect)
@@ -762,7 +765,7 @@ class Analyzer:
                 typing.assert_never(thing)
         return instr, popped, pushed
 
-    def write_stack_effect_functions(self):
+    def write_stack_effect_functions(self) -> None:
         popped_data = []
         pushed_data = []
         for thing in self.everything:
@@ -770,7 +773,7 @@ class Analyzer:
             popped_data.append( (instr, popped) )
             pushed_data.append( (instr, pushed) )
 
-        def write_function(direction, data):
+        def write_function(direction: str, data: list[tuple[Instruction, str]]) -> None:
             self.out.emit("\nstatic int");
             self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg) {{")
             self.out.emit("    switch(opcode) {");
