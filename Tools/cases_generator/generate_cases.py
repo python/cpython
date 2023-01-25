@@ -765,7 +765,7 @@ class Analyzer:
             # Write variable definition
             self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
-            self.out.emit("static const struct {")
+            self.out.emit("struct opcode_metadata {")
             with self.out.indent():
                 self.out.emit("short n_popped;")
                 self.out.emit("short n_pushed;")
@@ -774,7 +774,10 @@ class Analyzer:
                 self.out.emit("enum Direction dir_op3;")
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
-            self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
+            self.out.emit("};")
+            self.out.emit("\nstatic struct opcode_metadata")
+            self.out.emit("_PyOpcode_opcode_metadata(int opcode, int oparg) {")
+            self.out.emit("    struct opcode_metadata metadata[256] = {")
 
             # Write metadata for each instruction
             for thing in self.everything:
@@ -790,7 +793,9 @@ class Analyzer:
                         typing.assert_never(thing)
 
             # Write end of array
-            self.out.emit("};")
+            self.out.emit("    };")
+            self.out.emit("    return metadata[opcode];")
+            self.out.emit("}")
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
@@ -801,9 +806,10 @@ class Analyzer:
         else:
             n_popped, sym_popped = list_effect_size(instr.input_effects)
             n_pushed, sym_pushed = list_effect_size(instr.output_effects)
-            if sym_popped or sym_pushed:
-                # TODO: Record symbolic effects (how?)
-                n_popped = n_pushed = -1
+            if sym_popped:
+                n_popped = f"{sym_popped}+{n_popped}" if n_popped else sym_popped
+            if sym_pushed:
+                n_pushed = f"{sym_pushed}+{n_pushed}" if n_pushed else sym_pushed
             if instr.register:
                 directions: list[str] = []
                 directions.extend("DIR_READ" for _ in instr.input_effects)

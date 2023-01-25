@@ -8655,12 +8655,13 @@ opcode_metadata_is_sane(cfg_builder *g) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             int opcode = instr->i_opcode;
+            int oparg = instr->i_oparg;
             assert(opcode <= MAX_REAL_OPCODE);
-            int pushed = _PyOpcode_opcode_metadata[opcode].n_pushed;
-            int popped = _PyOpcode_opcode_metadata[opcode].n_popped;
+            int pushed = _PyOpcode_opcode_metadata(opcode, oparg).n_pushed;
+            int popped = _PyOpcode_opcode_metadata(opcode, oparg).n_popped;
             assert((pushed < 0) == (popped < 0));
             if (pushed >= 0) {
-                assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
+                assert(_PyOpcode_opcode_metadata(opcode, oparg).valid_entry);
                 int effect = stack_effect(opcode, instr->i_oparg, -1);
                 if (effect != pushed - popped) {
                    fprintf(stderr,

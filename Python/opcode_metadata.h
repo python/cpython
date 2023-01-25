@@ -3,7 +3,7 @@
 // Do not edit!
 enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };
 enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
-static const struct {
+struct opcode_metadata {
     short n_popped;
     short n_pushed;
     enum Direction dir_op1;
@@ -11,7 +11,11 @@ static const struct {
     enum Direction dir_op3;
     bool valid_entry;
     enum InstructionFormat instr_format;
-} _PyOpcode_opcode_metadata[256] = {
+};
+
+static struct opcode_metadata
+_PyOpcode_opcode_metadata(int opcode, int oparg) {
+    struct opcode_metadata metadata[256] = {
     [NOP] = { 0, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [RESUME] = { 0, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_CLOSURE] = { 0, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
@@ -45,8 +49,8 @@ static const struct {
     [BINARY_SUBSCR_TUPLE_INT] = { 2, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC000 },
     [BINARY_SUBSCR_DICT] = { 2, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC000 },
     [BINARY_SUBSCR_GETITEM] = { 2, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC000 },
-    [LIST_APPEND] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [SET_ADD] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LIST_APPEND] = { (oparg-1)+2, (oparg-1)+1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [SET_ADD] = { (oparg-1)+2, (oparg-1)+1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [STORE_SUBSCR] = { 3, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
     [STORE_SUBSCR_LIST_INT] = { 3, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
     [STORE_SUBSCR_DICT] = { 3, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
@@ -89,15 +93,15 @@ static const struct {
     [LOAD_DEREF] = { 0, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [STORE_DEREF] = { 1, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [COPY_FREE_VARS] = { 0, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [BUILD_STRING] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [BUILD_TUPLE] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [BUILD_LIST] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LIST_EXTEND] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [SET_UPDATE] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [BUILD_SET] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [BUILD_MAP] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BUILD_STRING] = { oparg, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BUILD_TUPLE] = { oparg, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BUILD_LIST] = { oparg, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LIST_EXTEND] = { (oparg-1)+2, (oparg-1)+1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [SET_UPDATE] = { (oparg-1)+2, (oparg-1)+1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BUILD_SET] = { oparg, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BUILD_MAP] = { oparg*2, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [SETUP_ANNOTATIONS] = { 0, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
-    [BUILD_CONST_KEY_MAP] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BUILD_CONST_KEY_MAP] = { oparg+1, 1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DICT_UPDATE] = { 1, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DICT_MERGE] = { 1, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [MAP_ADD] = { 2, 0, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
@@ -180,4 +184,6 @@ static const struct {
     [SWAP] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [EXTENDED_ARG] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CACHE] = { -1, -1, DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
-};
+    };
+    return metadata[opcode];
+}
