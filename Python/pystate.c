@@ -1321,6 +1321,13 @@ _PyThreadState_New(PyInterpreterState *interp)
     return new_threadstate(interp);
 }
 
+// We keep this for stable ABI compabibility.
+PyThreadState *
+_PyThreadState_Prealloc(PyInterpreterState *interp)
+{
+    return _PyThreadState_New(interp);
+}
+
 // We keep this around for (accidental) stable ABI compatibility.
 // Realisically, no extensions are using it.
 void
