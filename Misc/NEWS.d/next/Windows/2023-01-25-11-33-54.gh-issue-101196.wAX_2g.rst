@@ -1,2 +1,2 @@
-The functions `os.path.isdir`, `os.path.isfile` and `os.path.exists` are now
+The functions ``os.path.isdir``, ``os.path.isfile`` and `os.path.exists` are now
 13% to 28% faster on Windows, by making fewer win32 API calls.
