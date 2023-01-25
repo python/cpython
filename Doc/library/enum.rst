@@ -925,3 +925,23 @@ Notes
        >>> from enum import IntEnum
        >>> class MyIntEnum(IntEnum):
        ...     __str__ = IntEnum.__str__
+
+   Additionally, it's possible to end up shadowing a method or property from
+   a derived baseclass such as :meth:`str.title` or :attr:`~numbers.Rational.numerator`,
+   which can cause unexpected issues at runtime.
+
+   Consider the following examples::
+
+       >>> from enum import StrEnum
+       >>> class MyStrEnum(StrEnum):
+       ...     title = "RED"
+       >>> MyStrEnum.title.title()
+       Traceback (most recent call last):
+       ...
+       TypeError: 'MyStrEnum' object is not callable
+
+       >>> from enum import IntEnum
+       >>> class MyIntEnum(IntEnum):
+       ...     numerator = 42
+       >>> MyIntEnum.numerator.numerator
+       <MyIntEnum.numerator: 42>
