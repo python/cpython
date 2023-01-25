@@ -36,7 +36,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject
 
-#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata
+#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 
 
 #define DEFAULT_BLOCK_SIZE 16
@@ -8651,13 +8651,15 @@ no_redundant_jumps(cfg_builder *g) {
 
 static bool
 opcode_metadata_is_sane(cfg_builder *g) {
+    bool result = true;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             int opcode = instr->i_opcode;
+            int oparg = instr->i_oparg;
             assert(opcode <= MAX_REAL_OPCODE);
-            int pushed = _PyOpcode_opcode_metadata[opcode].n_pushed;
-            int popped = _PyOpcode_opcode_metadata[opcode].n_popped;
+            int popped = _PyOpcode_num_popped(opcode, oparg);
+            int pushed = _PyOpcode_num_pushed(opcode, oparg);
             assert((pushed < 0) == (popped < 0));
             if (pushed >= 0) {
                 assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
@@ -8666,12 +8668,12 @@ opcode_metadata_is_sane(cfg_builder *g) {
                    fprintf(stderr,
                            "op=%d: stack_effect (%d) != pushed (%d) - popped (%d)\n",
                            opcode, effect, pushed, popped);
-                   return false;
+                   result = false;
                 }
             }
         }
     }
-    return true;
+    return result;
 }
 
 static bool
