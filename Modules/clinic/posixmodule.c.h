@@ -10965,6 +10965,193 @@ exit:
 
 #endif /* (defined(WIFEXITED) || defined(MS_WINDOWS)) */
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__isdir__doc__,
+"_isdir($module, /, path)\n"
+"--\n"
+"\n"
+"Return True if path is an existing directory.\n"
+"\n"
+"This follows symbolic links, so both islink() and isdir() can be true for the\n"
+"same path.");
+
+#define OS__ISDIR_METHODDEF    \
+    {"_isdir", _PyCFunction_CAST(os__isdir), METH_FASTCALL|METH_KEYWORDS, os__isdir__doc__},
+
+static PyObject *
+os__isdir_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_isdir",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = os__isdir_impl(module, path);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__isfile__doc__,
+"_isfile($module, /, path)\n"
+"--\n"
+"\n"
+"Return True if path is an existing file.\n"
+"\n"
+"This follows symbolic links, so both islink() and isfile() can be true for the\n"
+"same path.");
+
+#define OS__ISFILE_METHODDEF    \
+    {"_isfile", _PyCFunction_CAST(os__isfile), METH_FASTCALL|METH_KEYWORDS, os__isfile__doc__},
+
+static PyObject *
+os__isfile_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_isfile",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = os__isfile_impl(module, path);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__exists__doc__,
+"_exists($module, /, path)\n"
+"--\n"
+"\n"
+"Return True if path refers to an existing path or an open file descriptor.\n"
+"\n"
+"Returns False for broken symbolic links. On some platforms, this function may\n"
+"return False if permission is not granted to execute os.stat() on the requested\n"
+"file, even if the path physically exists.");
+
+#define OS__EXISTS_METHODDEF    \
+    {"_exists", _PyCFunction_CAST(os__exists), METH_FASTCALL|METH_KEYWORDS, os__exists__doc__},
+
+static PyObject *
+os__exists_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_exists",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = os__exists_impl(module, path);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -11560,4 +11747,16 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=41eab6c3523792a9 input=a9049054013a1b77]*/
+
+#ifndef OS__ISDIR_METHODDEF
+    #define OS__ISDIR_METHODDEF
+#endif /* !defined(OS__ISDIR_METHODDEF) */
+
+#ifndef OS__ISFILE_METHODDEF
+    #define OS__ISFILE_METHODDEF
+#endif /* !defined(OS__ISFILE_METHODDEF) */
+
+#ifndef OS__EXISTS_METHODDEF
+    #define OS__EXISTS_METHODDEF
+#endif /* !defined(OS__EXISTS_METHODDEF) */
+/*[clinic end generated code: output=378f9b4d00998b10 input=a9049054013a1b77]*/

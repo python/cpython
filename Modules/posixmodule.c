@@ -14962,6 +14962,194 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 #endif
 
 
+#if defined(MS_WINDOWS)
+/*[clinic input]
+os._isdir
+
+    path: 'O'
+
+Return True if path is an existing directory.
+
+This follows symbolic links, so both islink() and isdir() can be true for the
+same path.
+
+[clinic start generated code]*/
+
+static PyObject *
+os__isdir_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=e87264f004b1aa44 input=2b77ce7f601eb6bc]*/
+{
+    HANDLE hfile;
+    BOOL close_file = TRUE;
+    FILE_BASIC_INFO info = { 0 };
+    path_t _path = PATH_T_INITIALIZE("isdir", "path", 0, 1);
+    int result;
+
+    if (!path_converter(path, &_path)) {
+        path_cleanup(&_path);
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        } else {
+            return NULL;
+        }
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (_path.fd != -1) {
+        hfile = _Py_get_osfhandle_noraise(_path.fd);
+        close_file = FALSE;
+    } else {
+        hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    }
+    if (hfile != INVALID_HANDLE_VALUE) {
+        GetFileInformationByHandleEx(hfile, FileBasicInfo, &info, sizeof(info));
+        if (close_file) {
+            CloseHandle(hfile);
+        }
+        result = info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+    } else {
+        result = 0;
+    }
+    Py_END_ALLOW_THREADS
+
+    path_cleanup(&_path);
+    if (result) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+/*[clinic input]
+os._isfile
+
+    path: 'O'
+
+Return True if path is an existing file.
+
+This follows symbolic links, so both islink() and isfile() can be true for the
+same path.
+
+[clinic start generated code]*/
+
+static PyObject *
+os__isfile_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=45efe2f636a0226a input=e4026a0f974ee867]*/
+{
+    HANDLE hfile;
+    BOOL close_file = TRUE;
+    FILE_BASIC_INFO info = { 0 };
+    DWORD fileType;
+    path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 1);
+    int result;
+
+    if (!path_converter(path, &_path)) {
+        path_cleanup(&_path);
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        } else {
+            return NULL;
+        }
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (_path.fd != -1) {
+        hfile = _Py_get_osfhandle_noraise(_path.fd);
+        close_file = FALSE;
+    } else {
+        hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    }
+    if (hfile != INVALID_HANDLE_VALUE) {
+        GetFileInformationByHandleEx(hfile, FileBasicInfo, &info, sizeof(info));
+        result = !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+        if (result) {
+            fileType = GetFileType(hfile);
+            if (fileType != FILE_TYPE_DISK) {
+                result = 0;
+            }
+        }
+        if (close_file) {
+            CloseHandle(hfile);
+        }
+    } else {
+        result = 0;
+    }
+    Py_END_ALLOW_THREADS
+
+    path_cleanup(&_path);
+    if (result) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+/*[clinic input]
+os._exists
+
+    path: 'O'
+
+Return True if path refers to an existing path or an open file descriptor.
+
+Returns False for broken symbolic links. On some platforms, this function may
+return False if permission is not granted to execute os.stat() on the requested
+file, even if the path physically exists.
+
+[clinic start generated code]*/
+
+static PyObject *
+os__exists_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=0f0ba589f386f816 input=a6e67a9b92711692]*/
+{
+    HANDLE hfile;
+    BOOL close_file = TRUE;
+    path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 1);
+    int result;
+
+    if (!path_converter(path, &_path)) {
+        path_cleanup(&_path);
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        } else {
+            return NULL;
+        }
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (_path.fd != -1) {
+        hfile = _Py_get_osfhandle_noraise(_path.fd);
+        close_file = FALSE;
+    } else {
+        hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    }
+    if (hfile != INVALID_HANDLE_VALUE) {
+        result = 1;
+        if (close_file) {
+            CloseHandle(hfile);
+        }
+    } else {
+        result = 0;
+    }
+    Py_END_ALLOW_THREADS
+
+    path_cleanup(&_path);
+    if (result) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+#endif
+
+
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
@@ -15150,6 +15338,10 @@ static PyMethodDef posix_methods[] = {
     OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     OS_SETNS_METHODDEF
     OS_UNSHARE_METHODDEF
+
+    OS__ISFILE_METHODDEF
+    OS__ISDIR_METHODDEF
+    OS__EXISTS_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

@@ -852,11 +852,12 @@ def commonpath(paths):
 
 
 try:
-    # The genericpath.isdir implementation uses os.stat and checks the mode
-    # attribute to tell whether or not the path is a directory.
-    # This is overkill on Windows - just pass the path to GetFileAttributes
+    # The genericpath's isdir and isfile implementations uses os.stat internally.
+    # This is overkill on Windows - just pass the path to GetFileAttributesW
     # and check the attribute from there.
     from nt import _isdir as isdir
+    from nt import _isfile as isfile
+    from nt import _exists as exists
 except ImportError:
-    # Use genericpath.isdir as imported above.
+    # Use genericpath.* as imported above
     pass

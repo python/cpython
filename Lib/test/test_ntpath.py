@@ -1,3 +1,4 @@
+import inspect
 import ntpath
 import os
 import sys
@@ -888,6 +889,18 @@ class TestNtpath(NtpathTestCase):
                 self.assertTrue(ntpath.isjunction('testjunc'))
                 self.assertFalse(ntpath.isjunction('tmpdir'))
                 self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
+
+    @unittest.skipIf(sys.platform != 'win32', "Fast paths are only for win32")
+    def test_fast_paths_in_use(self):
+        # There are fast paths of these functions implemented in posixmodule.c.
+        # Confirm that they are being used, and not the Python fallbacks in
+        # genericpath.py.
+        self.assertTrue(os.path.isdir is nt._isdir)
+        self.assertFalse(inspect.isfunction(os.path.isdir))
+        self.assertTrue(os.path.isfile is nt._isfile)
+        self.assertFalse(inspect.isfunction(os.path.isfile))
+        self.assertTrue(os.path.exists is nt._exists)
+        self.assertFalse(inspect.isfunction(os.path.exists))
 
 
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
