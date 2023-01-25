@@ -2,6 +2,7 @@
 // from Python/bytecodes.c
 // Do not edit!
 
+#ifndef NDEBUG
 static int
 _PyOpcode_num_popped(int opcode, int oparg) {
     switch(opcode) {
@@ -86,7 +87,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case CALL_INTRINSIC_1:
             return 1;
         case RAISE_VARARGS:
-            return -1;
+            return oparg;
         case INTERPRETER_EXIT:
             return 1;
         case RETURN_VALUE:
@@ -345,7 +346,9 @@ _PyOpcode_num_popped(int opcode, int oparg) {
             Py_UNREACHABLE();
     }
 }
+#endif
 
+#ifndef NDEBUG
 static int
 _PyOpcode_num_pushed(int opcode, int oparg) {
     switch(opcode) {
@@ -430,7 +433,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case CALL_INTRINSIC_1:
             return 1;
         case RAISE_VARARGS:
-            return -1;
+            return 0;
         case INTERPRETER_EXIT:
             return 0;
         case RETURN_VALUE:
@@ -689,6 +692,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
             Py_UNREACHABLE();
     }
 }
+#endif
 enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };
 enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
