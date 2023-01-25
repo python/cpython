@@ -402,14 +402,12 @@ The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
 the current directory::
 
-   import http.server
+   from http.server import SimpleHTTPRequestHandler
    import socketserver
 
    PORT = 8000
 
-   Handler = http.server.SimpleHTTPRequestHandler
-
-   with socketserver.TCPServer(("", PORT), Handler) as httpd:
+   with socketserver.TCPServer(("", PORT), SimpleHTTPRequestHandler) as httpd:
        print("serving at port", PORT)
        httpd.serve_forever()
 
