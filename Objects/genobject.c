@@ -376,6 +376,13 @@ static PyObject *
 gen_close(PyGenObject *gen, PyObject *args)
 {
     PyObject *retval;
+    if (gen->gi_frame_state == FRAME_CREATED) {
+        gen->gi_frame_state = FRAME_COMPLETED;
+        Py_RETURN_NONE;
+    }
+    if (gen->gi_frame_state >= FRAME_COMPLETED) {
+        Py_RETURN_NONE;
+    }
     PyObject *yf = _PyGen_yf(gen);
     int err = 0;
 
@@ -385,6 +392,11 @@ gen_close(PyGenObject *gen, PyObject *args)
         err = gen_close_iter(yf);
         gen->gi_frame_state = state;
         Py_DECREF(yf);
+    }
+    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
+    assert(PyBytes_CheckExact(frame->f_code->co_exceptiontable));
+    if (err == 0 && PyBytes_GET_SIZE(frame->f_code->co_exceptiontable) == 0) {
+        Py_RETURN_NONE;
     }
     if (err == 0)
         PyErr_SetNone(PyExc_GeneratorExit);
