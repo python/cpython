@@ -11152,6 +11152,67 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__islink__doc__,
+"_islink($module, /, path)\n"
+"--\n"
+"\n"
+"Return True if path refers to an existing directory entry that is a symbolic link.\n"
+"\n"
+"Always False if symbolic links are not supported by the Python runtime.");
+
+#define OS__ISLINK_METHODDEF    \
+    {"_islink", _PyCFunction_CAST(os__islink), METH_FASTCALL|METH_KEYWORDS, os__islink__doc__},
+
+static PyObject *
+os__islink_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__islink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_islink",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = os__islink_impl(module, path);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -11759,4 +11820,8 @@ exit:
 #ifndef OS__EXISTS_METHODDEF
     #define OS__EXISTS_METHODDEF
 #endif /* !defined(OS__EXISTS_METHODDEF) */
-/*[clinic end generated code: output=378f9b4d00998b10 input=a9049054013a1b77]*/
+
+#ifndef OS__ISLINK_METHODDEF
+    #define OS__ISLINK_METHODDEF
+#endif /* !defined(OS__ISLINK_METHODDEF) */
+/*[clinic end generated code: output=bd2677b545dabe35 input=a9049054013a1b77]*/

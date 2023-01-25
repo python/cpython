@@ -15143,6 +15143,70 @@ os__exists_impl(PyObject *module, PyObject *path)
         Py_RETURN_FALSE;
     }
 }
+
+
+/*[clinic input]
+os._islink
+
+    path: 'O'
+
+Return True if path refers to an existing directory entry that is a symbolic link.
+
+Always False if symbolic links are not supported by the Python runtime.
+
+[clinic start generated code]*/
+
+static PyObject *
+os__islink_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=597174066981ca21 input=df8e74a37ac3c6dc]*/
+{
+    HANDLE hfile;
+    BOOL close_file = TRUE;
+    FILE_ATTRIBUTE_TAG_INFO info = { 0 };
+    path_t _path = PATH_T_INITIALIZE("islink", "path", 0, 1);
+    int result;
+
+    if (!path_converter(path, &_path)) {
+        path_cleanup(&_path);
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        } else {
+            return NULL;
+        }
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (_path.fd != -1) {
+        hfile = _Py_get_osfhandle_noraise(_path.fd);
+        close_file = FALSE;
+    } else {
+        hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                            OPEN_EXISTING,
+                            FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+                            NULL);
+    }
+    if (hfile != INVALID_HANDLE_VALUE) {
+        if (GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info, sizeof(info))) {
+            result = (info.ReparseTag == IO_REPARSE_TAG_SYMLINK);
+        } else {
+            result = 0;
+        }
+        if (close_file) {
+            CloseHandle(hfile);
+        }
+    } else {
+        result = 0;
+    }
+    Py_END_ALLOW_THREADS
+
+    path_cleanup(&_path);
+    if (result) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
 #endif
 
 
@@ -15335,8 +15399,9 @@ static PyMethodDef posix_methods[] = {
     OS_SETNS_METHODDEF
     OS_UNSHARE_METHODDEF
 
-    OS__ISFILE_METHODDEF
     OS__ISDIR_METHODDEF
+    OS__ISFILE_METHODDEF
+    OS__ISLINK_METHODDEF
     OS__EXISTS_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
