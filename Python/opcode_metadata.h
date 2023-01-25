@@ -86,7 +86,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case CALL_INTRINSIC_1:
             return 1;
         case RAISE_VARARGS:
-            return -1;
+            return oparg;
         case INTERPRETER_EXIT:
             return 1;
         case RETURN_VALUE:
@@ -430,7 +430,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case CALL_INTRINSIC_1:
             return 1;
         case RAISE_VARARGS:
-            return -1;
+            return 0;
         case INTERPRETER_EXIT:
             return 0;
         case RETURN_VALUE:
