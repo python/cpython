@@ -283,13 +283,17 @@ bind_gilstate_tstate(PyThreadState *tstate)
     assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
     // XXX assert(!tstate->_status.active);
-    // XXX assert(!tstate->_status.bound_gilstate);
-    _PyRuntimeState *runtime = tstate->interp->runtime;
+    assert(!tstate->_status.bound_gilstate);
 
-    // XXX Skipping like this does not play nice with multiple interpreters.
-    if (gilstate_tss_get(runtime) == NULL) {
-        gilstate_tss_set(runtime, tstate);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+    PyThreadState *tcur = gilstate_tss_get(runtime);
+    assert(tstate != tcur);
+
+    if (tcur != NULL) {
+        // XXX Skipping like this does not play nice with multiple interpreters.
+        return;
     }
+    gilstate_tss_set(runtime, tstate);
     tstate->_status.bound_gilstate = 1;
 }
 
