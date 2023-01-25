@@ -4,7 +4,7 @@ import os
 import sys
 import unittest
 import warnings
-from test.support import os_helper
+from test.support import cpython_only, os_helper
 from test.support import TestFailed, is_emscripten
 from test.support.os_helper import FakePath
 from test import test_genericpath
@@ -891,6 +891,7 @@ class TestNtpath(NtpathTestCase):
                 self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
 
     @unittest.skipIf(sys.platform != 'win32', "Fast paths are only for win32")
+    @cpython_only
     def test_fast_paths_in_use(self):
         # There are fast paths of these functions implemented in posixmodule.c.
         # Confirm that they are being used, and not the Python fallbacks in
