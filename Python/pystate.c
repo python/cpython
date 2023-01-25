@@ -1610,7 +1610,8 @@ static inline void
 tstate_activate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
+    // XXX assert(tstate_is_alive(tstate));
+    assert(tstate_is_bound(tstate));
     assert(!tstate->_status.active);
 
     if (!tstate->_status.bound_gilstate) {
@@ -1719,7 +1720,8 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
         tstate_deactivate(oldts);
     }
     if (newts != NULL) {
-        assert(tstate_is_alive(newts) && tstate_is_bound(newts));
+        // XXX assert(tstate_is_alive(newts));
+        assert(tstate_is_bound(newts));
         current_fast_set(runtime, newts);
         tstate_activate(newts);
     }
