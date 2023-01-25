@@ -308,12 +308,9 @@ unbind_gilstate_tstate(PyThreadState *tstate)
     assert(tstate_is_bound(tstate));
     // XXX assert(!tstate->_status.active);
     assert(tstate->_status.bound_gilstate);
-    // XXX assert(tstate == gilstate_tss_get(tstate->interp->runtime));
+    assert(tstate == gilstate_tss_get(tstate->interp->runtime));
 
-    // XXX This check *should* always succeed.
-    if (tstate == gilstate_tss_get(tstate->interp->runtime)) {
-        gilstate_tss_clear(tstate->interp->runtime);
-    }
+    gilstate_tss_clear(tstate->interp->runtime);
     tstate->_status.bound_gilstate = 0;
 }
 
