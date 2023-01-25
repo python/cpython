@@ -699,9 +699,7 @@
                 exc = args[0];
                 /* fall through */
             case 0:
-                if (do_raise(tstate, exc, cause)) {
-                    if (true) { STACK_SHRINK(oparg); goto exception_unwind; }
-                }
+                if (do_raise(tstate, exc, cause)) { STACK_SHRINK(oparg); goto exception_unwind; }
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,

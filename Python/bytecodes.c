@@ -515,9 +515,7 @@ dummy_func(
                 exc = args[0];
                 /* fall through */
             case 0:
-                if (do_raise(tstate, exc, cause)) {
-                    ERROR_IF(true, exception_unwind);
-                }
+                ERROR_IF(do_raise(tstate, exc, cause), exception_unwind);
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
