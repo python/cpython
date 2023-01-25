@@ -227,13 +227,21 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: getsize(path)
+.. function:: getsize(path, apparent=True)
 
    Return the size, in bytes, of *path*.  Raise :exc:`OSError` if the file does
-   not exist or is inaccessible.
+   not exist or is inaccessible.  If *apparent* is ``True``, the apparent size
+   (number of bytes) of the file is returned.  If ``False``, the actual size
+   (disk space occupied) is returned. The actual size reflects the block size,
+   meaning it will typically be larger than the apparent size. However, the
+   inverse may also be true due to holes in ("sparse") files, internal
+   fragmentation, indirect blocks, etc.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.10
+      Add the optional *apparent* parameter.
 
 
 .. function:: isabs(path)

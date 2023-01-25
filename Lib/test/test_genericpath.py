@@ -104,10 +104,20 @@ class GenericTest:
 
         create_file(filename, b'Hello')
         self.assertEqual(self.pathmodule.getsize(filename), 5)
+        self.assertEqual(
+            self.pathmodule.getsize(filename, apparent=False), 4096)
         os.remove(filename)
 
         create_file(filename, b'Hello World!')
         self.assertEqual(self.pathmodule.getsize(filename), 12)
+        self.assertEqual(
+            self.pathmodule.getsize(filename, apparent=False), 4096)
+        os.remove(filename)
+
+        open(filename, 'xb', 0).close()
+        os.truncate(filename, 512)
+        self.assertEqual(self.pathmodule.getsize(filename), 512)
+        self.assertEqual(self.pathmodule.getsize(filename, apparent=False), 0)
 
     def test_filetime(self):
         filename = os_helper.TESTFN
