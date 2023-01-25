@@ -243,10 +243,6 @@ unbind_tstate(PyThreadState *tstate)
     assert(tstate->native_thread_id > 0);
 #endif
 
-    if (tstate->_status.bound_gilstate) {
-        unbind_gilstate_tstate(tstate);
-    }
-
     // We leave thread_id and native_thraed_id alone
     // since they can be useful for debugging.
     // Check the `_status` field to know if these values
@@ -1440,7 +1436,11 @@ tstate_delete_common(PyThreadState *tstate)
     }
     HEAD_UNLOCK(runtime);
 
-    // XXX Do this in PyThreadState_Swap() (and assert not-equal here)?
+    // XXX Unbind in PyThreadState_Clear(), or earlier
+    // (and assert not-equal here)?
+    if (tstate->_status.bound_gilstate) {
+        unbind_gilstate_tstate(tstate);
+    }
     unbind_tstate(tstate);
 
     // XXX Move to PyThreadState_Clear()?
