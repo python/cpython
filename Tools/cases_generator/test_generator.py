@@ -9,19 +9,19 @@ from parser import StackEffect
 
 def test_effect_sizes():
     input_effects = [
-        x := StackEffect("x", "", ""),
-        y := StackEffect("y", "", "oparg"),
-        z := StackEffect("z", "", "oparg*2"),
+        x := StackEffect("x", "", "", ""),
+        y := StackEffect("y", "", "", "oparg"),
+        z := StackEffect("z", "", "", "oparg*2"),
     ]
     output_effects = [
-        a := StackEffect("a", "", ""),
-        b := StackEffect("b", "", "oparg*4"),
-        c := StackEffect("c", "", ""),
+        StackEffect("a", "", "", ""),
+        StackEffect("b", "", "", "oparg*4"),
+        StackEffect("c", "", "", ""),
     ]
     other_effects = [
-        p := StackEffect("p", "", "oparg<<1"),
-        q := StackEffect("q", "", ""),
-        r := StackEffect("r", "", ""),
+        StackEffect("p", "", "", "oparg<<1"),
+        StackEffect("q", "", "", ""),
+        StackEffect("r", "", "", ""),
     ]
     assert generate_cases.effect_size(x) == (1, "")
     assert generate_cases.effect_size(y) == (0, "oparg")
@@ -472,6 +472,24 @@ def test_register():
             result = op(left, right);
             Py_XSETREF(REG(oparg3), result);
             JUMPBY(1);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_cond_effect():
+    input = """
+        inst(OP, (input if (oparg & 1) -- output if (oparg & 2))) {
+            output = spam(oparg, input);
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject *input = NULL;
+            if (oparg & 1) { input = POP(); }
+            PyObject *output;
+            output = spam(oparg, input);
+            if (oparg & 2) { PUSH(output); }
             DISPATCH();
         }
     """
