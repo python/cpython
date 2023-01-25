@@ -48,6 +48,7 @@ FROZEN = [
         # on a builtin zip file instead of a filesystem.
         'zipimport',
         ]),
+    # (You can delete entries from here down to the end of the list.)
     ('stdlib - startup, without site (python -S)', [
         'abc',
         'codecs',
@@ -83,6 +84,7 @@ FROZEN = [
         '<__phello__.**.*>',
         f'frozen_only : __hello_only__ = {FROZEN_ONLY}',
         ]),
+    # (End of stuff you could delete.)
 ]
 BOOTSTRAP = {
     'importlib._bootstrap',
