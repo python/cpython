@@ -505,27 +505,24 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // This should remain a legacy instruction.
-        inst(RAISE_VARARGS) {
+        inst(RAISE_VARARGS, (args[oparg] -- )) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = POP(); /* cause */
+                cause = args[1];
                 /* fall through */
             case 1:
-                exc = POP(); /* exc */
+                exc = args[0];
                 /* fall through */
             case 0:
-                if (do_raise(tstate, exc, cause)) {
-                    goto exception_unwind;
-                }
+                ERROR_IF(do_raise(tstate, exc, cause), exception_unwind);
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad RAISE_VARARGS oparg");
                 break;
             }
-            goto error;
+            ERROR_IF(true, error);
         }
 
         inst(INTERPRETER_EXIT, (retval --)) {
