@@ -429,7 +429,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3513 (Add CALL_INTRINSIC_1 instruction, removed STOPITERATION_ERROR, PRINT_EXPR, IMPORT_STAR)
 #     Python 3.12a1 3514 (Remove ASYNC_GEN_WRAP, LIST_TO_TUPLE, and UNARY_POSITIVE)
 #     Python 3.12a1 3515 (Embed jump mask in COMPARE_OP oparg)
-#     Python 3.12a1 3516 (Add COMAPRE_AND_BRANCH instruction)
+#     Python 3.12a1 3516 (Add COMPARE_AND_BRANCH instruction)
+#     Python 3.12a1 3517 (Change YIELD_VALUE oparg to exception block depth)
 
 #     Python 3.13 will start with 3550
 
@@ -442,7 +443,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3516).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3517).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

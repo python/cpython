@@ -919,7 +919,6 @@
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            assert(oparg == STACK_LEVEL());
             assert(frame != &entry_frame);
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
@@ -2251,43 +2250,32 @@
         }
 
         TARGET(CHECK_EG_MATCH) {
-            PyObject *match_type = POP();
+            PyObject *match_type = PEEK(1);
+            PyObject *exc_value = PEEK(2);
+            PyObject *rest;
+            PyObject *match;
             if (check_except_star_type_valid(tstate, match_type) < 0) {
+                Py_DECREF(exc_value);
                 Py_DECREF(match_type);
-                goto error;
+                if (true) goto pop_2_error;
             }
 
-            PyObject *exc_value = TOP();
-            PyObject *match = NULL, *rest = NULL;
+            match = NULL;
+            rest = NULL;
             int res = exception_group_match(exc_value, match_type,
                                             &match, &rest);
+            Py_DECREF(exc_value);
             Py_DECREF(match_type);
-            if (res < 0) {
-                goto error;
-            }
+            if (res < 0) goto pop_2_error;
 
-            if (match == NULL || rest == NULL) {
-                assert(match == NULL);
-                assert(rest == NULL);
-                goto error;
-            }
-            if (Py_IsNone(match)) {
-                PUSH(match);
-                Py_XDECREF(rest);
-            }
-            else {
-                /* Total or partial match - update the stack from
-                 * [val]
-                 * to
-                 * [rest, match]
-                 * (rest can be Py_None)
-                 */
+            assert((match == NULL) == (rest == NULL));
+            if (match == NULL) goto pop_2_error;
 
-                SET_TOP(rest);
-                PUSH(match);
+            if (!Py_IsNone(match)) {
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
-                Py_DECREF(exc_value);
             }
+            POKE(1, match);
+            POKE(2, rest);
             DISPATCH();
         }
 
@@ -2491,59 +2479,60 @@
         }
 
         TARGET(MATCH_CLASS) {
+            PyObject *names = PEEK(1);
+            PyObject *type = PEEK(2);
+            PyObject *subject = PEEK(3);
+            PyObject *attrs;
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
-            PyObject *names = POP();
-            PyObject *type = POP();
-            PyObject *subject = TOP();
             assert(PyTuple_CheckExact(names));
-            PyObject *attrs = match_class(tstate, subject, type, oparg, names);
-            Py_DECREF(names);
+            attrs = match_class(tstate, subject, type, oparg, names);
+            Py_DECREF(subject);
             Py_DECREF(type);
+            Py_DECREF(names);
             if (attrs) {
-                // Success!
-                assert(PyTuple_CheckExact(attrs));
-                SET_TOP(attrs);
-            }
-            else if (_PyErr_Occurred(tstate)) {
-                // Error!
-                goto error;
+                assert(PyTuple_CheckExact(attrs));  // Success!
             }
             else {
-                // Failure!
-                SET_TOP(Py_NewRef(Py_None));
+                if (_PyErr_Occurred(tstate)) goto pop_3_error;
+                attrs = Py_NewRef(Py_None);  // Failure!
             }
-            Py_DECREF(subject);
+            STACK_SHRINK(2);
+            POKE(1, attrs);
             DISPATCH();
         }
 
         TARGET(MATCH_MAPPING) {
-            PyObject *subject = TOP();
+            PyObject *subject = PEEK(1);
+            PyObject *res;
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
+            STACK_GROW(1);
+            POKE(1, res);
             PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
 
         TARGET(MATCH_SEQUENCE) {
-            PyObject *subject = TOP();
+            PyObject *subject = PEEK(1);
+            PyObject *res;
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
+            STACK_GROW(1);
+            POKE(1, res);
             PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
 
         TARGET(MATCH_KEYS) {
+            PyObject *keys = PEEK(1);
+            PyObject *subject = PEEK(2);
+            PyObject *values_or_none;
             // On successful match, PUSH(values). Otherwise, PUSH(None).
-            PyObject *keys = TOP();
-            PyObject *subject = SECOND();
-            PyObject *values_or_none = match_keys(tstate, subject, keys);
-            if (values_or_none == NULL) {
-                goto error;
-            }
-            PUSH(values_or_none);
+            values_or_none = match_keys(tstate, subject, keys);
+            if (values_or_none == NULL) goto error;
+            STACK_GROW(1);
+            POKE(1, values_or_none);
             DISPATCH();
         }
 
