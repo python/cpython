@@ -1,3 +1,3 @@
-Make ``shell=True`` mode of :meth:`subprocess.Popen.__init__` resilient
-to spoofing of ``cmd.exe``. Patch by Eryk Sun, based on a path by Oleg
-Iarygin.
+:class:`subprocess.Popen` now uses a safer approach to find
+``cmd.exe`` when launching with ``shell=True``. Patch by Eryk Sun,
+based on a path by Oleg Iarygin.
