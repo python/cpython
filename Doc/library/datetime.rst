@@ -986,7 +986,7 @@ Other constructors, all class methods:
 
    For any :class:`.datetime` object *d*,
    ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``.
-   
+
    If the *date* argument is a :class:`.datetime` object, its time components and
    :attr:`.tzinfo` attributes are ignored.
 
