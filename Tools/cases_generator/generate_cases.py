@@ -736,7 +736,7 @@ class Analyzer:
 
     def get_stack_effect_info(
         self, thing: parser.InstDef | parser.Super | parser.Macro
-    ) -> tuple[Instruction, str, str]:
+    ) -> tuple[Instruction|None, str, str]:
 
         def effect_str(effect: list[StackEffect]) -> str:
             if getattr(thing, 'kind', None) == 'legacy':
@@ -752,6 +752,9 @@ class Analyzer:
                     instr = self.instrs[thing.name]
                     popped = effect_str(instr.input_effects)
                     pushed = effect_str(instr.output_effects)
+                else:
+                    instr = None
+                    popped = pushed = "", ""
             case parser.Super():
                 instr = self.super_instrs[thing.name]
                 popped = '+'.join(effect_str(comp.instr.input_effects) for comp in instr.parts)
@@ -770,8 +773,9 @@ class Analyzer:
         pushed_data = []
         for thing in self.everything:
             instr, popped, pushed = self.get_stack_effect_info(thing)
-            popped_data.append( (instr, popped) )
-            pushed_data.append( (instr, pushed) )
+            if instr is not None:
+                popped_data.append( (instr, popped) )
+                pushed_data.append( (instr, pushed) )
 
         def write_function(direction: str, data: list[tuple[Instruction, str]]) -> None:
             self.out.emit("\n#ifndef NDEBUG");
