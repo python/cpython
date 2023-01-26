@@ -839,7 +839,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     while (start_stack > best_stack) {
         if (top_of_stack(start_stack) == Except) {
-            fprintf(stderr, "Popping exception\n");
             /* Pop exception stack as well as the evaluation stack */
             PyThreadState *tstate = _PyThreadState_GET();
             _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -850,13 +849,11 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             Py_XDECREF(value);
         }
         else {
-            fprintf(stderr, "Popping object\n");
             PyObject *v = _PyFrame_StackPop(f->f_frame);
             Py_XDECREF(v);
         }
         start_stack = pop_value(start_stack);
     }
-    fprintf(stderr, "Jumping to %d\n", best_addr);
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
     f->f_frame->prev_instr = _PyCode_CODE(f->f_frame->f_code) + best_addr;
