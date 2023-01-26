@@ -42,20 +42,20 @@ class WinTypesTest(unittest.TestCase):
         self.assertIs(vb.value, False)
 
     def test_signess(self):
-        # Unsigned aliases with octet sizw in their name
+        # Unsigned aliases with octet size in their names
         for type in (wintypes.BYTE, wintypes.WORD, wintypes.DWORD):
             with self.subTest(type=type):
-                self.assertEqual(type(200).value, 128)
+                self.assertEqual(type(200).value, 200)
 
         # Unsigned aliases with generic names
         for type in (wintypes.BOOLEAN, wintypes.UINT, wintypes.ULONG):
             with self.subTest(type=type):
-                self.assertEqual(type(200).value, 128)
+                self.assertEqual(type(200).value, 200)
 
         # Signed types with generic names
         for type in (wintypes.BOOL, wintypes.INT, wintypes.LONG):
             with self.subTest(type=type):
-                self.assertLess(type(200).value, 200)
+                self.assertLess(type(200).value, 128)
 
 
 if __name__ == "__main__":
