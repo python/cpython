@@ -700,7 +700,10 @@ iterations of the loop.
    Yields ``STACK.pop()`` from a :term:`generator`.
 
     .. versionchanged:: 3.11
-       oparg set to be the stack depth, for efficient handling on frames.
+       oparg set to be the stack depth.
+
+    .. versionchanged:: 3.12
+       oparg set to be the exception block depth, for efficient closing of generators.
 
 
 .. opcode:: SETUP_ANNOTATIONS
@@ -1041,6 +1044,15 @@ iterations of the loop.
 
    Performs a Boolean operation.  The operation name can be found in
    ``cmp_op[opname]``.
+
+
+.. opcode:: COMPARE_AND_BRANCH (opname)
+
+   Compares the top two values on the stack, popping them, then branches.
+   The direction and offset of the jump is embedded as a ``POP_JUMP_IF_TRUE``
+   or ``POP_JUMP_IF_FALSE`` instruction immediately following the cache.
+
+   .. versionadded:: 3.12
 
 
 .. opcode:: IS_OP (invert)
