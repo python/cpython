@@ -54,6 +54,12 @@ def run_cases_test(input: str, expected: str):
     while lines and lines[0].startswith("// "):
         lines.pop(0)
     actual = "".join(lines)
+    # if actual.rstrip() != expected.rstrip():
+    #     print("Actual:")
+    #     print(actual)
+    #     print("Expected:")
+    #     print(expected)
+    #     print("End")
     assert actual.rstrip() == expected.rstrip()
 
 def test_legacy():
@@ -411,9 +417,9 @@ def test_array_output():
             spam();
             STACK_GROW(2);
             STACK_GROW(oparg*3);
-            POKE(2 + oparg*3, below);
-            MOVE_ITEMS(&PEEK(1 + oparg*3), values, oparg*3);
             POKE(1, above);
+            MOVE_ITEMS(&PEEK(1 + oparg*3), values, oparg*3);
+            POKE(2 + oparg*3, below);
             DISPATCH();
         }
     """
@@ -431,8 +437,8 @@ def test_array_input_output():
             PyObject *below = PEEK(1 + oparg);
             PyObject *above;
             spam();
-            MOVE_ITEMS(&PEEK(1 + oparg), values, oparg);
             POKE(1, above);
+            MOVE_ITEMS(&PEEK(1 + oparg), values, oparg);
             DISPATCH();
         }
     """
@@ -484,16 +490,18 @@ def test_cond_effect():
     """
     output = """
         TARGET(OP) {
-            PyObject *cc = POP();
-            PyObject *input = (oparg & 1) ? POP() : NULL;
-            PyObject *aa = PEEK(1);
+            PyObject *cc = PEEK(1);
+            PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) != 0)) : NULL;
+            PyObject *aa = PEEK(2 + ((oparg & 1) != 0));
             PyObject *xx;
             PyObject *output;
             PyObject *zz;
             output = spam(oparg, input);
-            POKE(1, xx);
-            if (oparg & 2) { PUSH(output); }
-            PUSH(zz);
+            STACK_SHRINK(((oparg & 1) != 0));
+            STACK_GROW(((oparg & 2) != 0));
+            POKE(1, zz);
+            if (oparg & 2) { POKE(1 + ((oparg & 2) != 0), output); }
+            POKE(2 + ((oparg & 2) != 0), xx);
             DISPATCH();
         }
     """

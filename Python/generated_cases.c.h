@@ -1794,8 +1794,9 @@
                 Py_DECREF(owner);
                 if (res == NULL) goto pop_1_error;
             }
-            POKE(1, res);
-            if (oparg & 1) { PUSH(res2); }
+            STACK_GROW(((oparg & 1) != 0));
+            if (oparg & 1) { POKE(((oparg & 1) != 0), res2); }
+            POKE(1 + ((oparg & 1) != 0), res);
             JUMPBY(9);
             DISPATCH();
         }
@@ -2268,8 +2269,8 @@
             if (!Py_IsNone(match)) {
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
             }
-            POKE(2, rest);
             POKE(1, match);
+            POKE(2, rest);
             DISPATCH();
         }
 
