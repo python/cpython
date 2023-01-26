@@ -38,7 +38,7 @@ class Context(NamedTuple):
 
 @dataclass
 class Node:
-    context: Context | None = field(init=False, default=None)
+    context: Context | None = field(init=False, compare=False, default=None)
 
     @property
     def text(self) -> str:
@@ -51,19 +51,37 @@ class Node:
         tokens = context.owner.tokens
         begin = context.begin
         end = context.end
-        return lx.to_text(tokens[begin:end], dedent)
+        return lx.to_text(self.tokens, dedent)
+
+    @property
+    def tokens(self) -> list[lx.Token]:
+        context = self.context
+        if not context:
+            return []
+        tokens = context.owner.tokens
+        begin = context.begin
+        end = context.end
+        return tokens[begin:end]
 
 
 @dataclass
 class Block(Node):
-    tokens: list[lx.Token]
+    # This just holds a context which has the list of tokens.
+    pass
 
 
 @dataclass
 class StackEffect(Node):
     name: str
-    type: str = ""
-    # TODO: array, condition
+    type: str = ""  # Optional `:type`
+    size: str = ""  # Optional `[size]`
+    # Note: we can have type or size but not both
+    # TODO: condition (can be combined with type but not size)
+
+
+@dataclass
+class Dimension(Node):
+    size: str
 
 
 @dataclass
@@ -84,7 +102,8 @@ UOp = OpName | CacheEffect
 
 @dataclass
 class InstHeader(Node):
-    kind: Literal["inst", "op"]
+    register: bool
+    kind: Literal["inst", "op", "legacy"]  # Legacy means no (inputs -- outputs)
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
@@ -92,7 +111,8 @@ class InstHeader(Node):
 
 @dataclass
 class InstDef(Node):
-    kind: Literal["inst", "op"]
+    register: bool
+    kind: Literal["inst", "op", "legacy"]
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
@@ -134,16 +154,19 @@ class Parser(PLexer):
     def inst_def(self) -> InstDef | None:
         if hdr := self.inst_header():
             if block := self.block():
-                return InstDef(hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block)
+                return InstDef(
+                    hdr.register, hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block
+                )
             raise self.make_syntax_error("Expected block")
         return None
 
     @contextual
     def inst_header(self) -> InstHeader | None:
         # inst(NAME)
-        #   | inst(NAME, (inputs -- outputs))
-        #   | op(NAME, (inputs -- outputs))
+        #   | [register] inst(NAME, (inputs -- outputs))
+        #   | [register] op(NAME, (inputs -- outputs))
         # TODO: Make INST a keyword in the lexer.
+        register = bool(self.expect(lx.REGISTER))
         if (tkn := self.expect(lx.IDENTIFIER)) and (kind := tkn.text) in ("inst", "op"):
             if self.expect(lx.LPAREN) and (tkn := self.expect(lx.IDENTIFIER)):
                 name = tkn.text
@@ -151,10 +174,10 @@ class Parser(PLexer):
                     inp, outp = self.io_effect()
                     if self.expect(lx.RPAREN):
                         if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
-                            return InstHeader(kind, name, inp, outp)
+                            return InstHeader(register, kind, name, inp, outp)
                 elif self.expect(lx.RPAREN) and kind == "inst":
                     # No legacy stack effect if kind is "op".
-                    return InstHeader(kind, name, [], [])
+                    return InstHeader(register, "legacy", name, [], [])
         return None
 
     def io_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
@@ -216,13 +239,31 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        # IDENTIFIER [':' IDENTIFIER]
-        # TODO: Arrays, conditions
+        # IDENTIFIER
+        #   | IDENTIFIER ':' IDENTIFIER
+        #   | IDENTIFIER '[' dimension ']'
+        # TODO: Conditions
         if tkn := self.expect(lx.IDENTIFIER):
-            type = ""
             if self.expect(lx.COLON):
-                type = self.require(lx.IDENTIFIER).text
-            return StackEffect(tkn.text, type)
+                typ = self.require(lx.IDENTIFIER)
+                return StackEffect(tkn.text, typ.text)
+            elif self.expect(lx.LBRACKET):
+                if not (dim := self.dimension()):
+                    raise self.make_syntax_error("Expected dimension")
+                self.require(lx.RBRACKET)
+                return StackEffect(tkn.text, "PyObject **", dim.text.strip())
+            else:
+                return StackEffect(tkn.text)
+
+    @contextual
+    def dimension(self) -> Dimension | None:
+        tokens: list[lx.Token] = []
+        while (tkn := self.peek()) and tkn.kind != lx.RBRACKET:
+            tokens.append(tkn)
+            self.next()
+        if not tokens:
+            return None
+        return Dimension(lx.to_text(tokens).strip())
 
     @contextual
     def super_def(self) -> Super | None:
@@ -326,20 +367,20 @@ class Parser(PLexer):
 
     @contextual
     def block(self) -> Block:
-        tokens = self.c_blob()
-        return Block(tokens)
+        if self.c_blob():
+            return Block()
 
     def c_blob(self) -> list[lx.Token]:
         tokens: list[lx.Token] = []
         level = 0
         while tkn := self.next(raw=True):
+            tokens.append(tkn)
             if tkn.kind in (lx.LBRACE, lx.LPAREN, lx.LBRACKET):
                 level += 1
             elif tkn.kind in (lx.RBRACE, lx.RPAREN, lx.RBRACKET):
                 level -= 1
                 if level <= 0:
                     break
-            tokens.append(tkn)
         return tokens
 
 

@@ -1022,21 +1022,29 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
-    v = self->ob_item[index];
-    if (index == Py_SIZE(self) - 1) {
-        status = list_resize(self, Py_SIZE(self) - 1);
-        if (status >= 0)
-            return v; /* and v now owns the reference the list had */
-        else
-            return NULL;
+
+    PyObject **items = self->ob_item;
+    v = items[index];
+    const Py_ssize_t size_after_pop = Py_SIZE(self) - 1;
+    if (size_after_pop == 0) {
+        Py_INCREF(v);
+        status = _list_clear(self);
     }
-    Py_INCREF(v);
-    status = list_ass_slice(self, index, index+1, (PyObject *)NULL);
-    if (status < 0) {
-        Py_DECREF(v);
+    else {
+        if ((size_after_pop - index) > 0) {
+            memmove(&items[index], &items[index+1], (size_after_pop - index) * sizeof(PyObject *));
+        }
+        status = list_resize(self, size_after_pop);
+    }
+    if (status >= 0) {
+        return v; // and v now owns the reference the list had
+    }
+    else {
+        // list resize failed, need to restore
+        memmove(&items[index+1], &items[index], (size_after_pop - index)* sizeof(PyObject *));
+        items[index] = v;
         return NULL;
     }
-    return v;
 }
 
 /* Reverse a slice of a list in place, from lo up to (exclusive) hi. */
@@ -2555,6 +2563,27 @@ PyList_AsTuple(PyObject *v)
         return NULL;
     }
     return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
+}
+
+PyObject *
+_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+{
+    if (n == 0) {
+        return PyList_New(0);
+    }
+
+    PyListObject *list = (PyListObject *)PyList_New(n);
+    if (list == NULL) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            Py_DECREF(src[i]);
+        }
+        return NULL;
+    }
+
+    PyObject **dst = list->ob_item;
+    memcpy(dst, src, n * sizeof(PyObject *));
+
+    return (PyObject *)list;
 }
 
 /*[clinic input]

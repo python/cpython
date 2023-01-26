@@ -93,7 +93,10 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_doc = Py_NewRef(Py_None);
     op->func_dict = NULL;
     op->func_weakreflist = NULL;
-    op->func_module = NULL;
+    op->func_module = Py_XNewRef(PyDict_GetItem(op->func_globals, &_Py_ID(__name__)));
+    if (!op->func_module) {
+        PyErr_Clear();
+    }
     op->func_annotations = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;

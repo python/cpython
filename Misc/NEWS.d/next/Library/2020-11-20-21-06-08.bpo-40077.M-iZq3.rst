@@ -1,0 +1,1 @@
+Convert :mod:`elementtree` types to heap types. Patch by Erlend E. Aasland.
