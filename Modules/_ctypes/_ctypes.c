@@ -412,7 +412,7 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
 typedef struct {
     PyObject_HEAD
     void *ptr;
-    PyObject *keep;
+    PyObject *keep;  // If set, a reference to the original CDataObject.
 } StructParamObject;
 
 

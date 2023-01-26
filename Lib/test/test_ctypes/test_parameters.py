@@ -273,6 +273,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         from ctypes import PyDLL, c_int, c_void_p, py_object, Structure
 
         class X(Structure):
+            """This struct size is <= sizeof(void*)."""
             _fields_ = [("a", c_void_p)]
 
             def __del__(self):
@@ -295,6 +296,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertEqual(trace, [1, 2, 3, 4, 5])
 
         class Y(Structure):
+            """This struct size is > sizeof(void*)."""
             _fields_ = [("a", c_void_p), ("b", c_void_p)]
 
             def __del__(self):
