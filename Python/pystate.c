@@ -59,7 +59,7 @@ static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
 /*
    The stored thread state is set by PyThreadState_Swap().
 
-   For each of these functions, the GIL mus be held by the current thread.
+   For each of these functions, the GIL must be held by the current thread.
  */
 
 static inline PyThreadState *
