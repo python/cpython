@@ -892,8 +892,10 @@ class TestNtpath(NtpathTestCase):
 
     @unittest.skipIf(sys.platform != 'win32', "drive letters are a windows concept")
     def test_isfile_driveletter(self):
-        current_drive = "\\\\.\\" + os.path.splitdrive(os.path.abspath(__file__))[0]
-        self.assertFalse(os.path.isfile(current_drive))
+        drive = os.environ.get('SystemDrive')
+        if drive is None or len(drive) != 2 or drive[1] != ':':
+            raise unittest.SkipTest('SystemDrive is not defined or malformed')
+        self.assertFalse(os.path.isfile('\\\\.\\' + drive))
 
     @unittest.skipIf(sys.platform != 'win32', "Fast paths are only for win32")
     @cpython_only
