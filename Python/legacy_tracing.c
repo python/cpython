@@ -144,6 +144,7 @@ sys_trace_instruction_func(
     assert(PyVectorcall_NARGS(nargsf) == 2);
     PyFrameObject* frame = PyEval_GetFrame();
     if (frame == NULL) {
+        /* No frame */
         return NULL;
     }
     if (!frame->f_trace_opcodes) {
@@ -387,15 +388,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         return -1;
     }
 
-    int delta = (func != NULL) - (tstate->c_tracefunc != NULL);
-    tstate->c_tracefunc = func;
-    PyObject *old_traceobj = tstate->c_traceobj;
-    tstate->c_traceobj = Py_XNewRef(arg);
-    /* Flag that tracing or profiling is turned on */
-    _PyThreadState_UpdateTracingState(tstate);
-
     /* Setup PEP 669 monitoring callbacks and events. */
-    tstate->interp->sys_tracing_threads += delta;
     assert(tstate->interp->sys_tracing_threads >= 0);
     if (!tstate->interp->sys_trace_initialized) {
         tstate->interp->sys_trace_initialized = true;
@@ -441,6 +434,14 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         }
         /* TO DO: Set up callback for PY_MONITORING_EVENT_EXCEPTION_HANDLED */
     }
+
+    tstate->c_tracefunc = func;
+    PyObject *old_traceobj = tstate->c_traceobj;
+    tstate->c_traceobj = Py_XNewRef(arg);
+    Py_XDECREF(old_traceobj);
+
+    int delta = (func != NULL) - (tstate->c_tracefunc != NULL);
+    tstate->interp->sys_tracing_threads += delta;
     if (tstate->interp->sys_tracing_threads) {
         uint32_t events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
@@ -456,6 +457,6 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     else {
         _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_TRACE, 0);
     }
-    Py_XDECREF(old_traceobj);
+
     return 0;
 }
