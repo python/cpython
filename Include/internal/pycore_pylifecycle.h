@@ -69,7 +69,7 @@ extern void _PyThread_FiniType(PyInterpreterState *interp);
 extern void _Py_Deepfreeze_Fini(void);
 extern void _PyArg_Fini(void);
 
-extern PyStatus _PyGILState_Init(_PyRuntimeState *runtime);
+extern PyStatus _PyGILState_Init(PyInterpreterState *interp);
 extern PyStatus _PyGILState_SetTstate(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyInterpreterState *interp);
 

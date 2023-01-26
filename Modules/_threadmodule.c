@@ -839,11 +839,6 @@ local_traverse(localobject *self, visitproc visit, void *arg)
     return 0;
 }
 
-#define HEAD_LOCK(runtime) \
-    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
-#define HEAD_UNLOCK(runtime) \
-    PyThread_release_lock((runtime)->interpreters.mutex)
-
 static int
 local_clear(localobject *self)
 {
@@ -1079,13 +1074,7 @@ thread_run(void *boot_raw)
     PyThreadState *tstate;
 
     tstate = boot->tstate;
-    tstate->thread_id = PyThread_get_thread_ident();
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    tstate->native_thread_id = PyThread_get_thread_native_id();
-#else
-    tstate->native_thread_id = 0;
-#endif
-    _PyThreadState_SetCurrent(tstate);
+    _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;
 

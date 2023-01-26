@@ -157,7 +157,7 @@ Other Language Changes
   in :gh:`96670`.)
 
 * The Garbage Collector now runs only on the eval breaker mechanism of the
-  Python bytecode evaluation loop instead on object allocations. The GC can
+  Python bytecode evaluation loop instead of object allocations. The GC can
   also run when :c:func:`PyErr_CheckSignals` is called so C extensions that
   need to run for a long time without executing any Python code also have a
   chance to execute the GC periodically. (Contributed by Pablo Galindo in
@@ -269,6 +269,12 @@ dis
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
+fractions
+---------
+
+* Objects of type :class:`fractions.Fraction` now support float-style
+  formatting. (Contributed by Mark Dickinson in :gh:`100161`.)
+
 math
 ----
 
@@ -326,6 +332,12 @@ unicodedata
 
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
+
+uuid
+----
+
+* Add a :ref:`command-line interface <uuid-cli>`.
+  (Contributed by Adam Chhina in :gh:`88597`.)
 
 tempfile
 --------
@@ -408,6 +420,21 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
+* The :meth:`~asyncio.DefaultEventLoopPolicy.get_event_loop` method of the
+  default event loop policy now emits a :exc:`DeprecationWarning` if there
+  is no current event loop set and it decides to create one.
+  (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
+
+* The :mod:`xml.etree.ElementTree` module now emits :exc:`DeprecationWarning`
+  when testing the truth value of an :class:`xml.etree.ElementTree.Element`.
+  Before, the Python implementation emitted :exc:`FutureWarning`, and the C
+  implementation emitted nothing.
+
+* In accordance with :pep:`699`, the ``ma_version_tag`` field in :c:type:`PyDictObject`
+  is deprecated for extension modules. Accessing this field will generate a compiler
+  warning at compile time. This field will be removed in Python 3.14.
+  (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -459,7 +486,6 @@ Pending Removal in Python 3.14
 
   Use :mod:`importlib.resources.abc` classes instead:
 
-  * :class:`importlib.resources.abc.TraversableResources`
   * :class:`importlib.resources.abc.Traversable`
   * :class:`importlib.resources.abc.TraversableResources`
 
@@ -470,6 +496,9 @@ Pending Removal in Python 3.14
 
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
+
+* Testing the truth value of an :class:`xml.etree.ElementTree.Element`
+  is deprecated and will raise an exception in Python 3.14.
 
 
 Pending Removal in Future Versions
@@ -673,13 +702,13 @@ Changes in the Python API
   contain ASCII letters and digits and underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
-* Removed randrange() functionality deprecated since Python 3.10.  Formerly,
-  randrange(10.0) losslessly converted to randrange(10). Now, it raises a
-  TypeError. Also, the exception raised for non-integral values such as
-  randrange(10.5) or randrange('10') has been changed from ValueError to
-  TypeError.  This also prevents bugs where ``randrange(1e25)`` would silently
+* Removed ``randrange()`` functionality deprecated since Python 3.10.  Formerly,
+  ``randrange(10.0)`` losslessly converted to ``randrange(10)``. Now, it raises a
+  :exc:`TypeError`. Also, the exception raised for non-integral values such as
+  ``randrange(10.5)`` or ``randrange('10')`` has been changed from :exc:`ValueError` to
+  :exc:`TypeError`.  This also prevents bugs where ``randrange(1e25)`` would silently
   select from a larger range than ``randrange(10**25)``.
-  (Originally suggested by Serhiy Storchaka gh-86388.)
+  (Originally suggested by Serhiy Storchaka :gh:`86388`.)
 
 * :class:`argparse.ArgumentParser` changed encoding and error handler
   for reading arguments from file (e.g. ``fromfile_prefix_chars`` option)
@@ -709,18 +738,6 @@ Changes in the Python API
   This change helps with interpreter isolation.  Furthermore, :mod:`syslog` is a wrapper
   around process-global resources, which are best managed from the main interpreter.
   (Contributed by Dong-hee Na in :gh:`99127`.)
-
-* :func:`asyncio.get_event_loop` and many other :mod:`asyncio` functions like
-  :func:`~asyncio.ensure_future`, :func:`~asyncio.shield` or
-  :func:`~asyncio.gather`, and also the
-  :meth:`~asyncio.BaseDefaultEventLoopPolicy.get_event_loop` method of
-  :class:`~asyncio.BaseDefaultEventLoopPolicy` now raise a :exc:`RuntimeError`
-  if called when there is no running event loop and the current event loop was
-  not set.
-  Previously they implicitly created and set a new current event loop.
-  :exc:`DeprecationWarning` is no longer emitted if there is no running
-  event loop but the current event loop is set in the policy.
-  (Contributed by Serhiy Storchaka in :gh:`93453`.)
 
 
 Build Changes
@@ -954,7 +971,7 @@ Removed
   internals.
   (Contributed by Victor Stinner in :gh:`92651`.)
 
-* Legacy Unicode APIs has been removed. See :pep:`623` for detail.
+* Legacy Unicode APIs have been removed. See :pep:`623` for detail.
 
    * :c:macro:`PyUnicode_WCHAR_KIND`
    * :c:func:`PyUnicode_AS_UNICODE`

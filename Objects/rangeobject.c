@@ -171,6 +171,49 @@ range_dealloc(rangeobject *r)
     PyObject_Free(r);
 }
 
+static unsigned long
+get_len_of_range(long lo, long hi, long step);
+
+/* Return the length as a long, -2 for an overflow and -1 for any other type of error
+ *
+ * In case of an overflow no error is set
+ */
+static long compute_range_length_long(PyObject *start,
+                PyObject *stop, PyObject *step) {
+    int overflow = 0;
+
+    long long_start = PyLong_AsLongAndOverflow(start, &overflow);
+    if (overflow) {
+        return -2;
+    }
+    if (long_start == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    long long_stop = PyLong_AsLongAndOverflow(stop, &overflow);
+    if (overflow) {
+        return -2;
+    }
+    if (long_stop == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    long long_step = PyLong_AsLongAndOverflow(step, &overflow);
+    if (overflow) {
+        return -2;
+    }
+    if (long_step == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+
+    unsigned long ulen = get_len_of_range(long_start, long_stop, long_step);
+    if (ulen > (unsigned long)LONG_MAX) {
+        /* length too large for a long */
+        return -2;
+    }
+    else {
+        return (long)ulen;
+    }
+}
+
 /* Return number of items in range (lo, hi, step) as a PyLong object,
  * when arguments are PyLong objects.  Arguments MUST return 1 with
  * PyLong_Check().  Return NULL when there is an error.
@@ -190,6 +233,21 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
 
     PyObject *zero = _PyLong_GetZero();  // borrowed reference
     PyObject *one = _PyLong_GetOne();  // borrowed reference
+
+    assert(PyLong_Check(start));
+    assert(PyLong_Check(stop));
+    assert(PyLong_Check(step));
+
+    /* fast path when all arguments fit into a long integer */
+    long len = compute_range_length_long(start, stop, step);
+    if (len >= 0) {
+        return PyLong_FromLong(len);
+    }
+    else if (len == -1) {
+        /* unexpected error from compute_range_length_long, we propagate to the caller */
+        return NULL;
+    }
+    assert(len == -2);
 
     cmp_result = PyObject_RichCompareBool(step, zero, Py_GT);
     if (cmp_result == -1)

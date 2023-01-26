@@ -466,6 +466,14 @@ integer, string, bytes, a :mod:`ctypes` instance, or an object with an
 Return types
 ^^^^^^^^^^^^
 
+.. testsetup::
+
+   from ctypes import CDLL, c_char, c_char_p
+   from ctypes.util import find_library
+   libc = CDLL(find_library('c'))
+   strchr = libc.strchr
+
+
 By default functions are assumed to return the C :c:expr:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
@@ -502,18 +510,19 @@ If you want to avoid the ``ord("x")`` calls above, you can set the
 :attr:`argtypes` attribute, and the second argument will be converted from a
 single character Python bytes object into a C char::
 
+.. doctest::
+
    >>> strchr.restype = c_char_p
    >>> strchr.argtypes = [c_char_p, c_char]
    >>> strchr(b"abcdef", b"d")
-   'def'
+   b'def'
    >>> strchr(b"abcdef", b"def")
    Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: TypeError: one character string expected
+   ctypes.ArgumentError: argument 2: TypeError: one character bytes, bytearray or integer expected
    >>> print(strchr(b"abcdef", b"x"))
    None
    >>> strchr(b"abcdef", b"d")
-   'def'
+   b'def'
    >>>
 
 You can also use a callable Python object (a function or a class for example) as
@@ -1656,12 +1665,12 @@ They are instances of a private class:
    passed arguments.
 
 
-.. audit-event:: ctypes.seh_exception code foreign-functions
+.. audit-event:: ctypes.set_exception code foreign-functions
 
    On Windows, when a foreign function call raises a system exception (for
    example, due to an access violation), it will be captured and replaced with
    a suitable Python exception. Further, an auditing event
-   ``ctypes.seh_exception`` with argument ``code`` will be raised, allowing an
+   ``ctypes.set_exception`` with argument ``code`` will be raised, allowing an
    audit hook to replace the exception with its own.
 
 .. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
