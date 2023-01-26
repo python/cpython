@@ -6,6 +6,9 @@
 
 #ifndef _PYTHON_MULTIBYTECODEC_H_
 #define _PYTHON_MULTIBYTECODEC_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef uint16_t
 typedef uint16_t ucs2_t, DBCHAR;
@@ -129,4 +132,8 @@ typedef struct {
 
 #define PyMultibyteCodec_CAPSULE_NAME "multibytecodec.__map_*"
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif

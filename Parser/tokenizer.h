@@ -1,5 +1,8 @@
 #ifndef Py_TOKENIZER_H
 #define Py_TOKENIZER_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "object.h"
 
@@ -104,4 +107,7 @@ extern int _PyTokenizer_Get(struct tok_state *, struct token *);
 
 #define tok_dump _Py_tok_dump
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* !Py_TOKENIZER_H */

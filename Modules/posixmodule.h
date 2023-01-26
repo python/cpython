@@ -2,6 +2,9 @@
 
 #ifndef Py_POSIXMODULE_H
 #define Py_POSIXMODULE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -23,4 +26,7 @@ PyAPI_FUNC(int) _Py_Gid_Converter(PyObject *, gid_t *);
 PyAPI_FUNC(int) _Py_Sigset_Converter(PyObject *, void *);
 #endif /* Py_LIMITED_API */
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* !Py_POSIXMODULE_H */
