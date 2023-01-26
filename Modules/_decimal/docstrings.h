@@ -17,114 +17,13 @@
 
 
 PyDoc_STRVAR(doc__decimal,
-"This is an implementation of decimal floating point arithmetic based on\n\
-the General Decimal Arithmetic Specification:\n\
-\n\
-    http://speleotrove.com/decimal/decarith.html\n\
-\n\
-and IEEE standard 854-1987:\n\
-\n\
-    http://en.wikipedia.org/wiki/IEEE_854-1987\n\
-\n\
-Decimal floating point has finite precision with arbitrarily large bounds.\n\
-\n\
-The purpose of this module is to support arithmetic using familiar\n\
-\"schoolhouse\" rules and to avoid some of the tricky representation\n\
-issues associated with binary floating point.  The package is especially\n\
-useful for financial applications or for contexts where users have\n\
-expectations that are at odds with binary floating point (for instance,\n\
-in binary floating point, 1.00 % 0.1 gives 0.09999999999999995 instead\n\
-of 0.0; Decimal('1.00') % Decimal('0.1') returns the expected\n\
-Decimal('0.00')).\n\
-\n\
-Here are some examples of using the decimal module:\n\
-\n\
-    >>> from decimal import *\n\
-    >>> setcontext(ExtendedContext)\n\
-    >>> Decimal(0)\n\
-    Decimal('0')\n\
-    >>> Decimal('1')\n\
-    Decimal('1')\n\
-    >>> Decimal('-.0123')\n\
-    Decimal('-0.0123')\n\
-    >>> Decimal(123456)\n\
-    Decimal('123456')\n\
-    >>> Decimal('123.45e12345678')\n\
-    Decimal('1.2345E+12345680')\n\
-    >>> Decimal('1.33') + Decimal('1.27')\n\
-    Decimal('2.60')\n\
-    >>> Decimal('12.34') + Decimal('3.87') - Decimal('18.41')\n\
-    Decimal('-2.20')\n\
-    >>> dig = Decimal(1)\n\
-    >>> print(dig / Decimal(3))\n\
-    0.333333333\n\
-    >>> getcontext().prec = 18\n\
-    >>> print(dig / Decimal(3))\n\
-    0.333333333333333333\n\
-    >>> print(dig.sqrt())\n\
-    1\n\
-    >>> print(Decimal(3).sqrt())\n\
-    1.73205080756887729\n\
-    >>> print(Decimal(3) ** 123)\n\
-    4.85192780976896427E+58\n\
-    >>> inf = Decimal(1) / Decimal(0)\n\
-    >>> print(inf)\n\
-    Infinity\n\
-    >>> neginf = Decimal(-1) / Decimal(0)\n\
-    >>> print(neginf)\n\
-    -Infinity\n\
-    >>> print(neginf + inf)\n\
-    NaN\n\
-    >>> print(neginf * inf)\n\
-    -Infinity\n\
-    >>> print(dig / 0)\n\
-    Infinity\n\
-    >>> getcontext().traps[DivisionByZero] = 1\n\
-    >>> print(dig / 0)\n\
-    Traceback (most recent call last):\n\
-      ...\n\
-      ...\n\
-      ...\n\
-    decimal.DivisionByZero: x / 0\n\
-    >>> c = Context()\n\
-    >>> c.traps[InvalidOperation] = 0\n\
-    >>> print(c.flags[InvalidOperation])\n\
-    0\n\
-    >>> c.divide(Decimal(0), Decimal(0))\n\
-    Decimal('NaN')\n\
-    >>> c.traps[InvalidOperation] = 1\n\
-    >>> print(c.flags[InvalidOperation])\n\
-    1\n\
-    >>> c.flags[InvalidOperation] = 0\n\
-    >>> print(c.flags[InvalidOperation])\n\
-    0\n\
-    >>> print(c.divide(Decimal(0), Decimal(0)))\n\
-    Traceback (most recent call last):\n\
-      ...\n\
-      ...\n\
-      ...\n\
-    decimal.InvalidOperation: 0 / 0\n\
-    >>> print(c.flags[InvalidOperation])\n\
-    1\n\
-    >>> c.flags[InvalidOperation] = 0\n\
-    >>> c.traps[InvalidOperation] = 0\n\
-    >>> print(c.divide(Decimal(0), Decimal(0)))\n\
-    NaN\n\
-    >>> print(c.flags[InvalidOperation])\n\
-    1\n\
-    >>>\n\
-\n");
+"C decimal arithmetic module");
 
 PyDoc_STRVAR(doc_getcontext,
 "getcontext($module, /)\n--\n\n\
-Returns this thread's context.\n\
-\n\
-If this thread does not yet have a context, returns\n\
-a new context and sets this thread's context.\n\
-New contexts are copies of DefaultContext.\n\
+Get the current default context.\n\
 \n");
 
-/*This seems clearer than the python version*/
 PyDoc_STRVAR(doc_setcontext,
 "setcontext($module, context, /)\n--\n\n\
 Set a new default context.\n\
@@ -136,70 +35,6 @@ Return a context manager that will set the default context to a copy of ctx\n\
 on entry to the with-statement and restore the previous default context when\n\
 exiting the with-statement. If no context is specified, a copy of the current\n\
 default context is used.\n\
-The returned context manager creates a local decimal context\n\
-in a with statement:\n\
-    def sin(x):\n\
-         with localcontext() as ctx:\n\
-             ctx.prec += 2\n\
-             # Rest of sin calculation algorithm\n\
-             # uses a precision 2 greater than normal\n\
-         return +s  # Convert result to normal precision\n\
-\n\
-     def sin(x):\n\
-         with localcontext(ExtendedContext):\n\
-             # Rest of sin calculation algorithm\n\
-             # uses the Extended Context from the\n\
-             # General Decimal Arithmetic Specification\n\
-         return +s  # Convert result to normal context\n\
-\n\
-    >>> setcontext(DefaultContext)\n\
-    >>> print(getcontext().prec) # Return a context manager for a copy of the supplied context\n\
-\n\
-Uses a copy of the current context if no context is specified.\n\
-The returned context manager creates a local decimal context\n\
-in a with statement:\n\
-    def sin(x):\n\
-         with localcontext() as ctx:\n\
-             ctx.prec += 2\n\
-             # Rest of sin calculation algorithm\n\
-             # uses a precision 2 greater than normal\n\
-         return +s  # Convert result to normal precision\n\
-\n\
-    def sin(x):\n\
-        with localcontext(ExtendedContext):\n\
-            # Rest of sin calculation algorithm\n\
-            # uses the Extended Context from the\n\
-            # General Decimal Arithmetic Specification\n\
-        return +s  # Convert result to normal context\n\
-\n\
-    >>> setcontext(DefaultContext)\n\
-    >>> print(getcontext().prec)\n\
-    28\n\
-    >>> with localcontext():\n\
-    ...     ctx = getcontext()\n\
-    ...     ctx.prec += 2\n\
-    ...     print(ctx.prec)\n\
-    ...\n\
-    30\n\
-    >>> with localcontext(ExtendedContext):\n\
-    ...     print(getcontext().prec)\n\
-    ...\n\
-    9\n\
-    >>> print(getcontext().prec)\n\
-    28\n\
-    28\n\
-    >>> with localcontext():\n\
-    ...     ctx = getcontext()\n\
-    ...     ctx.prec += 2\n\
-    ...     print(ctx.prec)\n\
-    ...\n\
-    30\n\
-    >>> with localcontext(ExtendedContext):\n\
-    ...     print(getcontext().prec)\n\
-    ...\n\
-    9\n\
-    >>> print(getcontext().prec)\n\
-    28\n\
 \n");
 
 #ifdef EXTRA_FUNCTIONALITY
@@ -223,43 +58,25 @@ Construct a new Decimal object. 'value' can be an integer, string, tuple,\n\
 or another Decimal object. If no value is given, return Decimal('0'). The\n\
 context does not affect the conversion and is only passed to determine if\n\
 the InvalidOperation trap is active.\n\
-\n\
-    >>> Decimal('3.14')              # string input\n\
-    Decimal('3.14')\n\
-    >>> Decimal((0, (3, 1, 4), -2))  # tuple (sign, digit_tuple, exponent)\n\
-    Decimal('3.14')\n\
-    >>> Decimal(314)                 # int\n\
-    Decimal('314')\n\
-    >>> Decimal(Decimal(314))        # another decimal instance\n\
-    Decimal('314')\n\
-    >>> Decimal('  3.14  \\\\n')      # leading and trailing whitespace okay\n\
-    Decimal('3.14')\n\
 \n");
 
 PyDoc_STRVAR(doc_adjusted,
 "adjusted($self, /)\n--\n\n\
-Return the adjusted exponent of the number. Defined as exp + digits - 1.\n\
+Return the adjusted exponent of the number.  Defined as exp + digits - 1.\n\
 \n");
 
 PyDoc_STRVAR(doc_as_tuple,
 "as_tuple($self, /)\n--\n\n\
-Represents the number as a triple tuple, to show the internals exactly as\n\
-they are.\n\
+Return a tuple representation of the number.\n\
 \n");
 
 PyDoc_STRVAR(doc_as_integer_ratio,
 "as_integer_ratio($self, /)\n--\n\n\
-Express a finite Decimal instance in the form n / d.\n\
-Return a pair (n, d) of integers, whose ratio is exactly equal to the original\n\
+Decimal.as_integer_ratio() -> (int, int)\n\
+\n\
+Return a pair of integers, whose ratio is exactly equal to the original\n\
 Decimal and with a positive denominator. The ratio is in lowest terms.\n\
 Raise OverflowError on infinities and a ValueError on NaNs.\n\
-\n\
-    >>> Decimal('3.14').as_integer_ratio()\n\
-    (157, 50)\n\
-    >>> Decimal('-123e5').as_integer_ratio()\n\
-    (-12300000, 1)\n\
-    >>> Decimal('0.00').as_integer_ratio()\n\
-    (0, 1)\n\
 \n");
 
 PyDoc_STRVAR(doc_canonical,
@@ -271,82 +88,23 @@ argument unchanged.\n\
 
 PyDoc_STRVAR(doc_compare,
 "compare($self, /, other, context=None)\n--\n\n\
-Compare values numerically.\n\
-If the signs of the operands differ, a value representing each operand\n\
-('-1' if the operand is less than zero, '0' if the operand is zero or\n\
-negative zero, or '1' if the operand is greater than zero) is used in\n\
-place of that operand for the comparison instead of the actual\n\
-operand.\n\
+Compare self to other.  Return a decimal value:\n\
 \n\
-The comparison is then effected by subtracting the second operand from\n\
-the first and then returning a value according to the result of the\n\
-subtraction: '-1' if the result is less than zero, '0' if the result is\n\
-zero or negative zero, or '1' if the result is greater than zero.\n\
-\n\
-        a or b is a NaN ==> Decimal('NaN')\n\
-        a < b           ==> Decimal('-1')\n\
-        a == b          ==> Decimal('0')\n\
-        a > b           ==> Decimal('1')\n\
-\n\
-    >>> ExtendedContext.compare(Decimal('2.1'), Decimal('3'))\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare(Decimal('2.1'), Decimal('2.1'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.compare(Decimal('2.1'), Decimal('2.10'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.compare(Decimal('3'), Decimal('2.1'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.compare(Decimal('2.1'), Decimal('-3'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.compare(Decimal('-3'), Decimal('2.1'))\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare(1, 2)\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare(Decimal(1), 2)\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare(1, Decimal(2))\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare(Decimal('2'), Decimal('NaN'))\n\
-    Decimal('NaN')\n\
+    a or b is a NaN ==> Decimal('NaN')\n\
+    a < b           ==> Decimal('-1')\n\
+    a == b          ==> Decimal('0')\n\
+    a > b           ==> Decimal('1')\n\
 \n");
 
 PyDoc_STRVAR(doc_compare_signal,
 "compare_signal($self, /, other, context=None)\n--\n\n\
-Compare the values of the two operands numerically.\n\
-\n\
-It's pretty much like compare(), but all NaNs signal, with signaling\n\
-NaNs taking precedence over quiet NaNs.\n\
-\n\
-    >>> ExtendedContext.compare_signal(Decimal('2.1'), Decimal('3'))\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare_signal(Decimal('2.1'), Decimal('2.1'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.flags[InvalidOperation] = 0\n\
-    >>> print(ExtendedContext.flags[InvalidOperation])\n\
-    0\n\
-    >>> ExtendedContext.compare_signal(Decimal('NaN'), Decimal('2.1'))\n\
-    Decimal('NaN')\n\
-    >>> print(ExtendedContext.flags[InvalidOperation])\n\
-    1\n\
-    >>> ExtendedContext.flags[InvalidOperation] = 0\n\
-    >>> print(ExtendedContext.flags[InvalidOperation])\n\
-    0\n\
-    >>> ExtendedContext.compare_signal(Decimal('sNaN'), Decimal('2.1'))\n\
-    Decimal('NaN')\n\
-    >>> print(ExtendedContext.flags[InvalidOperation])\n\
-    1\n\
-    >>> ExtendedContext.compare_signal(-1, 2)\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare_signal(Decimal(-1), 2)\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare_signal(-1, Decimal(2))\n\
-    Decimal('-1')\n\
+Identical to compare, except that all NaNs signal.\n\
 \n");
 
 PyDoc_STRVAR(doc_compare_total,
 "compare_total($self, /, other, context=None)\n--\n\n\
 Compare two operands using their abstract representation rather than\n\
-their numerical value. Similar to the compare() method, but the result\n\
+their numerical value.  Similar to the compare() method, but the result\n\
 gives a total ordering on Decimal instances.  Two Decimal instances with\n\
 the same numeric value but different representations compare unequal\n\
 in this ordering:\n\
@@ -363,31 +121,12 @@ second operand. See the specification for details of the total order.\n\
 This operation is unaffected by context and is quiet: no flags are changed\n\
 and no rounding is performed. As an exception, the C version may raise\n\
 InvalidOperation if the second operand cannot be converted exactly.\n\
-\n\
-    >>> ExtendedContext.compare_total(Decimal('12.73'), Decimal('127.9'))\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare_total(Decimal('-127'),  Decimal('12'))\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare_total(Decimal('12.30'), Decimal('12.3'))\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare_total(Decimal('12.30'), Decimal('12.30'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.compare_total(Decimal('12.3'),  Decimal('12.300'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.compare_total(Decimal('12.3'),  Decimal('NaN'))\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare_total(1, 2)\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare_total(Decimal(1), 2)\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.compare_total(1, Decimal(2))\n\
 \n");
 
 PyDoc_STRVAR(doc_compare_total_mag,
 "compare_total_mag($self, /, other, context=None)\n--\n\n\
 Compare two operands using their abstract representation rather than their\n\
-numerical value and with their sign ignored. Like compare_total, but with\n\
-operand's sign ignored and assumed to be 0.\n\
+value as in compare_total(), but ignoring the sign of each operand.\n\
 \n\
 x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs()).\n\
 \n\
@@ -398,54 +137,28 @@ InvalidOperation if the second operand cannot be converted exactly.\n\
 
 PyDoc_STRVAR(doc_conjugate,
 "conjugate($self, /)\n--\n\n\
-Returns self.\n\
+Return self.\n\
 \n");
 
 PyDoc_STRVAR(doc_copy_abs,
 "copy_abs($self, /)\n--\n\n\
-Returns the absolute value of the argument. This operation is unaffected by\n\
+Return the absolute value of the argument.  This operation is unaffected by\n\
 context and is quiet: no flags are changed and no rounding is performed.\n\
-\n\
-    >>> ExtendedContext.copy_abs(Decimal('2.1'))\n\
-    Decimal('2.1')\n\
-    >>> ExtendedContext.copy_abs(Decimal('-100'))\n\
-    Decimal('100')\n\
-    >>> ExtendedContext.copy_abs(-1)\n\
-    Decimal('1')\n\
 \n");
 
 PyDoc_STRVAR(doc_copy_negate,
 "copy_negate($self, /)\n--\n\n\
-Returns a copy of the operand with the sign inverted. This operation is\n\
-unaffected by context and is quiet: no flags are changed and no rounding\n\
-is performed.\n\
-\n\
-    >>> ExtendedContext.copy_negate(Decimal('101.5'))\n\
-    Decimal('-101.5')\n\
-    >>> ExtendedContext.copy_negate(Decimal('-101.5'))\n\
-    Decimal('101.5')\n\
-    >>> ExtendedContext.copy_negate(1)\n\
-    Decimal('-1')\n\
+Return the negation of the argument.  This operation is unaffected by context\n\
+and is quiet: no flags are changed and no rounding is performed.\n\
 \n");
 
 PyDoc_STRVAR(doc_copy_sign,
 "copy_sign($self, /, other, context=None)\n--\n\n\
-Returns a copy of the first operand with the sign equal to the second operand.\n\
+Return a copy of the first operand with the sign set to be the same as the\n\
+sign of the second operand. For example:\n\
 \n\
-    >>> ExtendedContext.copy_sign(Decimal( '1.50'), Decimal('7.33'))\n\
-    Decimal('1.50')\n\
-    >>> ExtendedContext.copy_sign(Decimal('-1.50'), Decimal('7.33'))\n\
-    Decimal('1.50')\n\
-    >>> ExtendedContext.copy_sign(Decimal( '1.50'), Decimal('-7.33'))\n\
-    Decimal('-1.50')\n\
-    >>> ExtendedContext.copy_sign(Decimal('-1.50'), Decimal('-7.33'))\n\
-    Decimal('-1.50')\n\
-    >>> ExtendedContext.copy_sign(1, -2)\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.copy_sign(Decimal(1), -2)\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.copy_sign(1, Decimal(-2))\n\
-    Decimal('-1')\n\
+    >>> Decimal('2.3').copy_sign(Decimal('-1.5'))\n\
+    Decimal('-2.3')\n\
 \n\
 This operation is unaffected by context and is quiet: no flags are changed\n\
 and no rounding is performed. As an exception, the C version may raise\n\
@@ -454,26 +167,9 @@ InvalidOperation if the second operand cannot be converted exactly.\n\
 
 PyDoc_STRVAR(doc_exp,
 "exp($self, /, context=None)\n--\n\n\
-Return the value of the (natural) exponential function e ** a. The function always\n\
-uses the ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
-\n\
-    >>> c = ExtendedContext.copy()\n\
-    >>> c.Emin = -999\n\
-    >>> c.Emax = 999\n\
-    >>> c.exp(Decimal('-Infinity'))\n\
-    Decimal('0')\n\
-    >>> c.exp(Decimal('-1'))\n\
-    Decimal('0.367879441')\n\
-    >>> c.exp(Decimal('0'))\n\
-    Decimal('1')\n\
-    >>> c.exp(Decimal('1'))\n\
-    Decimal('2.71828183')\n\
-    >>> c.exp(Decimal('0.693147181'))\n\
-    Decimal('2.00000000')\n\
-    >>> c.exp(Decimal('+Infinity'))\n\
-    Decimal('Infinity')\n\
-    >>> c.exp(10)\n\
-    Decimal('22026.4658')\n\
+Return the value of the (natural) exponential function e**x at the given\n\
+number.  The function always uses the ROUND_HALF_EVEN mode and the result\n\
+is correctly rounded.\n\
 \n");
 
 PyDoc_STRVAR(doc_from_float,
@@ -495,538 +191,174 @@ Decimal.from_float(0.1) is not the same as Decimal('0.1').\n\
 
 PyDoc_STRVAR(doc_fma,
 "fma($self, /, other, third, context=None)\n--\n\n\
-Returns a multiplied by b, plus c.\n\
+Fused multiply-add.  Return self*other+third with no rounding of the\n\
+intermediate product self*other.\n\
 \n\
-Fused multiply-add. The first two operands are multiplied together,\n\
-using multiply, the third operand is then added to the result of that\n\
-+multiplication, using add, all with only one final rounding.\n\
+    >>> Decimal(2).fma(3, 5)\n\
+    Decimal('11')\n\
 \n\
-    >>> ExtendedContext.fma(Decimal('3'), Decimal('5'), Decimal('7'))\n\
-    Decimal('22')\n\
-    >>> ExtendedContext.fma(Decimal('3'), Decimal('-5'), Decimal('7'))\n\
-    Decimal('-8')\n\
-    >>> ExtendedContext.fma(Decimal('888565290'), Decimal('1557.96930'), Decimal('-86087.7578'))\n\
-    Decimal('1.38435736E+12')\n\
-    >>> ExtendedContext.fma(1, 3, 4)\n\
-    Decimal('7')\n\
-    >>> ExtendedContext.fma(1, Decimal(3), 4)\n\
-    Decimal('7')\n\
-    >>> ExtendedContext.fma(1, 3, Decimal(4))\n\
-    Decimal('7')\n\
 \n");
 
 PyDoc_STRVAR(doc_is_canonical,
 "is_canonical($self, /)\n--\n\n\
-Return True if the operand is canonical; otherwise return False.\n\
-Currently, the encoding of a Decimal instance is always\n\
-canonical, so this method returns True for any Decimal.\n\
-\n\
-    >>> ExtendedContext.is_canonical(Decimal('2.50'))\n\
-    True\n\
+Return True if the argument is canonical and False otherwise.  Currently,\n\
+a Decimal instance is always canonical, so this operation always returns\n\
+True.\n\
 \n");
 
 PyDoc_STRVAR(doc_is_finite,
 "is_finite($self, /)\n--\n\n\
-Return True if the operand is finite; otherwise return False.\n\
-A Decimal instance is considered finite if it is neither infinite nor a\n\
-NaN.\n\
-\n\
-    >>> ExtendedContext.is_finite(Decimal('2.50'))\n\
-   True\n\
-    >>> ExtendedContext.is_finite(Decimal('-0.3'))\n\
-    True\n\
-    >>> ExtendedContext.is_finite(Decimal('0'))\n\
-    True\n\
-    >>> ExtendedContext.is_finite(Decimal('Inf'))\n\
-    False\n\
-    >>> ExtendedContext.is_finite(Decimal('NaN'))\n\
-    False\n\
-    >>> ExtendedContext.is_finite(1)\n\
-    True\n\
+Return True if the argument is a finite number, and False if the argument\n\
+is infinite or a NaN.\n\
 \n");
 
 PyDoc_STRVAR(doc_is_infinite,
 "is_infinite($self, /)\n--\n\n\
-Return True if the operand is infinite; otherwise return False.\n\
-\n\
-    >>> ExtendedContext.is_infinite(Decimal('2.50'))\n\
-    False\n\
-    >>> ExtendedContext.is_infinite(Decimal('-Inf'))\n\
-    True\n\
-    >>> ExtendedContext.is_infinite(Decimal('NaN'))\n\
-    False\n\
-    >>> ExtendedContext.is_infinite(1)\n\
-    False\n\
+Return True if the argument is either positive or negative infinity and\n\
+False otherwise.\n\
 \n");
 
 PyDoc_STRVAR(doc_is_nan,
 "is_nan($self, /)\n--\n\n\
-Return True if the operand is a (quiet or signaling) NaN or NaN;\n\
-otherwise return False.\n\
-\n\
-    >>> ExtendedContext.is_nan(Decimal('2.50'))\n\
-    False\n\
-    >>> ExtendedContext.is_nan(Decimal('NaN'))\n\
-    True\n\
-    >>> ExtendedContext.is_nan(Decimal('-sNaN'))\n\
-    True\n\
-    >>> ExtendedContext.is_nan(1)\n\
-    False\n\
+Return True if the argument is a (quiet or signaling) NaN and False\n\
+otherwise.\n\
 \n");
 
 PyDoc_STRVAR(doc_is_normal,
 "is_normal($self, /, context=None)\n--\n\n\
-Return True if the operand is a normal number; otherwise return False.\n\
-\n\
-    >>> c = ExtendedContext.copy()\n\
-    >>> c.Emin = -999\n\
-    >>> c.Emax = 999\n\
-    >>> c.is_normal(Decimal('2.50'))\n\
-    True\n\
-    >>> c.is_normal(Decimal('0.1E-999'))\n\
-    False\n\
-    >>> c.is_normal(Decimal('0.00'))\n\
-    False\n\
-    >>> c.is_normal(Decimal('-Inf'))\n\
-    False\n\
-    >>> c.is_normal(Decimal('NaN'))\n\
-    False\n\
-    >>> c.is_normal(1)\n\
-    True\n\
+Return True if the argument is a normal finite non-zero number with an\n\
+adjusted exponent greater than or equal to Emin. Return False if the\n\
+argument is zero, subnormal, infinite or a NaN.\n\
 \n");
 
 PyDoc_STRVAR(doc_is_qnan,
 "is_qnan($self, /)\n--\n\n\
-Return True if the argument is a quiet NaN; otherwise return False.\n\
-\n\
-    >>> ExtendedContext.is_qnan(Decimal('2.50'))\n\
-    False\n\
-    >>> ExtendedContext.is_qnan(Decimal('NaN'))\n\
-    True\n\
-    >>> ExtendedContext.is_qnan(Decimal('sNaN'))\n\
-    False\n\
-    >>> ExtendedContext.is_qnan(1)\n\
-    False\n\
+Return True if the argument is a quiet NaN, and False otherwise.\n\
 \n");
 
 PyDoc_STRVAR(doc_is_signed,
 "is_signed($self, /)\n--\n\n\
 Return True if the argument has a negative sign and False otherwise.\n\
 Note that both zeros and NaNs can carry signs.\n\
-\n\
-    >>> ExtendedContext.is_signed(Decimal('2.50'))\n\
-    False\n\
-    >>> ExtendedContext.is_signed(Decimal('-12'))\n\
-    True\n\
-    >>> ExtendedContext.is_signed(Decimal('-0'))\n\
-    True\n\
-    >>> ExtendedContext.is_signed(8)\n\
-    False\n\
-    >>> ExtendedContext.is_signed(-8)\n\
-    True\n\
 \n");
 
 PyDoc_STRVAR(doc_is_snan,
 "is_snan($self, /)\n--\n\n\
-Return True if the operand is a signaling NaN; otherwise return False.\n\
-\n\
-    >>> ExtendedContext.is_snan(Decimal('2.50'))\n\
-    False\n\
-    >>> ExtendedContext.is_snan(Decimal('NaN'))\n\
-    False\n\
-    >>> ExtendedContext.is_snan(Decimal('sNaN'))\n\
-    True\n\
-    >>> ExtendedContext.is_snan(1)\n\
-    False\n\
+Return True if the argument is a signaling NaN and False otherwise.\n\
 \n");
 
 PyDoc_STRVAR(doc_is_subnormal,
 "is_subnormal($self, /, context=None)\n--\n\n\
-Return True if the argument is subnormal; otherwise return False. A number\n\
-is subnormal if it is non-zero, finite, and has an adjusted exponent less\n\
+Return True if the argument is subnormal, and False otherwise. A number is\n\
+subnormal if it is non-zero, finite, and has an adjusted exponent less\n\
 than Emin.\n\
-\n\
-    >>> c = ExtendedContext.copy()\n\
-    >>> c.Emin = -999\n\
-    >>> c.Emax = 999\n\
-    >>> c.is_subnormal(Decimal('2.50'))\n\
-    False\n\
-    >>> c.is_subnormal(Decimal('0.1E-999'))\n\
-    True\n\
-    >>> c.is_subnormal(Decimal('0.00'))\n\
-    False\n\
-    >>> c.is_subnormal(Decimal('-Inf'))\n\
-    False\n\
-    >>> c.is_subnormal(Decimal('NaN'))\n\
-    False\n\
-    >>> c.is_subnormal(1)\n\
-    False\n\
 \n");
 
 PyDoc_STRVAR(doc_is_zero,
 "is_zero($self, /)\n--\n\n\
-Return True if the operand is a zero; otherwise return False.\n\
-\n\
-    >>> ExtendedContext.is_zero(Decimal('0'))\n\
-    True\n\
-    >>> ExtendedContext.is_zero(Decimal('2.50'))\n\
-    False\n\
-    >>> ExtendedContext.is_zero(Decimal('-0E+2'))\n\
-    True\n\
-    >>> ExtendedContext.is_zero(1)\n\
-    False\n\
-    >>> ExtendedContext.is_zero(0)\n\
-    True\n\
+Return True if the argument is a (positive or negative) zero and False\n\
+otherwise.\n\
 \n");
 
 PyDoc_STRVAR(doc_ln,
 "ln($self, /, context=None)\n--\n\n\
 Return the natural (base e) logarithm of the operand. The function always\n\
 uses the ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
-\n\
-    >>> c = ExtendedContext.copy()\n\
-    >>> c.Emin = -999\n\
-    >>> c.Emax = 999\n\
-    >>> c.ln(Decimal('0'))\n\
-    Decimal('-Infinity')\n\
-    >>> c.ln(Decimal('1.000'))\n\
-    Decimal('0')\n\
-    >>> c.ln(Decimal('2.71828183'))\n\
-    Decimal('1.00000000')\n\
-    >>> c.ln(Decimal('10'))\n\
-    Decimal('2.30258509')\n\
-    >>> c.ln(Decimal('+Infinity'))\n\
-    Decimal('Infinity')\n\
-    >>> c.ln(1)\n\
-    Decimal('0')\n\
 \n");
 
 PyDoc_STRVAR(doc_log10,
 "log10($self, /, context=None)\n--\n\n\
-Return the base 10 logarithm of the operand. The function always uses the\n\
+Return the base ten logarithm of the operand. The function always uses the\n\
 ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
-\n\
-    >>> c = ExtendedContext.copy()\n\
-    >>> c.Emin = -999\n\
-    >>> c.Emax = 999\n\
-    >>> c.log10(Decimal('0'))\n\
-    Decimal('-Infinity')\n\
-    >>> c.log10(Decimal('0.001'))\n\
-    Decimal('-3')\n\
-    >>> c.log10(Decimal('1.000'))\n\
-    Decimal('0')\n\
-    >>> c.log10(Decimal('2'))\n\
-    Decimal('0.301029996')\n\
-    >>> c.log10(Decimal('10'))\n\
-    Decimal('1')\n\
-    >>> c.log10(Decimal('70'))\n\
-    Decimal('1.84509804')\n\
-    >>> c.log10(Decimal('+Infinity'))\n\
-    Decimal('Infinity')\n\
-    >>> c.log10(0)\n\
-    Decimal('-Infinity')\n\
-    >>> c.log10(1)\n\
-    Decimal('0')\n\
 \n");
 
 PyDoc_STRVAR(doc_logb,
 "logb($self, /, context=None)\n--\n\n\
-Returns the exponent of the magnitude of the operand's MSD.\n\
-The result is the integer which is the exponent of the magnitude\n\
-of the most significant digit of the operand (as though the\n\
-operand were truncated to a single digit while maintaining the\n\
-value of that digit and without limiting the resulting exponent).\n\
-\n\
-    >>> ExtendedContext.logb(Decimal('250'))\n\
-    Decimal('2')\n\
-    >>> ExtendedContext.logb(Decimal('2.50'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.logb(Decimal('0.03'))\n\
-    Decimal('-2')\n\
-    >>> ExtendedContext.logb(Decimal('0'))\n\
-    Decimal('-Infinity')\n\
-    >>> ExtendedContext.logb(1)\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.logb(10)\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.logb(100)\n\
-    Decimal('2')\n\
+For a non-zero number, return the adjusted exponent of the operand as a\n\
+Decimal instance.  If the operand is a zero, then Decimal('-Infinity') is\n\
+returned and the DivisionByZero condition is raised. If the operand is\n\
+an infinity then Decimal('Infinity') is returned.\n\
 \n");
 
 PyDoc_STRVAR(doc_logical_and,
 "logical_and($self, /, other, context=None)\n--\n\n\
-Applies the logical operation 'and' between each operand's digits.\n\
-The operands must be both logical numbers.\n\
-\n\
-    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('0'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('1'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('0'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('1'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.logical_and(Decimal('1100'), Decimal('1010'))\n\
-    Decimal('1000')\n\
-    >>> ExtendedContext.logical_and(Decimal('1111'), Decimal('10'))\n\
-    Decimal('10')\n\
-    >>> ExtendedContext.logical_and(110, 1101)\n\
-    Decimal('100')\n\
-    >>> ExtendedContext.logical_and(Decimal(110), 1101)\n\
-    Decimal('100')\n\
-    >>> ExtendedContext.logical_and(110, Decimal(1101))\n\
-    Decimal('100')\n\
+Return the digit-wise 'and' of the two (logical) operands.\n\
 \n");
 
 PyDoc_STRVAR(doc_logical_invert,
 "logical_invert($self, /, context=None)\n--\n\n\
-Invert all the digits in the operand.\n\
-The operand must be a logical number.\n\
-\n\
-    >>> ExtendedContext.logical_invert(Decimal('0'))\n\
-    Decimal('111111111')\n\
-    >>> ExtendedContext.logical_invert(Decimal('1'))\n\
-    Decimal('111111110')\n\
-    >>> ExtendedContext.logical_invert(Decimal('111111111'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.logical_invert(Decimal('101010101'))\n\
-    Decimal('10101010')\n\
-    >>> ExtendedContext.logical_invert(1101)\n\
-    Decimal('111110010')\n\
+Return the digit-wise inversion of the (logical) operand.\n\
 \n");
 
 PyDoc_STRVAR(doc_logical_or,
 "logical_or($self, /, other, context=None)\n--\n\n\
-Applies the logical operation 'or' between each operand's digits.\n\
-The operands must be both logical numbers.\n\
-\n\
-    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('0'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('1'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('0'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('1'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.logical_or(Decimal('1100'), Decimal('1010'))\n\
-    Decimal('1110')\n\
-    >>> ExtendedContext.logical_or(Decimal('1110'), Decimal('10'))\n\
-    Decimal('1110')\n\
-    >>> ExtendedContext.logical_or(110, 1101)\n\
-    Decimal('1111')\n\
-    >>> ExtendedContext.logical_or(Decimal(110), 1101)\n\
-    Decimal('1111')\n\
-    >>> ExtendedContext.logical_or(110, Decimal(1101))\n\
-    Decimal('1111')\n\
+Return the digit-wise 'or' of the two (logical) operands.\n\
 \n");
 
 PyDoc_STRVAR(doc_logical_xor,
 "logical_xor($self, /, other, context=None)\n--\n\n\
-Applies the logical operation 'xor' between each operand's digits.\n\
-The operands must be both logical numbers.\n\
-\n\
-    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('0'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('1'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('0'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('1'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.logical_xor(Decimal('1100'), Decimal('1010'))\n\
-    Decimal('110')\n\
-    >>> ExtendedContext.logical_xor(Decimal('1111'), Decimal('10'))\n\
-    Decimal('1101')\n\
-    >>> ExtendedContext.logical_xor(110, 1101)\n\
-    Decimal('1011')\n\
-    >>> ExtendedContext.logical_xor(Decimal(110), 1101)\n\
-    Decimal('1011')\n\
-    >>> ExtendedContext.logical_xor(110, Decimal(1101))\n\
-    Decimal('1011')\n\
+Return the digit-wise 'exclusive or' of the two (logical) operands.\n\
 \n");
 
 PyDoc_STRVAR(doc_max,
 "max($self, /, other, context=None)\n--\n\n\
-max compares two values numerically and returns the maximum.\n\
-\n\
-If either operand is a NaN then the general rules apply.\n\
-Otherwise, the operands are compared as though by the compare\n\
-operation.  If they are numerically equal then the left-hand operand\n\
-is chosen as the result.  Otherwise the maximum (closer to positive\n\
-infinity) of the two operands is chosen as the result.\n\
-\n\
-    >>> ExtendedContext.max(Decimal('3'), Decimal('2'))\n\
-    Decimal('3')\n\
-    >>> ExtendedContext.max(Decimal('-10'), Decimal('3'))\n\
-    Decimal('3')\n\
-    >>> ExtendedContext.max(Decimal('1.0'), Decimal('1'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.max(Decimal('7'), Decimal('NaN'))\n\
-    Decimal('7')\n\
-    >>> ExtendedContext.max(1, 2)\n\
-    Decimal('2')\n\
-    >>> ExtendedContext.max(Decimal(1), 2)\n\
-    Decimal('2')\n\
-    >>> ExtendedContext.max(1, Decimal(2))\n\
-    Decimal('2')\n\
+Maximum of self and other.  If one operand is a quiet NaN and the other is\n\
+numeric, the numeric operand is returned.\n\
 \n");
 
 PyDoc_STRVAR(doc_max_mag,
 "max_mag($self, /, other, context=None)\n--\n\n\
-    >>> ExtendedContext.max_mag(Decimal('7'), Decimal('NaN'))\n\
-    Decimal('7')\n\
-    >>> ExtendedContext.max_mag(Decimal('7'), Decimal('-10'))\n\
-    Decimal('-10')\n\
-    >>> ExtendedContext.max_mag(1, -2)\n\
-    Decimal('-2')\n\
-    >>> ExtendedContext.max_mag(Decimal(1), -2)\n\
-    Decimal('-2')\n\
-    >>> ExtendedContext.max_mag(1, Decimal(-2))\n\
-    Decimal('-2')\n\
+Similar to the max() method, but the comparison is done using the absolute\n\
+values of the operands.\n\
 \n");
 
 PyDoc_STRVAR(doc_min,
 "min($self, /, other, context=None)\n--\n\n\
-min compares two values numerically and returns the minimum.\n\
-\n\
-If either operand is a NaN then the general rules apply.\n\
-Otherwise, the operands are compared as though by the compare\n\
-operation.  If they are numerically equal then the left-hand operand\n\
-is chosen as the result.  Otherwise the minimum (closer to negative\n\
-infinity) of the two operands is chosen as the result.\n\
-\n\
-    >>> ExtendedContext.min(Decimal('3'), Decimal('2'))\n\
-    Decimal('2')\n\
-    >>> ExtendedContext.min(Decimal('-10'), Decimal('3'))\n\
-    Decimal('-10')\n\
-    >>> ExtendedContext.min(Decimal('1.0'), Decimal('1'))\n\
-    Decimal('1.0')\n\
-    >>> ExtendedContext.min(Decimal('7'), Decimal('NaN'))\n\
-    Decimal('7')\n\
-    >>> ExtendedContext.min(1, 2)\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.min(Decimal(1), 2)\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.min(1, Decimal(29))\n\
-    Decimal('1')\n\
+Minimum of self and other. If one operand is a quiet NaN and the other is\n\
+numeric, the numeric operand is returned.\n\
 \n");
 
 PyDoc_STRVAR(doc_min_mag,
 "min_mag($self, /, other, context=None)\n--\n\n\
-Compare the values numerically with their sign ignored.\n\
-\n\
-    >>> ExtendedContext.min_mag(Decimal('3'), Decimal('-2'))\n\
-    Decimal('-2')\n\
-    >>> ExtendedContext.min_mag(Decimal('-3'), Decimal('NaN'))\n\
-    Decimal('-3')\n\
-    >>> ExtendedContext.min_mag(1, -2)\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.min_mag(Decimal(1), -2)\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.min_mag(1, Decimal(-2))\n\
-    Decimal('1')\n\
+Similar to the min() method, but the comparison is done using the absolute\n\
+values of the operands.\n\
 \n");
 
 PyDoc_STRVAR(doc_next_minus,
 "next_minus($self, /, context=None)\n--\n\n\
-Returns the largest representable number smaller than a.\n\
-\n\
-    >>> c = ExtendedContext.copy()\n\
-    >>> c.Emin = -999\n\
-    >>> c.Emax = 999\n\
-    >>> ExtendedContext.next_minus(Decimal('1'))\n\
-    Decimal('0.999999999')\n\
-    >>> c.next_minus(Decimal('1E-1007'))\n\
-    Decimal('0E-1007')\n\
-    >>> ExtendedContext.next_minus(Decimal('-1.00000003'))\n\
-    Decimal('-1.00000004')\n\
-    >>> c.next_minus(Decimal('Infinity'))\n\
-    Decimal('9.99999999E+999')\n\
-    >>> c.next_minus(1)\n\
-    Decimal('0.999999999')\n\
+Return the largest number representable in the given context (or in the\n\
+current default context if no context is given) that is smaller than the\n\
+given operand.\n\
 \n");
 
 PyDoc_STRVAR(doc_next_plus,
 "next_plus($self, /, context=None)\n--\n\n\
-Returns the smallest representable number larger than a.\n\
-\n\
-    >>> c = ExtendedContext.copy()\n\
-    >>> c.Emin = -999\n\
-    >>> c.Emax = 999\n\
-    >>> ExtendedContext.next_plus(Decimal('1'))\n\
-    Decimal('1.00000001')\n\
-    >>> c.next_plus(Decimal('-1E-1007'))\n\
-    Decimal('-0E-1007')\n\
-    >>> ExtendedContext.next_plus(Decimal('-1.00000003'))\n\
-    Decimal('-1.00000002')\n\
-    >>> c.next_plus(Decimal('-Infinity'))\n\
-    Decimal('-9.99999999E+999')\n\
-    >>> c.next_plus(1)\n\
-    Decimal('1.00000001')\n\
+Return the smallest number representable in the given context (or in the\n\
+current default context if no context is given) that is larger than the\n\
+given operand.\n\
 \n");
 
 PyDoc_STRVAR(doc_next_toward,
 "next_toward($self, /, other, context=None)\n--\n\n\
-Returns the number closest to a, in direction towards b.\n\
-\n\
-The result is the closest representable number from the first\n\
-operand (but not the first operand) that is in the direction\n\
-towards the second operand, unless the operands have the same\n\
-value.\n\
-\n\
-    >>> c = ExtendedContext.copy()\n\
-    >>> c.Emin = -999\n\
-    >>> c.Emax = 999\n\
-    >>> c.next_toward(Decimal('1'), Decimal('2'))\n\
-    Decimal('1.00000001')\n\
-    >>> c.next_toward(Decimal('-1E-1007'), Decimal('1'))\n\
-    Decimal('-0E-1007')\n\
-    >>> c.next_toward(Decimal('-1.00000003'), Decimal('0'))\n\
-    Decimal('-1.00000002')\n\
-    >>> c.next_toward(Decimal('1'), Decimal('0'))\n\
-    Decimal('0.999999999')\n\
-    >>> c.next_toward(Decimal('1E-1007'), Decimal('-100'))\n\
-    Decimal('0E-1007')\n\
-    >>> c.next_toward(Decimal('-1.00000003'), Decimal('-10'))\n\
-    Decimal('-1.00000004')\n\
-    >>> c.next_toward(Decimal('0.00'), Decimal('-0.0000'))\n\
-    Decimal('-0.00')\n\
-    >>> c.next_toward(0, 1)\n\
-    Decimal('1E-1007')\n\
-    >>> c.next_toward(Decimal(0), 1)\n\
-    Decimal('1E-1007')\n\
-    >>> c.next_toward(0, Decimal(1))\n\
-    Decimal('1E-1007')\n\
+If the two operands are unequal, return the number closest to the first\n\
+operand in the direction of the second operand.  If both operands are\n\
+numerically equal, return a copy of the first operand with the sign set\n\
+to be the same as the sign of the second operand.\n\
 \n");
 
 PyDoc_STRVAR(doc_normalize,
 "normalize($self, /, context=None)\n--\n\n\
-normalize reduces an operand to its simplest form.\n\
-\n\
-Essentially a plus operation with all trailing zeros removed from the\n\
-result.\n\
-\n\
-    >>> ExtendedContext.normalize(Decimal('2.1'))\n\
-    Decimal('2.1')\n\
-    >>> ExtendedContext.normalize(Decimal('-2.0'))\n\
-    Decimal('-2')\n\
-    >>> ExtendedContext.normalize(Decimal('1.200'))\n\
-    Decimal('1.2')\n\
-    >>> ExtendedContext.normalize(Decimal('-120'))\n\
-    Decimal('-1.2E+2')\n\
-    >>> ExtendedContext.normalize(Decimal('120.00'))\n\
-    Decimal('1.2E+2')\n\
-    >>> ExtendedContext.normalize(Decimal('0.00'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.normalize(6)\n\
-    Decimal('6')\n\
+Normalize the number by stripping the rightmost trailing zeros and\n\
+converting any result equal to Decimal('0') to Decimal('0e0').  Used\n\
+for producing canonical values for members of an equivalence class.\n\
+For example, Decimal('32.100') and Decimal('0.321000e+2') both normalize\n\
+to the equivalent value Decimal('32.1').\n\
 \n");
 
 PyDoc_STRVAR(doc_number_class,
 "number_class($self, /, context=None)\n--\n\n\
-Returns an indication of the class of the operand.\n\
-\n\
-The class is one of the following strings:\n\
+Return a string describing the class of the operand.  The returned value\n\
+is one of the following ten strings:\n\
 \n\
     * '-Infinity', indicating that the operand is negative infinity.\n\
     * '-Normal', indicating that the operand is a negative normal number.\n\
@@ -1039,291 +371,100 @@ The class is one of the following strings:\n\
     * 'NaN', indicating that the operand is a quiet NaN (Not a Number).\n\
     * 'sNaN', indicating that the operand is a signaling NaN.\n\
 \n\
-    >>> c = ExtendedContext.copy()\n\
-    >>> c.Emin = -999\n\
-    >>> c.Emax = 999\n\
-    >>> c.number_class(Decimal('Infinity'))\n\
-    '+Infinity'\n\
-    >>> c.number_class(Decimal('1E-10'))\n\
-    '+Normal'\n\
-    >>> c.number_class(Decimal('2.50'))\n\
-    '+Normal'\n\
-    >>> c.number_class(Decimal('0.1E-999'))\n\
-    '+Subnormal'\n\
-    >>> c.number_class(Decimal('0'))\n\
-    '+Zero'\n\
-    >>> c.number_class(Decimal('-0'))\n\
-    '-Zero'\n\
-    >>> c.number_class(Decimal('-0.1E-999'))\n\
-    '-Subnormal'\n\
-    >>> c.number_class(Decimal('-1E-10'))\n\
-    '-Normal'\n\
-    >>> c.number_class(Decimal('-2.50'))\n\
-    '-Normal'\n\
-    >>> c.number_class(Decimal('-Infinity'))\n\
-    '-Infinity'\n\
-    >>> c.number_class(Decimal('NaN'))\n\
-    'NaN'\n\
-    >>> c.number_class(Decimal('-NaN'))\n\
-    'NaN'\n\
-    >>> c.number_class(Decimal('sNaN'))\n\
-    'sNaN'\n\
-    >>> c.number_class(123)\n\
-    '+Normal'\n\
 \n");
 
 PyDoc_STRVAR(doc_quantize,
 "quantize($self, /, exp, rounding=None, context=None)\n--\n\n\
-Returns a value equal to 'a' (rounded), having the exponent of 'b'.\n\
+Return a value equal to the first operand after rounding and having the\n\
+exponent of the second operand.\n\
 \n\
-The coefficient of the result is derived from that of the left-hand\n\
-operand.  It may be rounded using the current rounding setting (if the\n\
-exponent is being increased), multiplied by a positive power of ten (if\n\
-the exponent is being decreased), or is unchanged (if the exponent is\n\
-already equal to that of the right-hand operand).\n\
+    >>> Decimal('1.41421356').quantize(Decimal('1.000'))\n\
+    Decimal('1.414')\n\
 \n\
-Unlike other operations, if the length of the coefficient after the\n\
-quantize operation would be greater than precision then an Invalid\n\
-operation condition is raised.  This guarantees that, unless there is\n\
-an error condition, the exponent of the result of a quantize is always\n\
-equal to that of the right-hand operand.\n\
-Also unlike other operations, quantize will never raise Underflow, even\n\
-if the result is subnormal and inexact.\n\
+Unlike other operations, if the length of the coefficient after the quantize\n\
+operation would be greater than precision, then an InvalidOperation is signaled.\n\
+This guarantees that, unless there is an error condition, the quantized exponent\n\
+is always equal to that of the right-hand operand.\n\
 \n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.001'))\n\
-    Decimal('2.170')\n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.01'))\n\
-    Decimal('2.17')\n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.1'))\n\
-    Decimal('2.2')\n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+0'))\n\
-    Decimal('2')\n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+1'))\n\
-    Decimal('0E+1')\n\
-    >>> ExtendedContext.quantize(Decimal('-Inf'), Decimal('Infinity'))\n\
-    Decimal('-Infinity')\n\
-    >>> ExtendedContext.quantize(Decimal('2'), Decimal('Infinity'))\n\
-    Decimal('NaN')\n\
-    >>> ExtendedContext.quantize(Decimal('-0.1'), Decimal('1'))\n\
-    Decimal('-0')\n\
-    >>> ExtendedContext.quantize(Decimal('-0'), Decimal('1e+5'))\n\
-    Decimal('-0E+5')\n\
-    >>> ExtendedContext.quantize(Decimal('+35236450.6'), Decimal('1e-2'))\n\
-    Decimal('NaN')\n\
-    >>> ExtendedContext.quantize(Decimal('-35236450.6'), Decimal('1e-2'))\n\
-    Decimal('NaN')\n\
-    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-1'))\n\
-    Decimal('217.0')\n\
-    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-0'))\n\
-    Decimal('217')\n\
-    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+1'))\n\
-    Decimal('2.2E+2')\n\
-    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+2'))\n\
-    Decimal('2E+2')\n\
-    >>> ExtendedContext.quantize(1, 2)\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.quantize(Decimal(1), 2)\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.quantize(1, Decimal(2))\n\
-    Decimal('1')\n\
+Also unlike other operations, quantize never signals Underflow, even if the\n\
+result is subnormal and inexact.\n\
+\n\
+If the exponent of the second operand is larger than that of the first, then\n\
+rounding may be necessary. In this case, the rounding mode is determined by the\n\
+rounding argument if given, else by the given context argument; if neither\n\
+argument is given, the rounding mode of the current thread's context is used.\n\
 \n");
 
 PyDoc_STRVAR(doc_radix,
 "radix($self, /)\n--\n\n\
 Return Decimal(10), the radix (base) in which the Decimal class does\n\
 all its arithmetic. Included for compatibility with the specification.\n\
-\n\
-    >>> ExtendedContext.radix()\n\
-    Decimal('10')\n\
 \n");
 
 PyDoc_STRVAR(doc_remainder_near,
 "remainder_near($self, /, other, context=None)\n--\n\n\
-Returns to be \"a - b * n\", where n is the integer nearest the exact\n\
-value of \"x / b\" (if two integers are equally near then the even one\n\
-is chosen).  If the result is equal to 0 then its sign will be the\n\
-sign of a.\n\
+Return the remainder from dividing self by other.  This differs from\n\
+self % other in that the sign of the remainder is chosen so as to minimize\n\
+its absolute value. More precisely, the return value is self - n * other\n\
+where n is the integer nearest to the exact value of self / other, and\n\
+if two integers are equally near then the even one is chosen.\n\
 \n\
-This operation will fail under the same conditions as integer division\n\
-(that is, if integer division on the same two operands would fail, the\n\
-remainder cannot be calculated).\n\
-\n\
-    >>> ExtendedContext.remainder_near(Decimal('2.1'), Decimal('3'))\n\
-    Decimal('-0.9')\n\
-    >>> ExtendedContext.remainder_near(Decimal('10'), Decimal('6'))\n\
-    Decimal('-2')\n\
-    >>> ExtendedContext.remainder_near(Decimal('10'), Decimal('3'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.remainder_near(Decimal('-10'), Decimal('3'))\n\
-    Decimal('-1')\n\
-    >>> ExtendedContext.remainder_near(Decimal('10.2'), Decimal('1'))\n\
-    Decimal('0.2')\n\
-    >>> ExtendedContext.remainder_near(Decimal('10'), Decimal('0.3'))\n\
-    Decimal('0.1')\n\
-    >>> ExtendedContext.remainder_near(Decimal('3.6'), Decimal('1.3'))\n\
-    Decimal('-0.3')\n\
-    >>> ExtendedContext.remainder_near(3, 11)\n\
-    Decimal('3')\n\
-    >>> ExtendedContext.remainder_near(Decimal(3), 11)\n\
-    Decimal('3')\n\
-    >>> ExtendedContext.remainder_near(3, Decimal(11))\n\
-    Decimal('3')\n\
+If the result is zero then its sign will be the sign of self.\n\
 \n");
 
 PyDoc_STRVAR(doc_rotate,
 "rotate($self, /, other, context=None)\n--\n\n\
-Returns a rotated copy of a, b times.\n\
-\n\
-The coefficient of the result is a rotated copy of the digits in\n\
-the coefficient of the first operand.  The number of places of\n\
-rotation is taken from the absolute value of the second operand,\n\
-with the rotation being to the left if the second operand is\n\
-positive or to the right otherwise.\n\
-\n\
-    >>> ExtendedContext.rotate(Decimal('34'), Decimal('8'))\n\
-    Decimal('400000003')\n\
-    >>> ExtendedContext.rotate(Decimal('12'), Decimal('9'))\n\
-    Decimal('12')\n\
-    >>> ExtendedContext.rotate(Decimal('123456789'), Decimal('-2'))\n\
-    Decimal('891234567')\n\
-    >>> ExtendedContext.rotate(Decimal('123456789'), Decimal('0'))\n\
-    Decimal('123456789')\n\
-    >>> ExtendedContext.rotate(Decimal('123456789'), Decimal('+2'))\n\
-    Decimal('345678912')\n\
-    >>> ExtendedContext.rotate(1333333, 1)\n\
-    Decimal('13333330')\n\
-    >>> ExtendedContext.rotate(Decimal(1333333), 1)\n\
-    Decimal('13333330')\n\
-    >>> ExtendedContext.rotate(1333333, Decimal(1))\n\
-    Decimal('13333330')\n\
+Return the result of rotating the digits of the first operand by an amount\n\
+specified by the second operand.  The second operand must be an integer in\n\
+the range -precision through precision. The absolute value of the second\n\
+operand gives the number of places to rotate. If the second operand is\n\
+positive then rotation is to the left; otherwise rotation is to the right.\n\
+The coefficient of the first operand is padded on the left with zeros to\n\
+length precision if necessary. The sign and exponent of the first operand are\n\
+unchanged.\n\
 \n");
 
 PyDoc_STRVAR(doc_same_quantum,
 "same_quantum($self, /, other, context=None)\n--\n\n\
-Returns True if the two operands have the same exponent.\n\
+Test whether self and other have the same exponent or whether both are NaN.\n\
 \n\
-The result is never affected by either the sign or the coefficient of\n\
-either operand.\n\
-\n\
-    >>> ExtendedContext.same_quantum(Decimal('2.17'), Decimal('0.001'))\n\
-    False\n\
-    >>> ExtendedContext.same_quantum(Decimal('2.17'), Decimal('0.01'))\n\
-    True\n\
-    >>> ExtendedContext.same_quantum(Decimal('2.17'), Decimal('1'))\n\
-    False\n\
-    >>> ExtendedContext.same_quantum(Decimal('Inf'), Decimal('-Inf'))\n\
-    True\n\
-    >>> ExtendedContext.same_quantum(10000, -1)\n\
-    True\n\
-    >>> ExtendedContext.same_quantum(Decimal(10000), -1)\n\
-    True\n\
-    >>> ExtendedContext.same_quantum(10000, Decimal(-1))\n\
-    True\n\
+This operation is unaffected by context and is quiet: no flags are changed\n\
+and no rounding is performed. As an exception, the C version may raise\n\
+InvalidOperation if the second operand cannot be converted exactly.\n\
 \n");
 
 PyDoc_STRVAR(doc_scaleb,
 "scaleb($self, /, other, context=None)\n--\n\n\
-Returns the first operand after adding the second value its exp.\n\
-\n\
-    >>> ExtendedContext.scaleb(Decimal('7.50'), Decimal('-2'))\n\
-    Decimal('0.0750')\n\
-    >>> ExtendedContext.scaleb(Decimal('7.50'), Decimal('0'))\n\
-    Decimal('7.50')\n\
-    >>> ExtendedContext.scaleb(Decimal('7.50'), Decimal('3'))\n\
-    Decimal('7.50E+3')\n\
-    >>> ExtendedContext.scaleb(1, 4)\n\
-    Decimal('1E+4')\n\
-    >>> ExtendedContext.scaleb(Decimal(1), 4)\n\
-    Decimal('1E+4')\n\
-    >>> ExtendedContext.scaleb(1, Decimal(4))\n\
-    Decimal('1E+4')\n\
+Return the first operand with the exponent adjusted the second.  Equivalently,\n\
+return the first operand multiplied by 10**other. The second operand must be\n\
+an integer.\n\
 \n");
 
 PyDoc_STRVAR(doc_shift,
 "shift($self, /, other, context=None)\n--\n\n\
-Returns a shifted copy of a, b times.\n\
-\n\
-The coefficient of the result is a shifted copy of the digits\n\
-in the coefficient of the first operand.  The number of places\n\
-to shift is taken from the absolute value of the second operand,\n\
-with the shift being to the left if the second operand is\n\
-positive or to the right otherwise.  Digits shifted into the\n\
-coefficient are zeros.\n\
-\n\
-    >>> ExtendedContext.shift(Decimal('34'), Decimal('8'))\n\
-    Decimal('400000000')\n\
-    >>> ExtendedContext.shift(Decimal('12'), Decimal('9'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.shift(Decimal('123456789'), Decimal('-2'))\n\
-    Decimal('1234567')\n\
-    >>> ExtendedContext.shift(Decimal('123456789'), Decimal('0'))\n\
-    Decimal('123456789')\n\
-    >>> ExtendedContext.shift(Decimal('123456789'), Decimal('+2'))\n\
-    Decimal('345678900')\n\
-    >>> ExtendedContext.shift(88888888, 2)\n\
-    Decimal('888888800')\n\
-    >>> ExtendedContext.shift(Decimal(88888888), 2)\n\
-    Decimal('888888800')\n\
-    >>> ExtendedContext.shift(88888888, Decimal(2))\n\
-    Decimal('888888800')\n\
+Return the result of shifting the digits of the first operand by an amount\n\
+specified by the second operand.  The second operand must be an integer in\n\
+the range -precision through precision. The absolute value of the second\n\
+operand gives the number of places to shift. If the second operand is\n\
+positive, then the shift is to the left; otherwise the shift is to the\n\
+right. Digits shifted into the coefficient are zeros. The sign and exponent\n\
+of the first operand are unchanged.\n\
 \n");
 
 PyDoc_STRVAR(doc_sqrt,
 "sqrt($self, /, context=None)\n--\n\n\
-Square root of a non-negative number to context precision.\n\
-\n\
-If the result must be inexact, it is rounded using the round-half-even\n\
-algorithm.\n\
-\n\
-    >>> ExtendedContext.sqrt(Decimal('0'))\n\
-    Decimal('0')\n\
-    >>> ExtendedContext.sqrt(Decimal('-0'))\n\
-    Decimal('-0')\n\
-    >>> ExtendedContext.sqrt(Decimal('0.39'))\n\
-    Decimal('0.624499800')\n\
-    >>> ExtendedContext.sqrt(Decimal('100'))\n\
-    Decimal('10')\n\
-    >>> ExtendedContext.sqrt(Decimal('1'))\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.sqrt(Decimal('1.0'))\n\
-    Decimal('1.0')\n\
-    >>> ExtendedContext.sqrt(Decimal('1.00'))\n\
-    Decimal('1.0')\n\
-    >>> ExtendedContext.sqrt(Decimal('7'))\n\
-    Decimal('2.64575131')\n\
-    >>> ExtendedContext.sqrt(Decimal('10'))\n\
-    Decimal('3.16227766')\n\
-    >>> ExtendedContext.sqrt(2)\n\
-    Decimal('1.41421356')\n\
-    >>> ExtendedContext.prec\n\
-    9\n\
+Return the square root of the argument to full precision. The result is\n\
+correctly rounded using the ROUND_HALF_EVEN rounding mode.\n\
 \n");
 
 PyDoc_STRVAR(doc_to_eng_string,
 "to_eng_string($self, /, context=None)\n--\n\n\
-Convert to a string, using engineering notation if an exponent is needed.\n\
-\n\
-Engineering notation has an exponent which is a multiple of 3. This\n\
-can leave up to 3 digits to the left of the decimal place and may\n\
-require the addition of either one or two trailing zeros.\n\
+Convert to an engineering-type string.  Engineering notation has an exponent\n\
+which is a multiple of 3, so there are up to 3 digits left of the decimal\n\
+place. For example, Decimal('123E+1') is converted to Decimal('1.23E+3').\n\
 \n\
 The value of context.capitals determines whether the exponent sign is lower\n\
 or upper case. Otherwise, the context does not affect the operation.\n\
-\n\
-    >>> ExtendedContext.to_eng_string(Decimal('123E+1'))\n\
-    '1.23E+3'\n\
-    >>> ExtendedContext.to_eng_string(Decimal('123E+3'))\n\
-    '123E+3'\n\
-    >>> ExtendedContext.to_eng_string(Decimal('123E-10'))\n\
-    '12.3E-9'\n\
-    >>> ExtendedContext.to_eng_string(Decimal('-123E-12'))\n\
-    '-123E-12'\n\
-    >>> ExtendedContext.to_eng_string(Decimal('7E-7'))\n\
-    '700E-9'\n\
-    >>> ExtendedContext.to_eng_string(Decimal('7E+1'))\n\
-    '70'\n\
-    >>> ExtendedContext.to_eng_string(Decimal('0E+1'))\n\
-    '0.00E+3'\n\
 \n");
 
 PyDoc_STRVAR(doc_to_integral,
@@ -1334,59 +475,18 @@ kept for compatibility with older versions.\n\
 
 PyDoc_STRVAR(doc_to_integral_exact,
 "to_integral_exact($self, /, rounding=None, context=None)\n--\n\n\
-Rounds to an integer.\n\
-\n\
-When the operand has a negative exponent, the result is the same\n\
-as using the quantize() operation using the given operand as the\n\
-left-hand-operand, 1E+0 as the right-hand-operand, and the precision\n\
-of the operand as the precision setting; Inexact and Rounded flags\n\
-are allowed in this operation.  The rounding mode is taken from the\n\
-context.\n\
-\n\
-    >>> ExtendedContext.to_integral_exact(Decimal('2.1'))\n\
-    Decimal('2')\n\
-    >>> ExtendedContext.to_integral_exact(Decimal('100'))\n\
-    Decimal('100')\n\
-    >>> ExtendedContext.to_integral_exact(Decimal('100.0'))\n\
-    Decimal('100')\n\
-    >>> ExtendedContext.to_integral_exact(Decimal('101.5'))\n\
-    Decimal('102')\n\
-    >>> ExtendedContext.to_integral_exact(Decimal('-101.5'))\n\
-    Decimal('-102')\n\
-    >>> ExtendedContext.to_integral_exact(Decimal('10E+5'))\n\
-    Decimal('1.0E+6')\n\
-    >>> ExtendedContext.to_integral_exact(Decimal('7.89E+77'))\n\
-    Decimal('7.89E+77')\n\
-    >>> ExtendedContext.to_integral_exact(Decimal('-Inf'))\n\
-    Decimal('-Infinity')\n\
+Round to the nearest integer, signaling Inexact or Rounded as appropriate if\n\
+rounding occurs.  The rounding mode is determined by the rounding parameter\n\
+if given, else by the given context. If neither parameter is given, then the\n\
+rounding mode of the current default context is used.\n\
 \n");
 
 PyDoc_STRVAR(doc_to_integral_value,
 "to_integral_value($self, /, rounding=None, context=None)\n--\n\n\
-Rounds to an integer.\n\
-\n\
-When the operand has a negative exponent, the result is the same\n\
-as using the quantize() operation using the given operand as the\n\
-left-hand-operand, 1E+0 as the right-hand-operand, and the precision\n\
-of the operand as the precision setting, except that no flags will\n\
-be set.  The rounding mode is taken from the context.\n\
-\n\
-    >>> ExtendedContext.to_integral_value(Decimal('2.1'))\n\
-    Decimal('2')\n\
-    >>> ExtendedContext.to_integral_value(Decimal('100'))\n\
-    Decimal('100')\n\
-    >>> ExtendedContext.to_integral_value(Decimal('100.0'))\n\
-    Decimal('100')\n\
-    >>> ExtendedContext.to_integral_value(Decimal('101.5'))\n\
-    Decimal('102')\n\
-    >>> ExtendedContext.to_integral_value(Decimal('-101.5'))\n\
-    Decimal('-102')\n\
-    >>> ExtendedContext.to_integral_value(Decimal('10E+5'))\n\
-    Decimal('1.0E+6')\n\
-    >>> ExtendedContext.to_integral_value(Decimal('7.89E+77'))\n\
-    Decimal('7.89E+77')\n\
-    >>> ExtendedContext.to_integral_value(Decimal('-Inf'))\n\
-    Decimal('-Infinity')\n\
+Round to the nearest integer without signaling Inexact or Rounded.  The\n\
+rounding mode is determined by the rounding parameter if given, else by\n\
+the given context. If neither parameter is given, then the rounding mode\n\
+of the current default context is used.\n\
 \n");
 
 
@@ -1779,3 +879,6 @@ Convert a number to a string using scientific notation.\n\
 
 
 #endif /* DOCSTRINGS_H */
+
+
+
