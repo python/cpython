@@ -41,7 +41,7 @@ class WinTypesTest(unittest.TestCase):
         vb.value = []
         self.assertIs(vb.value, False)
 
-    def test_signess(self):
+    def test_signedness(self):
         # Unsigned aliases with octet size in their names
         for type in (wintypes.BYTE, wintypes.WORD, wintypes.DWORD):
             with self.subTest(type=type):
