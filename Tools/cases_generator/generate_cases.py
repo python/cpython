@@ -26,7 +26,9 @@ DEFAULT_METADATA_OUTPUT = os.path.relpath(
 )
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
-RE_PREDICTED = r"^\s*(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
+RE_PREDICTED = (
+    r"^\s*(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
+)
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
@@ -135,7 +137,12 @@ class Formatter:
             yield
         self.emit("}")
 
-    def stack_adjust(self, diff: int, input_effects: list[StackEffect], output_effects: list[StackEffect]):
+    def stack_adjust(
+        self,
+        diff: int,
+        input_effects: list[StackEffect],
+        output_effects: list[StackEffect],
+    ):
         # TODO: Get rid of 'diff' parameter
         shrink, isym = list_effect_size(input_effects)
         grow, osym = list_effect_size(output_effects)
@@ -255,7 +262,7 @@ class Instruction:
         if self.register:
             num_regs = len(self.input_effects) + len(self.output_effects)
             num_dummies = (num_regs // 2) * 2 + 1 - num_regs
-            fmt = "I" + "B"*num_regs + "X"*num_dummies
+            fmt = "I" + "B" * num_regs + "X" * num_dummies
         else:
             if variable_used(inst, "oparg"):
                 fmt = "IB"
@@ -297,18 +304,22 @@ class Instruction:
             # Write input stack effect variable declarations and initializations
             ieffects = list(reversed(self.input_effects))
             for i, ieffect in enumerate(ieffects):
-                isize = string_effect_size(list_effect_size([ieff for ieff in ieffects[:i+1] if not ieff.manual]))
+                isize = string_effect_size(
+                    list_effect_size(
+                        [ieff for ieff in ieffects[: i + 1] if not ieff.manual]
+                    )
+                )
                 if ieffect.size:
                     assert not ieffect.manual, "Manual array effects not yet supported"
                     src = StackEffect(f"&PEEK({isize})", "PyObject **")
                 else:
                     if ieffect.manual:
                         if ieffect.cond:
-                            src = StackEffect(f"({ieffect.cond}) ? POP() : NULL", "")            
+                            src = StackEffect(f"({ieffect.cond}) ? POP() : NULL", "")
                         else:
-                            src = StackEffect(f"POP()", "")            
+                            src = StackEffect(f"POP()", "")
                     else:
-                        src = StackEffect(f"PEEK({isize})", "")            
+                        src = StackEffect(f"PEEK({isize})", "")
                 out.declare(ieffect, src)
                 # if ieffect.cond:
                 #     assert ieffect.manual, "Conditional effects must be manual"
@@ -336,9 +347,11 @@ class Instruction:
 
         if not self.register:
             # Write net stack growth/shrinkage
-            out.stack_adjust(0,
+            out.stack_adjust(
+                0,
                 [ieff for ieff in self.input_effects if not ieff.manual],
-                [oeff for oeff in self.output_effects if not oeff.manual])
+                [oeff for oeff in self.output_effects if not oeff.manual],
+            )
 
             # Write output stack effect assignments
             oeffects = list(reversed(self.output_effects))
@@ -346,7 +359,11 @@ class Instruction:
             for i, oeffect in enumerate(oeffects):
                 if oeffect.name in self.unmoved_names:
                     continue
-                osize = string_effect_size(list_effect_size([oeff for oeff in oeffects[:i+1] if not oeff.manual]))
+                osize = string_effect_size(
+                    list_effect_size(
+                        [oeff for oeff in oeffects[: i + 1] if not oeff.manual]
+                    )
+                )
                 if oeffect.size:
                     assert not oeffect.manual, "Manual array effects not yet supported"
                     dst = StackEffect(f"&PEEK({osize})", "PyObject **")
@@ -674,7 +691,9 @@ class Analyzer:
             parts.append(part)
             format += instr.instr_fmt
         final_sp = sp
-        return SuperInstruction(super.name, stack, initial_sp, final_sp, format, super, parts)
+        return SuperInstruction(
+            super.name, stack, initial_sp, final_sp, format, super, parts
+        )
 
     def analyze_macro(self, macro: parser.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
@@ -700,7 +719,9 @@ class Analyzer:
                 case _:
                     typing.assert_never(component)
         final_sp = sp
-        return MacroInstruction(macro.name, stack, initial_sp, final_sp, format, macro, parts)
+        return MacroInstruction(
+            macro.name, stack, initial_sp, final_sp, format, macro, parts
+        )
 
     def analyze_instruction(
         self, instr: Instruction, stack: list[StackEffect], sp: int
@@ -753,7 +774,9 @@ class Analyzer:
         for thing in components:
             match thing:
                 case Instruction() as instr:
-                    if any(eff.size for eff in instr.input_effects + instr.output_effects):
+                    if any(
+                        eff.size for eff in instr.input_effects + instr.output_effects
+                    ):
                         # TODO: Eventually this will be needed, at least for macros.
                         self.error(
                             f"Instruction {instr.name!r} has variable-sized stack effect, "
@@ -779,10 +802,9 @@ class Analyzer:
 
     def get_stack_effect_info(
         self, thing: parser.InstDef | parser.Super | parser.Macro
-    ) -> tuple[Instruction|None, str, str]:
-
+    ) -> tuple[Instruction | None, str, str]:
         def effect_str(effects: list[StackEffect]) -> str:
-            if getattr(thing, 'kind', None) == 'legacy':
+            if getattr(thing, "kind", None) == "legacy":
                 return str(-1)
             n_effect, sym_effect = list_effect_size(effects)
             if sym_effect:
@@ -800,13 +822,21 @@ class Analyzer:
                     popped = pushed = "", ""
             case parser.Super():
                 instr = self.super_instrs[thing.name]
-                popped = '+'.join(effect_str(comp.instr.input_effects) for comp in instr.parts)
-                pushed = '+'.join(effect_str(comp.instr.output_effects) for comp in instr.parts)
+                popped = "+".join(
+                    effect_str(comp.instr.input_effects) for comp in instr.parts
+                )
+                pushed = "+".join(
+                    effect_str(comp.instr.output_effects) for comp in instr.parts
+                )
             case parser.Macro():
                 instr = self.macro_instrs[thing.name]
                 parts = [comp for comp in instr.parts if isinstance(comp, Component)]
-                popped = '+'.join(effect_str(comp.instr.input_effects) for comp in parts)
-                pushed = '+'.join(effect_str(comp.instr.output_effects) for comp in parts)
+                popped = "+".join(
+                    effect_str(comp.instr.input_effects) for comp in parts
+                )
+                pushed = "+".join(
+                    effect_str(comp.instr.output_effects) for comp in parts
+                )
             case _:
                 typing.assert_never(thing)
         return instr, popped, pushed
@@ -817,14 +847,14 @@ class Analyzer:
         for thing in self.everything:
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
-                popped_data.append( (instr, popped) )
-                pushed_data.append( (instr, pushed) )
+                popped_data.append((instr, popped))
+                pushed_data.append((instr, pushed))
 
         def write_function(direction: str, data: list[tuple[Instruction, str]]) -> None:
-            self.out.emit("\n#ifndef NDEBUG");
-            self.out.emit("static int");
+            self.out.emit("\n#ifndef NDEBUG")
+            self.out.emit("static int")
             self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg) {{")
-            self.out.emit("    switch(opcode) {");
+            self.out.emit("    switch(opcode) {")
             for instr, effect in data:
                 self.out.emit(f"        case {instr.name}:")
                 self.out.emit(f"            return {effect};")
@@ -832,10 +862,10 @@ class Analyzer:
             self.out.emit("            Py_UNREACHABLE();")
             self.out.emit("    }")
             self.out.emit("}")
-            self.out.emit("#endif");
+            self.out.emit("#endif")
 
-        write_function('popped', popped_data)
-        write_function('pushed', pushed_data)
+        write_function("popped", popped_data)
+        write_function("pushed", pushed_data)
 
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
@@ -908,21 +938,21 @@ class Analyzer:
                 directions.extend("DIR_NONE" for _ in range(3))
                 dir_op1, dir_op2, dir_op3 = directions[:3]
         self.out.emit(
-            f'    [{instr.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},'
+            f"    [{instr.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},"
         )
 
     def write_metadata_for_super(self, sup: SuperInstruction) -> None:
         """Write metadata for a super-instruction."""
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
         self.out.emit(
-            f'    [{sup.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},'
+            f"    [{sup.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},"
         )
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
         self.out.emit(
-            f'    [{mac.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},'
+            f"    [{mac.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},"
         )
 
     def write_instructions(self) -> None:
@@ -1055,7 +1085,9 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
 
     # Separate PREDICT(...) macros from end
     predictions: list[str] = []
-    while blocklines and (m := re.match(r"^\s*PREDICT\((\w+)\);\s*(?://.*)?$", blocklines[-1])):
+    while blocklines and (
+        m := re.match(r"^\s*PREDICT\((\w+)\);\s*(?://.*)?$", blocklines[-1])
+    ):
         predictions.insert(0, m.group(1))
         blocklines.pop()
 
@@ -1072,13 +1104,22 @@ def always_exits(lines: list[str]) -> bool:
         return False
     line = line[12:]
     return line.startswith(
-        ("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()", "ERROR_IF(true, ")
+        (
+            "goto ",
+            "return ",
+            "DISPATCH",
+            "GO_TO_",
+            "Py_UNREACHABLE()",
+            "ERROR_IF(true, ",
+        )
     )
 
 
 def variable_used(node: parser.Node, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
-    return any(token.kind == "IDENTIFIER" and token.text == name for token in node.tokens)
+    return any(
+        token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
+    )
 
 
 def main():
