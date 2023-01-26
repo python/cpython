@@ -247,6 +247,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #define S_ISCHR(x) (((x) & S_IFMT) == S_IFCHR)
 #endif
 
+#ifndef S_ISLNK
+#define S_ISLNK(x) (((x) & S_IFMT) == S_IFLNK)
+#endif
+
 #ifdef __cplusplus
 /* Move this down here since some C++ #include's don't like to be included
    inside an extern "C" */

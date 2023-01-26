@@ -742,6 +742,7 @@ class StatAttributeTests(unittest.TestCase):
         )
         result = os.stat(fname)
         self.assertNotEqual(result.st_size, 0)
+        self.assertTrue(os.path.isfile(fname))
 
     @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
     def test_stat_block_device(self):

@@ -14983,6 +14983,8 @@ os__isdir_impl(PyObject *module, PyObject *path)
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info = { 0 };
     path_t _path = PATH_T_INITIALIZE("isdir", "path", 0, 1);
+    STRUCT_STAT st;
+    DWORD error;
     int result;
 
     if (!path_converter(path, &_path)) {
@@ -15010,7 +15012,21 @@ os__isdir_impl(PyObject *module, PyObject *path)
         }
         result = info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
     } else {
-        result = 0;
+        error = GetLastError();
+        switch (error) {
+        case ERROR_ACCESS_DENIED:
+        case ERROR_SHARING_VIOLATION:
+        case ERROR_CANT_ACCESS_FILE:
+        case ERROR_INVALID_PARAMETER:
+            if (win32_stat(_path.wide, &st)) {
+                result = 0;
+            } else {
+                result = S_ISDIR(st.st_mode);
+            }
+            break;
+        default:
+            result = 0;
+        }
     }
     Py_END_ALLOW_THREADS
 
@@ -15043,6 +15059,8 @@ os__isfile_impl(PyObject *module, PyObject *path)
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info = { 0 };
     path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 1);
+    STRUCT_STAT st;
+    DWORD error;
     int result;
 
     if (!path_converter(path, &_path)) {
@@ -15073,7 +15091,21 @@ os__isfile_impl(PyObject *module, PyObject *path)
             CloseHandle(hfile);
         }
     } else {
-        result = 0;
+        error = GetLastError();
+        switch (error) {
+        case ERROR_ACCESS_DENIED:
+        case ERROR_SHARING_VIOLATION:
+        case ERROR_CANT_ACCESS_FILE:
+        case ERROR_INVALID_PARAMETER:
+            if (win32_stat(_path.wide, &st)) {
+                result = 0;
+            } else {
+                result = S_ISREG(st.st_mode);
+            }
+            break;
+        default:
+            result = 0;
+        }
     }
     Py_END_ALLOW_THREADS
 
@@ -15106,6 +15138,8 @@ os__exists_impl(PyObject *module, PyObject *path)
     HANDLE hfile;
     BOOL close_file = TRUE;
     path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 1);
+    STRUCT_STAT st;
+    DWORD error;
     int result;
 
     if (!path_converter(path, &_path)) {
@@ -15132,7 +15166,21 @@ os__exists_impl(PyObject *module, PyObject *path)
             CloseHandle(hfile);
         }
     } else {
-        result = 0;
+        error = GetLastError();
+        switch (error) {
+        case ERROR_ACCESS_DENIED:
+        case ERROR_SHARING_VIOLATION:
+        case ERROR_CANT_ACCESS_FILE:
+        case ERROR_INVALID_PARAMETER:
+            if (win32_stat(_path.wide, &st)) {
+                result = 0;
+            } else {
+                result = 1;
+            }
+            break;
+        default:
+            result = 0;
+        }
     }
     Py_END_ALLOW_THREADS
 
@@ -15164,6 +15212,8 @@ os__islink_impl(PyObject *module, PyObject *path)
     BOOL close_file = TRUE;
     FILE_ATTRIBUTE_TAG_INFO info = { 0 };
     path_t _path = PATH_T_INITIALIZE("islink", "path", 0, 1);
+    STRUCT_STAT st;
+    DWORD error;
     int result;
 
     if (!path_converter(path, &_path)) {
@@ -15196,7 +15246,21 @@ os__islink_impl(PyObject *module, PyObject *path)
             CloseHandle(hfile);
         }
     } else {
-        result = 0;
+        error = GetLastError();
+        switch (error) {
+        case ERROR_ACCESS_DENIED:
+        case ERROR_SHARING_VIOLATION:
+        case ERROR_CANT_ACCESS_FILE:
+        case ERROR_INVALID_PARAMETER:
+            if (win32_stat(_path.wide, &st)) {
+                result = 0;
+            } else {
+                result = S_ISLNK(st.st_mode);
+            }
+            break;
+        default:
+            result = 0;
+        }
     }
     Py_END_ALLOW_THREADS
 
