@@ -892,7 +892,7 @@ class TestNtpath(NtpathTestCase):
 
     @unittest.skipIf(sys.platform != 'win32', "drive letters are a windows concept")
     def test_isfile_driveletter(self):
-        current_drive = os.path.splitdrive(os.path.abspath(__file__))[0] + "\\"
+        current_drive = "\\\\.\\" + os.path.splitdrive(os.path.abspath(__file__))[0]
         self.assertFalse(os.path.isfile(current_drive))
 
     @unittest.skipIf(sys.platform != 'win32', "Fast paths are only for win32")
