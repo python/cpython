@@ -1740,7 +1740,8 @@ class PolicyTests(unittest.TestCase):
 
     def test_child_watcher_replace_mainloop_existing(self):
         policy = self.create_policy()
-        loop = policy.get_event_loop()
+        loop = policy.new_event_loop()
+        policy.set_event_loop(loop)
 
         # Explicitly setup SafeChildWatcher,
         # default ThreadedChildWatcher has no _loop property

@@ -1,0 +1,2 @@
+Modify :func:`random.choice` implementation to once again work with NumPy
+arrays.

@@ -1,1 +1,0 @@
-Fix ``-Wimplicit-int``, ``-Wstrict-prototypes``, and ``-Wimplicit-function-declaration`` compiler warnings in :program:`configure` checks.

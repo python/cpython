@@ -1012,6 +1012,9 @@ class PyBuildExt(build_ext):
         # Python C API test module
         self.addext(Extension('_testcapi', ['_testcapimodule.c']))
 
+        # Python Argument Clinc functional test module
+        self.addext(Extension('_testclinic', ['_testclinic.c']))
+
         # Python Internal C API test module
         self.addext(Extension('_testinternalcapi', ['_testinternalcapi.c']))
 
