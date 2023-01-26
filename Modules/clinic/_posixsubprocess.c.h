@@ -12,7 +12,7 @@ PyDoc_STRVAR(subprocess_fork_exec__doc__,
 "fork_exec($module, args, executable_list, close_fds, pass_fds, cwd,\n"
 "          env, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite,\n"
 "          errpipe_read, errpipe_write, restore_signals, call_setsid,\n"
-"          pgid_to_set, gid, groups_list, uid, child_umask, preexec_fn,\n"
+"          pgid_to_set, gid, extra_groups, uid, child_umask, preexec_fn,\n"
 "          allow_vfork, /)\n"
 "--\n"
 "\n"
@@ -50,9 +50,9 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           int errwrite, int errpipe_read, int errpipe_write,
                           int restore_signals, int call_setsid,
                           pid_t pgid_to_set, PyObject *gid_object,
-                          PyObject *groups_list, PyObject *uid_object,
-                          int child_umask, PyObject *preexec_fn,
-                          int allow_vfork);
+                          PyObject *extra_groups_packed,
+                          PyObject *uid_object, int child_umask,
+                          PyObject *preexec_fn, int allow_vfork);
 
 static PyObject *
 subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -76,7 +76,7 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int call_setsid;
     pid_t pgid_to_set;
     PyObject *gid_object;
-    PyObject *groups_list;
+    PyObject *extra_groups_packed;
     PyObject *uid_object;
     int child_umask;
     PyObject *preexec_fn;
@@ -143,7 +143,7 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     gid_object = args[17];
-    groups_list = args[18];
+    extra_groups_packed = args[18];
     uid_object = args[19];
     child_umask = _PyLong_AsInt(args[20]);
     if (child_umask == -1 && PyErr_Occurred()) {
@@ -154,9 +154,9 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (allow_vfork < 0) {
         goto exit;
     }
-    return_value = subprocess_fork_exec_impl(module, process_args, executable_list, close_fds, py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, errpipe_read, errpipe_write, restore_signals, call_setsid, pgid_to_set, gid_object, groups_list, uid_object, child_umask, preexec_fn, allow_vfork);
+    return_value = subprocess_fork_exec_impl(module, process_args, executable_list, close_fds, py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, errpipe_read, errpipe_write, restore_signals, call_setsid, pgid_to_set, gid_object, extra_groups_packed, uid_object, child_umask, preexec_fn, allow_vfork);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=772b8fdb9b982c33 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46d71e86845c93d7 input=a9049054013a1b77]*/
