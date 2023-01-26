@@ -1745,11 +1745,13 @@
 
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
+            PyObject *owner = PEEK(1);
+            PyObject *res;
+            PyObject *res2;
             #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
@@ -1759,26 +1761,18 @@
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(names, oparg >> 1);
-            PyObject *owner = TOP();
             if (oparg & 1) {
-                /* Designed to work in tandem with CALL. */
+                /* Designed to work in tandem with CALL, pushes two values. */
                 PyObject* meth = NULL;
-
-                int meth_found = _PyObject_GetMethod(owner, name, &meth);
-
-                if (meth == NULL) {
-                    /* Most likely attribute wasn't found. */
-                    goto error;
-                }
-
-                if (meth_found) {
+                if (_PyObject_GetMethod(owner, name, &meth)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
 
                        meth | self | arg1 | ... | argN
                      */
-                    SET_TOP(meth);
-                    PUSH(owner);  // self
+                    assert(meth != NULL);  // No errors on this branch
+                    res = meth;
+                    res2 = owner;  // Transfer ownership
                 }
                 else {
                     /* meth is not an unbound method (but a regular attr, or
@@ -1788,20 +1782,21 @@
 
                        NULL | meth | arg1 | ... | argN
                     */
-                    SET_TOP(NULL);
                     Py_DECREF(owner);
-                    PUSH(meth);
+                    if (meth == NULL) goto pop_1_error;
+                    res = NULL;
+                    res2 = meth;
                 }
             }
             else {
-                PyObject *res = PyObject_GetAttr(owner, name);
-                if (res == NULL) {
-                    goto error;
-                }
+                /* Classic, pushes one value. */
+                res = PyObject_GetAttr(owner, name);
                 Py_DECREF(owner);
-                SET_TOP(res);
+                if (res == NULL) goto pop_1_error;
             }
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            POKE(1, res);
+            if (oparg & 1) { PUSH(res2); }
+            JUMPBY(9);
             DISPATCH();
         }
 
