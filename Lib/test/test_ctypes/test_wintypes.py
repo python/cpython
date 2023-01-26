@@ -1,3 +1,6 @@
+# See <https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types>
+# for reference.
+
 import unittest
 
 # also work on POSIX
@@ -37,6 +40,22 @@ class WinTypesTest(unittest.TestCase):
         self.assertIs(vb.value, True)
         vb.value = []
         self.assertIs(vb.value, False)
+
+    def test_signess(self):
+        # Unsigned aliases with octet sie in their name
+        for type in (wintypes.BYTE, wintypes.WORD, wintypes.DWORD):
+            with self.subTest(type=type):
+                self.assertEqual(type(200).value, 128)
+
+        # Unsigned aliases with generic name
+        for type in (wintypes.BOOLEAN, wintypes.UINT, wintypes.ULONG):
+            with self.subTest(type=type):
+                self.assertLess(type(200).value, 200)
+
+        #Signed types with generic names
+        for type in (wintypes.BOOL, wintypes.INT, wintypes.LONG):
+            with self.subTest(type=type):
+                self.assertLess(type(200).value, 200)
 
 
 if __name__ == "__main__":
