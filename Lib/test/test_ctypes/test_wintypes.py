@@ -41,21 +41,18 @@ class WinTypesTest(unittest.TestCase):
         vb.value = []
         self.assertIs(vb.value, False)
 
+    def assertIsSigned(self, ctype):
+        self.assertLess(ctype(-1).value, 0)
+
     def test_signedness(self):
-        # Unsigned aliases with octet size in their names
-        for type in (wintypes.BYTE, wintypes.WORD, wintypes.DWORD):
+        for type in (wintypes.BYTE, wintypes.WORD, wintypes.DWORD,
+                     wintypes.BOOLEAN, wintypes.UINT, wintypes.ULONG):
             with self.subTest(type=type):
-                self.assertEqual(type(200).value, 200)
+                self.assertFalse(assertIsSigned(type))
 
-        # Unsigned aliases with generic names
-        for type in (wintypes.BOOLEAN, wintypes.UINT, wintypes.ULONG):
-            with self.subTest(type=type):
-                self.assertEqual(type(200).value, 200)
-
-        # Signed types with generic names
         for type in (wintypes.BOOL, wintypes.INT, wintypes.LONG):
             with self.subTest(type=type):
-                self.assertLess(type(200).value, 128)
+                self.assertTrue(assertIsSigned(type))
 
 
 if __name__ == "__main__":
