@@ -523,6 +523,7 @@ def localcontext(ctx=None, **kwargs):
     9
     >>> print(getcontext().prec)
     28
+    28
     >>> with localcontext():
     ...     ctx = getcontext()
     ...     ctx.prec += 2
@@ -4510,9 +4511,9 @@ class Context(object):
             return r
 
     def exp(self, a):
-        """The function always uses the ROUND_HALF_EVEN mode and the result
+        """Return the value of the (natural) exponential function e ** a.
+        The function always uses the ROUND_HALF_EVEN mode and the result
         is correctly rounded.
-
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
         >>> c.Emax = 999
