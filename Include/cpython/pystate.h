@@ -55,12 +55,6 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
 
-
-typedef struct {
-    PyCodeObject *code; // The code object for the line number. May be NULL.
-    int line; // Only valid if code != NULL.
-} PyTraceInfo;
-
 // Internal structure: you should not use it directly, but use public functions
 // like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
 typedef struct _PyCFrame {
@@ -203,8 +197,6 @@ struct _ts {
 
     /* Unique thread state id. */
     uint64_t id;
-
-    PyTraceInfo trace_info;
 
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;

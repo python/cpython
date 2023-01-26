@@ -168,8 +168,7 @@ trace_line(PyThreadState *tstate, _PyInterpreterFrame *iframe,
     if (line < 0) {
         Py_RETURN_NONE;
     }
-    tstate->trace_info.code = iframe->f_code;
-    tstate->trace_info.line = line;
+    frame ->f_last_traced_line = line;
     Py_INCREF(frame);
     frame->f_lineno = line;
     int err = tstate->c_tracefunc(tstate->c_traceobj, frame, self->event, Py_None);
@@ -197,16 +196,12 @@ sys_trace_line_func(
     assert(args[0] == (PyObject *)iframe->f_code);
     int line = _PyLong_AsInt(args[1]);
     assert(line >= 0);
-    if (tstate->trace_info.code == iframe->f_code &&
-        tstate->trace_info.line == line) {
-        /* Already traced this line */
-        Py_RETURN_NONE;
-    }
     PyFrameObject* frame = _PyFrame_GetFrameObject(iframe);
     if (frame == NULL) {
         return NULL;
     }
-    if (!frame->f_trace_lines) {
+    if (frame ->f_last_traced_line == line || !frame->f_trace_lines) {
+        /* Already traced this line */
         Py_RETURN_NONE;
     }
     return trace_line(tstate, iframe, self, frame, line);
@@ -244,8 +239,7 @@ sys_trace_jump_func(
      * Forward jump: Only generate event if jumping to different line. */
     if (to > from) {
         /* Forwards jump */
-        if (tstate->trace_info.code == iframe->f_code &&
-            tstate->trace_info.line == to_line) {
+        if (frame->f_last_traced_line == to_line) {
             /* Already traced this line */
             Py_RETURN_NONE;
         }
@@ -314,16 +308,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
         return -1;
     }
-    int delta = (func != NULL) - (tstate->c_profilefunc != NULL);
-    tstate->c_profilefunc = func;
-    PyObject *old_profileobj = tstate->c_profileobj;
-    tstate->c_profileobj = Py_XNewRef(arg);
-    /* Flag that tracing or profiling is turned on */
-    _PyThreadState_UpdateTracingState(tstate);
-
     /* Setup PEP 669 monitoring callbacks and events. */
-    tstate->interp->sys_profiling_threads += delta;
-    assert(tstate->interp->sys_profiling_threads >= 0);
     if (!tstate->interp->sys_profile_initialized) {
         tstate->interp->sys_profile_initialized = true;
         if (set_callbacks(PY_INSTRUMENT_SYS_PROFILE,
@@ -357,7 +342,16 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             return -1;
         }
     }
-    if (tstate->interp->sys_profiling_threads && delta) {
+
+    int delta = (func != NULL) - (tstate->c_profilefunc != NULL);
+    tstate->c_profilefunc = func;
+    PyObject *old_profileobj = tstate->c_profileobj;
+    tstate->c_profileobj = Py_XNewRef(arg);
+    Py_XDECREF(old_profileobj);
+    tstate->interp->sys_profiling_threads += delta;
+    assert(tstate->interp->sys_profiling_threads >= 0);
+
+    if (tstate->interp->sys_profiling_threads) {
         uint32_t events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
@@ -368,9 +362,6 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     else if (tstate->interp->sys_profiling_threads == 0) {
         _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_PROFILE, 0);
     }
-    // gh-98257: Only call Py_XDECREF() once the new profile function is fully
-    // set, so it's safe to call sys.setprofile() again (reentrant call).
-    Py_XDECREF(old_profileobj);
     return 0;
 }
 
@@ -388,8 +379,8 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         return -1;
     }
 
-    /* Setup PEP 669 monitoring callbacks and events. */
     assert(tstate->interp->sys_tracing_threads >= 0);
+    /* Setup PEP 669 monitoring callbacks and events. */
     if (!tstate->interp->sys_trace_initialized) {
         tstate->interp->sys_trace_initialized = true;
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
@@ -435,13 +426,14 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         /* TO DO: Set up callback for PY_MONITORING_EVENT_EXCEPTION_HANDLED */
     }
 
+    int delta = (func != NULL) - (tstate->c_tracefunc != NULL);
     tstate->c_tracefunc = func;
     PyObject *old_traceobj = tstate->c_traceobj;
     tstate->c_traceobj = Py_XNewRef(arg);
     Py_XDECREF(old_traceobj);
-
-    int delta = (func != NULL) - (tstate->c_tracefunc != NULL);
     tstate->interp->sys_tracing_threads += delta;
+    assert(tstate->interp->sys_tracing_threads >= 0);
+
     if (tstate->interp->sys_tracing_threads) {
         uint32_t events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
