@@ -304,8 +304,9 @@ Module functions
    :param bool check_same_thread:
        If ``True`` (default), only the creating thread may use the connection.
        If ``False``, the connection may be shared across multiple threads;
-       users should check :attr:`threadsafety` before setting this value to
-       avoid data corruption.
+       if so, write operations may need to be serialized by the user,
+       to avoid data corruption.
+       Please see :attr:`threadsafety` for more information.
 
    :param Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
