@@ -15018,7 +15018,7 @@ os__isdir_impl(PyObject *module, PyObject *path)
         case ERROR_SHARING_VIOLATION:
         case ERROR_CANT_ACCESS_FILE:
         case ERROR_INVALID_PARAMETER:
-            if (win32_stat(_path.wide, &st)) {
+            if (STAT(_path.wide, &st)) {
                 result = 0;
             } else {
                 result = S_ISDIR(st.st_mode);
@@ -15097,7 +15097,7 @@ os__isfile_impl(PyObject *module, PyObject *path)
         case ERROR_SHARING_VIOLATION:
         case ERROR_CANT_ACCESS_FILE:
         case ERROR_INVALID_PARAMETER:
-            if (win32_stat(_path.wide, &st)) {
+            if (STAT(_path.wide, &st)) {
                 result = 0;
             } else {
                 result = S_ISREG(st.st_mode);
@@ -15172,7 +15172,7 @@ os__exists_impl(PyObject *module, PyObject *path)
         case ERROR_SHARING_VIOLATION:
         case ERROR_CANT_ACCESS_FILE:
         case ERROR_INVALID_PARAMETER:
-            if (win32_stat(_path.wide, &st)) {
+            if (STAT(_path.wide, &st)) {
                 result = 0;
             } else {
                 result = 1;
@@ -15252,7 +15252,7 @@ os__islink_impl(PyObject *module, PyObject *path)
         case ERROR_SHARING_VIOLATION:
         case ERROR_CANT_ACCESS_FILE:
         case ERROR_INVALID_PARAMETER:
-            if (win32_stat(_path.wide, &st)) {
+            if (LSTAT(_path.wide, &st)) {
                 result = 0;
             } else {
                 result = S_ISLNK(st.st_mode);
