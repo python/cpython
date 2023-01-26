@@ -531,7 +531,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case MAP_ADD:
             return 0;
         case LOAD_ATTR:
-            return 2;
+            return ((oparg & 1) != 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
             return -1;
         case LOAD_ATTR_MODULE:

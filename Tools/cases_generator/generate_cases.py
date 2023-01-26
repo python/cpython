@@ -59,7 +59,10 @@ def effect_size(effect: StackEffect) -> tuple[int, str]:
     At most one of these will be non-zero / non-empty.
     """
     if effect.size:
+        assert not effect.cond, "Manual effects should be conditional"
         return 0, effect.size
+    elif effect.cond:
+        return 0, f"{maybe_parenthesize(effect.cond)} != 0"
     else:
         return 1, ""
 
@@ -778,10 +781,10 @@ class Analyzer:
         self, thing: parser.InstDef | parser.Super | parser.Macro
     ) -> tuple[Instruction, str, str]:
 
-        def effect_str(effect: list[StackEffect]) -> str:
+        def effect_str(effects: list[StackEffect]) -> str:
             if getattr(thing, 'kind', None) == 'legacy':
                 return str(-1)
-            n_effect, sym_effect = list_effect_size(effect)
+            n_effect, sym_effect = list_effect_size(effects)
             if sym_effect:
                 return f"{sym_effect} + {n_effect}" if n_effect else sym_effect
             return str(n_effect)
