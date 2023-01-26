@@ -61,7 +61,7 @@ def effect_size(effect: StackEffect) -> tuple[int, str]:
     At most one of these will be non-zero / non-empty.
     """
     if effect.size:
-        assert not effect.cond, "Manual effects should be conditional"
+        assert not effect.cond, "Array effects cannot have a condition"
         return 0, effect.size
     elif effect.cond:
         return 0, f"{maybe_parenthesize(effect.cond)} != 0"
@@ -168,8 +168,6 @@ class Formatter:
         self.emit(f"{typ}{sepa}{dst.name}{init};")
 
     def assign(self, dst: StackEffect, src: StackEffect):
-        if "boerenkool" in dst.name or "boerenkool" in src.name:
-            breakpoint()
         if src.name == UNUSED:
             return
         cast = self.cast(dst, src)
@@ -178,11 +176,6 @@ class Formatter:
             if src.cond:
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
-        # elif m := re.match(r"^POP\(\)$", dst.name):
-        #     if src.cond:
-        #         self.emit(f"if ({src.cond}) {{ PUSH({cast}{src.name}); }}")
-        #     else:
-        #         self.emit(f"PUSH({cast}{src.name});")
         elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
             # NOTE: MOVE_ITEMS() does not actually exist.
             # The only supported output array forms are:
@@ -297,9 +290,7 @@ class Instruction:
             ieffects = list(reversed(self.input_effects))
             for i, ieffect in enumerate(ieffects):
                 isize = string_effect_size(
-                    list_effect_size(
-                        [ieff for ieff in ieffects[: i + 1]]
-                    )
+                    list_effect_size([ieff for ieff in ieffects[: i + 1]])
                 )
                 if ieffect.size:
                     src = StackEffect(f"&PEEK({isize})", "PyObject **")
@@ -342,9 +333,7 @@ class Instruction:
                 if oeffect.name in self.unmoved_names:
                     continue
                 osize = string_effect_size(
-                    list_effect_size(
-                        [oeff for oeff in oeffects[: i + 1]]
-                    )
+                    list_effect_size([oeff for oeff in oeffects[: i + 1]])
                 )
                 if oeffect.size:
                     dst = StackEffect(f"&PEEK({osize})", "PyObject **")
@@ -354,7 +343,6 @@ class Instruction:
         else:
             # Write output register assignments
             for oeffect, reg in zip(self.output_effects, self.output_registers):
-                src = StackEffect(reg, "")
                 dst = StackEffect(reg, "")
                 out.assign(dst, oeffect)
 
