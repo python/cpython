@@ -358,8 +358,7 @@ def test_macro_instruction():
             {
                 PyObject *arg1 = _tmp_1;
                 PyObject *interim;
-                uint16_t counter = re
-                ad_u16(&next_instr[0].cache);
+                uint16_t counter = read_u16(&next_instr[0].cache);
                 interim = op1(arg1);
                 _tmp_1 = interim;
             }
