@@ -5638,6 +5638,11 @@ long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
     n = Py_SIZE(tmp);
     if (n < 0)
         n = -n;
+    /* Fast operations for single digit integers (including zero)
+     * assume that there is always at least one digit present. */
+    if (n == 0) {
+        n = 1;
+    }
     newobj = (PyLongObject *)type->tp_alloc(type, n);
     if (newobj == NULL) {
         Py_DECREF(tmp);

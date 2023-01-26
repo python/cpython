@@ -304,6 +304,7 @@ dummy_func(
         };
 
         inst(BINARY_SUBSCR, (unused/4, container, sub -- res)) {
+            #if ENABLE_SPECIALIZATION
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -313,6 +314,7 @@ dummy_func(
             }
             STAT_INC(BINARY_SUBSCR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             res = PyObject_GetItem(container, sub);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
@@ -441,6 +443,7 @@ dummy_func(
         };
 
         inst(STORE_SUBSCR, (counter/1, v, container, sub -- )) {
+            #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
@@ -450,6 +453,9 @@ dummy_func(
             STAT_INC(STORE_SUBSCR, deferred);
             _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #else
+            (void)counter;  // Unused.
+            #endif  /* ENABLE_SPECIALIZATION */
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
             DECREF_INPUTS();
@@ -499,27 +505,24 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // This should remain a legacy instruction.
-        inst(RAISE_VARARGS) {
+        inst(RAISE_VARARGS, (args[oparg] -- )) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = POP(); /* cause */
+                cause = args[1];
                 /* fall through */
             case 1:
-                exc = POP(); /* exc */
+                exc = args[0];
                 /* fall through */
             case 0:
-                if (do_raise(tstate, exc, cause)) {
-                    goto exception_unwind;
-                }
+                ERROR_IF(do_raise(tstate, exc, cause), exception_unwind);
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad RAISE_VARARGS oparg");
                 break;
             }
-            goto error;
+            ERROR_IF(true, error);
         }
 
         inst(INTERPRETER_EXIT, (retval --)) {
@@ -714,7 +717,6 @@ dummy_func(
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            assert(oparg == STACK_LEVEL());
             assert(frame != &entry_frame);
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
@@ -872,6 +874,7 @@ dummy_func(
 
         // stack effect: (__0 -- __array[oparg])
         inst(UNPACK_SEQUENCE) {
+            #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -882,6 +885,7 @@ dummy_func(
             }
             STAT_INC(UNPACK_SEQUENCE, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             PyObject *seq = POP();
             PyObject **top = stack_pointer + oparg;
             if (!unpack_iterable(tstate, seq, oparg, -1, top)) {
@@ -956,6 +960,7 @@ dummy_func(
         };
 
         inst(STORE_ATTR, (counter/1, unused/3, v, owner --)) {
+            #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg);
@@ -966,6 +971,9 @@ dummy_func(
             STAT_INC(STORE_ATTR, deferred);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #else
+            (void)counter;  // Unused.
+            #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(names, oparg);
             int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
@@ -1064,6 +1072,7 @@ dummy_func(
 
         // error: LOAD_GLOBAL has irregular stack effect
         inst(LOAD_GLOBAL) {
+            #if ENABLE_SPECIALIZATION
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -1074,6 +1083,7 @@ dummy_func(
             }
             STAT_INC(LOAD_GLOBAL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             int push_null = oparg & 1;
             PEEK(0) = NULL;
             PyObject *name = GETITEM(names, oparg>>1);
@@ -1430,6 +1440,7 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR) {
+            #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -1441,6 +1452,7 @@ dummy_func(
             }
             STAT_INC(LOAD_ATTR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(names, oparg >> 1);
             PyObject *owner = TOP();
             if (oparg & 1) {
@@ -1778,6 +1790,7 @@ dummy_func(
         };
 
         inst(COMPARE_AND_BRANCH, (unused/2, left, right -- )) {
+            #if ENABLE_SPECIALIZATION
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -1787,6 +1800,7 @@ dummy_func(
             }
             STAT_INC(COMPARE_AND_BRANCH, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             assert((oparg >> 4) <= Py_GE);
             PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
@@ -1876,44 +1890,24 @@ dummy_func(
             b = Py_NewRef((res^oparg) ? Py_True : Py_False);
         }
 
-        // stack effect: ( -- )
-        inst(CHECK_EG_MATCH) {
-            PyObject *match_type = POP();
+        inst(CHECK_EG_MATCH, (exc_value, match_type -- rest, match)) {
             if (check_except_star_type_valid(tstate, match_type) < 0) {
-                Py_DECREF(match_type);
-                goto error;
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
 
-            PyObject *exc_value = TOP();
-            PyObject *match = NULL, *rest = NULL;
+            match = NULL;
+            rest = NULL;
             int res = exception_group_match(exc_value, match_type,
                                             &match, &rest);
-            Py_DECREF(match_type);
-            if (res < 0) {
-                goto error;
-            }
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
 
-            if (match == NULL || rest == NULL) {
-                assert(match == NULL);
-                assert(rest == NULL);
-                goto error;
-            }
-            if (Py_IsNone(match)) {
-                PUSH(match);
-                Py_XDECREF(rest);
-            }
-            else {
-                /* Total or partial match - update the stack from
-                 * [val]
-                 * to
-                 * [rest, match]
-                 * (rest can be Py_None)
-                 */
+            assert((match == NULL) == (rest == NULL));
+            ERROR_IF(match == NULL, error);
 
-                SET_TOP(rest);
-                PUSH(match);
+            if (!Py_IsNone(match)) {
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
-                Py_DECREF(exc_value);
             }
         }
 
@@ -2095,61 +2089,37 @@ dummy_func(
             PUSH(len_o);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(MATCH_CLASS) {
+        inst(MATCH_CLASS, (subject, type, names -- attrs)) {
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
-            PyObject *names = POP();
-            PyObject *type = POP();
-            PyObject *subject = TOP();
             assert(PyTuple_CheckExact(names));
-            PyObject *attrs = match_class(tstate, subject, type, oparg, names);
-            Py_DECREF(names);
-            Py_DECREF(type);
+            attrs = match_class(tstate, subject, type, oparg, names);
+            DECREF_INPUTS();
             if (attrs) {
-                // Success!
-                assert(PyTuple_CheckExact(attrs));
-                SET_TOP(attrs);
-            }
-            else if (_PyErr_Occurred(tstate)) {
-                // Error!
-                goto error;
+                assert(PyTuple_CheckExact(attrs));  // Success!
             }
             else {
-                // Failure!
-                SET_TOP(Py_NewRef(Py_None));
+                ERROR_IF(_PyErr_Occurred(tstate), error);  // Error!
+                attrs = Py_NewRef(Py_None);  // Failure!
             }
-            Py_DECREF(subject);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_MAPPING) {
-            PyObject *subject = TOP();
+        inst(MATCH_MAPPING, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_SEQUENCE) {
-            PyObject *subject = TOP();
+        inst(MATCH_SEQUENCE, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_KEYS) {
+        inst(MATCH_KEYS, (subject, keys -- subject, keys, values_or_none)) {
             // On successful match, PUSH(values). Otherwise, PUSH(None).
-            PyObject *keys = TOP();
-            PyObject *subject = SECOND();
-            PyObject *values_or_none = match_keys(tstate, subject, keys);
-            if (values_or_none == NULL) {
-                goto error;
-            }
-            PUSH(values_or_none);
+            values_or_none = match_keys(tstate, subject, keys);
+            ERROR_IF(values_or_none == NULL, error);
         }
 
         // stack effect: ( -- )
@@ -2194,6 +2164,7 @@ dummy_func(
 
         // stack effect: ( -- __0)
         inst(FOR_ITER) {
+            #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2203,6 +2174,7 @@ dummy_func(
             }
             STAT_INC(FOR_ITER, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
@@ -2518,6 +2490,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL) {
+            #if ENABLE_SPECIALIZATION
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2530,6 +2503,7 @@ dummy_func(
             }
             STAT_INC(CALL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             int total_args, is_meth;
             is_meth = is_method(stack_pointer, oparg);
             PyObject *function = PEEK(oparg + 1);
@@ -3262,6 +3236,7 @@ dummy_func(
         }
 
         inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
+            #if ENABLE_SPECIALIZATION
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -3271,6 +3246,7 @@ dummy_func(
             }
             STAT_INC(BINARY_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             assert(0 <= oparg);
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
