@@ -1669,8 +1669,59 @@ hold:\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_quantize,
-"quantize($self, x, y, /)\n--\n\n\
-Return a value equal to x (rounded), having the exponent of y.\n\
+"quantize($self, a, b, /)\n--\n\n\
+Returns a value equal to 'a' (rounded), having the exponent of 'b'.\n\
+\n\
+The coefficient of the result is derived from that of the left-hand\n\
+operand.  It may be rounded using the current rounding setting (if the\n\
+exponent is being increased), multiplied by a positive power of ten (if\n\
+the exponent is being decreased), or is unchanged (if the exponent is\n\
+already equal to that of the right-hand operand).\n\
+\n\
+Unlike other operations, if the length of the coefficient after the\n\
+quantize operation would be greater than precision then an Invalid\n\
+operation condition is raised.  This guarantees that, unless there is\n\
+an error condition, the exponent of the result of a quantize is always\n\
+equal to that of the right-hand operand.\n\
+Also unlike other operations, quantize will never raise Underflow, even\n\
+if the result is subnormal and inexact.\n\
+\n\
+    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.001'))\n\
+    Decimal('2.170')\n\
+    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.01'))\n\
+    Decimal('2.17')\n\
+    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.1'))\n\
+    Decimal('2.2')\n\
+    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+0'))\n\
+    Decimal('2')\n\
+    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+1'))\n\
+    Decimal('0E+1')\n\
+    >>> ExtendedContext.quantize(Decimal('-Inf'), Decimal('Infinity'))\n\
+    Decimal('-Infinity')\n\
+    >>> ExtendedContext.quantize(Decimal('2'), Decimal('Infinity'))\n\
+    Decimal('NaN')\n\
+    >>> ExtendedContext.quantize(Decimal('-0.1'), Decimal('1'))\n\
+    Decimal('-0')\n\
+    >>> ExtendedContext.quantize(Decimal('-0'), Decimal('1e+5'))\n\
+    Decimal('-0E+5')\n\
+    >>> ExtendedContext.quantize(Decimal('+35236450.6'), Decimal('1e-2'))\n\
+    Decimal('NaN')\n\
+    >>> ExtendedContext.quantize(Decimal('-35236450.6'), Decimal('1e-2'))\n\
+    Decimal('NaN')\n\
+    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-1'))\n\
+    Decimal('217.0')\n\
+    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-0'))\n\
+    Decimal('217')\n\
+    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+1'))\n\
+    Decimal('2.2E+2')\n\
+    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+2'))\n\
+    Decimal('2E+2')\n\
+    >>> ExtendedContext.quantize(1, 2)\n\
+    Decimal('1')\n\
+    >>> ExtendedContext.quantize(Decimal(1), 2)\n\
+    Decimal('1')\n\
+    >>> ExtendedContext.quantize(1, Decimal(2))\n\
+    Decimal('1')\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_radix,
