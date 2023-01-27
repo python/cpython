@@ -2835,10 +2835,6 @@ long_add_would_overflow(long a, long b)
 Double and triple length extended precision floating point arithmetic
 based on:
 
-  A Floating-Point Technique for Extending the Available Precision
-  by T. J. Dekker
-  https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
-
   Accurate Sum and Dot Product
   by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
   https://doi.org/10.1137/030601818
@@ -2859,25 +2855,11 @@ twosum(double a, double b)
 }
 
 static inline DoubleLength
-dl_split(double x) {
-    // Rump Algorithm 3.2 Error-free splitting of a floating point number
-    // Dekker (5.5) and (5.6).
-    double t = x * 134217729.0;  // Veltkamp constant = 2.0 ** 27 + 1
-    double hi = t - (t - x);
-    double lo = x - hi;
-    return (DoubleLength) {hi, lo};
-}
-
-static inline DoubleLength
 dl_mul(double x, double y)
 {
-    // Dekker (5.12) and mul12()
-    DoubleLength xx = dl_split(x);
-    DoubleLength yy = dl_split(y);
-    double p = xx.hi * yy.hi;
-    double q = xx.hi * yy.lo + xx.lo * yy.hi;
-    double z = p + q;
-    double zz = p - z + q + xx.lo * yy.lo;
+    // Rump Algorithm 3.5. Error-free transformation of a product
+    double z = x * y;
+    double zz = fma(x, y, -z);
     return (DoubleLength) {z, zz};
 }
 
