@@ -1,0 +1,3 @@
+line 79, 109, and 193 used int to define functions, yet the return values only need to be short int.
+line 80, 110, and 194 used int to define chars, however, this leads to the overhead of memory.
+I really want this to be corrected or implemented because this can cause a little bit of improvement in the code performance, and I really desire to make Python faster, from my little bit of contribution.
