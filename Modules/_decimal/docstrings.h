@@ -1042,58 +1042,24 @@ is one of the following ten strings:\n\
 
 PyDoc_STRVAR(doc_quantize,
 "quantize($self, /, exp, rounding=None, context=None)\n--\n\n\
-Returns a value equal to 'a' (rounded), having the exponent of 'b'.\n\
+Return a value equal to the first operand after rounding and having the\n\
+exponent of the second operand.\n\
 \n\
-The coefficient of the result is derived from that of the left-hand\n\
-operand.  It may be rounded using the current rounding setting (if the\n\
-exponent is being increased), multiplied by a positive power of ten (if\n\
-the exponent is being decreased), or is unchanged (if the exponent is\n\
-already equal to that of the right-hand operand).\n\
+    >>> Decimal('1.41421356').quantize(Decimal('1.000'))\n\
+    Decimal('1.414')\n\
 \n\
-Unlike other operations, if the length of the coefficient after the\n\
-quantize operation would be greater than precision then an Invalid\n\
-operation condition is raised.  This guarantees that, unless there is\n\
-an error condition, the exponent of the result of a quantize is always\n\
-equal to that of the right-hand operand.\n\
-Also unlike other operations, quantize will never raise Underflow, even\n\
-if the result is subnormal and inexact.\n\
+Unlike other operations, if the length of the coefficient after the quantize\n\
+operation would be greater than precision, then an InvalidOperation is signaled.\n\
+This guarantees that, unless there is an error condition, the quantized exponent\n\
+is always equal to that of the right-hand operand.\n\
 \n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.001'))\n\
-    Decimal('2.170')\n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.01'))\n\
-    Decimal('2.17')\n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.1'))\n\
-    Decimal('2.2')\n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+0'))\n\
-    Decimal('2')\n\
-    >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+1'))\n\
-    Decimal('0E+1')\n\
-    >>> ExtendedContext.quantize(Decimal('-Inf'), Decimal('Infinity'))\n\
-    Decimal('-Infinity')\n\
-    >>> ExtendedContext.quantize(Decimal('2'), Decimal('Infinity'))\n\
-    Decimal('NaN')\n\
-    >>> ExtendedContext.quantize(Decimal('-0.1'), Decimal('1'))\n\
-    Decimal('-0')\n\
-    >>> ExtendedContext.quantize(Decimal('-0'), Decimal('1e+5'))\n\
-    Decimal('-0E+5')\n\
-    >>> ExtendedContext.quantize(Decimal('+35236450.6'), Decimal('1e-2'))\n\
-    Decimal('NaN')\n\
-    >>> ExtendedContext.quantize(Decimal('-35236450.6'), Decimal('1e-2'))\n\
-    Decimal('NaN')\n\
-    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-1'))\n\
-    Decimal('217.0')\n\
-    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-0'))\n\
-    Decimal('217')\n\
-    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+1'))\n\
-    Decimal('2.2E+2')\n\
-    >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+2'))\n\
-    Decimal('2E+2')\n\
-    >>> ExtendedContext.quantize(1, 2)\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.quantize(Decimal(1), 2)\n\
-    Decimal('1')\n\
-    >>> ExtendedContext.quantize(1, Decimal(2))\n\
-    Decimal('1')\n\
+Also unlike other operations, quantize never signals Underflow, even if the\n\
+result is subnormal and inexact.\n\
+\n\
+If the exponent of the second operand is larger than that of the first, then\n\
+rounding may be necessary. In this case, the rounding mode is determined by the\n\
+rounding argument if given, else by the given context argument; if neither\n\
+argument is given, the rounding mode of the current thread's context is used.\n\
 \n");
 
 PyDoc_STRVAR(doc_radix,
