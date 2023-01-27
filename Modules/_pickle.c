@@ -848,6 +848,7 @@ _PyMemoTable_ResizeTable(PyMemoTable *self, uint64_t min_size)
 #if (defined(__clang__) || defined(__GNUC__))
     if (new_size < min_size) {
         // min_size is always greater than 1.
+        assert(min_size > 1);
         new_size = (1 << (64-__builtin_clzl(min_size-1)));
     }
 #else
