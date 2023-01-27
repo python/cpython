@@ -2547,9 +2547,24 @@ class Decimal(object):
         return _dec_from_triple(dup._sign, dup._int[:end], exp)
 
     def quantize(self, exp, rounding=None, context=None):
-        """Quantize self so its exponent is the same as that of exp.
+        """Return a value equal to the first operand after rounding and having the
+        exponent of the second operand.
 
-        Similar to self._rescale(exp._exp) but with error checking.
+        >>> Decimal('1.41421356').quantize(Decimal('1.000'))
+        Decimal('1.414')
+
+        Unlike other operations, if the length of the coefficient after the quantize
+        operation would be greater than precision, then an InvalidOperation is signaled.
+        This guarantees that, unless there is an error condition, the quantized exponent
+        is always equal to that of the right-hand operand.
+
+        Also unlike other operations, quantize never signals Underflow, even if the
+        result is subnormal and inexact.
+
+        If the exponent of the second operand is larger than that of the first, then
+        rounding may be necessary. In this case, the rounding mode is determined by the
+        rounding argument if given, else by the given context argument; if neither
+        argument is given, the rounding mode of the current thread's context is used.
         """
         exp = _convert_other(exp, raiseit=True)
 
