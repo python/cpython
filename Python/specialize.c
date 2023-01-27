@@ -678,6 +678,7 @@ static int specialize_attr_loadmethod(PyObject* owner, _Py_CODEUNIT* instr, PyOb
     PyObject* descr, DescriptorClassification kind);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 static int set_available_type_method_cache(PyTypeObject *tp, PyObject *meth);
+static int type_ready_type_method_cache(PyTypeObject *type);
 
 void
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
@@ -685,6 +686,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     assert(_PyOpcode_Caches[LOAD_ATTR] == INLINE_CACHE_ENTRIES_LOAD_ATTR);
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyTypeObject *type = Py_TYPE(owner);
+    int err;
     if (!_PyType_IsReady(type)) {
         // We *might* not really need this check, but we inherited it from
         // PyObject_GenericGetAttr and friends... and this way we still do the
@@ -699,15 +701,25 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         }
         goto success;
     }
-    if (!(type->tp_flags & _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE)) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
-        goto fail;
-    }
     if (PyType_Check(owner)) {
+        err = type_ready_type_method_cache((PyTypeObject *)owner);
+        if (err < 0) {
+            return -1;
+        }
+        else if (err) {
+            goto fail;
+        }
         if (specialize_class_load_attr(owner, instr, name)) {
             goto fail;
         }
         goto success;
+    }
+    err = type_ready_type_method_cache((PyTypeObject *)owner);
+    if (err < 0) {
+        return -1;
+    }
+    else if (err) {
+        goto fail;
     }
     PyObject *descr = NULL;
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
@@ -1028,6 +1040,44 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
             SPECIALIZATION_FAIL(LOAD_ATTR, load_attr_fail_kind(kind));
             return -1;
     }
+}
+
+/* Initialize the type method cache
+   -1 - Raised error
+   0  - Success
+   1  - Failure but no error
+*/
+static int
+type_ready_type_method_cache(PyTypeObject *type)
+{
+    // Already set.
+    if (type->tp_flags & _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE) {
+        return type->_tp_method_cache.size != 0;
+    }
+    Py_ssize_t attrs = PyDict_Size(type->tp_dict);
+    assert(attrs >= 0);
+    if (attrs == 0) {
+        goto refuse;
+    }
+    if (attrs == (uint16_t)attrs) {
+        type->_tp_method_cache.size = (int)attrs;
+        PyObject **vector = PyMem_Malloc(attrs * sizeof(PyObject *));
+        if (vector == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        for (int i = 0; i < attrs; ++i) {
+            vector[i] = NULL;
+        }
+        type->_tp_method_cache.methods = vector;
+        type->tp_flags |= _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
+        return 0;
+    }
+    // Else, impossibly big.
+refuse:
+    type->_tp_method_cache.size = 0;
+    type->tp_flags |= _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
+    return 1;
 }
 
 /* Returns -1 on no free slot found, and the index if found */

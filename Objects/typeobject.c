@@ -4471,7 +4471,8 @@ _PyStaticType_Dealloc(PyTypeObject *type)
         /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
     }
 
-    if (type->tp_flags & _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE) {
+    if (type->tp_flags & _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE &&
+        type->_tp_method_cache.size > 0) {
         PyMem_Free(type->_tp_method_cache.methods);
         type->tp_flags &= ~_Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
     }
@@ -4492,7 +4493,8 @@ type_dealloc(PyTypeObject *type)
     assert(Py_REFCNT(type) == 0);
     PyObject_ClearWeakRefs((PyObject *)type);
 
-    if (type->tp_flags & _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE) {
+    if (type->tp_flags & _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE &&
+        type->_tp_method_cache.size > 0) {
         PyMem_Free(type->_tp_method_cache.methods);
         type->tp_flags &= ~_Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
     }
@@ -6870,34 +6872,6 @@ type_ready_managed_dict(PyTypeObject *type)
     return 0;
 }
 
-static int
-type_ready_type_method_cache(PyTypeObject *type)
-{
-    Py_ssize_t attrs = PyDict_Size(type->tp_dict);
-    assert(attrs >= 0);
-    if (attrs == 0) {
-        goto refuse;
-    }
-    if (attrs == (uint16_t)attrs) {
-        type->_tp_method_cache.size = (int)attrs;
-        PyObject **vector = PyMem_Malloc(attrs * sizeof(PyObject *));
-        if (vector == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
-        for (int i = 0; i < attrs; ++i) {
-            vector[i] = NULL;
-        }
-        type->_tp_method_cache.methods = vector;
-        type->tp_flags |= _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
-        return 0;
-    }
-    // Else, impossibly big.
-refuse:
-    type->_tp_method_cache.size = 0;
-    type->tp_flags |= _Py_TPFLAGS_HAVE_OWN_METHOD_CACHE;
-    return 0;
-}
 
 static int
 type_ready_post_checks(PyTypeObject *type)
@@ -6977,9 +6951,6 @@ type_ready(PyTypeObject *type)
         return -1;
     }
     if (type_ready_managed_dict(type) < 0) {
-        return -1;
-    }
-    if (type_ready_type_method_cache(type) < 0) {
         return -1;
     }
     if (type_ready_post_checks(type) < 0) {

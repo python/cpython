@@ -1504,7 +1504,9 @@ dummy_func(
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
-                _Py_Specialize_LoadAttr(owner, next_instr, name);
+                if (_Py_Specialize_LoadAttr(owner, next_instr, name) < 0) {
+                    goto error;
+                }
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(LOAD_ATTR, deferred);
