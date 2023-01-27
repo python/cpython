@@ -2,8 +2,6 @@
 OptionMenu widget modified to allow dynamic menu reconfiguration
 and setting of highlightthickness
 """
-import copy
-
 from tkinter import OptionMenu, _setit, StringVar, Button
 
 class DynOptionMenu(OptionMenu):
@@ -11,15 +9,11 @@ class DynOptionMenu(OptionMenu):
     unlike OptionMenu, our kwargs can include highlightthickness
     """
     def __init__(self, master, variable, value, *values, **kwargs):
-        # TODO copy value instead of whole dict
-        kwargsCopy=copy.copy(kwargs)
-        if 'highlightthickness' in list(kwargs.keys()):
-            del(kwargs['highlightthickness'])
+        highlightthickness = kwargs.pop('highlightthickness', None)
         OptionMenu.__init__(self, master, variable, value, *values, **kwargs)
-        self.config(highlightthickness=kwargsCopy.get('highlightthickness'))
-        #self.menu=self['menu']
-        self.variable=variable
-        self.command=kwargs.get('command')
+        self.config(highlightthickness=highlightthickness)
+        self.variable = variable
+        self.command = kwargs.get('command')
 
     def SetMenu(self,valueList,value=None):
         """
