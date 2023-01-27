@@ -11,7 +11,7 @@ class DynOptionMenu(OptionMenu):
     def __init__(self, master, variable, value, *values, **kwargs):
         highlightthickness = kwargs.pop('highlightthickness', None)
         OptionMenu.__init__(self, master, variable, value, *values, **kwargs)
-        self.config(highlightthickness=highlightthickness)
+        self['highlightthickness'] = highlightthickness
         self.variable = variable
         self.command = kwargs.get('command')
 
