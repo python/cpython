@@ -75,8 +75,8 @@ const char * const _PyParser_TokenNames[] = {
 
 /* Return the token corresponding to a single character */
 
-int
-_PyToken_OneChar(int c1)
+short int
+_PyToken_OneChar(char c1)
 {
     switch (c1) {
     case '%': return PERCENT;
@@ -106,8 +106,8 @@ _PyToken_OneChar(int c1)
     return OP;
 }
 
-int
-_PyToken_TwoChars(int c1, int c2)
+short int
+_PyToken_TwoChars(char c1, char c2)
 {
     switch (c1) {
     case '!':
@@ -190,8 +190,8 @@ _PyToken_TwoChars(int c1, int c2)
     return OP;
 }
 
-int
-_PyToken_ThreeChars(int c1, int c2, int c3)
+short int
+_PyToken_ThreeChars(char c1, char c2, char c3)
 {
     switch (c1) {
     case '*':
