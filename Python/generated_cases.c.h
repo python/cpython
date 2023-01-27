@@ -1746,8 +1746,8 @@
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
             PyObject *owner = PEEK(1);
-            PyObject *res;
             PyObject *res2;
+            PyObject *res;
             #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1771,8 +1771,8 @@
                        meth | self | arg1 | ... | argN
                      */
                     assert(meth != NULL);  // No errors on this branch
-                    res = meth;
-                    res2 = owner;  // Transfer ownership
+                    res2 = meth;
+                    res = owner;  // Transfer ownership
                 }
                 else {
                     /* meth is not an unbound method (but a regular attr, or
@@ -1784,8 +1784,8 @@
                     */
                     Py_DECREF(owner);
                     if (meth == NULL) goto pop_1_error;
-                    res = NULL;
-                    res2 = meth;
+                    res2 = NULL;
+                    res = meth;
                 }
             }
             else {
@@ -1795,8 +1795,8 @@
                 if (res == NULL) goto pop_1_error;
             }
             STACK_GROW(((oparg & 1) != 0));
-            if (oparg & 1) { POKE(((oparg & 1) != 0), res2); }
-            POKE(1 + ((oparg & 1) != 0), res);
+            POKE(1, res);
+            if (oparg & 1) { POKE(1 + ((oparg & 1) != 0), res2); }
             JUMPBY(9);
             DISPATCH();
         }

@@ -1438,7 +1438,7 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        inst(LOAD_ATTR, (unused/9, owner -- res, res2 if (oparg & 1))) {
+        inst(LOAD_ATTR, (unused/9, owner -- res2 if (oparg & 1), res)) {
             #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1462,8 +1462,8 @@ dummy_func(
                        meth | self | arg1 | ... | argN
                      */
                     assert(meth != NULL);  // No errors on this branch
-                    res = meth;
-                    res2 = owner;  // Transfer ownership
+                    res2 = meth;
+                    res = owner;  // Transfer ownership
                 }
                 else {
                     /* meth is not an unbound method (but a regular attr, or
@@ -1475,8 +1475,8 @@ dummy_func(
                     */
                     Py_DECREF(owner);
                     ERROR_IF(meth == NULL, error);
-                    res = NULL;
-                    res2 = meth;
+                    res2 = NULL;
+                    res = meth;
                 }
             }
             else {
