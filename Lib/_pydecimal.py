@@ -489,40 +489,7 @@ def localcontext(ctx=None, **kwargs):
              return +s  # Convert result to normal context
 
     >>> setcontext(DefaultContext)
-    >>> print(getcontext().prec) # Return a context manager for a copy of the supplied context
-
-    Uses a copy of the current context if no context is specified
-    The returned context manager creates a local decimal context
-    in a with statement:
-        def sin(x):
-             with localcontext() as ctx:
-                 ctx.prec += 2
-                 # Rest of sin calculation algorithm
-                 # uses a precision 2 greater than normal
-             return +s  # Convert result to normal precision
-
-         def sin(x):
-             with localcontext(ExtendedContext):
-                 # Rest of sin calculation algorithm
-                 # uses the Extended Context from the
-                 # General Decimal Arithmetic Specification
-             return +s  # Convert result to normal context
-
-    >>> setcontext(DefaultContext)
     >>> print(getcontext().prec)
-    28
-    >>> with localcontext():
-    ...     ctx = getcontext()
-    ...     ctx.prec += 2
-    ...     print(ctx.prec)
-    ...
-    30
-    >>> with localcontext(ExtendedContext):
-    ...     print(getcontext().prec)
-    ...
-    9
-    >>> print(getcontext().prec)
-    28
     28
     >>> with localcontext():
     ...     ctx = getcontext()
@@ -573,7 +540,7 @@ class Decimal(object):
         Decimal('314')
         >>> Decimal(Decimal(314))        # another decimal instance
         Decimal('314')
-        >>> Decimal('  3.14  \\n')       # leading and trailing whitespace okay
+        >>> Decimal('  3.14  \\n')        # leading and trailing whitespace okay
         Decimal('3.14')
         """
 
@@ -1010,8 +977,9 @@ class Decimal(object):
         return -2 if ans == -1 else ans
 
     def as_tuple(self):
-        """Represents the number as a triple tuple, to show the internals
-        exactly as they are.
+        """Represents the number as a triple tuple.
+
+        To show the internals exactly as they are.
         """
         return DecimalTuple(self._sign, tuple(map(int, self._int)), self._exp)
 
@@ -1685,6 +1653,7 @@ class Decimal(object):
         return Decimal(0)
 
     def conjugate(self):
+        """Returns self"""
         return self
 
     def __complex__(self):
@@ -2949,8 +2918,7 @@ class Decimal(object):
         return self._int[-1+self._exp] in '02468'
 
     def adjusted(self):
-        """Return the adjusted exponent of self.
-
+        """Return the adjusted exponent of the number.\n\
         Defined as exp + digits - 1.
         """
         try:
@@ -2960,10 +2928,9 @@ class Decimal(object):
             return 0
 
     def canonical(self):
-        """Return the canonical encoding of the argument.
-
-        Currently, the encoding of a Decimal instance is always canonical,
-        so this operation returns its argument unchanged.
+        """Return the canonical encoding of the argument. Currently, the encoding
+        of a Decimal instance is always canonical, so this operation returns its
+        argument unchanged.
         """
         return self
 
@@ -3104,7 +3071,7 @@ class Decimal(object):
             return Decimal(self)
 
         # the result is now guaranteed to be inexact (the true
-        # mathematical is transcendental). There's no need to
+        # mathematical result is transcendental). There's no need to
         # raise Rounded and Inexact here---they'll always be raised as
         # a result of the call to _fix.
         p = context.prec
@@ -4284,50 +4251,41 @@ class Context(object):
         It's pretty much like compare(), but all NaNs signal, with signaling
         NaNs taking precedence over quiet NaNs.
 
-        >>> ExtendedContext.compare_signal(Decimal('2.1'), Decimal('3'))
+        >>> c = ExtendedContext
+        >>> c.compare_signal(Decimal('2.1'), Decimal('3'))
         Decimal('-1')
-        >>> ExtendedContext.compare_signal(Decimal('2.1'), Decimal('2.1'))
+        >>> c.compare_signal(Decimal('2.1'), Decimal('2.1'))
         Decimal('0')
-        >>> ExtendedContext.flags[InvalidOperation] = 0
-        >>> print(ExtendedContext.flags[InvalidOperation])
+        >>> c.flags[InvalidOperation] = 0
+        >>> print(c.flags[InvalidOperation])
         0
-        >>> ExtendedContext.compare_signal(Decimal('NaN'), Decimal('2.1'))
+        >>> c.compare_signal(Decimal('NaN'), Decimal('2.1'))
         Decimal('NaN')
-        >>> print(ExtendedContext.flags[InvalidOperation])
+        >>> print(c.flags[InvalidOperation])
         1
-        >>> ExtendedContext.flags[InvalidOperation] = 0
-        >>> print(ExtendedContext.flags[InvalidOperation]
+        >>> c.flags[InvalidOperation] = 0
+        >>> print(c.flags[InvalidOperation])
         0
-        >>> ExtendedContext.compare_signal(Decimal('sNaN'), Decimal('2.1'))
+        >>> c.compare_signal(Decimal('sNaN'), Decimal('2.1'))
         Decimal('NaN')
-        >>> print(ExtendedContext.flags[InvalidOperation])
+        >>> print(c.flags[InvalidOperation])
         1
-        >>> ExtendedContext.compare_signal(-1, 2)
+        >>> c.compare_signal(-1, 2)
         Decimal('-1')
-        >>> ExtendedContext.compare_signal(Decimal(-1), 2)
+        >>> c.compare_signal(Decimal(-1), 2)
         Decimal('-1')
-        >>> ExtendedContext.compare_signal(-1, Decimal(2))
+        >>> c.compare_signal(-1, Decimal(2))
         Decimal('-1')
         """
         a = _convert_other(a, raiseit=True)
         return a.compare_signal(b, context=self)
 
     def compare_total(self, a, b):
-        """Compares two operands using their abstract representation rather
-        than their numerical value.
+        """Compares two operands using their abstract representation.
 
-        Similar to the compare() method, but the result gives a total ordering
-        on Decimal instances.
-
-        Quiet and signaling NaNs are also included in the total ordering.
-        The result of this function is Decimal('0') if both operands have the
-        same representation, Decimal('-1') if the first operand is lower in
-        the total order than the second, and Decimal('1') if the first
-        operand is higher in the total order than the second operand. See
-        the specification for details of the total order.
-
-        This operation is unaffected by context and is quiet: no flags are
-        changed and no rounding is performed.
+        This is not like the standard compare, which use their numerical
+        value. Note that a total ordering is defined for all possible abstract
+        representations.
 
         >>> ExtendedContext.compare_total(Decimal('12.73'), Decimal('127.9'))
         Decimal('-1')
@@ -4352,21 +4310,22 @@ class Context(object):
         return a.compare_total(b)
 
     def compare_total_mag(self, a, b):
-        """Compares two operands using their abstract representation rather
-        than their numerical value and with their sign ignored.
-
-        Like compare_total, but with operand's sign ignored and assumed to be
-        0.
+        """Compare two operands using their abstract representation rather than their
+        value as in compare_total(), but ignoring the sign of each operand. Like
+        compare_total, but with operand's sign ignored and assumed to be 0.
 
         x.compare_total_mag(y) is equivalent to  x.copy_abs().compare_total(y.copy_abs())
-        This operation is unaffected by context and is quiet: no flags are
-        changed and no rounding is performed.
-         """
+
+        This operation is unaffected by context and is quiet: no flags are changed
+        and no rounding is performed. As an exception, the C version may raise
+        InvalidOperation if the second operand cannot be converted exactly.
+        """
         a = _convert_other(a, raiseit=True)
         return a.compare_total_mag(b)
 
     def copy_abs(self, a):
-        """Returns a copy of the operand with the sign set to 0.
+        """Return the absolute value of the argument. This operation is unaffected by
+        context and is quiet: no flags are changed and no rounding is performed.
 
         >>> ExtendedContext.copy_abs(Decimal('2.1'))
         Decimal('2.1')
@@ -4392,7 +4351,9 @@ class Context(object):
         return Decimal(a)
 
     def copy_negate(self, a):
-        """Returns a copy of the operand with the sign inverted.
+        """Returns a copy of the operand with the sign inverted. This operation is
+        unaffected by context and is quiet: no flags are changed and no rounding
+        is performed.
 
         >>> ExtendedContext.copy_negate(Decimal('101.5'))
         Decimal('-101.5')
@@ -4405,8 +4366,10 @@ class Context(object):
         return a.copy_negate()
 
     def copy_sign(self, a, b):
-        """Returns a copy of the first operand with the sign equal to the second
-        operand.
+        """Copies the second operand's sign to the first one.
+
+        In detail, it returns a copy of the first operand with the sign
+        equal to the sign of the second operand.
 
         >>> ExtendedContext.copy_sign(Decimal( '1.50'), Decimal('7.33'))
         Decimal('1.50')
@@ -4423,8 +4386,9 @@ class Context(object):
         >>> ExtendedContext.copy_sign(1, Decimal(-2))
         Decimal('-1')
 
-        This operation is unaffected by context and is quiet: no flags are
-        changed and no rounding is performed.
+        This operation is unaffected by context and is quiet: no flags are changed
+        and no rounding is performed. As an exception, the C version may raise
+        InvalidOperation if the second operand cannot be converted exactly.
         """
         a = _convert_other(a, raiseit=True)
         return a.copy_sign(b)
@@ -4511,9 +4475,10 @@ class Context(object):
             return r
 
     def exp(self, a):
-        """Return the value of the (natural) exponential function e ** a.
-        The function always uses the ROUND_HALF_EVEN mode and the result
+        """Return the value of the (natural) exponential function e**a at the given
+        number. The function always uses the ROUND_HALF_EVEN mode and the result
         is correctly rounded.
+
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
         >>> c.Emax = 999
@@ -4538,7 +4503,7 @@ class Context(object):
     def fma(self, a, b, c):
         """Returns a multiplied by b, plus c.
 
-        Fused multiple-add. The first two operands are multiplied together,
+        Fused multiply-add. The first two operands are multiplied together,
         using multiply, the third operand is then added to the result of that
         multiplication, using add, all with only one final rounding.
 
@@ -4609,8 +4574,8 @@ class Context(object):
         return a.is_infinite()
 
     def is_nan(self, a):
-        """Return True if the operand is a (quiet or signaling) NaN or NaN;
-         otherwise return False.
+        """Return True if the operand is a (quiet or signaling) NaN;
+        otherwise return False.
 
         >>> ExtendedContext.is_nan(Decimal('2.50'))
         False
@@ -4625,8 +4590,9 @@ class Context(object):
         return a.is_nan()
 
     def is_normal(self, a):
-        """Return True if the operand is a normal number;
-        otherwise return False.
+        """Return True if the argument is a normal finite non-zero number with an
+        adjusted exponent greater than or equal to Emin. Return False if the
+        argument is zero, subnormal, infinite or a NaN.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
@@ -4663,8 +4629,7 @@ class Context(object):
         return a.is_qnan()
 
     def is_signed(self, a):
-        """Return True if the operand is negative; otherwise return False.
-
+        """Return True if the argument has a negative sign and False otherwise.
         Note that both zeros and NaNs can carry signs.
 
         >>> ExtendedContext.is_signed(Decimal('2.50'))
@@ -4698,10 +4663,9 @@ class Context(object):
         return a.is_snan()
 
     def is_subnormal(self, a):
-        """Return True if the operand is subnormal; otherwise return False.
-
-        A number is subnormal if it is non-zero, finite, and has an adjusted
-        exponent less than Emin.
+        """Return True if the argument is subnormal, and False otherwise. A number is
+        subnormal if it is non-zero, finite, and has an adjusted exponent less
+        than Emin.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
@@ -4740,10 +4704,8 @@ class Context(object):
         return a.is_zero()
 
     def ln(self, a):
-        """Returns the natural (base e) logarithm of the operand.
-
-        The function always uses the ROUND_HALF_EVEN mode and the result is
-        correctly rounded.
+        """Return the natural (base e) logarithm of the operand. The function always
+        uses the ROUND_HALF_EVEN mode and the result is correctly rounded.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
@@ -4765,10 +4727,8 @@ class Context(object):
         return a.ln(context=self)
 
     def log10(self, a):
-        """Returns the base 10 logarithm of the operand.
-
-        The function always uses the ROUND_HALF_EVEN mode and the result
-        is correctly rounded.
+        """Return the base 10 logarithm of the operand. The function always uses the
+        ROUND_HALF_EVEN mode and the result is correctly rounded.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
@@ -4796,7 +4756,7 @@ class Context(object):
         return a.log10(context=self)
 
     def logb(self, a):
-        """Returns the exponent of the magnitude of the operand's MSD.
+        """ Returns the exponent of the magnitude of the operand's MSD.
 
         The result is the integer which is the exponent of the magnitude
         of the most significant digit of the operand (as though the
@@ -4949,7 +4909,8 @@ class Context(object):
         return a.max(b, context=self)
 
     def max_mag(self, a, b):
-        """Compares the values numerically with their sign ignored.
+        """Similar to the max() method, but the comparison is done using the absolute
+        values of the operands.
 
         >>> ExtendedContext.max_mag(Decimal('7'), Decimal('NaN'))
         Decimal('7')
@@ -5059,7 +5020,9 @@ class Context(object):
             return r
 
     def next_minus(self, a):
-        """Returns the largest representable number smaller than a.
+        """Return the largest number representable in the given context (or in the
+        current default context if no context is given) that is smaller than the
+        given operand.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
@@ -5079,7 +5042,9 @@ class Context(object):
         return a.next_minus(context=self)
 
     def next_plus(self, a):
-        """Returns the smallest representable number larger than a.
+        """Return the smallest number representable in the given context (or in the
+        current default context if no context is given) that is larger than the
+        given operand.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
@@ -5099,12 +5064,10 @@ class Context(object):
         return a.next_plus(context=self)
 
     def next_toward(self, a, b):
-        """Returns the number closest to a, in direction towards b.
-
-        The result is the closest representable number from the first
-        operand (but not the first operand) that is in the direction
-        towards the second operand, unless the operands have the same
-        value.
+        """If the two operands are unequal, return the number closest to the first
+        operand in the direction of the second operand.  If both operands are
+        numerically equal, return a copy of the first operand with the sign set
+        to be the same as the sign of the second operand.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
@@ -5134,10 +5097,11 @@ class Context(object):
         return a.next_toward(b, context=self)
 
     def normalize(self, a):
-        """normalize reduces an operand to its simplest form.
-
-        Essentially a plus operation with all trailing zeros removed from the
-        result.
+        """Normalize the number by stripping the rightmost trailing zeros and
+        converting any result equal to Decimal('0') to Decimal('0e0').  Used
+        for producing canonical values for members of an equivalence class.
+        For example, Decimal('32.100') and Decimal('0.321000e+2') both normalize
+        to the equivalent value Decimal('32.1').
 
         >>> ExtendedContext.normalize(Decimal('2.1'))
         Decimal('2.1')
@@ -5158,7 +5122,8 @@ class Context(object):
         return a.normalize(context=self)
 
     def number_class(self, a):
-        """Returns an indication of the class of the operand.
+        """Return a string describing the class of the operand.  The returned value
+        is one of the following ten strings:
 
         The class is one of the following strings:
           -sNaN
@@ -5364,7 +5329,7 @@ class Context(object):
 
     def radix(self):
         """Return Decimal(10), the radix (base) in which the Decimal class does
-            all its arithmetic. Included for compatibility with the specification.
+        all its arithmetic. Included for compatibility with the specification.
 
         >>> ExtendedContext.radix()
         Decimal('10')
@@ -5623,7 +5588,6 @@ class Context(object):
         '70'
         >>> ExtendedContext.to_eng_string(Decimal('0E+1'))
         '0.00E+3'
-
         """
         a = _convert_other(a, raiseit=True)
         return a.to_eng_string(context=self)
