@@ -5680,20 +5680,20 @@ extern int sethostname(const char *, size_t);
 static PyObject *
 socket_gethostbyname(PyObject *self, PyObject *args)
 {
-    char *name;
+    struct maybe_idna host = {NULL, NULL};
     struct sockaddr_in addrbuf;
     PyObject *ret = NULL;
 
-    if (!PyArg_ParseTuple(args, "et:gethostbyname", "idna", &name))
+    if (!PyArg_ParseTuple(args, "O&:gethostbyname", idna_converter, &host))
         return NULL;
     if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
         goto finally;
     }
-    if (setipaddr(name, (struct sockaddr *)&addrbuf,  sizeof(addrbuf), AF_INET) < 0)
+    if (setipaddr(host.buf, (struct sockaddr *)&addrbuf,  sizeof(addrbuf), AF_INET) < 0)
         goto finally;
     ret = make_ipv4_addr(&addrbuf);
 finally:
-    PyMem_Free(name);
+    idna_cleanup(&host);
     return ret;
 }
 
@@ -5855,7 +5855,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 static PyObject *
 socket_gethostbyname_ex(PyObject *self, PyObject *args)
 {
-    char *name;
+    struct maybe_idna host = {NULL, NULL};
     struct hostent *h;
     sock_addr_t addr;
     struct sockaddr *sa;
@@ -5874,20 +5874,20 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 
-    if (!PyArg_ParseTuple(args, "et:gethostbyname_ex", "idna", &name))
+    if (!PyArg_ParseTuple(args, "O&:gethostbyname_ex", idna_converter, &host))
         return NULL;
     if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
         goto finally;
     }
-    if (setipaddr(name, SAS2SA(&addr), sizeof(addr), AF_INET) < 0)
+    if (setipaddr(host.buf, SAS2SA(&addr), sizeof(addr), AF_INET) < 0)
         goto finally;
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-    gethostbyname_r(name, &hp_allocated, buf, buf_len,
+    gethostbyname_r(host.buf, &hp_allocated, buf, buf_len,
                              &h, &errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
-    h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
+    h = gethostbyname_r(host.buf, &hp_allocated, buf, buf_len, &errnop);
 #else /* HAVE_GETHOSTBYNAME_R_3_ARG */
     memset((void *) &data, '\0', sizeof(data));
     result = gethostbyname_r(name, &hp_allocated, &data);
@@ -5898,7 +5898,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     PyThread_acquire_lock(netdb_lock, 1);
 #endif
     SUPPRESS_DEPRECATED_CALL
-    h = gethostbyname(name);
+    h = gethostbyname(host.buf);
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
     /* Some C libraries would require addr.__ss_family instead of
@@ -5912,7 +5912,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     PyThread_release_lock(netdb_lock);
 #endif
 finally:
-    PyMem_Free(name);
+    idna_cleanup(&host);
     return ret;
 }
 
@@ -5930,9 +5930,9 @@ for a host.  The host argument is a string giving a host name or IP number.");
 static PyObject *
 socket_gethostbyaddr(PyObject *self, PyObject *args)
 {
+    struct maybe_idna host = {NULL, NULL};
     sock_addr_t addr;
     struct sockaddr *sa = SAS2SA(&addr);
-    char *ip_num;
     struct hostent *h;
     PyObject *ret = NULL;
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -5956,13 +5956,13 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     int al;
     int af;
 
-    if (!PyArg_ParseTuple(args, "et:gethostbyaddr", "idna", &ip_num))
+    if (!PyArg_ParseTuple(args, "O&:gethostbyaddr", idna_converter, &host))
         return NULL;
     if (PySys_Audit("socket.gethostbyaddr", "O", args) < 0) {
         goto finally;
     }
     af = AF_UNSPEC;
-    if (setipaddr(ip_num, sa, sizeof(addr), af) < 0)
+    if (setipaddr(host.buf, sa, sizeof(addr), af) < 0)
         goto finally;
     af = sa->sa_family;
     ap = NULL;
@@ -6009,7 +6009,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     PyThread_release_lock(netdb_lock);
 #endif
 finally:
-    PyMem_Free(ip_num);
+    idna_cleanup(&host);
     return ret;
 }
 
@@ -6651,11 +6651,11 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     PyObject *hobj = NULL;
     PyObject *pobj = (PyObject *)NULL;
     char pbuf[30];
-    const char *hptr, *pptr;
+    struct maybe_idna host = {NULL, NULL};
+    const char *pptr;
     int family, socktype, protocol, flags;
     int error;
     PyObject *all = (PyObject *)NULL;
-    PyObject *idna = NULL;
 
     socktype = protocol = flags = 0;
     family = AF_UNSPEC;
@@ -6665,18 +6665,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         return NULL;
     }
     if (hobj == Py_None) {
-        hptr = NULL;
-    } else if (PyUnicode_Check(hobj)) {
-        idna = PyUnicode_AsEncodedString(hobj, "idna", NULL);
-        if (!idna)
-            return NULL;
-        assert(PyBytes_Check(idna));
-        hptr = PyBytes_AS_STRING(idna);
-    } else if (PyBytes_Check(hobj)) {
-        hptr = PyBytes_AsString(hobj);
-    } else {
-        PyErr_SetString(PyExc_TypeError,
-                        "getaddrinfo() argument 1 must be string or None");
+        /* use the NULL value of host.buf */
+    } else if (!idna_converter(hobj, &host)) {
         return NULL;
     }
     if (PyLong_CheckExact(pobj)) {
@@ -6718,7 +6708,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     hints.ai_protocol = protocol;
     hints.ai_flags = flags;
     Py_BEGIN_ALLOW_THREADS
-    error = getaddrinfo(hptr, pptr, &hints, &res0);
+    error = getaddrinfo(host.buf, pptr, &hints, &res0);
     Py_END_ALLOW_THREADS
     if (error) {
         res0 = NULL;  // gh-100795
@@ -6749,13 +6739,13 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         }
         Py_DECREF(single);
     }
-    Py_XDECREF(idna);
+    idna_cleanup(&host);
     if (res0)
         freeaddrinfo(res0);
     return all;
  err:
     Py_XDECREF(all);
-    Py_XDECREF(idna);
+    idna_cleanup(&host);
     if (res0)
         freeaddrinfo(res0);
     return (PyObject *)NULL;

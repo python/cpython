@@ -1,0 +1,2 @@
+Only import the idna encoding in :mod:`ssl` and :mod:`_socket` when
+necessary.

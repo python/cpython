@@ -442,7 +442,12 @@ class SSLContext(_SSLContext):
         if hostname is None:
             return None
         elif isinstance(hostname, str):
-            return hostname.encode('idna').decode('ascii')
+            # don't import idna unless it's necessary:
+            try:
+                hostname.encode('ascii')
+                return hostname
+            except UnicodeEncodeError:
+                return hostname.encode('idna').decode('ascii')
         else:
             return hostname.decode('ascii')
 
