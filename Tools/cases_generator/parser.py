@@ -1,7 +1,7 @@
 """Parser for bytecodes.inst."""
 
 from dataclasses import dataclass, field
-from typing import NamedTuple, Callable, TypeVar, Literal
+from typing import NamedTuple, Callable, TypeVar, Literal, get_args, TypeAlias
 
 import lexer as lx
 from plexer import PLexer
@@ -100,10 +100,30 @@ OutputEffect = StackEffect
 UOp = OpName | CacheEffect
 
 
+# Note: A mapping of macro_inst -> u_inst+ is created later.
+INST_KINDS: TypeAlias = Literal[
+    # Legacy means no (inputs -- outputs)
+    "legacy",
+    # This generates an instruction definition in the tier 1 and 2 interpreter.
+    "inst",
+    # This is a pseudo instruction used only internally by the cases generator.
+    "op",
+    # This generates an instruction definition strictly only in the
+    # tier 1 interpreter.
+    "macro_inst",
+    # This generates an instruction definition strictly only in the
+    # tier 2 interpreter.
+    "u_inst",
+]
+
+# Remove legacy
+INST_LABELS: tuple[INST_KINDS] = get_args(INST_KINDS)[1:]
+
+
 @dataclass
 class InstHeader(Node):
     register: bool
-    kind: Literal["inst", "op", "legacy"]  # Legacy means no (inputs -- outputs)
+    kind: INST_KINDS
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
@@ -112,7 +132,7 @@ class InstHeader(Node):
 @dataclass
 class InstDef(Node):
     register: bool
-    kind: Literal["inst", "op", "legacy"]
+    kind: INST_KINDS
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
@@ -167,7 +187,7 @@ class Parser(PLexer):
         #   | [register] op(NAME, (inputs -- outputs))
         # TODO: Make INST a keyword in the lexer.
         register = bool(self.expect(lx.REGISTER))
-        if (tkn := self.expect(lx.IDENTIFIER)) and (kind := tkn.text) in ("inst", "op"):
+        if (tkn := self.expect(lx.IDENTIFIER)) and (kind := tkn.text) in INST_LABELS:
             if self.expect(lx.LPAREN) and (tkn := self.expect(lx.IDENTIFIER)):
                 name = tkn.text
                 if self.expect(lx.COMMA):

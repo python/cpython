@@ -284,15 +284,23 @@ dummy_func(
             ERROR_IF(sum == NULL, error);
         }
 
-        inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum)) {
+        u_inst(BINARY_OP_ADD_INT_TYPE_CHECK, (unused / 1, left, right -- left, right)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+        }
+
+        u_inst(BINARY_OP_ADD_INST_REST, (unused / 1, left, right -- sum)) {
             STAT_INC(BINARY_OP, hit);
             sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(sum == NULL, error);
+        }
+
+        macro_inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum)) {
+            BINARY_OP_ADD_INT_TYPE_CHECK();
+            BINARY_OP_ADD_INST_REST();
         }
 
         family(binary_subscr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {

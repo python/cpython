@@ -12,6 +12,8 @@ import re
 import sys
 import typing
 
+from enum import Enum, auto
+
 import parser
 from parser import StackEffect
 
@@ -20,10 +22,19 @@ ROOT = os.path.join(HERE, "../..")
 THIS = os.path.relpath(__file__, ROOT)
 
 DEFAULT_INPUT = os.path.relpath(os.path.join(ROOT, "Python/bytecodes.c"))
+
+# Tier 1 interpreter
 DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"))
 DEFAULT_METADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Python/opcode_metadata.h")
 )
+
+# Tier 2 interpreter
+TIER2_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases_tier2.c.h"))
+TIER2_METADATA_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Python/opcode_metadata_tier2.h")
+)
+
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = r"^\s*(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
@@ -46,6 +57,11 @@ arg_parser.add_argument(
     action="store_true",
     help=f"Generate metadata instead, changes output default to {DEFAULT_METADATA_OUTPUT}",
 )
+
+
+class InterpreterTier(Enum):
+    TIER1 = auto()
+    TIER2 = auto()
 
 
 def effect_size(effect: StackEffect) -> tuple[int, str]:
@@ -102,17 +118,19 @@ class Formatter:
 
     stream: typing.TextIO
     prefix: str
+    postfix: str
 
     def __init__(self, stream: typing.TextIO, indent: int) -> None:
         self.stream = stream
         self.prefix = " " * indent
+        self.postfix = ""
 
     def write_raw(self, s: str) -> None:
         self.stream.write(s)
 
     def emit(self, arg: str) -> None:
         if arg:
-            self.write_raw(f"{self.prefix}{arg}\n")
+            self.write_raw(f"{self.prefix}{arg}{self.postfix}\n")
         else:
             self.write_raw("\n")
 
@@ -185,7 +203,7 @@ class Instruction:
     # Parts of the underlying instruction definition
     inst: parser.InstDef
     register: bool
-    kind: typing.Literal["inst", "op", "legacy"]  # Legacy means no (input -- output)
+    kind: parser.INST_KINDS
     name: str
     block: parser.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
@@ -377,7 +395,7 @@ class Instruction:
                         f"{extra}{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
                     )
                 else:
-                    out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
+                    out.write_raw(f"{extra}{space}if ({cond}) goto {label};{out.postfix}\n")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 if not self.register:
                     space = m.group(1)
@@ -385,7 +403,7 @@ class Instruction:
                         if ieff.name not in self.unmoved_names:
                             out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
             else:
-                out.write_raw(extra + line)
+                out.write_raw(extra + line.rstrip("\n") + out.postfix + "\n")
 
 
 InstructionOrCacheEffect = Instruction | parser.CacheEffect
@@ -446,13 +464,15 @@ class Analyzer:
 
     filename: str
     output_filename: str
+    tier: InterpreterTier
     src: str
     errors: int = 0
 
-    def __init__(self, filename: str, output_filename: str):
+    def __init__(self, filename: str, output_filename: str, tier: InterpreterTier):
         """Read the input file."""
         self.filename = filename
         self.output_filename = output_filename
+        self.tier = tier
         with open(filename) as f:
             self.src = f.read()
 
@@ -897,12 +917,32 @@ class Analyzer:
             n_instrs = 0
             n_supers = 0
             n_macros = 0
+
+            # Single pass to hoist all the u_instructions to the top.
+            if self.tier == InterpreterTier.TIER1:
+                for thing in self.everything:
+                    match thing:
+                        case parser.InstDef():
+                            if thing.kind == "u_inst":
+                                self.write_u_inst_as_c_macro(
+                                    self.instrs[thing.name])
+                        case _:
+                            pass
+
+            # Everything else
             for thing in self.everything:
                 match thing:
                     case parser.InstDef():
-                        if thing.kind != "op":
-                            n_instrs += 1
-                            self.write_instr(self.instrs[thing.name])
+                        match thing.kind:
+                            case "op":
+                                pass
+                            case "u_inst" if self.tier != InterpreterTier.TIER2:
+                                pass
+                            case "macro_inst" if self.tier != InterpreterTier.TIER1:
+                                pass
+                            case _:
+                                n_instrs += 1
+                                self.write_instr(self.instrs[thing.name])
                     case parser.Super():
                         n_supers += 1
                         self.write_super(self.super_instrs[thing.name])
@@ -929,6 +969,16 @@ class Analyzer:
                 for prediction in instr.predictions:
                     self.out.emit(f"PREDICT({prediction});")
                 self.out.emit(f"DISPATCH();")
+
+    def write_u_inst_as_c_macro(self, instr: Instruction) -> None:
+        name = instr.name
+        self.out.emit("")
+        self.out.emit(f"#define {name}() \\")
+        self.out.emit("do { \\")
+        self.out.postfix = "\\"
+        instr.write_body(self.out, 0)
+        self.out.postfix = ""
+        self.out.emit("} while (0)")
 
     def write_super(self, sup: SuperInstruction) -> None:
         """Write code for a super-instruction."""
@@ -1038,21 +1088,33 @@ def variable_used(node: parser.Node, name: str) -> bool:
     return any(token.kind == "IDENTIFIER" and token.text == name for token in node.tokens)
 
 
-def main():
-    """Parse command line, parse input, analyze, write output."""
-    args = arg_parser.parse_args()  # Prints message and sys.exit(2) on error
-    if args.metadata:
-        if args.output == DEFAULT_OUTPUT:
-            args.output = DEFAULT_METADATA_OUTPUT
-    a = Analyzer(args.input, args.output)  # Raises OSError if input unreadable
+def generate_interpreter(input_: str, output: str, metadata: bool,
+                         tier: InterpreterTier) -> None:
+    if metadata:
+        if output == DEFAULT_OUTPUT:
+            output = DEFAULT_METADATA_OUTPUT
+        elif output == TIER2_OUTPUT:
+            output = TIER2_METADATA_OUTPUT
+    a = Analyzer(input_, output, tier)  # Raises OSError if input unreadable
     a.parse()  # Raises SyntaxError on failure
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
-    if args.metadata:
+    if metadata:
         a.write_metadata()
     else:
         a.write_instructions()  # Raises OSError if output can't be written
+
+def main():
+    """Parse command line, parse input, analyze, write output."""
+    args = arg_parser.parse_args()  # Prints message and sys.exit(2) on error
+
+    # Tier 1 interpreter
+    generate_interpreter(args.input, args.output, args.metadata,
+                         InterpreterTier.TIER1)
+    # Tier 2 interpreter
+    generate_interpreter(args.input, TIER2_OUTPUT, args.metadata,
+                         InterpreterTier.TIER2)
 
 
 if __name__ == "__main__":

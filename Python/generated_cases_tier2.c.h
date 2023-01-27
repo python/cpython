@@ -2,22 +2,6 @@
 // from Python\bytecodes.c
 // Do not edit!
 
-        #define BINARY_OP_ADD_INT_TYPE_CHECK() \
-        do { \
-            assert(cframe.use_tracing == 0);\
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);\
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);\
-        } while (0)
-
-        #define BINARY_OP_ADD_INST_REST() \
-        do { \
-            STAT_INC(BINARY_OP, hit);\
-            sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);\
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);\
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);\
-            if (sum == NULL) goto pop_2_error;\
-        } while (0)
-
         TARGET(NOP) {
             DISPATCH();
         }
@@ -402,12 +386,25 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_OP_ADD_INT) {
+        TARGET(BINARY_OP_ADD_INT_TYPE_CHECK) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            JUMPBY(1);
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_ADD_INST_REST) {
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sum;
-            BINARY_OP_ADD_INT_TYPE_CHECK();
-            BINARY_OP_ADD_INST_REST();
+            STAT_INC(BINARY_OP, hit);
+            sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            if (sum == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, sum);
             JUMPBY(1);
