@@ -830,11 +830,11 @@ _PyMemoTable_Lookup(PyMemoTable *self, PyObject *key)
 
 /* Returns -1 on failure, 0 on success. */
 static int
-_PyMemoTable_ResizeTable(PyMemoTable *self, size_t min_size)
+_PyMemoTable_ResizeTable(PyMemoTable *self, uint64_t min_size)
 {
     PyMemoEntry *oldtable = NULL;
     PyMemoEntry *oldentry, *newentry;
-    size_t new_size = MT_MINSIZE;
+    uint64_t new_size = MT_MINSIZE;
     size_t to_process;
 
     assert(min_size > 0);
@@ -845,9 +845,16 @@ _PyMemoTable_ResizeTable(PyMemoTable *self, size_t min_size)
     }
 
     /* Find the smallest valid table size >= min_size. */
+#if (defined(__clang__) || defined(__GNUC__))
+    if (new_size < min_size) {
+        // min_size is always greater than 1.
+        new_size = (1 << (64-__builtin_clzl(min_size-1)));
+    }
+#else
     while (new_size < min_size) {
         new_size <<= 1;
     }
+#endif
     /* new_size needs to be a power of two. */
     assert((new_size & (new_size - 1)) == 0);
 
@@ -923,7 +930,7 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
         return 0;
     }
     // self->mt_used is always < PY_SSIZE_T_MAX, so this can't overflow.
-    size_t desired_size = (self->mt_used > 50000 ? 2 : 4) * self->mt_used;
+    uint64_t desired_size = (self->mt_used > 50000 ? 2 : 4) * self->mt_used;
     return _PyMemoTable_ResizeTable(self, desired_size);
 }
 
