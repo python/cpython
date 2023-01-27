@@ -26,7 +26,9 @@ except ImportError:
 class _BaseFlavourTest(object):
 
     def _check_parse_parts(self, arg, expected):
-        f = self.cls._parse_parts
+        def f(parts):
+            path = self.flavour.join(*parts) if parts else ''
+            return self.cls._parse_path(path)
         sep = self.flavour.sep
         altsep = self.flavour.altsep
         actual = f([x.replace('/', sep) for x in arg])
