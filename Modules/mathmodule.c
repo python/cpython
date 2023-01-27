@@ -2851,17 +2851,17 @@ typedef struct{ double hi; double lo; } DoubleLength;
 static inline DoubleLength
 twosum(double a, double b)
 {
-    double s = a + b;
-    double ap = s - b;
-    double bp = s - a;
-    double da = a - ap;
-    double db = b - bp;
-    double t = da + db;
-    return  (DoubleLength) {s, t};
+    // Rump Algorithm 3.1 Error-free transformation of the sum
+    double x = a + b;
+    double z = x - a;
+    double y = (a - (x - z)) + (b - z);
+    return (DoubleLength) {x, y};
 }
 
 static inline DoubleLength
 dl_split(double x) {
+    // Rump Algorithm 3.2 Error-free splitting of a floating point number
+    // Dekker (5.5) and (5.6).
     double t = x * 134217729.0;  // Veltkamp constant = 2.0 ** 27 + 1
     double hi = t - (t - x);
     double lo = x - hi;
@@ -2871,7 +2871,7 @@ dl_split(double x) {
 static inline DoubleLength
 dl_mul(double x, double y)
 {
-    /* Dekker mul12().  Section (5.12) */
+    // Dekker (5.12) and mul12()
     DoubleLength xx = dl_split(x);
     DoubleLength yy = dl_split(y);
     double p = xx.hi * yy.hi;
@@ -2881,24 +2881,19 @@ dl_mul(double x, double y)
     return (DoubleLength) {z, zz};
 }
 
-typedef struct{ double hi; double lo; double tiny; } TripleLength;
+typedef struct { double hi; double lo; double tiny; } TripleLength;
 
 static const TripleLength tl_zero = {0.0, 0.0, 0.0};
 
 static inline TripleLength
-tl_add(TripleLength total, double x)
+tl_fma(TripleLength total, double x, double y)
 {
-    DoubleLength s = twosum(x, total.hi);
-    DoubleLength t = twosum(s.lo, total.lo);
-    return (TripleLength) {s.hi, t.hi, t.lo + total.tiny};
-}
-
-static inline TripleLength
-tl_fma(TripleLength total, double p, double q)
-{
-    DoubleLength product = dl_mul(p, q);
-    total = tl_add(total, product.hi);
-    return  tl_add(total, product.lo);
+    // Rump Algorithm 5.10 with K=3 and using SumKVert
+    DoubleLength pr = dl_mul(x, y);
+    DoubleLength sm = twosum(total.hi, pr.hi);
+    DoubleLength r1 = twosum(total.lo, pr.lo);
+    DoubleLength r2 = twosum(r1.hi, sm.lo);
+    return (TripleLength) {sm.hi, r2.hi, total.tiny + r1.lo + r2.lo};
 }
 
 static inline double
