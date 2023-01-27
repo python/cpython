@@ -465,10 +465,14 @@ dumpSearchInfo(SearchInfo *search)
         return;
     }
 
-#define DEBUGNAME(s) L"SearchInfo." ## s
-#define DEBUG(s) debug(DEBUGNAME(#s) L": %s\n", (search->s) ? (search->s) : L"(null)")
-#define DEBUG_2(s, sl) _debugStringAndLength((search->s), (search->sl), DEBUGNAME(#s))
-#define DEBUG_BOOL(s) debug(DEBUGNAME(#s) L": %s\n", (search->s) ? L"True" : L"False")
+#ifdef __clang__
+#define DEBUGNAME(s) L # s
+#else
+#define DEBUGNAME(s) # s
+#endif
+#define DEBUG(s) debug(L"SearchInfo." DEBUGNAME(s) L": %s\n", (search->s) ? (search->s) : L"(null)")
+#define DEBUG_2(s, sl) _debugStringAndLength((search->s), (search->sl), L"SearchInfo." DEBUGNAME(s))
+#define DEBUG_BOOL(s) debug(L"SearchInfo." DEBUGNAME(s) L": %s\n", (search->s) ? L"True" : L"False")
     DEBUG(originalCmdLine);
     DEBUG(restOfCmdLine);
     DEBUG(executablePath);

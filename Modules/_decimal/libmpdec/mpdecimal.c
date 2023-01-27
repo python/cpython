@@ -76,6 +76,12 @@
   #endif
 #endif
 
+/* ClangCL claims to support 128-bit int, but doesn't */
+#if defined(__SIZEOF_INT128__) && defined(__clang__) && defined(_MSC_VER)
+#undef __SIZEOF_INT128__
+#endif
+
+
 
 #define MPD_NEWTONDIV_CUTOFF 1024L
 
