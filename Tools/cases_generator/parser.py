@@ -150,6 +150,11 @@ class Macro(Node):
     name: str
     uops: list[UOp]
 
+@dataclass
+class UOpMap(Node):
+    name: str
+    u_insts: list[str]
+
 
 @dataclass
 class Family(Node):
@@ -160,13 +165,15 @@ class Family(Node):
 
 class Parser(PLexer):
     @contextual
-    def definition(self) -> InstDef | Super | Macro | Family | None:
+    def definition(self) -> InstDef | Super | Macro | UOpMap | Family | None:
         if inst := self.inst_def():
             return inst
         if super := self.super_def():
             return super
         if macro := self.macro_def():
             return macro
+        if uopmap := self.uopmap_def():
+            return uopmap
         if family := self.family_def():
             return family
 
@@ -348,6 +355,28 @@ class Parser(PLexer):
                 raise self.make_syntax_error("Expected integer")
             else:
                 return OpName(tkn.text)
+
+    @contextual
+    def uopmap_def(self) -> UOpMap | None:
+        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "uop_map":
+            if self.expect(lx.LPAREN):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.EQUALS):
+                            if u_insts := self.u_insts():
+                                self.require(lx.SEMI)
+                                res = UOpMap(tkn.text, u_insts)
+                                return res
+
+    def u_insts(self) -> list[str] | None:
+        if tkn := self.expect(lx.IDENTIFIER):
+            u_insts = [tkn.text]
+            while self.expect(lx.PLUS):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    u_insts.append(tkn.text)
+                else:
+                    raise self.make_syntax_error("Expected op name")
+            return u_insts
 
     @contextual
     def family_def(self) -> Family | None:

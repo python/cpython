@@ -303,6 +303,8 @@ dummy_func(
             BINARY_OP_ADD_INST_REST();
         }
 
+        uop_map(BINARY_OP_ADD_INT) = BINARY_OP_ADD_INT_TYPE_CHECK + BINARY_OP_ADD_INT_REST;
+
         family(binary_subscr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
             BINARY_SUBSCR,
             BINARY_SUBSCR_DICT,
