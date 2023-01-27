@@ -525,6 +525,11 @@ returned by the call::
 
     my.package.customFormatterFactory(bar='baz', spam=99.9, answer=42)
 
+.. warning:: The values for keys such as ``bar``, ``spam`` and ``answer`` in
+   the above example should not be configuration dictionaries or references such
+   as ``cfg://foo`` or ``ext://bar``, because they will not be processed by the
+   configuration machinery, but passed to the callable as-is.
+
 The key ``'()'`` has been used as the special key because it is not a
 valid keyword parameter name, and so will not clash with the names of
 the keyword arguments used in the call.  The ``'()'`` also serves as a
@@ -552,6 +557,11 @@ following configuration::
 
 the returned formatter will have attribute ``foo`` set to ``'bar'`` and
 attribute ``baz`` set to ``'bozz'``.
+
+.. warning:: The values for attributes such as ``foo`` and ``baz`` in
+   the above example should not be configuration dictionaries or references such
+   as ``cfg://foo`` or ``ext://bar``, because they will not be processed by the
+   configuration machinery, but set as attribute values as-is.
 
 
 .. _logging-config-dict-externalobj:
