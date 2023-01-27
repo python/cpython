@@ -9,7 +9,7 @@
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);\
         } while (0)
 
-        #define BINARY_OP_ADD_INST_REST() \
+        #define BINARY_OP_ADD_INT_REST() \
         do { \
             STAT_INC(BINARY_OP, hit);\
             sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);\

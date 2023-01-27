@@ -396,7 +396,7 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_OP_ADD_INST_REST) {
+        TARGET(BINARY_OP_ADD_INT_REST) {
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sum;
