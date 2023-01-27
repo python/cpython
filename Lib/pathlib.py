@@ -701,7 +701,174 @@ class PureWindowsPath(PurePath):
 # Filesystem-accessing classes
 
 
-class Path(PurePath):
+class _PathWithStat(PurePath):
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+        raise NotImplementedError
+
+    def exists(self):
+        """
+        Whether this path exists.
+        """
+        try:
+            self.stat()
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            return False
+        except ValueError:
+            # Non-encodable path
+            return False
+        return True
+
+    def is_dir(self):
+        """
+        Whether this path is a directory.
+        """
+        try:
+            return S_ISDIR(self.stat().st_mode)
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            # Path doesn't exist or is a broken symlink
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
+            return False
+        except ValueError:
+            # Non-encodable path
+            return False
+
+    def is_file(self):
+        """
+        Whether this path is a regular file (also True for symlinks pointing
+        to regular files).
+        """
+        try:
+            return S_ISREG(self.stat().st_mode)
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            # Path doesn't exist or is a broken symlink
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
+            return False
+        except ValueError:
+            # Non-encodable path
+            return False
+
+    def is_mount(self):
+        """
+        Check if this path is a mount point
+        """
+        # Need to exist and be a dir
+        if not self.exists() or not self.is_dir():
+            return False
+
+        try:
+            parent_dev = self.parent.stat().st_dev
+        except OSError:
+            return False
+
+        dev = self.stat().st_dev
+        if dev != parent_dev:
+            return True
+        ino = self.stat().st_ino
+        parent_ino = self.parent.stat().st_ino
+        return ino == parent_ino
+
+    def is_symlink(self):
+        """
+        Whether this path is a symbolic link.
+        """
+        try:
+            return S_ISLNK(self.stat(follow_symlinks=False).st_mode)
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            # Path doesn't exist
+            return False
+        except ValueError:
+            # Non-encodable path
+            return False
+
+    def is_block_device(self):
+        """
+        Whether this path is a block device.
+        """
+        try:
+            return S_ISBLK(self.stat().st_mode)
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            # Path doesn't exist or is a broken symlink
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
+            return False
+        except ValueError:
+            # Non-encodable path
+            return False
+
+    def is_char_device(self):
+        """
+        Whether this path is a character device.
+        """
+        try:
+            return S_ISCHR(self.stat().st_mode)
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            # Path doesn't exist or is a broken symlink
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
+            return False
+        except ValueError:
+            # Non-encodable path
+            return False
+
+    def is_fifo(self):
+        """
+        Whether this path is a FIFO.
+        """
+        try:
+            return S_ISFIFO(self.stat().st_mode)
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            # Path doesn't exist or is a broken symlink
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
+            return False
+        except ValueError:
+            # Non-encodable path
+            return False
+
+    def is_socket(self):
+        """
+        Whether this path is a socket.
+        """
+        try:
+            return S_ISSOCK(self.stat().st_mode)
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            # Path doesn't exist or is a broken symlink
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
+            return False
+        except ValueError:
+            # Non-encodable path
+            return False
+
+    def samefile(self, other_path):
+        """Return whether other_path is the same or not as this file
+        (as returned by os.path.samefile()).
+        """
+        st = self.stat()
+        try:
+            other_st = other_path.stat()
+        except AttributeError:
+            other_st = self.__class__(other_path).stat()
+        return self._flavour.samestat(st, other_st)
+
+
+class Path(_PathWithStat):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers
@@ -770,12 +937,7 @@ class Path(PurePath):
         """Return whether other_path is the same or not as this file
         (as returned by os.path.samefile()).
         """
-        st = self.stat()
-        try:
-            other_st = other_path.stat()
-        except AttributeError:
-            other_st = self.__class__(other_path).stat()
-        return self._flavour.samestat(st, other_st)
+        return self._flavour.samefile(self, other_path)
 
     def iterdir(self):
         """Yield path objects of the directory contents.
@@ -1069,49 +1231,20 @@ class Path(PurePath):
         """
         Whether this path exists.
         """
-        try:
-            self.stat()
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            return False
-        except ValueError:
-            # Non-encodable path
-            return False
-        return True
+        return self._flavour.exists(self)
 
     def is_dir(self):
         """
         Whether this path is a directory.
         """
-        try:
-            return S_ISDIR(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
-            return False
+        return self._flavour.isdir(self)
 
     def is_file(self):
         """
         Whether this path is a regular file (also True for symlinks pointing
         to regular files).
         """
-        try:
-            return S_ISREG(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
-            return False
+        return self._flavour.isfile(self)
 
     def is_mount(self):
         """
@@ -1123,86 +1256,13 @@ class Path(PurePath):
         """
         Whether this path is a symbolic link.
         """
-        try:
-            return S_ISLNK(self.lstat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist
-            return False
-        except ValueError:
-            # Non-encodable path
-            return False
+        return self._flavour.islink(self)
 
     def is_junction(self):
         """
         Whether this path is a junction.
         """
         return self._flavour.isjunction(self)
-
-    def is_block_device(self):
-        """
-        Whether this path is a block device.
-        """
-        try:
-            return S_ISBLK(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
-            return False
-
-    def is_char_device(self):
-        """
-        Whether this path is a character device.
-        """
-        try:
-            return S_ISCHR(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
-            return False
-
-    def is_fifo(self):
-        """
-        Whether this path is a FIFO.
-        """
-        try:
-            return S_ISFIFO(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
-            return False
-
-    def is_socket(self):
-        """
-        Whether this path is a socket.
-        """
-        try:
-            return S_ISSOCK(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
-            return False
 
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
