@@ -2844,20 +2844,20 @@ based on:
 
 typedef struct{ double hi; double lo; } DoubleLength;
 
-static inline DoubleLength
-twosum(double a, double b)
+static DoubleLength
+dl_sum(double a, double b)
 {
-    // Rump Algorithm 3.1 Error-free transformation of the sum
+    // Algorithm 3.1 Error-free transformation of the sum
     double x = a + b;
     double z = x - a;
     double y = (a - (x - z)) + (b - z);
     return (DoubleLength) {x, y};
 }
 
-static inline DoubleLength
+static DoubleLength
 dl_mul(double x, double y)
 {
-    // Rump Algorithm 3.5. Error-free transformation of a product
+    // Algorithm 3.5. Error-free transformation of a product
     double z = x * y;
     double zz = fma(x, y, -z);
     return (DoubleLength) {z, zz};
@@ -2867,21 +2867,21 @@ typedef struct { double hi; double lo; double tiny; } TripleLength;
 
 static const TripleLength tl_zero = {0.0, 0.0, 0.0};
 
-static inline TripleLength
+static TripleLength
 tl_fma(TripleLength total, double x, double y)
 {
-    // Rump Algorithm 5.10 with K=3 and using SumKVert
+    // Algorithm 5.10 with SumKVert for K=3
     DoubleLength pr = dl_mul(x, y);
-    DoubleLength sm = twosum(total.hi, pr.hi);
-    DoubleLength r1 = twosum(total.lo, pr.lo);
-    DoubleLength r2 = twosum(r1.hi, sm.lo);
+    DoubleLength sm = dl_sum(total.hi, pr.hi);
+    DoubleLength r1 = dl_sum(total.lo, pr.lo);
+    DoubleLength r2 = dl_sum(r1.hi, sm.lo);
     return (TripleLength) {sm.hi, r2.hi, total.tiny + r1.lo + r2.lo};
 }
 
-static inline double
+static double
 tl_to_d(TripleLength total)
 {
-    DoubleLength last = twosum(total.lo, total.hi);
+    DoubleLength last = dl_sum(total.lo, total.hi);
     return total.tiny + last.lo + last.hi;
 }
 
