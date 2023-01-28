@@ -1441,7 +1441,7 @@ class MathTests(unittest.TestCase):
             return fabs(n / target_sumprod)
 
         def Trial(dotfunc, c, n):
-            ex = GenDot(10, c)
+            ex = GenDot(n, c)
             res = dotfunc(ex.x, ex.y)
             return RelativeError(res, ex)
 
