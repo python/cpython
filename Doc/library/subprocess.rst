@@ -111,6 +111,13 @@ underlying :class:`Popen` interface can be used directly.
       Added the *text* parameter, as a more understandable alias of *universal_newlines*.
       Added the *capture_output* parameter.
 
+   .. versionchanged:: 3.7.17, 3.8.17, 3.9.17, 3.10.9, and 3.11.2
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory is now used as the last resort insead of the first candidate.
+      As a result, dropping a malicious program named ``cmd.exe`` works only
+      when no other mechanism to locate ``cmd.exe`` is available.
+
 .. class:: CompletedProcess
 
    The return value from :func:`run`, representing a process that has finished.
@@ -482,6 +489,13 @@ functions.
 
    .. versionchanged:: 3.6
       *executable* parameter accepts a :term:`path-like object` on POSIX.
+
+   .. versionchanged:: 3.7.17, 3.8.17, 3.9.17, 3.10.9, and 3.11.2
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory is now used as the last resort insead of the first candidate.
+      As a result, dropping a malicious program named ``cmd.exe`` works only
+      when no other mechanism to locate ``cmd.exe`` is available.
 
    .. versionchanged:: 3.8
       *executable* parameter accepts a bytes and :term:`path-like object`
@@ -1157,6 +1171,13 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
+    .. versionchanged:: 3.7.17, 3.8.17, 3.9.17, 3.10.9, and 3.11.2
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory is now used as the last resort insead of the first candidate.
+      As a result, dropping a malicious program named ``cmd.exe`` works only
+      when no other mechanism to locate ``cmd.exe`` is available.
+
 .. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, \
                          shell=False, cwd=None, timeout=None, \
                          **other_popen_kwargs)
@@ -1188,6 +1209,13 @@ calls these functions.
 
    .. versionchanged:: 3.3
       *timeout* was added.
+
+   .. versionchanged:: 3.7.17, 3.8.17, 3.9.17, 3.10.9, and 3.11.2
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory is now used as the last resort insead of the first candidate.
+      As a result, dropping a malicious program named ``cmd.exe`` works only
+      when no other mechanism to locate ``cmd.exe`` is available.
 
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
@@ -1243,6 +1271,13 @@ calls these functions.
 
    .. versionadded:: 3.7
       *text* was added as a more readable alias for *universal_newlines*.
+
+   .. versionchanged:: 3.7.17, 3.8.17, 3.9.17, 3.10.9, and 3.11.2
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory is now used as the last resort insead of the first candidate.
+      As a result, dropping a malicious program named ``cmd.exe`` works only
+      when no other mechanism to locate ``cmd.exe`` is available.
 
 
 .. _subprocess-replacements:
