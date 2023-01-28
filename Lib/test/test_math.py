@@ -1400,7 +1400,7 @@ class MathTests(unittest.TestCase):
             width = (hi - lo) / (n - 1)
             return [lo + width * i for i in range(n)]
 
-        def GenDot(n, c=1e12):
+        def GenDot(n, c):
             """ Algorithm 6.1 (GenDot) works as follows. The condition number (5.7) of
             the dot product xT y is proportional to the degree of cancellation. In
             order to achieve a prescribed cancellation, we generate the first half of
@@ -1443,7 +1443,7 @@ class MathTests(unittest.TestCase):
             n = DotExact(list(x) + [-res], list(y) + [1])
             return fabs(n / target_sumprod)
 
-        def Trial(dotfunc, c=10e7, n=10):
+        def Trial(dotfunc, c, n):
             ex = GenDot(10, c)
             res = dotfunc(ex.x, ex.y)
             return RelativeError(res, ex)
@@ -1452,7 +1452,7 @@ class MathTests(unittest.TestCase):
         n = 20                # Length of vectors
         c = 1e30              # Target condition number
 
-        relative_err = median(Trial(sumprod, c=c, n=n) for i in range(times))
+        relative_err = median(Trial(sumprod, c, n) for i in range(times))
         self.assertLess(relative_err, 1e-16)
 
     def testModf(self):
