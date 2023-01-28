@@ -225,6 +225,13 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
                     norm = self.db.ucd_3_2_0.normalize(form, chr(x))
                     self.assertTrue(self.db.ucd_3_2_0.is_normalized(form, norm))
 
+    def test_is_normalized_unicode_3_2_0_multicharacter(self):
+        sample_chrs = random.sample(range(0x110000), 100)
+        for form in ('NFC', 'NFD', 'NFKC', 'NFKD'):
+            s = ''.join(map(chr, sample_chrs))
+            norm = self.db.ucd_3_2_0.normalize(form, s)
+            self.assertTrue(self.db.ucd_3_2_0.is_normalized(form, norm))
+
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width
         self.assertRaises(TypeError, eaw, b'a')
