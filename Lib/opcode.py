@@ -432,3 +432,11 @@ _cache_format = {
 _inline_cache_entries = [
     sum(_cache_format.get(opname[opcode], {}).values()) for opcode in range(256)
 ]
+
+_macro_ops = [
+    'BINARY_OP_ADD_INT',
+]
+_uops = [
+    'BINARY_OP_ADD_INT_TYPE_CHECK',
+    'BINARY_OP_ADD_INT_REST',
+]

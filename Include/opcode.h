@@ -125,6 +125,8 @@ extern "C" {
 #define JUMP_NO_INTERRUPT                      261
 #define LOAD_METHOD                            262
 #define MAX_PSEUDO_OPCODE                      262
+
+#ifndef Py_TIER2_INTERPRETER
 #define BINARY_OP_ADD_FLOAT                      5
 #define BINARY_OP_ADD_INT                        6
 #define BINARY_OP_ADD_UNICODE                    7
@@ -187,6 +189,74 @@ extern "C" {
 #define UNPACK_SEQUENCE_TUPLE                  159
 #define UNPACK_SEQUENCE_TWO_TUPLE              160
 #define DO_TRACING                             255
+#endif
+
+#ifdef Py_TIER2_INTERPRETER
+#define BINARY_OP_ADD_FLOAT                      5
+#define BINARY_OP_ADD_UNICODE                    7
+#define BINARY_OP_INPLACE_ADD_UNICODE            8
+#define BINARY_OP_MULTIPLY_FLOAT                10
+#define BINARY_OP_MULTIPLY_INT                  13
+#define BINARY_OP_SUBTRACT_FLOAT                14
+#define BINARY_OP_SUBTRACT_INT                  16
+#define BINARY_SUBSCR_DICT                      17
+#define BINARY_SUBSCR_GETITEM                   18
+#define BINARY_SUBSCR_LIST_INT                  19
+#define BINARY_SUBSCR_TUPLE_INT                 20
+#define CALL_PY_EXACT_ARGS                      21
+#define CALL_PY_WITH_DEFAULTS                   22
+#define CALL_BOUND_METHOD_EXACT_ARGS            23
+#define CALL_BUILTIN_CLASS                      24
+#define CALL_BUILTIN_FAST_WITH_KEYWORDS         28
+#define CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS  29
+#define CALL_NO_KW_BUILTIN_FAST                 34
+#define CALL_NO_KW_BUILTIN_O                    38
+#define CALL_NO_KW_ISINSTANCE                   39
+#define CALL_NO_KW_LEN                          40
+#define CALL_NO_KW_LIST_APPEND                  41
+#define CALL_NO_KW_METHOD_DESCRIPTOR_FAST       42
+#define CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS     43
+#define CALL_NO_KW_METHOD_DESCRIPTOR_O          44
+#define CALL_NO_KW_STR_1                        45
+#define CALL_NO_KW_TUPLE_1                      46
+#define CALL_NO_KW_TYPE_1                       47
+#define COMPARE_AND_BRANCH_FLOAT                48
+#define COMPARE_AND_BRANCH_INT                  56
+#define COMPARE_AND_BRANCH_STR                  57
+#define FOR_ITER_LIST                           58
+#define FOR_ITER_TUPLE                          59
+#define FOR_ITER_RANGE                          62
+#define FOR_ITER_GEN                            63
+#define LOAD_ATTR_CLASS                         64
+#define LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN       65
+#define LOAD_ATTR_INSTANCE_VALUE                66
+#define LOAD_ATTR_MODULE                        67
+#define LOAD_ATTR_PROPERTY                      70
+#define LOAD_ATTR_SLOT                          72
+#define LOAD_ATTR_WITH_HINT                     73
+#define LOAD_ATTR_METHOD_LAZY_DICT              76
+#define LOAD_ATTR_METHOD_NO_DICT                77
+#define LOAD_ATTR_METHOD_WITH_VALUES            78
+#define LOAD_CONST__LOAD_FAST                   79
+#define LOAD_FAST__LOAD_CONST                   80
+#define LOAD_FAST__LOAD_FAST                    81
+#define LOAD_GLOBAL_BUILTIN                     82
+#define LOAD_GLOBAL_MODULE                      84
+#define STORE_ATTR_INSTANCE_VALUE               86
+#define STORE_ATTR_SLOT                         87
+#define STORE_ATTR_WITH_HINT                   113
+#define STORE_FAST__LOAD_FAST                  121
+#define STORE_FAST__STORE_FAST                 143
+#define STORE_SUBSCR_DICT                      153
+#define STORE_SUBSCR_LIST_INT                  154
+#define UNPACK_SEQUENCE_LIST                   158
+#define UNPACK_SEQUENCE_TUPLE                  159
+#define UNPACK_SEQUENCE_TWO_TUPLE              160
+#define DO_TRACING                             255
+#define BINARY_OP_ADD_INT_TYPE_CHECK             6
+#define BINARY_OP_ADD_INT_REST                 161
+#endif
+
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \
