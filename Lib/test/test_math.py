@@ -1375,16 +1375,13 @@ class MathTests(unittest.TestCase):
     @support.cpython_only    # Other implementations may choose a different algorithm
     @support.requires_resource('cpu')
     def test_sumprod_extended_precision_accuracy(self):
-        sumprod = math.sumprod
         import operator
         from fractions import Fraction
         from itertools import starmap
         from collections import namedtuple
-        from math import log2, exp2, log10, fabs
+        from math import log2, exp2, fabs
         from random import choices, uniform, shuffle
         from statistics import median
-        from functools import partial
-        from pprint import pp
 
         DotExample = namedtuple('DotExample', ('x', 'y', 'target_sumprod', 'condition'))
 
@@ -1452,7 +1449,7 @@ class MathTests(unittest.TestCase):
         n = 20                # Length of vectors
         c = 1e30              # Target condition number
 
-        relative_err = median(Trial(sumprod, c, n) for i in range(times))
+        relative_err = median(Trial(math.sumprod, c, n) for i in range(times))
         self.assertLess(relative_err, 1e-16)
 
     def testModf(self):
