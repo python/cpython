@@ -35,7 +35,7 @@ TIER2_METADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Python/opcode_metadata_tier2.h")
 )
 TIER2_MACRO_TO_MICRO_MAP_OUTPUT = os.path.relpath(
-    os.path.join(ROOT, "Python/opcode_macro_to_micro.h")
+    os.path.join(ROOT, "Include/internal/pycore_opcode_macro_to_micro.h")
 )
 
 BEGIN_MARKER = "// BEGIN BYTECODES //"
@@ -850,11 +850,45 @@ class Analyzer:
 
             # Create formatter; the rest of the code uses this
             self.out = Formatter(f, 0)
-            self.out.emit("static int _Py_MacroOpToUOp[][2] = {")
+            # Header guard
+            self.out.emit("")
+            self.out.emit("#ifndef Py_INTERNAL_OPCODE_MACRO_TO_MICRO")
+            self.out.emit("#define Py_INTERNAL_OPCODE_MACRO_TO_MICRO")
+            self.out.emit("#ifdef __cplusplus")
+            self.out.emit('extern "C" {')
+            self.out.emit("#endif")
+            self.out.emit("")
+            self.out.emit("#ifndef Py_BUILD_CORE")
+            self.out.emit('#  error "this header requires Py_BUILD_CORE define"')
+            self.out.emit("#endif")
+            self.out.emit('#include "opcode.h"')
+            self.out.emit("")
+
+            self.out.emit("extern const int _Py_MacroOpUOpCount[] = {")
+            macro_instrdef_names = set()
+            max_instr_len = 0
+            for name, instr_def in self.instrs.items():
+                if (macro_def := instr_def.inst) in self.macro_instdefs:
+                    u_insts = macro_def.u_insts
+                    instr_len = len(u_insts)
+                    max_instr_len = max(instr_len, max_instr_len)
+                    self.out.emit(f"[{macro_def.name}] = {instr_len},")
+                    macro_instrdef_names.add(macro_def.name)
+                else:
+                    self.out.emit(f"[{name}] = 1,")
+            self.out.emit("}")
+            self.out.emit("")
+            self.out.emit(f"extern const int _Py_MacroOpToUOp[][{max_instr_len}] = {{")
             for macro_def in self.macro_instdefs:
                 u_insts = macro_def.u_insts
-                self.out.emit(f"[{macro_def.name}] = {{{u_insts[0]}, {u_insts[1]}}},")
+                self.out.emit(f"[{macro_def.name}] = {{{', '.join(u_insts)}}},")
             self.out.emit("}")
+
+            # Header guard end
+            self.out.emit("#ifdef __cplusplus")
+            self.out.emit("}")
+            self.out.emit("#endif")
+            self.out.emit("#endif  // Py_INTERNAL_OPCODE_MACRO_TO_MICRO")
 
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
