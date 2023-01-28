@@ -1406,6 +1406,12 @@ class MathTests(unittest.TestCase):
             and y is then constructed choosing xi randomly with decreasing exponent,
             and calculating yi such that some cancellation occurs. Finally, we permute
             the vectors x, y randomly and calculate the achieved condition number.
+
+            In general the actual condition number is a little larger than the
+            anticipated one with quite some variation. However, this is unimportant
+            because in the following figures we plot the relative error against the
+            actually achieved condition number.
+
             """
             # Test generator from: https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
 
@@ -1436,25 +1442,51 @@ class MathTests(unittest.TestCase):
 
             return DotExample(x, y, DotExact(x, y), Condition(x, y))
 
-        def AbsoluteError(res, ex):
-            return DotExact(list(ex.x) + [-res], list(ex.y) + [1])
+        def AbsoluteError(x, y, result):
+            return DotExact(list(x) + [-result], list(y) + [1])
+
+        def err_gamma(n):             # Definition (2.4)
+            return n * ulp(1.0) / (1 - n * ulp(1.0))
+
+        def dotk_bound(cond, n, K=3): # Proposition (5.11)
+            "Relative error bound for DotK"
+            return ulp(1.0) + 2 * err_gamma(4*n-2)**2 + 1/2 * err_gamma(4*n-2)**K * cond
+
+        # For a vector length of 20, the triple length sumprod calculation's
+        # theoretical error bound starts to degrade above a condition
+        # number of 1e25 where we get just under 52 bits of accuracy:
+        #
+        #    >>> -log2(dotk_bound(1e25, n=20, K=3))
+        #    51.84038876713239
+        #    >>> -log2(dotk_bound(1e26, n=20, K=3))
+        #    50.8823973719395
+        #    >>> -log2(dotk_bound(1e27, n=20, K=3))
+        #    48.3334013169794
+        #
+        # The paper notes that the theoretical error bound is pessimistic
+        # by several orders of magnitude, so our test can use a higher
+        # condition number.  (See Table 6.2)
+        #
+        # Here, we test a vector length of 20 and condition number of 1e28
+        # for an absolute error difference within 1 ulp.  This should be
+        # sufficiently loose to alway pass, but tight enough to fail in case
+        # of an implementation error, an incorrect compiler optimization,
+        # or an inadequate libmath implementation of fma().  If the latter
+        # ends up being a problem, we can revise dl_mul() to use Dekker's
+        # mul12() algorithm which slows sumprod() by 20% but would not be
+        # dependent on libmath() meeting the C99 specification for fma().
 
         vector_length = 20
-        target_condition_number = 1e30
-        for i in range(1_000_000):
-            # GenDot creates examples whether the condition numbers
-            # are centered about c but can be two orders of magnitude
-            # above or below.  Here, we generate examples centered
-            # around half our target and then reject examples higher
-            # than our target.
-            ex = GenDot(n=vector_length, c=target_condition_number / 2)
+        target_condition_number = 1e28
+        for i in range(5_000):
+            # Generate examples centered around a quarter of the target condition
+            # number.  Reject actual condition numbers higher than our target.
+            ex = GenDot(n=vector_length, c=target_condition_number / 4)
             if ex.condition > target_condition_number:
                 continue
             result = math.sumprod(ex.x, ex.y)
-            error = AbsoluteError(result, ex)
+            error = AbsoluteError(ex.x, ex.y, result)
             self.assertLess(fabs(error), ulp(result), (ex, result, error))
-            # XXX Compute the theoretical bound for n=20, K=3, cond=1e30.
-            # ??? Is 1e30 too aggressive (within practical but not theoretical bounds.
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
