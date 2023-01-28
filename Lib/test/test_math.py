@@ -1442,12 +1442,19 @@ class MathTests(unittest.TestCase):
         vector_length = 20
         target_condition_number = 1e30
         for i in range(1_000_000):
+            # GenDot creates examples whether the condition numbers
+            # are centered about c but can be two orders of magnitude
+            # above or below.  Here, we generate examples centered
+            # around half our target and then reject examples higher
+            # than our target.
             ex = GenDot(n=vector_length, c=target_condition_number / 2)
             if ex.condition > target_condition_number:
                 continue
             result = math.sumprod(ex.x, ex.y)
             error = AbsoluteError(result, ex)
             self.assertLess(fabs(error), ulp(result), (ex, result, error))
+            # XXX Compute the theoretical bound for n=20, K=3, cond=1e30.
+            # ??? Is 1e30 too aggressive (within practical but not theoretical bounds.
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
