@@ -124,7 +124,7 @@ to start a process.  These *start methods* are
     inherited by the child process.  Note that safely forking a
     multithreaded process is problematic.
 
-    Available on POSIX systems.  The default on POSIX other than macOS.
+    Available on POSIX systems.  Currently the default on POSIX (not macOS).
 
     .. versionchanged:: 3.12
        The implicit use of the *fork* start method as the default now raises a
@@ -137,9 +137,9 @@ to start a process.  These *start methods* are
     a server process is spawned.  From then on, whenever a new process
     is needed, the parent process connects to the server and requests
     that it fork a new process.  The fork server process is single threaded
-    unless system libraries or preloaded imports spawned threads as a
-    side-effect so it is generally safe for it to use :func:`os.fork`.  No
-    unnecessary resources are inherited.
+    unless system libraries or preloaded imports spawn threads as a
+    side-effect so it is generally safe for it to use :func:`os.fork`.
+    No unnecessary resources are inherited.
 
     Available on POSIX platforms which support passing file descriptors
     over Unix pipes such as Linux.
@@ -221,7 +221,7 @@ library user.
    The ``'spawn'`` and ``'forkserver'`` start methods generally cannot
    be used with "frozen" executables (i.e., binaries produced by
    packages like **PyInstaller** and **cx_Freeze**) on POSIX systems.
-   The ``'fork'`` start method does work.
+   The ``'fork'`` start method may work if code does not use threads.
 
 
 Exchanging objects between processes

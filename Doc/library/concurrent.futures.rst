@@ -253,6 +253,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    *mp_context* can be a :mod:`multiprocessing` context or ``None``. It will be
    used to launch the workers. If *mp_context* is ``None`` or not given, the
    default :mod:`multiprocessing` context is used.
+   See :ref:`multiprocessing-start-methods`.
 
    *initializer* is an optional callable that is called at the start of
    each worker process; *initargs* is a tuple of arguments passed to the
@@ -288,7 +289,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       The implcit use of the :mod:`multiprocessing` *fork* start method as a
       platform default (see :ref:`multiprocessing-start-methods`) now raises a
       :exc:`DeprecationWarning` as the default will be changing in Python >=
-      3.14. Code that requires *fork* it should explicitly specify that when
+      3.14. Code that requires *fork* should explicitly specify that when
       creating their ProcessPoolExecutor by passing a
       ``mp_context=multiprocessing.get_context('fork')`` parameter.
 

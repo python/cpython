@@ -657,8 +657,9 @@ class ProcessPoolExecutor(_base.Executor):
                 "The default multiprocessing start method will change "
                 "away from 'fork' in Python >= 3.14, per GH-84559. "
                 "ProcessPoolExecutor uses multiprocessing. "
-                "If your application requires 'fork', explicitly specify "
-                "that by passing a mp_context= parameter. "
+                "If your application requires the 'fork' multiprocessing "
+                "start method, explicitly specify that by passing a "
+                "mp_context= parameter. "
                 "The safest start method is 'spawn'.",
                 category=mp.context.DefaultForkDeprecationWarning,
                 stacklevel=2,

@@ -7,3 +7,5 @@ rather than being explicitly specified through a
 
 This is in preparation for default start method to change in Python 3.14 to
 a default that is safe for multithreaded applications.
+
+Windows and macOS are unaffected as their default start method is ``spawn``.
