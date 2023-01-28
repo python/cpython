@@ -1379,7 +1379,7 @@ class MathTests(unittest.TestCase):
         from fractions import Fraction
         from itertools import starmap
         from collections import namedtuple
-        from math import log2, exp2, fabs
+        from math import log2, exp2, fabs, ulp
         from random import choices, uniform, shuffle
         from statistics import median
 
@@ -1436,21 +1436,18 @@ class MathTests(unittest.TestCase):
 
             return DotExample(x, y, DotExact(x, y), Condition(x, y))
 
-        def RelativeError(res, ex):
-            x, y, target_sumprod, condition = ex
-            n = DotExact(list(x) + [-res], list(y) + [1])
-            return fabs(n / target_sumprod)
+        def AbsoluteError(res, ex):
+            return DotExact(list(ex.x) + [-res], list(ex.y) + [1])
 
         vector_length = 20
         target_condition_number = 1e30
-        for i in range(10_000):
-            ex = GenDot(n=vector_length, c=target_condition_number)
+        for i in range(1_000_000):
+            ex = GenDot(n=vector_length, c=target_condition_number / 2)
             if ex.condition > target_condition_number:
                 continue
-            res = math.sumprod(ex.x, ex.y)
-            relative_error = RelativeError(res, ex)
-            self.assertLessEqual(relative_error, 2.0 ** -53,
-                                (ex, res, relative_error))
+            result = math.sumprod(ex.x, ex.y)
+            error = AbsoluteError(result, ex)
+            self.assertLess(fabs(error), ulp(result), (ex, result, error))
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
