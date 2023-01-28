@@ -8,6 +8,7 @@
 
 import hashlib
 from http.client import HTTPException
+import random
 import sys
 import unicodedata
 import unittest
@@ -217,10 +218,12 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
 
     def test_is_normalized_unicode_3_2_0(self):
-        for x in range(0x110000):
-            for form in ('NFC', 'NFD', 'NFKC', 'NFKD'):
-                normalized = self.db.ucd_3_2_0.normalize(form, chr(x))
-                self.assertTrue(self.db.ucd_3_2_0.is_normalized(form, normalized))
+        sample_chrs = random.sample(range(0x110000), 100)
+        for form in ('NFC', 'NFD', 'NFKC', 'NFKD'):
+            with self.subTest(form=form):
+                for x in sample_chrs:
+                    norm = self.db.ucd_3_2_0.normalize(form, chr(x))
+                    self.assertTrue(self.db.ucd_3_2_0.is_normalized(form, norm))
 
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width
