@@ -2832,8 +2832,7 @@ long_add_would_overflow(long a, long b)
 }
 
 /*
-Double and triple length extended precision floating point arithmetic
-based on:
+Double and triple length extended precision algorithms from:
 
   Accurate Sum and Dot Product
   by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
@@ -2847,7 +2846,7 @@ typedef struct{ double hi; double lo; } DoubleLength;
 static DoubleLength
 dl_sum(double a, double b)
 {
-    // Algorithm 3.1 Error-free transformation of the sum
+    /* Algorithm 3.1 Error-free transformation of the sum */
     double x = a + b;
     double z = x - a;
     double y = (a - (x - z)) + (b - z);
@@ -2857,7 +2856,7 @@ dl_sum(double a, double b)
 static DoubleLength
 dl_mul(double x, double y)
 {
-    // Algorithm 3.5. Error-free transformation of a product
+    /* Algorithm 3.5. Error-free transformation of a product */
     double z = x * y;
     double zz = fma(x, y, -z);
     return (DoubleLength) {z, zz};
@@ -2870,7 +2869,7 @@ static const TripleLength tl_zero = {0.0, 0.0, 0.0};
 static TripleLength
 tl_fma(double x, double y, TripleLength total)
 {
-    // Algorithm 5.10 with SumKVert for K=3
+    /* Algorithm 5.10 with SumKVert for K=3 */
     DoubleLength pr = dl_mul(x, y);
     DoubleLength sm = dl_sum(total.hi, pr.hi);
     DoubleLength r1 = dl_sum(total.lo, pr.lo);
