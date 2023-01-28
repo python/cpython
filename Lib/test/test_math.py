@@ -1407,6 +1407,7 @@ class MathTests(unittest.TestCase):
             and calculating yi such that some cancellation occurs. Finally, we permute
             the vectors x, y randomly and calculate the achieved condition number.
             """
+            # Test generator from: https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
 
             assert n >= 6
             n2 = n // 2
@@ -1442,13 +1443,13 @@ class MathTests(unittest.TestCase):
 
         vector_length = 20
         target_condition_number = 1e30
-        for i in range(2000):
+        for i in range(10_000):
             ex = GenDot(n=vector_length, c=target_condition_number)
             if ex.condition > target_condition_number:
                 continue
             res = math.sumprod(ex.x, ex.y)
             relative_error = RelativeError(res, ex)
-            self.assertLess(relative_error, 1e-15,
+            self.assertLessEqual(relative_error, 2.0 ** -53,
                                 (ex, res, relative_error))
 
     def testModf(self):
