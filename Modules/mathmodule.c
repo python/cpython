@@ -2868,7 +2868,7 @@ typedef struct { double hi; double lo; double tiny; } TripleLength;
 static const TripleLength tl_zero = {0.0, 0.0, 0.0};
 
 static TripleLength
-tl_fma(TripleLength total, double x, double y)
+tl_fma(double x, double y, TripleLength total)
 {
     // Algorithm 5.10 with SumKVert for K=3
     DoubleLength pr = dl_mul(x, y);
@@ -3048,7 +3048,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 } else {
                     goto finalize_flt_path;
                 }
-                TripleLength new_flt_total = tl_fma(flt_total, flt_p, flt_q);
+                TripleLength new_flt_total = tl_fma(flt_p, flt_q, flt_total);
                 if (isfinite(new_flt_total.hi)) {
                     flt_total = new_flt_total;
                     flt_total_in_use = true;
