@@ -1387,7 +1387,7 @@ an :term:`importer`.
 
    .. classmethod:: factory(loader)
 
-      A static method which returns a callable that creates a lazy loader. This
+      A class method which returns a callable that creates a lazy loader. This
       is meant to be used in situations where the loader is passed by class
       instead of by instance.
       ::
