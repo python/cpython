@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 from typing import NamedTuple, Callable, TypeVar, Literal, get_args, TypeAlias
 
+import re
 import lexer as lx
 from plexer import PLexer
 
@@ -137,6 +138,7 @@ class InstDef(Node):
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
     block: Block
+    u_insts: list[str]
 
 
 @dataclass
@@ -151,12 +153,6 @@ class Macro(Node):
     uops: list[UOp]
 
 @dataclass
-class UOpMap(Node):
-    name: str
-    u_insts: list[str]
-
-
-@dataclass
 class Family(Node):
     name: str
     size: str  # Variable giving the cache size in code units
@@ -165,15 +161,13 @@ class Family(Node):
 
 class Parser(PLexer):
     @contextual
-    def definition(self) -> InstDef | Super | Macro | UOpMap | Family | None:
+    def definition(self) -> InstDef | Super | Macro | Family | None:
         if inst := self.inst_def():
             return inst
         if super := self.super_def():
             return super
         if macro := self.macro_def():
             return macro
-        if uopmap := self.uopmap_def():
-            return uopmap
         if family := self.family_def():
             return family
 
@@ -181,8 +175,14 @@ class Parser(PLexer):
     def inst_def(self) -> InstDef | None:
         if hdr := self.inst_header():
             if block := self.block():
+                u_insts = []
+                if hdr.kind == "macro_inst":
+                    for line in block.text.splitlines():
+                        if m := re.match(r"(\s*)U_INST\((.+)\);\s*$", line):
+                            space, label = m.groups()
+                            u_insts.append(label)
                 return InstDef(
-                    hdr.register, hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block
+                    hdr.register, hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block, u_insts
                 )
             raise self.make_syntax_error("Expected block")
         return None
@@ -355,18 +355,6 @@ class Parser(PLexer):
                 raise self.make_syntax_error("Expected integer")
             else:
                 return OpName(tkn.text)
-
-    @contextual
-    def uopmap_def(self) -> UOpMap | None:
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "uop_map":
-            if self.expect(lx.LPAREN):
-                if tkn := self.expect(lx.IDENTIFIER):
-                    if self.expect(lx.RPAREN):
-                        if self.expect(lx.EQUALS):
-                            if u_insts := self.u_insts():
-                                self.require(lx.SEMI)
-                                res = UOpMap(tkn.text, u_insts)
-                                return res
 
     def u_insts(self) -> list[str] | None:
         if tkn := self.expect(lx.IDENTIFIER):

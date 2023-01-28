@@ -407,7 +407,7 @@
             PyObject *left = PEEK(2);
             PyObject *sum;
             BINARY_OP_ADD_INT_TYPE_CHECK();
-            BINARY_OP_ADD_INST_REST();
+            BINARY_OP_ADD_INT_REST();
             STACK_SHRINK(1);
             POKE(1, sum);
             JUMPBY(1);
