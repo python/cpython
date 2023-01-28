@@ -289,7 +289,7 @@ dummy_func(
             U_INST(BINARY_OP_ADD_INT_REST);
         }
 
-        u_inst(BINARY_OP_ADD_INT_TYPE_CHECK, (left, right -- left, right)) {
+        u_inst(BINARY_OP_ADD_INT_TYPE_CHECK, (left : PyLong_Type, right : PyLong_Type -- left, right)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);

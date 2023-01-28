@@ -2,8 +2,8 @@
 // from Python\bytecodes.c
 // Do not edit!
 
-#ifndef Py_INTERNAL_OPCODE_MACRO_TO_MICRO
-#define Py_INTERNAL_OPCODE_MACRO_TO_MICRO
+#ifndef Py_INTERNAL_OPCODE_MACRO_TO_MICRO_H
+#define Py_INTERNAL_OPCODE_MACRO_TO_MICRO_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -178,11 +178,14 @@ extern const int _Py_MacroOpUOpCount[] = {
 [SWAP] = 1,
 [EXTENDED_ARG] = 1,
 [CACHE] = 1,
-}
+};
 
 extern const int _Py_MacroOpToUOp[][2] = {
 [BINARY_OP_ADD_INT] = {BINARY_OP_ADD_INT_TYPE_CHECK, BINARY_OP_ADD_INT_REST},
-}
+};
+extern const PyTypeObject *_Py_UOpGuardTypes[][2] = {
+[BINARY_OP_ADD_INT_TYPE_CHECK] = {&PyLong_Type, &PyLong_Type},
+};
 #ifdef __cplusplus
 }
 #endif

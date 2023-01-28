@@ -738,6 +738,9 @@
     <ClInclude Include="..\Include\internal\pycore_structseq.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_opcode_macro_to_micro.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_abc.c">
