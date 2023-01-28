@@ -319,6 +319,32 @@ class _BasePurePathTest(object):
         # Multi-part glob-style pattern.
         self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
         self.assertTrue(P('/a/b/c.py').match('/a/**/*.py'))
+        # Recursive patterns.
+        self.assertTrue(P('a').match('**', recursive=True))
+        self.assertTrue(P('c.py').match('**', recursive=True))
+        self.assertTrue(P('a/b/c.py').match('**', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('**', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('/**', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('**/', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('/a/**', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('**/*.py', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('/**/*.py', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('/a/**/*.py', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('/a/b/**/*.py', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('**/a/b/c.py/**', recursive=True))
+        self.assertTrue(P('/a/b/c.py').match('/**/**/**/**/*.py', recursive=True))
+        self.assertFalse(P('c.py').match('**/a.py', recursive=True))
+        self.assertFalse(P('c.py').match('c/**', recursive=True))
+        self.assertFalse(P('a/b/c.py').match('**/a', recursive=True))
+        self.assertFalse(P('a/b/c.py').match('**/a/b', recursive=True))
+        self.assertFalse(P('a/b/c.py').match('**/a/b/c', recursive=True))
+        self.assertFalse(P('a/b/c.py').match('**/a/b/c.', recursive=True))
+        self.assertFalse(P('a/b/c.py').match('**/a/b/c./**', recursive=True))
+        self.assertFalse(P('a/b/c.py').match('**/a/b/c./**', recursive=True))
+        self.assertFalse(P('a/b/c.py').match('/a/b/c.py/**', recursive=True))
+        self.assertFalse(P('a/b/c.py').match('/**/a/b/c.py', recursive=True))
+        self.assertRaises(ValueError, P('a').match, '**a/b/c', recursive=True)
+        self.assertRaises(ValueError, P('a').match, 'a/b/c**', recursive=True)
 
     def test_ordering_common(self):
         # Ordering is tuple-alike.

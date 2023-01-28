@@ -77,6 +77,11 @@ def translate(pat):
     There is no way to quote meta-characters.
     """
 
+    res = _translate(pat)
+    return fr'(?s:{res})\Z'
+
+
+def _translate(pat):
     STAR = object()
     res = []
     add = res.append
@@ -182,4 +187,4 @@ def translate(pat):
             add(f"(?>.*?{fixed})")
     assert i == n
     res = "".join(res)
-    return fr'(?s:{res})\Z'
+    return res

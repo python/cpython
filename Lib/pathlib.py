@@ -65,6 +65,25 @@ def _is_wildcard_pattern(pat):
 #
 
 @functools.lru_cache()
+def _make_matcher(path_cls, pattern, recursive):
+    pattern = path_cls(pattern)
+    if not pattern._parts:
+        raise ValueError("empty pattern")
+    result = [r'\A' if pattern._drv or pattern._root else '^']
+    for part in pattern._parts_normcase:
+        if recursive:
+            if part == '**':
+                result.append('(.+\n)*')
+                continue
+            elif '**' in part:
+                raise ValueError("Invalid pattern: '**' can only be an entire path component")
+        part = fnmatch._translate(part)
+        result.append(f'{part}\n')
+    result.append(r'\Z')
+    return re.compile(''.join(result), flags=re.MULTILINE)
+
+
+@functools.lru_cache()
 def _make_selector(pattern_parts, flavour):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
@@ -639,29 +658,13 @@ class PurePath(object):
         name = self._parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
 
-    def match(self, path_pattern):
+    def match(self, path_pattern, recursive=False):
         """
         Return True if this path matches the given pattern.
         """
-        path_pattern = self._flavour.normcase(path_pattern)
-        drv, root, pat_parts = self._parse_parts((path_pattern,))
-        if not pat_parts:
-            raise ValueError("empty pattern")
-        elif drv and drv != self._flavour.normcase(self._drv):
-            return False
-        elif root and root != self._root:
-            return False
-        parts = self._parts_normcase
-        if drv or root:
-            if len(pat_parts) != len(parts):
-                return False
-            pat_parts = pat_parts[1:]
-        elif len(pat_parts) > len(parts):
-            return False
-        for part, pat in zip(reversed(parts), reversed(pat_parts)):
-            if not fnmatch.fnmatchcase(part, pat):
-                return False
-        return True
+        matcher = _make_matcher(type(self), path_pattern, recursive)
+        lines = ''.join(f'{part}\n' for part in self._parts_normcase)
+        return matcher.search(lines) is not None
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
 # optimizations in PurePath._parse_args().

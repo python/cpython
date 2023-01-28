@@ -544,10 +544,13 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('c:/Program Files')
 
 
-.. method:: PurePath.match(pattern)
+.. method:: PurePath.match(pattern, recursive=False)
 
    Match this path against the provided glob-style pattern.  Return ``True``
    if matching is successful, ``False`` otherwise.
+
+   If *recursive* is true, the pattern "``**``" will match any number of file
+   or directory segments.
 
    If *pattern* is relative, the path can be either relative or absolute,
    and matching is done from the right::
@@ -573,6 +576,9 @@ Pure paths provide the following methods and properties:
       False
       >>> PureWindowsPath('b.py').match('*.PY')
       True
+
+   .. versionadded:: 3.12
+      The *recursive* argument.
 
 
 .. method:: PurePath.relative_to(other, walk_up=False)
