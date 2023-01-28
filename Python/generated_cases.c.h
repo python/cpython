@@ -1794,9 +1794,9 @@
                 Py_DECREF(owner);
                 if (res == NULL) goto pop_1_error;
             }
-            STACK_GROW(((oparg & 1) != 0));
+            STACK_GROW(((oparg & 1) ? 1 : 0));
             POKE(1, res);
-            if (oparg & 1) { POKE(1 + ((oparg & 1) != 0), res2); }
+            if (oparg & 1) { POKE(1 + ((oparg & 1) ? 1 : 0), res2); }
             JUMPBY(9);
             DISPATCH();
         }

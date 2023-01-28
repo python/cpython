@@ -491,17 +491,17 @@ def test_cond_effect():
     output = """
         TARGET(OP) {
             PyObject *cc = PEEK(1);
-            PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) != 0)) : NULL;
-            PyObject *aa = PEEK(2 + ((oparg & 1) != 0));
+            PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) ? 1 : 0)) : NULL;
+            PyObject *aa = PEEK(2 + ((oparg & 1) ? 1 : 0));
             PyObject *xx;
             PyObject *output = NULL;
             PyObject *zz;
             output = spam(oparg, input);
-            STACK_SHRINK(((oparg & 1) != 0));
-            STACK_GROW(((oparg & 2) != 0));
+            STACK_SHRINK(((oparg & 1) ? 1 : 0));
+            STACK_GROW(((oparg & 2) ? 1 : 0));
             POKE(1, zz);
-            if (oparg & 2) { POKE(1 + ((oparg & 2) != 0), output); }
-            POKE(2 + ((oparg & 2) != 0), xx);
+            if (oparg & 2) { POKE(1 + ((oparg & 2) ? 1 : 0), output); }
+            POKE(2 + ((oparg & 2) ? 1 : 0), xx);
             DISPATCH();
         }
     """

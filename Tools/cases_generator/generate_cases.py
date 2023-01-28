@@ -64,7 +64,7 @@ def effect_size(effect: StackEffect) -> tuple[int, str]:
         assert not effect.cond, "Array effects cannot have a condition"
         return 0, effect.size
     elif effect.cond:
-        return 0, f"{maybe_parenthesize(effect.cond)} != 0"
+        return 0, f"{maybe_parenthesize(effect.cond)} ? 1 : 0"
     else:
         return 1, ""
 
