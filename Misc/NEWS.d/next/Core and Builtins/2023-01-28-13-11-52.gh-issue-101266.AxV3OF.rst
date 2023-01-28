@@ -1,0 +1,1 @@
+Fix :func:`sys.getsizeof` reporting for `int` subclasses.
