@@ -294,8 +294,7 @@ def _next_external_frame(frame, skip_file_prefixes):
 
 # Code typically replaced by _warnings
 def warn(message, category=None, stacklevel=1, source=None,
-         *,
-         skip_file_prefixes: tuple[str, ...] = ()):
+         *, skip_file_prefixes=()):
     """Issue a warning, or maybe ignore it or raise an exception."""
     # Check if message is already a Warning object
     if isinstance(message, Warning):
