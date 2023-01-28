@@ -400,10 +400,12 @@ class Component:
 
     def write_body(self, out: Formatter, cache_adjust: int) -> None:
         with out.block(""):
+            input_names = {ieffect.name for _, ieffect in self.input_mapping}
             for var, ieffect in self.input_mapping:
                 out.declare(ieffect, var)
             for _, oeffect in self.output_mapping:
-                out.declare(oeffect, None)
+                if oeffect.name not in input_names:
+                    out.declare(oeffect, None)
 
             self.instr.write_body(out, dedent=-4, cache_adjust=cache_adjust)
 
@@ -537,10 +539,10 @@ class Analyzer:
         Raises SystemExit if there is an error.
         """
         self.find_predictions()
-        self.map_families()
-        self.check_families()
         self.analyze_register_instrs()
         self.analyze_supers_and_macros()
+        self.map_families()
+        self.check_families()
 
     def find_predictions(self) -> None:
         """Find the instructions that need PREDICTED() labels."""
@@ -559,11 +561,15 @@ class Analyzer:
                     )
 
     def map_families(self) -> None:
-        """Make instruction names back to their family, if they have one."""
+        """Link instruction names back to their family, if they have one."""
         for family in self.families.values():
             for member in family.members:
                 if member_instr := self.instrs.get(member):
                     member_instr.family = family
+                elif member_macro := self.macro_instrs.get(member):
+                    for part in member_macro.parts:
+                        if isinstance(part, Component):
+                            part.instr.family = family
                 else:
                     self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
@@ -580,7 +586,7 @@ class Analyzer:
         for family in self.families.values():
             if len(family.members) < 2:
                 self.error(f"Family {family.name!r} has insufficient members", family)
-            members = [member for member in family.members if member in self.instrs]
+            members = [member for member in family.members if member in self.instrs or member in self.macro_instrs]
             if members != family.members:
                 unknown = set(family.members) - set(members)
                 self.error(
@@ -588,15 +594,31 @@ class Analyzer:
                 )
             if len(members) < 2:
                 continue
-            head = self.instrs[members[0]]
+            head = self.instrs[members[0]]  # Head must be a regular instruction
             cache = head.cache_offset
             input = len(head.input_effects)
             output = len(head.output_effects)
             for member in members[1:]:
-                instr = self.instrs[member]
-                c = instr.cache_offset
-                i = len(instr.input_effects)
-                o = len(instr.output_effects)
+                if instr := self.instrs.get(member):
+                    c = instr.cache_offset
+                    i = len(instr.input_effects)
+                    o = len(instr.output_effects)
+                else:
+                    macro = self.macro_instrs[member]
+                    c, i, o = 0, 0, 0
+                    for part in macro.parts:
+                        if isinstance(part, Component):
+                            c += part.instr.cache_offset
+                            # A component may pop what the previous component pushed,
+                            # so we offset the input/output counts by that.
+                            delta_i = len(part.instr.input_effects)
+                            delta_o = len(part.instr.output_effects)
+                            offset = min(delta_i, o)
+                            i += delta_i - offset
+                            o += delta_o - offset
+                        else:
+                            assert isinstance(part, parser.CacheEffect), part
+                            c += part.size
                 if (c, i, o) != (cache, input, output):
                     self.error(
                         f"Family {family.name!r} has inconsistent "
