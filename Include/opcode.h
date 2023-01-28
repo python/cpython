@@ -125,8 +125,6 @@ extern "C" {
 #define JUMP_NO_INTERRUPT                      261
 #define LOAD_METHOD                            262
 #define MAX_PSEUDO_OPCODE                      262
-
-#ifndef Py_TIER2_INTERPRETER
 #define BINARY_OP_ADD_FLOAT                      5
 #define BINARY_OP_ADD_INT                        6
 #define BINARY_OP_ADD_UNICODE                    7
@@ -189,10 +187,9 @@ extern "C" {
 #define UNPACK_SEQUENCE_TUPLE                  159
 #define UNPACK_SEQUENCE_TWO_TUPLE              160
 #define DO_TRACING                             255
-#endif
-
-#ifdef Py_TIER2_INTERPRETER
+// Tier 2 interpreter ops
 #define BINARY_OP_ADD_FLOAT                      5
+#define BINARY_OP_ADD_INT                        6
 #define BINARY_OP_ADD_UNICODE                    7
 #define BINARY_OP_INPLACE_ADD_UNICODE            8
 #define BINARY_OP_MULTIPLY_FLOAT                10
@@ -253,10 +250,8 @@ extern "C" {
 #define UNPACK_SEQUENCE_TUPLE                  159
 #define UNPACK_SEQUENCE_TWO_TUPLE              160
 #define DO_TRACING                             255
-#define BINARY_OP_ADD_INT_TYPE_CHECK             6
-#define BINARY_OP_ADD_INT_REST                 161
-#endif
-
+#define BINARY_OP_ADD_INT_TYPE_CHECK           161
+#define BINARY_OP_ADD_INT_REST                 166
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

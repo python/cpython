@@ -30,10 +30,6 @@ DEFAULT_METADATA_OUTPUT = os.path.relpath(
 )
 
 # Tier 2 interpreter
-TIER2_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases_tier2.c.h"))
-TIER2_METADATA_OUTPUT = os.path.relpath(
-    os.path.join(ROOT, "Python/opcode_metadata_tier2.h")
-)
 TIER2_MACRO_TO_MICRO_MAP_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Include/internal/pycore_opcode_macro_to_micro.h")
 )
@@ -68,11 +64,6 @@ arg_parser.add_argument(
     help=f"Generate macro to micro instruction map instead,"
          f"changes output default to {TIER2_MACRO_TO_MICRO_MAP_OUTPUT}",
 )
-
-
-class InterpreterTier(Enum):
-    TIER1 = auto()
-    TIER2 = auto()
 
 
 def effect_size(effect: StackEffect) -> tuple[int, str]:
@@ -385,7 +376,7 @@ class Instruction:
         for line in self.block_text:
             if m := re.match(r"(\s*)U_INST\((.+)\);\s*$", line):
                 space, label = m.groups()
-                out.emit(f"{label}();")
+                out.emit(f"UOP_{label}();")
             elif m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*(?://.*)?$", line):
                 space, cond, label = m.groups()
                 # ERROR_IF() must pop the inputs from the stack.
@@ -478,15 +469,13 @@ class Analyzer:
 
     filename: str
     output_filename: str
-    tier: InterpreterTier
     src: str
     errors: int = 0
 
-    def __init__(self, filename: str, output_filename: str, tier: InterpreterTier):
+    def __init__(self, filename: str, output_filename: str):
         """Read the input file."""
         self.filename = filename
         self.output_filename = output_filename
-        self.tier = tier
         with open(filename) as f:
             self.src = f.read()
 
@@ -938,9 +927,6 @@ class Analyzer:
                     case parser.InstDef():
                         if thing.kind == "op":
                             continue
-                        if ((thing.kind == "macro_inst" and self.tier != InterpreterTier.TIER1)
-                            or (thing.kind == "u_inst" and self.tier != InterpreterTier.TIER2)):
-                            continue
                         self.write_metadata_for_inst(self.instrs[thing.name])
                     case parser.Super():
                         self.write_metadata_for_super(self.super_instrs[thing.name])
@@ -999,15 +985,14 @@ class Analyzer:
             n_macros = 0
 
             # Single pass to hoist all the u_instructions to the top.
-            if self.tier == InterpreterTier.TIER1:
-                for thing in self.everything:
-                    match thing:
-                        case parser.InstDef():
-                            if thing.kind == "u_inst":
-                                self.write_u_inst_as_c_macro(
-                                    self.instrs[thing.name])
-                        case _:
-                            pass
+            for thing in self.everything:
+                match thing:
+                    case parser.InstDef():
+                        if thing.kind == "u_inst":
+                            self.write_u_inst_as_c_macro(
+                                self.instrs[thing.name])
+                    case _:
+                        pass
 
             # Everything else
             for thing in self.everything:
@@ -1015,10 +1000,6 @@ class Analyzer:
                     case parser.InstDef():
                         match thing.kind:
                             case "op":
-                                pass
-                            case "u_inst" if self.tier != InterpreterTier.TIER2:
-                                pass
-                            case "macro_inst" if self.tier != InterpreterTier.TIER1:
                                 pass
                             case _:
                                 n_instrs += 1
@@ -1053,7 +1034,7 @@ class Analyzer:
     def write_u_inst_as_c_macro(self, instr: Instruction) -> None:
         name = instr.name
         self.out.emit("")
-        self.out.emit(f"#define {name}() \\")
+        self.out.emit(f"#define UOP_{name}() \\")
         self.out.emit("do { \\")
         self.out.postfix = "\\"
         instr.write_body(self.out, 0)
@@ -1167,39 +1148,28 @@ def variable_used(node: parser.Node, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(token.kind == "IDENTIFIER" and token.text == name for token in node.tokens)
 
-
-def generate_interpreter(input_: str, output: str, metadata: bool, macromap: bool,
-                         tier: InterpreterTier) -> None:
-    if tier == InterpreterTier.TIER2 and macromap:
-        output = TIER2_MACRO_TO_MICRO_MAP_OUTPUT
-    if metadata:
-        if output == DEFAULT_OUTPUT:
-            output = DEFAULT_METADATA_OUTPUT
-        elif output == TIER2_OUTPUT:
-            output = TIER2_METADATA_OUTPUT
-    a = Analyzer(input_, output, tier)  # Raises OSError if input unreadable
-    a.parse()  # Raises SyntaxError on failure
-    a.analyze()  # Prints messages and sets a.errors on failure
-    if a.errors:
-        sys.exit(f"Found {a.errors} errors")
-    if macromap:
-        a.write_macromap()
-        return
-    if metadata:
-        a.write_metadata()
-    else:
-        a.write_instructions()  # Raises OSError if output can't be written
-
 def main():
     """Parse command line, parse input, analyze, write output."""
     args = arg_parser.parse_args()  # Prints message and sys.exit(2) on error
 
-    # Tier 1 interpreter
-    generate_interpreter(args.input, args.output, args.metadata, False,
-                         InterpreterTier.TIER1)
-    # Tier 2 interpreter
-    generate_interpreter(args.input, TIER2_OUTPUT, args.metadata, args.macromap,
-                         InterpreterTier.TIER2)
+    if args.macromap:
+        if args.output == DEFAULT_OUTPUT:
+            output = TIER2_MACRO_TO_MICRO_MAP_OUTPUT
+    elif args.metadata:
+        if args.output == DEFAULT_OUTPUT:
+            output = DEFAULT_METADATA_OUTPUT
+    a = Analyzer(args.input, args.output)  # Raises OSError if input unreadable
+    a.parse()  # Raises SyntaxError on failure
+    a.analyze()  # Prints messages and sets a.errors on failure
+    if a.errors:
+        sys.exit(f"Found {a.errors} errors")
+    if args.macromap:
+        a.write_macromap()
+        return
+    elif args.metadata:
+        a.write_metadata()
+    else:
+        a.write_instructions()  # Raises OSError if output can't be written
 
 
 if __name__ == "__main__":
