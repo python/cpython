@@ -1440,17 +1440,16 @@ class MathTests(unittest.TestCase):
             n = DotExact(list(x) + [-res], list(y) + [1])
             return fabs(n / target_sumprod)
 
-        def Trial(dotfunc, c, n):
-            ex = GenDot(n, c)
-            res = dotfunc(ex.x, ex.y)
-            return RelativeError(res, ex)
-
-        times = 1000          # Number of trials
-        n = 20                # Length of vectors
-        c = 1e30              # Target condition number
-
-        relative_err = median(Trial(math.sumprod, c, n) for i in range(times))
-        self.assertLess(relative_err, 1e-16)
+        vector_length = 20
+        target_condition_number = 1e30
+        for i in range(2000):
+            ex = GenDot(n=vector_length, c=target_condition_number)
+            if ex.condition > target_condition_number:
+                continue
+            res = math.sumprod(ex.x, ex.y)
+            relative_error = RelativeError(res, ex)
+            self.assertLess(relative_error, 1e-15,
+                                (ex, res, relative_error))
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
