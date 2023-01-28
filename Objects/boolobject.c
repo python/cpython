@@ -4,6 +4,8 @@
 #include "pycore_object.h"      // _Py_FatalRefcountError()
 #include "pycore_runtime.h"       // _Py_ID()
 
+#include <stddef.h>
+
 /* We define bool_repr to return "False" or "True" */
 
 static PyObject *
