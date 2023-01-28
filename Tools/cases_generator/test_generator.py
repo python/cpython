@@ -494,7 +494,7 @@ def test_cond_effect():
             PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) != 0)) : NULL;
             PyObject *aa = PEEK(2 + ((oparg & 1) != 0));
             PyObject *xx;
-            PyObject *output;
+            PyObject *output = NULL;
             PyObject *zz;
             output = spam(oparg, input);
             STACK_SHRINK(((oparg & 1) != 0));

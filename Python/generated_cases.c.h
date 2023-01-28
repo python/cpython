@@ -1746,7 +1746,7 @@
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
             PyObject *owner = PEEK(1);
-            PyObject *res2;
+            PyObject *res2 = NULL;
             PyObject *res;
             #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;

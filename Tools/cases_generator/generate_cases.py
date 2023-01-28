@@ -160,10 +160,13 @@ class Formatter:
         if dst.name == UNUSED:
             return
         typ = f"{dst.type}" if dst.type else "PyObject *"
-        init = ""
         if src:
             cast = self.cast(dst, src)
             init = f" = {cast}{src.name}"
+        elif dst.cond:
+            init = " = NULL"
+        else:
+            init = ""
         sepa = "" if typ.endswith("*") else " "
         self.emit(f"{typ}{sepa}{dst.name}{init};")
 
