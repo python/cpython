@@ -216,7 +216,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
         self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
 
-    def test_unicode_3_2_0(self):
+    def test_is_normalized_unicode_3_2_0(self):
         for x in range(0x110000):
             for form in ('NFC', 'NFD', 'NFKC', 'NFKD'):
                 normalized = self.db.ucd_3_2_0.normalize(form, chr(x))
