@@ -587,13 +587,17 @@ PyOS_AfterFork_Child(void)
     PyStatus status;
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    status = _PyGILState_Reinit(runtime);
+    status = _PyRuntimeState_ReInitThreads(runtime);
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
+
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    tstate->native_thread_id = PyThread_get_thread_native_id();
+#endif
 
     status = _PyEval_ReInitThreads(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -606,11 +610,6 @@ PyOS_AfterFork_Child(void)
     }
 
     _PySignal_AfterFork();
-
-    status = _PyRuntimeState_ReInitThreads(runtime);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto fatal_error;
-    }
 
     status = _PyInterpreterState_DeleteExceptMain(runtime);
     if (_PyStatus_EXCEPTION(status)) {

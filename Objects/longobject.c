@@ -5638,6 +5638,11 @@ long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
     n = Py_SIZE(tmp);
     if (n < 0)
         n = -n;
+    /* Fast operations for single digit integers (including zero)
+     * assume that there is always at least one digit present. */
+    if (n == 0) {
+        n = 1;
+    }
     newobj = (PyLongObject *)type->tp_alloc(type, n);
     if (newobj == NULL) {
         Py_DECREF(tmp);
@@ -5879,7 +5884,10 @@ int___sizeof___impl(PyObject *self)
 {
     Py_ssize_t res;
 
-    res = offsetof(PyLongObject, ob_digit) + Py_ABS(Py_SIZE(self))*sizeof(digit);
+    res = offsetof(PyLongObject, ob_digit)
+        /* using Py_MAX(..., 1) because we always allocate space for at least
+           one digit, even though the integer zero has a Py_SIZE of 0 */
+        + Py_MAX(Py_ABS(Py_SIZE(self)), 1)*sizeof(digit);
     return res;
 }
 

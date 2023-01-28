@@ -33,6 +33,9 @@ hascompare = []
 hasfree = []
 hasexc = []
 
+
+ENABLE_SPECIALIZATION = True
+
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
 
@@ -82,7 +85,7 @@ def_op('INTERPRETER_EXIT', 3)
 def_op('END_FOR', 4)
 
 def_op('NOP', 9)
-def_op('UNARY_POSITIVE', 10)
+
 def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 
@@ -112,22 +115,18 @@ def_op('CLEANUP_THROW', 55)
 def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
 
-def_op('STOPITERATION_ERROR', 63)
-
 def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)
-def_op('PRINT_EXPR', 70)
+
 def_op('LOAD_BUILD_CLASS', 71)
 
 def_op('LOAD_ASSERTION_ERROR', 74)
 def_op('RETURN_GENERATOR', 75)
 
-def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
-def_op('IMPORT_STAR', 84)
+
 def_op('SETUP_ANNOTATIONS', 85)
 
-def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
@@ -193,6 +192,8 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
+def_op('COMPARE_AND_BRANCH', 141)   # Comparison and jump
+hascompare.append(141)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -220,7 +221,7 @@ def_op('DICT_UPDATE', 165)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
-
+def_op('CALL_INTRINSIC_1', 173)
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
@@ -313,10 +314,10 @@ _specializations = {
         "CALL_NO_KW_TUPLE_1",
         "CALL_NO_KW_TYPE_1",
     ],
-    "COMPARE_OP": [
-        "COMPARE_OP_FLOAT_JUMP",
-        "COMPARE_OP_INT_JUMP",
-        "COMPARE_OP_STR_JUMP",
+    "COMPARE_AND_BRANCH": [
+        "COMPARE_AND_BRANCH_FLOAT",
+        "COMPARE_AND_BRANCH_INT",
+        "COMPARE_AND_BRANCH_STR",
     ],
     "FOR_ITER": [
         "FOR_ITER_LIST",
@@ -336,7 +337,6 @@ _specializations = {
         # These will always push [unbound method, self] onto the stack.
         "LOAD_ATTR_METHOD_LAZY_DICT",
         "LOAD_ATTR_METHOD_NO_DICT",
-        "LOAD_ATTR_METHOD_WITH_DICT",
         "LOAD_ATTR_METHOD_WITH_VALUES",
     ],
     "LOAD_CONST": [
@@ -396,7 +396,9 @@ _cache_format = {
     },
     "COMPARE_OP": {
         "counter": 1,
-        "mask": 1,
+    },
+    "COMPARE_AND_BRANCH": {
+        "counter": 1,
     },
     "BINARY_SUBSCR": {
         "counter": 1,
