@@ -4,8 +4,8 @@
   <PropertyGroup>
     <TclMajorVersion>8</TclMajorVersion>
     <TclMinorVersion>6</TclMinorVersion>
-    <TclPatchLevel>12</TclPatchLevel>
-    <TclRevision>1</TclRevision>
+    <TclPatchLevel>13</TclPatchLevel>
+    <TclRevision>0</TclRevision>
     <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
     <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
     <TkPatchLevel>$(TclPatchLevel)</TkPatchLevel>
@@ -27,6 +27,7 @@
     <tclShExeName>tclsh$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).exe</tclShExeName>
     <tkDLLName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).dll</tkDLLName>
     <tkLibName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tkLibName>
+    <tclZlibDLLName>zlib1.dll</tclZlibDLLName>
     <tixDLLName>tix$(TixMajorVersion)$(TixMinorVersion)$(TclDebugExt).dll</tixDLLName>
     <tixDLLPath>$(tcltkDir)lib\tix$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel)\$(tixDLLName)</tixDLLPath>
     <tcltkLib>$(tcltkDir)lib\tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib;$(tcltkDir)lib\tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tcltkLib>
