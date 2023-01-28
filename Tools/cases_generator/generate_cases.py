@@ -461,6 +461,7 @@ class MacroInstruction(SuperOrMacroInstruction):
     parts: list[Component | parser.CacheEffect]
 
 
+AnyInstruction = Instruction | SuperInstruction | MacroInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
 
 
@@ -529,6 +530,7 @@ class Analyzer:
         self.supers = {}
         self.macros = {}
         self.families = {}
+        thing: parser.InstDef | parser.Super | parser.Macro | parser.Family | None
         while thing := psr.definition():
             match thing:
                 case parser.InstDef(name=name):
@@ -765,7 +767,7 @@ class Analyzer:
 
     def get_stack_effect_info(
         self, thing: parser.InstDef | parser.Super | parser.Macro
-    ) -> tuple[Instruction | None, str, str]:
+    ) -> tuple[AnyInstruction | None, str, str]:
         def effect_str(effects: list[StackEffect]) -> str:
             if getattr(thing, "kind", None) == "legacy":
                 return str(-1)
@@ -774,6 +776,7 @@ class Analyzer:
                 return f"{sym_effect} + {n_effect}" if n_effect else sym_effect
             return str(n_effect)
 
+        instr: AnyInstruction | None
         match thing:
             case parser.InstDef():
                 if thing.kind != "op":
@@ -782,7 +785,8 @@ class Analyzer:
                     pushed = effect_str(instr.output_effects)
                 else:
                     instr = None
-                    popped = pushed = "", ""
+                    popped = ""
+                    pushed = ""
             case parser.Super():
                 instr = self.super_instrs[thing.name]
                 popped = "+".join(
@@ -805,15 +809,15 @@ class Analyzer:
         return instr, popped, pushed
 
     def write_stack_effect_functions(self) -> None:
-        popped_data = []
-        pushed_data = []
+        popped_data: list[tuple[AnyInstruction, str]] = []
+        pushed_data: list[tuple[AnyInstruction, str]] = []
         for thing in self.everything:
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
                 popped_data.append((instr, popped))
                 pushed_data.append((instr, pushed))
 
-        def write_function(direction: str, data: list[tuple[Instruction, str]]) -> None:
+        def write_function(direction: str, data: list[tuple[AnyInstruction, str]]) -> None:
             self.out.emit("\n#ifndef NDEBUG")
             self.out.emit("static int")
             self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg) {{")
