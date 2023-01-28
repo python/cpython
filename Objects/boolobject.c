@@ -154,8 +154,8 @@ bool_dealloc(PyObject* Py_UNUSED(ignore))
 PyTypeObject PyBool_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bool",
-    sizeof(struct _longobject),
-    0,
+    offsetof(struct _longobject, ob_digit),     /* tp_basicsize */
+    sizeof(digit),                              /* tp_itemsize */
     bool_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
