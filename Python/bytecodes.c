@@ -505,27 +505,24 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // This should remain a legacy instruction.
-        inst(RAISE_VARARGS) {
+        inst(RAISE_VARARGS, (args[oparg] -- )) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = POP(); /* cause */
+                cause = args[1];
                 /* fall through */
             case 1:
-                exc = POP(); /* exc */
+                exc = args[0];
                 /* fall through */
             case 0:
-                if (do_raise(tstate, exc, cause)) {
-                    goto exception_unwind;
-                }
+                ERROR_IF(do_raise(tstate, exc, cause), exception_unwind);
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad RAISE_VARARGS oparg");
                 break;
             }
-            goto error;
+            ERROR_IF(true, error);
         }
 
         inst(INTERPRETER_EXIT, (retval --)) {
@@ -720,7 +717,6 @@ dummy_func(
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            assert(oparg == STACK_LEVEL());
             assert(frame != &entry_frame);
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
@@ -2093,61 +2089,37 @@ dummy_func(
             PUSH(len_o);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(MATCH_CLASS) {
+        inst(MATCH_CLASS, (subject, type, names -- attrs)) {
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
-            PyObject *names = POP();
-            PyObject *type = POP();
-            PyObject *subject = TOP();
             assert(PyTuple_CheckExact(names));
-            PyObject *attrs = match_class(tstate, subject, type, oparg, names);
-            Py_DECREF(names);
-            Py_DECREF(type);
+            attrs = match_class(tstate, subject, type, oparg, names);
+            DECREF_INPUTS();
             if (attrs) {
-                // Success!
-                assert(PyTuple_CheckExact(attrs));
-                SET_TOP(attrs);
-            }
-            else if (_PyErr_Occurred(tstate)) {
-                // Error!
-                goto error;
+                assert(PyTuple_CheckExact(attrs));  // Success!
             }
             else {
-                // Failure!
-                SET_TOP(Py_NewRef(Py_None));
+                ERROR_IF(_PyErr_Occurred(tstate), error);  // Error!
+                attrs = Py_NewRef(Py_None);  // Failure!
             }
-            Py_DECREF(subject);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_MAPPING) {
-            PyObject *subject = TOP();
+        inst(MATCH_MAPPING, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_SEQUENCE) {
-            PyObject *subject = TOP();
+        inst(MATCH_SEQUENCE, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_KEYS) {
+        inst(MATCH_KEYS, (subject, keys -- subject, keys, values_or_none)) {
             // On successful match, PUSH(values). Otherwise, PUSH(None).
-            PyObject *keys = TOP();
-            PyObject *subject = SECOND();
-            PyObject *values_or_none = match_keys(tstate, subject, keys);
-            if (values_or_none == NULL) {
-                goto error;
-            }
-            PUSH(values_or_none);
+            values_or_none = match_keys(tstate, subject, keys);
+            ERROR_IF(values_or_none == NULL, error);
         }
 
         // stack effect: ( -- )
