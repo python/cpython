@@ -124,13 +124,7 @@ to start a process.  These *start methods* are
     inherited by the child process.  Note that safely forking a
     multithreaded process is problematic.
 
-    Available on POSIX systems.  Currently the default on POSIX (not macOS).
-
-    .. versionchanged:: 3.12
-       The implicit use of the *fork* start method as the default now raises a
-       :exc:`DeprecationWarning`. Code that requires it should explicitly
-       specify *fork* via :func:`get_context` or :func:`set_start_method`.
-       The default will change in 3.14.
+    Available on POSIX systems.  Currently the default on POSIX except macOS.
 
   *forkserver*
     When the program starts and selects the *forkserver* start method,
@@ -143,6 +137,12 @@ to start a process.  These *start methods* are
 
     Available on POSIX platforms which support passing file descriptors
     over Unix pipes such as Linux.
+
+.. versionchanged:: 3.12
+   Implicit use of the *fork* start method as the default now raises a
+   :exc:`DeprecationWarning`. Code that requires it should explicitly
+   specify *fork* via :func:`get_context` or :func:`set_start_method`.
+   The default will change away from *fork* in 3.14.
 
 .. versionchanged:: 3.8
 

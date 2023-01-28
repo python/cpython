@@ -288,9 +288,9 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    .. versionchanged:: 3.12
       The implcit use of the :mod:`multiprocessing` *fork* start method as a
       platform default (see :ref:`multiprocessing-start-methods`) now raises a
-      :exc:`DeprecationWarning` as the default will be changing in Python >=
-      3.14. Code that requires *fork* should explicitly specify that when
-      creating their ProcessPoolExecutor by passing a
+      :exc:`DeprecationWarning`. The default will change in Python 3.14.
+      Code that requires *fork* should explicitly specify that when creating
+      their :class:`ProcessPoolExecutor` by passing a
       ``mp_context=multiprocessing.get_context('fork')`` parameter.
 
 .. _processpoolexecutor-example:
