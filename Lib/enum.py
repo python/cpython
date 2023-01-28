@@ -1565,11 +1565,6 @@ def unique(enumeration):
                 (enumeration, alias_details))
     return enumeration
 
-def _power_of_two(value):
-    if value < 1:
-        return False
-    return value == 2 ** _high_bit(value)
-
 def _dataclass_repr(self):
     dcf = self.__dataclass_fields__
     return ', '.join(
