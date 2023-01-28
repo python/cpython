@@ -59,12 +59,7 @@ class BaseContext(object):
         ctx = self.get_context()
         m = SyncManager(ctx=ctx)
         proc_class = ctx.Process
-        orig_level = getattr(proc_class, '_ORIG_WARNING_STACKLEVEL', None)
-        if orig_level:
-            ctx.Process._warning_stacklevel = 6  # blame mp.Manager()
         m.start()
-        if orig_level:
-            ctx.Process._warning_stacklevel = orig_level
         return m
 
     def Pipe(self, duplex=True):
@@ -291,9 +286,11 @@ if sys.platform != 'win32':
             from .popen_fork import Popen
             return Popen(process_obj)
 
+    _warn_package_prefixes = (os.path.dirname(__file__),)
+
     class _DeprecatedForkProcess(ForkProcess):
-        @staticmethod
-        def _warn(stacklevel):
+        @classmethod
+        def _Popen(cls, process_obj):
             import warnings
             warnings.warn(
                 "The default multiprocessing start method will change "
@@ -302,16 +299,8 @@ if sys.platform != 'win32':
                 "explicitly specify it when your application requires 'fork'. "
                 "The safest start method is 'spawn'.",
                 category=DefaultForkDeprecationWarning,
-                stacklevel=stacklevel,
+                skip_file_prefixes=_warn_package_prefixes,
             )
-
-        # Blame the process.start() method call.
-        _ORIG_WARNING_STACKLEVEL = 5
-        _warning_stacklevel = _ORIG_WARNING_STACKLEVEL
-
-        @classmethod
-        def _Popen(cls, process_obj):
-            cls._warn(stacklevel=cls._warning_stacklevel)
             return super()._Popen(process_obj)
 
     class SpawnProcess(process.BaseProcess):

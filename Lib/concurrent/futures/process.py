@@ -57,6 +57,7 @@ from functools import partial
 import itertools
 import sys
 from traceback import format_exception
+import warnings
 
 
 _threads_wakeups = weakref.WeakKeyDictionary()
@@ -652,7 +653,6 @@ class ProcessPoolExecutor(_base.Executor):
                 mp_context = mp.get_context()
         if (mp_context.get_start_method() == "fork" and
             mp_context == mp.context._default_context._default_context):
-            import warnings
             warnings.warn(
                 "The default multiprocessing start method will change "
                 "away from 'fork' in Python >= 3.14, per GH-84559. "

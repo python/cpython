@@ -1,0 +1,10 @@
+The :mod:`multiprocessing` module now triggers a :exc:`DeprecationWarning`
+when the (``fork``) start method is used implicitly via the default behavior
+on non-macOS POSIX-like platforms.
+
+We want application authors to explicitly specify their start method (thus
+avoiding the warning) when they do need to use ``fork``. Our default will
+change to something more conservative and compatible with multithreaded
+processes in the Python 3.14 timeframe.
+
+macOS and Windows already default to the ``spawn`` start method.
