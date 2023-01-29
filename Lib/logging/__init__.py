@@ -487,7 +487,7 @@ class StringTemplateStyle(PercentStyle):
 
     def usesTime(self):
         fmt = self._fmt
-        return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
+        return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_search) >= 0
 
     def validate(self):
         pattern = Template.pattern

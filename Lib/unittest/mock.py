@@ -643,7 +643,7 @@ class NonCallableMock(Base):
                 raise AttributeError("Mock object has no attribute %r" % name)
         elif _is_magic(name):
             raise AttributeError(name)
-        if not self._mock_unsafe:
+        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
             if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')):
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
@@ -1010,14 +1010,14 @@ class NonCallableMock(Base):
 
         For non-callable mocks the callable variant will be used (rather than
         any custom subclass)."""
-        _new_name = kw.get("_new_name")
-        if _new_name in self.__dict__['_spec_asyncs']:
-            return AsyncMock(**kw)
-
         if self._mock_sealed:
             attribute = f".{kw['name']}" if "name" in kw else "()"
             mock_name = self._extract_mock_name() + attribute
             raise AttributeError(mock_name)
+
+        _new_name = kw.get("_new_name")
+        if _new_name in self.__dict__['_spec_asyncs']:
+            return AsyncMock(**kw)
 
         _type = type(self)
         if issubclass(_type, MagicMock) and _new_name in _async_method_magics:

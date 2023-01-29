@@ -93,6 +93,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    underscores after a base specifier and between digits are ignored.  If there
    are no digits, :exc:`ValueError` will be raised.
 
+   .. seealso:: Python methods :meth:`int.to_bytes` and :meth:`int.from_bytes`
+      to convert a :c:type:`PyLongObject` to/from an array of bytes in base
+      ``256``. You can call those from C using :c:func:`PyObject_CallMethod`.
+
 
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
 

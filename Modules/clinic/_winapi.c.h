@@ -731,6 +731,32 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_UnmapViewOfFile__doc__,
+"UnmapViewOfFile($module, address, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_UNMAPVIEWOFFILE_METHODDEF    \
+    {"UnmapViewOfFile", (PyCFunction)_winapi_UnmapViewOfFile, METH_O, _winapi_UnmapViewOfFile__doc__},
+
+static PyObject *
+_winapi_UnmapViewOfFile_impl(PyObject *module, LPCVOID address);
+
+static PyObject *
+_winapi_UnmapViewOfFile(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    LPCVOID address;
+
+    if (!PyArg_Parse(arg, "" F_POINTER ":UnmapViewOfFile", &address)) {
+        goto exit;
+    }
+    return_value = _winapi_UnmapViewOfFile_impl(module, address);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_OpenFileMapping__doc__,
 "OpenFileMapping($module, desired_access, inherit_handle, name, /)\n"
 "--\n"
@@ -1216,4 +1242,4 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d76d0a5901db2e2a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acabf8f2b5cc44a1 input=a9049054013a1b77]*/

@@ -1,4 +1,4 @@
-This is Python version 3.10.8
+This is Python version 3.10.9
 =============================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master
@@ -18,7 +18,7 @@ This is Python version 3.10.8
    :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2022 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -247,14 +247,14 @@ See :pep:`619` for Python 3.10 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2022 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
 
-Copyright (c) 2000 BeOpen.com.  All rights reserved.
+Copyright © 2000 BeOpen.com.  All rights reserved.
 
-Copyright (c) 1995-2001 Corporation for National Research Initiatives.  All
+Copyright © 1995-2001 Corporation for National Research Initiatives.  All
 rights reserved.
 
-Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
+Copyright © 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
 See the `LICENSE <https://github.com/python/cpython/blob/master/LICENSE>`_ for
 information on the history of this software, terms & conditions for usage, and a

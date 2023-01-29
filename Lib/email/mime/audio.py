@@ -46,7 +46,7 @@ class MIMEAudio(MIMENonMultipart):
                  _encoder=encoders.encode_base64, *, policy=None, **_params):
         """Create an audio/* type MIME document.
 
-        _audiodata is a string containing the raw audio data.  If this data
+        _audiodata contains the bytes for the raw audio data.  If this data
         can be decoded by the standard Python `sndhdr' module, then the
         subtype will be automatically included in the Content-Type header.
         Otherwise, you can specify  the specific audio subtype via the

@@ -628,20 +628,23 @@ are always available.  They are listed here in alphabetical order.
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
    (not-a-number), or positive or negative infinity.  More precisely, the
-   input must conform to the following grammar after leading and trailing
-   whitespace characters are removed:
+   input must conform to the ``floatvalue`` production rule in the following
+   grammar, after leading and trailing whitespace characters are removed:
 
    .. productionlist:: float
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      numeric_value: `floatnumber` | `infinity` | `nan`
-      numeric_string: [`sign`] `numeric_value`
+      digitpart: `digit` (["_"] `digit`)*
+      number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
+      exponent: ("e" | "E") ["+" | "-"] `digitpart`
+      floatnumber: number [`exponent`]
+      floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
 
-   Here ``floatnumber`` is the form of a Python floating-point literal,
-   described in :ref:`floating`.  Case is not significant, so, for example,
-   "inf", "Inf", "INFINITY", and "iNfINity" are all acceptable spellings for
-   positive infinity.
+   Here ``digit`` is a Unicode decimal digit (character in the Unicode general
+   category ``Nd``). Case is not significant, so, for example, "inf", "Inf",
+   "INFINITY", and "iNfINity" are all acceptable spellings for positive
+   infinity.
 
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
@@ -865,17 +868,21 @@ are always available.  They are listed here in alphabetical order.
    For floating point numbers, this truncates towards zero.
 
    If *x* is not a number or if *base* is given, then *x* must be a string,
-   :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
-   literal <integers>` in radix *base*.  Optionally, the literal can be
-   preceded by ``+`` or ``-`` (with no space in between) and surrounded by
-   whitespace.  A base-n literal consists of the digits 0 to n-1, with ``a``
-   to ``z`` (or ``A`` to ``Z``) having
-   values 10 to 35.  The default *base* is 10. The allowed values are 0 and 2--36.
-   Base-2, -8, and -16 literals can be optionally prefixed with ``0b``/``0B``,
-   ``0o``/``0O``, or ``0x``/``0X``, as with integer literals in code.  Base 0
-   means to interpret exactly as a code literal, so that the actual base is 2,
-   8, 10, or 16, and so that ``int('010', 0)`` is not legal, while
-   ``int('010')`` is, as well as ``int('010', 8)``.
+   :class:`bytes`, or :class:`bytearray` instance representing an integer
+   in radix *base*.  Optionally, the string can be preceded by ``+`` or ``-``
+   (with no space in between), have leading zeros, be surrounded by whitespace,
+   and have single underscores interspersed between digits.
+
+   A base-n integer string contains digits, each representing a value from 0 to
+   n-1. The values 0--9 can be represented by any Unicode decimal digit. The
+   values 10--35 can be represented by ``a`` to ``z`` (or ``A`` to ``Z``). The
+   default *base* is 10. The allowed bases are 0 and 2--36. Base-2, -8, and -16
+   strings can be optionally prefixed with ``0b``/``0B``, ``0o``/``0O``, or
+   ``0x``/``0X``, as with integer literals in code.  For base 0, the string is
+   interpreted in a similar way to an :ref:`integer literal in code <integers>`,
+   in that the actual base is 2, 8, 10, or 16 as determined by the prefix. Base
+   0 also disallows leading zeros: ``int('010', 0)`` is not legal, while
+   ``int('010')`` and ``int('010', 8)`` are.
 
    The integer type is described in :ref:`typesnumeric`.
 
@@ -1891,13 +1898,23 @@ are always available.  They are listed here in alphabetical order.
         >>> list(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
         [('a', 1), ('b', 2), ('c', 3)]
 
-     Unlike the default behavior, it checks that the lengths of iterables are
-     identical, raising a :exc:`ValueError` if they aren't:
+     Unlike the default behavior, it raises a :exc:`ValueError` if one iterable
+     is exhausted before the others:
 
-        >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
+        >>> for item in zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True):  # doctest: +SKIP
+        ...     print(item)
+        ...
+        (0, 'fee')
+        (1, 'fi')
+        (2, 'fo')
         Traceback (most recent call last):
           ...
         ValueError: zip() argument 2 is longer than argument 1
+
+     ..
+        This doctest is disabled because doctest does not support capturing
+        output and exceptions in the same code unit.
+        https://github.com/python/cpython/issues/65382
 
      Without the ``strict=True`` argument, any bug that results in iterables of
      different lengths will be silenced, possibly manifesting as a hard-to-find

@@ -1328,6 +1328,10 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         const char *end;
         switch (PyTokenizer_Get(p->tok, &start, &end)) {
             case ERRORTOKEN:
+                if (PyErr_Occurred()) {
+                    ret = -1;
+                    goto exit;
+                }
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
                     if (current_err_line > error_lineno) {

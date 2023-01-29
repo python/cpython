@@ -155,8 +155,14 @@ class RowFactoryTests(unittest.TestCase):
         """Checks if the row object is iterable"""
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
-        for col in row:
-            pass
+
+        # Is iterable in correct order and produces valid results:
+        items = [col for col in row]
+        self.assertEqual(items, [1, 2])
+
+        # Is iterable the second time:
+        items = [col for col in row]
+        self.assertEqual(items, [1, 2])
 
     def test_sqlite_row_as_tuple(self):
         """Checks if the row object can be converted to a tuple"""
