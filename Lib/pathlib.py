@@ -70,15 +70,14 @@ def _make_matcher(path_cls, pattern, recursive):
     if not pattern._parts:
         raise ValueError("empty pattern")
     result = [r'\A' if pattern._drv or pattern._root else '^']
-    for part in pattern._parts_normcase:
+    for line in pattern._lines_normcase:
         if recursive:
-            if part == '**':
-                result.append('(.+\n)*')
+            if line == '**\n':
+                result.append('(.*\n)*')
                 continue
-            elif '**' in part:
+            elif '**' in line:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
-        part = fnmatch._translate(part)
-        result.append(f'{part}\n')
+        result.append(fnmatch._translate(line))
     result.append(r'\Z')
     return re.compile(''.join(result), flags=re.MULTILINE)
 
@@ -658,13 +657,16 @@ class PurePath(object):
         name = self._parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
 
+    @property
+    def _lines_normcase(self):
+        return [f'{part}\n' for part in self._parts_normcase]
+
     def match(self, path_pattern, recursive=False):
         """
         Return True if this path matches the given pattern.
         """
         matcher = _make_matcher(type(self), path_pattern, recursive)
-        lines = ''.join(f'{part}\n' for part in self._parts_normcase)
-        return matcher.search(lines) is not None
+        return matcher.search(''.join(self._lines_normcase)) is not None
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
 # optimizations in PurePath._parse_args().
