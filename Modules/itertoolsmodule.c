@@ -622,7 +622,6 @@ itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
 static PyObject *
 _grouper_create(groupbyobject *parent, PyObject *tgtkey)
 {
-    PyTypeObject *tp = Py_TYPE(parent);
     itertools_state *state = parent->state;
     _grouperobject *igo = PyObject_GC_New(_grouperobject, state->_grouper_type);
     if (igo == NULL)
