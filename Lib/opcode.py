@@ -437,6 +437,7 @@ _macro_ops = [
     'BINARY_OP_ADD_INT',
 ]
 _uops = [
+    'BB_NEXT',
     'BINARY_OP_ADD_INT_TYPE_CHECK',
     'BINARY_OP_ADD_INT_REST',
 ]

@@ -888,19 +888,19 @@ class Analyzer:
 
     def write_uopguard_typedata(self):
         """Write the type information expected of each uop typeguard."""
-        uop_to_type_input = {}
+        uop_to_type_output = {}
         max_types = 0
         for instr_def in self.u_insts:
             types = []
-            for input_ in instr_def.inputs:
-                if isinstance(input_, StackEffect) and input_.type:
-                    types.append(input_.type)
+            for output in instr_def.outputs:
+                if isinstance(output, StackEffect) and output.type:
+                    types.append(output.type)
             if types:
                 max_types = max(max_types, len(types))
-                uop_to_type_input[instr_def.name] = types
+                uop_to_type_output[instr_def.name] = types
 
         self.out.emit(f"extern const PyTypeObject *_Py_UOpGuardTypes[][{max_types}] = {{")
-        for name, types in uop_to_type_input.items():
+        for name, types in uop_to_type_output.items():
             self.out.emit(f"[{name}] = {{{', '.join(['&' + type_ for type_ in types])}}},")
         self.out.emit("};")
 

@@ -250,8 +250,9 @@ extern "C" {
 #define UNPACK_SEQUENCE_TUPLE                  159
 #define UNPACK_SEQUENCE_TWO_TUPLE              160
 #define DO_TRACING                             255
-#define BINARY_OP_ADD_INT_TYPE_CHECK           161
-#define BINARY_OP_ADD_INT_REST                 166
+#define BB_NEXT                                161
+#define BINARY_OP_ADD_INT_TYPE_CHECK           166
+#define BINARY_OP_ADD_INT_REST                 167
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

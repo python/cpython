@@ -389,13 +389,13 @@ static const char *const _PyOpcode_OpName[263] = {
     [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
     [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
-    [BINARY_OP_ADD_INT_TYPE_CHECK] = "BINARY_OP_ADD_INT_TYPE_CHECK",
+    [BB_NEXT] = "BB_NEXT",
     [LIST_EXTEND] = "LIST_EXTEND",
     [SET_UPDATE] = "SET_UPDATE",
     [DICT_MERGE] = "DICT_MERGE",
     [DICT_UPDATE] = "DICT_UPDATE",
+    [BINARY_OP_ADD_INT_TYPE_CHECK] = "BINARY_OP_ADD_INT_TYPE_CHECK",
     [BINARY_OP_ADD_INT_REST] = "BINARY_OP_ADD_INT_REST",
-    [167] = "<167>",
     [168] = "<168>",
     [169] = "<169>",
     [170] = "<170>",
@@ -496,7 +496,6 @@ static const char *const _PyOpcode_OpName[263] = {
 
 
 #define EXTRA_CASES \
-    case 167: \
     case 168: \
     case 169: \
     case 170: \
