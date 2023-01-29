@@ -397,7 +397,7 @@ Power and logarithmic functions
 
    Return the logarithm of *x* to the given *base*.
 
-   If the *base* is not specified or is None, returns the natural
+   If the *base* is not specified, returns the natural
    logarithm (base *e*) of *x*.
 
 .. function:: log1p(x)
