@@ -689,25 +689,24 @@
         }
 
         TARGET(RAISE_VARARGS) {
+            PyObject **args = &PEEK(oparg);
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = POP(); /* cause */
+                cause = args[1];
                 /* fall through */
             case 1:
-                exc = POP(); /* exc */
+                exc = args[0];
                 /* fall through */
             case 0:
-                if (do_raise(tstate, exc, cause)) {
-                    goto exception_unwind;
-                }
+                if (do_raise(tstate, exc, cause)) { STACK_SHRINK(oparg); goto exception_unwind; }
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad RAISE_VARARGS oparg");
                 break;
             }
-            goto error;
+            if (true) { STACK_SHRINK(oparg); goto error; }
         }
 
         TARGET(INTERPRETER_EXIT) {
