@@ -89,6 +89,8 @@ EXACT_TOKEN_TYPES = {
     '->':  RARROW,
     '@':   AT,
     '@=':  ATEQUAL,
+    '++':  INCREMENT,
+    '--':  DECREMENT,
 }
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):

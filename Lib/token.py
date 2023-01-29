@@ -70,7 +70,9 @@ ERRORTOKEN = 54
 COMMENT = 55
 NL = 56
 ENCODING = 57
-N_TOKENS = 58
+INCREMENT = 58
+DECREMENT = 59
+N_TOKENS = 60
 # Special definitions for cooperation with parser
 NT_OFFSET = 256
 #--end constants--
