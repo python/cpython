@@ -1369,6 +1369,89 @@ class MathTests(unittest.TestCase):
                             args,
                         )
 
+    @requires_IEEE_754
+    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
+                         "sumprod() accuracy not guaranteed on machines with double rounding")
+    @support.cpython_only    # Other implementations may choose a different algorithm
+    @support.requires_resource('cpu')
+    def test_sumprod_extended_precision_accuracy(self):
+        import operator
+        from fractions import Fraction
+        from itertools import starmap
+        from collections import namedtuple
+        from math import log2, exp2, fabs
+        from random import choices, uniform, shuffle
+        from statistics import median
+
+        DotExample = namedtuple('DotExample', ('x', 'y', 'target_sumprod', 'condition'))
+
+        def DotExact(x, y):
+            vec1 = map(Fraction, x)
+            vec2 = map(Fraction, y)
+            return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
+
+        def Condition(x, y):
+            return 2.0 * DotExact(map(abs, x), map(abs, y)) / abs(DotExact(x, y))
+
+        def linspace(lo, hi, n):
+            width = (hi - lo) / (n - 1)
+            return [lo + width * i for i in range(n)]
+
+        def GenDot(n, c):
+            """ Algorithm 6.1 (GenDot) works as follows. The condition number (5.7) of
+            the dot product xT y is proportional to the degree of cancellation. In
+            order to achieve a prescribed cancellation, we generate the first half of
+            the vectors x and y randomly within a large exponent range. This range is
+            chosen according to the anticipated condition number. The second half of x
+            and y is then constructed choosing xi randomly with decreasing exponent,
+            and calculating yi such that some cancellation occurs. Finally, we permute
+            the vectors x, y randomly and calculate the achieved condition number.
+            """
+
+            assert n >= 6
+            n2 = n // 2
+            x = [0.0] * n
+            y = [0.0] * n
+            b = log2(c)
+
+            # First half with exponents from 0 to |_b/2_| and random ints in between
+            e = choices(range(int(b/2)), k=n2)
+            e[0] = int(b / 2) + 1
+            e[-1] = 0.0
+
+            x[:n2] = [uniform(-1.0, 1.0) * exp2(p) for p in e]
+            y[:n2] = [uniform(-1.0, 1.0) * exp2(p) for p in e]
+
+            # Second half
+            e = list(map(round, linspace(b/2, 0.0 , n-n2)))
+            for i in range(n2, n):
+                x[i] = uniform(-1.0, 1.0) * exp2(e[i - n2])
+                y[i] = (uniform(-1.0, 1.0) * exp2(e[i - n2]) - DotExact(x, y)) / x[i]
+
+            # Shuffle
+            pairs = list(zip(x, y))
+            shuffle(pairs)
+            x, y = zip(*pairs)
+
+            return DotExample(x, y, DotExact(x, y), Condition(x, y))
+
+        def RelativeError(res, ex):
+            x, y, target_sumprod, condition = ex
+            n = DotExact(list(x) + [-res], list(y) + [1])
+            return fabs(n / target_sumprod)
+
+        def Trial(dotfunc, c, n):
+            ex = GenDot(10, c)
+            res = dotfunc(ex.x, ex.y)
+            return RelativeError(res, ex)
+
+        times = 1000          # Number of trials
+        n = 20                # Length of vectors
+        c = 1e30              # Target condition number
+
+        relative_err = median(Trial(math.sumprod, c, n) for i in range(times))
+        self.assertLess(relative_err, 1e-16)
+
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
 

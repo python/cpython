@@ -1143,6 +1143,7 @@ extern "C" {
     INIT_ID(signed), \
     INIT_ID(size), \
     INIT_ID(sizehint), \
+    INIT_ID(skip_file_prefixes), \
     INIT_ID(sleep), \
     INIT_ID(sock), \
     INIT_ID(sort), \

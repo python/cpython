@@ -57,9 +57,9 @@ static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
 //-------------------------------------------------
 
 /*
-   The stored thread state is set by PyThraedState_Swap().
+   The stored thread state is set by PyThreadState_Swap().
 
-   For each of these functions, the GIL mus be held by the current thread.
+   For each of these functions, the GIL must be held by the current thread.
  */
 
 static inline PyThreadState *
@@ -232,7 +232,7 @@ unbind_tstate(PyThreadState *tstate)
         current_tss_clear(runtime);
     }
 
-    // We leave thread_id and native_thraed_id alone
+    // We leave thread_id and native_thread_id alone
     // since they can be useful for debugging.
     // Check the `_status` field to know if these values
     // are still valid.
@@ -400,6 +400,11 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
         return status;
     }
 
+    if (PyThread_tss_create(&runtime->trashTSSkey) != 0) {
+        _PyRuntimeState_Fini(runtime);
+        return _PyStatus_NO_MEMORY();
+    }
+
     init_runtime(runtime, open_code_hook, open_code_userdata, audit_hook_head,
                  unicode_next_index, lock1, lock2, lock3, lock4);
 
@@ -411,6 +416,10 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
     if (current_tss_initialized(runtime)) {
         current_tss_fini(runtime);
+    }
+
+    if (PyThread_tss_is_created(&runtime->trashTSSkey)) {
+        PyThread_tss_delete(&runtime->trashTSSkey);
     }
 
     /* Force the allocator used by _PyRuntimeState_Init(). */
@@ -469,6 +478,13 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     PyStatus status = current_tss_reinit(runtime);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    if (PyThread_tss_is_created(&runtime->trashTSSkey)) {
+        PyThread_tss_delete(&runtime->trashTSSkey);
+    }
+    if (PyThread_tss_create(&runtime->trashTSSkey) != 0) {
+        return _PyStatus_NO_MEMORY();
     }
 
     return _PyStatus_OK();
@@ -1124,7 +1140,7 @@ init_threadstate(PyThreadState *tstate,
     tstate->exc_info = &tstate->exc_state;
 
     // PyGILState_Release must not try to delete this thread state.
-    // This is cleared when PyGILState_Ensure() creates the thread sate.
+    // This is cleared when PyGILState_Ensure() creates the thread state.
     tstate->gilstate_counter = 1;
 
     tstate->cframe = &tstate->root_cframe;
@@ -1204,7 +1220,7 @@ _PyThreadState_Prealloc(PyInterpreterState *interp)
 }
 
 // We keep this around for (accidental) stable ABI compatibility.
-// Realisically, no extensions are using it.
+// Realistically, no extensions are using it.
 void
 _PyThreadState_Init(PyThreadState *tstate)
 {

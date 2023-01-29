@@ -2832,97 +2832,56 @@ long_add_would_overflow(long a, long b)
 }
 
 /*
-Double and triple length extended precision floating point arithmetic
-based on ideas from three sources:
+Double and triple length extended precision algorithms from:
 
-  Improved Kahan–Babuška algorithm by Arnold Neumaier
-  https://www.mat.univie.ac.at/~neum/scan/01.pdf
-
-  A Floating-Point Technique for Extending the Available Precision
-  by T. J. Dekker
-  https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
-
-  Ultimately Fast Accurate Summation by Siegfried M. Rump
-  https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
-
-Double length functions:
-* dl_split() exact split of a C double into two half precision components.
-* dl_mul() exact multiplication of two C doubles.
-
-Triple length functions and constant:
-* tl_zero is a triple length zero for starting or resetting an accumulation.
-* tl_add() compensated addition of a C double to a triple length number.
-* tl_fma() performs a triple length fused-multiply-add.
-* tl_to_d() converts from triple length number back to a C double.
+  Accurate Sum and Dot Product
+  by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
+  https://doi.org/10.1137/030601818
+  https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
 
 */
 
 typedef struct{ double hi; double lo; } DoubleLength;
-typedef struct{ double hi; double lo; double tiny; } TripleLength;
 
-static const TripleLength tl_zero = {0.0, 0.0, 0.0};
-
-static inline DoubleLength
-twosum(double a, double b)
+static DoubleLength
+dl_sum(double a, double b)
 {
-    double s = a + b;
-    double ap = s - b;
-    double bp = s - a;
-    double da = a - ap;
-    double db = b - bp;
-    double t = da + db;
-    return  (DoubleLength) {s, t};
+    /* Algorithm 3.1 Error-free transformation of the sum */
+    double x = a + b;
+    double z = x - a;
+    double y = (a - (x - z)) + (b - z);
+    return (DoubleLength) {x, y};
 }
 
-static inline TripleLength
-tl_add(TripleLength total, double x)
-{
-    /* Input:       x     total.hi   total.lo    total.tiny
-                   |--- twosum ---|
-                    s.hi      s.lo
-                             |--- twosum ---|
-                              t.hi      t.lo
-                                       |--- single sum ---|
-       Output:      s.hi     t.hi       tiny
-     */
-    DoubleLength s = twosum(x, total.hi);
-    DoubleLength t = twosum(s.lo, total.lo);
-    return (TripleLength) {s.hi, t.hi, t.lo + total.tiny};
-}
-
-static inline DoubleLength
-dl_split(double x) {
-    double t = x * 134217729.0;  /* Veltkamp constant = float(0x8000001) */
-    double hi = t - (t - x);
-    double lo = x - hi;
-    return (DoubleLength) {hi, lo};
-}
-
-static inline DoubleLength
+static DoubleLength
 dl_mul(double x, double y)
 {
-    /* Dekker mul12().  Section (5.12) */
-    DoubleLength xx = dl_split(x);
-    DoubleLength yy = dl_split(y);
-    double p = xx.hi * yy.hi;
-    double q = xx.hi * yy.lo + xx.lo * yy.hi;
-    double z = p + q;
-    double zz = p - z + q + xx.lo * yy.lo;
+    /* Algorithm 3.5. Error-free transformation of a product */
+    double z = x * y;
+    double zz = fma(x, y, -z);
     return (DoubleLength) {z, zz};
 }
 
-static inline TripleLength
-tl_fma(TripleLength total, double p, double q)
+typedef struct { double hi; double lo; double tiny; } TripleLength;
+
+static const TripleLength tl_zero = {0.0, 0.0, 0.0};
+
+static TripleLength
+tl_fma(double x, double y, TripleLength total)
 {
-    DoubleLength product = dl_mul(p, q);
-    total = tl_add(total, product.hi);
-    return  tl_add(total, product.lo);
+    /* Algorithm 5.10 with SumKVert for K=3 */
+    DoubleLength pr = dl_mul(x, y);
+    DoubleLength sm = dl_sum(total.hi, pr.hi);
+    DoubleLength r1 = dl_sum(total.lo, pr.lo);
+    DoubleLength r2 = dl_sum(r1.hi, sm.lo);
+    return (TripleLength) {sm.hi, r2.hi, total.tiny + r1.lo + r2.lo};
 }
 
-static inline double
+static double
 tl_to_d(TripleLength total)
 {
-    return total.tiny + total.lo + total.hi;
+    DoubleLength last = dl_sum(total.lo, total.hi);
+    return total.tiny + last.lo + last.hi;
 }
 
 /*[clinic input]
@@ -3039,7 +2998,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             }
 
           finalize_int_path:
-            //  # We're finished, overflowed, or have a non-int
+            // We're finished, overflowed, or have a non-int
             int_path_enabled = false;
             if (int_total_in_use) {
                 term_i = PyLong_FromLong(int_total);
@@ -3088,7 +3047,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 } else {
                     goto finalize_flt_path;
                 }
-                TripleLength new_flt_total = tl_fma(flt_total, flt_p, flt_q);
+                TripleLength new_flt_total = tl_fma(flt_p, flt_q, flt_total);
                 if (isfinite(new_flt_total.hi)) {
                     flt_total = new_flt_total;
                     flt_total_in_use = true;
