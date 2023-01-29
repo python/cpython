@@ -409,6 +409,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     co->_co_linearray_entry_size = 0;
     co->_co_linearray = NULL;
+    co->_first_instr = _PyCode_CODE(co);
     co->_tier2_warmup = -64;
     co->_bb_next = NULL;
     co->_bb_space = NULL;
@@ -1708,6 +1709,7 @@ code_dealloc(PyCodeObject *co)
     if (co->_co_linearray) {
         PyMem_Free(co->_co_linearray);
     }
+    co->_first_instr = NULL;
     co->_bb_next = NULL;
     if (co->_bb_space != NULL) {
         // Traverse the linked list
@@ -2295,6 +2297,7 @@ _PyStaticCode_Fini(PyCodeObject *co)
         PyMem_Free(co->_co_cached);
         co->_co_cached = NULL;
     }
+    co->_first_instr = NULL;
     co->_bb_next = NULL;
     if (co->_bb_space != NULL) {
         // Traverse the linked list
@@ -2319,6 +2322,7 @@ _PyStaticCode_Fini(PyCodeObject *co)
 int
 _PyStaticCode_Init(PyCodeObject *co)
 {
+    co->_first_instr = _PyCode_CODE(co);
     int res = intern_strings(co->co_names);
     if (res < 0) {
         return -1;

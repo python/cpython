@@ -18,10 +18,7 @@ _PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
             // If it fails, due to lack of memory or whatever,
             // just fall back to the tier 1 interpreter.
             _Py_CODEUNIT *next = _PyCode_Tier2Initialize(frame, next_instr);
-            if (next == NULL) {
-                PyErr_Clear();
-            }
-            else {
+            if (next != NULL) {
                 return next;
             }
         }
@@ -42,18 +39,17 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     // @TODO split up code object into basic blocks.
     // 3. Set the instruction pointer to correct one.
     fprintf(stderr, "INITIALIZING %ld\n", Py_SIZE(co));
-    _PyTier2BBSpace *bb_space = PyMem_Malloc((sizeof(_PyTier2BB) + Py_SIZE(co) * sizeof(_Py_CODEUNIT)) * 2);
+    _PyTier2BBSpace *bb_space = PyMem_Malloc((sizeof(_PyTier2BB) + _PyCode_NBYTES(co)) * 2);
     if (bb_space == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     bb_space->next = NULL;
     bb_space->water_level = 0;
     co->_bb_space = bb_space;
 
-    _PyTier2BB *bb_ptr = (_PyTier2BB *)bb_space->bbs;
+    _PyTier2BB *bb_ptr = bb_space->bbs;
     bb_ptr->tier1_start = _PyCode_CODE(co);
-    memcpy(bb_ptr->u_code, _PyCode_CODE(co), Py_SIZE(co) * sizeof(_Py_CODEUNIT));
+    memcpy(bb_ptr->u_code, _PyCode_CODE(co), _PyCode_NBYTES(co));
     // Remove all the RESUME and JUMP_BACKWARDS instructions
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT instr = bb_ptr->u_code[i];
@@ -70,7 +66,7 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 
 
     co->_bb_next = bb_ptr;
-
+    co->_first_instr = bb_ptr->u_code;
 
     // Set the instruction pointer to the next one in the bb
     Py_ssize_t offset_from_start = (frame->prev_instr - _PyCode_CODE(co));

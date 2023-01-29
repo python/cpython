@@ -16,6 +16,7 @@ extern "C" {
 extern const int _Py_MacroOpUOpCount[] = {
 [NOP] = 1,
 [RESUME] = 1,
+[RESUME_QUICK] = 1,
 [LOAD_CLOSURE] = 1,
 [LOAD_FAST_CHECK] = 1,
 [LOAD_FAST] = 1,
@@ -123,6 +124,7 @@ extern const int _Py_MacroOpUOpCount[] = {
 [IMPORT_FROM] = 1,
 [JUMP_FORWARD] = 1,
 [JUMP_BACKWARD] = 1,
+[JUMP_BACKWARD_QUICK] = 1,
 [POP_JUMP_IF_FALSE] = 1,
 [POP_JUMP_IF_TRUE] = 1,
 [POP_JUMP_IF_NOT_NONE] = 1,

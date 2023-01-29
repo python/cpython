@@ -23,7 +23,9 @@
         }
 
         TARGET(RESUME) {
-            next_instr = _PyCode_Tier2Warmup(frame, next_instr);
+            if (cframe.use_tracing == 0) {
+                next_instr = _PyCode_Tier2Warmup(frame, next_instr);
+            }
             GO_TO_INSTRUCTION(RESUME_QUICK);
         }
 
@@ -2366,14 +2368,17 @@
 
         TARGET(JUMP_BACKWARD) {
             PREDICTED(JUMP_BACKWARD);
-            next_instr = _PyCode_Tier2Warmup(frame, next_instr);
+            if (cframe.use_tracing == 0) {
+                next_instr = _PyCode_Tier2Warmup(frame, next_instr);
+            }
             GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
 
         TARGET(JUMP_BACKWARD_QUICK) {
             PREDICTED(JUMP_BACKWARD_QUICK);
             if (oparg >= INSTR_OFFSET()) {
-                fprintf(stderr, "%ld, %p, %p, %p IS_NULL %d\n", oparg, next_instr, _PyCode_CODE(frame->f_code), frame->f_code->_bb_next->u_code, frame->f_code->_bb_next == NULL);
+                fprintf(stderr, "%ld, %p, %p, %p, %p, %p\n", oparg, next_instr, _PyCode_CODE(frame->f_code), frame->f_code->_bb_next->u_code, frame->f_code->_first_instr, frame->prev_instr);
+
             }
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
