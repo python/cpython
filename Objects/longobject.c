@@ -6345,61 +6345,6 @@ PyTypeObject PyLong_Type = {
     PyObject_Free,                              /* tp_free */
 };
 
-static void
-deepfreezelong_dealloc(PyObject *self)
-{
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref DeepFreeze Ints out of existence. Instead,
-     * since DeepFreeze Ints are immortal, re-set the reference count.
-     */
-     _Py_SetImmortal(self);
-}
-
-PyDoc_STRVAR(deepfreezelong_doc,
-"deepfreezeint is a subclass of int meant to be used by deepfrozen objects.");
-
-PyTypeObject PyDeepFreezeLong_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "deepfreezeint",                            /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    deepfreezelong_dealloc,                     /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    deepfreezelong_doc,                         /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    &PyLong_Type,                               /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-};
-
 static PyTypeObject Int_InfoType;
 
 PyDoc_STRVAR(int_info__doc__,

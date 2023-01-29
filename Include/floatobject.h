@@ -12,7 +12,6 @@ extern "C" {
 #endif
 
 PyAPI_DATA(PyTypeObject) PyFloat_Type;
-PyAPI_DATA(PyTypeObject) PyDeepFreezeFloat_Type;
 
 #define PyFloat_Check(op) PyObject_TypeCheck(op, &PyFloat_Type)
 #define PyFloat_CheckExact(op) Py_IS_TYPE((op), &PyFloat_Type)

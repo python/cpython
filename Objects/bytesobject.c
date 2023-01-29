@@ -2960,63 +2960,6 @@ PyTypeObject PyBytes_Type = {
     PyObject_Del,                               /* tp_free */
 };
 
-static void
-deepfreezebytes_dealloc(PyObject *self)
-{
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref DeepFreeze Bytes out of existence. Instead,
-     * since DeepFreeze Bytes are immortal, re-set the reference count.
-     */
-     _Py_SetImmortal(self);
-}
-
-PyDoc_STRVAR(deepfreezebytes_doc,
-"deepfreezebytes is a subclass of int meant to be used by deepfrozen objects.");
-
-PyTypeObject PyDeepFreezeBytes_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "deepfreezebytes",
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    deepfreezebytes_dealloc,                    /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_BYTES_SUBCLASS |
-        _Py_TPFLAGS_MATCH_SELF,                 /* tp_flags */
-    deepfreezebytes_doc,                        /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    &PyBytes_Type,                              /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-};
-
 void
 PyBytes_Concat(PyObject **pv, PyObject *w)
 {

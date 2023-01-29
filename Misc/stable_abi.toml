@@ -2386,13 +2386,3 @@
     added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
 [const.Py_AUDIT_READ]
     added = '3.12'  # Before 3.12, available in "structmember.h"
-[data.PyDeepFreezeBytes_Type]
-    added = '3.12'
-[data.PyDeepFreezeComplex_Type]
-    added = '3.12'
-[data.PyDeepFreezeFloat_Type]
-    added = '3.12'
-[data.PyDeepFreezeLong_Type]
-    added = '3.12'
-[data.PyDeepFreezeTuple_Type]
-    added = '3.12'

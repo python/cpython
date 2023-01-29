@@ -1681,7 +1681,7 @@
             PyObject *keys = PEEK(1);
             PyObject **values = &PEEK(1 + oparg);
             PyObject *map;
-            if (!PyTuple_Check(keys) ||
+            if (!PyTuple_CheckExact(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad BUILD_CONST_KEY_MAP keys argument");
@@ -3549,7 +3549,7 @@
                 func->func_kwdefaults = POP();
             }
             if (oparg & 0x01) {
-                assert(PyTuple_Check(TOP()));
+                assert(PyTuple_CheckExact(TOP()));
                 func->func_defaults = POP();
             }
 

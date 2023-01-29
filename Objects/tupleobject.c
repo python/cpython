@@ -886,63 +886,6 @@ PyTypeObject PyTuple_Type = {
     .tp_vectorcall = tuple_vectorcall,
 };
 
-static void
-deepfreezetuple_dealloc(PyObject *self)
-{
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref DeepFreeze Tuples out of existence. Instead,
-     * since DeepFreeze Tuples are immortal, re-set the reference count.
-     */
-     _Py_SetImmortal(self);
-}
-
-PyDoc_STRVAR(deepfreezetuple_doc,
-"deepfreezetuple is a subclass of tuple meant to be used by deepfrozen objects.");
-
-PyTypeObject PyDeepFreezeTuple_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "deepfreezetuple",
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    deepfreezetuple_dealloc,                    /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TUPLE_SUBCLASS |
-        _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_SEQUENCE,  /* tp_flags */
-    deepfreezetuple_doc,                        /* tp_doc */
-    (traverseproc)tupletraverse,                /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    &PyTuple_Type,                              /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-};
-
 /* The following function breaks the notion that tuples are immutable:
    it changes the size of a tuple.  We get away with this only if there
    is only one module referencing the object.  You can also think of it

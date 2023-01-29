@@ -8,7 +8,6 @@ extern "C" {
 /* Long (arbitrary precision) integer object interface */
 
 PyAPI_DATA(PyTypeObject) PyLong_Type;
-PyAPI_DATA(PyTypeObject) PyDeepFreezeLong_Type;
 
 #define PyLong_Check(op) \
         PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LONG_SUBCLASS)
