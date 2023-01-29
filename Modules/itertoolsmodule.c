@@ -394,6 +394,7 @@ typedef struct {
     PyObject *currkey;
     PyObject *currvalue;
     const void *currgrouper;  /* borrowed reference */
+    itertools_state *state;
 } groupbyobject;
 
 static PyObject *_grouper_create(groupbyobject *, PyObject *);
@@ -430,6 +431,7 @@ itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
         Py_DECREF(gbo);
         return NULL;
     }
+    gbo->state = find_state_by_type(type);
     return (PyObject *)gbo;
 }
 
