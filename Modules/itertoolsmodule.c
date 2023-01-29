@@ -623,7 +623,7 @@ static PyObject *
 _grouper_create(groupbyobject *parent, PyObject *tgtkey)
 {
     PyTypeObject *tp = Py_TYPE(parent);
-    itertools_state *state = find_state_by_type(tp);
+    itertools_state *state = parent->state;
     _grouperobject *igo = PyObject_GC_New(_grouperobject, state->_grouper_type);
     if (igo == NULL)
         return NULL;
