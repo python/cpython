@@ -603,7 +603,7 @@ static inline void Py_INCREF(PyObject *op)
     if (new_refcnt < cur_refcnt) {
         return;
     }
-    memcpy(&op->ob_refcnt, &new_refcnt, sizeof(new_refcnt));
+    Py_MEMCPY(&op->ob_refcnt, &new_refcnt, sizeof(new_refcnt));
 #else
     // Explicitly check immortality against the immortal value
     if (_Py_IsImmortal(op)) {

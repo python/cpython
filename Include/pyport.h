@@ -184,8 +184,23 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
+// Preprocessor check for a builtin preprocessor function. Always return 0
+// if __has_builtin() macro is not defined.
+//
+// __has_builtin() is available on clang and GCC 10.
+#ifdef __has_builtin
+#  define _Py__has_builtin(x) __has_builtin(x)
+#else
+#  define _Py__has_builtin(x) 0
+#endif
+
+// Avoid calls to external functions when possible,
+#if _Py__has_builtin(__builtin_memcpy_inline) || defined(__clang__)
+#  define Py_MEMCPY __builtin_memcpy_inline
+#elif _Py__has_builtin(__builtin_memcpy) || defined(__GNUC__)
+#  define Py_MEMCPY __builtin_memcpy
+#else
 // bpo-28126: Py_MEMCPY is kept for backwards compatibility,
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_MEMCPY memcpy
 #endif
 
@@ -687,16 +702,6 @@ extern char * _getpty(int *, int, mode_t, int);
 #endif
 #endif
 
-
-// Preprocessor check for a builtin preprocessor function. Always return 0
-// if __has_builtin() macro is not defined.
-//
-// __has_builtin() is available on clang and GCC 10.
-#ifdef __has_builtin
-#  define _Py__has_builtin(x) __has_builtin(x)
-#else
-#  define _Py__has_builtin(x) 0
-#endif
 
 // _Py_TYPEOF(expr) gets the type of an expression.
 //
