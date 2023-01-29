@@ -23,6 +23,12 @@
         }
 
         TARGET(RESUME) {
+            _PyCode_Tier2Warmup(frame, &next_instr);
+            GO_TO_INSTRUCTION(RESUME_QUICK);
+        }
+
+        TARGET(RESUME_QUICK) {
+            PREDICTED(RESUME_QUICK);
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
@@ -2360,7 +2366,16 @@
 
         TARGET(JUMP_BACKWARD) {
             PREDICTED(JUMP_BACKWARD);
-            assert(oparg < INSTR_OFFSET());
+            _PyCode_Tier2Warmup(frame, &next_instr);
+            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+        }
+
+        TARGET(JUMP_BACKWARD_QUICK) {
+            PREDICTED(JUMP_BACKWARD_QUICK);
+            if (oparg >= INSTR_OFFSET()) {
+                fprintf(stderr, "%ld, %ld\n", oparg, INSTR_OFFSET());
+            }
+            //assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
             DISPATCH();

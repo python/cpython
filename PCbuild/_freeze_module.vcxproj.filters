@@ -343,6 +343,9 @@
     <ClCompile Include="..\Python\specialize.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\tier2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>

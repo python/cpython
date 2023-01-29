@@ -42,6 +42,22 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
+
+// What the tier 2 interpreter executes
+typedef struct _PyTier2BB {
+    // Stores the start pointer in the tier 1 bytecode.
+    // So that when we exit the trace we can calculate where to return.
+    _Py_CODEUNIT *tier1_start;
+    _Py_CODEUNIT u_code[1];
+} _PyTier2BB;
+
+// Bump allocator for basic blocks (overallocated)
+typedef struct _PyTier2BBSpace  {
+    struct _PyTier2BBSpace *next;
+    void *water_level;
+    _PyTier2BB bbs[1];
+} _PyTier2BBSpace;
+
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
 #define _PyCode_DEF(SIZE) {                                                    \
@@ -102,6 +118,9 @@ typedef struct {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     char *_co_linearray;          /* array of line offsets */                  \
+    int _tier2_warmup;            /* warmup counter for tier 2 */              \
+    _PyTier2BB *_bb_next;         /* the tier 2 basic block to execute (if any) */ \
+    _PyTier2BBSpace *_bb_space;   /* linked list storing basic blocks */       \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \

@@ -88,6 +88,11 @@ dummy_func(
         }
 
         inst(RESUME, (--)) {
+            _PyCode_Tier2Warmup(frame, &next_instr);
+            GO_TO_INSTRUCTION(RESUME_QUICK);
+        }
+
+        inst(RESUME_QUICK, (--)) {
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
@@ -1949,6 +1954,11 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (--)) {
+            _PyCode_Tier2Warmup(frame, &next_instr);
+            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+        }
+
+        inst(JUMP_BACKWARD_QUICK, (--)) {
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();

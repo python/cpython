@@ -277,6 +277,9 @@ class Printer:
             self.write(f".co_linetable = {co_linetable},")
             self.write(f"._co_cached = NULL,")
             self.write("._co_linearray = NULL,")
+            self.write("._tier2_warmup = -64,")
+            self.write("._bb_next = NULL,")
+            self.write("._bb_space = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
             for i, op in enumerate(code.co_code[::2]):
                 if op == RESUME:

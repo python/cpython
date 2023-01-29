@@ -1223,6 +1223,9 @@
     <ClCompile Include="..\Python\specialize.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\tier2.c">
+      <Filter>Python</Filter>
+    </ClCompile>    
     <ClCompile Include="..\Python\structmember.c">
       <Filter>Python</Filter>
     </ClCompile>

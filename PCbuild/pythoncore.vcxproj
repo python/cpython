@@ -546,6 +546,7 @@
     <ClCompile Include="..\Python\Python-tokenize.c" />
     <ClCompile Include="..\Python\pythonrun.c" />
     <ClCompile Include="..\Python\specialize.c" />
+    <ClCompile Include="..\Python\tier2.c" />    
     <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\symtable.c" />

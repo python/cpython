@@ -409,6 +409,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     co->_co_linearray_entry_size = 0;
     co->_co_linearray = NULL;
+    co->_tier2_warmup = -64;
+    co->_bb_next = NULL;
+    co->_bb_space = NULL;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
     int entry_point = 0;
@@ -1705,6 +1708,16 @@ code_dealloc(PyCodeObject *co)
     if (co->_co_linearray) {
         PyMem_Free(co->_co_linearray);
     }
+    co->_bb_next = NULL;
+    if (co->_bb_space != NULL) {
+        // Traverse the linked list
+        for (_PyTier2BBSpace *curr = co->_bb_space; curr != NULL;) {
+            _PyTier2BBSpace *prev = curr;
+            curr = curr->next;
+            PyMem_Free(prev);
+        }
+        co->_bb_space = NULL;
+    }
     PyObject_Free(co);
 }
 
@@ -2281,6 +2294,16 @@ _PyStaticCode_Fini(PyCodeObject *co)
         Py_CLEAR(co->_co_cached->_co_varnames);
         PyMem_Free(co->_co_cached);
         co->_co_cached = NULL;
+    }
+    co->_bb_next = NULL;
+    if (co->_bb_space != NULL) {
+        // Traverse the linked list
+        for (_PyTier2BBSpace *curr = co->_bb_space; curr != NULL;) {
+            _PyTier2BBSpace *prev = curr;
+            curr = curr->next;
+            PyMem_Free(prev);
+        }
+        co->_bb_space = NULL;
     }
     co->co_extra = NULL;
     if (co->co_weakreflist != NULL) {
