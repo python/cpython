@@ -81,10 +81,10 @@ static PyObject *
 tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *self_tp = &PyTuple_Type;
     PyObject *iterable = NULL;
 
-    if ((type == &PyTuple_Type ||
-         type->tp_init == PyTuple_Type.tp_init) &&
+    if ((type == self_tp || type->tp_init == self_tp->tp_init) &&
         !_PyArg_NoKeywords("tuple", kwargs)) {
         goto exit;
     }
@@ -118,4 +118,4 @@ tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl(self);
 }
-/*[clinic end generated code: output=441d2b880e865f87 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bee5a759f0d953bd input=a9049054013a1b77]*/

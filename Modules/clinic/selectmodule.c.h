@@ -1061,14 +1061,13 @@ static PyObject *
 select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *self_tp = _selectstate_by_type(type)->kqueue_queue_Type;
 
-    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
-         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
+    if ((type == self_tp || type->tp_init == self_tp->tp_init) &&
         !_PyArg_NoPositional("kqueue", args)) {
         goto exit;
     }
-    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
-         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
+    if ((type == self_tp || type->tp_init == self_tp->tp_init) &&
         !_PyArg_NoKeywords("kqueue", kwargs)) {
         goto exit;
     }
@@ -1310,4 +1309,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=9556c7d6cd5192d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65a1315693c5d68b input=a9049054013a1b77]*/

@@ -326,10 +326,11 @@ static int
 list___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    PyTypeObject *self_tp = &PyList_Type;
     PyObject *iterable = NULL;
 
-    if ((Py_IS_TYPE(self, &PyList_Type) ||
-         Py_TYPE(self)->tp_new == PyList_Type.tp_new) &&
+    if ((Py_IS_TYPE(self, self_tp) ||
+         Py_TYPE(self)->tp_new == self_tp->tp_new) &&
         !_PyArg_NoKeywords("list", kwargs)) {
         goto exit;
     }
@@ -382,4 +383,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=4e6f38b655394564 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbeb53f9890968cc input=a9049054013a1b77]*/
