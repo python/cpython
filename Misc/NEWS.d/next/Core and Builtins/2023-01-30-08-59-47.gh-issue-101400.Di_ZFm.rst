@@ -1,0 +1,1 @@
+Restore continue/break loc for the non-loop case. Patch by Dong-hee Na.
