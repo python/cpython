@@ -952,23 +952,24 @@ cmath_tanh_impl(PyObject *module, Py_complex z)
 cmath.log
 
     z as x: Py_complex
-    base as y_obj: object = NULL
+    base as y_obj: object = None
     /
 
 log(z[, base]) -> the logarithm of z to the given base.
 
-If the base not specified, returns the natural logarithm (base e) of z.
+If the base is not specified or is None, returns the
+natural logarithm (base e) of z.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=230ed3a71ecd000a]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=e7db51859ebf70bf]*/
 {
     Py_complex y;
 
     errno = 0;
     x = c_log(x);
-    if (y_obj != NULL) {
+    if (y_obj != Py_None) {
         y = PyComplex_AsCComplex(y_obj);
         if (PyErr_Occurred()) {
             return NULL;
