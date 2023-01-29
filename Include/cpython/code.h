@@ -47,6 +47,7 @@ typedef struct {
 typedef struct _PyTier2BB {
     // Stores the start pointer in the tier 1 bytecode.
     // So that when we exit the trace we can calculate where to return.
+    struct _PyTier2BB *bb_next;
     _Py_CODEUNIT *tier1_start;
     _Py_CODEUNIT u_code[1];
 } _PyTier2BB;

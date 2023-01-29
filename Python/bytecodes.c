@@ -88,7 +88,7 @@ dummy_func(
         }
 
         inst(RESUME, (--)) {
-            _PyCode_Tier2Warmup(frame, &next_instr);
+            next_instr = _PyCode_Tier2Warmup(frame, next_instr);
             GO_TO_INSTRUCTION(RESUME_QUICK);
         }
 
@@ -1954,11 +1954,14 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (--)) {
-            _PyCode_Tier2Warmup(frame, &next_instr);
+            next_instr = _PyCode_Tier2Warmup(frame, next_instr);
             GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
 
         inst(JUMP_BACKWARD_QUICK, (--)) {
+            if (oparg >= INSTR_OFFSET()) {
+                fprintf(stderr, "%ld, %p, %p, %p\n", oparg, next_instr, _PyCode_CODE(frame->f_code), frame->f_code->_bb_next->u_code);
+            }
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();

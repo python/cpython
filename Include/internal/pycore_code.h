@@ -240,7 +240,7 @@ extern void _PyStaticCode_Fini(PyCodeObject *co);
 extern int _PyStaticCode_Init(PyCodeObject *co);
 
 /* Tier 2 interpreter */
-extern void _PyCode_Tier2Warmup(struct _PyInterpreterFrame *, _Py_CODEUNIT **);
+extern _Py_CODEUNIT *_PyCode_Tier2Warmup(struct _PyInterpreterFrame *, _Py_CODEUNIT *);
 
 #ifdef Py_STATS
 
