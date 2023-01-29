@@ -255,17 +255,15 @@ outdated.
     Using the Python Programming Language", CWI Quarterly, Volume 4, Issue 4
     (December 1991), Amsterdam, pp 283--303.
 
+You can download that article from the following link -
+https://ir.cwi.nl/pub/18204
+
 
 Are there any books on Python?
 ------------------------------
 
 Yes, there are many, and more are being published.  See the python.org wiki at
 https://wiki.python.org/moin/PythonBooks for a list.
-
-You can also refer to a book named "Interactively testing remote servers using
-the Python programming language" by G. van Rossum (Guido) and J. de Boer (Jelke)
-from the following link -
-https://ir.cwi.nl/pub/18204 .
 
 You can also search online bookstores for "Python" and filter out the Monty
 Python references; or perhaps search for "Python" and "language".
