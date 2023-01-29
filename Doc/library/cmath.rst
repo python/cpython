@@ -92,8 +92,8 @@ Power and logarithmic functions
 .. function:: log(x, base=None)
 
    Returns the logarithm of *x* to the given *base*. If the *base* is not
-   specified or is None, returns the natural logarithm of *x*. There is one
-   branch cut, from 0 along the negative real axis to -∞, continuous from above.
+   specified, returns the natural logarithm of *x*. There is one branch cut, from 0
+   along the negative real axis to -∞, continuous from above.
 
 
 .. function:: log10(x)
