@@ -462,7 +462,7 @@ In such cases, the ``@`` format character should be used to specify
 native byte ordering and data sizes.  Internal pad bytes are normally inserted
 automatically.  It is possible that a zero-repeat format code will be
 needed at the end of a format string to round up to the correct
-byte boundary for proper alignment of consective chunks of data.
+byte boundary for proper alignment of consecutive chunks of data.
 
 Consider these two simple examples (on a 64-bit, little-endian
 machine)::

@@ -272,7 +272,7 @@ The :mod:`uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
-   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5}] [-ns NAMESPACE] [-n NAME]
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5}] [-n NAMESPACE] [-N NAME]
 
 The following options are accepted:
 
@@ -288,13 +288,14 @@ The following options are accepted:
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
-.. cmdoption:: -ns <namespace>
+.. cmdoption:: -n <namespace>
                --namespace <namespace>
 
-   The namespace used as part of generating the uuid. Only required for
-   :func:`uuid3` / :func:`uuid5` functions.
+   The namespace is a ``UUID``, or ``@ns`` where ``ns`` is a well-known predefined UUID
+   addressed by namespace name. Such as ``@dns``, ``@url``, ``@oid``, and ``@x500``.
+   Only required for :func:`uuid3` / :func:`uuid5` functions.
 
-.. cmdoption:: -n <name>
+.. cmdoption:: -N <name>
                --name <name>
 
    The name used as part of generating the uuid. Only required for
@@ -351,12 +352,12 @@ Here are some examples of typical usage of the :mod:`uuid` command line interfac
 
 .. code-block:: shell
 
-    # generate a random uuid - by default uuid4() is used
-    $ python -m uuid
+   # generate a random uuid - by default uuid4() is used
+   $ python -m uuid
 
-    # generate a uuid using uuid1()
-    $ python -m uuid -u uuid1
+   # generate a uuid using uuid1()
+   $ python -m uuid -u uuid1
 
-    # generate a uuid using uuid5
-    $ python -m uuid -u uuid5 -ns NAMESPACE_URL -n example.com
+   # generate a uuid using uuid5
+   $ python -m uuid -u uuid5 -n @url -N example.com
 

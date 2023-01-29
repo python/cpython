@@ -734,6 +734,66 @@ class Analyzer:
         ]
         return stack, -lowest
 
+    def get_stack_effect_info(
+        self, thing: parser.InstDef | parser.Super | parser.Macro
+    ) -> tuple[Instruction|None, str, str]:
+
+        def effect_str(effect: list[StackEffect]) -> str:
+            if getattr(thing, 'kind', None) == 'legacy':
+                return str(-1)
+            n_effect, sym_effect = list_effect_size(effect)
+            if sym_effect:
+                return f"{sym_effect} + {n_effect}" if n_effect else sym_effect
+            return str(n_effect)
+
+        match thing:
+            case parser.InstDef():
+                if thing.kind != "op":
+                    instr = self.instrs[thing.name]
+                    popped = effect_str(instr.input_effects)
+                    pushed = effect_str(instr.output_effects)
+                else:
+                    instr = None
+                    popped = pushed = "", ""
+            case parser.Super():
+                instr = self.super_instrs[thing.name]
+                popped = '+'.join(effect_str(comp.instr.input_effects) for comp in instr.parts)
+                pushed = '+'.join(effect_str(comp.instr.output_effects) for comp in instr.parts)
+            case parser.Macro():
+                instr = self.macro_instrs[thing.name]
+                parts = [comp for comp in instr.parts if isinstance(comp, Component)]
+                popped = '+'.join(effect_str(comp.instr.input_effects) for comp in parts)
+                pushed = '+'.join(effect_str(comp.instr.output_effects) for comp in parts)
+            case _:
+                typing.assert_never(thing)
+        return instr, popped, pushed
+
+    def write_stack_effect_functions(self) -> None:
+        popped_data = []
+        pushed_data = []
+        for thing in self.everything:
+            instr, popped, pushed = self.get_stack_effect_info(thing)
+            if instr is not None:
+                popped_data.append( (instr, popped) )
+                pushed_data.append( (instr, pushed) )
+
+        def write_function(direction: str, data: list[tuple[Instruction, str]]) -> None:
+            self.out.emit("\n#ifndef NDEBUG");
+            self.out.emit("static int");
+            self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg) {{")
+            self.out.emit("    switch(opcode) {");
+            for instr, effect in data:
+                self.out.emit(f"        case {instr.name}:")
+                self.out.emit(f"            return {effect};")
+            self.out.emit("        default:")
+            self.out.emit("            Py_UNREACHABLE();")
+            self.out.emit("    }")
+            self.out.emit("}")
+            self.out.emit("#endif");
+
+        write_function('popped', popped_data)
+        write_function('pushed', pushed_data)
+
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
 
@@ -762,13 +822,13 @@ class Analyzer:
             # Create formatter; the rest of the code uses this
             self.out = Formatter(f, 0)
 
+            self.write_stack_effect_functions()
+
             # Write variable definition
             self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
-            self.out.emit("static const struct {")
+            self.out.emit("struct opcode_metadata {")
             with self.out.indent():
-                self.out.emit("short n_popped;")
-                self.out.emit("short n_pushed;")
                 self.out.emit("enum Direction dir_op1;")
                 self.out.emit("enum Direction dir_op2;")
                 self.out.emit("enum Direction dir_op3;")
@@ -796,42 +856,30 @@ class Analyzer:
         """Write metadata for a single instruction."""
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
         if instr.kind == "legacy":
-            n_popped = n_pushed = -1
             assert not instr.register
         else:
-            n_popped, sym_popped = list_effect_size(instr.input_effects)
-            n_pushed, sym_pushed = list_effect_size(instr.output_effects)
-            if sym_popped or sym_pushed:
-                # TODO: Record symbolic effects (how?)
-                n_popped = n_pushed = -1
             if instr.register:
                 directions: list[str] = []
                 directions.extend("DIR_READ" for _ in instr.input_effects)
                 directions.extend("DIR_WRITE" for _ in instr.output_effects)
                 directions.extend("DIR_NONE" for _ in range(3))
                 dir_op1, dir_op2, dir_op3 = directions[:3]
-                n_popped = n_pushed = 0
         self.out.emit(
-            f'    [{instr.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},'
+            f'    [{instr.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},'
         )
 
     def write_metadata_for_super(self, sup: SuperInstruction) -> None:
         """Write metadata for a super-instruction."""
-        n_popped = sum(len(comp.instr.input_effects) for comp in sup.parts)
-        n_pushed = sum(len(comp.instr.output_effects) for comp in sup.parts)
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
         self.out.emit(
-            f'    [{sup.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},'
+            f'    [{sup.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},'
         )
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        parts = [comp for comp in mac.parts if isinstance(comp, Component)]
-        n_popped = sum(len(comp.instr.input_effects) for comp in parts)
-        n_pushed = sum(len(comp.instr.output_effects) for comp in parts)
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
         self.out.emit(
-            f'    [{mac.name}] = {{ {n_popped}, {n_pushed}, {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},'
+            f'    [{mac.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},'
         )
 
     def write_instructions(self) -> None:
@@ -981,7 +1029,7 @@ def always_exits(lines: list[str]) -> bool:
         return False
     line = line[12:]
     return line.startswith(
-        ("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()")
+        ("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()", "ERROR_IF(true, ")
     )
 
 

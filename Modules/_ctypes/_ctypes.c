@@ -412,6 +412,7 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
 typedef struct {
     PyObject_HEAD
     void *ptr;
+    PyObject *keep;  // If set, a reference to the original CDataObject.
 } StructParamObject;
 
 
@@ -419,6 +420,7 @@ static void
 StructParam_dealloc(PyObject *myself)
 {
     StructParamObject *self = (StructParamObject *)myself;
+    Py_XDECREF(self->keep);
     PyMem_Free(self->ptr);
     Py_TYPE(self)->tp_free(myself);
 }
@@ -466,6 +468,7 @@ StructUnionType_paramfunc(CDataObject *self)
 
         StructParamObject *struct_param = (StructParamObject *)obj;
         struct_param->ptr = ptr;
+        struct_param->keep = Py_NewRef(self);
     } else {
         ptr = self->b_ptr;
         obj = Py_NewRef(self);
