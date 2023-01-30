@@ -305,19 +305,19 @@ _PyCode_Quicken(PyCodeObject *code)
             case STORE_FAST << 8 | STORE_FAST:
                 instructions[i - 1].opcode = STORE_FAST__STORE_FAST;
                 break;
-            case COMPARE_OP << 8 | POP_JUMP_IF_TRUE:
-            case COMPARE_OP << 8 | POP_JUMP_IF_FALSE:
-            {
-                int oparg = instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg;
-                assert((oparg >> 4) <= Py_GE);
-                int mask = compare_masks[oparg >> 4];
-                if (opcode == POP_JUMP_IF_FALSE) {
-                    mask = mask ^ 0xf;
-                }
-                instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].opcode = COMPARE_AND_BRANCH;
-                instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg = (oparg & 0xf0) | mask;
-                break;
-            }
+            //case COMPARE_OP << 8 | POP_JUMP_IF_TRUE:
+            //case COMPARE_OP << 8 | POP_JUMP_IF_FALSE:
+            //{
+            //    int oparg = instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg;
+            //    assert((oparg >> 4) <= Py_GE);
+            //    int mask = compare_masks[oparg >> 4];
+            //    if (opcode == POP_JUMP_IF_FALSE) {
+            //        mask = mask ^ 0xf;
+            //    }
+            //    instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].opcode = COMPARE_AND_BRANCH;
+            //    instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg = (oparg & 0xf0) | mask;
+            //    break;
+            //}
         }
     }
     #endif /* ENABLE_SPECIALIZATION */

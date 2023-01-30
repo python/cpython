@@ -403,8 +403,28 @@ _cache_format = {
     "COMPARE_OP": {
         "counter": 1,
     },
+    # Conditional branch instructions all need a branch counter.
     "COMPARE_AND_BRANCH": {
         "counter": 1,
+        "branch_counter": 1,
+    },
+    "JUMP_IF_FALSE_OR_POP": {
+        "branch_counter": 1,
+    },
+    "JUMP_IF_TRUE_OR_POP": {
+        "branch_counter": 1,
+    },
+    "POP_JUMP_IF_FALSE": {
+        "branch_counter": 1,
+    },
+    "POP_JUMP_IF_TRUE": {
+        "branch_counter": 1,
+    },
+    "POP_JUMP_IF_NOT_NONE": {
+        "branch_counter": 1,
+    },
+    "POP_JUMP_IF_NONE": {
+        "branch_counter": 1,
     },
     "BINARY_SUBSCR": {
         "counter": 1,

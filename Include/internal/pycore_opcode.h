@@ -48,9 +48,15 @@ const uint8_t _PyOpcode_Caches[256] = {
     [STORE_ATTR] = 4,
     [LOAD_ATTR] = 9,
     [COMPARE_OP] = 1,
+    [JUMP_IF_FALSE_OR_POP] = 1,
+    [JUMP_IF_TRUE_OR_POP] = 1,
+    [POP_JUMP_IF_FALSE] = 1,
+    [POP_JUMP_IF_TRUE] = 1,
     [LOAD_GLOBAL] = 5,
     [BINARY_OP] = 1,
-    [COMPARE_AND_BRANCH] = 1,
+    [POP_JUMP_IF_NOT_NONE] = 1,
+    [POP_JUMP_IF_NONE] = 1,
+    [COMPARE_AND_BRANCH] = 2,
     [CALL] = 4,
 };
 
