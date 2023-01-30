@@ -313,7 +313,7 @@ def _compile(pattern, flags):
                     "without an obvious purpose. "
                     "Don't use it.",
                     DeprecationWarning)
-        p = _COMPiler.compile(pattern, flags)
+        p = _compiler.compile(pattern, flags)
         if flags & DEBUG:
             return p
         if len(_cache) >= _MAXCACHE:
