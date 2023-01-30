@@ -1,5 +1,4 @@
-from .. import abc
-from .. import util
+from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
@@ -104,15 +103,7 @@ class ExecModuleTests(abc.LoaderTests):
                              expected=value))
         self.assertEqual(output, 'Hello world!\n')
 
-    def test_module_repr(self):
-        name = '__hello__'
-        module, output = self.exec_module(name)
-        with deprecated():
-            repr_str = self.machinery.FrozenImporter.module_repr(module)
-        self.assertEqual(repr_str,
-                         "<module '__hello__' (frozen)>")
-
-    def test_module_repr_indirect(self):
+    def test_module_repr_indirect_through_spec(self):
         name = '__hello__'
         module, output = self.exec_module(name)
         self.assertEqual(repr(module),
@@ -198,13 +189,6 @@ class LoaderTests(abc.LoaderTests):
         self.assertIs(module1, module2)
         self.assertEqual(stdout.getvalue(),
                          'Hello world!\nHello world!\n')
-
-    def test_module_repr(self):
-        with fresh('__hello__', oldapi=True):
-            module = self.machinery.FrozenImporter.load_module('__hello__')
-            repr_str = self.machinery.FrozenImporter.module_repr(module)
-        self.assertEqual(repr_str,
-                         "<module '__hello__' (frozen)>")
 
     # No way to trigger an error in a frozen module.
     test_state_after_failure = None

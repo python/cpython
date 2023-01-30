@@ -1,1 +1,0 @@
-``is_valid_fd`` now uses faster ``fcntl(fd, F_GETFD)`` on Linux, macOS, and Windows.

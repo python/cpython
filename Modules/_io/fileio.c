@@ -72,8 +72,6 @@ typedef struct {
 
 PyTypeObject PyFileIO_Type;
 
-_Py_IDENTIFIER(name);
-
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
 /* Forward declarations */
@@ -146,9 +144,8 @@ _io_FileIO_close_impl(fileio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    _Py_IDENTIFIER(close);
-    res = _PyObject_CallMethodIdOneArg((PyObject*)&PyRawIOBase_Type,
-                                       &PyId_close, (PyObject *)self);
+    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+                                     &_Py_ID(close), (PyObject *)self);
     if (!self->closefd) {
         self->fd = -1;
         return res;
@@ -201,7 +198,7 @@ extern int _Py_open_cloexec_works;
 _io.FileIO.__init__
     file as nameobj: object
     mode: str = "r"
-    closefd: bool(accept={int}) = True
+    closefd: bool = True
     opener: object = None
 
 Open a file.
@@ -222,7 +219,7 @@ results in functionality similar to passing None).
 static int
 _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                          int closefd, PyObject *opener)
-/*[clinic end generated code: output=23413f68e6484bbd input=1596c9157a042a39]*/
+/*[clinic end generated code: output=23413f68e6484bbd input=588aac967e0ba74b]*/
 {
 #ifdef MS_WINDOWS
     Py_UNICODE *widename = NULL;
@@ -271,14 +268,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         if (!PyUnicode_FSDecoder(nameobj, &stringobj)) {
             return -1;
         }
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        widename = PyUnicode_AsUnicode(stringobj);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
         widename = PyUnicode_AsWideCharString(stringobj, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         if (widename == NULL)
             return -1;
 #else
@@ -476,7 +466,7 @@ _Py_COMP_DIAG_POP
     _setmode(self->fd, O_BINARY);
 #endif
 
-    if (_PyObject_SetAttrId((PyObject *)self, &PyId_name, nameobj) < 0)
+    if (PyObject_SetAttr((PyObject *)self, &_Py_ID(name), nameobj) < 0)
         goto error;
 
     if (self->appending) {
@@ -495,14 +485,16 @@ _Py_COMP_DIAG_POP
     ret = -1;
     if (!fd_is_own)
         self->fd = -1;
-    if (self->fd >= 0)
+    if (self->fd >= 0) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
         internal_close(self);
+        _PyErr_ChainExceptions(exc, val, tb);
+    }
 
  done:
 #ifdef MS_WINDOWS
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(widename);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #endif
     Py_CLEAR(stringobj);
     return ret;
@@ -1085,7 +1077,7 @@ fileio_repr(fileio *self)
     if (self->fd < 0)
         return PyUnicode_FromFormat("<_io.FileIO [closed]>");
 
-    if (_PyObject_LookupAttrId((PyObject *) self, &PyId_name, &nameobj) < 0) {
+    if (_PyObject_LookupAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         return NULL;
     }
     if (nameobj == NULL) {

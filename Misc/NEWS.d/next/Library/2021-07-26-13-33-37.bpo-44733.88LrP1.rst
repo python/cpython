@@ -1,3 +1,0 @@
-Add ``max_tasks_per_child`` to :class:`concurrent.futures.ProcessPoolExecutor`.
-This allows users to specify the maximum number of tasks a single process
-should execute before the process needs to be restarted.

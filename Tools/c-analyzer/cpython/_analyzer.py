@@ -32,6 +32,7 @@ from . import _parser, REPO_ROOT
 _DATA_DIR = os.path.dirname(__file__)
 KNOWN_FILE = os.path.join(_DATA_DIR, 'known.tsv')
 IGNORED_FILE = os.path.join(_DATA_DIR, 'ignored.tsv')
+NEED_FIX_FILE = os.path.join(_DATA_DIR, 'globals-to-fix.tsv')
 KNOWN_IN_DOT_C = {
     'struct _odictobject': False,
     'PyTupleObject': False,
@@ -59,6 +60,46 @@ _IGNORED = {
     # {ID => reason}
 }
 
+# XXX We should be handling these through known.tsv.
+_OTHER_SUPPORTED_TYPES = {
+    # Holds tuple of strings, which we statically initialize:
+    '_PyArg_Parser',
+    # Uses of these should be const, but we don't worry about it.
+    'PyModuleDef',
+    'PyModuleDef_Slot[]',
+    'PyType_Spec',
+    'PyType_Slot[]',
+    'PyMethodDef',
+    'PyMethodDef[]',
+    'PyMemberDef[]',
+    'PyGetSetDef[]',
+    'PyNumberMethods',
+    'PySequenceMethods',
+    'PyMappingMethods',
+    'PyAsyncMethods',
+    'PyBufferProcs',
+    'PyStructSequence_Field[]',
+    'PyStructSequence_Desc',
+}
+
+# XXX We should normalize all cases to a single name,
+# e.g. "kwlist" (currently the most common).
+_KWLIST_VARIANTS = [
+    ('*', 'kwlist'),
+    ('*', 'keywords'),
+    ('*', 'kwargs'),
+    ('Modules/_csv.c', 'dialect_kws'),
+    ('Modules/_datetimemodule.c', 'date_kws'),
+    ('Modules/_datetimemodule.c', 'datetime_kws'),
+    ('Modules/_datetimemodule.c', 'time_kws'),
+    ('Modules/_datetimemodule.c', 'timezone_kws'),
+    ('Modules/_lzmamodule.c', 'optnames'),
+    ('Modules/_lzmamodule.c', 'arg_names'),
+    ('Modules/cjkcodecs/multibytecodec.c', 'incnewkwarglist'),
+    ('Modules/cjkcodecs/multibytecodec.c', 'streamkwarglist'),
+    ('Modules/socketmodule.c', 'kwnames'),
+]
+
 KINDS = frozenset((*KIND.TYPES, KIND.VARIABLE))
 
 
@@ -85,6 +126,7 @@ def write_known():
 def read_ignored():
     if not _IGNORED:
         _IGNORED.update(_datafiles.read_ignored(IGNORED_FILE, relroot=REPO_ROOT))
+        _IGNORED.update(_datafiles.read_ignored(NEED_FIX_FILE, relroot=REPO_ROOT))
     return dict(_IGNORED)
 
 
@@ -200,6 +242,8 @@ def _check_typedep(decl, typedecl, types, knowntypes):
         # XXX Fail?
         return 'typespec (missing)'
     elif typedecl is _info.UNKNOWN:
+        if _has_other_supported_type(decl):
+            return None
         # XXX Is this right?
         return 'typespec (unknown)'
     elif not isinstance(typedecl, TypeDeclaration):
@@ -214,10 +258,44 @@ def _check_typedep(decl, typedecl, types, knowntypes):
     elif decl.kind is KIND.VARIABLE:
         if not is_process_global(decl):
             return None
+        if _is_kwlist(decl):
+            return None
+        if _has_other_supported_type(decl):
+            return None
         checked = _check_vartype(decl, typedecl, types, knowntypes)
         return 'mutable' if checked is FIXED_TYPE else checked
     else:
         raise NotImplementedError(decl)
+
+
+def _is_kwlist(decl):
+    # keywords for PyArg_ParseTupleAndKeywords()
+    # "static char *name[]" -> "static const char * const name[]"
+    # XXX These should be made const.
+    for relpath, name in _KWLIST_VARIANTS:
+        if decl.name == name:
+            if relpath == '*':
+                break
+            assert os.path.isabs(decl.file.filename)
+            relpath = os.path.normpath(relpath)
+            if decl.file.filename.endswith(os.path.sep + relpath):
+                break
+    else:
+        return False
+    vartype = ''.join(str(decl.vartype).split())
+    return vartype == 'char*[]'
+
+
+def _has_other_supported_type(decl):
+    if hasattr(decl, 'file') and decl.file.filename.endswith('.c.h'):
+        assert 'clinic' in decl.file.filename, (decl,)
+        if decl.name == '_kwtuple':
+            return True
+    vartype = str(decl.vartype).split()
+    if vartype[0] == 'struct':
+        vartype = vartype[1:]
+    vartype = ''.join(vartype)
+    return vartype in _OTHER_SUPPORTED_TYPES
 
 
 def _check_vartype(decl, typedecl, types, knowntypes):
@@ -305,7 +383,7 @@ class Analyzed(_info.Analyzed):
         # XXX ???
         #if itemonly:
         #    yield from rendered
-        supported = self._supported
+        supported = self.supported
         if fmt in ('line', 'brief'):
             rendered, = rendered
             parts = [

@@ -11,6 +11,27 @@
 #define PARAMFLAG_FLCID 0x4
 #endif
 
+/*
+ * bpo-13097: Max number of arguments CFuncPtr._argtypes_ and
+ * _ctypes_callproc() will accept.
+ *
+ * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
+ * to avoid allocating a massive buffer on the stack.
+ */
+#ifndef CTYPES_MAX_ARGCOUNT
+  #ifdef __EMSCRIPTEN__
+    #define CTYPES_MAX_ARGCOUNT 1000
+  #else
+    #define CTYPES_MAX_ARGCOUNT 1024
+  #endif
+#endif
+
+#if defined(__has_builtin)
+#if __has_builtin(__builtin_available)
+#define HAVE_BUILTIN_AVAILABLE 1
+#endif
+#endif
+
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
 typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
@@ -362,7 +383,7 @@ PyObject *_ctypes_get_errobj(int **pspace);
 extern PyObject *ComError;
 #endif
 
-#if USING_MALLOC_CLOSURE_DOT_C
+#ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);
 void *Py_ffi_closure_alloc(size_t size, void** codeloc);
 #else

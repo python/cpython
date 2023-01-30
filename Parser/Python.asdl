@@ -40,6 +40,7 @@ module Python
 
           | Raise(expr? exc, expr? cause)
           | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
+          | TryStar(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
           | Assert(expr test, expr? msg)
 
           | Import(alias* names)
@@ -74,7 +75,7 @@ module Python
          -- x < 4 < 3 and (x < 4) < 3
          | Compare(expr left, cmpop* ops, expr* comparators)
          | Call(expr func, expr* args, keyword* keywords)
-         | FormattedValue(expr value, int? conversion, expr? format_spec)
+         | FormattedValue(expr value, int conversion, expr? format_spec)
          | JoinedStr(expr* values)
          | Constant(constant value, string? kind)
 

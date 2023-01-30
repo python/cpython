@@ -236,6 +236,14 @@ capture data for later printing in a lightweight fashion.
 
       The ``__suppress_context__`` value from the original exception.
 
+   .. attribute:: __notes__
+
+      The ``__notes__`` value from the original exception, or ``None``
+      if the exception does not have any notes. If it is not ``None``
+      is it formatted in the traceback after the exception string.
+
+      .. versionadded:: 3.11
+
    .. attribute:: stack
 
       A :class:`StackSummary` representing the traceback.
@@ -333,6 +341,10 @@ capture data for later printing in a lightweight fashion.
       local variables in each :class:`FrameSummary` are captured as object
       representations.
 
+      .. versionchanged:: 3.12
+         Exceptions raised from :func:`repr` on a local variable (when
+         *capture_locals* is ``True``) are no longer propagated to the caller.
+
    .. classmethod:: from_list(a_list)
 
       Construct a :class:`StackSummary` object from a supplied list of
@@ -417,9 +429,9 @@ exception and traceback:
    import sys, traceback
 
    def lumberjack():
-       bright_side_of_death()
+       bright_side_of_life()
 
-   def bright_side_of_death():
+   def bright_side_of_life():
        return tuple()[0]
 
    try:
@@ -429,9 +441,7 @@ exception and traceback:
        print("*** print_tb:")
        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
        print("*** print_exception:")
-       # exc_type below is ignored on 3.5 and later
-       traceback.print_exception(exc_type, exc_value, exc_traceback,
-                                 limit=2, file=sys.stdout)
+       traceback.print_exception(exc_value, limit=2, file=sys.stdout)
        print("*** print_exc:")
        traceback.print_exc(limit=2, file=sys.stdout)
        print("*** format_exc, first and last line:")
@@ -439,9 +449,7 @@ exception and traceback:
        print(formatted_lines[0])
        print(formatted_lines[-1])
        print("*** format_exception:")
-       # exc_type below is ignored on 3.5 and later
-       print(repr(traceback.format_exception(exc_type, exc_value,
-                                             exc_traceback)))
+       print(repr(traceback.format_exception(exc_value)))
        print("*** extract_tb:")
        print(repr(traceback.extract_tb(exc_traceback)))
        print("*** format_tb:")
@@ -456,42 +464,37 @@ The output for the example would look similar to this:
    *** print_tb:
      File "<doctest...>", line 10, in <module>
        lumberjack()
-       ^^^^^^^^^^^^
    *** print_exception:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
-       ^^^^^^^^^^^^
      File "<doctest...>", line 4, in lumberjack
-       bright_side_of_death()
-       ^^^^^^^^^^^^^^^^^^^^^^
+       bright_side_of_life()
    IndexError: tuple index out of range
    *** print_exc:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
-       ^^^^^^^^^^^^
      File "<doctest...>", line 4, in lumberjack
-       bright_side_of_death()
-       ^^^^^^^^^^^^^^^^^^^^^^
+       bright_side_of_life()
    IndexError: tuple index out of range
    *** format_exc, first and last line:
    Traceback (most recent call last):
    IndexError: tuple index out of range
    *** format_exception:
    ['Traceback (most recent call last):\n',
-    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n    ^^^^^^^^^^^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n',
+    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n',
+    '  File "<doctest default[0]>", line 7, in bright_side_of_life\n    return tuple()[0]\n           ~~~~~~~^^^\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
    [<FrameSummary file <doctest...>, line 10 in <module>>,
     <FrameSummary file <doctest...>, line 4 in lumberjack>,
-    <FrameSummary file <doctest...>, line 7 in bright_side_of_death>]
+    <FrameSummary file <doctest...>, line 7 in bright_side_of_life>]
    *** format_tb:
-   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n    ^^^^^^^^^^^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n']
+   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n',
+    '  File "<doctest default[0]>", line 7, in bright_side_of_life\n    return tuple()[0]\n           ~~~~~~~^^^\n']
    *** tb_lineno: 10
 
 

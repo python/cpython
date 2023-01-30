@@ -20,7 +20,9 @@
  */
 #define Py_HAVE_CONDVAR
 
-#include <pthread.h>
+#ifdef HAVE_PTHREAD_H
+#  include <pthread.h>
+#endif
 
 #define PyMUTEX_T pthread_mutex_t
 #define PyCOND_T pthread_cond_t
