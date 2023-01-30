@@ -1,1 +1,2 @@
-Restore continue/break loc for the non-loop case. Patch by Dong-hee Na.
+Fix wrong lineno in exception message on continue/break
+which are not in a loop. Patch by Dong-hee Na.
