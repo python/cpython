@@ -162,8 +162,9 @@ sys_trace_instruction_func(
 }
 
 static PyObject *
-trace_line(PyThreadState *tstate, _PyInterpreterFrame *iframe,
-    _PyLegacyEventHandler *self, PyFrameObject* frame, int line
+trace_line(
+    PyThreadState *tstate, _PyLegacyEventHandler *self,
+    PyFrameObject* frame, int line
 ) {
     if (line < 0) {
         Py_RETURN_NONE;
@@ -191,20 +192,21 @@ sys_trace_line_func(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 2);
-    _PyInterpreterFrame *iframe = _PyEval_GetFrame();
-    assert(iframe);
-    assert(args[0] == (PyObject *)iframe->f_code);
     int line = _PyLong_AsInt(args[1]);
     assert(line >= 0);
-    PyFrameObject* frame = _PyFrame_GetFrameObject(iframe);
+    PyFrameObject* frame = PyEval_GetFrame();
     if (frame == NULL) {
         return NULL;
     }
-    if (frame ->f_last_traced_line == line || !frame->f_trace_lines) {
+    assert(args[0] == (PyObject *)frame->f_frame->f_code);
+    if (!frame->f_trace_lines) {
+        Py_RETURN_NONE;
+    }
+    if (frame ->f_last_traced_line == line) {
         /* Already traced this line */
         Py_RETURN_NONE;
     }
-    return trace_line(tstate, iframe, self, frame, line);
+    return trace_line(tstate, self, frame, line);
 }
 
 
@@ -223,18 +225,19 @@ sys_trace_jump_func(
     assert(from >= 0);
     int to = _PyLong_AsInt(args[2]);
     assert(to >= 0);
-    _PyInterpreterFrame *iframe = _PyEval_GetFrame();
-    assert(iframe);
-    PyFrameObject* frame = _PyFrame_GetFrameObject(iframe);
+    PyFrameObject* frame = PyEval_GetFrame();
     if (frame == NULL) {
         return NULL;
     }
     if (!frame->f_trace_lines) {
         Py_RETURN_NONE;
     }
+    PyCodeObject *code = (PyCodeObject *)args[0];
+    assert(PyCode_Check(code));
+    assert(code == frame->f_frame->f_code);
     /* We can call _Py_Instrumentation_GetLine because we always set
     * line events for tracing */
-    int to_line = _Py_Instrumentation_GetLine(iframe->f_code, to);
+    int to_line = _Py_Instrumentation_GetLine(code, to);
     /* Backward jump: Always generate event
      * Forward jump: Only generate event if jumping to different line. */
     if (to > from) {
@@ -243,12 +246,8 @@ sys_trace_jump_func(
             /* Already traced this line */
             Py_RETURN_NONE;
         }
-        int from_line = _Py_Instrumentation_GetLine(iframe->f_code, from);
-        if (from_line == to_line) {
-            Py_RETURN_NONE;
-        }
     }
-    return trace_line(tstate, iframe, self, frame, to_line);
+    return trace_line(tstate, self, frame, to_line);
 }
 
 

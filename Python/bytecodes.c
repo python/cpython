@@ -3430,7 +3430,6 @@ dummy_func(
                 _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
                 INCREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
-            assert(original_opcode > 0 && original_opcode < 256);
             opcode = original_opcode;
             DISPATCH_GOTO();
         }

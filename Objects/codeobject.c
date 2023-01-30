@@ -1703,6 +1703,24 @@ code_dealloc(PyCodeObject *co)
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
+    _PyCoInstrumentationData *data = co->_co_instrumentation.monitoring_data;
+    if (data) {
+        if (data->tools) {
+            PyMem_Free(data->tools);
+        }
+        if (data->lines) {
+            PyMem_Free(data->lines);
+        }
+        if (data->line_tools) {
+            PyMem_Free(data->line_tools);
+        }
+        if (data->per_instruction_opcodes) {
+            PyMem_Free(data->per_instruction_opcodes);
+        }
+        if (data->per_instruction_tools) {
+            PyMem_Free(data->per_instruction_tools);
+        }
+    }
     if (co->_co_linearray) {
         PyMem_Free(co->_co_linearray);
     }

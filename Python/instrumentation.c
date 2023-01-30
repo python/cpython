@@ -8,7 +8,7 @@
 #include "pycore_pyerrors.h"
 
 /* Uncomment this to dump debugging output when assertions fail */
-//#define INSTRUMENT_DEBUG 1
+#define INSTRUMENT_DEBUG 1
 
 static PyObject DISABLE =
 {
@@ -889,35 +889,32 @@ static inline int most_significant_bit(uint8_t bits) {
 }
 
 static inline uint8_t
-get_tools(PyCodeObject * code, int index, int event)
+get_tools_for_instruction(PyCodeObject * code, int i, int event)
 {
     uint8_t tools;
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     _PyCoInstrumentationData *monitoring = code->_co_instrumentation.monitoring_data;
-    if (monitoring && monitoring->tools) {
-        tools = monitoring->tools[index];
+    if (event < PY_MONITORING_INSTRUMENTED_EVENTS && monitoring && monitoring->tools) {
+        tools = monitoring->tools[i];
     }
     else {
         tools = code->_co_instrumentation.monitoring_data->matrix.tools[event];
     }
-    assert((tools & PyInterpreterState_Get()->monitoring_matrix.tools[event]) == tools);
-    assert((tools & code->_co_instrumentation.monitoring_data->matrix.tools[event]) == tools);
+    CHECK((tools & PyInterpreterState_Get()->monitoring_matrix.tools[event]) == tools);
+    CHECK((tools & code->_co_instrumentation.monitoring_data->matrix.tools[event]) == tools);
     return tools;
 }
 
 static int
 call_instrument(PyThreadState *tstate, PyCodeObject *code, int event,
-    PyObject **args, Py_ssize_t nargsf, _Py_CODEUNIT *instr)
+    PyObject **args, Py_ssize_t nargsf, int offset, uint8_t tools)
 {
     //sanity_check_instrumentation(code);
     if (tstate->tracing) {
         return 0;
     }
     PyInterpreterState *interp = tstate->interp;
-    int offset = instr - _PyCode_CODE(code);
-    uint8_t tools = get_tools(code, offset, event);
-    // assert(tools);
     while (tools) {
         int tool = most_significant_bit(tools);
         assert(tool >= 0 && tool < 8);
@@ -953,14 +950,15 @@ _Py_call_instrumentation(
     PyCodeObject *code = frame->f_code;
     assert(is_instrumentation_up_to_date(code, tstate->interp));
     assert(matrix_equals(code->_co_instrumentation.monitoring_data->matrix, tstate->interp->monitoring_matrix));
-    int instruction_offset = instr - _PyCode_CODE(code);
-    PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
-    if (instruction_offset_obj == NULL) {
+    int offset = instr - _PyCode_CODE(code);
+    PyObject *offset_obj = PyLong_FromSsize_t(offset);
+    if (offset_obj == NULL) {
         return -1;
     }
-    PyObject *args[3] = { NULL, (PyObject *)code, instruction_offset_obj };
-    int err = call_instrument(tstate, code, event, &args[1], 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, instr);
-    Py_DECREF(instruction_offset_obj);
+    uint8_t tools = get_tools_for_instruction(code, offset, event);
+    PyObject *args[3] = { NULL, (PyObject *)code, offset_obj };
+    int err = call_instrument(tstate, code, event, &args[1], 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
+    Py_DECREF(offset_obj);
     return err;
 }
 
@@ -972,14 +970,15 @@ _Py_call_instrumentation_arg(
     PyCodeObject *code = frame->f_code;
     assert(is_instrumentation_up_to_date(code, tstate->interp));
     assert(matrix_equals(code->_co_instrumentation.monitoring_data->matrix, tstate->interp->monitoring_matrix));
-    int instruction_offset = instr - _PyCode_CODE(code);
-    PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
-    if (instruction_offset_obj == NULL) {
+    int offset = instr - _PyCode_CODE(code);
+    PyObject *offset_obj = PyLong_FromSsize_t(offset);
+    if (offset_obj == NULL) {
         return -1;
     }
-    PyObject *args[4] = { NULL, (PyObject *)code, instruction_offset_obj, arg };
-    int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, instr);
-    Py_DECREF(instruction_offset_obj);
+    uint8_t tools = get_tools_for_instruction(code, offset, event);
+    PyObject *args[4] = { NULL, (PyObject *)code, offset_obj, arg };
+    int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
+    Py_DECREF(offset_obj);
     return err;
 }
 
@@ -988,21 +987,24 @@ _Py_call_instrumentation_jump(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *target
 ) {
+    assert(event == PY_MONITORING_EVENT_JUMP ||
+           event == PY_MONITORING_EVENT_BRANCH);
     frame->prev_instr = target;
     PyCodeObject *code = frame->f_code;
-    int from = instr - _PyCode_CODE(code);
+    int offset = instr - _PyCode_CODE(code);
     int to = target - _PyCode_CODE(code);
     PyObject *to_obj = PyLong_FromLong(to);
     if (to_obj == NULL) {
         return -1;
     }
-    PyObject *from_obj = PyLong_FromLong(from);
+    PyObject *from_obj = PyLong_FromLong(offset);
     if (from_obj == NULL) {
         Py_DECREF(to_obj);
         return -1;
     }
+    uint8_t tools = get_tools_for_instruction(code, offset, event);
     PyObject *args[4] = { NULL, (PyObject *)code, from_obj, to_obj };
-    int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, instr);
+    int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
     Py_DECREF(to_obj);
     Py_DECREF(from_obj);
     return err;
@@ -1019,11 +1021,19 @@ _Py_call_instrumentation_exc(
     PyCodeObject *code = frame->f_code;
     assert(code->_co_instrumentation.monitoring_version == tstate->interp->monitoring_version);
     assert(matrix_equals(code->_co_instrumentation.monitoring_data->matrix, tstate->interp->monitoring_matrix));
-    int instruction_offset = instr - _PyCode_CODE(code);
-    PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
-    PyObject *args[4] = { NULL, (PyObject *)code, instruction_offset_obj, arg };
-    Py_ssize_t nargsf = (2 | PY_VECTORCALL_ARGUMENTS_OFFSET) + (arg != NULL);
-    int err = call_instrument(tstate, code, event, &args[1], nargsf, instr);
+    int offset = instr - _PyCode_CODE(code);
+    PyObject *offset_obj = PyLong_FromSsize_t(offset);
+    int err;
+    if (offset_obj == NULL) {
+        err = -1;
+    }
+    else {
+        PyObject *args[4] = { NULL, (PyObject *)code, offset_obj, arg };
+        Py_ssize_t nargsf = (2 | PY_VECTORCALL_ARGUMENTS_OFFSET) + (arg != NULL);
+        uint8_t tools = code->_co_instrumentation.monitoring_data->matrix.tools[event];
+        err = call_instrument(tstate, code, event, &args[1], nargsf, offset, tools);
+        Py_DECREF(offset_obj);
+    }
     if (err) {
         Py_XDECREF(type);
         Py_XDECREF(value);
@@ -1033,7 +1043,6 @@ _Py_call_instrumentation_exc(
         _PyErr_Restore(tstate, type, value, traceback);
     }
     assert(_PyErr_Occurred(tstate));
-    Py_DECREF(instruction_offset_obj);
 }
 
 int
@@ -1057,18 +1066,18 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     PyCodeObject *code = frame->f_code;
     assert(is_instrumentation_up_to_date(code, tstate->interp));
     assert(matrix_equals(code->_co_instrumentation.monitoring_data->matrix, tstate->interp->monitoring_matrix));
-    int offset = instr - _PyCode_CODE(code);
+    int i = instr - _PyCode_CODE(code);
     _PyCoInstrumentation *instrumentation = &code->_co_instrumentation;
-    _PyCoLineInstrumentationData *line_data = &instrumentation->monitoring_data->lines[offset];
+    _PyCoLineInstrumentationData *line_data = &instrumentation->monitoring_data->lines[i];
     uint8_t original_opcode = line_data->original_opcode;
     if (tstate->tracing) {
-        return original_opcode;
+        goto done;
     }
     PyInterpreterState *interp = tstate->interp;
     int8_t line_delta = line_data->line_delta;
-    int line = compute_line(code, offset, line_delta);
+    int line = compute_line(code, i, line_delta);
     uint8_t tools = code->_co_instrumentation.monitoring_data->line_tools != NULL ?
-        code->_co_instrumentation.monitoring_data->line_tools[offset] :
+        code->_co_instrumentation.monitoring_data->line_tools[i] :
         interp->monitoring_matrix.tools[PY_MONITORING_EVENT_LINE];
     PyObject *line_obj = PyLong_FromSsize_t(line);
     if (line_obj == NULL) {
@@ -1093,11 +1102,13 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         }
         else {
             /* DISABLE  */
-            remove_line_tools(code, offset, 1 << tool);
+            remove_line_tools(code, i, 1 << tool);
         }
     }
     Py_DECREF(line_obj);
+done:
     assert(original_opcode != 0);
+    assert(original_opcode < INSTRUMENTED_LINE);
     assert(_PyOpcode_Deopt[original_opcode] == original_opcode);
     return original_opcode;
 }
@@ -1143,7 +1154,7 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
         }
         else {
             /* DISABLE  */
-            remove_line_tools(code, offset, 1 << tool);
+            remove_per_instruction_tools(code, offset, 1 << tool);
         }
     }
     Py_DECREF(offset_obj);
