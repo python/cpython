@@ -1411,7 +1411,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
             if ((Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1)
-                && ((PyLongObject *)sub)->ob_digit[0] < (size_t)PyList_GET_SIZE(container))
+                && ((PyLongObject *)sub)->long_value.ob_digit[0] < (size_t)PyList_GET_SIZE(container))
             {
                 _py_set_opcode(instr, STORE_SUBSCR_LIST_INT);
                 goto success;
