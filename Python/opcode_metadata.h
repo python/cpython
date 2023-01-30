@@ -16,6 +16,8 @@ _PyOpcode_num_popped(int opcode, int oparg) {
             return 0;
         case LOAD_FAST:
             return 0;
+        case LOAD_FAST_OR_NULL:
+            return 0;
         case LOAD_CONST:
             return 0;
         case STORE_FAST:
@@ -362,6 +364,8 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
             return 1;
         case LOAD_FAST:
             return 1;
+        case LOAD_FAST_OR_NULL:
+            return 1;
         case LOAD_CONST:
             return 1;
         case STORE_FAST:
@@ -707,6 +711,7 @@ struct opcode_metadata {
     [LOAD_CLOSURE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_FAST_CHECK] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LOAD_FAST_OR_NULL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_CONST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [STORE_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_FAST__LOAD_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBIB },

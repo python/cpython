@@ -46,6 +46,15 @@
             DISPATCH();
         }
 
+        TARGET(LOAD_FAST_OR_NULL) {
+            PyObject *value;
+            value = GETLOCAL(oparg);
+            Py_XINCREF(value);
+            STACK_GROW(1);
+            POKE(1, value);
+            DISPATCH();
+        }
+
         TARGET(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
             PyObject *value;

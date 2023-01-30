@@ -143,6 +143,48 @@ We also repeat each of the above scoping tests inside a function
     >>> test_func()
     [2, 2, 2, 2, 2]
 
+A comprehension's iteration var, if in a cell, doesn't stomp on a previous value:
+
+    >>> def test_func():
+    ...     y = 10
+    ...     items = [(lambda: y) for y in range(5)]
+    ...     x = y
+    ...     y = 20
+    ...     return x, [z() for z in items]
+    >>> test_func()
+    (10, [4, 4, 4, 4, 4])
+
+A comprehension's iteration var doesn't shadow implicit globals for sibling scopes:
+
+    >>> g = -1
+    >>> def test_func():
+    ...     def inner():
+    ...         return g
+    ...     [g for g in range(5)]
+    ...     return inner
+    >>> test_func()()
+    -1
+
+A modification to a closed-over variable is visible in the outer scope:
+
+    >>> def test_func():
+    ...     x = -1
+    ...     items = [(x:=y) for y in range(3)]
+    ...     return x
+    >>> test_func()
+    2
+
+Comprehensions' scopes don't interact with each other:
+
+    >>> def test_func():
+    ...     lst = list(range(3))
+    ...     ret = [lambda: x for x in lst]
+    ...     inc = [x + 1 for x in lst]
+    ...     [x for x in inc]
+    ...     return ret
+    >>> test_func()[0]()
+    2
+
 """
 
 

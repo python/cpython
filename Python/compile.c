@@ -551,13 +551,15 @@ static int compiler_sync_comprehension_generator(
                                       struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
-                                      expr_ty elt, expr_ty val, int type);
+                                      expr_ty elt, expr_ty val, int type,
+                                      int outermost_iter_is_param);
 
 static int compiler_async_comprehension_generator(
                                       struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
-                                      expr_ty elt, expr_ty val, int type);
+                                      expr_ty elt, expr_ty val, int type,
+                                      int outermost_iter_is_param);
 
 static int compiler_pattern(struct compiler *, pattern_ty, pattern_context *);
 static int compiler_match(struct compiler *, stmt_ty);
@@ -1228,6 +1230,7 @@ stack_effect(int opcode, int oparg, int jump)
 
         case LOAD_FAST:
         case LOAD_FAST_CHECK:
+        case LOAD_FAST_OR_NULL:
             return 1;
         case STORE_FAST:
             return -1;
@@ -5149,16 +5152,19 @@ static int
 compiler_comprehension_generator(struct compiler *c, location loc,
                                  asdl_comprehension_seq *generators, int gen_index,
                                  int depth,
-                                 expr_ty elt, expr_ty val, int type)
+                                 expr_ty elt, expr_ty val, int type,
+                                 int outermost_iter_is_param)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
         return compiler_async_comprehension_generator(
-            c, loc, generators, gen_index, depth, elt, val, type);
+            c, loc, generators, gen_index, depth, elt, val, type,
+            outermost_iter_is_param);
     } else {
         return compiler_sync_comprehension_generator(
-            c, loc, generators, gen_index, depth, elt, val, type);
+            c, loc, generators, gen_index, depth, elt, val, type,
+            outermost_iter_is_param);
     }
 }
 
@@ -5166,7 +5172,8 @@ static int
 compiler_sync_comprehension_generator(struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
-                                      expr_ty elt, expr_ty val, int type)
+                                      expr_ty elt, expr_ty val, int type,
+                                      int outermost_iter_is_param)
 {
     /* generate code for the iterator, then each of the ifs,
        and then write to the element */
@@ -5178,7 +5185,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (gen_index == 0) {
+    if (gen_index == 0 && outermost_iter_is_param) {
         /* Receive outermost iter as an implicit argument */
         c->u->u_argcount = 1;
         ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -5229,7 +5236,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
         RETURN_IF_ERROR(
             compiler_comprehension_generator(c, loc,
                                              generators, gen_index, depth,
-                                             elt, val, type));
+                                             elt, val, type, 0));
     }
 
     location elt_loc = LOC(elt);
@@ -5282,7 +5289,8 @@ static int
 compiler_async_comprehension_generator(struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
-                                      expr_ty elt, expr_ty val, int type)
+                                      expr_ty elt, expr_ty val, int type,
+                                      int outermost_iter_is_param)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, except);
@@ -5291,7 +5299,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (gen_index == 0) {
+    if (gen_index == 0 && outermost_iter_is_param) {
         /* Receive outermost iter as an implicit argument */
         c->u->u_argcount = 1;
         ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -5326,7 +5334,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
         RETURN_IF_ERROR(
             compiler_comprehension_generator(c, loc,
                                              generators, gen_index, depth,
-                                             elt, val, type));
+                                             elt, val, type, 0));
     }
 
     location elt_loc = LOC(elt);
@@ -5375,26 +5383,144 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
     return SUCCESS;
 }
 
+typedef struct {
+    PyObject *pushed_locals;
+    PyObject *temp_symbols;
+} inlined_comprehension_state;
+
+static int
+push_inlined_comprehension_state(struct compiler *c, location loc,
+                                 PySTEntryObject *entry,
+                                 inlined_comprehension_state *state)
+{
+    // iterate over names bound in the comprehension and ensure we isolate
+    // them from the outer scope as needed
+    PyObject *k, *v;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
+        assert(PyLong_Check(v));
+        long symbol = PyLong_AS_LONG(v);
+        // only values bound in the comprehension (DEF_LOCAL) need to be
+        // handled; DEF_LOCAL | DEF_NONLOCAL (oddly) can occur in the case
+        // of an assignment expression to a nonlocal in the comprehension,
+        // these don't need handling here
+        if (symbol & DEF_LOCAL && ~symbol & DEF_NONLOCAL) {
+            long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
+            PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
+            if (outv == NULL) {
+                return ERROR;
+            }
+            assert(PyLong_Check(outv));
+            long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
+            if (outsc == GLOBAL_IMPLICIT || outsc == GLOBAL_EXPLICIT) {
+                if (state->temp_symbols == NULL) {
+                    state->temp_symbols = PyDict_New();
+                    if (state->temp_symbols == NULL) {
+                        return ERROR;
+                    }
+                }
+                // if a name is global in the outer scope but local in the
+                // comprehension scope, we need to keep it global in outer
+                // scope but ensure the comprehension writes to the local,
+                // not the global
+                Py_INCREF(outv);
+                if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v)) {
+                    return ERROR;
+                }
+                if (PyDict_SetItem(state->temp_symbols, k, outv)) {
+                    return ERROR;
+                }
+                Py_DECREF(outv);
+            } else if (scope == LOCAL || scope == CELL) {
+                // local names bound in comprehension must be isolated from
+                // outer scope; push existing value (which may be NULL if
+                // not defined) on stack
+                if (state->pushed_locals == NULL) {
+                    state->pushed_locals = PyList_New(0);
+                    if (state->pushed_locals == NULL) {
+                        return ERROR;
+                    }
+                }
+                if (scope == CELL) {
+                    ADDOP_NAME(c, loc, LOAD_FAST_OR_NULL, k, varnames);
+                    ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
+                } else {
+                    ADDOP_NAME(c, loc, LOAD_FAST_OR_NULL, k, varnames);
+                }
+                if (PyList_Append(state->pushed_locals, k)) {
+                    return ERROR;
+                }
+            }
+        }
+    }
+    return SUCCESS;
+}
+
+static int
+pop_inlined_comprehension_state(struct compiler *c, location loc,
+                                inlined_comprehension_state state)
+{
+    PyObject *k, *v;
+    Py_ssize_t pos = 0;
+    if (state.temp_symbols) {
+        // restore scope for globals that we temporarily set as locals
+        while (PyDict_Next(state.temp_symbols, &pos, &k, &v)) {
+            if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v)) {
+                return ERROR;
+            }
+        }
+    }
+    if (state.pushed_locals) {
+        // pop names we pushed to stack earlier
+        for (Py_ssize_t i = PyList_GET_SIZE(state.pushed_locals); i > 0; --i) {
+            k = PyList_GetItem(state.pushed_locals, i - 1);
+            if (k == NULL) {
+                return ERROR;
+            }
+            // preserve the built result of the comprehension; we could be
+            // cleverer about minimizing swaps but it doesn't matter because
+            // `apply_static_swaps` will eliminate all of these anyway
+            ADDOP_I(c, loc, SWAP, 2);
+            ADDOP_NAME(c, loc, STORE_FAST, k, varnames);
+        }
+    }
+    return SUCCESS;
+}
+
 static int
 compiler_comprehension(struct compiler *c, expr_ty e, int type,
                        identifier name, asdl_comprehension_seq *generators, expr_ty elt,
                        expr_ty val)
 {
     PyCodeObject *co = NULL;
+    inlined_comprehension_state inline_state = {NULL, NULL};
     comprehension_ty outermost;
     int scope_type = c->u->u_scope_type;
-    int is_async_generator = 0;
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
-
-    outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
-    if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
-                             (void *)e, e->lineno) < 0)
-    {
+    PySTEntryObject *entry = PySymtable_Lookup(c->c_st, (void *)e);
+    if (entry == NULL) {
         goto error;
     }
+    int is_inlined = entry->ste_comp_inlined;
+    int is_async_generator = entry->ste_coroutine;
+    // we only inline comprehensions in functions
+    assert(!is_inlined || c->u->u_ste->ste_type == FunctionBlock);
+
     location loc = LOC(e);
 
-    is_async_generator = c->u->u_ste->ste_coroutine;
+    outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
+    if (is_inlined) {
+        if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
+            goto error;
+        }
+    } else {
+        if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
+                                (void *)e, e->lineno) < 0)
+        {
+            goto error;
+        }
+    }
+    Py_CLEAR(entry);
 
     if (is_async_generator && type != COMP_GENEXP &&
         scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
@@ -5428,8 +5554,15 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     if (compiler_comprehension_generator(c, loc, generators, 0, 0,
-                                         elt, val, type) < 0) {
+                                         elt, val, type, !is_inlined) < 0) {
         goto error_in_scope;
+    }
+
+    if (is_inlined) {
+        if (pop_inlined_comprehension_state(c, loc, inline_state)) {
+            goto error;
+        }
+        return SUCCESS;
     }
 
     if (type != COMP_GENEXP) {
@@ -5475,9 +5608,13 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     return SUCCESS;
 error_in_scope:
-    compiler_exit_scope(c);
+    if (!is_inlined) {
+        compiler_exit_scope(c);
+    }
 error:
     Py_XDECREF(co);
+    Py_XDECREF(inline_state.pushed_locals);
+    Py_XDECREF(inline_state.temp_symbols);
     return ERROR;
 }
 

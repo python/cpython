@@ -114,6 +114,11 @@ dummy_func(
             Py_INCREF(value);
         }
 
+        inst(LOAD_FAST_OR_NULL, (-- value)) {
+            value = GETLOCAL(oparg);
+            Py_XINCREF(value);
+        }
+
         inst(LOAD_CONST, (-- value)) {
             value = GETITEM(consts, oparg);
             Py_INCREF(value);

@@ -1214,6 +1214,16 @@ iterations of the loop.
 
    .. versionadded:: 3.12
 
+.. opcode:: LOAD_FAST_OR_NULL (var_num)
+
+   Pushes a reference to the local ``co_varnames[var_num]`` onto the stack, or
+   pushes ``NULL`` onto the stack if the local variable has not been
+   initialized. This opcode has the same runtime effect as ``LOAD_FAST``; it
+   exists to maintain the invariant that ``LOAD_FAST`` will never load ``NULL``
+   and may appear only where the variable is guaranteed to be initialized.
+
+   .. versionadded:: 3.12
+
 .. opcode:: STORE_FAST (var_num)
 
    Stores ``STACK.pop()`` into the local ``co_varnames[var_num]``.

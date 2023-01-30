@@ -1,0 +1,2 @@
+Inline (non-async) list, dict and set comprehensions to reduce performance
+and bytecode size overhead.
