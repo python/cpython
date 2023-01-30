@@ -289,7 +289,7 @@ def run_all_tests(options):
         out.write(bw.rjust(12) + "\n")
         if cpu < 0.90 * real:
             out.write("   warning: test above used only "
-                      f"{100.0 * cpu / real}% CPU, "
+                      f"{cpu / real:%} CPU, "
                       "result may be flawed!\n")
 
     def run_one_test(name, size, open_func, test_func, *args):
