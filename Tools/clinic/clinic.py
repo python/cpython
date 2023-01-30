@@ -1174,7 +1174,7 @@ class CLanguage(Language):
                 raise ValueError("Slot methods cannot access their defining class.")
 
             if not parses_keywords:
-                declarations = '{self_type_ptr}'
+                declarations = '{base_type_ptr}'
                 fields.insert(0, normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
@@ -3842,19 +3842,19 @@ class self_converter(CConverter):
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
             if kind == METHOD_NEW:
                 type_check = (
-                    '({0} == self_tp || {0}->tp_init == self_tp->tp_init)'
+                    '({0} == base_tp || {0}->tp_init == base_tp->tp_init)'
                  ).format(self.name)
             else:
-                type_check = ('(Py_IS_TYPE({0}, self_tp) ||\n        '
-                              ' Py_TYPE({0})->tp_new == self_tp->tp_new)'
+                type_check = ('(Py_IS_TYPE({0}, base_tp) ||\n        '
+                              ' Py_TYPE({0})->tp_new == base_tp->tp_new)'
                              ).format(self.name)
 
             line = '{} &&\n        '.format(type_check)
             template_dict['self_type_check'] = line
 
             type_object = self.function.cls.type_object
-            type_ptr = f'PyTypeObject *self_tp = {type_object};'
-            template_dict['self_type_ptr'] = type_ptr
+            type_ptr = f'PyTypeObject *base_tp = {type_object};'
+            template_dict['base_type_ptr'] = type_ptr
 
 
 

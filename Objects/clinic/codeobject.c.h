@@ -30,7 +30,7 @@ static PyObject *
 code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *self_tp = &PyCode_Type;
+    PyTypeObject *base_tp = &PyCode_Type;
     int argcount;
     int posonlyargcount;
     int kwonlyargcount;
@@ -50,7 +50,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
 
-    if ((type == self_tp || type->tp_init == self_tp->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("code", kwargs)) {
         goto exit;
     }
@@ -488,4 +488,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2010875a71a56e18 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1fab6e71c785182 input=a9049054013a1b77]*/
