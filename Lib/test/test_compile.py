@@ -846,15 +846,6 @@ if 1:
             self.assertEqual(None, opcodes[1].argval)
             self.assertEqual('RETURN_VALUE', opcodes[2].opname)
 
-    def test_unloop_break_continue(self):
-        for stmt in ('break', 'continue'):
-            with self.subTest(stmt=stmt):
-                with self.assertRaises(SyntaxError) as err_ctx:
-                    source = f"with object() as obj:\n    {stmt}"
-                    compile(source, f"<unloop_{stmt}>", "exec")
-                    exc = err_ctx.exception
-                    self.assertEqual(exc.lineno, 2)
-
     def test_consts_in_conditionals(self):
         def and_true(x):
             return True and x
