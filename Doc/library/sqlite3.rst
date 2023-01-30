@@ -292,6 +292,7 @@ Module functions
        By default (``0``), type detection is disabled.
 
    :param isolation_level:
+       Control legacy transaction handling behaviour.
        See :attr:`Connection.isolation_level` and
        :ref:`sqlite3-transaction-control-isolation-level` for more information.
        Can be ``"DEFERRED"`` (default), ``"EXCLUSIVE"`` or ``"IMMEDIATE"``;
@@ -325,6 +326,7 @@ Module functions
        enabling various :ref:`sqlite3-uri-tricks`.
 
    :param autocommit:
+       Control :pep:`249` transaction handling behaviour.
        See :attr:`Connection.autocommit` and
        :ref:`sqlite3-transaction-control-autocommit` for more information.
        *autocommit* currently defaults to
@@ -395,6 +397,7 @@ Module functions
       >>> con = sqlite3.connect(":memory:")
       >>> def evil_trace(stmt):
       ...     5/0
+      ...
       >>> con.set_trace_callback(evil_trace)
       >>> def debug(unraisable):
       ...     print(f"{unraisable.exc_value!r} in callback {unraisable.object.__name__}")
@@ -498,11 +501,7 @@ Module constants
 
    .. note::
 
-      The :mod:`!sqlite3` module supports ``qmark``, ``numeric``,
-      and ``named`` DB-API parameter styles,
-      because that is what the underlying SQLite library supports.
-      However, the DB-API does not allow multiple values for
-      the ``paramstyle`` attribute.
+      The ``named`` DB-API parameter style is also supported.
 
 .. data:: sqlite_version
 
@@ -1927,50 +1926,61 @@ How to use placeholders to bind values in SQL queries
 
 SQL operations usually need to use values from Python variables. However,
 beware of using Python's string operations to assemble queries, as they
-are vulnerable to `SQL injection attacks`_ (see the `xkcd webcomic
-<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
+are vulnerable to `SQL injection attacks`_. For example, an attacker can simply
+close the single quote and inject ``OR TRUE`` to select all rows::
 
-   # Never do this -- insecure!
-   symbol = 'RHAT'
-   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
+   >>> # Never do this -- insecure!
+   >>> symbol = input()
+   ' OR TRUE; --
+   >>> sql = "SELECT * FROM stocks WHERE symbol = '%s'" % symbol
+   >>> print(sql)
+   SELECT * FROM stocks WHERE symbol = '' OR TRUE; --'
+   >>> cur.execute(sql)
 
 Instead, use the DB-API's parameter substitution. To insert a variable into a
 query string, use a placeholder in the string, and substitute the actual values
 into the query by providing them as a :class:`tuple` of values to the second
-argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
-use one of two kinds of placeholders: question marks (qmark style) or named
-placeholders (named style). For the qmark style, ``parameters`` must be a
-:term:`sequence <sequence>`. For the named style, it can be either a
-:term:`sequence <sequence>` or :class:`dict` instance. The length of the
-:term:`sequence <sequence>` must match the number of placeholders, or a
-:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
-keys for all named parameters. Any extra items are ignored. Here's an example of
-both styles:
+argument of the cursor's :meth:`~Cursor.execute` method.
+
+An SQL statement may use one of two kinds of placeholders:
+question marks (qmark style) or named placeholders (named style).
+For the qmark style, *parameters* must be a
+:term:`sequence` whose length must match the number of placeholders,
+or a :exc:`ProgrammingError` is raised.
+For the named style, *parameters* should be
+an instance of a :class:`dict` (or a subclass),
+which must contain keys for all named parameters;
+any extra items are ignored.
+Here's an example of both styles:
 
 .. testcode::
 
    con = sqlite3.connect(":memory:")
    cur = con.execute("CREATE TABLE lang(name, first_appeared)")
 
-   # This is the qmark style:
-   cur.execute("INSERT INTO lang VALUES(?, ?)", ("C", 1972))
+   # This is the named style used with executemany():
+   data = (
+       {"name": "C", "year": 1972},
+       {"name": "Fortran", "year": 1957},
+       {"name": "Python", "year": 1991},
+       {"name": "Go", "year": 2009},
+   )
+   cur.executemany("INSERT INTO lang VALUES(:name, :year)", data)
 
-   # The qmark style used with executemany():
-   lang_list = [
-       ("Fortran", 1957),
-       ("Python", 1991),
-       ("Go", 2009),
-   ]
-   cur.executemany("INSERT INTO lang VALUES(?, ?)", lang_list)
-
-   # And this is the named style:
-   cur.execute("SELECT * FROM lang WHERE first_appeared = :year", {"year": 1972})
+   # This is the qmark style used in a SELECT query:
+   params = (1972,)
+   cur.execute("SELECT * FROM lang WHERE first_appeared = ?", params)
    print(cur.fetchall())
 
 .. testoutput::
    :hide:
 
    [('C', 1972)]
+
+.. note::
+
+   :pep:`249` numeric placeholders are *not* supported.
+   If used, they will be interpreted as named placeholders.
 
 
 .. _sqlite3-adapters:
@@ -2105,7 +2115,7 @@ The following example illustrates the implicit and explicit approaches:
            return f"Point({self.x}, {self.y})"
 
    def adapt_point(point):
-       return f"{point.x};{point.y}".encode("utf-8")
+       return f"{point.x};{point.y}"
 
    def convert_point(s):
        x, y = list(map(float, s.split(b";")))
@@ -2197,7 +2207,7 @@ This section shows recipes for common adapters and converters.
    assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
 
    # Using current time as fromtimestamp() returns local date/time.
-   # Droping microseconds as adapt_datetime_epoch truncates fractional second part.
+   # Dropping microseconds as adapt_datetime_epoch truncates fractional second part.
    now = datetime.datetime.now().replace(microsecond=0)
    current_timestamp = int(now.timestamp())
 
@@ -2460,7 +2470,7 @@ Transaction control via the ``autocommit`` attribute
 
 The recommended way of controlling transaction behaviour is through
 the :attr:`Connection.autocommit` attribute,
-which should preferrably be set using the *autocommit* parameter
+which should preferably be set using the *autocommit* parameter
 of :func:`connect`.
 
 It is suggested to set *autocommit* to ``False``,
@@ -2468,9 +2478,9 @@ which implies :pep:`249`-compliant transaction control.
 This means:
 
 * :mod:`!sqlite3` ensures that a transaction is always open,
-  so :meth:`Connection.commit` and :meth:`Connection.rollback`
-  will implicitly open a new transaction immediately after closing
-  the pending one.
+  so :func:`connect`, :meth:`Connection.commit`, and :meth:`Connection.rollback`
+  will implicitly open a new transaction
+  (immediately after closing the pending one, for the latter two).
   :mod:`!sqlite3` uses ``BEGIN DEFERRED`` statements when opening transactions.
 * Transactions should be committed explicitly using :meth:`!commit`.
 * Transactions should be rolled back explicitly using :meth:`!rollback`.

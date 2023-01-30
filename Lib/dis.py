@@ -483,7 +483,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif deop in haslocal or deop in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
             elif deop in hascompare:
-                argval = cmp_op[arg]
+                argval = cmp_op[arg>>4]
                 argrepr = argval
             elif deop == FORMAT_VALUE:
                 argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
@@ -666,7 +666,6 @@ def _find_imports(co):
     the corresponding args to __import__.
     """
     IMPORT_NAME = opmap['IMPORT_NAME']
-    LOAD_CONST = opmap['LOAD_CONST']
 
     consts = co.co_consts
     names = co.co_names

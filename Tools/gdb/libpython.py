@@ -901,7 +901,7 @@ class PyLongObjectPtr(PyObjectPtr):
         if ob_size == 0:
             return 0
 
-        ob_digit = self.field('ob_digit')
+        ob_digit = self.field('long_value')['ob_digit']
 
         if gdb.lookup_type('digit').sizeof == 2:
             SHIFT = 15
@@ -2108,6 +2108,7 @@ class PyLocals(gdb.Command):
         while True:
             if not pyop_frame:
                 print(UNABLE_READ_INFO_PYTHON_FRAME)
+                break
             if pyop_frame.is_shim():
                 break
 

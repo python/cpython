@@ -569,7 +569,7 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
     if (!_is_fd_valid(self->fd))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "iii|i:setparameters",
+    if (!PyArg_ParseTuple(args, "iii|p:setparameters",
                           &wanted_fmt, &wanted_channels, &wanted_rate,
                           &strict))
         return NULL;
