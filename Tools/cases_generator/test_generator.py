@@ -9,19 +9,19 @@ from parser import StackEffect
 
 def test_effect_sizes():
     input_effects = [
-        x := StackEffect("x", "", ""),
-        y := StackEffect("y", "", "oparg"),
-        z := StackEffect("z", "", "oparg*2"),
+        x := StackEffect("x", "", "", ""),
+        y := StackEffect("y", "", "", "oparg"),
+        z := StackEffect("z", "", "", "oparg*2"),
     ]
     output_effects = [
-        a := StackEffect("a", "", ""),
-        b := StackEffect("b", "", "oparg*4"),
-        c := StackEffect("c", "", ""),
+        StackEffect("a", "", "", ""),
+        StackEffect("b", "", "", "oparg*4"),
+        StackEffect("c", "", "", ""),
     ]
     other_effects = [
-        p := StackEffect("p", "", "oparg<<1"),
-        q := StackEffect("q", "", ""),
-        r := StackEffect("r", "", ""),
+        StackEffect("p", "", "", "oparg<<1"),
+        StackEffect("q", "", "", ""),
+        StackEffect("r", "", "", ""),
     ]
     assert generate_cases.effect_size(x) == (1, "")
     assert generate_cases.effect_size(y) == (0, "oparg")
@@ -54,6 +54,12 @@ def run_cases_test(input: str, expected: str):
     while lines and lines[0].startswith("// "):
         lines.pop(0)
     actual = "".join(lines)
+    # if actual.rstrip() != expected.rstrip():
+    #     print("Actual:")
+    #     print(actual)
+    #     print("Expected:")
+    #     print(expected)
+    #     print("End")
     assert actual.rstrip() == expected.rstrip()
 
 def test_legacy():
@@ -471,6 +477,31 @@ def test_register():
             result = op(left, right);
             Py_XSETREF(REG(oparg3), result);
             JUMPBY(1);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_cond_effect():
+    input = """
+        inst(OP, (aa, input if (oparg & 1), cc -- xx, output if (oparg & 2), zz)) {
+            output = spam(oparg, input);
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject *cc = PEEK(1);
+            PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) ? 1 : 0)) : NULL;
+            PyObject *aa = PEEK(2 + ((oparg & 1) ? 1 : 0));
+            PyObject *xx;
+            PyObject *output = NULL;
+            PyObject *zz;
+            output = spam(oparg, input);
+            STACK_SHRINK(((oparg & 1) ? 1 : 0));
+            STACK_GROW(((oparg & 2) ? 1 : 0));
+            POKE(1, zz);
+            if (oparg & 2) { POKE(1 + ((oparg & 2) ? 1 : 0), output); }
+            POKE(2 + ((oparg & 2) ? 1 : 0), xx);
             DISPATCH();
         }
     """

@@ -806,7 +806,7 @@ is_filename_to_skip(PyObject *filename, PyTupleObject *skip_file_prefixes)
         for (Py_ssize_t idx = 0; idx < prefixes; ++idx)
         {
             PyObject *prefix = PyTuple_GET_ITEM(skip_file_prefixes, idx);
-            int found = PyUnicode_Tailmatch(filename, prefix, 0, -1, -1);
+            Py_ssize_t found = PyUnicode_Tailmatch(filename, prefix, 0, -1, -1);
             if (found == 1) {
                 return true;
             }
