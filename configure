@@ -642,6 +642,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTCLINIC_FALSE
+MODULE__TESTCLINIC_TRUE
 MODULE__TESTCAPI_FALSE
 MODULE__TESTCAPI_TRUE
 MODULE__HASHLIB_FALSE
@@ -872,8 +874,6 @@ LDSHARED
 SHLIB_SUFFIX
 DSYMUTIL_PATH
 DSYMUTIL
-LIBTOOL_CRUFT
-OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
@@ -904,8 +904,6 @@ MKDIR_P
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
-ac_ct_READELF
-READELF
 ARFLAGS
 ac_ct_AR
 AR
@@ -1064,7 +1062,6 @@ with_hash_algorithm
 with_tzpath
 with_libs
 with_system_expat
-with_system_ffi
 with_system_libmpdec
 with_decimal_contextvar
 enable_loadable_sqlite_extensions
@@ -1847,9 +1844,6 @@ Optional Packages:
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
-  --with-system-ffi       build _ctypes module using an installed ffi library,
-                          see Doc/library/ctypes.rst (default is
-                          system-dependent)
   --with-system-libmpdec  build _decimal module using an installed libmpdec
                           library, see Doc/library/decimal.rst (default is no)
   --with-decimal-contextvar
@@ -3361,7 +3355,7 @@ fi
 
 
 
-for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
+for ac_prog in python$PACKAGE_VERSION python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -6755,7 +6749,7 @@ if test "x$enable_profiling" = xyes; then
   CC="$CC -pg"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-int main() { return 0; }
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
@@ -7181,116 +7175,6 @@ then
         ARFLAGS="rcs"
 fi
 
-if test -n "$ac_tool_prefix"; then
-  for ac_prog in readelf
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_READELF+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$READELF"; then
-  ac_cv_prog_READELF="$READELF" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_READELF="$ac_tool_prefix$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-READELF=$ac_cv_prog_READELF
-if test -n "$READELF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READELF" >&5
-$as_echo "$READELF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-    test -n "$READELF" && break
-  done
-fi
-if test -z "$READELF"; then
-  ac_ct_READELF=$READELF
-  for ac_prog in readelf
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_READELF+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_READELF"; then
-  ac_cv_prog_ac_ct_READELF="$ac_ct_READELF" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_READELF="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_READELF=$ac_cv_prog_ac_ct_READELF
-if test -n "$ac_ct_READELF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_READELF" >&5
-$as_echo "$ac_ct_READELF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ac_ct_READELF" && break
-done
-
-  if test "x$ac_ct_READELF" = x; then
-    READELF=":"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    READELF=$ac_ct_READELF
-  fi
-fi
-
-if test "$cross_compiling" = yes; then
-    case "$READELF" in
-	readelf|:)
-	as_fn_error $? "readelf for the host is required for cross builds" "$LINENO" 5
-	;;
-    esac
-fi
-
-
-
 case $MACHDEP in
 hp*|HP*)
 	# install -d does not work on HP-UX
@@ -7640,7 +7524,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PROFILE_TASK" >&5
 $as_echo "$PROFILE_TASK" >&6; }
 
-# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# Make llvm-related checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
 # non-suffixed name in their versioned llvm directory.
 
@@ -7705,7 +7589,42 @@ fi
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-            LDFLAGS_NOLTO="-fno-lto"
+      LDFLAGS_NOLTO="-fno-lto"
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=thin" >&5
+$as_echo_n "checking whether C compiler accepts -flto=thin... " >&6; }
+if ${ax_cv_check_cflags___flto_thin+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -flto=thin"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___flto_thin=yes
+else
+  ax_cv_check_cflags___flto_thin=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___flto_thin" >&5
+$as_echo "$ax_cv_check_cflags___flto_thin" >&6; }
+if test "x$ax_cv_check_cflags___flto_thin" = xyes; then :
+  LDFLAGS_NOLTO="-flto=thin"
+else
+  LDFLAGS_NOLTO="-flto"
+fi
+
 
       if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-ar", so it can be a program name with args.
@@ -7995,17 +7914,53 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
+  # -fno-reorder-blocks-and-partition is required for bolt to work.
+  # Possibly GCC only.
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-reorder-blocks-and-partition" >&5
+$as_echo_n "checking whether C compiler accepts -fno-reorder-blocks-and-partition... " >&6; }
+if ${ax_cv_check_cflags___fno_reorder_blocks_and_partition+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fno-reorder-blocks-and-partition"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___fno_reorder_blocks_and_partition=yes
+else
+  ax_cv_check_cflags___fno_reorder_blocks_and_partition=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fno_reorder_blocks_and_partition" >&5
+$as_echo "$ax_cv_check_cflags___fno_reorder_blocks_and_partition" >&6; }
+if test "x$ax_cv_check_cflags___fno_reorder_blocks_and_partition" = xyes; then :
+
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+
+else
+  :
+fi
+
+
   # These flags are required for bolt to work:
-  CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
   # These flags are required to get good performance from bolt:
   CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
   # We want to add these no-pie flags to linking executables but not shared libraries:
   LINKCC="$LINKCC -fno-pie -no-pie"
-  # Designate the DWARF version into 4 since the LLVM-BOLT does not support DWARF5 yet.
-  CFLAGS="$CFLAGS -gdwarf-4"
-  LDFLAGS="$LDFLAGS -gdwarf-4"
 
   if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-bolt", so it can be a program name with args.
@@ -8822,6 +8777,44 @@ fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC int-conversion warning" >&5
+$as_echo_n "checking if we can disable $CC int-conversion warning... " >&6; }
+if ${ac_cv_disable_int_conversion_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wint-conversion -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_disable_int_conversion_warning=yes
+else
+  ac_cv_disable_int_conversion_warning=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_int_conversion_warning" >&5
+$as_echo "$ac_cv_disable_int_conversion_warning" >&6; }
+
+
+    if test "x$ac_cv_disable_int_conversion" = xyes; then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wno-int-conversion"
+fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC missing-field-initializers warning" >&5
 $as_echo_n "checking if we can disable $CC missing-field-initializers warning... " >&6; }
 if ${ac_cv_disable_missing_field_initializers_warning+:} false; then :
@@ -9295,7 +9288,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9350,7 +9343,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9399,7 +9392,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9448,7 +9441,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9474,12 +9467,14 @@ fi
 
 # If we have set a CC compiler flag for thread support then
 # check if it works for CXX, too.
-ac_cv_cxx_thread=no
 if test ! -z "$CXX"
 then
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CXX also accepts flags for thread support" >&5
 $as_echo_n "checking whether $CXX also accepts flags for thread support... " >&6; }
-ac_save_cxx="$CXX"
+if ${ac_cv_cxx_thread+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_save_cxx="$CXX"
 
 if test "$ac_cv_kpthread" = "yes"
 then
@@ -9493,6 +9488,8 @@ elif test "$ac_cv_pthread" = "yes"
 then
   CXX="$CXX -pthread"
   ac_cv_cxx_thread=yes
+else
+  ac_cv_cxx_thread=no
 fi
 
 if test $ac_cv_cxx_thread = yes
@@ -9508,10 +9505,13 @@ then
   fi
   rm -fr conftest*
 fi
+CXX="$ac_save_cxx"
+fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_thread" >&5
 $as_echo "$ac_cv_cxx_thread" >&6; }
+else
+  ac_cv_cxx_thread=no
 fi
-CXX="$ac_save_cxx"
 
 
 
@@ -9523,7 +9523,7 @@ for ac_header in  \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
-  linux/tipc.h linux/wait.h netdb.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
@@ -10944,97 +10944,6 @@ fi
 
 CC="$ac_save_cc"
 
-
-case $ac_sys_system/$ac_sys_release in
-  Darwin/[01567]\..*)
-    OTHER_LIBTOOL_OPT="-prebind -seg1addr 0x10000000"
-    ;;
-  Darwin/*)
-    OTHER_LIBTOOL_OPT=""
-    ;;
-esac
-
-
-
-case $ac_sys_system/$ac_sys_release in
-  Darwin/[01567]\..*)
-    LIBTOOL_CRUFT="-framework System -lcc_dynamic"
-    if test "${enable_universalsdk}"; then
-	    :
-    else
-        LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `/usr/bin/arch`"
-    fi
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
-  Darwin/*)
-    gcc_version=`gcc -dumpversion`
-    if test ${gcc_version} '<' 4.0
-        then
-            LIBTOOL_CRUFT="-lcc_dynamic"
-        else
-            LIBTOOL_CRUFT=""
-    fi
-    if test "$cross_compiling" = yes; then :
-  ac_osx_32bit=yes
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-    #include <unistd.h>
-    int main(int argc, char*argv[])
-    {
-      if (sizeof(long) == 4) {
-    	  return 0;
-      } else {
-      	  return 1;
-      }
-    }
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_osx_32bit=yes
-else
-  ac_osx_32bit=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-
-    if test "${ac_osx_32bit}" = "yes"; then
-    	case `/usr/bin/arch` in
-    	i386)
-    		MACOSX_DEFAULT_ARCH="i386"
-    		;;
-    	ppc)
-    		MACOSX_DEFAULT_ARCH="ppc"
-    		;;
-    	*)
-    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
-    		;;
-    	esac
-    else
-    	case `/usr/bin/arch` in
-    	i386)
-    		MACOSX_DEFAULT_ARCH="x86_64"
-    		;;
-    	ppc)
-    		MACOSX_DEFAULT_ARCH="ppc64"
-		;;
-    	arm64)
-    		MACOSX_DEFAULT_ARCH="arm64"
-    		;;
-    	*)
-    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
-    		;;
-    	esac
-
-    fi
-
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT" -lSystem -lSystemStubs -arch_only ${MACOSX_DEFAULT_ARCH}"
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
-esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-framework" >&5
 $as_echo_n "checking for --enable-framework... " >&6; }
 if test "$enable_framework"
@@ -11594,7 +11503,7 @@ if test "x$perf_trampoline" = xyes; then :
 
 $as_echo "#define PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
 
-  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+  PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 
     if test "x$Py_DEBUG" = xtrue; then :
 
@@ -12308,7 +12217,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-int main()
+int main(void)
 {
     char s[16];
     int i, *p1, *p2;
@@ -12584,50 +12493,84 @@ else
 
   LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
   LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
-  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_HEADERS) \$(LIBEXPAT_A)"
 
 fi
 
 
 
-
-# Check for use of the system libffi library
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-ffi" >&5
-$as_echo_n "checking for --with-system-ffi... " >&6; }
-
-# Check whether --with-system_ffi was given.
-if test "${with_system_ffi+set}" = set; then :
-  withval=$with_system_ffi;
-fi
-
-
-if test "$ac_sys_system" = "Darwin"
-then
-    case "$with_system_ffi" in
-        "")
-            with_system_ffi="no"
-            ;;
-        yes|no)
-            ;;
-        *)
-            as_fn_error $? "--with-system-ffi accepts no arguments" "$LINENO" 5
-            ;;
-    esac
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_ffi" >&5
-$as_echo "$with_system_ffi" >&6; }
-else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    if test "$with_system_ffi" != ""
-    then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with(out)-system-ffi is ignored on this platform" >&5
-$as_echo "$as_me: WARNING: --with(out)-system-ffi is ignored on this platform" >&2;}
-    fi
-    with_system_ffi="yes"
-fi
 
 have_libffi=missing
-if test "x$with_system_ffi" = xyes; then :
+if test "x$ac_sys_system" = xDarwin; then :
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
+    ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
+$as_echo_n "checking for ffi_call in -lffi... " >&6; }
+if ${ac_cv_lib_ffi_ffi_call+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lffi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ffi_call ();
+int
+main ()
+{
+return ffi_call ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ffi_ffi_call=yes
+else
+  ac_cv_lib_ffi_ffi_call=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
+$as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
+if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
+
+                have_libffi=yes
+        LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
+        LIBFFI_LIBS="-lffi"
+
+fi
+
+
+fi
+
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+if test "x$have_libffi" = xmissing; then :
 
 
 pkg_failed=no
@@ -12839,80 +12782,6 @@ $as_echo "yes" >&6; }
 	have_libffi=yes
 fi
 
-else
-
-  if test "x$ac_sys_system" = xDarwin; then :
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-      CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
-      ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
-if test "x$ac_cv_header_ffi_h" = xyes; then :
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
-$as_echo_n "checking for ffi_call in -lffi... " >&6; }
-if ${ac_cv_lib_ffi_ffi_call+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lffi  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char ffi_call ();
-int
-main ()
-{
-return ffi_call ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ffi_ffi_call=yes
-else
-  ac_cv_lib_ffi_ffi_call=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
-$as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
-if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
-
-                    have_libffi=yes
-          LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-          LIBFFI_LIBS="-lffi"
-
-else
-  have_libffi=no
-fi
-
-
-fi
-
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
-fi
-
 fi
 
 if test "x$have_libffi" = xyes; then :
@@ -12921,8 +12790,7 @@ if test "x$have_libffi" = xyes; then :
   case $ac_sys_system in #(
   Darwin) :
 
-            as_fn_append LIBFFI_CFLAGS " -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"
-      ctypes_malloc_closure=yes
+            ctypes_malloc_closure=yes
      ;; #(
   sunos5) :
     as_fn_append LIBFFI_LIBS " -mimpure-text"
@@ -13093,7 +12961,7 @@ else
 
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
-  LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+  LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
 
     if test "x$with_pydebug" = xyes; then :
 
@@ -14823,6 +14691,7 @@ fi
 { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+  { ac_cv_search_dbm_open=; unset ac_cv_search_dbm_open;}
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -14882,7 +14751,9 @@ $as_echo "$ac_cv_search_dbm_open" >&6; }
 ac_res=$ac_cv_search_dbm_open
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
+  have_gdbm_compat=yes
+else
+  have_gdbm_compat=no
 fi
 
 
@@ -15117,6 +14988,7 @@ $as_echo_n "checking for pthread_create in -lpthread... " >&6; }
 /* end confdefs.h.  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 void * start_routine (void *arg) { exit (0); }
@@ -15427,7 +15299,7 @@ else
       void *foo(void *parm) {
         return NULL;
       }
-      main() {
+      int main(void) {
         pthread_attr_t attr;
         pthread_t id;
         if (pthread_attr_init(&attr)) return (-1);
@@ -17029,7 +16901,7 @@ else
 
 #include <sys/stat.h>
 #include <unistd.h>
-int main(int argc, char*argv[])
+int main(int argc, char *argv[])
 {
   if(chflags(argv[0], 0) != 0)
     return 1;
@@ -17078,7 +16950,7 @@ else
 
 #include <sys/stat.h>
 #include <unistd.h>
-int main(int argc, char*argv[])
+int main(int argc, char *argv[])
 {
   if(lchflags(argv[0], 0) != 0)
     return 1;
@@ -19076,6 +18948,20 @@ fi
 done
 
 
+# check for namespace functions
+for ac_func in setns unshare
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
 
 
 
@@ -19772,7 +19658,7 @@ else
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-int main()
+int main(void)
 {
   int passive, gaierr, inet4 = 0, inet6 = 0;
   struct addrinfo hints, *ai, *aitop;
@@ -20969,7 +20855,7 @@ else
 
 #include <stdlib.h>
 #include <math.h>
-int main() {
+int main(void) {
     volatile double x, y, z;
     /* 1./(1-2**-53) -> 1+2**-52 (correct), 1.0 (double rounding) */
     x = 0.99999999999999989; /* 1-2**-53 */
@@ -21748,7 +21634,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-int main()
+int main(void)
 {
 	return (((-1)>>3 == -1) ? 0 : 1);
 }
@@ -22650,7 +22536,7 @@ else
 
 #include <stdlib.h>
 #include <unistd.h>
-int main()
+int main(void)
 {
 	int val1 = nice(1);
 	if (val1 != -1 && val1 == nice(2))
@@ -22692,7 +22578,7 @@ else
 #include <poll.h>
 #include <unistd.h>
 
-int main()
+int main(void)
 {
     struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 };
     int poll_test;
@@ -22749,7 +22635,7 @@ else
 extern char *tzname[];
 #endif
 
-int main()
+int main(void)
 {
 	/* Note that we need to ensure that not only does tzset(3)
 	   do 'something' with localtime, but it works as documented
@@ -24411,9 +24297,10 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <stddef.h>
 #include <stdio.h>
-#include<stdlib.h>
-int main() {
+#include <stdlib.h>
+int main(void) {
     size_t len = -1;
     const char *str = "text";
     len = mbstowcs(NULL, str, 0);
@@ -24613,7 +24500,7 @@ else
 #include <stdlib.h>
 #include <string.h>
 void foo(void *p, void *q) { memmove(p, q, 19); }
-int main() {
+int main(void) {
   char a[32] = "123456789000000000";
   foo(&a[9], a);
   if (strcmp(a, "123456789123456789000000000") != 0)
@@ -24668,7 +24555,7 @@ else
               );
               return r;
             }
-            int main() {
+            int main(void) {
               int p = 8;
               if ((foo(&p) ? : p) != 6)
                 return 1;
@@ -24711,7 +24598,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
     #include <stdatomic.h>
     atomic_int int_var;
     atomic_uintptr_t uintptr_var;
-    int main() {
+    int main(void) {
       atomic_store_explicit(&int_var, 5, memory_order_relaxed);
       atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
       int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
@@ -24752,7 +24639,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 
     int val;
-    int main() {
+    int main(void) {
       __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
       (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
       return 0;
@@ -24828,7 +24715,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
     #include <dirent.h>
 
-    int main() {
+    int main(void) {
       struct dirent entry;
       return entry.d_type == DT_UNKNOWN;
     }
@@ -24866,11 +24753,12 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
+    #include <stddef.h>
     #include <unistd.h>
     #include <sys/syscall.h>
     #include <linux/random.h>
 
-    int main() {
+    int main(void) {
         char buffer[1];
         const size_t buflen = sizeof(buffer);
         const int flags = GRND_NONBLOCK;
@@ -24913,9 +24801,10 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
+    #include <stddef.h>
     #include <sys/random.h>
 
-    int main() {
+    int main(void) {
         char buffer[1];
         const size_t buflen = sizeof(buffer);
         const int flags = 0;
@@ -27810,6 +27699,40 @@ fi
 $as_echo "$py_cv_module__testcapi" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testclinic" >&5
+$as_echo_n "checking for stdlib extension module _testclinic... " >&6; }
+        if test "$py_cv_module__testclinic" != "n/a"; then :
+
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testclinic=yes
+else
+  py_cv_module__testclinic=missing
+fi
+else
+  py_cv_module__testclinic=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTCLINIC_STATE=$py_cv_module__testclinic$as_nl"
+  if test "x$py_cv_module__testclinic" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module__testclinic" = yes; then
+  MODULE__TESTCLINIC_TRUE=
+  MODULE__TESTCLINIC_FALSE='#'
+else
+  MODULE__TESTCLINIC_TRUE='#'
+  MODULE__TESTCLINIC_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testclinic" >&5
+$as_echo "$py_cv_module__testclinic" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 $as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"; then :
@@ -28527,6 +28450,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTCLINIC_TRUE}" && test -z "${MODULE__TESTCLINIC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTCLINIC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then

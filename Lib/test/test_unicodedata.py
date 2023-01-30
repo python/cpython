@@ -12,7 +12,8 @@ import sys
 import unicodedata
 import unittest
 from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only, check_disallow_instantiation)
+                          cpython_only, check_disallow_instantiation,
+                          ResourceDenied)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
@@ -71,7 +72,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '84b88a89f40aeae96852732f9dc0ee08be49780f'
+    expectedchecksum = '26ff0d31c14194b4606a5b3a81ac36df3a14e331'
 
     @requires_resource('cpu')
     def test_function_checksum(self):
@@ -91,10 +92,18 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
                 str(self.db.mirrored(char)),
                 str(self.db.combining(char)),
                 unicodedata.east_asian_width(char),
+                self.db.name(char, ""),
             ]
             h.update(''.join(data).encode("ascii"))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
+
+    @requires_resource('cpu')
+    def test_name_inverse_lookup(self):
+        for i in range(sys.maxunicode + 1):
+            char = chr(i)
+            if looked_name := self.db.name(char, None):
+                self.assertEqual(self.db.lookup(looked_name), char)
 
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)
@@ -356,8 +365,8 @@ class NormalizationTest(unittest.TestCase):
         except PermissionError:
             self.skipTest(f"Permission error when downloading {TESTDATAURL} "
                           f"into the test data directory")
-        except (OSError, HTTPException):
-            self.fail(f"Could not retrieve {TESTDATAURL}")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
 
         with testdata:
             self.run_normalization_tests(testdata)

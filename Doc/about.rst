@@ -7,7 +7,7 @@ These documents are generated from `reStructuredText`_ sources by `Sphinx`_, a
 document processor specifically written for the Python documentation.
 
 .. _reStructuredText: https://docutils.sourceforge.io/rst.html
-.. _Sphinx: http://sphinx-doc.org/
+.. _Sphinx: https://www.sphinx-doc.org/
 
 .. In the online version of these documents, you can submit comments and suggest
    changes directly on the documentation pages.

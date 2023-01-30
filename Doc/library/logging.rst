@@ -534,6 +534,22 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
       is intended to be implemented by subclasses and so raises a
       :exc:`NotImplementedError`.
 
+      .. warning:: This method is called after a handler-level lock is acquired, which
+         is released after this method returns. When you override this method, note
+         that you should be careful when calling anything that invokes other parts of
+         the logging API which might do locking, because that might result in a
+         deadlock. Specifically:
+
+         * Logging configuration APIs acquire the module-level lock, and then
+           individual handler-level locks as those handlers are configured.
+
+         * Many logging APIs lock the module-level lock. If such an API is called
+           from this method, it could cause a deadlock if a configuration call is
+           made on another thread, because that thread will try to acquire the
+           module-level lock *before* the handler-level lock, whereas this thread
+           tries to acquire the module-level lock *after* the handler-level lock
+           (because in this method, the handler-level lock has already been acquired).
+
 For a list of handlers included as standard, see :mod:`logging.handlers`.
 
 .. _formatter-objects:

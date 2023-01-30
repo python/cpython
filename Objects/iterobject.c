@@ -23,8 +23,7 @@ PySeqIter_New(PyObject *seq)
     if (it == NULL)
         return NULL;
     it->it_index = 0;
-    Py_INCREF(seq);
-    it->it_seq = seq;
+    it->it_seq = Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -183,10 +182,8 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
     it = PyObject_GC_New(calliterobject, &PyCallIter_Type);
     if (it == NULL)
         return NULL;
-    Py_INCREF(callable);
-    it->it_callable = callable;
-    Py_INCREF(sentinel);
-    it->it_sentinel = sentinel;
+    it->it_callable = Py_NewRef(callable);
+    it->it_sentinel = Py_NewRef(sentinel);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -428,8 +425,13 @@ return next yielded value or raise StopIteration.");
 
 
 PyDoc_STRVAR(throw_doc,
-"throw(typ[,val[,tb]]) -> raise exception in the wrapped iterator,\n\
-return next yielded value or raise StopIteration.");
+"throw(value)\n\
+throw(typ[,val[,tb]])\n\
+\n\
+raise exception in the wrapped iterator, return next yielded value\n\
+or raise StopIteration.\n\
+the (type, val, tb) signature is deprecated, \n\
+and may be removed in a future version of Python.");
 
 
 PyDoc_STRVAR(close_doc,
@@ -491,10 +493,8 @@ PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
     if (anext == NULL) {
         return NULL;
     }
-    Py_INCREF(awaitable);
-    anext->wrapped = awaitable;
-    Py_INCREF(default_value);
-    anext->default_value = default_value;
+    anext->wrapped = Py_NewRef(awaitable);
+    anext->default_value = Py_NewRef(default_value);
     _PyObject_GC_TRACK(anext);
     return (PyObject *)anext;
 }

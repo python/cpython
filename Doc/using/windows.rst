@@ -163,11 +163,14 @@ of available options is shown below.
 |                           |                                      | Python X.Y`              |
 +---------------------------+--------------------------------------+--------------------------+
 | DefaultJustForMeTargetDir | The default install directory for    | :file:`%LocalAppData%\\\ |
-|                           | just-for-me installs                 | Programs\\PythonXY` or   |
+|                           | just-for-me installs                 | Programs\\Python\\\      |
+|                           |                                      | PythonXY` or             |
 |                           |                                      | :file:`%LocalAppData%\\\ |
-|                           |                                      | Programs\\PythonXY-32` or|
+|                           |                                      | Programs\\Python\\\      |
+|                           |                                      | PythonXY-32` or          |
 |                           |                                      | :file:`%LocalAppData%\\\ |
-|                           |                                      | Programs\\PythonXY-64`   |
+|                           |                                      | Programs\\Python\\\      |
+|                           |                                      | PythonXY-64`             |
 +---------------------------+--------------------------------------+--------------------------+
 | DefaultCustomTargetDir    | The default custom install directory | (empty)                  |
 |                           | displayed in the UI                  |                          |
@@ -213,7 +216,7 @@ of available options is shown below.
 +---------------------------+--------------------------------------+--------------------------+
 | Include_pip               | Install bundled pip and setuptools   | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
-| Include_symbols           | Install debugging symbols (`*`.pdb)  | 0                        |
+| Include_symbols           | Install debugging symbols (``*.pdb``)| 0                        |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_tcltk             | Install Tcl/Tk support and IDLE      | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
@@ -794,7 +797,7 @@ is printed.  Now try changing the first line to be:
 Re-executing the command should now print the latest Python 3.x information.
 As with the above command-line examples, you can specify a more explicit
 version qualifier.  Assuming you have Python 3.7 installed, try changing
-the first line to ``#! python3.7`` and you should find the |version|
+the first line to ``#! python3.7`` and you should find the 3.7
 version information printed.
 
 Note that unlike interactive use, a bare "python" will use the latest
@@ -828,7 +831,7 @@ To allow shebang lines in Python scripts to be portable between Unix and
 Windows, this launcher supports a number of 'virtual' commands to specify
 which interpreter to use.  The supported virtual commands are:
 
-* ``/usr/bin/env python``
+* ``/usr/bin/env``
 * ``/usr/bin/python``
 * ``/usr/local/bin/python``
 * ``python``
@@ -863,15 +866,36 @@ minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
    not provably i386/32-bit". To request a specific environment, use the new
    ``-V:<TAG>`` argument with the complete tag.
 
-
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
-executable :envvar:`PATH` for a Python executable. This corresponds to the
-behaviour of the Unix ``env`` program, which performs a :envvar:`PATH` search.
+executable :envvar:`PATH` for a Python executable matching the name provided
+as the first argument. This corresponds to the behaviour of the Unix ``env``
+program, which performs a :envvar:`PATH` search.
 If an executable matching the first argument after the ``env`` command cannot
-be found, it will be handled as described below. Additionally, the environment
-variable :envvar:`PYLAUNCHER_NO_SEARCH_PATH` may be set (to any value) to skip
-this additional search.
+be found, but the argument starts with ``python``, it will be handled as
+described for the other virtual commands.
+The environment variable :envvar:`PYLAUNCHER_NO_SEARCH_PATH` may be set
+(to any value) to skip this search of :envvar:`PATH`.
+
+Shebang lines that do not match any of these patterns are looked up in the
+``[commands]`` section of the launcher's :ref:`.INI file <launcher-ini>`.
+This may be used to handle certain commands in a way that makes sense for your
+system. The name of the command must be a single argument (no spaces in the
+shebang executable), and the value substituted is the full path to the
+executable (additional arguments specified in the .INI will be quoted as part
+of the filename).
+
+.. code-block:: ini
+
+   [commands]
+   /bin/xpython=C:\Program Files\XPython\python.exe
+
+Any commands not found in the .INI file are treated as **Windows** executable
+paths that are absolute or relative to the directory containing the script file.
+This is a convenience for Windows-only scripts, such as those generated by an
+installer, since the behavior is not compatible with Unix-style shells.
+These paths may be quoted, and may include multiple arguments, after which the
+path to the script and any additional arguments will be appended.
 
 
 Arguments in shebang lines
@@ -889,15 +913,16 @@ Then Python will be started with the ``-v`` option
 Customization
 -------------
 
+.. _launcher-ini:
+
 Customization via INI files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Two .ini files will be searched by the launcher - ``py.ini`` in the current
-user's "application data" directory (i.e. the directory returned by calling the
-Windows function ``SHGetFolderPath`` with ``CSIDL_LOCAL_APPDATA``) and ``py.ini`` in the
-same directory as the launcher. The same .ini files are used for both the
-'console' version of the launcher (i.e. py.exe) and for the 'windows' version
-(i.e. pyw.exe).
+user's application data directory (``%LOCALAPPDATA%`` or ``$env:LocalAppData``)
+and ``py.ini`` in the same directory as the launcher. The same .ini files are
+used for both the 'console' version of the launcher (i.e. py.exe) and for the
+'windows' version (i.e. pyw.exe).
 
 Customization specified in the "application directory" will have precedence over
 the one next to the executable, so a user, who may not have write access to the
@@ -1226,7 +1251,7 @@ With ongoing development of Python, some platforms that used to be supported
 earlier are no longer supported (due to the lack of users or developers).
 Check :pep:`11` for details on all unsupported platforms.
 
-* `Windows CE <http://pythonce.sourceforge.net/>`_ is
+* `Windows CE <https://pythonce.sourceforge.net/>`_ is
   `no longer supported <https://github.com/python/cpython/issues/71542>`__
   since Python 3 (if it ever was).
 * The `Cygwin <https://cygwin.com/>`_ installer offers to install the

@@ -81,8 +81,10 @@ underlying :class:`Popen` interface can be used directly.
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
-   behavior of inheriting the current process' environment. It is passed directly
-   to :class:`Popen`.
+   behavior of inheriting the current process' environment. It is passed
+   directly to :class:`Popen`. This mapping can be str to str on any platform
+   or bytes to bytes on POSIX platforms much like :data:`os.environ` or
+   :data:`os.environb`.
 
    Examples::
 
@@ -193,7 +195,10 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: output
 
         Output of the child process if it was captured by :func:`run` or
-        :func:`check_output`.  Otherwise, ``None``.
+        :func:`check_output`.  Otherwise, ``None``.  This is always
+        :class:`bytes` when any output was captured regardless of the
+        ``text=True`` setting.  It may remain ``None`` instead of ``b''``
+        when no output was observed.
 
     .. attribute:: stdout
 
@@ -202,7 +207,9 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: stderr
 
         Stderr output of the child process if it was captured by :func:`run`.
-        Otherwise, ``None``.
+        Otherwise, ``None``.  This is always :class:`bytes` when stderr output
+        was captured regardless of the ``text=True`` setting.  It may remain
+        ``None`` instead of ``b''`` when no stderr output was observed.
 
     .. versionadded:: 3.3
 
@@ -263,15 +270,14 @@ default values. The arguments that are most commonly needed are:
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
-   are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing file object with a valid file descriptor, and ``None``.
-   :data:`PIPE` indicates that a new pipe to the child should be created.
-   :data:`DEVNULL` indicates that the special file :data:`os.devnull` will
-   be used.  With the default settings of ``None``, no redirection will occur;
-   the child's file handles will be inherited from the parent.
-   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
-   stderr data from the child process should be captured into the same file
-   handle as for *stdout*.
+   are ``None``, :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a
+   positive integer), and an existing :term:`file object` with a valid file
+   descriptor.  With the default settings of ``None``, no redirection will
+   occur.  :data:`PIPE` indicates that a new pipe to the child should be
+   created.  :data:`DEVNULL` indicates that the special file :data:`os.devnull`
+   will be used.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the child process should be captured into the same
+   file handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -483,15 +489,14 @@ functions.
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
-   are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing :term:`file object` with a valid file descriptor,
-   and ``None``.  :data:`PIPE` indicates that a new pipe to the child should
-   be created.  :data:`DEVNULL` indicates that the special file
-   :data:`os.devnull` will be used. With the default settings of ``None``,
-   no redirection will occur; the child's file handles will be inherited from
-   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   are ``None``, :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a
+   positive integer), and an existing :term:`file object` with a valid file
+   descriptor.  With the default settings of ``None``, no redirection will
+   occur.  :data:`PIPE` indicates that a new pipe to the child should be
+   created.  :data:`DEVNULL` indicates that the special file :data:`os.devnull`
+   will be used.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
    that the stderr data from the applications should be captured into the same
-   file handle as for stdout.
+   file handle as for *stdout*.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
@@ -614,7 +619,9 @@ functions.
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
-   behavior of inheriting the current process' environment.
+   behavior of inheriting the current process' environment. This mapping can be
+   str to str on any platform or bytes to bytes on POSIX platforms much like
+   :data:`os.environ` or :data:`os.environb`.
 
    .. note::
 
@@ -824,7 +831,7 @@ Instances of the :class:`Popen` class have the following methods:
 
       On Windows, SIGTERM is an alias for :meth:`terminate`. CTRL_C_EVENT and
       CTRL_BREAK_EVENT can be sent to processes started with a *creationflags*
-      parameter which includes `CREATE_NEW_PROCESS_GROUP`.
+      parameter which includes ``CREATE_NEW_PROCESS_GROUP``.
 
 
 .. method:: Popen.terminate()
@@ -1558,12 +1565,16 @@ If you ever encounter a presumed highly unusual situation where you need to
 prevent ``vfork()`` from being used by Python, you can set the
 :attr:`subprocess._USE_VFORK` attribute to a false value.
 
+::
+
    subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
 
 Setting this has no impact on use of ``posix_spawn()`` which could use
 ``vfork()`` internally within its libc implementation.  There is a similar
 :attr:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
 that.
+
+::
 
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
 

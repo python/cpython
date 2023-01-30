@@ -98,50 +98,106 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitext("c:a/b\\c.d")', ('c:a/b\\c', '.d'))
 
     def test_splitdrive(self):
-        tester('ntpath.splitdrive("c:\\foo\\bar")',
-               ('c:', '\\foo\\bar'))
-        tester('ntpath.splitdrive("c:/foo/bar")',
-               ('c:', '/foo/bar'))
+        tester("ntpath.splitdrive('')", ('', ''))
+        tester("ntpath.splitdrive('foo')", ('', 'foo'))
+        tester("ntpath.splitdrive('foo\\bar')", ('', 'foo\\bar'))
+        tester("ntpath.splitdrive('foo/bar')", ('', 'foo/bar'))
+        tester("ntpath.splitdrive('\\')", ('', '\\'))
+        tester("ntpath.splitdrive('/')", ('', '/'))
+        tester("ntpath.splitdrive('\\foo\\bar')", ('', '\\foo\\bar'))
+        tester("ntpath.splitdrive('/foo/bar')", ('', '/foo/bar'))
+        tester('ntpath.splitdrive("c:foo\\bar")', ('c:', 'foo\\bar'))
+        tester('ntpath.splitdrive("c:foo/bar")', ('c:', 'foo/bar'))
+        tester('ntpath.splitdrive("c:\\foo\\bar")', ('c:', '\\foo\\bar'))
+        tester('ntpath.splitdrive("c:/foo/bar")', ('c:', '/foo/bar'))
+        tester("ntpath.splitdrive('\\\\')", ('\\\\', ''))
+        tester("ntpath.splitdrive('//')", ('//', ''))
         tester('ntpath.splitdrive("\\\\conky\\mountpoint\\foo\\bar")',
                ('\\\\conky\\mountpoint', '\\foo\\bar'))
         tester('ntpath.splitdrive("//conky/mountpoint/foo/bar")',
                ('//conky/mountpoint', '/foo/bar'))
-        tester('ntpath.splitdrive("\\\\\\conky\\mountpoint\\foo\\bar")',
-            ('', '\\\\\\conky\\mountpoint\\foo\\bar'))
-        tester('ntpath.splitdrive("///conky/mountpoint/foo/bar")',
-            ('', '///conky/mountpoint/foo/bar'))
-        tester('ntpath.splitdrive("\\\\conky\\\\mountpoint\\foo\\bar")',
-               ('', '\\\\conky\\\\mountpoint\\foo\\bar'))
-        tester('ntpath.splitdrive("//conky//mountpoint/foo/bar")',
-               ('', '//conky//mountpoint/foo/bar'))
-        # Issue #19911: UNC part containing U+0130
-        self.assertEqual(ntpath.splitdrive('//conky/MOUNTPOİNT/foo/bar'),
-                         ('//conky/MOUNTPOİNT', '/foo/bar'))
-        # gh-81790: support device namespace, including UNC drives.
-        tester('ntpath.splitdrive("//?/c:")', ("//?/c:", ""))
-        tester('ntpath.splitdrive("//?/c:/")', ("//?/c:", "/"))
-        tester('ntpath.splitdrive("//?/c:/dir")', ("//?/c:", "/dir"))
-        tester('ntpath.splitdrive("//?/UNC")', ("", "//?/UNC"))
-        tester('ntpath.splitdrive("//?/UNC/")', ("", "//?/UNC/"))
-        tester('ntpath.splitdrive("//?/UNC/server/")', ("//?/UNC/server/", ""))
-        tester('ntpath.splitdrive("//?/UNC/server/share")', ("//?/UNC/server/share", ""))
-        tester('ntpath.splitdrive("//?/UNC/server/share/dir")', ("//?/UNC/server/share", "/dir"))
-        tester('ntpath.splitdrive("//?/VOLUME{00000000-0000-0000-0000-000000000000}/spam")',
-               ('//?/VOLUME{00000000-0000-0000-0000-000000000000}', '/spam'))
-        tester('ntpath.splitdrive("//?/BootPartition/")', ("//?/BootPartition", "/"))
-
-        tester('ntpath.splitdrive("\\\\?\\c:")', ("\\\\?\\c:", ""))
-        tester('ntpath.splitdrive("\\\\?\\c:\\")', ("\\\\?\\c:", "\\"))
-        tester('ntpath.splitdrive("\\\\?\\c:\\dir")', ("\\\\?\\c:", "\\dir"))
-        tester('ntpath.splitdrive("\\\\?\\UNC")', ("", "\\\\?\\UNC"))
-        tester('ntpath.splitdrive("\\\\?\\UNC\\")', ("", "\\\\?\\UNC\\"))
-        tester('ntpath.splitdrive("\\\\?\\UNC\\server\\")', ("\\\\?\\UNC\\server\\", ""))
-        tester('ntpath.splitdrive("\\\\?\\UNC\\server\\share")', ("\\\\?\\UNC\\server\\share", ""))
         tester('ntpath.splitdrive("\\\\?\\UNC\\server\\share\\dir")',
                ("\\\\?\\UNC\\server\\share", "\\dir"))
-        tester('ntpath.splitdrive("\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}\\spam")',
-               ('\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}', '\\spam'))
-        tester('ntpath.splitdrive("\\\\?\\BootPartition\\")', ("\\\\?\\BootPartition", "\\"))
+        tester('ntpath.splitdrive("//?/UNC/server/share/dir")',
+               ("//?/UNC/server/share", "/dir"))
+
+    def test_splitroot(self):
+        tester("ntpath.splitroot('')", ('', '', ''))
+        tester("ntpath.splitroot('foo')", ('', '', 'foo'))
+        tester("ntpath.splitroot('foo\\bar')", ('', '', 'foo\\bar'))
+        tester("ntpath.splitroot('foo/bar')", ('', '', 'foo/bar'))
+        tester("ntpath.splitroot('\\')", ('', '\\', ''))
+        tester("ntpath.splitroot('/')", ('', '/', ''))
+        tester("ntpath.splitroot('\\foo\\bar')", ('', '\\', 'foo\\bar'))
+        tester("ntpath.splitroot('/foo/bar')", ('', '/', 'foo/bar'))
+        tester('ntpath.splitroot("c:foo\\bar")', ('c:', '', 'foo\\bar'))
+        tester('ntpath.splitroot("c:foo/bar")', ('c:', '', 'foo/bar'))
+        tester('ntpath.splitroot("c:\\foo\\bar")', ('c:', '\\', 'foo\\bar'))
+        tester('ntpath.splitroot("c:/foo/bar")', ('c:', '/', 'foo/bar'))
+
+        # Redundant slashes are not included in the root.
+        tester("ntpath.splitroot('c:\\\\a')", ('c:', '\\', '\\a'))
+        tester("ntpath.splitroot('c:\\\\\\a/b')", ('c:', '\\', '\\\\a/b'))
+
+        # Mixed path separators.
+        tester("ntpath.splitroot('c:/\\')", ('c:', '/', '\\'))
+        tester("ntpath.splitroot('c:\\/')", ('c:', '\\', '/'))
+        tester("ntpath.splitroot('/\\a/b\\/\\')", ('/\\a/b', '\\', '/\\'))
+        tester("ntpath.splitroot('\\/a\\b/\\/')", ('\\/a\\b', '/', '\\/'))
+
+        # UNC paths.
+        tester("ntpath.splitroot('\\\\')", ('\\\\', '', ''))
+        tester("ntpath.splitroot('//')", ('//', '', ''))
+        tester('ntpath.splitroot("\\\\conky\\mountpoint\\foo\\bar")',
+               ('\\\\conky\\mountpoint', '\\', 'foo\\bar'))
+        tester('ntpath.splitroot("//conky/mountpoint/foo/bar")',
+               ('//conky/mountpoint', '/', 'foo/bar'))
+        tester('ntpath.splitroot("\\\\\\conky\\mountpoint\\foo\\bar")',
+            ('\\\\\\conky', '\\', 'mountpoint\\foo\\bar'))
+        tester('ntpath.splitroot("///conky/mountpoint/foo/bar")',
+            ('///conky', '/', 'mountpoint/foo/bar'))
+        tester('ntpath.splitroot("\\\\conky\\\\mountpoint\\foo\\bar")',
+               ('\\\\conky\\', '\\', 'mountpoint\\foo\\bar'))
+        tester('ntpath.splitroot("//conky//mountpoint/foo/bar")',
+               ('//conky/', '/', 'mountpoint/foo/bar'))
+
+        # Issue #19911: UNC part containing U+0130
+        self.assertEqual(ntpath.splitroot('//conky/MOUNTPOİNT/foo/bar'),
+                         ('//conky/MOUNTPOİNT', '/', 'foo/bar'))
+
+        # gh-81790: support device namespace, including UNC drives.
+        tester('ntpath.splitroot("//?/c:")', ("//?/c:", "", ""))
+        tester('ntpath.splitroot("//?/c:/")', ("//?/c:", "/", ""))
+        tester('ntpath.splitroot("//?/c:/dir")', ("//?/c:", "/", "dir"))
+        tester('ntpath.splitroot("//?/UNC")', ("//?/UNC", "", ""))
+        tester('ntpath.splitroot("//?/UNC/")', ("//?/UNC/", "", ""))
+        tester('ntpath.splitroot("//?/UNC/server/")', ("//?/UNC/server/", "", ""))
+        tester('ntpath.splitroot("//?/UNC/server/share")', ("//?/UNC/server/share", "", ""))
+        tester('ntpath.splitroot("//?/UNC/server/share/dir")', ("//?/UNC/server/share", "/", "dir"))
+        tester('ntpath.splitroot("//?/VOLUME{00000000-0000-0000-0000-000000000000}/spam")',
+               ('//?/VOLUME{00000000-0000-0000-0000-000000000000}', '/', 'spam'))
+        tester('ntpath.splitroot("//?/BootPartition/")', ("//?/BootPartition", "/", ""))
+
+        tester('ntpath.splitroot("\\\\?\\c:")', ("\\\\?\\c:", "", ""))
+        tester('ntpath.splitroot("\\\\?\\c:\\")', ("\\\\?\\c:", "\\", ""))
+        tester('ntpath.splitroot("\\\\?\\c:\\dir")', ("\\\\?\\c:", "\\", "dir"))
+        tester('ntpath.splitroot("\\\\?\\UNC")', ("\\\\?\\UNC", "", ""))
+        tester('ntpath.splitroot("\\\\?\\UNC\\")', ("\\\\?\\UNC\\", "", ""))
+        tester('ntpath.splitroot("\\\\?\\UNC\\server\\")', ("\\\\?\\UNC\\server\\", "", ""))
+        tester('ntpath.splitroot("\\\\?\\UNC\\server\\share")',
+               ("\\\\?\\UNC\\server\\share", "", ""))
+        tester('ntpath.splitroot("\\\\?\\UNC\\server\\share\\dir")',
+               ("\\\\?\\UNC\\server\\share", "\\", "dir"))
+        tester('ntpath.splitroot("\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}\\spam")',
+               ('\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}', '\\', 'spam'))
+        tester('ntpath.splitroot("\\\\?\\BootPartition\\")', ("\\\\?\\BootPartition", "\\", ""))
+
+        # gh-96290: support partial/invalid UNC drives
+        tester('ntpath.splitroot("//")', ("//", "", ""))  # empty server & missing share
+        tester('ntpath.splitroot("///")', ("///", "", ""))  # empty server & empty share
+        tester('ntpath.splitroot("///y")', ("///y", "", ""))  # empty server & non-empty share
+        tester('ntpath.splitroot("//x")', ("//x", "", ""))  # non-empty server & missing share
+        tester('ntpath.splitroot("//x/")', ("//x/", "", ""))  # non-empty server & empty share
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
@@ -160,6 +216,10 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.isabs("\\\\conky\\mountpoint\\")', 1)
         tester('ntpath.isabs("\\foo")', 1)
         tester('ntpath.isabs("\\foo\\bar")', 1)
+
+        # gh-96290: normal UNC paths and device paths without trailing backslashes
+        tester('ntpath.isabs("\\\\conky\\mountpoint")', 1)
+        tester('ntpath.isabs("\\\\.\\C:")', 1)
 
     def test_commonprefix(self):
         tester('ntpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
@@ -269,6 +329,12 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('//server/share/../')" ,   '\\\\server\\share\\')
         tester("ntpath.normpath('//server/share/../..')",  '\\\\server\\share\\')
         tester("ntpath.normpath('//server/share/../../')", '\\\\server\\share\\')
+
+        # gh-96290: don't normalize partial/invalid UNC drives as rooted paths.
+        tester("ntpath.normpath('\\\\foo\\\\')", '\\\\foo\\\\')
+        tester("ntpath.normpath('\\\\foo\\')", '\\\\foo\\')
+        tester("ntpath.normpath('\\\\foo')", '\\\\foo')
+        tester("ntpath.normpath('\\\\')", '\\\\')
 
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
@@ -856,6 +922,23 @@ class TestNtpath(NtpathTestCase):
             self.assertIsInstance(b_final_path, bytes)
             self.assertGreater(len(b_final_path), 0)
 
+    @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
+    def test_isjunction(self):
+        with os_helper.temp_dir() as d:
+            with os_helper.change_cwd(d):
+                os.mkdir('tmpdir')
+
+                import _winapi
+                try:
+                    _winapi.CreateJunction('tmpdir', 'testjunc')
+                except OSError:
+                    raise unittest.SkipTest('creating the test junction failed')
+
+                self.assertTrue(ntpath.isjunction('testjunc'))
+                self.assertFalse(ntpath.isjunction('tmpdir'))
+                self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
+
+
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath
     attributes = ['relpath']
@@ -895,6 +978,9 @@ class PathLikeTests(NtpathTestCase):
 
     def test_path_splitdrive(self):
         self._check_function(self.path.splitdrive)
+
+    def test_path_splitroot(self):
+        self._check_function(self.path.splitroot)
 
     def test_path_basename(self):
         self._check_function(self.path.basename)
