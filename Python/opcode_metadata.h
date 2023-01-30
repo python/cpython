@@ -185,7 +185,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case MAP_ADD:
             return 2;
         case LOAD_ATTR:
-            return -1;
+            return 1;
         case LOAD_ATTR_INSTANCE_VALUE:
             return -1;
         case LOAD_ATTR_MODULE:
@@ -531,7 +531,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case MAP_ADD:
             return 0;
         case LOAD_ATTR:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
             return -1;
         case LOAD_ATTR_MODULE:
@@ -694,7 +694,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
 }
 #endif
 enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
     enum Direction dir_op1;
     enum Direction dir_op2;
@@ -791,7 +791,7 @@ struct opcode_metadata {
     [DICT_UPDATE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DICT_MERGE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [MAP_ADD] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_ATTR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LOAD_ATTR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_INSTANCE_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_ATTR_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_ATTR_WITH_HINT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
