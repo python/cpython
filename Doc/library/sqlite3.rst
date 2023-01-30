@@ -304,8 +304,10 @@ Module functions
    :param bool check_same_thread:
        If ``True`` (default), an exception will be raised if the database connection
        is used by a thread other than the one that created it.
-       This may be helpful in particular when SQLite is not in serialized mode
-       (see :attr:`threadsafety`).
+       If ``False``, the connection may be accessed in multiple threads;
+       write operations may need to be serialized by the user
+       to avoid data corruption.
+       See :attr:`threadsafety` for more information.
 
    :param Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
