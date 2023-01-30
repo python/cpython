@@ -1963,9 +1963,6 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD_QUICK, (--)) {
-            if (oparg >= INSTR_OFFSET()) {
-                fprintf(stderr, "%ld, %p, %p, %p, %p, %p\n", oparg, next_instr, _PyCode_CODE(frame->f_code), frame->f_code->_bb_next->u_code, frame->f_code->_first_instr, frame->prev_instr);
-            }
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();

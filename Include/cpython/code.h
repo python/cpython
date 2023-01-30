@@ -119,7 +119,6 @@ typedef struct _PyTier2BBSpace  {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     char *_co_linearray;          /* array of line offsets */                  \
-    _Py_CODEUNIT *_first_instr;    /* points to first tier 1/tier 2 instruction */  \
     int _tier2_warmup;            /* warmup counter for tier 2 */              \
     _PyTier2BB *_bb_next;         /* the tier 2 basic block to execute (if any) */ \
     _PyTier2BBSpace *_bb_space;   /* linked list storing basic blocks */       \
