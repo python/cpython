@@ -43,9 +43,8 @@ HOST = socket_helper.HOST
 # test unicode string and carriage return
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 
-VSOCKPORT = 1234
+VSOCKPORT = 12345
 AIX = platform.system() == "AIX"
-WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
     import _socket
@@ -499,7 +498,6 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
         ThreadableTest.clientTearDown(self)
 
 @unittest.skipIf(fcntl is None, "need fcntl")
-@unittest.skipIf(WSL, 'VSOCK does not work on Microsoft WSL')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
 @unittest.skipUnless(get_cid() != 2,
@@ -507,27 +505,38 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
 class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
+        print('__init__')
         unittest.TestCase.__init__(self, methodName=methodName)
         ThreadableTest.__init__(self)
 
     def setUp(self):
+        print('setUp')
         self.serv = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
         self.addCleanup(self.serv.close)
         self.serv.bind((socket.VMADDR_CID_ANY, VSOCKPORT))
         self.serv.listen()
         self.serverExplicitReady()
+        print('Before serv.accept')
+        # Time in seconds to wait before considering a test failed, no established connection in this case.
         self.serv.settimeout(support.LOOPBACK_TIMEOUT)
         self.conn, self.connaddr = self.serv.accept()
+        print('After serv.accept')
         self.addCleanup(self.conn.close)
+        print('end - setUp')
 
     def clientSetUp(self):
+        print('clientSetup')
         time.sleep(0.1)
         self.cli = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
         self.addCleanup(self.cli.close)
         cid = get_cid()
+        print('cid: ', cid)
+        print('before cli.connect')
         self.cli.connect((cid, VSOCKPORT))
+        print('end - clientSetup')
 
     def testStream(self):
+        print('testStream')
         msg = self.conn.recv(1024)
         self.assertEqual(msg, MSG)
 
@@ -550,6 +559,7 @@ class SocketConnectedTest(ThreadedTCPSocketTest):
         # Indicate explicitly we're ready for the client thread to
         # proceed and then perform the blocking call to accept
         self.serverExplicitReady()
+        # self.serv.settimeout(3)
         conn, addr = self.serv.accept()
         self.cli_conn = conn
 
