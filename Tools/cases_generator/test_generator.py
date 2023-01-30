@@ -343,7 +343,7 @@ def test_macro_instruction():
         inst(OP3, (unused/5, arg2, left, right -- res)) {
             res = op3(arg2, left, right);
         }
-        family(op3, INLINE_CACHE_ENTRIES_OP) = { OP3, OP };
+        family(op, INLINE_CACHE_ENTRIES_OP) = { OP, OP3 };
     """
     output = """
         TARGET(OP1) {
@@ -383,7 +383,6 @@ def test_macro_instruction():
         }
 
         TARGET(OP3) {
-            static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *arg2 = PEEK(3);
