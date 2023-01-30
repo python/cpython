@@ -3246,11 +3246,12 @@ static int
 compiler_break(struct compiler *c, location loc)
 {
     struct fblockinfo *loop = NULL;
+    location origin_loc = loc;
     /* Emit instruction with line number */
     ADDOP(c, loc, NOP);
     RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
-        return compiler_error(c, loc, "'break' outside loop");
+        return compiler_error(c, origin_loc, "'break' outside loop");
     }
     RETURN_IF_ERROR(compiler_unwind_fblock(c, &loc, loop, 0));
     ADDOP_JUMP(c, loc, JUMP, loop->fb_exit);
@@ -3261,11 +3262,12 @@ static int
 compiler_continue(struct compiler *c, location loc)
 {
     struct fblockinfo *loop = NULL;
+    location origin_loc = loc;
     /* Emit instruction with line number */
     ADDOP(c, loc, NOP);
     RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
-        return compiler_error(c, loc, "'continue' not properly in loop");
+        return compiler_error(c, origin_loc, "'continue' not properly in loop");
     }
     ADDOP_JUMP(c, loc, JUMP, loop->fb_block);
     return SUCCESS;
