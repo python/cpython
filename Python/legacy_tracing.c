@@ -16,7 +16,6 @@ typedef struct _PyLegacyEventHandler {
     PyObject_HEAD
     vectorcallfunc vectorcall;
     int event;
-    PyCodeObject *last_code;
 } _PyLegacyEventHandler;
 
 static void
@@ -40,8 +39,12 @@ call_profile_func(_PyLegacyEventHandler *self, PyObject *arg)
         Py_RETURN_NONE;
     }
     PyFrameObject* frame = PyEval_GetFrame();
+    if (frame == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Missing frame when calling profile function.");
+        return NULL;
+    }
     Py_INCREF(frame);
-    assert(frame != NULL);
     int err = tstate->c_profilefunc(tstate->c_profileobj, frame, self->event, arg);
     Py_DECREF(frame);
     if (err) {
@@ -92,8 +95,12 @@ call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
         Py_RETURN_NONE;
     }
     PyFrameObject* frame = PyEval_GetFrame();
+    if (frame == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Missing frame when calling trace function.");
+        return NULL;
+    }
     Py_INCREF(frame);
-    assert(frame != NULL);
     int err = tstate->c_tracefunc(tstate->c_traceobj, frame, self->event, arg);
     Py_DECREF(frame);
     if (err) {
@@ -144,7 +151,8 @@ sys_trace_instruction_func(
     assert(PyVectorcall_NARGS(nargsf) == 2);
     PyFrameObject* frame = PyEval_GetFrame();
     if (frame == NULL) {
-        /* No frame */
+        PyErr_SetString(PyExc_SystemError,
+                        "Missing frame when calling trace function.");
         return NULL;
     }
     if (!frame->f_trace_opcodes) {
@@ -196,6 +204,8 @@ sys_trace_line_func(
     assert(line >= 0);
     PyFrameObject* frame = PyEval_GetFrame();
     if (frame == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Missing frame when calling trace function.");
         return NULL;
     }
     assert(args[0] == (PyObject *)frame->f_frame->f_code);
@@ -227,6 +237,8 @@ sys_trace_jump_func(
     assert(to >= 0);
     PyFrameObject* frame = PyEval_GetFrame();
     if (frame == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Missing frame when calling trace function.");
         return NULL;
     }
     if (!frame->f_trace_lines) {
@@ -254,7 +266,7 @@ sys_trace_jump_func(
 PyTypeObject _PyLegacyEventHandler_Type = {
 
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "sys.profile_event_handler",
+    "sys.legacy_event_handler",
     sizeof(_PyLegacyEventHandler),
     .tp_dealloc = (destructor)dealloc,
     .tp_vectorcall_offset = offsetof(_PyLegacyEventHandler, vectorcall),
@@ -358,7 +370,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_C_RETURN) | (1 << PY_MONITORING_EVENT_C_RAISE);
         _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_PROFILE, events);
     }
-    else if (tstate->interp->sys_profiling_threads == 0) {
+    else {
         _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_PROFILE, 0);
     }
     return 0;
