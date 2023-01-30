@@ -431,6 +431,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3515 (Embed jump mask in COMPARE_OP oparg)
 #     Python 3.12a1 3516 (Add COMAPRE_AND_BRANCH instruction)
 
+#     Python 3.12a? 3530 (Add instrumentation support)
+
 #     Python 3.13 will start with 3550
 
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -442,7 +444,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3516).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3530).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
