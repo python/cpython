@@ -2366,26 +2366,24 @@ loghelper(PyObject* arg, double (*func)(double))
 math.log
 
     x:    object
-    [
-    base: object(c_default="NULL") = math.e
-    ]
+    base: object = None
     /
 
 Return the logarithm of x to the given base.
 
-If the base not specified, returns the natural logarithm (base e) of x.
+If the base is not specified or is None, returns the natural
+logarithm (base e) of x.
 [clinic start generated code]*/
 
 static PyObject *
-math_log_impl(PyObject *module, PyObject *x, int group_right_1,
-              PyObject *base)
-/*[clinic end generated code: output=7b5a39e526b73fc9 input=0f62d5726cbfebbd]*/
+math_log_impl(PyObject *module, PyObject *x, PyObject *base)
+/*[clinic end generated code: output=1dead263cbb1e854 input=ef032cc9837943e1]*/
 {
     PyObject *num, *den;
     PyObject *ans;
 
     num = loghelper(x, m_log);
-    if (num == NULL || base == NULL)
+    if (num == NULL || base == Py_None)
         return num;
 
     den = loghelper(base, m_log);
