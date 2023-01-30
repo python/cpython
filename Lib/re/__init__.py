@@ -86,7 +86,7 @@ resulting RE will match the second character.
 
 This module exports the following functions:
     prefixmatch Match a regular expression pattern to the beginning of a string.
-    match       The old name of prefixmatch. Prefer prefixmatch in 3.11+ code.
+    match       The old name of prefixmatch. Prefer prefixmatch in 3.12+ code.
     fullmatch   Match a regular expression pattern to all of a string.
     search      Search a string for the presence of a pattern.
     sub         Substitute occurrences of a pattern found in a string.
@@ -137,7 +137,7 @@ __all__ = [
     "UNICODE", "NOFLAG", "RegexFlag",
 ]
 
-__version__ = "3.11.0"
+__version__ = "3.12.0"
 
 @enum.global_enum
 @enum._simple_enum(enum.IntFlag, boundary=enum.KEEP)
