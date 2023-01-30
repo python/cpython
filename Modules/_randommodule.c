@@ -72,6 +72,7 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_runtime.h"
 #ifdef HAVE_PROCESS_H
 #  include <process.h>            // getpid()
 #endif
@@ -99,7 +100,7 @@ get_random_state(PyObject *module)
 static struct PyModuleDef _randommodule;
 
 #define _randomstate_type(type) \
-    (get_random_state(_PyType_GetModuleByDef(type, &_randommodule)))
+    (get_random_state(PyType_GetModuleByDef(type, &_randommodule)))
 
 typedef struct {
     PyObject_HEAD

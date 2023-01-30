@@ -24,6 +24,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
@@ -118,18 +119,6 @@ typedef struct {
     PyObject *weakreflist;
     access_mode access;
 } mmap_object;
-
-typedef struct {
-    PyTypeObject *mmap_object_type;
-} mmap_state;
-
-static mmap_state *
-get_mmap_state(PyObject *module)
-{
-    mmap_state *state = PyModule_GetState(module);
-    assert(state);
-    return state;
-}
 
 static int
 mmap_object_traverse(mmap_object *m_obj, visitproc visit, void *arg)
@@ -315,12 +304,8 @@ mmap_gfind(mmap_object *self,
     if (!PyArg_ParseTuple(args, reverse ? "y*|nn:rfind" : "y*|nn:find",
                           &view, &start, &end)) {
         return NULL;
-    } else {
-        const char *p, *start_p, *end_p;
-        int sign = reverse ? -1 : 1;
-        const char *needle = view.buf;
-        Py_ssize_t len = view.len;
-
+    }
+    else {
         if (start < 0)
             start += self->size;
         if (start < 0)
@@ -335,21 +320,19 @@ mmap_gfind(mmap_object *self,
         else if (end > self->size)
             end = self->size;
 
-        start_p = self->data + start;
-        end_p = self->data + end;
-
-        for (p = (reverse ? end_p - len : start_p);
-             (p >= start_p) && (p + len <= end_p); p += sign) {
-            Py_ssize_t i;
-            for (i = 0; i < len && needle[i] == p[i]; ++i)
-                /* nothing */;
-            if (i == len) {
-                PyBuffer_Release(&view);
-                return PyLong_FromSsize_t(p - self->data);
-            }
+        Py_ssize_t res;
+        if (reverse) {
+            res = _PyBytes_ReverseFind(
+                self->data + start, end - start,
+                view.buf, view.len, start);
+        }
+        else {
+            res = _PyBytes_Find(
+                self->data + start, end - start,
+                view.buf, view.len, start);
         }
         PyBuffer_Release(&view);
-        return PyLong_FromLong(-1);
+        return PyLong_FromSsize_t(res);
     }
 }
 
@@ -763,16 +746,13 @@ mmap__enter__method(mmap_object *self, PyObject *args)
 {
     CHECK_VALID(NULL);
 
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
 mmap__exit__method(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return mmap_close_method((mmap_object *)self, NULL);
 }
 
 static PyObject *
@@ -824,12 +804,11 @@ mmap__repr__method(PyObject *self)
 static PyObject *
 mmap__sizeof__method(mmap_object *self, void *unused)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
-    if (self->tagname)
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
+    if (self->tagname) {
         res += strlen(self->tagname) + 1;
-    return PyLong_FromSsize_t(res);
+    }
+    return PyLong_FromSize_t(res);
 }
 #endif
 
@@ -1337,9 +1316,9 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         }
     }
 
-    m_obj->data = mmap(NULL, map_size,
-                       prot, flags,
-                       fd, offset);
+    Py_BEGIN_ALLOW_THREADS
+    m_obj->data = mmap(NULL, map_size, prot, flags, fd, offset);
+    Py_END_ALLOW_THREADS
 
     if (devzero != -1) {
         close(devzero);
@@ -1563,45 +1542,22 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 #endif /* MS_WINDOWS */
 
 static int
-mmap_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    mmap_state *state = get_mmap_state(module);
-    Py_VISIT(state->mmap_object_type);
-    return 0;
-}
-
-static int
-mmap_clear(PyObject *module)
-{
-    mmap_state *state = get_mmap_state(module);
-    Py_CLEAR(state->mmap_object_type);
-    return 0;
-}
-
-static void
-mmap_free(void *module)
-{
-    mmap_clear((PyObject *)module);
-}
-
-static int
 mmap_exec(PyObject *module)
 {
-    mmap_state *state = get_mmap_state(module);
-
     Py_INCREF(PyExc_OSError);
     if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
         Py_DECREF(PyExc_OSError);
         return -1;
     }
 
-    state->mmap_object_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
-                                                                       &mmap_object_spec,
-                                                                       NULL);
-    if (state->mmap_object_type == NULL) {
+    PyObject *mmap_object_type = PyType_FromModuleAndSpec(module,
+                                                  &mmap_object_spec, NULL);
+    if (mmap_object_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->mmap_object_type) < 0) {
+    int rc = PyModule_AddType(module, (PyTypeObject *)mmap_object_type);
+    Py_DECREF(mmap_object_type);
+    if (rc < 0) {
         return -1;
     }
 
@@ -1751,13 +1707,10 @@ static PyModuleDef_Slot mmap_slots[] = {
 };
 
 static struct PyModuleDef mmapmodule = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "mmap",
-    .m_size = sizeof(mmap_state),
+    .m_size = 0,
     .m_slots = mmap_slots,
-    .m_traverse = mmap_traverse,
-    .m_clear = mmap_clear,
-    .m_free = mmap_free,
 };
 
 PyMODINIT_FUNC

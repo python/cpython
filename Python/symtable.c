@@ -74,8 +74,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_table = st;
     ste->ste_id = k; /* ste owns reference to k */
 
-    Py_INCREF(name);
-    ste->ste_name = name;
+    ste->ste_name = Py_NewRef(name);
 
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
@@ -230,13 +229,6 @@ static int symtable_raise_if_annotation_block(struct symtable *st, const char *,
 static int symtable_raise_if_comprehension_block(struct symtable *st, expr_ty);
 
 
-static identifier top = NULL, lambda = NULL, genexpr = NULL,
-    listcomp = NULL, setcomp = NULL, dictcomp = NULL,
-    __class__ = NULL, _annotation = NULL;
-
-#define GET_IDENTIFIER(VAR) \
-    ((VAR) ? (VAR) : ((VAR) = PyUnicode_InternFromString(# VAR)))
-
 #define DUPLICATE_ARGUMENT \
 "duplicate argument '%U' in function definition"
 
@@ -285,7 +277,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     asdl_stmt_seq *seq;
     int i;
     PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
     int starting_recursion_depth;
 
     if (st == NULL)
@@ -294,8 +285,7 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         _PySymtable_Free(st);
         return NULL;
     }
-    Py_INCREF(filename);
-    st->st_filename = filename;
+    st->st_filename = Py_NewRef(filename);
     st->st_future = future;
 
     /* Setup recursion depth check counters */
@@ -305,16 +295,13 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
+    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
+    st->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
     /* Make the initial symbol information gathering pass */
-    if (!GET_IDENTIFIER(top) ||
-        !symtable_enter_block(st, top, ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
+    if (!symtable_enter_block(st, &_Py_ID(top), ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
         _PySymtable_Free(st);
         return NULL;
     }
@@ -386,17 +373,17 @@ PySymtable_Lookup(struct symtable *st, void *key)
     if (k == NULL)
         return NULL;
     v = PyDict_GetItemWithError(st->st_blocks, k);
+    Py_DECREF(k);
+
     if (v) {
         assert(PySTEntry_Check(v));
-        Py_INCREF(v);
     }
     else if (!PyErr_Occurred()) {
         PyErr_SetString(PyExc_KeyError,
                         "unknown symbol table entry");
     }
 
-    Py_DECREF(k);
-    return (PySTEntryObject *)v;
+    return (PySTEntryObject *)Py_XNewRef(v);
 }
 
 long
@@ -619,9 +606,7 @@ static int
 drop_class_free(PySTEntryObject *ste, PyObject *free)
 {
     int res;
-    if (!GET_IDENTIFIER(__class__))
-        return 0;
-    res = PySet_Discard(free, __class__);
+    res = PySet_Discard(free, &_Py_ID(__class__));
     if (res < 0)
         return 0;
     if (res)
@@ -834,9 +819,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     }
     else {
         /* Special-case __class__ */
-        if (!GET_IDENTIFIER(__class__))
-            goto error;
-        if (PySet_Add(newbound, __class__) < 0)
+        if (PySet_Add(newbound, &_Py_ID(__class__)) < 0)
             goto error;
     }
 
@@ -1505,7 +1488,8 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
          */
         if (ste->ste_comprehension) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
-            if (target_in_scope & DEF_COMP_ITER) {
+            if ((target_in_scope & DEF_COMP_ITER) &&
+                (target_in_scope & DEF_LOCAL)) {
                 PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_CONFLICT, target_name);
                 PyErr_RangedSyntaxLocationObject(st->st_filename,
                                                   e->lineno,
@@ -1556,7 +1540,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
     /* We should always find either a FunctionBlock, ModuleBlock or ClassBlock
        and should never fall to this case
     */
-    assert(0);
+    Py_UNREACHABLE();
     return 0;
 }
 
@@ -1610,13 +1594,11 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.UnaryOp.operand);
         break;
     case Lambda_kind: {
-        if (!GET_IDENTIFIER(lambda))
-            VISIT_QUIT(st, 0);
         if (e->v.Lambda.args->defaults)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, e->v.Lambda.args->kw_defaults);
-        if (!symtable_enter_block(st, lambda,
+        if (!symtable_enter_block(st, &_Py_ID(lambda),
                                   FunctionBlock, (void *)e,
                                   e->lineno, e->col_offset,
                                   e->end_lineno, e->end_col_offset))
@@ -1730,8 +1712,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.Name.ctx == Load &&
             st->st_cur->ste_type == FunctionBlock &&
             _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
-            if (!GET_IDENTIFIER(__class__) ||
-                !symtable_add_def(st, __class__, USE, LOCATION(e)))
+            if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
                 VISIT_QUIT(st, 0);
         }
         break;
@@ -1832,7 +1813,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation)
 {
     int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
     if (future_annotations &&
-        !symtable_enter_block(st, GET_IDENTIFIER(_annotation), AnnotationBlock,
+        !symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
                               (void *)annotation, annotation->lineno,
                               annotation->col_offset, annotation->end_lineno,
                               annotation->end_col_offset)) {
@@ -1867,7 +1848,7 @@ symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_
 {
     int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
     if (future_annotations &&
-        !symtable_enter_block(st, GET_IDENTIFIER(_annotation), AnnotationBlock,
+        !symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
                               (void *)o, o->lineno, o->col_offset, o->end_lineno,
                               o->end_col_offset)) {
         VISIT_QUIT(st, 0);
@@ -1967,8 +1948,7 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
             return 0;
     }
     else {
-        store_name = name;
-        Py_INCREF(store_name);
+        store_name = Py_NewRef(name);
     }
     if (!_PyUnicode_EqualToASCIIString(name, "*")) {
         int r = symtable_add_def(st, store_name, DEF_IMPORT, LOCATION(a));
@@ -2085,7 +2065,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
 static int
 symtable_visit_genexp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(genexpr),
+    return symtable_handle_comprehension(st, e, &_Py_ID(genexpr),
                                          e->v.GeneratorExp.generators,
                                          e->v.GeneratorExp.elt, NULL);
 }
@@ -2093,7 +2073,7 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_listcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(listcomp),
+    return symtable_handle_comprehension(st, e, &_Py_ID(listcomp),
                                          e->v.ListComp.generators,
                                          e->v.ListComp.elt, NULL);
 }
@@ -2101,7 +2081,7 @@ symtable_visit_listcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_setcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(setcomp),
+    return symtable_handle_comprehension(st, e, &_Py_ID(setcomp),
                                          e->v.SetComp.generators,
                                          e->v.SetComp.elt, NULL);
 }
@@ -2109,7 +2089,7 @@ symtable_visit_setcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(dictcomp),
+    return symtable_handle_comprehension(st, e, &_Py_ID(dictcomp),
                                          e->v.DictComp.generators,
                                          e->v.DictComp.key,
                                          e->v.DictComp.value);
@@ -2162,27 +2142,13 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
         _PyArena_Free(arena);
         return NULL;
     }
-    PyFutureFeatures *future = _PyFuture_FromAST(mod, filename);
-    if (future == NULL) {
+    PyFutureFeatures future;
+    if (!_PyFuture_FromAST(mod, filename, &future)) {
         _PyArena_Free(arena);
         return NULL;
     }
-    future->ff_features |= flags->cf_flags;
-    st = _PySymtable_Build(mod, filename, future);
-    PyObject_Free((void *)future);
+    future.ff_features |= flags->cf_flags;
+    st = _PySymtable_Build(mod, filename, &future);
     _PyArena_Free(arena);
     return st;
-}
-
-void
-_PySymtable_Fini(void)
-{
-    Py_CLEAR(top);
-    Py_CLEAR(lambda);
-    Py_CLEAR(genexpr);
-    Py_CLEAR(listcomp);
-    Py_CLEAR(setcomp);
-    Py_CLEAR(dictcomp);
-    Py_CLEAR(__class__);
-    Py_CLEAR(_annotation);
 }

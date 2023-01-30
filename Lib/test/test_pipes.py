@@ -1,10 +1,12 @@
-import pipes
 import os
 import string
 import unittest
 import shutil
 from test.support import reap_children, unix_shell
 from test.support.os_helper import TESTFN, unlink
+from test.support.warnings_helper import import_deprecated
+
+pipes = import_deprecated("pipes")
 
 
 if os.name != 'posix':
