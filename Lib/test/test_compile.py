@@ -852,8 +852,8 @@ if 1:
                 with self.assertRaises(SyntaxError) as err_ctx:
                     source = f"with object() as obj:\n    {stmt}"
                     compile(source, f"<unloop_{stmt}>", "exec")
-                exc = err_ctx.exception
-                self.assertEqual(exc.lineno, 2)
+                    exc = err_ctx.exception
+                    self.assertEqual(exc.lineno, 2)
 
     def test_consts_in_conditionals(self):
         def and_true(x):
