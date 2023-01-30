@@ -1985,29 +1985,27 @@ class SyntaxTestCase(unittest.TestCase):
                           "outside function")
 
     def test_break_outside_loop(self):
-        self._check_error("break", "outside loop", lineno=1)
-        self._check_error("if 0: break",             "outside loop", lineno=1)
-        self._check_error("if 0: break\nelse:  x=1",  "outside loop", lineno=1)
-        self._check_error("if 1: pass\nelse: break", "outside loop", lineno=2)
-        self._check_error("class C:\n  if 0: break", "outside loop", lineno=2)
+        msg = "outside loop"
+        self._check_error("break", msg, lineno=1)
+        self._check_error("if 0: break", msg, lineno=1)
+        self._check_error("if 0: break\nelse:  x=1", msg, lineno=1)
+        self._check_error("if 1: pass\nelse: break", msg, lineno=2)
+        self._check_error("class C:\n  if 0: break", msg, lineno=2)
         self._check_error("class C:\n  if 1: pass\n  else: break",
-                          "outside loop", lineno=3)
+                          msg, lineno=3)
         self._check_error("with object() as obj:\n break",
-                          "outside loop", lineno=2)
+                          msg, lineno=2)
 
     def test_continue_outside_loop(self):
-        self._check_error("if 0: continue",             "not properly in loop",
-                          lineno=1)
-        self._check_error("if 0: continue\nelse:  x=1", "not properly in loop",
-                          lineno=1)
-        self._check_error("if 1: pass\nelse: continue", "not properly in loop",
-                          lineno=2)
-        self._check_error("class C:\n  if 0: continue", "not properly in loop",
-                          lineno=2)
+        msg = "not properly in loop"
+        self._check_error("if 0: continue", msg, lineno=1)
+        self._check_error("if 0: continue\nelse:  x=1", msg, lineno=1)
+        self._check_error("if 1: pass\nelse: continue", msg, lineno=2)
+        self._check_error("class C:\n  if 0: continue", msg, lineno=2)
         self._check_error("class C:\n  if 1: pass\n  else: continue",
-                          "not properly in loop", lineno=3)
+                          msg, lineno=3)
         self._check_error("with object() as obj:\n    continue",
-                          "not properly in loop", lineno=2)
+                          msg, lineno=2)
 
     def test_unexpected_indent(self):
         self._check_error("foo()\n bar()\n", "unexpected indent",
