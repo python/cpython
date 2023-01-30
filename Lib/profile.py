@@ -187,7 +187,6 @@ class Profile:
 
         if event == "c_call":
             self.c_func_name = arg.__name__
-        print(event, file = sys.stderr)
         if self.dispatch[event](self, frame,t):
             t = timer()
             self.t = t[0] + t[1]
