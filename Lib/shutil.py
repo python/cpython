@@ -1106,7 +1106,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     if root_dir is not None:
         stmd = os.stat(root_dir).st_mode
         if not stat.S_ISDIR(stmd):
-            raise NotADirectoryError(root_dir)
+            raise NotADirectoryError(errno.ENOTDIR, 'Not a directory', root_dir)
 
         if supports_root_dir:
             # Support path-like base_name here for backwards-compatibility.
