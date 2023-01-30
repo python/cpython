@@ -48,9 +48,6 @@ class Node:
         context = self.context
         if not context:
             return ""
-        tokens = context.owner.tokens
-        begin = context.begin
-        end = context.end
         return lx.to_text(self.tokens, dedent)
 
     @property
@@ -74,13 +71,13 @@ class Block(Node):
 class StackEffect(Node):
     name: str
     type: str = ""  # Optional `:type`
+    cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
-    # Note: we can have type or size but not both
-    # TODO: condition (can be combined with type but not size)
+    # Note: size cannot be combined with type or cond
 
 
 @dataclass
-class Dimension(Node):
+class Expression(Node):
     size: str
 
 
@@ -239,31 +236,39 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        # IDENTIFIER
-        #   | IDENTIFIER ':' IDENTIFIER
-        #   | IDENTIFIER '[' dimension ']'
-        # TODO: Conditions
+        #   IDENTIFIER [':' IDENTIFIER] ['if' '(' expression ')']
+        # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
+            type_text = ""
             if self.expect(lx.COLON):
-                typ = self.require(lx.IDENTIFIER)
-                return StackEffect(tkn.text, typ.text)
-            elif self.expect(lx.LBRACKET):
-                if not (dim := self.dimension()):
-                    raise self.make_syntax_error("Expected dimension")
+                type_text = self.require(lx.IDENTIFIER).text.strip()
+            cond_text = ""
+            if self.expect(lx.IF):
+                self.require(lx.LPAREN)
+                if not (cond := self.expression()):
+                    raise self.make_syntax_error("Expected condition")
+                self.require(lx.RPAREN)
+                cond_text = cond.text.strip()
+            size_text = ""
+            if self.expect(lx.LBRACKET):
+                if type_text or cond_text:
+                    raise self.make_syntax_error("Unexpected [")
+                if not (size := self.expression()):
+                    raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
-                return StackEffect(tkn.text, "PyObject **", dim.text.strip())
-            else:
-                return StackEffect(tkn.text)
+                type_text = "PyObject **"
+                size_text = size.text.strip()
+            return StackEffect(tkn.text, type_text, cond_text, size_text)
 
     @contextual
-    def dimension(self) -> Dimension | None:
+    def expression(self) -> Expression | None:
         tokens: list[lx.Token] = []
-        while (tkn := self.peek()) and tkn.kind != lx.RBRACKET:
+        while (tkn := self.peek()) and tkn.kind not in (lx.RBRACKET, lx.RPAREN):
             tokens.append(tkn)
             self.next()
         if not tokens:
             return None
-        return Dimension(lx.to_text(tokens).strip())
+        return Expression(lx.to_text(tokens).strip())
 
     @contextual
     def super_def(self) -> Super | None:
@@ -366,7 +371,7 @@ class Parser(PLexer):
         return None
 
     @contextual
-    def block(self) -> Block:
+    def block(self) -> Block | None:
         if self.c_blob():
             return Block()
 
