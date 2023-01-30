@@ -130,7 +130,7 @@ Available Types
 .. class:: timedelta
    :noindex:
 
-   A duration expressing the difference between two :class:`date`, :class:`.time`,
+   A duration expressing the difference between two :class:`date`
    or :class:`.datetime` instances to microsecond resolution.
 
 
