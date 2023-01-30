@@ -3018,7 +3018,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     funcflags = compiler_default_arguments(c, loc, args);
     if (funcflags == -1) {
-        return 0;
+        return ERROR;
     }
 
     _Py_DECLARE_STR(anon_lambda, "<lambda>");
