@@ -256,7 +256,6 @@ outdated.
     (December 1991), Amsterdam, pp 283--303.
 
 
-
 Are there any books on Python?
 ------------------------------
 
