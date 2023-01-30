@@ -90,6 +90,68 @@ PyAPI_FUNC(int) _PyMem_GetAllocatorName(
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
 PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
+#define WITH_FREELISTS 1
+
+#if WITH_FREELISTS
+/* Free lists.
+ *
+ * Free lists have a pointer to their first entry and
+ * the amount of space available allowing fast checks
+ * for emptiness and fullness.
+ * When empty they are half filled and when full they are
+ * completely emptied. This helps the underlying allocator
+ * avoid fragmentation and helps performance.
+ */
+
+typedef struct _freelist {
+    void *ptr;
+    uint32_t space;
+    uint16_t size;
+    uint16_t capacity;
+} _PyFreeList;
+
+extern void *_PyFreeList_HalfFillAndAllocate(_PyFreeList *list);
+extern void _PyFreeList_FreeToFull(_PyFreeList *list, void *ptr);
+
+
+static inline void *
+_PyFreeList_Alloc(_PyFreeList *list) {
+    if (list->ptr != NULL) {
+#ifdef Py_STATS
+        if (_py_stats) _py_stats->object_stats.from_freelist++;
+#endif
+        void *result = list->ptr;
+        list->ptr = *((void **)result);
+        list->space++;
+        return result;
+    }
+    return _PyFreeList_HalfFillAndAllocate(list);
+}
+
+static inline void
+_PyFreeList_Free(_PyFreeList *list, void *ptr) {
+    if (list->space) {
+#ifdef Py_STATS
+        if (_py_stats) _py_stats->object_stats.to_freelist++;
+#endif
+        *((void **)ptr) = list->ptr;
+        list->ptr = ptr;
+        list->space--;
+        return;
+    }
+    _PyFreeList_FreeToFull(list, ptr);
+}
+
+static inline void
+_PyFreeList_Init(_PyFreeList *list, int size, int capacity)
+{
+    list->ptr = NULL;
+    list->space = list->capacity = capacity;
+    list->size = size;
+}
+
+extern void _PyFreeList_Clear(_PyFreeList *list);
+#endif  /* WITH_FREELISTS */
 
 #ifdef __cplusplus
 }

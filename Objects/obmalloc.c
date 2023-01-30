@@ -717,6 +717,70 @@ PyObject_Free(void *ptr)
 #  define LIKELY(value) (value)
 #endif
 
+
+#if WITH_FREELISTS
+void *
+_PyFreeList_HalfFillAndAllocate(_PyFreeList *list)
+{
+    assert(list->ptr == NULL);
+    if (list->capacity < 4) {
+        return PyObject_Malloc(list->size);
+    }
+    uint32_t i = 0;
+    for (; i < list->space>>1; i++) {
+        void* ptr = PyObject_Malloc(list->size);
+        if (ptr == NULL) {
+            break;
+        }
+        *((void**)ptr) = list->ptr;
+        list->ptr = ptr;
+    }
+    if (i == 0) {
+        return NULL;
+    }
+    list->space -= (i-1);
+    void *result = list->ptr;
+    list->ptr = *((void **)result);
+    return result;
+}
+
+void
+_PyFreeList_Clear(_PyFreeList *list)
+{
+    int space = 0;
+    void *head = list->ptr;
+    while (head) {
+        void *next = *((void**)head);
+        PyObject_Free(head);
+        head = next;
+        space++;
+    }
+    list->ptr = NULL;
+    list->space += space;
+}
+
+void
+_PyFreeList_FreeToFull(_PyFreeList *list, void *ptr)
+{
+    assert(list->space == 0);
+    if (list->ptr == NULL) {
+        PyObject_Free(ptr);
+        return;
+    }
+    int space = 0;
+    void *head = list->ptr;
+    while (head) {
+        void *next = *((void**)head);
+        PyObject_Free(head);
+        head = next;
+        space++;
+    }
+    list->ptr = ptr;
+    *((void **)ptr) = NULL;
+    list->space = space-1;
+}
+#endif  /* WITH_FREELISTS */
+
 #ifdef WITH_PYMALLOC
 
 #ifdef WITH_VALGRIND

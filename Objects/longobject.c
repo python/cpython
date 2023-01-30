@@ -6,6 +6,7 @@
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _Py_SmallInts
+#include "pycore_pymem.h"         // Free lists
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
@@ -152,16 +153,26 @@ _PyLong_New(Py_ssize_t size)
                         "too many digits in integer");
         return NULL;
     }
-    /* Fast operations for single digit integers (including zero)
-     * assume that there is always at least one digit present. */
-    Py_ssize_t ndigits = size ? size : 1;
-    /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
-       sizeof(digit)*size.  Previous incarnations of this code used
-       sizeof(PyVarObject) instead of the offsetof, but this risks being
-       incorrect in the presence of padding between the PyVarObject header
-       and the digits. */
-    result = PyObject_Malloc(offsetof(PyLongObject, long_value.ob_digit) +
-                             ndigits*sizeof(digit));
+    assert(size >= 0);
+#if WITH_FREELISTS
+    if (size <= 1) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        result = (PyLongObject *)_PyInterpreterState_FreelistAlloc(interp, sizeof(PyLongObject));
+    }
+#else
+    if (size == 0) {
+        result = PyObject_Malloc(sizeof(PyLongObject));
+    }
+#endif
+    else {
+        /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
+           sizeof(digit)*size.  Previous incarnations of this code used
+           sizeof(PyVarObject) instead of the offsetof, but this risks being
+           incorrect in the presence of padding between the PyVarObject header
+           and the digits. */
+        result = PyObject_Malloc(offsetof(PyLongObject, long_value.ob_digit) +
+                                 size*sizeof(digit));
+    }
     if (!result) {
         PyErr_NoMemory();
         return NULL;
@@ -202,10 +213,14 @@ _PyLong_FromMedium(sdigit x)
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
     /* We could use a freelist here */
+#if WITH_FREELISTS
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyLongObject *v = (PyLongObject *)_PyInterpreterState_FreelistAlloc(interp, sizeof(PyLongObject));
+#else
     PyLongObject *v = PyObject_Malloc(sizeof(PyLongObject));
+#endif
     if (v == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        return PyErr_NoMemory();
     }
     Py_ssize_t sign = x < 0 ? -1: 1;
     digit abs_x = x < 0 ? -x : x;
@@ -265,6 +280,21 @@ _PyLong_FromSTwoDigits(stwodigits x)
         return _PyLong_FromMedium((sdigit)x);
     }
     return _PyLong_FromLarge(x);
+}
+
+static void
+int_dealloc(PyLongObject *op)
+{
+#if WITH_FREELISTS
+    if (PyLong_CheckExact(op) && IS_MEDIUM_VALUE(op)) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyInterpreterState_FreelistFree(interp, (PyObject*)op, sizeof(PyLongObject));
+    }
+    else
+#endif
+    {
+        Py_TYPE(op)->tp_free((PyObject *)op);
+    }
 }
 
 int
@@ -6289,7 +6319,7 @@ PyTypeObject PyLong_Type = {
     "int",                                      /* tp_name */
     offsetof(PyLongObject, long_value.ob_digit),  /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    0,                                          /* tp_dealloc */
+    (destructor)int_dealloc,                    /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

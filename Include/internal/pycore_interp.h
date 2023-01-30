@@ -18,6 +18,7 @@ extern "C" {
 #include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
+#include "pycore_pymem.h"         // free lists
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
@@ -49,6 +50,10 @@ struct _Py_long_state {
 
 
 /* interpreter state */
+#define WITH_FREELISTS 1
+
+#define SMALL_OBJECT_FREELIST_SIZE 1024
+#define INTERP_NUM_FREELISTS 30
 
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
@@ -178,6 +183,9 @@ struct _is {
     struct _Py_context_state context;
     struct _Py_exc_state exc_state;
 
+#if WITH_FREELISTS
+    _PyFreeList freelists[INTERP_NUM_FREELISTS];
+#endif
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
@@ -229,6 +237,28 @@ PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
+
+#if WITH_FREELISTS
+static inline PyObject*
+_PyInterpreterState_FreelistAlloc(PyInterpreterState *interp, int size) {
+    assert(size >= 4);
+    assert((size & 0x1) == 0);
+    int index = (size-4)/2;
+    return _PyFreeList_Alloc(&interp->freelists[index]);
+}
+
+static inline void
+_PyInterpreterState_FreelistFree(PyInterpreterState * interp, PyObject *op, int size) {
+    /* todo: assert the size is correct? */
+    assert(size >= 4);
+    assert((size & 0x1) == 0);
+    int index = (size-4)/2;
+    _PyFreeList_Alloc(&interp->freelists[index]);
+}
+
+#endif  /* WITH_FREELISTS */
+
 
 #ifdef __cplusplus
 }

@@ -652,6 +652,12 @@ PyInterpreterState_New(void)
 
     init_interpreter(interp, runtime, id, old_head, pending_lock);
 
+#if WITH_FREELISTS
+    for (int i=0; i < INTERP_NUM_FREELISTS; i++) {
+        _PyFreeList_Init(&interp->freelists[i], 4 + 2*i, SMALL_OBJECT_FREELIST_SIZE);
+    }
+#endif
+
     HEAD_UNLOCK(runtime);
     return interp;
 
@@ -680,6 +686,12 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         PyThreadState_Clear(p);
     }
     HEAD_UNLOCK(runtime);
+
+#if WITH_FREELISTS
+    for (int i=0; i < INTERP_NUM_FREELISTS; i++) {
+        _PyFreeList_Clear(&interp->freelists[i]);
+    }
+#endif
 
     Py_CLEAR(interp->audit_hooks);
 
