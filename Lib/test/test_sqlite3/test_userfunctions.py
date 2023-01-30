@@ -23,47 +23,53 @@
 
 import contextlib
 import functools
-import gc
 import io
+import re
 import sys
 import unittest
-import unittest.mock
 import sqlite3 as sqlite
 
-from test.support import bigmemtest
-from .test_dbapi import cx_limit
+from unittest.mock import Mock, patch
+from test.support import bigmemtest, catch_unraisable_exception, gc_collect
+
+from test.test_sqlite3.test_dbapi import cx_limit
 
 
-def with_tracebacks(strings, traceback=True):
+def with_tracebacks(exc, regex="", name=""):
     """Convenience decorator for testing callback tracebacks."""
-    if traceback:
-        strings.append('Traceback')
-
     def decorator(func):
+        _regex = re.compile(regex) if regex else None
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            # First, run the test with traceback enabled.
-            with check_tracebacks(self, strings):
-                func(self, *args, **kwargs)
+            with catch_unraisable_exception() as cm:
+                # First, run the test with traceback enabled.
+                with check_tracebacks(self, cm, exc, _regex, name):
+                    func(self, *args, **kwargs)
 
             # Then run the test with traceback disabled.
             func(self, *args, **kwargs)
         return wrapper
     return decorator
 
+
 @contextlib.contextmanager
-def check_tracebacks(self, strings):
+def check_tracebacks(self, cm, exc, regex, obj_name):
     """Convenience context manager for testing callback tracebacks."""
     sqlite.enable_callback_tracebacks(True)
     try:
         buf = io.StringIO()
         with contextlib.redirect_stderr(buf):
             yield
-        tb = buf.getvalue()
-        for s in strings:
-            self.assertIn(s, tb)
+
+        self.assertEqual(cm.unraisable.exc_type, exc)
+        if regex:
+            msg = str(cm.unraisable.exc_value)
+            self.assertIsNotNone(regex.search(msg))
+        if obj_name:
+            self.assertEqual(cm.unraisable.object.__name__, obj_name)
     finally:
         sqlite.enable_callback_tracebacks(False)
+
 
 def func_returntext():
     return "foo"
@@ -87,22 +93,6 @@ def func_memoryerror():
     raise MemoryError
 def func_overflowerror():
     raise OverflowError
-
-def func_isstring(v):
-    return type(v) is str
-def func_isint(v):
-    return type(v) is int
-def func_isfloat(v):
-    return type(v) is float
-def func_isnone(v):
-    return type(v) is type(None)
-def func_isblob(v):
-    return isinstance(v, (bytes, memoryview))
-def func_islonglong(v):
-    return isinstance(v, int) and v >= 1<<31
-
-def func(*args):
-    return len(args)
 
 class AggrNoStep:
     def __init__(self):
@@ -204,17 +194,17 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("returnnull", 0, func_returnnull)
         self.con.create_function("returnblob", 0, func_returnblob)
         self.con.create_function("returnlonglong", 0, func_returnlonglong)
+        self.con.create_function("returnnan", 0, lambda: float("nan"))
+        self.con.create_function("returntoolargeint", 0, lambda: 1 << 65)
+        self.con.create_function("return_noncont_blob", 0,
+                                 lambda: memoryview(b"blob")[::2])
         self.con.create_function("raiseexception", 0, func_raiseexception)
         self.con.create_function("memoryerror", 0, func_memoryerror)
         self.con.create_function("overflowerror", 0, func_overflowerror)
 
-        self.con.create_function("isstring", 1, func_isstring)
-        self.con.create_function("isint", 1, func_isint)
-        self.con.create_function("isfloat", 1, func_isfloat)
-        self.con.create_function("isnone", 1, func_isnone)
-        self.con.create_function("isblob", 1, func_isblob)
-        self.con.create_function("islonglong", 1, func_islonglong)
-        self.con.create_function("spam", -1, func)
+        self.con.create_function("isblob", 1, lambda x: isinstance(x, bytes))
+        self.con.create_function("isnone", 1, lambda x: x is None)
+        self.con.create_function("spam", -1, lambda *x: len(x))
         self.con.execute("create table test(t text)")
 
     def tearDown(self):
@@ -299,7 +289,17 @@ class FunctionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 1<<31)
 
-    @with_tracebacks(['func_raiseexception', '5/0', 'ZeroDivisionError'])
+    def test_func_return_nan(self):
+        cur = self.con.cursor()
+        cur.execute("select returnnan()")
+        self.assertIsNone(cur.fetchone()[0])
+
+    def test_func_return_too_large_int(self):
+        cur = self.con.cursor()
+        self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
+                               self.con.execute, "select returntoolargeint()")
+
+    @with_tracebacks(ZeroDivisionError, name="func_raiseexception")
     def test_func_exception(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -307,57 +307,19 @@ class FunctionTests(unittest.TestCase):
             cur.fetchone()
         self.assertEqual(str(cm.exception), 'user-defined function raised exception')
 
-    @with_tracebacks(['func_memoryerror', 'MemoryError'])
+    @with_tracebacks(MemoryError, name="func_memoryerror")
     def test_func_memory_error(self):
         cur = self.con.cursor()
         with self.assertRaises(MemoryError):
             cur.execute("select memoryerror()")
             cur.fetchone()
 
-    @with_tracebacks(['func_overflowerror', 'OverflowError'])
+    @with_tracebacks(OverflowError, name="func_overflowerror")
     def test_func_overflow_error(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.DataError):
             cur.execute("select overflowerror()")
             cur.fetchone()
-
-    def test_param_string(self):
-        cur = self.con.cursor()
-        for text in ["foo", str()]:
-            with self.subTest(text=text):
-                cur.execute("select isstring(?)", (text,))
-                val = cur.fetchone()[0]
-                self.assertEqual(val, 1)
-
-    def test_param_int(self):
-        cur = self.con.cursor()
-        cur.execute("select isint(?)", (42,))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
-
-    def test_param_float(self):
-        cur = self.con.cursor()
-        cur.execute("select isfloat(?)", (3.14,))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
-
-    def test_param_none(self):
-        cur = self.con.cursor()
-        cur.execute("select isnone(?)", (None,))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
-
-    def test_param_blob(self):
-        cur = self.con.cursor()
-        cur.execute("select isblob(?)", (memoryview(b"blob"),))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
-
-    def test_param_long_long(self):
-        cur = self.con.cursor()
-        cur.execute("select islonglong(?)", (1<<42,))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
 
     def test_any_arguments(self):
         cur = self.con.cursor()
@@ -369,6 +331,59 @@ class FunctionTests(unittest.TestCase):
         cur = self.con.execute("select isblob(x'')")
         self.assertTrue(cur.fetchone()[0])
 
+    def test_nan_float(self):
+        cur = self.con.execute("select isnone(?)", (float("nan"),))
+        # SQLite has no concept of nan; it is converted to NULL
+        self.assertTrue(cur.fetchone()[0])
+
+    def test_too_large_int(self):
+        err = "Python int too large to convert to SQLite INTEGER"
+        self.assertRaisesRegex(OverflowError, err, self.con.execute,
+                               "select spam(?)", (1 << 65,))
+
+    def test_non_contiguous_blob(self):
+        self.assertRaisesRegex(BufferError,
+                               "underlying buffer is not C-contiguous",
+                               self.con.execute, "select spam(?)",
+                               (memoryview(b"blob")[::2],))
+
+    @with_tracebacks(BufferError, regex="buffer.*contiguous")
+    def test_return_non_contiguous_blob(self):
+        with self.assertRaises(sqlite.OperationalError):
+            cur = self.con.execute("select return_noncont_blob()")
+            cur.fetchone()
+
+    def test_param_surrogates(self):
+        self.assertRaisesRegex(UnicodeEncodeError, "surrogates not allowed",
+                               self.con.execute, "select spam(?)",
+                               ("\ud803\ude6d",))
+
+    def test_func_params(self):
+        results = []
+        def append_result(arg):
+            results.append((arg, type(arg)))
+        self.con.create_function("test_params", 1, append_result)
+
+        dataset = [
+            (42, int),
+            (-1, int),
+            (1234567890123456789, int),
+            (4611686018427387905, int),  # 63-bit int with non-zero low bits
+            (3.14, float),
+            (float('inf'), float),
+            ("text", str),
+            ("1\x002", str),
+            ("\u02e2q\u02e1\u2071\u1d57\u1d49", str),
+            (b"blob", bytes),
+            (bytearray(range(2)), bytes),
+            (memoryview(b"blob"), bytes),
+            (None, type(None)),
+        ]
+        for val, _ in dataset:
+            cur = self.con.execute("select test_params(?)", (val,))
+            cur.fetchone()
+        self.assertEqual(dataset, results)
+
     # Regarding deterministic functions:
     #
     # Between 3.8.3 and 3.15.0, deterministic functions were only used to
@@ -378,7 +393,7 @@ class FunctionTests(unittest.TestCase):
     # indices, which allows testing based on syntax, iso. the query optimizer.
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def test_func_non_deterministic(self):
-        mock = unittest.mock.Mock(return_value=None)
+        mock = Mock(return_value=None)
         self.con.create_function("nondeterministic", 0, mock, deterministic=False)
         if sqlite.sqlite_version_info < (3, 15, 0):
             self.con.execute("select nondeterministic() = nondeterministic()")
@@ -389,7 +404,7 @@ class FunctionTests(unittest.TestCase):
 
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def test_func_deterministic(self):
-        mock = unittest.mock.Mock(return_value=None)
+        mock = Mock(return_value=None)
         self.con.create_function("deterministic", 0, mock, deterministic=True)
         if sqlite.sqlite_version_info < (3, 15, 0):
             self.con.execute("select deterministic() = deterministic()")
@@ -424,24 +439,23 @@ class FunctionTests(unittest.TestCase):
         y.append(y)
 
         del x,y
-        gc.collect()
+        gc_collect()
 
+    @with_tracebacks(OverflowError)
     def test_func_return_too_large_int(self):
         cur = self.con.cursor()
         for value in 2**63, -2**63-1, 2**64:
             self.con.create_function("largeint", 0, lambda value=value: value)
-            with check_tracebacks(self, ['OverflowError']):
-                with self.assertRaises(sqlite.DataError):
-                    cur.execute("select largeint()")
+            with self.assertRaises(sqlite.DataError):
+                cur.execute("select largeint()")
 
+    @with_tracebacks(UnicodeEncodeError, "surrogates not allowed", "chr")
     def test_func_return_text_with_surrogates(self):
         cur = self.con.cursor()
         self.con.create_function("pychr", 1, chr)
         for value in 0xd8ff, 0xdcff:
-            with check_tracebacks(self,
-                    ['UnicodeEncodeError', 'surrogates not allowed']):
-                with self.assertRaises(sqlite.OperationalError):
-                    cur.execute("select pychr(?)", (value,))
+            with self.assertRaises(sqlite.OperationalError):
+                cur.execute("select pychr(?)", (value,))
 
     @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
     @bigmemtest(size=2**31, memuse=3, dry_run=False)
@@ -460,6 +474,170 @@ class FunctionTests(unittest.TestCase):
             self.con.create_function("largeblob", 0, lambda size=size: b"b" * size)
             with self.assertRaises(sqlite.DataError):
                 cur.execute("select largeblob()")
+
+    def test_func_return_illegal_value(self):
+        self.con.create_function("badreturn", 0, lambda: self)
+        msg = "user-defined function raised exception"
+        self.assertRaisesRegex(sqlite.OperationalError, msg,
+                               self.con.execute, "select badreturn()")
+
+
+class WindowSumInt:
+    def __init__(self):
+        self.count = 0
+
+    def step(self, value):
+        self.count += value
+
+    def value(self):
+        return self.count
+
+    def inverse(self, value):
+        self.count -= value
+
+    def finalize(self):
+        return self.count
+
+class BadWindow(Exception):
+    pass
+
+
+@unittest.skipIf(sqlite.sqlite_version_info < (3, 25, 0),
+                 "Requires SQLite 3.25.0 or newer")
+class WindowFunctionTests(unittest.TestCase):
+    def setUp(self):
+        self.con = sqlite.connect(":memory:")
+        self.cur = self.con.cursor()
+
+        # Test case taken from https://www.sqlite.org/windowfunctions.html#udfwinfunc
+        values = [
+            ("a", 4),
+            ("b", 5),
+            ("c", 3),
+            ("d", 8),
+            ("e", 1),
+        ]
+        with self.con:
+            self.con.execute("create table test(x, y)")
+            self.con.executemany("insert into test values(?, ?)", values)
+        self.expected = [
+            ("a", 9),
+            ("b", 12),
+            ("c", 16),
+            ("d", 12),
+            ("e", 9),
+        ]
+        self.query = """
+            select x, %s(y) over (
+                order by x rows between 1 preceding and 1 following
+            ) as sum_y
+            from test order by x
+        """
+        self.con.create_window_function("sumint", 1, WindowSumInt)
+
+    def test_win_sum_int(self):
+        self.cur.execute(self.query % "sumint")
+        self.assertEqual(self.cur.fetchall(), self.expected)
+
+    def test_win_error_on_create(self):
+        self.assertRaises(sqlite.ProgrammingError,
+                          self.con.create_window_function,
+                          "shouldfail", -100, WindowSumInt)
+
+    @with_tracebacks(BadWindow)
+    def test_win_exception_in_method(self):
+        for meth in "__init__", "step", "value", "inverse":
+            with self.subTest(meth=meth):
+                with patch.object(WindowSumInt, meth, side_effect=BadWindow):
+                    name = f"exc_{meth}"
+                    self.con.create_window_function(name, 1, WindowSumInt)
+                    msg = f"'{meth}' method raised error"
+                    with self.assertRaisesRegex(sqlite.OperationalError, msg):
+                        self.cur.execute(self.query % name)
+                        self.cur.fetchall()
+
+    @with_tracebacks(BadWindow)
+    def test_win_exception_in_finalize(self):
+        # Note: SQLite does not (as of version 3.38.0) propagate finalize
+        # callback errors to sqlite3_step(); this implies that OperationalError
+        # is _not_ raised.
+        with patch.object(WindowSumInt, "finalize", side_effect=BadWindow):
+            name = f"exception_in_finalize"
+            self.con.create_window_function(name, 1, WindowSumInt)
+            self.cur.execute(self.query % name)
+            self.cur.fetchall()
+
+    @with_tracebacks(AttributeError)
+    def test_win_missing_method(self):
+        class MissingValue:
+            def step(self, x): pass
+            def inverse(self, x): pass
+            def finalize(self): return 42
+
+        class MissingInverse:
+            def step(self, x): pass
+            def value(self): return 42
+            def finalize(self): return 42
+
+        class MissingStep:
+            def value(self): return 42
+            def inverse(self, x): pass
+            def finalize(self): return 42
+
+        dataset = (
+            ("step", MissingStep),
+            ("value", MissingValue),
+            ("inverse", MissingInverse),
+        )
+        for meth, cls in dataset:
+            with self.subTest(meth=meth, cls=cls):
+                name = f"exc_{meth}"
+                self.con.create_window_function(name, 1, cls)
+                with self.assertRaisesRegex(sqlite.OperationalError,
+                                            f"'{meth}' method not defined"):
+                    self.cur.execute(self.query % name)
+                    self.cur.fetchall()
+
+    @with_tracebacks(AttributeError)
+    def test_win_missing_finalize(self):
+        # Note: SQLite does not (as of version 3.38.0) propagate finalize
+        # callback errors to sqlite3_step(); this implies that OperationalError
+        # is _not_ raised.
+        class MissingFinalize:
+            def step(self, x): pass
+            def value(self): return 42
+            def inverse(self, x): pass
+
+        name = "missing_finalize"
+        self.con.create_window_function(name, 1, MissingFinalize)
+        self.cur.execute(self.query % name)
+        self.cur.fetchall()
+
+    def test_win_clear_function(self):
+        self.con.create_window_function("sumint", 1, None)
+        self.assertRaises(sqlite.OperationalError, self.cur.execute,
+                          self.query % "sumint")
+
+    def test_win_redefine_function(self):
+        # Redefine WindowSumInt; adjust the expected results accordingly.
+        class Redefined(WindowSumInt):
+            def step(self, value): self.count += value * 2
+            def inverse(self, value): self.count -= value * 2
+        expected = [(v[0], v[1]*2) for v in self.expected]
+
+        self.con.create_window_function("sumint", 1, Redefined)
+        self.cur.execute(self.query % "sumint")
+        self.assertEqual(self.cur.fetchall(), expected)
+
+    def test_win_error_value_return(self):
+        class ErrorValueReturn:
+            def __init__(self): pass
+            def step(self, x): pass
+            def value(self): return 1 << 65
+
+        self.con.create_window_function("err_val_ret", 1, ErrorValueReturn)
+        self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
+                               self.cur.execute, self.query % "err_val_ret")
 
 
 class AggregateTests(unittest.TestCase):
@@ -497,20 +675,22 @@ class AggregateTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             self.con.create_function("bla", -100, AggrSum)
 
+    @with_tracebacks(AttributeError, name="AggrNoStep")
     def test_aggr_no_step(self):
         cur = self.con.cursor()
-        with self.assertRaises(AttributeError) as cm:
+        with self.assertRaises(sqlite.OperationalError) as cm:
             cur.execute("select nostep(t) from test")
-        self.assertEqual(str(cm.exception), "'AggrNoStep' object has no attribute 'step'")
+        self.assertEqual(str(cm.exception),
+                         "user-defined aggregate's 'step' method not defined")
 
     def test_aggr_no_finalize(self):
         cur = self.con.cursor()
-        with self.assertRaises(sqlite.OperationalError) as cm:
+        msg = "user-defined aggregate's 'finalize' method not defined"
+        with self.assertRaisesRegex(sqlite.OperationalError, msg):
             cur.execute("select nofinalize(t) from test")
             val = cur.fetchone()[0]
-        self.assertEqual(str(cm.exception), "user-defined aggregate's 'finalize' method raised error")
 
-    @with_tracebacks(['__init__', '5/0', 'ZeroDivisionError'])
+    @with_tracebacks(ZeroDivisionError, name="AggrExceptionInInit")
     def test_aggr_exception_in_init(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -518,7 +698,7 @@ class AggregateTests(unittest.TestCase):
             val = cur.fetchone()[0]
         self.assertEqual(str(cm.exception), "user-defined aggregate's '__init__' method raised error")
 
-    @with_tracebacks(['step', '5/0', 'ZeroDivisionError'])
+    @with_tracebacks(ZeroDivisionError, name="AggrExceptionInStep")
     def test_aggr_exception_in_step(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -526,7 +706,7 @@ class AggregateTests(unittest.TestCase):
             val = cur.fetchone()[0]
         self.assertEqual(str(cm.exception), "user-defined aggregate's 'step' method raised error")
 
-    @with_tracebacks(['finalize', '5/0', 'ZeroDivisionError'])
+    @with_tracebacks(ZeroDivisionError, name="AggrExceptionInFinalize")
     def test_aggr_exception_in_finalize(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -643,11 +823,11 @@ class AuthorizerRaiseExceptionTests(AuthorizerTests):
             raise ValueError
         return sqlite.SQLITE_OK
 
-    @with_tracebacks(['authorizer_cb', 'ValueError'])
+    @with_tracebacks(ValueError, name="authorizer_cb")
     def test_table_access(self):
         super().test_table_access()
 
-    @with_tracebacks(['authorizer_cb', 'ValueError'])
+    @with_tracebacks(ValueError, name="authorizer_cb")
     def test_column_access(self):
         super().test_table_access()
 

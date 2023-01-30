@@ -100,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2021 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2023 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -302,7 +302,8 @@ for third-party software incorporated in the Python distribution.
 Mersenne Twister
 ----------------
 
-The :mod:`_random` module includes code based on a download from
+The :mod:`!_random` C extension underlying the :mod:`random` module
+includes code based on a download from
 http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html. The following are
 the verbatim comments from the original code::
 
@@ -353,7 +354,7 @@ Sockets
 
 The :mod:`socket` module uses the functions, :func:`getaddrinfo`, and
 :func:`getnameinfo`, which are coded in separate source files from the WIDE
-Project, http://www.wide.ad.jp/. ::
+Project, https://www.wide.ad.jp/. ::
 
    Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
    All rights reserved.
@@ -381,6 +382,34 @@ Project, http://www.wide.ad.jp/. ::
    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
    SUCH DAMAGE.
+
+
+Asynchronous socket services
+----------------------------
+
+The :mod:`test.support.asynchat` and :mod:`test.support.asyncore`
+modules contain the following notice::
+
+   Copyright 1996 by Sam Rushing
+
+                           All Rights Reserved
+
+   Permission to use, copy, modify, and distribute this software and
+   its documentation for any purpose and without fee is hereby
+   granted, provided that the above copyright notice appear in all
+   copies and that both that copyright notice and this permission
+   notice appear in supporting documentation, and that the name of Sam
+   Rushing not be used in advertising or publicity pertaining to
+   distribution of the software without specific, written prior
+   permission.
+
+   SAM RUSHING DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+   INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN
+   NO EVENT SHALL SAM RUSHING BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+   CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+   OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+   NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
 Cookie management
@@ -599,9 +628,9 @@ strtod and dtoa
 The file :file:`Python/dtoa.c`, which supplies C functions dtoa and
 strtod for conversion of C doubles to and from strings, is derived
 from the file of the same name by David M. Gay, currently available
-from http://www.netlib.org/fp/.  The original file, as retrieved on
-March 16, 2009, contains the following copyright and licensing
-notice::
+from https://web.archive.org/web/20220517033456/http://www.netlib.org/fp/dtoa.c.
+The original file, as retrieved on March 16, 2009, contains the following
+copyright and licensing notice::
 
    /****************************************************************
     *
@@ -792,7 +821,8 @@ sources unless the build is configured ``--with-system-expat``::
 libffi
 ------
 
-The :mod:`_ctypes` extension is built using an included copy of the libffi
+The :mod:`!_ctypes` C extension underlying the :mod:`ctypes` module
+is built using an included copy of the libffi
 sources unless the build is configured ``--with-system-libffi``::
 
    Copyright (c) 1996-2008  Red Hat, Inc and others.
@@ -893,7 +923,8 @@ on the cfuhash project::
 libmpdec
 --------
 
-The :mod:`_decimal` module is built using an included copy of the libmpdec
+The :mod:`!_decimal` C extension underlying the :mod:`decimal` module
+is built using an included copy of the libmpdec
 library unless the build is configured ``--with-system-libmpdec``::
 
    Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
@@ -957,3 +988,31 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Audioop
+-------
+
+The audioop module uses the code base in g771.c file of the SoX project::
+
+    Programming the AdLib/Sound Blaster
+    FM Music Chips
+    Version 2.0 (24 Feb 1992)
+    Copyright (c) 1991, 1992 by Jeffrey S. Lee
+    jlee@smylex.uucp
+    Warranty and Copyright Policy
+    This document is provided on an "as-is" basis, and its author makes
+    no warranty or representation, express or implied, with respect to
+    its quality performance or fitness for a particular purpose.  In no
+    event will the author of this document be liable for direct, indirect,
+    special, incidental, or consequential damages arising out of the use
+    or inability to use the information contained within.  Use of this
+    document is at your own risk.
+    This file may be used and copied freely so long as the applicable
+    copyright notices are retained, and no modifications are made to the
+    text of the document.  No money shall be charged for its distribution
+    beyond reasonable shipping, handling and duplication costs, nor shall
+    proprietary changes be made to this document so that it cannot be
+    distributed freely.  This document may not be included in published
+    material or commercial packages without the written consent of its
+    author.

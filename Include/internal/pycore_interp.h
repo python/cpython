@@ -8,206 +8,25 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include <stdbool.h>
+
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
-#include "pycore_gil.h"           // struct _gil_runtime_state
+#include "pycore_ceval_state.h"   // struct _ceval_state
+#include "pycore_code.h"          // struct callable_cache
+#include "pycore_context.h"       // struct _Py_context_state
+#include "pycore_dict_state.h"    // struct _Py_dict_state
+#include "pycore_exceptions.h"    // struct _Py_exc_state
+#include "pycore_floatobject.h"   // struct _Py_float_state
+#include "pycore_function.h"      // FUNC_MAX_WATCHERS
+#include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
+#include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_global_objects.h"  // struct _Py_interp_static_objects
+#include "pycore_tuple.h"         // struct _Py_tuple_state
+#include "pycore_typeobject.h"    // struct type_cache
+#include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
-
-struct _pending_calls {
-    PyThread_type_lock lock;
-    /* Request for running pending calls. */
-    _Py_atomic_int calls_to_do;
-    /* Request for looking at the `async_exc` field of the current
-       thread state.
-       Guarded by the GIL. */
-    int async_exc;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
-    int first;
-    int last;
-};
-
-struct _ceval_state {
-    int recursion_limit;
-    /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
-    _Py_atomic_int eval_breaker;
-    /* Request for dropping the GIL */
-    _Py_atomic_int gil_drop_request;
-    struct _pending_calls pending;
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state gil;
-#endif
-};
-
-/* fs_codec.encoding is initialized to NULL.
-   Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
-struct _Py_unicode_fs_codec {
-    char *encoding;   // Filesystem encoding (encoded to UTF-8)
-    int utf8;         // encoding=="utf-8"?
-    char *errors;     // Filesystem errors (encoded to UTF-8)
-    _Py_error_handler error_handler;
-};
-
-struct _Py_bytes_state {
-    PyObject *empty_string;
-    PyBytesObject *characters[256];
-};
-
-struct _Py_unicode_ids {
-    Py_ssize_t size;
-    PyObject **array;
-};
-
-struct _Py_unicode_state {
-    // The empty Unicode object is a singleton to improve performance.
-    PyObject *empty_string;
-    /* Single character Unicode strings in the Latin-1 range are being
-       shared as well. */
-    PyObject *latin1[256];
-    struct _Py_unicode_fs_codec fs_codec;
-
-    /* This dictionary holds all interned unicode strings.  Note that references
-       to strings in this dictionary are *not* counted in the string's ob_refcnt.
-       When the interned string reaches a refcnt of 0 the string deallocation
-       function will delete the reference from this dictionary.
-
-       Another way to look at this is that to say that the actual reference
-       count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
-    */
-    PyObject *interned;
-
-    // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
-    struct _Py_unicode_ids ids;
-};
-
-#ifndef WITH_FREELISTS
-// without freelists
-#  define PyFloat_MAXFREELIST 0
-// for tuples only store empty tuple singleton
-#  define PyTuple_MAXSAVESIZE 1
-#  define PyTuple_MAXFREELIST 1
-#  define PyList_MAXFREELIST 0
-#  define PyDict_MAXFREELIST 0
-#  define PyFrame_MAXFREELIST 0
-#  define _PyAsyncGen_MAXFREELIST 0
-#  define PyContext_MAXFREELIST 0
-#endif
-
-#ifndef PyFloat_MAXFREELIST
-#  define PyFloat_MAXFREELIST   100
-#endif
-
-struct _Py_float_state {
-#if PyFloat_MAXFREELIST > 0
-    /* Special free list
-       free_list is a singly-linked list of available PyFloatObjects,
-       linked via abuse of their ob_type members. */
-    int numfree;
-    PyFloatObject *free_list;
-#endif
-};
-
-/* Speed optimization to avoid frequent malloc/free of small tuples */
-#ifndef PyTuple_MAXSAVESIZE
-   // Largest tuple to save on free list
-#  define PyTuple_MAXSAVESIZE 20
-#endif
-#ifndef PyTuple_MAXFREELIST
-   // Maximum number of tuples of each size to save
-#  define PyTuple_MAXFREELIST 2000
-#endif
-
-struct _Py_tuple_state {
-#if PyTuple_MAXSAVESIZE > 0
-    /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists,
-       entry 0 is the empty tuple () of which at most one instance
-       will be allocated. */
-    PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
-    int numfree[PyTuple_MAXSAVESIZE];
-#endif
-};
-
-/* Empty list reuse scheme to save calls to malloc and free */
-#ifndef PyList_MAXFREELIST
-#  define PyList_MAXFREELIST 80
-#endif
-
-struct _Py_list_state {
-#if PyList_MAXFREELIST > 0
-    PyListObject *free_list[PyList_MAXFREELIST];
-    int numfree;
-#endif
-};
-
-#ifndef PyDict_MAXFREELIST
-#  define PyDict_MAXFREELIST 80
-#endif
-
-struct _Py_dict_state {
-#if PyDict_MAXFREELIST > 0
-    /* Dictionary reuse scheme to save calls to malloc and free */
-    PyDictObject *free_list[PyDict_MAXFREELIST];
-    int numfree;
-    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
-    int keys_numfree;
-#endif
-};
-
-#ifndef PyFrame_MAXFREELIST
-#  define PyFrame_MAXFREELIST 200
-#endif
-
-struct _Py_frame_state {
-#if PyFrame_MAXFREELIST > 0
-    PyFrameObject *free_list;
-    /* number of frames currently in free_list */
-    int numfree;
-#endif
-};
-
-#ifndef _PyAsyncGen_MAXFREELIST
-#  define _PyAsyncGen_MAXFREELIST 80
-#endif
-
-struct _Py_async_gen_state {
-#if _PyAsyncGen_MAXFREELIST > 0
-    /* Freelists boost performance 6-10%; they also reduce memory
-       fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
-       are short-living objects that are instantiated for every
-       __anext__() call. */
-    struct _PyAsyncGenWrappedValue* value_freelist[_PyAsyncGen_MAXFREELIST];
-    int value_numfree;
-
-    struct PyAsyncGenASend* asend_freelist[_PyAsyncGen_MAXFREELIST];
-    int asend_numfree;
-#endif
-};
-
-#ifndef PyContext_MAXFREELIST
-#  define PyContext_MAXFREELIST 255
-#endif
-
-struct _Py_context_state {
-#if PyContext_MAXFREELIST > 0
-    // List of free PyContext objects
-    PyContext *freelist;
-    int numfree;
-#endif
-};
-
-struct _Py_exc_state {
-    // The dict mapping from errno codes to OSError subclasses
-    PyObject *errnomap;
-    PyBaseExceptionObject *memerrors_freelist;
-    int memerrors_numfree;
-    // The ExceptionGroup type
-    PyObject *PyExc_ExceptionGroup;
-};
 
 
 // atexit state
@@ -224,34 +43,34 @@ struct atexit_state {
 };
 
 
-// Type attribute lookup cache: speed up attribute and method lookups,
-// see _PyType_Lookup().
-struct type_cache_entry {
-    unsigned int version;  // initialized from type->tp_version_tag
-    PyObject *name;        // reference to exactly a str or None
-    PyObject *value;       // borrowed reference or NULL
-};
-
-#define MCACHE_SIZE_EXP 12
-#define MCACHE_STATS 0
-
-struct type_cache {
-    struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
-#if MCACHE_STATS
-    size_t hits;
-    size_t misses;
-    size_t collisions;
-#endif
+struct _Py_long_state {
+    int max_str_digits;
 };
 
 
 /* interpreter state */
 
-// The PyInterpreterState typedef is in Include/pystate.h.
+/* PyInterpreterState holds the global state for one of the runtime's
+   interpreters.  Typically the initial (main) interpreter is the only one.
+
+   The PyInterpreterState typedef is in Include/pytypedefs.h.
+   */
 struct _is {
 
-    struct _is *next;
-    struct _ts *tstate_head;
+    PyInterpreterState *next;
+
+    struct pythreads {
+        uint64_t next_unique_id;
+        /* The linked list of threads, newest first. */
+        PyThreadState *head;
+        /* Used in Modules/_threadmodule.c. */
+        long count;
+        /* Support for runtime thread stack size tuning.
+           A value of 0 means using the platform's default stack size
+           or the size specified by the THREAD_STACK_SIZE macro. */
+        /* Used in Python/thread.c. */
+        size_t stacksize;
+    } threads;
 
     /* Reference to the _PyRuntime global variable. This field exists
        to not have to pass runtime in addition to tstate to a function.
@@ -263,6 +82,11 @@ struct _is {
     int requires_idref;
     PyThread_type_lock id_mutex;
 
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
     int finalizing;
 
     struct _ceval_state ceval;
@@ -270,6 +94,25 @@ struct _is {
 
     // sys.modules dictionary
     PyObject *modules;
+    /* This is the list of module objects for all legacy (single-phase init)
+       extension modules ever loaded in this process (i.e. imported
+       in this interpreter or in any other).  Py_None stands in for
+       modules that haven't actually been imported in this interpreter.
+
+       A module's index (PyModuleDef.m_base.m_index) is used to look up
+       the corresponding module object for this interpreter, if any.
+       (See PyState_FindModule().)  When any extension module
+       is initialized during import, its moduledef gets initialized by
+       PyModuleDef_Init(), and the first time that happens for each
+       PyModuleDef, its index gets set to the current value of
+       a global counter (see _PyRuntimeState.imports.last_module_index).
+       The entry for that index in this interpreter remains unset until
+       the module is actually imported here.  (Py_None is used as
+       a placeholder.)  Note that multi-phase init modules always get
+       an index for which there will never be a module set.
+
+       This is initialized lazily in _PyState_AddModule(), which is also
+       where modules get added. */
     PyObject *modules_by_index;
     // Dictionary of the sys module
     PyObject *sysdict;
@@ -281,14 +124,6 @@ struct _is {
     // (-1: "off", 1: "on", 0: no override)
     int override_frozen_modules;
 
-    /* Used in Modules/_threadmodule.c. */
-    long num_threads;
-    /* Support for runtime thread stack size tuning.
-       A value of 0 means using the platform's default stack size
-       or the size specified by the THREAD_STACK_SIZE macro. */
-    /* Used in Python/thread.c. */
-    size_t pythread_stacksize;
-
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
@@ -298,6 +133,7 @@ struct _is {
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
+    unsigned long feature_flags;
 
     PyObject *dict;  /* Stores per-interpreter state */
 
@@ -305,6 +141,10 @@ struct _is {
     PyObject *import_func;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
+
+    PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
+    // One bit is set for each non-NULL entry in func_watchers
+    uint8_t active_func_watchers;
 
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
@@ -315,16 +155,18 @@ struct _is {
     PyObject *after_forkers_child;
 #endif
 
-    uint64_t tstate_next_unique_id;
-
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
 
     PyObject *audit_hooks;
+    PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
+    PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
+    // One bit is set for each non-NULL entry in code_watchers
+    uint8_t active_code_watchers;
 
-    struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
+    struct _Py_long_state long_state;
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
@@ -332,14 +174,36 @@ struct _is {
     struct _Py_tuple_state tuple;
     struct _Py_list_state list;
     struct _Py_dict_state dict_state;
-    struct _Py_frame_state frame;
     struct _Py_async_gen_state async_gen;
     struct _Py_context_state context;
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
-    struct type_cache type_cache;
+    struct types_state types;
+    struct callable_cache callable_cache;
+    PyCodeObject *interpreter_trampoline;
+
+    struct _Py_interp_cached_objects cached_objects;
+    struct _Py_interp_static_objects static_objects;
+
+    /* The following fields are here to avoid allocation during init.
+       The data is exposed through PyInterpreterState pointer fields.
+       These fields should not be accessed directly outside of init.
+
+       All other PyInterpreterState pointer fields are populated when
+       needed and default to NULL.
+
+       For now there are some exceptions to that rule, which require
+       allocation during init.  These will be addressed on a case-by-case
+       basis.  Also see _PyRuntimeState regarding the various mutex fields.
+       */
+
+    /* the initial PyInterpreterState.threads.head */
+    PyThreadState _initial_thread;
 };
+
+
+/* other API */
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
@@ -354,16 +218,17 @@ extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 struct _xidregitem;
 
 struct _xidregitem {
-    PyTypeObject *cls;
-    crossinterpdatafunc getdata;
+    struct _xidregitem *prev;
     struct _xidregitem *next;
+    PyObject *cls;  // weakref to a PyTypeObject
+    crossinterpdatafunc getdata;
 };
 
-PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(int64_t);
+PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
 
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(struct _is *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
+PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 #ifdef __cplusplus
 }

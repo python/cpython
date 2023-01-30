@@ -2,7 +2,13 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(Struct___init____doc__,
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
+PyDoc_STRVAR(Struct__doc__,
 "Struct(format)\n"
 "--\n"
 "\n"
@@ -13,15 +19,38 @@ PyDoc_STRVAR(Struct___init____doc__,
 "\n"
 "See help(struct) for more on format strings.");
 
-static int
-Struct___init___impl(PyStructObject *self, PyObject *format);
+static PyObject *
+Struct_impl(PyTypeObject *type, PyObject *format);
 
-static int
-Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(format), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"format", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Struct", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Struct",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -32,7 +61,7 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     format = fastargs[0];
-    return_value = Struct___init___impl((PyStructObject *)self, format);
+    return_value = Struct_impl(type, format);
 
 exit:
     return return_value;
@@ -93,7 +122,7 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "See help(struct) for more on format strings.");
 
 #define STRUCT_UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)(void(*)(void))Struct_unpack_from, METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
+    {"unpack_from", _PyCFunction_CAST(Struct_unpack_from), METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
 
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
@@ -103,8 +132,31 @@ static PyObject *
 Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unpack_from",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer buffer = {NULL, NULL};
@@ -226,7 +278,7 @@ PyDoc_STRVAR(unpack__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_METHODDEF    \
-    {"unpack", (PyCFunction)(void(*)(void))unpack, METH_FASTCALL, unpack__doc__},
+    {"unpack", _PyCFunction_CAST(unpack), METH_FASTCALL, unpack__doc__},
 
 static PyObject *
 unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer);
@@ -275,7 +327,7 @@ PyDoc_STRVAR(unpack_from__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)(void(*)(void))unpack_from, METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
+    {"unpack_from", _PyCFunction_CAST(unpack_from), METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
 
 static PyObject *
 unpack_from_impl(PyObject *module, PyStructObject *s_object,
@@ -285,8 +337,31 @@ static PyObject *
 unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unpack_from",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyStructObject *s_object = NULL;
@@ -348,7 +423,7 @@ PyDoc_STRVAR(iter_unpack__doc__,
 "Requires that the bytes length be a multiple of the format struct size.");
 
 #define ITER_UNPACK_METHODDEF    \
-    {"iter_unpack", (PyCFunction)(void(*)(void))iter_unpack, METH_FASTCALL, iter_unpack__doc__},
+    {"iter_unpack", _PyCFunction_CAST(iter_unpack), METH_FASTCALL, iter_unpack__doc__},
 
 static PyObject *
 iter_unpack_impl(PyObject *module, PyStructObject *s_object,
@@ -376,4 +451,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=a3d3cd900091cb1c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3d6e06f80368998 input=a9049054013a1b77]*/

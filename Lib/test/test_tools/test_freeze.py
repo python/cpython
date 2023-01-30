@@ -5,13 +5,14 @@ import textwrap
 import unittest
 
 from test import support
+from test.support import os_helper
+from test.test_tools import imports_under_tool, skip_if_missing
 
-from . import imports_under_tool, skip_if_missing
 skip_if_missing('freeze')
 with imports_under_tool('freeze', 'test'):
     import freeze as helper
 
-
+@support.requires_zlib()
 @unittest.skipIf(sys.platform.startswith('win'), 'not supported on Windows')
 @support.skip_if_buildbot('not all buildbots have enough space')
 class TestFreeze(unittest.TestCase):
@@ -22,8 +23,8 @@ class TestFreeze(unittest.TestCase):
             print('running...')
             sys.exit(0)
             """)
-        outdir, scriptfile, python = helper.prepare(script)
-
-        executable = helper.freeze(python, scriptfile, outdir)
-        text = helper.run(executable)
+        with os_helper.temp_dir() as outdir:
+            outdir, scriptfile, python = helper.prepare(script, outdir)
+            executable = helper.freeze(python, scriptfile, outdir)
+            text = helper.run(executable)
         self.assertEqual(text, 'running...')

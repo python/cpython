@@ -61,7 +61,8 @@ import struct
 from xml.parsers.expat import ParserCreate
 
 
-PlistFormat = enum.global_enum(enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__))
+PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
+globals().update(PlistFormat.__members__)
 
 
 class UID:
@@ -151,7 +152,7 @@ def _date_to_string(d):
 def _escape(text):
     m = _controlCharPat.search(text)
     if m is not None:
-        raise ValueError("strings can't contains control characters; "
+        raise ValueError("strings can't contain control characters; "
                          "use bytes instead")
     text = text.replace("\r\n", "\n")       # convert DOS line endings
     text = text.replace("\r", "\n")         # convert Mac line endings
@@ -198,7 +199,7 @@ class _PlistParser:
 
     def add_object(self, value):
         if self.current_key is not None:
-            if not isinstance(self.stack[-1], type({})):
+            if not isinstance(self.stack[-1], dict):
                 raise ValueError("unexpected element at line %d" %
                                  self.parser.CurrentLineNumber)
             self.stack[-1][self.current_key] = value
@@ -207,7 +208,7 @@ class _PlistParser:
             # this is the root object
             self.root = value
         else:
-            if not isinstance(self.stack[-1], type([])):
+            if not isinstance(self.stack[-1], list):
                 raise ValueError("unexpected element at line %d" %
                                  self.parser.CurrentLineNumber)
             self.stack[-1].append(value)
@@ -231,7 +232,7 @@ class _PlistParser:
         self.stack.pop()
 
     def end_key(self):
-        if self.current_key or not isinstance(self.stack[-1], type({})):
+        if self.current_key or not isinstance(self.stack[-1], dict):
             raise ValueError("unexpected key at line %d" %
                              self.parser.CurrentLineNumber)
         self.current_key = self.get_data()

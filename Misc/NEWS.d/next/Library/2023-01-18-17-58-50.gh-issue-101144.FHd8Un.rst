@@ -1,0 +1,4 @@
+Make :func:`zipfile.Path.open` and :func:`zipfile.Path.read_text` also accept
+``encoding`` as a positional argument. This was the behavior in Python 3.9 and
+earlier.  3.10 introduced a regression where supplying it as a positional
+argument would lead to a :exc:`TypeError`.

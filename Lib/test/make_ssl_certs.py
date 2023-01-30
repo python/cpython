@@ -307,6 +307,6 @@ if __name__ == '__main__':
         f.write(cert)
 
     unmake_ca()
-    print("update Lib/test/test_ssl.py and Lib/test/test_asyncio/util.py")
+    print("update Lib/test/test_ssl.py and Lib/test/test_asyncio/utils.py")
     print_cert('keycert.pem')
     print_cert('keycert3.pem')

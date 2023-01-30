@@ -49,10 +49,12 @@ class GroupDatabaseTestCase(unittest.TestCase):
 
     def test_errors(self):
         self.assertRaises(TypeError, grp.getgrgid)
+        self.assertRaises(TypeError, grp.getgrgid, 3.14)
         self.assertRaises(TypeError, grp.getgrnam)
+        self.assertRaises(TypeError, grp.getgrnam, 42)
         self.assertRaises(TypeError, grp.getgrall, 42)
         # embedded null character
-        self.assertRaises(ValueError, grp.getgrnam, 'a\x00b')
+        self.assertRaisesRegex(ValueError, 'null', grp.getgrnam, 'a\x00b')
 
         # try to get some errors
         bynames = {}

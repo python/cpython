@@ -1,11 +1,12 @@
-import imghdr
 import io
 import os
 import pathlib
 import unittest
 import warnings
-from test.support import findfile
+from test.support import findfile, warnings_helper
 from test.support.os_helper import TESTFN, unlink
+
+imghdr = warnings_helper.import_deprecated("imghdr")
 
 
 TEST_FILES = (

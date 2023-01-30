@@ -2,6 +2,9 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
+#include "pycore_call.h"
+#include "pycore_pystate.h"
+#include "pycore_runtime.h"
 
 /* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
    supported on this platform. configure will then compile and link in one
@@ -38,7 +41,6 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     PyObject *encoded = NULL;
     PyObject *modname = NULL;
     Py_ssize_t name_len, lastdot;
-    _Py_IDENTIFIER(replace);
 
     /* Get the short name (substring after last dot) */
     name_len = PyUnicode_GetLength(name);
@@ -76,7 +78,7 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     }
 
     /* Replace '-' by '_' */
-    modname = _PyObject_CallMethodId(encoded, &PyId_replace, "cc", '-', '_');
+    modname = _PyObject_CallMethod(encoded, &_Py_ID(replace), "cc", '-', '_');
     if (modname == NULL)
         goto error;
 
@@ -100,7 +102,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     const char *oldcontext;
     dl_funcptr exportfunc;
     PyModuleDef *def;
-    PyObject *(*p0)(void);
+    PyModInitFunction p0;
 
     name_unicode = PyObject_GetAttrString(spec, "name");
     if (name_unicode == NULL) {
@@ -155,17 +157,19 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         goto error;
     }
 
-    p0 = (PyObject *(*)(void))exportfunc;
+    p0 = (PyModInitFunction)exportfunc;
 
     /* Package context is needed for single-phase init */
+#define _Py_PackageContext (_PyRuntime.imports.pkgcontext)
     oldcontext = _Py_PackageContext;
     _Py_PackageContext = PyUnicode_AsUTF8(name_unicode);
     if (_Py_PackageContext == NULL) {
         _Py_PackageContext = oldcontext;
         goto error;
     }
-    m = p0();
+    m = _PyImport_InitFunc_TrampolineCall(p0);
     _Py_PackageContext = oldcontext;
+#undef _Py_PackageContext
 
     if (m == NULL) {
         if (!PyErr_Occurred()) {
@@ -176,8 +180,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         }
         goto error;
     } else if (PyErr_Occurred()) {
-        PyErr_Clear();
-        PyErr_Format(
+        _PyErr_FormatFromCause(
             PyExc_SystemError,
             "initialization of %s raised unreported exception",
             name_buf);
