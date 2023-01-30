@@ -66,7 +66,6 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 
 
     co->_bb_next = bb_ptr;
-    co->_first_instr = bb_ptr->u_code;
 
     // Set the instruction pointer to the next one in the bb
     Py_ssize_t offset_from_start = (frame->prev_instr - _PyCode_CODE(co));
