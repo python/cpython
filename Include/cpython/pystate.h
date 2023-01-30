@@ -141,7 +141,7 @@ struct _ts {
         unsigned int finalized:1;
 
         /* padding to align to 4 bytes */
-        unsigned int :25;
+        unsigned int :24;
     } _status;
 
     int py_recursion_remaining;
