@@ -1978,18 +1978,17 @@ dummy_func(
             }
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_JUMP_IF_NOT_NONE) {
-            PyObject *value = POP();
+        inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
             if (!Py_IsNone(value)) {
+                Py_DECREF(value);
                 JUMPBY(oparg);
             }
-            Py_DECREF(value);
+            else {
+                _Py_DECREF_NO_DEALLOC(value);
+            }
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_JUMP_IF_NONE) {
-            PyObject *value = POP();
+        inst(POP_JUMP_IF_NONE, (value -- )) {
             if (Py_IsNone(value)) {
                 _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(oparg);

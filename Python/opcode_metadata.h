@@ -237,9 +237,9 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case POP_JUMP_IF_TRUE:
             return -1;
         case POP_JUMP_IF_NOT_NONE:
-            return -1;
+            return 1;
         case POP_JUMP_IF_NONE:
-            return -1;
+            return 1;
         case JUMP_IF_FALSE_OR_POP:
             return -1;
         case JUMP_IF_TRUE_OR_POP:
@@ -583,9 +583,9 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case POP_JUMP_IF_TRUE:
             return -1;
         case POP_JUMP_IF_NOT_NONE:
-            return -1;
+            return 0;
         case POP_JUMP_IF_NONE:
-            return -1;
+            return 0;
         case JUMP_IF_FALSE_OR_POP:
             return -1;
         case JUMP_IF_TRUE_OR_POP:
