@@ -15018,9 +15018,7 @@ os__isdir_impl(PyObject *module, PyObject *path)
     }
     else {
         STRUCT_STAT st;
-        DWORD error;
-        error = GetLastError();
-        switch (error) {
+        switch (GetLastError()) {
         case ERROR_ACCESS_DENIED:
         case ERROR_SHARING_VIOLATION:
         case ERROR_CANT_ACCESS_FILE:
@@ -15101,9 +15099,7 @@ os__isfile_impl(PyObject *module, PyObject *path)
     }
     else {
         STRUCT_STAT st;
-        DWORD error;
-        error = GetLastError();
-        switch (error) {
+        switch (GetLastError()) {
         case ERROR_ACCESS_DENIED:
         case ERROR_SHARING_VIOLATION:
         case ERROR_CANT_ACCESS_FILE:
@@ -15177,9 +15173,7 @@ os__exists_impl(PyObject *module, PyObject *path)
     }
     else {
         STRUCT_STAT st;
-        DWORD error;
-        error = GetLastError();
-        switch (error) {
+        switch (GetLastError()) {
         case ERROR_ACCESS_DENIED:
         case ERROR_SHARING_VIOLATION:
         case ERROR_CANT_ACCESS_FILE:
@@ -15260,9 +15254,7 @@ os__islink_impl(PyObject *module, PyObject *path)
     }
     else {
         STRUCT_STAT st;
-        DWORD error;
-        error = GetLastError();
-        switch (error) {
+        switch (GetLastError()) {
         case ERROR_ACCESS_DENIED:
         case ERROR_SHARING_VIOLATION:
         case ERROR_CANT_ACCESS_FILE:
