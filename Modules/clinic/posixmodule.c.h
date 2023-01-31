@@ -11097,9 +11097,9 @@ PyDoc_STRVAR(os__exists__doc__,
 "\n"
 "Return True if path refers to an existing path or an open file descriptor.\n"
 "\n"
-"Returns False for broken symbolic links. On some platforms, this function may\n"
+"Return False for broken symbolic links. On some platforms, this function may\n"
 "return False if permission is not granted to execute os.stat() on the requested\n"
-"file, even if the path physically exists.");
+"file, even if the path exists.");
 
 #define OS__EXISTS_METHODDEF    \
     {"_exists", _PyCFunction_CAST(os__exists), METH_FASTCALL|METH_KEYWORDS, os__exists__doc__},
@@ -11160,7 +11160,7 @@ PyDoc_STRVAR(os__islink__doc__,
 "\n"
 "Return True if path refers to an existing directory entry that is a symbolic link.\n"
 "\n"
-"Always False if symbolic links are not supported by the Python runtime.");
+"Return False if symbolic links are not supported by the Python runtime.");
 
 #define OS__ISLINK_METHODDEF    \
     {"_islink", _PyCFunction_CAST(os__islink), METH_FASTCALL|METH_KEYWORDS, os__islink__doc__},
@@ -11824,4 +11824,4 @@ exit:
 #ifndef OS__ISLINK_METHODDEF
     #define OS__ISLINK_METHODDEF
 #endif /* !defined(OS__ISLINK_METHODDEF) */
-/*[clinic end generated code: output=bd2677b545dabe35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ad817f73e9707b32 input=a9049054013a1b77]*/

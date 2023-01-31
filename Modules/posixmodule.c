@@ -15140,7 +15140,7 @@ file, even if the path exists.
 
 static PyObject *
 os__exists_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=0f0ba589f386f816 input=a6e67a9b92711692]*/
+/*[clinic end generated code: output=0f0ba589f386f816 input=4fb71ae480a2082c]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -15211,7 +15211,7 @@ Return False if symbolic links are not supported by the Python runtime.
 
 static PyObject *
 os__islink_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=597174066981ca21 input=df8e74a37ac3c6dc]*/
+/*[clinic end generated code: output=597174066981ca21 input=78c88fc9c0b64d3b]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
