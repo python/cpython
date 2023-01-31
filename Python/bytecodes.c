@@ -1436,6 +1436,20 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
+        family(load_attr) = {
+            LOAD_ATTR,
+            // LOAD_ATTR_CLASS,
+            // LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
+            LOAD_ATTR_INSTANCE_VALUE,
+            // LOAD_ATTR_MODULE,
+            // LOAD_ATTR_PROPERTY,
+            // LOAD_ATTR_SLOT,
+            // LOAD_ATTR_WITH_HINT,
+            // LOAD_ATTR_METHOD_LAZY_DICT,
+            // LOAD_ATTR_METHOD_NO_DICT,
+            // LOAD_ATTR_METHOD_WITH_VALUES,
+        };
+
         inst(LOAD_ATTR, (unused/9, owner -- res2 if (oparg & 1), res)) {
             #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
@@ -1485,29 +1499,21 @@ dummy_func(
             }
         }
 
-        // error: LOAD_ATTR has irregular stack effect
-        inst(LOAD_ATTR_INSTANCE_VALUE) {
+        inst(LOAD_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
-            PyObject *res;
             PyTypeObject *tp = Py_TYPE(owner);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
             assert(tp->tp_dictoffset < 0);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-            res = _PyDictOrValues_GetValues(dorv)->values[cache->index];
+            res = _PyDictOrValues_GetValues(dorv)->values[index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
-            SET_TOP(NULL);
-            STACK_GROW((oparg & 1));
-            SET_TOP(res);
+            res2 = NULL;
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -3276,12 +3282,6 @@ family(call) = {
 family(for_iter) = {
     FOR_ITER, FOR_ITER_LIST,
     FOR_ITER_RANGE };
-family(load_attr) = {
-    LOAD_ATTR, LOAD_ATTR_CLASS,
-    LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_MODULE,
-    LOAD_ATTR_PROPERTY, LOAD_ATTR_SLOT, LOAD_ATTR_WITH_HINT,
-    LOAD_ATTR_METHOD_LAZY_DICT, LOAD_ATTR_METHOD_NO_DICT,
-    LOAD_ATTR_METHOD_WITH_VALUES };
 family(load_global) = {
     LOAD_GLOBAL, LOAD_GLOBAL_BUILTIN,
     LOAD_GLOBAL_MODULE };
