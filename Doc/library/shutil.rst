@@ -642,7 +642,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Remove the archive format *name* from the list of supported formats.
 
 
-.. function:: unpack_archive(filename[, extract_dir[, format]])
+.. function:: unpack_archive(filename[, extract_dir[, format[, filter]]])
 
    Unpack an archive. *filename* is the full path of the archive.
 
@@ -656,6 +656,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
+   *filter* is passed to the underlying unpacking function.
+   For zip files, *filter* is not accepted.
+   For tar files, it is recommended to set it to ``'data'``,
+   unless using features specific to tar and UNIX filesystems.
+   (See :ref:`tarfile-extraction-filter` for details.)
+   The ``'data'`` filter will become the default for tar files
+   in Python 3.14.
+
    .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
    .. warning::
@@ -668,6 +676,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
 
+   .. versionchanged:: 3.12
+      Added the *filter* argument.
+
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 
    Registers an unpack format. *name* is the name of the format and
@@ -677,6 +688,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *function* is the callable that will be used to unpack archives. The
    callable will receive the path of the archive, followed by the directory
    the archive must be extracted to.
+
+   If *filter* is used with ``unpack_archive``, it will be passed to *function*
+   as an additional named argument.
 
    When provided, *extra_args* is a sequence of ``(name, value)`` tuples that
    will be passed as keywords arguments to the callable.
