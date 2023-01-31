@@ -124,7 +124,9 @@ static void update_256(Hacl_Streaming_SHA2_state_sha2_256 *state, uint8_t *buf, 
     len -= UINT32_MAX;
     buf += UINT32_MAX;
   }
-  Hacl_Streaming_SHA2_update_256(state, buf, len);
+  /* Cast to uint32_t is safe: upon exiting the loop, len <= UINT32_MAX, and
+   * therefore fits in a uint32_t */
+  Hacl_Streaming_SHA2_update_256(state, buf, (uint32_t) len);
 }
 
 
