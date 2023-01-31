@@ -383,6 +383,7 @@ def test_macro_instruction():
                 _tmp_3 = res;
             }
             JUMPBY(5);
+            static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             STACK_SHRINK(2);
             POKE(1, _tmp_3);
             DISPATCH();
