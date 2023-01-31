@@ -648,6 +648,10 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         bytes = NULL;
         needed = 0;
     }
+    else if (PyBytes_Check(values)) {
+        bytes = PyBytes_AsString(values);
+        needed = Py_SIZE(values);
+    }
     else if (values == (PyObject *)self || !PyByteArray_Check(values)) {
         int err;
         if (PyNumber_Check(values) || PyUnicode_Check(values)) {
