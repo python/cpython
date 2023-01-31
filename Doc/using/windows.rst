@@ -757,15 +757,15 @@ displays the currently installed version(s) of Python.
 The ``-x.y`` argument is the short form of the ``-V:Company/Tag`` argument,
 which allows selecting a specific Python runtime, including those that may have
 come from somewhere other than python.org. Any runtime registered by following
-:pep:`514` will be discoverable. The ``py -0`` command lists all available
+:pep:`514` will be discoverable. The ``--list`` command lists all available
 runtimes using the ``-V:`` format.
 
 When using the ``-V:`` argument, specifying the Company will limit selection to
 runtimes from that provider, while specifying only the Tag will select from all
 providers. Note that omitting the slash implies a tag::
 
-  # Select any '3.9' tagged runtime
-  py -V:3.9
+  # Select any '3.*' tagged runtime
+  py -V:3
 
   # Select any 'PythonCore' released runtime
   py -V:PythonCore/
@@ -780,8 +780,8 @@ select from any.
 The Company is matched on the full string, case-insenitive. The Tag is matched
 oneither the full string, or a prefix, provided the next character is a dot or a
 hyphen. This allows ``-V:3.1`` to match ``3.1-32``, but not ``3.10``. Tags are
-sorted using numerical ordering (``3.10`` is 'bigger' than ``3.1``), but are not
-compared using it (``-V:3.01`` will not match ``3.1``).
+sorted using numerical ordering (``3.10`` is newer than ``3.1``), but are
+compared using text (``-V:3.01`` does not match ``3.1``).
 
 
 Virtual environments
