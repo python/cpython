@@ -189,7 +189,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case LOAD_ATTR_INSTANCE_VALUE:
             return 1;
         case LOAD_ATTR_MODULE:
-            return -1;
+            return 1;
         case LOAD_ATTR_WITH_HINT:
             return -1;
         case LOAD_ATTR_SLOT:
@@ -535,7 +535,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case LOAD_ATTR_INSTANCE_VALUE:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_MODULE:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_WITH_HINT:
             return -1;
         case LOAD_ATTR_SLOT:
@@ -793,7 +793,7 @@ struct opcode_metadata {
     [MAP_ADD] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_ATTR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_INSTANCE_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LOAD_ATTR_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_WITH_HINT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_ATTR_SLOT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_ATTR_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },

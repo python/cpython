@@ -1441,7 +1441,7 @@ dummy_func(
             // LOAD_ATTR_CLASS,
             // LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
             LOAD_ATTR_INSTANCE_VALUE,
-            // LOAD_ATTR_MODULE,
+            LOAD_ATTR_MODULE,
             // LOAD_ATTR_PROPERTY,
             // LOAD_ATTR_SLOT,
             // LOAD_ATTR_WITH_HINT,
@@ -1516,29 +1516,21 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        // error: LOAD_ATTR has irregular stack effect
-        inst(LOAD_ATTR_MODULE) {
+        inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
-            PyObject *res;
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
-            DEOPT_IF(dict->ma_keys->dk_version != read_u32(cache->version),
-                LOAD_ATTR);
+            DEOPT_IF(dict->ma_keys->dk_version != type_version, LOAD_ATTR);
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
-            assert(cache->index < dict->ma_keys->dk_nentries);
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + cache->index;
+            assert(index < dict->ma_keys->dk_nentries);
+            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
             res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
-            SET_TOP(NULL);
-            STACK_GROW((oparg & 1));
-            SET_TOP(res);
+            res2 = NULL;
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
         }
 
         // error: LOAD_ATTR has irregular stack effect
