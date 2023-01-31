@@ -119,7 +119,30 @@ struct _ts {
     PyThreadState *next;
     PyInterpreterState *interp;
 
-    int _status;
+    struct {
+        /* Has been initialized to a safe state.
+
+           In order to be effective, this must be set to 0 during or right
+           after allocation. */
+        unsigned int initialized:1;
+
+        /* Has been bound to an OS thread. */
+        unsigned int bound:1;
+        /* Has been unbound from its OS thread. */
+        unsigned int unbound:1;
+        /* Has been bound aa current for the GILState API. */
+        unsigned int bound_gilstate:1;
+        /* Currently in use (maybe holds the GIL). */
+        unsigned int active:1;
+
+        /* various stages of finalization */
+        unsigned int finalizing:1;
+        unsigned int cleared:1;
+        unsigned int finalized:1;
+
+        /* padding to align to 4 bytes */
+        unsigned int :24;
+    } _status;
 
     int py_recursion_remaining;
     int py_recursion_limit;
@@ -245,6 +268,8 @@ struct _ts {
 // Alias for backward compatibility with Python 3.8
 #define _PyInterpreterState_Get PyInterpreterState_Get
 
+/* An alias for the internal _PyThreadState_New(),
+   kept for stable ABI compatibility. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
