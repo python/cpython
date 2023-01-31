@@ -14992,7 +14992,8 @@ os__isdir_impl(PyObject *module, PyObject *path)
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             Py_RETURN_FALSE;
-        } else {
+        }
+        else {
             return NULL;
         }
     }
@@ -15001,20 +15002,25 @@ os__isdir_impl(PyObject *module, PyObject *path)
     if (_path.fd != -1) {
         hfile = _Py_get_osfhandle_noraise(_path.fd);
         close_file = FALSE;
-    } else {
+    }
+    else {
         hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
                             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     }
     if (hfile != INVALID_HANDLE_VALUE) {
-        if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info, sizeof(info))) {
+        if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
+                                         sizeof(info)))
+        {
             result = info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-        } else {
+        }
+        else {
             result = 0;
         }
         if (close_file) {
             CloseHandle(hfile);
         }
-    } else {
+    }
+    else {
         error = GetLastError();
         switch (error) {
         case ERROR_ACCESS_DENIED:
@@ -15023,7 +15029,8 @@ os__isdir_impl(PyObject *module, PyObject *path)
         case ERROR_INVALID_PARAMETER:
             if (STAT(_path.wide, &st)) {
                 result = 0;
-            } else {
+            }
+            else {
                 result = S_ISDIR(st.st_mode);
             }
             break;
@@ -15036,7 +15043,8 @@ os__isdir_impl(PyObject *module, PyObject *path)
     path_cleanup(&_path);
     if (result) {
         Py_RETURN_TRUE;
-    } else {
+    }
+    else {
         Py_RETURN_FALSE;
     }
 }
@@ -15071,7 +15079,8 @@ os__isfile_impl(PyObject *module, PyObject *path)
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             Py_RETURN_FALSE;
-        } else {
+        }
+        else {
             return NULL;
         }
     }
@@ -15080,20 +15089,25 @@ os__isfile_impl(PyObject *module, PyObject *path)
     if (_path.fd != -1) {
         hfile = _Py_get_osfhandle_noraise(_path.fd);
         close_file = FALSE;
-    } else {
+    }
+    else {
         hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
                             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     }
     if (hfile != INVALID_HANDLE_VALUE) {
-        if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info, sizeof(info))) {
+        if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
+                                         sizeof(info)))
+        {
             result = !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-        } else {
+        }
+        else {
             result = 0;
         }
         if (close_file) {
             CloseHandle(hfile);
         }
-    } else {
+    }
+    else {
         error = GetLastError();
         switch (error) {
         case ERROR_ACCESS_DENIED:
@@ -15102,7 +15116,8 @@ os__isfile_impl(PyObject *module, PyObject *path)
         case ERROR_INVALID_PARAMETER:
             if (STAT(_path.wide, &st)) {
                 result = 0;
-            } else {
+            }
+            else {
                 result = S_ISREG(st.st_mode);
             }
             break;
@@ -15115,7 +15130,8 @@ os__isfile_impl(PyObject *module, PyObject *path)
     path_cleanup(&_path);
     if (result) {
         Py_RETURN_TRUE;
-    } else {
+    }
+    else {
         Py_RETURN_FALSE;
     }
 }
@@ -15150,7 +15166,8 @@ os__exists_impl(PyObject *module, PyObject *path)
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             Py_RETURN_FALSE;
-        } else {
+        }
+        else {
             return NULL;
         }
     }
@@ -15159,7 +15176,8 @@ os__exists_impl(PyObject *module, PyObject *path)
     if (_path.fd != -1) {
         hfile = _Py_get_osfhandle_noraise(_path.fd);
         close_file = FALSE;
-    } else {
+    }
+    else {
         hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
                             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     }
@@ -15168,7 +15186,8 @@ os__exists_impl(PyObject *module, PyObject *path)
         if (close_file) {
             CloseHandle(hfile);
         }
-    } else {
+    }
+    else {
         error = GetLastError();
         switch (error) {
         case ERROR_ACCESS_DENIED:
@@ -15190,7 +15209,8 @@ os__exists_impl(PyObject *module, PyObject *path)
     path_cleanup(&_path);
     if (result) {
         Py_RETURN_TRUE;
-    } else {
+    }
+    else {
         Py_RETURN_FALSE;
     }
 }
@@ -15224,7 +15244,8 @@ os__islink_impl(PyObject *module, PyObject *path)
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             Py_RETURN_FALSE;
-        } else {
+        }
+        else {
             return NULL;
         }
     }
@@ -15233,22 +15254,27 @@ os__islink_impl(PyObject *module, PyObject *path)
     if (_path.fd != -1) {
         hfile = _Py_get_osfhandle_noraise(_path.fd);
         close_file = FALSE;
-    } else {
+    }
+    else {
         hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
                             OPEN_EXISTING,
                             FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
                             NULL);
     }
     if (hfile != INVALID_HANDLE_VALUE) {
-        if (GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info, sizeof(info))) {
+        if (GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
+                                         sizeof(info)))
+        {
             result = (info.ReparseTag == IO_REPARSE_TAG_SYMLINK);
-        } else {
+        }
+        else {
             result = 0;
         }
         if (close_file) {
             CloseHandle(hfile);
         }
-    } else {
+    }
+    else {
         error = GetLastError();
         switch (error) {
         case ERROR_ACCESS_DENIED:
@@ -15257,7 +15283,8 @@ os__islink_impl(PyObject *module, PyObject *path)
         case ERROR_INVALID_PARAMETER:
             if (LSTAT(_path.wide, &st)) {
                 result = 0;
-            } else {
+            }
+            else {
                 result = S_ISLNK(st.st_mode);
             }
             break;
@@ -15270,7 +15297,8 @@ os__islink_impl(PyObject *module, PyObject *path)
     path_cleanup(&_path);
     if (result) {
         Py_RETURN_TRUE;
-    } else {
+    }
+    else {
         Py_RETURN_FALSE;
     }
 }
