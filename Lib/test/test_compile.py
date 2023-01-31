@@ -1363,7 +1363,7 @@ async def f():
         compiled_code, _ = self.check_positions_against_ast(snippet)
         g = {}
         eval(compiled_code, g)
-        compiled_code = g['f'].__code__.co_consts[1]
+        compiled_code = g['f'].__code__
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LIST_APPEND',
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
@@ -1404,7 +1404,7 @@ async def f():
         compiled_code, _ = self.check_positions_against_ast(snippet)
         g = {}
         eval(compiled_code, g)
-        compiled_code = g['f'].__code__.co_consts[1]
+        compiled_code = g['f'].__code__
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'SET_ADD',
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
@@ -1445,7 +1445,7 @@ async def f():
         compiled_code, _ = self.check_positions_against_ast(snippet)
         g = {}
         eval(compiled_code, g)
-        compiled_code = g['f'].__code__.co_consts[1]
+        compiled_code = g['f'].__code__
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'MAP_ADD',
             line=2, end_line=3, column=5, end_column=11, occurrence=1)

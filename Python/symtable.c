@@ -907,13 +907,11 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
 
-        // we inline comprehensions if they are inside a function, are not a
-        // generator, and are not async
+        // we inline comprehensions if inside a function and not a generator
         int inline_comp =
             entry->ste_comprehension &&
             ste->ste_type == FunctionBlock &&
-            !entry->ste_generator &&
-            !entry->ste_coroutine;
+            !entry->ste_generator;
 
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  &child_free))
