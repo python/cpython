@@ -2766,7 +2766,10 @@
             Py_DECREF(mgr);
             res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
-            if (res == NULL) goto pop_1_error;
+            if (res == NULL) {
+                Py_DECREF(exit);
+                if (true) goto pop_1_error;
+            }
             STACK_GROW(1);
             POKE(1, res);
             POKE(2, exit);

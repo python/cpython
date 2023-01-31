@@ -2331,7 +2331,10 @@ dummy_func(
             DECREF_INPUTS();
             res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
-            ERROR_IF(res == NULL, error);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                ERROR_IF(true, error);
+            }
         }
 
         inst(WITH_EXCEPT_START, (exit_func, lasti, unused, val -- exit_func, lasti, unused, val, res)) {
