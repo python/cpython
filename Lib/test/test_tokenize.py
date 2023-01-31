@@ -2538,8 +2538,6 @@ async def f():
         def get_tokens(string):
             return [(kind, string) for (kind, string, *_) in _generate_tokens_from_c_tokenizer(string)]
 
-        import dis; dis.dis(get_tokens)
-
         code = dedent("""
             def fib(n):
                 \\
