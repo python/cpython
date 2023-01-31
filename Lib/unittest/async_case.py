@@ -6,6 +6,9 @@ import warnings
 from .case import TestCase
 
 
+__unittest = True
+
+
 class IsolatedAsyncioTestCase(TestCase):
     # Names intentionally have a long prefix
     # to reduce a chance of clashing with user-defined attributes
