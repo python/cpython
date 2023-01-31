@@ -929,8 +929,7 @@ compiler_next_instr(basicblock *b)
     (new)->u_lineno = (old)->u_lineno;                    \
     (new)->u_col_offset = (old)->u_col_offset;            \
     (new)->u_end_lineno = (old)->u_end_lineno;            \
-    (new)->u_end_col_offset = (old)->u_end_col_offset;    \
-
+    (new)->u_end_col_offset = (old)->u_end_col_offset;
 
 #define COPY_INSTR_LOC(old, new)                         \
     (new).i_lineno = (old).i_lineno;                     \
