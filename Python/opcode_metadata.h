@@ -111,7 +111,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case PREP_RERAISE_STAR:
             return 2;
         case END_ASYNC_FOR:
-            return -1;
+            return 2;
         case CLEANUP_THROW:
             return -1;
         case LOAD_ASSERTION_ERROR:
@@ -273,7 +273,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case FOR_ITER_GEN:
             return -1;
         case BEFORE_ASYNC_WITH:
-            return -1;
+            return 1;
         case BEFORE_WITH:
             return 1;
         case WITH_EXCEPT_START:
@@ -459,7 +459,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case PREP_RERAISE_STAR:
             return 1;
         case END_ASYNC_FOR:
-            return -1;
+            return 0;
         case CLEANUP_THROW:
             return -1;
         case LOAD_ASSERTION_ERROR:
@@ -621,7 +621,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case FOR_ITER_GEN:
             return -1;
         case BEFORE_ASYNC_WITH:
-            return -1;
+            return 2;
         case BEFORE_WITH:
             return 2;
         case WITH_EXCEPT_START:
