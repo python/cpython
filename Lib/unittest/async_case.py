@@ -13,19 +13,6 @@ class IsolatedAsyncioTestCase(TestCase):
     # Names intentionally have a long prefix
     # to reduce a chance of clashing with user-defined attributes
     # from inherited test case
-    #
-    # The class doesn't call loop.run_until_complete(self.setUp()) and family
-    # but uses a different approach:
-    # 1. create a long-running task that reads self.setUp()
-    #    awaitable from queue along with a future
-    # 2. await the awaitable object passing in and set the result
-    #    into the future object
-    # 3. Outer code puts the awaitable and the future object into a queue
-    #    with waiting for the future
-    # The trick is necessary because every run_until_complete() call
-    # creates a new task with embedded ContextVar context.
-    # To share contextvars between setUp(), test and tearDown() we need to execute
-    # them inside the same task.
 
     # Note: the test case modifies event loop policy if the policy was not instantiated
     # yet.
