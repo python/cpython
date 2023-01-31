@@ -1232,6 +1232,7 @@ stack_effect(int opcode, int oparg, int jump)
         case LOAD_FAST_OR_NULL:
             return 1;
         case STORE_FAST:
+        case STORE_FAST_MAYBE_NULL:
             return -1;
         case DELETE_FAST:
             return 0;
@@ -5486,7 +5487,7 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
             // could be cleverer about minimizing swaps but it doesn't matter
             // because `apply_static_swaps` will eliminate all of these anyway
             ADDOP_I(c, loc, SWAP, 2);
-            ADDOP_NAME(c, loc, STORE_FAST, k, varnames);
+            ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
         }
     }
     return SUCCESS;
@@ -7680,12 +7681,14 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
 }
 
 static void
-convert_exception_handlers_to_nops(basicblock *entryblock) {
+convert_pseudo_ops(basicblock *entryblock) {
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
                 INSTR_SET_OP0(instr, NOP);
+            } else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
+                instr->i_opcode = STORE_FAST;
             }
         }
     }
@@ -8969,7 +8972,7 @@ assemble(struct compiler *c, int addNone)
     }
     /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
-    convert_exception_handlers_to_nops(g->g_entryblock);
+    convert_pseudo_ops(g->g_entryblock);
 
     /* Order of basic blocks must have been determined by now */
     if (normalize_jumps(g) < 0) {
@@ -9236,7 +9239,9 @@ swaptimize(basicblock *block, int *ix)
 // - can't invoke arbitrary code (besides finalizers)
 // - only touch the TOS (and pop it when finished)
 #define SWAPPABLE(opcode) \
-    ((opcode) == STORE_FAST || (opcode) == POP_TOP)
+    ((opcode) == STORE_FAST || \
+     (opcode) == STORE_FAST_MAYBE_NULL || \
+     (opcode) == POP_TOP)
 
 static int
 next_swappable_instruction(basicblock *block, int i, int lineno)

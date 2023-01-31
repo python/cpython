@@ -242,6 +242,8 @@ pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT
 
 pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
 
+pseudo_op('STORE_FAST_MAYBE_NULL', 263, ['STORE_FAST'])
+
 MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 
 del def_op, name_op, jrel_op, jabs_op, pseudo_op

@@ -228,7 +228,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif   // NEED_OPCODE_TABLES
 
 #ifdef Py_DEBUG
-static const char *const _PyOpcode_OpName[263] = {
+static const char *const _PyOpcode_OpName[264] = {
     [CACHE] = "CACHE",
     [POP_TOP] = "POP_TOP",
     [PUSH_NULL] = "PUSH_NULL",
@@ -492,6 +492,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [JUMP] = "JUMP",
     [JUMP_NO_INTERRUPT] = "JUMP_NO_INTERRUPT",
     [LOAD_METHOD] = "LOAD_METHOD",
+    [STORE_FAST_MAYBE_NULL] = "STORE_FAST_MAYBE_NULL",
 };
 #endif
 

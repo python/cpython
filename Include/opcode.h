@@ -125,7 +125,8 @@ extern "C" {
 #define JUMP                                   260
 #define JUMP_NO_INTERRUPT                      261
 #define LOAD_METHOD                            262
-#define MAX_PSEUDO_OPCODE                      262
+#define STORE_FAST_MAYBE_NULL                  263
+#define MAX_PSEUDO_OPCODE                      263
 #define BINARY_OP_ADD_FLOAT                      5
 #define BINARY_OP_ADD_INT                        6
 #define BINARY_OP_ADD_UNICODE                    7
@@ -193,6 +194,7 @@ extern "C" {
     || ((op) == JUMP) \
     || ((op) == JUMP_NO_INTERRUPT) \
     || ((op) == LOAD_METHOD) \
+    || ((op) == STORE_FAST_MAYBE_NULL) \
     )
 
 #define HAS_CONST(op) (false\

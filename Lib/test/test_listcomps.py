@@ -195,6 +195,18 @@ Comprehensions' scopes don't interact with each other:
 """
 
 
+class ListComprehensionTest(unittest.TestCase):
+    def test_unbound_local_after_comprehension(self):
+        def f():
+            if False:
+                x = 0
+            [x for x in [1]]
+            return x
+
+        with self.assertRaises(UnboundLocalError):
+            f()
+
+
 __test__ = {'doctests' : doctests}
 
 def load_tests(loader, tests, pattern):
