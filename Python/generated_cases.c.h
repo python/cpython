@@ -1900,24 +1900,26 @@
         }
 
         TARGET(LOAD_ATTR_SLOT) {
-            assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
+            PyObject *owner = PEEK(1);
+            PyObject *res2 = NULL;
             PyObject *res;
+            uint32_t type_version = read_u32(&next_instr[1].cache);
+            uint16_t index = read_u16(&next_instr[3].cache);
+            assert(cframe.use_tracing == 0);
             PyTypeObject *tp = Py_TYPE(owner);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
-            char *addr = (char *)owner + cache->index;
+            char *addr = (char *)owner + index;
             res = *(PyObject **)addr;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
-            SET_TOP(NULL);
-            STACK_GROW((oparg & 1));
-            SET_TOP(res);
+            res2 = NULL;
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            POKE(1, res);
+            if (oparg & 1) { POKE(1 + ((oparg & 1) ? 1 : 0), res2); }
+            JUMPBY(9);
             DISPATCH();
         }
 
