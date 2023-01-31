@@ -436,7 +436,7 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        family(store_subscr) = {
+        family(store_subscr, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
             STORE_SUBSCR,
             STORE_SUBSCR_DICT,
             STORE_SUBSCR_LIST_INT,
@@ -950,7 +950,7 @@ dummy_func(
             Py_DECREF(seq);
         }
 
-        family(store_attr) = {
+        family(store_attr, INLINE_CACHE_ENTRIES_STORE_ATTR) = {
             STORE_ATTR,
             STORE_ATTR_INSTANCE_VALUE,
             STORE_ATTR_SLOT,
@@ -1436,7 +1436,7 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        family(load_attr) = {
+        family(load_attr, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
             LOAD_ATTR,
             LOAD_ATTR_INSTANCE_VALUE,
             LOAD_ATTR_MODULE,
@@ -1750,6 +1750,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
+        // No cache size here, since this is a family of super-instructions.
         family(compare_and_branch) = {
             COMPARE_AND_BRANCH,
             COMPARE_AND_BRANCH_FLOAT,
@@ -3247,7 +3248,7 @@ dummy_func(
 
 // Future families go below this point //
 
-family(call) = {
+family(call, INLINE_CACHE_ENTRIES_CALL) = {
     CALL, CALL_PY_EXACT_ARGS,
     CALL_PY_WITH_DEFAULTS, CALL_BOUND_METHOD_EXACT_ARGS, CALL_BUILTIN_CLASS,
     CALL_BUILTIN_FAST_WITH_KEYWORDS, CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, CALL_NO_KW_BUILTIN_FAST,
@@ -3255,13 +3256,13 @@ family(call) = {
     CALL_NO_KW_LIST_APPEND, CALL_NO_KW_METHOD_DESCRIPTOR_FAST, CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
     CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
     CALL_NO_KW_TYPE_1 };
-family(for_iter) = {
+family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
     FOR_ITER, FOR_ITER_LIST,
     FOR_ITER_RANGE };
-family(load_global) = {
+family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
     LOAD_GLOBAL, LOAD_GLOBAL_BUILTIN,
     LOAD_GLOBAL_MODULE };
 family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
-family(unpack_sequence) = {
+family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
     UNPACK_SEQUENCE, UNPACK_SEQUENCE_LIST,
     UNPACK_SEQUENCE_TUPLE, UNPACK_SEQUENCE_TWO_TUPLE };
