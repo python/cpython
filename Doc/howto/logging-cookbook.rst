@@ -307,7 +307,7 @@ Suppose you configure logging with the following JSON:
                 "class": "logging.StreamHandler",
                 "level": "INFO",
                 "formatter": "simple",
-                "stream": "ext://sys.stdout",
+                "stream": "ext://sys.stdout"
             },
             "stderr": {
                 "class": "logging.StreamHandler",
