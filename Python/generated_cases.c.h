@@ -2735,8 +2735,12 @@
         }
 
         TARGET(BEFORE_WITH) {
-            PyObject *mgr = TOP();
+            PyObject *mgr = PEEK(1);
+            PyObject *exit;
             PyObject *res;
+            /* pop the context manager, push its __exit__ and the
+             * value returned from calling its __enter__
+             */
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -2747,7 +2751,7 @@
                 }
                 goto error;
             }
-            PyObject *exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2759,14 +2763,13 @@
                 Py_DECREF(enter);
                 goto error;
             }
-            SET_TOP(exit);
             Py_DECREF(mgr);
             res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
-            if (res == NULL) {
-                goto error;
-            }
-            PUSH(res);
+            if (res == NULL) goto pop_1_error;
+            STACK_GROW(1);
+            POKE(1, res);
+            POKE(2, exit);
             DISPATCH();
         }
 
