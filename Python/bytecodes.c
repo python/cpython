@@ -770,18 +770,16 @@ dummy_func(
             ERROR_IF(val == NULL, error);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(END_ASYNC_FOR) {
-            PyObject *val = POP();
-            assert(val && PyExceptionInstance_Check(val));
-            if (PyErr_GivenExceptionMatches(val, PyExc_StopAsyncIteration)) {
-                Py_DECREF(val);
-                Py_DECREF(POP());
+        inst(END_ASYNC_FOR, (awaitable, exc -- )) {
+            assert(exc && PyExceptionInstance_Check(exc));
+            if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
+                DECREF_INPUTS();
             }
             else {
-                PyObject *exc = Py_NewRef(PyExceptionInstance_Class(val));
-                PyObject *tb = PyException_GetTraceback(val);
-                _PyErr_Restore(tstate, exc, val, tb);
+                Py_INCREF(exc);
+                PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
+                PyObject *tb = PyException_GetTraceback(exc);
+                _PyErr_Restore(tstate, typ, exc, tb);
                 goto exception_unwind;
             }
         }
@@ -2266,10 +2264,7 @@ dummy_func(
             DISPATCH_INLINED(gen_frame);
         }
 
-        // stack effect: ( -- __0)
-        inst(BEFORE_ASYNC_WITH) {
-            PyObject *mgr = TOP();
-            PyObject *res;
+        inst(BEFORE_ASYNC_WITH, (mgr -- exit, res)) {
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -2280,7 +2275,7 @@ dummy_func(
                 }
                 goto error;
             }
-            PyObject *exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2292,13 +2287,13 @@ dummy_func(
                 Py_DECREF(enter);
                 goto error;
             }
-            SET_TOP(exit);
-            Py_DECREF(mgr);
+            DECREF_INPUTS();
             res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
-            if (res == NULL)
-                goto error;
-            PUSH(res);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                ERROR_IF(true, error);
+            }
             PREDICT(GET_AWAITABLE);
         }
 
