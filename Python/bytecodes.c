@@ -1438,16 +1438,16 @@ dummy_func(
 
         family(load_attr) = {
             LOAD_ATTR,
-            // LOAD_ATTR_CLASS,
-            // LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
             LOAD_ATTR_INSTANCE_VALUE,
             LOAD_ATTR_MODULE,
-            // LOAD_ATTR_PROPERTY,
-            LOAD_ATTR_SLOT,
             LOAD_ATTR_WITH_HINT,
-            // LOAD_ATTR_METHOD_LAZY_DICT,
-            // LOAD_ATTR_METHOD_NO_DICT,
+            LOAD_ATTR_SLOT,
+            // LOAD_ATTR_CLASS,
+            // LOAD_ATTR_PROPERTY,
+            // LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
             // LOAD_ATTR_METHOD_WITH_VALUES,
+            // LOAD_ATTR_METHOD_NO_DICT,
+            // LOAD_ATTR_METHOD_LAZY_DICT,
         };
 
         inst(LOAD_ATTR, (unused/9, owner -- res2 if (oparg & 1), res)) {
