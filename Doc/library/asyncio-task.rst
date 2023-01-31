@@ -121,7 +121,7 @@ To actually run a coroutine, asyncio provides the following mechanisms:
 
               print(f"started at {time.strftime('%X')}")
 
-          # The wait is implicit when the context manager exits.
+          # The await is implicit when the context manager exits.
 
           print(f"finished at {time.strftime('%X')}")
 
