@@ -770,7 +770,7 @@ class TestCopy(unittest.TestCase):
 
         l1 = L([1, 2])
         l2 = copy.deepcopy(l1)
-        self.assertEqual(list(l1), list(l2))
+        self.assertEqual(l1, l2)
         self.assertEqual(len(l1), len(l2))
 
     def test_copy_tuple_subclass(self):
