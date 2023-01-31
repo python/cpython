@@ -1464,8 +1464,8 @@ generator to be determined easily.
 
    Get current state of a coroutine object.  The function is intended to be
    used with coroutine objects created by :keyword:`async def` functions, but
-   will accept any coroutine-like object that has ``cr_running`` and
-   ``cr_frame`` attributes.
+   will accept any coroutine-like object that has ``cr_running``,
+   ``cr_suspended`` and ``cr_frame`` attributes.
 
    Possible states are:
     * CORO_CREATED: Waiting to start execution.
@@ -1474,6 +1474,9 @@ generator to be determined easily.
     * CORO_CLOSED: Execution has completed.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.11
+      Added requirement on ``cr_suspended`` attribute.
 
 The current internal state of the generator can also be queried. This is
 mostly useful for testing purposes, to ensure that internal state is being
