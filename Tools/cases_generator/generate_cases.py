@@ -597,7 +597,7 @@ class Analyzer:
                         self.error(
                             f"Instruction {member} is a member of multiple families "
                             f"({member_instr.family.name}, {family.name}).",
-                            family
+                            family,
                         )
                     else:
                         member_instr.family = family
@@ -609,7 +609,7 @@ class Analyzer:
                                     f"Component {part.instr.name} of macro {member} "
                                     f"is a member of multiple families "
                                     f"({part.instr.family.name}, {family.name}).",
-                                    family
+                                    family,
                                 )
                             else:
                                 part.instr.family = family
@@ -629,7 +629,11 @@ class Analyzer:
         for family in self.families.values():
             if len(family.members) < 2:
                 self.error(f"Family {family.name!r} has insufficient members", family)
-            members = [member for member in family.members if member in self.instrs or member in self.macro_instrs]
+            members = [
+                member
+                for member in family.members
+                if member in self.instrs or member in self.macro_instrs
+            ]
             if members != family.members:
                 unknown = set(family.members) - set(members)
                 self.error(
@@ -859,7 +863,9 @@ class Analyzer:
                 popped_data.append((instr, popped))
                 pushed_data.append((instr, pushed))
 
-        def write_function(direction: str, data: list[tuple[AnyInstruction, str]]) -> None:
+        def write_function(
+            direction: str, data: list[tuple[AnyInstruction, str]]
+        ) -> None:
             self.out.emit("\n#ifndef NDEBUG")
             self.out.emit("static int")
             self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg) {{")
@@ -1031,6 +1037,7 @@ class Analyzer:
 
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
+        last_instr: Instruction | None = None
         with self.wrap_super_or_macro(mac):
             cache_adjust = 0
             for part in mac.parts:
@@ -1038,11 +1045,23 @@ class Analyzer:
                     case parser.CacheEffect(size=size):
                         cache_adjust += size
                     case Component() as comp:
+                        last_instr = comp.instr
                         comp.write_body(self.out, cache_adjust)
                         cache_adjust += comp.instr.cache_offset
 
             if cache_adjust:
                 self.out.emit(f"JUMPBY({cache_adjust});")
+
+            if (
+                last_instr
+                and (family := last_instr.family)
+                and mac.name == family.members[0]
+                and (cache_size := family.size)
+            ):
+                self.out.emit(
+                    f"static_assert({cache_size} == "
+                    f'{cache_adjust}, "incorrect cache size");'
+                )
 
     @contextlib.contextmanager
     def wrap_super_or_macro(self, up: SuperOrMacroInstruction):
