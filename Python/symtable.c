@@ -618,7 +618,7 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             } else {
                 // free vars in comprehension that are locals in outer scope can
                 // now simply be locals, unless they are free in comp children
-                if ((PyLong_AsLong(existing) && DEF_BOUND) &&
+                if ((PyLong_AsLong(existing) & DEF_BOUND) &&
                      !is_free_in_children(comp, k)) {
                     if (PySet_Discard(comp_free, k) < 0) {
                         return 0;
