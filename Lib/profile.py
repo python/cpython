@@ -187,6 +187,7 @@ class Profile:
 
         if event == "c_call":
             self.c_func_name = arg.__name__
+
         if self.dispatch[event](self, frame,t):
             t = timer()
             self.t = t[0] + t[1]
@@ -288,7 +289,7 @@ class Profile:
 
     def trace_dispatch_return(self, frame, t):
         if frame is not self.cur[-2]:
-            assert frame is self.cur[-2].f_back, ("Bad return", self.cur[-3], t)
+            assert frame is self.cur[-2].f_back, ("Bad return", self.cur[-3])
             self.trace_dispatch_return(self.cur[-2], 0)
 
         # Prefix "r" means part of the Returning or exiting frame.

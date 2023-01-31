@@ -510,7 +510,7 @@ class LineMontoringTest(unittest.TestCase):
             floop()
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
-            self.assertEqual(events, [510, 21, 22, 22, 21, 511])
+            self.assertEqual(events, [510, 21, 22, 22, 511])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
