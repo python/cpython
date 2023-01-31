@@ -5403,7 +5403,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // only values bound in the comprehension (DEF_LOCAL) need to be
         // handled; DEF_LOCAL | DEF_NONLOCAL (oddly) can occur in the case
         // of an assignment expression to a nonlocal in the comprehension,
-        // these don't need handling here
+        // these don't need handling here since they shouldn't be isolated
         if (symbol & DEF_LOCAL && ~symbol & DEF_NONLOCAL) {
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
@@ -5413,16 +5413,19 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
             assert(PyLong_Check(outv));
             long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
             if (outsc == GLOBAL_IMPLICIT || outsc == GLOBAL_EXPLICIT) {
+                // if a name is global in the outer scope but local in the
+                // comprehension scope, we need to keep it global in outer
+                // scope but ensure the comprehension writes to the local,
+                // not the global; this is all the isolation we need.
                 if (state->temp_symbols == NULL) {
                     state->temp_symbols = PyDict_New();
                     if (state->temp_symbols == NULL) {
                         return ERROR;
                     }
                 }
-                // if a name is global in the outer scope but local in the
-                // comprehension scope, we need to keep it global in outer
-                // scope but ensure the comprehension writes to the local,
-                // not the global
+                // update the symbol to the in-comprehension version and save
+                // the outer version; we'll restore it after running the
+                // comprehension
                 Py_INCREF(outv);
                 if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v)) {
                     return ERROR;
@@ -5441,6 +5444,9 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                         return ERROR;
                     }
                 }
+                // in the case of a cell, this will actually push the cell
+                // itself to the stack, then we'll create a new one for the
+                // comprehension and restore the original one after
                 ADDOP_NAME(c, loc, LOAD_FAST_OR_NULL, k, varnames);
                 if (scope == CELL) {
                     ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
@@ -5475,9 +5481,9 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
             if (k == NULL) {
                 return ERROR;
             }
-            // preserve the built result of the comprehension; we could be
-            // cleverer about minimizing swaps but it doesn't matter because
-            // `apply_static_swaps` will eliminate all of these anyway
+            // preserve the list/dict/set result of the comprehension as TOS; we
+            // could be cleverer about minimizing swaps but it doesn't matter
+            // because `apply_static_swaps` will eliminate all of these anyway
             ADDOP_I(c, loc, SWAP, 2);
             ADDOP_NAME(c, loc, STORE_FAST, k, varnames);
         }
