@@ -176,14 +176,21 @@ A modification to a closed-over variable is visible in the outer scope:
 
 Comprehensions' scopes don't interact with each other:
 
-    >>> def test_func():
-    ...     lst = list(range(3))
+    >>> def test_func(lst):
     ...     ret = [lambda: x for x in lst]
     ...     inc = [x + 1 for x in lst]
     ...     [x for x in inc]
     ...     return ret
-    >>> test_func()[0]()
+    >>> test_func(range(3))[0]()
     2
+
+    >>> def test_func(lst):
+    ...     x = -1
+    ...     funcs = [lambda: x for x in lst]
+    ...     items = [x + 1 for x in lst]
+    ...     return x
+    >>> test_func(range(3))
+    -1
 
 """
 

@@ -5396,10 +5396,10 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
     while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
         assert(PyLong_Check(v));
         long symbol = PyLong_AS_LONG(v);
-        // only values bound in the comprehension (DEF_LOCAL) need to be
-        // handled; DEF_LOCAL | DEF_NONLOCAL (oddly) can occur in the case
-        // of an assignment expression to a nonlocal in the comprehension,
-        // these don't need handling here since they shouldn't be isolated
+        // only values bound in the comprehension (DEF_LOCAL) need to be handled
+        // at all; DEF_LOCAL | DEF_NONLOCAL can occur in the case of an
+        // assignment expression to a nonlocal in the comprehension, these don't
+        // need handling here since they shouldn't be isolated
         if (symbol & DEF_LOCAL && ~symbol & DEF_NONLOCAL) {
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
@@ -5408,11 +5408,15 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
             }
             assert(PyLong_Check(outv));
             long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
-            if (outsc == GLOBAL_IMPLICIT || outsc == GLOBAL_EXPLICIT) {
-                // if a name is global in the outer scope but local in the
-                // comprehension scope, we need to keep it global in outer
-                // scope but ensure the comprehension writes to the local,
-                // not the global; this is all the isolation we need.
+            int outer_global = (outsc == GLOBAL_IMPLICIT || outsc == GLOBAL_EXPLICIT);
+            if (outer_global || (outsc == CELL && scope == LOCAL)) {
+                // If a name is global in the outer scope but local in the
+                // comprehension scope, we need to keep it global in outer scope
+                // but ensure the comprehension writes to the local, not the
+                // global; this is all the isolation we need.  If it's a cell in
+                // outer scope and a local inside the comprehension, we want the
+                // comprehension to treat it as a local, but we also need to
+                // save/restore the outer cell.
                 if (state->temp_symbols == NULL) {
                     state->temp_symbols = PyDict_New();
                     if (state->temp_symbols == NULL) {
@@ -5430,7 +5434,8 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                     return ERROR;
                 }
                 Py_DECREF(outv);
-            } else if (scope == LOCAL || scope == CELL) {
+            }
+            if (!outer_global && (scope == LOCAL || scope == CELL)) {
                 // local names bound in comprehension must be isolated from
                 // outer scope; push existing value (which may be NULL if
                 // not defined) on stack
