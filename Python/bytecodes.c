@@ -2302,10 +2302,10 @@ dummy_func(
             PREDICT(GET_AWAITABLE);
         }
 
-        inst(BEFORE_WITH, (mgr -- exit, res)) {
-            /* pop the context manager, push its __exit__ and the
-             * value returned from calling its __enter__
-             */
+        // stack effect: ( -- __0)
+        inst(BEFORE_WITH) {
+            PyObject *mgr = TOP();
+            PyObject *res;
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -2316,7 +2316,7 @@ dummy_func(
                 }
                 goto error;
             }
-            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
+            PyObject *exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2328,10 +2328,14 @@ dummy_func(
                 Py_DECREF(enter);
                 goto error;
             }
-            DECREF_INPUTS();
+            SET_TOP(exit);
+            Py_DECREF(mgr);
             res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
-            ERROR_IF(res == NULL, error);
+            if (res == NULL) {
+                goto error;
+            }
+            PUSH(res);
         }
 
         inst(WITH_EXCEPT_START, (exit_func, lasti, unused, val -- exit_func, lasti, unused, val, res)) {
