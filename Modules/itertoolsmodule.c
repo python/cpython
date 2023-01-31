@@ -25,6 +25,7 @@ get_module_state(PyObject *mod)
 }
 
 static struct PyModuleDef itertoolsmodule;
+
 static inline itertools_state *
 find_state_by_type(PyTypeObject *tp)
 {
