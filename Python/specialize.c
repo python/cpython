@@ -1039,14 +1039,6 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
     }
 }
 
-typedef enum {
-    MANAGED_VALUES = 1,
-    MANAGED_DICT = 2,
-    OFFSET_DICT = 3,
-    NO_DICT = 4,
-    LAZY_DICT = 5,
-} ObjectDictKind;
-
 // Please collect stats carefully before and after modifying. A subtle change
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
@@ -1058,71 +1050,45 @@ PyObject *descr, DescriptorClassification kind)
     PyTypeObject *owner_cls = Py_TYPE(owner);
 
     assert(kind == METHOD && descr != NULL);
-    ObjectDictKind dictkind;
-    PyDictKeysObject *keys;
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-        keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
-        if (_PyDictOrValues_IsValues(dorv)) {
-            dictkind = MANAGED_VALUES;
+        PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
+        if (!_PyDictOrValues_IsValues(dorv)) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_HAS_MANAGED_DICT);
+            return 0;
         }
-        else {
-            dictkind = MANAGED_DICT;
+        Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+        if (index != DKIX_EMPTY) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SHADOWED);
+            return 0;
         }
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
+        if (keys_version == 0) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+            return 0;
+        }
+        write_u32(cache->keys_version, keys_version);
+        _py_set_opcode(instr, LOAD_ATTR_METHOD_WITH_VALUES);
     }
     else {
         Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
         if (dictoffset < 0 || dictoffset > INT16_MAX) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
+            return 0;
         }
         if (dictoffset == 0) {
-            dictkind = NO_DICT;
-            keys = NULL;
+            _py_set_opcode(instr, LOAD_ATTR_METHOD_NO_DICT);
         }
         else {
             PyObject *dict = *(PyObject **) ((char *)owner + dictoffset);
-            if (dict == NULL) {
-                // This object will have a dict if user access __dict__
-                dictkind = LAZY_DICT;
-                keys = NULL;
-            }
-            else {
-                keys = ((PyDictObject *)dict)->ma_keys;
-                dictkind = OFFSET_DICT;
-            }
-        }
-    }
-    if (dictkind == MANAGED_VALUES || dictkind == OFFSET_DICT) {
-        Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
-        if (index != DKIX_EMPTY) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SHADOWED);
-            goto fail;
-        }
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
-        if (keys_version == 0) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
-            goto fail;
-        }
-        write_u32(cache->keys_version, keys_version);
-    }
-    switch(dictkind) {
-        case NO_DICT:
-            _py_set_opcode(instr, LOAD_ATTR_METHOD_NO_DICT);
-            break;
-        case MANAGED_VALUES:
-            _py_set_opcode(instr, LOAD_ATTR_METHOD_WITH_VALUES);
-            break;
-        case MANAGED_DICT:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_HAS_MANAGED_DICT);
-            goto fail;
-        case OFFSET_DICT:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
-            goto fail;
-        case LAZY_DICT:
-            assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
+            if (dict) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
+                return 0;
+            }  
+            assert(owner_cls->tp_dictoffset > 0);
+            assert(owner_cls->tp_dictoffset <= INT16_MAX);
             _py_set_opcode(instr, LOAD_ATTR_METHOD_LAZY_DICT);
-            break;
+        }
     }
     /* `descr` is borrowed. This is safe for methods (even inherited ones from
     *  super classes!) as long as tp_version_tag is validated for two main reasons:
@@ -1141,8 +1107,6 @@ PyObject *descr, DescriptorClassification kind)
     write_u32(cache->type_version, owner_cls->tp_version_tag);
     write_obj(cache->descr, descr);
     return 1;
-fail:
-    return 0;
 }
 
 void
