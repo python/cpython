@@ -808,8 +808,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
     PyObject *newglobal = NULL, *newfree = NULL;
     PyObject *temp;
-    int i, success = 0;
-    Py_ssize_t pos = 0;
+    int success = 0;
+    Py_ssize_t i, pos = 0;
 
     local = PySet_New(NULL);  /* collect new names bound in block */
     if (!local)
