@@ -129,10 +129,10 @@ the :mod:`glob` module.)
 .. function:: exists(path)
 
    Return ``True`` if *path* refers to an existing path or an open
-   file descriptor.  Returns ``False`` for broken symbolic links.  On
+   file descriptor.  Return ``False`` for broken symbolic links.  On
    some platforms, this function may return ``False`` if permission is
    not granted to execute :func:`os.stat` on the requested file, even
-   if the *path* physically exists.
+   if the *path* exists.
 
    .. versionchanged:: 3.3
       *path* can now be an integer: ``True`` is returned if it is an
@@ -278,7 +278,7 @@ the :mod:`glob` module.)
 .. function:: islink(path)
 
    Return ``True`` if *path* refers to an :func:`existing <exists>` directory
-   entry that is a symbolic link.  Always ``False`` if symbolic links are not
+   entry that is a symbolic link.  Return ``False`` if symbolic links are not
    supported by the Python runtime.
 
    .. versionchanged:: 3.6
