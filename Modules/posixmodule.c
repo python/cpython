@@ -15136,9 +15136,9 @@ os._exists
 
 Return True if path refers to an existing path or an open file descriptor.
 
-Returns False for broken symbolic links. On some platforms, this function may
+Return False for broken symbolic links. On some platforms, this function may
 return False if permission is not granted to execute os.stat() on the requested
-file, even if the path physically exists.
+file, even if the path exists.
 
 [clinic start generated code]*/
 
@@ -15211,7 +15211,7 @@ os._islink
 
 Return True if path refers to an existing directory entry that is a symbolic link.
 
-Always False if symbolic links are not supported by the Python runtime.
+Return False if symbolic links are not supported by the Python runtime.
 
 [clinic start generated code]*/
 
