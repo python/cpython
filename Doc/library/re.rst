@@ -1258,7 +1258,8 @@ Match objects support the following methods and attributes:
    Escapes such as ``\n`` are converted to the appropriate characters,
    and numeric backreferences (``\1``, ``\2``) and named backreferences
    (``\g<1>``, ``\g<name>``) are replaced by the contents of the
-   corresponding group.
+   corresponding group. A named backreference to *group0* (``\g<0>``) will be
+   replaced by the entire match.
 
    .. versionchanged:: 3.5
       Unmatched groups are replaced with an empty string.
