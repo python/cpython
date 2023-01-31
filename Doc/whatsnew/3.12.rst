@@ -157,7 +157,7 @@ Other Language Changes
   in :gh:`96670`.)
 
 * The Garbage Collector now runs only on the eval breaker mechanism of the
-  Python bytecode evaluation loop instead on object allocations. The GC can
+  Python bytecode evaluation loop instead of object allocations. The GC can
   also run when :c:func:`PyErr_CheckSignals` is called so C extensions that
   need to run for a long time without executing any Python code also have a
   chance to execute the GC periodically. (Contributed by Pablo Galindo in
@@ -181,6 +181,13 @@ Other Language Changes
 * All builtin and extension callables expecting boolean parameters now accept
   arguments of any type instead of just :class:`bool` and :class:`int`.
   (Contributed by Serhiy Storchaka in :gh:`60203`.)
+
+* Variables used in the target part of comprehensions that are not stored to
+  can now be used in assignment expressions (``:=``).
+  For example, in ``[(b := 1) for a, b.prop in some_iter]``, the assignment to
+  ``b`` is now allowed. Note that assigning to variables stored to in the target
+  part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
+  (Contributed by Nikita Sobolev in :gh:`100581`.)
 
 
 New Modules
@@ -225,6 +232,9 @@ asyncio
   a custom event loop factory.
   (Contributed by Kumar Aditya in :gh:`99388`.)
 
+* Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
+  (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
+
 inspect
 -------
 
@@ -259,6 +269,18 @@ dis
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
+fractions
+---------
+
+* Objects of type :class:`fractions.Fraction` now support float-style
+  formatting. (Contributed by Mark Dickinson in :gh:`100161`.)
+
+math
+----
+
+* Added :func:`math.sumprod` for computing a sum of products.
+  (Contributed by Raymond Hettinger in :gh:`100485`.)
+
 os
 --
 
@@ -266,13 +288,18 @@ os
   for a process with :func:`os.pidfd_open` in non-blocking mode.
   (Contributed by Kumar Aditya in :gh:`93312`.)
 
-* Add :func:`os.path.isjunction` to check if a given path is a junction.
-  (Contributed by Charles Machalow in :gh:`99547`.)
-
 * :class:`os.DirEntry` now includes an :meth:`os.DirEntry.is_junction`
   method to check if the entry is a junction.
   (Contributed by Charles Machalow in :gh:`99547`.)
 
+os.path
+-------
+
+* Add :func:`os.path.isjunction` to check if a given path is a junction.
+  (Contributed by Charles Machalow in :gh:`99547`.)
+
+* Add :func:`os.path.splitroot` to split a path into a triad
+  ``(drive, root, tail)``. (Contributed by Barney Gale in :gh:`101000`.)
 
 shutil
 ------
@@ -310,6 +337,12 @@ unicodedata
 
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
+
+uuid
+----
+
+* Add a :ref:`command-line interface <uuid-cli>`.
+  (Contributed by Adam Chhina in :gh:`88597`.)
 
 tempfile
 --------
@@ -392,6 +425,21 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
+* The :meth:`~asyncio.DefaultEventLoopPolicy.get_event_loop` method of the
+  default event loop policy now emits a :exc:`DeprecationWarning` if there
+  is no current event loop set and it decides to create one.
+  (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
+
+* The :mod:`xml.etree.ElementTree` module now emits :exc:`DeprecationWarning`
+  when testing the truth value of an :class:`xml.etree.ElementTree.Element`.
+  Before, the Python implementation emitted :exc:`FutureWarning`, and the C
+  implementation emitted nothing.
+
+* In accordance with :pep:`699`, the ``ma_version_tag`` field in :c:type:`PyDictObject`
+  is deprecated for extension modules. Accessing this field will generate a compiler
+  warning at compile time. This field will be removed in Python 3.14.
+  (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -443,7 +491,6 @@ Pending Removal in Python 3.14
 
   Use :mod:`importlib.resources.abc` classes instead:
 
-  * :class:`importlib.resources.abc.TraversableResources`
   * :class:`importlib.resources.abc.Traversable`
   * :class:`importlib.resources.abc.TraversableResources`
 
@@ -454,6 +501,9 @@ Pending Removal in Python 3.14
 
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
+
+* Testing the truth value of an :class:`xml.etree.ElementTree.Element`
+  is deprecated and will raise an exception in Python 3.14.
 
 
 Pending Removal in Future Versions
@@ -628,9 +678,11 @@ Removed
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
   (Contributed by Julien Palard in :gh:`98179`.)
 
-* Remove the *keyfile*, *certfile* and *check_hostname* parameters, deprecated
-  since Python 3.6, in modules: :mod:`ftplib`, :mod:`http.client`,
-  :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib`. Use the *context* parameter
+* Remove the *keyfile* and *certfile* parameters from the
+  :mod:`ftplib`, :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib` modules,
+  and the *key_file*, *cert_file* and *check_hostname* parameters from the
+  :mod:`http.client` module,
+  all deprecated since Python 3.6. Use the *context* parameter
   (*ssl_context* in :mod:`imaplib`) instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
@@ -655,13 +707,13 @@ Changes in the Python API
   contain ASCII letters and digits and underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
-* Removed randrange() functionality deprecated since Python 3.10.  Formerly,
-  randrange(10.0) losslessly converted to randrange(10). Now, it raises a
-  TypeError. Also, the exception raised for non-integral values such as
-  randrange(10.5) or randrange('10') has been changed from ValueError to
-  TypeError.  This also prevents bugs where ``randrange(1e25)`` would silently
+* Removed ``randrange()`` functionality deprecated since Python 3.10.  Formerly,
+  ``randrange(10.0)`` losslessly converted to ``randrange(10)``. Now, it raises a
+  :exc:`TypeError`. Also, the exception raised for non-integral values such as
+  ``randrange(10.5)`` or ``randrange('10')`` has been changed from :exc:`ValueError` to
+  :exc:`TypeError`.  This also prevents bugs where ``randrange(1e25)`` would silently
   select from a larger range than ``randrange(10**25)``.
-  (Originally suggested by Serhiy Storchaka gh-86388.)
+  (Originally suggested by Serhiy Storchaka :gh:`86388`.)
 
 * :class:`argparse.ArgumentParser` changed encoding and error handler
   for reading arguments from file (e.g. ``fromfile_prefix_chars`` option)
@@ -691,18 +743,6 @@ Changes in the Python API
   This change helps with interpreter isolation.  Furthermore, :mod:`syslog` is a wrapper
   around process-global resources, which are best managed from the main interpreter.
   (Contributed by Dong-hee Na in :gh:`99127`.)
-
-* :func:`asyncio.get_event_loop` and many other :mod:`asyncio` functions like
-  :func:`~asyncio.ensure_future`, :func:`~asyncio.shield` or
-  :func:`~asyncio.gather`, and also the
-  :meth:`~asyncio.BaseDefaultEventLoopPolicy.get_event_loop` method of
-  :class:`~asyncio.BaseDefaultEventLoopPolicy` now raise a :exc:`RuntimeError`
-  if called when there is no running event loop and the current event loop was
-  not set.
-  Previously they implicitly created and set a new current event loop.
-  :exc:`DeprecationWarning` is no longer emitted if there is no running
-  event loop but the current event loop is set in the policy.
-  (Contributed by Serhiy Storchaka in :gh:`93453`.)
 
 
 Build Changes
@@ -936,7 +976,7 @@ Removed
   internals.
   (Contributed by Victor Stinner in :gh:`92651`.)
 
-* Leagcy Unicode APIs has been removed. See :pep:`623` for detail.
+* Legacy Unicode APIs have been removed. See :pep:`623` for detail.
 
    * :c:macro:`PyUnicode_WCHAR_KIND`
    * :c:func:`PyUnicode_AS_UNICODE`
@@ -951,6 +991,9 @@ Removed
 * Remove the ``PyUnicode_InternImmortal()`` function and the
   ``SSTATE_INTERNED_IMMORTAL`` macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
+
+* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
+  (Contributed by Nikita Sobolev in :gh:`99482`.)
 
 * Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
   from :mod:`ctypes` module.

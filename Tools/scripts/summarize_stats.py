@@ -224,10 +224,12 @@ def pretty(defname):
     return defname.replace("_", " ").lower()
 
 def kind_to_text(kind, defines, opname):
-    if kind <= 7:
+    if kind <= 8:
         return pretty(defines[kind][0])
     if opname.endswith("ATTR"):
         opname = "ATTR"
+    if opname in ("COMPARE_OP", "COMPARE_AND_BRANCH"):
+        opname = "COMPARE"
     if opname.endswith("SUBSCR"):
         opname = "SUBSCR"
     for name in defines[kind]:
@@ -404,6 +406,9 @@ def emit_specialization_overview(opcode_stats, total):
             total = 0
             counts = []
             for i, opcode_stat in enumerate(opcode_stats):
+                # Avoid double counting misses
+                if title == "Misses" and "specializable" in opcode_stat:
+                    continue
                 value = opcode_stat.get(field, 0)
                 counts.append((value, opname[i]))
                 total += value

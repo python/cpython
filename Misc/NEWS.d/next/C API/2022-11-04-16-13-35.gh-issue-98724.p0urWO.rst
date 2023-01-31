@@ -1,3 +1,0 @@
-The :c:macro:`Py_CLEAR`, :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros
-now only evaluate their arguments once. If an argument has side effects, these
-side effects are no longer duplicated. Patch by Victor Stinner.

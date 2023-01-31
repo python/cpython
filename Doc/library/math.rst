@@ -108,12 +108,7 @@ Number-theoretic and representation functions
 .. function:: fsum(iterable)
 
    Return an accurate floating point sum of values in the iterable.  Avoids
-   loss of precision by tracking multiple intermediate partial sums:
-
-        >>> sum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
-        0.9999999999999999
-        >>> fsum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
-        1.0
+   loss of precision by tracking multiple intermediate partial sums.
 
    The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
    typical case where the rounding mode is half-even.  On some non-Windows
@@ -296,6 +291,22 @@ Number-theoretic and representation functions
    .. versionadded:: 3.7
 
 
+.. function:: sumprod(p, q)
+
+   Return the sum of products of values from two iterables *p* and *q*.
+
+   Raises :exc:`ValueError` if the inputs do not have the same length.
+
+   Roughly equivalent to::
+
+       sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
+
+   For float and mixed int/float inputs, the intermediate products
+   and sums are computed with extended precision.
+
+   .. versionadded:: 3.12
+
+
 .. function:: trunc(x)
 
    Return *x* with the fractional part
@@ -382,13 +393,12 @@ Power and logarithmic functions
    .. versionadded:: 3.2
 
 
-.. function:: log(x[, base])
+.. function:: log(x, base=None)
 
-   With one argument, return the natural logarithm of *x* (to base *e*).
+   Return the logarithm of *x* to the given *base*.
 
-   With two arguments, return the logarithm of *x* to the given *base*,
-   calculated as ``log(x)/log(base)``.
-
+   If the *base* is not specified, returns the natural
+   logarithm (base *e*) of *x*.
 
 .. function:: log1p(x)
 
