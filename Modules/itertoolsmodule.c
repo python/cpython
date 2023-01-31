@@ -24,6 +24,14 @@ get_module_state(PyObject *mod)
     return (itertools_state *)state;
 }
 
+static inline itertools_state *
+get_module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (itertools_state *)state;
+}
+
 static struct PyModuleDef itertoolsmodule;
 
 static inline itertools_state *
@@ -74,7 +82,9 @@ static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
 static PyTypeObject pairwise_type;
 
+#define clinic_state_by_cls() (get_module_state_by_cls(base_tp))
 #include "clinic/itertoolsmodule.c.h"
+#undef clinic_state_by_cls
 #undef clinic_state
 
 /* batched object ************************************************************/
@@ -608,7 +618,7 @@ typedef struct {
 @classmethod
 itertools._grouper.__new__
 
-    parent: object(subclass_of='clinic_state()->groupby_type')
+    parent: object(subclass_of='clinic_state_by_cls()->groupby_type')
     tgtkey: object
     /
 [clinic start generated code]*/
@@ -616,7 +626,7 @@ itertools._grouper.__new__
 static PyObject *
 itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
                         PyObject *tgtkey)
-/*[clinic end generated code: output=462efb1cdebb5914 input=626b30a78e38cf7d]*/
+/*[clinic end generated code: output=462efb1cdebb5914 input=afe05eb477118f12]*/
 {
     return _grouper_create((groupbyobject*) parent, tgtkey);
 }
