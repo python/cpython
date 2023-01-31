@@ -1,5 +1,5 @@
-#ifndef PYTHON_HACL_NAMESPACES_H
-#define PYTHON_HACL_NAMESPACES_H
+#ifndef _PYTHON_HACL_NAMESPACES_H
+#define _PYTHON_HACL_NAMESPACES_H
 
 /*
  * C's excuse for namespaces: Use globally unique names to avoid linkage
@@ -25,4 +25,4 @@
 #define Hacl_Streaming_SHA2_sha256 python_hashlib_Hacl_Streaming_SHA2_sha256
 #define Hacl_Streaming_SHA2_sha224 python_hashlib_Hacl_Streaming_SHA2_sha224
 
-#endif  // PYTHON_HACL_NAMESPACES_H
+#endif  // _PYTHON_HACL_NAMESPACES_H
