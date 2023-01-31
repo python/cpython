@@ -763,8 +763,8 @@ void
 _PyFreeList_FreeToFull(_PyFreeList *list, void *ptr)
 {
     assert(list->space == 0);
+    PyObject_Free(ptr);
     if (list->ptr == NULL) {
-        PyObject_Free(ptr);
         return;
     }
     int space = 0;
@@ -776,8 +776,7 @@ _PyFreeList_FreeToFull(_PyFreeList *list, void *ptr)
         space++;
     }
     list->ptr = ptr;
-    *((void **)ptr) = NULL;
-    list->space = space-1;
+    list->space = space;
 }
 #endif  /* WITH_FREELISTS */
 
