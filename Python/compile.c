@@ -5441,11 +5441,9 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                         return ERROR;
                     }
                 }
+                ADDOP_NAME(c, loc, LOAD_FAST_OR_NULL, k, varnames);
                 if (scope == CELL) {
-                    ADDOP_NAME(c, loc, LOAD_FAST_OR_NULL, k, varnames);
                     ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
-                } else {
-                    ADDOP_NAME(c, loc, LOAD_FAST_OR_NULL, k, varnames);
                 }
                 if (PyList_Append(state->pushed_locals, k)) {
                     return ERROR;
