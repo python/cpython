@@ -18,7 +18,7 @@ typedef struct {
 static inline itertools_state *
 get_module_state(PyObject *mod)
 {
-    void *state = PyModule_GetState(mod);
+    void *state = _PyModule_GetState(mod);
     assert(state != NULL);
     return (itertools_state *)state;
 }
