@@ -90,7 +90,6 @@ PyAPI_FUNC(int) _PyMem_GetAllocatorName(
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
 PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
-#define WITH_FREELISTS 1
 
 #if WITH_FREELISTS
 /* Free lists.

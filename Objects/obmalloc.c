@@ -738,9 +738,9 @@ _PyFreeList_HalfFillAndAllocate(_PyFreeList *list)
     if (i == 0) {
         return NULL;
     }
-    list->space -= (i-1);
     void *result = list->ptr;
     list->ptr = *((void **)result);
+    list->space -= (i-1);
     return result;
 }
 
