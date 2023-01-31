@@ -119,6 +119,9 @@ $sed -i -z 's/\n\n\([^\n]\+\n\)*[^\n]*\(384\|512\)[^{]*{\n\?\(  [^\n]*\n\)*}//g'
 # Same thing with function prototypes
 $sed -i -z 's/\n\n\([^\n]\+\n\)*[^\n]*\(384\|512\)[^;]*;//g' Hacl_Streaming_SHA2.h
 
+# Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
+$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Streaming_SHA2.h
+
 # Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
 # the general case, but not exercised by the subset of HACL* that we vendor.
 $sed -z -i 's!#ifndef KRML_\(HOST_PRINTF\|HOST_EXIT\|PRE_ALIGN\|POST_ALIGN\|ALIGNED_MALLOC\|ALIGNED_FREE\|HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h

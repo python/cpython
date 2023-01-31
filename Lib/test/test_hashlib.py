@@ -22,6 +22,7 @@ from test import support
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_fresh_module
 from test.support import os_helper
+from test.support import requires_resource
 from test.support import threading_helper
 from test.support import warnings_helper
 from http.client import HTTPException
@@ -354,7 +355,8 @@ class HashLibTestCase(unittest.TestCase):
             self.assertEqual(m1.digest(*args), m4_copy.digest(*args))
             self.assertEqual(m4.digest(*args), m4_digest)
 
-    def test_sha256_over_4gb(self):
+    @requires_resource('cpu')
+    def test_sha256_update_over_4gb(self):
         zero_1mb = b"\0" * 1024 * 1024
         h = hashlib.sha256()
         for i in range(0, 4096):
