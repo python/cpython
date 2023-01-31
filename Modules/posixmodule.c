@@ -14993,9 +14993,7 @@ os__isdir_impl(PyObject *module, PyObject *path)
             PyErr_Clear();
             Py_RETURN_FALSE;
         }
-        else {
-            return NULL;
-        }
+        return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -15044,9 +15042,7 @@ os__isdir_impl(PyObject *module, PyObject *path)
     if (result) {
         Py_RETURN_TRUE;
     }
-    else {
-        Py_RETURN_FALSE;
-    }
+    Py_RETURN_FALSE;
 }
 
 
@@ -15080,9 +15076,7 @@ os__isfile_impl(PyObject *module, PyObject *path)
             PyErr_Clear();
             Py_RETURN_FALSE;
         }
-        else {
-            return NULL;
-        }
+        return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -15131,9 +15125,7 @@ os__isfile_impl(PyObject *module, PyObject *path)
     if (result) {
         Py_RETURN_TRUE;
     }
-    else {
-        Py_RETURN_FALSE;
-    }
+    Py_RETURN_FALSE;
 }
 
 
@@ -15167,9 +15159,7 @@ os__exists_impl(PyObject *module, PyObject *path)
             PyErr_Clear();
             Py_RETURN_FALSE;
         }
-        else {
-            return NULL;
-        }
+        return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -15210,9 +15200,7 @@ os__exists_impl(PyObject *module, PyObject *path)
     if (result) {
         Py_RETURN_TRUE;
     }
-    else {
-        Py_RETURN_FALSE;
-    }
+    Py_RETURN_FALSE;
 }
 
 
@@ -15245,9 +15233,7 @@ os__islink_impl(PyObject *module, PyObject *path)
             PyErr_Clear();
             Py_RETURN_FALSE;
         }
-        else {
-            return NULL;
-        }
+        return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -15298,9 +15284,7 @@ os__islink_impl(PyObject *module, PyObject *path)
     if (result) {
         Py_RETURN_TRUE;
     }
-    else {
-        Py_RETURN_FALSE;
-    }
+    Py_RETURN_FALSE;
 }
 #endif
 
