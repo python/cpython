@@ -5478,15 +5478,15 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
     }
     if (state.pushed_locals) {
         // pop names we pushed to stack earlier
-        for (Py_ssize_t i = PyList_GET_SIZE(state.pushed_locals); i > 0; --i) {
-            k = PyList_GetItem(state.pushed_locals, i - 1);
+        Py_ssize_t npops = PyList_GET_SIZE(state.pushed_locals);
+        // preserve the list/dict/set result of the comprehension as TOS
+        ADDOP_I(c, loc, SWAP, npops + 1);
+        for (Py_ssize_t i = npops; i > 0; --i) {
+            // i % npops: pop in order e.g. 0, 3, 2, 1: accounts for the swap
+            k = PyList_GetItem(state.pushed_locals, i % npops);
             if (k == NULL) {
                 return ERROR;
             }
-            // preserve the list/dict/set result of the comprehension as TOS; we
-            // could be cleverer about minimizing swaps but it doesn't matter
-            // because `apply_static_swaps` will eliminate all of these anyway
-            ADDOP_I(c, loc, SWAP, 2);
             ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
         }
     }
