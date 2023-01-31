@@ -3259,12 +3259,20 @@ static int
 compiler_break(struct compiler *c)
 {
     struct fblockinfo *loop = NULL;
+    int u_lineno = c->u->u_lineno;
+    int u_col_offset = c->u->u_col_offset;
+    int u_end_lineno = c->u->u_end_lineno;
+    int u_end_col_offset = c->u->u_end_col_offset;
     /* Emit instruction with line number */
     ADDOP(c, NOP);
     if (!compiler_unwind_fblock_stack(c, 0, &loop)) {
         return 0;
     }
     if (loop == NULL) {
+        c->u->u_lineno = u_lineno;
+        c->u->u_col_offset = u_col_offset;
+        c->u->u_end_lineno = u_end_lineno;
+        c->u->u_end_col_offset = u_end_col_offset;
         return compiler_error(c, "'break' outside loop");
     }
     if (!compiler_unwind_fblock(c, loop, 0)) {
@@ -3278,12 +3286,20 @@ static int
 compiler_continue(struct compiler *c)
 {
     struct fblockinfo *loop = NULL;
+    int u_lineno = c->u->u_lineno;
+    int u_col_offset = c->u->u_col_offset;
+    int u_end_lineno = c->u->u_end_lineno;
+    int u_end_col_offset = c->u->u_end_col_offset;
     /* Emit instruction with line number */
     ADDOP(c, NOP);
     if (!compiler_unwind_fblock_stack(c, 0, &loop)) {
         return 0;
     }
     if (loop == NULL) {
+        c->u->u_lineno = u_lineno;
+        c->u->u_col_offset = u_col_offset;
+        c->u->u_end_lineno = u_end_lineno;
+        c->u->u_end_col_offset = u_end_col_offset;
         return compiler_error(c, "'continue' not properly in loop");
     }
     ADDOP_JUMP(c, JUMP, loop->fb_block);
