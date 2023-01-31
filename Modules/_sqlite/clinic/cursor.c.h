@@ -27,8 +27,11 @@ pysqlite_cursor_init(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!_PyArg_CheckPositional("Cursor", PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), clinic_state()->ConnectionType)) {
-        _PyArg_BadArgument("Cursor", "argument 1", (clinic_state()->ConnectionType)->tp_name, PyTuple_GET_ITEM(args, 0));
+    PyTypeObject *argument_1_tp = clinic_state()->ConnectionType;
+    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), argument_1_tp)) {
+        _PyArg_BadArgument("Cursor", "argument 1",
+                           argument_1_tp->tp_name,
+                           PyTuple_GET_ITEM(args, 0));
         goto exit;
     }
     connection = (pysqlite_Connection *)PyTuple_GET_ITEM(args, 0);
@@ -319,4 +322,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=1f82e3c9791bb9a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9ae402265c772e9 input=a9049054013a1b77]*/

@@ -224,8 +224,11 @@ test_object_converter_subclass_of(PyObject *module, PyObject *const *args, Py_ss
         goto exit;
     }
     i = args[8];
-    if (!PyObject_TypeCheck(args[9], &MyType)) {
-        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 10", (&MyType)->tp_name, args[9]);
+    PyTypeObject *argument_10_tp = &MyType;
+    if (!PyObject_TypeCheck(args[9], argument_10_tp)) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", "argument 10",
+                           argument_10_tp->tp_name,
+                           args[9]);
         goto exit;
     }
     j = args[9];
@@ -240,7 +243,7 @@ test_object_converter_subclass_of_impl(PyObject *module, PyObject *a,
                                        PyObject *b, PyObject *c, PyObject *d,
                                        PyObject *e, PyObject *f, PyObject *g,
                                        PyObject *h, PyObject *i, PyObject *j)
-/*[clinic end generated code: output=e4b07c9a54479a40 input=31b06b772d5f983e]*/
+/*[clinic end generated code: output=198257b104f8c5af input=31b06b772d5f983e]*/
 
 
 /*[clinic input]

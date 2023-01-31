@@ -752,8 +752,11 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], get_state_ctx(self)->Sock_Type)) {
-        _PyArg_BadArgument("_wrap_socket", "argument 'sock'", (get_state_ctx(self)->Sock_Type)->tp_name, args[0]);
+    PyTypeObject *argument_sock_tp = get_state_ctx(self)->Sock_Type;
+    if (!PyObject_TypeCheck(args[0], argument_sock_tp)) {
+        _PyArg_BadArgument("_wrap_socket", "argument 'sock'",
+                           argument_sock_tp->tp_name,
+                           args[0]);
         goto exit;
     }
     sock = args[0];
@@ -845,13 +848,19 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], get_state_ctx(self)->PySSLMemoryBIO_Type)) {
-        _PyArg_BadArgument("_wrap_bio", "argument 'incoming'", (get_state_ctx(self)->PySSLMemoryBIO_Type)->tp_name, args[0]);
+    PyTypeObject *argument_incoming_tp = get_state_ctx(self)->PySSLMemoryBIO_Type;
+    if (!PyObject_TypeCheck(args[0], argument_incoming_tp)) {
+        _PyArg_BadArgument("_wrap_bio", "argument 'incoming'",
+                           argument_incoming_tp->tp_name,
+                           args[0]);
         goto exit;
     }
     incoming = (PySSLMemoryBIO *)args[0];
-    if (!PyObject_TypeCheck(args[1], get_state_ctx(self)->PySSLMemoryBIO_Type)) {
-        _PyArg_BadArgument("_wrap_bio", "argument 'outgoing'", (get_state_ctx(self)->PySSLMemoryBIO_Type)->tp_name, args[1]);
+    PyTypeObject *argument_outgoing_tp = get_state_ctx(self)->PySSLMemoryBIO_Type;
+    if (!PyObject_TypeCheck(args[1], argument_outgoing_tp)) {
+        _PyArg_BadArgument("_wrap_bio", "argument 'outgoing'",
+                           argument_outgoing_tp->tp_name,
+                           args[1]);
         goto exit;
     }
     outgoing = (PySSLMemoryBIO *)args[1];
@@ -1542,4 +1551,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4d9b81fa81f520f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a8fc05a99b12b521 input=a9049054013a1b77]*/

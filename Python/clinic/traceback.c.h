@@ -60,8 +60,11 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     tb_next = fastargs[0];
-    if (!PyObject_TypeCheck(fastargs[1], &PyFrame_Type)) {
-        _PyArg_BadArgument("TracebackType", "argument 'tb_frame'", (&PyFrame_Type)->tp_name, fastargs[1]);
+    PyTypeObject *argument_tb_frame_tp = &PyFrame_Type;
+    if (!PyObject_TypeCheck(fastargs[1], argument_tb_frame_tp)) {
+        _PyArg_BadArgument("TracebackType", "argument 'tb_frame'",
+                           argument_tb_frame_tp->tp_name,
+                           fastargs[1]);
         goto exit;
     }
     tb_frame = (PyFrameObject *)fastargs[1];
@@ -78,4 +81,4 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7bc9927e362fdfb7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de149d664bb244f7 input=a9049054013a1b77]*/

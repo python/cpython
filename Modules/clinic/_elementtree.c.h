@@ -44,8 +44,11 @@ _elementtree_Element_append(ElementObject *self, PyTypeObject *cls, PyObject *co
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], clinic_state()->Element_Type)) {
-        _PyArg_BadArgument("append", "argument 1", (clinic_state()->Element_Type)->tp_name, args[0]);
+    PyTypeObject *argument_1_tp = clinic_state()->Element_Type;
+    if (!PyObject_TypeCheck(args[0], argument_1_tp)) {
+        _PyArg_BadArgument("append", "argument 1",
+                           argument_1_tp->tp_name,
+                           args[0]);
         goto exit;
     }
     subelement = args[0];
@@ -684,8 +687,11 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
         }
         index = ival;
     }
-    if (!PyObject_TypeCheck(args[1], clinic_state()->Element_Type)) {
-        _PyArg_BadArgument("insert", "argument 2", (clinic_state()->Element_Type)->tp_name, args[1]);
+    PyTypeObject *argument_2_tp = clinic_state()->Element_Type;
+    if (!PyObject_TypeCheck(args[1], argument_2_tp)) {
+        _PyArg_BadArgument("insert", "argument 2",
+                           argument_2_tp->tp_name,
+                           args[1]);
         goto exit;
     }
     subelement = args[1];
@@ -795,8 +801,11 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyObject_TypeCheck(arg, clinic_state()->Element_Type)) {
-        _PyArg_BadArgument("remove", "argument", (clinic_state()->Element_Type)->tp_name, arg);
+    PyTypeObject *argument_tp = clinic_state()->Element_Type;
+    if (!PyObject_TypeCheck(arg, argument_tp)) {
+        _PyArg_BadArgument("remove", "argument",
+                           argument_tp->tp_name,
+                           arg);
         goto exit;
     }
     subelement = arg;
@@ -1218,4 +1227,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=40767b1a98e54b60 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0375756f3e72596 input=a9049054013a1b77]*/

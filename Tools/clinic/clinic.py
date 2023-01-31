@@ -2862,6 +2862,9 @@ class CConverter(metaclass=CConverterAutoRegister):
         pass
 
     def parse_arg(self, argname, displayname):
+        def normalized(name):
+            return name.replace('"', '').replace("'", "").replace(' ', '_')
+
         if self.format_unit == 'O&':
             return """
                 if (!{converter}({argname}, &{paramname})) {{{{
@@ -2882,15 +2885,19 @@ class CConverter(metaclass=CConverterAutoRegister):
                     """.format(argname=argname, paramname=self.parser_name,
                                displayname=displayname, typecheck=typecheck,
                                typename=typename, cast=cast)
+            subclass_tp = f"{normalized(displayname)}_tp";
             return """
-                if (!PyObject_TypeCheck({argname}, {subclass_of})) {{{{
-                    _PyArg_BadArgument("{{name}}", {displayname}, ({subclass_of})->tp_name, {argname});
+                PyTypeObject *{subclass_tp} = {subclass_of};
+                if (!PyObject_TypeCheck({argname}, {subclass_tp})) {{{{
+                    _PyArg_BadArgument("{{name}}", {displayname},
+                                       {subclass_tp}->tp_name,
+                                       {argname});
                     goto exit;
                 }}}}
                 {paramname} = {cast}{argname};
                 """.format(argname=argname, paramname=self.parser_name,
                            subclass_of=self.subclass_of, cast=cast,
-                           displayname=displayname)
+                           displayname=displayname, subclass_tp=subclass_tp)
         if self.format_unit == 'O':
             cast = '(%s)' % self.type if self.type != 'PyObject *' else ''
             return """

@@ -1067,8 +1067,11 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], clinic_state()->ConnectionType)) {
-        _PyArg_BadArgument("backup", "argument 'target'", (clinic_state()->ConnectionType)->tp_name, args[0]);
+    PyTypeObject *argument_target_tp = clinic_state()->ConnectionType;
+    if (!PyObject_TypeCheck(args[0], argument_target_tp)) {
+        _PyArg_BadArgument("backup", "argument 'target'",
+                           argument_target_tp->tp_name,
+                           args[0]);
         goto exit;
     }
     target = (pysqlite_Connection *)args[0];
@@ -1532,4 +1535,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=f10306e10427488b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b553fb560627dca input=a9049054013a1b77]*/

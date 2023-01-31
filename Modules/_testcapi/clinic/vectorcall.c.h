@@ -27,8 +27,11 @@ _testcapi_VectorCallClass_set_vectorcall(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyTypeObject *type;
 
-    if (!PyObject_TypeCheck(arg, &PyType_Type)) {
-        _PyArg_BadArgument("set_vectorcall", "argument", (&PyType_Type)->tp_name, arg);
+    PyTypeObject *argument_tp = &PyType_Type;
+    if (!PyObject_TypeCheck(arg, argument_tp)) {
+        _PyArg_BadArgument("set_vectorcall", "argument",
+                           argument_tp->tp_name,
+                           arg);
         goto exit;
     }
     type = (PyTypeObject *)arg;
@@ -65,8 +68,11 @@ _testcapi_make_vectorcall_class(PyObject *module, PyObject *const *args, Py_ssiz
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (!PyObject_TypeCheck(args[0], &PyType_Type)) {
-        _PyArg_BadArgument("make_vectorcall_class", "argument 1", (&PyType_Type)->tp_name, args[0]);
+    PyTypeObject *argument_1_tp = &PyType_Type;
+    if (!PyObject_TypeCheck(args[0], argument_1_tp)) {
+        _PyArg_BadArgument("make_vectorcall_class", "argument 1",
+                           argument_1_tp->tp_name,
+                           args[0]);
         goto exit;
     }
     base = (PyTypeObject *)args[0];
@@ -96,8 +102,11 @@ _testcapi_has_vectorcall_flag(PyObject *module, PyObject *arg)
     PyTypeObject *type;
     int _return_value;
 
-    if (!PyObject_TypeCheck(arg, &PyType_Type)) {
-        _PyArg_BadArgument("has_vectorcall_flag", "argument", (&PyType_Type)->tp_name, arg);
+    PyTypeObject *argument_tp = &PyType_Type;
+    if (!PyObject_TypeCheck(arg, argument_tp)) {
+        _PyArg_BadArgument("has_vectorcall_flag", "argument",
+                           argument_tp->tp_name,
+                           arg);
         goto exit;
     }
     type = (PyTypeObject *)arg;
@@ -110,4 +119,4 @@ _testcapi_has_vectorcall_flag(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=609569aa9942584f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f41a644bfdb62fa7 input=a9049054013a1b77]*/

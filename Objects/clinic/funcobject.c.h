@@ -72,8 +72,11 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(fastargs[0], &PyCode_Type)) {
-        _PyArg_BadArgument("function", "argument 'code'", (&PyCode_Type)->tp_name, fastargs[0]);
+    PyTypeObject *argument_code_tp = &PyCode_Type;
+    if (!PyObject_TypeCheck(fastargs[0], argument_code_tp)) {
+        _PyArg_BadArgument("function", "argument 'code'",
+                           argument_code_tp->tp_name,
+                           fastargs[0]);
         goto exit;
     }
     code = (PyCodeObject *)fastargs[0];
@@ -104,4 +107,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=777cead7b1f6fad3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9e0180ad7f2f3a8a input=a9049054013a1b77]*/

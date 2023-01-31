@@ -206,8 +206,11 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!_PyArg_CheckPositional("_grouper", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), &groupby_type)) {
-        _PyArg_BadArgument("_grouper", "argument 1", (&groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
+    PyTypeObject *argument_1_tp = &groupby_type;
+    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), argument_1_tp)) {
+        _PyArg_BadArgument("_grouper", "argument 1",
+                           argument_1_tp->tp_name,
+                           PyTuple_GET_ITEM(args, 0));
         goto exit;
     }
     parent = PyTuple_GET_ITEM(args, 0);
@@ -913,4 +916,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=47c8c8ccec8740d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fddee4a536592338 input=a9049054013a1b77]*/

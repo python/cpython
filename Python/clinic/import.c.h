@@ -97,8 +97,11 @@ _imp__fix_co_filename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("_fix_co_filename", nargs, 2, 2)) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], &PyCode_Type)) {
-        _PyArg_BadArgument("_fix_co_filename", "argument 1", (&PyCode_Type)->tp_name, args[0]);
+    PyTypeObject *argument_1_tp = &PyCode_Type;
+    if (!PyObject_TypeCheck(args[0], argument_1_tp)) {
+        _PyArg_BadArgument("_fix_co_filename", "argument 1",
+                           argument_1_tp->tp_name,
+                           args[0]);
         goto exit;
     }
     code = (PyCodeObject *)args[0];
@@ -617,4 +620,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=806352838c3f7008 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a802b8558f4f29d input=a9049054013a1b77]*/
