@@ -2597,10 +2597,10 @@ process(int argc, wchar_t ** argv)
     }
 
     DWORD len = GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", NULL, 0);
-    if (len > 0) {
-        wchar_t *limitToCompany = allocSearchInfoBuffer(&search, len + 1);
+    if (len > 1) {
+        wchar_t *limitToCompany = allocSearchInfoBuffer(&search, len);
         search.limitToCompany = limitToCompany;
-        if (0 == GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", limitToCompany, len + 1)) {
+        if (0 == GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", limitToCompany, len)) {
             exitCode = RC_INTERNAL_ERROR;
             winerror(0, L"Failed to read PYLAUNCHER_LIMIT_TO_COMPANY variable");
             goto abort;
