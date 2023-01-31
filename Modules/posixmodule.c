@@ -14981,7 +14981,7 @@ os__isdir_impl(PyObject *module, PyObject *path)
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
-    FILE_BASIC_INFO info = { 0 };
+    FILE_BASIC_INFO info;
     path_t _path = PATH_T_INITIALIZE("isdir", "path", 0, 1);
     STRUCT_STAT st;
     DWORD error;
@@ -15006,11 +15006,14 @@ os__isdir_impl(PyObject *module, PyObject *path)
                             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     }
     if (hfile != INVALID_HANDLE_VALUE) {
-        GetFileInformationByHandleEx(hfile, FileBasicInfo, &info, sizeof(info));
+        if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info, sizeof(info))) {
+            result = info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+        } else {
+            result = 0;
+        }
         if (close_file) {
             CloseHandle(hfile);
         }
-        result = info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
     } else {
         error = GetLastError();
         switch (error) {
@@ -15057,7 +15060,7 @@ os__isfile_impl(PyObject *module, PyObject *path)
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
-    FILE_BASIC_INFO info = { 0 };
+    FILE_BASIC_INFO info;
     path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 1);
     STRUCT_STAT st;
     DWORD error;
@@ -15210,7 +15213,7 @@ os__islink_impl(PyObject *module, PyObject *path)
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
-    FILE_ATTRIBUTE_TAG_INFO info = { 0 };
+    FILE_ATTRIBUTE_TAG_INFO info;
     path_t _path = PATH_T_INITIALIZE("islink", "path", 0, 1);
     STRUCT_STAT st;
     DWORD error;
