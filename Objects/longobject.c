@@ -154,16 +154,10 @@ _PyLong_New(Py_ssize_t size)
         return NULL;
     }
     assert(size >= 0);
-#if WITH_FREELISTS
     if (size <= 1) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         result = (PyLongObject *)_PyInterpreterState_FreelistAlloc(interp, sizeof(PyLongObject));
     }
-#else
-    if (size == 0) {
-        result = PyObject_Malloc(sizeof(PyLongObject));
-    }
-#endif
     else {
         /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
            sizeof(digit)*size.  Previous incarnations of this code used
@@ -212,13 +206,9 @@ _PyLong_FromMedium(sdigit x)
 {
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
-    /* We could use a freelist here */
-#if WITH_FREELISTS
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyLongObject *v = (PyLongObject *)_PyInterpreterState_FreelistAlloc(interp, sizeof(PyLongObject));
-#else
-    PyLongObject *v = PyObject_Malloc(sizeof(PyLongObject));
-#endif
+    PyLongObject *v = (PyLongObject *)_PyInterpreterState_FreelistAlloc(
+        interp, sizeof(PyLongObject));
     if (v == NULL) {
         return PyErr_NoMemory();
     }
@@ -285,13 +275,11 @@ _PyLong_FromSTwoDigits(stwodigits x)
 static void
 int_dealloc(PyLongObject *op)
 {
-#if WITH_FREELISTS
     if (PyLong_CheckExact(op) && IS_MEDIUM_VALUE(op)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         _PyInterpreterState_FreelistFree(interp, (PyObject*)op, sizeof(PyLongObject));
     }
     else
-#endif
     {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
