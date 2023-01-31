@@ -805,6 +805,13 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
     if (callback == NULL)
         /* return existing weak reference if it exists */
         result = ref;
+    else {
+        if (!PyCallable_Check(callback)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "callback must be None, NULL, or callable object");
+            return NULL;
+        }
+    }
     if (result != NULL)
         Py_INCREF(result);
     else {

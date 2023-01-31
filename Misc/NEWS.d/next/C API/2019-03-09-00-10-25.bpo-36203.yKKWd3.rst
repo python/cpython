@@ -1,0 +1,1 @@
+Amend PyWeakref_New to raise a TypeError if the callback given is not NULL, None, or a callable object. The documentation previously falsely claimed this check occurred.

@@ -2793,6 +2793,15 @@ test_fatal_error(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_PyWeakref_NewRef(PyObject *self, PyObject *args) {
+    PyObject *ob = NULL;
+    PyObject *callback = NULL;
+    if (!PyArg_ParseTuple(args, "OO", &ob, &callback))
+        return NULL;
+    return PyWeakref_NewRef(ob, callback);
+}
+
 // type->tp_version_tag
 static PyObject *
 type_get_version(PyObject *self, PyObject *type)
@@ -3392,6 +3401,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
+    {"PyWeakref_NewRef", test_PyWeakref_NewRef, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

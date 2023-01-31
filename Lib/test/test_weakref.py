@@ -133,6 +133,14 @@ class ReferencesTestCase(TestBase):
         self.check_basic_ref(create_cfunction)
         self.check_basic_callback(create_cfunction)
 
+    def test_PyWeakref_NewRef_with_non_callable_raises_type_error(self):
+        import _testcapi
+        o = C()
+        with self.assertRaises(TypeError) as ctx:
+            _testcapi.PyWeakref_NewRef(o, 3)
+        self.assertEqual(str(ctx.exception),
+                         "callback must be None, NULL, or callable object")
+
     def test_multiple_callbacks(self):
         o = C()
         ref1 = weakref.ref(o, self.callback)
