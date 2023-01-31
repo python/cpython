@@ -925,12 +925,6 @@ compiler_next_instr(basicblock *b)
     (c)->u->u_end_lineno = -1;                  \
     (c)->u->u_end_col_offset = -1;
 
-#define COPY_COMPILER_UNIT_LOC(old, new)                  \
-    (new)->u_lineno = (old)->u_lineno;                    \
-    (new)->u_col_offset = (old)->u_col_offset;            \
-    (new)->u_end_lineno = (old)->u_end_lineno;            \
-    (new)->u_end_col_offset = (old)->u_end_col_offset;
-
 #define COPY_INSTR_LOC(old, new)                         \
     (new).i_lineno = (old).i_lineno;                     \
     (new).i_col_offset = (old).i_col_offset;             \
@@ -3265,15 +3259,14 @@ static int
 compiler_break(struct compiler *c)
 {
     struct fblockinfo *loop = NULL;
-    struct compiler_unit origin_loc;
-    COPY_COMPILER_UNIT_LOC(c->u, &origin_loc);
+    int origin_lineno = c->u->u_lineno;
     /* Emit instruction with line number */
     ADDOP(c, NOP);
     if (!compiler_unwind_fblock_stack(c, 0, &loop)) {
         return 0;
     }
     if (loop == NULL) {
-        COPY_COMPILER_UNIT_LOC(&origin_loc, c->u);
+        c->u->u_lineno = origin_lineno;
         return compiler_error(c, "'break' outside loop");
     }
     if (!compiler_unwind_fblock(c, loop, 0)) {
@@ -3287,15 +3280,14 @@ static int
 compiler_continue(struct compiler *c)
 {
     struct fblockinfo *loop = NULL;
-    struct compiler_unit origin_loc;
-    COPY_COMPILER_UNIT_LOC(c->u, &origin_loc);
+    int origin_lineno = c->u->u_lineno;
     /* Emit instruction with line number */
     ADDOP(c, NOP);
     if (!compiler_unwind_fblock_stack(c, 0, &loop)) {
         return 0;
     }
     if (loop == NULL) {
-        COPY_COMPILER_UNIT_LOC(&origin_loc, c->u);
+        c->u->u_lineno = origin_lineno;
         return compiler_error(c, "'continue' not properly in loop");
     }
     ADDOP_JUMP(c, JUMP, loop->fb_block);
