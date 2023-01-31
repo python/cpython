@@ -15180,7 +15180,8 @@ os__exists_impl(PyObject *module, PyObject *path)
         case ERROR_INVALID_PARAMETER:
             if (STAT(_path.wide, &st)) {
                 result = 0;
-            } else {
+            }
+            else {
                 result = 1;
             }
             break;
