@@ -232,9 +232,8 @@ SHA256_get_name(SHAobject *self, void *closure)
 {
     if (self->digestsize == 28) {
         return PyUnicode_FromStringAndSize("sha224", 6);
-    } else {
-        return PyUnicode_FromStringAndSize("sha256", 6);
     }
+    return PyUnicode_FromStringAndSize("sha256", 6);
 }
 
 static PyGetSetDef SHA_getseters[] = {
