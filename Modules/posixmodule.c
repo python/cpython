@@ -14983,8 +14983,6 @@ os__isdir_impl(PyObject *module, PyObject *path)
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info;
     path_t _path = PATH_T_INITIALIZE("isdir", "path", 0, 1);
-    STRUCT_STAT st;
-    DWORD error;
     int result;
 
     if (!path_converter(path, &_path)) {
@@ -15019,6 +15017,8 @@ os__isdir_impl(PyObject *module, PyObject *path)
         }
     }
     else {
+        STRUCT_STAT st;
+        DWORD error;
         error = GetLastError();
         switch (error) {
         case ERROR_ACCESS_DENIED:
@@ -15066,8 +15066,6 @@ os__isfile_impl(PyObject *module, PyObject *path)
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info;
     path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 1);
-    STRUCT_STAT st;
-    DWORD error;
     int result;
 
     if (!path_converter(path, &_path)) {
@@ -15102,6 +15100,8 @@ os__isfile_impl(PyObject *module, PyObject *path)
         }
     }
     else {
+        STRUCT_STAT st;
+        DWORD error;
         error = GetLastError();
         switch (error) {
         case ERROR_ACCESS_DENIED:
@@ -15149,8 +15149,6 @@ os__exists_impl(PyObject *module, PyObject *path)
     HANDLE hfile;
     BOOL close_file = TRUE;
     path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 1);
-    STRUCT_STAT st;
-    DWORD error;
     int result;
 
     if (!path_converter(path, &_path)) {
@@ -15178,6 +15176,8 @@ os__exists_impl(PyObject *module, PyObject *path)
         }
     }
     else {
+        STRUCT_STAT st;
+        DWORD error;
         error = GetLastError();
         switch (error) {
         case ERROR_ACCESS_DENIED:
@@ -15223,8 +15223,6 @@ os__islink_impl(PyObject *module, PyObject *path)
     BOOL close_file = TRUE;
     FILE_ATTRIBUTE_TAG_INFO info;
     path_t _path = PATH_T_INITIALIZE("islink", "path", 0, 1);
-    STRUCT_STAT st;
-    DWORD error;
     int result;
 
     if (!path_converter(path, &_path)) {
@@ -15261,6 +15259,8 @@ os__islink_impl(PyObject *module, PyObject *path)
         }
     }
     else {
+        STRUCT_STAT st;
+        DWORD error;
         error = GetLastError();
         switch (error) {
         case ERROR_ACCESS_DENIED:
