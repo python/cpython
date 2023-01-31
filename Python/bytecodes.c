@@ -1932,9 +1932,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_JUMP_IF_FALSE) {
-            PyObject *cond = POP();
+        inst(POP_JUMP_IF_FALSE, (cond -- )) {
             if (Py_IsTrue(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
             }
@@ -1945,19 +1943,16 @@ dummy_func(
             else {
                 int err = PyObject_IsTrue(cond);
                 Py_DECREF(cond);
-                if (err > 0)
-                    ;
-                else if (err == 0) {
+                if (err == 0) {
                     JUMPBY(oparg);
                 }
-                else
-                    goto error;
+                else {
+                    ERROR_IF(err < 0, error);
+                }
             }
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_JUMP_IF_TRUE) {
-            PyObject *cond = POP();
+        inst(POP_JUMP_IF_TRUE, (cond -- )) {
             if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
             }
@@ -1971,10 +1966,9 @@ dummy_func(
                 if (err > 0) {
                     JUMPBY(oparg);
                 }
-                else if (err == 0)
-                    ;
-                else
-                    goto error;
+                else {
+                    ERROR_IF(err < 0, error);
+                }
             }
         }
 

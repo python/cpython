@@ -2334,7 +2334,7 @@
 
         TARGET(POP_JUMP_IF_FALSE) {
             PREDICTED(POP_JUMP_IF_FALSE);
-            PyObject *cond = POP();
+            PyObject *cond = PEEK(1);
             if (Py_IsTrue(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
             }
@@ -2345,19 +2345,19 @@
             else {
                 int err = PyObject_IsTrue(cond);
                 Py_DECREF(cond);
-                if (err > 0)
-                    ;
-                else if (err == 0) {
+                if (err == 0) {
                     JUMPBY(oparg);
                 }
-                else
-                    goto error;
+                else {
+                    if (err < 0) goto pop_1_error;
+                }
             }
+            STACK_SHRINK(1);
             DISPATCH();
         }
 
         TARGET(POP_JUMP_IF_TRUE) {
-            PyObject *cond = POP();
+            PyObject *cond = PEEK(1);
             if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
             }
@@ -2371,11 +2371,11 @@
                 if (err > 0) {
                     JUMPBY(oparg);
                 }
-                else if (err == 0)
-                    ;
-                else
-                    goto error;
+                else {
+                    if (err < 0) goto pop_1_error;
+                }
             }
+            STACK_SHRINK(1);
             DISPATCH();
         }
 
