@@ -2749,7 +2749,7 @@
                                   "context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                if (true) goto pop_1_error;
+                goto error;
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
@@ -2761,7 +2761,7 @@
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                if (true) goto pop_1_error;
+                goto error;
             }
             Py_DECREF(mgr);
             res = _PyObject_CallNoArgs(enter);

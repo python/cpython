@@ -2314,7 +2314,7 @@ dummy_func(
                                   "context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                ERROR_IF(true, error);
+                goto error;
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
@@ -2326,7 +2326,7 @@ dummy_func(
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                ERROR_IF(true, error);
+                goto error;
             }
             DECREF_INPUTS();
             res = _PyObject_CallNoArgs(enter);
