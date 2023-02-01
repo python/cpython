@@ -15,12 +15,12 @@ _PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     if (code->_tier2_warmup != 0) {
         code->_tier2_warmup++;
         if (code->_tier2_warmup == 0) {
-            //// If it fails, due to lack of memory or whatever,
-            //// just fall back to the tier 1 interpreter.
-            //_Py_CODEUNIT *next = _PyCode_Tier2Initialize(frame, next_instr);
-            //if (next != NULL) {
-            //    return next;
-            //}
+            // If it fails, due to lack of memory or whatever,
+            // just fall back to the tier 1 interpreter.
+            _Py_CODEUNIT *next = _PyCode_Tier2Initialize(frame, next_instr);
+            if (next != NULL) {
+                return next;
+            }
         }
     }
     return next_instr;

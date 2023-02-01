@@ -41,16 +41,9 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
-    uint16_t branch_counter;
 } _PyCompareOpCache;
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
-
-typedef struct {
-    uint16_t branch_counter;
-} _PyConditionalJumpCache;
-
-#define INLINE_CACHE_ENTRIES_CONDITIONAL_JUMP CACHE_ENTRIES(_PyConditionalJumpCache)
 
 typedef struct {
     uint16_t counter;
