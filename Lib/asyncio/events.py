@@ -81,7 +81,13 @@ class Handle:
 
     def _run(self):
         try:
-            self._context.run(self._callback, *self._args)
+            try:
+                self._context.run(self._callback, *self._args)
+            except RuntimeError as e:
+                if 'cannot enter context' not in str(e):
+                    raise
+                # XXX: HACK!
+                self._callback(*self._args)
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
