@@ -8630,17 +8630,19 @@ opcode_metadata_is_sane(cfg_builder *g) {
             int opcode = instr->i_opcode;
             int oparg = instr->i_oparg;
             assert(opcode <= MAX_REAL_OPCODE);
-            int popped = _PyOpcode_num_popped(opcode, oparg);
-            int pushed = _PyOpcode_num_pushed(opcode, oparg);
-            assert((pushed < 0) == (popped < 0));
-            if (pushed >= 0) {
-                assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
-                int effect = stack_effect(opcode, instr->i_oparg, -1);
-                if (effect != pushed - popped) {
-                   fprintf(stderr,
-                           "op=%d: stack_effect (%d) != pushed (%d) - popped (%d)\n",
-                           opcode, effect, pushed, popped);
-                   result = false;
+            for (int jump = 0; jump <= 1; jump++) {
+                int popped = _PyOpcode_num_popped(opcode, oparg, jump ? true : false);
+                int pushed = _PyOpcode_num_pushed(opcode, oparg, jump ? true : false);
+                assert((pushed < 0) == (popped < 0));
+                if (pushed >= 0) {
+                    assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
+                    int effect = stack_effect(opcode, instr->i_oparg, jump);
+                    if (effect != pushed - popped) {
+                       fprintf(stderr,
+                               "op=%d arg=%d jump=%d: stack_effect (%d) != pushed (%d) - popped (%d)\n",
+                               opcode, oparg, jump, effect, pushed, popped);
+                       result = false;
+                    }
                 }
             }
         }

@@ -1898,9 +1898,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_JUMP_IF_FALSE) {
-            PyObject *cond = POP();
+        inst(POP_JUMP_IF_FALSE, (cond -- )) {
             if (Py_IsTrue(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
             }
@@ -1911,19 +1909,16 @@ dummy_func(
             else {
                 int err = PyObject_IsTrue(cond);
                 Py_DECREF(cond);
-                if (err > 0)
-                    ;
-                else if (err == 0) {
+                if (err == 0) {
                     JUMPBY(oparg);
                 }
-                else
-                    goto error;
+                else {
+                    ERROR_IF(err < 0, error);
+                }
             }
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_JUMP_IF_TRUE) {
-            PyObject *cond = POP();
+        inst(POP_JUMP_IF_TRUE, (cond -- )) {
             if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
             }
@@ -1937,25 +1932,23 @@ dummy_func(
                 if (err > 0) {
                     JUMPBY(oparg);
                 }
-                else if (err == 0)
-                    ;
-                else
-                    goto error;
+                else {
+                    ERROR_IF(err < 0, error);
+                }
             }
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_JUMP_IF_NOT_NONE) {
-            PyObject *value = POP();
+        inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
             if (!Py_IsNone(value)) {
+                Py_DECREF(value);
                 JUMPBY(oparg);
             }
-            Py_DECREF(value);
+            else {
+                _Py_DECREF_NO_DEALLOC(value);
+            }
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_JUMP_IF_NONE) {
-            PyObject *value = POP();
+        inst(POP_JUMP_IF_NONE, (value -- )) {
             if (Py_IsNone(value)) {
                 _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(oparg);
@@ -1965,25 +1958,24 @@ dummy_func(
             }
         }
 
-        // error: JUMP_IF_FALSE_OR_POP stack effect depends on jump flag
-        inst(JUMP_IF_FALSE_OR_POP) {
-            PyObject *cond = TOP();
+        inst(JUMP_IF_FALSE_OR_POP, (cond -- cond if (jump))) {
+            bool jump = false;
             int err;
             if (Py_IsTrue(cond)) {
-                STACK_SHRINK(1);
                 _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsFalse(cond)) {
                 JUMPBY(oparg);
+                jump = true;
             }
             else {
                 err = PyObject_IsTrue(cond);
                 if (err > 0) {
-                    STACK_SHRINK(1);
                     Py_DECREF(cond);
                 }
                 else if (err == 0) {
                     JUMPBY(oparg);
+                    jump = true;
                 }
                 else {
                     goto error;
@@ -1991,24 +1983,23 @@ dummy_func(
             }
         }
 
-        // error: JUMP_IF_TRUE_OR_POP stack effect depends on jump flag
-        inst(JUMP_IF_TRUE_OR_POP) {
-            PyObject *cond = TOP();
+        inst(JUMP_IF_TRUE_OR_POP, (cond -- cond if (jump))) {
+            bool jump = false;
             int err;
             if (Py_IsFalse(cond)) {
-                STACK_SHRINK(1);
                 _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsTrue(cond)) {
                 JUMPBY(oparg);
+                jump = true;
             }
             else {
                 err = PyObject_IsTrue(cond);
                 if (err > 0) {
                     JUMPBY(oparg);
+                    jump = true;
                 }
                 else if (err == 0) {
-                    STACK_SHRINK(1);
                     Py_DECREF(cond);
                 }
                 else {
@@ -2321,22 +2312,16 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: ( -- __0)
-        inst(PUSH_EXC_INFO) {
-            PyObject *value = TOP();
-
+        inst(PUSH_EXC_INFO, (new_exc -- prev_exc, new_exc)) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
             if (exc_info->exc_value != NULL) {
-                SET_TOP(exc_info->exc_value);
+                prev_exc = exc_info->exc_value;
             }
             else {
-                SET_TOP(Py_NewRef(Py_None));
+                prev_exc = Py_NewRef(Py_None);
             }
-
-            PUSH(Py_NewRef(value));
-            assert(PyExceptionInstance_Check(value));
-            exc_info->exc_value = value;
-
+            assert(PyExceptionInstance_Check(new_exc));
+            exc_info->exc_value = Py_NewRef(new_exc);
         }
 
         inst(LOAD_ATTR_METHOD_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- res2 if (oparg & 1), res)) {
