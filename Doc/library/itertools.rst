@@ -1004,7 +1004,7 @@ which incur interpreter overhead.
 
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
-       # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+       # unique_everseen('AAAABBBCCDAABBBDDD') --> A B C D
        # unique_everseen('ABBcCAD', str.lower) --> A B c D
        seen = set()
        if key is None:
