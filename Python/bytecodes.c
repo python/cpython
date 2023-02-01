@@ -2346,7 +2346,6 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: ( -- __0)
         inst(PUSH_EXC_INFO, (new_exc -- prev_exc, new_exc)) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
             if (exc_info->exc_value != NULL) {
