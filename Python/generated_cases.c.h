@@ -1311,6 +1311,7 @@
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 5, "incorrect cache size");
             PyObject *null = NULL;
             PyObject *v;
             #if ENABLE_SPECIALIZATION
@@ -1374,22 +1375,26 @@
         }
 
         TARGET(LOAD_GLOBAL_MODULE) {
+            PyObject *null = NULL;
+            PyObject *res;
+            uint16_t index = read_u16(&next_instr[1].cache);
+            uint32_t version = read_u32(&next_instr[2].cache);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
-            _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
-            uint32_t version = read_u32(cache->module_keys_version);
             DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
             assert(DK_IS_UNICODE(dict->ma_keys));
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-            PyObject *res = entries[cache->index].me_value;
+            res = entries[index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            int push_null = oparg & 1;
-            PEEK(0) = NULL;
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
+            Py_INCREF(res);
             STAT_INC(LOAD_GLOBAL, hit);
-            STACK_GROW(push_null+1);
-            SET_TOP(Py_NewRef(res));
+            null = NULL;
+            STACK_GROW(1);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            POKE(1, res);
+            if (oparg & 1) { POKE(1 + ((oparg & 1) ? 1 : 0), null); }
+            JUMPBY(5);
             DISPATCH();
         }
 
