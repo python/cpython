@@ -102,10 +102,10 @@ static PyObject *
 pairwise_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &pairwise_type;
     PyObject *iterable;
 
-    if ((type == &pairwise_type ||
-         type->tp_init == pairwise_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("pairwise", kwargs)) {
         goto exit;
     }
@@ -195,11 +195,11 @@ static PyObject *
 itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &_grouper_type;
     PyObject *parent;
     PyObject *tgtkey;
 
-    if ((type == &_grouper_type ||
-         type->tp_init == _grouper_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("_grouper", kwargs)) {
         goto exit;
     }
@@ -232,12 +232,12 @@ static PyObject *
 itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &teedataobject_type;
     PyObject *it;
     PyObject *values;
     PyObject *next;
 
-    if ((type == &teedataobject_type ||
-         type->tp_init == teedataobject_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("teedataobject", kwargs)) {
         goto exit;
     }
@@ -270,10 +270,10 @@ static PyObject *
 itertools__tee(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &tee_type;
     PyObject *iterable;
 
-    if ((type == &tee_type ||
-         type->tp_init == tee_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("_tee", kwargs)) {
         goto exit;
     }
@@ -345,10 +345,10 @@ static PyObject *
 itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &cycle_type;
     PyObject *iterable;
 
-    if ((type == &cycle_type ||
-         type->tp_init == cycle_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("cycle", kwargs)) {
         goto exit;
     }
@@ -377,11 +377,11 @@ static PyObject *
 itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &dropwhile_type;
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &dropwhile_type ||
-         type->tp_init == dropwhile_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("dropwhile", kwargs)) {
         goto exit;
     }
@@ -409,11 +409,11 @@ static PyObject *
 itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &takewhile_type;
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &takewhile_type ||
-         type->tp_init == takewhile_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("takewhile", kwargs)) {
         goto exit;
     }
@@ -441,11 +441,11 @@ static PyObject *
 itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &starmap_type;
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &starmap_type ||
-         type->tp_init == starmap_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("starmap", kwargs)) {
         goto exit;
     }
@@ -821,11 +821,11 @@ static PyObject *
 itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &filterfalse_type;
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &filterfalse_type ||
-         type->tp_init == filterfalse_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("filterfalse", kwargs)) {
         goto exit;
     }
@@ -913,4 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0229ebd72962f130 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47c8c8ccec8740d7 input=a9049054013a1b77]*/
