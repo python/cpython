@@ -221,8 +221,8 @@ Scheduling callbacks
    Schedule the *callback* :term:`callback` to be called with
    *args* arguments at the next iteration of the event loop.
 
-   Callbacks are called in the order in which they are registered. Each callback
-   will be called exactly once, even if it is registered multiple times.
+   Callbacks are called in the order in which they are registered.
+   Each callback will be called exactly once.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *callback* to run in.
