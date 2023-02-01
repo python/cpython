@@ -302,8 +302,9 @@ Module functions
    :type isolation_level: str | None
 
    :param bool check_same_thread:
-       If ``True`` (default), :exc:`ProgrammingError` will be raised if the database connection
-       is used by a thread other than the one that created it.
+       If ``True`` (default), :exc:`ProgrammingError` will be raised
+       if the database connection is used by a thread
+       other than the one that created it.
        If ``False``, the connection may be accessed in multiple threads;
        write operations may need to be serialized by the user
        to avoid data corruption.
