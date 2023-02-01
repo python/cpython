@@ -141,11 +141,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case LOAD_NAME:
             return 0;
         case LOAD_GLOBAL:
-            return -1;
+            return 0;
         case LOAD_GLOBAL_MODULE:
-            return -1;
+            return 0;
         case LOAD_GLOBAL_BUILTIN:
-            return -1;
+            return 0;
         case DELETE_FAST:
             return 0;
         case MAKE_CELL:
@@ -487,11 +487,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_NAME:
             return 1;
         case LOAD_GLOBAL:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_MODULE:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_BUILTIN:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case DELETE_FAST:
             return 0;
         case MAKE_CELL:
@@ -694,7 +694,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC0000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
     enum Direction dir_op1;
     enum Direction dir_op2;
@@ -769,9 +769,9 @@ struct opcode_metadata {
     [STORE_GLOBAL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DELETE_GLOBAL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_GLOBAL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_GLOBAL_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_GLOBAL_BUILTIN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LOAD_GLOBAL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC0000 },
+    [LOAD_GLOBAL_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC0000 },
+    [LOAD_GLOBAL_BUILTIN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC0000 },
     [DELETE_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [MAKE_CELL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DELETE_DEREF] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },

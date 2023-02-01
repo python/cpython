@@ -1062,8 +1062,13 @@ dummy_func(
             }
         }
 
-        // error: LOAD_GLOBAL has irregular stack effect
-        inst(LOAD_GLOBAL) {
+        family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
+            LOAD_GLOBAL,
+            LOAD_GLOBAL_MODULE,
+            LOAD_GLOBAL_BUILTIN,
+        };
+
+        inst(LOAD_GLOBAL, (unused/1, unused/1, unused/2, unused/1 -- null if (oparg & 1), v)) {
             #if ENABLE_SPECIALIZATION
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1076,10 +1081,7 @@ dummy_func(
             STAT_INC(LOAD_GLOBAL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            int push_null = oparg & 1;
-            PEEK(0) = NULL;
             PyObject *name = GETITEM(names, oparg>>1);
-            PyObject *v;
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
             {
@@ -1093,7 +1095,7 @@ dummy_func(
                         format_exc_check_arg(tstate, PyExc_NameError,
                                              NAME_ERROR_MSG, name);
                     }
-                    goto error;
+                    ERROR_IF(true, error);
                 }
                 Py_INCREF(v);
             }
@@ -1103,9 +1105,7 @@ dummy_func(
                 /* namespace 1: globals */
                 v = PyObject_GetItem(GLOBALS(), name);
                 if (v == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        goto error;
-                    }
+                    ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
                     _PyErr_Clear(tstate);
 
                     /* namespace 2: builtins */
@@ -1116,58 +1116,42 @@ dummy_func(
                                         tstate, PyExc_NameError,
                                         NAME_ERROR_MSG, name);
                         }
-                        goto error;
+                        ERROR_IF(true, error);
                     }
                 }
             }
-            /* Skip over inline cache */
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
-            STACK_GROW(push_null);
-            PUSH(v);
+            null = NULL;
         }
 
-        // error: LOAD_GLOBAL has irregular stack effect
-        inst(LOAD_GLOBAL_MODULE) {
+        inst(LOAD_GLOBAL_MODULE, (unused/1, index/1, version/2, unused/1 -- null if (oparg & 1), res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
-            _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
-            uint32_t version = read_u32(cache->module_keys_version);
             DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
             assert(DK_IS_UNICODE(dict->ma_keys));
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-            PyObject *res = entries[cache->index].me_value;
+            res = entries[index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            int push_null = oparg & 1;
-            PEEK(0) = NULL;
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
+            Py_INCREF(res);
             STAT_INC(LOAD_GLOBAL, hit);
-            STACK_GROW(push_null+1);
-            SET_TOP(Py_NewRef(res));
+            null = NULL;
         }
 
-        // error: LOAD_GLOBAL has irregular stack effect
-        inst(LOAD_GLOBAL_BUILTIN) {
+        inst(LOAD_GLOBAL_BUILTIN, (unused/1, index/1, mod_version/2, bltn_version/1 -- null if (oparg & 1), res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
             PyDictObject *mdict = (PyDictObject *)GLOBALS();
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
-            _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
-            uint32_t mod_version = read_u32(cache->module_keys_version);
-            uint16_t bltn_version = cache->builtin_keys_version;
             DEOPT_IF(mdict->ma_keys->dk_version != mod_version, LOAD_GLOBAL);
             DEOPT_IF(bdict->ma_keys->dk_version != bltn_version, LOAD_GLOBAL);
             assert(DK_IS_UNICODE(bdict->ma_keys));
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
-            PyObject *res = entries[cache->index].me_value;
+            res = entries[index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            int push_null = oparg & 1;
-            PEEK(0) = NULL;
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
+            Py_INCREF(res);
             STAT_INC(LOAD_GLOBAL, hit);
-            STACK_GROW(push_null+1);
-            SET_TOP(Py_NewRef(res));
+            null = NULL;
         }
 
         inst(DELETE_FAST, (--)) {
@@ -3206,9 +3190,6 @@ family(call, INLINE_CACHE_ENTRIES_CALL) = {
 family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
     FOR_ITER, FOR_ITER_LIST,
     FOR_ITER_RANGE };
-family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
-    LOAD_GLOBAL, LOAD_GLOBAL_BUILTIN,
-    LOAD_GLOBAL_MODULE };
 family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
 family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
     UNPACK_SEQUENCE, UNPACK_SEQUENCE_LIST,
