@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include <stddef.h>               // offsetof()
@@ -10,10 +11,42 @@
    by Raymond D. Hettinger <python@rcn.com>
 */
 
+typedef struct {
+    PyTypeObject *groupby_type;
+    PyTypeObject *_grouper_type;
+} itertools_state;
+
+static inline itertools_state *
+get_module_state(PyObject *mod)
+{
+    void *state = _PyModule_GetState(mod);
+    assert(state != NULL);
+    return (itertools_state *)state;
+}
+
+static inline itertools_state *
+get_module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (itertools_state *)state;
+}
+
+static struct PyModuleDef itertoolsmodule;
+
+static inline itertools_state *
+find_state_by_type(PyTypeObject *tp)
+{
+    PyObject *mod = PyType_GetModuleByDef(tp, &itertoolsmodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+#define clinic_state() (find_state_by_type(type))
+
 /*[clinic input]
 module itertools
-class itertools.groupby "groupbyobject *" "&groupby_type"
-class itertools._grouper "_grouperobject *" "&_grouper_type"
+class itertools.groupby "groupbyobject *" "clinic_state()->groupby_type"
+class itertools._grouper "_grouperobject *" "clinic_state()->_grouper_type"
 class itertools.teedataobject "teedataobject *" "&teedataobject_type"
 class itertools._tee "teeobject *" "&tee_type"
 class itertools.batched "batchedobject *" "&batched_type"
@@ -31,10 +64,8 @@ class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1168b274011ce21b]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=424108522584b55b]*/
 
-static PyTypeObject groupby_type;
-static PyTypeObject _grouper_type;
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
 static PyTypeObject batched_type;
@@ -51,7 +82,10 @@ static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
 static PyTypeObject pairwise_type;
 
+#define clinic_state_by_cls() (get_module_state_by_cls(base_tp))
 #include "clinic/itertoolsmodule.c.h"
+#undef clinic_state_by_cls
+#undef clinic_state
 
 /* batched object ************************************************************/
 
@@ -372,6 +406,7 @@ typedef struct {
     PyObject *currkey;
     PyObject *currvalue;
     const void *currgrouper;  /* borrowed reference */
+    itertools_state *state;
 } groupbyobject;
 
 static PyObject *_grouper_create(groupbyobject *, PyObject *);
@@ -408,24 +443,28 @@ itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
         Py_DECREF(gbo);
         return NULL;
     }
+    gbo->state = find_state_by_type(type);
     return (PyObject *)gbo;
 }
 
 static void
 groupby_dealloc(groupbyobject *gbo)
 {
+    PyTypeObject *tp = Py_TYPE(gbo);
     PyObject_GC_UnTrack(gbo);
     Py_XDECREF(gbo->it);
     Py_XDECREF(gbo->keyfunc);
     Py_XDECREF(gbo->tgtkey);
     Py_XDECREF(gbo->currkey);
     Py_XDECREF(gbo->currvalue);
-    Py_TYPE(gbo)->tp_free(gbo);
+    tp->tp_free(gbo);
+    Py_DECREF(tp);
 }
 
 static int
 groupby_traverse(groupbyobject *gbo, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(gbo));
     Py_VISIT(gbo->it);
     Py_VISIT(gbo->keyfunc);
     Py_VISIT(gbo->tgtkey);
@@ -546,50 +585,26 @@ static PyMethodDef groupby_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyTypeObject groupby_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.groupby",                /* tp_name */
-    sizeof(groupbyobject),              /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)groupby_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_groupby__doc__,           /* tp_doc */
-    (traverseproc)groupby_traverse,     /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)groupby_next,         /* tp_iternext */
-    groupby_methods,                    /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_groupby,                  /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot groupby_slots[] = {
+    {Py_tp_dealloc, groupby_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_groupby__doc__},
+    {Py_tp_traverse, groupby_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, groupby_next},
+    {Py_tp_methods, groupby_methods},
+    {Py_tp_new, itertools_groupby},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
 };
 
+static PyType_Spec groupby_spec = {
+    .name = "itertools.groupby",
+    .basicsize= sizeof(groupbyobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = groupby_slots,
+};
 
 /* _grouper object (internal) ************************************************/
 
@@ -603,7 +618,7 @@ typedef struct {
 @classmethod
 itertools._grouper.__new__
 
-    parent: object(subclass_of='&groupby_type')
+    parent: object(subclass_of='clinic_state_by_cls()->groupby_type')
     tgtkey: object
     /
 [clinic start generated code]*/
@@ -611,7 +626,7 @@ itertools._grouper.__new__
 static PyObject *
 itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
                         PyObject *tgtkey)
-/*[clinic end generated code: output=462efb1cdebb5914 input=dc180d7771fc8c59]*/
+/*[clinic end generated code: output=462efb1cdebb5914 input=afe05eb477118f12]*/
 {
     return _grouper_create((groupbyobject*) parent, tgtkey);
 }
@@ -619,9 +634,8 @@ itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
 static PyObject *
 _grouper_create(groupbyobject *parent, PyObject *tgtkey)
 {
-    _grouperobject *igo;
-
-    igo = PyObject_GC_New(_grouperobject, &_grouper_type);
+    itertools_state *state = parent->state;
+    _grouperobject *igo = PyObject_GC_New(_grouperobject, state->_grouper_type);
     if (igo == NULL)
         return NULL;
     igo->parent = Py_NewRef(parent);
@@ -635,15 +649,18 @@ _grouper_create(groupbyobject *parent, PyObject *tgtkey)
 static void
 _grouper_dealloc(_grouperobject *igo)
 {
+    PyTypeObject *tp = Py_TYPE(igo);
     PyObject_GC_UnTrack(igo);
     Py_DECREF(igo->parent);
     Py_DECREF(igo->tgtkey);
     PyObject_GC_Del(igo);
+    Py_DECREF(tp);
 }
 
 static int
 _grouper_traverse(_grouperobject *igo, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(igo));
     Py_VISIT(igo->parent);
     Py_VISIT(igo->tgtkey);
     return 0;
@@ -691,48 +708,24 @@ static PyMethodDef _grouper_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
+static PyType_Slot _grouper_slots[] = {
+    {Py_tp_dealloc, _grouper_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, _grouper_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, _grouper_next},
+    {Py_tp_methods, _grouper_methods},
+    {Py_tp_new, itertools__grouper},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
 
-static PyTypeObject _grouper_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools._grouper",               /* tp_name */
-    sizeof(_grouperobject),             /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)_grouper_dealloc,       /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
-    0,                                  /* tp_doc */
-    (traverseproc)_grouper_traverse,    /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)_grouper_next,        /* tp_iternext */
-    _grouper_methods,                   /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools__grouper,                 /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Spec _grouper_spec = {
+    .name = "itertools._grouper",
+    .basicsize = sizeof(_grouperobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = _grouper_slots,
 };
 
 
@@ -4979,8 +4972,47 @@ combinations_with_replacement(p, r)\n\
 ");
 
 static int
-itertoolsmodule_exec(PyObject *m)
+itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
 {
+    itertools_state *state = get_module_state(mod);
+    Py_VISIT(state->groupby_type);
+    Py_VISIT(state->_grouper_type);
+    return 0;
+}
+
+static int
+itertoolsmodule_clear(PyObject *mod)
+{
+    itertools_state *state = get_module_state(mod);
+    Py_CLEAR(state->groupby_type);
+    Py_CLEAR(state->_grouper_type);
+    return 0;
+}
+
+static void
+itertoolsmodule_free(void *mod)
+{
+    (void)itertoolsmodule_clear((PyObject *)mod);
+}
+
+#define ADD_TYPE(module, type, spec)                                     \
+do {                                                                     \
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, NULL); \
+    if (type == NULL) {                                                  \
+        return -1;                                                       \
+    }                                                                    \
+    if (PyModule_AddType(module, type) < 0) {                            \
+        return -1;                                                       \
+    }                                                                    \
+} while (0)
+
+static int
+itertoolsmodule_exec(PyObject *mod)
+{
+    itertools_state *state = get_module_state(mod);
+    ADD_TYPE(mod, state->groupby_type, &groupby_spec);
+    ADD_TYPE(mod, state->_grouper_type, &_grouper_spec);
+
     PyTypeObject *typelist[] = {
         &accumulate_type,
         &batched_type,
@@ -5000,8 +5032,6 @@ itertoolsmodule_exec(PyObject *m)
         &permutations_type,
         &product_type,
         &repeat_type,
-        &groupby_type,
-        &_grouper_type,
         &tee_type,
         &teedataobject_type
     };
@@ -5009,7 +5039,7 @@ itertoolsmodule_exec(PyObject *m)
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
-        if (PyModule_AddType(m, typelist[i]) < 0) {
+        if (PyModule_AddType(mod, typelist[i]) < 0) {
             return -1;
         }
     }
@@ -5029,15 +5059,15 @@ static PyMethodDef module_methods[] = {
 
 
 static struct PyModuleDef itertoolsmodule = {
-    PyModuleDef_HEAD_INIT,
-    "itertools",
-    module_doc,
-    0,
-    module_methods,
-    itertoolsmodule_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "itertools",
+    .m_doc = module_doc,
+    .m_size = sizeof(itertools_state),
+    .m_methods = module_methods,
+    .m_slots = itertoolsmodule_slots,
+    .m_traverse = itertoolsmodule_traverse,
+    .m_clear = itertoolsmodule_clear,
+    .m_free = itertoolsmodule_free,
 };
 
 PyMODINIT_FUNC
