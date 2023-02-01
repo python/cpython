@@ -283,7 +283,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case LOAD_ATTR_METHOD_NO_DICT:
             return 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
-            return -1;
+            return 1;
         case CALL_BOUND_METHOD_EXACT_ARGS:
             return -1;
         case KW_NAMES:
@@ -629,7 +629,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case LOAD_ATTR_METHOD_NO_DICT:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case CALL_BOUND_METHOD_EXACT_ARGS:
             return -1;
         case KW_NAMES:
@@ -840,7 +840,7 @@ struct opcode_metadata {
     [PUSH_EXC_INFO] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_METHOD_NO_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_METHOD_LAZY_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [LOAD_ATTR_METHOD_LAZY_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [KW_NAMES] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CALL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },

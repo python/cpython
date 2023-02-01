@@ -1447,7 +1447,7 @@ dummy_func(
             LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
             LOAD_ATTR_METHOD_WITH_VALUES,
             LOAD_ATTR_METHOD_NO_DICT,
-            // LOAD_ATTR_METHOD_LAZY_DICT,
+            LOAD_ATTR_METHOD_LAZY_DICT,
         };
 
         inst(LOAD_ATTR, (unused/9, owner -- res2 if (oparg & 1), res)) {
@@ -2372,13 +2372,9 @@ dummy_func(
             assert(oparg & 1);
         }
 
-        // error: LOAD_ATTR has irregular stack effect
-        inst(LOAD_ATTR_METHOD_LAZY_DICT) {
+        inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (oparg & 1), res)) {
             assert(cframe.use_tracing == 0);
-            PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
-            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
-            uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             Py_ssize_t dictoffset = self_cls->tp_dictoffset;
             assert(dictoffset > 0);
@@ -2386,12 +2382,11 @@ dummy_func(
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            PyObject *res = read_obj(cache->descr);
-            assert(res != NULL);
-            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            SET_TOP(Py_NewRef(res));
-            PUSH(self);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            assert(descr != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            res2 = Py_NewRef(descr);
+            res = self;
+            assert(oparg & 1);
         }
 
         // stack effect: (__0, __array[oparg] -- )
