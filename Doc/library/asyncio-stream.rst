@@ -335,7 +335,7 @@ StreamWriter
       returns immediately.
 
    .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
-                          ssl_handshake_timeout=None)
+                          ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
 
       Upgrade an existing stream-based connection to TLS.
 
@@ -350,7 +350,15 @@ StreamWriter
         handshake to complete before aborting the connection.  ``60.0`` seconds
         if ``None`` (default).
 
+      * *ssl_shutdown_timeout* is the time in seconds to wait for the SSL shutdown
+        to complete before aborting the connection. ``30.0`` seconds if ``None``
+        (default).
+
       .. versionadded:: 3.11
+
+      .. versionchanged:: 3.12
+         Added the *ssl_shutdown_timeout* parameter.
+
 
    .. method:: is_closing()
 
