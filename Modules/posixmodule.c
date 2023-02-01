@@ -14968,10 +14968,7 @@ os._isdir
 
     path: 'O'
 
-Return True if path is an existing directory.
-
-This follows symbolic links, so both islink() and isdir() can be true for the
-same path.
+Return true if the pathname refers to an existing directory.
 
 [clinic start generated code]*/
 
@@ -15049,10 +15046,7 @@ os._isfile
 
     path: 'O'
 
-Return True if path is an existing file.
-
-This follows symbolic links, so both islink() and isfile() can be true for the
-same path.
+Test whether a path is a regular file
 
 [clinic start generated code]*/
 
@@ -15130,11 +15124,7 @@ os._exists
 
     path: 'O'
 
-Return True if path refers to an existing path or an open file descriptor.
-
-Return False for broken symbolic links. On some platforms, this function may
-return False if permission is not granted to execute os.stat() on the requested
-file, even if the path exists.
+Test whether a path exists.  Returns False for broken symbolic links
 
 [clinic start generated code]*/
 
@@ -15204,9 +15194,7 @@ os._islink
 
     path: 'O'
 
-Return True if path refers to an existing directory entry that is a symbolic link.
-
-Return False if symbolic links are not supported by the Python runtime.
+Test whether a path is a symbolic link
 
 [clinic start generated code]*/
 
