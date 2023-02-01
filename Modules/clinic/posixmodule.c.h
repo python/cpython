@@ -10971,10 +10971,7 @@ PyDoc_STRVAR(os__isdir__doc__,
 "_isdir($module, /, path)\n"
 "--\n"
 "\n"
-"Return True if path is an existing directory.\n"
-"\n"
-"This follows symbolic links, so both islink() and isdir() can be true for the\n"
-"same path.");
+"Return true if the pathname refers to an existing directory.");
 
 #define OS__ISDIR_METHODDEF    \
     {"_isdir", _PyCFunction_CAST(os__isdir), METH_FASTCALL|METH_KEYWORDS, os__isdir__doc__},
@@ -11033,10 +11030,7 @@ PyDoc_STRVAR(os__isfile__doc__,
 "_isfile($module, /, path)\n"
 "--\n"
 "\n"
-"Return True if path is an existing file.\n"
-"\n"
-"This follows symbolic links, so both islink() and isfile() can be true for the\n"
-"same path.");
+"Test whether a path is a regular file");
 
 #define OS__ISFILE_METHODDEF    \
     {"_isfile", _PyCFunction_CAST(os__isfile), METH_FASTCALL|METH_KEYWORDS, os__isfile__doc__},
@@ -11095,11 +11089,7 @@ PyDoc_STRVAR(os__exists__doc__,
 "_exists($module, /, path)\n"
 "--\n"
 "\n"
-"Return True if path refers to an existing path or an open file descriptor.\n"
-"\n"
-"Return False for broken symbolic links. On some platforms, this function may\n"
-"return False if permission is not granted to execute os.stat() on the requested\n"
-"file, even if the path exists.");
+"Test whether a path exists.  Returns False for broken symbolic links");
 
 #define OS__EXISTS_METHODDEF    \
     {"_exists", _PyCFunction_CAST(os__exists), METH_FASTCALL|METH_KEYWORDS, os__exists__doc__},
@@ -11158,9 +11148,7 @@ PyDoc_STRVAR(os__islink__doc__,
 "_islink($module, /, path)\n"
 "--\n"
 "\n"
-"Return True if path refers to an existing directory entry that is a symbolic link.\n"
-"\n"
-"Return False if symbolic links are not supported by the Python runtime.");
+"Test whether a path is a symbolic link");
 
 #define OS__ISLINK_METHODDEF    \
     {"_islink", _PyCFunction_CAST(os__islink), METH_FASTCALL|METH_KEYWORDS, os__islink__doc__},
@@ -11824,4 +11812,4 @@ exit:
 #ifndef OS__ISLINK_METHODDEF
     #define OS__ISLINK_METHODDEF
 #endif /* !defined(OS__ISLINK_METHODDEF) */
-/*[clinic end generated code: output=ad817f73e9707b32 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=804a3fa6b5e7a575 input=a9049054013a1b77]*/

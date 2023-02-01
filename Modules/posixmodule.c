@@ -14974,7 +14974,7 @@ Return true if the pathname refers to an existing directory.
 
 static PyObject *
 os__isdir_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=e87264f004b1aa44 input=2b77ce7f601eb6bc]*/
+/*[clinic end generated code: output=e87264f004b1aa44 input=c5c5c56fe1d287b7]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -15052,7 +15052,7 @@ Test whether a path is a regular file
 
 static PyObject *
 os__isfile_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=45efe2f636a0226a input=e4026a0f974ee867]*/
+/*[clinic end generated code: output=45efe2f636a0226a input=93d9523950b7585f]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -15130,7 +15130,7 @@ Test whether a path exists.  Returns False for broken symbolic links
 
 static PyObject *
 os__exists_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=0f0ba589f386f816 input=4fb71ae480a2082c]*/
+/*[clinic end generated code: output=0f0ba589f386f816 input=6aa7a07262d888f4]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -15200,7 +15200,7 @@ Test whether a path is a symbolic link
 
 static PyObject *
 os__islink_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=597174066981ca21 input=78c88fc9c0b64d3b]*/
+/*[clinic end generated code: output=597174066981ca21 input=e90f4913a45c8098]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
