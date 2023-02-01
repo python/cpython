@@ -784,18 +784,12 @@ dummy_func(
             }
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(CLEANUP_THROW) {
+        inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value -- value)) {
             assert(throwflag);
-            PyObject *exc_value = TOP();
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
-                PyObject *value = ((PyStopIterationObject *)exc_value)->value;
-                Py_INCREF(value);
-                Py_DECREF(POP());  // The StopIteration.
-                Py_DECREF(POP());  // The last sent value.
-                Py_DECREF(POP());  // The delegated sub-iterator.
-                PUSH(value);
+                value = Py_NewRef(((PyStopIterationObject *)exc_value)->value);
+                DECREF_INPUTS();
             }
             else {
                 PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));

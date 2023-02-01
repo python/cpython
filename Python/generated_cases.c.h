@@ -960,7 +960,6 @@
                     goto error;
                 }
             }
-            // PyObject *exc = Py_NewRef(values[oparg]);
             assert(exc && PyExceptionInstance_Check(exc));
             Py_INCREF(exc);
             PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
@@ -1005,16 +1004,17 @@
         }
 
         TARGET(CLEANUP_THROW) {
+            PyObject *exc_value = PEEK(1);
+            PyObject *last_sent_val = PEEK(2);
+            PyObject *sub_iter = PEEK(3);
+            PyObject *value;
             assert(throwflag);
-            PyObject *exc_value = TOP();
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
-                PyObject *value = ((PyStopIterationObject *)exc_value)->value;
-                Py_INCREF(value);
-                Py_DECREF(POP());  // The StopIteration.
-                Py_DECREF(POP());  // The last sent value.
-                Py_DECREF(POP());  // The delegated sub-iterator.
-                PUSH(value);
+                value = Py_NewRef(((PyStopIterationObject *)exc_value)->value);
+                Py_DECREF(sub_iter);
+                Py_DECREF(last_sent_val);
+                Py_DECREF(exc_value);
             }
             else {
                 PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
@@ -1022,6 +1022,8 @@
                 _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
                 goto exception_unwind;
             }
+            STACK_SHRINK(2);
+            POKE(1, value);
             DISPATCH();
         }
 

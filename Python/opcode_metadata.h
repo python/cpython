@@ -111,7 +111,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case END_ASYNC_FOR:
             return 2;
         case CLEANUP_THROW:
-            return -1;
+            return 3;
         case LOAD_ASSERTION_ERROR:
             return 0;
         case LOAD_BUILD_CLASS:
@@ -457,7 +457,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case END_ASYNC_FOR:
             return 0;
         case CLEANUP_THROW:
-            return -1;
+            return 1;
         case LOAD_ASSERTION_ERROR:
             return 1;
         case LOAD_BUILD_CLASS:
