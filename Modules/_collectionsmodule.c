@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>
 
@@ -76,11 +77,34 @@ static PyTypeObject tuplegetter_type;
  */
 
 typedef struct {
+    PyTypeObject *deque_type;
 } collections_state;
 
-static collections_state global_state;
+static inline collections_state *
+get_module_state(PyObject *mod)
+{
+    void *state = _PyModule_GetState(mod);
+    assert(state != NULL);
+    return (collections_state *)state;
+}
 
-#define GLOBAL_STATE() (&global_state)
+static inline collections_state *
+get_module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (collections_state *)state;
+}
+
+static struct PyModuleDef _collectionsmodule;
+
+static inline collections_state *
+find_module_state_by_type(PyTypeObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef(type, &_collectionsmodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
 
 typedef struct BLOCK {
     struct BLOCK *leftlink;
@@ -100,8 +124,6 @@ typedef struct {
     block *freeblocks[MAXFREEBLOCKS];
     PyObject *weakreflist;
 } dequeobject;
-
-static PyTypeObject deque_type;
 
 /* For debug builds, add error checking to track the endpoints
  * in the chain of links.  The goal is to make sure that link
@@ -491,11 +513,13 @@ deque_copy(PyObject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result;
     dequeobject *old_deque = (dequeobject *)deque;
-    if (Py_IS_TYPE(deque, &deque_type)) {
+    collections_state *state = find_module_state_by_type(Py_TYPE(deque));
+    if (Py_IS_TYPE(deque, state->deque_type)) {
         dequeobject *new_deque;
         PyObject *rv;
 
-        new_deque = (dequeobject *)deque_new(&deque_type, (PyObject *)NULL, (PyObject *)NULL);
+        new_deque = (dequeobject *)deque_new(state->deque_type,
+                                             (PyObject *)NULL, (PyObject *)NULL);
         if (new_deque == NULL)
             return NULL;
         new_deque->maxlen = old_deque->maxlen;
@@ -518,7 +542,7 @@ deque_copy(PyObject *deque, PyObject *Py_UNUSED(ignored))
     else
         result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
                                        deque, old_deque->maxlen, NULL);
-    if (result != NULL && !PyObject_TypeCheck(result, &deque_type)) {
+    if (result != NULL && !PyObject_TypeCheck(result, state->deque_type)) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s() must return a deque, not %.200s",
                      Py_TYPE(deque)->tp_name, Py_TYPE(result)->tp_name);
@@ -536,7 +560,8 @@ deque_concat(dequeobject *deque, PyObject *other)
     PyObject *new_deque, *result;
     int rv;
 
-    rv = PyObject_IsInstance(other, (PyObject *)&deque_type);
+    collections_state *state = find_module_state_by_type(Py_TYPE(deque));
+    rv = PyObject_IsInstance(other, (PyObject *)state->deque_type);
     if (rv <= 0) {
         if (rv == 0) {
             PyErr_Format(PyExc_TypeError,
@@ -1295,6 +1320,7 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 static void
 deque_dealloc(dequeobject *deque)
 {
+    PyTypeObject *tp = Py_TYPE(deque);
     Py_ssize_t i;
 
     PyObject_GC_UnTrack(deque);
@@ -1310,12 +1336,15 @@ deque_dealloc(dequeobject *deque)
     for (i=0 ; i < deque->numfreeblocks ; i++) {
         PyMem_Free(deque->freeblocks[i]);
     }
-    Py_TYPE(deque)->tp_free(deque);
+    tp->tp_free(deque);
+    Py_DECREF(tp);
 }
 
 static int
 deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(deque));
+
     block *b;
     PyObject *item;
     Py_ssize_t index;
@@ -1400,8 +1429,9 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
     Py_ssize_t vs, ws;
     int b, cmp=-1;
 
-    if (!PyObject_TypeCheck(v, &deque_type) ||
-        !PyObject_TypeCheck(w, &deque_type)) {
+    collections_state *state = find_module_state_by_type(Py_TYPE(v));
+    if (!PyObject_TypeCheck(v, state->deque_type) ||
+        !PyObject_TypeCheck(w, state->deque_type)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -1544,19 +1574,6 @@ static PyGetSetDef deque_getset[] = {
     {0}
 };
 
-static PySequenceMethods deque_as_sequence = {
-    (lenfunc)deque_len,                 /* sq_length */
-    (binaryfunc)deque_concat,           /* sq_concat */
-    (ssizeargfunc)deque_repeat,         /* sq_repeat */
-    (ssizeargfunc)deque_item,           /* sq_item */
-    0,                                  /* sq_slice */
-    (ssizeobjargproc)deque_ass_item,    /* sq_ass_item */
-    0,                                  /* sq_ass_slice */
-    (objobjproc)deque_contains,         /* sq_contains */
-    (binaryfunc)deque_inplace_concat,   /* sq_inplace_concat */
-    (ssizeargfunc)deque_inplace_repeat, /* sq_inplace_repeat */
-};
-
 static PyObject *deque_iter(dequeobject *deque);
 static PyObject *deque_reviter(dequeobject *deque, PyObject *Py_UNUSED(ignored));
 PyDoc_STRVAR(reversed_doc,
@@ -1604,54 +1621,53 @@ static PyMethodDef deque_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
+static PyMemberDef deque_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(dequeobject, weakreflist), READONLY},
+    {NULL},
+};
+
 PyDoc_STRVAR(deque_doc,
 "deque([iterable[, maxlen]]) --> deque object\n\
 \n\
 A list-like sequence optimized for data accesses near its endpoints.");
 
-static PyTypeObject deque_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "collections.deque",                /* tp_name */
-    sizeof(dequeobject),                /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)deque_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    deque_repr,                         /* tp_repr */
-    0,                                  /* tp_as_number */
-    &deque_as_sequence,                 /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    PyObject_HashNotImplemented,        /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-    Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_SEQUENCE,
-                                        /* tp_flags */
-    deque_doc,                          /* tp_doc */
-    (traverseproc)deque_traverse,       /* tp_traverse */
-    (inquiry)deque_clear,               /* tp_clear */
-    (richcmpfunc)deque_richcompare,     /* tp_richcompare */
-    offsetof(dequeobject, weakreflist), /* tp_weaklistoffset*/
-    (getiterfunc)deque_iter,            /* tp_iter */
-    0,                                  /* tp_iternext */
-    deque_methods,                      /* tp_methods */
-    0,                                  /* tp_members */
-    deque_getset,                       /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    (initproc)deque_init,               /* tp_init */
-    PyType_GenericAlloc,                /* tp_alloc */
-    deque_new,                          /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot deque_slots[] = {
+    {Py_tp_dealloc, deque_dealloc},
+    {Py_tp_repr, deque_repr},
+    {Py_tp_hash, PyObject_HashNotImplemented},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)deque_doc},
+    {Py_tp_traverse, deque_traverse},
+    {Py_tp_clear, deque_clear},
+    {Py_tp_richcompare, deque_richcompare},
+    {Py_tp_iter, deque_iter},
+    {Py_tp_getset, deque_getset},
+    {Py_tp_init, deque_init},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, deque_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {Py_tp_methods, deque_methods},
+    {Py_tp_members, deque_members},
+
+    // Sequence protocol
+    {Py_sq_length, deque_len},
+    {Py_sq_concat, deque_concat},
+    {Py_sq_repeat, deque_repeat},
+    {Py_sq_item, deque_item},
+    {Py_sq_ass_item, deque_ass_item},
+    {Py_sq_contains, deque_contains},
+    {Py_sq_inplace_concat, deque_inplace_concat},
+    {Py_sq_inplace_repeat, deque_inplace_repeat},
+    {0, NULL},
+};
+
+static PyType_Spec deque_spec = {
+    .name = "collections.deque",
+    .basicsize = sizeof(dequeobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_SEQUENCE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = deque_slots,
 };
 
 /*********************** Deque Iterator **************************/
@@ -1733,7 +1749,8 @@ dequeiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i, index=0;
     PyObject *deque;
     dequeiterobject *it;
-    if (!PyArg_ParseTuple(args, "O!|n", &deque_type, &deque, &index))
+    collections_state *state = find_module_state_by_type(Py_TYPE(type));
+    if (!PyArg_ParseTuple(args, "O!|n", state->deque_type, &deque, &index))
         return NULL;
     assert(type == &dequeiter_type);
 
@@ -1873,7 +1890,8 @@ dequereviter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i, index=0;
     PyObject *deque;
     dequeiterobject *it;
-    if (!PyArg_ParseTuple(args, "O!|n", &deque_type, &deque, &index))
+    collections_state *state = find_module_state_by_type(Py_TYPE(type));
+    if (!PyArg_ParseTuple(args, "O!|n", state->deque_type, &deque, &index))
         return NULL;
     assert(type == &dequereviter_type);
 
@@ -2541,14 +2559,18 @@ static PyTypeObject tuplegetter_type = {
 /* module level code ********************************************************/
 
 static int
-collections_traverse(PyObject *module, visitproc visit, void *arg)
+collections_traverse(PyObject *mod, visitproc visit, void *arg)
 {
+    collections_state *state = get_module_state(mod);
+    Py_VISIT(state->deque_type);
     return 0;
 }
 
 static int
-collections_clear(PyObject *module)
+collections_clear(PyObject *mod)
 {
+    collections_state *state = get_module_state(mod);
+    Py_CLEAR(state->deque_type);
     return 0;
 }
 
@@ -2583,8 +2605,10 @@ static struct PyMethodDef collections_methods[] = {
 
 static int
 collections_exec(PyObject *module) {
+    collections_state *state = get_module_state(module);
+    ADD_TYPE(module, &deque_spec, state->deque_type);
+
     PyTypeObject *typelist[] = {
-        &deque_type,
         &defdict_type,
         &PyODict_Type,
         &dequeiter_type,
@@ -2612,6 +2636,7 @@ static struct PyModuleDef _collectionsmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_collections",
     .m_doc = collections_doc,
+    .m_size = sizeof(collections_state),
     .m_methods = collections_methods,
     .m_slots = collections_slots,
     .m_traverse = collections_traverse,
