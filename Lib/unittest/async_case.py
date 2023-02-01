@@ -73,7 +73,7 @@ class IsolatedAsyncioTestCase(TestCase):
         # so that setUp functions can use get_event_loop() and get the
         # correct loop instance.
         self._asyncioRunner.get_loop()
-        self._asyncioTestContext.run(self.setUp)
+        self.setUp()
         self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
@@ -83,28 +83,30 @@ class IsolatedAsyncioTestCase(TestCase):
 
     def _callTearDown(self):
         self._callAsync(self.asyncTearDown)
-        self._asyncioTestContext.run(self.tearDown)
+        self.tearDown()
 
     def _callCleanup(self, function, *args, **kwargs):
         self._callMaybeAsync(function, *args, **kwargs)
 
     def _callAsync(self, func, /, *args, **kwargs):
         assert self._asyncioRunner is not None, 'asyncio runner is not initialized'
-        assert inspect.iscoroutinefunction(func), f'{func!r} is not an async function'
+        result = func(*args, **kwargs)
+        assert inspect.isawaitable(result), f'{func!r} does not return an awaitable'
         return self._asyncioRunner.run(
-            func(*args, **kwargs),
+            result,
             context=self._asyncioTestContext
         )
 
     def _callMaybeAsync(self, func, /, *args, **kwargs):
         assert self._asyncioRunner is not None, 'asyncio runner is not initialized'
-        if inspect.iscoroutinefunction(func):
+        result = func(*args, **kwargs)
+        if inspect.isawaitable(result):
             return self._asyncioRunner.run(
-                func(*args, **kwargs),
+                result,
                 context=self._asyncioTestContext,
             )
         else:
-            return self._asyncioTestContext.run(func, *args, **kwargs)
+            return result
 
     def _setupAsyncioRunner(self):
         assert self._asyncioRunner is None, 'asyncio runner is already initialized'
@@ -118,13 +120,13 @@ class IsolatedAsyncioTestCase(TestCase):
     def run(self, result=None):
         self._setupAsyncioRunner()
         try:
-            return super().run(result)
+            return self._asyncioTestContext.run(super().run, result)
         finally:
             self._tearDownAsyncioRunner()
 
     def debug(self):
         self._setupAsyncioRunner()
-        super().debug()
+        self._asyncioTestContext.run(super().debug)
         self._tearDownAsyncioRunner()
 
     def __del__(self):
