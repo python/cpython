@@ -51,7 +51,7 @@
 
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
-static PyObject *container, *start, *stop, *v, *lhs, *rhs;
+static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
 static PyObject *list, *tuple, *dict, *owner, *set, *str, *tup, *map, *keys;
 static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
 static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc;
@@ -357,8 +357,8 @@ dummy_func(
 
             // Deopt unless 0 <= sub < PyList_Size(list)
             DEOPT_IF(!_PyLong_IsPositiveSingleDigit(sub), BINARY_SUBSCR);
-            assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
-            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            assert(((PyLongObject *)_PyLong_GetZero())->long_value.ob_digit[0] == 0);
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyList_GET_ITEM(list, index);
@@ -375,8 +375,8 @@ dummy_func(
 
             // Deopt unless 0 <= sub < PyTuple_Size(list)
             DEOPT_IF(!_PyLong_IsPositiveSingleDigit(sub), BINARY_SUBSCR);
-            assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
-            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            assert(((PyLongObject *)_PyLong_GetZero())->long_value.ob_digit[0] == 0);
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyTuple_GET_ITEM(tuple, index);
@@ -469,7 +469,7 @@ dummy_func(
 
             // Ensure nonnegative, zero-or-one-digit ints.
             DEOPT_IF(!_PyLong_IsPositiveSingleDigit(sub), STORE_SUBSCR);
-            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             // Ensure index < len(list)
             DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
@@ -505,27 +505,24 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // This should remain a legacy instruction.
-        inst(RAISE_VARARGS) {
+        inst(RAISE_VARARGS, (args[oparg] -- )) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = POP(); /* cause */
+                cause = args[1];
                 /* fall through */
             case 1:
-                exc = POP(); /* exc */
+                exc = args[0];
                 /* fall through */
             case 0:
-                if (do_raise(tstate, exc, cause)) {
-                    goto exception_unwind;
-                }
+                ERROR_IF(do_raise(tstate, exc, cause), exception_unwind);
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad RAISE_VARARGS oparg");
                 break;
             }
-            goto error;
+            ERROR_IF(true, error);
         }
 
         inst(INTERPRETER_EXIT, (retval --)) {
@@ -720,7 +717,6 @@ dummy_func(
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            assert(oparg == STACK_LEVEL());
             assert(frame != &entry_frame);
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
@@ -774,18 +770,16 @@ dummy_func(
             ERROR_IF(val == NULL, error);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(END_ASYNC_FOR) {
-            PyObject *val = POP();
-            assert(val && PyExceptionInstance_Check(val));
-            if (PyErr_GivenExceptionMatches(val, PyExc_StopAsyncIteration)) {
-                Py_DECREF(val);
-                Py_DECREF(POP());
+        inst(END_ASYNC_FOR, (awaitable, exc -- )) {
+            assert(exc && PyExceptionInstance_Check(exc));
+            if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
+                DECREF_INPUTS();
             }
             else {
-                PyObject *exc = Py_NewRef(PyExceptionInstance_Class(val));
-                PyObject *tb = PyException_GetTraceback(val);
-                _PyErr_Restore(tstate, exc, val, tb);
+                Py_INCREF(exc);
+                PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
+                PyObject *tb = PyException_GetTraceback(exc);
+                _PyErr_Restore(tstate, typ, exc, tb);
                 goto exception_unwind;
             }
         }
@@ -1442,13 +1436,11 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        // error: LOAD_ATTR has irregular stack effect
-        inst(LOAD_ATTR) {
+        inst(LOAD_ATTR, (unused/9, owner -- res2 if (oparg & 1), res)) {
             #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
@@ -1458,26 +1450,18 @@ dummy_func(
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(names, oparg >> 1);
-            PyObject *owner = TOP();
             if (oparg & 1) {
-                /* Designed to work in tandem with CALL. */
+                /* Designed to work in tandem with CALL, pushes two values. */
                 PyObject* meth = NULL;
-
-                int meth_found = _PyObject_GetMethod(owner, name, &meth);
-
-                if (meth == NULL) {
-                    /* Most likely attribute wasn't found. */
-                    goto error;
-                }
-
-                if (meth_found) {
+                if (_PyObject_GetMethod(owner, name, &meth)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
 
                        meth | self | arg1 | ... | argN
                      */
-                    SET_TOP(meth);
-                    PUSH(owner);  // self
+                    assert(meth != NULL);  // No errors on this branch
+                    res2 = meth;
+                    res = owner;  // Transfer ownership
                 }
                 else {
                     /* meth is not an unbound method (but a regular attr, or
@@ -1487,20 +1471,18 @@ dummy_func(
 
                        NULL | meth | arg1 | ... | argN
                     */
-                    SET_TOP(NULL);
                     Py_DECREF(owner);
-                    PUSH(meth);
+                    ERROR_IF(meth == NULL, error);
+                    res2 = NULL;
+                    res = meth;
                 }
             }
             else {
-                PyObject *res = PyObject_GetAttr(owner, name);
-                if (res == NULL) {
-                    goto error;
-                }
+                /* Classic, pushes one value. */
+                res = PyObject_GetAttr(owner, name);
                 Py_DECREF(owner);
-                SET_TOP(res);
+                ERROR_IF(res == NULL, error);
             }
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -1850,8 +1832,8 @@ dummy_func(
             DEOPT_IF((size_t)(Py_SIZE(right) + 1) > 2, COMPARE_AND_BRANCH);
             STAT_INC(COMPARE_AND_BRANCH, hit);
             assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
-            Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
-            Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
+            Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->long_value.ob_digit[0];
+            Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->long_value.ob_digit[0];
             // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
             int sign_ish = COMPARISON_BIT(ileft, iright);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
@@ -1894,44 +1876,24 @@ dummy_func(
             b = Py_NewRef((res^oparg) ? Py_True : Py_False);
         }
 
-        // stack effect: ( -- )
-        inst(CHECK_EG_MATCH) {
-            PyObject *match_type = POP();
+        inst(CHECK_EG_MATCH, (exc_value, match_type -- rest, match)) {
             if (check_except_star_type_valid(tstate, match_type) < 0) {
-                Py_DECREF(match_type);
-                goto error;
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
 
-            PyObject *exc_value = TOP();
-            PyObject *match = NULL, *rest = NULL;
+            match = NULL;
+            rest = NULL;
             int res = exception_group_match(exc_value, match_type,
                                             &match, &rest);
-            Py_DECREF(match_type);
-            if (res < 0) {
-                goto error;
-            }
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
 
-            if (match == NULL || rest == NULL) {
-                assert(match == NULL);
-                assert(rest == NULL);
-                goto error;
-            }
-            if (Py_IsNone(match)) {
-                PUSH(match);
-                Py_XDECREF(rest);
-            }
-            else {
-                /* Total or partial match - update the stack from
-                 * [val]
-                 * to
-                 * [rest, match]
-                 * (rest can be Py_None)
-                 */
+            assert((match == NULL) == (rest == NULL));
+            ERROR_IF(match == NULL, error);
 
-                SET_TOP(rest);
-                PUSH(match);
+            if (!Py_IsNone(match)) {
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
-                Py_DECREF(exc_value);
             }
         }
 
@@ -2089,8 +2051,7 @@ dummy_func(
             }
         }
 
-        // stack effect: ( -- )
-        inst(JUMP_BACKWARD_NO_INTERRUPT) {
+        inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -2099,86 +2060,52 @@ dummy_func(
             JUMPBY(-oparg);
         }
 
-        // stack effect: ( -- __0)
-        inst(GET_LEN) {
+        inst(GET_LEN, (obj -- obj, len_o)) {
             // PUSH(len(TOS))
-            Py_ssize_t len_i = PyObject_Length(TOP());
-            if (len_i < 0) {
-                goto error;
-            }
-            PyObject *len_o = PyLong_FromSsize_t(len_i);
-            if (len_o == NULL) {
-                goto error;
-            }
-            PUSH(len_o);
+            Py_ssize_t len_i = PyObject_Length(obj);
+            ERROR_IF(len_i < 0, error);
+            len_o = PyLong_FromSsize_t(len_i);
+            ERROR_IF(len_o == NULL, error);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(MATCH_CLASS) {
+        inst(MATCH_CLASS, (subject, type, names -- attrs)) {
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
-            PyObject *names = POP();
-            PyObject *type = POP();
-            PyObject *subject = TOP();
             assert(PyTuple_CheckExact(names));
-            PyObject *attrs = match_class(tstate, subject, type, oparg, names);
-            Py_DECREF(names);
-            Py_DECREF(type);
+            attrs = match_class(tstate, subject, type, oparg, names);
+            DECREF_INPUTS();
             if (attrs) {
-                // Success!
-                assert(PyTuple_CheckExact(attrs));
-                SET_TOP(attrs);
-            }
-            else if (_PyErr_Occurred(tstate)) {
-                // Error!
-                goto error;
+                assert(PyTuple_CheckExact(attrs));  // Success!
             }
             else {
-                // Failure!
-                SET_TOP(Py_NewRef(Py_None));
+                ERROR_IF(_PyErr_Occurred(tstate), error);  // Error!
+                attrs = Py_NewRef(Py_None);  // Failure!
             }
-            Py_DECREF(subject);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_MAPPING) {
-            PyObject *subject = TOP();
+        inst(MATCH_MAPPING, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_SEQUENCE) {
-            PyObject *subject = TOP();
+        inst(MATCH_SEQUENCE, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
-            PyObject *res = match ? Py_True : Py_False;
-            PUSH(Py_NewRef(res));
+            res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        // stack effect: ( -- __0)
-        inst(MATCH_KEYS) {
+        inst(MATCH_KEYS, (subject, keys -- subject, keys, values_or_none)) {
             // On successful match, PUSH(values). Otherwise, PUSH(None).
-            PyObject *keys = TOP();
-            PyObject *subject = SECOND();
-            PyObject *values_or_none = match_keys(tstate, subject, keys);
-            if (values_or_none == NULL) {
-                goto error;
-            }
-            PUSH(values_or_none);
+            values_or_none = match_keys(tstate, subject, keys);
+            ERROR_IF(values_or_none == NULL, error);
         }
 
-        // stack effect: ( -- )
-        inst(GET_ITER) {
+        inst(GET_ITER, (iterable -- iter)) {
             /* before: [obj]; after [getiter(obj)] */
-            PyObject *iterable = TOP();
-            PyObject *iter = PyObject_GetIter(iterable);
-            Py_DECREF(iterable);
-            SET_TOP(iter);
-            if (iter == NULL)
-                goto error;
+            iter = PyObject_GetIter(iterable);
+            DECREF_INPUTS();
+            ERROR_IF(iter == NULL, error);
         }
 
         // stack effect: ( -- )
@@ -2337,10 +2264,7 @@ dummy_func(
             DISPATCH_INLINED(gen_frame);
         }
 
-        // stack effect: ( -- __0)
-        inst(BEFORE_ASYNC_WITH) {
-            PyObject *mgr = TOP();
-            PyObject *res;
+        inst(BEFORE_ASYNC_WITH, (mgr -- exit, res)) {
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -2351,7 +2275,7 @@ dummy_func(
                 }
                 goto error;
             }
-            PyObject *exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2363,20 +2287,20 @@ dummy_func(
                 Py_DECREF(enter);
                 goto error;
             }
-            SET_TOP(exit);
-            Py_DECREF(mgr);
+            DECREF_INPUTS();
             res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
-            if (res == NULL)
-                goto error;
-            PUSH(res);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                ERROR_IF(true, error);
+            }
             PREDICT(GET_AWAITABLE);
         }
 
-        // stack effect: ( -- __0)
-        inst(BEFORE_WITH) {
-            PyObject *mgr = TOP();
-            PyObject *res;
+        inst(BEFORE_WITH, (mgr -- exit, res)) {
+            /* pop the context manager, push its __exit__ and the
+             * value returned from calling its __enter__
+             */
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -2387,7 +2311,7 @@ dummy_func(
                 }
                 goto error;
             }
-            PyObject *exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2399,14 +2323,13 @@ dummy_func(
                 Py_DECREF(enter);
                 goto error;
             }
-            SET_TOP(exit);
-            Py_DECREF(mgr);
+            DECREF_INPUTS();
             res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
-                goto error;
+                Py_DECREF(exit);
+                ERROR_IF(true, error);
             }
-            PUSH(res);
         }
 
         inst(WITH_EXCEPT_START, (exit_func, lasti, unused, val -- exit_func, lasti, unused, val, res)) {
@@ -2529,8 +2452,7 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
-        // stack effect: ( -- )
-        inst(KW_NAMES) {
+        inst(KW_NAMES, (--)) {
             assert(kwnames == NULL);
             assert(oparg < PyTuple_GET_SIZE(consts));
             kwnames = GETITEM(consts, oparg);
@@ -3312,8 +3234,7 @@ dummy_func(
             PEEK(oparg) = top;
         }
 
-        // stack effect: ( -- )
-        inst(EXTENDED_ARG) {
+        inst(EXTENDED_ARG, (--)) {
             assert(oparg);
             assert(cframe.use_tracing == 0);
             opcode = _Py_OPCODE(*next_instr);
@@ -3322,8 +3243,7 @@ dummy_func(
             DISPATCH_GOTO();
         }
 
-        // stack effect: ( -- )
-        inst(CACHE) {
+        inst(CACHE, (--)) {
             Py_UNREACHABLE();
         }
 

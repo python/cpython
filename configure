@@ -7914,17 +7914,53 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
+  # -fno-reorder-blocks-and-partition is required for bolt to work.
+  # Possibly GCC only.
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-reorder-blocks-and-partition" >&5
+$as_echo_n "checking whether C compiler accepts -fno-reorder-blocks-and-partition... " >&6; }
+if ${ax_cv_check_cflags___fno_reorder_blocks_and_partition+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fno-reorder-blocks-and-partition"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___fno_reorder_blocks_and_partition=yes
+else
+  ax_cv_check_cflags___fno_reorder_blocks_and_partition=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fno_reorder_blocks_and_partition" >&5
+$as_echo "$ax_cv_check_cflags___fno_reorder_blocks_and_partition" >&6; }
+if test "x$ax_cv_check_cflags___fno_reorder_blocks_and_partition" = xyes; then :
+
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+
+else
+  :
+fi
+
+
   # These flags are required for bolt to work:
-  CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
   # These flags are required to get good performance from bolt:
   CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
   # We want to add these no-pie flags to linking executables but not shared libraries:
   LINKCC="$LINKCC -fno-pie -no-pie"
-  # Designate the DWARF version into 4 since the LLVM-BOLT does not support DWARF5 yet.
-  CFLAGS="$CFLAGS -gdwarf-4"
-  LDFLAGS="$LDFLAGS -gdwarf-4"
 
   if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-bolt", so it can be a program name with args.

@@ -797,7 +797,7 @@ is printed.  Now try changing the first line to be:
 Re-executing the command should now print the latest Python 3.x information.
 As with the above command-line examples, you can specify a more explicit
 version qualifier.  Assuming you have Python 3.7 installed, try changing
-the first line to ``#! python3.7`` and you should find the |version|
+the first line to ``#! python3.7`` and you should find the 3.7
 version information printed.
 
 Note that unlike interactive use, a bare "python" will use the latest

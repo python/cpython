@@ -2207,7 +2207,7 @@ This section shows recipes for common adapters and converters.
    assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
 
    # Using current time as fromtimestamp() returns local date/time.
-   # Droping microseconds as adapt_datetime_epoch truncates fractional second part.
+   # Dropping microseconds as adapt_datetime_epoch truncates fractional second part.
    now = datetime.datetime.now().replace(microsecond=0)
    current_timestamp = int(now.timestamp())
 

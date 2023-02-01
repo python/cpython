@@ -507,7 +507,7 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
         /* If "cond" is false, then _tstate remains NULL and the deallocator \
          * is run normally without involving the trashcan */ \
         if (cond) { \
-            _tstate = PyThreadState_Get(); \
+            _tstate = _PyThreadState_UncheckedGet(); \
             if (_PyTrash_begin(_tstate, _PyObject_CAST(op))) { \
                 break; \
             } \
