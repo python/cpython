@@ -143,7 +143,7 @@ We also repeat each of the above scoping tests inside a function
     >>> test_func()
     [2, 2, 2, 2, 2]
 
-A comprehension's iteration var, if in a cell, doesn't stomp on a previous value:
+Some more tests for scoping edge cases:
 
     >>> def test_func():
     ...     y = 10
@@ -154,8 +154,6 @@ A comprehension's iteration var, if in a cell, doesn't stomp on a previous value
     >>> test_func()
     (10, [4, 4, 4, 4, 4])
 
-A comprehension's iteration var doesn't shadow implicit globals for sibling scopes:
-
     >>> g = -1
     >>> def test_func():
     ...     def inner():
@@ -165,16 +163,12 @@ A comprehension's iteration var doesn't shadow implicit globals for sibling scop
     >>> test_func()()
     -1
 
-A modification to a closed-over variable is visible in the outer scope:
-
     >>> def test_func():
     ...     x = -1
     ...     items = [(x:=y) for y in range(3)]
     ...     return x
     >>> test_func()
     2
-
-Comprehensions' scopes don't interact with each other:
 
     >>> def test_func(lst):
     ...     ret = [lambda: x for x in lst]
@@ -192,6 +186,11 @@ Comprehensions' scopes don't interact with each other:
     >>> test_func(range(3))
     -1
 
+    >>> def test_func(x):
+    ...     return [x for x in x]
+    >>> test_func([1])
+    [1]
+
 """
 
 
@@ -202,6 +201,14 @@ class ListComprehensionTest(unittest.TestCase):
                 x = 0
             [x for x in [1]]
             return x
+
+        with self.assertRaises(UnboundLocalError):
+            f()
+
+    def test_unbound_local_inside_comprehension(self):
+        def f():
+            l = [None]
+            return [1 for (l[0], l) in [[1, 2]]]
 
         with self.assertRaises(UnboundLocalError):
             f()
