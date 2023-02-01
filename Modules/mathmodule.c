@@ -1054,7 +1054,8 @@ is_error(double x)
 static PyObject *
 math_1_to_whatever(PyObject *arg, double (*func) (double),
                    PyObject *(*from_double_func) (double),
-                   int can_overflow)
+                   int can_overflow,
+                   const char *err_msg)
 {
     double x, r;
     x = PyFloat_AsDouble(arg);
@@ -1063,8 +1064,7 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
     errno = 0;
     r = (*func)(x);
     if (Py_IS_NAN(r) && !Py_IS_NAN(x)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "math domain error"); /* invalid arg */
+        PyErr_Format(PyExc_ValueError, err_msg, arg); /* invalid arg */
         return NULL;
     }
     if (Py_IS_INFINITY(r) && Py_IS_FINITE(x)) {
@@ -1129,9 +1129,9 @@ math_1a(PyObject *arg, double (*func) (double))
 */
 
 static PyObject *
-math_1(PyObject *arg, double (*func) (double), int can_overflow)
+math_1(PyObject *arg, double (*func) (double), int can_overflow, const char *err_msg)
 {
-    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow);
+    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow, err_msg);
 }
 
 static PyObject *
@@ -1169,9 +1169,9 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
         return PyFloat_FromDouble(r);
 }
 
-#define FUNC1(funcname, func, can_overflow, docstring)                  \
+#define FUNC1(funcname, func, can_overflow, docstring, err_msg)                  \
     static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
-        return math_1(args, func, can_overflow);                            \
+        return math_1(args, func, can_overflow, err_msg);                            \
     }\
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
@@ -1190,31 +1190,38 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
 FUNC1(acos, acos, 0,
       "acos($module, x, /)\n--\n\n"
       "Return the arc cosine (measured in radians) of x.\n\n"
-      "The result is between 0 and pi.")
+      "The result is between 0 and pi.",
+      "math domain error")
 FUNC1(acosh, acosh, 0,
       "acosh($module, x, /)\n--\n\n"
-      "Return the inverse hyperbolic cosine of x.")
+      "Return the inverse hyperbolic cosine of x.",
+      "math domain error")
 FUNC1(asin, asin, 0,
       "asin($module, x, /)\n--\n\n"
       "Return the arc sine (measured in radians) of x.\n\n"
-      "The result is between -pi/2 and pi/2.")
+      "The result is between -pi/2 and pi/2.",
+      "math domain error")
 FUNC1(asinh, asinh, 0,
       "asinh($module, x, /)\n--\n\n"
-      "Return the inverse hyperbolic sine of x.")
+      "Return the inverse hyperbolic sine of x.",
+      "math domain error")
 FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of x.\n\n"
-      "The result is between -pi/2 and pi/2.")
+      "The result is between -pi/2 and pi/2.",
+      "math domain error")
 FUNC2(atan2, m_atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
 FUNC1(atanh, atanh, 0,
       "atanh($module, x, /)\n--\n\n"
-      "Return the inverse hyperbolic tangent of x.")
+      "Return the inverse hyperbolic tangent of x.",
+      "math domain error")
 FUNC1(cbrt, cbrt, 0,
       "cbrt($module, x, /)\n--\n\n"
-      "Return the cube root of x.")
+      "Return the cube root of x.",
+      "math domain error")
 
 /*[clinic input]
 math.ceil
@@ -1257,10 +1264,12 @@ FUNC2(copysign, copysign,
       "returns -1.0.\n")
 FUNC1(cos, cos, 0,
       "cos($module, x, /)\n--\n\n"
-      "Return the cosine of x (measured in radians).")
+      "Return the cosine of x (measured in radians).",
+      "math domain error")
 FUNC1(cosh, cosh, 1,
       "cosh($module, x, /)\n--\n\n"
-      "Return the hyperbolic cosine of x.")
+      "Return the hyperbolic cosine of x.",
+      "math domain error")
 FUNC1A(erf, m_erf,
        "erf($module, x, /)\n--\n\n"
        "Error function at x.")
@@ -1269,18 +1278,22 @@ FUNC1A(erfc, m_erfc,
        "Complementary error function at x.")
 FUNC1(exp, exp, 1,
       "exp($module, x, /)\n--\n\n"
-      "Return e raised to the power of x.")
+      "Return e raised to the power of x.",
+      "math domain error")
 FUNC1(exp2, exp2, 1,
       "exp2($module, x, /)\n--\n\n"
-      "Return 2 raised to the power of x.")
+      "Return 2 raised to the power of x.",
+      "math domain error")
 FUNC1(expm1, expm1, 1,
       "expm1($module, x, /)\n--\n\n"
       "Return exp(x)-1.\n\n"
       "This function avoids the loss of precision involved in the direct "
-      "evaluation of exp(x)-1 for small x.")
+      "evaluation of exp(x)-1 for small x.",
+      "math domain error")
 FUNC1(fabs, fabs, 0,
       "fabs($module, x, /)\n--\n\n"
-      "Return the absolute value of the float x.")
+      "Return the absolute value of the float x.",
+      "math domain error")
 
 /*[clinic input]
 math.floor
@@ -1329,7 +1342,8 @@ FUNC1A(lgamma, m_lgamma,
 FUNC1(log1p, m_log1p, 0,
       "log1p($module, x, /)\n--\n\n"
       "Return the natural logarithm of 1+x (base e).\n\n"
-      "The result is computed in a way which is accurate for x near zero.")
+      "The result is computed in a way which is accurate for x near zero.",
+      "math domain error")
 FUNC2(remainder, m_remainder,
       "remainder($module, x, y, /)\n--\n\n"
       "Difference between x and the closest integer multiple of y.\n\n"
@@ -1338,19 +1352,25 @@ FUNC2(remainder, m_remainder,
       "y, the nearest even value of n is used. The result is always exact.")
 FUNC1(sin, sin, 0,
       "sin($module, x, /)\n--\n\n"
-      "Return the sine of x (measured in radians).")
+      "Return the sine of x (measured in radians).",
+      "math domain error")
 FUNC1(sinh, sinh, 1,
       "sinh($module, x, /)\n--\n\n"
-      "Return the hyperbolic sine of x.")
+      "Return the hyperbolic sine of x.",
+      "math domain error")
 FUNC1(sqrt, sqrt, 0,
       "sqrt($module, x, /)\n--\n\n"
-      "Return the square root of x.")
+      "Return the square root of x.",
+      "math.sqrt() expects a non-negative input, got '%R'.\n"
+      "See cmath.sqrt() for variation that supports complex numbers")
 FUNC1(tan, tan, 0,
       "tan($module, x, /)\n--\n\n"
-      "Return the tangent of x (measured in radians).")
+      "Return the tangent of x (measured in radians).",
+      "math domain error")
 FUNC1(tanh, tanh, 0,
       "tanh($module, x, /)\n--\n\n"
-      "Return the hyperbolic tangent of x.")
+      "Return the hyperbolic tangent of x.",
+      "math domain error")
 
 /* Precision summation function as msum() by Raymond Hettinger in
    <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/393090>,
@@ -2358,7 +2378,7 @@ loghelper(PyObject* arg, double (*func)(double))
     }
 
     /* Else let libm handle it by itself. */
-    return math_1(arg, func, 0);
+    return math_1(arg, func, 0, "math domain error");
 }
 
 
