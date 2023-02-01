@@ -69,7 +69,7 @@ _PyType_GetModuleState(PyTypeObject *type)
 {
     assert(PyType_Check(type));
     assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
-    PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+    PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     assert(et->ht_module);
     PyModuleObject *mod = (PyModuleObject *)(et->ht_module);
     assert(mod != NULL);
