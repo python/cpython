@@ -2540,6 +2540,24 @@ static PyTypeObject tuplegetter_type = {
 
 /* module level code ********************************************************/
 
+static int
+collections_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    return 0;
+}
+
+static int
+collections_clear(PyObject *module)
+{
+    return 0;
+}
+
+static void
+collections_free(void *module)
+{
+    collections_clear((PyObject *)module);
+}
+
 PyDoc_STRVAR(collections_doc,
 "High performance data structures.\n\
 - deque:        ordered collection accessible from endpoints only\n\
@@ -2550,6 +2568,18 @@ static struct PyMethodDef collections_methods[] = {
     _COLLECTIONS__COUNT_ELEMENTS_METHODDEF
     {NULL,       NULL}          /* sentinel */
 };
+
+#define ADD_TYPE(mod, spec, type)                                           \
+    do {                                                                    \
+        type = (PyTypeObject *)PyType_FromModuleAndSpec(mod, spec, NULL);   \
+        if (type == NULL) {                                                 \
+            return -1;                                                      \
+        }                                                                   \
+        if (PyModule_AddType(mod, type) < 0) {                              \
+            return -1;                                                      \
+        }                                                                   \
+        return 0;                                                           \
+    } while (0)
 
 static int
 collections_exec(PyObject *module) {
@@ -2579,15 +2609,14 @@ static struct PyModuleDef_Slot collections_slots[] = {
 };
 
 static struct PyModuleDef _collectionsmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_collections",
-    collections_doc,
-    0,
-    collections_methods,
-    collections_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_collections",
+    .m_doc = collections_doc,
+    .m_methods = collections_methods,
+    .m_slots = collections_slots,
+    .m_traverse = collections_traverse,
+    .m_clear = collections_clear,
+    .m_free = collections_free,
 };
 
 PyMODINIT_FUNC
