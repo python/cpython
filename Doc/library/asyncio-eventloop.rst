@@ -193,7 +193,7 @@ Running and stopping the loop
    :meth:`loop.run_in_executor` will raise a :exc:`RuntimeError` if called
    while using the default executor.
 
-   *timeout* specifies the duration in seconds (as a :class:`float`)
+   The *timeout* parameter specifies the duration in seconds (as a :class:`float`)
    this method gives the executor to finish joining.
    With the default, ``None``, the
    method allows the executor an unlimited amount of time.
@@ -203,7 +203,7 @@ Running and stopping the loop
    joining.
 
    .. note::
-   
+
       There is no need to call this method when :func:`asyncio.run` is
       used, because that high-level function handles default executor shutdown
       automatically.
