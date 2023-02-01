@@ -2472,27 +2472,27 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_PY_EXACT_ARGS) {
+        inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, unused/1, thing1, thing2, unused[oparg] -- unused)) {
             assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
-            _PyCallCache *cache = (_PyCallCache *)next_instr;
-            int is_meth = is_method(stack_pointer, oparg);
+            // _PyCallCache *cache = (_PyCallCache *)next_instr;
+            int is_meth = thing1 != NULL;
             int argcount = oparg + is_meth;
-            PyObject *callable = PEEK(argcount + 1);
+            PyObject *callable = is_meth ? thing1 : thing2;
             DEOPT_IF(!PyFunction_Check(callable), CALL);
             PyFunctionObject *func = (PyFunctionObject *)callable;
-            DEOPT_IF(func->func_version != read_u32(cache->func_version), CALL);
+            DEOPT_IF(func->func_version != func_version, CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(code->co_argcount != argcount, CALL);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+            // Manipulate stack directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
             }
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(2 - is_meth);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             DISPATCH_INLINED(new_frame);
         }
