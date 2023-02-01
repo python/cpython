@@ -2346,25 +2346,34 @@ dummy_func(
             assert(oparg & 1);
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_BOUND_METHOD_EXACT_ARGS) {
-            DEOPT_IF(is_method(stack_pointer, oparg), CALL);
-            PyObject *function = PEEK(oparg + 1);
-            DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, CALL);
-            STAT_INC(CALL, hit);
-            PyObject *self = ((PyMethodObject *)function)->im_self;
-            PEEK(oparg + 1) = Py_NewRef(self);
-            PyObject *meth = ((PyMethodObject *)function)->im_func;
-            PEEK(oparg + 2) = Py_NewRef(meth);
-            Py_DECREF(function);
-            GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
-        }
-
         inst(KW_NAMES, (--)) {
             assert(kwnames == NULL);
             assert(oparg < PyTuple_GET_SIZE(consts));
             kwnames = GETITEM(consts, oparg);
         }
+
+        // Cache layout: counter/1, func_version/2, min_args/1
+        // Neither CALL_INTRINSIC_1 nor CALL_FUNCTION_EX are members!
+        // family(call, INLINE_CACHE_ENTRIES_CALL) = {
+        //     CALL,
+        //     CALL_BOUND_METHOD_EXACT_ARGS,
+        //     CALL_PY_EXACT_ARGS,
+        //     CALL_PY_WITH_DEFAULTS,
+        //     CALL_NO_KW_TYPE_1,
+        //     CALL_NO_KW_STR_1,
+        //     CALL_NO_KW_TUPLE_1,
+        //     CALL_BUILTIN_CLASS,
+        //     CALL_NO_KW_BUILTIN_O,
+        //     CALL_NO_KW_BUILTIN_FAST,
+        //     CALL_BUILTIN_FAST_WITH_KEYWORDS,
+        //     CALL_NO_KW_LEN,
+        //     CALL_NO_KW_ISINSTANCE,
+        //     CALL_NO_KW_LIST_APPEND,
+        //     CALL_NO_KW_METHOD_DESCRIPTOR_O,
+        //     CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS,
+        //     CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
+        //     CALL_NO_KW_METHOD_DESCRIPTOR_FAST,
+        // };
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL) {
@@ -2446,6 +2455,20 @@ dummy_func(
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
+        }
+
+        // stack effect: (__0, __array[oparg] -- )
+        inst(CALL_BOUND_METHOD_EXACT_ARGS) {
+            DEOPT_IF(is_method(stack_pointer, oparg), CALL);
+            PyObject *function = PEEK(oparg + 1);
+            DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, CALL);
+            STAT_INC(CALL, hit);
+            PyObject *self = ((PyMethodObject *)function)->im_self;
+            PEEK(oparg + 1) = Py_NewRef(self);
+            PyObject *meth = ((PyMethodObject *)function)->im_func;
+            PEEK(oparg + 2) = Py_NewRef(meth);
+            Py_DECREF(function);
+            GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
         // stack effect: (__0, __array[oparg] -- )
@@ -3165,14 +3188,6 @@ dummy_func(
 
 // Future families go below this point //
 
-family(call, INLINE_CACHE_ENTRIES_CALL) = {
-    CALL, CALL_PY_EXACT_ARGS,
-    CALL_PY_WITH_DEFAULTS, CALL_BOUND_METHOD_EXACT_ARGS, CALL_BUILTIN_CLASS,
-    CALL_BUILTIN_FAST_WITH_KEYWORDS, CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, CALL_NO_KW_BUILTIN_FAST,
-    CALL_NO_KW_BUILTIN_O, CALL_NO_KW_ISINSTANCE, CALL_NO_KW_LEN,
-    CALL_NO_KW_LIST_APPEND, CALL_NO_KW_METHOD_DESCRIPTOR_FAST, CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
-    CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
-    CALL_NO_KW_TYPE_1 };
 family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
     FOR_ITER, FOR_ITER_LIST,
     FOR_ITER_RANGE };
