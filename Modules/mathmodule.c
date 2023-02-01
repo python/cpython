@@ -2344,7 +2344,7 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
-loghelper(PyObject* arg, double (*func)(double))
+loghelper(PyObject* arg, double (*func)(double), const char* err_msg)
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
@@ -2353,8 +2353,7 @@ loghelper(PyObject* arg, double (*func)(double))
 
         /* Negative or zero inputs give a ValueError. */
         if (Py_SIZE(arg) <= 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "math domain error");
+            PyErr_Format(PyExc_ValueError, err_msg, arg);
             return NULL;
         }
 
@@ -2378,7 +2377,7 @@ loghelper(PyObject* arg, double (*func)(double))
     }
 
     /* Else let libm handle it by itself. */
-    return math_1(arg, func, 0, "math domain error");
+    return math_1(arg, func, 0, err_msg);
 }
 
 
@@ -2402,11 +2401,11 @@ math_log_impl(PyObject *module, PyObject *x, PyObject *base)
     PyObject *num, *den;
     PyObject *ans;
 
-    num = loghelper(x, m_log);
+    num = loghelper(x, m_log, "math.log() expects a positive input, got '%R'.");
     if (num == NULL || base == Py_None)
         return num;
 
-    den = loghelper(base, m_log);
+    den = loghelper(base, m_log, "math.log() expects a positive input, got '%R'.");
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2432,7 +2431,7 @@ static PyObject *
 math_log2(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=5425899a4d5d6acb input=08321262bae4f39b]*/
 {
-    return loghelper(x, m_log2);
+    return loghelper(x, m_log2, "math.log2() expects a positive input, got '%R'.");
 }
 
 
@@ -2449,7 +2448,7 @@ static PyObject *
 math_log10(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=be72a64617df9c6f input=b2469d02c6469e53]*/
 {
-    return loghelper(x, m_log10);
+    return loghelper(x, m_log10, "math.log10() expects a positive input, got '%R'.");
 }
 
 
