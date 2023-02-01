@@ -409,16 +409,11 @@ static PyObject *
 itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &takewhile_type;
+    PyTypeObject *base_tp = clinic_state()->takewhile_type;
     PyObject *func;
     PyObject *seq;
 
-<<<<<<< HEAD
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-=======
-    if ((type == clinic_state()->takewhile_type ||
-         type->tp_init == clinic_state()->takewhile_type->tp_init) &&
->>>>>>> 4e23243ee8 (gh-101277: Add takewhile type to module state)
         !_PyArg_NoKeywords("takewhile", kwargs)) {
         goto exit;
     }
@@ -446,16 +441,11 @@ static PyObject *
 itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &starmap_type;
+    PyTypeObject *base_tp = clinic_state()->starmap_type;
     PyObject *func;
     PyObject *seq;
 
-<<<<<<< HEAD
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-=======
-    if ((type == clinic_state()->starmap_type ||
-         type->tp_init == clinic_state()->starmap_type->tp_init) &&
->>>>>>> 610c52202a (gh-101277: Add starmap type to module state)
         !_PyArg_NoKeywords("starmap", kwargs)) {
         goto exit;
     }
@@ -923,12 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-/*[clinic end generated code: output=bef66ff0bff0a951 input=a9049054013a1b77]*/
-=======
-/*[clinic end generated code: output=165d47c9da0e01d3 input=a9049054013a1b77]*/
->>>>>>> 4e23243ee8 (gh-101277: Add takewhile type to module state)
-=======
-/*[clinic end generated code: output=874770ce22a5cca2 input=a9049054013a1b77]*/
->>>>>>> 610c52202a (gh-101277: Add starmap type to module state)
+/*[clinic end generated code: output=b86fcd99bd32145e input=a9049054013a1b77]*/
