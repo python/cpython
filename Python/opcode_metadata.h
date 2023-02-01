@@ -145,7 +145,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case LOAD_GLOBAL_MODULE:
             return 0;
         case LOAD_GLOBAL_BUILTIN:
-            return -1;
+            return 0;
         case DELETE_FAST:
             return 0;
         case MAKE_CELL:
@@ -491,7 +491,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case LOAD_GLOBAL_MODULE:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_BUILTIN:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case DELETE_FAST:
             return 0;
         case MAKE_CELL:
@@ -771,7 +771,7 @@ struct opcode_metadata {
     [LOAD_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_GLOBAL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC0000 },
     [LOAD_GLOBAL_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC0000 },
-    [LOAD_GLOBAL_BUILTIN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LOAD_GLOBAL_BUILTIN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC0000 },
     [DELETE_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [MAKE_CELL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DELETE_DEREF] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
