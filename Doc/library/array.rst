@@ -60,7 +60,7 @@ Notes:
 
 The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed
-through the :attr:`itemsize` attribute.
+through the :attr:`array.itemsize` attribute.
 
 The module defines the following item:
 
@@ -116,7 +116,7 @@ The module defines the following type:
       memory buffer in bytes can be computed as ``array.buffer_info()[1] *
       array.itemsize``.  This is occasionally useful when working with low-level (and
       inherently unsafe) I/O interfaces that require memory addresses, such as certain
-      :c:func:`ioctl` operations.  The returned numbers are valid as long as the array
+      :c:func:`!ioctl` operations.  The returned numbers are valid as long as the array
       exists and no length-changing operations are applied to it.
 
       .. note::
@@ -155,7 +155,7 @@ The module defines the following type:
       values (as if it had been read from a file using the :meth:`fromfile` method).
 
       .. versionadded:: 3.2
-         :meth:`fromstring` is renamed to :meth:`frombytes` for clarity.
+         :meth:`!fromstring` is renamed to :meth:`frombytes` for clarity.
 
 
    .. method:: fromfile(f, n)
@@ -221,7 +221,7 @@ The module defines the following type:
       the :meth:`tofile` method.)
 
       .. versionadded:: 3.2
-         :meth:`tostring` is renamed to :meth:`tobytes` for clarity.
+         :meth:`!tostring` is renamed to :meth:`tobytes` for clarity.
 
 
    .. method:: tofile(f)
