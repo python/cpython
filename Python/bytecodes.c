@@ -1068,8 +1068,13 @@ dummy_func(
             }
         }
 
-        // error: LOAD_GLOBAL has irregular stack effect
-        inst(LOAD_GLOBAL) {
+        // family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
+            // LOAD_GLOBAL,
+            // LOAD_GLOBAL_BUILTIN,
+            // LOAD_GLOBAL_MODULE,
+        // };
+
+        inst(LOAD_GLOBAL, (unused/1, unused/1, unused/2, unused/1 -- null if (oparg & 1), v)) {
             #if ENABLE_SPECIALIZATION
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1082,10 +1087,7 @@ dummy_func(
             STAT_INC(LOAD_GLOBAL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            int push_null = oparg & 1;
-            PEEK(0) = NULL;
             PyObject *name = GETITEM(names, oparg>>1);
-            PyObject *v;
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
             {
@@ -1099,7 +1101,7 @@ dummy_func(
                         format_exc_check_arg(tstate, PyExc_NameError,
                                              NAME_ERROR_MSG, name);
                     }
-                    goto error;
+                    ERROR_IF(true, error);
                 }
                 Py_INCREF(v);
             }
@@ -1109,9 +1111,7 @@ dummy_func(
                 /* namespace 1: globals */
                 v = PyObject_GetItem(GLOBALS(), name);
                 if (v == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        goto error;
-                    }
+                    ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
                     _PyErr_Clear(tstate);
 
                     /* namespace 2: builtins */
@@ -1122,14 +1122,11 @@ dummy_func(
                                         tstate, PyExc_NameError,
                                         NAME_ERROR_MSG, name);
                         }
-                        goto error;
+                        ERROR_IF(true, error);
                     }
                 }
             }
-            /* Skip over inline cache */
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
-            STACK_GROW(push_null);
-            PUSH(v);
+            null = NULL;
         }
 
         // error: LOAD_GLOBAL has irregular stack effect
@@ -3227,9 +3224,6 @@ family(call, INLINE_CACHE_ENTRIES_CALL) = {
 family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
     FOR_ITER, FOR_ITER_LIST,
     FOR_ITER_RANGE };
-family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
-    LOAD_GLOBAL, LOAD_GLOBAL_BUILTIN,
-    LOAD_GLOBAL_MODULE };
 family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
 family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
     UNPACK_SEQUENCE, UNPACK_SEQUENCE_LIST,
