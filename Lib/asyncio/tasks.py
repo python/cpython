@@ -75,6 +75,8 @@ def _set_task_name(task, name):
             set_name(name)
 
 
+_NOT_SET = object()
+
 class Task(futures._PyFuture):  # Inherit Python Task implementation
                                 # from a Python Future implementation.
 
@@ -93,7 +95,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     # status is still pending
     _log_destroy_pending = True
 
-    def __init__(self, coro, *, loop=None, name=None, context=None):
+    def __init__(self, coro, *, loop=None, name=None, context=None,
+                                yield_result=_NOT_SET):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -117,7 +120,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         else:
             self._context = context
 
-        self._loop.call_soon(self.__step, context=self._context)
+        if yield_result is _NOT_SET:
+            self._loop.call_soon(self.__step, context=self._context)
+        else:
+            self.__step2(yield_result)
         _register_task(self)
 
     def __del__(self):
@@ -287,6 +293,12 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         except BaseException as exc:
             super().set_exception(exc)
         else:
+            self.__step2(result)
+        finally:
+            _leave_task(self._loop, self)
+            self = None  # Needed to break cycles when an exception occurs.
+
+    def __step2(self, result):
             blocking = getattr(result, '_asyncio_future_blocking', None)
             if blocking is not None:
                 # Yielded Future must come from Future.__iter__().
@@ -333,9 +345,6 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 new_exc = RuntimeError(f'Task got bad yield: {result!r}')
                 self._loop.call_soon(
                     self.__step, new_exc, context=self._context)
-        finally:
-            _leave_task(self._loop, self)
-            self = None  # Needed to break cycles when an exception occurs.
 
     def __wakeup(self, future):
         try:
@@ -357,13 +366,13 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 _PyTask = Task
 
 
-try:
-    import _asyncio
-except ImportError:
-    pass
-else:
-    # _CTask is needed for tests.
-    Task = _CTask = _asyncio.Task
+# try:
+#     import _asyncio
+# except ImportError:
+#     pass
+# else:
+#     # _CTask is needed for tests.
+#     Task = _CTask = _asyncio.Task
 
 
 def create_task(coro, *, name=None, context=None):

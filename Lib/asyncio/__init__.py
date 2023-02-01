@@ -36,7 +36,36 @@ __all__ = (base_events.__all__ +
            tasks.__all__ +
            threads.__all__ +
            timeouts.__all__ +
-           transports.__all__)
+           transports.__all__ + (
+            'create_eager_task_factory',
+            'eager_task_factory',
+           ))
+
+# throwing things here temporarily to defer premature dir layout bikeshedding
+
+def create_eager_task_factory(custom_task_constructor):
+
+    def factory(loop, coro, *, name=None, context=None):
+        loop._check_closed()
+        try:
+            result = coro.send(None)
+        except StopIteration as si:
+            print("XXX")
+            fut = loop.create_future()
+            fut.set_result(si.value)
+            return fut
+        except Exception as ex:
+            print("YYY")
+            fut = loop.create_future()
+            fut.set_exception(ex)
+            return fut
+        else:
+            return custom_task_constructor(
+                coro, loop=loop, name=name, context=context, yield_result=result)
+
+    return factory
+
+eager_task_factory = create_eager_task_factory(Task)
 
 if sys.platform == 'win32':  # pragma: no cover
     from .windows_events import *
