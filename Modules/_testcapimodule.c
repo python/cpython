@@ -2149,7 +2149,7 @@ dict_get_version(PyObject *self, PyObject *args)
         return NULL;
 
     _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS    
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     version = dict->ma_version_tag;
     _Py_COMP_DIAG_POP
 
@@ -3244,6 +3244,90 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_py_buildvalue(PyObject *self) {
+    PyObject *test_var;
+
+    test_var = Py_BuildValue("(i,i,i)", 2,3,4);
+    if (!PyTuple_CheckExact(test_var)) {
+        PyErr_SetString(TestError, "Failed to Create tuble");
+        return NULL;
+    }
+
+    test_var = Py_BuildValue("[i,i,i]", 2,3,4);
+    if (!PyList_CheckExact(test_var)) {
+        PyErr_SetString(TestError, "Failed to Create list");
+       return NULL;
+    }
+
+    test_var = Py_BuildValue("{s:i}", "test", 1);
+    if (!PyDict_CheckExact(test_var)) {
+        PyErr_SetString(TestError, "Failed to Create dict");
+        return NULL;
+    }
+
+    test_var = Py_BuildValue("b", -1);
+    if (!PyLong_CheckExact(test_var)) {
+        PyErr_SetString(TestError, "Failed to Create long");
+        return NULL;
+    }
+
+    test_var = Py_BuildValue("B", -1);
+    if (!PyLong_CheckExact(test_var)) {
+        PyErr_SetString(TestError, "Failed to Create long");
+        return NULL;
+    }
+
+    test_var = Py_BuildValue("H", -1);
+    if (!PyLong_CheckExact(test_var)) {
+        PyErr_SetString(TestError, "Failed to Create long");
+        return NULL;
+    }
+
+    test_var = Py_BuildValue("i", -1);
+    if (!PyLong_CheckExact(test_var)) {
+        PyErr_SetString(TestError, "Failed to Create long");
+        return NULL;
+    }
+
+    test_var = Py_BuildValue("i", -1);
+    if (!PyLong_CheckExact(test_var)) {
+        PyErr_SetString(TestError, "Failed to Create long");
+        return NULL;
+    }
+
+    test_var = Py_BuildValue("H", 1);
+    if (!PyLong_CheckExact(test_var)) {
+        PyErr_SetString(TestError, "Failed to Create long");
+        return NULL;
+    }
+
+    test_var = Py_BuildValue("I", -100);
+    if (!PyLong_CheckExact(test_var) && _PyLong_Sign(test_var) == 1) {
+       PyErr_SetString(TestError, "Failed to Create unsigned long");
+        return NULL;
+    }
+
+    /*
+     Skipping a bunch of the build values because I am lazy and they work with
+     no tests to date
+    */
+
+    test_var = Py_BuildValue("?", 0);
+    if (!PyBool_Check(test_var) || test_var != Py_False) {
+        PyErr_SetString(TestError, "Failed to Create boolean");
+        return NULL;
+    }
+
+    test_var = Py_BuildValue("?", 1);
+    if (!PyBool_Check(test_var) || test_var != Py_True) {
+        PyErr_SetString(TestError, "Failed to Create boolean");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -3255,6 +3339,7 @@ static PyMethodDef TestMethods[] = {
     {"test_gc_control",         test_gc_control,                 METH_NOARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
+    {"test_py_buildvalue",      (PyCFunction)test_py_buildvalue, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
     {"test_lazy_hash_inheritance",      test_lazy_hash_inheritance,METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},

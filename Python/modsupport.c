@@ -489,6 +489,13 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
             return v;
         }
 
+        case '?':
+        {
+            if (va_arg(*p_va, int) == 0)
+                Py_RETURN_FALSE;
+            else
+                Py_RETURN_TRUE;
+        }
         case ':':
         case ',':
         case ' ':
