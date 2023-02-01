@@ -2356,8 +2356,7 @@ dummy_func(
                 prev_exc = Py_NewRef(Py_None);
             }
             assert(PyExceptionInstance_Check(new_exc));
-            Py_INCREF(new_exc);
-            exc_info->exc_value = new_exc;
+            exc_info->exc_value = Py_NewRef(new_exc);
         }
 
         // error: LOAD_ATTR has irregular stack effect
