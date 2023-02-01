@@ -75,6 +75,13 @@ static PyTypeObject tuplegetter_type;
  * Checking for d.len == 0 is the intended way to see whether d is empty.
  */
 
+typedef struct {
+} collections_state;
+
+static collections_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
+
 typedef struct BLOCK {
     struct BLOCK *leftlink;
     PyObject *data[BLOCKLEN];
