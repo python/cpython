@@ -1,0 +1,3 @@
+:func:`warnings.warn` now has the ability to skip stack frames based on code
+filename prefix rather than only a numeric ``stacklevel`` via the new
+``skip_file_prefixes`` keyword argument.

@@ -13,10 +13,10 @@ if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
-        %PYTHON% -m pip install sphinx
+        %PYTHON% -m pip install -r requirements.txt
         if errorlevel 1 exit /B
     )
-    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sys.exit(sphinx.main())"
+    set SPHINXBUILD=%PYTHON% -c "import sphinx.cmd.build, sys; sys.exit(sphinx.cmd.build.main())"
 )
 
 %PYTHON% -c "import python_docs_theme" > nul 2> nul
@@ -30,10 +30,22 @@ if not defined BLURB (
     %PYTHON% -c "import blurb" > nul 2> nul
     if errorlevel 1 (
         echo Installing blurb with %PYTHON%
+        rem Should have been installed with Sphinx earlier
         %PYTHON% -m pip install blurb
         if errorlevel 1 exit /B
     )
     set BLURB=%PYTHON% -m blurb
+)
+
+if not defined SPHINXLINT (
+    %PYTHON% -c "import sphinxlint" > nul 2> nul
+    if errorlevel 1 (
+        echo Installing sphinx-lint with %PYTHON%
+        rem Should have been installed with Sphinx earlier
+        %PYTHON% -m pip install sphinx-lint
+        if errorlevel 1 exit /B
+    )
+    set SPHINXLINT=%PYTHON% -m sphinxlint
 )
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
@@ -41,7 +53,7 @@ if exist "%HTMLHELP%" goto :skiphhcsearch
 
 rem Search for HHC in likely places
 set HTMLHELP=
-where hhc /q && set HTMLHELP=hhc && goto :skiphhcsearch
+where hhc /q && set "HTMLHELP=hhc" && goto :skiphhcsearch
 where /R ..\externals hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
 if not exist "%HTMLHELP%" where /R "%ProgramFiles(x86)%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
 if not exist "%HTMLHELP%" where /R "%ProgramFiles%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
@@ -54,9 +66,9 @@ if not exist "%HTMLHELP%" (
 )
 :skiphhcsearch
 
-if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/extensions/patchlevel.py`) do set DISTVERSION=%%v
+if not defined DISTVERSION for /f "usebackq" %%v in (`%PYTHON% tools/extensions/patchlevel.py`) do set DISTVERSION=%%v
 
-if "%BUILDDIR%" EQU "" set BUILDDIR=build
+if not defined BUILDDIR set BUILDDIR=build
 
 rem Targets that don't require sphinx-build
 if "%1" EQU "" goto help
@@ -97,9 +109,9 @@ echo.always available include:
 echo.
 echo.   Provided by Sphinx:
 echo.      html, htmlhelp, latex, text
-echo.      suspicious, linkcheck, changes, doctest
+echo.      linkcheck, changes, doctest
 echo.   Provided by this script:
-echo.      clean, check, serve, htmlview
+echo.      clean, check, htmlview
 echo.
 echo.All arguments past the first one are passed through to sphinx-build as
 echo.filenames to build or are ignored.  See README.rst in this directory or
@@ -115,21 +127,27 @@ goto end
 :build
 if not exist "%BUILDDIR%" mkdir "%BUILDDIR%"
 
+rem PY_MISC_NEWS_DIR is also used by our Sphinx extension in tools/extensions/pyspecific.py
+if not defined PY_MISC_NEWS_DIR set PY_MISC_NEWS_DIR=%BUILDDIR%\%1
+if not exist "%PY_MISC_NEWS_DIR%" mkdir "%PY_MISC_NEWS_DIR%"
 if exist ..\Misc\NEWS (
-    echo.Copying Misc\NEWS to build\NEWS
-    copy ..\Misc\NEWS build\NEWS > nul
+    echo.Copying Misc\NEWS to %PY_MISC_NEWS_DIR%\NEWS
+    copy ..\Misc\NEWS "%PY_MISC_NEWS_DIR%\NEWS" > nul
 ) else if exist ..\Misc\NEWS.D (
     if defined BLURB (
         echo.Merging Misc/NEWS with %BLURB%
-        %BLURB% merge -f build\NEWS
+        %BLURB% merge -f "%PY_MISC_NEWS_DIR%\NEWS"
     ) else (
         echo.No Misc/NEWS file and Blurb is not available.
         exit /B 1
     )
 )
 
-if NOT "%PAPER%" == "" (
+if defined PAPER (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
+)
+if "%1" EQU "htmlhelp" (
+    set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
 )
 cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
 
@@ -162,11 +180,14 @@ if EXIST "%BUILDDIR%\html\index.html" (
 goto end
 
 :check
-cmd /S /C "%PYTHON% tools\rstlint.py -i tools"
+rem Check the docs and NEWS files with sphinx-lint.
+rem Ignore the tools dir and check that the default role is not used.
+cmd /S /C "%SPHINXLINT% -i tools --enable default-role"
+cmd /S /C "%SPHINXLINT% --enable default-role ..\Misc\NEWS.d\next\ "
 goto end
 
 :serve
-cmd /S /C "%PYTHON% ..\Tools\scripts\serve.py "%BUILDDIR%\html""
+echo.The serve target was removed, use htmlview instead (see bpo-36329)
 goto end
 
 :end

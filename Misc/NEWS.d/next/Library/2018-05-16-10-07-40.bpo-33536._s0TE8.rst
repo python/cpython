@@ -1,2 +1,0 @@
-dataclasses.make_dataclass now checks for invalid field names and duplicate
-fields. Also, added a check for invalid field specifications.
