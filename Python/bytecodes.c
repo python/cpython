@@ -2349,21 +2349,17 @@ dummy_func(
         }
 
         // stack effect: ( -- __0)
-        inst(PUSH_EXC_INFO) {
-            PyObject *value = TOP();
-
+        inst(PUSH_EXC_INFO, (new_exc -- prev_exc, new_exc)) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
             if (exc_info->exc_value != NULL) {
-                SET_TOP(exc_info->exc_value);
+                prev_exc = exc_info->exc_value;
             }
             else {
-                SET_TOP(Py_NewRef(Py_None));
+                prev_exc = Py_NewRef(Py_None);
             }
-
-            PUSH(Py_NewRef(value));
-            assert(PyExceptionInstance_Check(value));
-            exc_info->exc_value = value;
-
+            assert(PyExceptionInstance_Check(new_exc));
+            Py_INCREF(new_exc);
+            exc_info->exc_value = new_exc;
         }
 
         // error: LOAD_ATTR has irregular stack effect

@@ -277,7 +277,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case WITH_EXCEPT_START:
             return 4;
         case PUSH_EXC_INFO:
-            return -1;
+            return 1;
         case LOAD_ATTR_METHOD_WITH_VALUES:
             return -1;
         case LOAD_ATTR_METHOD_NO_DICT:
@@ -623,7 +623,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case WITH_EXCEPT_START:
             return 5;
         case PUSH_EXC_INFO:
-            return -1;
+            return 2;
         case LOAD_ATTR_METHOD_WITH_VALUES:
             return -1;
         case LOAD_ATTR_METHOD_NO_DICT:
