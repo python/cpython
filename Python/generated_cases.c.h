@@ -945,8 +945,11 @@
         }
 
         TARGET(RERAISE) {
+            PyObject *exc = PEEK(1);
+            PyObject **values = &PEEK(1 + oparg);
+            assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                PyObject *lasti = PEEK(oparg + 1);
+                PyObject *lasti = values[0];
                 if (PyLong_Check(lasti)) {
                     frame->prev_instr = _PyCode_CODE(frame->f_code) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
@@ -957,11 +960,12 @@
                     goto error;
                 }
             }
-            PyObject *val = POP();
-            assert(val && PyExceptionInstance_Check(val));
-            PyObject *exc = Py_NewRef(PyExceptionInstance_Class(val));
-            PyObject *tb = PyException_GetTraceback(val);
-            _PyErr_Restore(tstate, exc, val, tb);
+            // PyObject *exc = Py_NewRef(values[oparg]);
+            assert(exc && PyExceptionInstance_Check(exc));
+            Py_INCREF(exc);
+            PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
+            PyObject *tb = PyException_GetTraceback(exc);
+            _PyErr_Restore(tstate, typ, exc, tb);
             goto exception_unwind;
         }
 

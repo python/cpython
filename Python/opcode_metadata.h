@@ -105,7 +105,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case POP_EXCEPT:
             return 1;
         case RERAISE:
-            return -1;
+            return oparg + 1;
         case PREP_RERAISE_STAR:
             return 2;
         case END_ASYNC_FOR:
@@ -451,7 +451,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case POP_EXCEPT:
             return 0;
         case RERAISE:
-            return -1;
+            return oparg;
         case PREP_RERAISE_STAR:
             return 1;
         case END_ASYNC_FOR:
