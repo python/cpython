@@ -56,8 +56,7 @@ class BaseContext(object):
         can be used to create shared objects.
         '''
         from .managers import SyncManager
-        ctx = self.get_context()
-        m = SyncManager(ctx=ctx)
+        m = SyncManager(ctx=self.get_context())
         m.start()
         return m
 

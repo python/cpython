@@ -286,7 +286,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       control the lifetime of workers in the pool.
 
    .. versionchanged:: 3.12
-      The implcit use of the :mod:`multiprocessing` *fork* start method as a
+      The implicit use of the :mod:`multiprocessing` *fork* start method as a
       platform default (see :ref:`multiprocessing-start-methods`) now raises a
       :exc:`DeprecationWarning`. The default will change in Python 3.14.
       Code that requires *fork* should explicitly specify that when creating
