@@ -243,7 +243,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case JUMP_IF_FALSE_OR_POP:
             return 1;
         case JUMP_IF_TRUE_OR_POP:
-            return -1;
+            return 1;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case GET_LEN:
@@ -589,7 +589,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case JUMP_IF_FALSE_OR_POP:
             return (jump ? 1 : 0);
         case JUMP_IF_TRUE_OR_POP:
-            return -1;
+            return (jump ? 1 : 0);
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case GET_LEN:
