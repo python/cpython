@@ -887,6 +887,8 @@ call fails (for example because the path doesn't exist).
    Return the name of the group owning the file.  :exc:`KeyError` is raised
    if the file's gid isn't found in the system database.
 
+   .. availability:: Unix.
+
 
 .. method:: Path.is_dir()
 
@@ -1145,6 +1147,8 @@ call fails (for example because the path doesn't exist).
    Return the name of the user owning the file.  :exc:`KeyError` is raised
    if the file's uid isn't found in the system database.
 
+   .. availability:: Unix.
+
 
 .. method:: Path.read_bytes()
 
@@ -1184,6 +1188,8 @@ call fails (for example because the path doesn't exist).
       >>> p.symlink_to('setup.py')
       >>> p.readlink()
       PosixPath('setup.py')
+
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.9
 
@@ -1333,6 +1339,9 @@ call fails (for example because the path doesn't exist).
       The order of arguments (link, target) is the reverse
       of :func:`os.symlink`'s.
 
+   .. availability:: Unix, Windows.
+
+
 .. method:: Path.hardlink_to(target)
 
    Make this path a hard link to the same file as *target*.
@@ -1342,6 +1351,8 @@ call fails (for example because the path doesn't exist).
       of :func:`os.link`'s.
 
    .. versionadded:: 3.10
+
+   .. availability:: Unix, Windows.
 
 
 .. method:: Path.touch(mode=0o666, exist_ok=True)

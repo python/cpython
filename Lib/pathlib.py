@@ -20,6 +20,11 @@ from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
+try:
+    import pwd, grp
+except ImportError:
+    pwd = grp = None
+
 
 __all__ = [
     "PurePath", "PurePosixPath", "PureWindowsPath",
@@ -861,22 +866,26 @@ class Path(PurePath):
         """
         Return the login name of the file owner.
         """
-        try:
-            import pwd
-            return pwd.getpwuid(self.stat().st_uid).pw_name
-        except ImportError:
+        if not pwd:
+            msg = ("From Python {remove}, pathlib.Path.owner() will "
+                   "not be available in builds lacking the pwd module.")
+            warnings._deprecated("pathlib.Path.owner()", msg,
+                                 remove=(3, 14))
             raise NotImplementedError("Path.owner() is unsupported on this system")
+        return pwd.getpwuid(self.stat().st_uid).pw_name
 
     def group(self):
         """
         Return the group name of the file gid.
         """
 
-        try:
-            import grp
-            return grp.getgrgid(self.stat().st_gid).gr_name
-        except ImportError:
+        if not grp:
+            msg = ("From Python {remove}, pathlib.Path.group() will "
+                   "not be available in builds lacking the grp module.")
+            warnings._deprecated("pathlib.Path.group()", msg,
+                                 remove=(3, 14))
             raise NotImplementedError("Path.group() is unsupported on this system")
+        return grp.getgrgid(self.stat().st_gid).gr_name
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -928,6 +937,10 @@ class Path(PurePath):
         Return the path to which the symbolic link points.
         """
         if not hasattr(os, "readlink"):
+            msg = ("From Python {remove}, pathlib.Path.readlink() will "
+                   "not be available in builds lacking os.readlink().")
+            warnings._deprecated("pathlib.Path.readlink()", msg,
+                                 remove=(3, 14))
             raise NotImplementedError("os.readlink() not available on this system")
         return self._from_parts((os.readlink(self),))
 
@@ -1039,6 +1052,10 @@ class Path(PurePath):
         Note the order of arguments (link, target) is the reverse of os.symlink.
         """
         if not hasattr(os, "symlink"):
+            msg = ("From Python {remove}, pathlib.Path.symlink_to() will "
+                   "not be available in builds lacking os.symlink().")
+            warnings._deprecated("pathlib.Path.symlink_to()", msg,
+                                 remove=(3, 14))
             raise NotImplementedError("os.symlink() not available on this system")
         os.symlink(target, self, target_is_directory)
 
@@ -1049,6 +1066,10 @@ class Path(PurePath):
         Note the order of arguments (self, target) is the reverse of os.link's.
         """
         if not hasattr(os, "link"):
+            msg = ("From Python {remove}, pathlib.Path.hardlink_to() will "
+                   "not be available in builds lacking os.link().")
+            warnings._deprecated("pathlib.Path.hardlink_to()", msg,
+                                 remove=(3, 14))
             raise NotImplementedError("os.link() not available on this system")
         os.link(target, self)
 

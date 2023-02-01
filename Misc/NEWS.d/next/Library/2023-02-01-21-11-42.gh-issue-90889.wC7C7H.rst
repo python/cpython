@@ -1,0 +1,13 @@
+Deprecate use of some pathlib methods when low-level functions or modules
+they require are missing. The affected methods are:
+:meth:`pathlib.Path.readlink` (when :func:`os.readlink` is missing),
+:meth:`~pathlib.Path.symlink_to` (likewise :func:`os.symlink`),
+:meth:`~pathlib.Path.hardlink_to` (:func:`os.link`),
+:meth:`~pathlib.Path.owner` (:mod:`pwd`) and :meth:`~pathlib.Path.group`
+(:mod:`grp`). From Python 3.14, these methods will not be present when
+corresponding low-level functions or modules are not available; this will
+facilitate feature detection like
+``if hasattr(p, 'symlink_to'): p.symlink_to(...)``. In Python 3.13 and
+prior, users may check for the existence of the underlying functions like
+``if hasattr(os, 'symlink'): p.symlink_to(...)``, or check for a
+POSIX-flavoured path like ``if isinstance(p, PosixPath):  u = p.owner()``.

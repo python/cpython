@@ -2078,8 +2078,40 @@ class _BasePathTest(object):
         p = P / 'fileA'
         # linking to another path.
         q = P / 'dirA' / 'fileAA'
-        with self.assertRaises(NotImplementedError):
-            q.hardlink_to(p)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                p.hardlink_to(q)
+
+    @unittest.skipIf(hasattr(os, "symlink"), "os.symlink() is present")
+    def test_symlink_to_not_implemented(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        # linking to another path.
+        q = P / 'dirA' / 'fileAA'
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                p.symlink_to(q)
+
+    @unittest.skipIf(hasattr(os, "readlink"), "os.readlink() is present")
+    def test_readlink_not_implemented(self):
+        p = self.cls(BASE) / 'fileA'
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                p.readlink()
+
+    @unittest.skipIf(pwd, "the pwd module is present")
+    def test_owner_not_implemented(self):
+        p = self.cls(BASE) / 'fileA'
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                p.owner()
+
+    @unittest.skipIf(grp, "the grp module is present")
+    def test_group_not_implemented(self):
+        p = self.cls(BASE) / 'fileA'
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                p.group()
 
     def test_rename(self):
         P = self.cls(BASE)
