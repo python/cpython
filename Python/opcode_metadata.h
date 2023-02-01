@@ -197,7 +197,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case LOAD_ATTR_CLASS:
             return 1;
         case LOAD_ATTR_PROPERTY:
-            return -1;
+            return 1;
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN:
             return -1;
         case STORE_ATTR_INSTANCE_VALUE:
@@ -543,7 +543,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case LOAD_ATTR_CLASS:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_PROPERTY:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN:
             return -1;
         case STORE_ATTR_INSTANCE_VALUE:
@@ -797,7 +797,7 @@ struct opcode_metadata {
     [LOAD_ATTR_WITH_HINT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_SLOT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_PROPERTY] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LOAD_ATTR_PROPERTY] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [STORE_ATTR_INSTANCE_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC000 },
     [STORE_ATTR_WITH_HINT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
