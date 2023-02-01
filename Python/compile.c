@@ -1194,9 +1194,6 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_JUMP_IF_TRUE:
             return -1;
 
-        case COMPARE_AND_BRANCH:
-            return -2;
-
         case LOAD_GLOBAL:
             return (oparg & 1) + 1;
 
@@ -2886,9 +2883,7 @@ static int compiler_addcompare(struct compiler *c, location loc,
     default:
         Py_UNREACHABLE();
     }
-    /* cmp goes in top bits of the oparg, while the low bits are used by quickened
-     * versions of this opcode to store the comparison mask. */
-    ADDOP_I(c, loc, COMPARE_OP, cmp << 4);
+    ADDOP_I(c, loc, COMPARE_OP, cmp);
     return SUCCESS;
 }
 
