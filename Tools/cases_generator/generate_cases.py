@@ -868,7 +868,7 @@ class Analyzer:
         ) -> None:
             self.out.emit("\n#ifndef NDEBUG")
             self.out.emit("static int")
-            self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg) {{")
+            self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg, bool jump) {{")
             self.out.emit("    switch(opcode) {")
             for instr, effect in data:
                 self.out.emit(f"        case {instr.name}:")

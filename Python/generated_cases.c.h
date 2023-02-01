@@ -2406,28 +2406,31 @@
         }
 
         TARGET(JUMP_IF_FALSE_OR_POP) {
-            PyObject *cond = TOP();
+            PyObject *cond = PEEK(1);
+            bool jump = false;
             int err;
             if (Py_IsTrue(cond)) {
-                STACK_SHRINK(1);
                 _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsFalse(cond)) {
                 JUMPBY(oparg);
+                jump = true;
             }
             else {
                 err = PyObject_IsTrue(cond);
                 if (err > 0) {
-                    STACK_SHRINK(1);
                     Py_DECREF(cond);
                 }
                 else if (err == 0) {
                     JUMPBY(oparg);
+                    jump = true;
                 }
                 else {
                     goto error;
                 }
             }
+            STACK_SHRINK(1);
+            STACK_GROW((jump ? 1 : 0));
             DISPATCH();
         }
 

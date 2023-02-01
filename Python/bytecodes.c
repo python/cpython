@@ -1992,25 +1992,24 @@ dummy_func(
             }
         }
 
-        // error: JUMP_IF_FALSE_OR_POP stack effect depends on jump flag
-        inst(JUMP_IF_FALSE_OR_POP) {
-            PyObject *cond = TOP();
+        inst(JUMP_IF_FALSE_OR_POP, (cond -- cond if (jump))) {
+            bool jump = false;
             int err;
             if (Py_IsTrue(cond)) {
-                STACK_SHRINK(1);
                 _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsFalse(cond)) {
                 JUMPBY(oparg);
+                jump = true;
             }
             else {
                 err = PyObject_IsTrue(cond);
                 if (err > 0) {
-                    STACK_SHRINK(1);
                     Py_DECREF(cond);
                 }
                 else if (err == 0) {
                     JUMPBY(oparg);
+                    jump = true;
                 }
                 else {
                     goto error;

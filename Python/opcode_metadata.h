@@ -4,7 +4,7 @@
 
 #ifndef NDEBUG
 static int
-_PyOpcode_num_popped(int opcode, int oparg) {
+_PyOpcode_num_popped(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
             return 0;
@@ -241,7 +241,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case POP_JUMP_IF_NONE:
             return 1;
         case JUMP_IF_FALSE_OR_POP:
-            return -1;
+            return 1;
         case JUMP_IF_TRUE_OR_POP:
             return -1;
         case JUMP_BACKWARD_NO_INTERRUPT:
@@ -350,7 +350,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
 
 #ifndef NDEBUG
 static int
-_PyOpcode_num_pushed(int opcode, int oparg) {
+_PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
             return 0;
@@ -587,7 +587,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case POP_JUMP_IF_NONE:
             return 0;
         case JUMP_IF_FALSE_OR_POP:
-            return -1;
+            return (jump ? 1 : 0);
         case JUMP_IF_TRUE_OR_POP:
             return -1;
         case JUMP_BACKWARD_NO_INTERRUPT:
