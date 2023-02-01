@@ -3452,7 +3452,9 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     if (monitoring == NULL) {
         goto error;
     }
-    if (PyDict_SetItemString(sysdict, "monitoring", monitoring) < 0) {
+    int err = PyDict_SetItemString(sysdict, "monitoring", monitoring);
+    Py_DECREF(monitoring);
+    if (err < 0) {
         goto error;
     }
 

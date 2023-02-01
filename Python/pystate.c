@@ -421,6 +421,13 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
+    for(int i = 0; i < PY_MONITORING_EVENTS; i++) {
+        interp->monitoring_matrix.tools[i] = 0;
+        for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
+            Py_CLEAR(interp->tools[t].instrument_callables[i]);
+        }
+    }
+
     PyConfig_Clear(&interp->config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
@@ -475,7 +482,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         interp->code_watchers[i] = NULL;
     }
     interp->active_code_watchers = 0;
-
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.

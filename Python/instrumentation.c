@@ -9,7 +9,7 @@
 #include "pycore_pystate.h"
 
 /* Uncomment this to dump debugging output when assertions fail */
-#define INSTRUMENT_DEBUG 1
+// #define INSTRUMENT_DEBUG 1
 
 static PyObject DISABLE =
 {
@@ -1068,6 +1068,7 @@ _Py_call_instrumentation_jump(
 ) {
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH);
+    assert(frame->prev_instr == instr);
     frame->prev_instr = target;
     PyCodeObject *code = frame->f_code;
     int offset = instr - _PyCode_CODE(code);
@@ -1086,6 +1087,11 @@ _Py_call_instrumentation_jump(
     int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
     Py_DECREF(to_obj);
     Py_DECREF(from_obj);
+    if (err) {
+        /* Error handling expects next_instr to point to instruction + 1.
+         * So we add one here. */
+        frame->prev_instr++;
+    }
     return err;
 }
 
@@ -1914,7 +1920,9 @@ PyObject *_Py_CreateMonitoringObject(void)
     if (events == NULL) {
         goto error;
     }
-    if (PyObject_SetAttrString(mod, "events", events)) {
+    int err = PyObject_SetAttrString(mod, "events", events);
+    Py_DECREF(events);
+    if (err) {
         goto error;
     }
     for (int i = 0; i < PY_MONITORING_EVENTS; i++) {
