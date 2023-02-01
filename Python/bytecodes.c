@@ -2457,17 +2457,18 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_BOUND_METHOD_EXACT_ARGS) {
-            DEOPT_IF(is_method(stack_pointer, oparg), CALL);
-            PyObject *function = PEEK(oparg + 1);
-            DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, CALL);
+        // Start out with [NULL, method, arg1, arg2, ...]
+        // Transform to [func, self, arg1, arg2, ...]
+        // Then fall through to CALL_PY_EXACT_ARGS
+        inst(CALL_BOUND_METHOD_EXACT_ARGS, (unused/1, unused/2, unused/1, thing1, thing2, unused[oparg] -- unused)) {
+            DEOPT_IF(thing1 != NULL, CALL);
+            DEOPT_IF(Py_TYPE(thing2) != &PyMethod_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *self = ((PyMethodObject *)function)->im_self;
-            PEEK(oparg + 1) = Py_NewRef(self);
-            PyObject *meth = ((PyMethodObject *)function)->im_func;
-            PEEK(oparg + 2) = Py_NewRef(meth);
-            Py_DECREF(function);
+            PyObject *self = ((PyMethodObject *)thing2)->im_self;
+            PEEK(oparg + 1) = Py_NewRef(self);  // thing2
+            PyObject *meth = ((PyMethodObject *)thing2)->im_func;
+            PEEK(oparg + 2) = Py_NewRef(meth);  // thing1
+            Py_DECREF(thing2);
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
