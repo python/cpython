@@ -97,7 +97,7 @@ extern "C" {
 #define JUMP_BACKWARD                          140
 #define COMPARE_AND_BRANCH                     141
 #define CALL_FUNCTION_EX                       142
-#define LOAD_FAST_OR_NULL                      143
+#define LOAD_FAST_AND_CLEAR                    143
 #define EXTENDED_ARG                           144
 #define LIST_APPEND                            145
 #define SET_ADD                                146

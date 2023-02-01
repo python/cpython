@@ -196,7 +196,7 @@ def_op('COMPARE_AND_BRANCH', 141)   # Comparison and jump
 hascompare.append(141)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
-def_op('LOAD_FAST_OR_NULL', 143)  # Local variable number, may load NULL if undefined
+def_op('LOAD_FAST_AND_CLEAR', 143)  # Local variable number
 haslocal.append(143)
 
 def_op('EXTENDED_ARG', 144)

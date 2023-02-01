@@ -46,10 +46,11 @@
             DISPATCH();
         }
 
-        TARGET(LOAD_FAST_OR_NULL) {
+        TARGET(LOAD_FAST_AND_CLEAR) {
             PyObject *value;
             value = GETLOCAL(oparg);
-            Py_XINCREF(value);
+            // do not use SETLOCAL here, it decrefs the old value
+            GETLOCAL(oparg) = NULL;
             STACK_GROW(1);
             POKE(1, value);
             DISPATCH();

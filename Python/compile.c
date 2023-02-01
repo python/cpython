@@ -550,14 +550,14 @@ static int compiler_sync_comprehension_generator(
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int outermost_iter_is_param);
+                                      int iter_on_stack);
 
 static int compiler_async_comprehension_generator(
                                       struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int outermost_iter_is_param);
+                                      int iter_on_stack);
 
 static int compiler_pattern(struct compiler *, pattern_ty, pattern_context *);
 static int compiler_match(struct compiler *, stmt_ty);
@@ -1229,7 +1229,7 @@ stack_effect(int opcode, int oparg, int jump)
 
         case LOAD_FAST:
         case LOAD_FAST_CHECK:
-        case LOAD_FAST_OR_NULL:
+        case LOAD_FAST_AND_CLEAR:
             return 1;
         case STORE_FAST:
         case STORE_FAST_MAYBE_NULL:
@@ -5150,18 +5150,18 @@ compiler_comprehension_generator(struct compiler *c, location loc,
                                  asdl_comprehension_seq *generators, int gen_index,
                                  int depth,
                                  expr_ty elt, expr_ty val, int type,
-                                 int outermost_iter_is_param)
+                                 int iter_on_stack)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
         return compiler_async_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
-            outermost_iter_is_param);
+            iter_on_stack);
     } else {
         return compiler_sync_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
-            outermost_iter_is_param);
+            iter_on_stack);
     }
 }
 
@@ -5170,7 +5170,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int outermost_iter_is_param)
+                                      int iter_on_stack)
 {
     /* generate code for the iterator, then each of the ifs,
        and then write to the element */
@@ -5182,37 +5182,39 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (gen_index == 0 && outermost_iter_is_param) {
-        /* Receive outermost iter as an implicit argument */
-        c->u->u_argcount = 1;
-        ADDOP_I(c, loc, LOAD_FAST, 0);
-    }
-    else {
-        /* Sub-iter - calculate on the fly */
-        /* Fast path for the temporary variable assignment idiom:
-             for y in [f(x)]
-         */
-        asdl_expr_seq *elts;
-        switch (gen->iter->kind) {
-            case List_kind:
-                elts = gen->iter->v.List.elts;
-                break;
-            case Tuple_kind:
-                elts = gen->iter->v.Tuple.elts;
-                break;
-            default:
-                elts = NULL;
+    if (!iter_on_stack) {
+        if (gen_index == 0) {
+            /* Receive outermost iter as an implicit argument */
+            c->u->u_argcount = 1;
+            ADDOP_I(c, loc, LOAD_FAST, 0);
         }
-        if (asdl_seq_LEN(elts) == 1) {
-            expr_ty elt = asdl_seq_GET(elts, 0);
-            if (elt->kind != Starred_kind) {
-                VISIT(c, expr, elt);
-                start = NO_LABEL;
+        else {
+            /* Sub-iter - calculate on the fly */
+            /* Fast path for the temporary variable assignment idiom:
+                for y in [f(x)]
+            */
+            asdl_expr_seq *elts;
+            switch (gen->iter->kind) {
+                case List_kind:
+                    elts = gen->iter->v.List.elts;
+                    break;
+                case Tuple_kind:
+                    elts = gen->iter->v.Tuple.elts;
+                    break;
+                default:
+                    elts = NULL;
             }
-        }
-        if (IS_LABEL(start)) {
-            VISIT(c, expr, gen->iter);
-            ADDOP(c, loc, GET_ITER);
+            if (asdl_seq_LEN(elts) == 1) {
+                expr_ty elt = asdl_seq_GET(elts, 0);
+                if (elt->kind != Starred_kind) {
+                    VISIT(c, expr, elt);
+                    start = NO_LABEL;
+                }
+            }
+            if (IS_LABEL(start)) {
+                VISIT(c, expr, gen->iter);
+                ADDOP(c, loc, GET_ITER);
+            }
         }
     }
     if (IS_LABEL(start)) {
@@ -5287,7 +5289,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int outermost_iter_is_param)
+                                      int iter_on_stack)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, except);
@@ -5296,15 +5298,17 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (gen_index == 0 && outermost_iter_is_param) {
-        /* Receive outermost iter as an implicit argument */
-        c->u->u_argcount = 1;
-        ADDOP_I(c, loc, LOAD_FAST, 0);
-    }
-    else {
-        /* Sub-iter - calculate on the fly */
-        VISIT(c, expr, gen->iter);
-        ADDOP(c, loc, GET_AITER);
+    if (!iter_on_stack) {
+        if (gen_index == 0) {
+            /* Receive outermost iter as an implicit argument */
+            c->u->u_argcount = 1;
+            ADDOP_I(c, loc, LOAD_FAST, 0);
+        }
+        else {
+            /* Sub-iter - calculate on the fly */
+            VISIT(c, expr, gen->iter);
+            ADDOP(c, loc, GET_AITER);
+        }
     }
 
     USE_LABEL(c, start);
@@ -5449,7 +5453,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 // in the case of a cell, this will actually push the cell
                 // itself to the stack, then we'll create a new one for the
                 // comprehension and restore the original one after
-                ADDOP_NAME(c, loc, LOAD_FAST_OR_NULL, k, varnames);
+                ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
                 if (scope == CELL) {
                     ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
                 }
@@ -5459,6 +5463,14 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
             }
         }
     }
+    if (state->pushed_locals) {
+        // Outermost iterable expression was already evaluated and is on the
+        // stack, we need to swap it back to TOS. This also rotates the order of
+        // `pushed_locals` on the stack, but this will be reversed when we swap
+        // out the comprehension result in pop_inlined_comprehension_state
+        ADDOP_I(c, loc, SWAP, PyList_GET_SIZE(state->pushed_locals) + 1);
+    }
+
     return SUCCESS;
 }
 
@@ -5479,16 +5491,31 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
     if (state.pushed_locals) {
         // pop names we pushed to stack earlier
         Py_ssize_t npops = PyList_GET_SIZE(state.pushed_locals);
-        // preserve the list/dict/set result of the comprehension as TOS
+        // Preserve the list/dict/set result of the comprehension as TOS. This
+        // reverses the SWAP we did in push_inlined_comprehension_state to get
+        // the outermost iterable to TOS, so we can still just iterate
+        // pushed_locals in simple reverse order
         ADDOP_I(c, loc, SWAP, npops + 1);
-        for (Py_ssize_t i = npops; i > 0; --i) {
-            // i % npops: pop in order e.g. 0, 3, 2, 1: accounts for the swap
-            k = PyList_GetItem(state.pushed_locals, i % npops);
+        for (Py_ssize_t i = npops - 1; i >= 0; --i) {
+            k = PyList_GetItem(state.pushed_locals, i);
             if (k == NULL) {
                 return ERROR;
             }
             ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
         }
+    }
+    return SUCCESS;
+}
+
+static inline int
+compiler_comprehension_iter(struct compiler *c, location loc,
+                            comprehension_ty comp)
+{
+    VISIT(c, expr, comp->iter);
+    if (comp->is_async) {
+        ADDOP(c, loc, GET_AITER);
+    } else {
+        ADDOP(c, loc, GET_ITER);
     }
     return SUCCESS;
 }
@@ -5516,6 +5543,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
+        if (compiler_comprehension_iter(c, loc, outermost)) {
+            goto error;
+        }
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
             goto error;
         }
@@ -5557,10 +5587,13 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         }
 
         ADDOP_I(c, loc, op, 0);
+        if (is_inlined) {
+            ADDOP_I(c, loc, SWAP, 2);
+        }
     }
 
     if (compiler_comprehension_generator(c, loc, generators, 0, 0,
-                                         elt, val, type, !is_inlined) < 0) {
+                                         elt, val, type, is_inlined) < 0) {
         goto error_in_scope;
     }
 
@@ -5595,13 +5628,8 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     Py_DECREF(co);
 
-    VISIT(c, expr, outermost->iter);
-
-    loc = LOC(e);
-    if (outermost->is_async) {
-        ADDOP(c, loc, GET_AITER);
-    } else {
-        ADDOP(c, loc, GET_ITER);
+    if (compiler_comprehension_iter(c, loc, outermost)) {
+        goto error;
     }
 
     ADDOP_I(c, loc, CALL, 0);
@@ -8141,6 +8169,7 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
         uint64_t bit = (uint64_t)1 << instr->i_oparg;
         switch (instr->i_opcode) {
             case DELETE_FAST:
+            case LOAD_FAST_AND_CLEAR:
                 unsafe_mask |= bit;
                 break;
             case STORE_FAST:
@@ -8194,6 +8223,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
             assert(arg >= 0);
             switch (instr->i_opcode) {
                 case DELETE_FAST:
+                case LOAD_FAST_AND_CLEAR:
                     states[arg - 64] = blocknum - 1;
                     break;
                 case STORE_FAST:

@@ -114,9 +114,10 @@ dummy_func(
             Py_INCREF(value);
         }
 
-        inst(LOAD_FAST_OR_NULL, (-- value)) {
+        inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
-            Py_XINCREF(value);
+            // do not use SETLOCAL here, it decrefs the old value
+            GETLOCAL(oparg) = NULL;
         }
 
         inst(LOAD_CONST, (-- value)) {
