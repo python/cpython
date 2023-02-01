@@ -236,7 +236,7 @@ static void *opcode_targets[256] = {
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
-    &&_unknown_opcode,
+    &&TARGET_INSTRUMENTED_FOR_ITER,
     &&TARGET_INSTRUMENTED_INSTRUCTION,
     &&TARGET_INSTRUMENTED_COMPARE_AND_BRANCH,
     &&TARGET_INSTRUMENTED_RESUME,

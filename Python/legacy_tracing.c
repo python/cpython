@@ -116,9 +116,20 @@ sys_trace_exception_func(
 ) {
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    PyObject *arg = args[2];
-    assert(PyTuple_CheckExact(arg));
-    PyObject *res = call_trace_func(self, arg);
+    PyObject *exc = args[2];
+    assert(PyExceptionInstance_Check(exc));
+    PyObject *type = (PyObject *)Py_TYPE(exc);
+    PyObject *tb = PyException_GetTraceback(exc);
+    if (tb == NULL) {
+        tb = Py_NewRef(Py_None);
+    }
+    PyObject * tuple = PyTuple_Pack(3, type, exc, tb);
+    Py_DECREF(tb);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    PyObject *res = call_trace_func(self, tuple);
+    Py_DECREF(tuple);
     return res;
 }
 

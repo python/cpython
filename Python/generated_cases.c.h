@@ -18,10 +18,9 @@
             else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
-                        tstate, oparg != 0, frame, next_instr-1);
+                        tstate, oparg > 0, frame, next_instr-1);
                 if (err) goto error;
                 if (frame->prev_instr != next_instr-1) {
-                    fprintf(stderr, "Jump has happened\n");
                     /* Instrumentation has jumped */
                     next_instr = frame->prev_instr;
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2629,6 +2628,34 @@
                 /* Skip END_FOR */
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             }
+            DISPATCH();
+        }
+
+        TARGET(INSTRUMENTED_FOR_ITER) {
+            _Py_CODEUNIT *here = next_instr-1;
+            _Py_CODEUNIT *target;
+            PyObject *iter = TOP();
+            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next != NULL) {
+                PUSH(next);
+                target = next_instr + INLINE_CACHE_ENTRIES_FOR_ITER;
+            }
+            else {
+                if (_PyErr_Occurred(tstate)) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        goto error;
+                    }
+                    monitor_raise(tstate, frame, here);
+                    _PyErr_Clear(tstate);
+                }
+                /* iterator ended normally */
+                assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
+                STACK_SHRINK(1);
+                Py_DECREF(iter);
+                /* Skip END_FOR */
+                target = next_instr + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
+            }
+            INSTRUMENTED_JUMP(here, target, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
         }
 

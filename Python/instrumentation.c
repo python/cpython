@@ -45,6 +45,8 @@ static const int8_t EVENT_FOR_OPCODE[256] = {
     [INSTRUMENTED_POP_JUMP_IF_NONE] = PY_MONITORING_EVENT_BRANCH,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = PY_MONITORING_EVENT_BRANCH,
     [INSTRUMENTED_COMPARE_AND_BRANCH] = PY_MONITORING_EVENT_BRANCH,
+    [FOR_ITER] = PY_MONITORING_EVENT_BRANCH,
+    [INSTRUMENTED_FOR_ITER] = PY_MONITORING_EVENT_BRANCH,
 };
 
 static const bool OPCODE_HAS_EVENT[256] = {
@@ -76,6 +78,7 @@ static const bool OPCODE_HAS_EVENT[256] = {
     [INSTRUMENTED_POP_JUMP_IF_NONE] = true,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = true,
     [INSTRUMENTED_COMPARE_AND_BRANCH] = true,
+    [INSTRUMENTED_FOR_ITER] = true,
 };
 
 static const uint8_t DE_INSTRUMENT[256] = {
@@ -93,6 +96,7 @@ static const uint8_t DE_INSTRUMENT[256] = {
     [INSTRUMENTED_POP_JUMP_IF_NONE] = POP_JUMP_IF_NONE,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = POP_JUMP_IF_NOT_NONE,
     [INSTRUMENTED_COMPARE_AND_BRANCH] = COMPARE_AND_BRANCH,
+    [INSTRUMENTED_FOR_ITER] = FOR_ITER,
 };
 
 static const uint8_t INSTRUMENTED_OPCODES[256] = {
@@ -1504,8 +1508,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         if (OPCODE_HAS_EVENT[base_opcode]) {
             int8_t event;
             if (base_opcode == RESUME) {
-                int oparg = _Py_OPARG(*instr);
-                event = oparg > 0;
+                event = instr->oparg > 0;
             }
             else {
                 event = EVENT_FOR_OPCODE[base_opcode];
