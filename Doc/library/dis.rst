@@ -616,10 +616,9 @@ not have to be) the original ``STACK[-2]``.
 .. opcode:: END_ASYNC_FOR
 
    Terminates an :keyword:`async for` loop.  Handles an exception raised
-   when awaiting a next item.  If ``STACK[-1]`` is :exc:`StopAsyncIteration` pop 3
-   values from the stack and restore the exception state using the second
-   of them.  Otherwise re-raise the exception using the value
-   from the stack.  An exception handler block is removed from the block stack.
+   when awaiting a next item. The stack contains the async iterable in
+   ``STACK[-2]`` and the raised exception in ``STACK[-1]``. Both are popped.
+   If the exception is not :exc:`StopAsyncIteration`, it is re-raised.
 
    .. versionadded:: 3.8
 

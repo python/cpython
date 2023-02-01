@@ -666,7 +666,7 @@ Timeouts
             except TimeoutError:
                 pass
 
-            if cm.expired:
+            if cm.expired():
                 print("Looks like we haven't finished on time.")
 
     Timeout context managers can be safely nested.

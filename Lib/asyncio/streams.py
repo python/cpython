@@ -378,7 +378,8 @@ class StreamWriter:
 
     async def start_tls(self, sslcontext, *,
                         server_hostname=None,
-                        ssl_handshake_timeout=None):
+                        ssl_handshake_timeout=None,
+                        ssl_shutdown_timeout=None):
         """Upgrade an existing stream-based connection to TLS."""
         server_side = self._protocol._client_connected_cb is not None
         protocol = self._protocol
@@ -386,7 +387,8 @@ class StreamWriter:
         new_transport = await self._loop.start_tls(  # type: ignore
             self._transport, protocol, sslcontext,
             server_side=server_side, server_hostname=server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
         self._transport = new_transport
         protocol._replace_writer(self)
 
