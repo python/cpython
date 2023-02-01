@@ -1,1 +1,2 @@
-Add ``ssl_shutdown_timeout`` parameter for ``StreamWriter.start_tls()``.
+Add *ssl_shutdown_timeout* parameter for :meth:`asyncio.StreamWriter.start_tls()`.
+
