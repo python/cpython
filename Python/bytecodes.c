@@ -1444,7 +1444,7 @@ dummy_func(
             LOAD_ATTR_SLOT,
             LOAD_ATTR_CLASS,
             LOAD_ATTR_PROPERTY,
-            // LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
+            LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
             // LOAD_ATTR_METHOD_WITH_VALUES,
             // LOAD_ATTR_METHOD_NO_DICT,
             // LOAD_ATTR_METHOD_LAZY_DICT,
@@ -1620,20 +1620,14 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        // error: LOAD_ATTR has irregular stack effect
-        inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
+        inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused if (oparg & 1), unused)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
-            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
-            PyObject *owner = TOP();
             PyTypeObject *cls = Py_TYPE(owner);
-            uint32_t type_version = read_u32(cache->type_version);
             DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(type_version != 0);
-            PyObject *getattribute = read_obj(cache->descr);
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
-            uint32_t func_version = read_u32(cache->keys_version);
             assert(func_version != 0);
             DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
             PyCodeObject *code = (PyCodeObject *)f->func_code;
@@ -1644,6 +1638,7 @@ dummy_func(
             PyObject *name = GETITEM(names, oparg >> 1);
             Py_INCREF(f);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2);
+            // Manipulate stack directly because we exit with DISPATCH_INLINED().
             SET_TOP(NULL);
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
