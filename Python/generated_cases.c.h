@@ -2965,11 +2965,14 @@
 
         TARGET(CALL) {
             PREDICTED(CALL);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 4, "incorrect cache size");
+            PyObject *thing2 = PEEK(1 + oparg);
+            PyObject *thing1 = PEEK(2 + oparg);
             #if ENABLE_SPECIALIZATION
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                int is_meth = is_method(stack_pointer, oparg);
+                int is_meth = thing1 != NULL;
                 int nargs = oparg + is_meth;
                 PyObject *callable = PEEK(nargs + 1);
                 next_instr--;
@@ -2980,18 +2983,18 @@
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             int total_args, is_meth;
-            is_meth = is_method(stack_pointer, oparg);
-            PyObject *function = PEEK(oparg + 1);
+            is_meth = thing1 != NULL;
+            PyObject *function = thing2;
             if (!is_meth && Py_TYPE(function) == &PyMethod_Type) {
                 PyObject *self = ((PyMethodObject *)function)->im_self;
-                PEEK(oparg+1) = Py_NewRef(self);
+                PEEK(oparg+1) = thing2 = Py_NewRef(self);
                 PyObject *meth = ((PyMethodObject *)function)->im_func;
-                PEEK(oparg+2) = Py_NewRef(meth);
+                PEEK(oparg+2) = thing1 = Py_NewRef(meth);
                 Py_DECREF(function);
                 is_meth = 1;
             }
             total_args = oparg + is_meth;
-            function = PEEK(total_args + 1);
+            function = is_meth ? thing1 : thing2;
             int positional_args = total_args - KWNAMES_LEN();
             // Check if the call can be inlined or not
             if (Py_TYPE(function) == &PyFunction_Type &&
@@ -3000,13 +3003,14 @@
             {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(function));
+                // Manipulate stack directly since we leave using DISPATCH_INLINED().
                 STACK_SHRINK(total_args);
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)function, locals,
                     stack_pointer, positional_args, kwnames
                 );
                 kwnames = NULL;
-                STACK_SHRINK(2-is_meth);
+                STACK_SHRINK(2 - is_meth);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
@@ -3019,31 +3023,32 @@
             PyObject *res;
             if (cframe.use_tracing) {
                 res = trace_call_function(
-                    tstate, function, stack_pointer-total_args,
+                    tstate, function, stack_pointer - total_args,
                     positional_args, kwnames);
             }
             else {
                 res = PyObject_Vectorcall(
-                    function, stack_pointer-total_args,
+                    function, stack_pointer - total_args,
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                     kwnames);
             }
             kwnames = NULL;
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(function);
+            // Manipulate stack directly since we leave using DISPATCH().
             /* Clear the stack */
             STACK_SHRINK(total_args);
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF(stack_pointer[i]);
             }
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(2 - is_meth);
             PUSH(res);
             if (res == NULL) {
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-            DISPATCH();
+            DISPATCH();  // Prevents generator emitting the epologue.
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
