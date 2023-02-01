@@ -58,7 +58,6 @@ class BaseContext(object):
         from .managers import SyncManager
         ctx = self.get_context()
         m = SyncManager(ctx=ctx)
-        proc_class = ctx.Process
         m.start()
         return m
 
