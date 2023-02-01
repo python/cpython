@@ -2849,8 +2849,7 @@
                 prev_exc = Py_NewRef(Py_None);
             }
             assert(PyExceptionInstance_Check(new_exc));
-            Py_INCREF(new_exc);
-            exc_info->exc_value = new_exc;
+            exc_info->exc_value = Py_NewRef(new_exc);
             STACK_GROW(1);
             POKE(1, new_exc);
             POKE(2, prev_exc);
