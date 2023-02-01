@@ -2358,7 +2358,7 @@ dummy_func(
             CALL,
             CALL_BOUND_METHOD_EXACT_ARGS,
             CALL_PY_EXACT_ARGS,
-        //     CALL_PY_WITH_DEFAULTS,
+            CALL_PY_WITH_DEFAULTS,
         //     CALL_NO_KW_TYPE_1,
         //     CALL_NO_KW_STR_1,
         //     CALL_NO_KW_TUPLE_1,
@@ -2505,34 +2505,31 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_PY_WITH_DEFAULTS) {
+        inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, min_args/1, thing1, thing2, unused[oparg] -- unused)) {
             assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
-            _PyCallCache *cache = (_PyCallCache *)next_instr;
-            int is_meth = is_method(stack_pointer, oparg);
+            int is_meth = thing1 != NULL;
             int argcount = oparg + is_meth;
-            PyObject *callable = PEEK(argcount + 1);
+            PyObject *callable = is_meth ? thing1 : thing2;
             DEOPT_IF(!PyFunction_Check(callable), CALL);
             PyFunctionObject *func = (PyFunctionObject *)callable;
-            DEOPT_IF(func->func_version != read_u32(cache->func_version), CALL);
+            DEOPT_IF(func->func_version != func_version, CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(argcount > code->co_argcount, CALL);
-            int minargs = cache->min_args;
-            DEOPT_IF(argcount < minargs, CALL);
+            DEOPT_IF(argcount < min_args, CALL);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, code->co_argcount);
+            // Manipulate stack directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
             }
             for (int i = argcount; i < code->co_argcount; i++) {
-                PyObject *def = PyTuple_GET_ITEM(func->func_defaults,
-                                                 i - minargs);
+                PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i - min_args);
                 new_frame->localsplus[i] = Py_NewRef(def);
             }
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(2 - is_meth);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             DISPATCH_INLINED(new_frame);
         }
