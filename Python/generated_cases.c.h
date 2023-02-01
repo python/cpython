@@ -3789,15 +3789,9 @@
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
             _Py_CODEUNIT *target = next_instr + err*oparg;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, target);
-            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-            if (err) goto error;
-            if (err) {
-                JUMPBY(oparg);
-            }
-            else {
+            int shrink = 1 - err;
+            INSTRUMENTED_JUMP(here, target, PY_MONITORING_EVENT_BRANCH);
+            if (shrink) {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
             }
@@ -3810,16 +3804,10 @@
             if (err < 0) goto error;
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
-            _Py_CODEUNIT *target = next_instr + err*oparg;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, target);
-            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-            if (err) goto error;
-            if (err == 0) {
-                JUMPBY(oparg);
-            }
-            else {
+            _Py_CODEUNIT *target = next_instr + (1-err)*oparg;
+            int shrink = err;
+            INSTRUMENTED_JUMP(here, target, PY_MONITORING_EVENT_BRANCH);
+            if (shrink) {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
             }
@@ -3833,12 +3821,7 @@
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
             int offset = err*oparg;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
-            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-            if (err) goto error;
-            JUMPBY(offset);
+            INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
         }
 
@@ -3849,12 +3832,7 @@
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
             int offset = (1-err)*oparg;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
-            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-            if (err) goto error;
-            JUMPBY(offset);
+            INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
         }
 
@@ -3870,10 +3848,7 @@
                 Py_DECREF(value);
                 offset = 0;
             }
-            int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
-            if (err) goto error;
-            JUMPBY(offset);
+            INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
         }
 
@@ -3889,10 +3864,7 @@
                 Py_DECREF(value);
                  offset = oparg;
             }
-            int err = _Py_call_instrumentation_jump(
-                tstate, PY_MONITORING_EVENT_BRANCH, frame, here, next_instr + offset);
-            if (err) goto error;
-            JUMPBY(offset);
+            INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
         }
 

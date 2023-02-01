@@ -493,7 +493,8 @@ class LineMontoringTest(unittest.TestCase):
             f1()
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
-            self.assertEqual(events, [493, 14, 494])
+            start = LineMontoringTest.test_lines_single.__code__.co_firstlineno
+            self.assertEqual(events, [start+7, 14, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -510,7 +511,8 @@ class LineMontoringTest(unittest.TestCase):
             floop()
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
-            self.assertEqual(events, [510, 21, 22, 22, 511])
+            start = LineMontoringTest.test_lines_loop.__code__.co_firstlineno
+            self.assertEqual(events, [start+7, 21, 22, 22, 21, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -531,7 +533,8 @@ class LineMontoringTest(unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0); sys.monitoring.set_events(TEST_TOOL2, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.register_callback(TEST_TOOL2, E.LINE, None)
-            expected = [530, 14, 531]
+            start = LineMontoringTest.test_lines_two.__code__.co_firstlineno
+            expected = [start+10, 14, start+11]
             self.assertEqual(events, expected)
             self.assertEqual(events2, expected)
         finally:
