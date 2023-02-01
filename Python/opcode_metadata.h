@@ -4,7 +4,7 @@
 
 #ifndef NDEBUG
 static int
-_PyOpcode_num_popped(int opcode, int oparg) {
+_PyOpcode_num_popped(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
             return 0;
@@ -233,17 +233,17 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case JUMP_BACKWARD:
             return 0;
         case POP_JUMP_IF_FALSE:
-            return -1;
+            return 1;
         case POP_JUMP_IF_TRUE:
-            return -1;
+            return 1;
         case POP_JUMP_IF_NOT_NONE:
-            return -1;
+            return 1;
         case POP_JUMP_IF_NONE:
-            return -1;
+            return 1;
         case JUMP_IF_FALSE_OR_POP:
-            return -1;
+            return 1;
         case JUMP_IF_TRUE_OR_POP:
-            return -1;
+            return 1;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case GET_LEN:
@@ -277,7 +277,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case WITH_EXCEPT_START:
             return 4;
         case PUSH_EXC_INFO:
-            return -1;
+            return 1;
         case LOAD_ATTR_METHOD_WITH_VALUES:
             return 1;
         case LOAD_ATTR_METHOD_NO_DICT:
@@ -350,7 +350,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
 
 #ifndef NDEBUG
 static int
-_PyOpcode_num_pushed(int opcode, int oparg) {
+_PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
             return 0;
@@ -579,17 +579,17 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case JUMP_BACKWARD:
             return 0;
         case POP_JUMP_IF_FALSE:
-            return -1;
+            return 0;
         case POP_JUMP_IF_TRUE:
-            return -1;
+            return 0;
         case POP_JUMP_IF_NOT_NONE:
-            return -1;
+            return 0;
         case POP_JUMP_IF_NONE:
-            return -1;
+            return 0;
         case JUMP_IF_FALSE_OR_POP:
-            return -1;
+            return (jump ? 1 : 0);
         case JUMP_IF_TRUE_OR_POP:
-            return -1;
+            return (jump ? 1 : 0);
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case GET_LEN:
@@ -623,7 +623,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case WITH_EXCEPT_START:
             return 5;
         case PUSH_EXC_INFO:
-            return -1;
+            return 2;
         case LOAD_ATTR_METHOD_WITH_VALUES:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_METHOD_NO_DICT:
