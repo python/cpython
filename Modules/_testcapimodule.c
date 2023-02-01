@@ -3250,7 +3250,7 @@ test_py_buildvalue(PyObject *self) {
 
     test_var = Py_BuildValue("(i,i,i)", 2,3,4);
     if (!PyTuple_CheckExact(test_var)) {
-        PyErr_SetString(TestError, "Failed to Create tuble");
+        PyErr_SetString(TestError, "Failed to Create tuple");
         return NULL;
     }
 
