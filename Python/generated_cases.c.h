@@ -945,8 +945,11 @@
         }
 
         TARGET(RERAISE) {
+            PyObject *exc = PEEK(1);
+            PyObject **values = &PEEK(1 + oparg);
+            assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                PyObject *lasti = PEEK(oparg + 1);
+                PyObject *lasti = values[0];
                 if (PyLong_Check(lasti)) {
                     frame->prev_instr = _PyCode_CODE(frame->f_code) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
@@ -957,11 +960,11 @@
                     goto error;
                 }
             }
-            PyObject *val = POP();
-            assert(val && PyExceptionInstance_Check(val));
-            PyObject *exc = Py_NewRef(PyExceptionInstance_Class(val));
-            PyObject *tb = PyException_GetTraceback(val);
-            _PyErr_Restore(tstate, exc, val, tb);
+            assert(exc && PyExceptionInstance_Check(exc));
+            Py_INCREF(exc);
+            PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
+            PyObject *tb = PyException_GetTraceback(exc);
+            _PyErr_Restore(tstate, typ, exc, tb);
             goto exception_unwind;
         }
 
@@ -1001,16 +1004,17 @@
         }
 
         TARGET(CLEANUP_THROW) {
+            PyObject *exc_value = PEEK(1);
+            PyObject *last_sent_val = PEEK(2);
+            PyObject *sub_iter = PEEK(3);
+            PyObject *value;
             assert(throwflag);
-            PyObject *exc_value = TOP();
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
-                PyObject *value = ((PyStopIterationObject *)exc_value)->value;
-                Py_INCREF(value);
-                Py_DECREF(POP());  // The StopIteration.
-                Py_DECREF(POP());  // The last sent value.
-                Py_DECREF(POP());  // The delegated sub-iterator.
-                PUSH(value);
+                value = Py_NewRef(((PyStopIterationObject *)exc_value)->value);
+                Py_DECREF(sub_iter);
+                Py_DECREF(last_sent_val);
+                Py_DECREF(exc_value);
             }
             else {
                 PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
@@ -1018,6 +1022,8 @@
                 _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
                 goto exception_unwind;
             }
+            STACK_SHRINK(2);
+            POKE(1, value);
             DISPATCH();
         }
 
