@@ -3647,20 +3647,18 @@
         }
 
         TARGET(BUILD_SLICE) {
-            PyObject *start, *stop, *step, *slice;
-            if (oparg == 3)
-                step = POP();
-            else
-                step = NULL;
-            stop = POP();
-            start = TOP();
+            PyObject *step = (oparg == 3) ? PEEK(((oparg == 3) ? 1 : 0)) : NULL;
+            PyObject *stop = PEEK(1 + ((oparg == 3) ? 1 : 0));
+            PyObject *start = PEEK(2 + ((oparg == 3) ? 1 : 0));
+            PyObject *slice;
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
             Py_DECREF(stop);
             Py_XDECREF(step);
-            SET_TOP(slice);
-            if (slice == NULL)
-                goto error;
+            if (slice == NULL) { STACK_SHRINK(((oparg == 3) ? 1 : 0)); goto pop_2_error; }
+            STACK_SHRINK(((oparg == 3) ? 1 : 0));
+            STACK_SHRINK(1);
+            POKE(1, slice);
             DISPATCH();
         }
 

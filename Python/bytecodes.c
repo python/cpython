@@ -3030,22 +3030,12 @@ dummy_func(
             goto resume_frame;
         }
 
-        // error: BUILD_SLICE has irregular stack effect
-        inst(BUILD_SLICE) {
-            PyObject *start, *stop, *step, *slice;
-            if (oparg == 3)
-                step = POP();
-            else
-                step = NULL;
-            stop = POP();
-            start = TOP();
+        inst(BUILD_SLICE, (start, stop, step if (oparg == 3) -- slice)) {
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
             Py_DECREF(stop);
             Py_XDECREF(step);
-            SET_TOP(slice);
-            if (slice == NULL)
-                goto error;
+            ERROR_IF(slice == NULL, error);
         }
 
         // error: FORMAT_VALUE has irregular stack effect
