@@ -3245,7 +3245,8 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-test_py_buildvalue(PyObject *self) {
+test_py_buildvalue(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
     PyObject *test_var;
 
     test_var = Py_BuildValue("(i,i,i)", 2,3,4);
