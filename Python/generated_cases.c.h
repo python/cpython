@@ -2584,30 +2584,33 @@
         }
 
         TARGET(GET_YIELD_FROM_ITER) {
-            /* before: [obj]; after [getiter(obj)] */
-            PyObject *iterable = TOP();
+            PyObject *iterable = PEEK(1);
             PyObject *iter;
+            /* before: [obj]; after [getiter(obj)] */
             if (PyCoro_CheckExact(iterable)) {
                 /* `iterable` is a coroutine */
                 if (!(frame->f_code->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
                     /* and it is used in a 'yield from' expression of a
                        regular generator. */
-                    Py_DECREF(iterable);
-                    SET_TOP(NULL);
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
                     goto error;
                 }
+                iter = iterable;
             }
-            else if (!PyGen_CheckExact(iterable)) {
+            else if (PyGen_CheckExact(iterable)) {
+                iter = iterable;
+            }
+            else {
                 /* `iterable` is not a generator. */
                 iter = PyObject_GetIter(iterable);
                 Py_DECREF(iterable);
-                SET_TOP(iter);
-                if (iter == NULL)
+                if (iter == NULL) {
                     goto error;
+                }
             }
+            POKE(1, iter);
             PREDICT(LOAD_CONST);
             DISPATCH();
         }

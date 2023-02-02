@@ -259,7 +259,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case GET_ITER:
             return 1;
         case GET_YIELD_FROM_ITER:
-            return -1;
+            return 1;
         case FOR_ITER:
             return -1;
         case FOR_ITER_LIST:
@@ -327,7 +327,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case MAKE_FUNCTION:
             return -1;
         case RETURN_GENERATOR:
-            return -1;
+            return 0;
         case BUILD_SLICE:
             return -1;
         case FORMAT_VALUE:
@@ -605,7 +605,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case GET_ITER:
             return 1;
         case GET_YIELD_FROM_ITER:
-            return -1;
+            return 1;
         case FOR_ITER:
             return -1;
         case FOR_ITER_LIST:
@@ -673,7 +673,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case MAKE_FUNCTION:
             return -1;
         case RETURN_GENERATOR:
-            return -1;
+            return 0;
         case BUILD_SLICE:
             return -1;
         case FORMAT_VALUE:
