@@ -295,7 +295,8 @@ StreamWriter
 
       The method closes the stream and the underlying socket.
 
-      The method should be used along with the ``wait_closed()`` method::
+      The method should be used, though not mandatory, 
+      along with the ``wait_closed()`` method::
 
          stream.close()
          await stream.wait_closed()
@@ -372,7 +373,8 @@ StreamWriter
       Wait until the stream is closed.
 
       Should be called after :meth:`close` to wait until the underlying
-      connection is closed.
+      connection is closed, ensuring that all data has been flushed 
+      before e.g. exiting the program.
 
       .. versionadded:: 3.7
 
