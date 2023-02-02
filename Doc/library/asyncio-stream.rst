@@ -402,6 +402,7 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
         print('Close the connection')
         writer.close()
+        await writer.wait_closed()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -434,6 +435,7 @@ TCP echo server using the :func:`asyncio.start_server` function::
 
         print("Close the connection")
         writer.close()
+        await writer.wait_closed()
 
     async def main():
         server = await asyncio.start_server(
@@ -490,6 +492,7 @@ Simple example querying HTTP headers of the URL passed on the command line::
 
         # Ignore the body, close the socket
         writer.close()
+        await writer.wait_closed()
 
     url = sys.argv[1]
     asyncio.run(print_http_headers(url))
@@ -535,6 +538,7 @@ Coroutine waiting until a socket receives data using the
         # Got data, we are done: close the socket
         print("Received:", data.decode())
         writer.close()
+        await writer.wait_closed()
 
         # Close the second socket
         wsock.close()
