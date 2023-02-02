@@ -9,6 +9,7 @@ import threading
 import time
 import unittest
 
+import _testcapi
 from test import support
 from test.support import import_helper
 from test.support import script_helper
@@ -144,22 +145,11 @@ class IsShareableTests(unittest.TestCase):
 
 class ShareableTypeTests(unittest.TestCase):
 
-    # XXX Stop depending on _xxinterpchannels here.
-    channels = import_helper.import_module('_xxinterpchannels')
-
-    def setUp(self):
-        super().setUp()
-        self.cid = self.channels.create()
-
-    def tearDown(self):
-        self.channels.destroy(self.cid)
-        super().tearDown()
-
     def _assert_values(self, values):
         for obj in values:
             with self.subTest(obj):
-                self.channels.send(self.cid, obj)
-                got = self.channels.recv(self.cid)
+                xid = _testcapi.get_crossinterp_data(obj)
+                got = _testcapi.restore_crossinterp_data(xid)
 
                 self.assertEqual(got, obj)
                 self.assertIs(type(got), type(obj))
@@ -167,8 +157,8 @@ class ShareableTypeTests(unittest.TestCase):
     def test_singletons(self):
         for obj in [None]:
             with self.subTest(obj):
-                self.channels.send(self.cid, obj)
-                got = self.channels.recv(self.cid)
+                xid = _testcapi.get_crossinterp_data(obj)
+                got = _testcapi.restore_crossinterp_data(xid)
 
                 # XXX What about between interpreters?
                 self.assertIs(got, obj)
@@ -199,7 +189,7 @@ class ShareableTypeTests(unittest.TestCase):
         for i in ints:
             with self.subTest(i):
                 with self.assertRaises(OverflowError):
-                    self.channels.send(self.cid, i)
+                    _testcapi.get_crossinterp_data(i)
 
 
 class ModuleTests(TestBase):
