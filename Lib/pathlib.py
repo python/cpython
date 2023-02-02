@@ -281,9 +281,14 @@ class PurePath(object):
         if altsep:
             path = path.replace(altsep, sep)
         drv, root, rel = cls._flavour.splitroot(path)
-        if drv.startswith(sep):
-            # pathlib assumes that UNC paths always have a root.
-            root = sep
+        if drv and not root and not drv.endswith(sep):
+            drv_parts = drv.split(sep)
+            if len(drv_parts) == 4 and drv_parts[2] not in '?.':
+                # e.g. //server/share
+                root = sep
+            elif len(drv_parts) == 6:
+                # e.g. //?/unc/server/share
+                root = sep
         unfiltered_parsed = [drv + root] + rel.split(sep)
         parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed

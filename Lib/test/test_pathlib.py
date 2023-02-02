@@ -95,6 +95,9 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['c:/a'],                 ('c:', '\\', ['c:\\', 'a']))
         check(['/a'],                   ('', '\\', ['\\', 'a']))
         # UNC paths.
+        check(['//'],                   ('\\\\', '', ['\\\\']))
+        check(['//a'],                  ('\\\\a', '', ['\\\\a']))
+        check(['//a/'],                 ('\\\\a\\', '', ['\\\\a\\']))
         check(['//a/b'],                ('\\\\a\\b', '\\', ['\\\\a\\b\\']))
         check(['//a/b/'],               ('\\\\a\\b', '\\', ['\\\\a\\b\\']))
         check(['//a/b/c'],              ('\\\\a\\b', '\\', ['\\\\a\\b\\', 'c']))
@@ -108,12 +111,20 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         # UNC paths.
         check(['a', '//b/c//', 'd'],    ('\\\\b\\c', '\\', ['\\\\b\\c\\', 'd']))
         # Extended paths.
+        check(['//./c:'],               ('\\\\.\\c:', '', ['\\\\.\\c:']))
         check(['//?/c:/'],              ('\\\\?\\c:', '\\', ['\\\\?\\c:\\']))
         check(['//?/c:/a'],             ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'a']))
         check(['//?/c:/a', '/b'],       ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'b']))
         # Extended UNC paths (format is "\\?\UNC\server\share").
+        check(['//?/UNC/'],             ('\\\\?\\UNC\\', '', ['\\\\?\\UNC\\']))
         check(['//?/UNC/b/c'],          ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\']))
         check(['//?/UNC/b/c/d'],        ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\', 'd']))
+        # UNC device paths
+        check(['//./BootPartition/'],   ('\\\\.\\BootPartition', '\\', ['\\\\.\\BootPartition\\']))
+        check(['//?/BootPartition/'],   ('\\\\?\\BootPartition', '\\', ['\\\\?\\BootPartition\\']))
+        check(['//./PhysicalDrive0'],   ('\\\\.\\PhysicalDrive0', '', ['\\\\.\\PhysicalDrive0']))
+        check(['//?/Volume{}/'],        ('\\\\?\\Volume{}', '\\', ['\\\\?\\Volume{}\\']))
+        check(['//./nul'],              ('\\\\.\\nul', '', ['\\\\.\\nul']))
         # Second part has a root but not drive.
         check(['a', '/b', 'c'],         ('', '\\', ['\\', 'b', 'c']))
         check(['Z:/a', '/b', 'c'],      ('Z:', '\\', ['Z:\\', 'b', 'c']))
