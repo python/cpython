@@ -869,8 +869,8 @@
             PyObject *receiver = PEEK(2);
             PyObject *retval;
             assert(frame != &entry_frame);
-            PySendResult gen_status;
             bool jump = false;
+            PySendResult gen_status;
             if (tstate->c_tracefunc == NULL) {
                 gen_status = PyIter_Send(receiver, v, &retval);
             } else {
