@@ -76,7 +76,7 @@ dummy_func(
     PyObject **stack_pointer,
     PyObject *kwnames,
     int throwflag,
-    binaryfunc binary_ops[],
+    binaryfunc binary_ops[]
 )
 {
     _PyInterpreterFrame  entry_frame;
