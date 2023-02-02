@@ -319,15 +319,6 @@ static const binaryfunc binary_ops[] = {
     [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
 };
 
-static int compare_masks[] = {
-    [Py_LT] = COMPARISON_LESS_THAN,
-    [Py_LE] = COMPARISON_LESS_THAN | COMPARISON_EQUALS,
-    [Py_EQ] = COMPARISON_EQUALS,
-    [Py_NE] = COMPARISON_NOT_EQUALS,
-    [Py_GT] = COMPARISON_GREATER_THAN,
-    [Py_GE] = COMPARISON_GREATER_THAN | COMPARISON_EQUALS,
-};
-
 
 // PEP 634: Structural Pattern Matching
 

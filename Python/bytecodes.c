@@ -77,7 +77,6 @@ dummy_func(
     PyObject *kwnames,
     int throwflag,
     binaryfunc binary_ops[],
-    int compare_masks[],
 )
 {
     _PyInterpreterFrame  entry_frame;
@@ -1737,8 +1736,8 @@ dummy_func(
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            assert(oparg <= Py_GE);
-            res = PyObject_RichCompare(left, right, oparg);
+            assert((oparg >> 4) <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg>>4);
             Py_DECREF(left);
             Py_DECREF(right);
             ERROR_IF(res == NULL, error);
@@ -1755,7 +1754,7 @@ dummy_func(
             int sign_ish = COMPARISON_BIT(dleft, dright);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            res = (sign_ish & compare_masks[oparg]) ? Py_True : Py_False;
+            res = (sign_ish & oparg) ? Py_True : Py_False;
             Py_INCREF(res);
         }
 
@@ -1774,7 +1773,7 @@ dummy_func(
             int sign_ish = COMPARISON_BIT(ileft, iright);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            res = (sign_ish & compare_masks[oparg]) ? Py_True : Py_False;
+            res = (sign_ish & oparg) ? Py_True : Py_False;
             Py_INCREF(res);
         }
 
@@ -1785,11 +1784,13 @@ dummy_func(
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             int eq = _PyUnicode_Equal(left, right);
+            assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            assert(oparg == Py_EQ || oparg == Py_NE);
             assert(eq == 0 || eq == 1);
-            res = (eq == (oparg == Py_EQ)) ? Py_True : Py_False;
+            assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+            assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+            res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
             Py_INCREF(res);
         }
 
