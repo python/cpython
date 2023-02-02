@@ -79,9 +79,10 @@ Module contents
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
+                match_args=True, kw_only=False, slots=False, weakref_slot=False)
      class C:
-        ...
+         ...
 
    The parameters to :func:`dataclass` are:
 
@@ -482,10 +483,10 @@ Module contents
 
     @dataclass
     class Point:
-      x: float
-      _: KW_ONLY
-      y: float
-      z: float
+        x: float
+        _: KW_ONLY
+        y: float
+        z: float
 
     p = Point(0, y=1.5, z=2.0)
 
@@ -551,7 +552,7 @@ parameters to :meth:`__post_init__`.  Also see the warning about how
 Class variables
 ---------------
 
-One of two places where :func:`dataclass` actually inspects the type
+One of the few places where :func:`dataclass` actually inspects the type
 of a field is to determine if a field is a class variable as defined
 in :pep:`526`.  It does this by checking if the type of the field is
 ``typing.ClassVar``.  If a field is a ``ClassVar``, it is excluded
@@ -562,7 +563,7 @@ module-level :func:`fields` function.
 Init-only variables
 -------------------
 
-The other place where :func:`dataclass` inspects a type annotation is to
+Another place where :func:`dataclass` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
 if the type of a field is of type ``dataclasses.InitVar``.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only
@@ -578,8 +579,8 @@ value is not provided when creating the class::
   @dataclass
   class C:
       i: int
-      j: int = None
-      database: InitVar[DatabaseType] = None
+      j: int | None = None
+      database: InitVar[DatabaseType | None] = None
 
       def __post_init__(self, database):
           if self.j is None and database is not None:
@@ -773,24 +774,24 @@ default value have the following special behaviors:
 ::
 
   class IntConversionDescriptor:
-    def __init__(self, *, default):
-      self._default = default
+      def __init__(self, *, default):
+          self._default = default
 
-    def __set_name__(self, owner, name):
-      self._name = "_" + name
+      def __set_name__(self, owner, name):
+          self._name = "_" + name
 
-    def __get__(self, obj, type):
-      if obj is None:
-        return self._default
+      def __get__(self, obj, type):
+          if obj is None:
+              return self._default
 
-      return getattr(obj, self._name, self._default)
+          return getattr(obj, self._name, self._default)
 
-    def __set__(self, obj, value):
-      setattr(obj, self._name, int(value))
+      def __set__(self, obj, value):
+          setattr(obj, self._name, int(value))
 
   @dataclass
   class InventoryItem:
-    quantity_on_hand: IntConversionDescriptor = IntConversionDescriptor(default=100)
+      quantity_on_hand: IntConversionDescriptor = IntConversionDescriptor(default=100)
 
   i = InventoryItem()
   print(i.quantity_on_hand)   # 100

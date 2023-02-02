@@ -9,6 +9,8 @@
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
 
+**Source code:** :source:`Lib/curses`
+
 --------------
 
 The :mod:`curses` module provides an interface to the curses library, the
@@ -1295,11 +1297,11 @@ the following methods and attributes:
    :meth:`refresh`.
 
 
-.. method:: window.vline(ch, n)
-            window.vline(y, x, ch, n)
+.. method:: window.vline(ch, n[, attr])
+            window.vline(y, x, ch, n[, attr])
 
    Display a vertical line starting at ``(y, x)`` with length *n* consisting of the
-   character *ch*.
+   character *ch* with attributes *attr*.
 
 
 Constants

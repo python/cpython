@@ -423,7 +423,14 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3507 (Set lineno of module's RESUME to 0)
 #     Python 3.12a1 3508 (Add CLEANUP_THROW)
 #     Python 3.12a1 3509 (Conditional jumps only jump forward)
-#     Python 3.12a1 3510 (FOR_ITER leaves iterator on the stack)
+#     Python 3.12a2 3510 (FOR_ITER leaves iterator on the stack)
+#     Python 3.12a2 3511 (Add STOPITERATION_ERROR instruction)
+#     Python 3.12a2 3512 (Remove all unused consts from code objects)
+#     Python 3.12a4 3513 (Add CALL_INTRINSIC_1 instruction, removed STOPITERATION_ERROR, PRINT_EXPR, IMPORT_STAR)
+#     Python 3.12a4 3514 (Remove ASYNC_GEN_WRAP, LIST_TO_TUPLE, and UNARY_POSITIVE)
+#     Python 3.12a5 3515 (Embed jump mask in COMPARE_OP oparg)
+#     Python 3.12a5 3516 (Add COMPARE_AND_BRANCH instruction)
+#     Python 3.12a5 3517 (Change YIELD_VALUE oparg to exception block depth)
 
 #     Python 3.13 will start with 3550
 
@@ -436,7 +443,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3510).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3517).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
@@ -1142,7 +1149,8 @@ class SourceLoader(_LoaderBasics):
                 source_mtime is not None):
             if hash_based:
                 if source_hash is None:
-                    source_hash = _imp.source_hash(source_bytes)
+                    source_hash = _imp.source_hash(_RAW_MAGIC_NUMBER,
+                                                   source_bytes)
                 data = _code_to_hash_pyc(code_object, source_hash, check_source)
             else:
                 data = _code_to_timestamp_pyc(code_object, source_mtime,

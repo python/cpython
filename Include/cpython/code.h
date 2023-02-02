@@ -16,21 +16,24 @@ extern "C" {
  * 2**32 - 1, rather than INT_MAX.
  */
 
-typedef uint16_t _Py_CODEUNIT;
+typedef union {
+    uint16_t cache;
+    struct {
+        uint8_t opcode;
+        uint8_t oparg;
+    };
+} _Py_CODEUNIT;
 
-#ifdef WORDS_BIGENDIAN
-#  define _Py_OPCODE(word) ((word) >> 8)
-#  define _Py_OPARG(word) ((word) & 255)
-#  define _Py_MAKECODEUNIT(opcode, oparg) (((opcode)<<8)|(oparg))
-#else
-#  define _Py_OPCODE(word) ((word) & 255)
-#  define _Py_OPARG(word) ((word) >> 8)
-#  define _Py_MAKECODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
-#endif
+#define _Py_OPCODE(word) ((word).opcode)
+#define _Py_OPARG(word) ((word).oparg)
 
-// Use "unsigned char" instead of "uint8_t" here to avoid illegal aliasing:
-#define _Py_SET_OPCODE(word, opcode) \
-    do { ((unsigned char *)&(word))[0] = (opcode); } while (0)
+static inline void
+_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
+{
+    word->opcode = opcode;
+}
+
+#define _Py_SET_OPCODE(word, opcode) _py_set_opocde(&(word), opcode)
 
 typedef struct {
     PyObject *_co_code;
@@ -70,7 +73,6 @@ typedef struct {
     PyObject *co_exceptiontable;   /* Byte string encoding exception handling  \
                                       table */                                 \
     int co_flags;                  /* CO_..., see below */                     \
-    short co_warmup;                 /* Warmup counter for quickening */       \
     short _co_linearray_entry_size;  /* Size of each entry in _co_linearray */ \
                                                                                \
     /* The rest are not so impactful on performance. */                        \
@@ -85,9 +87,9 @@ typedef struct {
     int co_nlocalsplus;           /* number of local + cell + free variables */ \
     int co_framesize;             /* Size of frame in words */                 \
     int co_nlocals;               /* number of local variables */              \
-    int co_nplaincellvars;        /* number of non-arg cell variables */       \
     int co_ncellvars;             /* total number of cell variables */         \
     int co_nfreevars;             /* number of free variables */               \
+    uint32_t co_version;          /* version number */                         \
                                                                                \
     PyObject *co_localsplusnames; /* tuple mapping offsets to names */         \
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte    \
@@ -148,8 +150,18 @@ struct PyCodeObject _PyCode_DEF(1);
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE((op), &PyCode_Type)
-#define PyCode_GetNumFree(op) ((op)->co_nfreevars)
-#define _PyCode_CODE(CO) ((_Py_CODEUNIT *)(CO)->co_code_adaptive)
+
+static inline Py_ssize_t PyCode_GetNumFree(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return op->co_nfreevars;
+}
+
+static inline int PyCode_GetFirstFree(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return op->co_nlocalsplus - op->co_nfreevars;
+}
+
+#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
 /* Public interface */
@@ -176,6 +188,41 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, int *);
+
+typedef enum PyCodeEvent {
+  PY_CODE_EVENT_CREATE,
+  PY_CODE_EVENT_DESTROY
+} PyCodeEvent;
+
+
+/*
+ * A callback that is invoked for different events in a code object's lifecycle.
+ *
+ * The callback is invoked with a borrowed reference to co, after it is
+ * created and before it is destroyed.
+ *
+ * If the callback returns with an exception set, it must return -1. Otherwise
+ * it should return 0.
+ */
+typedef int (*PyCode_WatchCallback)(
+  PyCodeEvent event,
+  PyCodeObject* co);
+
+/*
+ * Register a per-interpreter callback that will be invoked for code object
+ * lifecycle events.
+ *
+ * Returns a handle that may be passed to PyCode_ClearWatcher on success,
+ * or -1 and sets an error if no more handles are available.
+ */
+PyAPI_FUNC(int) PyCode_AddWatcher(PyCode_WatchCallback callback);
+
+/*
+ * Clear the watcher associated with the watcher_id handle.
+ *
+ * Returns 0 on success or -1 if no watcher exists for the provided id.
+ */
+PyAPI_FUNC(int) PyCode_ClearWatcher(int watcher_id);
 
 /* for internal use only */
 struct _opaque {

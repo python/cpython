@@ -307,7 +307,7 @@ Suppose you configure logging with the following JSON:
                 "class": "logging.StreamHandler",
                 "level": "INFO",
                 "formatter": "simple",
-                "stream": "ext://sys.stdout",
+                "stream": "ext://sys.stdout"
             },
             "stderr": {
                 "class": "logging.StreamHandler",
@@ -765,13 +765,71 @@ serialization.
 Running a logging socket listener in production
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To run a logging listener in production, you may need to use a process-management tool
-such as `Supervisor <http://supervisord.org/>`_. `Here
-<https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
-provides the bare-bones files to run the above functionality using Supervisor: you
-will need to change the ``/path/to/`` parts in the Gist to reflect the actual paths you
-want to use.
+.. _socket-listener-gist: https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b
 
+To run a logging listener in production, you may need to use a
+process-management tool such as `Supervisor <http://supervisord.org/>`_.
+`Here is a Gist <socket-listener-gist_>`__
+which provides the bare-bones files to run the above functionality using
+Supervisor. It consists of the following files:
+
++-------------------------+----------------------------------------------------+
+| File                    | Purpose                                            |
++=========================+====================================================+
+| :file:`prepare.sh`      | A Bash script to prepare the environment for       |
+|                         | testing                                            |
++-------------------------+----------------------------------------------------+
+| :file:`supervisor.conf` | The Supervisor configuration file, which has       |
+|                         | entries for the listener and a multi-process web   |
+|                         | application                                        |
++-------------------------+----------------------------------------------------+
+| :file:`ensure_app.sh`   | A Bash script to ensure that Supervisor is running |
+|                         | with the above configuration                       |
++-------------------------+----------------------------------------------------+
+| :file:`log_listener.py` | The socket listener program which receives log     |
+|                         | events and records them to a file                  |
++-------------------------+----------------------------------------------------+
+| :file:`main.py`         | A simple web application which performs logging    |
+|                         | via a socket connected to the listener             |
++-------------------------+----------------------------------------------------+
+| :file:`webapp.json`     | A JSON configuration file for the web application  |
++-------------------------+----------------------------------------------------+
+| :file:`client.py`       | A Python script to exercise the web application    |
++-------------------------+----------------------------------------------------+
+
+The web application uses `Gunicorn <https://gunicorn.org/>`_, which is a
+popular web application server that starts multiple worker processes to handle
+requests. This example setup shows how the workers can write to the same log file
+without conflicting with one another --- they all go through the socket listener.
+
+To test these files, do the following in a POSIX environment:
+
+#. Download `the Gist <socket-listener-gist_>`__
+   as a ZIP archive using the :guilabel:`Download ZIP` button.
+
+#. Unzip the above files from the archive into a scratch directory.
+
+#. In the scratch directory, run ``bash prepare.sh`` to get things ready.
+   This creates a :file:`run` subdirectory to contain Supervisor-related and
+   log files, and a :file:`venv` subdirectory to contain a virtual environment
+   into which ``bottle``, ``gunicorn`` and ``supervisor`` are installed.
+
+#. Run ``bash ensure_app.sh`` to ensure that Supervisor is running with
+   the above configuration.
+
+#. Run ``venv/bin/python client.py`` to exercise the web application,
+   which will lead to records being written to the log.
+
+#. Inspect the log files in the :file:`run` subdirectory. You should see the
+   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
+   any particular order, since they have been handled concurrently by different
+   worker processes in a non-deterministic way.
+
+#. You can shut down the listener and the web application by running
+   ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
+
+You may need to tweak the configuration files in the unlikely event that the
+configured ports clash with something else in your test environment.
 
 .. _context-info:
 
@@ -1073,7 +1131,7 @@ each request is handled by a thread:
                                                  'context can be used to '
                                                  'populate logs')
         aa = ap.add_argument
-        aa('--count', '-c', default=100, help='How many requests to simulate')
+        aa('--count', '-c', type=int, default=100, help='How many requests to simulate')
         options = ap.parse_args()
 
         # Create the dummy webapps and put them in a list which we can use to select
@@ -1924,26 +1982,47 @@ Using a rotator and namer to customize log rotation processing
 --------------------------------------------------------------
 
 An example of how you can define a namer and rotator is given in the following
-snippet, which shows zlib-based compression of the log file::
+runnable script, which shows gzip compression of the log file::
+
+    import gzip
+    import logging
+    import logging.handlers
+    import os
+    import shutil
 
     def namer(name):
         return name + ".gz"
 
     def rotator(source, dest):
-        with open(source, "rb") as sf:
-            data = sf.read()
-            compressed = zlib.compress(data, 9)
-            with open(dest, "wb") as df:
-                df.write(compressed)
+        with open(source, 'rb') as f_in:
+            with gzip.open(dest, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
         os.remove(source)
 
-    rh = logging.handlers.RotatingFileHandler(...)
+
+    rh = logging.handlers.RotatingFileHandler('rotated.log', maxBytes=128, backupCount=5)
     rh.rotator = rotator
     rh.namer = namer
 
-These are not "true" .gz files, as they are bare compressed data, with no
-"container" such as you’d find in an actual gzip file. This snippet is just
-for illustration purposes.
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.addHandler(rh)
+    f = logging.Formatter('%(asctime)s %(message)s')
+    rh.setFormatter(f)
+    for i in range(1000):
+        root.info(f'Message no. {i + 1}')
+
+After running this, you will see six new files, five of which are compressed:
+
+.. code-block:: shell-session
+
+    $ ls rotated.log*
+    rotated.log       rotated.log.2.gz  rotated.log.4.gz
+    rotated.log.1.gz  rotated.log.3.gz  rotated.log.5.gz
+    $ zcat rotated.log.1.gz
+    2023-01-20 02:28:17,767 Message no. 996
+    2023-01-20 02:28:17,767 Message no. 997
+    2023-01-20 02:28:17,767 Message no. 998
 
 A more elaborate multiprocessing example
 ----------------------------------------
@@ -3549,7 +3628,7 @@ refer to the comments in the code snippet for more detailed information.
 Logging to syslog with RFC5424 support
 --------------------------------------
 
-Although :rfc:`5424` dates from 2009, most syslog servers are configured by detault to
+Although :rfc:`5424` dates from 2009, most syslog servers are configured by default to
 use the older :rfc:`3164`, which hails from 2001. When ``logging`` was added to Python
 in 2003, it supported the earlier (and only existing) protocol at the time. Since
 RFC5424 came out, as there has not been widespread deployment of it in syslog
@@ -3740,7 +3819,7 @@ then running the script results in
     WARNING:demo:division by zero
 
 As you can see, this output isn't ideal. That's because the underlying code
-which writes to ``sys.stderr`` makes mutiple writes, each of which results in a
+which writes to ``sys.stderr`` makes multiple writes, each of which results in a
 separate logged line (for example, the last three lines above). To get around
 this problem, you need to buffer things and only output log lines when newlines
 are seen. Let's use a slghtly better implementation of ``LoggerWriter``:

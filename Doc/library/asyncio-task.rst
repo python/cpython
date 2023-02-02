@@ -18,6 +18,10 @@ and Tasks.
 Coroutines
 ==========
 
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
+----------------------------------------------------
+
 :term:`Coroutines <coroutine>` declared with the async/await syntax is the
 preferred way of writing asyncio applications.  For example, the following
 snippet of code prints "hello", waits 1 second,
@@ -117,7 +121,7 @@ To actually run a coroutine, asyncio provides the following mechanisms:
 
               print(f"started at {time.strftime('%X')}")
 
-          # The wait is implicit when the context manager exits.
+          # The await is implicit when the context manager exits.
 
           print(f"finished at {time.strftime('%X')}")
 
@@ -229,6 +233,10 @@ is :meth:`loop.run_in_executor`.
 
 Creating Tasks
 ==============
+
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+-----------------------------------------------
 
 .. function:: create_task(coro, *, name=None, context=None)
 
@@ -658,7 +666,7 @@ Timeouts
             except TimeoutError:
                 pass
 
-            if cm.expired:
+            if cm.expired():
                 print("Looks like we haven't finished on time.")
 
     Timeout context managers can be safely nested.

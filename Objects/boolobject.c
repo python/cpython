@@ -23,8 +23,7 @@ PyObject *PyBool_FromLong(long ok)
         result = Py_True;
     else
         result = Py_False;
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 /* We define bool_new to always return either Py_True or Py_False */
@@ -196,11 +195,11 @@ PyTypeObject PyBool_Type = {
 /* The objects representing bool values False and True */
 
 struct _longobject _Py_FalseStruct = {
-    PyVarObject_HEAD_INIT(&PyBool_Type, 0)
-    { 0 }
+    PyObject_HEAD_INIT(&PyBool_Type)
+    { 0, { 0 } }
 };
 
 struct _longobject _Py_TrueStruct = {
-    PyVarObject_HEAD_INIT(&PyBool_Type, 1)
-    { 1 }
+    PyObject_HEAD_INIT(&PyBool_Type)
+    { 1, { 1 } }
 };

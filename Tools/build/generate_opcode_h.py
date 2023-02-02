@@ -85,6 +85,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
     is_pseudo = opcode['is_pseudo']
     _pseudo_ops = opcode['_pseudo_ops']
 
+    ENABLE_SPECIALIZATION = opcode["ENABLE_SPECIALIZATION"]
     HAVE_ARGUMENT = opcode["HAVE_ARGUMENT"]
     MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
     MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
@@ -108,7 +109,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
     opname_including_specialized[255] = 'DO_TRACING'
     used[255] = True
 
-    with (open(outfile, 'w') as fobj, open(internaloutfile, 'w') as iobj):
+    with open(outfile, 'w') as fobj, open(internaloutfile, 'w') as iobj:
         fobj.write(header)
         iobj.write(internal_header)
 
@@ -170,6 +171,10 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         fobj.write("\n")
         for i, (op, _) in enumerate(opcode["_nb_ops"]):
             fobj.write(DEFINE.format(op, i))
+
+        fobj.write("\n")
+        fobj.write("/* Defined in Lib/opcode.py */\n")
+        fobj.write(f"#define ENABLE_SPECIALIZATION {int(ENABLE_SPECIALIZATION)}")
 
         iobj.write("\n")
         iobj.write("#ifdef Py_DEBUG\n")
