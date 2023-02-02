@@ -99,7 +99,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case GET_AWAITABLE:
             return 1;
         case SEND:
-            return -1;
+            return 2;
         case YIELD_VALUE:
             return 1;
         case POP_EXCEPT:
@@ -445,7 +445,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case GET_AWAITABLE:
             return 1;
         case SEND:
-            return -1;
+            return ((!jump) ? 1 : 0) + 1;
         case YIELD_VALUE:
             return 1;
         case POP_EXCEPT:

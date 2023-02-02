@@ -663,14 +663,10 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        // error: SEND stack effect depends on jump flag
-        inst(SEND) {
+        inst(SEND, (receiver, v -- receiver if (!jump), retval)) {
             assert(frame != &entry_frame);
-            assert(STACK_LEVEL() >= 2);
-            PyObject *v = POP();
-            PyObject *receiver = TOP();
+            bool jump = false;
             PySendResult gen_status;
-            PyObject *retval;
             if (tstate->c_tracefunc == NULL) {
                 gen_status = PyIter_Send(receiver, v, &retval);
             } else {
@@ -695,21 +691,20 @@ dummy_func(
                     gen_status = PYGEN_NEXT;
                 }
             }
-            Py_DECREF(v);
             if (gen_status == PYGEN_ERROR) {
                 assert(retval == NULL);
                 goto error;
             }
+            Py_DECREF(v);
             if (gen_status == PYGEN_RETURN) {
                 assert(retval != NULL);
                 Py_DECREF(receiver);
-                SET_TOP(retval);
                 JUMPBY(oparg);
+                jump = true;
             }
             else {
                 assert(gen_status == PYGEN_NEXT);
                 assert(retval != NULL);
-                PUSH(retval);
             }
         }
 
