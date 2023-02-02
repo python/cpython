@@ -2058,10 +2058,10 @@ dummy_func(
             else {
                 /* `iterable` is not a generator. */
                 iter = PyObject_GetIter(iterable);
-                Py_DECREF(iterable);
                 if (iter == NULL) {
                     goto error;
                 }
+                Py_DECREF(iterable);
             }
             PREDICT(LOAD_CONST);
         }
