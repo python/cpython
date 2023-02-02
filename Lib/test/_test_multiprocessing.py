@@ -4098,9 +4098,10 @@ class _TestSharedMemory(BaseTestCase):
     def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
         # bpo-36867: test that a SharedMemoryManager uses the
         # same resource_tracker process as its parent.
-        cmd = '''if 1:
+        cmd = f'''if 1:
             from multiprocessing.managers import SharedMemoryManager
-
+            from multiprocessing import set_start_method
+            set_start_method({multiprocessing.get_start_method()!r})
 
             smm = SharedMemoryManager()
             smm.start()
@@ -4967,11 +4968,13 @@ class TestFlags(unittest.TestCase):
         conn.send(tuple(sys.flags))
 
     @classmethod
-    def run_in_child(cls):
+    def run_in_child(cls, start_method):
         import json
-        r, w = multiprocessing.Pipe(duplex=False)
-        p = multiprocessing.Process(target=cls.run_in_grandchild, args=(w,))
-        p.start()
+        mp = multiprocessing.get_context(start_method)
+        r, w = mp.Pipe(duplex=False)
+        p = mp.Process(target=cls.run_in_grandchild, args=(w,))
+        with warnings.catch_warnings(category=DeprecationWarning):
+            p.start()
         grandchild_flags = r.recv()
         p.join()
         r.close()
@@ -4982,8 +4985,10 @@ class TestFlags(unittest.TestCase):
     def test_flags(self):
         import json
         # start child process using unusual flags
-        prog = ('from test._test_multiprocessing import TestFlags; ' +
-                'TestFlags.run_in_child()')
+        prog = (
+            'from test._test_multiprocessing import TestFlags; '
+            f'TestFlags.run_in_child({multiprocessing.get_start_method()!r})'
+        )
         data = subprocess.check_output(
             [sys.executable, '-E', '-S', '-O', '-c', prog])
         child_flags, grandchild_flags = json.loads(data.decode('ascii'))
