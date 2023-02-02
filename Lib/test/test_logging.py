@@ -4759,8 +4759,9 @@ class LogRecordTest(BaseTest):
             # In other processes, processName is correct when multiprocessing in imported,
             # but it is (incorrectly) defaulted to 'MainProcess' otherwise (bpo-38762).
             import multiprocessing
-            parent_conn, child_conn = multiprocessing.Pipe()
-            p = multiprocessing.Process(
+            mp = multiprocessing.get_context('spawn')
+            parent_conn, child_conn = mp.Pipe()
+            p = mp.Process(
                 target=self._extract_logrecord_process_name,
                 args=(2, LOG_MULTI_PROCESSING, child_conn,)
             )

@@ -1,11 +1,11 @@
 """Test program for the fcntl C module.
 """
+import multiprocessing
 import platform
 import os
 import struct
 import sys
 import unittest
-from multiprocessing import Process
 from test.support import verbose, cpython_only
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -160,7 +160,8 @@ class TestFcntl(unittest.TestCase):
         self.f = open(TESTFN, 'wb+')
         cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
         fcntl.lockf(self.f, cmd)
-        p = Process(target=try_lockf_on_other_process_fail, args=(TESTFN, cmd))
+        mp = multiprocessing.get_context('spawn')
+        p = mp.Process(target=try_lockf_on_other_process_fail, args=(TESTFN, cmd))
         p.start()
         p.join()
         fcntl.lockf(self.f, fcntl.LOCK_UN)
@@ -171,7 +172,8 @@ class TestFcntl(unittest.TestCase):
         self.f = open(TESTFN, 'wb+')
         cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
         fcntl.lockf(self.f, cmd)
-        p = Process(target=try_lockf_on_other_process, args=(TESTFN, cmd))
+        mp = multiprocessing.get_context('spawn')
+        p = mp.Process(target=try_lockf_on_other_process, args=(TESTFN, cmd))
         p.start()
         p.join()
         fcntl.lockf(self.f, fcntl.LOCK_UN)

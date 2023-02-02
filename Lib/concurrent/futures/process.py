@@ -57,6 +57,7 @@ from functools import partial
 import itertools
 import sys
 from traceback import format_exception
+import warnings
 
 
 _threads_wakeups = weakref.WeakKeyDictionary()
@@ -616,9 +617,9 @@ class ProcessPoolExecutor(_base.Executor):
             max_workers: The maximum number of processes that can be used to
                 execute the given calls. If None or not given then as many
                 worker processes will be created as the machine has processors.
-            mp_context: A multiprocessing context to launch the workers. This
-                object should provide SimpleQueue, Queue and Process. Useful
-                to allow specific multiprocessing start methods.
+            mp_context: A multiprocessing context to launch the workers created
+                using the multiprocessing.get_context('start method') API. This
+                object should provide SimpleQueue, Queue and Process.
             initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
             max_tasks_per_child: The maximum number of tasks a worker process
@@ -650,6 +651,22 @@ class ProcessPoolExecutor(_base.Executor):
                 mp_context = mp.get_context("spawn")
             else:
                 mp_context = mp.get_context()
+        if (mp_context.get_start_method() == "fork" and
+            mp_context == mp.context._default_context._default_context):
+            warnings.warn(
+                "The default multiprocessing start method will change "
+                "away from 'fork' in Python >= 3.14, per GH-84559. "
+                "ProcessPoolExecutor uses multiprocessing. "
+                "If your application requires the 'fork' multiprocessing "
+                "start method, explicitly specify that by passing a "
+                "mp_context= parameter. "
+                "The safest start method is 'spawn'.",
+                category=mp.context.DefaultForkDeprecationWarning,
+                stacklevel=2,
+            )
+            # Avoid the equivalent warning from multiprocessing itself via
+            # a non-default fork context.
+            mp_context = mp.get_context("fork")
         self._mp_context = mp_context
 
         # https://github.com/python/cpython/issues/90622
