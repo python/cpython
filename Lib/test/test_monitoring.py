@@ -206,7 +206,7 @@ class MonitoringEventsBase(MonitoringTestBase):
             def record(*args, event_name=event_name):
                 events.append(event_name)
             sys.monitoring.register_callback(TEST_TOOL, event, record)
-        def record_call(code, offset, obj):
+        def record_call(code, offset, obj, arg):
             if isinstance(obj, PY_CALLABLES):
                 events.append("py_call")
             else:
@@ -282,7 +282,7 @@ class SimulateProfileTest(unittest.TestCase, MonitoringEventsBase):
             frame = sys._getframe(1)
             stack.append(frame)
             seen.add(frame.f_code)
-        def call(code, offset, callable):
+        def call(code, offset, callable, arg):
             if not isinstance(callable, PY_CALLABLES):
                 stack.append(sys._getframe(1))
         for event in UP_EVENTS:

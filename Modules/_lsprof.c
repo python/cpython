@@ -126,6 +126,10 @@ call_timer(ProfilerObject *pObj)
 static PyObject *
 normalizeUserObj(PyObject *obj)
 {
+    //if (Py_TYPE(obj) == &PyMethodDescr_Type) {
+    //    assert(0);
+    //    return PyObject_Repr(obj);
+    //}
     PyCFunctionObject *fn;
     if (!PyCFunction_Check(obj)) {
         return Py_NewRef(obj);

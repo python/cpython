@@ -2283,7 +2283,7 @@ monitor_unwind(PyThreadState *tstate,
     if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_PY_UNWIND] == 0) {
         return;
     }
-    _Py_call_instrumentation_exc(tstate, PY_MONITORING_EVENT_PY_UNWIND, frame, instr, NULL);
+    _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_UNWIND, frame, instr);
 }
 
 
@@ -2306,7 +2306,7 @@ monitor_throw(PyThreadState *tstate,
     if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_PY_THROW] == 0) {
         return;
     }
-    _Py_call_instrumentation_exc(tstate, PY_MONITORING_EVENT_PY_THROW, frame, instr, NULL);
+    _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_THROW, frame, instr);
 }
 
 void

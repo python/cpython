@@ -79,12 +79,30 @@ sys_profile_call_or_return(
     size_t nargsf, PyObject *kwnames
 ) {
     assert(kwnames == NULL);
-    assert(PyVectorcall_NARGS(nargsf) == 3);
+    assert(PyVectorcall_NARGS(nargsf) == 4);
     PyObject *callable = args[2];
-    if (!PyCFunction_Check(callable) && Py_TYPE(callable) != &PyMethodDescr_Type) {
-        Py_RETURN_NONE;
+    if (PyCFunction_Check(callable)) {
+        return call_profile_func(self, callable);
     }
-    return call_profile_func(self, callable);
+    if (Py_TYPE(callable) == &PyMethodDescr_Type) {
+        PyObject *self_arg = args[3];
+        /* For backwards compatibility need to
+         * convert to builtin method */
+
+        /* If no arg, skip */
+        if (self_arg == Py_None) {
+            Py_RETURN_NONE;
+        }
+        PyObject *meth = Py_TYPE(callable)->tp_descr_get(
+            callable, self_arg, (PyObject*)Py_TYPE(self_arg));
+        if (meth == NULL) {
+            return NULL;
+        }
+        PyObject *res =  call_profile_func(self, meth);
+        Py_DECREF(meth);
+        return res;
+    }
+    Py_RETURN_NONE;
 }
 
 static PyObject *

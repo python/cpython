@@ -83,9 +83,17 @@ extern int
 _Py_call_instrumentation_arg(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg);
 
+extern int
+_Py_call_instrumentation_2args(PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
+
 extern void
-_Py_call_instrumentation_exc(PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg);
+_Py_call_instrumentation_exc0(PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
+
+extern void
+_Py_call_instrumentation_exc2(PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 
 extern int
 _Py_Instrumentation_GetLine(PyCodeObject *code, int index);
