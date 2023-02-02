@@ -235,8 +235,9 @@ Scheduling callbacks
 
 .. method:: loop.call_soon_threadsafe(callback, *args, context=None)
 
-   A thread-safe variant of :meth:`call_soon`. This method *must* be used to
-   schedule callbacks *from another thread*.
+   A thread-safe variant of :meth:`call_soon`. When scheduling callbacks from
+   another thread, this function *must* be used, since :meth:`call_soon` is not
+   thread-safe.
 
    Raises :exc:`RuntimeError` if called on a loop that's been closed.
    This can happen on a secondary thread when the main application is
