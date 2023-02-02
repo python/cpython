@@ -685,7 +685,7 @@ class EnumType(type):
                         'member order does not match _order_:\n  %r\n  %r'
                         % (enum_class._member_names_, _order_)
                         )
-
+        #
         return enum_class
 
     def __bool__(cls):
@@ -862,13 +862,15 @@ class EnumType(type):
                 member_name, member_value = item
             classdict[member_name] = member_value
 
-        # TODO: replace the frame hack if a blessed way to know the calling
-        # module is ever developed
         if module is None:
             try:
-                module = sys._getframe(2).f_globals['__name__']
-            except (AttributeError, ValueError, KeyError):
-                pass
+                module = sys._getframemodulename(2)
+            except AttributeError:
+                # Fall back on _getframe if _getframemodulename is missing
+                try:
+                    module = sys._getframe(2).f_globals['__name__']
+                except (AttributeError, ValueError, KeyError):
+                    pass
         if module is None:
             _make_class_unpicklable(classdict)
         else:
@@ -1082,6 +1084,13 @@ class Enum(metaclass=EnumType):
     Methods can be added to enumerations, and members can have their own
     attributes -- see the documentation for details.
     """
+
+    @classmethod
+    def __signature__(cls):
+        if cls._member_names_:
+            return '(*values)'
+        else:
+            return '(new_class_name, /, names, *, module=None, qualname=None, type=None, start=1, boundary=None)'
 
     def __new__(cls, value):
         # all enum instances are actually created during class construction
@@ -1555,11 +1564,6 @@ def unique(enumeration):
         raise ValueError('duplicate values found in %r: %s' %
                 (enumeration, alias_details))
     return enumeration
-
-def _power_of_two(value):
-    if value < 1:
-        return False
-    return value == 2 ** _high_bit(value)
 
 def _dataclass_repr(self):
     dcf = self.__dataclass_fields__

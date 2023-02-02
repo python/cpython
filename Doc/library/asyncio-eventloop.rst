@@ -48,7 +48,7 @@ an event loop:
    running event loop.
 
    If there is no running event loop set, the function will return
-   the result of calling ``get_event_loop_policy().get_event_loop()``.
+   the result of the ``get_event_loop_policy().get_event_loop()`` call.
 
    Because this function has rather complex behavior (especially
    when custom event loop policies are in use), using the
@@ -59,11 +59,9 @@ an event loop:
    instead of using these lower level functions to manually create and close an
    event loop.
 
-   .. note::
-      In Python versions 3.10.0--3.10.8 and 3.11.0 this function
-      (and other functions which used it implicitly) emitted a
-      :exc:`DeprecationWarning` if there was no running event loop, even if
-      the current loop was set.
+   .. deprecated:: 3.12
+      Deprecation warning is emitted if there is no current event loop.
+      In some future Python release this will become an error.
 
 .. function:: set_event_loop(loop)
 
@@ -939,7 +937,8 @@ Watching file descriptors
 
 .. method:: loop.remove_reader(fd)
 
-   Stop monitoring the *fd* file descriptor for read availability.
+   Stop monitoring the *fd* file descriptor for read availability. Returns
+   ``True`` if *fd* was previously being monitored for reads.
 
 .. method:: loop.add_writer(fd, callback, *args)
 
@@ -952,7 +951,8 @@ Watching file descriptors
 
 .. method:: loop.remove_writer(fd)
 
-   Stop monitoring the *fd* file descriptor for write availability.
+   Stop monitoring the *fd* file descriptor for write availability. Returns
+   ``True`` if *fd* was previously being monitored for writes.
 
 See also :ref:`Platform Support <asyncio-platform-support>` section
 for some limitations of these methods.

@@ -302,10 +302,13 @@ Module functions
    :type isolation_level: str | None
 
    :param bool check_same_thread:
-       If ``True`` (default), only the creating thread may use the connection.
-       If ``False``, the connection may be shared across multiple threads;
-       if so, write operations should be serialized by the user to avoid data
-       corruption.
+       If ``True`` (default), :exc:`ProgrammingError` will be raised
+       if the database connection is used by a thread
+       other than the one that created it.
+       If ``False``, the connection may be accessed in multiple threads;
+       write operations may need to be serialized by the user
+       to avoid data corruption.
+       See :attr:`threadsafety` for more information.
 
    :param Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
@@ -501,11 +504,7 @@ Module constants
 
    .. note::
 
-      The :mod:`!sqlite3` module supports ``qmark``, ``numeric``,
-      and ``named`` DB-API parameter styles,
-      because that is what the underlying SQLite library supports.
-      However, the DB-API does not allow multiple values for
-      the ``paramstyle`` attribute.
+      The ``named`` DB-API parameter style is also supported.
 
 .. data:: sqlite_version
 
@@ -1944,40 +1943,47 @@ close the single quote and inject ``OR TRUE`` to select all rows::
 Instead, use the DB-API's parameter substitution. To insert a variable into a
 query string, use a placeholder in the string, and substitute the actual values
 into the query by providing them as a :class:`tuple` of values to the second
-argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
-use one of two kinds of placeholders: question marks (qmark style) or named
-placeholders (named style). For the qmark style, ``parameters`` must be a
-:term:`sequence <sequence>`. For the named style, it can be either a
-:term:`sequence <sequence>` or :class:`dict` instance. The length of the
-:term:`sequence <sequence>` must match the number of placeholders, or a
-:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
-keys for all named parameters. Any extra items are ignored. Here's an example of
-both styles:
+argument of the cursor's :meth:`~Cursor.execute` method.
+
+An SQL statement may use one of two kinds of placeholders:
+question marks (qmark style) or named placeholders (named style).
+For the qmark style, *parameters* must be a
+:term:`sequence` whose length must match the number of placeholders,
+or a :exc:`ProgrammingError` is raised.
+For the named style, *parameters* should be
+an instance of a :class:`dict` (or a subclass),
+which must contain keys for all named parameters;
+any extra items are ignored.
+Here's an example of both styles:
 
 .. testcode::
 
    con = sqlite3.connect(":memory:")
    cur = con.execute("CREATE TABLE lang(name, first_appeared)")
 
-   # This is the qmark style:
-   cur.execute("INSERT INTO lang VALUES(?, ?)", ("C", 1972))
+   # This is the named style used with executemany():
+   data = (
+       {"name": "C", "year": 1972},
+       {"name": "Fortran", "year": 1957},
+       {"name": "Python", "year": 1991},
+       {"name": "Go", "year": 2009},
+   )
+   cur.executemany("INSERT INTO lang VALUES(:name, :year)", data)
 
-   # The qmark style used with executemany():
-   lang_list = [
-       ("Fortran", 1957),
-       ("Python", 1991),
-       ("Go", 2009),
-   ]
-   cur.executemany("INSERT INTO lang VALUES(?, ?)", lang_list)
-
-   # And this is the named style:
-   cur.execute("SELECT * FROM lang WHERE first_appeared = :year", {"year": 1972})
+   # This is the qmark style used in a SELECT query:
+   params = (1972,)
+   cur.execute("SELECT * FROM lang WHERE first_appeared = ?", params)
    print(cur.fetchall())
 
 .. testoutput::
    :hide:
 
    [('C', 1972)]
+
+.. note::
+
+   :pep:`249` numeric placeholders are *not* supported.
+   If used, they will be interpreted as named placeholders.
 
 
 .. _sqlite3-adapters:
@@ -2204,7 +2210,7 @@ This section shows recipes for common adapters and converters.
    assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
 
    # Using current time as fromtimestamp() returns local date/time.
-   # Droping microseconds as adapt_datetime_epoch truncates fractional second part.
+   # Dropping microseconds as adapt_datetime_epoch truncates fractional second part.
    now = datetime.datetime.now().replace(microsecond=0)
    current_timestamp = int(now.timestamp())
 
@@ -2467,7 +2473,7 @@ Transaction control via the ``autocommit`` attribute
 
 The recommended way of controlling transaction behaviour is through
 the :attr:`Connection.autocommit` attribute,
-which should preferrably be set using the *autocommit* parameter
+which should preferably be set using the *autocommit* parameter
 of :func:`connect`.
 
 It is suggested to set *autocommit* to ``False``,

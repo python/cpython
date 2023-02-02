@@ -33,7 +33,7 @@ by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 These tools and their built-in counterparts also work well with the high-speed
 functions in the :mod:`operator` module.  For example, the multiplication
 operator can be mapped across two vectors to form an efficient dot-product:
-``sum(map(operator.mul, vector1, vector2))``.
+``sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))``.
 
 
 **Infinite iterators:**
@@ -788,6 +788,11 @@ which incur interpreter overhead.
 
 .. testcode::
 
+   import collections
+   import math
+   import operator
+   import random
+
    def take(n, iterable):
        "Return first n items of the iterable as a list"
        return list(islice(iterable, n))
@@ -829,16 +834,25 @@ which incur interpreter overhead.
        "Count how many times the predicate is true"
        return sum(map(pred, iterable))
 
-   def pad_none(iterable):
-       "Returns the sequence elements and then returns None indefinitely."
-       return chain(iterable, repeat(None))
-
    def ncycles(iterable, n):
        "Returns the sequence elements n times"
        return chain.from_iterable(repeat(tuple(iterable), n))
 
-   def dotproduct(vec1, vec2):
-       return sum(map(operator.mul, vec1, vec2))
+   def sum_of_squares(it):
+       "Add up the squares of the input values."
+       # sum_of_squares([10, 20, 30]) -> 1400
+       return math.sumprod(*tee(it))
+
+   def transpose(it):
+       "Swap the rows and columns of the input."
+       # transpose([(1, 2, 3), (11, 22, 33)]) --> (1, 11) (2, 22) (3, 33)
+       return zip(*it, strict=True)
+
+   def matmul(m1, m2):
+       "Multiply two matrices."
+       # matmul([(7, 5), (3, 5)], [[2, 5], [7, 9]]) --> (49, 80), (41, 60)
+       n = len(m2[0])
+       return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
 
    def convolve(signal, kernel):
        # See:  https://betterexplained.com/articles/intuitive-convolution/
@@ -850,7 +864,7 @@ which incur interpreter overhead.
        window = collections.deque([0], maxlen=n) * n
        for x in chain(signal, repeat(0, n-1)):
            window.append(x)
-           yield sum(map(operator.mul, kernel, window))
+           yield math.sumprod(kernel, window)
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
@@ -894,6 +908,21 @@ which incur interpreter overhead.
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
        data[2] = 1
        return iter_index(data, 1) if n > 2 else iter([])
+
+   def factor(n):
+       "Prime factors of n."
+       # factor(99) --> 3 3 11
+       for prime in sieve(math.isqrt(n) + 1):
+           while True:
+               quotient, remainder = divmod(n, prime)
+               if remainder:
+                   break
+               yield prime
+               n = quotient
+               if n == 1:
+                   return
+       if n >= 2:
+           yield n
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -1002,15 +1031,14 @@ which incur interpreter overhead.
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-       # unique_everseen('ABBCcAD', str.lower) --> A B C D
+       # unique_everseen('ABBcCAD', str.lower) --> A B c D
        seen = set()
        if key is None:
            for element in filterfalse(seen.__contains__, iterable):
                seen.add(element)
                yield element
-           # Note: The steps shown above are intended to demonstrate
-           # filterfalse(). For order preserving deduplication,
-           # a better solution is:
+           # For order preserving deduplication,
+           # a faster but non-lazy solution is:
            #     yield from dict.fromkeys(iterable)
        else:
            for element in iterable:
@@ -1018,11 +1046,15 @@ which incur interpreter overhead.
                if k not in seen:
                    seen.add(k)
                    yield element
+           # For use cases that allow the last matching element to be returned,
+           # a faster but non-lazy solution is:
+           #      t1, t2 = tee(iterable)
+           #      yield from dict(zip(map(key, t1), t2)).values()
 
    def unique_justseen(iterable, key=None):
        "List unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-       # unique_justseen('ABBCcAD', str.lower) --> A B C A D
+       # unique_justseen('ABBcCAD', str.lower) --> A B c A D
        return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
    def iter_except(func, exception, first=None):
@@ -1137,11 +1169,6 @@ which incur interpreter overhead.
 
     Now, we test all of the itertool recipes
 
-    >>> import operator
-    >>> import collections
-    >>> import math
-    >>> import random
-
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -1193,14 +1220,19 @@ which incur interpreter overhead.
     >>> take(5, map(int, repeatfunc(random.random)))
     [0, 0, 0, 0, 0]
 
-    >>> list(islice(pad_none('abc'), 0, 6))
-    ['a', 'b', 'c', None, None, None]
-
     >>> list(ncycles('abc', 3))
     ['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']
 
-    >>> dotproduct([1,2,3], [4,5,6])
-    32
+    >>> sum_of_squares([10, 20, 30])
+    1400
+
+    >>> list(transpose([(1, 2, 3), (11, 22, 33)]))
+    [(1, 11), (2, 22), (3, 33)]
+
+    >>> list(matmul([(7, 5), (3, 5)], [[2, 5], [7, 9]]))
+    [(49, 80), (41, 60)]
+    >>> list(matmul([[2, 5], [7, 9], [3, 4]], [[7, 11, 5, 4, 9], [3, 5, 2, 6, 3]]))
+    [(29, 47, 20, 38, 33), (76, 122, 53, 82, 90), (33, 53, 23, 36, 39)]
 
     >>> data = [20, 40, 24, 32, 20, 28, 16]
     >>> list(convolve(data, [0.25, 0.25, 0.25, 0.25]))
@@ -1255,6 +1287,45 @@ which incur interpreter overhead.
     78498
     >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
     >>> set(sieve(10_000)).isdisjoint(carmichael)
+    True
+
+    >>> list(factor(0))
+    []
+    >>> list(factor(1))
+    []
+    >>> list(factor(2))
+    [2]
+    >>> list(factor(3))
+    [3]
+    >>> list(factor(4))
+    [2, 2]
+    >>> list(factor(5))
+    [5]
+    >>> list(factor(6))
+    [2, 3]
+    >>> list(factor(7))
+    [7]
+    >>> list(factor(8))
+    [2, 2, 2]
+    >>> list(factor(9))
+    [3, 3]
+    >>> list(factor(10))
+    [2, 5]
+    >>> list(factor(128_884_753_939))       # large prime
+    [128884753939]
+    >>> list(factor(999953 * 999983))       # large semiprime
+    [999953, 999983]
+    >>> list(factor(6 ** 20)) == [2] * 20 + [3] * 20   # large power
+    True
+    >>> list(factor(909_909_090_909))       # large multiterm composite
+    [3, 3, 7, 13, 13, 751, 113797]
+    >>> math.prod([3, 3, 7, 13, 13, 751, 113797])
+    909909090909
+    >>> all(math.prod(factor(n)) == n for n in range(1, 2_000))
+    True
+    >>> all(set(factor(n)) <= set(sieve(n+1)) for n in range(2_000))
+    True
+    >>> all(list(factor(n)) == sorted(factor(n)) for n in range(2_000))
     True
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
@@ -1323,15 +1394,17 @@ which incur interpreter overhead.
 
     >>> list(unique_everseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D']
-
     >>> list(unique_everseen('ABBCcAD', str.lower))
     ['A', 'B', 'C', 'D']
+    >>> list(unique_everseen('ABBcCAD', str.lower))
+    ['A', 'B', 'c', 'D']
 
     >>> list(unique_justseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D', 'A', 'B']
-
     >>> list(unique_justseen('ABBCcAD', str.lower))
     ['A', 'B', 'C', 'A', 'D']
+    >>> list(unique_justseen('ABBcCAD', str.lower))
+    ['A', 'B', 'c', 'A', 'D']
 
     >>> d = dict(a=1, b=2, c=3)
     >>> it = iter_except(d.popitem, KeyError)

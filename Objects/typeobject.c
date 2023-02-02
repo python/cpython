@@ -1289,8 +1289,13 @@ PyObject *
 _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
 {
     PyObject *obj;
+    /* The +1 on nitems is needed for most types but not all. We could save a
+     * bit of space by allocating one less item in certain cases, depending on
+     * the type. However, given the extra complexity (e.g. an additional type
+     * flag to indicate when that is safe) it does not seem worth the memory
+     * savings. An example type that doesn't need the +1 is a subclass of
+     * tuple. See GH-100659 and GH-81381. */
     const size_t size = _PyObject_VAR_SIZE(type, nitems+1);
-    /* note that we need to add one, for the sentinel */
 
     const size_t presize = _PyType_PreHeaderSize(type);
     char *alloc = PyObject_Malloc(size + presize);
@@ -2712,8 +2717,7 @@ type_new_visit_slots(type_new_ctx *ctx)
             if (!ctx->may_add_weak || ctx->add_weak != 0) {
                 PyErr_SetString(PyExc_TypeError,
                     "__weakref__ slot disallowed: "
-                    "either we already got one, "
-                    "or __itemsize__ != 0");
+                    "we already got one");
                 return -1;
             }
             ctx->add_weak++;
@@ -4219,9 +4223,19 @@ _PyType_LookupId(PyTypeObject *type, _Py_Identifier *name)
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
-   but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
-static PyObject *
-type_getattro(PyTypeObject *type, PyObject *name)
+   but uses _PyType_Lookup() instead of just looking in type->tp_dict.
+
+   The argument suppress_missing_attribute is used to provide a
+   fast path for hasattr. The possible values are:
+
+   * NULL: do not suppress the exception
+   * Non-zero pointer: suppress the PyExc_AttributeError and
+     set *suppress_missing_attribute to 1 to signal we are returning NULL while
+     having suppressed the exception (other exceptions are not suppressed)
+
+   */
+PyObject *
+_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missing_attribute)
 {
     PyTypeObject *metatype = Py_TYPE(type);
     PyObject *meta_attribute, *attribute;
@@ -4301,10 +4315,23 @@ type_getattro(PyTypeObject *type, PyObject *name)
     }
 
     /* Give up */
-    PyErr_Format(PyExc_AttributeError,
-                 "type object '%.50s' has no attribute '%U'",
-                 type->tp_name, name);
+    if (suppress_missing_attribute == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                        "type object '%.50s' has no attribute '%U'",
+                        type->tp_name, name);
+    } else {
+        // signal the caller we have not set an PyExc_AttributeError and gave up
+        *suppress_missing_attribute = 1;
+    }
     return NULL;
+}
+
+/* This is similar to PyObject_GenericGetAttr(),
+   but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
+PyObject *
+_Py_type_getattro(PyTypeObject *type, PyObject *name)
+{
+    return _Py_type_getattro_impl(type, name, NULL);
 }
 
 static int
@@ -4798,7 +4825,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_hash */
     (ternaryfunc)type_call,                     /* tp_call */
     0,                                          /* tp_str */
-    (getattrofunc)type_getattro,                /* tp_getattro */
+    (getattrofunc)_Py_type_getattro,            /* tp_getattro */
     (setattrofunc)type_setattro,                /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
@@ -9492,7 +9519,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
 
     // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
-    int i = co->co_nlocals + co->co_nplaincellvars;
+    int i = PyCode_GetFirstFree(co);
     for (; i < co->co_nlocalsplus; i++) {
         assert((_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_FREE) != 0);
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
@@ -9556,13 +9583,13 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
         PyThreadState *tstate = _PyThreadState_GET();
-        _PyInterpreterFrame *cframe = tstate->cframe->current_frame;
-        if (cframe == NULL) {
+        _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+        if (frame == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");
             return -1;
         }
-        int res = super_init_without_args(cframe, cframe->f_code, &type, &obj);
+        int res = super_init_without_args(frame, frame->f_code, &type, &obj);
 
         if (res < 0) {
             return -1;

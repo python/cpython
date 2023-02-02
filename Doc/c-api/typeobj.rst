@@ -147,7 +147,7 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_watched`           | char                              |                   |   |   |   |   |
+   | [:c:member:`~PyTypeObject.tp_watched`]         | char                              |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
@@ -452,6 +452,7 @@ slot typedefs
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`Py_ssize_t`     |                      |
+|                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`objobjproc`        | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -2633,7 +2634,7 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t)
 
-.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t)
+.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *)
 
 .. c:type:: int (*objobjproc)(PyObject *, PyObject *)
 
