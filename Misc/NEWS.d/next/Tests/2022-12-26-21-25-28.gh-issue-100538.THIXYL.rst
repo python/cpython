@@ -1,2 +1,0 @@
-Create a GitHub Actions workflow for verifying bundled libexpat files. Patch
-by Illia Volochii.
