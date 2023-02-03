@@ -356,7 +356,14 @@ PyThread_exit_thread(void)
 {
     if (!initialized)
         exit(0);
+#if defined(__wasi__)
+    /*
+     * wasi-threads doesn't have pthread_exit right now
+     */
+    abort();
+#else
     pthread_exit(0);
+#endif
 }
 
 #ifdef USE_SEMAPHORES
