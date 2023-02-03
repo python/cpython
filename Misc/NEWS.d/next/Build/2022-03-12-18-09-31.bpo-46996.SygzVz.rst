@@ -1,1 +1,0 @@
-The :mod:`tkinter` package now requires Tcl/Tk version 8.5.12 or newer.

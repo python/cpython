@@ -35,7 +35,7 @@ def _io_wrapper(file, mode='r', *args, **kwargs):
     elif mode == 'rb':
         return file
     raise ValueError(
-        "Invalid mode value '{}', only 'r' and 'rb' are supported".format(mode)
+        f"Invalid mode value '{mode}', only 'r' and 'rb' are supported"
     )
 
 

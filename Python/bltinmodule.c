@@ -63,8 +63,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
             }
             for (j = 0; j < i; j++) {
                 base = args[j];
-                PyList_SET_ITEM(new_bases, j, base);
-                Py_INCREF(base);
+                PyList_SET_ITEM(new_bases, j, Py_NewRef(base));
             }
         }
         j = PyList_GET_SIZE(new_bases);
@@ -169,9 +168,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
         if (winner != meta) {
-            Py_DECREF(meta);
-            meta = winner;
-            Py_INCREF(meta);
+            Py_SETREF(meta, Py_NewRef(winner));
         }
     }
     /* else: meta is not a class, so we cannot do the metaclass
@@ -198,6 +195,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         goto error;
     }
     PyThreadState *tstate = _PyThreadState_GET();
+    EVAL_CALL_STAT_INC(EVAL_CALL_BUILD_CLASS);
     cell = _PyEval_Vector(tstate, (PyFunctionObject *)func, ns, NULL, 0, NULL);
     if (cell != NULL) {
         if (bases != orig_bases) {
@@ -220,8 +218,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__class__ set to %.200R defining %.200R as %.200R";
                     PyErr_Format(PyExc_TypeError, msg, cell_cls, name, cls);
                 }
-                Py_DECREF(cls);
-                cls = NULL;
+                Py_SETREF(cls, NULL);
                 goto error;
             }
         }
@@ -260,8 +257,8 @@ importlib.import_module() to programmatically import a module.
 
 The globals argument is only used to determine the context;
 they are not modified.  The locals argument is unused.  The fromlist
-should be a list of names to emulate ``from name import ...'', or an
-empty list to emulate ``import name''.
+should be a list of names to emulate ``from name import ...``, or an
+empty list to emulate ``import name``.
 When importing a module from a package, note that __import__('A.B', ...)
 returns package A when fromlist is empty, but its submodule B when
 fromlist is not empty.  The level argument is used to determine whether to
@@ -272,7 +269,7 @@ is the number of parent directories to search relative to the current module.
 static PyObject *
 builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
                         PyObject *locals, PyObject *fromlist, int level)
-/*[clinic end generated code: output=4febeda88a0cd245 input=35e9a6460412430f]*/
+/*[clinic end generated code: output=4febeda88a0cd245 input=73f4b960ea5b9dd6]*/
 {
     return PyImport_ImportModuleLevelObject(name, globals, locals,
                                             fromlist, level);
@@ -613,7 +610,7 @@ filter_reduce(filterobject *lz, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef filter_methods[] = {
-    {"__reduce__",   (PyCFunction)filter_reduce,   METH_NOARGS, reduce_doc},
+    {"__reduce__", _PyCFunction_CAST(filter_reduce), METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -676,16 +673,19 @@ format as builtin_format
     format_spec: unicode(c_default="NULL") = ''
     /
 
-Return value.__format__(format_spec)
+Return type(value).__format__(value, format_spec)
 
-format_spec defaults to the empty string.
-See the Format Specification Mini-Language section of help('FORMATTING') for
-details.
+Many built-in types implement format_spec according to the
+Format Specification Mini-language. See help('FORMATTING').
+
+If type(value) does not supply a method named __format__
+and format_spec is empty, then str(value) is returned.
+See also help('SPECIALMETHODS').
 [clinic start generated code]*/
 
 static PyObject *
 builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec)
-/*[clinic end generated code: output=2f40bdfa4954b077 input=88339c93ea522b33]*/
+/*[clinic end generated code: output=2f40bdfa4954b077 input=45ef3934b86d5624]*/
 {
     return PyObject_Format(value, format_spec);
 }
@@ -714,7 +714,7 @@ compile as builtin_compile
     filename: object(converter="PyUnicode_FSDecoder")
     mode: str
     flags: int = 0
-    dont_inherit: bool(accept={int}) = False
+    dont_inherit: bool = False
     optimize: int = -1
     *
     _feature_version as feature_version: int = -1
@@ -737,7 +737,7 @@ static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
                      int optimize, int feature_version)
-/*[clinic end generated code: output=b0c09c84f116d3d7 input=40171fb92c1d580d]*/
+/*[clinic end generated code: output=b0c09c84f116d3d7 input=cc78e20e7c7682ba]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -800,8 +800,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto error;
     if (is_ast) {
         if (flags & PyCF_ONLY_AST) {
-            Py_INCREF(source);
-            result = source;
+            result = Py_NewRef(source);
         }
         else {
             PyArena *arena;
@@ -838,30 +837,32 @@ finally:
     return result;
 }
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
-static PyObject *
-builtin_dir(PyObject *self, PyObject *args)
-{
-    PyObject *arg = NULL;
+/*[clinic input]
+dir as builtin_dir
 
-    if (!PyArg_UnpackTuple(args, "dir", 0, 1, &arg))
-        return NULL;
+    arg: object = NULL
+    /
+
+Show attributes of an object.
+
+If called without an argument, return the names in the current scope.
+Else, return an alphabetized list of names comprising (some of) the attributes
+of the given object, and of attributes reachable from it.
+If the object supplies a method named __dir__, it will be used; otherwise
+the default dir() logic is used and returns:
+  for a module object: the module's attributes.
+  for a class object:  its attributes, and recursively the attributes
+    of its bases.
+  for any other object: its attributes, its class's attributes, and
+    recursively the attributes of its class's base classes.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_dir_impl(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=24f2c7a52c1e3b08 input=ed6d6ccb13d52251]*/
+{
     return PyObject_Dir(arg);
 }
-
-PyDoc_STRVAR(dir_doc,
-"dir([object]) -> list of strings\n"
-"\n"
-"If called without an argument, return the names in the current scope.\n"
-"Else, return an alphabetized list of names comprising (some of) the attributes\n"
-"of the given object, and of attributes reachable from it.\n"
-"If the object supplies a method named __dir__, it will be used; otherwise\n"
-"the default dir() logic is used and returns:\n"
-"  for a module object: the module's attributes.\n"
-"  for a class object:  its attributes, and recursively the attributes\n"
-"    of its bases.\n"
-"  for any other object: its attributes, its class's attributes, and\n"
-"    recursively the attributes of its class's base classes.");
 
 /*[clinic input]
 divmod as builtin_divmod
@@ -977,6 +978,8 @@ exec as builtin_exec
     globals: object = None
     locals: object = None
     /
+    *
+    closure: object(c_default="NULL") = None
 
 Execute the given source in the context of globals and locals.
 
@@ -985,12 +988,14 @@ or a code object as returned by compile().
 The globals must be a dictionary and locals can be any mapping,
 defaulting to the current globals and locals.
 If only globals is given, locals defaults to it.
+The closure must be a tuple of cellvars, and can only be used
+when source is a code object requiring exactly that many cellvars.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
-                  PyObject *locals)
-/*[clinic end generated code: output=3c90efc6ab68ef5d input=01ca3e1c01692829]*/
+                  PyObject *locals, PyObject *closure)
+/*[clinic end generated code: output=7579eb4e7646743d input=f13a7e2b503d1d9a]*/
 {
     PyObject *v;
 
@@ -1029,20 +1034,60 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         return NULL;
     }
 
+    if (closure == Py_None) {
+        closure = NULL;
+    }
+
     if (PyCode_Check(source)) {
+        Py_ssize_t num_free = PyCode_GetNumFree((PyCodeObject *)source);
+        if (num_free == 0) {
+            if (closure) {
+                PyErr_SetString(PyExc_TypeError,
+                    "cannot use a closure with this code object");
+                return NULL;
+            }
+        } else {
+            int closure_is_ok =
+                closure
+                && PyTuple_CheckExact(closure)
+                && (PyTuple_GET_SIZE(closure) == num_free);
+            if (closure_is_ok) {
+                for (Py_ssize_t i = 0; i < num_free; i++) {
+                    PyObject *cell = PyTuple_GET_ITEM(closure, i);
+                    if (!PyCell_Check(cell)) {
+                        closure_is_ok = 0;
+                        break;
+                    }
+                }
+            }
+            if (!closure_is_ok) {
+                PyErr_Format(PyExc_TypeError,
+                    "code object requires a closure of exactly length %zd",
+                    num_free);
+                return NULL;
+            }
+        }
+
         if (PySys_Audit("exec", "O", source) < 0) {
             return NULL;
         }
 
-        if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
-            PyErr_SetString(PyExc_TypeError,
-                "code object passed to exec() may not "
-                "contain free variables");
-            return NULL;
+        if (!closure) {
+            v = PyEval_EvalCode(source, globals, locals);
+        } else {
+            v = PyEval_EvalCodeEx(source, globals, locals,
+                NULL, 0,
+                NULL, 0,
+                NULL, 0,
+                NULL,
+                closure);
         }
-        v = PyEval_EvalCode(source, globals, locals);
     }
     else {
+        if (closure != NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                "closure can only be used when source is a code object");
+        }
         PyObject *source_copy;
         const char *str;
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
@@ -1066,36 +1111,38 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
 }
 
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
+/*[clinic input]
+getattr as builtin_getattr
+
+    object: object
+    name: object
+    default: object = NULL
+    /
+
+Get a named attribute from an object.
+
+getattr(x, 'y') is equivalent to x.y
+When a default argument is given, it is returned when the attribute doesn't
+exist; without it, an exception is raised in that case.
+[clinic start generated code]*/
+
 static PyObject *
-builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+builtin_getattr_impl(PyObject *module, PyObject *object, PyObject *name,
+                     PyObject *default_value)
+/*[clinic end generated code: output=74ad0e225e3f701c input=d7562cd4c3556171]*/
 {
-    PyObject *v, *name, *result;
+    PyObject *result;
 
-    if (!_PyArg_CheckPositional("getattr", nargs, 2, 3))
-        return NULL;
-
-    v = args[0];
-    name = args[1];
-    if (nargs > 2) {
-        if (_PyObject_LookupAttr(v, name, &result) == 0) {
-            PyObject *dflt = args[2];
-            Py_INCREF(dflt);
-            return dflt;
+    if (default_value != NULL) {
+        if (_PyObject_LookupAttr(object, name, &result) == 0) {
+            return Py_NewRef(default_value);
         }
     }
     else {
-        result = PyObject_GetAttr(v, name);
+        result = PyObject_GetAttr(object, name);
     }
     return result;
 }
-
-PyDoc_STRVAR(getattr_doc,
-"getattr(object, name[, default]) -> value\n\
-\n\
-Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.\n\
-When a default argument is given, it is returned when the attribute doesn't\n\
-exist; without it, an exception is raised in that case.");
 
 
 /*[clinic input]
@@ -1114,8 +1161,7 @@ builtin_globals_impl(PyObject *module)
     PyObject *d;
 
     d = PyEval_GetGlobals();
-    Py_XINCREF(d);
-    return d;
+    return Py_XNewRef(d);
 }
 
 
@@ -1342,19 +1388,17 @@ map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
     Py_ssize_t i;
     if (args == NULL)
         return NULL;
-    Py_INCREF(lz->func);
-    PyTuple_SET_ITEM(args, 0, lz->func);
+    PyTuple_SET_ITEM(args, 0, Py_NewRef(lz->func));
     for (i = 0; i<numargs; i++){
         PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
-        Py_INCREF(it);
-        PyTuple_SET_ITEM(args, i+1, it);
+        PyTuple_SET_ITEM(args, i+1, Py_NewRef(it));
     }
 
     return Py_BuildValue("ON", Py_TYPE(lz), args);
 }
 
 static PyMethodDef map_methods[] = {
-    {"__reduce__",   (PyCFunction)map_reduce,   METH_NOARGS, reduce_doc},
+    {"__reduce__", _PyCFunction_CAST(map_reduce), METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -1411,35 +1455,43 @@ PyTypeObject PyMap_Type = {
 };
 
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
+/*[clinic input]
+next as builtin_next
+
+    iterator: object
+    default: object = NULL
+    /
+
+Return the next item from the iterator.
+
+If default is given and the iterator is exhausted,
+it is returned instead of raising StopIteration.
+[clinic start generated code]*/
+
 static PyObject *
-builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+builtin_next_impl(PyObject *module, PyObject *iterator,
+                  PyObject *default_value)
+/*[clinic end generated code: output=a38a94eeb447fef9 input=180f9984f182020f]*/
 {
-    PyObject *it, *res;
+    PyObject *res;
 
-    if (!_PyArg_CheckPositional("next", nargs, 1, 2))
-        return NULL;
-
-    it = args[0];
-    if (!PyIter_Check(it)) {
+    if (!PyIter_Check(iterator)) {
         PyErr_Format(PyExc_TypeError,
             "'%.200s' object is not an iterator",
-            Py_TYPE(it)->tp_name);
+            Py_TYPE(iterator)->tp_name);
         return NULL;
     }
 
-    res = (*Py_TYPE(it)->tp_iternext)(it);
+    res = (*Py_TYPE(iterator)->tp_iternext)(iterator);
     if (res != NULL) {
         return res;
-    } else if (nargs > 1) {
-        PyObject *def = args[1];
+    } else if (default_value != NULL) {
         if (PyErr_Occurred()) {
             if(!PyErr_ExceptionMatches(PyExc_StopIteration))
                 return NULL;
             PyErr_Clear();
         }
-        Py_INCREF(def);
-        return def;
+        return Py_NewRef(default_value);
     } else if (PyErr_Occurred()) {
         return NULL;
     } else {
@@ -1447,12 +1499,6 @@ builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
 }
-
-PyDoc_STRVAR(next_doc,
-"next(iterator[, default])\n\
-\n\
-Return the next item from the iterator. If default is given and the iterator\n\
-is exhausted, it is returned instead of raising StopIteration.");
 
 
 /*[clinic input]
@@ -1465,13 +1511,13 @@ setattr as builtin_setattr
 
 Sets the named attribute on the given object to the specified value.
 
-setattr(x, 'y', v) is equivalent to ``x.y = v''
+setattr(x, 'y', v) is equivalent to ``x.y = v``
 [clinic start generated code]*/
 
 static PyObject *
 builtin_setattr_impl(PyObject *module, PyObject *obj, PyObject *name,
                      PyObject *value)
-/*[clinic end generated code: output=dc2ce1d1add9acb4 input=bd2b7ca6875a1899]*/
+/*[clinic end generated code: output=dc2ce1d1add9acb4 input=5e26417f2e8598d4]*/
 {
     if (PyObject_SetAttr(obj, name, value) != 0)
         return NULL;
@@ -1488,12 +1534,12 @@ delattr as builtin_delattr
 
 Deletes the named attribute from the given object.
 
-delattr(x, 'y') is equivalent to ``del x.y''
+delattr(x, 'y') is equivalent to ``del x.y``
 [clinic start generated code]*/
 
 static PyObject *
 builtin_delattr_impl(PyObject *module, PyObject *obj, PyObject *name)
-/*[clinic end generated code: output=85134bc58dff79fa input=db16685d6b4b9410]*/
+/*[clinic end generated code: output=85134bc58dff79fa input=164865623abe7216]*/
 {
     if (PyObject_SetAttr(obj, name, (PyObject *)NULL) != 0)
         return NULL;
@@ -1546,33 +1592,32 @@ builtin_hex(PyObject *module, PyObject *number)
 }
 
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
-static PyObject *
-builtin_iter(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *v;
+/*[clinic input]
+iter as builtin_iter
 
-    if (!_PyArg_CheckPositional("iter", nargs, 1, 2))
-        return NULL;
-    v = args[0];
-    if (nargs == 1)
-        return PyObject_GetIter(v);
-    if (!PyCallable_Check(v)) {
+    object: object
+    sentinel: object = NULL
+    /
+
+Get an iterator from an object.
+
+In the first form, the argument must supply its own iterator, or be a sequence.
+In the second form, the callable is called until it returns the sentinel.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_iter_impl(PyObject *module, PyObject *object, PyObject *sentinel)
+/*[clinic end generated code: output=12cf64203c195a94 input=a5d64d9d81880ba6]*/
+{
+    if (sentinel == NULL)
+        return PyObject_GetIter(object);
+    if (!PyCallable_Check(object)) {
         PyErr_SetString(PyExc_TypeError,
-                        "iter(v, w): v must be callable");
+                        "iter(object, sentinel): object must be callable");
         return NULL;
     }
-    PyObject *sentinel = args[1];
-    return PyCallIter_New(v, sentinel);
+    return PyCallIter_New(object, sentinel);
 }
-
-PyDoc_STRVAR(iter_doc,
-"iter(iterable) -> iterator\n\
-iter(callable, sentinel) -> iterator\n\
-\n\
-Get an iterator from an object.  In the first form, the argument must\n\
-supply its own iterator, or be a sequence.\n\
-In the second form, the callable is called until it returns the sentinel.");
 
 
 /*[clinic input]
@@ -1675,8 +1720,7 @@ builtin_locals_impl(PyObject *module)
     PyObject *d;
 
     d = PyEval_GetLocals();
-    Py_XINCREF(d);
-    return d;
+    return Py_XNewRef(d);
 }
 
 
@@ -1737,8 +1781,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
         }
         /* no key function; the value is the item */
         else {
-            val = item;
-            Py_INCREF(val);
+            val = Py_NewRef(item);
         }
 
         /* maximum value and item are unset; set them */
@@ -1768,11 +1811,10 @@ min_max(PyObject *args, PyObject *kwds, int op)
     if (maxval == NULL) {
         assert(maxitem == NULL);
         if (defaultval != NULL) {
-            Py_INCREF(defaultval);
-            maxitem = defaultval;
+            maxitem = Py_NewRef(defaultval);
         } else {
             PyErr_Format(PyExc_ValueError,
-                         "%s() arg is an empty sequence", name);
+                         "%s() iterable argument is empty", name);
         }
     }
     else
@@ -2022,7 +2064,7 @@ builtin_print_impl(PyObject *module, Py_ssize_t varargssize,
 /*[clinic input]
 input as builtin_input
 
-    prompt: object(c_default="NULL") = None
+    prompt: object(c_default="NULL") = ""
     /
 
 Read a string from standard input.  The trailing newline is stripped.
@@ -2036,7 +2078,7 @@ On *nix systems, readline is used if available.
 
 static PyObject *
 builtin_input_impl(PyObject *module, PyObject *prompt)
-/*[clinic end generated code: output=83db5a191e7a0d60 input=5e8bb70c2908fe3c]*/
+/*[clinic end generated code: output=83db5a191e7a0d60 input=159c46d4ae40977e]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *fin = _PySys_GetAttr(
@@ -2322,7 +2364,7 @@ PyDoc_STRVAR(builtin_sorted__doc__,
 "reverse flag can be set to request the result in descending order.");
 
 #define BUILTIN_SORTED_METHODDEF    \
-    {"sorted", (PyCFunction)(void(*)(void))builtin_sorted, METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},
+    {"sorted", _PyCFunction_CAST(builtin_sorted), METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},
 
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2356,33 +2398,35 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 }
 
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
+/*[clinic input]
+vars as builtin_vars
+
+    object: object = NULL
+    /
+
+Show vars.
+
+Without arguments, equivalent to locals().
+With an argument, equivalent to object.__dict__.
+[clinic start generated code]*/
+
 static PyObject *
-builtin_vars(PyObject *self, PyObject *args)
+builtin_vars_impl(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=840a7f64007a3e0a input=80cbdef9182c4ba3]*/
 {
-    PyObject *v = NULL;
     PyObject *d;
 
-    if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
-        return NULL;
-    if (v == NULL) {
-        d = PyEval_GetLocals();
-        Py_XINCREF(d);
+    if (object == NULL) {
+        d = Py_XNewRef(PyEval_GetLocals());
     }
     else {
-        if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &d) == 0) {
+        if (_PyObject_LookupAttr(object, &_Py_ID(__dict__), &d) == 0) {
             PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");
         }
     }
     return d;
 }
-
-PyDoc_STRVAR(vars_doc,
-"vars([object]) -> dictionary\n\
-\n\
-Without arguments, equivalent to locals().\n\
-With an argument, equivalent to object.__dict__.");
 
 
 /*[clinic input]
@@ -2449,8 +2493,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         long i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
         if (overflow == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
         }
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2465,10 +2508,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 overflow = 0;
                 /* Single digits are common, fast, and cannot overflow on unpacking. */
                 switch (Py_SIZE(item)) {
-                    case -1: b = -(sdigit) ((PyLongObject*)item)->ob_digit[0]; break;
+                    case -1: b = -(sdigit) ((PyLongObject*)item)->long_value.ob_digit[0]; break;
                     // Note: the continue goes to the top of the "while" loop that iterates over the elements
                     case  0: Py_DECREF(item); continue;
-                    case  1: b = ((PyLongObject*)item)->ob_digit[0]; break;
+                    case  1: b = ((PyLongObject*)item)->long_value.ob_digit[0]; break;
                     default: b = PyLong_AsLongAndOverflow(item, &overflow); break;
                 }
                 if (overflow == 0 &&
@@ -2500,19 +2543,34 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
-        Py_DECREF(result);
-        result = NULL;
+        double c = 0.0;
+        Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
+                /* Avoid losing the sign on a negative result,
+                   and don't let adding the compensation convert
+                   an infinite or overflowed sum to a NaN. */
+                if (c && Py_IS_FINITE(c)) {
+                    f_result += c;
+                }
                 return PyFloat_FromDouble(f_result);
             }
             if (PyFloat_CheckExact(item)) {
-                f_result += PyFloat_AS_DOUBLE(item);
-                Py_DECREF(item);
+                // Improved Kahan–Babuška algorithm by Arnold Neumaier
+                // https://www.mat.univie.ac.at/~neum/scan/01.pdf
+                double x = PyFloat_AS_DOUBLE(item);
+                double t = f_result + x;
+                if (fabs(f_result) >= fabs(x)) {
+                    c += (f_result - t) + x;
+                } else {
+                    c += (x - t) + f_result;
+                }
+                f_result = t;
+                _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
             if (PyLong_Check(item)) {
@@ -2524,6 +2582,9 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     Py_DECREF(item);
                     continue;
                 }
+            }
+            if (c && Py_IS_FINITE(c)) {
+                f_result += c;
             }
             result = PyFloat_FromDouble(f_result);
             if (result == NULL) {
@@ -2548,8 +2609,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         if (item == NULL) {
             /* error, or end-of-sequence */
             if (PyErr_Occurred()) {
-                Py_DECREF(result);
-                result = NULL;
+                Py_SETREF(result, NULL);
             }
             break;
         }
@@ -2690,8 +2750,7 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     for (i=0 ; i < tuplesize ; i++) {
-        Py_INCREF(Py_None);
-        PyTuple_SET_ITEM(result, i, Py_None);
+        PyTuple_SET_ITEM(result, i, Py_NewRef(Py_None));
     }
 
     /* create zipobject structure */
@@ -2840,8 +2899,8 @@ zip_setstate(zipobject *lz, PyObject *state)
 }
 
 static PyMethodDef zip_methods[] = {
-    {"__reduce__",   (PyCFunction)zip_reduce,   METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)zip_setstate, METH_O,      setstate_doc},
+    {"__reduce__", _PyCFunction_CAST(zip_reduce), METH_NOARGS, reduce_doc},
+    {"__setstate__", _PyCFunction_CAST(zip_setstate), METH_O, setstate_doc},
     {NULL}  /* sentinel */
 };
 
@@ -2905,7 +2964,7 @@ PyTypeObject PyZip_Type = {
 
 
 static PyMethodDef builtin_methods[] = {
-    {"__build_class__", (PyCFunction)(void(*)(void))builtin___build_class__,
+    {"__build_class__", _PyCFunction_CAST(builtin___build_class__),
      METH_FASTCALL | METH_KEYWORDS, build_class_doc},
     BUILTIN___IMPORT___METHODDEF
     BUILTIN_ABS_METHODDEF
@@ -2913,17 +2972,17 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
-    {"breakpoint",      (PyCFunction)(void(*)(void))builtin_breakpoint, METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
+    {"breakpoint", _PyCFunction_CAST(builtin_breakpoint), METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
     BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
     BUILTIN_DELATTR_METHODDEF
-    {"dir",             builtin_dir,        METH_VARARGS, dir_doc},
+    BUILTIN_DIR_METHODDEF
     BUILTIN_DIVMOD_METHODDEF
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
     BUILTIN_FORMAT_METHODDEF
-    {"getattr",         (PyCFunction)(void(*)(void))builtin_getattr, METH_FASTCALL, getattr_doc},
+    BUILTIN_GETATTR_METHODDEF
     BUILTIN_GLOBALS_METHODDEF
     BUILTIN_HASATTR_METHODDEF
     BUILTIN_HASH_METHODDEF
@@ -2932,13 +2991,13 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_INPUT_METHODDEF
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
-    {"iter",            (PyCFunction)(void(*)(void))builtin_iter,       METH_FASTCALL, iter_doc},
+    BUILTIN_ITER_METHODDEF
     BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
-    {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
-    {"min",             (PyCFunction)(void(*)(void))builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
-    {"next",            (PyCFunction)(void(*)(void))builtin_next,       METH_FASTCALL, next_doc},
+    {"max", _PyCFunction_CAST(builtin_max), METH_VARARGS | METH_KEYWORDS, max_doc},
+    {"min", _PyCFunction_CAST(builtin_min), METH_VARARGS | METH_KEYWORDS, min_doc},
+    BUILTIN_NEXT_METHODDEF
     BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
@@ -2949,7 +3008,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_SETATTR_METHODDEF
     BUILTIN_SORTED_METHODDEF
     BUILTIN_SUM_METHODDEF
-    {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
+    BUILTIN_VARS_METHODDEF
     {NULL,              NULL},
 };
 

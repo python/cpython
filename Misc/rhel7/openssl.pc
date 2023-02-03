@@ -1,0 +1,3 @@
+Name: OpenSSL
+Version: 1.1.1k
+Requires: libssl11 libcrypto11

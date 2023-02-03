@@ -9,7 +9,7 @@ import unittest
 import pyexpat
 import xml.dom.minidom
 
-from xml.dom.minidom import parse, Node, Document, parseString
+from xml.dom.minidom import parse, Attr, Node, Document, parseString
 from xml.dom.minidom import getDOMImplementation
 from xml.parsers.expat import ExpatError
 
@@ -76,6 +76,20 @@ class MinidomTest(unittest.TestCase):
             dom = parse(file)
             dom.unlink()
             self.confirm(isinstance(dom, Document))
+
+    def testAttrModeSetsParamsAsAttrs(self):
+        attr = Attr("qName", "namespaceURI", "localName", "prefix")
+        self.assertEqual(attr.name, "qName")
+        self.assertEqual(attr.namespaceURI, "namespaceURI")
+        self.assertEqual(attr.prefix, "prefix")
+        self.assertEqual(attr.localName, "localName")
+
+    def testAttrModeSetsNonOptionalAttrs(self):
+        attr = Attr("qName", "namespaceURI", None, "prefix")
+        self.assertEqual(attr.name, "qName")
+        self.assertEqual(attr.namespaceURI, "namespaceURI")
+        self.assertEqual(attr.prefix, "prefix")
+        self.assertEqual(attr.localName, attr.name)
 
     def testGetElementsByTagName(self):
         dom = parse(tstfile)
@@ -1149,14 +1163,10 @@ class MinidomTest(unittest.TestCase):
 
         # Verify that character decoding errors raise exceptions instead
         # of crashing
-        if pyexpat.version_info >= (2, 4, 5):
-            self.assertRaises(ExpatError, parseString,
-                    b'<fran\xe7ais></fran\xe7ais>')
-            self.assertRaises(ExpatError, parseString,
-                    b'<franais>Comment \xe7a va ? Tr\xe8s bien ?</franais>')
-        else:
-            self.assertRaises(UnicodeDecodeError, parseString,
-                b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>')
+        with self.assertRaises((UnicodeDecodeError, ExpatError)):
+            parseString(
+                b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>'
+            )
 
         doc.unlink()
 
@@ -1617,13 +1627,11 @@ class MinidomTest(unittest.TestCase):
         self.confirm(doc2.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
     def testExceptionOnSpacesInXMLNSValue(self):
-        if pyexpat.version_info >= (2, 4, 5):
-            context = self.assertRaisesRegex(ExpatError, 'syntax error')
-        else:
-            context = self.assertRaisesRegex(ValueError, 'Unsupported syntax')
-
-        with context:
-            parseString('<element xmlns:abc="http:abc.com/de f g/hi/j k"><abc:foo /></element>')
+        with self.assertRaises((ValueError, ExpatError)):
+            parseString(
+                '<element xmlns:abc="http:abc.com/de f g/hi/j k">' +
+                '<abc:foo /></element>'
+            )
 
     def testDocRemoveChild(self):
         doc = parse(tstfile)

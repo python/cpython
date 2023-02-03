@@ -1,14 +1,15 @@
 import socket
 import selectors
-import telnetlib
 import threading
 import contextlib
 
 from test import support
-from test.support import socket_helper
+from test.support import socket_helper, warnings_helper
 import unittest
 
 support.requires_working_socket(module=True)
+
+telnetlib = warnings_helper.import_deprecated('telnetlib')
 
 HOST = socket_helper.HOST
 
