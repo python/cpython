@@ -5,14 +5,51 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>
 
+typedef struct {
+    PyTypeObject *deque_type;
+    PyTypeObject *defdict_type;
+    PyTypeObject *dequeiter_type;
+    PyTypeObject *dequereviter_type;
+    PyTypeObject *tuplegetter_type;
+} collections_state;
+
+static inline collections_state *
+get_module_state(PyObject *mod)
+{
+    void *state = _PyModule_GetState(mod);
+    assert(state != NULL);
+    return (collections_state *)state;
+}
+
+static inline collections_state *
+get_module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (collections_state *)state;
+}
+
+static struct PyModuleDef _collectionsmodule;
+
+static inline collections_state *
+find_module_state_by_def(PyTypeObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef(type, &_collectionsmodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
 /*[clinic input]
 module _collections
-class _tuplegetter "_tuplegetterobject *" "&tuplegetter_type"
+class _tuplegetter "_tuplegetterobject *" "clinic_state()->tuplegetter_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a8ece4ccad7e30ac]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7356042a89862e0e]*/
 
-static PyTypeObject tuplegetter_type;
+/* We can safely assume type to be the defining class,
+ * since tuplegetter is not a base type */
+#define clinic_state() (get_module_state_by_cls(type))
 #include "clinic/_collectionsmodule.c.h"
+#undef clinic_state
 
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
@@ -75,36 +112,6 @@ static PyTypeObject tuplegetter_type;
  *
  * Checking for d.len == 0 is the intended way to see whether d is empty.
  */
-
-typedef struct {
-    PyTypeObject *deque_type;
-} collections_state;
-
-static inline collections_state *
-get_module_state(PyObject *mod)
-{
-    void *state = _PyModule_GetState(mod);
-    assert(state != NULL);
-    return (collections_state *)state;
-}
-
-static inline collections_state *
-get_module_state_by_cls(PyTypeObject *cls)
-{
-    void *state = PyType_GetModuleState(cls);
-    assert(state != NULL);
-    return (collections_state *)state;
-}
-
-static struct PyModuleDef _collectionsmodule;
-
-static inline collections_state *
-find_module_state_by_type(PyTypeObject *type)
-{
-    PyObject *mod = PyType_GetModuleByDef(type, &_collectionsmodule);
-    assert(mod != NULL);
-    return get_module_state(mod);
-}
 
 typedef struct BLOCK {
     struct BLOCK *leftlink;
@@ -513,7 +520,7 @@ deque_copy(PyObject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result;
     dequeobject *old_deque = (dequeobject *)deque;
-    collections_state *state = find_module_state_by_type(Py_TYPE(deque));
+    collections_state *state = find_module_state_by_def(Py_TYPE(deque));
     if (Py_IS_TYPE(deque, state->deque_type)) {
         dequeobject *new_deque;
         PyObject *rv;
@@ -560,7 +567,7 @@ deque_concat(dequeobject *deque, PyObject *other)
     PyObject *new_deque, *result;
     int rv;
 
-    collections_state *state = find_module_state_by_type(Py_TYPE(deque));
+    collections_state *state = find_module_state_by_def(Py_TYPE(deque));
     rv = PyObject_IsInstance(other, (PyObject *)state->deque_type);
     if (rv <= 0) {
         if (rv == 0) {
@@ -1429,7 +1436,7 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
     Py_ssize_t vs, ws;
     int b, cmp=-1;
 
-    collections_state *state = find_module_state_by_type(Py_TYPE(v));
+    collections_state *state = find_module_state_by_def(Py_TYPE(v));
     if (!PyObject_TypeCheck(v, state->deque_type) ||
         !PyObject_TypeCheck(w, state->deque_type)) {
         Py_RETURN_NOTIMPLEMENTED;
@@ -1662,7 +1669,7 @@ static PyType_Slot deque_slots[] = {
 };
 
 static PyType_Spec deque_spec = {
-    .name = "collections.deque",
+    .name = "_collections.deque",
     .basicsize = sizeof(dequeobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_SEQUENCE |
@@ -1681,14 +1688,13 @@ typedef struct {
     Py_ssize_t counter;    /* number of items remaining for iteration */
 } dequeiterobject;
 
-static PyTypeObject dequeiter_type;
-
 static PyObject *
 deque_iter(dequeobject *deque)
 {
     dequeiterobject *it;
 
-    it = PyObject_GC_New(dequeiterobject, &dequeiter_type);
+    collections_state *state = find_module_state_by_def(Py_TYPE(deque));
+    it = PyObject_GC_New(dequeiterobject, state->dequeiter_type);
     if (it == NULL)
         return NULL;
     it->b = deque->leftblock;
@@ -1703,7 +1709,15 @@ deque_iter(dequeobject *deque)
 static int
 dequeiter_traverse(dequeiterobject *dio, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(dio));
     Py_VISIT(dio->deque);
+    return 0;
+}
+
+static int
+dequeiter_clear(dequeiterobject *dio)
+{
+    Py_CLEAR(dio->deque);
     return 0;
 }
 
@@ -1711,9 +1725,11 @@ static void
 dequeiter_dealloc(dequeiterobject *dio)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyTypeObject *tp = Py_TYPE(dio);
     PyObject_GC_UnTrack(dio);
-    Py_XDECREF(dio->deque);
+    tp->tp_clear((PyObject *)dio);
     PyObject_GC_Del(dio);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1749,10 +1765,10 @@ dequeiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i, index=0;
     PyObject *deque;
     dequeiterobject *it;
-    collections_state *state = find_module_state_by_type(Py_TYPE(type));
+    collections_state *state = get_module_state_by_cls(type);
     if (!PyArg_ParseTuple(args, "O!|n", state->deque_type, &deque, &index))
         return NULL;
-    assert(type == &dequeiter_type);
+    assert(type == state->dequeiter_type);
 
     it = (dequeiterobject*)deque_iter((dequeobject *)deque);
     if (!it)
@@ -1793,59 +1809,35 @@ static PyMethodDef dequeiter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyTypeObject dequeiter_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_collections._deque_iterator",             /* tp_name */
-    sizeof(dequeiterobject),                    /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)dequeiter_dealloc,              /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    (traverseproc)dequeiter_traverse,           /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)dequeiter_next,               /* tp_iternext */
-    dequeiter_methods,                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    dequeiter_new,                              /* tp_new */
-    0,
+static PyType_Slot dequeiter_slots[] = {
+    {Py_tp_dealloc, dequeiter_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, dequeiter_traverse},
+    {Py_tp_clear, dequeiter_clear},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, dequeiter_next},
+    {Py_tp_methods, dequeiter_methods},
+    {Py_tp_new, dequeiter_new},
+    {0, NULL},
+};
+
+static PyType_Spec dequeiter_spec = {
+    .name = "_collections._deque_iterator",
+    .basicsize = sizeof(dequeiterobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = dequeiter_slots,
 };
 
 /*********************** Deque Reverse Iterator **************************/
-
-static PyTypeObject dequereviter_type;
 
 static PyObject *
 deque_reviter(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     dequeiterobject *it;
+    collections_state *state = find_module_state_by_def(Py_TYPE(deque));
 
-    it = PyObject_GC_New(dequeiterobject, &dequereviter_type);
+    it = PyObject_GC_New(dequeiterobject, state->dequereviter_type);
     if (it == NULL)
         return NULL;
     it->b = deque->rightblock;
@@ -1890,10 +1882,10 @@ dequereviter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i, index=0;
     PyObject *deque;
     dequeiterobject *it;
-    collections_state *state = find_module_state_by_type(Py_TYPE(type));
+    collections_state *state = get_module_state_by_cls(type);
     if (!PyArg_ParseTuple(args, "O!|n", state->deque_type, &deque, &index))
         return NULL;
-    assert(type == &dequereviter_type);
+    assert(type == state->dequereviter_type);
 
     it = (dequeiterobject*)deque_reviter((dequeobject *)deque, NULL);
     if (!it)
@@ -1914,47 +1906,24 @@ dequereviter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject*)it;
 }
 
-static PyTypeObject dequereviter_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_collections._deque_reverse_iterator",     /* tp_name */
-    sizeof(dequeiterobject),                    /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)dequeiter_dealloc,              /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    (traverseproc)dequeiter_traverse,           /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)dequereviter_next,            /* tp_iternext */
-    dequeiter_methods,                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    dequereviter_new,                           /* tp_new */
-    0,
+static PyType_Slot dequereviter_slots[] = {
+    {Py_tp_dealloc, dequeiter_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, dequeiter_traverse},
+    {Py_tp_clear, dequeiter_clear},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, dequereviter_next},
+    {Py_tp_methods, dequeiter_methods},
+    {Py_tp_new, dequereviter_new},
+    {0, NULL},
+};
+
+static PyType_Spec dequereviter_spec = {
+    .name = "_collections._deque_reverse_iterator",
+    .basicsize = sizeof(dequeiterobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = dequereviter_slots,
 };
 
 /* defaultdict type *********************************************************/
@@ -1963,8 +1932,6 @@ typedef struct {
     PyDictObject dict;
     PyObject *default_factory;
 } defdictobject;
-
-static PyTypeObject defdict_type; /* Forward */
 
 PyDoc_STRVAR(defdict_missing_doc,
 "__missing__(key) # Called by __getitem__ for missing key; pseudo-code:\n\
@@ -2096,9 +2063,11 @@ static void
 defdict_dealloc(defdictobject *dd)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyTypeObject *tp = Py_TYPE(dd);
     PyObject_GC_UnTrack(dd);
-    Py_CLEAR(dd->default_factory);
+    tp->tp_clear((PyObject *)dd);
     PyDict_Type.tp_dealloc((PyObject *)dd);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -2142,7 +2111,8 @@ static PyObject*
 defdict_or(PyObject* left, PyObject* right)
 {
     PyObject *self, *other;
-    if (PyObject_TypeCheck(left, &defdict_type)) {
+    collections_state *state = find_module_state_by_def(Py_TYPE(left));
+    if (PyObject_TypeCheck(left, state->defdict_type)) {
         self = left;
         other = right;
     }
@@ -2166,13 +2136,10 @@ defdict_or(PyObject* left, PyObject* right)
     return new;
 }
 
-static PyNumberMethods defdict_as_number = {
-    .nb_or = defdict_or,
-};
-
 static int
 defdict_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(((defdictobject *)self)->default_factory);
     return PyDict_Type.tp_traverse(self, visit, arg);
 }
@@ -2228,48 +2195,28 @@ passed to the dict constructor, including keyword arguments.\n\
 /* See comment in xxsubtype.c */
 #define DEFERRED_ADDRESS(ADDR) 0
 
-static PyTypeObject defdict_type = {
-    PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
-    "collections.defaultdict",          /* tp_name */
-    sizeof(defdictobject),              /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)defdict_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    (reprfunc)defdict_repr,             /* tp_repr */
-    &defdict_as_number,                 /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-                                    /* tp_flags */
-    defdict_doc,                        /* tp_doc */
-    defdict_traverse,                   /* tp_traverse */
-    (inquiry)defdict_tp_clear,          /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset*/
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    defdict_methods,                    /* tp_methods */
-    defdict_members,                    /* tp_members */
-    0,                                  /* tp_getset */
-    DEFERRED_ADDRESS(&PyDict_Type),     /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    defdict_init,                       /* tp_init */
-    PyType_GenericAlloc,                /* tp_alloc */
-    0,                                  /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot defdict_slots[] = {
+    {Py_tp_dealloc, defdict_dealloc},
+    {Py_tp_repr, defdict_repr},
+    {Py_nb_or, defdict_or},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)defdict_doc},
+    {Py_tp_traverse, defdict_traverse},
+    {Py_tp_clear, defdict_tp_clear},
+    {Py_tp_methods, defdict_methods},
+    {Py_tp_members, defdict_members},
+    {Py_tp_init, defdict_init},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec defdict_spec = {
+    .name = "_collections.defaultdict",
+    .basicsize = sizeof(defdictobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = defdict_slots,
 };
 
 /* helper function for Counter  *********************************************/
@@ -2467,6 +2414,7 @@ static int
 tuplegetter_traverse(PyObject *self, visitproc visit, void *arg)
 {
     _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
+    Py_VISIT(Py_TYPE(tuplegetter));
     Py_VISIT(tuplegetter->doc);
     return 0;
 }
@@ -2482,9 +2430,11 @@ tuplegetter_clear(PyObject *self)
 static void
 tuplegetter_dealloc(_tuplegetterobject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     tuplegetter_clear((PyObject*)self);
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    tp->tp_free((PyObject*)self);
+    Py_DECREF(tp);
 }
 
 static PyObject*
@@ -2512,47 +2462,25 @@ static PyMethodDef tuplegetter_methods[] = {
     {NULL},
 };
 
-static PyTypeObject tuplegetter_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_collections._tuplegetter",                /* tp_name */
-    sizeof(_tuplegetterobject),                 /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)tuplegetter_dealloc,            /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)tuplegetter_repr,                 /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    (traverseproc)tuplegetter_traverse,         /* tp_traverse */
-    (inquiry)tuplegetter_clear,                 /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    tuplegetter_methods,                        /* tp_methods */
-    tuplegetter_members,                        /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    tuplegetter_descr_get,                      /* tp_descr_get */
-    tuplegetter_descr_set,                      /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    tuplegetter_new,                            /* tp_new */
-    0,
+static PyType_Slot tuplegetter_slots[] = {
+    {Py_tp_dealloc, tuplegetter_dealloc},
+    {Py_tp_repr, tuplegetter_repr},
+    {Py_tp_traverse, tuplegetter_traverse},
+    {Py_tp_clear, tuplegetter_clear},
+    {Py_tp_methods, tuplegetter_methods},
+    {Py_tp_members, tuplegetter_members},
+    {Py_tp_descr_get, tuplegetter_descr_get},
+    {Py_tp_descr_set, tuplegetter_descr_set},
+    {Py_tp_new, tuplegetter_new},
+    {0, NULL},
+};
+
+static PyType_Spec tuplegetter_spec = {
+    .name = "_collections._tuplegetter",
+    .basicsize = sizeof(_tuplegetterobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = tuplegetter_slots,
 };
 
 
@@ -2563,6 +2491,10 @@ collections_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     collections_state *state = get_module_state(mod);
     Py_VISIT(state->deque_type);
+    Py_VISIT(state->defdict_type);
+    Py_VISIT(state->dequeiter_type);
+    Py_VISIT(state->dequereviter_type);
+    Py_VISIT(state->tuplegetter_type);
     return 0;
 }
 
@@ -2571,6 +2503,10 @@ collections_clear(PyObject *mod)
 {
     collections_state *state = get_module_state(mod);
     Py_CLEAR(state->deque_type);
+    Py_CLEAR(state->defdict_type);
+    Py_CLEAR(state->dequeiter_type);
+    Py_CLEAR(state->dequereviter_type);
+    Py_CLEAR(state->tuplegetter_type);
     return 0;
 }
 
@@ -2591,9 +2527,10 @@ static struct PyMethodDef collections_methods[] = {
     {NULL,       NULL}          /* sentinel */
 };
 
-#define ADD_TYPE(mod, spec, type)                                           \
+#define ADD_TYPE(mod, spec, type, base)                                     \
     do {                                                                    \
-        type = (PyTypeObject *)PyType_FromModuleAndSpec(mod, spec, NULL);   \
+        type = (PyTypeObject *)PyType_FromModuleAndSpec(mod, spec,          \
+                                                        (PyObject *)base);  \
         if (type == NULL) {                                                 \
             return -1;                                                      \
         }                                                                   \
@@ -2606,22 +2543,14 @@ static struct PyMethodDef collections_methods[] = {
 static int
 collections_exec(PyObject *module) {
     collections_state *state = get_module_state(module);
-    ADD_TYPE(module, &deque_spec, state->deque_type);
+    ADD_TYPE(module, &deque_spec, state->deque_type, NULL);
+    ADD_TYPE(module, &defdict_spec, state->defdict_type, &PyDict_Type);
+    ADD_TYPE(module, &dequeiter_spec, state->dequeiter_type, NULL);
+    ADD_TYPE(module, &dequereviter_spec, state->dequereviter_type, NULL);
+    ADD_TYPE(module, &tuplegetter_spec, state->tuplegetter_type, NULL);
 
-    PyTypeObject *typelist[] = {
-        &defdict_type,
-        &PyODict_Type,
-        &dequeiter_type,
-        &dequereviter_type,
-        &tuplegetter_type
-    };
-
-    defdict_type.tp_base = &PyDict_Type;
-
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
-        if (PyModule_AddType(module, typelist[i]) < 0) {
-            return -1;
-        }
+    if (PyModule_AddType(module, &PyODict_Type) < 0) {
+        return -1;
     }
 
     return 0;
