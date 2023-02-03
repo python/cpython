@@ -767,16 +767,7 @@ _PyFreeList_FreeToFull(_PyFreeList *list, void *ptr)
     if (list->ptr == NULL) {
         return;
     }
-    int space = 0;
-    void *head = list->ptr;
-    while (head) {
-        void *next = *((void**)head);
-        PyObject_Free(head);
-        head = next;
-        space++;
-    }
-    list->ptr = ptr;
-    list->space = space;
+    _PyFreeList_Clear(list);
 }
 #endif  /* WITH_FREELISTS */
 
