@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# IMPORTANT: this file has the utf-8 BOM signature '\xef\xbb\xbf' 
+# IMPORTANT: this file has the utf-8 BOM signature '\xef\xbb\xbf'
 # at the start of it.  Make sure this is preserved if any changes
 # are made!
 

@@ -1,0 +1,35 @@
+name: TestsMSI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - 'main'
+    - '3.*'
+    paths:
+    - 'Tools/msi/**'
+  pull_request:
+    branches:
+    - 'main'
+    - '3.*'
+    paths:
+    - 'Tools/msi/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Windows Installer
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        type: [x86, x64, arm64]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build CPython installer
+      run: .\Tools\msi\build.bat -${{ matrix.type }}

@@ -6,6 +6,12 @@
 
 **Source code:** :source:`Lib/dis.py`
 
+.. testsetup::
+
+   import dis
+   def myfunc(alist):
+       return len(alist)
+
 --------------
 
 The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
@@ -24,6 +30,18 @@ interpreter.
       Use 2 bytes for each instruction. Previously the number of bytes varied
       by instruction.
 
+   .. versionchanged:: 3.10
+      The argument of jump, exception handling and loop instructions is now
+      the instruction offset rather than the byte offset.
+
+   .. versionchanged:: 3.11
+      Some instructions are accompanied by one or more inline cache entries,
+      which take the form of :opcode:`CACHE` instructions. These instructions
+      are hidden by default, but can be shown by passing ``show_caches=True`` to
+      any :mod:`dis` utility. Furthermore, the interpreter now adapts the
+      bytecode to specialize it for different runtime conditions. The
+      adaptive bytecode can be shown by passing ``adaptive=True``.
+
 
 Example: Given the function :func:`myfunc`::
 
@@ -31,13 +49,17 @@ Example: Given the function :func:`myfunc`::
        return len(alist)
 
 the following command can be used to display the disassembly of
-:func:`myfunc`::
+:func:`myfunc`:
+
+.. doctest::
 
    >>> dis.dis(myfunc)
-     2           0 LOAD_GLOBAL              0 (len)
-                 2 LOAD_FAST                0 (alist)
-                 4 CALL_FUNCTION            1
-                 6 RETURN_VALUE
+     2           0 RESUME                   0
+   <BLANKLINE>
+     3           2 LOAD_GLOBAL              1 (NULL + len)
+                14 LOAD_FAST                0 (alist)
+                16 CALL                     1
+                26 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -50,11 +72,12 @@ The bytecode analysis API allows pieces of Python code to be wrapped in a
 :class:`Bytecode` object that provides easy access to details of the compiled
 code.
 
-.. class:: Bytecode(x, *, first_line=None, current_offset=None)
+.. class:: Bytecode(x, *, first_line=None, current_offset=None,\
+                    show_caches=False, adaptive=False)
 
-
-   Analyse the bytecode corresponding to a function, generator, method, string
-   of source code, or a code object (as returned by :func:`compile`).
+   Analyse the bytecode corresponding to a function, generator, asynchronous
+   generator, coroutine, method, string of source code, or a code object (as
+   returned by :func:`compile`).
 
    This is a convenience wrapper around many of the functions listed below, most
    notably :func:`get_instructions`, as iterating over a :class:`Bytecode`
@@ -69,7 +92,13 @@ code.
    disassembled code. Setting this means :meth:`.dis` will display a "current
    instruction" marker against the specified opcode.
 
-   .. classmethod:: from_traceback(tb)
+   If *show_caches* is ``True``, :meth:`.dis` will display inline cache
+   entries used by the interpreter to specialize the bytecode.
+
+   If *adaptive* is ``True``, :meth:`.dis` will display specialized bytecode
+   that may be different from the original bytecode.
+
+   .. classmethod:: from_traceback(tb, *, show_caches=False)
 
       Construct a :class:`Bytecode` instance from the given traceback, setting
       *current_offset* to the instruction responsible for the exception.
@@ -92,15 +121,24 @@ code.
       Return a formatted multi-line string with detailed information about the
       code object, like :func:`code_info`.
 
-Example::
+   .. versionchanged:: 3.7
+      This can now handle coroutine and asynchronous generator objects.
+
+   .. versionchanged:: 3.11
+      Added the *show_caches* and *adaptive* parameters.
+
+Example:
+
+.. doctest::
 
     >>> bytecode = dis.Bytecode(myfunc)
     >>> for instr in bytecode:
     ...     print(instr.opname)
     ...
+    RESUME
     LOAD_GLOBAL
     LOAD_FAST
-    CALL_FUNCTION
+    CALL
     RETURN_VALUE
 
 
@@ -114,13 +152,17 @@ operation is being performed, so the intermediate analysis object isn't useful:
 .. function:: code_info(x)
 
    Return a formatted multi-line string with detailed code object information
-   for the supplied function, generator, method, source code string or code object.
+   for the supplied function, generator, asynchronous generator, coroutine,
+   method, source code string or code object.
 
    Note that the exact contents of code info strings are highly implementation
    dependent and they may change arbitrarily across Python VMs or Python
    releases.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.7
+      This can now handle coroutine and asynchronous generator objects.
 
 
 .. function:: show_code(x, *, file=None)
@@ -138,15 +180,16 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None, depth=None)
+.. function:: dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
-   method, a function, a generator, a code object, a string of source code or
-   a byte sequence of raw bytecode.  For a module, it disassembles all functions.
-   For a class, it disassembles all methods (including class and static methods).
-   For a code object or sequence of raw bytecode, it prints one line per bytecode
-   instruction.  It also recursively disassembles nested code objects (the code
-   of comprehensions, generator expressions and nested functions, and the code
+   method, a function, a generator, an asynchronous generator, a coroutine,
+   a code object, a string of source code or a byte sequence of raw bytecode.
+   For a module, it disassembles all functions. For a class, it disassembles
+   all methods (including class and static methods). For a code object or
+   sequence of raw bytecode, it prints one line per bytecode instruction.
+   It also recursively disassembles nested code objects (the code of
+   comprehensions, generator expressions and nested functions, and the code
    used for building nested classes).
    Strings are first compiled to code objects with the :func:`compile`
    built-in function before being disassembled.  If no object is provided, this
@@ -158,14 +201,26 @@ operation is being performed, so the intermediate analysis object isn't useful:
    The maximal depth of recursion is limited by *depth* unless it is ``None``.
    ``depth=0`` means no recursion.
 
+   If *show_caches* is ``True``, this function will display inline cache
+   entries used by the interpreter to specialize the bytecode.
+
+   If *adaptive* is ``True``, this function will display specialized bytecode
+   that may be different from the original bytecode.
+
    .. versionchanged:: 3.4
       Added *file* parameter.
 
    .. versionchanged:: 3.7
       Implemented recursive disassembling and added *depth* parameter.
 
+   .. versionchanged:: 3.7
+      This can now handle coroutine and asynchronous generator objects.
 
-.. function:: distb(tb=None, *, file=None)
+   .. versionchanged:: 3.11
+      Added the *show_caches* and *adaptive* parameters.
+
+
+.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False)
 
    Disassemble the top-of-stack function of a traceback, using the last
    traceback if none was passed.  The instruction causing the exception is
@@ -177,9 +232,12 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.4
       Added *file* parameter.
 
+   .. versionchanged:: 3.11
+      Added the *show_caches* and *adaptive* parameters.
 
-.. function:: disassemble(code, lasti=-1, *, file=None)
-              disco(code, lasti=-1, *, file=None)
+
+.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
+              disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
@@ -201,8 +259,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.4
       Added *file* parameter.
 
+   .. versionchanged:: 3.11
+      Added the *show_caches* and *adaptive* parameters.
 
-.. function:: get_instructions(x, *, first_line=None)
+
+.. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False)
 
    Return an iterator over the instructions in the supplied function, method,
    source code string or code object.
@@ -215,32 +276,48 @@ operation is being performed, so the intermediate analysis object isn't useful:
    source line information (if any) is taken directly from the disassembled code
    object.
 
+   The *show_caches* and *adaptive* parameters work as they do in :func:`dis`.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.11
+      Added the *show_caches* and *adaptive* parameters.
 
 
 .. function:: findlinestarts(code)
 
-   This generator function uses the ``co_firstlineno`` and ``co_lnotab``
-   attributes of the code object *code* to find the offsets which are starts of
+   This generator function uses the ``co_lines`` method
+   of the code object *code* to find the offsets which are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
-   See :source:`Objects/lnotab_notes.txt` for the ``co_lnotab`` format and
-   how to decode it.
 
    .. versionchanged:: 3.6
       Line numbers can be decreasing. Before, they were always increasing.
 
+   .. versionchanged:: 3.10
+      The :pep:`626` ``co_lines`` method is used instead of the ``co_firstlineno``
+      and ``co_lnotab`` attributes of the code object.
+
 
 .. function:: findlabels(code)
 
-   Detect all offsets in the code object *code* which are jump targets, and
+   Detect all offsets in the raw compiled bytecode string *code* which are jump targets, and
    return a list of these offsets.
 
 
-.. function:: stack_effect(opcode, [oparg])
+.. function:: stack_effect(opcode, oparg=None, *, jump=None)
 
    Compute the stack effect of *opcode* with argument *oparg*.
 
+   If the code has a jump target and *jump* is ``True``, :func:`~stack_effect`
+   will return the stack effect of jumping.  If *jump* is ``False``,
+   it will return the stack effect of not jumping. And if *jump* is
+   ``None`` (default), it will return the maximal stack effect of both cases.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.8
+      Added *jump* parameter.
+
 
 .. _bytecodes:
 
@@ -272,12 +349,13 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: argval
 
-      resolved arg value (if known), otherwise same as arg
+      resolved arg value (if any), otherwise ``None``
 
 
    .. data:: argrepr
 
-      human readable description of operation argument
+      human readable description of operation argument (if any),
+      otherwise an empty string.
 
 
    .. data:: offset
@@ -294,7 +372,29 @@ details of bytecode instructions as :class:`Instruction` instances:
 
       ``True`` if other code jumps to here, otherwise ``False``
 
+
+   .. data:: positions
+
+      :class:`dis.Positions` object holding the
+      start and end locations that are covered by this instruction.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.11
+
+      Field ``positions`` is added.
+
+
+.. class:: Positions
+
+   In case the information is not available, some fields might be ``None``.
+
+   .. data:: lineno
+   .. data:: end_lineno
+   .. data:: col_offset
+   .. data:: end_col_offset
+
+   .. versionadded:: 3.11
 
 
 The Python compiler currently generates the following bytecode instructions.
@@ -302,36 +402,68 @@ The Python compiler currently generates the following bytecode instructions.
 
 **General instructions**
 
+In the following, We will refer to the interpreter stack as STACK and describe
+operations on it as if it was a Python list. The top of the stack corresponds to
+``STACK[-1]`` in this language.
+
 .. opcode:: NOP
 
-   Do nothing code.  Used as a placeholder by the bytecode optimizer.
+   Do nothing code.  Used as a placeholder by the bytecode optimizer, and to
+   generate line tracing events.
 
 
 .. opcode:: POP_TOP
 
-   Removes the top-of-stack (TOS) item.
+   Removes the top-of-stack item.::
+
+      STACK.pop()
 
 
-.. opcode:: ROT_TWO
+.. opcode:: END_FOR
 
-   Swaps the two top-most stack items.
+   Removes the top two values from the stack.
+   Equivalent to POP_TOP; POP_TOP.
+   Used to clean up at the end of loops, hence the name.
 
-
-.. opcode:: ROT_THREE
-
-   Lifts second and third stack item one position up, moves top down to position
-   three.
+   .. versionadded:: 3.12
 
 
-.. opcode:: DUP_TOP
+.. opcode:: COPY (i)
 
-   Duplicates the reference on top of the stack.
+   Push the i-th item to the top of the stack without removing it from its original
+   location.::
+
+      assert i > 0
+      STACK.append(STACK[-i])
+
+   .. versionadded:: 3.11
 
 
-.. opcode:: DUP_TOP_TWO
+.. opcode:: SWAP (i)
 
-   Duplicates the two references on top of the stack, leaving them in the
-   same order.
+   Swap the top of the stack with the i-th element.::
+
+      STACK[-i], STACK[-1] = stack[-1], STACK[-i]
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: CACHE
+
+   Rather than being an actual instruction, this opcode is used to mark extra
+   space for the interpreter to cache useful data directly in the bytecode
+   itself. It is automatically hidden by all ``dis`` utilities, but can be
+   viewed with ``show_caches=True``.
+
+   Logically, this space is part of the preceding instruction. Many opcodes
+   expect to be followed by an exact number of caches, and will instruct the
+   interpreter to skip over them at runtime.
+
+   Populated caches can look like arbitrary instructions, so great care should
+   be taken when reading or modifying raw, adaptive bytecode containing
+   quickened data.
+
+   .. versionadded:: 3.11
 
 
 **Unary operations**
@@ -339,269 +471,217 @@ The Python compiler currently generates the following bytecode instructions.
 Unary operations take the top of the stack, apply the operation, and push the
 result back on the stack.
 
-.. opcode:: UNARY_POSITIVE
-
-   Implements ``TOS = +TOS``.
-
 
 .. opcode:: UNARY_NEGATIVE
 
-   Implements ``TOS = -TOS``.
+   Implements ``STACK[-1] = -STACK[-1]``.
 
 
 .. opcode:: UNARY_NOT
 
-   Implements ``TOS = not TOS``.
+   Implements ``STACK[-1] = not STACK[-1]``.
 
 
 .. opcode:: UNARY_INVERT
 
-   Implements ``TOS = ~TOS``.
+   Implements ``STACK[-1] = ~STACK[-1]``.
 
 
 .. opcode:: GET_ITER
 
-   Implements ``TOS = iter(TOS)``.
+   Implements ``STACK[-1] = iter(STACK[-1])``.
 
 
 .. opcode:: GET_YIELD_FROM_ITER
 
-   If ``TOS`` is a :term:`generator iterator` or :term:`coroutine` object
-   it is left as is.  Otherwise, implements ``TOS = iter(TOS)``.
+   If ``STACK[-1]`` is a :term:`generator iterator` or :term:`coroutine` object
+   it is left as is.  Otherwise, implements ``STACK[-1] = iter(STACK[-1])``.
 
    .. versionadded:: 3.5
 
 
-**Binary operations**
+**Binary and in-place operations**
 
-Binary operations remove the top of the stack (TOS) and the second top-most
-stack item (TOS1) from the stack.  They perform the operation, and put the
-result back on the stack.
+Binary operations remove the top two items from the stack (``STACK[-1]`` and
+``STACK[-2]``). They perform the operation, then put the result back on the stack.
 
-.. opcode:: BINARY_POWER
-
-   Implements ``TOS = TOS1 ** TOS``.
-
-
-.. opcode:: BINARY_MULTIPLY
-
-   Implements ``TOS = TOS1 * TOS``.
+In-place operations are like binary operations, but the operation is done in-place
+when ``STACK[-2]`` supports it, and the resulting ``STACK[-1]`` may be (but does
+not have to be) the original ``STACK[-2]``.
 
 
-.. opcode:: BINARY_MATRIX_MULTIPLY
+.. opcode:: BINARY_OP (op)
 
-   Implements ``TOS = TOS1 @ TOS``.
+   Implements the binary and in-place operators (depending on the value of
+   *op*).::
 
-   .. versionadded:: 3.5
+      rhs = STACK.pop()
+      lhs = STACK.pop()
+      STACK.append(lhs op rhs)
 
-
-.. opcode:: BINARY_FLOOR_DIVIDE
-
-   Implements ``TOS = TOS1 // TOS``.
-
-
-.. opcode:: BINARY_TRUE_DIVIDE
-
-   Implements ``TOS = TOS1 / TOS``.
-
-
-.. opcode:: BINARY_MODULO
-
-   Implements ``TOS = TOS1 % TOS``.
-
-
-.. opcode:: BINARY_ADD
-
-   Implements ``TOS = TOS1 + TOS``.
-
-
-.. opcode:: BINARY_SUBTRACT
-
-   Implements ``TOS = TOS1 - TOS``.
+   .. versionadded:: 3.11
 
 
 .. opcode:: BINARY_SUBSCR
 
-   Implements ``TOS = TOS1[TOS]``.
+   Implements::
 
-
-.. opcode:: BINARY_LSHIFT
-
-   Implements ``TOS = TOS1 << TOS``.
-
-
-.. opcode:: BINARY_RSHIFT
-
-   Implements ``TOS = TOS1 >> TOS``.
-
-
-.. opcode:: BINARY_AND
-
-   Implements ``TOS = TOS1 & TOS``.
-
-
-.. opcode:: BINARY_XOR
-
-   Implements ``TOS = TOS1 ^ TOS``.
-
-
-.. opcode:: BINARY_OR
-
-   Implements ``TOS = TOS1 | TOS``.
-
-
-**In-place operations**
-
-In-place operations are like binary operations, in that they remove TOS and
-TOS1, and push the result back on the stack, but the operation is done in-place
-when TOS1 supports it, and the resulting TOS may be (but does not have to be)
-the original TOS1.
-
-.. opcode:: INPLACE_POWER
-
-   Implements in-place ``TOS = TOS1 ** TOS``.
-
-
-.. opcode:: INPLACE_MULTIPLY
-
-   Implements in-place ``TOS = TOS1 * TOS``.
-
-
-.. opcode:: INPLACE_MATRIX_MULTIPLY
-
-   Implements in-place ``TOS = TOS1 @ TOS``.
-
-   .. versionadded:: 3.5
-
-
-.. opcode:: INPLACE_FLOOR_DIVIDE
-
-   Implements in-place ``TOS = TOS1 // TOS``.
-
-
-.. opcode:: INPLACE_TRUE_DIVIDE
-
-   Implements in-place ``TOS = TOS1 / TOS``.
-
-
-.. opcode:: INPLACE_MODULO
-
-   Implements in-place ``TOS = TOS1 % TOS``.
-
-
-.. opcode:: INPLACE_ADD
-
-   Implements in-place ``TOS = TOS1 + TOS``.
-
-
-.. opcode:: INPLACE_SUBTRACT
-
-   Implements in-place ``TOS = TOS1 - TOS``.
-
-
-.. opcode:: INPLACE_LSHIFT
-
-   Implements in-place ``TOS = TOS1 << TOS``.
-
-
-.. opcode:: INPLACE_RSHIFT
-
-   Implements in-place ``TOS = TOS1 >> TOS``.
-
-
-.. opcode:: INPLACE_AND
-
-   Implements in-place ``TOS = TOS1 & TOS``.
-
-
-.. opcode:: INPLACE_XOR
-
-   Implements in-place ``TOS = TOS1 ^ TOS``.
-
-
-.. opcode:: INPLACE_OR
-
-   Implements in-place ``TOS = TOS1 | TOS``.
+      key = STACK.pop()
+      container = STACK.pop()
+      STACK.append(container[index])
 
 
 .. opcode:: STORE_SUBSCR
 
-   Implements ``TOS1[TOS] = TOS2``.
+   Implements::
+
+      key = STACK.pop()
+      container = STACK.pop()
+      value = STACK.pop()
+      container[key] = value
 
 
 .. opcode:: DELETE_SUBSCR
 
-   Implements ``del TOS1[TOS]``.
+   Implements::
+
+      key = STACK.pop()
+      container = STACK.pop()
+      del container[key]
+
+.. opcode:: BINARY_SLICE
+
+   Implements::
+
+      end = STACK.pop()
+      start = STACK.pop()
+      container = STACK.pop()
+      STACK.append(container[start:end])
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: STORE_SLICE
+
+   Implements::
+
+      end = STACK.pop()
+      start = STACK.pop()
+      container = STACK.pop()
+      values = STACK.pop()
+      container[start:end] = value
+
+   .. versionadded:: 3.12
 
 
 **Coroutine opcodes**
 
-.. opcode:: GET_AWAITABLE
+.. opcode:: GET_AWAITABLE (where)
 
-   Implements ``TOS = get_awaitable(TOS)``, where ``get_awaitable(o)``
+   Implements ``STACK[-1] = get_awaitable(STACK[-1])``, where ``get_awaitable(o)``
    returns ``o`` if ``o`` is a coroutine object or a generator object with
    the CO_ITERABLE_COROUTINE flag, or resolves
    ``o.__await__``.
 
+    If the ``where`` operand is nonzero, it indicates where the instruction
+    occurs:
+
+    * ``1`` After a call to ``__aenter__``
+    * ``2`` After a call to ``__aexit__``
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.11
+      Previously, this instruction did not have an oparg.
+
 
 .. opcode:: GET_AITER
 
-   Implements ``TOS = get_awaitable(TOS.__aiter__())``.  See ``GET_AWAITABLE``
-   for details about ``get_awaitable``
+   Implements ``STACK[-1] = STACK[-1].__aiter__()``.
+
+   .. versionadded:: 3.5
+   .. versionchanged:: 3.7
+      Returning awaitable objects from ``__aiter__`` is no longer
+      supported.
 
 
 .. opcode:: GET_ANEXT
 
-   Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
-   for details about ``get_awaitable``
+   Implement ``STACK.append(get_awaitable(STACK[-1].__anext__()))`` to the stack.
+   See ``GET_AWAITABLE`` for details about ``get_awaitable``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: END_ASYNC_FOR
+
+   Terminates an :keyword:`async for` loop.  Handles an exception raised
+   when awaiting a next item. The stack contains the async iterable in
+   ``STACK[-2]`` and the raised exception in ``STACK[-1]``. Both are popped.
+   If the exception is not :exc:`StopAsyncIteration`, it is re-raised.
+
+   .. versionadded:: 3.8
+
+    .. versionchanged:: 3.11
+       Exception representation on the stack now consist of one, not three, items.
+
+
+.. opcode:: CLEANUP_THROW
+
+   Handles an exception raised during a :meth:`~generator.throw` or
+   :meth:`~generator.close` call through the current frame.  If ``STACK[-1]`` is an
+   instance of :exc:`StopIteration`, pop three values from the stack and push
+   its ``value`` member.  Otherwise, re-raise ``STACK[-1]``.
+
+   .. versionadded:: 3.12
 
 
 .. opcode:: BEFORE_ASYNC_WITH
 
-   Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
-   stack.  Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack.
+   Resolves ``__aenter__`` and ``__aexit__`` from ``STACK[-1]``.
+   Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack::
 
+      STACK.extend((__aexit__, __aenter__())
 
-.. opcode:: SETUP_ASYNC_WITH
-
-   Creates a new frame object.
+   .. versionadded:: 3.5
 
 
 
 **Miscellaneous opcodes**
 
-.. opcode:: PRINT_EXPR
-
-   Implements the expression statement for the interactive mode.  TOS is removed
-   from the stack and printed.  In non-interactive mode, an expression statement
-   is terminated with :opcode:`POP_TOP`.
-
-
-.. opcode:: BREAK_LOOP
-
-   Terminates a loop due to a :keyword:`break` statement.
-
-
-.. opcode:: CONTINUE_LOOP (target)
-
-   Continues a loop due to a :keyword:`continue` statement.  *target* is the
-   address to jump to (which should be a :opcode:`FOR_ITER` instruction).
-
-
 .. opcode:: SET_ADD (i)
 
-   Calls ``set.add(TOS1[-i], TOS)``.  Used to implement set comprehensions.
+   Implements::
+      item = STACK.pop()
+      set.add(STACK[-i], item)
+
+   Used to implement set comprehensions.
 
 
 .. opcode:: LIST_APPEND (i)
 
-   Calls ``list.append(TOS[-i], TOS)``.  Used to implement list comprehensions.
+   Implements::
+
+      item = STACK.pop()
+      list.append(STACK[-i], item)
+
+   Used to implement list comprehensions.
 
 
 .. opcode:: MAP_ADD (i)
 
-   Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
-   comprehensions.
+   Implements::
+
+      value = STACK.pop()
+      key = STACK.pop()
+      dict.__setitem__(STACK[-i], key, value)
+
+   Used to implement dict comprehensions.
+
+   .. versionadded:: 3.1
+   .. versionchanged:: 3.8
+      Map value is ``STACK[-1]`` and map key is ``STACK[-2]``. Before, those
+      were reversed.
 
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
 instructions, while the added value or key/value pair is popped off, the
@@ -611,19 +691,19 @@ iterations of the loop.
 
 .. opcode:: RETURN_VALUE
 
-   Returns with TOS to the caller of the function.
+   Returns with ``STACK[-1]`` to the caller of the function.
 
 
 .. opcode:: YIELD_VALUE
 
-   Pops TOS and yields it from a :term:`generator`.
+   Yields ``STACK.pop()`` from a :term:`generator`.
 
+    .. versionchanged:: 3.11
+       oparg set to be the stack depth.
 
-.. opcode:: YIELD_FROM
+    .. versionchanged:: 3.12
+       oparg set to be the exception block depth, for efficient closing of generators.
 
-   Pops TOS and delegates to it as a subiterator from a :term:`generator`.
-
-   .. versionadded:: 3.3
 
 .. opcode:: SETUP_ANNOTATIONS
 
@@ -634,85 +714,145 @@ iterations of the loop.
 
    .. versionadded:: 3.6
 
-.. opcode:: IMPORT_STAR
-
-   Loads all symbols not starting with ``'_'`` directly from the module TOS to
-   the local namespace. The module is popped after loading all names. This
-   opcode implements ``from module import *``.
-
-
-.. opcode:: POP_BLOCK
-
-   Removes one block from the block stack.  Per frame, there is a stack of
-   blocks, denoting nested loops, try statements, and such.
-
 
 .. opcode:: POP_EXCEPT
 
-   Removes one block from the block stack. The popped block must be an exception
-   handler block, as implicitly created when entering an except handler.  In
-   addition to popping extraneous values from the frame stack, the last three
-   popped values are used to restore the exception state.
+   Pops a value from the stack, which is used to restore the exception state.
+
+    .. versionchanged:: 3.11
+       Exception representation on the stack now consist of one, not three, items.
+
+.. opcode:: RERAISE
+
+    Re-raises the exception currently on top of the stack. If oparg is non-zero,
+    pops an additional value from the stack which is used to set ``f_lasti``
+    of the current frame.
+
+    .. versionadded:: 3.9
+
+    .. versionchanged:: 3.11
+       Exception representation on the stack now consist of one, not three, items.
+
+.. opcode:: PUSH_EXC_INFO
+
+    Pops a value from the stack. Pushes the current exception to the top of the stack.
+    Pushes the value originally popped back to the stack.
+    Used in exception handlers.
+
+    .. versionadded:: 3.11
+
+.. opcode:: CHECK_EXC_MATCH
+
+   Performs exception matching for ``except``. Tests whether the ``STACK[-2]``
+   is an exception matching ``STACK[-1]``. Pops STACK[-1] and pushes the boolean
+   result of the test.
+
+   .. versionadded:: 3.11
+
+.. opcode:: CHECK_EG_MATCH
+
+   Performs exception matching for ``except*``. Applies ``split(STACK[-1])`` on
+   the exception group representing ``STACK[-2]``.
+
+   In case of a match, pops two items from the stack and pushes the
+   non-matching subgroup (``None`` in case of full match) followed by the
+   matching subgroup. When there is no match, pops one item (the match
+   type) and pushes ``None``.
+
+   .. versionadded:: 3.11
+
+.. opcode:: PREP_RERAISE_STAR
+
+   Combines the raised and reraised exceptions list from ``STACK[-1]``, into an
+   exception group to propagate from a try-except* block. Uses the original exception
+   group from ``STACK[-2]`` to reconstruct the structure of reraised exceptions. Pops
+   two items from the stack and pushes the exception to reraise or ``None``
+   if there isn't one.
+
+   .. versionadded:: 3.11
+
+.. opcode:: WITH_EXCEPT_START
+
+    Calls the function in position 4 on the stack with arguments (type, val, tb)
+    representing the exception at the top of the stack.
+    Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
+    has occurred in a :keyword:`with` statement.
+
+    .. versionadded:: 3.9
+
+    .. versionchanged:: 3.11
+       The ``__exit__`` function is in position 4 of the stack rather than 7.
+       Exception representation on the stack now consist of one, not three, items.
 
 
-.. opcode:: END_FINALLY
+.. opcode:: LOAD_ASSERTION_ERROR
 
-   Terminates a :keyword:`finally` clause.  The interpreter recalls whether the
-   exception has to be re-raised, or whether the function returns, and continues
-   with the outer-next block.
+   Pushes :exc:`AssertionError` onto the stack.  Used by the :keyword:`assert`
+   statement.
+
+   .. versionadded:: 3.9
 
 
 .. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
-   by :opcode:`CALL_FUNCTION` to construct a class.
+   to construct a class.
 
 
-.. opcode:: SETUP_WITH (delta)
+.. opcode:: BEFORE_WITH
 
    This opcode performs several operations before a with block starts.  First,
    it loads :meth:`~object.__exit__` from the context manager and pushes it onto
-   the stack for later use by :opcode:`WITH_CLEANUP`.  Then,
-   :meth:`~object.__enter__` is called, and a finally block pointing to *delta*
-   is pushed.  Finally, the result of calling the enter method is pushed onto
-   the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
-   store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
-   :opcode:`UNPACK_SEQUENCE`).
+   the stack for later use by :opcode:`WITH_EXCEPT_START`.  Then,
+   :meth:`~object.__enter__` is called. Finally, the result of calling the
+   ``__enter__()`` method is pushed onto the stack.
+
+   .. versionadded:: 3.11
 
 
-.. opcode:: WITH_CLEANUP_START
+.. opcode:: GET_LEN
 
-   Cleans up the stack when a :keyword:`with` statement block exits.  TOS is the
-   context manager's :meth:`__exit__` bound method. Below TOS are 1--3 values
-   indicating how/why the finally clause was entered:
+   Perform ``STACK.append(len(STACK[-1]))``.
 
-   * SECOND = ``None``
-   * (SECOND, THIRD) = (``WHY_{RETURN,CONTINUE}``), retval
-   * SECOND = ``WHY_*``; no retval below it
-   * (SECOND, THIRD, FOURTH) = exc_info()
-
-   In the last case, ``TOS(SECOND, THIRD, FOURTH)`` is called, otherwise
-   ``TOS(None, None, None)``.  Pushes SECOND and result of the call
-   to the stack.
+   .. versionadded:: 3.10
 
 
-.. opcode:: WITH_CLEANUP_FINISH
+.. opcode:: MATCH_MAPPING
 
-   Pops exception type and result of 'exit' function call from the stack.
+   If ``STACK[-1]`` is an instance of :class:`collections.abc.Mapping` (or, more
+   technically: if it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
+   :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise,
+   push ``False``.
 
-   If the stack represents an exception, *and* the function call returns a
-   'true' value, this information is "zapped" and replaced with a single
-   ``WHY_SILENCED`` to prevent :opcode:`END_FINALLY` from re-raising the
-   exception.  (But non-local gotos will still be resumed.)
-
-   .. XXX explain the WHY stuff!
+   .. versionadded:: 3.10
 
 
-All of the following opcodes use their arguments.
+.. opcode:: MATCH_SEQUENCE
+
+   If ``STACK[-1]`` is an instance of :class:`collections.abc.Sequence` and is *not* an instance
+   of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
+   the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
+   push ``True`` onto the stack.  Otherwise, push ``False``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_KEYS
+
+   ``STACK[-1]`` is a tuple of mapping keys, and ``STACK[-2]`` is the match subject.
+   If ``STACK[-2]`` contains all of the keys in ``STACK[-1]``, push a :class:`tuple`
+   containing the corresponding values. Otherwise, push ``None``.
+
+   .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      Previously, this instruction also pushed a boolean value indicating
+      success (``True``) or failure (``False``).
+
 
 .. opcode:: STORE_NAME (namei)
 
-   Implements ``name = TOS``. *namei* is the index of *name* in the attribute
+   Implements ``name = STACK.pop()``. *namei* is the index of *name* in the attribute
    :attr:`co_names` of the code object. The compiler tries to use
    :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
@@ -725,31 +865,49 @@ All of the following opcodes use their arguments.
 
 .. opcode:: UNPACK_SEQUENCE (count)
 
-   Unpacks TOS into *count* individual values, which are put onto the stack
-   right-to-left.
+   Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
+   right-to-left.::
+
+      STACK.extend(STACK.pop()[:count:-1])
 
 
 .. opcode:: UNPACK_EX (counts)
 
-   Implements assignment with a starred target: Unpacks an iterable in TOS into
-   individual values, where the total number of values can be smaller than the
+   Implements assignment with a starred target: Unpacks an iterable in ``STACK[-1]``
+   into individual values, where the total number of values can be smaller than the
    number of items in the iterable: one of the new values will be a list of all
    leftover items.
 
-   The low byte of *counts* is the number of values before the list value, the
-   high byte of *counts* the number of values after it.  The resulting values
-   are put onto the stack right-to-left.
+   The number of values before and after the list value is limited to 255.
+
+   The number of values before the list value is encoded in the argument of the
+   opcode. The number of values after the list if any is encoded using an
+   ``EXTENDED_ARG``. As a consequence, the argument can be seen as a two bytes values
+   where the low byte of *counts* is the number of values before the list value, the
+   high byte of *counts* the number of values after it.
+
+   The extracted values are put onto the stack right-to-left, i.e. ``a, *b, c = d``
+   will be stored after execution as ``STACK.extend((a, b, c))``.
 
 
 .. opcode:: STORE_ATTR (namei)
 
-   Implements ``TOS.name = TOS1``, where *namei* is the index of name in
-   :attr:`co_names`.
+   Implements::
 
+      obj = STACK.pop()
+      value = STACK.pop()
+      obj.name = value
+
+   where *namei* is the index of name in :attr:`co_names`.
 
 .. opcode:: DELETE_ATTR (namei)
 
-   Implements ``del TOS.name``, using *namei* as index into :attr:`co_names`.
+   Implements::
+
+      obj = STACK.pop()
+      del obj.name
+
+   where *namei* is the index of name into :attr:`co_names`.
 
 
 .. opcode:: STORE_GLOBAL (namei)
@@ -775,7 +933,11 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_TUPLE (count)
 
    Creates a tuple consuming *count* items from the stack, and pushes the
-   resulting tuple onto the stack.
+   resulting tuple onto the stack.::
+
+      assert count > 0
+      STACK, values = STACK[:-count], STACK[-count:]
+      STACK.append(tuple(values))
 
 
 .. opcode:: BUILD_LIST (count)
@@ -792,7 +954,7 @@ All of the following opcodes use their arguments.
 
    Pushes a new dictionary object onto the stack.  Pops ``2 * count`` items
    so that the dictionary holds *count* entries:
-   ``{..., TOS3: TOS2, TOS1: TOS}``.
+   ``{..., STACK[-4]: STACK[-3], STACK[-2]: STACK[-1]}``.
 
    .. versionchanged:: 3.5
       The dictionary is created from stack items instead of creating an
@@ -801,9 +963,9 @@ All of the following opcodes use their arguments.
 
 .. opcode:: BUILD_CONST_KEY_MAP (count)
 
-   The version of :opcode:`BUILD_MAP` specialized for constant keys.  *count*
-   values are consumed from the stack.  The top element on the stack contains
-   a tuple of keys.
+   The version of :opcode:`BUILD_MAP` specialized for constant keys. Pops the
+   top element on the stack which contains a tuple of keys, then starting from
+   ``STACK[-2]``, pops *count* values to form values in the built dictionary.
 
    .. versionadded:: 3.6
 
@@ -816,66 +978,65 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
-.. opcode:: BUILD_TUPLE_UNPACK (count)
+.. opcode:: LIST_EXTEND (i)
 
-   Pops *count* iterables from the stack, joins them in a single tuple,
-   and pushes the result.  Implements iterable unpacking in tuple
-   displays ``(*x, *y, *z)``.
+   Implements::
 
-   .. versionadded:: 3.5
+      seq = STACK.pop()
+      list.extend(STACK[-i], seq)
 
+   Used to build lists.
 
-.. opcode:: BUILD_TUPLE_UNPACK_WITH_CALL (count)
-
-   This is similar to :opcode:`BUILD_TUPLE_UNPACK`,
-   but is used for ``f(*x, *y, *z)`` call syntax. The stack item at position
-   ``count + 1`` should be the corresponding callable ``f``.
-
-   .. versionadded:: 3.6
+   .. versionadded:: 3.9
 
 
-.. opcode:: BUILD_LIST_UNPACK (count)
+.. opcode:: SET_UPDATE (i)
 
-   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
-   instead of tuple.  Implements iterable unpacking in list
-   displays ``[*x, *y, *z]``.
+   Implements::
 
-   .. versionadded:: 3.5
+      seq = STACK.pop()
+      set.update(STACK[-i], seq)
 
+   Used to build sets.
 
-.. opcode:: BUILD_SET_UNPACK (count)
-
-   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a set
-   instead of tuple.  Implements iterable unpacking in set
-   displays ``{*x, *y, *z}``.
-
-   .. versionadded:: 3.5
+   .. versionadded:: 3.9
 
 
-.. opcode:: BUILD_MAP_UNPACK (count)
+.. opcode:: DICT_UPDATE (i)
 
-   Pops *count* mappings from the stack, merges them into a single dictionary,
-   and pushes the result.  Implements dictionary unpacking in dictionary
-   displays ``{**x, **y, **z}``.
+   Implements::
 
-   .. versionadded:: 3.5
+      map = STACK.pop()
+      dict.update(STACK[-i], map)
+
+   Used to build dicts.
+
+   .. versionadded:: 3.9
 
 
-.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (count)
+.. opcode:: DICT_MERGE (i)
 
-   This is similar to :opcode:`BUILD_MAP_UNPACK`,
-   but is used for ``f(**x, **y, **z)`` call syntax.  The stack item at
-   position ``count + 2`` should be the corresponding callable ``f``.
+   Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
 
-   .. versionadded:: 3.5
-   .. versionchanged:: 3.6
-      The position of the callable is determined by adding 2 to the opcode
-      argument instead of encoding it in the second byte of the argument.
+   .. versionadded:: 3.9
 
 
 .. opcode:: LOAD_ATTR (namei)
 
-   Replaces TOS with ``getattr(TOS, co_names[namei])``.
+   If the low bit of ``namei`` is not set, this replaces ``STACK[-1]`` with
+   ``getattr(STACK[-1], co_names[namei>>1])``.
+
+   If the low bit of ``namei`` is set, this will attempt to load a method named
+   ``co_names[namei>>1]`` from the ``STACK[-1]`` object. ``STACK[-1]`` is popped.
+   This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
+   correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
+   ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
+   when calling the unbound method. Otherwise, ``NULL`` and the object return by
+   the attribute lookup are pushed.
+
+   .. versionchanged:: 3.12
+      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
+      pushed to the stack before the attribute or unbound method respectively.
 
 
 .. opcode:: COMPARE_OP (opname)
@@ -884,19 +1045,41 @@ All of the following opcodes use their arguments.
    ``cmp_op[opname]``.
 
 
+.. opcode:: COMPARE_AND_BRANCH (opname)
+
+   Compares the top two values on the stack, popping them, then branches.
+   The direction and offset of the jump is embedded as a ``POP_JUMP_IF_TRUE``
+   or ``POP_JUMP_IF_FALSE`` instruction immediately following the cache.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: IS_OP (invert)
+
+   Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
+
+   .. versionadded:: 3.9
+
+
+.. opcode:: CONTAINS_OP (invert)
+
+   Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
+
+   .. versionadded:: 3.9
+
+
 .. opcode:: IMPORT_NAME (namei)
 
-   Imports the module ``co_names[namei]``.  TOS and TOS1 are popped and provide
-   the *fromlist* and *level* arguments of :func:`__import__`.  The module
-   object is pushed onto the stack.  The current namespace is not affected: for
-   a proper import statement, a subsequent :opcode:`STORE_FAST` instruction
+   Imports the module ``co_names[namei]``.  ``STACK[-1]`` and ``STACK[-2]`` are
+   popped and provide the *fromlist* and *level* arguments of :func:`__import__`.
+   The module object is pushed onto the stack.  The current namespace is not affected: for a proper import statement, a subsequent :opcode:`STORE_FAST` instruction
    modifies the namespace.
 
 
 .. opcode:: IMPORT_FROM (namei)
 
-   Loads the attribute ``co_names[namei]`` from the module found in TOS. The
-   resulting object is pushed onto the stack, to be subsequently stored by a
+   Loads the attribute ``co_names[namei]`` from the module found in ``STACK[-1]``.
+   The resulting object is pushed onto the stack, to be subsequently stored by a
    :opcode:`STORE_FAST` instruction.
 
 
@@ -905,72 +1088,134 @@ All of the following opcodes use their arguments.
    Increments bytecode counter by *delta*.
 
 
-.. opcode:: POP_JUMP_IF_TRUE (target)
+.. opcode:: JUMP_BACKWARD (delta)
 
-   If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
+   Decrements bytecode counter by *delta*. Checks for interrupts.
 
-
-.. opcode:: POP_JUMP_IF_FALSE (target)
-
-   If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
+   .. versionadded:: 3.11
 
 
-.. opcode:: JUMP_IF_TRUE_OR_POP (target)
+.. opcode:: JUMP_BACKWARD_NO_INTERRUPT (delta)
 
-   If TOS is true, sets the bytecode counter to *target* and leaves TOS on the
-   stack.  Otherwise (TOS is false), TOS is popped.
+   Decrements bytecode counter by *delta*. Does not check for interrupts.
 
-
-.. opcode:: JUMP_IF_FALSE_OR_POP (target)
-
-   If TOS is false, sets the bytecode counter to *target* and leaves TOS on the
-   stack.  Otherwise (TOS is true), TOS is popped.
+   .. versionadded:: 3.11
 
 
-.. opcode:: JUMP_ABSOLUTE (target)
+.. opcode:: POP_JUMP_IF_TRUE (delta)
 
-   Set bytecode counter to *target*.
+   If ``STACK[-1]`` is true, increments the bytecode counter by *delta*.
+   ``STACK[-1]`` is popped.
+
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
+      This opcode is a pseudo-instruction, replaced in final bytecode by
+      the directed versions (forward/backward).
+
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
+
+.. opcode:: POP_JUMP_IF_FALSE (delta)
+
+   If ``STACK[-1]`` is false, increments the bytecode counter by *delta*.
+   ``STACK[-1]`` is popped.
+
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
+      This opcode is a pseudo-instruction, replaced in final bytecode by
+      the directed versions (forward/backward).
+
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
+
+.. opcode:: POP_JUMP_IF_NOT_NONE (delta)
+
+   If ``STACK[-1]`` is not ``None``, increments the bytecode counter by *delta*.
+   ``STACK[-1]`` is popped.
+
+   This opcode is a pseudo-instruction, replaced in final bytecode by
+   the directed versions (forward/backward).
+
+   .. versionadded:: 3.11
+
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
+
+
+.. opcode:: POP_JUMP_IF_NONE (delta)
+
+   If ``STACK[-1]`` is ``None``, increments the bytecode counter by *delta*.
+   ``STACK[-1]`` is popped.
+
+   This opcode is a pseudo-instruction, replaced in final bytecode by
+   the directed versions (forward/backward).
+
+   .. versionadded:: 3.11
+
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
+
+
+.. opcode:: JUMP_IF_TRUE_OR_POP (delta)
+
+   If ``STACK[-1]`` is true, increments the bytecode counter by *delta* and leaves
+   ``STACK[-1]`` on the stack.  Otherwise (``STACK[-1]`` is false), ``STACK[-1]``
+   is popped.
+
+   .. versionadded:: 3.1
+
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
+
+.. opcode:: JUMP_IF_FALSE_OR_POP (delta)
+
+   If ``STACK[-1]`` is false, increments the bytecode counter by *delta* and leaves
+   ``STACK[-1]`` on the stack. Otherwise (``STACK[-1]`` is true), ``STACK[-1]`` is
+   popped.
+
+   .. versionadded:: 3.1
+
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
 
 
 .. opcode:: FOR_ITER (delta)
 
-   TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
-   this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted TOS is popped, and the byte
-   code counter is incremented by *delta*.
+   ``STACK[-1]`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
+   If this yields a new value, push it on the stack (leaving the iterator below
+   it).  If the iterator indicates it is exhausted then the byte code counter is
+   incremented by *delta*.
 
+   .. versionchanged:: 3.12
+      Up until 3.11 the iterator was popped when it was exhausted.
 
 .. opcode:: LOAD_GLOBAL (namei)
 
-   Loads the global named ``co_names[namei]`` onto the stack.
+   Loads the global named ``co_names[namei>>1]`` onto the stack.
 
-
-.. opcode:: SETUP_LOOP (delta)
-
-   Pushes a block for a loop onto the block stack.  The block spans from the
-   current instruction with a size of *delta* bytes.
-
-
-.. opcode:: SETUP_EXCEPT (delta)
-
-   Pushes a try block from a try-except clause onto the block stack. *delta*
-   points to the first except block.
-
-
-.. opcode:: SETUP_FINALLY (delta)
-
-   Pushes a try block from a try-except clause onto the block stack. *delta*
-   points to the finally block.
-
+   .. versionchanged:: 3.11
+      If the low bit of ``namei`` is set, then a ``NULL`` is pushed to the
+      stack before the global variable.
 
 .. opcode:: LOAD_FAST (var_num)
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack.
 
+   .. versionchanged:: 3.12
+      This opcode is now only used in situations where the local variable is
+      guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
+
+.. opcode:: LOAD_FAST_CHECK (var_num)
+
+   Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
+   raising an :exc:`UnboundLocalError` if the local variable has not been
+   initialized.
+
+   .. versionadded:: 3.12
 
 .. opcode:: STORE_FAST (var_num)
 
-   Stores TOS into the local ``co_varnames[var_num]``.
+   Stores ``STACK.pop()`` into the local ``co_varnames[var_num]``.
 
 
 .. opcode:: DELETE_FAST (var_num)
@@ -978,25 +1223,33 @@ All of the following opcodes use their arguments.
    Deletes local ``co_varnames[var_num]``.
 
 
-.. opcode:: STORE_ANNOTATION (namei)
+.. opcode:: MAKE_CELL (i)
 
-   Stores TOS as ``locals()['__annotations__'][co_names[namei]] = TOS``.
+   Creates a new cell in slot ``i``.  If that slot is empty then
+   that value is stored into the new cell.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.11
 
 
 .. opcode:: LOAD_CLOSURE (i)
 
-   Pushes a reference to the cell contained in slot *i* of the cell and free
-   variable storage.  The name of the variable is ``co_cellvars[i]`` if *i* is
-   less than the length of *co_cellvars*.  Otherwise it is ``co_freevars[i -
-   len(co_cellvars)]``.
+   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
+   storage.  The name of the variable is ``co_fastlocalnames[i]``.
+
+   Note that ``LOAD_CLOSURE`` is effectively an alias for ``LOAD_FAST``.
+   It exists to keep bytecode a little more readable.
+
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: LOAD_DEREF (i)
 
-   Loads the cell contained in slot *i* of the cell and free variable storage.
+   Loads the cell contained in slot ``i`` of the "fast locals" storage.
    Pushes a reference to the object the cell contains on the stack.
+
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: LOAD_CLASSDEREF (i)
@@ -1005,119 +1258,156 @@ All of the following opcodes use their arguments.
    consulting the cell.  This is used for loading free variables in class
    bodies.
 
+   .. versionadded:: 3.4
+
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
+
 
 .. opcode:: STORE_DEREF (i)
 
-   Stores TOS into the cell contained in slot *i* of the cell and free variable
+   Stores ``STACK.pop()`` into the cell contained in slot ``i`` of the "fast locals"
    storage.
+
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: DELETE_DEREF (i)
 
-   Empties the cell contained in slot *i* of the cell and free variable storage.
+   Empties the cell contained in slot ``i`` of the "fast locals" storage.
    Used by the :keyword:`del` statement.
+
+   .. versionadded:: 3.2
+
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
+
+
+.. opcode:: COPY_FREE_VARS (n)
+
+   Copies the ``n`` free variables from the closure into the frame.
+   Removes the need for special code on the caller's side when calling
+   closures.
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: RAISE_VARARGS (argc)
 
-   Raises an exception. *argc* indicates the number of parameters to the raise
-   statement, ranging from 0 to 3.  The handler will find the traceback as TOS2,
-   the parameter as TOS1, and the exception as TOS.
+   Raises an exception using one of the 3 forms of the ``raise`` statement,
+   depending on the value of *argc*:
+
+   * 0: ``raise`` (re-raise previous exception)
+   * 1: ``raise STACK[-1]`` (raise exception instance or type at ``STACK[-1]``)
+   * 2: ``raise STACK[-2] from STACK[-1]`` (raise exception instance or type at
+     ``STACK[-2]`` with ``__cause__`` set to ``STACK[-1]``)
 
 
-.. opcode:: CALL_FUNCTION (argc)
+.. opcode:: CALL (argc)
 
-   Calls a function.  *argc* indicates the number of positional arguments.
-   The positional arguments are on the stack, with the right-most argument
-   on top.  Below the arguments, the function object to call is on the stack.
-   Pops all function arguments, and the function itself off the stack, and
-   pushes the return value.
+   Calls a callable object with the number of arguments specified by ``argc``,
+   including the named arguments specified by the preceding
+   :opcode:`KW_NAMES`, if any.
+   On the stack are (in ascending order), either:
 
-   .. versionchanged:: 3.6
-      This opcode is used only for calls with positional arguments.
+   * NULL
+   * The callable
+   * The positional arguments
+   * The named arguments
 
+   or:
 
-.. opcode:: CALL_FUNCTION_KW (argc)
+   * The callable
+   * ``self``
+   * The remaining positional arguments
+   * The named arguments
 
-   Calls a function.  *argc* indicates the number of arguments (positional
-   and keyword).  The top element on the stack contains a tuple of keyword
-   argument names.  Below the tuple, keyword arguments are on the stack, in
-   the order corresponding to the tuple.  Below the keyword arguments, the
-   positional arguments are on the stack, with the right-most parameter on
-   top.  Below the arguments, the function object to call is on the stack.
-   Pops all function arguments, and the function itself off the stack, and
-   pushes the return value.
+   ``argc`` is the total of the positional and named arguments, excluding
+   ``self`` when a ``NULL`` is not present.
 
-   .. versionchanged:: 3.6
-      Keyword arguments are packed in a tuple instead of a dictionary,
-      *argc* indicates the total number of arguments
+   ``CALL`` pops all arguments and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
 
-   Calls a function. The lowest bit of *flags* indicates whether the
-   var-keyword argument is placed at the top of the stack.  Below the
-   var-keyword argument, the var-positional argument is on the stack.
-   Below the arguments, the function object to call is placed.
-   Pops all function arguments, and the function itself off the stack, and
-   pushes the return value. Note that this opcode pops at most three items
-   from the stack. Var-positional and var-keyword arguments are packed
-   by :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
-   :opcode:`BUILD_MAP_UNPACK_WITH_CALL`.
+   Calls a callable object with variable set of positional and keyword
+   arguments.  If the lowest bit of *flags* is set, the top of the stack
+   contains a mapping object containing additional keyword arguments.
+   Before the callable is called, the mapping object and iterable object
+   are each "unpacked" and their contents passed in as keyword and
+   positional arguments respectively.
+   ``CALL_FUNCTION_EX`` pops all arguments and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
 
    .. versionadded:: 3.6
 
 
-.. opcode:: LOAD_METHOD (namei)
+.. opcode:: PUSH_NULL
 
-   Loads a method named ``co_names[namei]`` from TOS object. TOS is popped and
-   method and TOS are pushed when interpreter can call unbound method directly.
-   TOS will be used as the first argument (``self``) by :opcode:`CALL_METHOD`.
-   Otherwise, ``NULL`` and  method is pushed (method is bound method or
-   something else).
+    Pushes a ``NULL`` to the stack.
+    Used in the call sequence to match the ``NULL`` pushed by
+    :opcode:`LOAD_METHOD` for non-method calls.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.11
 
 
-.. opcode:: CALL_METHOD (argc)
+.. opcode:: KW_NAMES (consti)
 
-   Calls a method.  *argc* is number of positional arguments.
-   Keyword arguments are not supported.  This opcode is designed to be used
-   with :opcode:`LOAD_METHOD`.  Positional arguments are on top of the stack.
-   Below them, two items described in :opcode:`LOAD_METHOD` on the stack.
-   All of them are popped and return value is pushed.
+   Prefixes :opcode:`CALL`.
+   Stores a reference to ``co_consts[consti]`` into an internal variable
+   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.11
 
 
-.. opcode:: MAKE_FUNCTION (argc)
+.. opcode:: MAKE_FUNCTION (flags)
 
    Pushes a new function object on the stack.  From bottom to top, the consumed
    stack must consist of values if the argument carries a specified flag value
 
-   * ``0x01`` a tuple of default argument objects in positional order
+   * ``0x01`` a tuple of default values for positional-only and
+     positional-or-keyword parameters in positional order
    * ``0x02`` a dictionary of keyword-only parameters' default values
-   * ``0x04`` an annotation dictionary
+   * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
-   * the code associated with the function (at TOS1)
-   * the :term:`qualified name` of the function (at TOS)
+   * the code associated with the function (at ``STACK[-2]``)
+   * the :term:`qualified name` of the function (at ``STACK[-1]``)
 
+   .. versionchanged:: 3.10
+      Flag value ``0x04`` is a tuple of strings instead of dictionary
 
 .. opcode:: BUILD_SLICE (argc)
 
    .. index:: builtin: slice
 
-   Pushes a slice object on the stack.  *argc* must be 2 or 3.  If it is 2,
-   ``slice(TOS1, TOS)`` is pushed; if it is 3, ``slice(TOS2, TOS1, TOS)`` is
-   pushed. See the :func:`slice` built-in function for more information.
+   Pushes a slice object on the stack.  *argc* must be 2 or 3.  If it is 2, implements::
+
+      end = STACK.pop()
+      start = STACK.pop()
+      STACK.append(slice(start, stop))
+
+   if it is 3, implements::
+
+      step = STACK.pop()
+      end = STACK.pop()
+      start = STACK.pop()
+      STACK.append(slice(start, end, step))
+
+   See the :func:`slice` built-in function for more information.
 
 
 .. opcode:: EXTENDED_ARG (ext)
 
-   Prefixes any opcode which has an argument too big to fit into the default two
-   bytes.  *ext* holds two additional bytes which, taken together with the
-   subsequent opcode's argument, comprise a four-byte argument, *ext* being the
-   two most-significant bytes.
+   Prefixes any opcode which has an argument too big to fit into the default one
+   byte. *ext* holds an additional byte which act as higher bits in the argument.
+   For each opcode, at most three prefixal ``EXTENDED_ARG`` are allowed, forming
+   an argument from two-byte to four-byte.
 
 
 .. opcode:: FORMAT_VALUE (flags)
@@ -1142,15 +1432,144 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
+.. opcode:: MATCH_CLASS (count)
+
+   ``STACK[-1]`` is a tuple of keyword attribute names, ``STACK[-2]`` is the class
+   being matched against, and ``STACK[-3]`` is the match subject.  *count* is the
+   number of positional sub-patterns.
+
+   Pop ``STACK[-1]``, ``STACK[-2]``, and ``STACK[-3]``. If ``STACK[-3]`` is an
+   instance of ``STACK[-2]`` and has the positional and keyword attributes
+   required by *count* and ``STACK[-1]``, push a tuple of extracted attributes.
+   Otherwise, push ``None``.
+
+   .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      Previously, this instruction also pushed a boolean value indicating
+      success (``True``) or failure (``False``).
+
+
+.. opcode:: RESUME (where)
+
+    A no-op. Performs internal tracing, debugging and optimization checks.
+
+    The ``where`` operand marks where the ``RESUME`` occurs:
+
+    * ``0`` The start of a function, which is neither a generator, coroutine
+      nor an async generator
+    * ``1`` After a ``yield`` expression
+    * ``2`` After a ``yield from`` expression
+    * ``3`` After an ``await`` expression
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: RETURN_GENERATOR
+
+    Create a generator, coroutine, or async generator from the current frame.
+    Used as first opcode of in code object for the above mentioned callables.
+    Clear the current frame and return the newly created generator.
+
+    .. versionadded:: 3.11
+
+
+.. opcode:: SEND (delta)
+
+    Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
+    and ``await`` statements.
+
+    If the call raises :exc:`StopIteration`, pop both items, push the
+    exception's ``value`` attribute, and increment the bytecode counter by
+    *delta*.
+
+    .. versionadded:: 3.11
+
+
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
-   opcodes which don't use their argument and those that do
-   (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
+   opcodes in the range [0,255] which don't use their argument and those
+   that do (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
+
+   If your application uses pseudo instructions, use the :data:`hasarg`
+   collection instead.
 
    .. versionchanged:: 3.6
       Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
       ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
+
+   .. versionchanged:: 3.12
+      Pseudo instructions were added to the :mod:`dis` module, and for them
+      it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
+      they use their arg.
+
+
+.. opcode:: CALL_INTRINSIC_1
+
+   Calls an intrinsic function with one argument. Passes ``STACK[-1]`` as the
+   argument and sets ``STACK[-1]`` to the result. Used to implement functionality that is necessary but not performance critical.
+
+    The operand determines which intrinsic function is called:
+
+    * ``0`` Not valid
+    * ``1`` Prints the argument to standard out. Used in the REPL.
+    * ``2`` Performs ``import *`` for the named module.
+    * ``3`` Extracts the return value from a ``StopIteration`` exception.
+    * ``4`` Wraps an aync generator value
+    * ``5`` Performs the unary ``+`` operation
+    * ``6`` Converts a list to a tuple
+
+   .. versionadded:: 3.12
+
+
+**Pseudo-instructions**
+
+These opcodes do not appear in python bytecode, they are used by the compiler
+but are replaced by real opcodes or removed before bytecode is generated.
+
+.. opcode:: SETUP_FINALLY (target)
+
+   Set up an exception handler for the following code block. If an exception
+   occurs, the value stack level is restored to its current state and control
+   is transferred to the exception handler at ``target``.
+
+
+.. opcode:: SETUP_CLEANUP (target)
+
+   Like ``SETUP_FINALLY``, but in case of exception also pushes the last
+   instruction (``lasti``) to the stack so that ``RERAISE`` can restore it.
+   If an exception occurs, the value stack level and the last instruction on
+   the frame are restored to their current state, and control is transferred
+   to the exception handler at ``target``.
+
+
+.. opcode:: SETUP_WITH (target)
+
+   Like ``SETUP_CLEANUP``, but in case of exception one more item is popped
+   from the stack before control is transferred to the exception handler at
+   ``target``.
+
+   This variant is used in :keyword:`with` and :keyword:`async with`
+   constructs, which push the return value of the context manager's
+   :meth:`~object.__enter__` or :meth:`~object.__aenter__` to the stack.
+
+
+.. opcode:: POP_BLOCK
+
+   Marks the end of the code block associated with the last ``SETUP_FINALLY``,
+   ``SETUP_CLEANUP`` or ``SETUP_WITH``.
+
+.. opcode:: JUMP
+.. opcode:: JUMP_NO_INTERRUPT
+
+   Undirected relative jump instructions which are replaced by their
+   directed (forward/backward) counterparts by the assembler.
+
+.. opcode:: LOAD_METHOD
+
+   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
+   with a flag set in the arg.
 
 
 .. _opcode_collections:
@@ -1160,6 +1579,10 @@ Opcode collections
 
 These collections are provided for automatic introspection of bytecode
 instructions:
+
+   .. versionchanged:: 3.12
+      The collections now contain pseudo instructions as well. These are
+      opcodes with values ``>= MIN_PSEUDO_OPCODE``.
 
 .. data:: opname
 
@@ -1176,9 +1599,16 @@ instructions:
    Sequence of all compare operation names.
 
 
+.. data:: hasarg
+
+   Sequence of bytecodes that use their argument.
+
+    .. versionadded:: 3.12
+
+
 .. data:: hasconst
 
-   Sequence of bytecodes that have a constant parameter.
+   Sequence of bytecodes that access a constant.
 
 
 .. data:: hasfree
@@ -1212,3 +1642,9 @@ instructions:
 .. data:: hascompare
 
    Sequence of bytecodes of Boolean operations.
+
+.. data:: hasexc
+
+   Sequence of bytecodes that set an exception handler.
+
+    .. versionadded:: 3.12
