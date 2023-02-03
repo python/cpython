@@ -860,10 +860,10 @@ try:
     # The isdir(), isfile(), islink() and exists() implementations in
     # genericpath use os.stat(). This is overkill on Windows. Use simpler
     # builtin functions if they are available.
-    from nt import _isdir as isdir
-    from nt import _isfile as isfile
-    from nt import _islink as islink
-    from nt import _exists as exists
+    from nt import _path_isdir as isdir
+    from nt import _path_isfile as isfile
+    from nt import _path_islink as islink
+    from nt import _path_exists as exists
 except ImportError:
     # Use genericpath.* as imported above
     pass
