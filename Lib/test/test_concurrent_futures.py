@@ -18,7 +18,6 @@ import sys
 import threading
 import time
 import unittest
-import warnings
 import weakref
 from pickle import PicklingError
 
@@ -570,24 +569,6 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         # Make sure the results were all computed before the executor got
         # shutdown.
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
-
-
-@unittest.skipIf(mp.get_all_start_methods()[0] != "fork", "non-fork default.")
-class ProcessPoolExecutorDefaultForkWarning(unittest.TestCase):
-    def test_fork_default_warns(self):
-        with self.assertWarns(mp.context.DefaultForkDeprecationWarning):
-            with futures.ProcessPoolExecutor(2):
-                pass
-
-    def test_explicit_fork_does_not_warn(self):
-        with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter("ignore")
-            warnings.filterwarnings(
-                'always', category=mp.context.DefaultForkDeprecationWarning)
-            ctx = mp.get_context("fork")  # Non-default fork context.
-            with futures.ProcessPoolExecutor(2, mp_context=ctx):
-                pass
-        self.assertEqual(len(ws), 0, msg=[str(x) for x in ws])
 
 
 create_executor_tests(ProcessPoolShutdownTest,

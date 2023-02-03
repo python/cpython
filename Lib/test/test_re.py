@@ -2431,8 +2431,7 @@ class ReTests(unittest.TestCase):
         input_js = '''a(function() {
             ///////////////////////////////////////////////////////////////////
         });'''
-        mp = multiprocessing.get_context('spawn')
-        p = mp.Process(target=pattern.sub, args=('', input_js))
+        p = multiprocessing.Process(target=pattern.sub, args=('', input_js))
         p.start()
         p.join(SHORT_TIMEOUT)
         try:
