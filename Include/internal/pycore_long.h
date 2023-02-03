@@ -129,6 +129,8 @@ _PyLong_IsPositiveSingleDigit(PyObject* sub) {
     return ((size_t)signed_size) <= 1;
 }
 
+void _PyLong_Free(PyLongObject *op);
+
 #ifdef __cplusplus
 }
 #endif

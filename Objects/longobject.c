@@ -272,8 +272,8 @@ _PyLong_FromSTwoDigits(stwodigits x)
     return _PyLong_FromLarge(x);
 }
 
-static void
-int_dealloc(PyLongObject *op)
+void
+_PyLong_Free(PyLongObject *op)
 {
     if (PyLong_CheckExact(op) && IS_MEDIUM_VALUE(op)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -6307,7 +6307,7 @@ PyTypeObject PyLong_Type = {
     "int",                                      /* tp_name */
     offsetof(PyLongObject, long_value.ob_digit),  /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    (destructor)int_dealloc,                    /* tp_dealloc */
+    (destructor)_PyLong_Free,                   /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

@@ -248,8 +248,8 @@
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_Free);
             if (prod == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, prod);
@@ -286,8 +286,8 @@
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_Free);
             if (sub == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, sub);
@@ -395,8 +395,8 @@
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_Free);
             if (sum == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, sum);
@@ -491,7 +491,7 @@
             res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
             Py_INCREF(res);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_Free);
             Py_DECREF(list);
             STACK_SHRINK(1);
             POKE(1, res);
@@ -516,7 +516,7 @@
             res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
             Py_INCREF(res);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_Free);
             Py_DECREF(tuple);
             STACK_SHRINK(1);
             POKE(1, res);
@@ -643,7 +643,7 @@
             PyList_SET_ITEM(list, index, value);
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_Free);
             Py_DECREF(list);
             STACK_SHRINK(3);
             JUMPBY(1);
@@ -2183,8 +2183,8 @@
             Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->long_value.ob_digit[0];
             // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
             int sign_ish = COMPARISON_BIT(ileft, iright);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_Free);
             if (sign_ish & oparg) {
                 int offset = _Py_OPARG(next_instr[1]);
                 JUMPBY(offset);
