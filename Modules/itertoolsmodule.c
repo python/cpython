@@ -741,8 +741,7 @@ static PyObject *
 teedataobject_jumplink(teedataobject *tdo)
 {
     if (tdo->nextlink == NULL) {
-        PyTypeObject *tp = Py_TYPE(tdo);
-        itertools_state *state = find_state_by_type(tp);
+        itertools_state *state = get_module_state_by_cls(Py_TYPE(tdo));
         tdo->nextlink = teedataobject_newinternal(state, tdo->it);
     }
     return Py_XNewRef(tdo->nextlink);
@@ -811,7 +810,7 @@ teedataobject_clear(teedataobject *tdo)
         Py_CLEAR(tdo->values[i]);
     tmp = tdo->nextlink;
     tdo->nextlink = NULL;
-    itertools_state *state = find_state_by_type(Py_TYPE(tdo));
+    itertools_state *state = get_module_state_by_cls(Py_TYPE(tdo));
     teedataobject_safe_decref(tmp, state->teedataobject_type);
     return 0;
 }
@@ -862,7 +861,7 @@ itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
     teedataobject *tdo;
     Py_ssize_t i, len;
 
-    itertools_state *state = find_state_by_type(type);
+    itertools_state *state = get_module_state_by_cls(type);
     assert(type == state->teedataobject_type);
 
     tdo = (teedataobject *)teedataobject_newinternal(state, it);
@@ -1013,7 +1012,7 @@ static PyObject *
 itertools__tee_impl(PyTypeObject *type, PyObject *iterable)
 /*[clinic end generated code: output=b02d3fd26c810c3f input=adc0779d2afe37a2]*/
 {
-    itertools_state *state = find_state_by_type(type);
+    itertools_state *state = get_module_state_by_cls(type);
     return tee_fromiterable(state, iterable);
 }
 
@@ -1051,8 +1050,8 @@ tee_setstate(teeobject *to, PyObject *state)
         PyErr_SetString(PyExc_TypeError, "state is not a tuple");
         return NULL;
     }
-    itertools_state *m_state = find_state_by_type(Py_TYPE(to));
-    PyTypeObject *tdo_type = m_state->teedataobject_type;
+    itertools_state *mod_st = get_module_state_by_cls(Py_TYPE(to));
+    PyTypeObject *tdo_type = mod_st->teedataobject_type;
     if (!PyArg_ParseTuple(state, "O!i", tdo_type, &tdo, &index)) {
         return NULL;
     }
