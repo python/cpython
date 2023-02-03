@@ -825,19 +825,19 @@ Reference
 Functions
 ^^^^^^^^^
 
-.. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding=None)
+.. function:: xml.etree.ElementInclude.default_loader(href, parse, encoding=None)
    :module:
 
-   Default loader. This default loader reads an included resource from disk.  *href* is a URL.
+   Default loader. This default loader reads an included resource from disk. *href* is a URL.
    *parse* is for parse mode either "xml" or "text".  *encoding*
    is an optional text encoding.  If not given, encoding is ``utf-8``.  Returns the
-   expanded resource.  If the parse mode is ``"xml"``, this is an ElementTree
+   expanded resource.  If the parse mode is ``"xml"``, this is an Element
    instance.  If the parse mode is "text", this is a Unicode string.  If the
    loader fails, it can return None or raise an exception.
 
 
-.. function:: xml.etree.ElementInclude.include( elem, loader=None, base_url=None, \
-                                                max_depth=6)
+.. function:: xml.etree.ElementInclude.include(elem, loader=None, base_url=None, \
+                                               max_depth=6)
    :module:
 
    This function expands XInclude directives.  *elem* is the root element.  *loader* is
@@ -848,10 +848,7 @@ Functions
    inclusions.  Limited to reduce the risk of malicious content explosion. Pass a
    negative value to disable the limitation.
 
-   Returns the expanded resource.  If the parse mode is
-   ``"xml"``, this is an ElementTree instance.  If the parse mode is "text",
-   this is a Unicode string.  If the loader fails, it can return None or
-   raise an exception.
+   Returns the expanded resource in *elem*.
 
    .. versionadded:: 3.9
       The *base_url* and *max_depth* parameters.
