@@ -75,10 +75,10 @@ class TestCPPExt(unittest.TestCase):
                 subprocess.run(cmd, check=True, env=env)
             else:
                 proc = subprocess.run(cmd,
+                                      env=env,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT,
-                                      text=True,
-                                      env=env)
+                                      text=True)
                 if proc.returncode:
                     print(proc.stdout, end='')
                     self.fail(
