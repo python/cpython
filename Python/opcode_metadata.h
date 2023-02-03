@@ -4,7 +4,7 @@
 
 #ifndef NDEBUG
 static int
-_PyOpcode_num_popped(int opcode, int oparg) {
+_PyOpcode_num_popped(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
             return 0;
@@ -105,13 +105,13 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case POP_EXCEPT:
             return 1;
         case RERAISE:
-            return -1;
+            return oparg + 1;
         case PREP_RERAISE_STAR:
             return 2;
         case END_ASYNC_FOR:
             return 2;
         case CLEANUP_THROW:
-            return -1;
+            return 3;
         case LOAD_ASSERTION_ERROR:
             return 0;
         case LOAD_BUILD_CLASS:
@@ -141,11 +141,11 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case LOAD_NAME:
             return 0;
         case LOAD_GLOBAL:
-            return -1;
+            return 0;
         case LOAD_GLOBAL_MODULE:
-            return -1;
+            return 0;
         case LOAD_GLOBAL_BUILTIN:
-            return -1;
+            return 0;
         case DELETE_FAST:
             return 0;
         case MAKE_CELL:
@@ -187,19 +187,19 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case LOAD_ATTR:
             return 1;
         case LOAD_ATTR_INSTANCE_VALUE:
-            return -1;
+            return 1;
         case LOAD_ATTR_MODULE:
-            return -1;
+            return 1;
         case LOAD_ATTR_WITH_HINT:
-            return -1;
+            return 1;
         case LOAD_ATTR_SLOT:
-            return -1;
+            return 1;
         case LOAD_ATTR_CLASS:
-            return -1;
+            return 1;
         case LOAD_ATTR_PROPERTY:
-            return -1;
+            return 1;
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN:
-            return -1;
+            return 1;
         case STORE_ATTR_INSTANCE_VALUE:
             return 2;
         case STORE_ATTR_WITH_HINT:
@@ -233,17 +233,17 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case JUMP_BACKWARD:
             return 0;
         case POP_JUMP_IF_FALSE:
-            return -1;
+            return 1;
         case POP_JUMP_IF_TRUE:
-            return -1;
+            return 1;
         case POP_JUMP_IF_NOT_NONE:
-            return -1;
+            return 1;
         case POP_JUMP_IF_NONE:
-            return -1;
+            return 1;
         case JUMP_IF_FALSE_OR_POP:
-            return -1;
+            return 1;
         case JUMP_IF_TRUE_OR_POP:
-            return -1;
+            return 1;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case GET_LEN:
@@ -277,13 +277,13 @@ _PyOpcode_num_popped(int opcode, int oparg) {
         case WITH_EXCEPT_START:
             return 4;
         case PUSH_EXC_INFO:
-            return -1;
+            return 1;
         case LOAD_ATTR_METHOD_WITH_VALUES:
-            return -1;
+            return 1;
         case LOAD_ATTR_METHOD_NO_DICT:
-            return -1;
+            return 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
-            return -1;
+            return 1;
         case CALL_BOUND_METHOD_EXACT_ARGS:
             return -1;
         case KW_NAMES:
@@ -350,7 +350,7 @@ _PyOpcode_num_popped(int opcode, int oparg) {
 
 #ifndef NDEBUG
 static int
-_PyOpcode_num_pushed(int opcode, int oparg) {
+_PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
             return 0;
@@ -451,13 +451,13 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case POP_EXCEPT:
             return 0;
         case RERAISE:
-            return -1;
+            return oparg;
         case PREP_RERAISE_STAR:
             return 1;
         case END_ASYNC_FOR:
             return 0;
         case CLEANUP_THROW:
-            return -1;
+            return 1;
         case LOAD_ASSERTION_ERROR:
             return 1;
         case LOAD_BUILD_CLASS:
@@ -487,11 +487,11 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case LOAD_NAME:
             return 1;
         case LOAD_GLOBAL:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_MODULE:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_BUILTIN:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case DELETE_FAST:
             return 0;
         case MAKE_CELL:
@@ -533,19 +533,19 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case LOAD_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_MODULE:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_WITH_HINT:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_SLOT:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_CLASS:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_PROPERTY:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case STORE_ATTR_INSTANCE_VALUE:
             return 0;
         case STORE_ATTR_WITH_HINT:
@@ -579,17 +579,17 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case JUMP_BACKWARD:
             return 0;
         case POP_JUMP_IF_FALSE:
-            return -1;
+            return 0;
         case POP_JUMP_IF_TRUE:
-            return -1;
+            return 0;
         case POP_JUMP_IF_NOT_NONE:
-            return -1;
+            return 0;
         case POP_JUMP_IF_NONE:
-            return -1;
+            return 0;
         case JUMP_IF_FALSE_OR_POP:
-            return -1;
+            return (jump ? 1 : 0);
         case JUMP_IF_TRUE_OR_POP:
-            return -1;
+            return (jump ? 1 : 0);
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case GET_LEN:
@@ -623,13 +623,13 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
         case WITH_EXCEPT_START:
             return 5;
         case PUSH_EXC_INFO:
-            return -1;
+            return 2;
         case LOAD_ATTR_METHOD_WITH_VALUES:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_METHOD_NO_DICT:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 1;
         case CALL_BOUND_METHOD_EXACT_ARGS:
             return -1;
         case KW_NAMES:
@@ -694,7 +694,7 @@ _PyOpcode_num_pushed(int opcode, int oparg) {
 }
 #endif
 enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC0000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
     enum Direction dir_op1;
     enum Direction dir_op2;
@@ -769,9 +769,9 @@ struct opcode_metadata {
     [STORE_GLOBAL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DELETE_GLOBAL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_GLOBAL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_GLOBAL_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_GLOBAL_BUILTIN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LOAD_GLOBAL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC0000 },
+    [LOAD_GLOBAL_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC0000 },
+    [LOAD_GLOBAL_BUILTIN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC0000 },
     [DELETE_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [MAKE_CELL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DELETE_DEREF] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
@@ -792,13 +792,13 @@ struct opcode_metadata {
     [DICT_MERGE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [MAP_ADD] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_ATTR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_INSTANCE_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_ATTR_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_ATTR_WITH_HINT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_ATTR_SLOT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_ATTR_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_ATTR_PROPERTY] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LOAD_ATTR_INSTANCE_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR_MODULE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR_WITH_HINT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR_SLOT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR_PROPERTY] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [STORE_ATTR_INSTANCE_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC000 },
     [STORE_ATTR_WITH_HINT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [STORE_ATTR_SLOT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC000 },
@@ -838,9 +838,9 @@ struct opcode_metadata {
     [BEFORE_WITH] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [WITH_EXCEPT_START] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [PUSH_EXC_INFO] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
-    [LOAD_ATTR_METHOD_WITH_VALUES] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
-    [LOAD_ATTR_METHOD_NO_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
-    [LOAD_ATTR_METHOD_LAZY_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [LOAD_ATTR_METHOD_WITH_VALUES] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR_METHOD_NO_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR_METHOD_LAZY_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [KW_NAMES] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CALL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
