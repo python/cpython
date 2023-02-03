@@ -45,10 +45,11 @@ class Runner:
 
     # Note: the class is final, it is not intended for inheritance.
 
-    def __init__(self, *, debug=None, loop_factory=None):
+    def __init__(self, *, debug=None, loop_factory=None, task_factory=None):
         self._state = _State.CREATED
         self._debug = debug
         self._loop_factory = loop_factory
+        self._task_factory = task_factory
         self._loop = None
         self._context = None
         self._interrupt_count = 0
@@ -144,6 +145,8 @@ class Runner:
             self._loop = self._loop_factory()
         if self._debug is not None:
             self._loop.set_debug(self._debug)
+        if self._task_factory is not None:
+            self._loop.set_task_factory(self._task_factory)
         self._context = contextvars.copy_context()
         self._state = _State.INITIALIZED
 
@@ -157,7 +160,7 @@ class Runner:
         raise KeyboardInterrupt()
 
 
-def run(main, *, debug=None, loop_factory=None):
+def run(main, *, debug=None, loop_factory=None, task_factory=None):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
@@ -190,7 +193,7 @@ def run(main, *, debug=None, loop_factory=None):
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    with Runner(debug=debug, loop_factory=loop_factory) as runner:
+    with Runner(debug=debug, loop_factory=loop_factory, task_factory=task_factory) as runner:
         return runner.run(main)
 
 
