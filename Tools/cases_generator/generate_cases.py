@@ -380,9 +380,11 @@ class Instruction:
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
         extra = " " * -dedent
+        names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
         for line in self.block_text:
             if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*(?://.*)?$", line):
                 space, cond, label = m.groups()
+                space = extra + space
                 # ERROR_IF() must pop the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.
                 # NOTE: If the label doesn't exist, just add it to ceval.c.
@@ -401,16 +403,25 @@ class Instruction:
                     symbolic = ""
                 if symbolic:
                     out.write_raw(
-                        f"{extra}{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
+                        f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
                     )
                 else:
-                    out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
+                    out.write_raw(f"{space}if ({cond}) goto {label};\n")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 if not self.register:
-                    space = m.group(1)
+                    space = extra + m.group(1)
                     for ieff in self.input_effects:
-                        if ieff.name not in self.unmoved_names:
-                            out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
+                        if ieff.name in names_to_skip:
+                            continue
+                        if ieff.size:
+                            out.write_raw(
+                                f"{space}for (int _i = {ieff.size}; --_i >= 0;) {{\n"
+                            )
+                            out.write_raw(f"{space}    Py_DECREF({ieff.name}[_i]);\n")
+                            out.write_raw(f"{space}}}\n")
+                        else:
+                            decref = "XDECREF" if ieff.cond else "DECREF"
+                            out.write_raw(f"{space}Py_{decref}({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
 
