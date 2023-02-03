@@ -440,12 +440,6 @@ Deprecated
   warning at compile time. This field will be removed in Python 3.14.
   (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
 
-* Use of the implicit default ``'fork'`` start method for
-  :mod:`multiprocessing` and :class:`concurrent.futures.ProcessPoolExecutor`
-  now emits a :exc:`DeprecationWarning` on Linux and other non-macOS POSIX
-  systems. Avoid this by explicitly specifying a start method.
-  See :ref:`multiprocessing-start-methods`.
-
 Pending Removal in Python 3.13
 ------------------------------
 
@@ -510,9 +504,13 @@ Pending Removal in Python 3.14
 * Testing the truth value of an :class:`xml.etree.ElementTree.Element`
   is deprecated and will raise an exception in Python 3.14.
 
-* The default :mod:`multiprocessing` start method will change to one of either
-  ``'forkserver'`` or ``'spawn'`` on all platforms for which ``'fork'`` remains
-  the default per :gh:`84559`.
+* The default :mod:`multiprocessing` start method will change to a safer one on
+  Linux, BSDs, and other non-macOS POSIX platforms where ``'fork'`` is currently
+  the default (:gh:`84559`). Adding a runtime warning about this was deemed too
+  disruptive as the majority of code is not expected to care. Use the
+  :func:`~multiprocessing.get_context` or
+  :func:`~multiprocessing.set_start_method` APIs to explicitly specify when
+  your code *requires* ``'fork'``.  See :ref:`multiprocessing-start-methods`.
 
 Pending Removal in Future Versions
 ----------------------------------
