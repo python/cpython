@@ -281,13 +281,13 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
       Added the *initializer* and *initargs* arguments.
 
-       .. note::
-          The default :mod:`multiprocessing` start method
-          (see :ref:`multiprocessing-start-methods`) will change away from
-          *fork* in Python 3.14.  Code that requires *fork* be used for their
-          :class:`ProcessPoolExecutor` should explicitly specify that by
-          passing a ``mp_context=multiprocessing.get_context("fork")``
-          parameter.
+      .. note::
+         The default :mod:`multiprocessing` start method
+         (see :ref:`multiprocessing-start-methods`) will change away from
+         *fork* in Python 3.14.  Code that requires *fork* be used for their
+         :class:`ProcessPoolExecutor` should explicitly specify that by
+         passing a ``mp_context=multiprocessing.get_context("fork")``
+         parameter.
 
    .. versionchanged:: 3.11
       The *max_tasks_per_child* argument was added to allow users to
