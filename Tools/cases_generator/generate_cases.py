@@ -230,7 +230,8 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.block_text, self.predictions = extract_block_text(self.block)
+        self.block_text, self.check_eval_breaker, self.predictions = \
+            extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
@@ -1016,6 +1017,8 @@ class Analyzer:
             if not instr.always_exits:
                 for prediction in instr.predictions:
                     self.out.emit(f"PREDICT({prediction});")
+                if instr.check_eval_breaker:
+                    self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
 
     def write_super(self, sup: SuperInstruction) -> None:
@@ -1091,7 +1094,7 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
+def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
 
@@ -1111,6 +1114,12 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
     while blocklines and not blocklines[-1].strip():
         blocklines.pop()
 
+    # Separate CHECK_EVAL_BREAKER() macro from end
+    check_eval_breaker = \
+        blocklines != [] and blocklines[-1].strip() == "CHECK_EVAL_BREAKER();"
+    if check_eval_breaker:
+        del blocklines[-1]
+
     # Separate PREDICT(...) macros from end
     predictions: list[str] = []
     while blocklines and (
@@ -1119,7 +1128,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
         predictions.insert(0, m.group(1))
         blocklines.pop()
 
-    return blocklines, predictions
+    return blocklines, check_eval_breaker, predictions
 
 
 def always_exits(lines: list[str]) -> bool:
