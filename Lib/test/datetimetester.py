@@ -6212,6 +6212,10 @@ class ZoneInfoTest(unittest.TestCase):
                     ts1 = dt.replace(fold=1).timestamp()
                     self.assertEqual(ts0, s0 + ss / 2)
                     self.assertEqual(ts1, s0 - ss / 2)
+                    # gh-83861
+                    utc0 = dt.astimezone(timezone.utc)
+                    utc1 = dt.replace(fold=1).astimezone(timezone.utc)
+                    self.assertEqual(utc0, utc1 + timedelta(0, ss))
         finally:
             if TZ is None:
                 del os.environ['TZ']

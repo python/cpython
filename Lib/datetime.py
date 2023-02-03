@@ -1965,6 +1965,11 @@ class datetime(date):
     def _local_timezone(self):
         if self.tzinfo is None:
             ts = self._mktime()
+            # Detect gap
+            ts2 = self.replace(fold=1-self.fold)._mktime()
+            if ts2 != ts: # This happens in a gap or a fold
+                if (ts2 > ts) == self.fold:
+                    ts = ts2
         else:
             ts = (self - _EPOCH) // timedelta(seconds=1)
         localtm = _time.localtime(ts)
