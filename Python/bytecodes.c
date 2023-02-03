@@ -663,14 +663,10 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        // error: SEND stack effect depends on jump flag
-        inst(SEND) {
+        inst(SEND, (receiver, v -- receiver if (!jump), retval)) {
             assert(frame != &entry_frame);
-            assert(STACK_LEVEL() >= 2);
-            PyObject *v = POP();
-            PyObject *receiver = TOP();
+            bool jump = false;
             PySendResult gen_status;
-            PyObject *retval;
             if (tstate->c_tracefunc == NULL) {
                 gen_status = PyIter_Send(receiver, v, &retval);
             } else {
@@ -695,21 +691,20 @@ dummy_func(
                     gen_status = PYGEN_NEXT;
                 }
             }
-            Py_DECREF(v);
             if (gen_status == PYGEN_ERROR) {
                 assert(retval == NULL);
                 goto error;
             }
+            Py_DECREF(v);
             if (gen_status == PYGEN_RETURN) {
                 assert(retval != NULL);
                 Py_DECREF(receiver);
-                SET_TOP(retval);
                 JUMPBY(oparg);
+                jump = true;
             }
             else {
                 assert(gen_status == PYGEN_NEXT);
                 assert(retval != NULL);
-                PUSH(retval);
             }
         }
 
@@ -2043,31 +2038,30 @@ dummy_func(
             ERROR_IF(iter == NULL, error);
         }
 
-        // stack effect: ( -- )
-        inst(GET_YIELD_FROM_ITER) {
+        inst(GET_YIELD_FROM_ITER, (iterable -- iter)) {
             /* before: [obj]; after [getiter(obj)] */
-            PyObject *iterable = TOP();
-            PyObject *iter;
             if (PyCoro_CheckExact(iterable)) {
                 /* `iterable` is a coroutine */
                 if (!(frame->f_code->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
                     /* and it is used in a 'yield from' expression of a
                        regular generator. */
-                    Py_DECREF(iterable);
-                    SET_TOP(NULL);
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
                     goto error;
                 }
+                iter = iterable;
             }
-            else if (!PyGen_CheckExact(iterable)) {
+            else if (PyGen_CheckExact(iterable)) {
+                iter = iterable;
+            }
+            else {
                 /* `iterable` is not a generator. */
                 iter = PyObject_GetIter(iterable);
-                Py_DECREF(iterable);
-                SET_TOP(iter);
-                if (iter == NULL)
+                if (iter == NULL) {
                     goto error;
+                }
+                Py_DECREF(iterable);
             }
             PREDICT(LOAD_CONST);
         }
@@ -3010,8 +3004,7 @@ dummy_func(
             PUSH((PyObject *)func);
         }
 
-        // stack effect: ( -- )
-        inst(RETURN_GENERATOR) {
+        inst(RETURN_GENERATOR, (--)) {
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
