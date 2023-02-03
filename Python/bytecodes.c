@@ -2972,36 +2972,39 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // error: MAKE_FUNCTION has irregular stack effect
-        inst(MAKE_FUNCTION) {
-            PyObject *codeobj = POP();
-            PyFunctionObject *func = (PyFunctionObject *)
+        inst(MAKE_FUNCTION, (defaults    if (oparg & 0x01),
+                             kwdefaults  if (oparg & 0x02),
+                             annotations if (oparg & 0x04),
+                             closure     if (oparg & 0x08),
+                             codeobj -- func)) {
+
+            PyFunctionObject *func_obj = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
 
             Py_DECREF(codeobj);
-            if (func == NULL) {
+            if (func_obj == NULL) {
                 goto error;
             }
 
             if (oparg & 0x08) {
-                assert(PyTuple_CheckExact(TOP()));
-                func->func_closure = POP();
+                assert(PyTuple_CheckExact(closure));
+                func_obj->func_closure = closure;
             }
             if (oparg & 0x04) {
-                assert(PyTuple_CheckExact(TOP()));
-                func->func_annotations = POP();
+                assert(PyTuple_CheckExact(annotations));
+                func_obj->func_annotations = annotations;
             }
             if (oparg & 0x02) {
-                assert(PyDict_CheckExact(TOP()));
-                func->func_kwdefaults = POP();
+                assert(PyDict_CheckExact(kwdefaults));
+                func_obj->func_kwdefaults = kwdefaults;
             }
             if (oparg & 0x01) {
-                assert(PyTuple_CheckExact(TOP()));
-                func->func_defaults = POP();
+                assert(PyTuple_CheckExact(defaults));
+                func_obj->func_defaults = defaults;
             }
 
-            func->func_version = ((PyCodeObject *)codeobj)->co_version;
-            PUSH((PyObject *)func);
+            func_obj->func_version = ((PyCodeObject *)codeobj)->co_version;
+            func = (PyObject *)func_obj;
         }
 
         inst(RETURN_GENERATOR, (--)) {
@@ -3027,22 +3030,12 @@ dummy_func(
             goto resume_frame;
         }
 
-        // error: BUILD_SLICE has irregular stack effect
-        inst(BUILD_SLICE) {
-            PyObject *start, *stop, *step, *slice;
-            if (oparg == 3)
-                step = POP();
-            else
-                step = NULL;
-            stop = POP();
-            start = TOP();
+        inst(BUILD_SLICE, (start, stop, step if (oparg == 3) -- slice)) {
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
             Py_DECREF(stop);
             Py_XDECREF(step);
-            SET_TOP(slice);
-            if (slice == NULL)
-                goto error;
+            ERROR_IF(slice == NULL, error);
         }
 
         // error: FORMAT_VALUE has irregular stack effect
