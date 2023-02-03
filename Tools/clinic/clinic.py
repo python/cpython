@@ -1038,8 +1038,8 @@ class CLanguage(Language):
                 declarations += "\nPyObject *argsbuf[%s];" % argsbuf_size
                 if vararg != NO_VARARG:
                     declarations += "\nPy_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % (max_pos)
-                    parsed_argname = "fastargs"
                     declarations += "\nPyObject *const *fastargs;"
+                    parsed_argname = "fastargs"
                 else:
                     parsed_argname = "args"
                 if has_optional_kw:

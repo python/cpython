@@ -12,6 +12,20 @@
 #include "clinic/_testclinic.c.h"
 
 
+static PyObject *
+pack_varargs_to_tuple(Py_ssize_t varargssize, PyObject *const *args)
+{
+    assert(!PyErr_Occurred());
+    PyObject *tuple = PyTuple_New(varargssize);
+    if (!tuple) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < varargssize; i++) {
+        PyTuple_SET_ITEM(tuple, i, Py_NewRef(args[i]));
+    }
+    return tuple;
+}
+
 /* Pack arguments to a tuple, implicitly increase all the arguments' refcount.
  * NULL arguments will be replaced to Py_None. */
 static PyObject *
@@ -962,10 +976,16 @@ posonly_vararg
 
 static PyObject *
 posonly_vararg_impl(PyObject *module, PyObject *a, PyObject *b,
-                    PyObject *args)
-/*[clinic end generated code: output=ee6713acda6b954e input=783427fe7ec2b67a]*/
+                    Py_ssize_t varargssize, PyObject *const *args)
+/*[clinic end generated code: output=744bd14cfaa7b46c input=783427fe7ec2b67a]*/
 {
-    return pack_arguments_newref(3, a, b, args);
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(3, a, b, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
 }
 
 
@@ -979,10 +999,17 @@ vararg_and_posonly
 [clinic start generated code]*/
 
 static PyObject *
-vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=42792f799465a14d input=defe017b19ba52e8]*/
+vararg_and_posonly_impl(PyObject *module, PyObject *a,
+                        Py_ssize_t varargssize, PyObject *const *args)
+/*[clinic end generated code: output=75f9bcbfc99efb90 input=defe017b19ba52e8]*/
 {
-    return pack_arguments_newref(2, a, args);
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(2, a, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
 }
 
 
@@ -995,10 +1022,17 @@ vararg
 [clinic start generated code]*/
 
 static PyObject *
-vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=91ab7a0efc52dd5e input=02c0f772d05f591e]*/
+vararg_impl(PyObject *module, PyObject *a, Py_ssize_t varargssize,
+            PyObject *const *args)
+/*[clinic end generated code: output=36e183ea6ecb9f8f input=02c0f772d05f591e]*/
 {
-    return pack_arguments_newref(2, a, args);
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(2, a, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
 }
 
 
@@ -1012,12 +1046,19 @@ vararg_with_default
 [clinic start generated code]*/
 
 static PyObject *
-vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
+vararg_with_default_impl(PyObject *module, PyObject *a,
+                         Py_ssize_t varargssize, PyObject *const *args,
                          int b)
-/*[clinic end generated code: output=182c01035958ce92 input=68cafa6a79f89e36]*/
+/*[clinic end generated code: output=f4e18bc71825f3f9 input=68cafa6a79f89e36]*/
 {
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
     PyObject *obj_b = b ? Py_True : Py_False;
-    return pack_arguments_newref(3, a, args, obj_b);
+    PyObject *result = pack_arguments_newref(3, a, vararg_tuple, obj_b);
+    Py_DECREF(vararg_tuple);
+    return result;
 }
 
 
@@ -1030,10 +1071,17 @@ vararg_with_only_defaults
 [clinic start generated code]*/
 
 static PyObject *
-vararg_with_only_defaults_impl(PyObject *module, PyObject *args, PyObject *b)
-/*[clinic end generated code: output=c06b1826d91f2f7b input=678c069bc67550e1]*/
+vararg_with_only_defaults_impl(PyObject *module, Py_ssize_t varargssize,
+                               PyObject *const *args, PyObject *b)
+/*[clinic end generated code: output=049328b782106d03 input=678c069bc67550e1]*/
 {
-    return pack_arguments_newref(2, args, b);
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(2, vararg_tuple, b);
+    Py_DECREF(vararg_tuple);
+    return result;
 }
 
 
@@ -1053,8 +1101,9 @@ Proof-of-concept of GH-32092 OOB bug.
 
 static PyObject *
 gh_32092_oob_impl(PyObject *module, PyObject *pos1, PyObject *pos2,
-                  PyObject *varargs, PyObject *kw1, PyObject *kw2)
-/*[clinic end generated code: output=ee259c130054653f input=46d15c881608f8ff]*/
+                  Py_ssize_t varargssize, PyObject *const *varargs,
+                  PyObject *kw1, PyObject *kw2)
+/*[clinic end generated code: output=ecb8573caf9791ac input=46d15c881608f8ff]*/
 {
     Py_RETURN_NONE;
 }
@@ -1072,9 +1121,10 @@ Proof-of-concept of GH-32092 keyword args passing bug.
 [clinic start generated code]*/
 
 static PyObject *
-gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
+gh_32092_kw_pass_impl(PyObject *module, PyObject *pos,
+                      Py_ssize_t varargssize, PyObject *const *args,
                       PyObject *kw)
-/*[clinic end generated code: output=4a2bbe4f7c8604e9 input=5c0bd5b9079a0cce]*/
+/*[clinic end generated code: output=5fb8caec2618b065 input=5c0bd5b9079a0cce]*/
 {
     Py_RETURN_NONE;
 }
@@ -1091,8 +1141,9 @@ Proof-of-concept of GH-99233 refcount error bug.
 [clinic start generated code]*/
 
 static PyObject *
-gh_99233_refcount_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=585855abfbca9a7f input=85f5fb47ac91a626]*/
+gh_99233_refcount_impl(PyObject *module, Py_ssize_t varargssize,
+                       PyObject *const *args)
+/*[clinic end generated code: output=2712f6e3397e4eca input=85f5fb47ac91a626]*/
 {
     Py_RETURN_NONE;
 }

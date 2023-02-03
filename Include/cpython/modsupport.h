@@ -99,6 +99,13 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywordsWithVararg(
         int minpos, int maxpos, int minkw,
         int vararg, PyObject **buf);
 
+PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywordsWithVarargKwonly(
+        PyObject *const *args, Py_ssize_t nargs,
+        PyObject *kwargs, PyObject *kwnames,
+        struct _PyArg_Parser *parser,
+        int minpos, int maxpos, int minkw,
+        int vararg, PyObject **buf);
+
 #define _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, parser, minpos, maxpos, minkw, buf) \
     (((minkw) == 0 && (kwargs) == NULL && (kwnames) == NULL && \
       (minpos) <= (nargs) && (nargs) <= (maxpos) && (args) != NULL) ? (args) : \

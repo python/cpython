@@ -2645,6 +2645,8 @@ exit:
     return NULL;
 }
 
+/* Specialized version of _PyArg_UnpackKeywordsWithVararg.
+ * This function only returns parsed kwonly arguments array. */
 PyObject * const *
 _PyArg_UnpackKeywordsWithVarargKwonly(PyObject *const *args, Py_ssize_t nargs,
                                 PyObject *kwargs, PyObject *kwnames,
@@ -2686,7 +2688,6 @@ _PyArg_UnpackKeywordsWithVarargKwonly(PyObject *const *args, Py_ssize_t nargs,
     posonly = parser->pos;
     minposonly = Py_MIN(posonly, minpos);
     maxargs = posonly + (int)PyTuple_GET_SIZE(kwtuple);
-
     if (kwargs != NULL) {
         nkwargs = PyDict_GET_SIZE(kwargs);
     }
@@ -2729,7 +2730,19 @@ _PyArg_UnpackKeywordsWithVarargKwonly(PyObject *const *args, Py_ssize_t nargs,
             current_arg = NULL;
         }
 
-        buf[i - vararg] = current_arg;
+        /* This function only cares about keyword-only argument.
+         * If an arguments is passed in as a keyword argument,
+         * we do not process it.
+         *
+         * For example:
+         * def f(posonly, /, kw, *varargs, kwonly1, kwonly2):
+         *     pass
+         * f(1, kw=2, kwonly1=3, kwonly2=4)
+         *
+         * This `buf` array should be: [3, 4]. */
+        if (i >= vararg) {
+            buf[i - vararg] = current_arg;
+        }
 
         if (current_arg) {
             --nkwargs;
@@ -2747,35 +2760,8 @@ _PyArg_UnpackKeywordsWithVarargKwonly(PyObject *const *args, Py_ssize_t nargs,
     }
 
     if (nkwargs > 0) {
-        Py_ssize_t j;
-        /* make sure there are no extraneous keyword arguments */
-        j = 0;
-        while (1) {
-            int match;
-            if (kwargs != NULL) {
-                if (!PyDict_Next(kwargs, &j, &keyword, NULL))
-                    break;
-            }
-            else {
-                if (j >= PyTuple_GET_SIZE(kwnames))
-                    break;
-                keyword = PyTuple_GET_ITEM(kwnames, j);
-                j++;
-            }
-
-            match = PySequence_Contains(kwtuple, keyword);
-            if (match <= 0) {
-                if (!match) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "'%S' is an invalid keyword "
-                                 "argument for %.200s%s",
-                                 keyword,
-                                 (parser->fname == NULL) ? "this function" : parser->fname,
-                                 (parser->fname == NULL) ? "" : "()");
-                }
-                return NULL;
-            }
-        }
+        error_unexpected_keyword_arg(kwargs, kwnames, kwtuple, parser->fname);
+        return NULL;
     }
 
     return buf;
