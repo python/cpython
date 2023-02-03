@@ -2360,7 +2360,7 @@ dummy_func(
             CALL_PY_EXACT_ARGS,
             CALL_PY_WITH_DEFAULTS,
             CALL_NO_KW_TYPE_1,
-        //     CALL_NO_KW_STR_1,
+            CALL_NO_KW_STR_1,
         //     CALL_NO_KW_TUPLE_1,
         //     CALL_BUILTIN_CLASS,
         //     CALL_NO_KW_BUILTIN_O,
@@ -2547,25 +2547,18 @@ dummy_func(
             Py_DECREF(callable);
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_NO_KW_STR_1) {
+        inst(CALL_NO_KW_STR_1, (unused/1, unused/2, unused/1, null, callable, args[oparg] -- res)) {
             assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
-            DEOPT_IF(is_method(stack_pointer, 1), CALL);
-            PyObject *callable = PEEK(2);
+            DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = TOP();
-            PyObject *res = PyObject_Str(arg);
+            PyObject *arg = args[0];
+            res = PyObject_Str(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyUnicode_Type);
-            STACK_SHRINK(2);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            Py_DECREF(&PyUnicode_Type);  // I.e., callable
+            ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
         }
 
