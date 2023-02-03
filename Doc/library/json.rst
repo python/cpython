@@ -9,14 +9,24 @@
 
 **Source code:** :source:`Lib/json/__init__.py`
 
+.. testsetup:: *
+
+   import json
+   from json import AttrDict
+
 --------------
 
-`JSON (JavaScript Object Notation) <http://json.org>`_, specified by
+`JSON (JavaScript Object Notation) <https://json.org>`_, specified by
 :rfc:`7159` (which obsoletes :rfc:`4627`) and by
-`ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_,
+`ECMA-404 <https://www.ecma-international.org/publications-and-standards/standards/ecma-404/>`_,
 is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
 (although it is not a strict subset of JavaScript [#rfc-errata]_ ).
+
+.. warning::
+   Be cautious when parsing JSON data from untrusted sources. A malicious
+   JSON string may cause the decoder to consume considerable CPU and memory
+   resources. Limiting the size of data to be parsed is recommended.
 
 :mod:`json` exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
@@ -115,10 +125,15 @@ See :ref:`json-commandline` for detailed documentation.
 
 .. note::
 
-   JSON is a subset of `YAML <http://yaml.org/>`_ 1.2.  The JSON produced by
+   JSON is a subset of `YAML <https://yaml.org/>`_ 1.2.  The JSON produced by
    this module's default settings (in particular, the default *separators*
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.
+
+.. note::
+
+   This module's encoders and decoders preserve input and output order by
+   default.  Order is only lost if the underlying containers are unordered.
 
 
 Basic Usage
@@ -147,7 +162,7 @@ Basic Usage
 
    If *check_circular* is false (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
-   will result in an :exc:`OverflowError` (or worse).
+   will result in a :exc:`RecursionError` (or worse).
 
    If *allow_nan* is false (default: ``True``), then it will be a
    :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
@@ -188,6 +203,11 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. note::
+
+      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
+      so trying to serialize multiple objects with repeated calls to
+      :func:`dump` using the same *fp* will result in an invalid JSON file.
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
@@ -200,12 +220,6 @@ Basic Usage
 
    .. note::
 
-      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
-      so trying to serialize multiple objects with repeated calls to
-      :func:`dump` using the same *fp* will result in an invalid JSON file.
-
-   .. note::
-
       Keys in key/value pairs of JSON are always of the type :class:`str`. When
       a dictionary is converted into JSON, all the keys of the dictionary are
       coerced to strings. As a result of this, if a dictionary is converted
@@ -215,14 +229,14 @@ Basic Usage
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
-   Deserialize *fp* (a ``.read()``-supporting :term:`file-like object`
-   containing a JSON document) to a Python object using this :ref:`conversion
-   table <json-to-py-table>`.
+   Deserialize *fp* (a ``.read()``-supporting :term:`text file` or
+   :term:`binary file` containing a JSON document) to a Python object using
+   this :ref:`conversion table <json-to-py-table>`.
 
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
    *object_hook* will be used instead of the :class:`dict`.  This feature can be used
-   to implement custom decoders (e.g. `JSON-RPC <http://www.jsonrpc.org>`_
+   to implement custom decoders (e.g. `JSON-RPC <https://www.jsonrpc.org>`_
    class hinting).
 
    *object_pairs_hook* is an optional function that will be called with the
@@ -244,6 +258,12 @@ Basic Usage
    be used to use another datatype or parser for JSON integers
    (e.g. :class:`float`).
 
+   .. versionchanged:: 3.11
+      The default *parse_int* of :func:`int` now limits the maximum length of
+      the integer string via the interpreter's :ref:`integer string
+      conversion length limitation <int_max_str_digits>` to help avoid denial
+      of service attacks.
+
    *parse_constant*, if specified, will be called with one of the following
    strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.
    This can be used to raise an exception if invalid JSON numbers
@@ -262,14 +282,17 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
-.. function:: loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+   .. versionchanged:: 3.6
+      *fp* can now be a :term:`binary file`. The input encoding should be
+      UTF-8, UTF-16 or UTF-32.
+
+.. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
    instance containing a JSON document) to a Python object using this
    :ref:`conversion table <json-to-py-table>`.
 
-   The other arguments have the same meaning as in :func:`load`, except
-   *encoding* which is ignored and deprecated.
+   The other arguments have the same meaning as in :func:`load`.
 
    If the data being deserialized is not a valid JSON document, a
    :exc:`JSONDecodeError` will be raised.
@@ -277,6 +300,9 @@ Basic Usage
    .. versionchanged:: 3.6
       *s* can now be of type :class:`bytes` or :class:`bytearray`. The
       input encoding should be UTF-8, UTF-16 or UTF-32.
+
+   .. versionchanged:: 3.9
+      The keyword argument *encoding* has been removed.
 
 
 Encoders and Decoders
@@ -316,7 +342,7 @@ Encoders and Decoders
    *object_hook*, if specified, will be called with the result of every JSON
    object decoded and its return value will be used in place of the given
    :class:`dict`.  This can be used to provide custom deserializations (e.g. to
-   support JSON-RPC class hinting).
+   support `JSON-RPC <https://www.jsonrpc.org>`_ class hinting).
 
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of
@@ -405,10 +431,9 @@ Encoders and Decoders
    for ``o`` if possible, otherwise it should call the superclass implementation
    (to raise :exc:`TypeError`).
 
-   If *skipkeys* is false (the default), then it is a :exc:`TypeError` to
-   attempt encoding of keys that are not :class:`str`, :class:`int`,
-   :class:`float` or ``None``.  If *skipkeys* is true, such items are simply
-   skipped.
+   If *skipkeys* is false (the default), a :exc:`TypeError` will be raised when
+   trying to encode keys that are not :class:`str`, :class:`int`, :class:`float`
+   or ``None``.  If *skipkeys* is true, such items are simply skipped.
 
    If *ensure_ascii* is true (the default), the output is guaranteed to
    have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
@@ -416,7 +441,7 @@ Encoders and Decoders
 
    If *check_circular* is true (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
-   prevent an infinite recursion (which would cause an :exc:`OverflowError`).
+   prevent an infinite recursion (which would cause a :exc:`RecursionError`).
    Otherwise, no such check takes place.
 
    If *allow_nan* is true (the default), then ``NaN``, ``Infinity``, and
@@ -462,8 +487,8 @@ Encoders and Decoders
       object for *o*, or calls the base implementation (to raise a
       :exc:`TypeError`).
 
-      For example, to support arbitrary iterators, you could implement default
-      like this::
+      For example, to support arbitrary iterators, you could implement
+      :meth:`default` like this::
 
          def default(self, o):
             try:
@@ -523,12 +548,50 @@ Exceptions
 
    .. versionadded:: 3.5
 
+.. class:: AttrDict(**kwargs)
+           AttrDict(mapping, **kwargs)
+           AttrDict(iterable, **kwargs)
+
+   Subclass of :class:`dict` object that also supports attribute style dotted access.
+
+   This class is intended for use with the :attr:`object_hook` in
+   :func:`json.load` and :func:`json.loads`::
+
+   .. doctest::
+
+        >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
+        >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
+        >>> orbital_period['earth']     # Dict style lookup
+        365
+        >>> orbital_period.earth        # Attribute style lookup
+        365
+        >>> orbital_period.keys()       # All dict methods are present
+        dict_keys(['mercury', 'venus', 'earth', 'mars'])
+
+   Attribute style access only works for keys that are valid attribute
+   names.  In contrast, dictionary style access works for all keys.  For
+   example, ``d.two words`` contains a space and is not syntactically
+   valid Python, so ``d["two words"]`` should be used instead.
+
+   If a key has the same name as a dictionary method, then a dictionary
+   lookup finds the key and an attribute lookup finds the method:
+
+   .. doctest::
+
+        >>> d = AttrDict(items=50)
+        >>> d['items']                  # Lookup the key
+        50
+        >>> d.items()                   # Call the method
+        dict_items([('items', 50)])
+
+   .. versionadded:: 3.12
+
 
 Standard Compliance and Interoperability
 ----------------------------------------
 
 The JSON format is specified by :rfc:`7159` and by
-`ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_.
+`ECMA-404 <https://www.ecma-international.org/publications-and-standards/standards/ecma-404/>`_.
 This section details this module's level of compliance with the RFC.
 For simplicity, :class:`JSONEncoder` and :class:`JSONDecoder` subclasses, and
 parameters other than those explicitly mentioned, are not considered.
@@ -645,7 +708,9 @@ when serializing Python :class:`int` values of extremely large magnitude, or
 when serializing instances of "exotic" numerical types such as
 :class:`decimal.Decimal`.
 
+
 .. _json-commandline:
+.. program:: json.tool
 
 Command Line Interface
 ----------------------
@@ -676,6 +741,7 @@ specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
    The output is now in the same order as the input. Use the
    :option:`--sort-keys` option to sort the output of dictionaries
    alphabetically by key.
+
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
@@ -710,6 +776,24 @@ Command line options
    Sort the output of dictionaries alphabetically by key.
 
    .. versionadded:: 3.5
+
+.. cmdoption:: --no-ensure-ascii
+
+   Disable escaping of non-ascii characters, see :func:`json.dumps` for more information.
+
+   .. versionadded:: 3.9
+
+.. cmdoption:: --json-lines
+
+   Parse every input line as separate JSON object.
+
+   .. versionadded:: 3.8
+
+.. cmdoption:: --indent, --tab, --no-indent, --compact
+
+   Mutually exclusive options for whitespace control.
+
+   .. versionadded:: 3.9
 
 .. cmdoption:: -h, --help
 

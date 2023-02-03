@@ -1,5 +1,0 @@
-This directory contains a slightly modified version of libffi, extracted from
-the GCC source-tree.
-
-The only modifications are those that are necessary to compile libffi using 
-the Apple provided compiler and outside of the GCC source tree.

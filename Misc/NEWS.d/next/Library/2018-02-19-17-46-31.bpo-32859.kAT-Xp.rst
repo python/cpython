@@ -1,2 +1,0 @@
-In ``os.dup2``, don't check every call whether the ``dup3`` syscall exists
-or not.

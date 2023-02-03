@@ -2,16 +2,19 @@
 
 import copy
 import pickle
-from test.support import findfile
+import io
+from test import support
 import unittest
 
+import pyexpat
 import xml.dom.minidom
 
-from xml.dom.minidom import parse, Node, Document, parseString
+from xml.dom.minidom import parse, Attr, Node, Document, parseString
 from xml.dom.minidom import getDOMImplementation
+from xml.parsers.expat import ExpatError
 
 
-tstfile = findfile("test.xml", subdir="xmltestdata")
+tstfile = support.findfile("test.xml", subdir="xmltestdata")
 sample = ("<?xml version='1.0' encoding='us-ascii'?>\n"
           "<!DOCTYPE doc PUBLIC 'http://xml.python.org/public'"
           " 'http://xml.python.org/system' [\n"
@@ -73,6 +76,20 @@ class MinidomTest(unittest.TestCase):
             dom = parse(file)
             dom.unlink()
             self.confirm(isinstance(dom, Document))
+
+    def testAttrModeSetsParamsAsAttrs(self):
+        attr = Attr("qName", "namespaceURI", "localName", "prefix")
+        self.assertEqual(attr.name, "qName")
+        self.assertEqual(attr.namespaceURI, "namespaceURI")
+        self.assertEqual(attr.prefix, "prefix")
+        self.assertEqual(attr.localName, "localName")
+
+    def testAttrModeSetsNonOptionalAttrs(self):
+        attr = Attr("qName", "namespaceURI", None, "prefix")
+        self.assertEqual(attr.name, "qName")
+        self.assertEqual(attr.namespaceURI, "namespaceURI")
+        self.assertEqual(attr.prefix, "prefix")
+        self.assertEqual(attr.localName, attr.name)
 
     def testGetElementsByTagName(self):
         dom = parse(tstfile)
@@ -325,7 +342,7 @@ class MinidomTest(unittest.TestCase):
         node = child.getAttributeNode("spam")
         self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNode,
             None)
-        child.removeAttributeNode(node)
+        self.assertIs(node, child.removeAttributeNode(node))
         self.confirm(len(child.attributes) == 0
                 and child.getAttributeNode("spam") is None)
         dom2 = Document()
@@ -836,6 +853,57 @@ class MinidomTest(unittest.TestCase):
     def testClonePIDeep(self):
         self.check_clone_pi(1, "testClonePIDeep")
 
+    def check_clone_node_entity(self, clone_document):
+        # bpo-35052: Test user data handler in cloneNode() on a document with
+        # an entity
+        document = xml.dom.minidom.parseString("""
+            <?xml version="1.0" ?>
+            <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+                "http://www.w3.org/TR/html4/strict.dtd"
+                [ <!ENTITY smile "☺"> ]
+            >
+            <doc>Don't let entities make you frown &smile;</doc>
+        """.strip())
+
+        class Handler:
+            def handle(self, operation, key, data, src, dst):
+                self.operation = operation
+                self.key = key
+                self.data = data
+                self.src = src
+                self.dst = dst
+
+        handler = Handler()
+        doctype = document.doctype
+        entity = doctype.entities['smile']
+        entity.setUserData("key", "data", handler)
+
+        if clone_document:
+            # clone Document
+            clone = document.cloneNode(deep=True)
+
+            self.assertEqual(clone.documentElement.firstChild.wholeText,
+                             "Don't let entities make you frown ☺")
+            operation = xml.dom.UserDataHandler.NODE_IMPORTED
+            dst = clone.doctype.entities['smile']
+        else:
+            # clone DocumentType
+            with support.swap_attr(doctype, 'ownerDocument', None):
+                clone = doctype.cloneNode(deep=True)
+
+            operation = xml.dom.UserDataHandler.NODE_CLONED
+            dst = clone.entities['smile']
+
+        self.assertEqual(handler.operation, operation)
+        self.assertEqual(handler.key, "key")
+        self.assertEqual(handler.data, "data")
+        self.assertIs(handler.src, entity)
+        self.assertIs(handler.dst, dst)
+
+    def testCloneNodeEntity(self):
+        self.check_clone_node_entity(False)
+        self.check_clone_node_entity(True)
+
     def testNormalize(self):
         doc = parseString("<doc/>")
         root = doc.documentElement
@@ -1095,8 +1163,26 @@ class MinidomTest(unittest.TestCase):
 
         # Verify that character decoding errors raise exceptions instead
         # of crashing
-        self.assertRaises(UnicodeDecodeError, parseString,
-                b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>')
+        with self.assertRaises((UnicodeDecodeError, ExpatError)):
+            parseString(
+                b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>'
+            )
+
+        doc.unlink()
+
+    def testStandalone(self):
+        doc = parseString('<foo>&#x20ac;</foo>')
+        self.assertEqual(doc.toxml(),
+                         '<?xml version="1.0" ?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml(standalone=None),
+                         '<?xml version="1.0" ?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml(standalone=True),
+            '<?xml version="1.0" standalone="yes"?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml(standalone=False),
+            '<?xml version="1.0" standalone="no"?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml('utf-8', True),
+            b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>'
+            b'<foo>\xe2\x82\xac</foo>')
 
         doc.unlink()
 
@@ -1541,8 +1627,11 @@ class MinidomTest(unittest.TestCase):
         self.confirm(doc2.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
     def testExceptionOnSpacesInXMLNSValue(self):
-        with self.assertRaisesRegex(ValueError, 'Unsupported syntax'):
-            parseString('<element xmlns:abc="http:abc.com/de f g/hi/j k"><abc:foo /></element>')
+        with self.assertRaises((ValueError, ExpatError)):
+            parseString(
+                '<element xmlns:abc="http:abc.com/de f g/hi/j k">' +
+                '<abc:foo /></element>'
+            )
 
     def testDocRemoveChild(self):
         doc = parse(tstfile)
@@ -1559,6 +1648,41 @@ class MinidomTest(unittest.TestCase):
         doc = parse(tstfile)
         pi = doc.createProcessingInstruction("y", "z")
         pi.nodeValue = "crash"
+
+    def test_minidom_attribute_order(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        doc = parseString(xml_str)
+        output = io.StringIO()
+        doc.writexml(output)
+        self.assertEqual(output.getvalue(), xml_str)
+
+    def test_toxml_with_attributes_ordered(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toxml(), xml_str)
+
+    def test_toprettyxml_with_attributes_ordered(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toprettyxml(),
+                         '<?xml version="1.0" ?>\n'
+                         '<curriculum status="public" company="example"/>\n')
+
+    def test_toprettyxml_with_cdata(self):
+        xml_str = '<?xml version="1.0" ?><root><node><![CDATA[</data>]]></node></root>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toprettyxml(),
+                         '<?xml version="1.0" ?>\n'
+                         '<root>\n'
+                         '\t<node><![CDATA[</data>]]></node>\n'
+                         '</root>\n')
+
+    def test_cdata_parsing(self):
+        xml_str = '<?xml version="1.0" ?><root><node><![CDATA[</data>]]></node></root>'
+        dom1 = parseString(xml_str)
+        self.checkWholeText(dom1.getElementsByTagName('node')[0].firstChild, '</data>')
+        dom2 = parseString(dom1.toprettyxml())
+        self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
 
 if __name__ == "__main__":
     unittest.main()

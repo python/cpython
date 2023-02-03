@@ -136,7 +136,7 @@ def create_archive(source, target=None, interpreter=None, main=None,
         compression = (zipfile.ZIP_DEFLATED if compressed else
                        zipfile.ZIP_STORED)
         with zipfile.ZipFile(fd, 'w', compression=compression) as z:
-            for child in source.rglob('*'):
+            for child in sorted(source.rglob('*')):
                 arcname = child.relative_to(source)
                 if filter is None or filter(arcname):
                     z.write(child, arcname.as_posix())

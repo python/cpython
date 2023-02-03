@@ -19,7 +19,7 @@ arguments and return values that cannot be transported through the RPC
 barrier, in particular frame and traceback objects.
 
 """
-
+import reprlib
 import types
 from idlelib import debugger
 
@@ -157,7 +157,7 @@ class IdbAdapter:
     #----------called by a DictProxy----------
 
     def dict_keys(self, did):
-        raise NotImplemented("dict_keys not public or pickleable")
+        raise NotImplementedError("dict_keys not public or pickleable")
 ##         dict = dicttable[did]
 ##         return dict.keys()
 
@@ -170,7 +170,7 @@ class IdbAdapter:
     def dict_item(self, did, key):
         dict = dicttable[did]
         value = dict[key]
-        value = repr(value) ### can't pickle module 'builtins'
+        value = reprlib.repr(value) ### can't pickle module 'builtins'
         return value
 
 #----------end class IdbAdapter----------
@@ -299,7 +299,7 @@ class IdbProxy:
         self.conn = conn
         self.shell = shell
 
-    def call(self, methodname, *args, **kwargs):
+    def call(self, methodname, /, *args, **kwargs):
         ##print("*** IdbProxy.call %s %s %s" % (methodname, args, kwargs))
         value = self.conn.remotecall(self.oid, methodname, args, kwargs)
         ##print("*** IdbProxy.call %s returns %r" % (methodname, value))
@@ -386,3 +386,8 @@ def restart_subprocess_debugger(rpcclt):
     idb_adap_oid_ret = rpcclt.remotecall("exec", "start_the_debugger",\
                                          (gui_adap_oid,), {})
     assert idb_adap_oid_ret == idb_adap_oid, 'Idb restarted with different oid'
+
+
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_debugger_r', verbosity=2, exit=False)
