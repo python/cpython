@@ -23,9 +23,6 @@ class TimeoutError(ProcessError):
 class AuthenticationError(ProcessError):
     pass
 
-class DefaultForkDeprecationWarning(DeprecationWarning):
-    pass
-
 #
 # Base type for contexts. Bound methods of an instance of this type are included in __all__ of __init__.py
 #
@@ -284,23 +281,6 @@ if sys.platform != 'win32':
             from .popen_fork import Popen
             return Popen(process_obj)
 
-    _warn_package_prefixes = (os.path.dirname(__file__),)
-
-    class _DeprecatedForkProcess(ForkProcess):
-        @classmethod
-        def _Popen(cls, process_obj):
-            import warnings
-            warnings.warn(
-                "The default multiprocessing start method will change "
-                "away from 'fork' in Python >= 3.14, per GH-84559. "
-                "Use multiprocessing.get_context(X) or .set_start_method(X) to "
-                "explicitly specify it when your application requires 'fork'. "
-                "The safest start method is 'spawn'.",
-                category=DefaultForkDeprecationWarning,
-                skip_file_prefixes=_warn_package_prefixes,
-            )
-            return super()._Popen(process_obj)
-
     class SpawnProcess(process.BaseProcess):
         _start_method = 'spawn'
         @staticmethod
@@ -324,9 +304,6 @@ if sys.platform != 'win32':
         _name = 'fork'
         Process = ForkProcess
 
-    class _DefaultForkContext(ForkContext):
-        Process = _DeprecatedForkProcess
-
     class SpawnContext(BaseContext):
         _name = 'spawn'
         Process = SpawnProcess
@@ -342,16 +319,13 @@ if sys.platform != 'win32':
         'fork': ForkContext(),
         'spawn': SpawnContext(),
         'forkserver': ForkServerContext(),
-        # Remove None and _DefaultForkContext() when changing the default
-        # in 3.14 for https://github.com/python/cpython/issues/84559.
-        None: _DefaultForkContext(),
     }
     if sys.platform == 'darwin':
         # bpo-33725: running arbitrary code after fork() is no longer reliable
         # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
         _default_context = DefaultContext(_concrete_contexts['spawn'])
     else:
-        _default_context = DefaultContext(_concrete_contexts[None])
+        _default_context = DefaultContext(_concrete_contexts['fork'])
 
 else:
 
