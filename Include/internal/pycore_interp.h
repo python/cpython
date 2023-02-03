@@ -182,9 +182,7 @@ struct _is {
     struct _Py_context_state context;
     struct _Py_exc_state exc_state;
 
-#if WITH_FREELISTS
     _PyFreeList freelists[INTERP_NUM_FREELISTS];
-#endif
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
@@ -237,30 +235,23 @@ PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
-#define SIZE_TO_FREELIST_INDEX(size) ((size-4)/2)
-#define FREELIST_INDEX_TO_SIZE(idx) (2*(idx) + 4)
+#define FREELIST_QUANTUM (2*sizeof(void*))
+#define SIZE_TO_FREELIST_INDEX(size) ((size-4)/FREELIST_QUANTUM)
+#define FREELIST_INDEX_TO_SIZE(idx) (FREELIST_QUANTUM*(idx) + 4)
 
 static inline PyObject*
 _PyInterpreterState_FreelistAlloc(PyInterpreterState *interp, Py_ssize_t size) {
-#if WITH_FREELISTS
     int index = SIZE_TO_FREELIST_INDEX(size);
     assert(index >= 0 && index < INTERP_NUM_FREELISTS);
     return _PyFreeList_Alloc(&interp->freelists[index]);
-#else
-    return PyObject_Malloc(size);
-#endif
 }
 
 static inline void
 _PyInterpreterState_FreelistFree(PyInterpreterState * interp, PyObject *op, Py_ssize_t size) {
-#if WITH_FREELISTS
     /* todo: assert the size is correct? */
     int index = SIZE_TO_FREELIST_INDEX(size);
     assert(index >= 0 && index < INTERP_NUM_FREELISTS);
-    _PyFreeList_Alloc(&interp->freelists[index]);
-#else
-    Py_TYPE(op)->tp_free((PyObject *)op);
-#endif
+    _PyFreeList_Free(&interp->freelists[index], op);
 }
 
 
