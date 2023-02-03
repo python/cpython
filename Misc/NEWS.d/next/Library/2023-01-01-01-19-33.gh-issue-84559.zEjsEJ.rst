@@ -1,0 +1,11 @@
+The :mod:`multiprocessing` module and
+:class:`concurrent.futures.ProcessPoolExecutor` will emit a
+:exc:`DeprecationWarning` on Linux and other non-macOS POSIX systems when
+the default multiprocessing start method of ``'fork'`` is used implicitly
+rather than being explicitly specified through a
+:func:`multiprocessing.get_context` context.
+
+This is in preparation for default start method to change in Python 3.14 to
+a default that is safe for multithreaded applications.
+
+Windows and macOS are unaffected as their default start method is ``spawn``.

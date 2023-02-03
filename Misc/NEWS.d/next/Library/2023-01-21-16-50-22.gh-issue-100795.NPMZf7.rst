@@ -1,0 +1,3 @@
+Avoid potential unexpected ``freeaddrinfo`` call (double free) in :mod:`socket`
+when when a libc ``getaddrinfo()`` implementation leaves garbage in an output
+pointer when returning an error. Original patch by Sergey G. Brester.

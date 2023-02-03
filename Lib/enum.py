@@ -862,13 +862,15 @@ class EnumType(type):
                 member_name, member_value = item
             classdict[member_name] = member_value
 
-        # TODO: replace the frame hack if a blessed way to know the calling
-        # module is ever developed
         if module is None:
             try:
-                module = sys._getframe(2).f_globals['__name__']
-            except (AttributeError, ValueError, KeyError):
-                pass
+                module = sys._getframemodulename(2)
+            except AttributeError:
+                # Fall back on _getframe if _getframemodulename is missing
+                try:
+                    module = sys._getframe(2).f_globals['__name__']
+                except (AttributeError, ValueError, KeyError):
+                    pass
         if module is None:
             _make_class_unpicklable(classdict)
         else:
@@ -1562,11 +1564,6 @@ def unique(enumeration):
         raise ValueError('duplicate values found in %r: %s' %
                 (enumeration, alias_details))
     return enumeration
-
-def _power_of_two(value):
-    if value < 1:
-        return False
-    return value == 2 ** _high_bit(value)
 
 def _dataclass_repr(self):
     dcf = self.__dataclass_fields__

@@ -19,7 +19,7 @@ offers both local and remote concurrency, effectively side-stepping the
 :term:`Global Interpreter Lock <global interpreter lock>` by using
 subprocesses instead of threads.  Due
 to this, the :mod:`multiprocessing` module allows the programmer to fully
-leverage multiple processors on a given machine.  It runs on both Unix and
+leverage multiple processors on a given machine.  It runs on both POSIX and
 Windows.
 
 The :mod:`multiprocessing` module also introduces APIs which do not have
@@ -99,10 +99,10 @@ necessary, see :ref:`multiprocessing-programming`.
 
 
 
+.. _multiprocessing-start-methods:
+
 Contexts and start methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _multiprocessing-start-methods:
 
 Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
@@ -115,7 +115,7 @@ to start a process.  These *start methods* are
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
 
-    Available on Unix and Windows.  The default on Windows and macOS.
+    Available on POSIX and Windows platforms.  The default on Windows and macOS.
 
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
@@ -124,32 +124,39 @@ to start a process.  These *start methods* are
     inherited by the child process.  Note that safely forking a
     multithreaded process is problematic.
 
-    Available on Unix only.  The default on Unix.
+    Available on POSIX systems.  Currently the default on POSIX except macOS.
 
   *forkserver*
     When the program starts and selects the *forkserver* start method,
-    a server process is started.  From then on, whenever a new process
+    a server process is spawned.  From then on, whenever a new process
     is needed, the parent process connects to the server and requests
-    that it fork a new process.  The fork server process is single
-    threaded so it is safe for it to use :func:`os.fork`.  No
-    unnecessary resources are inherited.
+    that it fork a new process.  The fork server process is single threaded
+    unless system libraries or preloaded imports spawn threads as a
+    side-effect so it is generally safe for it to use :func:`os.fork`.
+    No unnecessary resources are inherited.
 
-    Available on Unix platforms which support passing file descriptors
-    over Unix pipes.
+    Available on POSIX platforms which support passing file descriptors
+    over Unix pipes such as Linux.
+
+.. versionchanged:: 3.12
+   Implicit use of the *fork* start method as the default now raises a
+   :exc:`DeprecationWarning`. Code that requires it should explicitly
+   specify *fork* via :func:`get_context` or :func:`set_start_method`.
+   The default will change away from *fork* in 3.14.
 
 .. versionchanged:: 3.8
 
    On macOS, the *spawn* start method is now the default.  The *fork* start
    method should be considered unsafe as it can lead to crashes of the
-   subprocess. See :issue:`33725`.
+   subprocess as macOS system libraries may start threads. See :issue:`33725`.
 
 .. versionchanged:: 3.4
-   *spawn* added on all Unix platforms, and *forkserver* added for
-   some Unix platforms.
+   *spawn* added on all POSIX platforms, and *forkserver* added for
+   some POSIX platforms.
    Child processes no longer inherit all of the parents inheritable
    handles on Windows.
 
-On Unix using the *spawn* or *forkserver* start methods will also
+On POSIX using the *spawn* or *forkserver* start methods will also
 start a *resource tracker* process which tracks the unlinked named
 system resources (such as named semaphores or
 :class:`~multiprocessing.shared_memory.SharedMemory` objects) created
@@ -211,10 +218,10 @@ library user.
 
 .. warning::
 
-   The ``'spawn'`` and ``'forkserver'`` start methods cannot currently
+   The ``'spawn'`` and ``'forkserver'`` start methods generally cannot
    be used with "frozen" executables (i.e., binaries produced by
-   packages like **PyInstaller** and **cx_Freeze**) on Unix.
-   The ``'fork'`` start method does work.
+   packages like **PyInstaller** and **cx_Freeze**) on POSIX systems.
+   The ``'fork'`` start method may work if code does not use threads.
 
 
 Exchanging objects between processes
@@ -629,14 +636,14 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       calling :meth:`join()` is simpler.
 
       On Windows, this is an OS handle usable with the ``WaitForSingleObject``
-      and ``WaitForMultipleObjects`` family of API calls.  On Unix, this is
+      and ``WaitForMultipleObjects`` family of API calls.  On POSIX, this is
       a file descriptor usable with primitives from the :mod:`select` module.
 
       .. versionadded:: 3.3
 
    .. method:: terminate()
 
-      Terminate the process.  On Unix this is done using the ``SIGTERM`` signal;
+      Terminate the process.  On POSIX this is done using the ``SIGTERM`` signal;
       on Windows :c:func:`TerminateProcess` is used.  Note that exit handlers and
       finally clauses, etc., will not be executed.
 
@@ -653,7 +660,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. method:: kill()
 
-      Same as :meth:`terminate()` but using the ``SIGKILL`` signal on Unix.
+      Same as :meth:`terminate()` but using the ``SIGKILL`` signal on POSIX.
 
       .. versionadded:: 3.7
 
@@ -676,16 +683,17 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    .. doctest::
 
        >>> import multiprocessing, time, signal
-       >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
+       >>> mp_context = multiprocessing.get_context('spawn')
+       >>> p = mp_context.Process(target=time.sleep, args=(1000,))
        >>> print(p, p.is_alive())
-       <Process ... initial> False
+       <...Process ... initial> False
        >>> p.start()
        >>> print(p, p.is_alive())
-       <Process ... started> True
+       <...Process ... started> True
        >>> p.terminate()
        >>> time.sleep(0.1)
        >>> print(p, p.is_alive())
-       <Process ... stopped exitcode=-SIGTERM> False
+       <...Process ... stopped exitcode=-SIGTERM> False
        >>> p.exitcode == -signal.SIGTERM
        True
 
@@ -815,7 +823,7 @@ For an example of the usage of queues for interprocess communication see
       Return the approximate size of the queue.  Because of
       multithreading/multiprocessing semantics, this number is not reliable.
 
-      Note that this may raise :exc:`NotImplementedError` on Unix platforms like
+      Note that this may raise :exc:`NotImplementedError` on platforms like
       macOS where ``sem_getvalue()`` is not implemented.
 
    .. method:: empty()
@@ -1034,9 +1042,8 @@ Miscellaneous
 
    Returns a list of the supported start methods, the first of which
    is the default.  The possible start methods are ``'fork'``,
-   ``'spawn'`` and ``'forkserver'``.  On Windows only ``'spawn'`` is
-   available.  On Unix ``'fork'`` and ``'spawn'`` are always
-   supported, with ``'fork'`` being the default.
+   ``'spawn'`` and ``'forkserver'``.  Not all platforms support all
+   methods.  See :ref:`multiprocessing-start-methods`.
 
    .. versionadded:: 3.4
 
@@ -1048,7 +1055,7 @@ Miscellaneous
    If *method* is ``None`` then the default context is returned.
    Otherwise *method* should be ``'fork'``, ``'spawn'``,
    ``'forkserver'``.  :exc:`ValueError` is raised if the specified
-   start method is not available.
+   start method is not available.  See :ref:`multiprocessing-start-methods`.
 
    .. versionadded:: 3.4
 
@@ -1062,8 +1069,7 @@ Miscellaneous
    is true then ``None`` is returned.
 
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
-   or ``None``.  ``'fork'`` is the default on Unix, while ``'spawn'`` is
-   the default on Windows and macOS.
+   or ``None``.  See :ref:`multiprocessing-start-methods`.
 
 .. versionchanged:: 3.8
 
@@ -1084,10 +1090,25 @@ Miscellaneous
    before they can create child processes.
 
    .. versionchanged:: 3.4
-      Now supported on Unix when the ``'spawn'`` start method is used.
+      Now supported on POSIX when the ``'spawn'`` start method is used.
 
    .. versionchanged:: 3.11
       Accepts a :term:`path-like object`.
+
+.. function:: set_forkserver_preload(module_names)
+
+   Set a list of module names for the forkserver main process to attempt to
+   import so that their already imported state is inherited by forked
+   processes. Any :exc:`ImportError` when doing so is silently ignored.
+   This can be used as a performance enhancement to avoid repeated work
+   in every process.
+
+   For this to work, it must be called before the forkserver process has been
+   launched (before creating a :class:`Pool` or starting a :class:`Process`).
+
+   Only meaningful when using the ``'forkserver'`` start method.
+
+   .. versionadded:: 3.4
 
 .. function:: set_start_method(method, force=False)
 
@@ -1101,6 +1122,8 @@ Miscellaneous
    Note that this should be called at most once, and it should be
    protected inside the ``if __name__ == '__main__'`` clause of the
    main module.
+
+   See :ref:`multiprocessing-start-methods`.
 
    .. versionadded:: 3.4
 
@@ -1906,7 +1929,8 @@ their parent process exits.  The manager classes are defined in the
 
    .. doctest::
 
-    >>> manager = multiprocessing.Manager()
+    >>> mp_context = multiprocessing.get_context('spawn')
+    >>> manager = mp_context.Manager()
     >>> Global = manager.Namespace()
     >>> Global.x = 10
     >>> Global.y = 'hello'
@@ -2018,8 +2042,8 @@ the proxy).  In this way, a proxy can be used just like its referent can:
 
 .. doctest::
 
-   >>> from multiprocessing import Manager
-   >>> manager = Manager()
+   >>> mp_context = multiprocessing.get_context('spawn')
+   >>> manager = mp_context.Manager()
    >>> l = manager.list([i*i for i in range(10)])
    >>> print(l)
    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
@@ -2520,7 +2544,7 @@ multiple connections at the same time.
    *timeout* is ``None`` then it will block for an unlimited period.
    A negative timeout is equivalent to a zero timeout.
 
-   For both Unix and Windows, an object can appear in *object_list* if
+   For both POSIX and Windows, an object can appear in *object_list* if
    it is
 
    * a readable :class:`~multiprocessing.connection.Connection` object;
@@ -2531,7 +2555,7 @@ multiple connections at the same time.
    A connection or socket object is ready when there is data available
    to be read from it, or the other end has been closed.
 
-   **Unix**: ``wait(object_list, timeout)`` almost equivalent
+   **POSIX**: ``wait(object_list, timeout)`` almost equivalent
    ``select.select(object_list, [], [], timeout)``.  The difference is
    that, if :func:`select.select` is interrupted by a signal, it can
    raise :exc:`OSError` with an error number of ``EINTR``, whereas
@@ -2803,7 +2827,7 @@ Thread safety of proxies
 
 Joining zombie processes
 
-    On Unix when a process finishes but has not been joined it becomes a zombie.
+    On POSIX when a process finishes but has not been joined it becomes a zombie.
     There should never be very many because each time a new process starts (or
     :func:`~multiprocessing.active_children` is called) all completed processes
     which have not yet been joined will be joined.  Also calling a finished
@@ -2866,7 +2890,7 @@ Joining processes that use queues
 
 Explicitly pass resources to child processes
 
-    On Unix using the *fork* start method, a child process can make
+    On POSIX using the *fork* start method, a child process can make
     use of a shared resource created in a parent process using a
     global resource.  However, it is better to pass the object as an
     argument to the constructor for the child process.

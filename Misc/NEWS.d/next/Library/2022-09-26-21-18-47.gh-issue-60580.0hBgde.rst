@@ -1,0 +1,3 @@
+:data:`ctypes.wintypes.BYTE` definition changed from
+:data:`~ctypes.c_byte` to :data:`~ctypes.c_ubyte` to match Windows
+SDK. Patch by Anatoly Techtonik and Oleg Iarygin.

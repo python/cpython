@@ -46,11 +46,11 @@ static PyObject *
 tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &tuplegetter_type;
     Py_ssize_t index;
     PyObject *doc;
 
-    if ((type == &tuplegetter_type ||
-         type->tp_init == tuplegetter_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("_tuplegetter", kwargs)) {
         goto exit;
     }
@@ -75,4 +75,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=12168d58a11a4fb9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=91a0f221c7b1f96c input=a9049054013a1b77]*/
