@@ -81,6 +81,13 @@ microbenchmark scenario.
         default=False,
         help="Print the results (runtime and number of Tasks created).",
     )
+    parser.add_argument(
+        "-e",
+        "--eager",
+        action="store_true",
+        default=False,
+        help="Use the eager task factory.",
+    )
     return parser.parse_args()
 
 
@@ -102,10 +109,6 @@ class AsyncTree:
         self.suspense_count += 1
         await asyncio.sleep(IO_SLEEP_TIME)
 
-    def create_task(self, loop, coro):
-        self.task_count += 1
-        return asyncio.Task(coro, loop=loop)
-
     async def suspense_func(self):
         raise NotImplementedError(
             "To be implemented by each microbenchmark's derived class."
@@ -120,13 +123,25 @@ class AsyncTree:
             *[self.recurse(recurse_level - 1) for _ in range(NUM_RECURSE_BRANCHES)]
         )
 
-    def run(self):
-        loop = asyncio.new_event_loop()
-        # eager_factory = asyncio.create_eager_task_factory(self.create_task)
-        # loop.set_task_factory(eager_factory)
-        loop.set_task_factory(asyncio.eager_task_factory)
-        loop.run_until_complete(self.recurse(NUM_RECURSE_LEVELS))
-        loop.close()
+    async def run_benchmark(self):
+        await self.recurse(NUM_RECURSE_LEVELS)
+
+    def run(self, use_eager_factory):
+
+        def counting_task_constructor(coro, *, loop=None, name=None, context=None, yield_result=None):
+            self.task_count += 1
+            return asyncio.Task(coro, loop=loop, name=name, context=context, yield_result=yield_result)
+
+        def counting_task_factory(loop, coro, *, name=None, context=None, yield_result=None):
+            return counting_task_constructor(coro, loop=loop, name=name, context=context, yield_result=yield_result)
+
+        asyncio.run(
+            self.run_benchmark(),
+            task_factory=(
+                asyncio.create_eager_task_factory(counting_task_constructor)
+                if use_eager_factory else counting_task_factory
+            ),
+        )
 
 
 class NoSuspensionAsyncTree(AsyncTree):
@@ -177,7 +192,7 @@ if __name__ == "__main__":
     async_tree = async_tree_class(args.memoizable_percentage, args.cpu_probability)
 
     start_time = time.perf_counter()
-    async_tree.run()
+    async_tree.run(args.eager)
     end_time = time.perf_counter()
 
     if args.print:
