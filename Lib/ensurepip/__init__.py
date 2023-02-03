@@ -158,10 +158,10 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
     #
     # pip 1.5+ allows ensurepip to request that some of those be left out
     if altinstall:
-        # omit pip, pipX and easy_install
+        # omit pip, pipX
         os.environ["ENSUREPIP_OPTIONS"] = "altinstall"
     elif not default_pip:
-        # omit pip and easy_install
+        # omit pip
         os.environ["ENSUREPIP_OPTIONS"] = "install"
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -269,14 +269,14 @@ def _main(argv=None):
         action="store_true",
         default=False,
         help=("Make an alternate install, installing only the X.Y versioned "
-              "scripts (Default: pipX, pipX.Y, easy_install-X.Y)."),
+              "scripts (Default: pipX, pipX.Y)."),
     )
     parser.add_argument(
         "--default-pip",
         action="store_true",
         default=False,
         help=("Make a default pip install, installing the unqualified pip "
-              "and easy_install in addition to the versioned scripts."),
+              "in addition to the versioned scripts."),
     )
 
     args = parser.parse_args(argv)

@@ -166,7 +166,6 @@ altinstallunixtools:
 	-if test "x$(ENSUREPIP)" != "xno"  ; then \
 		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
 		for fn in \
-				easy_install-$(VERSION) \
 				pip$(VERSION) \
 				; \
 		do \
