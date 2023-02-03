@@ -356,7 +356,7 @@ class CDLL(object):
                archive(member) syntax for dlopen(), and the mode is adjusted.
                Otherwise, name is presented to dlopen() as a file argument.
             """
-            if name and name.endswith(")") and ".a(" in name:
+            if self._name and self._name.endswith(")") and ".a(" in self._name:
                 mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
         if _os.name == "nt":
             if winmode is not None:
@@ -364,7 +364,7 @@ class CDLL(object):
             else:
                 import nt
                 mode = nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
-                if '/' in name or '\\' in name:
+                if '/' in self._name or '\\' in self._name:
                     self._name = nt._getfullpathname(self._name)
                     mode |= nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
 
