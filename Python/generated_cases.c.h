@@ -3128,20 +3128,24 @@
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
+            PyObject **args = &PEEK(oparg);
+            PyObject *callable = PEEK(1 + oparg);
+            PyObject *null = PEEK(2 + oparg);
+            PyObject *res;
             assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
-            DEOPT_IF(is_method(stack_pointer, 1), CALL);
-            PyObject *obj = TOP();
-            PyObject *callable = SECOND();
+            DEOPT_IF(null != NULL, CALL);
+            PyObject *obj = args[0];
             DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            PyObject *res = Py_NewRef(Py_TYPE(obj));
-            Py_DECREF(callable);
+            res = Py_NewRef(Py_TYPE(obj));
             Py_DECREF(obj);
-            STACK_SHRINK(2);
-            SET_TOP(res);
+            Py_DECREF(callable);
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            POKE(1, res);
+            JUMPBY(4);
             DISPATCH();
         }
 

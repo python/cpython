@@ -2359,7 +2359,7 @@ dummy_func(
             CALL_BOUND_METHOD_EXACT_ARGS,
             CALL_PY_EXACT_ARGS,
             CALL_PY_WITH_DEFAULTS,
-        //     CALL_NO_KW_TYPE_1,
+            CALL_NO_KW_TYPE_1,
         //     CALL_NO_KW_STR_1,
         //     CALL_NO_KW_TUPLE_1,
         //     CALL_BUILTIN_CLASS,
@@ -2534,22 +2534,17 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_NO_KW_TYPE_1) {
+        inst(CALL_NO_KW_TYPE_1, (unused/1, unused/2, unused/1, null, callable, args[oparg] -- res)) {
             assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
-            DEOPT_IF(is_method(stack_pointer, 1), CALL);
-            PyObject *obj = TOP();
-            PyObject *callable = SECOND();
+            DEOPT_IF(null != NULL, CALL);
+            PyObject *obj = args[0];
             DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            PyObject *res = Py_NewRef(Py_TYPE(obj));
-            Py_DECREF(callable);
+            res = Py_NewRef(Py_TYPE(obj));
             Py_DECREF(obj);
-            STACK_SHRINK(2);
-            SET_TOP(res);
+            Py_DECREF(callable);
         }
 
         // stack effect: (__0, __array[oparg] -- )
