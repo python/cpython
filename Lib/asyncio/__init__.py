@@ -47,15 +47,16 @@ def create_eager_task_factory(custom_task_constructor):
 
     def factory(loop, coro, *, name=None, context=None):
         loop._check_closed()
+        if not loop.is_running():
+            return custom_task_constructor(coro, loop=loop, name=name, context=context)
+
         try:
             result = coro.send(None)
         except StopIteration as si:
-            print("XXX")
             fut = loop.create_future()
             fut.set_result(si.value)
             return fut
         except Exception as ex:
-            print("YYY")
             fut = loop.create_future()
             fut.set_exception(ex)
             return fut
