@@ -54,6 +54,23 @@ class FunctionTestCase(unittest.TestCase):
             class X(object, Structure):
                 _fields_ = []
 
+    def test_c_char_parm(self):
+        proto = CFUNCTYPE(c_int, c_char)
+        def callback(*args):
+            return 0
+
+        callback = proto(callback)
+
+        self.assertEqual(callback(b"a"), 0)
+
+        with self.assertRaises(ArgumentError) as cm:
+            callback(b"abc")
+
+        self.assertEqual(str(cm.exception),
+                         "argument 1: TypeError: one character bytes, "
+                         "bytearray or integer expected")
+
+
     @need_symbol('c_wchar')
     def test_wchar_parm(self):
         f = dll._testfunc_i_bhilfd
@@ -61,6 +78,18 @@ class FunctionTestCase(unittest.TestCase):
         result = f(1, "x", 3, 4, 5.0, 6.0)
         self.assertEqual(result, 139)
         self.assertEqual(type(result), int)
+
+        with self.assertRaises(ArgumentError) as cm:
+            f(1, 2, 3, 4, 5.0, 6.0)
+        self.assertEqual(str(cm.exception),
+                         "argument 2: TypeError: unicode string expected "
+                         "instead of int instance")
+
+        with self.assertRaises(ArgumentError) as cm:
+            f(1, "abc", 3, 4, 5.0, 6.0)
+        self.assertEqual(str(cm.exception),
+                         "argument 2: TypeError: one character unicode string "
+                         "expected")
 
     @need_symbol('c_wchar')
     def test_wchar_result(self):
@@ -371,7 +400,7 @@ class FunctionTestCase(unittest.TestCase):
                 (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
     def test_sf1651235(self):
-        # see https://www.python.org/sf/1651235
+        # see https://bugs.python.org/issue1651235
 
         proto = CFUNCTYPE(c_int, RECT, POINT)
         def callback(*args):

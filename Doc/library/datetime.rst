@@ -589,8 +589,8 @@ Supported operations:
 +-------------------------------+----------------------------------------------+
 | Operation                     | Result                                       |
 +===============================+==============================================+
-| ``date2 = date1 + timedelta`` | *date2* is ``timedelta.days`` days removed   |
-|                               | from *date1*. (1)                            |
+| ``date2 = date1 + timedelta`` | *date2* will be ``timedelta.days`` days      |
+|                               | after *date1*. (1)                           |
 +-------------------------------+----------------------------------------------+
 | ``date2 = date1 - timedelta`` | Computes *date2* such that ``date2 +         |
 |                               | timedelta == date1``. (2)                    |
@@ -765,6 +765,7 @@ Example of counting days to an event::
     >>> my_birthday = date(today.year, 6, 24)
     >>> if my_birthday < today:
     ...     my_birthday = my_birthday.replace(year=today.year + 1)
+    ...
     >>> my_birthday
     datetime.date(2008, 6, 24)
     >>> time_to_birthday = abs(my_birthday - today)
@@ -974,19 +975,18 @@ Other constructors, all class methods:
    microsecond of the result are all 0, and :attr:`.tzinfo` is ``None``.
 
 
-.. classmethod:: datetime.combine(date, time, tzinfo=self.tzinfo)
+.. classmethod:: datetime.combine(date, time, tzinfo=time.tzinfo)
 
    Return a new :class:`.datetime` object whose date components are equal to the
    given :class:`date` object's, and whose time components
    are equal to the given :class:`.time` object's. If the *tzinfo*
    argument is provided, its value is used to set the :attr:`.tzinfo` attribute
    of the result, otherwise the :attr:`~.time.tzinfo` attribute of the *time* argument
-   is used.
+   is used.  If the *date* argument is a :class:`.datetime` object, its time components
+   and :attr:`.tzinfo` attributes are ignored.
 
    For any :class:`.datetime` object *d*,
-   ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``. If date is a
-   :class:`.datetime` object, its time components and :attr:`.tzinfo` attributes
-   are ignored.
+   ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``.
 
    .. versionchanged:: 3.6
       Added the *tzinfo* argument.
@@ -1350,7 +1350,7 @@ Instance methods:
 
       Because naive ``datetime`` objects are treated by many ``datetime`` methods
       as local times, it is preferred to use aware datetimes to represent times
-      in UTC; as a result, using ``utcfromtimetuple`` may give misleading
+      in UTC; as a result, using :meth:`datetime.utctimetuple` may give misleading
       results. If you have a naive ``datetime`` representing UTC, use
       ``datetime.replace(tzinfo=timezone.utc)`` to make it aware, at which point
       you can use :meth:`.datetime.timetuple`.
@@ -1769,7 +1769,7 @@ Other constructor:
    ISO 8601 format, with the following exceptions:
 
    1. Time zone offsets may have fractional seconds.
-   2. The leading `T`, normally required in cases where there may be ambiguity between
+   2. The leading ``T``, normally required in cases where there may be ambiguity between
       a date and a time, is not required.
    3. Fractional seconds may have any number of digits (anything beyond 6 will
       be truncated).
@@ -2265,7 +2265,7 @@ where historical changes have been made to civil time.
   two digits of ``offset.hours`` and ``offset.minutes`` respectively.
 
   .. versionchanged:: 3.6
-     Name generated from ``offset=timedelta(0)`` is now plain `'UTC'`, not
+     Name generated from ``offset=timedelta(0)`` is now plain ``'UTC'``, not
      ``'UTC+00:00'``.
 
 
@@ -2443,6 +2443,11 @@ convenience. These parameters all correspond to ISO 8601 date values.
 |           | Week 01 is the week containing |                        |       |
 |           | Jan 4.                         |                        |       |
 +-----------+--------------------------------+------------------------+-------+
+| ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
+|           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
+|           | (empty string if the object is | +06:34:15,             |       |
+|           | naive).                        | -03:07:12.345216       |       |
++-----------+--------------------------------+------------------------+-------+
 
 These may not be available on all platforms when used with the :meth:`strftime`
 method. The ISO 8601 year and ISO 8601 week directives are not interchangeable
@@ -2457,6 +2462,9 @@ differences between platforms in handling of unsupported format specifiers.
 
 .. versionadded:: 3.6
    ``%G``, ``%u`` and ``%V`` were added.
+
+.. versionadded:: 3.12
+   ``%:z`` was added.
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
@@ -2530,8 +2538,8 @@ Notes:
    available).
 
 (6)
-   For a naive object, the ``%z`` and ``%Z`` format codes are replaced by empty
-   strings.
+   For a naive object, the ``%z``, ``%:z`` and ``%Z`` format codes are replaced
+   by empty strings.
 
    For an aware object:
 
@@ -2556,6 +2564,10 @@ Notes:
       and seconds.
       For example, ``'+01:00:00'`` will be parsed as an offset of one hour.
       In addition, providing ``'Z'`` is identical to ``'+00:00'``.
+
+   ``%:z``
+      Behaves exactly as ``%z``, but has a colon separator added between
+      hours, minutes and seconds.
 
    ``%Z``
       In :meth:`strftime`, ``%Z`` is replaced by an empty string if
@@ -2589,7 +2601,7 @@ Notes:
 
 (9)
    When used with the :meth:`strptime` method, the leading zero is optional
-   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%J``, ``%U``,
+   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
 .. rubric:: Footnotes

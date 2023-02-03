@@ -32,7 +32,7 @@ The :func:`getmembers` function retrieves the members of an object such as a
 class or module. The functions whose names begin with "is" are mainly
 provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
-attributes:
+attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. this function name is too big to fit in the ascii-art table below
 .. |coroutine-origin-link| replace:: :func:`sys.set_coroutine_origin_tracking_depth`
@@ -40,11 +40,6 @@ attributes:
 +-----------+-------------------+---------------------------+
 | Type      | Attribute         | Description               |
 +===========+===================+===========================+
-| module    | __doc__           | documentation string      |
-+-----------+-------------------+---------------------------+
-|           | __file__          | filename (missing for     |
-|           |                   | built-in modules)         |
-+-----------+-------------------+---------------------------+
 | class     | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -348,14 +343,35 @@ attributes:
 
 .. function:: iscoroutinefunction(object)
 
-   Return ``True`` if the object is a :term:`coroutine function`
-   (a function defined with an :keyword:`async def` syntax).
+   Return ``True`` if the object is a :term:`coroutine function` (a function
+   defined with an :keyword:`async def` syntax), a :func:`functools.partial`
+   wrapping a :term:`coroutine function`, or a sync function marked with
+   :func:`markcoroutinefunction`.
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
+
+   .. versionchanged:: 3.12
+      Sync functions marked with :func:`markcoroutinefunction` now return
+      ``True``.
+
+
+.. function:: markcoroutinefunction(func)
+
+   Decorator to mark a callable as a :term:`coroutine function` if it would not
+   otherwise be detected by :func:`iscoroutinefunction`.
+
+   This may be of use for sync functions that return a :term:`coroutine`, if
+   the function is passed to an API that requires :func:`iscoroutinefunction`.
+
+   When possible, using an :keyword:`async def` function is preferred. Also
+   acceptable is calling the function and testing the return with
+   :func:`iscoroutine`.
+
+   .. versionadded:: 3.12
 
 
 .. function:: iscoroutine(object)
@@ -434,8 +450,10 @@ attributes:
 
    Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
 
-   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
-   :meth:`~object().__eq__` and :meth:`~object().__repr__`
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object.__str__`,
+   :meth:`~object.__eq__` and :meth:`~object.__repr__`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: isroutine(object)
@@ -718,6 +736,7 @@ function.
 
          >>> def test(a, b):
          ...     pass
+         ...
          >>> sig = signature(test)
          >>> new_sig = sig.replace(return_annotation="new return anno")
          >>> str(new_sig)
@@ -1057,6 +1076,7 @@ Classes and functions
     >>> from inspect import getcallargs
     >>> def f(a, b=1, *pos, **named):
     ...     pass
+    ...
     >>> getcallargs(f, 1, 2, 3) == {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
     True
     >>> getcallargs(f, a=2, x=4) == {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
@@ -1206,12 +1226,13 @@ is considered deprecated and may be removed in the future.
       number, start column offset, and end column offset associated with the
       instruction being executed by the frame this record corresponds to.
 
-.. versionchanged:: 3.5
-   Return a named tuple instead of a tuple.
+   .. versionchanged:: 3.5
+      Return a :term:`named tuple` instead of a :class:`tuple`.
 
-.. versionchanged:: 3.11
-   Changed the return object from a named tuple to a regular object (that is
-   backwards compatible with the previous named tuple).
+   .. versionchanged:: 3.11
+      :class:`!FrameInfo` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. class:: Traceback
 
@@ -1244,6 +1265,11 @@ is considered deprecated and may be removed in the future.
       line number, start column offset, and end column offset associated with
       the instruction being executed by the frame this traceback corresponds
       to.
+
+   .. versionchanged:: 3.11
+      :class:`!Traceback` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. note::
 

@@ -56,7 +56,7 @@ for improved styling effects.
 
 .. seealso::
 
-   `Converting existing applications to use Tile widgets <http://tktable.sourceforge.net/tile/doc/converting.txt>`_
+   `Converting existing applications to use Tile widgets <https://tktable.sourceforge.net/tile/doc/converting.txt>`_
      A monograph (using Tcl terminology) about differences typically
      encountered when moving applications to use the new widgets.
 
@@ -1272,7 +1272,7 @@ option. If you don't know the class name of a widget, use the method
 
 .. seealso::
 
-   `Tcl'2004 conference presentation <http://tktable.sourceforge.net/tile/tile-tcl2004.pdf>`_
+   `Tcl'2004 conference presentation <https://tktable.sourceforge.net/tile/tile-tcl2004.pdf>`_
       This document explains how the theme engine works
 
 

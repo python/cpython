@@ -1339,10 +1339,7 @@ class Transport:
 
         p, u = self.getparser()
 
-        while 1:
-            data = stream.read(1024)
-            if not data:
-                break
+        while data := stream.read(1024):
             if self.verbose:
                 print("body:", repr(data))
             p.feed(data)

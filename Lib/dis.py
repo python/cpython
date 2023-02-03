@@ -394,7 +394,7 @@ def _get_name_info(name_index, get_name, **extrainfo):
     else:
         return UNKNOWN, ''
 
-def parse_varint(iterator):
+def _parse_varint(iterator):
     b = next(iterator)
     val = b & 63
     while b&64:
@@ -403,16 +403,16 @@ def parse_varint(iterator):
         val |= b&63
     return val
 
-def parse_exception_table(code):
+def _parse_exception_table(code):
     iterator = iter(code.co_exceptiontable)
     entries = []
     try:
         while True:
-            start = parse_varint(iterator)*2
-            length = parse_varint(iterator)*2
+            start = _parse_varint(iterator)*2
+            length = _parse_varint(iterator)*2
             end = start + length
-            target = parse_varint(iterator)*2
-            dl = parse_varint(iterator)
+            target = _parse_varint(iterator)*2
+            dl = _parse_varint(iterator)
             depth = dl >> 1
             lasti = bool(dl&1)
             entries.append(_ExceptionTableEntry(start, end, target, depth, lasti))
@@ -483,7 +483,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif deop in haslocal or deop in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
             elif deop in hascompare:
-                argval = cmp_op[arg]
+                argval = cmp_op[arg>>4]
                 argrepr = argval
             elif deop == FORMAT_VALUE:
                 argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
@@ -512,9 +512,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             for i in range(size):
                 offset += 2
                 # Only show the fancy argrepr for a CACHE instruction when it's
-                # the first entry for a particular cache value and the
-                # instruction using it is actually quickened:
-                if i == 0 and op != deop:
+                # the first entry for a particular cache value:
+                if i == 0:
                     data = code[offset: offset + 2 * size]
                     argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
                 else:
@@ -527,7 +526,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
-    exception_entries = parse_exception_table(co)
+    exception_entries = _parse_exception_table(co)
     _disassemble_bytes(_get_code_array(co, adaptive),
                        lasti, co._varname_from_oparg,
                        co.co_names, co.co_consts, linestarts, file=file,
@@ -667,7 +666,6 @@ def _find_imports(co):
     the corresponding args to __import__.
     """
     IMPORT_NAME = opmap['IMPORT_NAME']
-    LOAD_CONST = opmap['LOAD_CONST']
 
     consts = co.co_consts
     names = co.co_names
@@ -717,7 +715,7 @@ class Bytecode:
         self._linestarts = dict(findlinestarts(co))
         self._original_object = x
         self.current_offset = current_offset
-        self.exception_entries = parse_exception_table(co)
+        self.exception_entries = _parse_exception_table(co)
         self.show_caches = show_caches
         self.adaptive = adaptive
 

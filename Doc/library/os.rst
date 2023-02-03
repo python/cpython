@@ -34,6 +34,14 @@ Notes on the availability of these functions:
 
 * On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
+* On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, large
+  parts of the :mod:`os` module are not available or behave differently. API
+  related to processes (e.g. :func:`~os.fork`, :func:`~os.execve`), signals
+  (e.g. :func:`~os.kill`, :func:`~os.wait`), and resources
+  (e.g. :func:`~os.nice`) are not available. Others like :func:`~os.getuid`
+  and :func:`~os.getpid` are emulated or stubs.
+
+
 .. note::
 
    All functions in this module raise :exc:`OSError` (or subclasses thereof) in
@@ -151,6 +159,11 @@ can be read from :data:`sys.flags.utf8_mode <sys.flags>`.
 See also the :ref:`UTF-8 mode on Windows <win-utf8-mode>`
 and the :term:`filesystem encoding and error handler`.
 
+.. seealso::
+
+   :pep:`686`
+      Python 3.15 will make :ref:`utf8-mode` default.
+
 
 .. _os-procinfo:
 
@@ -165,7 +178,7 @@ process and user.
 
    Return the filename corresponding to the controlling terminal of the process.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: environ
@@ -291,8 +304,8 @@ process and user.
 
 .. function:: getenv(key, default=None)
 
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are str. Note that
+   Return the value of the environment variable *key* as a string if it exists, or
+   *default* if it doesn't. *key* is a string. Note that
    since :func:`getenv` uses :data:`os.environ`, the mapping of :func:`getenv` is
    similarly also captured on import, and the function may not reflect
    future environment changes.
@@ -301,13 +314,13 @@ process and user.
    and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
    would like to use a different encoding.
 
-   .. availability:: most flavors of Unix, Windows.
+   .. availability:: Unix, Windows.
 
 
 .. function:: getenvb(key, default=None)
 
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are bytes. Note that
+   Return the value of the environment variable *key* as bytes if it exists, or
+   *default* if it doesn't. *key* must be bytes. Note that
    since :func:`getenvb` uses :data:`os.environb`, the mapping of :func:`getenvb` is
    similarly also captured on import, and the function may not reflect
    future environment changes.
@@ -316,7 +329,7 @@ process and user.
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
    is ``True``.
 
-   .. availability:: most flavors of Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.2
 
@@ -337,7 +350,7 @@ process and user.
    Return the effective group id of the current process.  This corresponds to the
    "set id" bit on the file being executed in the current process.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: geteuid()
@@ -346,7 +359,7 @@ process and user.
 
    Return the current process's effective user id.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: getgid()
@@ -357,15 +370,18 @@ process and user.
 
    .. availability:: Unix.
 
+      The function is a stub on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
 
-.. function:: getgrouplist(user, group)
+
+.. function:: getgrouplist(user, group, /)
 
    Return list of group ids that *user* belongs to. If *group* is not in the
    list, it is included; typically, *group* is specified as the group ID
    field from the password record for *user*, because that group ID will
    otherwise be potentially omitted.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -374,7 +390,7 @@ process and user.
 
    Return list of supplemental group ids associated with the current process.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. note::
 
@@ -402,7 +418,7 @@ process and user.
    falls back to ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the
    current real user id.
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
 
 .. function:: getpgid(pid)
@@ -410,7 +426,7 @@ process and user.
    Return the process group id of the process with process id *pid*. If *pid* is 0,
    the process group id of the current process is returned.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 .. function:: getpgrp()
 
@@ -418,7 +434,7 @@ process and user.
 
    Return the id of the current process group.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: getpid()
@@ -427,6 +443,8 @@ process and user.
 
    Return the current process id.
 
+   The function is a stub on Emscripten and WASI, see
+   :ref:`wasm-availability` for more information.
 
 .. function:: getppid()
 
@@ -436,7 +454,7 @@ process and user.
    the id returned is the one of the init process (1), on Windows it is still
    the same id, which may be already reused by another process.
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionchanged:: 3.2
       Added support for Windows.
@@ -454,7 +472,7 @@ process and user.
    (respectively) the calling process, the process group of the calling process,
    or the real user ID of the calling process.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -465,7 +483,7 @@ process and user.
 
    Parameters for the :func:`getpriority` and :func:`setpriority` functions.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -475,7 +493,7 @@ process and user.
    Return a tuple (ruid, euid, suid) denoting the current process's
    real, effective, and saved user ids.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.2
 
@@ -485,7 +503,7 @@ process and user.
    Return a tuple (rgid, egid, sgid) denoting the current process's
    real, effective, and saved group ids.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.2
 
@@ -498,19 +516,22 @@ process and user.
 
    .. availability:: Unix.
 
+      The function is a stub on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
 
-.. function:: initgroups(username, gid)
+
+.. function:: initgroups(username, gid, /)
 
    Call the system initgroups() to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
    group id.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.2
 
 
-.. function:: putenv(key, value)
+.. function:: putenv(key, value, /)
 
    .. index:: single: environment variables; setting
 
@@ -535,55 +556,93 @@ process and user.
       The function is now always available.
 
 
-.. function:: setegid(egid)
+.. function:: setegid(egid, /)
 
    Set the current process's effective group id.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: seteuid(euid)
+.. function:: seteuid(euid, /)
 
    Set the current process's effective user id.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setgid(gid)
+.. function:: setgid(gid, /)
 
    Set the current process' group id.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setgroups(groups)
+.. function:: setgroups(groups, /)
 
    Set the list of supplemental group ids associated with the current process to
    *groups*. *groups* must be a sequence, and each element must be an integer
    identifying a group. This operation is typically available only to the superuser.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. note:: On macOS, the length of *groups* may not exceed the
       system-defined maximum number of effective group ids, typically 16.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
 
+.. function:: setns(fd, nstype=0)
+
+   Reassociate the current thread with a Linux namespace.
+   See the :manpage:`setns(2)` and :manpage:`namespaces(7)` man pages for more
+   details.
+
+   If *fd* refers to a :file:`/proc/{pid}/ns/` link, ``setns()`` reassociates the
+   calling thread with the namespace associated with that link,
+   and *nstype* may be set to one of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`
+   to impose constraints on the operation
+   (``0`` means no constraints).
+
+   Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
+   :func:`~os.pidfd_open`. In this case, ``setns()`` reassociates the calling thread
+   into one or more of the same namespaces as the thread referred to by *fd*.
+   This is subject to any constraints imposed by *nstype*,
+   which is a bit mask combining one or more of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`,
+   e.g. ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
+   The caller's memberships in unspecified namespaces are left unchanged.
+
+   *fd* can be any object with a :meth:`~io.IOBase.fileno` method, or a raw file descriptor.
+
+   This example reassociates the thread with the ``init`` process's network namespace::
+
+      fd = os.open("/proc/1/ns/net", os.O_RDONLY)
+      os.setns(fd, os.CLONE_NEWNET)
+      os.close(fd)
+
+   .. availability:: Linux >= 3.0 with glibc >= 2.14.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      The :func:`~os.unshare` function.
+
 .. function:: setpgrp()
 
    Call the system call :c:func:`setpgrp` or ``setpgrp(0, 0)`` depending on
    which version is implemented (if any).  See the Unix manual for the semantics.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setpgid(pid, pgrp)
+.. function:: setpgid(pid, pgrp, /)
 
    Call the system call :c:func:`setpgid` to set the process group id of the
    process with id *pid* to the process group with id *pgrp*.  See the Unix manual
    for the semantics.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: setpriority(which, who, priority)
@@ -600,68 +659,68 @@ process and user.
    *priority* is a value in the range -20 to 19. The default priority is 0;
    lower priorities cause more favorable scheduling.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
 
-.. function:: setregid(rgid, egid)
+.. function:: setregid(rgid, egid, /)
 
    Set the current process's real and effective group ids.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setresgid(rgid, egid, sgid)
+.. function:: setresgid(rgid, egid, sgid, /)
 
    Set the current process's real, effective, and saved group ids.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.2
 
 
-.. function:: setresuid(ruid, euid, suid)
+.. function:: setresuid(ruid, euid, suid, /)
 
    Set the current process's real, effective, and saved user ids.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.2
 
 
-.. function:: setreuid(ruid, euid)
+.. function:: setreuid(ruid, euid, /)
 
    Set the current process's real and effective user ids.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: getsid(pid)
+.. function:: getsid(pid, /)
 
    Call the system call :c:func:`getsid`.  See the Unix manual for the semantics.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: setsid()
 
    Call the system call :c:func:`setsid`.  See the Unix manual for the semantics.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setuid(uid)
+.. function:: setuid(uid, /)
 
    .. index:: single: user; id, setting
 
    Set the current process's user id.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. placed in this section since it relates to errno.... a little weak
-.. function:: strerror(code)
+.. function:: strerror(code, /)
 
    Return the error message corresponding to the error code in *code*.
    On platforms where :c:func:`strerror` returns ``NULL`` when given an unknown
@@ -676,9 +735,12 @@ process and user.
    .. versionadded:: 3.2
 
 
-.. function:: umask(mask)
+.. function:: umask(mask, /)
 
    Set the current numeric umask and return the previous umask.
+
+   The function is a stub on Emscripten and WASI, see
+   :ref:`wasm-availability` for more information.
 
 
 .. function:: uname()
@@ -706,14 +768,14 @@ process and user.
    :func:`socket.gethostname`  or even
    ``socket.gethostbyaddr(socket.gethostname())``.
 
-   .. availability:: recent flavors of Unix.
+   .. availability:: Unix.
 
    .. versionchanged:: 3.3
       Return type changed from a tuple to a tuple-like object
       with named attributes.
 
 
-.. function:: unsetenv(key)
+.. function:: unsetenv(key, /)
 
    .. index:: single: environment variables; deleting
 
@@ -730,6 +792,49 @@ process and user.
 
    .. versionchanged:: 3.9
       The function is now always available and is also available on Windows.
+
+
+.. function:: unshare(flags)
+
+   Disassociate parts of the process execution context, and move them into a
+   newly created namespace.
+   See the :manpage:`unshare(2)`
+   man page for more details.
+   The *flags* argument is a bit mask, combining zero or more of the
+   :ref:`CLONE_* constants <os-unshare-clone-flags>`,
+   that specifies which parts of the execution context should be
+   unshared from their existing associations and moved to a new namespace.
+   If the *flags* argument is ``0``, no changes are made to the calling process's
+   execution context.
+
+   .. availability:: Linux >= 2.6.16.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      The :func:`~os.setns` function.
+
+.. _os-unshare-clone-flags:
+
+Flags to the :func:`unshare` function, if the implementation supports them.
+See :manpage:`unshare(2)` in the Linux manual
+for their exact effect and availability.
+
+.. data:: CLONE_FILES
+          CLONE_FS
+          CLONE_NEWCGROUP
+          CLONE_NEWIPC
+          CLONE_NEWNET
+          CLONE_NEWNS
+          CLONE_NEWPID
+          CLONE_NEWTIME
+          CLONE_NEWUSER
+          CLONE_NEWUTS
+          CLONE_SIGHAND
+          CLONE_SYSVSEM
+          CLONE_THREAD
+          CLONE_VM
 
 
 .. _os-newstreams:
@@ -781,7 +886,7 @@ as internal buffering of data.
       :func:`fdopen`, use its :meth:`~io.IOBase.close` method.
 
 
-.. function:: closerange(fd_low, fd_high)
+.. function:: closerange(fd_low, fd_high, /)
 
    Close all file descriptors from *fd_low* (inclusive) to *fd_high* (exclusive),
    ignoring errors. Equivalent to (but much faster than)::
@@ -824,7 +929,7 @@ as internal buffering of data.
       It will always copy no bytes and return 0 as if the file was empty
       because of a known Linux kernel issue.
 
-   .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
+   .. availability:: Linux >= 4.5 with glibc >= 2.27.
 
    .. versionadded:: 3.8
 
@@ -841,7 +946,7 @@ as internal buffering of data.
       On Unix, the function now implements the Python UTF-8 Mode.
 
 
-.. function:: dup(fd)
+.. function:: dup(fd, /)
 
    Return a duplicate of file descriptor *fd*. The new file descriptor is
    :ref:`non-inheritable <fd_inheritance>`.
@@ -849,6 +954,8 @@ as internal buffering of data.
    On Windows, when duplicating a standard stream (0: stdin, 1: stdout,
    2: stderr), the new file descriptor is :ref:`inheritable
    <fd_inheritance>`.
+
+   .. availability:: not WASI.
 
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
@@ -860,6 +967,8 @@ as internal buffering of data.
    necessary. Return *fd2*. The new file descriptor is :ref:`inheritable
    <fd_inheritance>` by default or non-inheritable if *inheritable*
    is ``False``.
+
+   .. availability:: not WASI.
 
    .. versionchanged:: 3.4
       Add the optional *inheritable* parameter.
@@ -878,6 +987,9 @@ as internal buffering of data.
 
    .. availability:: Unix.
 
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
+
 
 .. function:: fchown(fd, uid, gid)
 
@@ -889,6 +1001,9 @@ as internal buffering of data.
    .. audit-event:: os.chown path,uid,gid,dir_fd os.fchown
 
    .. availability:: Unix.
+
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
 
 
 .. function:: fdatasync(fd)
@@ -902,7 +1017,7 @@ as internal buffering of data.
       This function is not available on MacOS.
 
 
-.. function:: fpathconf(fd, name)
+.. function:: fpathconf(fd, name, /)
 
    Return system configuration information relevant to an open file. *name*
    specifies the configuration value to retrieve; it may be a string which is the
@@ -934,7 +1049,7 @@ as internal buffering of data.
       The :func:`.stat` function.
 
 
-.. function:: fstatvfs(fd)
+.. function:: fstatvfs(fd, /)
 
    Return information about the filesystem containing the file associated with
    file descriptor *fd*, like :func:`statvfs`.  As of Python 3.3, this is
@@ -955,7 +1070,7 @@ as internal buffering of data.
    .. availability:: Unix, Windows.
 
 
-.. function:: ftruncate(fd, length)
+.. function:: ftruncate(fd, length, /)
 
    Truncate the file corresponding to file descriptor *fd*, so that it is at
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
@@ -969,7 +1084,7 @@ as internal buffering of data.
       Added support for Windows
 
 
-.. function:: get_blocking(fd)
+.. function:: get_blocking(fd, /)
 
    Get the blocking mode of the file descriptor: ``False`` if the
    :data:`O_NONBLOCK` flag is set, ``True`` if the flag is cleared.
@@ -978,16 +1093,19 @@ as internal buffering of data.
 
    .. availability:: Unix.
 
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
+
    .. versionadded:: 3.5
 
 
-.. function:: isatty(fd)
+.. function:: isatty(fd, /)
 
    Return ``True`` if the file descriptor *fd* is open and connected to a
    tty(-like) device, else ``False``.
 
 
-.. function:: lockf(fd, cmd, len)
+.. function:: lockf(fd, cmd, len, /)
 
    Apply, test or remove a POSIX lock on an open file descriptor.
    *fd* is an open file descriptor.
@@ -1014,18 +1132,18 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: login_tty(fd)
+.. function:: login_tty(fd, /)
 
    Prepare the tty of which fd is a file descriptor for a new login session.
    Make the calling process a session leader; make the tty the controlling tty,
    the stdin, the stdout, and the stderr of the calling process; close fd.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.11
 
 
-.. function:: lseek(fd, pos, how)
+.. function:: lseek(fd, pos, how, /)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
    by *how*: :const:`SEEK_SET` or ``0`` to set the position relative to the
@@ -1164,7 +1282,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    descriptors are :ref:`non-inheritable <fd_inheritance>`. For a (slightly) more
    portable approach, use the :mod:`pty` module.
 
-   .. availability:: some flavors of Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionchanged:: 3.4
       The new file descriptors are now non-inheritable.
@@ -1182,7 +1300,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       The new file descriptors are now non-inheritable.
 
 
-.. function:: pipe2(flags)
+.. function:: pipe2(flags, /)
 
    Create a pipe with *flags* set atomically.
    *flags* can be constructed by ORing together one or more of these values:
@@ -1190,22 +1308,22 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: some flavors of Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
 
-.. function:: posix_fallocate(fd, offset, len)
+.. function:: posix_fallocate(fd, offset, len, /)
 
    Ensures that enough disk space is allocated for the file specified by *fd*
    starting from *offset* and continuing for *len* bytes.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten.
 
    .. versionadded:: 3.3
 
 
-.. function:: posix_fadvise(fd, offset, len, advice)
+.. function:: posix_fadvise(fd, offset, len, advice, /)
 
    Announces an intention to access data in a specific pattern thus allowing
    the kernel to make optimizations.
@@ -1235,7 +1353,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pread(fd, n, offset)
+.. function:: pread(fd, n, offset, /)
 
    Read at most *n* bytes from file descriptor *fd* at a position of *offset*,
    leaving the file offset unchanged.
@@ -1248,7 +1366,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: preadv(fd, buffers, offset, flags=0)
+.. function:: preadv(fd, buffers, offset, flags=0, /)
 
    Read from a file descriptor *fd* at a position of *offset* into mutable
    :term:`bytes-like objects <bytes-like object>` *buffers*, leaving the file
@@ -1269,9 +1387,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.readv` and :func:`os.pread`.
 
-   .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer, AIX 7.1 and newer. Using flags requires
-      Linux 4.6 or newer.
+   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+
+      Using flags requires Linux >= 4.6.
 
    .. versionadded:: 3.7
 
@@ -1286,7 +1404,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    If no bytes were read, it will return ``-1`` and set errno to
    :data:`errno.EAGAIN`.
 
-   .. availability:: Linux 4.14 and newer.
+   .. availability:: Linux >= 4.14.
 
    .. versionadded:: 3.7
 
@@ -1300,12 +1418,12 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Currently, on Linux, this feature is usable only on a file descriptor opened
    using the :data:`O_DIRECT` flag.
 
-   .. availability:: Linux 4.6 and newer.
+   .. availability:: Linux >= 4.6.
 
    .. versionadded:: 3.7
 
 
-.. function:: pwrite(fd, str, offset)
+.. function:: pwrite(fd, str, offset, /)
 
    Write the bytestring in *str* to file descriptor *fd* at position of
    *offset*, leaving the file offset unchanged.
@@ -1317,7 +1435,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pwritev(fd, buffers, offset, flags=0)
+.. function:: pwritev(fd, buffers, offset, flags=0, /)
 
    Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
    leaving the file offset unchanged.  *buffers* must be a sequence of
@@ -1339,9 +1457,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
-   .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer, AIX 7.1 and newer. Using flags requires
-      Linux 4.7 or newer.
+   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+
+      Using flags requires Linux >= 4.6.
 
    .. versionadded:: 3.7
 
@@ -1351,7 +1469,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Provide a per-write equivalent of the :data:`O_DSYNC` :func:`os.open` flag.
    This flag effect applies only to the data range written by the system call.
 
-   .. availability:: Linux 4.7 and newer.
+   .. availability:: Linux >= 4.7.
 
    .. versionadded:: 3.7
 
@@ -1361,7 +1479,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Provide a per-write equivalent of the :data:`O_SYNC` :func:`os.open` flag.
    This flag effect applies only to the data range written by the system call.
 
-   .. availability:: Linux 4.7 and newer.
+   .. availability:: Linux >= 4.7.
 
    .. versionadded:: 3.7
 
@@ -1375,12 +1493,12 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    appended to the end of the file. However, if the *offset* argument is
    ``-1``, the current file *offset* is updated.
 
-   .. availability:: Linux 4.16 and newer.
+   .. availability:: Linux >= 4.16.
 
    .. versionadded:: 3.10
 
 
-.. function:: read(fd, n)
+.. function:: read(fd, n, /)
 
    Read at most *n* bytes from file descriptor *fd*.
 
@@ -1427,7 +1545,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Cross-platform applications should not use *headers*, *trailers* and *flags*
    arguments.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. note::
 
@@ -1440,7 +1558,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Parameters *out* and *in* was renamed to *out_fd* and *in_fd*.
 
 
-.. function:: set_blocking(fd, blocking)
+.. function:: set_blocking(fd, blocking, /)
 
    Set the blocking mode of the specified file descriptor. Set the
    :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
@@ -1448,6 +1566,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
 
    .. availability:: Unix.
+
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
 
    .. versionadded:: 3.5
 
@@ -1459,7 +1580,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Parameters to the :func:`sendfile` function, if the implementation supports
    them.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1468,7 +1589,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Parameter to the :func:`sendfile` function, if the implementation supports
    it. The data won't be cached in the virtual memory and will be freed afterwards.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.11
 
@@ -1495,7 +1616,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    make sense to block because there are no writers connected to the write end
    of the pipe.
 
-   .. availability:: Linux kernel >= 2.6.17 and glibc >= 2.5
+   .. availability:: Linux >= 2.6.17 with glibc >= 2.5
 
    .. versionadded:: 3.10
 
@@ -1506,7 +1627,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.10
 
-.. function:: readv(fd, buffers)
+.. function:: readv(fd, buffers, /)
 
    Read from a file descriptor *fd* into a number of mutable :term:`bytes-like
    objects <bytes-like object>` *buffers*. Transfer data into each buffer until
@@ -1524,23 +1645,23 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: tcgetpgrp(fd)
+.. function:: tcgetpgrp(fd, /)
 
    Return the process group associated with the terminal given by *fd* (an open
    file descriptor as returned by :func:`os.open`).
 
-   .. availability:: Unix.
+   .. availability:: Unix, not WASI.
 
 
-.. function:: tcsetpgrp(fd, pg)
+.. function:: tcsetpgrp(fd, pg, /)
 
    Set the process group associated with the terminal given by *fd* (an open file
    descriptor as returned by :func:`os.open`) to *pg*.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not WASI.
 
 
-.. function:: ttyname(fd)
+.. function:: ttyname(fd, /)
 
    Return a string which specifies the terminal device associated with
    file descriptor *fd*.  If *fd* is not associated with a terminal device, an
@@ -1549,7 +1670,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix.
 
 
-.. function:: write(fd, str)
+.. function:: write(fd, str, /)
 
    Write the bytestring in *str* to file descriptor *fd*.
 
@@ -1569,7 +1690,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
-.. function:: writev(fd, buffers)
+.. function:: writev(fd, buffers, /)
 
    Write the contents of *buffers* to file descriptor *fd*. *buffers* must be
    a sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
@@ -1593,7 +1714,7 @@ Querying the size of a terminal
 
 .. versionadded:: 3.3
 
-.. function:: get_terminal_size(fd=STDOUT_FILENO)
+.. function:: get_terminal_size(fd=STDOUT_FILENO, /)
 
    Return the size of the terminal window as ``(columns, lines)``,
    tuple of type :class:`terminal_size`.
@@ -1645,21 +1766,24 @@ Using the :mod:`subprocess` module, all file descriptors except standard
 streams are closed, and inheritable handles are only inherited if the
 *close_fds* parameter is ``False``.
 
-.. function:: get_inheritable(fd)
+On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, the file
+descriptor cannot be modified.
+
+.. function:: get_inheritable(fd, /)
 
    Get the "inheritable" flag of the specified file descriptor (a boolean).
 
-.. function:: set_inheritable(fd, inheritable)
+.. function:: set_inheritable(fd, inheritable, /)
 
    Set the "inheritable" flag of the specified file descriptor.
 
-.. function:: get_handle_inheritable(handle)
+.. function:: get_handle_inheritable(handle, /)
 
    Get the "inheritable" flag of the specified handle (a boolean).
 
    .. availability:: Windows.
 
-.. function:: set_handle_inheritable(handle, inheritable)
+.. function:: set_handle_inheritable(handle, inheritable, /)
 
    Set the "inheritable" flag of the specified handle.
 
@@ -1829,7 +1953,7 @@ features:
 
    .. audit-event:: os.chflags path,flags os.chflags
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
       The *follow_symlinks* argument.
@@ -1874,6 +1998,9 @@ features:
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
 
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
+
    .. audit-event:: os.chmod path,mode,dir_fd os.chmod
 
    .. versionadded:: 3.3
@@ -1900,6 +2027,9 @@ features:
 
    .. availability:: Unix.
 
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
+
    .. versionadded:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
@@ -1912,7 +2042,7 @@ features:
 
    Change the root directory of the current process to *path*.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -1952,7 +2082,7 @@ features:
 
    .. audit-event:: os.chflags path,flags os.lchflags
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2169,7 +2299,7 @@ features:
    FIFO for reading, and the client opens it for writing.  Note that :func:`mkfifo`
    doesn't open the FIFO --- it just creates the rendezvous point.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
@@ -2191,7 +2321,7 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
@@ -2200,19 +2330,19 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: major(device)
+.. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
    :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
 
 
-.. function:: minor(device)
+.. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
    :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
 
 
-.. function:: makedev(major, minor)
+.. function:: makedev(major, minor, /)
 
    Compose a raw device number from the major and minor device numbers.
 
@@ -2291,7 +2421,7 @@ features:
 .. function:: remove(path, *, dir_fd=None)
 
    Remove (delete) the file *path*.  If *path* is a directory, an
-   :exc:`IsADirectoryError` is raised.  Use :func:`rmdir` to remove directories.
+   :exc:`OSError` is raised.  Use :func:`rmdir` to remove directories.
    If the file does not exist, a :exc:`FileNotFoundError` is raised.
 
    This function can support :ref:`paths relative to directory descriptors
@@ -2337,6 +2467,8 @@ features:
    will fail with an :exc:`OSError` subclass in a number of cases:
 
    On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
+   The operation may fail if *src* and *dst* are on different filesystems. Use
+   :func:`shutil.move` to support moves to a different filesystem.
 
    On Unix, if *src* is a file and *dst* is a directory or vice-versa, an
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
@@ -2474,9 +2606,9 @@ features:
    .. note::
 
       On Unix-based systems, :func:`scandir` uses the system's
-      `opendir() <http://pubs.opengroup.org/onlinepubs/009695399/functions/opendir.html>`_
+      `opendir() <https://pubs.opengroup.org/onlinepubs/009695399/functions/opendir.html>`_
       and
-      `readdir() <http://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html>`_
+      `readdir() <https://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html>`_
       functions. On Windows, it uses the Win32
       `FindFirstFileW <https://msdn.microsoft.com/en-us/library/windows/desktop/aa364418(v=vs.85).aspx>`_
       and
@@ -2608,6 +2740,17 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
+   .. method:: is_junction()
+
+      Return ``True`` if this entry is a junction (even if broken);
+      return ``False`` if the entry points to a regular directory, any kind
+      of file, a symlink, or if it doesn't exist anymore.
+
+      The result is cached on the ``os.DirEntry`` object. Call
+      :func:`os.path.isjunction` to fetch up-to-date information.
+
+      .. versionadded:: 3.12
+
    .. method:: stat(*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
@@ -2630,8 +2773,8 @@ features:
    Note that there is a nice correspondence between several attributes
    and methods of ``os.DirEntry`` and of :class:`pathlib.Path`.  In
    particular, the ``name`` attribute has the same
-   meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``
-   and ``stat()`` methods.
+   meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``,
+   ``is_junction()``, and ``stat()`` methods.
 
    .. versionadded:: 3.5
 
@@ -3059,6 +3202,9 @@ features:
 
    .. availability:: Unix, Windows.
 
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
+
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
 
@@ -3142,7 +3288,7 @@ features:
    system records access and modification times; see :func:`~os.stat`. The best
    way to preserve exact times is to use the *st_atime_ns* and *st_mtime_ns*
    fields from the :func:`os.stat` result object with the *ns* parameter to
-   `utime`.
+   :func:`utime`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
@@ -3170,7 +3316,8 @@ features:
    filenames)``.
 
    *dirpath* is a string, the path to the directory.  *dirnames* is a list of the
-   names of the subdirectories in *dirpath* (excluding ``'.'`` and ``'..'``).
+   names of the subdirectories in *dirpath* (including symlinks to directories,
+   and excluding ``'.'`` and ``'..'``).
    *filenames* is a list of the names of the non-directory files in *dirpath*.
    Note that the names in the lists contain no path components.  To get a full path
    (which begins with *top*) to a file or directory in *dirpath*, do
@@ -3334,7 +3481,7 @@ features:
    the file descriptor, and as such multiple files can have the same name
    without any side effects.
 
-   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.
+   .. availability:: Linux >= 3.17 with glibc >= 2.27.
 
    .. versionadded:: 3.8
 
@@ -3359,8 +3506,9 @@ features:
 
    These flags can be passed to :func:`memfd_create`.
 
-   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.  The
-      ``MFD_HUGE*`` flags are only available since Linux 4.14.
+   .. availability:: Linux >= 3.17 with glibc >= 2.27
+
+      The ``MFD_HUGE*`` flags are only available since Linux 4.14.
 
    .. versionadded:: 3.8
 
@@ -3412,7 +3560,7 @@ features:
        finally:
            os.close(fd)
 
-   .. availability:: Linux 2.6.27 or newer with glibc 2.8 or newer.
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.10
 
@@ -3421,7 +3569,7 @@ features:
    Read value from an :func:`eventfd` file descriptor and return a 64 bit
    unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3430,7 +3578,7 @@ features:
    Add value to an :func:`eventfd` file descriptor. *value* must be a 64 bit
    unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3438,7 +3586,7 @@ features:
 
    Set close-on-exec flag for new :func:`eventfd` file descriptor.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3447,7 +3595,7 @@ features:
    Set :const:`O_NONBLOCK` status flag for new :func:`eventfd` file
    descriptor.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3456,7 +3604,7 @@ features:
    Provide semaphore-like semantics for reads from a :func:`eventfd` file
    descriptor. On read the internal counter is decremented by one.
 
-   .. availability:: Linux 2.6.30 or newer with glibc 2.8 or newer.
+   .. availability:: Linux >= 2.6.30
 
    .. versionadded:: 3.10
 
@@ -3669,7 +3817,7 @@ to be ignored.
 
    .. audit-event:: os.exec path,args,env os.execl
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
       Added support for specifying *path* as an open file descriptor
@@ -3712,49 +3860,49 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means the command was used incorrectly, such as when the wrong
    number of arguments are given.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_DATAERR
 
    Exit code that means the input data was incorrect.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_NOINPUT
 
    Exit code that means an input file did not exist or was not readable.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_NOUSER
 
    Exit code that means a specified user did not exist.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_NOHOST
 
    Exit code that means a specified host did not exist.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_UNAVAILABLE
 
    Exit code that means that a required service is unavailable.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_SOFTWARE
 
    Exit code that means an internal software error was detected.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_OSERR
@@ -3762,7 +3910,7 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means an operating system error was detected, such as the
    inability to fork or create a pipe.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_OSFILE
@@ -3770,21 +3918,21 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means some system file did not exist, could not be opened, or had
    some other kind of error.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_CANTCREAT
 
    Exit code that means a user specified output file could not be created.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_IOERR
 
    Exit code that means that an error occurred while doing I/O on some file.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_TEMPFAIL
@@ -3793,7 +3941,7 @@ written in Python, such as a mail server's external command delivery program.
    that may not really be an error, such as a network connection that couldn't be
    made during a retryable operation.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_PROTOCOL
@@ -3801,7 +3949,7 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means that a protocol exchange was illegal, invalid, or not
    understood.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_NOPERM
@@ -3809,21 +3957,21 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means that there were insufficient permissions to perform the
    operation (but not intended for file system problems).
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_CONFIG
 
    Exit code that means that some kind of configuration error occurred.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: EX_NOTFOUND
 
    Exit code that means something like "an entry was not found".
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: fork()
@@ -3844,7 +3992,7 @@ written in Python, such as a mail server's external command delivery program.
 
       See :mod:`ssl` for applications that use the SSL module with fork().
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: forkpty()
@@ -3861,10 +4009,10 @@ written in Python, such as a mail server's external command delivery program.
       Calling ``forkpty()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
 
-   .. availability:: some flavors of Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: kill(pid, sig)
+.. function:: kill(pid, sig, /)
 
    .. index::
       single: process; killing
@@ -3885,11 +4033,13 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.kill pid,sig os.kill
 
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
+
    .. versionadded:: 3.2
       Windows support.
 
 
-.. function:: killpg(pgid, sig)
+.. function:: killpg(pgid, sig, /)
 
    .. index::
       single: process; killing
@@ -3899,14 +4049,14 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.killpg pgid,sig os.killpg
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: nice(increment)
+.. function:: nice(increment, /)
 
    Add *increment* to the process's "niceness".  Return the new niceness.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: pidfd_open(pid, flags=0)
@@ -3917,7 +4067,7 @@ written in Python, such as a mail server's external command delivery program.
 
    See the :manpage:`pidfd_open(2)` man page for more details.
 
-   .. availability:: Linux 5.3+
+   .. availability:: Linux >= 5.3
    .. versionadded:: 3.9
 
    .. data:: PIDFD_NONBLOCK
@@ -3927,16 +4077,16 @@ written in Python, such as a mail server's external command delivery program.
       then an attempt to wait on the file descriptor using :manpage:`waitid(2)`
       will immediately return the error :data:`~errno.EAGAIN` rather than blocking.
 
-   .. availability:: Linux 5.10+
+   .. availability:: Linux >= 5.10
    .. versionadded:: 3.12
 
 
-.. function:: plock(op)
+.. function:: plock(op, /)
 
    Lock program segments into memory.  The value of *op* (defined in
    ``<sys/lock.h>``) determines which segments are locked.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: popen(cmd, mode='r', buffering=-1)
@@ -3967,6 +4117,8 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+   .. availability:: not Emscripten, not WASI.
 
    .. note::
       The :ref:`Python UTF-8 Mode <utf8-mode>` affects encodings used
@@ -4037,7 +4189,7 @@ written in Python, such as a mail server's external command delivery program.
    library :c:data:`POSIX_SPAWN_RESETIDS` flag.
 
    If the *setsid* argument is ``True``, it will create a new session ID
-   for `posix_spawn`. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
+   for ``posix_spawn``. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
    or :c:data:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
    is raised.
 
@@ -4061,7 +4213,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.8
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 .. function:: posix_spawnp(path, argv, env, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
@@ -4077,7 +4229,9 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.8
 
-   .. availability:: See :func:`posix_spawn` documentation.
+   .. availability:: POSIX, not Emscripten, not WASI.
+
+      See :func:`posix_spawn` documentation.
 
 
 .. function:: register_at_fork(*, before=None, after_in_parent=None, \
@@ -4108,7 +4262,7 @@ written in Python, such as a mail server's external command delivery program.
 
    There is no way to unregister a function.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.7
 
@@ -4177,7 +4331,9 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.spawn mode,path,args,env os.spawnl
 
-   .. availability:: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
+
+      :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
       :func:`spawnve` are not thread-safe on Windows; we advise you to use the
       :mod:`subprocess` module instead.
@@ -4224,13 +4380,13 @@ written in Python, such as a mail server's external command delivery program.
 
    Start a file with its associated application.
 
-   When *operation* is not specified or ``'open'``, this acts like double-clicking
+   When *operation* is not specified, this acts like double-clicking
    the file in Windows Explorer, or giving the file name as an argument to the
    :program:`start` command from the interactive command shell: the file is opened
    with whatever application (if any) its extension is associated.
 
    When another *operation* is given, it must be a "command verb" that specifies
-   what should be done with the file. Common verbs documented by Microsoft are
+   what should be done with the file. Common verbs documented by Microsoft are ``'open'``,
    ``'print'`` and  ``'edit'`` (to be used on files) as well as ``'explore'`` and
    ``'find'`` (to be used on directories).
 
@@ -4299,7 +4455,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.system command os.system
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
 
 .. function:: times()
@@ -4337,85 +4493,52 @@ written in Python, such as a mail server's external command delivery program.
    number is zero); the high bit of the low byte is set if a core file was
    produced.
 
+   If there are no children that could be waited for, :exc:`ChildProcessError`
+   is raised.
+
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. seealso::
 
-      :func:`waitpid` can be used to wait for the completion of a specific
-      child process and has more options.
+      The other :func:`!wait*` functions documented below can be used to wait for the
+      completion of a specific child process and have more options.
+      :func:`waitpid` is the only one also available on Windows.
 
-.. function:: waitid(idtype, id, options)
 
-   Wait for the completion of one or more child processes.
-   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or
-   :data:`P_PIDFD` on Linux.
-   *id* specifies the pid to wait on.
-   *options* is constructed from the ORing of one or more of :data:`WEXITED`,
-   :data:`WSTOPPED` or :data:`WCONTINUED` and additionally may be ORed with
-   :data:`WNOHANG` or :data:`WNOWAIT`. The return value is an object
-   representing the data contained in the :c:type:`siginfo_t` structure, namely:
-   :attr:`si_pid`, :attr:`si_uid`, :attr:`si_signo`, :attr:`si_status`,
-   :attr:`si_code` or ``None`` if :data:`WNOHANG` is specified and there are no
-   children in a waitable state.
+.. function:: waitid(idtype, id, options, /)
 
-   .. availability:: Unix.
+   Wait for the completion of a child process.
 
-   .. versionadded:: 3.3
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or (on Linux) :data:`P_PIDFD`.
+   The interpretation of *id* depends on it; see their individual descriptions.
 
-.. data:: P_PID
-          P_PGID
-          P_ALL
+   *options* is an OR combination of flags.  At least one of :data:`WEXITED`,
+   :data:`WSTOPPED` or :data:`WCONTINUED` is required;
+   :data:`WNOHANG` and :data:`WNOWAIT` are additional optional flags.
 
-   These are the possible values for *idtype* in :func:`waitid`. They affect
-   how *id* is interpreted.
+   The return value is an object representing the data contained in the
+   :c:type:`!siginfo_t` structure with the following attributes:
 
-   .. availability:: Unix.
+   * :attr:`!si_pid` (process ID)
+   * :attr:`!si_uid` (real user ID of the child)
+   * :attr:`!si_signo` (always :data:`~signal.SIGCHLD`)
+   * :attr:`!si_status` (the exit status or signal number, depending on :attr:`!si_code`)
+   * :attr:`!si_code` (see :data:`CLD_EXITED` for possible values)
 
-   .. versionadded:: 3.3
+   If :data:`WNOHANG` is specified and there are no matching children in the
+   requested state, ``None`` is returned.
+   Otherwise, if there are no matching children
+   that could be waited for, :exc:`ChildProcessError` is raised.
 
-.. data:: P_PIDFD
-
-   This is a Linux-specific *idtype* that indicates that *id* is a file
-   descriptor that refers to a process.
-
-   .. availability:: Linux 5.4+
-
-   .. versionadded:: 3.9
-
-.. data:: WEXITED
-          WSTOPPED
-          WNOWAIT
-
-   Flags that can be used in *options* in :func:`waitid` that specify what
-   child signal to wait for.
-
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
 
-.. data:: CLD_EXITED
-          CLD_KILLED
-          CLD_DUMPED
-          CLD_TRAPPED
-          CLD_STOPPED
-          CLD_CONTINUED
-
-   These are the possible values for :attr:`si_code` in the result returned by
-   :func:`waitid`.
-
-   .. availability:: Unix.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.9
-      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
-
-
-.. function:: waitpid(pid, options)
+.. function:: waitpid(pid, options, /)
 
    The details of this function differ on Unix and Windows.
 
@@ -4431,8 +4554,11 @@ written in Python, such as a mail server's external command delivery program.
    ``-1``, status is requested for any process in the process group ``-pid`` (the
    absolute value of *pid*).
 
-   An :exc:`OSError` is raised with the value of errno when the syscall
-   returns -1.
+   *options* is an OR combination of flags.  If it contains :data:`WNOHANG` and
+   there are no matching children in the requested state, ``(0, 0)`` is
+   returned.  Otherwise, if there are no matching children that could be waited
+   for, :exc:`ChildProcessError` is raised.  Other options that can be used are
+   :data:`WUNTRACED` and :data:`WCONTINUED`.
 
    On Windows: Wait for completion of a process given by process handle *pid*, and
    return a tuple containing *pid*, and its exit status shifted left by 8 bits
@@ -4445,6 +4571,8 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
+
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
       exception, the function now retries the system call instead of raising an
@@ -4456,28 +4584,133 @@ written in Python, such as a mail server's external command delivery program.
    Similar to :func:`waitpid`, except no process id argument is given and a
    3-element tuple containing the child's process id, exit status indication,
    and resource usage information is returned.  Refer to
-   :mod:`resource`.\ :func:`~resource.getrusage` for details on resource usage
-   information.  The option argument is the same as that provided to
-   :func:`waitpid` and :func:`wait4`.
+   :func:`resource.getrusage` for details on resource usage information.  The
+   *options* argument is the same as that provided to :func:`waitpid` and
+   :func:`wait4`.
 
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: wait4(pid, options)
 
    Similar to :func:`waitpid`, except a 3-element tuple, containing the child's
-   process id, exit status indication, and resource usage information is returned.
-   Refer to :mod:`resource`.\ :func:`~resource.getrusage` for details on
-   resource usage information.  The arguments to :func:`wait4` are the same
-   as those provided to :func:`waitpid`.
+   process id, exit status indication, and resource usage information is
+   returned.  Refer to :func:`resource.getrusage` for details on resource usage
+   information.  The arguments to :func:`wait4` are the same as those provided
+   to :func:`waitpid`.
 
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: P_PID
+          P_PGID
+          P_ALL
+          P_PIDFD
+
+   These are the possible values for *idtype* in :func:`waitid`. They affect
+   how *id* is interpreted:
+
+   * :data:`!P_PID` - wait for the child whose PID is *id*.
+   * :data:`!P_PGID` - wait for any child whose progress group ID is *id*.
+   * :data:`!P_ALL` - wait for any child; *id* is ignored.
+   * :data:`!P_PIDFD` - wait for the child identified by the file descriptor
+     *id* (a process file descriptor created with :func:`pidfd_open`).
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. note:: :data:`!P_PIDFD` is only available on Linux >= 5.4.
+
+   .. versionadded:: 3.3
+   .. versionadded:: 3.9
+      The :data:`!P_PIDFD` constant.
+
+
+.. data:: WCONTINUED
+
+   This *options* flag for :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` causes child processes to be reported if they have been
+   continued from a job control stop since they were last reported.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WEXITED
+
+   This *options* flag for :func:`waitid` causes child processes that have terminated to
+   be reported.
+
+   The other ``wait*`` functions always report children that have terminated,
+   so this option is not available for them.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+
+.. data:: WSTOPPED
+
+   This *options* flag for :func:`waitid` causes child processes that have been stopped
+   by the delivery of a signal to be reported.
+
+   This option is not available for the other ``wait*`` functions.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+
+.. data:: WUNTRACED
+
+   This *options* flag for :func:`waitpid`, :func:`wait3`, and :func:`wait4` causes
+   child processes to also be reported if they have been stopped but their
+   current state has not been reported since they were stopped.
+
+   This option is not available for :func:`waitid`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WNOHANG
+
+   This *options* flag causes :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` to return right away if no child process status is available
+   immediately.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WNOWAIT
+
+   This *options* flag causes :func:`waitid` to leave the child in a waitable state, so that
+   a later :func:`!wait*` call can be used to retrieve the child status information again.
+
+   This option is not available for the other ``wait*`` functions.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: CLD_EXITED
+          CLD_KILLED
+          CLD_DUMPED
+          CLD_TRAPPED
+          CLD_STOPPED
+          CLD_CONTINUED
+
+   These are the possible values for :attr:`!si_code` in the result returned by
+   :func:`waitid`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitstatus_to_exitcode(status)
@@ -4507,45 +4740,23 @@ written in Python, such as a mail server's external command delivery program.
       :func:`WIFEXITED`, :func:`WEXITSTATUS`, :func:`WIFSIGNALED`,
       :func:`WTERMSIG`, :func:`WIFSTOPPED`, :func:`WSTOPSIG` functions.
 
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
+
    .. versionadded:: 3.9
-
-
-.. data:: WNOHANG
-
-   The option for :func:`waitpid` to return immediately if no child process status
-   is available immediately. The function returns ``(0, 0)`` in this case.
-
-   .. availability:: Unix.
-
-
-.. data:: WCONTINUED
-
-   This option causes child processes to be reported if they have been continued
-   from a job control stop since their status was last reported.
-
-   .. availability:: some Unix systems.
-
-
-.. data:: WUNTRACED
-
-   This option causes child processes to be reported if they have been stopped but
-   their current state has not been reported since they were stopped.
-
-   .. availability:: Unix.
 
 
 The following functions take a process status code as returned by
 :func:`system`, :func:`wait`, or :func:`waitpid` as a parameter.  They may be
 used to determine the disposition of a process.
 
-.. function:: WCOREDUMP(status)
+.. function:: WCOREDUMP(status, /)
 
    Return ``True`` if a core dump was generated for the process, otherwise
    return ``False``.
 
    This function should be employed only if :func:`WIFSIGNALED` is true.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: WIFCONTINUED(status)
@@ -4556,7 +4767,7 @@ used to determine the disposition of a process.
 
    See :data:`WCONTINUED` option.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: WIFSTOPPED(status)
@@ -4568,14 +4779,14 @@ used to determine the disposition of a process.
    done using :data:`WUNTRACED` option or when the process is being traced (see
    :manpage:`ptrace(2)`).
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 .. function:: WIFSIGNALED(status)
 
    Return ``True`` if the process was terminated by a signal, otherwise return
    ``False``.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: WIFEXITED(status)
@@ -4584,7 +4795,7 @@ used to determine the disposition of a process.
    by calling ``exit()`` or ``_exit()``, or by returning from ``main()``;
    otherwise return ``False``.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: WEXITSTATUS(status)
@@ -4593,7 +4804,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFEXITED` is true.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: WSTOPSIG(status)
@@ -4602,7 +4813,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSTOPPED` is true.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: WTERMSIG(status)
@@ -4611,7 +4822,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSIGNALED` is true.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 Interface to the scheduler
@@ -4683,33 +4894,33 @@ operating system.
    scheduling policy constants above.
 
 
-.. function:: sched_setscheduler(pid, policy, param)
+.. function:: sched_setscheduler(pid, policy, param, /)
 
    Set the scheduling policy for the process with PID *pid*. A *pid* of 0 means
    the calling process. *policy* is one of the scheduling policy constants
    above. *param* is a :class:`sched_param` instance.
 
 
-.. function:: sched_getscheduler(pid)
+.. function:: sched_getscheduler(pid, /)
 
    Return the scheduling policy for the process with PID *pid*. A *pid* of 0
    means the calling process. The result is one of the scheduling policy
    constants above.
 
 
-.. function:: sched_setparam(pid, param)
+.. function:: sched_setparam(pid, param, /)
 
    Set the scheduling parameters for the process with PID *pid*. A *pid* of 0 means
    the calling process. *param* is a :class:`sched_param` instance.
 
 
-.. function:: sched_getparam(pid)
+.. function:: sched_getparam(pid, /)
 
    Return the scheduling parameters as a :class:`sched_param` instance for the
    process with PID *pid*. A *pid* of 0 means the calling process.
 
 
-.. function:: sched_rr_get_interval(pid)
+.. function:: sched_rr_get_interval(pid, /)
 
    Return the round-robin quantum in seconds for the process with PID *pid*. A
    *pid* of 0 means the calling process.
@@ -4720,14 +4931,14 @@ operating system.
    Voluntarily relinquish the CPU.
 
 
-.. function:: sched_setaffinity(pid, mask)
+.. function:: sched_setaffinity(pid, mask, /)
 
    Restrict the process with PID *pid* (or the current process if zero) to a
    set of CPUs.  *mask* is an iterable of integers representing the set of
    CPUs to which the process should be restricted.
 
 
-.. function:: sched_getaffinity(pid)
+.. function:: sched_getaffinity(pid, /)
 
    Return the set of CPUs the process with PID *pid* (or the current process
    if zero) is restricted to.
@@ -4739,7 +4950,7 @@ Miscellaneous System Information
 --------------------------------
 
 
-.. function:: confstr(name)
+.. function:: confstr(name, /)
 
    Return string-valued system configuration values. *name* specifies the
    configuration value to retrieve; it may be a string which is the name of a
@@ -4790,7 +5001,7 @@ Miscellaneous System Information
    .. availability:: Unix.
 
 
-.. function:: sysconf(name)
+.. function:: sysconf(name, /)
 
    Return integer-valued system configuration values. If the configuration value
    specified by *name* isn't defined, ``-1`` is returned.  The comments regarding
@@ -4927,13 +5138,13 @@ Random numbers
    :py:data:`GRND_NONBLOCK`.
 
    See also the `Linux getrandom() manual page
-   <http://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
+   <https://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
 
-   .. availability:: Linux 3.17 and newer.
+   .. availability:: Linux >= 3.17.
 
    .. versionadded:: 3.6
 
-.. function:: urandom(size)
+.. function:: urandom(size, /)
 
    Return a bytestring of *size* random bytes suitable for cryptographic use.
 

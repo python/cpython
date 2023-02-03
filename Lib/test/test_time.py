@@ -848,7 +848,7 @@ class CPyTimeTestCase:
         # test rounding
         ns_timestamps = self._rounding_values(use_float)
         valid_values = convert_values(ns_timestamps)
-        for time_rnd, decimal_rnd in ROUNDING_MODES :
+        for time_rnd, decimal_rnd in ROUNDING_MODES:
             with decimal.localcontext() as context:
                 context.rounding = decimal_rnd
 

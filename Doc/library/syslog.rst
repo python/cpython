@@ -15,6 +15,8 @@ This module wraps the system ``syslog`` family of routines.  A pure Python
 library that can speak to a syslog server is available in the
 :mod:`logging.handlers` module as :class:`SysLogHandler`.
 
+.. include:: ../includes/wasm-notavail.rst
+
 The module defines the following functions:
 
 
@@ -38,6 +40,13 @@ The module defines the following functions:
       it wasn't called prior to the call to :func:`syslog`, deferring to the syslog
       implementation to call ``openlog()``.
 
+   .. versionchanged:: 3.12
+      This function is restricted in subinterpreters.
+      (Only code that runs in multiple interpreters is affected and
+      the restriction is not relevant for most users.)
+      :func:`openlog` must be called in the main interpreter before :func:`syslog` may be used
+      in a subinterpreter.  Otherwise it will raise :exc:`RuntimeError`.
+
 
 .. function:: openlog([ident[, logoption[, facility]]])
 
@@ -58,6 +67,13 @@ The module defines the following functions:
       In previous versions, keyword arguments were not allowed, and *ident* was
       required.
 
+   .. versionchanged:: 3.12
+      This function is restricted in subinterpreters.
+      (Only code that runs in multiple interpreters is affected and
+      the restriction is not relevant for most users.)
+      This may only be called in the main interpreter.
+      It will raise :exc:`RuntimeError` if called in a subinterpreter.
+
 
 .. function:: closelog()
 
@@ -69,6 +85,13 @@ The module defines the following functions:
    :func:`openlog` parameters are reset to defaults.
 
    .. audit-event:: syslog.closelog "" syslog.closelog
+
+   .. versionchanged:: 3.12
+      This function is restricted in subinterpreters.
+      (Only code that runs in multiple interpreters is affected and
+      the restriction is not relevant for most users.)
+      This may only be called in the main interpreter.
+      It will raise :exc:`RuntimeError` if called in a subinterpreter.
 
 
 .. function:: setlogmask(maskpri)

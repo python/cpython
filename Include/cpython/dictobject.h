@@ -16,7 +16,11 @@ typedef struct {
 
     /* Dictionary version: globally unique, value change each time
        the dictionary is modified */
+#ifdef Py_BUILD_CORE       
     uint64_t ma_version_tag;
+#else
+    Py_DEPRECATED(3.12) uint64_t ma_version_tag;
+#endif        
 
     PyDictKeysObject *ma_keys;
 
@@ -84,5 +88,26 @@ typedef struct {
 PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
 
-PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg);
-PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *self);
+/* Dictionary watchers */
+
+typedef enum {
+    PyDict_EVENT_ADDED,
+    PyDict_EVENT_MODIFIED,
+    PyDict_EVENT_DELETED,
+    PyDict_EVENT_CLONED,
+    PyDict_EVENT_CLEARED,
+    PyDict_EVENT_DEALLOCATED,
+} PyDict_WatchEvent;
+
+// Callback to be invoked when a watched dict is cleared, dealloced, or modified.
+// In clear/dealloc case, key and new_value will be NULL. Otherwise, new_value will be the
+// new value for key, NULL if key is being deleted.
+typedef int(*PyDict_WatchCallback)(PyDict_WatchEvent event, PyObject* dict, PyObject* key, PyObject* new_value);
+
+// Register/unregister a dict-watcher callback
+PyAPI_FUNC(int) PyDict_AddWatcher(PyDict_WatchCallback callback);
+PyAPI_FUNC(int) PyDict_ClearWatcher(int watcher_id);
+
+// Mark given dictionary as "watched" (callback will be called if it is modified)
+PyAPI_FUNC(int) PyDict_Watch(int watcher_id, PyObject* dict);
+PyAPI_FUNC(int) PyDict_Unwatch(int watcher_id, PyObject* dict);

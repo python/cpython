@@ -560,6 +560,7 @@ Example with (non-bound) methods::
    >>> class C:
    ...     def meth(self):
    ...         pass
+   ...
    >>> C.meth.__name__
    'meth'
    >>> C.meth.__qualname__
@@ -932,7 +933,7 @@ it can now be used as a class decorator (:issue:`10868`).
 array
 -----
 
-The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
+The :mod:`array` module supports the :c:expr:`long long` type using ``q`` and
 ``Q`` type codes.
 
 (Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`.)
@@ -1106,7 +1107,7 @@ the precision is user configurable, the exact figures may vary. For example,
 in integer bignum arithmetic the differences can be significantly higher.
 
 The following table is meant as an illustration. Benchmarks are available
-at http://www.bytereef.org/mpdecimal/quickstart.html.
+at https://www.bytereef.org/mpdecimal/quickstart.html.
 
    +---------+-------------+--------------+-------------+
    |         |  decimal.py |   _decimal   |   speedup   |
@@ -1898,7 +1899,7 @@ socket
   family on OS X.  (Contributed by Michael Goderbauer in :issue:`13777`.)
 
 * New function :func:`~socket.sethostname` allows the hostname to be set
-  on unix systems if the calling process has sufficient privileges.
+  on Unix systems if the calling process has sufficient privileges.
   (Contributed by Ross Lagerwall in :issue:`10866`.)
 
 
@@ -2267,7 +2268,7 @@ The :c:type:`Py_UNICODE` has been deprecated by :pep:`393` and will be
 removed in Python 4. All functions using this type are deprecated:
 
 Unicode functions and methods using :c:type:`Py_UNICODE` and
-:c:type:`Py_UNICODE*` types:
+:c:expr:`Py_UNICODE*` types:
 
 * :c:macro:`PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
   :c:func:`PyUnicode_FromKindAndData`
@@ -2389,10 +2390,10 @@ Porting Python code
   :attr:`sys.path_importer_cache` where it represents the use of implicit
   finders, but semantically it should not change anything.
 
-* :class:`importlib.abc.Finder` no longer specifies a `find_module()` abstract
+* :class:`importlib.abc.Finder` no longer specifies a ``find_module()`` abstract
   method that must be implemented. If you were relying on subclasses to
   implement that method, make sure to check for the method's existence first.
-  You will probably want to check for `find_loader()` first, though, in the
+  You will probably want to check for ``find_loader()`` first, though, in the
   case of working with :term:`path entry finders <path entry finder>`.
 
 * :mod:`pkgutil` has been converted to use :mod:`importlib` internally. This

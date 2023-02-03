@@ -15,74 +15,119 @@
 
 --------------
 
-The :mod:`venv` module provides support for creating lightweight "virtual
-environments" with their own site directories, optionally isolated from system
-site directories.  Each virtual environment has its own Python binary (which
-matches the version of the binary that was used to create this environment) and
-can have its own independent set of installed Python packages in its site
-directories.
+.. _venv-def:
+.. _venv-intro:
 
-See :pep:`405` for more information about Python virtual environments.
+The :mod:`!venv` module supports creating lightweight "virtual environments",
+each with their own independent set of Python packages installed in
+their :mod:`site` directories.
+A virtual environment is created on top of an existing
+Python installation, known as the virtual environment's "base" Python, and may
+optionally be isolated from the packages in the base environment,
+so only those explicitly installed in the virtual environment are available.
+
+When used from within a virtual environment, common installation tools such as
+`pip`_ will install Python packages into a virtual environment
+without needing to be told to do so explicitly.
+
+See :pep:`405` for more background on Python virtual environments.
 
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
    <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
+.. include:: ../includes/wasm-notavail.rst
 
 Creating virtual environments
 -----------------------------
 
 .. include:: /using/venv-create.inc
 
+.. _venv-explanation:
 
-.. _venv-def:
+How venvs work
+--------------
 
-.. note:: A virtual environment is a Python environment such that the Python
-   interpreter, libraries and scripts installed into it are isolated from those
-   installed in other virtual environments, and (by default) any libraries
-   installed in a "system" Python, i.e., one which is installed as part of your
-   operating system.
+When a Python interpreter is running from a virtual environment,
+:data:`sys.prefix` and :data:`sys.exec_prefix`
+point to the directories of the virtual environment,
+whereas :data:`sys.base_prefix` and :data:`sys.base_exec_prefix`
+point to those of the base Python used to create the environment.
+It is sufficient to check
+``sys.prefix == sys.base_prefix`` to determine if the current interpreter is
+running from a virtual environment.
 
-   A virtual environment is a directory tree which contains Python executable
-   files and other files which indicate that it is a virtual environment.
+A virtual environment may be "activated" using a script in its binary directory
+(``bin`` on POSIX; ``Scripts`` on Windows).
+This will prepend that directory to your :envvar:`!PATH`, so that running
+:program:`!python` will invoke the environment's Python interpreter
+and you can run installed scripts without having to use their full path.
+The invocation of the activation script is platform-specific
+(:samp:`{<venv>}` must be replaced by the path to the directory
+containing the virtual environment):
 
-   Common installation tools such as setuptools_ and pip_ work as
-   expected with virtual environments. In other words, when a virtual
-   environment is active, they install Python packages into the virtual
-   environment without needing to be told to do so explicitly.
++-------------+------------+--------------------------------------------------+
+| Platform    | Shell      | Command to activate virtual environment          |
++=============+============+==================================================+
+| POSIX       | bash/zsh   | :samp:`$ source {<venv>}/bin/activate`           |
+|             +------------+--------------------------------------------------+
+|             | fish       | :samp:`$ source {<venv>}/bin/activate.fish`      |
+|             +------------+--------------------------------------------------+
+|             | csh/tcsh   | :samp:`$ source {<venv>}/bin/activate.csh`       |
+|             +------------+--------------------------------------------------+
+|             | PowerShell | :samp:`$ {<venv>}/bin/Activate.ps1`              |
++-------------+------------+--------------------------------------------------+
+| Windows     | cmd.exe    | :samp:`C:\\> {<venv>}\\Scripts\\activate.bat`    |
+|             +------------+--------------------------------------------------+
+|             | PowerShell | :samp:`PS C:\\> {<venv>}\\Scripts\\Activate.ps1` |
++-------------+------------+--------------------------------------------------+
 
-   When a virtual environment is active (i.e., the virtual environment's Python
-   interpreter is running), the attributes :attr:`sys.prefix` and
-   :attr:`sys.exec_prefix` point to the base directory of the virtual
-   environment, whereas :attr:`sys.base_prefix` and
-   :attr:`sys.base_exec_prefix` point to the non-virtual environment Python
-   installation which was used to create the virtual environment. If a virtual
-   environment is not active, then :attr:`sys.prefix` is the same as
-   :attr:`sys.base_prefix` and :attr:`sys.exec_prefix` is the same as
-   :attr:`sys.base_exec_prefix` (they all point to a non-virtual environment
-   Python installation).
+.. versionadded:: 3.4
+   :program:`!fish` and :program:`!csh` activation scripts.
 
-   When a virtual environment is active, any options that change the
-   installation path will be ignored from all ``setuptools`` configuration
-   files to prevent projects being inadvertently installed outside of the
-   virtual environment.
+.. versionadded:: 3.8
+   PowerShell activation scripts installed under POSIX for PowerShell Core
+   support.
 
-   When working in a command shell, users can make a virtual environment active
-   by running an ``activate`` script in the virtual environment's executables
-   directory (the precise filename and command to use the file is
-   shell-dependent), which prepends the virtual environment's directory for
-   executables to the ``PATH`` environment variable for the running shell. There
-   should be no need in other circumstances to activate a virtual
-   environment; scripts installed into virtual environments have a "shebang"
-   line which points to the virtual environment's Python interpreter. This means
-   that the script will run with that interpreter regardless of the value of
-   ``PATH``. On Windows, "shebang" line processing is supported if you have the
-   Python Launcher for Windows installed (this was added to Python in 3.3 - see
-   :pep:`397` for more details). Thus, double-clicking an installed script in a
-   Windows Explorer window should run the script with the correct interpreter
-   without there needing to be any reference to its virtual environment in
-   ``PATH``.
+You don't specifically *need* to activate a virtual environment,
+as you can just specify the full path to that environment's
+Python interpreter when invoking Python.
+Furthermore, all scripts installed in the environment
+should be runnable without activating it.
+
+In order to achieve this, scripts installed into virtual environments have
+a "shebang" line which points to the environment's Python interpreter,
+i.e. :samp:`#!/{<path-to-venv>}/bin/python`.
+This means that the script will run with that interpreter regardless of the
+value of :envvar:`!PATH`. On Windows, "shebang" line processing is supported if
+you have the :ref:`launcher` installed. Thus, double-clicking an installed
+script in a Windows Explorer window should run it with the correct interpreter
+without the environment needing to be activated or on the :envvar:`!PATH`.
+
+When a virtual environment has been activated, the :envvar:`!VIRTUAL_ENV`
+environment variable is set to the path of the environment.
+Since explicitly activating a virtual environment is not required to use it,
+:envvar:`!VIRTUAL_ENV` cannot be relied upon to determine
+whether a virtual environment is being used.
+
+.. warning:: Because scripts installed in environments should not expect the
+   environment to be activated, their shebang lines contain the absolute paths
+   to their environment's interpreters. Because of this, environments are
+   inherently non-portable, in the general case. You should always have a
+   simple means of recreating an environment (for example, if you have a
+   requirements file ``requirements.txt``, you can invoke ``pip install -r
+   requirements.txt`` using the environment's ``pip`` to install all of the
+   packages needed by the environment). If for any reason you need to move the
+   environment to a new location, you should recreate it at the desired
+   location and delete the one at the old location. If you move an environment
+   because you moved a parent directory of it, you should recreate the
+   environment in its new location. Otherwise, software installed into the
+   environment may not work as expected.
+
+You can deactivate a virtual environment by typing ``deactivate`` in your shell.
+The exact mechanism is platform-specific and is an internal implementation
+detail (typically, a script or shell function will be used).
 
 
 .. _venv-api:
@@ -452,76 +497,68 @@ subclass which installs setuptools and pip into a created virtual environment::
             url = 'https://bootstrap.pypa.io/get-pip.py'
             self.install_script(context, 'pip', url)
 
-    def main(args=None):
-        compatible = True
-        if sys.version_info < (3, 3):
-            compatible = False
-        elif not hasattr(sys, 'base_prefix'):
-            compatible = False
-        if not compatible:
-            raise ValueError('This script is only for use with '
-                             'Python 3.3 or later')
-        else:
-            import argparse
 
-            parser = argparse.ArgumentParser(prog=__name__,
-                                             description='Creates virtual Python '
-                                                         'environments in one or '
-                                                         'more target '
-                                                         'directories.')
-            parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
-                                help='A directory in which to create the '
-                                     'virtual environment.')
-            parser.add_argument('--no-setuptools', default=False,
-                                action='store_true', dest='nodist',
-                                help="Don't install setuptools or pip in the "
-                                     "virtual environment.")
-            parser.add_argument('--no-pip', default=False,
-                                action='store_true', dest='nopip',
-                                help="Don't install pip in the virtual "
-                                     "environment.")
-            parser.add_argument('--system-site-packages', default=False,
-                                action='store_true', dest='system_site',
-                                help='Give the virtual environment access to the '
-                                     'system site-packages dir.')
-            if os.name == 'nt':
-                use_symlinks = False
-            else:
-                use_symlinks = True
-            parser.add_argument('--symlinks', default=use_symlinks,
-                                action='store_true', dest='symlinks',
-                                help='Try to use symlinks rather than copies, '
-                                     'when symlinks are not the default for '
-                                     'the platform.')
-            parser.add_argument('--clear', default=False, action='store_true',
-                                dest='clear', help='Delete the contents of the '
-                                                   'virtual environment '
-                                                   'directory if it already '
-                                                   'exists, before virtual '
-                                                   'environment creation.')
-            parser.add_argument('--upgrade', default=False, action='store_true',
-                                dest='upgrade', help='Upgrade the virtual '
-                                                     'environment directory to '
-                                                     'use this version of '
-                                                     'Python, assuming Python '
-                                                     'has been upgraded '
-                                                     'in-place.')
-            parser.add_argument('--verbose', default=False, action='store_true',
-                                dest='verbose', help='Display the output '
-                                                   'from the scripts which '
-                                                   'install setuptools and pip.')
-            options = parser.parse_args(args)
-            if options.upgrade and options.clear:
-                raise ValueError('you cannot supply --upgrade and --clear together.')
-            builder = ExtendedEnvBuilder(system_site_packages=options.system_site,
-                                           clear=options.clear,
-                                           symlinks=options.symlinks,
-                                           upgrade=options.upgrade,
-                                           nodist=options.nodist,
-                                           nopip=options.nopip,
-                                           verbose=options.verbose)
-            for d in options.dirs:
-                builder.create(d)
+    def main(args=None):
+        import argparse
+
+        parser = argparse.ArgumentParser(prog=__name__,
+                                         description='Creates virtual Python '
+                                                     'environments in one or '
+                                                     'more target '
+                                                     'directories.')
+        parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
+                            help='A directory in which to create the '
+                                 'virtual environment.')
+        parser.add_argument('--no-setuptools', default=False,
+                            action='store_true', dest='nodist',
+                            help="Don't install setuptools or pip in the "
+                                 "virtual environment.")
+        parser.add_argument('--no-pip', default=False,
+                            action='store_true', dest='nopip',
+                            help="Don't install pip in the virtual "
+                                 "environment.")
+        parser.add_argument('--system-site-packages', default=False,
+                            action='store_true', dest='system_site',
+                            help='Give the virtual environment access to the '
+                                 'system site-packages dir.')
+        if os.name == 'nt':
+            use_symlinks = False
+        else:
+            use_symlinks = True
+        parser.add_argument('--symlinks', default=use_symlinks,
+                            action='store_true', dest='symlinks',
+                            help='Try to use symlinks rather than copies, '
+                                 'when symlinks are not the default for '
+                                 'the platform.')
+        parser.add_argument('--clear', default=False, action='store_true',
+                            dest='clear', help='Delete the contents of the '
+                                               'virtual environment '
+                                               'directory if it already '
+                                               'exists, before virtual '
+                                               'environment creation.')
+        parser.add_argument('--upgrade', default=False, action='store_true',
+                            dest='upgrade', help='Upgrade the virtual '
+                                                 'environment directory to '
+                                                 'use this version of '
+                                                 'Python, assuming Python '
+                                                 'has been upgraded '
+                                                 'in-place.')
+        parser.add_argument('--verbose', default=False, action='store_true',
+                            dest='verbose', help='Display the output '
+                                                 'from the scripts which '
+                                                 'install setuptools and pip.')
+        options = parser.parse_args(args)
+        if options.upgrade and options.clear:
+            raise ValueError('you cannot supply --upgrade and --clear together.')
+        builder = ExtendedEnvBuilder(system_site_packages=options.system_site,
+                                       clear=options.clear,
+                                       symlinks=options.symlinks,
+                                       upgrade=options.upgrade,
+                                       nodist=options.nodist,
+                                       nopip=options.nopip,
+                                       verbose=options.verbose)
+        for d in options.dirs:
+            builder.create(d)
 
     if __name__ == '__main__':
         rc = 1
