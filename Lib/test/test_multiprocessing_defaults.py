@@ -4,9 +4,12 @@ from inspect import currentframe, getframeinfo
 import multiprocessing
 from multiprocessing.context import DefaultForkDeprecationWarning
 import sys
-from test.support import threading_helper
+from test.support import import_helper, threading_helper
 import unittest
 import warnings
+
+# Skip tests if _multiprocessing wasn't built.
+import_helper.import_module('_multiprocessing')
 
 
 def do_nothing():
