@@ -325,11 +325,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CALL_FUNCTION_EX:
             return -1;
         case MAKE_FUNCTION:
-            return -1;
+            return ((oparg & 0x01) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x08) ? 1 : 0) + 1;
         case RETURN_GENERATOR:
             return 0;
         case BUILD_SLICE:
-            return -1;
+            return ((oparg == 3) ? 1 : 0) + 2;
         case FORMAT_VALUE:
             return -1;
         case COPY:
@@ -671,11 +671,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case CALL_FUNCTION_EX:
             return -1;
         case MAKE_FUNCTION:
-            return -1;
+            return 1;
         case RETURN_GENERATOR:
             return 0;
         case BUILD_SLICE:
-            return -1;
+            return 1;
         case FORMAT_VALUE:
             return -1;
         case COPY:
