@@ -768,14 +768,24 @@ dummy_func(
             }
         }
 
-        inst(INSTRUMENTED_YIELD_VALUE, ( -- )) {
-            PyObject *val = TOP();
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+        inst(INSTRUMENTED_YIELD_VALUE, (retval -- unused)) {
+            assert(frame != &entry_frame);
+            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            gen->gi_frame_state = FRAME_SUSPENDED;
+            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
-                    frame, next_instr-1, val);
+                    frame, next_instr-1, retval);
             ERROR_IF(err, error);
-            GO_TO_INSTRUCTION(YIELD_VALUE);
+            tstate->exc_info = gen->gi_exc_state.previous_item;
+            gen->gi_exc_state.previous_item = NULL;
+            _Py_LeaveRecursiveCallPy(tstate);
+            _PyInterpreterFrame *gen_frame = frame;
+            frame = cframe.current_frame = frame->previous;
+            gen_frame->previous = NULL;
+            frame->prev_instr -= frame->yield_offset;
+            _PyFrame_StackPush(frame, retval);
+            goto resume_frame;
         }
 
         inst(YIELD_VALUE, (retval -- unused)) {
@@ -2694,8 +2704,7 @@ dummy_func(
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-            PyObject *res;
-            res = PyObject_Vectorcall(
+            PyObject *res = PyObject_Vectorcall(
                 function, stack_pointer-total_args,
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 kwnames);
