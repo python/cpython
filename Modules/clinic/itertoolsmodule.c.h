@@ -345,7 +345,7 @@ static PyObject *
 itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &cycle_type;
+    PyTypeObject *base_tp = clinic_state()->cycle_type;
     PyObject *iterable;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
@@ -377,7 +377,7 @@ static PyObject *
 itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &dropwhile_type;
+    PyTypeObject *base_tp = clinic_state()->dropwhile_type;
     PyObject *func;
     PyObject *seq;
 
@@ -409,7 +409,7 @@ static PyObject *
 itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &takewhile_type;
+    PyTypeObject *base_tp = clinic_state()->takewhile_type;
     PyObject *func;
     PyObject *seq;
 
@@ -441,7 +441,7 @@ static PyObject *
 itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &starmap_type;
+    PyTypeObject *base_tp = clinic_state()->starmap_type;
     PyObject *func;
     PyObject *seq;
 
@@ -913,4 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c3069caac417e165 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b86fcd99bd32145e input=a9049054013a1b77]*/
