@@ -55,7 +55,6 @@ find_state_by_type(PyTypeObject *tp)
     assert(mod != NULL);
     return get_module_state(mod);
 }
-#define clinic_state() (find_state_by_type(type))
 
 /*[clinic input]
 module itertools
@@ -84,6 +83,7 @@ static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
 static PyTypeObject batched_type;
 
+#define clinic_state() (find_state_by_type(type))
 #define clinic_state_by_cls() (get_module_state_by_cls(base_tp))
 #include "clinic/itertoolsmodule.c.h"
 #undef clinic_state_by_cls
