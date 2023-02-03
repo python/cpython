@@ -505,9 +505,9 @@ Pending Removal in Python 3.14
   is deprecated and will raise an exception in Python 3.14.
 
 * The default :mod:`multiprocessing` start method will change to a safer one on
-  Linux, BSDs, and other non-macOS POSIX where ``'fork'`` is currently the
-  default per :gh:`84559`.  Adding a runtime warning about this was deemed too
-  disruptive as the majority of code is expected not to care.  Use the
+  Linux, BSDs, and other non-macOS POSIX platforms where ``'fork'`` is currently
+  the default (:gh:`84559`). Adding a runtime warning about this was deemed too
+  disruptive as the majority of code is not expected to care. Use the
   :func:`~multiprocessing.get_context` or
   :func:`~multiprocessing.set_start_method` APIs to explicitly specify when
   your code *requires* ``'fork'``.  See :ref:`multiprocessing-start-methods`.
