@@ -8,14 +8,15 @@ import sys
 
 
 def import_singlephase():
-    assert '_singlephase' not in sys.modules
+    assert '_testsinglephase' not in sys.modules
     try:
-        import _singlephase
+        import _testsinglephase
     except ImportError:
-        return True
-    else:
-        del sys.modules['_singlephase']
+        sys.modules.pop('_testsinglephase')
         return False
+    else:
+        del sys.modules['_testsinglephase']
+        return True
 
 
 def check_singlephase(override):
@@ -68,5 +69,9 @@ def run_singlephase_check(override, outfd):
     with os.fdopen(outfd, 'w') as outfile:
         sys.stdout = outfile
         sys.stderr = outfile
-        results = check_singlephase(override)
-        json.dump(results, outfile)
+        try:
+            results = check_singlephase(override)
+            json.dump(results, outfile)
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
