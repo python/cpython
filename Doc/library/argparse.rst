@@ -31,7 +31,7 @@ Core Functionality
 
 The :mod:`argparse` module's support for command-line interfaces is built
 around an instance of :class:`argparse.ArgumentParser`.  It is a container for
-argument specifications and has options that apply the parser as whole::
+argument specifications and has options that apply to the parser as whole::
 
    parser = argparse.ArgumentParser(
                        prog = 'ProgramName',
