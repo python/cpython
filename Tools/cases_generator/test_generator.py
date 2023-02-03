@@ -177,15 +177,16 @@ def test_overlap():
     """
     run_cases_test(input, output)
 
-def test_predictions():
+def test_predictions_and_eval_breaker():
     input = """
         inst(OP1, (--)) {
         }
         inst(OP2, (--)) {
         }
-        inst(OP3, (--)) {
+        inst(OP3, (arg -- res)) {
             DEOPT_IF(xxx, OP1);
             PREDICT(OP2);
+            CHECK_EVAL_BREAKER();
         }
     """
     output = """
@@ -200,8 +201,12 @@ def test_predictions():
         }
 
         TARGET(OP3) {
+            PyObject *arg = PEEK(1);
+            PyObject *res;
             DEOPT_IF(xxx, OP1);
+            POKE(1, res);
             PREDICT(OP2);
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
     """
