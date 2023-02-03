@@ -295,7 +295,8 @@ StreamWriter
 
       The method closes the stream and the underlying socket.
 
-      The method should be used along with the ``wait_closed()`` method::
+      The method should be used, though not mandatory,
+      along with the ``wait_closed()`` method::
 
          stream.close()
          await stream.wait_closed()
@@ -364,7 +365,8 @@ StreamWriter
       Wait until the stream is closed.
 
       Should be called after :meth:`close` to wait until the underlying
-      connection is closed.
+      connection is closed, ensuring that all data has been flushed
+      before e.g. exiting the program.
 
       .. versionadded:: 3.7
 
@@ -394,6 +396,7 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
         print('Close the connection')
         writer.close()
+        await writer.wait_closed()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -426,6 +429,7 @@ TCP echo server using the :func:`asyncio.start_server` function::
 
         print("Close the connection")
         writer.close()
+        await writer.wait_closed()
 
     async def main():
         server = await asyncio.start_server(
@@ -482,6 +486,7 @@ Simple example querying HTTP headers of the URL passed on the command line::
 
         # Ignore the body, close the socket
         writer.close()
+        await writer.wait_closed()
 
     url = sys.argv[1]
     asyncio.run(print_http_headers(url))
@@ -527,6 +532,7 @@ Coroutine waiting until a socket receives data using the
         # Got data, we are done: close the socket
         print("Received:", data.decode())
         writer.close()
+        await writer.wait_closed()
 
         # Close the second socket
         wsock.close()
