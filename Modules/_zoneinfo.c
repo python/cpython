@@ -210,6 +210,7 @@ zoneinfo_get_state_by_cls(PyTypeObject *cls)
 }
 
 static struct PyModuleDef zoneinfomodule;
+
 static inline zoneinfo_state *
 zoneinfo_get_state_by_self(PyTypeObject *self)
 {
@@ -391,7 +392,7 @@ zoneinfo_dealloc(PyObject *obj_self)
 
     free_tzrule(&(self->tzrule_after));
 
-    tp->tp_clear(obj_self);
+    zoneinfo_clear(self);
     tp->tp_free(obj_self);
     Py_DECREF(tp);
 }
