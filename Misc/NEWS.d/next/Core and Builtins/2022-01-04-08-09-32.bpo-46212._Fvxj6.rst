@@ -1,4 +1,5 @@
-Avoid creating temporary varargs tuple in argument passing with "Argument Clinic generated code".
+Avoid creating temporary varargs tuple in argument passing with Argument Clinic generated code.
 
-Introduce a function `_PyArg_UnpackKeywordsWithVarargKwonly`, which parse positional args, varargs and keyword args,
-but returns an array of ordered keyword args only.
+Introduce the :c:func:`_PyArg_UnpackKeywordsWithVarargKwonly` function,
+which checks and parses positional arguments, varargs, and keyword arguments,
+but returns only parsed kwonly arguments.
