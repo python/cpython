@@ -784,5 +784,6 @@ config['base_prefix'] = base_prefix or prefix
 config['base_exec_prefix'] = base_exec_prefix or exec_prefix
 
 config['platlibdir'] = platlibdir
-config['stdlib_dir'] = stdlib_dir
-config['platstdlib_dir'] = platstdlib_dir
+# test_embed expects empty strings, not None
+config['stdlib_dir'] = stdlib_dir or ''
+config['platstdlib_dir'] = platstdlib_dir or ''
