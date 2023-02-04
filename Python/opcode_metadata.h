@@ -311,7 +311,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_LEN:
             return oparg + 2;
         case CALL_NO_KW_ISINSTANCE:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_LIST_APPEND:
             return -1;
         case CALL_NO_KW_METHOD_DESCRIPTOR_O:
@@ -657,7 +657,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_LEN:
             return 1;
         case CALL_NO_KW_ISINSTANCE:
-            return -1;
+            return 1;
         case CALL_NO_KW_LIST_APPEND:
             return -1;
         case CALL_NO_KW_METHOD_DESCRIPTOR_O:
@@ -854,7 +854,7 @@ struct opcode_metadata {
     [CALL_NO_KW_BUILTIN_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [CALL_BUILTIN_FAST_WITH_KEYWORDS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [CALL_NO_KW_LEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_ISINSTANCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [CALL_NO_KW_ISINSTANCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [CALL_NO_KW_LIST_APPEND] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CALL_NO_KW_METHOD_DESCRIPTOR_O] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
