@@ -3455,7 +3455,7 @@ def dataclass_transform(
 
 
 
-def override(__arg: F) -> F:
+def override(method: F, /) -> F:
     """Indicate that a method is intended to override a method in a base class.
 
     Usage:
@@ -3482,10 +3482,10 @@ def override(__arg: F) -> F:
 
     """
     try:
-        __arg.__override__ = True
+        method.__override__ = True
     except (AttributeError, TypeError):
         # Skip the attribute silently if it is not writable.
         # AttributeError happens if the object has __slots__ or a
         # read-only property, TypeError if it's a builtin class.
         pass
-    return __arg
+    return method
