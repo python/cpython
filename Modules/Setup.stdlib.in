@@ -43,6 +43,7 @@
 @MODULE__STRUCT_TRUE@_struct _struct.c
 @MODULE__TYPING_TRUE@_typing _typingmodule.c
 @MODULE__XXSUBINTERPRETERS_TRUE@_xxsubinterpreters _xxsubinterpretersmodule.c
+@MODULE__XXINTERPCHANNELS_TRUE@_xxinterpchannels _xxinterpchannelsmodule.c
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
