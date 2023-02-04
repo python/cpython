@@ -388,6 +388,22 @@ Functions
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+.. function:: sleep_until(secs)
+
+   Like :func:`sleep`, but sleep until the specified time of the system clock (as
+   returned by :func:`time`). This can be used, for example, to schedule events
+   at a specific timestamp obtained from
+   :meth:`datetime.timestamp <datetime.datetime.timestamp>`.
+
+   See the notes in :func:`sleep` on the behavior when interrupted and on accuracy.
+   Additional potential sources of inaccuracies include:
+
+   * Because this function uses the system clock as a reference, this means the
+     reference clock is adjustable and may jump backwards.
+   * On Unix, if ``clock_nanosleep()`` is not available, the absolute timeout
+     is emulated using ``nanosleep()`` or ``select()``.
+
+   .. versionadded:: 3.12
 
 .. index::
    single: % (percent); datetime format

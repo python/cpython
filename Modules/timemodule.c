@@ -115,7 +115,7 @@ _PyTime_Init(void)
 
 
 /* Forward declarations */
-static int pysleep(_PyTime_t timeout);
+static int pysleep(_PyTime_t timeout, int absolute);
 
 
 typedef struct {
@@ -422,7 +422,7 @@ time_sleep(PyObject *self, PyObject *timeout_obj)
                         "sleep length must be non-negative");
         return NULL;
     }
-    if (pysleep(timeout) != 0) {
+    if (pysleep(timeout, 0) != 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -433,6 +433,28 @@ PyDoc_STRVAR(sleep_doc,
 \n\
 Delay execution for a given number of seconds.  The argument may be\n\
 a floating point number for subsecond precision.");
+
+static PyObject *
+time_sleep_until(PyObject *self, PyObject *deadline_obj)
+{
+    _PyTime_t deadline;
+    if (_PyTime_FromSecondsObject(&deadline, deadline_obj, _PyTime_ROUND_TIMEOUT))
+        return NULL;
+    if (deadline < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "sleep_until deadline must be non-negative");
+        return NULL;
+    }
+    if (pysleep(deadline, 1) != 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(sleep_until_doc,
+"sleep_until(seconds)\n\
+\n\
+Delay execution until the specified system clock time.");
 
 static PyStructSequence_Field struct_time_type_fields[] = {
     {"tm_year", "year, for example, 1993"},
@@ -1868,6 +1890,7 @@ static PyMethodDef time_methods[] = {
     {"pthread_getcpuclockid", time_pthread_getcpuclockid, METH_VARARGS, pthread_getcpuclockid_doc},
 #endif
     {"sleep",           time_sleep, METH_O, sleep_doc},
+    {"sleep_until",     time_sleep_until, METH_O, sleep_until_doc},
     {"gmtime",          time_gmtime, METH_VARARGS, gmtime_doc},
     {"localtime",       time_localtime, METH_VARARGS, localtime_doc},
     {"asctime",         time_asctime, METH_VARARGS, asctime_doc},
@@ -2132,8 +2155,9 @@ PyInit_time(void)
 // time.sleep() implementation.
 // On error, raise an exception and return -1.
 // On success, return 0.
+// If absolute==0, timeout is relative; otherwise timeout is absolute.
 static int
-pysleep(_PyTime_t timeout)
+pysleep(_PyTime_t timeout, int absolute)
 {
     assert(timeout >= 0);
 
@@ -2145,13 +2169,27 @@ pysleep(_PyTime_t timeout)
 #else
     struct timeval timeout_tv;
 #endif
-    _PyTime_t deadline, monotonic;
+    _PyTime_t deadline, reference;
     int err = 0;
 
-    if (get_monotonic(&monotonic) < 0) {
-        return -1;
+    if (absolute) {
+        deadline = timeout;
+#ifndef HAVE_CLOCK_NANOSLEEP
+        if (get_system_time(&reference) < 0) {
+            return -1;
+        }
+        timeout = deadline - reference;
+        if (timeout < 0) {
+            return 0;
+        }
+#endif
     }
-    deadline = monotonic + timeout;
+    else {
+        if (get_monotonic(&reference) < 0) {
+            return -1;
+        }
+        deadline = reference + timeout;
+    }
 #ifdef HAVE_CLOCK_NANOSLEEP
     if (_PyTime_AsTimespec(deadline, &timeout_abs) < 0) {
         return -1;
@@ -2174,7 +2212,8 @@ pysleep(_PyTime_t timeout)
         int ret;
         Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_CLOCK_NANOSLEEP
-        ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
+        ret = clock_nanosleep(absolute ? CLOCK_REALTIME : CLOCK_MONOTONIC,
+                TIMER_ABSTIME, &timeout_abs, NULL);
         err = ret;
 #elif defined(HAVE_NANOSLEEP)
         ret = nanosleep(&timeout_ts, NULL);
@@ -2201,10 +2240,17 @@ pysleep(_PyTime_t timeout)
         }
 
 #ifndef HAVE_CLOCK_NANOSLEEP
-        if (get_monotonic(&monotonic) < 0) {
-            return -1;
+        if (absolute) {
+            if (get_system_time(&reference) < 0) {
+                return -1;
+            }
         }
-        timeout = deadline - monotonic;
+        else {
+            if (get_monotonic(&reference) < 0) {
+                return -1;
+            }
+        }
+        timeout = deadline - reference;
         if (timeout < 0) {
             break;
         }
@@ -2229,11 +2275,18 @@ pysleep(_PyTime_t timeout)
         return 0;
     }
 
-    LARGE_INTEGER relative_timeout;
+    LARGE_INTEGER due_time;
     // No need to check for integer overflow, both types are signed
-    assert(sizeof(relative_timeout) == sizeof(timeout_100ns));
-    // SetWaitableTimer(): a negative due time indicates relative time
-    relative_timeout.QuadPart = -timeout_100ns;
+    assert(sizeof(due_time) == sizeof(timeout_100ns));
+    if (absolute) {
+        // Adjust from Unix time (1970-01-01) to Windows time (1601-01-01)
+        // (the inverse of what is done in py_get_system_clock)
+        due_time.QuadPart = timeout_100ns + 116444736000000000;
+    }
+    else {
+        // SetWaitableTimer(): a negative due time indicates relative time
+        due_time.QuadPart = -timeout_100ns;
+    }
 
     HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags,
                                           TIMER_ALL_ACCESS);
@@ -2242,7 +2295,7 @@ pysleep(_PyTime_t timeout)
         return -1;
     }
 
-    if (!SetWaitableTimerEx(timer, &relative_timeout,
+    if (!SetWaitableTimerEx(timer, &due_time,
                             0, // no period; the timer is signaled once
                             NULL, NULL, // no completion routine
                             NULL,  // no wake context; do not resume from suspend

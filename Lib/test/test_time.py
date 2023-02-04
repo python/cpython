@@ -159,6 +159,18 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.sleep, -1)
         time.sleep(1.2)
 
+    def test_sleep_until(self):
+        start = time.time()
+        deadline = start + 2
+        time.sleep_until(deadline)
+        stop = time.time()
+        delta = stop - deadline
+        # cargo-cult these 50ms from test_monotonic (bpo-20101)
+        self.assertGreater(delta, -0.050)
+        # allow sleep_until to take up to 1s longer than planned
+        # (e.g. in case the system is under heavy load during testing)
+        self.assertLess(delta, 1.000)
+
     def test_epoch(self):
         # bpo-43869: Make sure that Python use the same Epoch on all platforms:
         # January 1, 1970, 00:00:00 (UTC).
