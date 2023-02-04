@@ -40,5 +40,3 @@ ac_cv_header_netpacket_packet_h=no
 
 # Disable int-conversion for wask-sdk as it triggers an error from version 17.
 ac_cv_disable_int_conversion=yes
-
-ac_cv_pthread=yes
