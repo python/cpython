@@ -3430,22 +3430,24 @@
         }
 
         TARGET(CALL_NO_KW_LIST_APPEND) {
+            PyObject **args = &PEEK(oparg);
+            PyObject *self = PEEK(1 + oparg);
+            PyObject *method = PEEK(2 + oparg);
+            PyObject *res;
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             assert(oparg == 1);
-            PyObject *callable = PEEK(3);
+            assert(method != NULL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
-            DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
-            PyObject *list = SECOND();
-            DEOPT_IF(!PyList_Check(list), CALL);
+            DEOPT_IF(method != interp->callable_cache.list_append, CALL);
+            DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = POP();
-            if (_PyList_AppendTakeRef((PyListObject *)list, arg) < 0) {
-                goto error;
+            if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
+                goto pop_1_error;  // Since arg is DECREF'ed already
             }
-            STACK_SHRINK(2);
-            Py_DECREF(list);
-            Py_DECREF(callable);
+            Py_DECREF(self);
+            Py_DECREF(method);
+            STACK_SHRINK(3);
             // CALL + POP_TOP
             JUMPBY(INLINE_CACHE_ENTRIES_CALL + 1);
             assert(_Py_OPCODE(next_instr[-1]) == POP_TOP);
