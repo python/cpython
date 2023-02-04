@@ -1453,8 +1453,8 @@ class MathTests(unittest.TestCase):
         # If the following test fails, it means that the C math library
         # implementation of fma() is not compliant with the C99 standard
         # and is inaccurate.  To solve this problem, make a new build
-        # with the symbol NO_C99_FMA defined.  That will enable a slower
-        # but more accurate code path that avoids the fma() call.
+        # with the symbol UNRELIABLE_FMA defined.  That will enable a
+        # slower but accurate code path that avoids the fma() call.
         relative_err = median(Trial(math.sumprod, c, n) for i in range(times))
         self.assertLess(relative_err, 1e-16)
 

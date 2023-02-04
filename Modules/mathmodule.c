@@ -2851,12 +2851,25 @@ dl_sum(double a, double b)
     return (DoubleLength) {x, y};
 }
 
+#ifndef UNRELIABLE_FMA
+
+static DoubleLength
+dl_mul(double x, double y)
+{
+    /* Algorithm 3.5. Error-free transformation of a product */
+    double z = x * y;
+    double zz = fma(x, y, -z);
+    return (DoubleLength) {z, zz};
+}
+
+#else
+
 /*
-   Our default implementation of dl_mul() depends on the C math library
+   The default implementation of dl_mul() depends on the C math library
    having an accurate fma() function as required by § 7.12.13.1 of the
    C99 standard.
 
-   The NO_C99_FMA option is provided as a slower, but fully accurate
+   The UNRELIABLE_FMA option is provided as a slower but accurate
    alternative for builds where the fma() function is found wanting.
    The speed penalty may be modest (17% slower on an Apple M1 Max),
    so don't hesitate to enable this build option.
@@ -2865,8 +2878,6 @@ dl_sum(double a, double b)
    A Floating-Point Technique for Extending the Available Precision
    https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 */
-
-#ifdef NO_C99_FMA
 
 static DoubleLength
 dl_split(double x) {
@@ -2887,17 +2898,6 @@ dl_mul(double x, double y)
     double q = xx.hi * yy.lo + xx.lo * yy.hi;
     double z = p + q;
     double zz = p - z + q + xx.lo * yy.lo;
-    return (DoubleLength) {z, zz};
-}
-
-#else
-
-static DoubleLength
-dl_mul(double x, double y)
-{
-    /* Algorithm 3.5. Error-free transformation of a product */
-    double z = x * y;
-    double zz = fma(x, y, -z);
     return (DoubleLength) {z, zz};
 }
 
