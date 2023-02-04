@@ -748,7 +748,10 @@ class PathDistribution(Distribution):
             NotADirectoryError,
             PermissionError,
         ):
-            return self._path.joinpath(filename).read_text(encoding='utf-8')
+            path = self._path
+            if filename:
+                path /= filename
+            return path.read_text(encoding='utf-8')
 
     read_text.__doc__ = Distribution.read_text.__doc__
 
