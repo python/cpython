@@ -2369,7 +2369,7 @@ dummy_func(
             CALL_NO_KW_LEN,
             CALL_NO_KW_ISINSTANCE,
             CALL_NO_KW_LIST_APPEND,
-        //     CALL_NO_KW_METHOD_DESCRIPTOR_O,
+            CALL_NO_KW_METHOD_DESCRIPTOR_O,
         //     CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS,
         //     CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
         //     CALL_NO_KW_METHOD_DESCRIPTOR_FAST,
@@ -2777,19 +2777,22 @@ dummy_func(
             DISPATCH();
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
+        inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (unused/1, unused/2, unused/1, method, unused, args[oparg] -- res)) {
             assert(kwnames == NULL);
-            int is_meth = is_method(stack_pointer, oparg);
-            int total_args = oparg + is_meth;
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                args--;
+                total_args++;
+            }
             PyMethodDescrObject *callable =
                 (PyMethodDescrObject *)PEEK(total_args + 1);
             DEOPT_IF(total_args != 2, CALL);
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != METH_O, CALL);
-            PyObject *arg = TOP();
-            PyObject *self = SECOND();
+            PyObject *arg = args[1];
+            PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -2798,18 +2801,13 @@ dummy_func(
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *res = _PyCFunction_TrampolineCall(cfunc, self, arg);
+            res = _PyCFunction_TrampolineCall(cfunc, self, arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
             Py_DECREF(arg);
-            STACK_SHRINK(oparg + 1);
-            SET_TOP(res);
             Py_DECREF(callable);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
         }
 
