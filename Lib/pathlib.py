@@ -286,26 +286,21 @@ class PurePath(object):
         return drv, root, parsed
 
     def __init__(self, *args):
-        parts = []
-        for a in args:
-            if isinstance(a, PurePath):
-                parts += a._parts
+        if args:
+            if len(args) == 1:
+                path = os.fspath(args[0])
             else:
-                a = os.fspath(a)
-                if isinstance(a, str):
-                    # Force-cast str subclasses to str (issue #21127)
-                    parts.append(str(a))
-                else:
-                    raise TypeError(
-                        "argument should be a str object or an os.PathLike "
-                        "object returning str, not %r"
-                        % type(a))
-        if not parts:
-            self._fspath = ''
-        elif len(parts) == 1:
-            self._fspath = os.fspath(parts[0])
+                path = self._flavour.join(*args)
+            if isinstance(path, str):
+                # Force-cast str subclasses to str (issue #21127)
+                self._fspath = str(path)
+            else:
+                raise TypeError(
+                    "argument should be a str object or an os.PathLike "
+                    "object returning str, not %r"
+                    % type(path))
         else:
-            self._fspath = self._flavour.join(*parts)
+            self._fspath = ''
 
     def _load_parts(self):
         drv, root, parts = self._parse_path(self._fspath)
