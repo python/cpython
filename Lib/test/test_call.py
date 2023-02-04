@@ -1,6 +1,5 @@
-import datetime
 import unittest
-from test.support import cpython_only
+from test.support import cpython_only, requires_limited_api
 try:
     import _testcapi
 except ImportError:
@@ -9,6 +8,16 @@ import struct
 import collections
 import itertools
 import gc
+import contextlib
+import sys
+
+
+class BadStr(str):
+    def __eq__(self, other):
+        return True
+    def __hash__(self):
+        # Guaranteed different hash
+        return str.__hash__(self) ^ 3
 
 
 class FunctionCalls(unittest.TestCase):
@@ -26,6 +35,18 @@ class FunctionCalls(unittest.TestCase):
         self.assertIsInstance(res, dict)
         self.assertEqual(list(res.items()), expected)
 
+    def test_frames_are_popped_after_failed_calls(self):
+        # GH-93252: stuff blows up if we don't pop the new frame after
+        # recovering from failed calls:
+        def f():
+            pass
+        for _ in range(1000):
+            try:
+                f(None)
+            except TypeError:
+                pass
+        # BOOM!
+
 
 @cpython_only
 class CFunctionCallsErrorMessages(unittest.TestCase):
@@ -39,7 +60,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, {}.__contains__, 0, 1)
 
     def test_varargs3(self):
-        msg = r"^from_bytes\(\) takes exactly 2 positional arguments \(3 given\)"
+        msg = r"^from_bytes\(\) takes at most 2 positional arguments \(3 given\)"
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
 
     def test_varargs1min(self):
@@ -74,7 +95,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, bool, x=2)
 
     def test_varargs4_kw(self):
-        msg = r"^index\(\) takes no keyword arguments$"
+        msg = r"^list[.]index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, [].index, x=2)
 
     def test_varargs5_kw(self):
@@ -90,19 +111,19 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, next, x=2)
 
     def test_varargs8_kw(self):
-        msg = r"^pack\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack, x=2)
 
     def test_varargs9_kw(self):
-        msg = r"^pack_into\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack_into\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack_into, x=2)
 
     def test_varargs10_kw(self):
-        msg = r"^index\(\) takes no keyword arguments$"
+        msg = r"^deque[.]index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, collections.deque().index, x=2)
 
     def test_varargs11_kw(self):
-        msg = r"^pack\(\) takes no keyword arguments$"
+        msg = r"^Struct[.]pack\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.Struct.pack, struct.Struct(""), x=2)
 
     def test_varargs12_kw(self):
@@ -119,9 +140,9 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                itertools.product, 0, repeat=1, foo=2)
 
     def test_varargs15_kw(self):
-        msg = r"^ImportError\(\) takes at most 2 keyword arguments \(3 given\)$"
+        msg = r"^ImportError\(\) takes at most 3 keyword arguments \(4 given\)$"
         self.assertRaisesRegex(TypeError, msg,
-                               ImportError, 0, name=1, path=2, foo=3)
+                               ImportError, 0, name=1, path=2, name_from=3, foo=3)
 
     def test_varargs16_kw(self):
         msg = r"^min\(\) takes at most 2 keyword arguments \(3 given\)$"
@@ -129,9 +150,21 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                min, 0, default=1, key=2, foo=3)
 
     def test_varargs17_kw(self):
-        msg = r"^print\(\) takes at most 4 keyword arguments \(5 given\)$"
+        msg = r"'foo' is an invalid keyword argument for print\(\)$"
         self.assertRaisesRegex(TypeError, msg,
                                print, 0, sep=1, end=2, file=3, flush=4, foo=5)
+
+    def test_varargs18_kw(self):
+        # _PyArg_UnpackKeywordsWithVararg()
+        msg = r"invalid keyword argument for print\(\)$"
+        with self.assertRaisesRegex(TypeError, msg):
+            print(0, 1, **{BadStr('foo'): ','})
+
+    def test_varargs19_kw(self):
+        # _PyArg_UnpackKeywords()
+        msg = r"invalid keyword argument for round\(\)$"
+        with self.assertRaisesRegex(TypeError, msg):
+            round(1.75, **{BadStr('foo'): 1})
 
     def test_oldargs0_1(self):
         msg = r"keys\(\) takes no arguments \(1 given\)"
@@ -468,7 +501,7 @@ class FastCallTests(unittest.TestCase):
                     self.check_result(result, expected)
 
     def test_vectorcall_dict(self):
-        # Test _PyObject_FastCallDict()
+        # Test PyObject_VectorcallDict()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -487,7 +520,7 @@ class FastCallTests(unittest.TestCase):
                 self.check_result(result, expected)
 
     def test_vectorcall(self):
-        # Test _PyObject_Vectorcall()
+        # Test PyObject_Vectorcall()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -526,7 +559,7 @@ class FastCallTests(unittest.TestCase):
                 self.kwargs.clear()
                 gc.collect()
                 return 0
-        x = IntWithDict(dont_inherit=IntWithDict())
+        x = IntWithDict(optimize=IntWithDict())
         # We test the argument handling of "compile" here, the compilation
         # itself is not relevant. When we pass flags=x below, x.__index__() is
         # called, which changes the keywords dict.
@@ -547,6 +580,9 @@ def testfunction_kw(self, *, kw):
     return self
 
 
+ADAPTIVE_WARMUP_DELAY = 2
+
+
 class TestPEP590(unittest.TestCase):
 
     def test_method_descriptor_flag(self):
@@ -563,7 +599,7 @@ class TestPEP590(unittest.TestCase):
         self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
         self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
 
-        # Heap type should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
+        # Mutable heap types should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
         class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
             pass
         self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
@@ -574,9 +610,19 @@ class TestPEP590(unittest.TestCase):
         self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
         self.assertTrue(_testcapi.MethodDescriptor2.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
 
-        # Heap type should not inherit Py_TPFLAGS_HAVE_VECTORCALL
+        # Mutable heap types should inherit Py_TPFLAGS_HAVE_VECTORCALL,
+        # but should lose it when __call__ is overridden
         class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
             pass
+        self.assertTrue(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        MethodDescriptorHeap.__call__ = print
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+        # Mutable heap types should not inherit Py_TPFLAGS_HAVE_VECTORCALL if
+        # they define __call__ directly
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            def __call__(self):
+                pass
         self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
 
     def test_vectorcall_override(self):
@@ -589,12 +635,64 @@ class TestPEP590(unittest.TestCase):
         f = _testcapi.MethodDescriptorNopGet()
         self.assertIs(f(*args), args)
 
+    def test_vectorcall_override_on_mutable_class(self):
+        """Setting __call__ should disable vectorcall"""
+        TestType = _testcapi.make_vectorcall_class()
+        instance = TestType()
+        self.assertEqual(instance(), "tp_call")
+        instance.set_vectorcall(TestType)
+        self.assertEqual(instance(), "vectorcall")  # assume vectorcall is used
+        TestType.__call__ = lambda self: "custom"
+        self.assertEqual(instance(), "custom")
+
+    def test_vectorcall_override_with_subclass(self):
+        """Setting __call__ on a superclass should disable vectorcall"""
+        SuperType = _testcapi.make_vectorcall_class()
+        class DerivedType(SuperType):
+            pass
+
+        instance = DerivedType()
+
+        # Derived types with its own vectorcall should be unaffected
+        UnaffectedType1 = _testcapi.make_vectorcall_class(DerivedType)
+        UnaffectedType2 = _testcapi.make_vectorcall_class(SuperType)
+
+        # Aside: Quickly check that the C helper actually made derived types
+        self.assertTrue(issubclass(UnaffectedType1, DerivedType))
+        self.assertTrue(issubclass(UnaffectedType2, SuperType))
+
+        # Initial state: tp_call
+        self.assertEqual(instance(), "tp_call")
+        self.assertEqual(_testcapi.has_vectorcall_flag(SuperType), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(DerivedType), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType1), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType2), True)
+
+        # Setting the vectorcall function
+        instance.set_vectorcall(SuperType)
+
+        self.assertEqual(instance(), "vectorcall")
+        self.assertEqual(_testcapi.has_vectorcall_flag(SuperType), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(DerivedType), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType1), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType2), True)
+
+        # Setting __call__ should remove vectorcall from all subclasses
+        SuperType.__call__ = lambda self: "custom"
+
+        self.assertEqual(instance(), "custom")
+        self.assertEqual(_testcapi.has_vectorcall_flag(SuperType), False)
+        self.assertEqual(_testcapi.has_vectorcall_flag(DerivedType), False)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType1), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType2), True)
+
+
     def test_vectorcall(self):
         # Test a bunch of different ways to call objects:
         # 1. vectorcall using PyVectorcall_Call()
         #   (only for objects that support vectorcall directly)
         # 2. normal call
-        # 3. vectorcall using _PyObject_Vectorcall()
+        # 3. vectorcall using PyObject_Vectorcall()
         # 4. call as bound method
         # 5. call using functools.partial
 
@@ -664,6 +762,187 @@ class TestPEP590(unittest.TestCase):
                 self.assertEqual(expected, vectorcall(func, args, kwargs))
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
+
+    def test_setvectorcall(self):
+        from _testcapi import function_setvectorcall
+        def f(num): return num + 1
+        assert_equal = self.assertEqual
+        num = 10
+        assert_equal(11, f(num))
+        function_setvectorcall(f)
+        # make sure specializer is triggered by running > 50 times
+        for _ in range(10 * ADAPTIVE_WARMUP_DELAY):
+            assert_equal("overridden", f(num))
+
+    def test_setvectorcall_load_attr_specialization_skip(self):
+        from _testcapi import function_setvectorcall
+
+        class X:
+            def __getattribute__(self, attr):
+                return attr
+
+        assert_equal = self.assertEqual
+        x = X()
+        assert_equal("a", x.a)
+        function_setvectorcall(X.__getattribute__)
+        # make sure specialization doesn't trigger
+        # when vectorcall is overridden
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
+            assert_equal("overridden", x.a)
+
+    def test_setvectorcall_load_attr_specialization_deopt(self):
+        from _testcapi import function_setvectorcall
+
+        class X:
+            def __getattribute__(self, attr):
+                return attr
+
+        def get_a(x):
+            return x.a
+
+        assert_equal = self.assertEqual
+        x = X()
+        # trigger LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN specialization
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
+            assert_equal("a", get_a(x))
+        function_setvectorcall(X.__getattribute__)
+        # make sure specialized LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN
+        # gets deopted due to overridden vectorcall
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
+            assert_equal("overridden", get_a(x))
+
+    @requires_limited_api
+    def test_vectorcall_limited_incoming(self):
+        from _testcapi import pyobject_vectorcall
+        obj = _testcapi.LimitedVectorCallClass()
+        self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
+
+    @requires_limited_api
+    def test_vectorcall_limited_outgoing(self):
+        from _testcapi import call_vectorcall
+
+        args_captured = []
+        kwargs_captured = []
+
+        def f(*args, **kwargs):
+            args_captured.append(args)
+            kwargs_captured.append(kwargs)
+            return "success"
+
+        self.assertEqual(call_vectorcall(f), "success")
+        self.assertEqual(args_captured, [("foo",)])
+        self.assertEqual(kwargs_captured, [{"baz": "bar"}])
+
+    @requires_limited_api
+    def test_vectorcall_limited_outgoing_method(self):
+        from _testcapi import call_vectorcall_method
+
+        args_captured = []
+        kwargs_captured = []
+
+        class TestInstance:
+            def f(self, *args, **kwargs):
+                args_captured.append(args)
+                kwargs_captured.append(kwargs)
+                return "success"
+
+        self.assertEqual(call_vectorcall_method(TestInstance()), "success")
+        self.assertEqual(args_captured, [("foo",)])
+        self.assertEqual(kwargs_captured, [{"baz": "bar"}])
+
+class A:
+    def method_two_args(self, x, y):
+        pass
+
+    @staticmethod
+    def static_no_args():
+        pass
+
+    @staticmethod
+    def positional_only(arg, /):
+        pass
+
+@cpython_only
+class TestErrorMessagesUseQualifiedName(unittest.TestCase):
+
+    @contextlib.contextmanager
+    def check_raises_type_error(self, message):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertEqual(str(cm.exception), message)
+
+    def test_missing_arguments(self):
+        msg = "A.method_two_args() missing 1 required positional argument: 'y'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args("x")
+
+    def test_too_many_positional(self):
+        msg = "A.static_no_args() takes 0 positional arguments but 1 was given"
+        with self.check_raises_type_error(msg):
+            A.static_no_args("oops it's an arg")
+
+    def test_positional_only_passed_as_keyword(self):
+        msg = "A.positional_only() got some positional-only arguments passed as keyword arguments: 'arg'"
+        with self.check_raises_type_error(msg):
+            A.positional_only(arg="x")
+
+    def test_unexpected_keyword(self):
+        msg = "A.method_two_args() got an unexpected keyword argument 'bad'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args(bad="x")
+
+    def test_multiple_values(self):
+        msg = "A.method_two_args() got multiple values for argument 'x'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args("x", "y", x="oops")
+
+@cpython_only
+class TestRecursion(unittest.TestCase):
+
+    def test_super_deep(self):
+
+        def recurse(n):
+            if n:
+                recurse(n-1)
+
+        def py_recurse(n, m):
+            if n:
+                py_recurse(n-1, m)
+            else:
+                c_py_recurse(m-1)
+
+        def c_recurse(n):
+            if n:
+                _testcapi.pyobject_fastcall(c_recurse, (n-1,))
+
+        def c_py_recurse(m):
+            if m:
+                _testcapi.pyobject_fastcall(py_recurse, (1000, m))
+
+        depth = sys.getrecursionlimit()
+        sys.setrecursionlimit(100_000)
+        try:
+            recurse(90_000)
+            with self.assertRaises(RecursionError):
+                recurse(101_000)
+            c_recurse(100)
+            with self.assertRaises(RecursionError):
+                c_recurse(90_000)
+            c_py_recurse(90)
+            with self.assertRaises(RecursionError):
+                c_py_recurse(100_000)
+        finally:
+            sys.setrecursionlimit(depth)
+
+class TestFunctionWithManyArgs(unittest.TestCase):
+    def test_function_with_many_args(self):
+        for N in (10, 500, 1000):
+            with self.subTest(N=N):
+                args = ",".join([f"a{i}" for i in range(N)])
+                src = f"def f({args}) : return a{N//2}"
+                l = {}
+                exec(src, {}, l)
+                self.assertEqual(l['f'](*range(N)), N//2)
 
 
 if __name__ == "__main__":

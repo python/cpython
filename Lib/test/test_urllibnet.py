@@ -1,5 +1,7 @@
 import unittest
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
 
 import contextlib
 import socket
@@ -16,10 +18,8 @@ support.requires('network')
 class URLTimeoutTest(unittest.TestCase):
     # XXX this test doesn't seem to test anything useful.
 
-    TIMEOUT = 30.0
-
     def setUp(self):
-        socket.setdefaulttimeout(self.TIMEOUT)
+        socket.setdefaulttimeout(support.INTERNET_TIMEOUT)
 
     def tearDown(self):
         socket.setdefaulttimeout(None)
@@ -29,7 +29,7 @@ class URLTimeoutTest(unittest.TestCase):
         self.addCleanup(urllib.request.urlcleanup)
 
         domain = urllib.parse.urlparse(support.TEST_HTTP_URL).netloc
-        with support.transient_internet(domain):
+        with socket_helper.transient_internet(domain):
             f = urllib.request.urlopen(support.TEST_HTTP_URL)
             f.read()
 
@@ -58,7 +58,7 @@ class urlopenNetworkTests(unittest.TestCase):
     @contextlib.contextmanager
     def urlopen(self, *args, **kwargs):
         resource = args[0]
-        with support.transient_internet(resource):
+        with socket_helper.transient_internet(resource):
             r = urllib.request.urlopen(*args, **kwargs)
             try:
                 yield r
@@ -100,7 +100,7 @@ class urlopenNetworkTests(unittest.TestCase):
     def test_getcode(self):
         # test getcode() with the fancy opener to get 404 error codes
         URL = self.url + "XXXinvalidXXX"
-        with support.transient_internet(URL):
+        with socket_helper.transient_internet(URL):
             with self.assertWarns(DeprecationWarning):
                 open_url = urllib.request.FancyURLopener().open(URL)
             try:
@@ -158,12 +158,12 @@ class urlretrieveNetworkTests(unittest.TestCase):
     @contextlib.contextmanager
     def urlretrieve(self, *args, **kwargs):
         resource = args[0]
-        with support.transient_internet(resource):
+        with socket_helper.transient_internet(resource):
             file_location, info = urllib.request.urlretrieve(*args, **kwargs)
             try:
                 yield file_location, info
             finally:
-                support.unlink(file_location)
+                os_helper.unlink(file_location)
 
     def test_basic(self):
         # Test basic functionality.
@@ -177,8 +177,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
     def test_specified_path(self):
         # Make sure that specifying the location of the file to write to works.
         with self.urlretrieve(self.logo,
-                              support.TESTFN) as (file_location, info):
-            self.assertEqual(file_location, support.TESTFN)
+                              os_helper.TESTFN) as (file_location, info):
+            self.assertEqual(file_location, os_helper.TESTFN)
             self.assertTrue(os.path.exists(file_location))
             with open(file_location, 'rb') as f:
                 self.assertTrue(f.read(), "reading from temporary file failed")

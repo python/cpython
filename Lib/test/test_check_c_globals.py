@@ -1,9 +1,19 @@
 import unittest
 import test.test_tools
+from test.support.warnings_helper import save_restore_warnings_filters
+
+
+# TODO: gh-92584: c-analyzer uses distutils which was removed in Python 3.12
+raise unittest.SkipTest("distutils has been removed in Python 3.12")
+
 
 test.test_tools.skip_if_missing('c-analyzer')
 with test.test_tools.imports_under_tool('c-analyzer'):
-    from c_globals.__main__ import main
+    # gh-95349: Save/restore warnings filters to leave them unchanged.
+    # Importing the c-analyzer imports docutils which imports pkg_resources
+    # which adds a warnings filter.
+    with save_restore_warnings_filters():
+        from cpython.__main__ import main
 
 
 class ActualChecks(unittest.TestCase):

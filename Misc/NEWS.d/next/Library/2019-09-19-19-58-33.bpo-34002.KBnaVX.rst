@@ -1,2 +1,0 @@
-Improve efficiency in parts of email package by changing while-pop to a for
-loop, using isdisjoint instead of set intersections.

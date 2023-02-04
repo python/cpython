@@ -18,15 +18,9 @@ PROPS_DATA = {
 }
 
 if not PROPS_DATA["PYTHON_VERSION"]:
-    if VER_NAME:
-        PROPS_DATA["PYTHON_VERSION"] = "{}.{}-{}{}".format(
-            VER_DOT, VER_MICRO, VER_NAME, VER_SERIAL
-        )
-    else:
-        PROPS_DATA["PYTHON_VERSION"] = "{}.{}".format(VER_DOT, VER_MICRO)
-
-if not PROPS_DATA["PYTHON_PLATFORM"]:
-    PROPS_DATA["PYTHON_PLATFORM"] = "x64" if IS_X64 else "Win32"
+    PROPS_DATA["PYTHON_VERSION"] = "{}.{}{}{}".format(
+        VER_DOT, VER_MICRO, "-" if VER_SUFFIX else "", VER_SUFFIX
+    )
 
 PROPS_DATA["PYTHON_TARGET"] = "_GetPythonRuntimeFilesDependsOn{}{}_{}".format(
     VER_MAJOR, VER_MINOR, PROPS_DATA["PYTHON_PLATFORM"]
@@ -35,15 +29,13 @@ PROPS_DATA["PYTHON_TARGET"] = "_GetPythonRuntimeFilesDependsOn{}{}_{}".format(
 PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="$(Platform) == '{PYTHON_PLATFORM}'">
-    <PythonHome Condition="$(Configuration) == 'Debug'">$([msbuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), "python_d.exe")</PythonHome>
-    <PythonHome Condition="$(PythonHome) == ''">$([msbuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), "python.exe")</PythonHome>
+    <PythonHome Condition="$(PythonHome) == ''">$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)\..\..\tools"))</PythonHome>
     <PythonInclude>$(PythonHome)\include</PythonInclude>
     <PythonLibs>$(PythonHome)\libs</PythonLibs>
     <PythonTag>{PYTHON_TAG}</PythonTag>
     <PythonVersion>{PYTHON_VERSION}</PythonVersion>
 
     <IncludePythonExe Condition="$(IncludePythonExe) == ''">true</IncludePythonExe>
-    <IncludeDistutils Condition="$(IncludeDistutils) == ''">false</IncludeDistutils>
     <IncludeLib2To3 Condition="$(IncludeLib2To3) == ''">false</IncludeLib2To3>
     <IncludeVEnv Condition="$(IncludeVEnv) == ''">false</IncludeVEnv>
 
@@ -75,7 +67,6 @@ PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
         <Link>DLLs\%(Filename)%(Extension)</Link>
       </_PythonRuntimeDlls>
       <_PythonRuntimeLib Include="$(PythonHome)\Lib\**\*" Exclude="$(PythonHome)\Lib\**\*.pyc;$(PythonHome)\Lib\site-packages\**\*" />
-      <_PythonRuntimeLib Remove="$(PythonHome)\Lib\distutils\**\*" Condition="$(IncludeDistutils) != 'true'" />
       <_PythonRuntimeLib Remove="$(PythonHome)\Lib\lib2to3\**\*" Condition="$(IncludeLib2To3) != 'true'" />
       <_PythonRuntimeLib Remove="$(PythonHome)\Lib\ensurepip\**\*" Condition="$(IncludeVEnv) != 'true'" />
       <_PythonRuntimeLib Remove="$(PythonHome)\Lib\venv\**\*" Condition="$(IncludeVEnv) != 'true'" />
@@ -94,5 +85,13 @@ PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
 def get_props_layout(ns):
     if ns.include_all or ns.include_props:
         # TODO: Filter contents of props file according to included/excluded items
-        props = PROPS_TEMPLATE.format_map(PROPS_DATA)
+        d = dict(PROPS_DATA)
+        if not d.get("PYTHON_PLATFORM"):
+            d["PYTHON_PLATFORM"] = {
+                "win32": "Win32",
+                "amd64": "X64",
+                "arm32": "ARM",
+                "arm64": "ARM64",
+            }[ns.arch]
+        props = PROPS_TEMPLATE.format_map(d)
         yield "python.props", ("python.props", props.encode("utf-8"))

@@ -1,3 +1,0 @@
-Add a new ``struct_size`` field to :c:type:`PyPreConfig` and :c:type:`PyConfig`
-structures to allow to modify these structures in the future without breaking
-the backward compatibility.

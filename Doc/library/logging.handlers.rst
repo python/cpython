@@ -117,6 +117,9 @@ sends logging output to a disk file.  It inherits the output functionality from
 
       Outputs the record to the file.
 
+      Note that if the file was closed due to logging shutdown at exit and the file
+      mode is 'w', the record will not be emitted (see :issue:`42378`).
+
 
 .. _null-handler:
 
@@ -230,6 +233,19 @@ need to override.
          so it should be as simple and as fast as possible. It should also
          return the same output every time for a given input, otherwise the
          rollover behaviour may not work as expected.
+
+         It's also worth noting that care should be taken when using a namer to
+         preserve certain attributes in the filename which are used during rotation.
+         For example, :class:`RotatingFileHandler` expects to have a set of log files
+         whose names contain successive integers, so that rotation works as expected,
+         and :class:`TimedRotatingFileHandler` deletes old log files (based on the
+         ``backupCount`` parameter passed to the handler's initializer) by determining
+         the oldest files to delete. For this to happen, the filenames should be
+         sortable using the date/time portion of the filename, and a namer needs to
+         respect this. (If a namer is wanted that doesn't respect this scheme, it will
+         need to be used in a subclass of :class:`TimedRotatingFileHandler` which
+         overrides the :meth:`~TimedRotatingFileHandler.getFilesToDelete` method to
+         fit in with the custom naming scheme.)
 
       .. versionadded:: 3.3
 
@@ -440,6 +456,10 @@ timed intervals.
 
       Outputs the record to the file, catering for rollover as described above.
 
+   .. method:: getFilesToDelete()
+
+      Returns a list of filenames which should be deleted as part of rollover. These
+      are the absolute paths of the oldest backup log files written by the handler.
 
 .. _socket-handler:
 
@@ -552,6 +572,13 @@ over UDP sockets.
    Returns a new instance of the :class:`DatagramHandler` class intended to
    communicate with a remote machine whose address is given by *host* and *port*.
 
+   .. note:: As UDP is not a streaming protocol, there is no persistent connection
+      between an instance of this handler and *host*. For this reason, when using a
+      network socket, a DNS lookup might have to be made each time an event is
+      logged, which can introduce some latency into the system. If this affects you,
+      you can do a lookup yourself and initialize this handler using the looked-up IP
+      address rather than the hostname.
+
    .. versionchanged:: 3.4
       If ``port`` is specified as ``None``, a Unix domain socket is created
       using the value in ``host`` - otherwise, a UDP socket is created.
@@ -609,6 +636,12 @@ supports sending logging messages to a remote or local Unix syslog.
    application needs to run on several platforms). On Windows, you pretty
    much have to use the UDP option.
 
+   .. note:: On macOS 12.x (Monterey), Apple has changed the behaviour of their
+      syslog daemon - it no longer listens on a domain socket. Therefore, you cannot
+      expect :class:`SysLogHandler` to work on this system.
+
+      See :gh:`91070` for more information.
+
    .. versionchanged:: 3.2
       *socktype* was added.
 
@@ -617,6 +650,17 @@ supports sending logging messages to a remote or local Unix syslog.
 
       Closes the socket to the remote host.
 
+   .. method:: createSocket()
+
+      Tries to create a socket and, if it's not a datagram socket, connect it
+      to the other end. This method is called during handler initialization,
+      but it's not regarded as an error if the other end isn't listening at
+      this point - the method will be called again when emitting an event, if
+      but it's not regarded as an error if the other end isn't listening yet
+      --- the method will be called again when emitting an event,
+      if there is no socket at that point.
+
+      .. versionadded:: 3.11
 
    .. method:: emit(record)
 
@@ -867,8 +911,8 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: emit(record)
 
-      Appends the record to the buffer. If :meth:`shouldFlush` returns true,
-      calls :meth:`flush` to process the buffer.
+      Append the record to the buffer. If :meth:`shouldFlush` returns true,
+      call :meth:`flush` to process the buffer.
 
 
    .. method:: flush()
@@ -879,7 +923,7 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: shouldFlush(record)
 
-      Returns true if the buffer is up to capacity. This method can be
+      Return ``True`` if the buffer is up to capacity. This method can be
       overridden to implement custom flushing strategies.
 
 
@@ -927,7 +971,7 @@ HTTPHandler
 ^^^^^^^^^^^
 
 The :class:`HTTPHandler` class, located in the :mod:`logging.handlers` module,
-supports sending logging messages to a Web server, using either ``GET`` or
+supports sending logging messages to a web server, using either ``GET`` or
 ``POST`` semantics.
 
 
@@ -957,17 +1001,17 @@ supports sending logging messages to a Web server, using either ``GET`` or
 
    .. method:: emit(record)
 
-      Sends the record to the Web server as a URL-encoded dictionary. The
+      Sends the record to the web server as a URL-encoded dictionary. The
       :meth:`mapLogRecord` method is used to convert the record to the
       dictionary to be sent.
 
-   .. note:: Since preparing a record for sending it to a Web server is not
+   .. note:: Since preparing a record for sending it to a web server is not
       the same as a generic formatting operation, using
       :meth:`~logging.Handler.setFormatter` to specify a
       :class:`~logging.Formatter` for a :class:`HTTPHandler` has no effect.
       Instead of calling :meth:`~logging.Handler.format`, this handler calls
       :meth:`mapLogRecord` and then :func:`urllib.parse.urlencode` to encode the
-      dictionary in a form suitable for sending to a Web server.
+      dictionary in a form suitable for sending to a web server.
 
 
 .. _queue-handler:
@@ -984,7 +1028,7 @@ supports sending logging messages to a queue, such as those implemented in the
 
 Along with the :class:`QueueListener` class, :class:`QueueHandler` can be used
 to let handlers do their work on a separate thread from the one which does the
-logging. This is important in Web applications and also other service
+logging. This is important in web applications and also other service
 applications where threads servicing clients need to respond as quickly as
 possible, while any potentially slow operations (such as sending an email via
 :class:`SMTPHandler`) are done on a separate thread.
@@ -998,6 +1042,8 @@ possible, while any potentially slow operations (such as sending an email via
    have the task tracking API, which means that you can use
    :class:`~queue.SimpleQueue` instances for *queue*.
 
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    .. method:: emit(record)
 
@@ -1014,12 +1060,30 @@ possible, while any potentially slow operations (such as sending an email via
       method is enqueued.
 
       The base implementation formats the record to merge the message,
-      arguments, and exception information, if present.  It also
-      removes unpickleable items from the record in-place.
+      arguments, exception and stack information, if present.  It also removes
+      unpickleable items from the record in-place. Specifically, it overwrites
+      the record's :attr:`msg` and :attr:`message` attributes with the merged
+      message (obtained by calling the handler's :meth:`format` method), and
+      sets the :attr:`args`, :attr:`exc_info` and :attr:`exc_text` attributes
+      to ``None``.
 
       You might want to override this method if you want to convert
       the record to a dict or JSON string, or send a modified copy
       of the record while leaving the original intact.
+
+      .. note:: The base implementation formats the message with arguments, sets
+         the ``message`` and ``msg`` attributes to the formatted message and
+         sets the ``args`` and ``exc_text`` attributes to ``None`` to allow
+         pickling and to prevent further attempts at formatting. This means
+         that a handler on the :class:`QueueListener` side won't have the
+         information to do custom formatting, e.g. of exceptions. You may wish
+         to subclass ``QueueHandler`` and override this method to e.g. avoid
+         setting ``exc_text`` to ``None``. Note that the ``message`` / ``msg``
+         / ``args`` changes are related to ensuring the record is pickleable,
+         and you might or might not be able to avoid doing that depending on
+         whether your ``args`` are pickleable. (Note that you may have to
+         consider not only your own code but also code in any libraries that
+         you use.)
 
    .. method:: enqueue(record)
 
@@ -1027,7 +1091,13 @@ possible, while any potentially slow operations (such as sending an email via
       want to override this if you want to use blocking behaviour, or a
       timeout, or a customized queue implementation.
 
+   .. attribute:: listener
 
+      When created via configuration using :func:`~logging.config.dictConfig`, this
+      attribute will contain a :class:`QueueListener` instance for use with this
+      handler. Otherwise, it will be ``None``.
+
+      .. versionadded:: 3.12
 
 .. _queue-listener:
 
@@ -1046,7 +1116,7 @@ because it works hand-in-hand with :class:`QueueHandler`.
 
 Along with the :class:`QueueHandler` class, :class:`QueueListener` can be used
 to let handlers do their work on a separate thread from the one which does the
-logging. This is important in Web applications and also other service
+logging. This is important in web applications and also other service
 applications where threads servicing clients need to respond as quickly as
 possible, while any potentially slow operations (such as sending an email via
 :class:`SMTPHandler`) are done on a separate thread.
@@ -1060,6 +1130,9 @@ possible, while any potentially slow operations (such as sending an email via
    to know how to get messages from it. The queue is not *required* to have the
    task tracking API (though it's used if available), which means that you can
    use :class:`~queue.SimpleQueue` instances for *queue*.
+
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    If ``respect_handler_level`` is ``True``, a handler's level is respected
    (compared with the level for the message) when deciding whether to pass

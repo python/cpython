@@ -1,2 +1,0 @@
-Fixed comparisons of :class:`datetime.timedelta` and
-:class:`datetime.timezone`.

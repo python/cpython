@@ -1,1 +1,0 @@
-Slot functions optimize any callable with ``Py_TPFLAGS_METHOD_DESCRIPTOR`` instead of only instances of ``function``.

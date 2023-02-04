@@ -2,7 +2,7 @@
 Argparse Tutorial
 *****************
 
-:author: Tshepang Lekhonkhobe
+:author: Tshepang Mbambo
 
 .. _argparse-tutorial:
 
@@ -79,16 +79,16 @@ Following is a result of running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
-   $ python3 prog.py --help
+   $ python prog.py
+   $ python prog.py --help
    usage: prog.py [-h]
 
-   optional arguments:
+   options:
      -h, --help  show this help message and exit
-   $ python3 prog.py --verbose
+   $ python prog.py --verbose
    usage: prog.py [-h]
    prog.py: error: unrecognized arguments: --verbose
-   $ python3 prog.py foo
+   $ python prog.py foo
    usage: prog.py [-h]
    prog.py: error: unrecognized arguments: foo
 
@@ -121,18 +121,18 @@ And running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
+   $ python prog.py
    usage: prog.py [-h] echo
    prog.py: error: the following arguments are required: echo
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] echo
 
    positional arguments:
      echo
 
-   optional arguments:
+   options:
      -h, --help  show this help message and exit
-   $ python3 prog.py foo
+   $ python prog.py foo
    foo
 
 Here is what's happening:
@@ -166,13 +166,13 @@ And we get:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py -h
+   $ python prog.py -h
    usage: prog.py [-h] echo
 
    positional arguments:
      echo        echo the string you use here
 
-   optional arguments:
+   options:
      -h, --help  show this help message and exit
 
 Now, how about doing something even more useful::
@@ -187,7 +187,7 @@ Following is a result of running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    Traceback (most recent call last):
      File "prog.py", line 5, in <module>
        print(args.square**2)
@@ -208,9 +208,9 @@ Following is a result of running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py four
+   $ python prog.py four
    usage: prog.py [-h] square
    prog.py: error: argument square: invalid int value: 'four'
 
@@ -235,17 +235,17 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py --verbosity 1
+   $ python prog.py --verbosity 1
    verbosity turned on
-   $ python3 prog.py
-   $ python3 prog.py --help
+   $ python prog.py
+   $ python prog.py --help
    usage: prog.py [-h] [--verbosity VERBOSITY]
 
-   optional arguments:
+   options:
      -h, --help            show this help message and exit
      --verbosity VERBOSITY
                            increase output verbosity
-   $ python3 prog.py --verbosity
+   $ python prog.py --verbosity
    usage: prog.py [-h] [--verbosity VERBOSITY]
    prog.py: error: argument --verbosity: expected one argument
 
@@ -281,15 +281,15 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py --verbose
+   $ python prog.py --verbose
    verbosity turned on
-   $ python3 prog.py --verbose 1
+   $ python prog.py --verbose 1
    usage: prog.py [-h] [--verbose]
    prog.py: error: unrecognized arguments: 1
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] [--verbose]
 
-   optional arguments:
+   options:
      -h, --help  show this help message and exit
      --verbose   increase output verbosity
 
@@ -327,12 +327,12 @@ And here goes:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py -v
+   $ python prog.py -v
    verbosity turned on
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] [-v]
 
-   optional arguments:
+   options:
      -h, --help     show this help message and exit
      -v, --verbose  increase output verbosity
 
@@ -353,7 +353,7 @@ Our program keeps growing in complexity::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbose:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    else:
        print(answer)
 
@@ -361,14 +361,14 @@ And now the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
+   $ python prog.py
    usage: prog.py [-h] [-v] square
    prog.py: error: the following arguments are required: square
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py 4 --verbose
+   $ python prog.py 4 --verbose
    the square of 4 equals 16
-   $ python3 prog.py --verbose 4
+   $ python prog.py --verbose 4
    the square of 4 equals 16
 
 * We've brought back a positional argument, hence the complaint.
@@ -387,9 +387,9 @@ multiple verbosity values, and actually get to use them::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -397,16 +397,16 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py 4 -v
+   $ python prog.py 4 -v
    usage: prog.py [-h] [-v VERBOSITY] square
    prog.py: error: argument -v/--verbosity: expected one argument
-   $ python3 prog.py 4 -v 1
+   $ python prog.py 4 -v 1
    4^2 == 16
-   $ python3 prog.py 4 -v 2
+   $ python prog.py 4 -v 2
    the square of 4 equals 16
-   $ python3 prog.py 4 -v 3
+   $ python prog.py 4 -v 3
    16
 
 These all look good except the last one, which exposes a bug in our program.
@@ -421,9 +421,9 @@ Let's fix it by restricting the values the ``--verbosity`` option can accept::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -431,16 +431,16 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 -v 3
+   $ python prog.py 4 -v 3
    usage: prog.py [-h] [-v {0,1,2}] square
    prog.py: error: argument -v/--verbosity: invalid choice: 3 (choose from 0, 1, 2)
-   $ python3 prog.py 4 -h
+   $ python prog.py 4 -h
    usage: prog.py [-h] [-v {0,1,2}] square
 
    positional arguments:
      square                display a square of a given number
 
-   optional arguments:
+   options:
      -h, --help            show this help message and exit
      -v {0,1,2}, --verbosity {0,1,2}
                            increase output verbosity
@@ -461,38 +461,39 @@ verbosity argument (check the output of ``python --help``)::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
 We have introduced another action, "count",
-to count the number of occurrences of a specific optional arguments:
+to count the number of occurrences of specific options.
+
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py 4 -v
+   $ python prog.py 4 -v
    4^2 == 16
-   $ python3 prog.py 4 -vv
+   $ python prog.py 4 -vv
    the square of 4 equals 16
-   $ python3 prog.py 4 --verbosity --verbosity
+   $ python prog.py 4 --verbosity --verbosity
    the square of 4 equals 16
-   $ python3 prog.py 4 -v 1
+   $ python prog.py 4 -v 1
    usage: prog.py [-h] [-v] square
    prog.py: error: unrecognized arguments: 1
-   $ python3 prog.py 4 -h
+   $ python prog.py 4 -h
    usage: prog.py [-h] [-v] square
 
    positional arguments:
      square           display a square of a given number
 
-   optional arguments:
+   options:
      -h, --help       show this help message and exit
      -v, --verbosity  increase output verbosity
-   $ python3 prog.py 4 -vvv
+   $ python prog.py 4 -vvv
    16
 
 * Yes, it's now more of a flag (similar to ``action="store_true"``) in the
@@ -529,9 +530,9 @@ Let's fix::
 
    # bugfix: replace == with >=
    if args.verbosity >= 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -539,11 +540,11 @@ And this is what it gives:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 -vvv
+   $ python prog.py 4 -vvv
    the square of 4 equals 16
-   $ python3 prog.py 4 -vvvv
+   $ python prog.py 4 -vvvv
    the square of 4 equals 16
-   $ python3 prog.py 4
+   $ python prog.py 4
    Traceback (most recent call last):
      File "prog.py", line 11, in <module>
        if args.verbosity >= 2:
@@ -566,9 +567,9 @@ Let's fix that bug::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity >= 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -583,7 +584,7 @@ And:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
 
 You can go quite far just with what we've learned so far,
@@ -606,9 +607,9 @@ not just squares::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-       print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print(f"{args.x} to the power {args.y} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^{} == {}".format(args.x, args.y, answer))
+       print(f"{args.x}^{args.y} == {answer}")
    else:
        print(answer)
 
@@ -616,20 +617,20 @@ Output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
+   $ python prog.py
    usage: prog.py [-h] [-v] x y
    prog.py: error: the following arguments are required: x, y
-   $ python3 prog.py -h
+   $ python prog.py -h
    usage: prog.py [-h] [-v] x y
 
    positional arguments:
      x                the base
      y                the exponent
 
-   optional arguments:
+   options:
      -h, --help       show this help message and exit
      -v, --verbosity
-   $ python3 prog.py 4 2 -v
+   $ python prog.py 4 2 -v
    4^2 == 16
 
 
@@ -645,22 +646,51 @@ to display *more* text instead::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-       print("Running '{}'".format(__file__))
+       print(f"Running '{__file__}'")
    if args.verbosity >= 1:
-       print("{}^{} == ".format(args.x, args.y), end="")
+       print(f"{args.x}^{args.y} == ", end="")
    print(answer)
 
 Output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 2
+   $ python prog.py 4 2
    16
-   $ python3 prog.py 4 2 -v
+   $ python prog.py 4 2 -v
    4^2 == 16
-   $ python3 prog.py 4 2 -vv
+   $ python prog.py 4 2 -vv
    Running 'prog.py'
    4^2 == 16
+
+
+.. _specifying-ambiguous-arguments:
+
+Specifying ambiguous arguments
+------------------------------
+
+When there is ambiguity in deciding whether an argument is positional or for an
+argument, ``--`` can be used to tell :meth:`~ArgumentParser.parse_args` that
+everything after that is a positional argument::
+
+   >>> parser = argparse.ArgumentParser(prog='PROG')
+   >>> parser.add_argument('-n', nargs='+')
+   >>> parser.add_argument('args', nargs='*')
+
+   >>> # ambiguous, so parse_args assumes it's an option
+   >>> parser.parse_args(['-f'])
+   usage: PROG [-h] [-n N [N ...]] [args ...]
+   PROG: error: unrecognized arguments: -f
+
+   >>> parser.parse_args(['--', '-f'])
+   Namespace(args=['-f'], n=None)
+
+   >>> # ambiguous, so the -n option greedily accepts arguments
+   >>> parser.parse_args(['-n', '1', '2', '3'])
+   Namespace(args=[], n=['1', '2', '3'])
+
+   >>> parser.parse_args(['-n', '1', '--', '2', '3'])
+   Namespace(args=['2', '3'], n=['1'])
 
 
 Conflicting options
@@ -688,25 +718,25 @@ which will be the opposite of the ``--verbose`` one::
    if args.quiet:
        print(answer)
    elif args.verbose:
-       print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print(f"{args.x} to the power {args.y} equals {answer}")
    else:
-       print("{}^{} == {}".format(args.x, args.y, answer))
+       print(f"{args.x}^{args.y} == {answer}")
 
 Our program is now simpler, and we've lost some functionality for the sake of
 demonstration. Anyways, here's the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 2
+   $ python prog.py 4 2
    4^2 == 16
-   $ python3 prog.py 4 2 -q
+   $ python prog.py 4 2 -q
    16
-   $ python3 prog.py 4 2 -v
+   $ python prog.py 4 2 -v
    4 to the power 2 equals 16
-   $ python3 prog.py 4 2 -vq
+   $ python prog.py 4 2 -vq
    usage: prog.py [-h] [-v | -q] x y
    prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
-   $ python3 prog.py 4 2 -v --quiet
+   $ python prog.py 4 2 -v --quiet
    usage: prog.py [-h] [-v | -q] x y
    prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
 
@@ -731,9 +761,9 @@ your program, just in case they don't know::
    if args.quiet:
        print(answer)
    elif args.verbose:
-       print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print(f"{args.x} to the power {args.y} equals {answer}")
    else:
-       print("{}^{} == {}".format(args.x, args.y, answer))
+       print(f"{args.x}^{args.y} == {answer}")
 
 Note that slight difference in the usage text. Note the ``[-v | -q]``,
 which tells us that we can either use ``-v`` or ``-q``,
@@ -741,7 +771,7 @@ but not both at the same time:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] [-v | -q] x y
 
    calculate X to the power of Y
@@ -750,7 +780,7 @@ but not both at the same time:
      x              the base
      y              the exponent
 
-   optional arguments:
+   options:
      -h, --help     show this help message and exit
      -v, --verbose
      -q, --quiet

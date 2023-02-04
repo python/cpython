@@ -13,7 +13,8 @@ are available, however.
 
 .. c:function:: int PyBool_Check(PyObject *o)
 
-   Return true if *o* is of type :c:data:`PyBool_Type`.
+   Return true if *o* is of type :c:data:`PyBool_Type`.  This function always
+   succeeds.
 
 
 .. c:var:: PyObject* Py_False

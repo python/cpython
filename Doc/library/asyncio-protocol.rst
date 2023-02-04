@@ -69,6 +69,10 @@ This documentation page contains the following sections:
 Transports
 ==========
 
+**Source code:** :source:`Lib/asyncio/transports.py`
+
+----------------------------------------------------
+
 Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.
 
@@ -152,7 +156,8 @@ Base Transport
    will be received.  After all buffered data is flushed, the
    protocol's :meth:`protocol.connection_lost()
    <BaseProtocol.connection_lost>` method will be called with
-   :const:`None` as its argument.
+   :const:`None` as its argument. The transport should not be
+   used once it is closed.
 
 .. method:: BaseTransport.is_closing()
 
@@ -431,6 +436,10 @@ Subprocess Transports
 Protocols
 =========
 
+**Source code:** :source:`Lib/asyncio/protocols.py`
+
+---------------------------------------------------
+
 asyncio provides a set of abstract base classes that should be used
 to implement network protocols.  Those classes are meant to be used
 together with :ref:`transports <asyncio-transport>`.
@@ -545,7 +554,7 @@ accept factories that return streaming protocols.
    a connection is open.
 
    However, :meth:`protocol.eof_received() <Protocol.eof_received>`
-   is called at most once.  Once `eof_received()` is called,
+   is called at most once.  Once ``eof_received()`` is called,
    ``data_received()`` is not called anymore.
 
 .. method:: Protocol.eof_received()
@@ -580,9 +589,6 @@ Buffered Streaming Protocols
 ----------------------------
 
 .. versionadded:: 3.7
-   **Important:** this has been added to asyncio in Python 3.7
-   *on a provisional basis*!  This is as an experimental API that
-   might be changed or removed completely in Python 3.8.
 
 Buffered Protocols can be used with any event loop method
 that supports `Streaming Protocols`_.
@@ -678,7 +684,7 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
 Subprocess Protocols
 --------------------
 
-Datagram Protocol instances should be constructed by protocol
+Subprocess Protocol instances should be constructed by protocol
 factories passed to the :meth:`loop.subprocess_exec` and
 :meth:`loop.subprocess_shell` methods.
 
@@ -809,7 +815,7 @@ data, and waits until the connection is closed::
 .. seealso::
 
    The :ref:`TCP echo client using streams <asyncio-tcp-echo-client-streams>`
-   example uses the high-level :func:`asyncio.connect` function.
+   example uses the high-level :func:`asyncio.open_connection` function.
 
 
 .. _asyncio-udp-echo-server-protocol:
@@ -978,7 +984,7 @@ Wait until a socket receives data using the
 
    The :ref:`register an open socket to wait for data using streams
    <asyncio_example_create_connection-streams>` example uses high-level streams
-   created by the :func:`asyncio.connect` function in a coroutine.
+   created by the :func:`open_connection` function in a coroutine.
 
 .. _asyncio_example_subprocess_proto:
 
@@ -988,7 +994,7 @@ loop.subprocess_exec() and SubprocessProtocol
 An example of a subprocess protocol used to get the output of a
 subprocess and to wait for the subprocess exit.
 
-The subprocess is created by th :meth:`loop.subprocess_exec` method::
+The subprocess is created by the :meth:`loop.subprocess_exec` method::
 
     import asyncio
     import sys

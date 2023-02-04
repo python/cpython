@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,12 +26,12 @@
  */
 
 
-#ifndef NUMBER_THEORY_H
-#define NUMBER_THEORY_H
+#ifndef LIBMPDEC_NUMBERTHEORY_H_
+#define LIBMPDEC_NUMBERTHEORY_H_
 
 
-#include "constants.h"
 #include "mpdecimal.h"
+#include "constants.h"
 
 
 /* Internal header file: all symbols have local scope in the DSO */
@@ -73,6 +73,4 @@ std_setmodulus(int modnum, mpd_uint_t *umod)
 MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */
 
 
-#endif
-
-
+#endif /* LIBMPDEC_NUMBERTHEORY_H_ */

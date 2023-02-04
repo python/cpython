@@ -8,6 +8,7 @@ We're going the use these types for extra testing
 
 We're defining four helper functions
 
+    >>> from test import support
     >>> def e(a,b):
     ...     print(a, b)
 
@@ -52,15 +53,15 @@ Here we add keyword arguments
     >>> f(1, 2, **{'a': -1, 'b': 5}, **{'a': 4, 'c': 6})
     Traceback (most recent call last):
         ...
-    TypeError: f() got multiple values for keyword argument 'a'
+    TypeError: test.test_extcall.f() got multiple values for keyword argument 'a'
     >>> f(1, 2, **{'a': -1, 'b': 5}, a=4, c=6)
     Traceback (most recent call last):
         ...
-    TypeError: f() got multiple values for keyword argument 'a'
+    TypeError: test.test_extcall.f() got multiple values for keyword argument 'a'
     >>> f(1, 2, a=3, **{'a': 4}, **{'a': 5})
     Traceback (most recent call last):
         ...
-    TypeError: f() got multiple values for keyword argument 'a'
+    TypeError: test.test_extcall.f() got multiple values for keyword argument 'a'
     >>> f(1, 2, 3, *[4, 5], **{'a':6, 'b':7})
     (1, 2, 3, 4, 5) {'a': 6, 'b': 7}
     >>> f(1, 2, 3, x=4, y=5, *(6, 7), **{'a':8, 'b': 9})
@@ -78,6 +79,24 @@ Here we add keyword arguments
     (1, 2, 3, 6, 7) {'a': 8, 'b': 9, 'x': 4, 'y': 5}
     >>> f(1, 2, 3, *(4, 5), x=6, y=7, **UserDict(a=8, b=9))
     (1, 2, 3, 4, 5) {'a': 8, 'b': 9, 'x': 6, 'y': 7}
+
+Mix keyword arguments and dict unpacking
+
+    >>> d1 = {'a':1}
+
+    >>> d2 = {'c':3}
+
+    >>> f(b=2, **d1, **d2)
+    () {'a': 1, 'b': 2, 'c': 3}
+
+    >>> f(**d1, b=2, **d2)
+    () {'a': 1, 'b': 2, 'c': 3}
+
+    >>> f(**d1, **d2, b=2)
+    () {'a': 1, 'b': 2, 'c': 3}
+
+    >>> f(**d1, b=2, **d2, d=4)
+    () {'a': 1, 'b': 2, 'c': 3, 'd': 4}
 
 Examples with invalid arguments (TypeErrors). We're also testing the function
 names in the exception messages.
@@ -118,7 +137,7 @@ Verify clearing of SF bug #733667
     >>> g(*Nothing())
     Traceback (most recent call last):
       ...
-    TypeError: g() argument after * must be an iterable, not Nothing
+    TypeError: test.test_extcall.g() argument after * must be an iterable, not Nothing
 
     >>> class Nothing:
     ...     def __len__(self): return 5
@@ -127,7 +146,7 @@ Verify clearing of SF bug #733667
     >>> g(*Nothing())
     Traceback (most recent call last):
       ...
-    TypeError: g() argument after * must be an iterable, not Nothing
+    TypeError: test.test_extcall.g() argument after * must be an iterable, not Nothing
 
     >>> class Nothing():
     ...     def __len__(self): return 5
@@ -247,17 +266,17 @@ What about willful misconduct?
     >>> h(*h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after * must be an iterable, not function
+    TypeError: test.test_extcall.h() argument after * must be an iterable, not function
 
     >>> h(1, *h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after * must be an iterable, not function
+    TypeError: Value after * must be an iterable, not function
 
     >>> h(*[1], *h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after * must be an iterable, not function
+    TypeError: Value after * must be an iterable, not function
 
     >>> dir(*h)
     Traceback (most recent call last):
@@ -268,38 +287,38 @@ What about willful misconduct?
     >>> nothing(*h)
     Traceback (most recent call last):
       ...
-    TypeError: NoneType object argument after * must be an iterable, \
+    TypeError: None argument after * must be an iterable, \
 not function
 
     >>> h(**h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after ** must be a mapping, not function
+    TypeError: test.test_extcall.h() argument after ** must be a mapping, not function
 
     >>> h(**[])
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after ** must be a mapping, not list
+    TypeError: test.test_extcall.h() argument after ** must be a mapping, not list
 
     >>> h(a=1, **h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after ** must be a mapping, not function
+    TypeError: test.test_extcall.h() argument after ** must be a mapping, not function
 
     >>> h(a=1, **[])
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after ** must be a mapping, not list
+    TypeError: test.test_extcall.h() argument after ** must be a mapping, not list
 
     >>> h(**{'a': 1}, **h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after ** must be a mapping, not function
+    TypeError: test.test_extcall.h() argument after ** must be a mapping, not function
 
     >>> h(**{'a': 1}, **[])
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after ** must be a mapping, not list
+    TypeError: test.test_extcall.h() argument after ** must be a mapping, not list
 
     >>> dir(**h)
     Traceback (most recent call last):
@@ -309,7 +328,7 @@ not function
     >>> nothing(**h)
     Traceback (most recent call last):
       ...
-    TypeError: NoneType object argument after ** must be a mapping, \
+    TypeError: None argument after ** must be a mapping, \
 not function
 
     >>> dir(b=1, **{'b': 1})
@@ -351,17 +370,38 @@ Test a kwargs mapping with duplicated keys.
     >>> g(**MultiDict([('x', 1), ('x', 2)]))
     Traceback (most recent call last):
       ...
-    TypeError: g() got multiple values for keyword argument 'x'
+    TypeError: test.test_extcall.g() got multiple values for keyword argument 'x'
 
     >>> g(a=3, **MultiDict([('x', 1), ('x', 2)]))
     Traceback (most recent call last):
       ...
-    TypeError: g() got multiple values for keyword argument 'x'
+    TypeError: test.test_extcall.g() got multiple values for keyword argument 'x'
 
     >>> g(**MultiDict([('a', 3)]), **MultiDict([('x', 1), ('x', 2)]))
     Traceback (most recent call last):
       ...
-    TypeError: g() got multiple values for keyword argument 'x'
+    TypeError: test.test_extcall.g() got multiple values for keyword argument 'x'
+
+Call with dict subtype:
+
+    >>> class MyDict(dict):
+    ...     pass
+
+    >>> def s1(**kwargs):
+    ...     return kwargs
+    >>> def s2(*args, **kwargs):
+    ...     return (args, kwargs)
+    >>> def s3(*, n, **kwargs):
+    ...     return (n, kwargs)
+
+    >>> md = MyDict({'a': 1, 'b': 2})
+    >>> assert s1(**md) == {'a': 1, 'b': 2}
+    >>> assert s2(*(1, 2), **md) == ((1, 2), {'a': 1, 'b': 2})
+    >>> assert s3(**MyDict({'n': 1, 'b': 2})) == (1, {'b': 2})
+    >>> s3(**md)
+    Traceback (most recent call last):
+      ...
+    TypeError: s3() missing 1 required keyword-only argument: 'n'
 
 Another helper function
 
@@ -502,11 +542,13 @@ Same with keyword only args:
 
 """
 
-import sys
-from test import support
+import doctest
+import unittest
 
-def test_main():
-    support.run_doctest(sys.modules[__name__], True)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

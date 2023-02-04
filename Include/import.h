@@ -67,7 +67,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
 #endif
 
 #define PyImport_ImportModuleEx(n, g, l, f) \
-    PyImport_ImportModuleLevel(n, g, l, f, 0)
+    PyImport_ImportModuleLevel((n), (g), (l), (f), 0)
 
 PyAPI_FUNC(PyObject *) PyImport_GetImporter(PyObject *path);
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);
@@ -81,8 +81,6 @@ PyAPI_FUNC(int) PyImport_ImportFrozenModule(
     const char *name            /* UTF-8 encoded string */
     );
 
-PyAPI_DATA(PyTypeObject) PyNullImporter_Type;
-
 PyAPI_FUNC(int) PyImport_AppendInittab(
     const char *name,           /* ASCII encoded string */
     PyObject* (*initfunc)(void)
@@ -90,7 +88,7 @@ PyAPI_FUNC(int) PyImport_AppendInittab(
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_IMPORT_H
-#  include  "cpython/import.h"
+#  include "cpython/import.h"
 #  undef Py_CPYTHON_IMPORT_H
 #endif
 

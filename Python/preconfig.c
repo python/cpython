@@ -1,14 +1,12 @@
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "pycore_getopt.h"
-#include "pycore_pystate.h"   /* _PyRuntime_Initialize() */
-#include <locale.h>       /* setlocale() */
+#include "pycore_fileutils.h"     // DECODE_LOCALE_ERR
+#include "pycore_getopt.h"        // _PyOS_GetOpt()
+#include "pycore_initconfig.h"    // _PyArgv
+#include "pycore_pymem.h"         // _PyMem_GetAllocatorName()
+#include "pycore_runtime.h"       // _PyRuntime_Initialize()
 
-
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    (((LEN) == -2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY())
+#include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
 
 
 /* Forward declarations */
@@ -18,11 +16,6 @@ preconfig_copy(PyPreConfig *config, const PyPreConfig *config2);
 
 /* --- File system encoding/errors -------------------------------- */
 
-/* The filesystem encoding is chosen by config_init_fs_encoding(),
-   see also initfsencoding().
-
-   Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-   are encoded to UTF-8. */
 const char *Py_FileSystemDefaultEncoding = NULL;
 int Py_HasFileSystemDefaultEncoding = 0;
 const char *Py_FileSystemDefaultEncodeErrors = NULL;
@@ -31,6 +24,8 @@ int _Py_HasFileSystemDefaultEncodeErrors = 0;
 void
 _Py_ClearFileSystemEncoding(void)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
         PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
         Py_FileSystemDefaultEncoding = NULL;
@@ -39,11 +34,15 @@ _Py_ClearFileSystemEncoding(void)
         PyMem_RawFree((char*)Py_FileSystemDefaultEncodeErrors);
         Py_FileSystemDefaultEncodeErrors = NULL;
     }
+_Py_COMP_DIAG_POP
 }
 
 
 /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-   global configuration variables. */
+   global configuration variables to PyConfig.filesystem_encoding and
+   PyConfig.filesystem_errors (encoded to UTF-8).
+
+   Function called by _PyUnicode_InitEncodings(). */
 int
 _Py_SetFileSystemEncoding(const char *encoding, const char *errors)
 {
@@ -60,11 +59,14 @@ _Py_SetFileSystemEncoding(const char *encoding, const char *errors)
 
     _Py_ClearFileSystemEncoding();
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     Py_FileSystemDefaultEncoding = encoding2;
     Py_HasFileSystemDefaultEncoding = 0;
 
     Py_FileSystemDefaultEncodeErrors = errors2;
     _Py_HasFileSystemDefaultEncodeErrors = 0;
+_Py_COMP_DIAG_POP
     return 0;
 }
 
@@ -75,7 +77,7 @@ _Py_SetFileSystemEncoding(const char *encoding, const char *errors)
 PyStatus
 _PyArgv_AsWstrList(const _PyArgv *args, PyWideStringList *list)
 {
-    PyWideStringList wargv = PyWideStringList_INIT;
+    PyWideStringList wargv = _PyWideStringList_INIT;
     if (args->use_bytes_argv) {
         size_t size = sizeof(wchar_t*) * args->argc;
         wargv.items = (wchar_t **)PyMem_RawMalloc(size);
@@ -88,8 +90,7 @@ _PyArgv_AsWstrList(const _PyArgv *args, PyWideStringList *list)
             wchar_t *arg = Py_DecodeLocale(args->bytes_argv[i], &len);
             if (arg == NULL) {
                 _PyWideStringList_Clear(&wargv);
-                return DECODE_LOCALE_ERR("command line arguments",
-                                         (Py_ssize_t)len);
+                return DECODE_LOCALE_ERR("command line arguments", len);
             }
             wargv.items[i] = arg;
             wargv.length++;
@@ -170,6 +171,7 @@ _PyPreCmdline_SetConfig(const _PyPreCmdline *cmdline, PyConfig *config)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
+    COPY_ATTR(warn_default_encoding);
     return _PyStatus_OK();
 
 #undef COPY_ATTR
@@ -258,9 +260,17 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
         cmdline->dev_mode = 0;
     }
 
+    // warn_default_encoding
+    if (_Py_get_xoption(&cmdline->xoptions, L"warn_default_encoding")
+            || _Py_GetEnv(cmdline->use_environment, "PYTHONWARNDEFAULTENCODING"))
+    {
+        cmdline->warn_default_encoding = 1;
+    }
+
     assert(cmdline->use_environment >= 0);
     assert(cmdline->isolated >= 0);
     assert(cmdline->dev_mode >= 0);
+    assert(cmdline->warn_default_encoding >= 0);
 
     return _PyStatus_OK();
 }
@@ -269,29 +279,10 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
 /* --- PyPreConfig ----------------------------------------------- */
 
 
-static PyStatus
-preconfig_check_struct_size(PyPreConfig *config)
-{
-    if (config->struct_size != sizeof(PyPreConfig)) {
-        return _PyStatus_ERR("unsupported PyPreConfig structure size "
-                             "(Python version mismatch?)");
-    }
-    return _PyStatus_OK();
-}
-
-
-PyStatus
+void
 _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 {
-    size_t struct_size = config->struct_size;
     memset(config, 0, sizeof(*config));
-    config->struct_size = struct_size;
-
-    PyStatus status = preconfig_check_struct_size(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->parse_argv = 0;
@@ -313,18 +304,13 @@ _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = -1;
 #endif
-    return _PyStatus_OK();
 }
 
 
-PyStatus
+void
 PyPreConfig_InitPythonConfig(PyPreConfig *config)
 {
-    PyStatus status = _PyPreConfig_InitCompatConfig(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
+    _PyPreConfig_InitCompatConfig(config);
 
     config->_config_init = (int)_PyConfig_INIT_PYTHON;
     config->isolated = 0;
@@ -339,18 +325,13 @@ PyPreConfig_InitPythonConfig(PyPreConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = 0;
 #endif
-    return _PyStatus_OK();
 }
 
 
-PyStatus
+void
 PyPreConfig_InitIsolatedConfig(PyPreConfig *config)
 {
-    PyStatus status = _PyPreConfig_InitCompatConfig(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
+    _PyPreConfig_InitCompatConfig(config);
 
     config->_config_init = (int)_PyConfig_INIT_ISOLATED;
     config->configure_locale = 0;
@@ -361,7 +342,6 @@ PyPreConfig_InitIsolatedConfig(PyPreConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = 0;
 #endif
-    return _PyStatus_OK();
 }
 
 
@@ -369,47 +349,35 @@ PyStatus
 _PyPreConfig_InitFromPreConfig(PyPreConfig *config,
                                const PyPreConfig *config2)
 {
-    PyStatus status = PyPreConfig_InitPythonConfig(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
+    PyPreConfig_InitPythonConfig(config);
     preconfig_copy(config, config2);
     return _PyStatus_OK();
 }
 
 
-PyStatus
+void
 _PyPreConfig_InitFromConfig(PyPreConfig *preconfig, const PyConfig *config)
 {
-    PyStatus status;
     _PyConfigInitEnum config_init = (_PyConfigInitEnum)config->_config_init;
     switch (config_init) {
     case _PyConfig_INIT_PYTHON:
-        status = PyPreConfig_InitPythonConfig(preconfig);
+        PyPreConfig_InitPythonConfig(preconfig);
         break;
     case _PyConfig_INIT_ISOLATED:
-        status = PyPreConfig_InitIsolatedConfig(preconfig);
+        PyPreConfig_InitIsolatedConfig(preconfig);
         break;
     case _PyConfig_INIT_COMPAT:
     default:
-        status = _PyPreConfig_InitCompatConfig(preconfig);
-    }
-
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        _PyPreConfig_InitCompatConfig(preconfig);
     }
 
     _PyPreConfig_GetConfig(preconfig, config);
-    return _PyStatus_OK();
 }
 
 
 static void
 preconfig_copy(PyPreConfig *config, const PyPreConfig *config2)
 {
-    assert(config->struct_size == sizeof(PyPreConfig));
-
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 
     COPY_ATTR(_config_init);
@@ -510,6 +478,8 @@ preconfig_get_global_vars(PyPreConfig *config)
         config->ATTR = !(VALUE); \
     }
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     if (Py_UTF8Mode > 0) {
@@ -518,6 +488,7 @@ preconfig_get_global_vars(PyPreConfig *config)
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
+_Py_COMP_DIAG_POP
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -536,12 +507,15 @@ preconfig_set_global_vars(const PyPreConfig *config)
         VAR = !config->ATTR; \
     }
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
     COPY_FLAG(utf8_mode, Py_UTF8Mode);
+_Py_COMP_DIAG_POP
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -829,12 +803,6 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         return status;
     }
 
-    status = preconfig_check_struct_size(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
-
     preconfig_get_global_vars(config);
 
     /* Copy LC_CTYPE locale, since it's modified later */
@@ -849,7 +817,6 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
 
     /* Save the config to be able to restore it if encodings change */
     PyPreConfig save_config;
-    save_config.struct_size = sizeof(PyPreConfig);
 
     status = _PyPreConfig_InitFromPreConfig(&save_config, config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -861,19 +828,10 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         _Py_SetLocaleFromEnv(LC_CTYPE);
     }
 
+    PyPreConfig save_runtime_config;
+    preconfig_copy(&save_runtime_config, &_PyRuntime.preconfig);
+
     _PyPreCmdline cmdline = _PyPreCmdline_INIT;
-    int init_utf8_mode = Py_UTF8Mode;
-#ifdef MS_WINDOWS
-    int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
-#endif
-
-    if (args) {
-        status = _PyPreCmdline_SetArgv(&cmdline, args);
-        if (_PyStatus_EXCEPTION(status)) {
-            goto done;
-        }
-    }
-
     int locale_coerced = 0;
     int loops = 0;
 
@@ -884,16 +842,23 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         loops++;
         if (loops == 3) {
             status = _PyStatus_ERR("Encoding changed twice while "
-                               "reading the configuration");
+                                   "reading the configuration");
             goto done;
         }
 
         /* bpo-34207: Py_DecodeLocale() and Py_EncodeLocale() depend
-           on Py_UTF8Mode and Py_LegacyWindowsFSEncodingFlag. */
-        Py_UTF8Mode = config->utf8_mode;
-#ifdef MS_WINDOWS
-        Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
-#endif
+           on the utf8_mode and legacy_windows_fs_encoding members
+           of _PyRuntime.preconfig. */
+        preconfig_copy(&_PyRuntime.preconfig, config);
+
+        if (args) {
+            // Set command line arguments at each iteration. If they are bytes
+            // strings, they are decoded from the new encoding.
+            status = _PyPreCmdline_SetArgv(&cmdline, args);
+            if (_PyStatus_EXCEPTION(status)) {
+                goto done;
+            }
+        }
 
         status = preconfig_read(config, &cmdline);
         if (_PyStatus_EXCEPTION(status)) {
@@ -934,7 +899,7 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         }
 
         /* Reset the configuration before reading again the configuration,
-           just keep UTF-8 Mode value. */
+           just keep UTF-8 Mode and coerce C locale value. */
         int new_utf8_mode = config->utf8_mode;
         int new_coerce_c_locale = config->coerce_c_locale;
         preconfig_copy(config, &save_config);
@@ -947,14 +912,10 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
     status = _PyStatus_OK();
 
 done:
-    if (init_ctype_locale != NULL) {
-        setlocale(LC_CTYPE, init_ctype_locale);
-        PyMem_RawFree(init_ctype_locale);
-    }
-    Py_UTF8Mode = init_utf8_mode ;
-#ifdef MS_WINDOWS
-    Py_LegacyWindowsFSEncodingFlag = init_legacy_encoding;
-#endif
+    // Revert side effects
+    setlocale(LC_CTYPE, init_ctype_locale);
+    PyMem_RawFree(init_ctype_locale);
+    preconfig_copy(&_PyRuntime.preconfig, &save_runtime_config);
     _PyPreCmdline_Clear(&cmdline);
     return status;
 }
@@ -976,7 +937,6 @@ PyStatus
 _PyPreConfig_Write(const PyPreConfig *src_config)
 {
     PyPreConfig config;
-    config.struct_size = sizeof(PyPreConfig);
 
     PyStatus status = _PyPreConfig_InitFromPreConfig(&config, src_config);
     if (_PyStatus_EXCEPTION(status)) {

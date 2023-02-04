@@ -1,2 +1,0 @@
-Update the *length* parameter of :func:`os.pread` to accept
-:c:type:`Py_ssize_t` instead of :c:type:`int`.

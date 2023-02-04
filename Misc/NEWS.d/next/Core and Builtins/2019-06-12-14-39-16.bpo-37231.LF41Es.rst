@@ -1,2 +1,0 @@
-The dispatching of type slots to special methods (for example calling
-``__mul__`` when doing ``x * y``) has been made faster.

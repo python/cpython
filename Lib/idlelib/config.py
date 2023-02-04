@@ -16,7 +16,7 @@ to values.  For 'main' and 'extensions', user values override
 default values.  For 'highlight' and 'keys', user sections augment the
 default sections (and must, therefore, have distinct names).
 
-Throughout this module there is an emphasis on returning useable defaults
+Throughout this module there is an emphasis on returning usable defaults
 when a problem occurs in returning a requested configuration value back to
 idle. This is to allow IDLE to continue to function in spite of errors in
 the retrieval of config information. When a default is returned instead of
@@ -158,6 +158,8 @@ class IdleConf:
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
+        # self.blink_off_time = <first editor text>['insertofftime']
+        # See https:/bugs.python.org/issue4630, msg356516.
 
         if not _utest:
             self.CreateConfigHandlers()
@@ -576,7 +578,7 @@ class IdleConf:
         """
         return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
-# TODO make keyBindins a file or class attribute used for test above
+# TODO make keyBindings a file or class attribute used for test above
 # and copied in function below.
 
     former_extension_events = {  #  Those with user-configurable keys.

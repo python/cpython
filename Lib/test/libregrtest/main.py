@@ -1,4 +1,3 @@
-import datetime
 import faulthandler
 import locale
 import os
@@ -12,20 +11,28 @@ import time
 import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
-    findtests, runtest, get_abs_module,
-    STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN, TIMEOUT,
-    PROGRESS_MIN_TIME, format_test_result, is_failed)
+    findtests, runtest, get_abs_module, is_failed,
+    STDTESTS, NOTTESTS, PROGRESS_MIN_TIME,
+    Passed, Failed, EnvChanged, Skipped, ResourceDenied, Interrupted,
+    ChildError, DidNotRun)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.pgo import setup_pgo_tests
-from test.libregrtest.utils import removepy, count, format_duration, printlist
+from test.libregrtest.utils import (removepy, count, format_duration,
+                                    printlist, get_build_info)
 from test import support
+from test.support import os_helper
+from test.support import threading_helper
 
 
 # bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
 # Used to protect against threading._shutdown() hang.
 # Must be smaller than buildbot "1200 seconds without output" limit.
 EXIT_TIMEOUT = 120.0
+
+EXITCODE_BAD_TEST = 2
+EXITCODE_INTERRUPTED = 130
+EXITCODE_ENV_CHANGED = 3
+EXITCODE_NO_TESTS_RAN = 4
 
 
 class Regrtest:
@@ -46,7 +53,7 @@ class Regrtest:
     files beginning with test_ will be used.
 
     The other default arguments (verbose, quiet, exclude,
-    single, randomize, findleaks, use_resources, trace, coverdir,
+    single, randomize, use_resources, trace, coverdir,
     print_slow, and random_seed) allow programmers calling main()
     directly to set the values that would normally be set by flags
     on the command line.
@@ -66,6 +73,7 @@ class Regrtest:
         self.resource_denieds = []
         self.environment_changed = []
         self.run_no_tests = []
+        self.need_rerun = []
         self.rerun = []
         self.first_result = None
         self.interrupted = False
@@ -99,34 +107,32 @@ class Regrtest:
                 | set(self.run_no_tests))
 
     def accumulate_result(self, result, rerun=False):
-        test_name = result.test_name
-        ok = result.result
+        test_name = result.name
 
-        if ok not in (CHILD_ERROR, INTERRUPTED) and not rerun:
-            self.test_times.append((result.test_time, test_name))
+        if not isinstance(result, (ChildError, Interrupted)) and not rerun:
+            self.test_times.append((result.duration_sec, test_name))
 
-        if ok == PASSED:
+        if isinstance(result, Passed):
             self.good.append(test_name)
-        elif ok in (FAILED, CHILD_ERROR):
-            if not rerun:
-                self.bad.append(test_name)
-        elif ok == ENV_CHANGED:
-            self.environment_changed.append(test_name)
-        elif ok == SKIPPED:
-            self.skipped.append(test_name)
-        elif ok == RESOURCE_DENIED:
+        elif isinstance(result, ResourceDenied):
             self.skipped.append(test_name)
             self.resource_denieds.append(test_name)
-        elif ok == TEST_DID_NOT_RUN:
+        elif isinstance(result, Skipped):
+            self.skipped.append(test_name)
+        elif isinstance(result, EnvChanged):
+            self.environment_changed.append(test_name)
+        elif isinstance(result, Failed):
+            if not rerun:
+                self.bad.append(test_name)
+                self.need_rerun.append(result)
+        elif isinstance(result, DidNotRun):
             self.run_no_tests.append(test_name)
-        elif ok == INTERRUPTED:
+        elif isinstance(result, Interrupted):
             self.interrupted = True
-        elif ok == TIMEOUT:
-            self.bad.append(test_name)
         else:
-            raise ValueError("invalid test result: %r" % ok)
+            raise ValueError("invalid test result: %r" % result)
 
-        if rerun and ok not in {FAILED, CHILD_ERROR, INTERRUPTED}:
+        if rerun and not isinstance(result, (Failed, Interrupted)):
             self.bad.remove(test_name)
 
         xml_data = result.xml_data
@@ -139,6 +145,27 @@ class Regrtest:
                     print(xml_data, file=sys.__stderr__)
                     raise
 
+    def log(self, line=''):
+        empty = not line
+
+        # add the system load prefix: "load avg: 1.80 "
+        load_avg = self.getloadavg()
+        if load_avg is not None:
+            line = f"load avg: {load_avg:.2f} {line}"
+
+        # add the timestamp prefix:  "0:01:05 "
+        test_time = time.monotonic() - self.start_time
+
+        mins, secs = divmod(int(test_time), 60)
+        hours, mins = divmod(mins, 60)
+        test_time = "%d:%02d:%02d" % (hours, mins, secs)
+
+        line = f"{test_time} {line}"
+        if empty:
+            line = line[:-1]
+
+        print(line, flush=True)
+
     def display_progress(self, test_index, text):
         if self.ns.quiet:
             return
@@ -148,18 +175,7 @@ class Regrtest:
         fails = len(self.bad) + len(self.environment_changed)
         if fails and not self.ns.pgo:
             line = f"{line}/{fails}"
-        line = f"[{line}] {text}"
-
-        # add the system load prefix: "load avg: 1.80 "
-        load_avg = self.getloadavg()
-        if load_avg is not None:
-            line = f"load avg: {load_avg:.2f} {line}"
-
-        # add the timestamp prefix:  "0:01:05 "
-        test_time = time.monotonic() - self.start_time
-        test_time = datetime.timedelta(seconds=int(test_time))
-        line = f"{test_time} {line}"
-        print(line, flush=True)
+        self.log(f"[{line}] {text}")
 
     def parse_args(self, kwargs):
         ns = _parse_args(sys.argv[1:], **kwargs)
@@ -208,7 +224,7 @@ class Regrtest:
             # regex to match 'test_builtin' in line:
             # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
             regex = re.compile(r'\btest_[a-zA-Z0-9_]+\b')
-            with open(os.path.join(support.SAVEDCWD, self.ns.fromfile)) as fp:
+            with open(os.path.join(os_helper.SAVEDCWD, self.ns.fromfile)) as fp:
                 for line in fp:
                     line = line.split('#', 1)[0]
                     line = line.strip()
@@ -280,7 +296,7 @@ class Regrtest:
 
     def list_cases(self):
         support.verbose = False
-        support.set_match_tests(self.ns.match_tests)
+        support.set_match_tests(self.ns.match_tests, self.ns.ignore_tests)
 
         for test_name in self.selected:
             abstest = get_abs_module(self.ns, test_name)
@@ -296,23 +312,50 @@ class Regrtest:
             printlist(self.skipped, file=sys.stderr)
 
     def rerun_failed_tests(self):
+        self.log()
+
+        if self.ns.python:
+            # Temp patch for https://github.com/python/cpython/issues/94052
+            self.log(
+                "Re-running failed tests is not supported with --python "
+                "host runner option."
+            )
+            return
+
         self.ns.verbose = True
         self.ns.failfast = False
         self.ns.verbose3 = False
 
         self.first_result = self.get_tests_result()
 
-        print()
-        print("Re-running failed tests in verbose mode")
-        self.rerun = self.bad[:]
-        for test_name in self.rerun:
-            print(f"Re-running {test_name} in verbose mode", flush=True)
+        self.log("Re-running failed tests in verbose mode")
+        rerun_list = list(self.need_rerun)
+        self.need_rerun.clear()
+        for result in rerun_list:
+            test_name = result.name
+            self.rerun.append(test_name)
+
+            errors = result.errors or []
+            failures = result.failures or []
+            error_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in errors]
+            failure_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in failures]
             self.ns.verbose = True
+            orig_match_tests = self.ns.match_tests
+            if errors or failures:
+                if self.ns.match_tests is None:
+                    self.ns.match_tests = []
+                self.ns.match_tests.extend(error_names)
+                self.ns.match_tests.extend(failure_names)
+                matching = "matching: " + ", ".join(self.ns.match_tests)
+                self.log(f"Re-running {test_name} in verbose mode ({matching})")
+            else:
+                self.log(f"Re-running {test_name} in verbose mode")
             result = runtest(self.ns, test_name)
+            self.ns.match_tests = orig_match_tests
 
             self.accumulate_result(result, rerun=True)
 
-            if result.result == INTERRUPTED:
+            if isinstance(result, Interrupted):
                 break
 
         if self.bad:
@@ -387,7 +430,10 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
-        print("Run tests sequentially")
+        msg = "Run tests sequentially"
+        if self.ns.timeout:
+            msg += " (timeout: %s)" % format_duration(self.ns.timeout)
+        self.log(msg)
 
         previous_test = None
         for test_index, test_name in enumerate(self.tests, 1):
@@ -410,14 +456,14 @@ class Regrtest:
                 result = runtest(self.ns, test_name)
                 self.accumulate_result(result)
 
-            if result.result == INTERRUPTED:
+            if isinstance(result, Interrupted):
                 break
 
-            previous_test = format_test_result(result)
+            previous_test = str(result)
             test_time = time.monotonic() - start_time
             if test_time >= PROGRESS_MIN_TIME:
                 previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif result.result == PASSED:
+            elif isinstance(result, Passed):
                 # be quiet: say nothing if the test passed shortly
                 previous_test = None
 
@@ -446,13 +492,17 @@ class Regrtest:
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
+        print("== Python build:", ' '.join(get_build_info()))
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:
             print("== CPU count:", cpu_count)
         print("== encodings: locale=%s, FS=%s"
-              % (locale.getpreferredencoding(False),
-                 sys.getfilesystemencoding()))
+              % (locale.getencoding(), sys.getfilesystemencoding()))
+
+    def no_tests_run(self):
+        return not any((self.good, self.bad, self.skipped, self.interrupted,
+                        self.environment_changed))
 
     def get_tests_result(self):
         result = []
@@ -460,9 +510,8 @@ class Regrtest:
             result.append("FAILURE")
         elif self.ns.fail_env_changed and self.environment_changed:
             result.append("ENV CHANGED")
-        elif not any((self.good, self.bad, self.skipped, self.interrupted,
-            self.environment_changed)):
-            result.append("NO TEST RUN")
+        elif self.no_tests_run():
+            result.append("NO TESTS RAN")
 
         if self.interrupted:
             result.append("INTERRUPTED")
@@ -503,15 +552,28 @@ class Regrtest:
 
         if self.ns.use_mp:
             from test.libregrtest.runtest_mp import run_tests_multiprocess
-            run_tests_multiprocess(self)
+            # If we're on windows and this is the parent runner (not a worker),
+            # track the load average.
+            if sys.platform == 'win32' and self.worker_test_name is None:
+                from test.libregrtest.win_utils import WindowsLoadTracker
+
+                try:
+                    self.win_load_tracker = WindowsLoadTracker()
+                except PermissionError as error:
+                    # Standard accounts may not have access to the performance
+                    # counters.
+                    print(f'Failed to create WindowsLoadTracker: {error}')
+
+            try:
+                run_tests_multiprocess(self)
+            finally:
+                if self.win_load_tracker is not None:
+                    self.win_load_tracker.close()
+                    self.win_load_tracker = None
         else:
             self.run_tests_sequential()
 
     def finalize(self):
-        if self.win_load_tracker is not None:
-            self.win_load_tracker.close()
-            self.win_load_tracker = None
-
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -552,10 +614,20 @@ class Regrtest:
         for k, v in totals.items():
             root.set(k, str(v))
 
-        xmlpath = os.path.join(support.SAVEDCWD, self.ns.xmlpath)
+        xmlpath = os.path.join(os_helper.SAVEDCWD, self.ns.xmlpath)
         with open(xmlpath, 'wb') as f:
             for s in ET.tostringlist(root):
                 f.write(s)
+
+    def fix_umask(self):
+        if support.is_emscripten:
+            # Emscripten has default umask 0o777, which breaks some tests.
+            # see https://github.com/emscripten-core/emscripten/issues/17269
+            old_mask = os.umask(0)
+            if old_mask == 0o777:
+                os.umask(0o027)
+            else:
+                os.umask(old_mask)
 
     def set_temp_dir(self):
         if self.ns.tempdir:
@@ -585,31 +657,39 @@ class Regrtest:
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
         # testing (see the -j option).
-        pid = os.getpid()
-        if self.worker_test_name is not None:
-            test_cwd = 'test_python_worker_{}'.format(pid)
+        # Emscripten and WASI have stubbed getpid(), Emscripten has only
+        # milisecond clock resolution. Use randint() instead.
+        if sys.platform in {"emscripten", "wasi"}:
+            nounce = random.randint(0, 1_000_000)
         else:
-            test_cwd = 'test_python_{}'.format(pid)
+            nounce = os.getpid()
+        if self.worker_test_name is not None:
+            test_cwd = 'test_python_worker_{}'.format(nounce)
+        else:
+            test_cwd = 'test_python_{}'.format(nounce)
+        test_cwd += os_helper.FS_NONASCII
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
 
     def cleanup(self):
         import glob
 
-        path = os.path.join(self.tmp_dir, 'test_python_*')
+        path = os.path.join(glob.escape(self.tmp_dir), 'test_python_*')
         print("Cleanup %s directory" % self.tmp_dir)
         for name in glob.glob(path):
             if os.path.isdir(name):
                 print("Remove directory: %s" % name)
-                support.rmtree(name)
+                os_helper.rmtree(name)
             else:
                 print("Remove file: %s" % name)
-                support.unlink(name)
+                os_helper.unlink(name)
 
     def main(self, tests=None, **kwargs):
         self.parse_args(kwargs)
 
         self.set_temp_dir()
+
+        self.fix_umask()
 
         if self.ns.cleanup:
             self.cleanup()
@@ -621,8 +701,8 @@ class Regrtest:
             # Run the tests in a context manager that temporarily changes the CWD
             # to a temporary and writable directory. If it's not possible to
             # create or change the CWD, the original CWD will be used.
-            # The original CWD is available from support.SAVEDCWD.
-            with support.temp_cwd(test_cwd, quiet=True):
+            # The original CWD is available from os_helper.SAVEDCWD.
+            with os_helper.temp_cwd(test_cwd, quiet=True):
                 # When using multiprocessing, worker processes will use test_cwd
                 # as their parent temporary directory. So when the main process
                 # exit, it removes also subdirectories of worker processes.
@@ -632,7 +712,8 @@ class Regrtest:
         except SystemExit as exc:
             # bpo-38203: Python can hang at exit in Py_Finalize(), especially
             # on threading._shutdown() call: put a timeout
-            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+            if threading_helper.can_start_thread:
+                faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
 
             sys.exit(exc.code)
 
@@ -668,18 +749,6 @@ class Regrtest:
             self.list_cases()
             sys.exit(0)
 
-        # If we're on windows and this is the parent runner (not a worker),
-        # track the load average.
-        if sys.platform == 'win32' and self.worker_test_name is None:
-            from test.libregrtest.win_utils import WindowsLoadTracker
-
-            try:
-                self.win_load_tracker = WindowsLoadTracker()
-            except FileNotFoundError as error:
-                # Windows IoT Core and Windows Nano Server do not provide
-                # typeperf.exe for x64, x86 or ARM
-                print(f'Failed to create WindowsLoadTracker: {error}')
-
         self.run_tests()
         self.display_result()
 
@@ -691,11 +760,13 @@ class Regrtest:
         self.save_xml_result()
 
         if self.bad:
-            sys.exit(2)
+            sys.exit(EXITCODE_BAD_TEST)
         if self.interrupted:
-            sys.exit(130)
+            sys.exit(EXITCODE_INTERRUPTED)
         if self.ns.fail_env_changed and self.environment_changed:
-            sys.exit(3)
+            sys.exit(EXITCODE_ENV_CHANGED)
+        if self.no_tests_run():
+            sys.exit(EXITCODE_NO_TESTS_RAN)
         sys.exit(0)
 
 

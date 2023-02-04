@@ -1,1 +1,0 @@
-Speed-up statistics.fmean() by switching from a function to a generator.

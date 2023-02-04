@@ -1,2 +1,0 @@
-test_winconsoleio doesn't leak a temporary file anymore: use
-tempfile.TemporaryFile() to remove it when the test completes.

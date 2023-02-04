@@ -1,4 +1,0 @@
-Add optional line numbers for IDLE editor windows.  Windows
-open without line numbers unless set otherwise in the General
-tab of the configuration dialog. 
-

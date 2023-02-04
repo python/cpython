@@ -19,6 +19,7 @@ The asynchronous execution can be performed with threads, using
 :class:`ProcessPoolExecutor`.  Both implement the same interface, which is
 defined by the abstract :class:`Executor` class.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Executor Objects
 ----------------
@@ -30,7 +31,7 @@ Executor Objects
 
     .. method:: submit(fn, /, *args, **kwargs)
 
-       Schedules the callable, *fn*, to be executed as ``fn(*args **kwargs)``
+       Schedules the callable, *fn*, to be executed as ``fn(*args, **kwargs)``
        and returns a :class:`Future` object representing the execution of the
        callable. ::
 
@@ -47,7 +48,7 @@ Executor Objects
        * *func* is executed asynchronously and several calls to
          *func* may be made concurrently.
 
-       The returned iterator raises a :exc:`concurrent.futures.TimeoutError`
+       The returned iterator raises a :exc:`TimeoutError`
        if :meth:`~iterator.__next__` is called and the result isn't available
        after *timeout* seconds from the original call to :meth:`Executor.map`.
        *timeout* can be an int or a float.  If *timeout* is not specified or
@@ -67,7 +68,7 @@ Executor Objects
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
 
-    .. method:: shutdown(wait=True)
+    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
        Signal the executor that it should free any resources that it is using
        when the currently pending futures are done executing.  Calls to
@@ -82,6 +83,15 @@ Executor Objects
        value of *wait*, the entire Python program will not exit until all
        pending futures are done executing.
 
+       If *cancel_futures* is ``True``, this method will cancel all pending
+       futures that the executor has not started running. Any futures that
+       are completed or running won't be cancelled, regardless of the value
+       of *cancel_futures*.
+
+       If both *cancel_futures* and *wait* are ``True``, all futures that the
+       executor has started running will be completed prior to this method
+       returning. The remaining futures are cancelled.
+
        You can avoid having to call this method explicitly if you use the
        :keyword:`with` statement, which will shutdown the :class:`Executor`
        (waiting as if :meth:`Executor.shutdown` were called with *wait* set to
@@ -93,6 +103,9 @@ Executor Objects
               e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
               e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
               e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
+
+       .. versionchanged:: 3.9
+          Added *cancel_futures*.
 
 
 ThreadPoolExecutor
@@ -136,6 +149,13 @@ And::
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
+
+   All threads enqueued to ``ThreadPoolExecutor`` will be joined before the
+   interpreter can exit. Note that the exit handler which does this is
+   executed *before* any exit handlers added using ``atexit``. This means
+   exceptions in the main thread must be caught and handled in order to
+   signal threads to exit gracefully. For this reason, it is recommended
+   that ``ThreadPoolExecutor`` not be used for long-running tasks.
 
    *initializer* is an optional callable that is called at the start of
    each worker thread; *initargs* is a tuple of arguments passed to the
@@ -209,7 +229,8 @@ ProcessPoolExecutor
 The :class:`ProcessPoolExecutor` class is an :class:`Executor` subclass that
 uses a pool of processes to execute calls asynchronously.
 :class:`ProcessPoolExecutor` uses the :mod:`multiprocessing` module, which
-allows it to side-step the :term:`Global Interpreter Lock` but also means that
+allows it to side-step the :term:`Global Interpreter Lock
+<global interpreter lock>` but also means that
 only picklable objects can be executed and returned.
 
 The ``__main__`` module must be importable by worker subprocesses. This means
@@ -218,26 +239,35 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
-.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=())
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
    given, it will default to the number of processors on the machine.
-   If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
+   If *max_workers* is less than or equal to ``0``, then a :exc:`ValueError`
    will be raised.
-   On Windows, *max_workers* must be equal or lower than ``61``. If it is not
+   On Windows, *max_workers* must be less than or equal to ``61``. If it is not
    then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
    the default chosen will be at most ``61``, even if more processors are
    available.
-   *mp_context* can be a multiprocessing context or None. It will be used to
-   launch the workers. If *mp_context* is ``None`` or not given, the default
-   multiprocessing context is used.
+   *mp_context* can be a :mod:`multiprocessing` context or ``None``. It will be
+   used to launch the workers. If *mp_context* is ``None`` or not given, the
+   default :mod:`multiprocessing` context is used.
+   See :ref:`multiprocessing-start-methods`.
 
    *initializer* is an optional callable that is called at the start of
    each worker process; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
-   as well any attempt to submit more jobs to the pool.
+   as well as any attempt to submit more jobs to the pool.
+
+   *max_tasks_per_child* is an optional argument that specifies the maximum
+   number of tasks a single process can execute before it will exit and be
+   replaced with a fresh worker process. By default *max_tasks_per_child* is
+   ``None`` which means worker processes will live as long as the pool. When
+   a max is specified, the "spawn" multiprocessing start method will be used by
+   default in absence of a *mp_context* parameter. This feature is incompatible
+   with the "fork" start method.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
@@ -251,6 +281,17 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
       Added the *initializer* and *initargs* arguments.
 
+      .. note::
+         The default :mod:`multiprocessing` start method
+         (see :ref:`multiprocessing-start-methods`) will change away from
+         *fork* in Python 3.14.  Code that requires *fork* be used for their
+         :class:`ProcessPoolExecutor` should explicitly specify that by
+         passing a ``mp_context=multiprocessing.get_context("fork")``
+         parameter.
+
+   .. versionchanged:: 3.11
+      The *max_tasks_per_child* argument was added to allow users to
+      control the lifetime of workers in the pool.
 
 .. _processpoolexecutor-example:
 
@@ -330,21 +371,21 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        Return the value returned by the call. If the call hasn't yet completed
        then this method will wait up to *timeout* seconds.  If the call hasn't
        completed in *timeout* seconds, then a
-       :exc:`concurrent.futures.TimeoutError` will be raised. *timeout* can be
+       :exc:`TimeoutError` will be raised. *timeout* can be
        an int or float.  If *timeout* is not specified or ``None``, there is no
        limit to the wait time.
 
        If the future is cancelled before completing then :exc:`.CancelledError`
        will be raised.
 
-       If the call raised, this method will raise the same exception.
+       If the call raised an exception, this method will raise the same exception.
 
     .. method:: exception(timeout=None)
 
        Return the exception raised by the call.  If the call hasn't yet
        completed then this method will wait up to *timeout* seconds.  If the
        call hasn't completed in *timeout* seconds, then a
-       :exc:`concurrent.futures.TimeoutError` will be raised.  *timeout* can be
+       :exc:`TimeoutError` will be raised.  *timeout* can be
        an int or float.  If *timeout* is not specified or ``None``, there is no
        limit to the wait time.
 
@@ -378,13 +419,13 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        tests.
 
        If the method returns ``False`` then the :class:`Future` was cancelled,
-       i.e. :meth:`Future.cancel` was called and returned `True`.  Any threads
+       i.e. :meth:`Future.cancel` was called and returned ``True``.  Any threads
        waiting on the :class:`Future` completing (i.e. through
        :func:`as_completed` or :func:`wait`) will be woken up.
 
        If the method returns ``True`` then the :class:`Future` was not cancelled
        and has been put in the running state, i.e. calls to
-       :meth:`Future.running` will return `True`.
+       :meth:`Future.running` will return ``True``.
 
        This method can only be called once and cannot be called after
        :meth:`Future.set_result` or :meth:`Future.set_exception` have been
@@ -422,7 +463,8 @@ Module Functions
 .. function:: wait(fs, timeout=None, return_when=ALL_COMPLETED)
 
    Wait for the :class:`Future` instances (possibly created by different
-   :class:`Executor` instances) given by *fs* to complete.  Returns a named
+   :class:`Executor` instances) given by *fs* to complete. Duplicate futures
+   given to *fs* are removed and will be returned only once. Returns a named
    2-tuple of sets.  The first set, named ``done``, contains the futures that
    completed (finished or cancelled futures) before the wait completed.  The
    second set, named ``not_done``, contains the futures that did not complete
@@ -460,7 +502,7 @@ Module Functions
    they complete (finished or cancelled futures). Any futures given by *fs* that
    are duplicated will be returned once. Any futures that completed before
    :func:`as_completed` is called will be yielded first.  The returned iterator
-   raises a :exc:`concurrent.futures.TimeoutError` if :meth:`~iterator.__next__`
+   raises a :exc:`TimeoutError` if :meth:`~iterator.__next__`
    is called and the result isn't available after *timeout* seconds from the
    original call to :func:`as_completed`.  *timeout* can be an int or float. If
    *timeout* is not specified or ``None``, there is no limit to the wait time.
@@ -484,7 +526,13 @@ Exception classes
 
 .. exception:: TimeoutError
 
-   Raised when a future operation exceeds the given timeout.
+   A deprecated alias of :exc:`TimeoutError`,
+   raised when a future operation exceeds the given timeout.
+
+   .. versionchanged:: 3.11
+
+      This class was made an alias of :exc:`TimeoutError`.
+
 
 .. exception:: BrokenExecutor
 
