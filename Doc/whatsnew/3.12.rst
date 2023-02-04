@@ -350,6 +350,14 @@ tempfile
 The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
 *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
+typing
+-----
+
+* Add :func:`typing.override`, an override decorator telling to static type
+  checkers to verify that a method overrides some method or attribute of the
+  same name on a base class, as per :pep:698 (Contributed by Steven Troxler in
+  :gh:`101564`).
+
 sys
 ---
 
