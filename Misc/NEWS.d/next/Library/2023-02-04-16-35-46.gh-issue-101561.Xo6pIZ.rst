@@ -1,0 +1,5 @@
+Add a new decorator ``typing.override``.
+
+This decorator indicates to static type checkers that they should verify the method overrides an attribute or method of the same name in a base class. This is useful for catching bugs when base class methods are renamed but some children are not updated accordingly.
+
+See :pep:698 for details.
