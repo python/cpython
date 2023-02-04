@@ -2851,7 +2851,6 @@ dl_sum(double a, double b)
     return (DoubleLength) {x, y};
 }
 
-#ifdef NO_C99_FMA
 /*
    Our default implementation of dl_mul() depends on the C math library
    having an accurate fma() function as required by § 7.12.13.1 of the
@@ -2866,6 +2865,8 @@ dl_sum(double a, double b)
    A Floating-Point Technique for Extending the Available Precision
    https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 */
+
+#ifdef NO_C99_FMA
 
 static DoubleLength
 dl_split(double x) {
