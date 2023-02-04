@@ -5238,7 +5238,7 @@ class GetTypeHintTests(BaseTestCase):
             "title": Required[str], "year": NotRequired[int]
         })
 
-        self.assertEqual(get_type_hints(ChildDeeplyAnnotatedMovie), {"title": str, "year": int}))
+        self.assertEqual(get_type_hints(ChildDeeplyAnnotatedMovie), {"title": str, "year": int})
         self.assertEqual(get_type_hints(ChildDeeplyAnnotatedMovie, include_extras=True), {
             "title": Annotated[Required[str], "foobar", "another level"],
             "year": NotRequired[Annotated[int, 2000]]
