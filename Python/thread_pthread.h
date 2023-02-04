@@ -359,6 +359,7 @@ PyThread_exit_thread(void)
 #if defined(__wasi__)
     /*
      * wasi-threads doesn't have pthread_exit right now
+     * cf. https://github.com/WebAssembly/wasi-threads/issues/7
      */
     abort();
 #else
