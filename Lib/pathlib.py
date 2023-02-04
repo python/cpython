@@ -293,14 +293,14 @@ class PurePath(object):
                 path = self._flavour.join(*args)
             if isinstance(path, str):
                 # Force-cast str subclasses to str (issue #21127)
-                self._fspath = str(path)
+                self._fspath = str(path) or '.'
             else:
                 raise TypeError(
                     "argument should be a str object or an os.PathLike "
                     "object returning str, not %r"
                     % type(path))
         else:
-            self._fspath = ''
+            self._fspath = '.'
 
     def _load_parts(self):
         drv, root, parts = self._parse_path(self._fspath)
@@ -310,7 +310,9 @@ class PurePath(object):
 
     @classmethod
     def _from_parsed_parts(cls, drv, root, parts):
-        self = cls(cls._format_parsed_parts(drv, root, parts))
+        path = cls._format_parsed_parts(drv, root, parts)
+        self = cls(path)
+        self._str = path
         self._drv = drv
         self._root = root
         self._parts_cached = parts
@@ -320,8 +322,10 @@ class PurePath(object):
     def _format_parsed_parts(cls, drv, root, parts):
         if drv or root:
             return drv + root + cls._flavour.sep.join(parts[1:])
-        else:
+        elif parts:
             return cls._flavour.sep.join(parts)
+        else:
+            return '.'
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -330,11 +334,11 @@ class PurePath(object):
             return self._str
         except AttributeError:
             self._str = self._format_parsed_parts(self.drive, self.root,
-                                                  self._parts) or '.'
+                                                  self._parts)
             return self._str
 
     def __fspath__(self):
-        return self._fspath or '.'
+        return self._fspath
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
