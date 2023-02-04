@@ -299,7 +299,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_STR_1:
             return oparg + 2;
         case CALL_NO_KW_TUPLE_1:
-            return -1;
+            return oparg + 2;
         case CALL_BUILTIN_CLASS:
             return -1;
         case CALL_NO_KW_BUILTIN_O:
@@ -645,7 +645,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_STR_1:
             return 1;
         case CALL_NO_KW_TUPLE_1:
-            return -1;
+            return 1;
         case CALL_BUILTIN_CLASS:
             return -1;
         case CALL_NO_KW_BUILTIN_O:
@@ -848,7 +848,7 @@ struct opcode_metadata {
     [CALL_PY_WITH_DEFAULTS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [CALL_NO_KW_TYPE_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [CALL_NO_KW_STR_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_TUPLE_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [CALL_NO_KW_TUPLE_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [CALL_BUILTIN_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CALL_NO_KW_BUILTIN_O] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CALL_NO_KW_BUILTIN_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },

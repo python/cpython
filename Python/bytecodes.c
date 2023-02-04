@@ -2361,7 +2361,7 @@ dummy_func(
             CALL_PY_WITH_DEFAULTS,
             CALL_NO_KW_TYPE_1,
             CALL_NO_KW_STR_1,
-        //     CALL_NO_KW_TUPLE_1,
+            CALL_NO_KW_TUPLE_1,
         //     CALL_BUILTIN_CLASS,
         //     CALL_NO_KW_BUILTIN_O,
         //     CALL_NO_KW_BUILTIN_FAST,
@@ -2562,24 +2562,17 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_NO_KW_TUPLE_1) {
+        inst(CALL_NO_KW_TUPLE_1, (unused/1, unused/2, unused/1, null, callable, args[oparg] -- res)) {
             assert(kwnames == NULL);
             assert(oparg == 1);
-            DEOPT_IF(is_method(stack_pointer, 1), CALL);
-            PyObject *callable = PEEK(2);
+            DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = TOP();
-            PyObject *res = PySequence_Tuple(arg);
+            PyObject *arg = args[0];
+            res = PySequence_Tuple(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyTuple_Type);
-            STACK_SHRINK(2);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            Py_DECREF(&PyTuple_Type);  // I.e., tuple
+            ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
         }
 
