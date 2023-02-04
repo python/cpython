@@ -2366,7 +2366,7 @@ dummy_func(
             CALL_NO_KW_BUILTIN_O,
             CALL_NO_KW_BUILTIN_FAST,
             CALL_BUILTIN_FAST_WITH_KEYWORDS,
-        //     CALL_NO_KW_LEN,
+            CALL_NO_KW_LEN,
         //     CALL_NO_KW_ISINSTANCE,
         //     CALL_NO_KW_LIST_APPEND,
         //     CALL_NO_KW_METHOD_DESCRIPTOR_O,
@@ -2699,34 +2699,30 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_NO_KW_LEN) {
+        inst(CALL_NO_KW_LEN, (unused/1, unused/2, unused/1, method, callable, args[oparg] -- res)) {
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             /* len(o) */
-            int is_meth = is_method(stack_pointer, oparg);
+            int is_meth = method != NULL;
             int total_args = oparg + is_meth;
             DEOPT_IF(total_args != 1, CALL);
-            PyObject *callable = PEEK(total_args + 1);
+            if (is_meth) {
+                callable = method;
+            }
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = TOP();
+            PyObject *arg = args[-is_meth];
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
                 goto error;
             }
-            PyObject *res = PyLong_FromSsize_t(len_i);
+            res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
-            STACK_SHRINK(2-is_meth);
-            SET_TOP(res);
             Py_DECREF(callable);
             Py_DECREF(arg);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: (__0, __array[oparg] -- )
