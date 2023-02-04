@@ -1450,6 +1450,11 @@ class MathTests(unittest.TestCase):
         n = 20                # Length of vectors
         c = 1e30              # Target condition number
 
+        # If the following test fails, it means that the C math library
+        # implementation of fma() is not compliant with the C99 standard
+        # and is inaccurate.  To solve this problem, make a new build
+        # with the symbol UNRELIABLE_FMA defined.  That will enable a
+        # slower but accurate code path that avoids the fma() call.
         relative_err = median(Trial(math.sumprod, c, n) for i in range(times))
         self.assertLess(relative_err, 1e-16)
 
