@@ -1,0 +1,4 @@
+Speed up construction and joining of :class:`pathlib.PurePath` objects by
+deferring path parsing and normalization until needed. Some path object
+operations are 2-4x faster as a result of this change. An unnormalized path
+is now returned by :func:`os.fspath` when a pathlib path object is given.
