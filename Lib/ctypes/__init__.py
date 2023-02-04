@@ -344,7 +344,9 @@ class CDLL(object):
                  use_errno=False,
                  use_last_error=False,
                  winmode=None):
-        self._name = _os.fspath(name) if name is not None else None
+        if name:
+            name = _os.fspath(name)
+        self._name = name
         flags = self._func_flags_
         if use_errno:
             flags |= _FUNCFLAG_USE_ERRNO
@@ -356,7 +358,7 @@ class CDLL(object):
                archive(member) syntax for dlopen(), and the mode is adjusted.
                Otherwise, name is presented to dlopen() as a file argument.
             """
-            if self._name and self._name.endswith(")") and ".a(" in self._name:
+            if name and name.endswith(")") and ".a(" in name:
                 mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
         if _os.name == "nt":
             if winmode is not None:
@@ -364,8 +366,8 @@ class CDLL(object):
             else:
                 import nt
                 mode = nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
-                if '/' in self._name or '\\' in self._name:
-                    self._name = nt._getfullpathname(self._name)
+                if '/' in name or '\\' in name:
+                    name = nt._getfullpathname(name)
                     mode |= nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
 
         class _FuncPtr(_CFuncPtr):
@@ -374,7 +376,7 @@ class CDLL(object):
         self._FuncPtr = _FuncPtr
 
         if handle is None:
-            self._handle = _dlopen(self._name, mode)
+            self._handle = _dlopen(name, mode)
         else:
             self._handle = handle
 
