@@ -110,9 +110,7 @@ class TestKQueue(unittest.TestCase):
 
 
     def test_queue_event(self):
-        serverSocket = socket.socket()
-        serverSocket.bind(('127.0.0.1', 0))
-        serverSocket.listen()
+        serverSocket = socket.create_server(('127.0.0.1', 0))
         client = socket.socket()
         client.setblocking(False)
         try:
@@ -203,6 +201,30 @@ class TestKQueue(unittest.TestCase):
         self.assertTrue(r)
         self.assertFalse(r[0].flags & select.KQ_EV_ERROR)
         self.assertEqual(b.recv(r[0].data), b'foo')
+
+        a.close()
+        b.close()
+        kq.close()
+
+    def test_issue30058(self):
+        # changelist must be an iterable
+        kq = select.kqueue()
+        a, b = socket.socketpair()
+        ev = select.kevent(a, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE)
+
+        kq.control([ev], 0)
+        # not a list
+        kq.control((ev,), 0)
+        # __len__ is not consistent with __iter__
+        class BadList:
+            def __len__(self):
+                return 0
+            def __iter__(self):
+                for i in range(100):
+                    yield ev
+        kq.control(BadList(), 0)
+        # doesn't have __len__
+        kq.control(iter([ev]), 0)
 
         a.close()
         b.close()

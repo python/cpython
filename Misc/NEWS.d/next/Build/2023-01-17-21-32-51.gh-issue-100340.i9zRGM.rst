@@ -1,0 +1,2 @@
+Allows -Wno-int-conversion for wasm-sdk 17 and onwards, thus enables
+building WASI builds once against the latest sdk.

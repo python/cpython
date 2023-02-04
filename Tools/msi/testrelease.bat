@@ -2,7 +2,7 @@
 @echo off
 
 set D=%~dp0
-set PCBUILD=%D%..\..\PCBuild\
+set PCBUILD=%D%..\..\PCbuild\
 
 set TARGETDIR=%TEMP%
 set TESTX86=

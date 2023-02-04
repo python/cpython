@@ -8,8 +8,15 @@ import webbrowser
 from email import policy
 from email.parser import BytesParser
 
-# An imaginary module that would make this work and be safe.
-from imaginary import magic_html_parser
+
+def magic_html_parser(html_text, partfiles):
+    """Return safety-sanitized html linked to partfiles.
+
+    Rewrite the href="cid:...." attributes to point to the filenames in partfiles.
+    Though not trivial, this should be possible using html.parser.
+    """
+    raise NotImplementedError("Add the magic needed")
+
 
 # In a real program you'd get the filename from the arguments.
 with open('outgoing.msg', 'rb') as fp:
@@ -21,7 +28,7 @@ print('To:', msg['to'])
 print('From:', msg['from'])
 print('Subject:', msg['subject'])
 
-# If we want to print a priview of the message content, we can extract whatever
+# If we want to print a preview of the message content, we can extract whatever
 # the least formatted payload is and print the first three lines.  Of course,
 # if the message has no plain text part printing the first three lines of html
 # is probably useless, but this is just a conceptual example.
@@ -62,9 +69,6 @@ else:
     print("Don't know how to display {}".format(richest.get_content_type()))
     sys.exit()
 with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-    # The magic_html_parser has to rewrite the href="cid:...." attributes to
-    # point to the filenames in partfiles.  It also has to do a safety-sanitize
-    # of the html.  It could be written using html.parser.
     f.write(magic_html_parser(body.get_content(), partfiles))
 webbrowser.open(f.name)
 os.remove(f.name)

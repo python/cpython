@@ -8,13 +8,13 @@
 
 
 /* struct module */
-PyObject *structmodule = NULL;
-PyObject *Struct = NULL;
-PyObject *calcsize = NULL;
+static PyObject *structmodule = NULL;
+static PyObject *Struct = NULL;
+static PyObject *calcsize = NULL;
 
 /* cache simple format string */
 static const char *simple_fmt = "B";
-PyObject *simple_format = NULL;
+static PyObject *simple_format = NULL;
 #define SIMPLE_FORMAT(fmt) (fmt == NULL || strcmp(fmt, "B") == 0)
 #define FIX_FORMAT(fmt) (fmt == NULL ? "B" : fmt)
 
@@ -24,7 +24,7 @@ PyObject *simple_format = NULL;
 /**************************************************************************/
 
 static PyTypeObject NDArray_Type;
-#define NDArray_Check(v) (Py_TYPE(v) == &NDArray_Type)
+#define NDArray_Check(v) Py_IS_TYPE(v, &NDArray_Type)
 
 #define CHECK_LIST_OR_TUPLE(v) \
     if (!PyList_Check(v) && !PyTuple_Check(v)) { \
@@ -236,7 +236,7 @@ ndarray_dealloc(NDArrayObject *self)
                 ndbuf_pop(self);
         }
     }
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static int
@@ -1524,14 +1524,13 @@ ndarray_getbuf(NDArrayObject *self, Py_buffer *view, int flags)
             return -1;
     }
 
-    view->obj = (PyObject *)self;
-    Py_INCREF(view->obj);
+    view->obj = Py_NewRef(self);
     self->head->exports++;
 
     return 0;
 }
 
-static int
+static void
 ndarray_releasebuf(NDArrayObject *self, Py_buffer *view)
 {
     if (!ND_IS_CONSUMER(self)) {
@@ -1539,8 +1538,6 @@ ndarray_releasebuf(NDArrayObject *self, Py_buffer *view)
         if (--ndbuf->exports == 0 && ndbuf != self->head)
             ndbuf_delete(self, ndbuf);
     }
-
-    return 0;
 }
 
 static PyBufferProcs ndarray_as_buffer = {
@@ -1790,8 +1787,7 @@ ndarray_subscript(NDArrayObject *self, PyObject *key)
             return unpack_single(base->buf, base->format, base->itemsize);
         }
         else if (key == Py_Ellipsis) {
-            Py_INCREF(self);
-            return (PyObject *)self;
+            return Py_NewRef(self);
         }
         else {
             PyErr_SetString(PyExc_TypeError, "invalid indexing of scalar");
@@ -1856,7 +1852,7 @@ ndarray_subscript(NDArrayObject *self, PyObject *key)
 type_error:
     PyErr_Format(PyExc_TypeError,
         "cannot index memory using \"%.200s\"",
-        key->ob_type->tp_name);
+        Py_TYPE(key)->tp_name);
 err_occurred:
     Py_DECREF(nd);
     return NULL;
@@ -2023,8 +2019,7 @@ ndarray_get_obj(NDArrayObject *self, void *closure)
     if (base->obj == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(base->obj);
-    return base->obj;
+    return Py_NewRef(base->obj);
 }
 
 static PyObject *
@@ -2038,7 +2033,7 @@ static PyObject *
 ndarray_get_readonly(NDArrayObject *self, void *closure)
 {
     Py_buffer *base = &self->head->base;
-    return PyLong_FromLong(base->readonly);
+    return PyBool_FromLong(base->readonly);
 }
 
 static PyObject *
@@ -2052,7 +2047,7 @@ static PyObject *
 ndarray_get_format(NDArrayObject *self, void *closure)
 {
     Py_buffer *base = &self->head->base;
-    char *fmt = base->format ? base->format : "";
+    const char *fmt = base->format ? base->format : "";
     return PyUnicode_FromString(fmt);
 }
 
@@ -2354,7 +2349,7 @@ out:
 }
 
 static PyObject *
-get_sizeof_void_p(PyObject *self)
+get_sizeof_void_p(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromSize_t(sizeof(void *));
 }
@@ -2561,8 +2556,7 @@ result:
     PyBuffer_Release(&v2);
 
     ret = equal ? Py_True : Py_False;
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 static PyObject *
@@ -2599,8 +2593,7 @@ is_contiguous(PyObject *self, PyObject *args)
         PyBuffer_Release(&view);
     }
 
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 static Py_hash_t
@@ -2635,7 +2628,7 @@ static PyMethodDef ndarray_methods [] =
 {
     { "tolist", ndarray_tolist, METH_NOARGS, NULL },
     { "tobytes", ndarray_tobytes, METH_NOARGS, NULL },
-    { "push", (PyCFunction)ndarray_push, METH_VARARGS|METH_KEYWORDS, NULL },
+    { "push", _PyCFunction_CAST(ndarray_push), METH_VARARGS|METH_KEYWORDS, NULL },
     { "pop", ndarray_pop, METH_NOARGS, NULL },
     { "add_suboffsets", ndarray_add_suboffsets, METH_NOARGS, NULL },
     { "memoryview_from_buffer", ndarray_memoryview_from_buffer, METH_NOARGS, NULL },
@@ -2648,10 +2641,10 @@ static PyTypeObject NDArray_Type = {
     sizeof(NDArrayObject),       /* Basic object size */
     0,                           /* Item size for varobject */
     (destructor)ndarray_dealloc, /* tp_dealloc */
-    0,                           /* tp_print */
+    0,                           /* tp_vectorcall_offset */
     0,                           /* tp_getattr */
     0,                           /* tp_setattr */
-    0,                           /* tp_compare */
+    0,                           /* tp_as_async */
     0,                           /* tp_repr */
     0,                           /* tp_as_number */
     &ndarray_as_sequence,        /* tp_as_sequence */
@@ -2736,7 +2729,7 @@ staticarray_init(PyObject *self, PyObject *args, PyObject *kwds)
 static void
 staticarray_dealloc(StaticArrayObject *self)
 {
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 /* Return a buffer for a PyBUF_FULL_RO request. Flags are not checked,
@@ -2750,8 +2743,7 @@ staticarray_getbuf(StaticArrayObject *self, Py_buffer *view, int flags)
         view->obj = NULL; /* Don't use this in new code. */
     }
     else {
-        view->obj = (PyObject *)self;
-        Py_INCREF(view->obj);
+        view->obj = Py_NewRef(self);
     }
 
     return 0;
@@ -2768,10 +2760,10 @@ static PyTypeObject StaticArray_Type = {
     sizeof(StaticArrayObject),       /* Basic object size */
     0,                               /* Item size for varobject */
     (destructor)staticarray_dealloc, /* tp_dealloc */
-    0,                               /* tp_print */
+    0,                               /* tp_vectorcall_offset */
     0,                               /* tp_getattr */
     0,                               /* tp_setattr */
-    0,                               /* tp_compare */
+    0,                               /* tp_as_async */
     0,                               /* tp_repr */
     0,                               /* tp_as_number */
     0,                               /* tp_as_sequence */
@@ -2807,7 +2799,7 @@ static PyTypeObject StaticArray_Type = {
 static struct PyMethodDef _testbuffer_functions[] = {
     {"slice_indices", slice_indices, METH_VARARGS, NULL},
     {"get_pointer", get_pointer, METH_VARARGS, NULL},
-    {"get_sizeof_void_p", (PyCFunction)get_sizeof_void_p, METH_NOARGS, NULL},
+    {"get_sizeof_void_p", get_sizeof_void_p, METH_NOARGS, NULL},
     {"get_contiguous", get_contiguous, METH_VARARGS, NULL},
     {"py_buffer_to_contiguous", py_buffer_to_contiguous, METH_VARARGS, NULL},
     {"is_contiguous", is_contiguous, METH_VARARGS, NULL},
@@ -2837,11 +2829,11 @@ PyInit__testbuffer(void)
     if (m == NULL)
         return NULL;
 
-    Py_TYPE(&NDArray_Type) = &PyType_Type;
+    Py_SET_TYPE(&NDArray_Type, &PyType_Type);
     Py_INCREF(&NDArray_Type);
     PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
 
-    Py_TYPE(&StaticArray_Type) = &PyType_Type;
+    Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
     Py_INCREF(&StaticArray_Type);
     PyModule_AddObject(m, "staticarray", (PyObject *)&StaticArray_Type);
 

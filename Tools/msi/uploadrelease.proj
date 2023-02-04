@@ -10,7 +10,6 @@
         <IncludeDoc Condition="'$(IncludeDoc)' == ''">true</IncludeDoc>
         <BuildForRelease Condition="'$(BuildForRelease)' == ''">true</BuildForRelease>
         <DryRun Condition="'$(DryRun)' == ''">false</DryRun>
-        <Purge Condition="'$(Purge)' == ''">false</Purge>
     </PropertyGroup>
 
     <Import Project="msi.props" />
@@ -22,7 +21,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <File Include="$(OutputPath)\*.msi;$(OutputPath)\*.msu">
+        <File Include="$(OutputPath)\*.msi">
             <CopyTo>$(MSITarget)</CopyTo>
         </File>
         <File Include="$(OutputPath)\*.exe;$(OutputPath)\*.zip">
@@ -43,7 +42,8 @@
     <Target Name="_RunGpg" Condition="'$(GPG)' != ''" Inputs="@(File)" Outputs="$(IntermediateOutputPath)\gpg\%(FileName)%(Extension).asc">
         <MakeDir Directories="$(IntermediateOutputPath)gpg" />
         <Delete Files="$(IntermediateOutputPath)\gpg\%(File.FileName)%(File.Extension).asc" Condition="Exists('$(IntermediateOutputPath)\gpg\%(File.FileName)%(File.Extension).asc')" />
-        <Exec Command="&quot;$(GPG)&quot; -ba -o &quot;$(IntermediateOutputPath)\gpg\%(File.FileName)%(File.Extension).asc&quot; &quot;%(File.FullPath)&quot;" />
+        <Exec Command="&quot;$(GPG)&quot; -ba -o &quot;$(IntermediateOutputPath)\gpg\%(File.FileName)%(File.Extension).asc&quot; &quot;%(File.FullPath)&quot;"
+              IgnoreExitCode="false" />
         <ItemGroup>
             <File Include="$(IntermediateOutputPath)\gpg\%(File.FileName)%(File.Extension).asc">
                 <CopyTo>%(File.CopyTo)</CopyTo>
@@ -52,23 +52,15 @@
     </Target>
     
     <Target Name="_Upload" Condition="!$(DryRun)">
-        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)
-&quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)
-&quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/*; chmod g-w,o+r %(File.CopyTo)/*
-" />
+        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)" ContinueOnError="true" />
+        <Exec Command="&quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)" />
+        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/*; chmod g-w,o+r %(File.CopyTo)/*" ContinueOnError="true" />
     </Target>
-    
+
     <Target Name="_PrintNames" Condition="$(DryRun)">
-        <Exec Command="echo &quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)
-echo &quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)
-echo &quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/*; chmod g-w,o+r %(File.CopyTo)/*
-echo.
-echo." />
-    </Target>
-    
-    <Target Name="_Purge" Condition="$(Purge) and !$(DryRun)">
-        <Error Condition="!Exists('$(PythonExe)')" Text="No Python executable available at $(PythonExe)" />
-        <Exec Command="&quot;$(PythonExe)&quot; purge.py $(PythonVersion)" />
+        <Exec Command="echo &quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)" />
+        <Exec Command="echo &quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)" />
+        <Exec Command="echo &quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/*; chmod g-w,o+r %(File.CopyTo)/*" />
     </Target>
     
     <Target Name="_TestLayout">
@@ -82,6 +74,7 @@ echo." />
                 <LogFile>$(OutputPath)\%(Filename)_layoutlog\%(Filename).log</LogFile>
             </WebInstaller>
         </ItemGroup>
+        <Error Text="Could not find installer" Condition="@(WebInstaller) == ''" />
         <RemoveDir Directories="%(WebInstaller.SourceDir)" Condition="Exists('%(WebInstaller.SourceDir)')" />
         <RemoveDir Directories="%(WebInstaller.LayoutDir)" Condition="Exists('%(WebInstaller.LayoutDir)')" />
         <RemoveDir Directories="%(WebInstaller.LogDir)" Condition="Exists('%(WebInstaller.LogDir)')" />
@@ -95,14 +88,22 @@ echo." />
         <Message Text="Successfully downloaded %(WebInstaller.Filename)%(WebInstaller.Extension) layout" Importance="high" />
     </Target>
     
-    <Target Name="Upload" DependsOnTargets="_ValidateProperties;_RunGpg;_PrintNames;_Upload;_Purge" />
+    <Target Name="Upload" DependsOnTargets="_ValidateProperties;_RunGpg;_PrintNames;_Upload" />
     <Target Name="Test" DependsOnTargets="_TestLayout" />
+    
+    <Target Name="Purge">
+        <Error Condition="!Exists('$(PythonExe)')" Text="No Python executable available at $(PythonExe)" />
+        <Exec Command="echo &quot;$(PythonExe)&quot; purge.py $(PythonVersion)" Condition="$(DryRun)" />
+        <Exec Command="&quot;$(PythonExe)&quot; purge.py $(PythonVersion)" Condition="!$(DryRun)" />
+        <Message Text="Purged uploaded files" Importance="high" />
+    </Target>
     
     <Target Name="ShowHashes">
         <ItemGroup>
             <UserFiles Include="@(File)" Condition="'%(File.CopyTo)' == '$(EXETarget)'" />
         </ItemGroup>
         
+        <Error Text="No files generated" Condition="@(UserFiles) == ''" />
         <Exec Command="&quot;$(PythonExe)&quot; generate_md5.py @(UserFiles->'&quot;%(FullPath)&quot;',' ')" />
     </Target>
     

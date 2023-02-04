@@ -77,6 +77,9 @@ class TestTimeit(unittest.TestCase):
         self.assertRaises(SyntaxError, timeit.Timer, stmt='break')
         self.assertRaises(SyntaxError, timeit.Timer, stmt='continue')
         self.assertRaises(SyntaxError, timeit.Timer, stmt='from timeit import *')
+        self.assertRaises(SyntaxError, timeit.Timer, stmt='  pass')
+        self.assertRaises(SyntaxError, timeit.Timer,
+                          setup='while False:\n  pass', stmt='  break')
 
     def test_timer_invalid_setup(self):
         self.assertRaises(ValueError, timeit.Timer, setup=None)
@@ -86,6 +89,12 @@ class TestTimeit(unittest.TestCase):
         self.assertRaises(SyntaxError, timeit.Timer, setup='break')
         self.assertRaises(SyntaxError, timeit.Timer, setup='continue')
         self.assertRaises(SyntaxError, timeit.Timer, setup='from timeit import *')
+        self.assertRaises(SyntaxError, timeit.Timer, setup='  pass')
+
+    def test_timer_empty_stmt(self):
+        timeit.Timer(stmt='')
+        timeit.Timer(stmt=' \n\t\f')
+        timeit.Timer(stmt='# comment')
 
     fake_setup = "import timeit\ntimeit._fake_timer.setup()"
     fake_stmt = "import timeit\ntimeit._fake_timer.inc()"
