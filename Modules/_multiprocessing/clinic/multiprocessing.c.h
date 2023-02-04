@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_closesocket__doc__,
@@ -21,7 +27,8 @@ _multiprocessing_closesocket(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HANDLE handle;
 
-    if (!PyArg_Parse(arg, ""F_HANDLE":closesocket", &handle)) {
+    handle = PyLong_AsVoidPtr(arg);
+    if (!handle && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _multiprocessing_closesocket_impl(module, handle);
@@ -52,8 +59,15 @@ _multiprocessing_recv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE handle;
     int size;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"i:recv",
-        &handle, &size)) {
+    if (!_PyArg_CheckPositional("recv", nargs, 2, 2)) {
+        goto exit;
+    }
+    handle = PyLong_AsVoidPtr(args[0]);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    size = _PyLong_AsInt(args[1]);
+    if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _multiprocessing_recv_impl(module, handle, size);
@@ -84,8 +98,18 @@ _multiprocessing_send(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE handle;
     Py_buffer buf = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*:send",
-        &handle, &buf)) {
+    if (!_PyArg_CheckPositional("send", nargs, 2, 2)) {
+        goto exit;
+    }
+    handle = PyLong_AsVoidPtr(args[0]);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buf, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buf, 'C')) {
+        _PyArg_BadArgument("send", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = _multiprocessing_send_impl(module, handle, &buf);
@@ -148,4 +172,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=d3bbf69de578db7b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a6afc67c1f5ec85 input=a9049054013a1b77]*/

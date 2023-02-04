@@ -155,6 +155,7 @@
     <ClInclude Include="..\Include\cpython\listobject.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
+    <ClInclude Include="..\Include\cpython\memoryobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
     <ClInclude Include="..\Include\cpython\modsupport.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
@@ -167,6 +168,7 @@
     <ClInclude Include="..\Include\cpython\pydebug.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
     <ClInclude Include="..\Include\cpython\pyfpe.h" />
+    <ClInclude Include="..\Include\cpython\pyframe.h" />
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
     <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
@@ -192,7 +194,6 @@
     <ClInclude Include="..\Include\frameobject.h" />
     <ClInclude Include="..\Include\import.h" />
     <ClInclude Include="..\Include\internal\pycore_abstract.h" />
-    <ClInclude Include="..\Include\internal\pycore_accu.h" />
     <ClInclude Include="..\Include\internal\pycore_asdl.h" />
     <ClInclude Include="..\Include\internal\pycore_ast.h" />
     <ClInclude Include="..\Include\internal\pycore_ast_state.h" />
@@ -203,53 +204,71 @@
     <ClInclude Include="..\Include\internal\pycore_bytesobject.h" />
     <ClInclude Include="..\Include\internal\pycore_call.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
+    <ClInclude Include="..\Include\internal\pycore_ceval_state.h" />
     <ClInclude Include="..\Include\internal\pycore_code.h" />
     <ClInclude Include="..\Include\internal\pycore_compile.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
+    <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_dict.h" />
+    <ClInclude Include="..\Include\internal\pycore_dict_state.h" />
     <ClInclude Include="..\Include\internal\pycore_dtoa.h" />
     <ClInclude Include="..\Include\internal\pycore_exceptions.h" />
+    <ClInclude Include="..\Include\internal\pycore_faulthandler.h" />
     <ClInclude Include="..\Include\internal\pycore_fileutils.h" />
     <ClInclude Include="..\Include\internal\pycore_floatobject.h" />
     <ClInclude Include="..\Include\internal\pycore_format.h" />
+    <ClInclude Include="..\Include\internal\pycore_frame.h" />
     <ClInclude Include="..\Include\internal\pycore_function.h" />
     <ClInclude Include="..\Include\internal\pycore_gc.h" />
     <ClInclude Include="..\Include\internal\pycore_genobject.h" />
     <ClInclude Include="..\Include\internal\pycore_getopt.h" />
     <ClInclude Include="..\Include\internal\pycore_gil.h" />
     <ClInclude Include="..\Include\internal\pycore_global_objects.h" />
+    <ClInclude Include="..\Include\internal\pycore_global_objects_fini_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
     <ClInclude Include="..\Include\internal\pycore_hashtable.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_interpreteridobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_intrinsics.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
+    <ClInclude Include="..\Include\internal\pycore_obmalloc.h" />
+    <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyarena.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
     <ClInclude Include="..\Include\internal\pycore_pyhash.h" />
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />
+    <ClInclude Include="..\Include\internal\pycore_pymem_init.h" />
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
+    <ClInclude Include="..\Include\internal\pycore_pythread.h" />
+    <ClInclude Include="..\Include\internal\pycore_range.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime_init.h" />
+    <ClInclude Include="..\Include\internal\pycore_runtime_init_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_signal.h" />
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h" />
     <ClInclude Include="..\Include\internal\pycore_strhex.h" />
     <ClInclude Include="..\Include\internal\pycore_structseq.h" />
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h" />
     <ClInclude Include="..\Include\internal\pycore_symtable.h" />
+    <ClInclude Include="..\Include\internal\pycore_time.h" />
+    <ClInclude Include="..\Include\internal\pycore_token.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
+    <ClInclude Include="..\Include\internal\pycore_tracemalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
     <ClInclude Include="..\Include\internal\pycore_typeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
@@ -279,6 +298,7 @@
     <ClInclude Include="..\Include\pymem.h" />
     <ClInclude Include="..\Include\pyport.h" />
     <ClInclude Include="..\Include\pystate.h" />
+    <ClInclude Include="..\Include\pystats.h" />
     <ClInclude Include="..\Include\pystrcmp.h" />
     <ClInclude Include="..\Include\pystrtod.h" />
     <ClInclude Include="..\Include\pythonrun.h" />
@@ -291,7 +311,6 @@
     <ClInclude Include="..\Include\structseq.h" />
     <ClInclude Include="..\Include\symtable.h" />
     <ClInclude Include="..\Include\sysmodule.h" />
-    <ClInclude Include="..\Include\token.h" />
     <ClInclude Include="..\Include\traceback.h" />
     <ClInclude Include="..\Include\tracemalloc.h" />
     <ClInclude Include="..\Include\tupleobject.h" />
@@ -323,7 +342,6 @@
     <ClInclude Include="..\Parser\pegen.h" />
     <ClInclude Include="..\PC\errmap.h" />
     <ClInclude Include="..\PC\pyconfig.h" />
-    <ClInclude Include="..\Python\ceval_gil.h" />
     <ClInclude Include="..\Python\condvar.h" />
     <ClInclude Include="..\Python\importdl.h" />
     <ClInclude Include="..\Python\stdlib_module_names.h" />
@@ -400,6 +418,7 @@
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
+    <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c" />
     <ClCompile Include="..\Modules\_io\fileio.c" />
     <ClCompile Include="..\Modules\_io\bytesio.c" />
     <ClCompile Include="..\Modules\_io\stringio.c" />
@@ -417,7 +436,6 @@
     <ClCompile Include="..\Modules\cjkcodecs\multibytecodec.c" />
     <ClCompile Include="..\Modules\_winapi.c" />
     <ClCompile Include="..\Objects\abstract.c" />
-    <ClCompile Include="..\Objects\accu.c" />
     <ClCompile Include="..\Objects\boolobject.c" />
     <ClCompile Include="..\Objects\bytearrayobject.c" />
     <ClCompile Include="..\Objects\bytes_methods.c" />
@@ -499,16 +517,19 @@
     <ClCompile Include="..\Python\getopt.c" />
     <ClCompile Include="..\Python\getplatform.c" />
     <ClCompile Include="..\Python\getversion.c" />
+    <ClCompile Include="..\Python\ceval_gil.c" />
     <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\hashtable.c" />
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
     <ClCompile Include="..\Python\initconfig.c" />
+    <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
+    <ClCompile Include="..\Python\perf_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
@@ -584,7 +605,7 @@
     </PropertyGroup>
     <Message Text="Building $(GitTag):$(GitVersion) $(GitBranch)" Importance="high" />
     <ItemGroup>
-      <ClCompile Condition="$(Filename) == 'getbuildinfo'">
+      <ClCompile Condition="%(Filename) == 'getbuildinfo'">
         <PreprocessorDefinitions>GITVERSION="$(GitVersion)";GITTAG="$(GitTag)";GITBRANCH="$(GitBranch)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       </ClCompile>
     </ItemGroup>

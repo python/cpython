@@ -2,24 +2,54 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 static int
-pysqlite_connection_init_impl(pysqlite_Connection *self,
-                              const char *database, double timeout,
-                              int detect_types, const char *isolation_level,
+pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
+                              double timeout, int detect_types,
+                              const char *isolation_level,
                               int check_same_thread, PyObject *factory,
-                              int cache_size, int uri);
+                              int cache_size, int uri,
+                              enum autocommit_mode autocommit);
 
 static int
 pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Connection", 0};
-    PyObject *argsbuf[8];
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 9
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(database), &_Py_ID(timeout), &_Py_ID(detect_types), &_Py_ID(isolation_level), &_Py_ID(check_same_thread), &_Py_ID(factory), &_Py_ID(cached_statements), &_Py_ID(uri), &_Py_ID(autocommit), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", "autocommit", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Connection",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[9];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    const char *database = NULL;
+    PyObject *database;
     double timeout = 5.0;
     int detect_types = 0;
     const char *isolation_level = "";
@@ -27,14 +57,13 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
     int cache_size = 128;
     int uri = 0;
+    enum autocommit_mode autocommit = LEGACY_TRANSACTION_CONTROL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
-    if (!clinic_fsconverter(fastargs[0], &database)) {
-        goto exit;
-    }
+    database = fastargs[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -71,8 +100,8 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[4]) {
-        check_same_thread = _PyLong_AsInt(fastargs[4]);
-        if (check_same_thread == -1 && PyErr_Occurred()) {
+        check_same_thread = PyObject_IsTrue(fastargs[4]);
+        if (check_same_thread < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -94,17 +123,26 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    uri = PyObject_IsTrue(fastargs[7]);
-    if (uri < 0) {
-        goto exit;
+    if (fastargs[7]) {
+        uri = PyObject_IsTrue(fastargs[7]);
+        if (uri < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
 skip_optional_pos:
-    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!autocommit_converter(fastargs[8], &autocommit)) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri, autocommit);
 
 exit:
-    /* Cleanup for database */
-    PyMem_Free((void *)database);
-
     return return_value;
 }
 
@@ -124,8 +162,31 @@ static PyObject *
 pysqlite_connection_cursor(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(factory), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"factory", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "cursor", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "cursor",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *factory = NULL;
@@ -173,8 +234,31 @@ static PyObject *
 blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(readonly), &_Py_ID(name), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "", "", "readonly", "name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "blobopen", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "blobopen",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *table;
@@ -221,8 +305,8 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         goto skip_optional_kwonly;
     }
     if (args[3]) {
-        readonly = _PyLong_AsInt(args[3]);
-        if (readonly == -1 && PyErr_Occurred()) {
+        readonly = PyObject_IsTrue(args[3]);
+        if (readonly < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -253,7 +337,9 @@ PyDoc_STRVAR(pysqlite_connection_close__doc__,
 "close($self, /)\n"
 "--\n"
 "\n"
-"Closes the connection.");
+"Close the database connection.\n"
+"\n"
+"Any pending transaction is not committed implicitly.");
 
 #define PYSQLITE_CONNECTION_CLOSE_METHODDEF    \
     {"close", (PyCFunction)pysqlite_connection_close, METH_NOARGS, pysqlite_connection_close__doc__},
@@ -271,7 +357,9 @@ PyDoc_STRVAR(pysqlite_connection_commit__doc__,
 "commit($self, /)\n"
 "--\n"
 "\n"
-"Commit the current transaction.");
+"Commit any pending transaction to the database.\n"
+"\n"
+"If there is no open transaction, this method is a no-op.");
 
 #define PYSQLITE_CONNECTION_COMMIT_METHODDEF    \
     {"commit", (PyCFunction)pysqlite_connection_commit, METH_NOARGS, pysqlite_connection_commit__doc__},
@@ -289,7 +377,9 @@ PyDoc_STRVAR(pysqlite_connection_rollback__doc__,
 "rollback($self, /)\n"
 "--\n"
 "\n"
-"Roll back the current transaction.");
+"Roll back to the start of any pending transaction.\n"
+"\n"
+"If there is no open transaction, this method is a no-op.");
 
 #define PYSQLITE_CONNECTION_ROLLBACK_METHODDEF    \
     {"rollback", (PyCFunction)pysqlite_connection_rollback, METH_NOARGS, pysqlite_connection_rollback__doc__},
@@ -322,8 +412,31 @@ static PyObject *
 pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(name), &_Py_ID(narg), &_Py_ID(func), &_Py_ID(deterministic), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"name", "narg", "func", "deterministic", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "create_function", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "create_function",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *name;
@@ -396,8 +509,19 @@ static PyObject *
 create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", "", "", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "create_window_function", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "create_window_function",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     const char *name;
     int num_params;
@@ -452,8 +576,31 @@ static PyObject *
 pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(name), &_Py_ID(n_arg), &_Py_ID(aggregate_class), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"name", "n_arg", "aggregate_class", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "create_aggregate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "create_aggregate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     const char *name;
     int n_arg;
@@ -505,8 +652,31 @@ static PyObject *
 pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(authorizer_callback), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"authorizer_callback", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_authorizer", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_authorizer",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *callable;
 
@@ -539,8 +709,31 @@ static PyObject *
 pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(progress_handler), &_Py_ID(n), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"progress_handler", "n", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_progress_handler", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_progress_handler",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject *callable;
     int n;
@@ -578,8 +771,31 @@ static PyObject *
 pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(trace_callback), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"trace_callback", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_trace_callback", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_trace_callback",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *callable;
 
@@ -615,8 +831,8 @@ pysqlite_connection_enable_load_extension(pysqlite_Connection *self, PyObject *a
     PyObject *return_value = NULL;
     int onoff;
 
-    onoff = _PyLong_AsInt(arg);
-    if (onoff == -1 && PyErr_Occurred()) {
+    onoff = PyObject_IsTrue(arg);
+    if (onoff < 0) {
         goto exit;
     }
     return_value = pysqlite_connection_enable_load_extension_impl(self, onoff);
@@ -814,8 +1030,31 @@ static PyObject *
 pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(target), &_Py_ID(pages), &_Py_ID(progress), &_Py_ID(name), &_Py_ID(sleep), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "backup", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "backup",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     pysqlite_Connection *target;
@@ -905,8 +1144,19 @@ static PyObject *
 pysqlite_connection_create_collation(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "create_collation", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "create_collation",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     const char *name;
     PyObject *callable;
@@ -961,8 +1211,31 @@ static PyObject *
 serialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(name), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "serialize", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "serialize",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *name = "main";
@@ -1027,8 +1300,31 @@ static PyObject *
 deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(name), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "deserialize", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "deserialize",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
@@ -1236,4 +1532,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=d21767843c480a10 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f10306e10427488b input=a9049054013a1b77]*/

@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(cmath_acos__doc__,
 "acos($module, z, /)\n"
 "--\n"
@@ -633,12 +639,13 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_log__doc__,
-"log($module, z, base=<unrepresentable>, /)\n"
+"log($module, z, base=None, /)\n"
 "--\n"
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
-"If the base not specified, returns the natural logarithm (base e) of z.");
+"If the base is not specified or is None, returns the\n"
+"natural logarithm (base e) of z.");
 
 #define CMATH_LOG_METHODDEF    \
     {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL, cmath_log__doc__},
@@ -651,7 +658,7 @@ cmath_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_complex x;
-    PyObject *y_obj = NULL;
+    PyObject *y_obj = Py_None;
 
     if (!_PyArg_CheckPositional("log", nargs, 1, 2)) {
         goto exit;
@@ -893,8 +900,31 @@ static PyObject *
 cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "isclose", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "isclose",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     Py_complex a;
@@ -953,4 +983,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b8e445fcd2a3da65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2630f8740909a8f7 input=a9049054013a1b77]*/

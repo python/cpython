@@ -1,1 +1,0 @@
-Remove deprecated ``SO`` config variable in :mod:`sysconfig`.

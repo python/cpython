@@ -1,2 +1,0 @@
-Fix initialization of :envvar:`PYTHONREGRTEST_UNICODE_GUARD` which prevented
-running regression tests on non-UTF-8 locale.

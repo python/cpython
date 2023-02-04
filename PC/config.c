@@ -37,6 +37,7 @@ extern PyObject* PyInit__weakref(void);
 /* XXX: These two should really be extracted to standalone extensions. */
 extern PyObject* PyInit_xxsubtype(void);
 extern PyObject* PyInit__xxsubinterpreters(void);
+extern PyObject* PyInit__xxinterpchannels(void);
 extern PyObject* PyInit__random(void);
 extern PyObject* PyInit_itertools(void);
 extern PyObject* PyInit__collections(void);
@@ -134,6 +135,7 @@ struct _inittab _PyImport_Inittab[] = {
 
     {"xxsubtype", PyInit_xxsubtype},
     {"_xxsubinterpreters", PyInit__xxsubinterpreters},
+    {"_xxinterpchannels", PyInit__xxinterpchannels},
 #ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},
 #endif

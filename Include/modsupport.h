@@ -37,8 +37,6 @@ PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 
 
-#define ANY_VARARGS(n) (n == PY_SSIZE_T_MAX)
-
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
 // Add an attribute with name 'name' and value 'obj' to the module 'mod.
@@ -58,8 +56,8 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
 PyAPI_FUNC(int) PyModule_AddType(PyObject *module, PyTypeObject *type);
 #endif /* Py_LIMITED_API */
 
-#define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
-#define PyModule_AddStringMacro(m, c) PyModule_AddStringConstant(m, #c, c)
+#define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant((m), #c, (c))
+#define PyModule_AddStringMacro(m, c) PyModule_AddStringConstant((m), #c, (c))
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* New in 3.5 */
@@ -134,10 +132,10 @@ PyAPI_FUNC(PyObject *) PyModule_Create2(PyModuleDef*, int apiver);
 
 #ifdef Py_LIMITED_API
 #define PyModule_Create(module) \
-        PyModule_Create2(module, PYTHON_ABI_VERSION)
+        PyModule_Create2((module), PYTHON_ABI_VERSION)
 #else
 #define PyModule_Create(module) \
-        PyModule_Create2(module, PYTHON_API_VERSION)
+        PyModule_Create2((module), PYTHON_API_VERSION)
 #endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
@@ -148,10 +146,10 @@ PyAPI_FUNC(PyObject *) PyModule_FromDefAndSpec2(PyModuleDef *def,
 
 #ifdef Py_LIMITED_API
 #define PyModule_FromDefAndSpec(module, spec) \
-    PyModule_FromDefAndSpec2(module, spec, PYTHON_ABI_VERSION)
+    PyModule_FromDefAndSpec2((module), (spec), PYTHON_ABI_VERSION)
 #else
 #define PyModule_FromDefAndSpec(module, spec) \
-    PyModule_FromDefAndSpec2(module, spec, PYTHON_API_VERSION)
+    PyModule_FromDefAndSpec2((module), (spec), PYTHON_API_VERSION)
 #endif /* Py_LIMITED_API */
 
 #endif /* New in 3.5 */

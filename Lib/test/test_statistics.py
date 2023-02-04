@@ -1742,6 +1742,12 @@ class TestMedianGrouped(TestMedian):
                 data = [x]*count
                 self.assertEqual(self.func(data), float(x))
 
+    def test_single_value(self):
+        # Override method from AverageMixin.
+        # Average of a single value is the value as a float.
+        for x in (23, 42.5, 1.3e15, Fraction(15, 19), Decimal('0.28')):
+            self.assertEqual(self.func([x]), float(x))
+
     def test_odd_fractions(self):
         # Test median_grouped works with an odd number of Fractions.
         F = Fraction
@@ -2559,6 +2565,22 @@ class TestCorrelationAndCovariance(unittest.TestCase):
         self.assertAlmostEqual(statistics.covariance(x, y), 0.1)
 
 
+    def test_correlation_spearman(self):
+        # https://statistics.laerd.com/statistical-guides/spearmans-rank-order-correlation-statistical-guide-2.php
+        # Compare with:
+        #     >>> import scipy.stats.mstats
+        #     >>> scipy.stats.mstats.spearmanr(reading, mathematics)
+        #     SpearmanrResult(correlation=0.6686960980480712, pvalue=0.03450954165178532)
+        # And Wolfram Alpha gives: 0.668696
+        #     https://www.wolframalpha.com/input?i=SpearmanRho%5B%7B56%2C+75%2C+45%2C+71%2C+61%2C+64%2C+58%2C+80%2C+76%2C+61%7D%2C+%7B66%2C+70%2C+40%2C+60%2C+65%2C+56%2C+59%2C+77%2C+67%2C+63%7D%5D
+        reading = [56, 75, 45, 71, 61, 64, 58, 80, 76, 61]
+        mathematics = [66, 70, 40, 60, 65, 56, 59, 77, 67, 63]
+        self.assertAlmostEqual(statistics.correlation(reading, mathematics, method='ranked'),
+                               0.6686960980480712)
+
+        with self.assertRaises(ValueError):
+            statistics.correlation(reading, mathematics, method='bad_method')
+
 class TestLinearRegression(unittest.TestCase):
 
     def test_constant_input_error(self):
@@ -2795,9 +2817,10 @@ class TestNormalDist:
             iq.inv_cdf(1.0)                         # p is one
         with self.assertRaises(self.module.StatisticsError):
             iq.inv_cdf(1.1)                         # p over one
-        with self.assertRaises(self.module.StatisticsError):
-            iq = NormalDist(100, 0)                 # sigma is zero
-            iq.inv_cdf(0.5)
+
+        # Supported case:
+        iq = NormalDist(100, 0)                     # sigma is zero
+        self.assertEqual(iq.inv_cdf(0.5), 100)
 
         # Special values
         self.assertTrue(math.isnan(Z.inv_cdf(float('NaN'))))
@@ -2980,14 +3003,19 @@ class TestNormalDist:
         nd = NormalDist(100, 15)
         self.assertNotEqual(nd, lnd)
 
-    def test_pickle_and_copy(self):
+    def test_copy(self):
         nd = self.module.NormalDist(37.5, 5.625)
         nd1 = copy.copy(nd)
         self.assertEqual(nd, nd1)
         nd2 = copy.deepcopy(nd)
         self.assertEqual(nd, nd2)
-        nd3 = pickle.loads(pickle.dumps(nd))
-        self.assertEqual(nd, nd3)
+
+    def test_pickle(self):
+        nd = self.module.NormalDist(37.5, 5.625)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                pickled = pickle.loads(pickle.dumps(nd, protocol=proto))
+                self.assertEqual(nd, pickled)
 
     def test_hashability(self):
         ND = self.module.NormalDist
