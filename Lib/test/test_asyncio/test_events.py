@@ -4,6 +4,7 @@ import collections.abc
 import concurrent.futures
 import functools
 import io
+import multiprocessing
 import os
 import platform
 import re
@@ -2762,7 +2763,13 @@ class GetEventLoopTestsMixin:
             support.skip_if_broken_multiprocessing_synchronize()
 
             async def main():
-                pool = concurrent.futures.ProcessPoolExecutor()
+                if multiprocessing.get_start_method() == 'fork':
+                    # Avoid 'fork' DeprecationWarning.
+                    mp_context = multiprocessing.get_context('forkserver')
+                else:
+                    mp_context = None
+                pool = concurrent.futures.ProcessPoolExecutor(
+                        mp_context=mp_context)
                 result = await self.loop.run_in_executor(
                     pool, _test_get_event_loop_new_process__sub_proc)
                 pool.shutdown()
