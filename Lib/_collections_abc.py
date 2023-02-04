@@ -609,11 +609,9 @@ class Set(Collection):
         return cls(it)
 
     def __and__(self, other):
-        if not isinstance(other, Iterable):
+        if not isinstance(other, Set):
             return NotImplemented
         return self._from_iterable(value for value in other if value in self)
-
-    __rand__ = __and__
 
     def isdisjoint(self, other):
         'Return True if two sets have a null intersection.'
@@ -623,37 +621,21 @@ class Set(Collection):
         return True
 
     def __or__(self, other):
-        if not isinstance(other, Iterable):
+        if not isinstance(other, Set):
             return NotImplemented
         chain = (e for s in (self, other) for e in s)
         return self._from_iterable(chain)
 
-    __ror__ = __or__
-
     def __sub__(self, other):
         if not isinstance(other, Set):
-            if not isinstance(other, Iterable):
-                return NotImplemented
-            other = self._from_iterable(other)
+            return NotImplemented
         return self._from_iterable(value for value in self
                                    if value not in other)
 
-    def __rsub__(self, other):
-        if not isinstance(other, Set):
-            if not isinstance(other, Iterable):
-                return NotImplemented
-            other = self._from_iterable(other)
-        return self._from_iterable(value for value in other
-                                   if value not in self)
-
     def __xor__(self, other):
         if not isinstance(other, Set):
-            if not isinstance(other, Iterable):
-                return NotImplemented
-            other = self._from_iterable(other)
+            return NotImplemented
         return (self - other) | (other - self)
-
-    __rxor__ = __xor__
 
     def _hash(self):
         """Compute the hash value of a set.
