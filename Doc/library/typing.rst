@@ -2750,8 +2750,8 @@ Functions and decorators
 
    The decorator will set the ``__override__`` attribute to ``True`` on
    the decorated object. Thus, a check like
-   ``if getattr(obj, "__final__", False)`` can be used at runtime to determine
-   whether an object ``obj`` has been marked as final.  If the decorated object
+   ``if getattr(obj, "__override__", False)`` can be used at runtime to determine
+   whether an object ``obj`` has been marked as an override.  If the decorated object
    does not support setting attributes, the decorator returns the object unchanged
    without raising an exception.
 
