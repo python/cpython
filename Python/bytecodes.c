@@ -2370,7 +2370,7 @@ dummy_func(
             CALL_NO_KW_ISINSTANCE,
             CALL_NO_KW_LIST_APPEND,
             CALL_NO_KW_METHOD_DESCRIPTOR_O,
-        //     CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS,
+            CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS,
         //     CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
         //     CALL_NO_KW_METHOD_DESCRIPTOR_FAST,
         };
@@ -2811,9 +2811,8 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-            int is_meth = is_method(stack_pointer, oparg);
+        inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (unused/1, unused/2, unused/1, method, unused, args[oparg] -- res)) {
+            int is_meth = method != NULL;
             int total_args = oparg + is_meth;
             PyMethodDescrObject *callable =
                 (PyMethodDescrObject *)PEEK(total_args + 1);
@@ -2821,15 +2820,14 @@ dummy_func(
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
             PyTypeObject *d_type = callable->d_common.d_type;
-            PyObject *self = PEEK(total_args);
+            PyObject *self = args[-is_meth];
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
-            int nargs = total_args-1;
+            int nargs = total_args - 1;
             STACK_SHRINK(nargs);
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            PyObject *res = cfunc(self, stack_pointer, nargs - KWNAMES_LEN(),
-                                  kwnames);
+            res = cfunc(self, stack_pointer, nargs - KWNAMES_LEN(), kwnames);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             kwnames = NULL;
 
@@ -2838,7 +2836,7 @@ dummy_func(
                 Py_DECREF(stack_pointer[i]);
             }
             Py_DECREF(self);
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(2 - is_meth);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -2846,6 +2844,7 @@ dummy_func(
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
+            DISPATCH();
         }
 
         // stack effect: (__0, __array[oparg] -- )

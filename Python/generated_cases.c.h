@@ -3497,7 +3497,10 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-            int is_meth = is_method(stack_pointer, oparg);
+            PyObject **args = &PEEK(oparg);
+            PyObject *method = PEEK(2 + oparg);
+            PyObject *res;
+            int is_meth = method != NULL;
             int total_args = oparg + is_meth;
             PyMethodDescrObject *callable =
                 (PyMethodDescrObject *)PEEK(total_args + 1);
@@ -3505,15 +3508,14 @@
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
             PyTypeObject *d_type = callable->d_common.d_type;
-            PyObject *self = PEEK(total_args);
+            PyObject *self = args[-is_meth];
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
-            int nargs = total_args-1;
+            int nargs = total_args - 1;
             STACK_SHRINK(nargs);
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            PyObject *res = cfunc(self, stack_pointer, nargs - KWNAMES_LEN(),
-                                  kwnames);
+            res = cfunc(self, stack_pointer, nargs - KWNAMES_LEN(), kwnames);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             kwnames = NULL;
 
@@ -3522,7 +3524,7 @@
                 Py_DECREF(stack_pointer[i]);
             }
             Py_DECREF(self);
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(2 - is_meth);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {
