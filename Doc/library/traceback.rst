@@ -20,8 +20,15 @@ The module uses traceback objects --- this is the object type that is stored in
 the :data:`sys.last_traceback` variable and returned as the third item from
 :func:`sys.exc_info`.
 
-The module defines the following functions:
+.. seealso::
 
+   Module :mod:`faulthandler`
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout, or on a user signal.
+
+   Module :mod:`pdb`
+      Interactive source code debugger for Python programs.
+
+The module defines the following functions:
 
 .. function:: print_tb(tb, limit=None, file=None)
 
