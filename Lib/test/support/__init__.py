@@ -2161,7 +2161,13 @@ def skip_if_broken_multiprocessing_synchronize():
             # bpo-38377: On Linux, creating a semaphore fails with OSError
             # if the current user does not have the permission to create
             # a file in /dev/shm/ directory.
-            synchronize.Lock(ctx=None)
+            import multiprocessing
+            synchronize.Lock(ctx=multiprocessing.get_context('fork'))
+            # The explicit fork mp context is required as relying on the
+            # default breaks TestResourceTracker.test_resource_tracker_reused
+            # when the default start method is not fork as synchronize creates
+            # a new multiprocessing.resource_tracker process at module import
+            # time via the aboe call in that scenario. This enables gh-84559.
         except OSError as exc:
             raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
 
