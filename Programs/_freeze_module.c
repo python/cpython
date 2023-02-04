@@ -2,13 +2,17 @@
    modules into frozen modules (like Lib/importlib/_bootstrap.py
    into Python/importlib.h).
 
-   This is used directly by Tools/scripts/freeze_modules.py, and indirectly by "make regen-frozen".
+   This is used directly by Tools/build/freeze_modules.py, and indirectly by "make regen-frozen".
 
    See Python/frozen.c for more info.
+
+   Keep this file in sync with Programs/_freeze_module.py.
 */
+
 
 #include <Python.h>
 #include <marshal.h>
+#include "pycore_fileutils.h"     // _Py_stat_struct
 #include <pycore_import.h>
 
 #include <stdio.h>
@@ -19,17 +23,33 @@
 #include <unistd.h>
 #endif
 
+uint32_t _Py_next_func_version = 1;
+
+/* Empty initializer for deepfrozen modules */
+int _Py_Deepfreeze_Init(void)
+{
+    return 0;
+}
+/* Empty finalizer for deepfrozen modules */
+void
+_Py_Deepfreeze_Fini(void)
+{
+}
+
 /* To avoid a circular dependency on frozen.o, we create our own structure
    of frozen modules instead, left deliberately blank so as to avoid
    unintentional import of a stale version of _frozen_importlib. */
 
-static const struct _frozen _PyImport_FrozenModules[] = {
+static const struct _frozen no_modules[] = {
     {0, 0, 0} /* sentinel */
 };
 static const struct _module_alias aliases[] = {
     {0, 0} /* sentinel */
 };
 
+const struct _frozen *_PyImport_FrozenBootstrap;
+const struct _frozen *_PyImport_FrozenStdlib;
+const struct _frozen *_PyImport_FrozenTest;
 const struct _frozen *PyImport_FrozenModules;
 const struct _module_alias *_PyImport_FrozenAliases;
 
@@ -177,6 +197,7 @@ write_frozen(const char *outpath, const char *inpath, const char *name,
 
     if (ferror(outfile)) {
         fprintf(stderr, "error when writing to '%s'\n", outpath);
+        fclose(outfile);
         return -1;
     }
     fclose(outfile);
@@ -188,7 +209,10 @@ main(int argc, char *argv[])
 {
     const char *name, *inpath, *outpath;
 
-    PyImport_FrozenModules = _PyImport_FrozenModules;
+    _PyImport_FrozenBootstrap = no_modules;
+    _PyImport_FrozenStdlib = no_modules;
+    _PyImport_FrozenTest = no_modules;
+    PyImport_FrozenModules = NULL;
     _PyImport_FrozenAliases = aliases;
 
     if (argc != 4) {
@@ -226,3 +250,4 @@ error:
     Py_Finalize();
     return 1;
 }
+

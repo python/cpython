@@ -127,13 +127,11 @@ Intermezzo: Errors and Exceptions
 
 An important convention throughout the Python interpreter is the following: when
 a function fails, it should set an exception condition and return an error value
-(usually a ``NULL`` pointer).  Exceptions are stored in a static global variable
-inside the interpreter; if this variable is ``NULL`` no exception has occurred.  A
-second global variable stores the "associated value" of the exception (the
-second argument to :keyword:`raise`).  A third variable contains the stack
-traceback in case the error originated in Python code.  These three variables
-are the C equivalents of the result in Python of :meth:`sys.exc_info` (see the
-section on module :mod:`sys` in the Python Library Reference).  It is important
+(usually ``-1`` or a ``NULL`` pointer).  Exception information is stored in
+three members of the interpreter's thread state.  These are ``NULL`` if
+there is no exception.  Otherwise they are the C equivalents of the members
+of the Python tuple returned by :meth:`sys.exc_info`.  These are the
+exception type, exception instance, and a traceback object.  It is important
 to know about them to understand how errors are passed around.
 
 The Python API defines a number of functions to set various types of exceptions.
@@ -159,16 +157,16 @@ since you should be able to tell from the return value.
 
 When a function *f* that calls another function *g* detects that the latter
 fails, *f* should itself return an error value (usually ``NULL`` or ``-1``).  It
-should *not* call one of the :c:func:`PyErr_\*` functions --- one has already
+should *not* call one of the ``PyErr_*`` functions --- one has already
 been called by *g*. *f*'s caller is then supposed to also return an error
-indication to *its* caller, again *without* calling :c:func:`PyErr_\*`, and so on
+indication to *its* caller, again *without* calling ``PyErr_*``, and so on
 --- the most detailed cause of the error was already reported by the function
 that first detected it.  Once the error reaches the Python interpreter's main
 loop, this aborts the currently executing Python code and tries to find an
 exception handler specified by the Python programmer.
 
 (There are situations where a module can actually give a more detailed error
-message by calling another :c:func:`PyErr_\*` function, and in such cases it is
+message by calling another ``PyErr_*`` function, and in such cases it is
 fine to do so.  As a general rule, however, this is not necessary, and can cause
 information about the cause of the error to be lost: most operations can fail
 for a variety of reasons.)
@@ -300,7 +298,7 @@ In this case, it will return an integer object.  (Yes, even integers are objects
 on the heap in Python!)
 
 If you have a C function that returns no useful argument (a function returning
-:c:type:`void`), the corresponding Python function must return ``None``.   You
+:c:expr:`void`), the corresponding Python function must return ``None``.   You
 need this idiom to do so (which is implemented by the :c:macro:`Py_RETURN_NONE`
 macro)::
 
@@ -1173,7 +1171,7 @@ other extension modules must be exported in a different way.
 
 Python provides a special mechanism to pass C-level information (pointers) from
 one extension module to another one: Capsules. A Capsule is a Python data type
-which stores a pointer (:c:type:`void \*`).  Capsules can only be created and
+which stores a pointer (:c:expr:`void \*`).  Capsules can only be created and
 accessed via their C API, but they can be passed around like any other Python
 object. In particular,  they can be assigned to a name in an extension module's
 namespace. Other extension modules can then import this module, retrieve the
@@ -1187,7 +1185,7 @@ different ways between the module providing the code and the client modules.
 
 Whichever method you choose, it's important to name your Capsules properly.
 The function :c:func:`PyCapsule_New` takes a name parameter
-(:c:type:`const char \*`); you're permitted to pass in a ``NULL`` name, but
+(:c:expr:`const char \*`); you're permitted to pass in a ``NULL`` name, but
 we strongly encourage you to specify a name.  Properly named Capsules provide
 a degree of runtime type-safety; there is no feasible way to tell one unnamed
 Capsule from another.
@@ -1205,7 +1203,7 @@ of certainty that the Capsule they load contains the correct C API.
 The following example demonstrates an approach that puts most of the burden on
 the writer of the exporting module, which is appropriate for commonly used
 library modules. It stores all C API pointers (just one in the example!) in an
-array of :c:type:`void` pointers which becomes the value of a Capsule. The header
+array of :c:expr:`void` pointers which becomes the value of a Capsule. The header
 file corresponding to the module provides a macro that takes care of importing
 the module and retrieving its C API pointers; client modules only have to call
 this macro before accessing the C API.

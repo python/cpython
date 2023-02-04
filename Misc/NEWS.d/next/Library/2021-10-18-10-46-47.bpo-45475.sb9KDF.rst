@@ -1,4 +1,0 @@
-Reverted optimization of iterating :class:`gzip.GzipFile`,
-:class:`bz2.BZ2File`, and :class:`lzma.LZMAFile` (see bpo-43787) because it
-caused regression when user iterate them without having reference of them.
-Patch by Inada Naoki.

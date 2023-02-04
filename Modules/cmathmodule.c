@@ -7,7 +7,8 @@
 #endif
 
 #include "Python.h"
-#include "pycore_dtoa.h"
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+#include "pycore_dtoa.h"          // _Py_dg_stdnan()
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
 #include <float.h>
@@ -89,14 +90,14 @@ else {
 
 /* Constants cmath.inf, cmath.infj, cmath.nan, cmath.nanj.
    cmath.nan and cmath.nanj are defined only when either
-   PY_NO_SHORT_FLOAT_REPR is *not* defined (which should be
+   _PY_SHORT_FLOAT_REPR is 1 (which should be
    the most common situation on machines using an IEEE 754
    representation), or Py_NAN is defined. */
 
 static double
 m_inf(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_infinity(0);
 #else
     return Py_HUGE_VAL;
@@ -112,12 +113,12 @@ c_infj(void)
     return r;
 }
 
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 m_nan(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_stdnan(0);
 #else
     return Py_NAN;
@@ -951,23 +952,24 @@ cmath_tanh_impl(PyObject *module, Py_complex z)
 cmath.log
 
     z as x: Py_complex
-    base as y_obj: object = NULL
+    base as y_obj: object = None
     /
 
 log(z[, base]) -> the logarithm of z to the given base.
 
-If the base not specified, returns the natural logarithm (base e) of z.
+If the base is not specified or is None, returns the
+natural logarithm (base e) of z.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=230ed3a71ecd000a]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=e7db51859ebf70bf]*/
 {
     Py_complex y;
 
     errno = 0;
     x = c_log(x);
-    if (y_obj != NULL) {
+    if (y_obj != Py_None) {
         y = PyComplex_AsCComplex(y_obj);
         if (PyErr_Occurred()) {
             return NULL;
@@ -1281,7 +1283,7 @@ cmath_exec(PyObject *mod)
                            PyComplex_FromCComplex(c_infj())) < 0) {
         return -1;
     }
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
     if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }

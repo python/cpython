@@ -6,7 +6,7 @@
 
 /* PyException_HEAD defines the initial segment of every exception class. */
 #define PyException_HEAD PyObject_HEAD PyObject *dict;\
-             PyObject *args; PyObject *traceback;\
+             PyObject *args; PyObject *notes; PyObject *traceback;\
              PyObject *context; PyObject *cause;\
              char suppress_context;
 
@@ -37,6 +37,7 @@ typedef struct {
     PyObject *msg;
     PyObject *name;
     PyObject *path;
+    PyObject *name_from;
 } PyImportErrorObject;
 
 typedef struct {
@@ -91,6 +92,8 @@ typedef PyOSErrorObject PyWindowsErrorObject;
 
 PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
 PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
+PyAPI_FUNC(PyObject*) _PyErr_GetHandledException(PyThreadState *);
+PyAPI_FUNC(void) _PyErr_SetHandledException(PyThreadState *, PyObject *);
 PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
 /* Context manipulation (PEP 3134) */
@@ -149,6 +152,11 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
 
+PyAPI_FUNC(PyObject *) _PyErr_ProgramDecodedTextObject(
+    PyObject *filename,
+    int lineno,
+    const char* encoding);
+
 PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
     PyObject *object,
     Py_ssize_t start,
@@ -169,4 +177,11 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFormat(
     const char *format,
     ...);
 
-#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, message)
+extern PyObject *_PyErr_SetImportErrorWithNameFrom(
+        PyObject *,
+        PyObject *,
+        PyObject *,
+        PyObject *);
+
+
+#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

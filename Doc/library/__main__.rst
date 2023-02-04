@@ -61,7 +61,7 @@ The top-level code environment can be:
 
     .. code-block:: shell-session
 
-       $ python3 helloworld.py
+       $ python helloworld.py
        Hello, world!
 
 * the Python module or package passed to the Python interpreter with the
@@ -69,14 +69,14 @@ The top-level code environment can be:
 
     .. code-block:: shell-session
 
-       $ python3 -m tarfile
+       $ python -m tarfile
        usage: tarfile.py [-h] [-v] (...)
 
 * Python code read by the Python interpreter from standard input:
 
     .. code-block:: shell-session
 
-       $ echo "import this" | python3
+       $ echo "import this" | python
        The Zen of Python, by Tim Peters
 
        Beautiful is better than ugly.
@@ -87,7 +87,7 @@ The top-level code environment can be:
 
     .. code-block:: shell-session
 
-       $ python3 -c "import this"
+       $ python -c "import this"
        The Zen of Python, by Tim Peters
 
        Beautiful is better than ugly.
@@ -116,8 +116,8 @@ Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
 Some modules contain code that is intended for script use only, like parsing
-command-line arguments or fetching data from standard input.  When a module
-like this were to be imported from a different module, for example to unit test
+command-line arguments or fetching data from standard input.  If a module
+like this was imported from a different module, for example to unit test
 it, the script code would unintentionally execute as well.
 
 This is where using the ``if __name__ == '__main__'`` code block comes in
@@ -178,7 +178,7 @@ that your function will return some value acceptable as an input to
 returned if your function does not have a return statement).
 
 By proactively following this convention ourselves, our module will have the
-same behavior when run directly (i.e. ``python3 echo.py``) as it will have if
+same behavior when run directly (i.e. ``python echo.py``) as it will have if
 we later package it as a console script entry-point in a pip-installable
 package.
 
@@ -215,7 +215,7 @@ directly from the command line using the :option:`-m` flag. For example:
 
 .. code-block:: shell-session
 
-   $ python3 -m bandclass
+   $ python -m bandclass
 
 This command will cause ``__main__.py`` to run. How you utilize this mechanism
 will depend on the nature of the package you are writing, but in this
@@ -231,7 +231,7 @@ students::
     print(f'Found student: {search_students(student_name)}')
 
 Note that ``from .student import search_students`` is an example of a relative
-import.  This import style must be used when referencing modules within a
+import.  This import style can be used when referencing modules within a
 package.  For more details, see :ref:`intra-package-references` in the
 :ref:`tut-modules` section of the tutorial.
 
@@ -253,7 +253,7 @@ attribute will include the package's path if imported::
 
 This won't work for ``__main__.py`` files in the root directory of a .zip file
 though.  Hence, for consistency, minimal ``__main__.py`` like the :mod:`venv`
-one mentioned above are preferred.
+one mentioned below are preferred.
 
 .. seealso::
 
@@ -320,7 +320,7 @@ Now, if we started our program, the result would look like this:
 
 .. code-block:: shell-session
 
-   $ python3 start.py
+   $ python start.py
    Define the variable `my_name`!
 
 The exit code of the program would be 1, indicating an error. Uncommenting the
@@ -329,7 +329,7 @@ status code 0, indicating success:
 
 .. code-block:: shell-session
 
-   $ python3 start.py
+   $ python start.py
    Dinsdale found in file /path/to/start.py
 
 Note that importing ``__main__`` doesn't cause any issues with unintentionally

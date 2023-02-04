@@ -5,6 +5,8 @@ if __name__ != 'test.support':
 
 import contextlib
 import functools
+import getpass
+import opcode
 import os
 import re
 import stat
@@ -35,16 +37,20 @@ __all__ = [
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
-    "BasicTestRunner", "run_unittest", "run_doctest",
+    "run_unittest", "run_doctest",
     "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
+    "has_fork_support", "requires_fork",
+    "has_subprocess_support", "requires_subprocess",
+    "has_socket_support", "requires_working_socket",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
-    "check_disallow_instantiation",
+    "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
+    "requires_limited_api", "requires_specialization",
     # sys
-    "is_jython", "is_android", "check_impl_detail", "unix_shell",
-    "setswitchinterval",
+    "is_jython", "is_android", "is_emscripten", "is_wasi",
+    "check_impl_detail", "unix_shell", "setswitchinterval",
     # network
     "open_urlresource",
     # processes
@@ -55,6 +61,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
+    "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT",
     ]
 
 
@@ -195,6 +202,11 @@ def get_original_stdout():
 def _force_run(path, func, *args):
     try:
         return func(*args)
+    except FileNotFoundError as err:
+        # chmod() won't fix a missing file.
+        if verbose >= 2:
+            print('%s: %s' % (err.__class__.__name__, err))
+        raise
     except OSError as err:
         if verbose >= 2:
             print('%s: %s' % (err.__class__.__name__, err))
@@ -295,6 +307,8 @@ def requires(resource, msg=None):
         if msg is None:
             msg = "Use of the %r resource not enabled" % resource
         raise ResourceDenied(msg)
+    if resource in {"network", "urlfetch"} and not has_socket_support:
+        raise ResourceDenied("No socket support")
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
@@ -372,6 +386,52 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
+def skip_if_buildbot(reason=None):
+    """Decorator raising SkipTest if running on a buildbot."""
+    if not reason:
+        reason = 'not suitable for buildbots'
+    try:
+        isbuildbot = getpass.getuser().lower() == 'buildbot'
+    except (KeyError, EnvironmentError) as err:
+        warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
+        isbuildbot = False
+    return unittest.skipIf(isbuildbot, reason)
+
+def check_sanitizer(*, address=False, memory=False, ub=False):
+    """Returns True if Python is compiled with sanitizer support"""
+    if not (address or memory or ub):
+        raise ValueError('At least one of address, memory, or ub must be True')
+
+
+    _cflags = sysconfig.get_config_var('CFLAGS') or ''
+    _config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+    memory_sanitizer = (
+        '-fsanitize=memory' in _cflags or
+        '--with-memory-sanitizer' in _config_args
+    )
+    address_sanitizer = (
+        '-fsanitize=address' in _cflags or
+        '--with-memory-sanitizer' in _config_args
+    )
+    ub_sanitizer = (
+        '-fsanitize=undefined' in _cflags or
+        '--with-undefined-behavior-sanitizer' in _config_args
+    )
+    return (
+        (memory and memory_sanitizer) or
+        (address and address_sanitizer) or
+        (ub and ub_sanitizer)
+    )
+
+
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
+    """Decorator raising SkipTest if running with a sanitizer active."""
+    if not reason:
+        reason = 'not working with sanitizers active'
+    skip = check_sanitizer(address=address, memory=memory, ub=ub)
+    return unittest.skipIf(skip, reason)
+
+
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
     @functools.wraps(f)
@@ -433,9 +493,12 @@ def requires_lzma(reason='requires lzma'):
     return unittest.skipUnless(lzma, reason)
 
 def has_no_debug_ranges():
-    import _testinternalcapi
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("_testinternalcapi required")
     config = _testinternalcapi.get_config()
-    return bool(config['no_debug_ranges'])
+    return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
@@ -443,6 +506,7 @@ def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
 requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
                         'requires legacy Unicode C API')
 
+# Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
@@ -451,6 +515,46 @@ if sys.platform not in ('win32', 'vxworks'):
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
+
+# wasm32-emscripten and -wasi are POSIX-like but do not
+# have subprocess or fork support.
+is_emscripten = sys.platform == "emscripten"
+is_wasi = sys.platform == "wasi"
+
+has_fork_support = hasattr(os, "fork") and not is_emscripten and not is_wasi
+
+def requires_fork():
+    return unittest.skipUnless(has_fork_support, "requires working os.fork()")
+
+has_subprocess_support = not is_emscripten and not is_wasi
+
+def requires_subprocess():
+    """Used for subprocess, os.spawn calls, fd inheritance"""
+    return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
+
+# Emscripten's socket emulation and WASI sockets have limitations.
+has_socket_support = not is_emscripten and not is_wasi
+
+def requires_working_socket(*, module=False):
+    """Skip tests or modules that require working sockets
+
+    Can be used as a function/class decorator or to skip an entire module.
+    """
+    msg = "requires socket support"
+    if module:
+        if not has_socket_support:
+            raise unittest.SkipTest(msg)
+    else:
+        return unittest.skipUnless(has_socket_support, msg)
+
+# Does strftime() support glibc extension like '%4Y'?
+has_strftime_extensions = False
+if sys.platform != "win32":
+    # bpo-47037: Windows debug builds crash with "Debug Assertion Failed"
+    try:
+        has_strftime_extensions = time.strftime("%4Y") != "%4Y"
+    except ValueError:
+        pass
 
 # Define the URL of a dedicated HTTP server for the network tests.
 # The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
@@ -478,7 +582,8 @@ def darwin_malloc_err_warning(test_name):
     msg = ' NOTICE '
     detail = (f'{test_name} may generate "malloc can\'t allocate region"\n'
               'warnings on macOS systems. This behavior is known. Do not\n'
-              'report a bug unless tests are also failing. See bpo-40928.')
+              'report a bug unless tests are also failing.\n'
+              'See https://github.com/python/cpython/issues/85100')
 
     padding, _ = shutil.get_terminal_size()
     print(msg.center(padding, '-'))
@@ -634,8 +739,6 @@ def gc_collect():
     """
     import gc
     gc.collect()
-    if is_jython:
-        time.sleep(0.1)
     gc.collect()
     gc.collect()
 
@@ -681,7 +784,10 @@ _TPFLAGS_HAVE_GC = 1<<14
 _TPFLAGS_HEAPTYPE = 1<<9
 
 def check_sizeof(test, o, size):
-    import _testinternalcapi
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("_testinternalcapi required")
     result = sys.getsizeof(o)
     # add GC header size
     if ((type(o) == type) and (o.__flags__ & _TPFLAGS_HEAPTYPE) or\
@@ -697,29 +803,29 @@ def check_sizeof(test, o, size):
 
 @contextlib.contextmanager
 def run_with_locale(catstr, *locales):
+    try:
+        import locale
+        category = getattr(locale, catstr)
+        orig_locale = locale.setlocale(category)
+    except AttributeError:
+        # if the test author gives us an invalid category string
+        raise
+    except:
+        # cannot retrieve original locale, so do nothing
+        locale = orig_locale = None
+    else:
+        for loc in locales:
             try:
-                import locale
-                category = getattr(locale, catstr)
-                orig_locale = locale.setlocale(category)
-            except AttributeError:
-                # if the test author gives us an invalid category string
-                raise
+                locale.setlocale(category, loc)
+                break
             except:
-                # cannot retrieve original locale, so do nothing
-                locale = orig_locale = None
-            else:
-                for loc in locales:
-                    try:
-                        locale.setlocale(category, loc)
-                        break
-                    except:
-                        pass
+                pass
 
-            try:
-                yield
-            finally:
-                if locale and orig_locale:
-                    locale.setlocale(category, orig_locale)
+    try:
+        yield
+    finally:
+        if locale and orig_locale:
+            locale.setlocale(category, orig_locale)
 
 #=======================================================================
 # Decorator for running a function in a specific timezone, correctly
@@ -887,12 +993,6 @@ def bigaddrspacetest(f):
 #=======================================================================
 # unittest integration.
 
-class BasicTestRunner:
-    def run(self, test):
-        result = unittest.TestResult()
-        test(result)
-        return result
-
 def _id(obj):
     return obj
 
@@ -970,6 +1070,18 @@ def refcount_test(test):
     """
     return no_tracing(cpython_only(test))
 
+
+def requires_limited_api(test):
+    try:
+        import _testcapi
+    except ImportError:
+        return unittest.skip('needs _testcapi module')(test)
+    return unittest.skipUnless(
+        _testcapi.LIMITED_API_AVAILABLE, 'needs Limited API support')(test)
+
+def requires_specialization(test):
+    return unittest.skipUnless(
+        opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 def _filter_suite(suite, pred):
     """Recursively filter test cases in a suite based on a predicate."""
@@ -1206,6 +1318,8 @@ def reap_children():
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
+    elif not has_subprocess_support:
+        return
 
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
@@ -1347,7 +1461,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
-                locale.getdefaultlocale()[1]  == 'cp65001' and
+                locale.getencoding() == 'cp65001' and
                 time.localtime().tm_zone == ''):
             _buggy_ucrt = True
         else:
@@ -1367,9 +1481,6 @@ class PythonSymlink:
         self._env = None
 
         self._platform_specific()
-
-    def _platform_specific(self):
-        pass
 
     if sys.platform == "win32":
         def _platform_specific(self):
@@ -1396,8 +1507,11 @@ class PythonSymlink:
 
             self._env = {k.upper(): os.getenv(k) for k in os.environ}
             self._env["PYTHONHOME"] = os.path.dirname(self.real)
-            if sysconfig.is_python_build(True):
+            if sysconfig.is_python_build():
                 self._env["PYTHONPATH"] = STDLIB_DIR
+    else:
+        def _platform_specific(self):
+            pass
 
     def __enter__(self):
         os.symlink(self.real, self.link)
@@ -1668,11 +1782,37 @@ def patch(test_instance, object_to_patch, attr_name, new_value):
     setattr(object_to_patch, attr_name, new_value)
 
 
+@contextlib.contextmanager
+def patch_list(orig):
+    """Like unittest.mock.patch.dict, but for lists."""
+    try:
+        saved = orig[:]
+        yield
+    finally:
+        orig[:] = saved
+
+
 def run_in_subinterp(code):
     """
     Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
     module is enabled.
     """
+    _check_tracemalloc()
+    import _testcapi
+    return _testcapi.run_in_subinterp(code)
+
+
+def run_in_subinterp_with_config(code, **config):
+    """
+    Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
+    module is enabled.
+    """
+    _check_tracemalloc()
+    import _testcapi
+    return _testcapi.run_in_subinterp_with_config(code, **config)
+
+
+def _check_tracemalloc():
     # Issue #10915, #15751: PyGILState_*() functions don't work with
     # sub-interpreters, the tracemalloc module uses these functions internally
     try:
@@ -1684,8 +1824,6 @@ def run_in_subinterp(code):
             raise unittest.SkipTest("run_in_subinterp() cannot be used "
                                      "if tracemalloc module is tracing "
                                      "memory allocations")
-    import _testcapi
-    return _testcapi.run_in_subinterp(code)
 
 
 def check_free_after_iterating(test, iter, cls, args=()):
@@ -1963,7 +2101,7 @@ def wait_process(pid, *, exitcode, timeout=None):
 
     Raise an AssertionError if the process exit code is not equal to exitcode.
 
-    If the process runs longer than timeout seconds (SHORT_TIMEOUT by default),
+    If the process runs longer than timeout seconds (LONG_TIMEOUT by default),
     kill the process (if signal.SIGKILL is available) and raise an
     AssertionError. The timeout feature is not available on Windows.
     """
@@ -1971,32 +2109,27 @@ def wait_process(pid, *, exitcode, timeout=None):
         import signal
 
         if timeout is None:
-            timeout = SHORT_TIMEOUT
-        t0 = time.monotonic()
-        sleep = 0.001
-        max_sleep = 0.1
-        while True:
+            timeout = LONG_TIMEOUT
+
+        start_time = time.monotonic()
+        for _ in sleeping_retry(timeout, error=False):
             pid2, status = os.waitpid(pid, os.WNOHANG)
             if pid2 != 0:
                 break
-            # process is still running
+            # rety: the process is still running
+        else:
+            try:
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+            except OSError:
+                # Ignore errors like ChildProcessError or PermissionError
+                pass
 
-            dt = time.monotonic() - t0
-            if dt > SHORT_TIMEOUT:
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                    os.waitpid(pid, 0)
-                except OSError:
-                    # Ignore errors like ChildProcessError or PermissionError
-                    pass
-
-                raise AssertionError(f"process {pid} is still running "
-                                     f"after {dt:.1f} seconds")
-
-            sleep = min(sleep * 2, max_sleep)
-            time.sleep(sleep)
+            dt = time.monotonic() - start_time
+            raise AssertionError(f"process {pid} is still running "
+                                 f"after {dt:.1f} seconds")
     else:
-        # Windows implementation
+        # Windows implementation: don't support timeout :-(
         pid2, status = os.waitpid(pid, 0)
 
     exitcode2 = os.waitstatus_to_exitcode(status)
@@ -2049,19 +2182,23 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
 
 @contextlib.contextmanager
+def set_recursion_limit(limit):
+    """Temporarily change the recursion limit."""
+    original_limit = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(limit)
+        yield
+    finally:
+        sys.setrecursionlimit(original_limit)
+
 def infinite_recursion(max_depth=75):
     """Set a lower limit for tests that interact with infinite recursions
     (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
     debug windows builds, due to not enough functions being inlined the
     stack size might not handle the default recursion limit (1000). See
     bpo-11105 for details."""
+    return set_recursion_limit(max_depth)
 
-    original_depth = sys.getrecursionlimit()
-    try:
-        sys.setrecursionlimit(max_depth)
-        yield
-    finally:
-        sys.setrecursionlimit(original_depth)
 
 def ignore_deprecations_from(module: str, *, like: str) -> object:
     token = object()
@@ -2091,3 +2228,152 @@ def clear_ignored_deprecations(*tokens: object) -> None:
     if warnings.filters != new_filters:
         warnings.filters[:] = new_filters
         warnings._filters_mutated()
+
+
+# Skip a test if venv with pip is known to not work.
+def requires_venv_with_pip():
+    # ensurepip requires zlib to open ZIP archives (.whl binary wheel packages)
+    try:
+        import zlib
+    except ImportError:
+        return unittest.skipIf(True, "venv: ensurepip requires zlib")
+
+    # bpo-26610: pip/pep425tags.py requires ctypes.
+    # gh-92820: setuptools/windows_support.py uses ctypes (setuptools 58.1).
+    try:
+        import ctypes
+    except ImportError:
+        ctypes = None
+    return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
+
+
+# True if Python is built with the Py_DEBUG macro defined: if
+# Python is built in debug mode (./configure --with-pydebug).
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+
+
+def late_deletion(obj):
+    """
+    Keep a Python alive as long as possible.
+
+    Create a reference cycle and store the cycle in an object deleted late in
+    Python finalization. Try to keep the object alive until the very last
+    garbage collection.
+
+    The function keeps a strong reference by design. It should be called in a
+    subprocess to not mark a test as "leaking a reference".
+    """
+
+    # Late CPython finalization:
+    # - finalize_interp_clear()
+    # - _PyInterpreterState_Clear(): Clear PyInterpreterState members
+    #   (ex: codec_search_path, before_forkers)
+    # - clear os.register_at_fork() callbacks
+    # - clear codecs.register() callbacks
+
+    ref_cycle = [obj]
+    ref_cycle.append(ref_cycle)
+
+    # Store a reference in PyInterpreterState.codec_search_path
+    import codecs
+    def search_func(encoding):
+        return None
+    search_func.reference = ref_cycle
+    codecs.register(search_func)
+
+    if hasattr(os, 'register_at_fork'):
+        # Store a reference in PyInterpreterState.before_forkers
+        def atfork_func():
+            pass
+        atfork_func.reference = ref_cycle
+        os.register_at_fork(before=atfork_func)
+
+
+def busy_retry(timeout, err_msg=None, /, *, error=True):
+    """
+    Run the loop body until "break" stops the loop.
+
+    After *timeout* seconds, raise an AssertionError if *error* is true,
+    or just stop if *error is false.
+
+    Example:
+
+        for _ in support.busy_retry(support.SHORT_TIMEOUT):
+            if check():
+                break
+
+    Example of error=False usage:
+
+        for _ in support.busy_retry(support.SHORT_TIMEOUT, error=False):
+            if check():
+                break
+        else:
+            raise RuntimeError('my custom error')
+
+    """
+    if timeout <= 0:
+        raise ValueError("timeout must be greater than zero")
+
+    start_time = time.monotonic()
+    deadline = start_time + timeout
+
+    while True:
+        yield
+
+        if time.monotonic() >= deadline:
+            break
+
+    if error:
+        dt = time.monotonic() - start_time
+        msg = f"timeout ({dt:.1f} seconds)"
+        if err_msg:
+            msg = f"{msg}: {err_msg}"
+        raise AssertionError(msg)
+
+
+def sleeping_retry(timeout, err_msg=None, /,
+                     *, init_delay=0.010, max_delay=1.0, error=True):
+    """
+    Wait strategy that applies exponential backoff.
+
+    Run the loop body until "break" stops the loop. Sleep at each loop
+    iteration, but not at the first iteration. The sleep delay is doubled at
+    each iteration (up to *max_delay* seconds).
+
+    See busy_retry() documentation for the parameters usage.
+
+    Example raising an exception after SHORT_TIMEOUT seconds:
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if check():
+                break
+
+    Example of error=False usage:
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+            if check():
+                break
+        else:
+            raise RuntimeError('my custom error')
+    """
+
+    delay = init_delay
+    for _ in busy_retry(timeout, err_msg, error=error):
+        yield
+
+        time.sleep(delay)
+        delay = min(delay * 2, max_delay)
+
+
+@contextlib.contextmanager
+def adjust_int_max_str_digits(max_digits):
+    """Temporarily change the integer string conversion length limit."""
+    current = sys.get_int_max_str_digits()
+    try:
+        sys.set_int_max_str_digits(max_digits)
+        yield
+    finally:
+        sys.set_int_max_str_digits(current)
+
+#For recursion tests, easily exceeds default recursion limit
+EXCEEDS_RECURSION_LIMIT = 5000

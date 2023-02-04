@@ -1,5 +1,4 @@
-from .. import abc
-from .. import util
+from test.test_importlib import abc, util
 
 importlib = util.import_importlib('importlib')
 importlib_abc = util.import_importlib('importlib.abc')
@@ -52,7 +51,6 @@ class SimpleTest(abc.LoaderTests):
             def get_code(self, _): pass
             def get_source(self, _): pass
             def is_package(self, _): pass
-            def module_repr(self, _): pass
 
         path = 'some_path'
         name = 'some_name'

@@ -27,11 +27,11 @@ can be used to compare three different expressions:
 
 .. code-block:: shell-session
 
-   $ python3 -m timeit '"-".join(str(n) for n in range(100))'
+   $ python -m timeit '"-".join(str(n) for n in range(100))'
    10000 loops, best of 5: 30.2 usec per loop
-   $ python3 -m timeit '"-".join([str(n) for n in range(100)])'
+   $ python -m timeit '"-".join([str(n) for n in range(100)])'
    10000 loops, best of 5: 27.5 usec per loop
-   $ python3 -m timeit '"-".join(map(str, range(100)))'
+   $ python -m timeit '"-".join(map(str, range(100)))'
    10000 loops, best of 5: 23.2 usec per loop
 
 This can be achieved from the :ref:`python-interface` with::
@@ -281,6 +281,13 @@ It is possible to provide a setup statement that is executed only once at the be
    5000000 loops, best of 5: 0.0877 usec per loop
    $ python -m timeit -s 'text = "sample string"; char = "g"'  'text.find(char)'
    1000000 loops, best of 5: 0.342 usec per loop
+
+In the output, there are three fields. The loop count, which tells you how many
+times the statement body was run per timing loop repetition. The repetition
+count ('best of 5') which tells you how many times the timing loop was
+repeated, and finally the time the statement body took on average within the
+best repetition of the timing loop. That is, the time the fastest repetition
+took divided by the loop count.
 
 ::
 
