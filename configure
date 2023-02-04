@@ -752,6 +752,8 @@ MODULE__MULTIPROCESSING_FALSE
 MODULE__MULTIPROCESSING_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
+MODULE__XXINTERPCHANNELS_FALSE
+MODULE__XXINTERPCHANNELS_TRUE
 MODULE__XXSUBINTERPRETERS_FALSE
 MODULE__XXSUBINTERPRETERS_TRUE
 MODULE__TYPING_FALSE
@@ -28255,6 +28257,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__XXINTERPCHANNELS_TRUE}" && test -z "${MODULE__XXINTERPCHANNELS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__XXINTERPCHANNELS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
