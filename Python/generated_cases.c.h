@@ -3197,29 +3197,35 @@
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
-            int is_meth = is_method(stack_pointer, oparg);
-            int total_args = oparg + is_meth;
+            PyObject **args = &PEEK(oparg);
+            PyObject *callable = PEEK(1 + oparg);
+            PyObject *method = PEEK(2 + oparg);
+            PyObject *res;
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                total_args++;
+            }
             int kwnames_len = KWNAMES_LEN();
-            PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(!PyType_Check(callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
-            STACK_SHRINK(total_args);
-            PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer,
-                                              total_args-kwnames_len, kwnames);
+            res = tp->tp_vectorcall((PyObject *)tp, args,
+                                    total_args - kwnames_len, kwnames);
             kwnames = NULL;
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(stack_pointer[i]);
+                Py_DECREF(args[i]);
             }
             Py_DECREF(tp);
-            STACK_SHRINK(1-is_meth);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            POKE(1, res);
+            JUMPBY(4);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }

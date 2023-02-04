@@ -2362,7 +2362,7 @@ dummy_func(
             CALL_NO_KW_TYPE_1,
             CALL_NO_KW_STR_1,
             CALL_NO_KW_TUPLE_1,
-        //     CALL_BUILTIN_CLASS,
+            CALL_BUILTIN_CLASS,
         //     CALL_NO_KW_BUILTIN_O,
         //     CALL_NO_KW_BUILTIN_FAST,
         //     CALL_BUILTIN_FAST_WITH_KEYWORDS,
@@ -2576,31 +2576,28 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_BUILTIN_CLASS) {
-            int is_meth = is_method(stack_pointer, oparg);
-            int total_args = oparg + is_meth;
+        inst(CALL_BUILTIN_CLASS, (unused/1, unused/2, unused/1, method, callable, args[oparg] -- res)) {
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                total_args++;
+            }
             int kwnames_len = KWNAMES_LEN();
-            PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(!PyType_Check(callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
-            STACK_SHRINK(total_args);
-            PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer,
-                                              total_args-kwnames_len, kwnames);
+            res = tp->tp_vectorcall((PyObject *)tp, args,
+                                    total_args - kwnames_len, kwnames);
             kwnames = NULL;
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(stack_pointer[i]);
+                Py_DECREF(args[i]);
             }
             Py_DECREF(tp);
-            STACK_SHRINK(1-is_meth);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
         }
 
