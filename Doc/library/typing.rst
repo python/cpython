@@ -2732,6 +2732,8 @@ Functions and decorators
    This helps prevent bugs that may occur when a base class is changed without
    an equivalent change to a child class.
 
+   For example::
+
       class Base:
            def log_status(self)
 
