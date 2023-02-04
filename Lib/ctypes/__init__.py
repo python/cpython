@@ -346,7 +346,6 @@ class CDLL(object):
                  winmode=None):
         if name:
             name = _os.fspath(name)
-        self._name = name
         flags = self._func_flags_
         if use_errno:
             flags |= _FUNCFLAG_USE_ERRNO
@@ -379,6 +378,8 @@ class CDLL(object):
             self._handle = _dlopen(name, mode)
         else:
             self._handle = handle
+
+        self._name = name
 
     def __repr__(self):
         return "<%s '%s', handle %x at %#x>" % \
