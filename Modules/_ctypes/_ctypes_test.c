@@ -1032,6 +1032,12 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 #endif
 
+EXPORT(int)
+_testfunc_pylist_append(PyObject *list, PyObject *item)
+{
+    return PyList_Append(list, item);
+}
+
 static struct PyModuleDef_Slot _ctypes_test_slots[] = {
     {0, NULL}
 };
