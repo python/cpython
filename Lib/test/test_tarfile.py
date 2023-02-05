@@ -228,7 +228,6 @@ class UstarReadTest(ReadTest, unittest.TestCase):
     def add_dir_and_getmember(self, name):
         with os_helper.temp_cwd():
             with tarfile.open(tmpname, 'w') as tar:
-                tar.format = tarfile.USTAR_FORMAT
                 try:
                     os.mkdir(name)
                     tar.add(name)
