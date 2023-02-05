@@ -1,0 +1,3 @@
+Record the (virtual) exception block depth in the oparg of
+:opcode:`YIELD_VALUE`. Use this to avoid the expensive ``throw()`` when
+closing generators (and coroutines) that can be closed trivially.

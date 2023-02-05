@@ -84,7 +84,7 @@ get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
     if (v == NULL) goto error;
 
     r = PyDict_SetItemString(result, "exclude_simple", v);
-    Py_DECREF(v); v = NULL;
+    Py_SETREF(v, NULL);
     if (r == -1) goto error;
 
     anArray = CFDictionaryGetValue(proxyDict,

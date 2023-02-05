@@ -16,7 +16,7 @@ files see :func:`open`, and for accessing the filesystem see the :mod:`os`
 module. The path parameters can be passed as strings, or bytes, or any object
 implementing the :class:`os.PathLike` protocol.
 
-Unlike a unix shell, Python does not do any *automatic* path expansions.
+Unlike a Unix shell, Python does not do any *automatic* path expansions.
 Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
 explicitly when an application desires shell-like path expansion.  (See also
 the :mod:`glob` module.)
@@ -266,6 +266,15 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: isjunction(path)
+
+   Return ``True`` if *path* refers to an :func:`existing <lexists>` directory
+   entry that is a junction.  Always return ``False`` if junctions are not
+   supported on the current platform.
+
+   .. versionadded:: 3.12
+
+
 .. function:: islink(path)
 
    Return ``True`` if *path* refers to an :func:`existing <exists>` directory
@@ -297,17 +306,18 @@ the :mod:`glob` module.)
 
 .. function:: join(path, *paths)
 
-   Join one or more path components intelligently.  The return value is the
-   concatenation of *path* and any members of *\*paths* with exactly one
-   directory separator following each non-empty part except the last, meaning
-   that the result will only end in a separator if the last part is empty.  If
-   a component is an absolute path, all previous components are thrown away
-   and joining continues from the absolute path component.
+   Join one or more path segments intelligently.  The return value is the
+   concatenation of *path* and all members of *\*paths*, with exactly one
+   directory separator following each non-empty part, except the last. That is,
+   the result will only end in a separator if the last part is either empty or
+   ends in a separator. If a segment is an absolute path (which on Windows
+   requires both a drive and a root), then all previous segments are ignored and
+   joining continues from the absolute path segment.
 
-   On Windows, the drive letter is not reset when an absolute path component
-   (e.g., ``r'\foo'``) is encountered.  If a component contains a drive
-   letter, all previous components are thrown away and the drive letter is
-   reset.  Note that since there is a current directory for each drive,
+   On Windows, the drive is not reset when a rooted path segment (e.g.,
+   ``r'\foo'``) is encountered. If a segment is on a different drive or is an
+   absolute path, all previous segments are ignored and the drive is reset. Note
+   that since there is a current directory for each drive,
    ``os.path.join("c:", "foo")`` represents a path relative to the current
    directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
 
@@ -476,6 +486,39 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+
+.. function:: splitroot(path)
+
+   Split the pathname *path* into a 3-item tuple ``(drive, root, tail)`` where
+   *drive* is a device name or mount point, *root* is a string of separators
+   after the drive, and *tail* is everything after the root. Any of these
+   items may be the empty string. In all cases, ``drive + root + tail`` will
+   be the same as *path*.
+
+   On POSIX systems, *drive* is always empty. The *root* may be empty (if *path* is
+   relative), a single forward slash (if *path* is absolute), or two forward slashes
+   (implementation-defined per `IEEE Std 1003.1-2017; 4.13 Pathname Resolution
+   <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_.)
+   For example::
+
+      >>> splitroot('/home/sam')
+      ('', '/', 'home/sam')
+      >>> splitroot('//home/sam')
+      ('', '//', 'home/sam')
+      >>> splitroot('///home/sam')
+      ('', '/', '//home/sam')
+
+   On Windows, *drive* may be empty, a drive-letter name, a UNC share, or a device
+   name. The *root* may be empty, a forward slash, or a backward slash. For
+   example::
+
+      >>> splitroot('C:/Users/Sam')
+      ('C:', '/', 'Users/Sam')
+      >>> splitroot('//Server/Share/Users/Sam')
+      ('//Server/Share', '/', 'Users/Sam')
+
+   .. versionadded:: 3.12
 
 
 .. function:: splitext(path)

@@ -152,7 +152,7 @@ And::
 
    All threads enqueued to ``ThreadPoolExecutor`` will be joined before the
    interpreter can exit. Note that the exit handler which does this is
-   executed *before* any exit handlers added using `atexit`. This means
+   executed *before* any exit handlers added using ``atexit``. This means
    exceptions in the main thread must be caught and handled in order to
    signal threads to exit gracefully. For this reason, it is recommended
    that ``ThreadPoolExecutor`` not be used for long-running tasks.
@@ -250,9 +250,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
    the default chosen will be at most ``61``, even if more processors are
    available.
-   *mp_context* can be a multiprocessing context or None. It will be used to
-   launch the workers. If *mp_context* is ``None`` or not given, the default
-   multiprocessing context is used.
+   *mp_context* can be a :mod:`multiprocessing` context or ``None``. It will be
+   used to launch the workers. If *mp_context* is ``None`` or not given, the
+   default :mod:`multiprocessing` context is used.
+   See :ref:`multiprocessing-start-methods`.
 
    *initializer* is an optional callable that is called at the start of
    each worker process; *initargs* is a tuple of arguments passed to the
@@ -280,10 +281,17 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
       Added the *initializer* and *initargs* arguments.
 
+      .. note::
+         The default :mod:`multiprocessing` start method
+         (see :ref:`multiprocessing-start-methods`) will change away from
+         *fork* in Python 3.14.  Code that requires *fork* be used for their
+         :class:`ProcessPoolExecutor` should explicitly specify that by
+         passing a ``mp_context=multiprocessing.get_context("fork")``
+         parameter.
+
    .. versionchanged:: 3.11
       The *max_tasks_per_child* argument was added to allow users to
       control the lifetime of workers in the pool.
-
 
 .. _processpoolexecutor-example:
 
@@ -411,13 +419,13 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        tests.
 
        If the method returns ``False`` then the :class:`Future` was cancelled,
-       i.e. :meth:`Future.cancel` was called and returned `True`.  Any threads
+       i.e. :meth:`Future.cancel` was called and returned ``True``.  Any threads
        waiting on the :class:`Future` completing (i.e. through
        :func:`as_completed` or :func:`wait`) will be woken up.
 
        If the method returns ``True`` then the :class:`Future` was not cancelled
        and has been put in the running state, i.e. calls to
-       :meth:`Future.running` will return `True`.
+       :meth:`Future.running` will return ``True``.
 
        This method can only be called once and cannot be called after
        :meth:`Future.set_result` or :meth:`Future.set_exception` have been
