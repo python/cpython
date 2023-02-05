@@ -2872,17 +2872,18 @@ class TestSpecial(unittest.TestCase):
         class FlagFromChar(Flag):
             def __new__(cls, c):
                 value = 1 << c
-                self = int.__new__(cls, value)
+                self = object.__new__(cls)
                 self._value_ = value
                 return self
             #
             a = ord('a')
+            z = 1
         #
         self.assertEqual(FlagFromChar.a.value, 158456325028528675187087900672)
-        self.assertEqual((FlagFromChar.a|1).value, 158456325028528675187087900673)
+        self.assertEqual((FlagFromChar.a|FlagFromChar.z).value, 158456325028528675187087900674)
         #
         #
-        class FlagFromChar(int, Flag):
+        class FlagFromChar(int, Flag, boundary=KEEP):
             def __new__(cls, c):
                 value = 1 << c
                 self = int.__new__(cls, value)
