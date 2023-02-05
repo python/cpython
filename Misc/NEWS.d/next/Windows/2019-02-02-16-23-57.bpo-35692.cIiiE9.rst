@@ -1,2 +1,0 @@
-``pathlib`` no longer raises when checking file and directory existence on
-drives that are not ready

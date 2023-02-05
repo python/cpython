@@ -1,1 +1,0 @@
-In http.server script, rely on getaddrinfo to bind to preferred address based on the bind parameter. Now default bind or binding to a name may bind to IPv6 or dual-stack, depending on the environment.

@@ -196,23 +196,31 @@ def read_dict(trials=trials, a={0: 1}):
         a[0];   a[0];   a[0];   a[0];   a[0]
         a[0];   a[0];   a[0];   a[0];   a[0]
 
+def read_strdict(trials=trials, a={'key': 1}):
+    for t in trials:
+        a['key'];   a['key'];   a['key'];   a['key'];   a['key']
+        a['key'];   a['key'];   a['key'];   a['key'];   a['key']
+        a['key'];   a['key'];   a['key'];   a['key'];   a['key']
+        a['key'];   a['key'];   a['key'];   a['key'];   a['key']
+        a['key'];   a['key'];   a['key'];   a['key'];   a['key']
+
 def list_append_pop(trials=trials, a=[1]):
     ap, pop = a.append, a.pop
     for t in trials:
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
 
 def deque_append_pop(trials=trials, a=deque([1])):
     ap, pop = a.append, a.pop
     for t in trials:
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
-        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop()
 
 def deque_append_popleft(trials=trials, a=deque([1])):
     ap, pop = a.append, a.popleft
@@ -247,6 +255,14 @@ def write_dict(trials=trials, a={0: 1}):
         a[0]=1; a[0]=1; a[0]=1; a[0]=1; a[0]=1
         a[0]=1; a[0]=1; a[0]=1; a[0]=1; a[0]=1
 
+def write_strdict(trials=trials, a={'key': 1}):
+    for t in trials:
+        a['key']=1; a['key']=1; a['key']=1; a['key']=1; a['key']=1
+        a['key']=1; a['key']=1; a['key']=1; a['key']=1; a['key']=1
+        a['key']=1; a['key']=1; a['key']=1; a['key']=1; a['key']=1
+        a['key']=1; a['key']=1; a['key']=1; a['key']=1; a['key']=1
+        a['key']=1; a['key']=1; a['key']=1; a['key']=1; a['key']=1
+
 def loop_overhead(trials=trials):
     for t in trials:
         pass
@@ -266,9 +282,9 @@ if __name__=='__main__':
             write_local, write_nonlocal, write_global,
             write_classvar, write_instancevar, write_instancevar_slots,
             '\nData structure read access:',
-            read_list, read_deque, read_dict,
+            read_list, read_deque, read_dict, read_strdict,
             '\nData structure write access:',
-            write_list, write_deque, write_dict,
+            write_list, write_deque, write_dict, write_strdict,
             '\nStack (or queue) operations:',
             list_append_pop, deque_append_pop, deque_append_popleft,
             '\nTiming loop overhead:',

@@ -1,1 +1,0 @@
-Write expected and actual call parameters on separate lines in :meth:`unittest.mock.Mock.assert_called_with` assertion errors.  Contributed by Susan Su.

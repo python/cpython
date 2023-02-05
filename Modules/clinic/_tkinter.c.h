@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_tkinter_tkapp_eval__doc__,
 "eval($self, script, /)\n"
 "--\n"
@@ -20,7 +26,7 @@ _tkinter_tkapp_eval(TkappObject *self, PyObject *arg)
     const char *script;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("eval", 0, "str", arg);
+        _PyArg_BadArgument("eval", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t script_length;
@@ -56,7 +62,7 @@ _tkinter_tkapp_evalfile(TkappObject *self, PyObject *arg)
     const char *fileName;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("evalfile", 0, "str", arg);
+        _PyArg_BadArgument("evalfile", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t fileName_length;
@@ -92,7 +98,7 @@ _tkinter_tkapp_record(TkappObject *self, PyObject *arg)
     const char *script;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("record", 0, "str", arg);
+        _PyArg_BadArgument("record", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t script_length;
@@ -128,7 +134,7 @@ _tkinter_tkapp_adderrorinfo(TkappObject *self, PyObject *arg)
     const char *msg;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("adderrorinfo", 0, "str", arg);
+        _PyArg_BadArgument("adderrorinfo", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t msg_length;
@@ -188,7 +194,7 @@ _tkinter_tkapp_exprstring(TkappObject *self, PyObject *arg)
     const char *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("exprstring", 0, "str", arg);
+        _PyArg_BadArgument("exprstring", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t s_length;
@@ -224,7 +230,7 @@ _tkinter_tkapp_exprlong(TkappObject *self, PyObject *arg)
     const char *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("exprlong", 0, "str", arg);
+        _PyArg_BadArgument("exprlong", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t s_length;
@@ -260,7 +266,7 @@ _tkinter_tkapp_exprdouble(TkappObject *self, PyObject *arg)
     const char *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("exprdouble", 0, "str", arg);
+        _PyArg_BadArgument("exprdouble", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t s_length;
@@ -296,7 +302,7 @@ _tkinter_tkapp_exprboolean(TkappObject *self, PyObject *arg)
     const char *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("exprboolean", 0, "str", arg);
+        _PyArg_BadArgument("exprboolean", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t s_length;
@@ -322,21 +328,13 @@ PyDoc_STRVAR(_tkinter_tkapp_splitlist__doc__,
 #define _TKINTER_TKAPP_SPLITLIST_METHODDEF    \
     {"splitlist", (PyCFunction)_tkinter_tkapp_splitlist, METH_O, _tkinter_tkapp_splitlist__doc__},
 
-PyDoc_STRVAR(_tkinter_tkapp_split__doc__,
-"split($self, arg, /)\n"
-"--\n"
-"\n");
-
-#define _TKINTER_TKAPP_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)_tkinter_tkapp_split, METH_O, _tkinter_tkapp_split__doc__},
-
 PyDoc_STRVAR(_tkinter_tkapp_createcommand__doc__,
 "createcommand($self, name, func, /)\n"
 "--\n"
 "\n");
 
 #define _TKINTER_TKAPP_CREATECOMMAND_METHODDEF    \
-    {"createcommand", (PyCFunction)(void(*)(void))_tkinter_tkapp_createcommand, METH_FASTCALL, _tkinter_tkapp_createcommand__doc__},
+    {"createcommand", _PyCFunction_CAST(_tkinter_tkapp_createcommand), METH_FASTCALL, _tkinter_tkapp_createcommand__doc__},
 
 static PyObject *
 _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
@@ -353,7 +351,7 @@ _tkinter_tkapp_createcommand(TkappObject *self, PyObject *const *args, Py_ssize_
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("createcommand", 1, "str", args[0]);
+        _PyArg_BadArgument("createcommand", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t name_length;
@@ -390,7 +388,7 @@ _tkinter_tkapp_deletecommand(TkappObject *self, PyObject *arg)
     const char *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("deletecommand", 0, "str", arg);
+        _PyArg_BadArgument("deletecommand", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t name_length;
@@ -416,7 +414,7 @@ PyDoc_STRVAR(_tkinter_tkapp_createfilehandler__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF    \
-    {"createfilehandler", (PyCFunction)(void(*)(void))_tkinter_tkapp_createfilehandler, METH_FASTCALL, _tkinter_tkapp_createfilehandler__doc__},
+    {"createfilehandler", _PyCFunction_CAST(_tkinter_tkapp_createfilehandler), METH_FASTCALL, _tkinter_tkapp_createfilehandler__doc__},
 
 static PyObject *
 _tkinter_tkapp_createfilehandler_impl(TkappObject *self, PyObject *file,
@@ -434,11 +432,6 @@ _tkinter_tkapp_createfilehandler(TkappObject *self, PyObject *const *args, Py_ss
         goto exit;
     }
     file = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     mask = _PyLong_AsInt(args[1]);
     if (mask == -1 && PyErr_Occurred()) {
         goto exit;
@@ -487,7 +480,7 @@ PyDoc_STRVAR(_tkinter_tkapp_createtimerhandler__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_CREATETIMERHANDLER_METHODDEF    \
-    {"createtimerhandler", (PyCFunction)(void(*)(void))_tkinter_tkapp_createtimerhandler, METH_FASTCALL, _tkinter_tkapp_createtimerhandler__doc__},
+    {"createtimerhandler", _PyCFunction_CAST(_tkinter_tkapp_createtimerhandler), METH_FASTCALL, _tkinter_tkapp_createtimerhandler__doc__},
 
 static PyObject *
 _tkinter_tkapp_createtimerhandler_impl(TkappObject *self, int milliseconds,
@@ -501,11 +494,6 @@ _tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject *const *args, Py_s
     PyObject *func;
 
     if (!_PyArg_CheckPositional("createtimerhandler", nargs, 2, 2)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     milliseconds = _PyLong_AsInt(args[0]);
@@ -525,7 +513,7 @@ PyDoc_STRVAR(_tkinter_tkapp_mainloop__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_MAINLOOP_METHODDEF    \
-    {"mainloop", (PyCFunction)(void(*)(void))_tkinter_tkapp_mainloop, METH_FASTCALL, _tkinter_tkapp_mainloop__doc__},
+    {"mainloop", _PyCFunction_CAST(_tkinter_tkapp_mainloop), METH_FASTCALL, _tkinter_tkapp_mainloop__doc__},
 
 static PyObject *
 _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold);
@@ -541,11 +529,6 @@ _tkinter_tkapp_mainloop(TkappObject *self, PyObject *const *args, Py_ssize_t nar
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     threshold = _PyLong_AsInt(args[0]);
     if (threshold == -1 && PyErr_Occurred()) {
@@ -564,7 +547,7 @@ PyDoc_STRVAR(_tkinter_tkapp_dooneevent__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_DOONEEVENT_METHODDEF    \
-    {"dooneevent", (PyCFunction)(void(*)(void))_tkinter_tkapp_dooneevent, METH_FASTCALL, _tkinter_tkapp_dooneevent__doc__},
+    {"dooneevent", _PyCFunction_CAST(_tkinter_tkapp_dooneevent), METH_FASTCALL, _tkinter_tkapp_dooneevent__doc__},
 
 static PyObject *
 _tkinter_tkapp_dooneevent_impl(TkappObject *self, int flags);
@@ -580,11 +563,6 @@ _tkinter_tkapp_dooneevent(TkappObject *self, PyObject *const *args, Py_ssize_t n
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     flags = _PyLong_AsInt(args[0]);
     if (flags == -1 && PyErr_Occurred()) {
@@ -674,7 +652,7 @@ PyDoc_STRVAR(_tkinter__flatten__doc__,
     {"_flatten", (PyCFunction)_tkinter__flatten, METH_O, _tkinter__flatten__doc__},
 
 PyDoc_STRVAR(_tkinter_create__doc__,
-"create($module, screenName=None, baseName=None, className=\'Tk\',\n"
+"create($module, screenName=None, baseName=\'\', className=\'Tk\',\n"
 "       interactive=False, wantobjects=False, wantTk=True, sync=False,\n"
 "       use=None, /)\n"
 "--\n"
@@ -689,7 +667,7 @@ PyDoc_STRVAR(_tkinter_create__doc__,
 "    if not None, then pass -use to wish");
 
 #define _TKINTER_CREATE_METHODDEF    \
-    {"create", (PyCFunction)(void(*)(void))_tkinter_create, METH_FASTCALL, _tkinter_create__doc__},
+    {"create", _PyCFunction_CAST(_tkinter_create), METH_FASTCALL, _tkinter_create__doc__},
 
 static PyObject *
 _tkinter_create_impl(PyObject *module, const char *screenName,
@@ -702,7 +680,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *screenName = NULL;
-    const char *baseName = NULL;
+    const char *baseName = "";
     const char *className = "Tk";
     int interactive = 0;
     int wantobjects = 0;
@@ -731,14 +709,14 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("create", 1, "str or None", args[0]);
+        _PyArg_BadArgument("create", "argument 1", "str or None", args[0]);
         goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("create", 2, "str", args[1]);
+        _PyArg_BadArgument("create", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t baseName_length;
@@ -754,7 +732,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("create", 3, "str", args[2]);
+        _PyArg_BadArgument("create", "argument 3", "str", args[2]);
         goto exit;
     }
     Py_ssize_t className_length;
@@ -769,49 +747,29 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    interactive = _PyLong_AsInt(args[3]);
-    if (interactive == -1 && PyErr_Occurred()) {
+    interactive = PyObject_IsTrue(args[3]);
+    if (interactive < 0) {
         goto exit;
     }
     if (nargs < 5) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[4])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    wantobjects = _PyLong_AsInt(args[4]);
-    if (wantobjects == -1 && PyErr_Occurred()) {
+    wantobjects = PyObject_IsTrue(args[4]);
+    if (wantobjects < 0) {
         goto exit;
     }
     if (nargs < 6) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[5])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    wantTk = _PyLong_AsInt(args[5]);
-    if (wantTk == -1 && PyErr_Occurred()) {
+    wantTk = PyObject_IsTrue(args[5]);
+    if (wantTk < 0) {
         goto exit;
     }
     if (nargs < 7) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[6])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    sync = _PyLong_AsInt(args[6]);
-    if (sync == -1 && PyErr_Occurred()) {
+    sync = PyObject_IsTrue(args[6]);
+    if (sync < 0) {
         goto exit;
     }
     if (nargs < 8) {
@@ -832,7 +790,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("create", 8, "str or None", args[7]);
+        _PyArg_BadArgument("create", "argument 8", "str or None", args[7]);
         goto exit;
     }
 skip_optional:
@@ -862,11 +820,6 @@ _tkinter_setbusywaitinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     new_val = _PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
@@ -912,4 +865,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=2cf95f0101f3dbca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a4e3bf8448604b5 input=a9049054013a1b77]*/
