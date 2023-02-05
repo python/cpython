@@ -199,14 +199,14 @@ native_types = [
 
     ## structures and unions
 
-    (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point2),
-    (Point,                     "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point),
-    (PackedPoint,               "T{<l:x:<l:y:}".replace('l', s_long),  (),  PackedPoint),
-    (PointMidPad,               "T{<b:x:3x<I:y:}",                     (),  PointMidPad),
-    (PackedPointMidPad,         "T{<b:x:x<Q:y:}",                      (),  PackedPointMidPad),
-    (PointEndPad,               "T{<I:x:<b:y:3x}",                     (),  PointEndPad),
-    (PackedPointEndPad,         "T{<Q:x:<b:y:x}",                      (),  PackedPointEndPad),
-    (EmptyStruct,               "T{}",                                 (),  EmptyStruct),
+    (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),   (),  Point2),
+    (Point,                     "T{<l:x:<l:y:}".replace('l', s_long),   (),  Point),
+    (PackedPoint,               "T{<l:x:<l:y:}".replace('l', s_long),   (),  PackedPoint),
+    (PointMidPad,               "T{<b:x:3x<I:y:}".replace('I', s_uint), (),  PointMidPad),
+    (PackedPointMidPad,         "T{<b:x:x<Q:y:}",                       (),  PackedPointMidPad),
+    (PointEndPad,               "T{<I:x:<b:y:3x}".replace('I', s_uint), (),  PointEndPad),
+    (PackedPointEndPad,         "T{<Q:x:<b:y:x}",                       (),  PackedPointEndPad),
+    (EmptyStruct,               "T{}",                                  (),  EmptyStruct),
     # the pep doesn't support unions
     (aUnion,                    "B",                                   (),  aUnion),
     # structure with sub-arrays
