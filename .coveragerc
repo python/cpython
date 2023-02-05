@@ -8,6 +8,7 @@ exclude_lines =
     # pragma: no cover
     # pragma: no branch
 
+    # Additions for IDLE:
     .*# htest #
     if not (_htest or _utest):
     if not .*_utest:
