@@ -886,7 +886,8 @@ class ItemsView(MappingView, Set):
             return v is value or v == value
 
     def __iter__(self):
-        return ((key, self._mapping[key]) for key in self._mapping)
+        for key in self._mapping:
+            yield (key, self._mapping[key])
 
 
 ItemsView.register(dict_items)
@@ -904,7 +905,8 @@ class ValuesView(MappingView, Collection):
         return False
 
     def __iter__(self):
-        return (self._mapping[key] for key in self._mapping)
+        for key in self._mapping:
+            yield self._mapping[key]
 
 
 ValuesView.register(dict_values)
