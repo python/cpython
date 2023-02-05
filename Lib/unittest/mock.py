@@ -529,7 +529,6 @@ class NonCallableMock(Base):
                 _spec_class = type(spec)
             _spec_signature = _check_signature(spec, self, _eat_self,
                                                _spec_as_instance)
-            _spec_signature = res and res[1]
 
             spec_list = dir(spec)
 
