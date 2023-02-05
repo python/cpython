@@ -87,14 +87,14 @@ class PackedPoint(Structure):
     _fields_ = [("x", c_long), ("y", c_long)]
 
 class PointMidPad(Structure):
-    _fields_ = [("x", c_byte), ("y", c_uint32)]
+    _fields_ = [("x", c_byte), ("y", c_uint)]
 
 class PackedPointMidPad(Structure):
     _pack_ = 2
     _fields_ = [("x", c_byte), ("y", c_uint64)]
 
 class PointEndPad(Structure):
-    _fields_ = [("x", c_uint32), ("y", c_byte)]
+    _fields_ = [("x", c_uint), ("y", c_byte)]
 
 class PackedPointEndPad(Structure):
     _pack_ = 2
