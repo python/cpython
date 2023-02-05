@@ -1,5 +1,10 @@
-# Get Started!
-
-Welcome to Einpunk-Dapp-Minimal
-
-## Below are guides about this project
+{
+  "name": "dev-ein",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Einstein Punk",
+  "license": "MIT"
+}
