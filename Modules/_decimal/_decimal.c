@@ -2171,16 +2171,16 @@ dec_from_long(PyTypeObject *type, PyObject *v,
     }
 
     if (len == 1) {
-        _dec_settriple(dec, sign, *l->ob_digit, 0);
+        _dec_settriple(dec, sign, *l->long_value.ob_digit, 0);
         mpd_qfinalize(MPD(dec), ctx, status);
         return dec;
     }
 
 #if PYLONG_BITS_IN_DIGIT == 30
-    mpd_qimport_u32(MPD(dec), l->ob_digit, len, sign, PyLong_BASE,
+    mpd_qimport_u32(MPD(dec), l->long_value.ob_digit, len, sign, PyLong_BASE,
                     ctx, status);
 #elif PYLONG_BITS_IN_DIGIT == 15
-    mpd_qimport_u16(MPD(dec), l->ob_digit, len, sign, PyLong_BASE,
+    mpd_qimport_u16(MPD(dec), l->long_value.ob_digit, len, sign, PyLong_BASE,
                     ctx, status);
 #else
   #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
@@ -3543,11 +3543,11 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         return NULL;
     }
 
-    memcpy(pylong->ob_digit, ob_digit, n * sizeof(digit));
+    memcpy(pylong->long_value.ob_digit, ob_digit, n * sizeof(digit));
     mpd_free(ob_digit);
 
     i = n;
-    while ((i > 0) && (pylong->ob_digit[i-1] == 0)) {
+    while ((i > 0) && (pylong->long_value.ob_digit[i-1] == 0)) {
         i--;
     }
 

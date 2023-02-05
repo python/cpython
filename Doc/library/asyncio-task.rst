@@ -121,7 +121,7 @@ To actually run a coroutine, asyncio provides the following mechanisms:
 
               print(f"started at {time.strftime('%X')}")
 
-          # The wait is implicit when the context manager exits.
+          # The await is implicit when the context manager exits.
 
           print(f"finished at {time.strftime('%X')}")
 
@@ -666,7 +666,7 @@ Timeouts
             except TimeoutError:
                 pass
 
-            if cm.expired:
+            if cm.expired():
                 print("Looks like we haven't finished on time.")
 
     Timeout context managers can be safely nested.
