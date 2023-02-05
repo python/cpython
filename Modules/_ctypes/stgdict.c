@@ -355,7 +355,7 @@ _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
         return _ctypes_alloc_format_string(prefix, "x");
     }
 
-    int ret = PyOS_snprintf(buf, sizeof(buf), "%zdx", padding);
+    int ret = PyOS_snprintf(buf, sizeof(buf), "%zdx", padding); (void)ret;
     assert(0 <= ret && ret < (Py_ssize_t)sizeof(buf));
     return _ctypes_alloc_format_string(prefix, buf);
 }
