@@ -87,14 +87,14 @@ class PackedPoint(Structure):
     _fields_ = [("x", c_long), ("y", c_long)]
 
 class PointMidPad(Structure):
-    _fields_ = [("x", c_byte), ("y", c_uint64)]
+    _fields_ = [("x", c_byte), ("y", c_uint32)]
 
 class PackedPointMidPad(Structure):
     _pack_ = 2
     _fields_ = [("x", c_byte), ("y", c_uint64)]
 
 class PointEndPad(Structure):
-    _fields_ = [("x", c_uint64), ("y", c_byte)]
+    _fields_ = [("x", c_uint32), ("y", c_byte)]
 
 class PackedPointEndPad(Structure):
     _pack_ = 2
@@ -202,9 +202,9 @@ native_types = [
     (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point2),
     (Point,                     "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point),
     (PackedPoint,               "T{<l:x:<l:y:}".replace('l', s_long),  (),  PackedPoint),
-    (PointMidPad,               "T{<b:x:7x<Q:y:}",                     (),  PointMidPad),
+    (PointMidPad,               "T{<b:x:3x<I:y:}",                     (),  PointMidPad),
     (PackedPointMidPad,         "T{<b:x:x<Q:y:}",                      (),  PackedPointMidPad),
-    (PointEndPad,               "T{<Q:x:<b:y:7x}",                     (),  PointEndPad),
+    (PointEndPad,               "T{<I:x:<b:y:3x}",                     (),  PointEndPad),
     (PackedPointEndPad,         "T{<Q:x:<b:y:x}",                      (),  PackedPointEndPad),
     (EmptyStruct,               "T{}",                                 (),  EmptyStruct),
     # the pep doesn't support unions
