@@ -6153,17 +6153,31 @@ local_to_seconds(int year, int month, int day,
 static PyObject *
 local_timezone_from_local(PyDateTime_DateTime *local_dt)
 {
-    long long seconds;
+    long long seconds, seconds2;
     time_t timestamp;
+    int fold = DATE_GET_FOLD(local_dt);
     seconds = local_to_seconds(GET_YEAR(local_dt),
                                GET_MONTH(local_dt),
                                GET_DAY(local_dt),
                                DATE_GET_HOUR(local_dt),
                                DATE_GET_MINUTE(local_dt),
                                DATE_GET_SECOND(local_dt),
-                               DATE_GET_FOLD(local_dt));
+                               fold);
     if (seconds == -1)
         return NULL;
+    seconds2 = local_to_seconds(GET_YEAR(local_dt),
+                                GET_MONTH(local_dt),
+                                GET_DAY(local_dt),
+                                DATE_GET_HOUR(local_dt),
+                                DATE_GET_MINUTE(local_dt),
+                                DATE_GET_SECOND(local_dt),
+                                !fold);
+    if (seconds2 == -1)
+        return NULL;
+    /* Detect gap */
+    if (seconds2 != seconds && (seconds2 > seconds) == fold)
+        seconds = seconds2;
+
     /* XXX: add bounds check */
     timestamp = seconds - epoch;
     return local_timezone_from_timestamp(timestamp);
