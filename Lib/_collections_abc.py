@@ -33,6 +33,7 @@ Unit tests are in test_collections.
 #######################################################################
 
 from abc import ABCMeta, abstractmethod
+from itertools import chain, filterfalse
 import sys
 
 GenericAlias = type(list[int])
@@ -569,9 +570,8 @@ class Set(Collection):
             return NotImplemented
         if len(self) > len(other):
             return False
-        for elem in self:
-            if elem not in other:
-                return False
+        for elem in filterfalse(other.__contains__, self):
+            return False
         return True
 
     def __lt__(self, other):
@@ -587,11 +587,10 @@ class Set(Collection):
     def __ge__(self, other):
         if not isinstance(other, Set):
             return NotImplemented
-        if len(self) < len(other):
+        if len(self) > len(other):
             return False
-        for elem in other:
-            if elem not in self:
-                return False
+        for elem in filterfalse(self.__contains__, other):
+            return False
         return True
 
     def __eq__(self, other):
@@ -611,47 +610,50 @@ class Set(Collection):
     def __and__(self, other):
         if not isinstance(other, Iterable):
             return NotImplemented
-        return self._from_iterable(value for value in other if value in self)
+        return self._from_iterable(filter(self.__contains__, other))
 
     __rand__ = __and__
 
     def isdisjoint(self, other):
         'Return True if two sets have a null intersection.'
-        for value in other:
-            if value in self:
-                return False
+        for elem in filter(self.__contains__, other):
+            return False
         return True
 
     def __or__(self, other):
         if not isinstance(other, Iterable):
             return NotImplemented
-        chain = (e for s in (self, other) for e in s)
-        return self._from_iterable(chain)
+        return self._from_iterable(chain(self, other))
 
     __ror__ = __or__
 
     def __sub__(self, other):
-        if not isinstance(other, Set):
+        if not isinstance(other, (Mapping, Set)):
             if not isinstance(other, Iterable):
                 return NotImplemented
-            other = self._from_iterable(other)
-        return self._from_iterable(value for value in self
-                                   if value not in other)
+            other = set(other)
+        return self._from_iterable(
+            filterfalse(other.__contains__, self)
+        )
 
     def __rsub__(self, other):
-        if not isinstance(other, Set):
+        if not isinstance(other, (Mapping, Set)):
             if not isinstance(other, Iterable):
                 return NotImplemented
-            other = self._from_iterable(other)
-        return self._from_iterable(value for value in other
-                                   if value not in self)
+            other = set(other)
+        return self._from_iterable(
+            filterfalse(self.__contains__, other)
+        )
 
     def __xor__(self, other):
-        if not isinstance(other, Set):
+        if not isinstance(other, (Mapping, Set)):
             if not isinstance(other, Iterable):
                 return NotImplemented
-            other = self._from_iterable(other)
-        return (self - other) | (other - self)
+            other = set(other)
+        return self._from_iterable(chain(
+            filterfalse(self.__contains__, other),
+            filterfalse(other.__contains__, self),
+        ))
 
     __rxor__ = __xor__
 
@@ -718,19 +720,17 @@ class MutableSet(Set):
 
     def remove(self, value):
         """Remove an element. If not a member, raise a KeyError."""
-        if value not in self:
-            raise KeyError(value)
+        size = len(self)
         self.discard(value)
+        if size == len(self):
+            raise KeyError(value)
 
     def pop(self):
         """Return the popped value.  Raise KeyError if empty."""
-        it = iter(self)
-        try:
-            value = next(it)
-        except StopIteration:
-            raise KeyError from None
-        self.discard(value)
-        return value
+        for value in self:
+            self.discard(value)
+            return value
+        raise KeyError
 
     def clear(self):
         """This is slow (creates N new iterators!) but effective."""
@@ -754,13 +754,16 @@ class MutableSet(Set):
         if it is self:
             self.clear()
         else:
-            if not isinstance(it, Set):
-                it = self._from_iterable(it)
+            if not isinstance(it, (Mapping, Set)):
+                it = set(it)
+            size = len(self)
             for value in it:
-                if value in self:
-                    self.discard(value)
-                else:
+                self.discard(value)
+                if size == len(self):
                     self.add(value)
+                    size += 1
+                else:
+                    size -= 1
         return self
 
     def __isub__(self, it):
@@ -859,7 +862,7 @@ class KeysView(MappingView, Set):
         return key in self._mapping
 
     def __iter__(self):
-        yield from self._mapping
+        return iter(self._mapping)
 
 
 KeysView.register(dict_keys)
@@ -883,8 +886,7 @@ class ItemsView(MappingView, Set):
             return v is value or v == value
 
     def __iter__(self):
-        for key in self._mapping:
-            yield (key, self._mapping[key])
+        return ((key, self._mapping[key]) for key in self._mapping)
 
 
 ItemsView.register(dict_items)
@@ -902,8 +904,7 @@ class ValuesView(MappingView, Collection):
         return False
 
     def __iter__(self):
-        for key in self._mapping:
-            yield self._mapping[key]
+        return (self._mapping[key] for key in self._mapping)
 
 
 ValuesView.register(dict_values)
@@ -948,13 +949,11 @@ class MutableMapping(Mapping):
         '''D.popitem() -> (k, v), remove and return some (key, value) pair
            as a 2-tuple; but raise KeyError if D is empty.
         '''
-        try:
-            key = next(iter(self))
-        except StopIteration:
-            raise KeyError from None
-        value = self[key]
-        del self[key]
-        return key, value
+        for key in self:
+            value = self[key]
+            del self[key]
+            return key, value
+        raise KeyError
 
     def clear(self):
         'D.clear() -> None.  Remove all items from D.'
