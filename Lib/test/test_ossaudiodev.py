@@ -1,15 +1,19 @@
 from test import support
+from test.support import import_helper, warnings_helper
+import warnings
 support.requires('audio')
 
 from test.support import findfile
 
-ossaudiodev = support.import_module('ossaudiodev')
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    ossaudiodev = import_helper.import_module('ossaudiodev')
+audioop = warnings_helper.import_deprecated('audioop')
+sunau = warnings_helper.import_deprecated('sunau')
 
 import errno
 import sys
-import sunau
 import time
-import audioop
 import unittest
 
 # Arggh, AFMT_S16_NE not defined on all platforms -- seems to be a
@@ -77,10 +81,10 @@ class OSSAudioDevTests(unittest.TestCase):
         # set parameters based on .au file headers
         dsp.setparameters(AFMT_S16_NE, nchannels, rate)
         self.assertTrue(abs(expected_time - 3.51) < 1e-2, expected_time)
-        t1 = time.time()
+        t1 = time.monotonic()
         dsp.write(data)
         dsp.close()
-        t2 = time.time()
+        t2 = time.monotonic()
         elapsed_time = t2 - t1
 
         percent_diff = (abs(elapsed_time - expected_time) / expected_time) * 100
@@ -187,7 +191,7 @@ class OSSAudioDevTests(unittest.TestCase):
         mixer.close()
         self.assertRaises(ValueError, mixer.fileno)
 
-def test_main():
+def setUpModule():
     try:
         dsp = ossaudiodev.open('w')
     except (ossaudiodev.error, OSError) as msg:
@@ -196,7 +200,6 @@ def test_main():
             raise unittest.SkipTest(msg)
         raise
     dsp.close()
-    support.run_unittest(__name__)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

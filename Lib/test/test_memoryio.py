@@ -759,7 +759,8 @@ class CBytesIOTest(PyBytesIOTest):
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
         check(io.BytesIO(), basesize )
-        check(io.BytesIO(b'a' * 1000), basesize + sys.getsizeof(b'a' * 1000))
+        n = 1000  # use a variable to prevent constant folding
+        check(io.BytesIO(b'a' * n), basesize + sys.getsizeof(b'a' * n))
 
     # Various tests of copy-on-write behaviour for BytesIO.
 

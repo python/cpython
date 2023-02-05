@@ -13,6 +13,11 @@
 
 This module defines a number of utilities for use by CGI scripts
 written in Python.
+
+The global variable maxlen can be set to an integer indicating the maximum size
+of a POST request. POST requests larger than this size will result in a
+ValueError being raised during parsing. The default value of this variable is 0,
+meaning the request size is unlimited.
 """
 
 # History
@@ -38,16 +43,18 @@ import os
 import urllib.parse
 from email.parser import FeedParser
 from email.message import Message
-from warnings import warn
 import html
 import locale
 import tempfile
+import warnings
 
-__all__ = ["MiniFieldStorage", "FieldStorage",
-           "parse", "parse_qs", "parse_qsl", "parse_multipart",
+__all__ = ["MiniFieldStorage", "FieldStorage", "parse", "parse_multipart",
            "parse_header", "test", "print_exception", "print_environ",
            "print_form", "print_directory", "print_arguments",
-           "print_environ_usage", "escape"]
+           "print_environ_usage"]
+
+
+warnings._deprecated(__name__, remove=(3,13))
 
 # Logging support
 # ===============
@@ -79,9 +86,11 @@ def initlog(*allargs):
 
     """
     global log, logfile, logfp
+    warnings.warn("cgi.log() is deprecated as of 3.10. Use logging instead",
+                  DeprecationWarning, stacklevel=2)
     if logfile and not logfp:
         try:
-            logfp = open(logfile, "a")
+            logfp = open(logfile, "a", encoding="locale")
         except OSError:
             pass
     if not logfp:
@@ -117,7 +126,8 @@ log = initlog           # The current logging function
 # 0 ==> unlimited input
 maxlen = 0
 
-def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
+def parse(fp=None, environ=os.environ, keep_blank_values=0,
+          strict_parsing=0, separator='&'):
     """Parse a query in the environment or from a file (default stdin)
 
         Arguments, all optional:
@@ -136,6 +146,9 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
         strict_parsing: flag indicating what to do with parsing errors.
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
+
+        separator: str. The symbol to use for separating the query arguments.
+            Defaults to &.
     """
     if fp is None:
         fp = sys.stdin
@@ -156,7 +169,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
     if environ['REQUEST_METHOD'] == 'POST':
         ctype, pdict = parse_header(environ['CONTENT_TYPE'])
         if ctype == 'multipart/form-data':
-            return parse_multipart(fp, pdict)
+            return parse_multipart(fp, pdict, separator=separator)
         elif ctype == 'application/x-www-form-urlencoded':
             clength = int(environ['CONTENT_LENGTH'])
             if maxlen and clength > maxlen:
@@ -180,45 +193,34 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
             qs = ""
         environ['QUERY_STRING'] = qs    # XXX Shouldn't, really
     return urllib.parse.parse_qs(qs, keep_blank_values, strict_parsing,
-                                 encoding=encoding)
+                                 encoding=encoding, separator=separator)
 
 
-# parse query string function called from urlparse,
-# this is done in order to maintain backward compatibility.
-
-def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
-    """Parse a query given as a string argument."""
-    warn("cgi.parse_qs is deprecated, use urllib.parse.parse_qs instead",
-         DeprecationWarning, 2)
-    return urllib.parse.parse_qs(qs, keep_blank_values, strict_parsing)
-
-def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
-    """Parse a query given as a string argument."""
-    warn("cgi.parse_qsl is deprecated, use urllib.parse.parse_qsl instead",
-         DeprecationWarning, 2)
-    return urllib.parse.parse_qsl(qs, keep_blank_values, strict_parsing)
-
-def parse_multipart(fp, pdict, encoding="utf-8"):
+def parse_multipart(fp, pdict, encoding="utf-8", errors="replace", separator='&'):
     """Parse multipart input.
 
     Arguments:
     fp   : input file
     pdict: dictionary containing other parameters of content-type header
-    encoding: request encoding
+    encoding, errors: request encoding and error handler, passed to
+        FieldStorage
 
     Returns a dictionary just like parse_qs(): keys are the field names, each
     value is a list of values for that field. For non-file fields, the value
     is a list of strings.
     """
-    # RFC 2026, Section 5.1 : The "multipart" boundary delimiters are always
+    # RFC 2046, Section 5.1 : The "multipart" boundary delimiters are always
     # represented as 7bit US-ASCII.
     boundary = pdict['boundary'].decode('ascii')
     ctype = "multipart/form-data; boundary={}".format(boundary)
     headers = Message()
     headers.set_type(ctype)
-    headers['Content-Length'] = pdict['CONTENT-LENGTH']
-    fs = FieldStorage(fp, headers=headers, encoding=encoding,
-        environ={'REQUEST_METHOD': 'POST'})
+    try:
+        headers['Content-Length'] = pdict['CONTENT-LENGTH']
+    except KeyError:
+        pass
+    fs = FieldStorage(fp, headers=headers, encoding=encoding, errors=errors,
+        environ={'REQUEST_METHOD': 'POST'}, separator=separator)
     return {k: fs.getlist(k) for k in fs}
 
 def _parseparam(s):
@@ -327,7 +329,8 @@ class FieldStorage:
     """
     def __init__(self, fp=None, headers=None, outerboundary=b'',
                  environ=os.environ, keep_blank_values=0, strict_parsing=0,
-                 limit=None, encoding='utf-8', errors='replace'):
+                 limit=None, encoding='utf-8', errors='replace',
+                 max_num_fields=None, separator='&'):
         """Constructor.  Read multipart/* until last part.
 
         Arguments, all optional:
@@ -367,10 +370,15 @@ class FieldStorage:
             for the page sending the form (content-type : meta http-equiv or
             header)
 
+        max_num_fields: int. If set, then __init__ throws a ValueError
+            if there are more than n fields read by parse_qsl().
+
         """
         method = 'GET'
         self.keep_blank_values = keep_blank_values
         self.strict_parsing = strict_parsing
+        self.max_num_fields = max_num_fields
+        self.separator = separator
         if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
         self.qs_on_post = None
@@ -458,7 +466,8 @@ class FieldStorage:
         self.type = ctype
         self.type_options = pdict
         if 'boundary' in pdict:
-            self.innerboundary = pdict['boundary'].encode(self.encoding)
+            self.innerboundary = pdict['boundary'].encode(self.encoding,
+                                                          self.errors)
         else:
             self.innerboundary = b""
 
@@ -471,7 +480,7 @@ class FieldStorage:
             if maxlen and clen > maxlen:
                 raise ValueError('Maximum content length exceeded')
         self.length = clen
-        if self.limit is None and clen:
+        if self.limit is None and clen >= 0:
             self.limit = clen
 
         self.list = self.file = None
@@ -593,12 +602,11 @@ class FieldStorage:
         qs = qs.decode(self.encoding, self.errors)
         if self.qs_on_post:
             qs += '&' + self.qs_on_post
-        self.list = []
         query = urllib.parse.parse_qsl(
             qs, self.keep_blank_values, self.strict_parsing,
-            encoding=self.encoding, errors=self.errors)
-        for key, value in query:
-            self.list.append(MiniFieldStorage(key, value))
+            encoding=self.encoding, errors=self.errors,
+            max_num_fields=self.max_num_fields, separator=self.separator)
+        self.list = [MiniFieldStorage(key, value) for key, value in query]
         self.skip_lines()
 
     FieldStorageClass = None
@@ -612,9 +620,9 @@ class FieldStorage:
         if self.qs_on_post:
             query = urllib.parse.parse_qsl(
                 self.qs_on_post, self.keep_blank_values, self.strict_parsing,
-                encoding=self.encoding, errors=self.errors)
-            for key, value in query:
-                self.list.append(MiniFieldStorage(key, value))
+                encoding=self.encoding, errors=self.errors,
+                max_num_fields=self.max_num_fields, separator=self.separator)
+            self.list.extend(MiniFieldStorage(key, value) for key, value in query)
 
         klass = self.FieldStorageClass or self.__class__
         first_line = self.fp.readline() # bytes
@@ -628,6 +636,11 @@ class FieldStorage:
                 first_line):
             first_line = self.fp.readline()
             self.bytes_read += len(first_line)
+
+        # Propagate max_num_fields into the sub class appropriately
+        max_num_fields = self.max_num_fields
+        if max_num_fields is not None:
+            max_num_fields -= len(self.list)
 
         while True:
             parser = FeedParser()
@@ -648,9 +661,19 @@ class FieldStorage:
             if 'content-length' in headers:
                 del headers['content-length']
 
+            limit = None if self.limit is None \
+                else self.limit - self.bytes_read
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
-                         strict_parsing,self.limit-self.bytes_read,
-                         self.encoding, self.errors)
+                         strict_parsing, limit,
+                         self.encoding, self.errors, max_num_fields, self.separator)
+
+            if max_num_fields is not None:
+                max_num_fields -= 1
+                if part.list:
+                    max_num_fields -= len(part.list)
+                if max_num_fields < 0:
+                    raise ValueError('Max number of fields exceeded')
+
             self.bytes_read += part.bytes_read
             self.list.append(part)
             if part.done or self.bytes_read >= self.length > 0:
@@ -732,7 +755,8 @@ class FieldStorage:
         last_line_lfend = True
         _read = 0
         while 1:
-            if _read >= self.limit:
+
+            if self.limit is not None and 0 <= self.limit <= _read:
                 break
             line = self.fp.readline(1<<16) # bytes
             self.bytes_read += len(line)
@@ -971,18 +995,6 @@ environment as well.  Here are some common variable names:
 
 # Utilities
 # =========
-
-def escape(s, quote=None):
-    """Deprecated API."""
-    warn("cgi.escape is deprecated, use html.escape instead",
-         DeprecationWarning, stacklevel=2)
-    s = s.replace("&", "&amp;") # Must be done first!
-    s = s.replace("<", "&lt;")
-    s = s.replace(">", "&gt;")
-    if quote:
-        s = s.replace('"', "&quot;")
-    return s
-
 
 def valid_boundary(s):
     import re

@@ -51,8 +51,8 @@ The module defines the following functions:
 
 .. function:: tcsendbreak(fd, duration)
 
-   Send a break on file descriptor *fd*.  A zero *duration* sends a break for 0.25
-   --0.5 seconds; a nonzero *duration* has a system dependent meaning.
+   Send a break on file descriptor *fd*.  A zero *duration* sends a break for
+   0.25--0.5 seconds; a nonzero *duration* has a system dependent meaning.
 
 
 .. function:: tcdrain(fd)
@@ -72,6 +72,26 @@ The module defines the following functions:
    Suspend or resume input or output on file descriptor *fd*.  The *action*
    argument can be :const:`TCOOFF` to suspend output, :const:`TCOON` to restart
    output, :const:`TCIOFF` to suspend input, or :const:`TCION` to restart input.
+
+
+.. function:: tcgetwinsize(fd)
+
+   Return a tuple ``(ws_row, ws_col)`` containing the tty window size for file
+   descriptor *fd*. Requires :const:`termios.TIOCGWINSZ` or
+   :const:`termios.TIOCGSIZE`.
+
+   .. versionadded:: 3.11
+
+
+.. function:: tcsetwinsize(fd, winsize)
+
+   Set the tty window size for file descriptor *fd* from *winsize*, which is
+   a two-item tuple ``(ws_row, ws_col)`` like the one returned by
+   :func:`tcgetwinsize`. Requires at least one of the pairs
+   (:const:`termios.TIOCGWINSZ`, :const:`termios.TIOCSWINSZ`);
+   (:const:`termios.TIOCGSIZE`, :const:`termios.TIOCSSIZE`) to be defined.
+
+   .. versionadded:: 3.11
 
 
 .. seealso::

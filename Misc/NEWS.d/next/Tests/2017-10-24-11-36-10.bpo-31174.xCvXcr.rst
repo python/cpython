@@ -1,3 +1,0 @@
-Fix test_tools.test_unparse: DirectoryTestCase now stores the names sample
-to always test the same files. It prevents false alarms when hunting
-reference leaks.

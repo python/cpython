@@ -1,4 +1,0 @@
-Test_code_module now passes if run after test_idle, which sets ps1.
-
-The code module uses sys.ps1 if present or sets it to '>>> ' if not.
-Test_code_module now properly tests both behaviors.  Ditto for ps2.

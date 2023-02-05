@@ -1,2 +1,0 @@
-`PyErr_PrintEx()` clears now the ignored exception that may be raised by
-`_PySys_SetObjectId()`, for example when no memory.

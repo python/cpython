@@ -15,7 +15,7 @@
 
 #include <windows.h>
 #include <gdiplus.h>
-#include <Uxtheme.h>
+#include <uxtheme.h>
 #include <msiquery.h>
 #include <objbase.h>
 #include <shlobj.h>

@@ -1,3 +1,0 @@
-Remove year (1-9999) limits on the Calendar.weekday() function.
-
-Patch by Mark Gollahon.
