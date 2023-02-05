@@ -35,19 +35,24 @@ def recursive_repr(fillvalue='...'):
 
 class Repr:
 
-    def __init__(self):
-        self.fillvalue = '...'
-        self.maxlevel = 6
-        self.maxtuple = 6
-        self.maxlist = 6
-        self.maxarray = 5
-        self.maxdict = 4
-        self.maxset = 6
-        self.maxfrozenset = 6
-        self.maxdeque = 6
-        self.maxstring = 30
-        self.maxlong = 40
-        self.maxother = 30
+    def __init__(
+        self, *, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4,
+        maxset=6, maxfrozenset=6, maxdeque=6, maxstring=30, maxlong=40,
+        maxother=30, fillvalue='...', indent=None,
+    ):
+        self.maxlevel = maxlevel
+        self.maxtuple = maxtuple
+        self.maxlist = maxlist
+        self.maxarray = maxarray
+        self.maxdict = maxdict
+        self.maxset = maxset
+        self.maxfrozenset = maxfrozenset
+        self.maxdeque = maxdeque
+        self.maxstring = maxstring
+        self.maxlong = maxlong
+        self.maxother = maxother
+        self.fillvalue = fillvalue
+        self.indent = indent
 
     def repr(self, x):
         return self.repr1(x, self.maxlevel)
@@ -62,6 +67,26 @@ class Repr:
         else:
             return self.repr_instance(x, level)
 
+    def _join(self, pieces, level):
+        if self.indent is None:
+            return ', '.join(pieces)
+        if not pieces:
+            return ''
+        indent = self.indent
+        if isinstance(indent, int):
+            if indent < 0:
+                raise ValueError(
+                    f'Repr.indent cannot be negative int (was {indent!r})'
+                )
+            indent *= ' '
+        try:
+            sep = ',\n' + (self.maxlevel - level + 1) * indent
+        except TypeError as error:
+            raise TypeError(
+                f'Repr.indent must be a str, int or None, not {type(indent)}'
+            ) from error
+        return sep.join(('', *pieces, ''))[1:-len(indent) or None]
+
     def _repr_iterable(self, x, level, left, right, maxiter, trail=''):
         n = len(x)
         if level <= 0 and n:
@@ -72,8 +97,8 @@ class Repr:
             pieces = [repr1(elem, newlevel) for elem in islice(x, maxiter)]
             if n > maxiter:
                 pieces.append(self.fillvalue)
-            s = ', '.join(pieces)
-            if n == 1 and trail:
+            s = self._join(pieces, level)
+            if n == 1 and trail and self.indent is None:
                 right = trail + right
         return '%s%s%s' % (left, s, right)
 
@@ -120,7 +145,7 @@ class Repr:
             pieces.append('%s: %s' % (keyrepr, valrepr))
         if n > self.maxdict:
             pieces.append(self.fillvalue)
-        s = ', '.join(pieces)
+        s = self._join(pieces, level)
         return '{%s}' % (s,)
 
     def repr_str(self, x, level):

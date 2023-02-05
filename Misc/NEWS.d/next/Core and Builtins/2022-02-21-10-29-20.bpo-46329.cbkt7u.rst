@@ -1,2 +1,0 @@
-Move ``KW_NAMES`` before ``PRECALL`` instruction in call sequence. Change
-``operand`` of ``CALL`` to match ``PRECALL`` for easier specialization.

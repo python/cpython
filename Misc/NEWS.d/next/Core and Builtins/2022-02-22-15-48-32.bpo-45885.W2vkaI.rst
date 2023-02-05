@@ -1,1 +1,0 @@
-Don't un-adapt :opcode:`COMPARE_OP` when collecting specialization stats.

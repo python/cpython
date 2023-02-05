@@ -214,7 +214,7 @@ It is possible that ``pip`` does not get installed by default. One potential fix
     python -m ensurepip --default-pip
 
 There are also additional resources for `installing pip.
-<https://packaging.python.org/tutorials/installing-packages/#install-pip-setuptools-and-wheel>`__
+<https://packaging.python.org/en/latest/tutorials/installing-packages/#ensure-pip-setuptools-and-wheel-are-up-to-date>`__
 
 
 Installing binary extensions

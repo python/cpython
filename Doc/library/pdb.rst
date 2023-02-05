@@ -27,6 +27,15 @@ The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
 extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
 
+.. seealso::
+
+   Module :mod:`faulthandler`
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout,
+      or on a user signal.
+
+   Module :mod:`traceback`
+      Standard interface to extract, format and print stack traces of Python programs.
+
 The debugger's prompt is ``(Pdb)``. Typical usage to run a program under control
 of the debugger is::
 
@@ -233,7 +242,8 @@ Multiple commands may be entered on a single line, separated by ``;;``.  (A
 single ``;`` is not used as it is the separator for multiple commands in a line
 that is passed to the Python parser.)  No intelligence is applied to separating
 the commands; the input is split at the first ``;;`` pair, even if it is in the
-middle of a quoted string.
+middle of a quoted string. A workaround for strings with double semicolons
+is to use implicit string concatenation ``';'';'`` or ``";"";"``.
 
 .. index::
    pair: .pdbrc; file

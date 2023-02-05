@@ -9,11 +9,12 @@ import pickle
 import inspect
 import builtins
 import types
+import weakref
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
+from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
-from collections import deque, OrderedDict, namedtuple
+from collections import deque, OrderedDict, namedtuple, defaultdict
 from functools import total_ordering
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
@@ -66,6 +67,50 @@ class TestCase(unittest.TestCase):
                            "_field_type=None)"
 
         self.assertEqual(repr_output, expected_output)
+
+    def test_field_recursive_repr(self):
+        rec_field = field()
+        rec_field.type = rec_field
+        rec_field.name = "id"
+        repr_output = repr(rec_field)
+
+        self.assertIn(",type=...,", repr_output)
+
+    def test_recursive_annotation(self):
+        class C:
+            pass
+
+        @dataclass
+        class D:
+            C: C = field()
+
+        self.assertIn(",type=...,", repr(D.__dataclass_fields__["C"]))
+
+    def test_dataclass_params_repr(self):
+        # Even though this is testing an internal implementation detail,
+        # it's testing a feature we want to make sure is correctly implemented
+        # for the sake of dataclasses itself
+        @dataclass(slots=True, frozen=True)
+        class Some: pass
+
+        repr_output = repr(Some.__dataclass_params__)
+        expected_output = "_DataclassParams(init=True,repr=True," \
+                          "eq=True,order=False,unsafe_hash=False,frozen=True," \
+                          "match_args=True,kw_only=False," \
+                          "slots=True,weakref_slot=False)"
+        self.assertEqual(repr_output, expected_output)
+
+    def test_dataclass_params_signature(self):
+        # Even though this is testing an internal implementation detail,
+        # it's testing a feature we want to make sure is correctly implemented
+        # for the sake of dataclasses itself
+        @dataclass
+        class Some: pass
+
+        for param in inspect.signature(dataclass).parameters:
+            if param == 'cls':
+                continue
+            self.assertTrue(hasattr(Some.__dataclass_params__, param), msg=param)
 
     def test_named_init_params(self):
         @dataclass
@@ -229,6 +274,14 @@ class TestCase(unittest.TestCase):
             object: str
         c = C('foo')
         self.assertEqual(c.object, 'foo')
+
+    def test_field_named_BUILTINS_frozen(self):
+        # gh-96151
+        @dataclass(frozen=True)
+        class C:
+            BUILTINS: int
+        c = C(5)
+        self.assertEqual(c.BUILTINS, 5)
 
     def test_field_named_like_builtin(self):
         # Attribute names can shadow built-in names
@@ -1650,6 +1703,23 @@ class TestCase(unittest.TestCase):
         self.assertIsNot(d['f'], t)
         self.assertEqual(d['f'].my_a(), 6)
 
+    def test_helper_asdict_defaultdict(self):
+        # Ensure asdict() does not throw exceptions when a
+        # defaultdict is a member of a dataclass
+
+        @dataclass
+        class C:
+            mp: DefaultDict[str, List]
+
+
+        dd = defaultdict(list)
+        dd["x"].append(12)
+        c = C(mp=dd)
+        d = asdict(c)
+
+        assert d == {"mp": {"x": [12]}}
+        assert d["mp"] is not c.mp  # make sure defaultdict is copied
+
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
         @dataclass
@@ -2214,12 +2284,12 @@ class TestInit(unittest.TestCase):
         self.assertEqual(c.z, 100)
 
     def test_no_init(self):
-        dataclass(init=False)
+        @dataclass(init=False)
         class C:
             i: int = 0
         self.assertEqual(C().i, 0)
 
-        dataclass(init=False)
+        @dataclass(init=False)
         class C:
             i: int = 2
             def __init__(self):
@@ -2926,23 +2996,58 @@ class TestSlots(unittest.TestCase):
                 x: int
 
     def test_generated_slots_value(self):
-        @dataclass(slots=True)
-        class Base:
-            x: int
 
-        self.assertEqual(Base.__slots__, ('x',))
+        class Root:
+            __slots__ = {'x'}
+
+        class Root2(Root):
+            __slots__ = {'k': '...', 'j': ''}
+
+        class Root3(Root2):
+            __slots__ = ['h']
+
+        class Root4(Root3):
+            __slots__ = 'aa'
 
         @dataclass(slots=True)
-        class Delivered(Base):
+        class Base(Root4):
             y: int
+            j: str
+            h: str
 
-        self.assertEqual(Delivered.__slots__, ('x', 'y'))
+        self.assertEqual(Base.__slots__, ('y', ))
+
+        @dataclass(slots=True)
+        class Derived(Base):
+            aa: float
+            x: str
+            z: int
+            k: str
+            h: str
+
+        self.assertEqual(Derived.__slots__, ('z', ))
 
         @dataclass
-        class AnotherDelivered(Base):
+        class AnotherDerived(Base):
             z: int
 
-        self.assertTrue('__slots__' not in AnotherDelivered.__dict__)
+        self.assertNotIn('__slots__', AnotherDerived.__dict__)
+
+    def test_cant_inherit_from_iterator_slots(self):
+
+        class Root:
+            __slots__ = iter(['a'])
+
+        class Root2(Root):
+            __slots__ = ('b', )
+
+        with self.assertRaisesRegex(
+           TypeError,
+            "^Slots of 'Root' cannot be determined"
+        ):
+            @dataclass(slots=True)
+            class C(Root2):
+                x: int
 
     def test_returns_new_class(self):
         class A:
@@ -3002,6 +3107,125 @@ class TestSlots(unittest.TestCase):
         obj = A("a")
         self.assertEqual(obj.a, 'a')
         self.assertEqual(obj.b, 'b')
+
+    def test_slots_no_weakref(self):
+        @dataclass(slots=True)
+        class A:
+            # No weakref.
+            pass
+
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A()
+        with self.assertRaisesRegex(TypeError,
+                                    "cannot create weak reference"):
+            weakref.ref(a)
+
+    def test_slots_weakref(self):
+        @dataclass(slots=True, weakref_slot=True)
+        class A:
+            a: int
+
+        self.assertIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_slots_weakref_base_str(self):
+        class Base:
+            __slots__ = '__weakref__'
+
+        @dataclass(slots=True)
+        class A(Base):
+            a: int
+
+        # __weakref__ is in the base class, not A.  But an A is still weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_slots_weakref_base_tuple(self):
+        # Same as test_slots_weakref_base, but use a tuple instead of a string
+        # in the base class.
+        class Base:
+            __slots__ = ('__weakref__',)
+
+        @dataclass(slots=True)
+        class A(Base):
+            a: int
+
+        # __weakref__ is in the base class, not A.  But an A is still
+        # weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_weakref_slot_without_slot(self):
+        with self.assertRaisesRegex(TypeError,
+                                    "weakref_slot is True but slots is False"):
+            @dataclass(weakref_slot=True)
+            class A:
+                a: int
+
+    def test_weakref_slot_make_dataclass(self):
+        A = make_dataclass('A', [('a', int),], slots=True, weakref_slot=True)
+        self.assertIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+        # And make sure if raises if slots=True is not given.
+        with self.assertRaisesRegex(TypeError,
+                                    "weakref_slot is True but slots is False"):
+            B = make_dataclass('B', [('a', int),], weakref_slot=True)
+
+    def test_weakref_slot_subclass_weakref_slot(self):
+        @dataclass(slots=True, weakref_slot=True)
+        class Base:
+            field: int
+
+        # A *can* also specify weakref_slot=True if it wants to (gh-93521)
+        @dataclass(slots=True, weakref_slot=True)
+        class A(Base):
+            ...
+
+        # __weakref__ is in the base class, not A.  But an instance of A
+        # is still weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_weakref_slot_subclass_no_weakref_slot(self):
+        @dataclass(slots=True, weakref_slot=True)
+        class Base:
+            field: int
+
+        @dataclass(slots=True)
+        class A(Base):
+            ...
+
+        # __weakref__ is in the base class, not A.  Even though A doesn't
+        # specify weakref_slot, it should still be weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
+    def test_weakref_slot_normal_base_weakref_slot(self):
+        class Base:
+            __slots__ = ('__weakref__',)
+
+        @dataclass(slots=True, weakref_slot=True)
+        class A(Base):
+            field: int
+
+        # __weakref__ is in the base class, not A.  But an instance of
+        # A is still weakref-able.
+        self.assertIn("__weakref__", Base.__slots__)
+        self.assertNotIn("__weakref__", A.__slots__)
+        a = A(1)
+        weakref.ref(a)
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
@@ -3074,6 +3298,115 @@ class TestDescriptors(unittest.TestCase):
 
         self.assertEqual(D.__set_name__.call_count, 1)
 
+    def test_init_calls_set(self):
+        class D:
+            pass
+
+        D.__set__ = Mock()
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        # Make sure D.__set__ is called.
+        D.__set__.reset_mock()
+        c = C(5)
+        self.assertEqual(D.__set__.call_count, 1)
+
+    def test_getting_field_calls_get(self):
+        class D:
+            pass
+
+        D.__set__ = Mock()
+        D.__get__ = Mock()
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        c = C(5)
+
+        # Make sure D.__get__ is called.
+        D.__get__.reset_mock()
+        value = c.i
+        self.assertEqual(D.__get__.call_count, 1)
+
+    def test_setting_field_calls_set(self):
+        class D:
+            pass
+
+        D.__set__ = Mock()
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        c = C(5)
+
+        # Make sure D.__set__ is called.
+        D.__set__.reset_mock()
+        c.i = 10
+        self.assertEqual(D.__set__.call_count, 1)
+
+    def test_setting_uninitialized_descriptor_field(self):
+        class D:
+            pass
+
+        D.__set__ = Mock()
+
+        @dataclass
+        class C:
+            i: D
+
+        # D.__set__ is not called because there's no D instance to call it on
+        D.__set__.reset_mock()
+        c = C(5)
+        self.assertEqual(D.__set__.call_count, 0)
+
+        # D.__set__ still isn't called after setting i to an instance of D
+        # because descriptors don't behave like that when stored as instance vars
+        c.i = D()
+        c.i = 5
+        self.assertEqual(D.__set__.call_count, 0)
+
+    def test_default_value(self):
+        class D:
+            def __get__(self, instance: Any, owner: object) -> int:
+                if instance is None:
+                    return 100
+
+                return instance._x
+
+            def __set__(self, instance: Any, value: int) -> None:
+                instance._x = value
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        c = C()
+        self.assertEqual(c.i, 100)
+
+        c = C(5)
+        self.assertEqual(c.i, 5)
+
+    def test_no_default_value(self):
+        class D:
+            def __get__(self, instance: Any, owner: object) -> int:
+                if instance is None:
+                    raise AttributeError()
+
+                return instance._x
+
+            def __set__(self, instance: Any, value: int) -> None:
+                instance._x = value
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        with self.assertRaisesRegex(TypeError, 'missing 1 required positional argument'):
+            c = C()
 
 class TestStringAnnotations(unittest.TestCase):
     def test_classvar(self):
@@ -3655,7 +3988,7 @@ class TestAbstract(unittest.TestCase):
             day: 'int'
 
         self.assertTrue(inspect.isabstract(Date))
-        msg = 'class Date with abstract method foo'
+        msg = "class Date without an implementation for abstract method 'foo'"
         self.assertRaisesRegex(TypeError, msg, Date)
 
 

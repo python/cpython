@@ -34,8 +34,7 @@ typedef struct {
 } iobase;
 
 PyDoc_STRVAR(iobase_doc,
-    "The abstract base class for all I/O classes, acting on streams of\n"
-    "bytes. There is no public constructor.\n"
+    "The abstract base class for all I/O classes.\n"
     "\n"
     "This class provides dummy implementations for many methods that\n"
     "derived classes can override selectively; the default implementations\n"
@@ -465,8 +464,7 @@ iobase_enter(PyObject *self, PyObject *args)
     if (iobase_check_closed(self))
         return NULL;
 
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -643,8 +641,7 @@ iobase_iter(PyObject *self)
     if (iobase_check_closed(self))
         return NULL;
 
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *

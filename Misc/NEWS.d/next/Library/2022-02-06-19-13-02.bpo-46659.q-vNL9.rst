@@ -1,4 +1,0 @@
-The :class:`calendar.LocaleTextCalendar` and
-:class:`calendar.LocaleHTMLCalendar` classes now use :func:`locale.getlocale`,
-instead of using :func:`locale.getdefaultlocale`, if no locale is specified.
-Patch by Victor Stinner.

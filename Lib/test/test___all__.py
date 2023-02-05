@@ -41,6 +41,7 @@ class AllTest(unittest.TestCase):
     def check_all(self, modname):
         names = {}
         with warnings_helper.check_warnings(
+            (f".*{modname}", DeprecationWarning),
             (".* (module|package)", DeprecationWarning),
             (".* (module|package)", PendingDeprecationWarning),
             ("", ResourceWarning),
@@ -99,10 +100,9 @@ class AllTest(unittest.TestCase):
             '__future__',
         ])
 
-        if not sys.platform.startswith('java'):
-            # In case _socket fails to build, make this test fail more gracefully
-            # than an AttributeError somewhere deep in CGIHTTPServer.
-            import _socket
+        # In case _socket fails to build, make this test fail more gracefully
+        # than an AttributeError somewhere deep in CGIHTTPServer.
+        import _socket
 
         ignored = []
         failed_imports = []

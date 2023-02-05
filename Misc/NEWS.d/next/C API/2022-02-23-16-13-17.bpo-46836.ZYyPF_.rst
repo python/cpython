@@ -1,2 +1,0 @@
-Move the :c:type:`PyFrameObject` type definition (``struct _frame``) to the
-internal C API ``pycore_frame.h`` header file. Patch by Victor Stinner.
