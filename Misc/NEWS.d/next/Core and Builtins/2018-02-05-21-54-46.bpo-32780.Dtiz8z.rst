@@ -1,3 +1,3 @@
 Inter-field padding is now inserted into the PEP3118 format strings obtained
-from ``ctypes.Structure`` objects, reflecting their true representation in
+from :class:`ctypes.Structure` objects, reflecting their true representation in
 memory.
