@@ -3573,8 +3573,11 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
+            PyObject **args = &PEEK(oparg);
+            PyObject *method = PEEK(2 + oparg);
+            PyObject *res;
             assert(kwnames == NULL);
-            int is_meth = is_method(stack_pointer, oparg);
+            int is_meth = method != NULL;
             int total_args = oparg + is_meth;
             PyMethodDescrObject *callable =
                 (PyMethodDescrObject *)PEEK(total_args + 1);
@@ -3589,14 +3592,14 @@
                 (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args-1;
             STACK_SHRINK(nargs);
-            PyObject *res = cfunc(self, stack_pointer, nargs);
+            res = cfunc(self, stack_pointer, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < nargs; i++) {
                 Py_DECREF(stack_pointer[i]);
             }
             Py_DECREF(self);
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(2 - is_meth);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {

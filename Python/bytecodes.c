@@ -2372,7 +2372,7 @@ dummy_func(
             CALL_NO_KW_METHOD_DESCRIPTOR_O,
             CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS,
             CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
-        //     CALL_NO_KW_METHOD_DESCRIPTOR_FAST,
+            CALL_NO_KW_METHOD_DESCRIPTOR_FAST,
         };
 
         // Stack is either
@@ -2881,10 +2881,9 @@ dummy_func(
             DISPATCH();
         }
 
-        // stack effect: (__0, __array[oparg] -- )
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
+        inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, unused/1, method, unused, args[oparg] -- res)) {
             assert(kwnames == NULL);
-            int is_meth = is_method(stack_pointer, oparg);
+            int is_meth = method != NULL;
             int total_args = oparg + is_meth;
             PyMethodDescrObject *callable =
                 (PyMethodDescrObject *)PEEK(total_args + 1);
@@ -2899,14 +2898,14 @@ dummy_func(
                 (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args-1;
             STACK_SHRINK(nargs);
-            PyObject *res = cfunc(self, stack_pointer, nargs);
+            res = cfunc(self, stack_pointer, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < nargs; i++) {
                 Py_DECREF(stack_pointer[i]);
             }
             Py_DECREF(self);
-            STACK_SHRINK(2-is_meth);
+            STACK_SHRINK(2 - is_meth);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -2914,6 +2913,7 @@ dummy_func(
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
+            DISPATCH();
         }
 
         // error: CALL_FUNCTION_EX has irregular stack effect
