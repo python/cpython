@@ -60,6 +60,10 @@ typedef struct _object_stats {
     uint64_t frees;
     uint64_t to_freelist;
     uint64_t from_freelist;
+    uint64_t to_generic_freelist;
+    uint64_t from_generic_freelist;
+    uint64_t generic_freelist_empty;
+    uint64_t generic_freelist_full;
     uint64_t new_values;
     uint64_t dict_materialized_on_request;
     uint64_t dict_materialized_new_key;

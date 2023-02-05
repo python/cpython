@@ -117,13 +117,16 @@ static inline void *
 _PyFreeList_Alloc(_PyFreeList *list) {
     if (list->ptr != NULL) {
 #ifdef Py_STATS
-        if (_py_stats) _py_stats->object_stats.from_freelist++;
+        if (_py_stats) _py_stats->object_stats.from_generic_freelist++;
 #endif
         void *result = list->ptr;
         list->ptr = *((void **)result);
         list->space++;
         return result;
     }
+#ifdef Py_STATS
+        if (_py_stats) _py_stats->object_stats.generic_freelist_empty++;
+#endif
     return _PyFreeList_HalfFillAndAllocate(list);
 }
 
@@ -131,13 +134,16 @@ static inline void
 _PyFreeList_Free(_PyFreeList *list, void *ptr) {
     if (list->space) {
 #ifdef Py_STATS
-        if (_py_stats) _py_stats->object_stats.to_freelist++;
+        if (_py_stats) _py_stats->object_stats.to_generic_freelist++;
 #endif
         *((void **)ptr) = list->ptr;
         list->ptr = ptr;
         list->space--;
         return;
     }
+#ifdef Py_STATS
+        if (_py_stats) _py_stats->object_stats.generic_freelist_full++;
+#endif
     _PyFreeList_FreeToFull(list, ptr);
 }
 
