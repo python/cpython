@@ -5882,13 +5882,10 @@ static Py_ssize_t
 int___sizeof___impl(PyObject *self)
 /*[clinic end generated code: output=3303f008eaa6a0a5 input=9b51620c76fc4507]*/
 {
-    Py_ssize_t res;
-
-    res = offsetof(PyLongObject, long_value.ob_digit)
-        /* using Py_MAX(..., 1) because we always allocate space for at least
-           one digit, even though the integer zero has a Py_SIZE of 0 */
-        + Py_MAX(Py_ABS(Py_SIZE(self)), 1)*sizeof(digit);
-    return res;
+    /* using Py_MAX(..., 1) because we always allocate space for at least
+       one digit, even though the integer zero has a Py_SIZE of 0 */
+    Py_ssize_t ndigits = Py_MAX(Py_ABS(Py_SIZE(self)), 1);
+    return Py_TYPE(self)->tp_basicsize + Py_TYPE(self)->tp_itemsize * ndigits;
 }
 
 /*[clinic input]
