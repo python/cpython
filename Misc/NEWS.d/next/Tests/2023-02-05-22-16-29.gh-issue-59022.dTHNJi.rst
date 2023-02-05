@@ -1,0 +1,1 @@
+Add tests for :class:`pkgutil.extend_path`. Patch by Windson Yang.
