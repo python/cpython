@@ -338,7 +338,9 @@ MakeAnonFields(PyObject *type)
 }
 
 /*
-  Append {padding}x to the PEP3118 format string.
+  Allocate a memory block for a pep3118 format string, copy prefix (if
+  non-null) into it and append `{padding}x` to the end. 
+  Returns NULL on failure, with the error indicator set.
 */
 char *
 _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
@@ -353,7 +355,8 @@ _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
         return _ctypes_alloc_format_string(prefix, "x");
     }
 
-    sprintf(buf, "%zdx", padding);
+    int ret = PyOS_snprintf(buf, sizeof(buf), "%zdx", padding);
+    assert(0 <= ret && ret < sizeof(buf));
     return _ctypes_alloc_format_string(prefix, buf);
 }
 
