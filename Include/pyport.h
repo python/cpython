@@ -726,4 +726,10 @@ extern char * _getpty(int *, int, mode_t, int);
 #  endif
 #endif
 
+
+/* AIX has __bool__ redefined in it's system header file. */
+#if defined(_AIX) && defined(__bool__)
+#undef __bool__
+#endif
+
 #endif /* Py_PYPORT_H */
