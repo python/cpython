@@ -133,8 +133,7 @@ class Parser:
         self.code = s
         self.study_level = 0
 
-    def find_good_parse_start(self, is_char_in_string=None,
-                              _synchre=_synchre):
+    def find_good_parse_start(self, is_char_in_string):
         """
         Return index of a good place to begin parsing, as close to the
         end of the string as possible.  This will be the start of some
@@ -148,10 +147,6 @@ class Parser:
         guaranteed that the char is not in a string.
         """
         code, pos = self.code, None
-
-        if not is_char_in_string:
-            # no clue -- make the caller pass everything
-            return None
 
         # Peek back from the end for a good place to start,
         # but don't try too often; pos will be left None, or
@@ -184,14 +179,10 @@ class Parser:
         # Peeking back worked; look forward until _synchre no longer
         # matches.
         i = pos + 1
-        while 1:
-            m = _synchre(code, i)
-            if m:
-                s, i = m.span()
-                if not is_char_in_string(s):
-                    pos = s
-            else:
-                break
+        while m := _synchre(code, i):
+            s, i = m.span()
+            if not is_char_in_string(s):
+                pos = s
         return pos
 
     def set_lo(self, lo):
@@ -575,7 +566,7 @@ class Parser:
         return code[i:j]
 
     def is_block_opener(self):
-        "Return True if the last interesting statemtent opens a block."
+        "Return True if the last interesting statement opens a block."
         self._study2()
         return self.lastch == ':'
 

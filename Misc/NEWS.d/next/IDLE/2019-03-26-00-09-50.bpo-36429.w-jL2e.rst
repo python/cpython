@@ -1,2 +1,0 @@
-Fix starting IDLE with pyshell. Add idlelib.pyshell alias at top; remove
-pyshell alias at bottom. Remove obsolete __name__=='__main__' command.

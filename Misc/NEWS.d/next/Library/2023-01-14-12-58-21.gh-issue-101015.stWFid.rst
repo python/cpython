@@ -1,0 +1,2 @@
+Fix :func:`typing.get_type_hints` on ``'*tuple[...]'`` and ``*tuple[...]``.
+It must not drop the ``Unpack`` part.

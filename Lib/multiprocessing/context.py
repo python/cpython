@@ -35,6 +35,7 @@ class BaseContext(object):
     AuthenticationError = AuthenticationError
 
     current_process = staticmethod(process.current_process)
+    parent_process = staticmethod(process.parent_process)
     active_children = staticmethod(process.active_children)
 
     def cpu_count(self):
@@ -222,6 +223,10 @@ class Process(process.BaseProcess):
     def _Popen(process_obj):
         return _default_context.get_context().Process._Popen(process_obj)
 
+    @staticmethod
+    def _after_fork():
+        return _default_context.get_context().Process._after_fork()
+
 class DefaultContext(BaseContext):
     Process = Process
 
@@ -253,13 +258,15 @@ class DefaultContext(BaseContext):
         return self._actual_context._name
 
     def get_all_start_methods(self):
+        """Returns a list of the supported start methods, default first."""
         if sys.platform == 'win32':
             return ['spawn']
         else:
+            methods = ['spawn', 'fork'] if sys.platform == 'darwin' else ['fork', 'spawn']
             if reduction.HAVE_SEND_HANDLE:
-                return ['fork', 'spawn', 'forkserver']
-            else:
-                return ['fork', 'spawn']
+                methods.append('forkserver')
+            return methods
+
 
 #
 # Context types for fixed start method
@@ -280,6 +287,11 @@ if sys.platform != 'win32':
         def _Popen(process_obj):
             from .popen_spawn_posix import Popen
             return Popen(process_obj)
+
+        @staticmethod
+        def _after_fork():
+            # process is spawned, nothing to do
+            pass
 
     class ForkServerProcess(process.BaseProcess):
         _start_method = 'forkserver'
@@ -308,7 +320,12 @@ if sys.platform != 'win32':
         'spawn': SpawnContext(),
         'forkserver': ForkServerContext(),
     }
-    _default_context = DefaultContext(_concrete_contexts['fork'])
+    if sys.platform == 'darwin':
+        # bpo-33725: running arbitrary code after fork() is no longer reliable
+        # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
+        _default_context = DefaultContext(_concrete_contexts['spawn'])
+    else:
+        _default_context = DefaultContext(_concrete_contexts['fork'])
 
 else:
 
@@ -318,6 +335,11 @@ else:
         def _Popen(process_obj):
             from .popen_spawn_win32 import Popen
             return Popen(process_obj)
+
+        @staticmethod
+        def _after_fork():
+            # process is spawned, nothing to do
+            pass
 
     class SpawnContext(BaseContext):
         _name = 'spawn'

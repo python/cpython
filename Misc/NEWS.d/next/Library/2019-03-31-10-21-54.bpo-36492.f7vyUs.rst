@@ -1,5 +1,0 @@
-Deprecated passing required arguments like *func* as keyword arguments
-in functions which should accept arbitrary keyword arguments and pass them
-to other function. Arbitrary keyword arguments (even with names "self" and
-"func") can now be passed to these functions if the required arguments are
-passed as positional arguments.

@@ -1,41 +1,10 @@
 /* InterpreterID object */
 
 #include "Python.h"
-#include "internal/pycore_pystate.h"
-#include "interpreteridobject.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_interp.h"     // _PyInterpreterState_LookUpID()
+#include "pycore_interpreteridobject.h"
 
-
-int64_t
-_Py_CoerceID(PyObject *orig)
-{
-    PyObject *pyid = PyNumber_Long(orig);
-    if (pyid == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Format(PyExc_TypeError,
-                         "'id' must be a non-negative int, got %R", orig);
-        }
-        else {
-            PyErr_Format(PyExc_ValueError,
-                         "'id' must be a non-negative int, got %R", orig);
-        }
-        return -1;
-    }
-    int64_t id = PyLong_AsLongLong(pyid);
-    Py_DECREF(pyid);
-    if (id == -1 && PyErr_Occurred() != NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            PyErr_Format(PyExc_ValueError,
-                         "'id' must be a non-negative int, got %R", orig);
-        }
-        return -1;
-    }
-    if (id < 0) {
-        PyErr_Format(PyExc_ValueError,
-                     "'id' must be a non-negative int, got %R", orig);
-        return -1;
-    }
-    return id;
-}
 
 typedef struct interpid {
     PyObject_HEAD
@@ -55,40 +24,62 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
         }
     }
 
+    if (interp != NULL) {
+        if (_PyInterpreterState_IDIncref(interp) < 0) {
+            return NULL;
+        }
+    }
+
     interpid *self = PyObject_New(interpid, cls);
     if (self == NULL) {
+        if (interp != NULL) {
+            _PyInterpreterState_IDDecref(interp);
+        }
         return NULL;
     }
     self->id = id;
 
-    if (interp != NULL) {
-        _PyInterpreterState_IDIncref(interp);
-    }
     return self;
+}
+
+static int
+interp_id_converter(PyObject *arg, void *ptr)
+{
+    int64_t id;
+    if (PyObject_TypeCheck(arg, &_PyInterpreterID_Type)) {
+        id = ((interpid *)arg)->id;
+    }
+    else if (_PyIndex_Check(arg)) {
+        id = PyLong_AsLongLong(arg);
+        if (id == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+        if (id < 0) {
+            PyErr_Format(PyExc_ValueError,
+                         "interpreter ID must be a non-negative int, got %R", arg);
+            return 0;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "interpreter ID must be an int, got %.100s",
+                     Py_TYPE(arg)->tp_name);
+        return 0;
+    }
+    *(int64_t *)ptr = id;
+    return 1;
 }
 
 static PyObject *
 interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "force", NULL};
-    PyObject *idobj;
+    int64_t id;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:InterpreterID.__init__", kwlist,
-                                     &idobj, &force)) {
+                                     "O&|$p:InterpreterID.__init__", kwlist,
+                                     interp_id_converter, &id, &force)) {
         return NULL;
-    }
-
-    // Coerce and check the ID.
-    int64_t id;
-    if (PyObject_TypeCheck(idobj, &_PyInterpreterID_Type)) {
-        id = ((interpid *)idobj)->id;
-    }
-    else {
-        id = _Py_CoerceID(idobj);
-        if (id < 0) {
-            return NULL;
-        }
     }
 
     return (PyObject *)newinterpid(cls, id, force);
@@ -202,23 +193,26 @@ interpid_richcompare(PyObject *self, PyObject *other, int op)
         interpid *otherid = (interpid *)other;
         equal = (id->id == otherid->id);
     }
-    else {
-        other = PyNumber_Long(other);
-        if (other == NULL) {
-            PyErr_Clear();
-            Py_RETURN_NOTIMPLEMENTED;
-        }
-        int64_t otherid = PyLong_AsLongLong(other);
-        Py_DECREF(other);
-        if (otherid == -1 && PyErr_Occurred() != NULL) {
+    else if (PyLong_CheckExact(other)) {
+        /* Fast path */
+        int overflow;
+        long long otherid = PyLong_AsLongLongAndOverflow(other, &overflow);
+        if (otherid == -1 && PyErr_Occurred()) {
             return NULL;
         }
-        if (otherid < 0) {
-            equal = 0;
+        equal = !overflow && (otherid >= 0) && (id->id == otherid);
+    }
+    else if (PyNumber_Check(other)) {
+        PyObject *pyid = PyLong_FromLongLong(id->id);
+        if (pyid == NULL) {
+            return NULL;
         }
-        else {
-            equal = (id->id == otherid);
-        }
+        PyObject *res = PyObject_RichCompare(pyid, other, op);
+        Py_DECREF(pyid);
+        return res;
+    }
+    else {
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if ((op == Py_EQ && equal) || (op == Py_NE && !equal)) {
@@ -236,7 +230,7 @@ PyTypeObject _PyInterpreterID_Type = {
     sizeof(interpid),               /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)interpid_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
+    0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
     0,                              /* tp_as_async */
@@ -250,8 +244,7 @@ PyTypeObject _PyInterpreterID_Type = {
     0,                              /* tp_getattro */
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_LONG_SUBCLASS,   /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
     interpid_doc,                   /* tp_doc */
     0,                              /* tp_traverse */
     0,                              /* tp_clear */
@@ -262,7 +255,7 @@ PyTypeObject _PyInterpreterID_Type = {
     0,                              /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
-    &PyLong_Type,                   /* tp_base */
+    0,                              /* tp_base */
     0,                              /* tp_dict */
     0,                              /* tp_descr_get */
     0,                              /* tp_descr_set */
@@ -283,7 +276,7 @@ _PyInterpreterState_GetIDObject(PyInterpreterState *interp)
     if (_PyInterpreterState_IDInitref(interp) != 0) {
         return NULL;
     };
-    PY_INT64_T id = PyInterpreterState_GetID(interp);
+    int64_t id = PyInterpreterState_GetID(interp);
     if (id < 0) {
         return NULL;
     }
@@ -294,15 +287,8 @@ PyInterpreterState *
 _PyInterpreterID_LookUp(PyObject *requested_id)
 {
     int64_t id;
-    if (PyObject_TypeCheck(requested_id, &_PyInterpreterID_Type)) {
-        id = ((interpid *)requested_id)->id;
-    }
-    else {
-        id = PyLong_AsLongLong(requested_id);
-        if (id == -1 && PyErr_Occurred() != NULL) {
-            return NULL;
-        }
-        assert(id <= INT64_MAX);
+    if (!interp_id_converter(requested_id, &id)) {
+        return NULL;
     }
     return _PyInterpreterState_LookUpID(id);
 }

@@ -6,7 +6,7 @@ from test.support import requires
 from tkinter import Text, Tk
 
 
-class Dummy_Editwin:
+class DummyEditwin:
     # AutoExpand.__init__ only needs .text
     def __init__(self, text):
         self.text = text
@@ -18,7 +18,7 @@ class AutoExpandTest(unittest.TestCase):
         requires('gui')
         cls.tk = Tk()
         cls.text = Text(cls.tk)
-        cls.auto_expand = AutoExpand(Dummy_Editwin(cls.text))
+        cls.auto_expand = AutoExpand(DummyEditwin(cls.text))
         cls.auto_expand.bell = lambda: None
 
 # If mock_tk.Text._decode understood indexes 'insert' with suffixed 'linestart',

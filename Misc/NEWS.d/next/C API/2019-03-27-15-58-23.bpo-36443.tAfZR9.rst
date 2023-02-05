@@ -1,6 +1,0 @@
-Since Python 3.7.0, calling :c:func:`Py_DecodeLocale` before
-:c:func:`Py_Initialize` produces mojibake if the ``LC_CTYPE`` locale is coerced
-and/or if the UTF-8 Mode is enabled by the user configuration. The LC_CTYPE
-coercion and UTF-8 Mode are now disabled by default to fix the mojibake issue.
-They must now be enabled explicitly (opt-in) using the new
-:c:func:`_Py_PreInitialize` API with ``_PyPreConfig``.

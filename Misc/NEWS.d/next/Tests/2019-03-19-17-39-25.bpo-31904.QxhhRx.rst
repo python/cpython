@@ -1,1 +1,0 @@
-Fix test_utf8_mode on VxWorks: Python always use UTF-8 on VxWorks.

@@ -1,4 +1,5 @@
 import unittest
+from types import MethodType
 
 def funcattrs(**kwds):
     def decorate(func):
@@ -76,11 +77,32 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo(), 42)
         self.assertEqual(C().foo(), 42)
 
-    def test_staticmethod_function(self):
-        @staticmethod
-        def notamethod(x):
+    def check_wrapper_attrs(self, method_wrapper, format_str):
+        def func(x):
             return x
-        self.assertRaises(TypeError, notamethod, 1)
+        wrapper = method_wrapper(func)
+
+        self.assertIs(wrapper.__func__, func)
+        self.assertIs(wrapper.__wrapped__, func)
+
+        for attr in ('__module__', '__qualname__', '__name__',
+                     '__doc__', '__annotations__'):
+            self.assertIs(getattr(wrapper, attr),
+                          getattr(func, attr))
+
+        self.assertEqual(repr(wrapper), format_str.format(func))
+        return wrapper
+
+    def test_staticmethod(self):
+        wrapper = self.check_wrapper_attrs(staticmethod, '<staticmethod({!r})>')
+
+        # bpo-43682: Static methods are callable since Python 3.10
+        self.assertEqual(wrapper(1), 1)
+
+    def test_classmethod(self):
+        wrapper = self.check_wrapper_attrs(classmethod, '<classmethod({!r})>')
+
+        self.assertRaises(TypeError, wrapper, 1)
 
     def test_dotted(self):
         decorators = MiscDecorators()
@@ -151,21 +173,18 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(counts['double'], 4)
 
     def test_errors(self):
-        # Test syntax restrictions - these are all compile-time errors:
-        #
-        for expr in [ "1+2", "x[3]", "(1, 2)" ]:
-            # Sanity check: is expr is a valid expression by itself?
-            compile(expr, "testexpr", "exec")
 
-            codestr = "@%s\ndef f(): pass" % expr
-            self.assertRaises(SyntaxError, compile, codestr, "test", "exec")
+        # Test SyntaxErrors:
+        for stmt in ("x,", "x, y", "x = y", "pass", "import sys"):
+            compile(stmt, "test", "exec")  # Sanity check.
+            with self.assertRaises(SyntaxError):
+                compile(f"@{stmt}\ndef f(): pass", "test", "exec")
 
-        # You can't put multiple decorators on a single line:
-        #
-        self.assertRaises(SyntaxError, compile,
-                          "@f1 @f2\ndef f(): pass", "test", "exec")
-
-        # Test runtime errors
+        # Test TypeErrors that used to be SyntaxErrors:
+        for expr in ("1.+2j", "[1, 2][-1]", "(1, 2)", "True", "...", "None"):
+            compile(expr, "test", "eval")  # Sanity check.
+            with self.assertRaises(TypeError):
+                exec(f"@{expr}\ndef f(): pass")
 
         def unimp(func):
             raise NotImplementedError
@@ -178,6 +197,13 @@ class TestDecorators(unittest.TestCase):
             codestr = "@%s\ndef f(): pass\nassert f() is None" % expr
             code = compile(codestr, "test", "exec")
             self.assertRaises(exc, eval, code, context)
+
+    def test_expressions(self):
+        for expr in (
+            "(x,)", "(x, y)", "x := y", "(x := y)", "x @y", "(x @ y)", "x[0]",
+            "w[x].y.z", "w + x - (y + z)", "x(y)()(z)", "[w, x, y][z]", "x.y",
+        ):
+            compile(f"@{expr}\ndef f(): pass", "test", "exec")
 
     def test_double(self):
         class C(object):
@@ -264,6 +290,140 @@ class TestDecorators(unittest.TestCase):
         bar = c1.make_decorator(c1.arg)(c2.make_decorator(c2.arg)(c3.make_decorator(c3.arg)(bar)))
         self.assertEqual(bar(), 42)
         self.assertEqual(actions, expected_actions)
+
+    def test_wrapped_descriptor_inside_classmethod(self):
+        class BoundWrapper:
+            def __init__(self, wrapped):
+                self.__wrapped__ = wrapped
+
+            def __call__(self, *args, **kwargs):
+                return self.__wrapped__(*args, **kwargs)
+
+        class Wrapper:
+            def __init__(self, wrapped):
+                self.__wrapped__ = wrapped
+
+            def __get__(self, instance, owner):
+                bound_function = self.__wrapped__.__get__(instance, owner)
+                return BoundWrapper(bound_function)
+
+        def decorator(wrapped):
+            return Wrapper(wrapped)
+
+        class Class:
+            @decorator
+            @classmethod
+            def inner(cls):
+                # This should already work.
+                return 'spam'
+
+            @classmethod
+            @decorator
+            def outer(cls):
+                # Raised TypeError with a message saying that the 'Wrapper'
+                # object is not callable.
+                return 'eggs'
+
+        self.assertEqual(Class.inner(), 'spam')
+        self.assertEqual(Class.outer(), 'eggs')
+        self.assertEqual(Class().inner(), 'spam')
+        self.assertEqual(Class().outer(), 'eggs')
+
+    def test_bound_function_inside_classmethod(self):
+        class A:
+            def foo(self, cls):
+                return 'spam'
+
+        class B:
+            bar = classmethod(A().foo)
+
+        self.assertEqual(B.bar(), 'spam')
+
+    def test_wrapped_classmethod_inside_classmethod(self):
+        class MyClassMethod1:
+            def __init__(self, func):
+                self.func = func
+
+            def __call__(self, cls):
+                if hasattr(self.func, '__get__'):
+                    return self.func.__get__(cls, cls)()
+                return self.func(cls)
+
+            def __get__(self, instance, owner=None):
+                if owner is None:
+                    owner = type(instance)
+                return MethodType(self, owner)
+
+        class MyClassMethod2:
+            def __init__(self, func):
+                if isinstance(func, classmethod):
+                    func = func.__func__
+                self.func = func
+
+            def __call__(self, cls):
+                return self.func(cls)
+
+            def __get__(self, instance, owner=None):
+                if owner is None:
+                    owner = type(instance)
+                return MethodType(self, owner)
+
+        for myclassmethod in [MyClassMethod1, MyClassMethod2]:
+            class A:
+                @myclassmethod
+                def f1(cls):
+                    return cls
+
+                @classmethod
+                @myclassmethod
+                def f2(cls):
+                    return cls
+
+                @myclassmethod
+                @classmethod
+                def f3(cls):
+                    return cls
+
+                @classmethod
+                @classmethod
+                def f4(cls):
+                    return cls
+
+                @myclassmethod
+                @MyClassMethod1
+                def f5(cls):
+                    return cls
+
+                @myclassmethod
+                @MyClassMethod2
+                def f6(cls):
+                    return cls
+
+            self.assertIs(A.f1(), A)
+            self.assertIs(A.f2(), A)
+            self.assertIs(A.f3(), A)
+            self.assertIs(A.f4(), A)
+            self.assertIs(A.f5(), A)
+            self.assertIs(A.f6(), A)
+            a = A()
+            self.assertIs(a.f1(), A)
+            self.assertIs(a.f2(), A)
+            self.assertIs(a.f3(), A)
+            self.assertIs(a.f4(), A)
+            self.assertIs(a.f5(), A)
+            self.assertIs(a.f6(), A)
+
+            def f(cls):
+                return cls
+
+            self.assertIs(myclassmethod(f).__get__(a)(), A)
+            self.assertIs(myclassmethod(f).__get__(a, A)(), A)
+            self.assertIs(myclassmethod(f).__get__(A, A)(), A)
+            self.assertIs(myclassmethod(f).__get__(A)(), type(A))
+            self.assertIs(classmethod(f).__get__(a)(), A)
+            self.assertIs(classmethod(f).__get__(a, A)(), A)
+            self.assertIs(classmethod(f).__get__(A, A)(), A)
+            self.assertIs(classmethod(f).__get__(A)(), type(A))
 
 class TestClassDecorators(unittest.TestCase):
 
