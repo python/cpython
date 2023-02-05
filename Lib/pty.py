@@ -101,20 +101,8 @@ def fork():
     master_fd, slave_fd = openpty()
     pid = os.fork()
     if pid == CHILD:
-        # Establish a new session.
-        os.setsid()
         os.close(master_fd)
-
-        # Slave becomes stdin/stdout/stderr of child.
-        os.dup2(slave_fd, STDIN_FILENO)
-        os.dup2(slave_fd, STDOUT_FILENO)
-        os.dup2(slave_fd, STDERR_FILENO)
-        if slave_fd > STDERR_FILENO:
-            os.close(slave_fd)
-
-        # Explicitly open the tty to make it become a controlling tty.
-        tmp_fd = os.open(os.ttyname(STDOUT_FILENO), os.O_RDWR)
-        os.close(tmp_fd)
+        os.login_tty(slave_fd)
     else:
         os.close(slave_fd)
 
