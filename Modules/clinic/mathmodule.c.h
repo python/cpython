@@ -187,37 +187,43 @@ exit:
 }
 
 PyDoc_STRVAR(math_log__doc__,
-"log($module, x, base=None, /)\n"
-"--\n"
-"\n"
+"log(x, [base=math.e])\n"
 "Return the logarithm of x to the given base.\n"
 "\n"
-"If the base is not specified or is None, returns the natural\n"
-"logarithm (base e) of x.");
+"If the base not specified, returns the natural logarithm (base e) of x.");
 
 #define MATH_LOG_METHODDEF    \
-    {"log", _PyCFunction_CAST(math_log), METH_FASTCALL, math_log__doc__},
+    {"log", (PyCFunction)math_log, METH_VARARGS, math_log__doc__},
 
 static PyObject *
-math_log_impl(PyObject *module, PyObject *x, PyObject *base);
+math_log_impl(PyObject *module, PyObject *x, int group_right_1,
+              PyObject *base);
 
 static PyObject *
-math_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+math_log(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *x;
-    PyObject *base = Py_None;
+    int group_right_1 = 0;
+    PyObject *base = NULL;
 
-    if (!_PyArg_CheckPositional("log", nargs, 1, 2)) {
-        goto exit;
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:log", &x)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "OO:log", &x, &base)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "math.log requires 1 to 2 arguments");
+            goto exit;
     }
-    x = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    base = args[1];
-skip_optional:
-    return_value = math_log_impl(module, x, base);
+    return_value = math_log_impl(module, x, group_right_1, base);
 
 exit:
     return return_value;
@@ -948,4 +954,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=afec63ebb0da709a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=899211ec70e4506c input=a9049054013a1b77]*/
