@@ -1,0 +1,1 @@
+Optimized collections.abc with a few tricks. Some cases may be slower, but most cases should be overall faster. Mostly impacts sets.
