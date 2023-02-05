@@ -587,7 +587,7 @@ class Set(Collection):
     def __ge__(self, other):
         if not isinstance(other, Set):
             return NotImplemented
-        if len(self) > len(other):
+        if len(self) < len(other):
             return False
         for elem in filterfalse(self.__contains__, other):
             return False
