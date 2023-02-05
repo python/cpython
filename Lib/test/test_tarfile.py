@@ -225,9 +225,14 @@ class UstarReadTest(ReadTest, unittest.TestCase):
         self.add_dir_and_getmember('bar')
         self.add_dir_and_getmember('a'*101)
 
+    @unittest.skipIf(
+        os.getuid() > 0o777_7777 or os.getgid() > 0o777_7777,
+        f"{os.getuid()=} or {os.getgid()=} too high for USTAR format."
+    ) 
     def add_dir_and_getmember(self, name):
         with os_helper.temp_cwd():
             with tarfile.open(tmpname, 'w') as tar:
+                tar.format = tarfile.USTAR_FORMAT
                 try:
                     os.mkdir(name)
                     tar.add(name)
