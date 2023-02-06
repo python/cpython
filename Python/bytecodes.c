@@ -3098,11 +3098,9 @@ dummy_func(
             PUSH(result);
         }
 
-        // stack effect: ( -- __0)
-        inst(COPY) {
-            assert(oparg != 0);
-            PyObject *peek = PEEK(oparg);
-            PUSH(Py_NewRef(peek));
+        inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
+            assert(oparg > 0);
+            top = Py_NewRef(bottom);
         }
 
         inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
@@ -3126,12 +3124,9 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: ( -- )
-        inst(SWAP) {
-            assert(oparg != 0);
-            PyObject *top = TOP();
-            SET_TOP(PEEK(oparg));
-            PEEK(oparg) = top;
+        inst(SWAP, (bottom, unused[oparg-2], top --
+                    top, unused[oparg-2], bottom)) {
+            assert(oparg >= 2);
         }
 
         inst(EXTENDED_ARG, (--)) {
