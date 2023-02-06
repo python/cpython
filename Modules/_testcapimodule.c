@@ -2201,7 +2201,7 @@ dict_get_version(PyObject *self, PyObject *args)
         return NULL;
 
     _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS    
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     version = dict->ma_version_tag;
     _Py_COMP_DIAG_POP
 
@@ -3031,17 +3031,17 @@ eval_get_func_desc(PyObject *self, PyObject *func)
 static PyObject *
 eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
 {
-    PyObject* result = NULL;
-    PyObject* code;
-    PyObject* globals;
-    PyObject* locals = NULL;
-    PyObject* args = NULL;
-    PyObject* kwargs = NULL;
-    PyObject* defaults = NULL;
-    PyObject* kw_defaults = NULL;
-    PyObject* closure = NULL;
+    PyObject *result = NULL;
+    PyObject *code;
+    PyObject *globals;
+    PyObject *locals = NULL;
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *defaults = NULL;
+    PyObject *kw_defaults = NULL;
+    PyObject *closure = NULL;
 
-    PyObject** c_kwargs = NULL;
+    PyObject **c_kwargs = NULL;
 
     if (!PyArg_UnpackTuple(pos_args,
                            "eval_code_ex",
@@ -3078,13 +3078,13 @@ eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
         locals = NULL;
     }
 
-    PyObject** c_args = NULL;
+    PyObject **c_args = NULL;
     Py_ssize_t c_args_len = 0;
 
     if (args)
     {
-        if (!PyTuple_Check( args )) {
-            PyErr_SetString( PyExc_TypeError, "args must be a tuple" );
+        if (!PyTuple_Check(args)) {
+            PyErr_SetString(PyExc_TypeError, "args must be a tuple");
             goto exit;
         } else {
             c_args = &PyTuple_GET_ITEM(args, 0);
@@ -3094,7 +3094,7 @@ eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
 
     Py_ssize_t c_kwargs_len = 0;
 
-    if( kwargs )
+    if (kwargs)
     {
         if (!PyDict_Check(kwargs)) {
             PyErr_SetString(PyExc_TypeError, "keywords must be a dict");
@@ -3113,8 +3113,8 @@ eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
 
                 while (PyDict_Next(kwargs,
                                    &pos,
-                                   &c_kwargs[ i ],
-                                   &c_kwargs[ i + 1 ]))
+                                   &c_kwargs[i],
+                                   &c_kwargs[i + 1]))
                 {
                     i += 2;
                 }
@@ -3125,21 +3125,21 @@ eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
     }
 
 
-    PyObject** c_defaults = NULL;
+    PyObject **c_defaults = NULL;
     Py_ssize_t c_defaults_len = 0;
 
     if (defaults && PyTuple_Check(defaults)) {
-        c_defaults = &PyTuple_GET_ITEM( defaults, 0 );
-        c_defaults_len = PyTuple_Size( defaults );
+        c_defaults = &PyTuple_GET_ITEM(defaults, 0);
+        c_defaults_len = PyTuple_Size(defaults);
     }
 
     if (kw_defaults && !PyDict_Check(kw_defaults)) {
-        PyErr_SetString( PyExc_TypeError, "kw_defaults must be a dict" );
+        PyErr_SetString(PyExc_TypeError, "kw_defaults must be a dict");
         goto exit;
     }
 
     if (closure && !PyTuple_Check(closure)) {
-        PyErr_SetString( PyExc_TypeError, "closure must be a tuple of cells" );
+        PyErr_SetString(PyExc_TypeError, "closure must be a tuple of cells");
         goto exit;
     }
 
@@ -3160,7 +3160,7 @@ eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
 
 exit:
     if (c_kwargs) {
-        PyMem_DEL( c_kwargs );
+        PyMem_DEL(c_kwargs);
     }
 
     return result;

@@ -21,16 +21,16 @@ class PyEval_EvalCodeExTests(unittest.TestCase):
     #         return
 
     def test_with_args(self):
-        def f(a):
+        def f(a, b, c):
             return a
 
-        self.assertEqual(_testcapi.eval_code_ex(f.__code__, {}, {}, (1,)), 1)
+        self.assertEqual(_testcapi.eval_code_ex(f.__code__, {}, {}, (1, 2, 3)), 1)
 
     def test_with_kwargs(self):
-        def f(a):
+        def f(a, b, c):
             return a
 
-        self.assertEqual(_testcapi.eval_code_ex(f.__code__, {}, {}, (), dict(a=1)), 1)
+        self.assertEqual(_testcapi.eval_code_ex(f.__code__, {}, {}, (), dict(a=1, b=2, c=3)), 1)
 
     def test_with_default(self):
         def f(a):
