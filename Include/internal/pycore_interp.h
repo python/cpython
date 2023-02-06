@@ -236,8 +236,8 @@ PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 #define FREELIST_QUANTUM (2*sizeof(void*))
-#define SIZE_TO_FREELIST_INDEX(size) ((size-4)/FREELIST_QUANTUM)
-#define FREELIST_INDEX_TO_SIZE(idx) (FREELIST_QUANTUM*(idx) + 4)
+#define SIZE_TO_FREELIST_INDEX(size) (((size) + FREELIST_QUANTUM - 1)/FREELIST_QUANTUM)
+#define FREELIST_INDEX_TO_ALLOCATED_SIZE(idx) ((idx) * FREELIST_QUANTUM)
 
 static inline PyObject*
 _PyInterpreterState_FreelistAlloc(PyInterpreterState *interp, Py_ssize_t size) {
