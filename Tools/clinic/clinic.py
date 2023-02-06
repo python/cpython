@@ -1190,7 +1190,11 @@ class CLanguage(Language):
                 raise ValueError("Slot methods cannot access their defining class.")
 
             if not parses_keywords:
-                declarations = '{base_type_ptr}'
+                if not parser_body_declarations:
+                    parser_body_declarations = '{base_type_ptr}'
+                else:
+                    parser_body_declarations += '\n{base_type_ptr}'
+
                 fields.insert(0, normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
@@ -1204,7 +1208,7 @@ class CLanguage(Language):
                         """, indent=4))
 
             parser_definition = parser_body(parser_prototype, *fields,
-                                            declarations=declarations)
+                                            declarations=parser_body_declarations)
 
 
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):

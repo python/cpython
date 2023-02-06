@@ -4133,6 +4133,7 @@ static int
 TestModule_TestClass1___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    Py_ssize_t varargssize = Py_MAX(PyTuple_GET_SIZE(args) - 0, 0);
     PyTypeObject *base_tp = &TestModule_Type;
     PyObject *const *__clinic_args;
 
@@ -4155,7 +4156,7 @@ static int
 TestModule_TestClass1___init___impl(TestClassObject *self,
                                     Py_ssize_t varargssize,
                                     PyObject *const *args)
-/*[clinic end generated code: output=89fc8cfb766b0097 input=3e093b8ea0b74b0c]*/
+/*[clinic end generated code: output=8ce5c8a0d4d3e0cb input=3e093b8ea0b74b0c]*/
 
 
 /*[clinic input]
