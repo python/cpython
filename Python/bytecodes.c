@@ -3124,12 +3124,9 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: ( -- )
-        inst(SWAP) {
-            assert(oparg != 0);
-            PyObject *top = TOP();
-            SET_TOP(PEEK(oparg));
-            PEEK(oparg) = top;
+        inst(SWAP, (bottom, unused[oparg-2], top --
+                    top, unused[oparg-2], bottom)) {
+            assert(oparg >= 2);
         }
 
         inst(EXTENDED_ARG, (--)) {

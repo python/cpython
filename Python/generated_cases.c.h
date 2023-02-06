@@ -3763,10 +3763,11 @@
         }
 
         TARGET(SWAP) {
-            assert(oparg != 0);
-            PyObject *top = TOP();
-            SET_TOP(PEEK(oparg));
-            PEEK(oparg) = top;
+            PyObject *top = PEEK(1);
+            PyObject *bottom = PEEK(2 + (oparg-2));
+            assert(oparg >= 2);
+            POKE(1, bottom);
+            POKE(2 + (oparg-2), top);
             DISPATCH();
         }
 
