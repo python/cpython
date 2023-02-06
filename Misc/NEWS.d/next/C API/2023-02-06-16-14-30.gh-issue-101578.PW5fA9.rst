@@ -1,0 +1,5 @@
+Deprecate the three arguments forms of :cfunc`PyErr_Fetch` and
+:cfunc:`PyErr_Restore` and replace them with one argument forms that take
+and return the exception object. Also add :cfunc`PyException_GetArgs` and
+:cfunc:`PyException_SetArgs` as convenience functions to help dealing with
+exceptions in the C API.
