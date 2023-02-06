@@ -626,6 +626,28 @@ _PyErr_ChainExceptions(PyObject *typ, PyObject *val, PyObject *tb)
     }
 }
 
+/* Like PyErr_Restore1(), but if an exception is already set,
+   set the context associated with it.
+
+   The caller is responsible for ensuring that this call won't create
+   any cycles in the exception context chain. */
+void
+_PyErr_ChainExceptions1(PyObject *exc)
+{
+    if (exc == NULL) {
+        return;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PyErr_Occurred(tstate)) {
+        PyObject *exc2 = _PyErr_Fetch1(tstate);
+        PyException_SetContext(exc2, exc);
+        _PyErr_Restore1(tstate, exc2);
+    }
+    else {
+        _PyErr_Restore1(tstate, exc);
+    }
+}
+
 /* Set the currently set exception's context to the given exception.
 
    If the provided exc_info is NULL, then the current Python thread state's
