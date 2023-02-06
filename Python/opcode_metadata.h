@@ -333,11 +333,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case FORMAT_VALUE:
             return -1;
         case COPY:
-            return -1;
+            return (oparg-1) + 1;
         case BINARY_OP:
             return 2;
         case SWAP:
-            return -1;
+            return (oparg-2) + 2;
         case EXTENDED_ARG:
             return 0;
         case CACHE:
@@ -679,11 +679,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case FORMAT_VALUE:
             return -1;
         case COPY:
-            return -1;
+            return (oparg-1) + 2;
         case BINARY_OP:
             return 1;
         case SWAP:
-            return -1;
+            return (oparg-2) + 2;
         case EXTENDED_ARG:
             return 0;
         case CACHE:
