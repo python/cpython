@@ -2905,13 +2905,13 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
         }
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-        PyObject *exc, *val, *tb;
-        _PyErr_Fetch(tstate, &exc, &val, &tb);
-        if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
+        PyObject *exc = _PyErr_Fetch1(tstate);
+        PyObject *args = ((PyBaseExceptionObject *)exc)->args;
+        if (exc && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
             _PyErr_Clear(tstate);
             PyObject *funcstr = _PyObject_FunctionStr(func);
             if (funcstr != NULL) {
-                PyObject *key = PyTuple_GET_ITEM(val, 0);
+                PyObject *key = PyTuple_GET_ITEM(args, 0);
                 _PyErr_Format(
                     tstate, PyExc_TypeError,
                     "%U got multiple values for keyword argument '%S'",
@@ -2919,11 +2919,9 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
                 Py_DECREF(funcstr);
             }
             Py_XDECREF(exc);
-            Py_XDECREF(val);
-            Py_XDECREF(tb);
         }
         else {
-            _PyErr_Restore(tstate, exc, val, tb);
+            _PyErr_Restore1(tstate, exc);
         }
     }
 }

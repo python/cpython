@@ -27,6 +27,43 @@ static PyObject *
 _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
                const char *format, va_list vargs);
 
+void
+ASSERT_EXCEPTIONS_NORMALIZED(PyThreadState *tstate)
+{
+    /* Exceptions are normalized if all NULL,
+     * or if curexc_type = Py_TYPE(curexc_value) and
+     * curexc_traceback = curexc_value->traceback
+     * and both type and traceback are valid */
+    if (tstate->curexc_value == NULL) {
+        assert(tstate->curexc_type == NULL);
+        assert(tstate->curexc_traceback == NULL);
+    }
+    else {
+        assert(((PyBaseExceptionObject *)tstate->curexc_value)->traceback != Py_None);
+        assert(tstate->curexc_traceback != Py_None);
+        assert(PyExceptionClass_Check(tstate->curexc_type));
+        assert(tstate->curexc_type == (PyObject *)Py_TYPE(tstate->curexc_value));
+        assert(
+            tstate->curexc_traceback ==
+            ((PyBaseExceptionObject *)tstate->curexc_value)->traceback
+        );
+    }
+}
+
+void
+_PyErr_Restore1(PyThreadState *tstate, PyObject *exc)
+{
+    if (exc == NULL) {
+        _PyErr_Restore(tstate, NULL, NULL, NULL);
+    }
+    else {
+        _PyErr_Restore(tstate,
+                       Py_NewRef(Py_TYPE(exc)),
+                       exc,
+                       Py_XNewRef(((PyBaseExceptionObject *)exc)->traceback)
+        );
+    }
+}
 
 void
 _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
@@ -53,6 +90,7 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
     Py_XDECREF(oldtype);
     Py_XDECREF(oldvalue);
     Py_XDECREF(oldtraceback);
+    ASSERT_EXCEPTIONS_NORMALIZED(tstate);
 }
 
 void
@@ -117,30 +155,29 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
                       exception);
         return;
     }
-
     Py_XINCREF(value);
+    /* Normalize the exception */
+    if (value == NULL || (PyObject *)Py_TYPE(value) != exception) {
+        /* We must normalize the value right now */
+        PyObject *fixed_value;
+
+        /* Issue #23571: functions must not be called with an
+            exception set */
+        _PyErr_Clear(tstate);
+
+        fixed_value = _PyErr_CreateException(exception, value);
+        Py_XDECREF(value);
+        if (fixed_value == NULL) {
+            return;
+        }
+
+        value = fixed_value;
+    }
+
     exc_value = _PyErr_GetTopmostException(tstate)->exc_value;
     if (exc_value != NULL && exc_value != Py_None) {
         /* Implicit exception chaining */
         Py_INCREF(exc_value);
-        if (value == NULL || !PyExceptionInstance_Check(value)) {
-            /* We must normalize the value right now */
-            PyObject *fixed_value;
-
-            /* Issue #23571: functions must not be called with an
-               exception set */
-            _PyErr_Clear(tstate);
-
-            fixed_value = _PyErr_CreateException(exception, value);
-            Py_XDECREF(value);
-            if (fixed_value == NULL) {
-                Py_DECREF(exc_value);
-                return;
-            }
-
-            value = fixed_value;
-        }
-
         /* Avoid creating new reference cycles through the
            context chain, while taking care not to hang on
            pre-existing ones.
@@ -413,6 +450,22 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
     _PyErr_NormalizeException(tstate, exc, val, tb);
 }
 
+
+PyObject *
+_PyErr_Fetch1(PyThreadState *tstate) {
+    PyObject *exc = tstate->curexc_value;
+    tstate->curexc_value = NULL;
+    Py_CLEAR(tstate->curexc_type);
+    Py_CLEAR(tstate->curexc_traceback);
+    return exc;
+}
+
+PyObject *
+PyErr_Fetch1(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_Fetch1(tstate);
+}
 
 void
 _PyErr_Fetch(PyThreadState *tstate, PyObject **p_type, PyObject **p_value,
@@ -704,19 +757,6 @@ PyErr_BadArgument(void)
     _PyErr_SetString(tstate, PyExc_TypeError,
                      "bad argument type for built-in operation");
     return 0;
-}
-
-PyObject *
-_PyErr_NoMemory(PyThreadState *tstate)
-{
-    if (Py_IS_TYPE(PyExc_MemoryError, NULL)) {
-        /* PyErr_NoMemory() has been called before PyExc_MemoryError has been
-           initialized by _PyExc_Init() */
-        Py_FatalError("Out of memory and PyExc_MemoryError is not "
-                      "initialized yet");
-    }
-    _PyErr_SetNone(tstate, PyExc_MemoryError);
-    return NULL;
 }
 
 PyObject *

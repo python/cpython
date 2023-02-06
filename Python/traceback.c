@@ -249,6 +249,8 @@ PyTraceBack_Here(PyFrameObject *frame)
         _PyErr_ChainExceptions(exc, val, tb);
         return -1;
     }
+    assert(PyExceptionInstance_Check(val));
+    PyException_SetTraceback(val, newtb);
     PyErr_Restore(exc, val, newtb);
     Py_XDECREF(tb);
     return 0;

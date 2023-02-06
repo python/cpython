@@ -347,6 +347,7 @@ class ExceptionTests(unittest.TestCase):
                 _testcapi.raise_exception(BadException, 0)
             except RuntimeError as err:
                 exc, err, tb = sys.exc_info()
+                tb = tb.tb_next
                 co = tb.tb_frame.f_code
                 self.assertEqual(co.co_name, "__init__")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
@@ -1415,8 +1416,8 @@ class ExceptionTests(unittest.TestCase):
     @cpython_only
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
-        # PyErr_NormalizeException() maximum recursion depth has been
-        # exceeded.
+        # maximum recursion depth has been exceeded when creating
+        # an exception
         code = """if 1:
             import _testcapi
             try:
@@ -1426,8 +1427,7 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        self.assertIn(b'RecursionError: maximum recursion depth exceeded '
-                      b'while normalizing an exception', err)
+        self.assertIn(b'RecursionError: maximum recursion depth exceeded', err)
         self.assertIn(b'Done.', out)
 
 

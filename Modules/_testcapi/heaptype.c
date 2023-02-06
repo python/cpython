@@ -116,10 +116,9 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
     PyObject *bases = NULL;
     PyObject *new = NULL;
     PyObject *meta_error_string = NULL;
-    PyObject *exc_type = NULL;
-    PyObject *exc_value = NULL;
-    PyObject *exc_traceback = NULL;
+    PyObject *exc = NULL;
     PyObject *result = NULL;
+    PyObject *message = NULL;
 
     metaclass_a = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
     if (metaclass_a == NULL) {
@@ -156,13 +155,19 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
 
     // Assert that the correct exception was raised
     if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-        PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
-
+        exc = PyErr_Fetch1();
+        PyObject *args = PyException_GetArgs(exc);
+        if (!PyTuple_Check(args) || PyTuple_Size(args) != 1) {
+            PyErr_SetString(PyExc_AssertionError,
+                    "TypeError args are not a one-tuple");
+            goto finally;
+        }
+        PyObject *message = Py_NewRef(PyTuple_GET_ITEM(args, 0));
         meta_error_string = PyUnicode_FromString("metaclass conflict:");
         if (meta_error_string == NULL) {
             goto finally;
         }
-        int res = PyUnicode_Contains(exc_value, meta_error_string);
+        int res = PyUnicode_Contains(message, meta_error_string);
         if (res < 0) {
             goto finally;
         }
@@ -179,9 +184,8 @@ finally:
     Py_XDECREF(bases);
     Py_XDECREF(new);
     Py_XDECREF(meta_error_string);
-    Py_XDECREF(exc_type);
-    Py_XDECREF(exc_value);
-    Py_XDECREF(exc_traceback);
+    Py_XDECREF(exc);
+    Py_XDECREF(message);
     Py_XDECREF(class_a);
     Py_XDECREF(class_b);
     return result;
