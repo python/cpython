@@ -28,10 +28,21 @@ _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
                const char *format, va_list vargs);
 
 void
-ASSERT_EXCEPTION_NORMALIZED(PyObject *type, PyObject *value,
+_PyErr_Restore1(PyThreadState *tstate, PyObject *exc)
+{
+    PyObject *old_exc = tstate->current_exception;
+    tstate->current_exception = exc;
+    Py_XDECREF(old_exc);
+}
+
+void
+_PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
                PyObject *traceback)
 {
-    /* Exceptions are normalized if all NULL,
+#ifdef Py_DEBUG
+    /* Check that we are being passed a normalized exception.
+     *
+     * Exceptions are normalized if all NULL,
      * or if curexc_type = Py_TYPE(curexc_value) and
      * curexc_traceback = curexc_value->traceback
      * and both type and traceback are valid */
@@ -48,21 +59,8 @@ ASSERT_EXCEPTION_NORMALIZED(PyObject *type, PyObject *value,
             ((PyBaseExceptionObject *)value)->traceback == NULL)
         );
     }
-}
+#endif
 
-void
-_PyErr_Restore1(PyThreadState *tstate, PyObject *exc)
-{
-    PyObject *old_exc = tstate->current_exception;
-    tstate->current_exception = exc;
-    Py_XDECREF(old_exc);
-}
-
-void
-_PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
-               PyObject *traceback)
-{
-    ASSERT_EXCEPTION_NORMALIZED(type, value, traceback);
     _PyErr_Restore1(tstate, value);
     Py_XDECREF(type);
     Py_XDECREF(traceback);
