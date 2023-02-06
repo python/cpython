@@ -512,6 +512,10 @@ Pending Removal in Python 3.14
   :func:`~multiprocessing.set_start_method` APIs to explicitly specify when
   your code *requires* ``'fork'``.  See :ref:`multiprocessing-start-methods`.
 
+* :mod:`pty` has two undocumented ``master_open()`` and ``slave_open()``
+  functions that have been deprecated since Python 2 but only gained a
+  proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
+
 Pending Removal in Future Versions
 ----------------------------------
 
