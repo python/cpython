@@ -4,6 +4,8 @@
 #include "pycore_object.h"      // _Py_FatalRefcountError()
 #include "pycore_runtime.h"       // _Py_ID()
 
+#include <stddef.h>
+
 /* We define bool_repr to return "False" or "True" */
 
 static PyObject *
@@ -153,8 +155,8 @@ bool_dealloc(PyObject* Py_UNUSED(ignore))
 PyTypeObject PyBool_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bool",
-    sizeof(struct _longobject),
-    0,
+    offsetof(struct _longobject, long_value.ob_digit),  /* tp_basicsize */
+    sizeof(digit),                              /* tp_itemsize */
     bool_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
@@ -195,11 +197,11 @@ PyTypeObject PyBool_Type = {
 /* The objects representing bool values False and True */
 
 struct _longobject _Py_FalseStruct = {
-    PyVarObject_HEAD_INIT(&PyBool_Type, 0)
-    { 0 }
+    PyObject_HEAD_INIT(&PyBool_Type)
+    { 0, { 0 } }
 };
 
 struct _longobject _Py_TrueStruct = {
-    PyVarObject_HEAD_INIT(&PyBool_Type, 1)
-    { 1 }
+    PyObject_HEAD_INIT(&PyBool_Type)
+    { 1, { 1 } }
 };

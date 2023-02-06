@@ -901,7 +901,7 @@ class PyLongObjectPtr(PyObjectPtr):
         if ob_size == 0:
             return 0
 
-        ob_digit = self.field('ob_digit')
+        ob_digit = self.field('long_value')['ob_digit']
 
         if gdb.lookup_type('digit').sizeof == 2:
             SHIFT = 15

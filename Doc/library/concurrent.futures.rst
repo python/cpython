@@ -250,9 +250,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
    the default chosen will be at most ``61``, even if more processors are
    available.
-   *mp_context* can be a multiprocessing context or None. It will be used to
-   launch the workers. If *mp_context* is ``None`` or not given, the default
-   multiprocessing context is used.
+   *mp_context* can be a :mod:`multiprocessing` context or ``None``. It will be
+   used to launch the workers. If *mp_context* is ``None`` or not given, the
+   default :mod:`multiprocessing` context is used.
+   See :ref:`multiprocessing-start-methods`.
 
    *initializer* is an optional callable that is called at the start of
    each worker process; *initargs* is a tuple of arguments passed to the
@@ -280,10 +281,17 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
       Added the *initializer* and *initargs* arguments.
 
+      .. note::
+         The default :mod:`multiprocessing` start method
+         (see :ref:`multiprocessing-start-methods`) will change away from
+         *fork* in Python 3.14.  Code that requires *fork* be used for their
+         :class:`ProcessPoolExecutor` should explicitly specify that by
+         passing a ``mp_context=multiprocessing.get_context("fork")``
+         parameter.
+
    .. versionchanged:: 3.11
       The *max_tasks_per_child* argument was added to allow users to
       control the lifetime of workers in the pool.
-
 
 .. _processpoolexecutor-example:
 

@@ -295,7 +295,8 @@ StreamWriter
 
       The method closes the stream and the underlying socket.
 
-      The method should be used along with the ``wait_closed()`` method::
+      The method should be used, though not mandatory,
+      along with the ``wait_closed()`` method::
 
          stream.close()
          await stream.wait_closed()
@@ -335,7 +336,7 @@ StreamWriter
       returns immediately.
 
    .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
-                          ssl_handshake_timeout=None)
+                          ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
 
       Upgrade an existing stream-based connection to TLS.
 
@@ -350,7 +351,15 @@ StreamWriter
         handshake to complete before aborting the connection.  ``60.0`` seconds
         if ``None`` (default).
 
+      * *ssl_shutdown_timeout* is the time in seconds to wait for the SSL shutdown
+        to complete before aborting the connection. ``30.0`` seconds if ``None``
+        (default).
+
       .. versionadded:: 3.11
+
+      .. versionchanged:: 3.12
+         Added the *ssl_shutdown_timeout* parameter.
+
 
    .. method:: is_closing()
 
@@ -364,7 +373,8 @@ StreamWriter
       Wait until the stream is closed.
 
       Should be called after :meth:`close` to wait until the underlying
-      connection is closed.
+      connection is closed, ensuring that all data has been flushed
+      before e.g. exiting the program.
 
       .. versionadded:: 3.7
 
@@ -394,6 +404,7 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
         print('Close the connection')
         writer.close()
+        await writer.wait_closed()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -426,6 +437,7 @@ TCP echo server using the :func:`asyncio.start_server` function::
 
         print("Close the connection")
         writer.close()
+        await writer.wait_closed()
 
     async def main():
         server = await asyncio.start_server(
@@ -482,6 +494,7 @@ Simple example querying HTTP headers of the URL passed on the command line::
 
         # Ignore the body, close the socket
         writer.close()
+        await writer.wait_closed()
 
     url = sys.argv[1]
     asyncio.run(print_http_headers(url))
@@ -527,6 +540,7 @@ Coroutine waiting until a socket receives data using the
         # Got data, we are done: close the socket
         print("Received:", data.decode())
         writer.close()
+        await writer.wait_closed()
 
         # Close the second socket
         wsock.close()
