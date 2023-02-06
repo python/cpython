@@ -2269,7 +2269,6 @@ module_exec(PyObject *mod)
     return 0;
 
 error:
-    (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
     _globals_fini();
     return -1;
 }
