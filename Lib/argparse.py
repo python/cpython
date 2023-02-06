@@ -696,13 +696,10 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     """
 
     def _get_help_string(self, action):
-        """
-        Add the default value to the option help message.
+        """Add the default value to the option help message.
 
-        ArgumentDefaultsHelpFormatter and BooleanOptionalAction when it isn't
-        already present. This code will do that, detecting cornercases to
-        prevent duplicates or cases where it wouldn't make sense to the end
-        user.
+        Except when it's already present, or in cases where it wouldn't
+        make sense to the end user.
         """
         help = action.help
         if help is None:
