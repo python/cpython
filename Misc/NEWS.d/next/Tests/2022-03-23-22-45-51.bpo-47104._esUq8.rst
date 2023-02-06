@@ -1,2 +1,0 @@
-Rewrite :func:`asyncio.to_thread` tests to use
-:class:`unittest.IsolatedAsyncioTestCase`.

@@ -1363,13 +1363,126 @@ def test_pdb_issue_43318():
     4
     """
 
+def test_pdb_issue_gh_91742():
+    """See GH-91742
+
+    >>> def test_function():
+    ...    __author__ = "pi"
+    ...    __version__ = "3.14"
+    ...
+    ...    def about():
+    ...        '''About'''
+    ...        print(f"Author: {__author__!r}",
+    ...            f"Version: {__version__!r}",
+    ...            sep=" ")
+    ...
+    ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...    about()
+
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'step',
+    ...     'next',
+    ...     'next',
+    ...     'jump 5',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(12)test_function()
+    -> about()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(5)about()
+    -> def about():
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(7)about()
+    -> print(f"Author: {__author__!r}",
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(8)about()
+    -> f"Version: {__version__!r}",
+    (Pdb) jump 5
+    > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(5)about()
+    -> def about():
+    (Pdb) continue
+    Author: 'pi' Version: '3.14'
+    """
+
+def test_pdb_issue_gh_94215():
+    """See GH-94215
+
+    Check that frame_setlineno() does not leak references.
+
+    >>> def test_function():
+    ...    def func():
+    ...        def inner(v): pass
+    ...        inner(
+    ...             42
+    ...        )
+    ...
+    ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...    func()
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'step',
+    ...     'next',
+    ...     'next',
+    ...     'jump 3',
+    ...     'next',
+    ...     'next',
+    ...     'jump 3',
+    ...     'next',
+    ...     'next',
+    ...     'jump 3',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(9)test_function()
+    -> func()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(2)func()
+    -> def func():
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(3)func()
+    -> def inner(v): pass
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(4)func()
+    -> inner(
+    (Pdb) jump 3
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(3)func()
+    -> def inner(v): pass
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(4)func()
+    -> inner(
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(5)func()
+    -> 42
+    (Pdb) jump 3
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(3)func()
+    -> def inner(v): pass
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(4)func()
+    -> inner(
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(5)func()
+    -> 42
+    (Pdb) jump 3
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(3)func()
+    -> def inner(v): pass
+    (Pdb) continue
+    """
+
 
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)
 
-    def _run_pdb(self, pdb_args, commands):
+    @unittest.skipIf(sys.flags.safe_path,
+                     'PYTHONSAFEPATH changes default sys.path')
+    def _run_pdb(self, pdb_args, commands, expected_returncode=0):
         self.addCleanup(os_helper.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb'] + pdb_args
         with subprocess.Popen(
@@ -1382,15 +1495,20 @@ class PdbTestCase(unittest.TestCase):
             stdout, stderr = proc.communicate(str.encode(commands))
         stdout = stdout and bytes.decode(stdout)
         stderr = stderr and bytes.decode(stderr)
+        self.assertEqual(
+            proc.returncode,
+            expected_returncode,
+            f"Unexpected return code\nstdout: {stdout}\nstderr: {stderr}"
+        )
         return stdout, stderr
 
-    def run_pdb_script(self, script, commands):
+    def run_pdb_script(self, script, commands, expected_returncode=0):
         """Run 'script' lines with pdb and the pdb 'commands'."""
         filename = 'main.py'
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
         self.addCleanup(os_helper.unlink, filename)
-        return self._run_pdb([filename], commands)
+        return self._run_pdb([filename], commands, expected_returncode)
 
     def run_pdb_module(self, script, commands):
         """Runs the script code as part of a module"""
@@ -1596,7 +1714,9 @@ def bœr():
         script = "def f: pass\n"
         commands = ''
         expected = "SyntaxError:"
-        stdout, stderr = self.run_pdb_script(script, commands)
+        stdout, stderr = self.run_pdb_script(
+            script, commands, expected_returncode=1
+        )
         self.assertIn(expected, stdout,
             '\n\nExpected:\n{}\nGot:\n{}\n'
             'Fail to handle a syntax error in the debuggee.'
@@ -1759,7 +1879,9 @@ def bœr():
         with open(init_file, 'w'):
             pass
         self.addCleanup(os_helper.rmtree, module_name)
-        stdout, stderr = self._run_pdb(['-m', module_name], "")
+        stdout, stderr = self._run_pdb(
+            ['-m', module_name], "", expected_returncode=1
+        )
         self.assertIn("ImportError: No module named t_main.__main__",
                       stdout.splitlines())
 
@@ -1772,7 +1894,9 @@ def bœr():
         with open(modpath + '/__init__.py', 'w'):
             pass
         self.addCleanup(os_helper.rmtree, pkg_name)
-        stdout, stderr = self._run_pdb(['-m', modpath.replace('/', '.')], "")
+        stdout, stderr = self._run_pdb(
+            ['-m', modpath.replace('/', '.')], "", expected_returncode=1
+        )
         self.assertIn(
             "'t_pkg.t_main' is a package and cannot be directly executed",
             stdout)
@@ -1961,6 +2085,70 @@ def bœr():
             expected = '(Pdb) The correct file was executed'
             self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
+    def test_gh_94215_crash(self):
+        script = """\
+            def func():
+                def inner(v): pass
+                inner(
+                    42
+                )
+            func()
+        """
+        commands = textwrap.dedent("""
+            break func
+            continue
+            next
+            next
+            jump 2
+        """)
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertFalse(stderr)
+
+    def test_gh_93696_frozen_list(self):
+        frozen_src = """
+        def func():
+            x = "Sentinel string for gh-93696"
+            print(x)
+        """
+        host_program = """
+        import os
+        import sys
+
+        def _create_fake_frozen_module():
+            with open('gh93696.py') as f:
+                src = f.read()
+
+            # this function has a co_filename as if it were in a frozen module
+            dummy_mod = compile(src, "<frozen gh93696>", "exec")
+            func_code = dummy_mod.co_consts[0]
+
+            mod = type(sys)("gh93696")
+            mod.func = type(lambda: None)(func_code, mod.__dict__)
+            mod.__file__ = 'gh93696.py'
+
+            return mod
+
+        mod = _create_fake_frozen_module()
+        mod.func()
+        """
+        commands = """
+            break 20
+            continue
+            step
+            list
+            quit
+        """
+        with open('gh93696.py', 'w') as f:
+            f.write(textwrap.dedent(frozen_src))
+
+        with open('gh93696_host.py', 'w') as f:
+            f.write(textwrap.dedent(host_program))
+
+        self.addCleanup(os_helper.unlink, 'gh93696.py')
+        self.addCleanup(os_helper.unlink, 'gh93696_host.py')
+        stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
+        # verify that pdb found the source of the "frozen" function
+        self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):

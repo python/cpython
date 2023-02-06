@@ -57,6 +57,7 @@ lock_traverse(lockobject *self, visitproc visit, void *arg)
 static void
 lock_dealloc(lockobject *self)
 {
+    PyObject_GC_UnTrack(self);
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
     }
@@ -134,7 +135,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     *timeout = unset_timeout ;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO:acquire", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pO:acquire", kwlist,
                                      &blocking, &timeout_obj))
         return -1;
 
@@ -254,9 +255,9 @@ lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
 
 
 static PyMethodDef lock_methods[] = {
-    {"acquire_lock", (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
+    {"acquire_lock", _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
-    {"acquire",      (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
+    {"acquire",      _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"release_lock", (PyCFunction)lock_PyThread_release_lock,
      METH_NOARGS, release_doc},
@@ -266,7 +267,7 @@ static PyMethodDef lock_methods[] = {
      METH_NOARGS, locked_doc},
     {"locked",       (PyCFunction)lock_locked_lock,
      METH_NOARGS, locked_doc},
-    {"__enter__",    (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
+    {"__enter__",    _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
      METH_VARARGS, release_doc},
@@ -333,6 +334,7 @@ rlock_traverse(rlockobject *self, visitproc visit, void *arg)
 static void
 rlock_dealloc(rlockobject *self)
 {
+    PyObject_GC_UnTrack(self);
     if (self->in_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     /* self->rlock_lock can be NULL if PyThread_allocate_lock() failed
@@ -548,7 +550,7 @@ rlock__at_fork_reinit(rlockobject *self, PyObject *Py_UNUSED(args))
 
 
 static PyMethodDef rlock_methods[] = {
-    {"acquire",      (PyCFunction)(void(*)(void))rlock_acquire,
+    {"acquire",      _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"release",      (PyCFunction)rlock_release,
      METH_NOARGS, rlock_release_doc},
@@ -558,7 +560,7 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS, rlock_acquire_restore_doc},
     {"_release_save", (PyCFunction)rlock_release_save,
      METH_NOARGS, rlock_release_save_doc},
-    {"__enter__",    (PyCFunction)(void(*)(void))rlock_acquire,
+    {"__enter__",    _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
      METH_VARARGS, rlock_release_doc},
@@ -847,18 +849,23 @@ local_clear(localobject *self)
     /* Remove all strong references to dummies from the thread states */
     if (self->key) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyRuntimeState *runtime = &_PyRuntime;
+        HEAD_LOCK(runtime);
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        for(; tstate; tstate = PyThreadState_Next(tstate)) {
-            if (tstate->dict == NULL) {
-                continue;
+        HEAD_UNLOCK(runtime);
+        while (tstate) {
+            if (tstate->dict) {
+                PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
+                if (v != NULL) {
+                    Py_DECREF(v);
+                }
+                else {
+                    PyErr_Clear();
+                }
             }
-            PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
-            if (v != NULL) {
-                Py_DECREF(v);
-            }
-            else {
-                PyErr_Clear();
-            }
+            HEAD_LOCK(runtime);
+            tstate = PyThreadState_Next(tstate);
+            HEAD_UNLOCK(runtime);
         }
     }
     return 0;
@@ -1067,13 +1074,7 @@ thread_run(void *boot_raw)
     PyThreadState *tstate;
 
     tstate = boot->tstate;
-    tstate->thread_id = PyThread_get_thread_ident();
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    tstate->native_thread_id = PyThread_get_thread_native_id();
-#else
-    tstate->native_thread_id = 0;
-#endif
-    _PyThreadState_SetCurrent(tstate);
+    _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;
 
@@ -1101,6 +1102,24 @@ thread_run(void *boot_raw)
 }
 
 static PyObject *
+thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    if (interp->feature_flags & Py_RTFLAGS_DAEMON_THREADS) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+PyDoc_STRVAR(daemon_threads_allowed_doc,
+"daemon_threads_allowed()\n\
+\n\
+Return True if daemon threads are allowed in the current interpreter,\n\
+and False otherwise.\n");
+
+static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
@@ -1125,8 +1144,13 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
+    if (PySys_Audit("_thread.start_new_thread", "OOO",
+                    func, args, kwargs ? kwargs : Py_None) < 0) {
+        return NULL;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->config._isolated_interpreter) {
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "thread is not supported for isolated subinterpreters");
         return NULL;
@@ -1137,10 +1161,13 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return PyErr_NoMemory();
     }
     boot->interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_Prealloc(boot->interp);
+    boot->tstate = _PyThreadState_New(boot->interp);
     if (boot->tstate == NULL) {
         PyMem_Free(boot);
-        return PyErr_NoMemory();
+        if (!PyErr_Occurred()) {
+            return PyErr_NoMemory();
+        }
+        return NULL;
     }
     boot->runtime = runtime;
     boot->func = Py_NewRef(func);
@@ -1541,6 +1568,8 @@ static PyMethodDef thread_methods[] = {
      METH_VARARGS, start_new_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
+    {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
+     METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
      METH_NOARGS, allocate_doc},
     {"allocate",                thread_PyThread_allocate_lock,

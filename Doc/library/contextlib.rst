@@ -66,6 +66,8 @@ Functions and classes provided:
               # Code to release resource, e.g.:
               release_resource(resource)
 
+   The function can then be used like this::
+
       >>> with managed_resource(timeout=3600) as resource:
       ...     # Resource is released at the end of this block,
       ...     # even if code in the block raises an exception
@@ -140,9 +142,9 @@ Functions and classes provided:
          finally:
              print(f'it took {time.monotonic() - now}s to run')
 
-      @timeit()
-      async def main():
-          # ... async code ...
+     @timeit()
+     async def main():
+         # ... async code ...
 
    When used as a decorator, a new generator instance is implicitly created on
    each function call. This allows the otherwise "one-shot" context managers
@@ -181,7 +183,7 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
-.. class:: aclosing(thing)
+.. function:: aclosing(thing)
 
    Return an async context manager that calls the ``aclose()`` method of *thing*
    upon completion of the block.  This is basically equivalent to::
@@ -249,15 +251,15 @@ Functions and classes provided:
    :ref:`asynchronous context managers <async-context-managers>`::
 
        async def send_http(session=None):
-          if not session:
-              # If no http session, create it with aiohttp
-              cm = aiohttp.ClientSession()
-          else:
-              # Caller is responsible for closing the session
-              cm = nullcontext(session)
+           if not session:
+               # If no http session, create it with aiohttp
+               cm = aiohttp.ClientSession()
+           else:
+               # Caller is responsible for closing the session
+               cm = nullcontext(session)
 
-          async with cm as session:
-              # Send http requests with session
+           async with cm as session:
+               # Send http requests with session
 
    .. versionadded:: 3.7
 
@@ -361,7 +363,7 @@ Functions and classes provided:
    As this changes a global state, the working directory, it is not suitable
    for use in most threaded or async contexts. It is also not suitable for most
    non-linear code execution, like generators, where the program execution is
-   temporarily relinquished -- unless explicitely desired, you should not yield
+   temporarily relinquished -- unless explicitly desired, you should not yield
    when this context manager is active.
 
    This is a simple wrapper around :func:`~os.chdir`, it changes the current
@@ -395,6 +397,8 @@ Functions and classes provided:
           def __exit__(self, *exc):
               print('Finishing')
               return False
+
+   The class can then be used like this::
 
       >>> @mycontext()
       ... def function():
@@ -465,6 +469,8 @@ Functions and classes provided:
           async def __aexit__(self, *exc):
               print('Finishing')
               return False
+
+   The class can then be used like this::
 
       >>> @mycontext()
       ... async def function():
