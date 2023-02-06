@@ -1,0 +1,3 @@
+The GILState API is now partially compatible with subinterpreters.
+Previously, ``PyThreadState_GET()`` and ``PyGILState_GetThisThreadState()``
+would get out of sync, causing inconsistent behavior and crashes.
