@@ -945,7 +945,10 @@ class CLanguage(Language):
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
             if vararg != NO_VARARG:
-                declarations = "Py_ssize_t varargssize = Py_MAX(%s - %d, 0);" % (nargs, max_pos)
+                if max_pos == 0:
+                    declarations = "Py_ssize_t varargssize = %s;" % nargs
+                else:
+                    declarations = "Py_ssize_t varargssize = Py_MAX(%s - %d, 0);" % (nargs, max_pos)
             else:
                 declarations = ""
 
@@ -1032,7 +1035,10 @@ class CLanguage(Language):
                 )
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
                 argsbuf_size = len(converters) - vararg - 1
-                varargssize = "\nPy_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % (max_pos)
+                if max_pos == 0:
+                    varargssize = "\nPy_ssize_t varargssize = nargs;"
+                else:
+                    varargssize = "\nPy_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % max_pos
             declarations = declare_parser(f)
             declarations += "\nPyObject *argsbuf[%s];" % argsbuf_size
             if not new_or_init:

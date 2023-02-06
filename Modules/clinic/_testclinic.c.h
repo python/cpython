@@ -2591,7 +2591,7 @@ vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *argsbuf[1];
     PyObject *const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
+    Py_ssize_t varargssize = nargs;
     PyObject *const *__clinic_args;
     PyObject *b = Py_None;
 
@@ -2773,7 +2773,7 @@ static PyObject *
 gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
+    Py_ssize_t varargssize = nargs;
     PyObject *const *__clinic_args;
 
     if (!_PyArg_CheckPositional("gh_99233_refcount", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -2818,4 +2818,4 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d01570b22ee0815b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=55622d446938c069 input=a9049054013a1b77]*/

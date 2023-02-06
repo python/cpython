@@ -4008,7 +4008,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
     PyObject *argsbuf[2];
     PyObject *const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
+    Py_ssize_t varargssize = nargs;
     PyObject *const *__clinic_args;
     int b = 0;
     PyObject *c = " ";
@@ -4042,7 +4042,7 @@ static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, Py_ssize_t varargssize,
                                     PyObject *const *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=e68965b94622fbfc input=fa56a709a035666e]*/
+/*[clinic end generated code: output=fd25c0b3171663cc input=fa56a709a035666e]*/
 
 /*[clinic input]
 test_paramname_module
@@ -4133,7 +4133,7 @@ static int
 TestModule_TestClass1___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    Py_ssize_t varargssize = Py_MAX(PyTuple_GET_SIZE(args) - 0, 0);
+    Py_ssize_t varargssize = PyTuple_GET_SIZE(args);
     PyTypeObject *base_tp = &TestModule_Type;
     PyObject *const *__clinic_args;
 
@@ -4156,7 +4156,7 @@ static int
 TestModule_TestClass1___init___impl(TestClassObject *self,
                                     Py_ssize_t varargssize,
                                     PyObject *const *args)
-/*[clinic end generated code: output=8ce5c8a0d4d3e0cb input=3e093b8ea0b74b0c]*/
+/*[clinic end generated code: output=3f3f406f43e296d2 input=3e093b8ea0b74b0c]*/
 
 
 /*[clinic input]
