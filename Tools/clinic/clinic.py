@@ -1022,6 +1022,7 @@ class CLanguage(Language):
                 )
                 nargs = "nargs"
                 argsbuf_size = len(converters)
+                varargssize = ""
             else:
                 args_declaration = "_PyArg_UnpackKeywordsWithVarargKwonly", "%s, %s, %s, %s" % (
                     min_pos,
@@ -1031,13 +1032,13 @@ class CLanguage(Language):
                 )
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
                 argsbuf_size = len(converters) - vararg - 1
+                varargssize = "\nPy_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % (max_pos)
+            declarations = declare_parser(f)
+            declarations += "\nPyObject *argsbuf[%s];" % argsbuf_size
             if not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
-                declarations = declare_parser(f)
-                declarations += "\nPyObject *argsbuf[%s];" % argsbuf_size
                 if vararg != NO_VARARG:
-                    declarations += "\nPy_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % (max_pos)
                     declarations += "\nPyObject *const *fastargs;"
                     parsed_argname = "fastargs"
                 else:
@@ -1055,13 +1056,8 @@ class CLanguage(Language):
                 # positional-or-keyword arguments
                 flags = "METH_VARARGS|METH_KEYWORDS"
                 parser_prototype = parser_prototype_keyword
-                argname_fmt = 'fastargs[%d]'
-                declarations = declare_parser(f)
-                declarations += "\nPyObject *argsbuf[%s];" % argsbuf_size
                 declarations += "\nPyObject * const *fastargs;"
                 declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
-                if vararg != NO_VARARG:
-                    declarations += "\nPy_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % (max_pos)
                 if has_optional_kw:
                     declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
@@ -1070,6 +1066,8 @@ class CLanguage(Language):
                         goto exit;
                     }}
                     """ % args_declaration, indent=4)]
+                argname_fmt = 'fastargs[%d]'
+            declarations += varargssize
 
             if requires_defining_class:
                 flags = 'METH_METHOD|' + flags

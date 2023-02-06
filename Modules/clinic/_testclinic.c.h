@@ -2368,8 +2368,8 @@ posonly_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[0];
-    Py_ssize_t varargssize = Py_MAX(nargs - 2, 0);
     PyObject *const *fastargs;
+    Py_ssize_t varargssize = Py_MAX(nargs - 2, 0);
     PyObject *a;
     PyObject *b;
     PyObject *const *__clinic_args;
@@ -2460,8 +2460,8 @@ vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwna
     };
     #undef KWTUPLE
     PyObject *argsbuf[0];
-    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
     PyObject *const *fastargs;
+    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
     PyObject *a;
     PyObject *const *__clinic_args;
 
@@ -2520,9 +2520,9 @@ vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
     PyObject *const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
     PyObject *a;
     PyObject *const *__clinic_args;
     int b = 0;
@@ -2589,9 +2589,9 @@ vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize_t na
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
     PyObject *const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
     PyObject *const *__clinic_args;
     PyObject *b = Py_None;
 
@@ -2655,9 +2655,9 @@ gh_32092_oob(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
-    Py_ssize_t varargssize = Py_MAX(nargs - 2, 0);
     PyObject *const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 2) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    Py_ssize_t varargssize = Py_MAX(nargs - 2, 0);
     PyObject *pos1;
     PyObject *pos2;
     PyObject *const *varargs;
@@ -2732,9 +2732,9 @@ gh_32092_kw_pass(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
     PyObject *const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
     PyObject *pos;
     PyObject *const *__clinic_args;
     PyObject *kw = Py_None;
@@ -2818,4 +2818,4 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7a5b64c86324db97 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d01570b22ee0815b input=a9049054013a1b77]*/

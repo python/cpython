@@ -1081,9 +1081,9 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
-    Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
     PyObject *const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
     PyObject *const *__clinic_args;
     PyObject *sep = Py_None;
     PyObject *end = Py_None;
@@ -1411,4 +1411,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=86444999d5dd52a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7ef42ce13ab1f529 input=a9049054013a1b77]*/
