@@ -61,8 +61,11 @@ def create_eager_task_factory(custom_task_constructor):
             fut.set_exception(ex)
             return fut
         else:
-            return custom_task_constructor(
+            task = custom_task_constructor(
                 coro, loop=loop, name=name, context=context, yield_result=result)
+            if task._source_traceback:
+                del task._source_traceback[-1]
+            return task
 
     return factory
 
