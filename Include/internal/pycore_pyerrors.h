@@ -20,7 +20,10 @@ extern void _PyErr_FiniTypes(PyInterpreterState *);
 static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    return tstate->curexc_type;
+    if (tstate->current_exception == NULL) {
+        return NULL;
+    }
+    return (PyObject *)Py_TYPE(tstate->current_exception);
 }
 
 static inline void _PyErr_ClearExcState(_PyErr_StackItem *exc_state)

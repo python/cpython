@@ -28,24 +28,24 @@ _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
                const char *format, va_list vargs);
 
 void
-ASSERT_EXCEPTIONS_NORMALIZED(PyThreadState *tstate)
+ASSERT_EXCEPTION_NORMALIZED(PyObject *type, PyObject *value,
+               PyObject *traceback)
 {
     /* Exceptions are normalized if all NULL,
      * or if curexc_type = Py_TYPE(curexc_value) and
      * curexc_traceback = curexc_value->traceback
      * and both type and traceback are valid */
-    if (tstate->curexc_value == NULL) {
-        assert(tstate->curexc_type == NULL);
-        assert(tstate->curexc_traceback == NULL);
+    if (value == NULL) {
+        assert(type == NULL);
+        assert(traceback == NULL);
     }
     else {
-        assert(((PyBaseExceptionObject *)tstate->curexc_value)->traceback != Py_None);
-        assert(tstate->curexc_traceback != Py_None);
-        assert(PyExceptionClass_Check(tstate->curexc_type));
-        assert(tstate->curexc_type == (PyObject *)Py_TYPE(tstate->curexc_value));
-        assert(
-            tstate->curexc_traceback ==
-            ((PyBaseExceptionObject *)tstate->curexc_value)->traceback
+        assert(PyExceptionClass_Check(type));
+        assert(type == (PyObject *)Py_TYPE(value));
+        assert(((PyBaseExceptionObject *)value)->traceback != Py_None);
+        assert(traceback == ((PyBaseExceptionObject *)value)->traceback ||
+            (traceback == Py_None &&
+            ((PyBaseExceptionObject *)value)->traceback == NULL)
         );
     }
 }
@@ -53,44 +53,19 @@ ASSERT_EXCEPTIONS_NORMALIZED(PyThreadState *tstate)
 void
 _PyErr_Restore1(PyThreadState *tstate, PyObject *exc)
 {
-    if (exc == NULL) {
-        _PyErr_Restore(tstate, NULL, NULL, NULL);
-    }
-    else {
-        _PyErr_Restore(tstate,
-                       Py_NewRef(Py_TYPE(exc)),
-                       exc,
-                       Py_XNewRef(((PyBaseExceptionObject *)exc)->traceback)
-        );
-    }
+    PyObject *old_exc = tstate->current_exception;
+    tstate->current_exception = exc;
+    Py_XDECREF(old_exc);
 }
 
 void
 _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
                PyObject *traceback)
 {
-    PyObject *oldtype, *oldvalue, *oldtraceback;
-
-    if (traceback != NULL && !PyTraceBack_Check(traceback)) {
-        /* XXX Should never happen -- fatal error instead? */
-        /* Well, it could be None. */
-        Py_SETREF(traceback, NULL);
-    }
-
-    /* Save these in locals to safeguard against recursive
-       invocation through Py_XDECREF */
-    oldtype = tstate->curexc_type;
-    oldvalue = tstate->curexc_value;
-    oldtraceback = tstate->curexc_traceback;
-
-    tstate->curexc_type = type;
-    tstate->curexc_value = value;
-    tstate->curexc_traceback = traceback;
-
-    Py_XDECREF(oldtype);
-    Py_XDECREF(oldvalue);
-    Py_XDECREF(oldtraceback);
-    ASSERT_EXCEPTIONS_NORMALIZED(tstate);
+    ASSERT_EXCEPTION_NORMALIZED(type, value, traceback);
+    _PyErr_Restore1(tstate, value);
+    Py_XDECREF(type);
+    Py_XDECREF(traceback);
 }
 
 void
@@ -453,10 +428,8 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 
 PyObject *
 _PyErr_Fetch1(PyThreadState *tstate) {
-    PyObject *exc = tstate->curexc_value;
-    tstate->curexc_value = NULL;
-    Py_CLEAR(tstate->curexc_type);
-    Py_CLEAR(tstate->curexc_traceback);
+    PyObject *exc = tstate->current_exception;
+    tstate->current_exception = NULL;
     return exc;
 }
 
@@ -471,13 +444,16 @@ void
 _PyErr_Fetch(PyThreadState *tstate, PyObject **p_type, PyObject **p_value,
              PyObject **p_traceback)
 {
-    *p_type = tstate->curexc_type;
-    *p_value = tstate->curexc_value;
-    *p_traceback = tstate->curexc_traceback;
-
-    tstate->curexc_type = NULL;
-    tstate->curexc_value = NULL;
-    tstate->curexc_traceback = NULL;
+    PyObject *exc = _PyErr_Fetch1(tstate);
+    *p_value = exc;
+    if (exc == NULL) {
+        *p_type = NULL;
+        *p_traceback = NULL;
+    }
+    else {
+        *p_type = Py_NewRef(Py_TYPE(exc));
+        *p_traceback = Py_XNewRef(((PyBaseExceptionObject *)exc)->traceback);
+    }
 }
 
 

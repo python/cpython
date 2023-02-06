@@ -1379,9 +1379,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 
-    Py_CLEAR(tstate->curexc_type);
-    Py_CLEAR(tstate->curexc_value);
-    Py_CLEAR(tstate->curexc_traceback);
+    Py_CLEAR(tstate->current_exception);
 
     Py_CLEAR(tstate->exc_state.exc_value);
 
