@@ -2690,25 +2690,31 @@
         }
 
         TARGET(FOR_ITER_TUPLE) {
+            PyObject *iter = PEEK(1);
+            PyObject *next;
             assert(cframe.use_tracing == 0);
-            _PyTupleIterObject *it = (_PyTupleIterObject *)TOP();
+            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             PyTupleObject *seq = it->it_seq;
             if (seq) {
                 if (it->it_index < PyTuple_GET_SIZE(seq)) {
-                    PyObject *next = PyTuple_GET_ITEM(seq, it->it_index++);
-                    PUSH(Py_NewRef(next));
-                    JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
                     goto end_for_iter_tuple;  // End of this instruction
                 }
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
+            Py_DECREF(iter);
             STACK_SHRINK(1);
-            Py_DECREF(it);
+            /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+            DISPATCH();
         end_for_iter_tuple:
+            // Common case: no jump, leave it to the code generator
+            STACK_GROW(1);
+            POKE(1, next);
+            JUMPBY(1);
             DISPATCH();
         }
 
