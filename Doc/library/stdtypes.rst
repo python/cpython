@@ -533,8 +533,10 @@ class`. In addition, it provides a few more methods:
     single byte object.  However, when using the default arguments, don't try
     to convert a value greater than 255 or you'll get an :exc:`OverflowError`::
 
-        >>> (65).to_bytes()
-        b'A'
+        >>> (256).to_bytes()
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+        OverflowError: int too big to convert
 
     Equivalent to::
 
