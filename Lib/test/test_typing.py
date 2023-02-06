@@ -4892,6 +4892,18 @@ class NontotalMovie(TypedDict, total=False):
     title: Required[str]
     year: int
 
+class ParentNontotalMovie(TypedDict, total=False):
+    title: Required[str]
+
+class ChildTotalMovie(ParentNontotalMovie):
+    year: NotRequired[int]
+
+class ParentDeeplyAnnotatedMovie(TypedDict):
+    title: Annotated[Annotated[Required[str], "foobar"], "another level"]
+
+class ChildDeeplyAnnotatedMovie(ParentDeeplyAnnotatedMovie):
+    year: NotRequired[Annotated[int, 2000]]
+
 class AnnotatedMovie(TypedDict):
     title: Annotated[Required[str], "foobar"]
     year: NotRequired[Annotated[int, 2000]]
@@ -5219,6 +5231,17 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(get_type_hints(_typed_dict_helper.VeryAnnotated), {'a': int})
         self.assertEqual(get_type_hints(_typed_dict_helper.VeryAnnotated, include_extras=True), {
             'a': Annotated[Required[int], "a", "b", "c"]
+        })
+
+        self.assertEqual(get_type_hints(ChildTotalMovie), {"title": str, "year": int})
+        self.assertEqual(get_type_hints(ChildTotalMovie, include_extras=True), {
+            "title": Required[str], "year": NotRequired[int]
+        })
+
+        self.assertEqual(get_type_hints(ChildDeeplyAnnotatedMovie), {"title": str, "year": int})
+        self.assertEqual(get_type_hints(ChildDeeplyAnnotatedMovie, include_extras=True), {
+            "title": Annotated[Required[str], "foobar", "another level"],
+            "year": NotRequired[Annotated[int, 2000]]
         })
 
     def test_get_type_hints_collections_abc_callable(self):
@@ -6379,6 +6402,16 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(WeirdlyQuotedMovie.__required_keys__,
                          frozenset({"title"}))
         self.assertEqual(WeirdlyQuotedMovie.__optional_keys__,
+                         frozenset({"year"}))
+
+        self.assertEqual(ChildTotalMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(ChildTotalMovie.__optional_keys__,
+                         frozenset({"year"}))
+
+        self.assertEqual(ChildDeeplyAnnotatedMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(ChildDeeplyAnnotatedMovie.__optional_keys__,
                          frozenset({"year"}))
 
     def test_multiple_inheritance(self):
