@@ -2385,24 +2385,26 @@ loghelper(PyObject* arg, double (*func)(double), const char* err_msg)
 math.log
 
     x:    object
-    base: object = None
+    [
+    base: object(c_default="NULL") = math.e
+    ]
     /
 
 Return the logarithm of x to the given base.
 
-If the base is not specified or is None, returns the natural
-logarithm (base e) of x.
+If the base not specified, returns the natural logarithm (base e) of x.
 [clinic start generated code]*/
 
 static PyObject *
-math_log_impl(PyObject *module, PyObject *x, PyObject *base)
-/*[clinic end generated code: output=1dead263cbb1e854 input=ef032cc9837943e1]*/
+math_log_impl(PyObject *module, PyObject *x, int group_right_1,
+              PyObject *base)
+/*[clinic end generated code: output=7b5a39e526b73fc9 input=0f62d5726cbfebbd]*/
 {
     PyObject *num, *den;
     PyObject *ans;
 
     num = loghelper(x, m_log, "math.log() expects a positive input, got '%R'.");
-    if (num == NULL || base == Py_None)
+    if (num == NULL || base == NULL)
         return num;
 
     den = loghelper(base, m_log, "math.log() expects a positive input, got '%R'.");
@@ -2870,6 +2872,8 @@ dl_sum(double a, double b)
     return (DoubleLength) {x, y};
 }
 
+#ifndef UNRELIABLE_FMA
+
 static DoubleLength
 dl_mul(double x, double y)
 {
@@ -2878,6 +2882,47 @@ dl_mul(double x, double y)
     double zz = fma(x, y, -z);
     return (DoubleLength) {z, zz};
 }
+
+#else
+
+/*
+   The default implementation of dl_mul() depends on the C math library
+   having an accurate fma() function as required by § 7.12.13.1 of the
+   C99 standard.
+
+   The UNRELIABLE_FMA option is provided as a slower but accurate
+   alternative for builds where the fma() function is found wanting.
+   The speed penalty may be modest (17% slower on an Apple M1 Max),
+   so don't hesitate to enable this build option.
+
+   The algorithms are from the T. J. Dekker paper:
+   A Floating-Point Technique for Extending the Available Precision
+   https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+*/
+
+static DoubleLength
+dl_split(double x) {
+    // Dekker (5.5) and (5.6).
+    double t = x * 134217729.0;  // Veltkamp constant = 2.0 ** 27 + 1
+    double hi = t - (t - x);
+    double lo = x - hi;
+    return (DoubleLength) {hi, lo};
+}
+
+static DoubleLength
+dl_mul(double x, double y)
+{
+    // Dekker (5.12) and mul12()
+    DoubleLength xx = dl_split(x);
+    DoubleLength yy = dl_split(y);
+    double p = xx.hi * yy.hi;
+    double q = xx.hi * yy.lo + xx.lo * yy.hi;
+    double z = p + q;
+    double zz = p - z + q + xx.lo * yy.lo;
+    return (DoubleLength) {z, zz};
+}
+
+#endif
 
 typedef struct { double hi; double lo; double tiny; } TripleLength;
 
