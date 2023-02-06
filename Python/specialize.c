@@ -174,6 +174,10 @@ print_object_stats(FILE *out, ObjectStats *stats)
 {
     fprintf(out, "Object allocations from freelist: %" PRIu64 "\n", stats->from_freelist);
     fprintf(out, "Object frees to freelist: %" PRIu64 "\n", stats->to_freelist);
+    fprintf(out, "Object allocations from generic freelist: %" PRIu64 "\n", stats->from_generic_freelist);
+    fprintf(out, "Object frees to generic freelist: %" PRIu64 "\n", stats->to_generic_freelist);
+    fprintf(out, "Object allocations when generic freelist is empty: %" PRIu64 "\n", stats->generic_freelist_empty);
+    fprintf(out, "Object frees when generic freelist is full: %" PRIu64 "\n", stats->generic_freelist_full);
     fprintf(out, "Object allocations: %" PRIu64 "\n", stats->allocations);
     fprintf(out, "Object allocations to 512 bytes: %" PRIu64 "\n", stats->allocations512);
     fprintf(out, "Object allocations to 4 kbytes: %" PRIu64 "\n", stats->allocations4k);
