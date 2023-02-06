@@ -805,7 +805,7 @@ is_normalized_quickcheck(PyObject *self, PyObject *input, bool nfc, bool k,
 {
     /* UCD 3.2.0 is requested, quickchecks must be disabled. */
     if (UCD_Check(self)) {
-        return NO;
+        return MAYBE;
     }
 
     Py_ssize_t i, len;
