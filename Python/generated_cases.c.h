@@ -3723,12 +3723,12 @@
         }
 
         TARGET(COPY) {
-            PyObject **values = &PEEK(oparg);
-            PyObject *copy;
-            assert(oparg != 0);
-            copy = Py_NewRef(values[0]);
+            PyObject *bottom = PEEK(1 + (oparg-1));
+            PyObject *top;
+            assert(oparg > 0);
+            top = Py_NewRef(bottom);
             STACK_GROW(1);
-            POKE(1, copy);
+            POKE(1, top);
             DISPATCH();
         }
 

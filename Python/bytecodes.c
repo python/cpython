@@ -3098,9 +3098,9 @@ dummy_func(
             PUSH(result);
         }
 
-        inst(COPY, (values[oparg] -- values[oparg], copy)) {
-            assert(oparg != 0);
-            copy = Py_NewRef(values[0]);
+        inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
+            assert(oparg > 0);
+            top = Py_NewRef(bottom);
         }
 
         inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
