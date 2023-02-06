@@ -187,24 +187,23 @@ Running and stopping the loop
 
    Schedule the closure of the default executor and wait for it to join all of
    the threads in the :class:`~concurrent.futures.ThreadPoolExecutor`.
-   After calling this method,
-   :meth:`loop.run_in_executor` will raise a :exc:`RuntimeError` if called
-   while using the default executor.
+   Once this method has been called,
+   using the default executor with :meth:`loop.run_in_executor`
+   will raise a :exc:`RuntimeError`.
 
-   The *timeout* parameter specifies the duration in seconds (as a :class:`float`)
-   this method gives the executor to finish joining.
-   With the default, ``None``, the
-   method allows the executor an unlimited amount of time.
+   The *timeout* parameter specifies the amount of time
+   (in :class:`float` seconds) the executor will be given to finish joining.
+   With the default, ``None``,
+   the executor is allowed an unlimited amount of time.
 
-   If the *timeout* is reached, this method emits a :exc:`RuntimeWarning` and
-   terminates the default executor without waiting for its threads to finish
-   joining.
+   If the *timeout* is reached, a :exc:`RuntimeWarning` is emitted
+   and the default executor is terminated
+   without waiting for its threads to finish joining.
 
    .. note::
 
-      There is no need to call this method when :func:`asyncio.run` is
-      used, because that high-level function handles default executor shutdown
-      automatically.
+      Do not call this method when using :func:`asyncio.run`,
+      as the latter handles default executor shutdown automatically.
 
    .. versionadded:: 3.9
 
@@ -222,11 +221,11 @@ Scheduling callbacks
    Callbacks are called in the order in which they are registered.
    Each callback will be called exactly once.
 
-   An optional keyword-only *context* argument allows specifying a
+   The optional keyword-only *context* argument specifies a
    custom :class:`contextvars.Context` for the *callback* to run in.
    Callbacks use the current context when no *context* is provided.
 
-   Returns an instance of :class:`asyncio.Handle`, which can be
+   Return an instance of :class:`asyncio.Handle`, which can be
    used later to cancel the callback.
 
    This method is not thread-safe.
