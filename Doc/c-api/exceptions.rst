@@ -402,6 +402,8 @@ Querying the error indicator
 
 .. c:function:: void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
 
+    As of 3.12, this function is deprecated. Use :c:func:`PyErr_Fetch1` instead.
+
    Retrieve the error indicator into three variables whose addresses are passed.
    If the error indicator is not set, set all three variables to ``NULL``.  If it is
    set, it will be cleared and you own a reference to each object retrieved.  The
@@ -422,6 +424,49 @@ Querying the error indicator
          }
 
 
+.. c:function:: PyObject *PyErr_Fetch1(void)
+
+    Returns the current error indicator, clearing the error indicator at the same time.
+
+   .. note::
+
+      This function is normally only used by code that needs to catch exceptions or
+      by code that needs to save and restore the error indicator temporarily, e.g.::
+
+         {
+            PyObject *exc = PyErr_Fetch1();
+
+            /* ... code that might produce other errors ... */
+
+            PyErr_Restore1(exc);
+         }
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: void PyErr_Restore1(PyObject *exc)
+
+    As of 3.12, this function is deprecated. Use :c:func:`PyErr_Restore1` instead.
+
+   Set the error indicator to ``exc``.
+   If the error indicator is already set, it is cleared first.
+
+   ``exc`` should be a valid exception.
+   (Violating this rules will cause subtle problems later.)
+   This call consumes a reference to the ``exc`` object: you must own a
+   reference to that object before the call and after the call you no longer own
+   that reference.
+   (If you don't understand this, don't use this function. I warned you.)
+
+   .. note::
+
+      This function is normally only used by code that needs to save and restore the
+      error indicator temporarily.  Use :c:func:`PyErr_Fetch` to save the current
+      error indicator.
+
+   .. versionadded:: 3.12
+
+
 .. c:function:: void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 
    Set  the error indicator from the three objects.  If the error indicator is
@@ -437,11 +482,14 @@ Querying the error indicator
    .. note::
 
       This function is normally only used by code that needs to save and restore the
-      error indicator temporarily.  Use :c:func:`PyErr_Fetch` to save the current
+      error indicator temporarily.  Use :c:func:`PyErr_Fetch1` to save the current
       error indicator.
 
 
 .. c:function:: void PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
+
+    As of 3.12, this function is deprecated.
+    Use :c:func:`PyErr_Fetch1` instead of :c:func:`PyErr_Fetch`.
 
    Under certain circumstances, the values returned by :c:func:`PyErr_Fetch` below
    can be "unnormalized", meaning that ``*exc`` is a class object but ``*val`` is
@@ -702,6 +750,18 @@ Exception Objects
    instance or :const:`None`.  This steals a reference to *cause*.
 
    :attr:`__suppress_context__` is implicitly set to ``True`` by this function.
+
+
+.. c:function:: PyObject* PyException_GetArgs(PyObject *ex)
+
+   Return args of the given exception as a new reference,
+   as accessible from Python through :attr:`args`.
+
+
+.. c:function:: void PyException_SetArgs(PyObject *ex, PyObject *args)
+
+   Set the args of the given exception,
+   as accessible from Python through :attr:`args`.
 
 
 .. _unicodeexceptions:
