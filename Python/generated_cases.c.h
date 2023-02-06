@@ -2619,25 +2619,22 @@
 
         TARGET(FOR_ITER) {
             PREDICTED(FOR_ITER);
+            PyObject *iter = PEEK(1);
+            PyObject *next;
             #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
-                _Py_Specialize_ForIter(TOP(), next_instr, oparg);
+                _Py_Specialize_ForIter(iter, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(FOR_ITER, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            /* before: [iter]; after: [iter, iter()] *or* [] */
-            PyObject *iter = TOP();
-            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
-            if (next != NULL) {
-                PUSH(next);
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-            }
-            else {
+            /* before: [iter]; after: [iter, iter()] *or* [] (and jump an extra instr.) */
+            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
@@ -2649,11 +2646,16 @@
                 }
                 /* iterator ended normally */
                 assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
-                STACK_SHRINK(1);
                 Py_DECREF(iter);
-                /* Skip END_FOR */
+                STACK_SHRINK(1);
+                /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+                DISPATCH();
             }
+            // Common case: no jump, leave it to the code generator
+            STACK_GROW(1);
+            POKE(1, next);
+            JUMPBY(1);
             DISPATCH();
         }
 

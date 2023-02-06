@@ -2066,27 +2066,35 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        // stack effect: ( -- __0)
-        inst(FOR_ITER) {
+        // Most members of this family are "secretly" super-instructions.
+        // When the loop is exhausted, they jump, and the jump target is
+        // always END_FOR, which pops two values off the stack.
+        // This is optimized by skipping that instruction and combining
+        // its effect (popping 'iter' instead of pushing 'next'.)
+
+        // family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
+        //     FOR_ITER,
+        //     FOR_ITER_LIST,
+        //     FOR_ITER_TUPLE,
+        //     FOR_ITER_RANGE,
+        //     FOR_ITER_GEN,
+        // };
+
+        inst(FOR_ITER, (unused/1, iter -- iter, next)) {
             #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
-                _Py_Specialize_ForIter(TOP(), next_instr, oparg);
+                _Py_Specialize_ForIter(iter, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(FOR_ITER, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            /* before: [iter]; after: [iter, iter()] *or* [] */
-            PyObject *iter = TOP();
-            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
-            if (next != NULL) {
-                PUSH(next);
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-            }
-            else {
+            /* before: [iter]; after: [iter, iter()] *or* [] (and jump an extra instr.) */
+            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
@@ -2098,11 +2106,13 @@ dummy_func(
                 }
                 /* iterator ended normally */
                 assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
-                STACK_SHRINK(1);
                 Py_DECREF(iter);
-                /* Skip END_FOR */
+                STACK_SHRINK(1);
+                /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+                DISPATCH();
             }
+            // Common case: no jump, leave it to the code generator
         }
 
         // stack effect: ( -- __0)
@@ -3173,9 +3183,6 @@ family(call, INLINE_CACHE_ENTRIES_CALL) = {
     CALL_NO_KW_LIST_APPEND, CALL_NO_KW_METHOD_DESCRIPTOR_FAST, CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
     CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
     CALL_NO_KW_TYPE_1 };
-family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
-    FOR_ITER, FOR_ITER_LIST,
-    FOR_ITER_RANGE };
 family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
 family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
     UNPACK_SEQUENCE, UNPACK_SEQUENCE_LIST,
