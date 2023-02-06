@@ -955,15 +955,12 @@ cmath.log
     base as y_obj: object = None
     /
 
-log(z[, base]) -> the logarithm of z to the given base.
-
-If the base is not specified or is None, returns the
-natural logarithm (base e) of z.
+Return the logarithm of z to the given base or the natural logarithm of z.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=e7db51859ebf70bf]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=3b21afa2e8548074]*/
 {
     Py_complex y;
 

@@ -2369,15 +2369,12 @@ math.log
     base: object = None
     /
 
-Return the logarithm of x to the given base.
-
-If the base is not specified or is None, returns the natural
-logarithm (base e) of x.
+Return the logarithm of x to the given base or the natural logarithm of x.
 [clinic start generated code]*/
 
 static PyObject *
 math_log_impl(PyObject *module, PyObject *x, PyObject *base)
-/*[clinic end generated code: output=1dead263cbb1e854 input=ef032cc9837943e1]*/
+/*[clinic end generated code: output=1dead263cbb1e854 input=1ccc0718b30ca6c5]*/
 {
     PyObject *num, *den;
     PyObject *ans;
