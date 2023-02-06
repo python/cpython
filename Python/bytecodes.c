@@ -3098,11 +3098,9 @@ dummy_func(
             PUSH(result);
         }
 
-        // stack effect: ( -- __0)
-        inst(COPY) {
+        inst(COPY, (values[oparg] -- values[oparg], copy)) {
             assert(oparg != 0);
-            PyObject *peek = PEEK(oparg);
-            PUSH(Py_NewRef(peek));
+            copy = Py_NewRef(values[0]);
         }
 
         inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
