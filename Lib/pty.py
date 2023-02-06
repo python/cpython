@@ -39,6 +39,9 @@ def master_open():
     """master_open() -> (master_fd, slave_name)
     Open a pty master and return the fd, and the filename of the slave end.
     Deprecated, use openpty() instead."""
+    
+    import warnings
+    warnings.warn("Use pty.openpty() instead.", DeprecationWarning, stacklevel=2)  # Remove API in 3.14
 
     try:
         master_fd, slave_fd = os.openpty()
@@ -68,6 +71,9 @@ def slave_open(tty_name):
     Open the pty slave and acquire the controlling terminal, returning
     opened filedescriptor.
     Deprecated, use openpty() instead."""
+
+    import warnings
+    warnings.warn("Use pty.openpty() instead.", DeprecationWarning, stacklevel=2)  # Remove API in 3.14
 
     result = os.open(tty_name, os.O_RDWR)
     try:
