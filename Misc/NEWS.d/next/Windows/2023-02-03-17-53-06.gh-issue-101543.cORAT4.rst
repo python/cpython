@@ -1,0 +1,2 @@
+Ensure the install path in the registry is only used when the standard
+library hasn't been located in any other way.
