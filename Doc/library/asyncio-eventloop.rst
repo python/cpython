@@ -218,6 +218,9 @@ Scheduling callbacks
    Schedule the *callback* :term:`callback` to be called with
    *args* arguments at the next iteration of the event loop.
 
+   Return an instance of :class:`asyncio.Handle`,
+   which can be used later to cancel the callback.
+
    Callbacks are called in the order in which they are registered.
    Each callback will be called exactly once.
 
@@ -225,10 +228,7 @@ Scheduling callbacks
    custom :class:`contextvars.Context` for the *callback* to run in.
    Callbacks use the current context when no *context* is provided.
 
-   Return an instance of :class:`asyncio.Handle`, which can be
-   used later to cancel the callback.
-
-   This method is not thread-safe.
+   Unlike :meth:`call_soon_threadsafe`, this method is not thread-safe.
 
 .. method:: loop.call_soon_threadsafe(callback, *args, context=None)
 
