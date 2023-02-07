@@ -2777,11 +2777,39 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch
-        def f(*args):
+        def f(a, /):
             pass
         msg = 'f requires at least 1 positional argument'
         with self.assertRaisesRegex(TypeError, msg):
             f()
+
+        @functools.singledispatch
+        def f(a):
+            pass
+        msg = 'f requires at least 1 positional or keyword argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            f()
+
+    def test_posorkw_argument(self):
+        @functools.singledispatch
+        def f(a):
+            return "default"
+
+        @f.register
+        def _(a: int):
+            return "int"
+
+        self.assertEqual(f([]), "default")
+        self.assertEqual(f(a=[]), "default")
+        self.assertEqual(f(1), "int")
+        self.assertEqual(f(a=1), "int")
+
+        msg = "Invalid kind of parameter for a."
+        with self.assertRaisesRegex(TypeError, msg):
+            f.register(list, lambda a, /: "list")
+        msg = "f requires at least 1 positional or keyword argument a"
+        with self.assertRaisesRegex(TypeError, msg):
+            f(b=1)
 
     def test_union(self):
         @functools.singledispatch

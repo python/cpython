@@ -810,6 +810,7 @@ def singledispatch(func):
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
     import types, weakref
+    from inspect import isfunction
 
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
@@ -889,6 +890,17 @@ def singledispatch(func):
                         f"{cls!r} is not a class."
                     )
 
+        if isfunction(func):
+            from inspect import signature
+
+            func_1st_arg = next(iter(signature(func).parameters.values()))
+            if func_1st_arg.kind != dispatched_arg.kind:
+                raise TypeError(
+                    f"Invalid kind of parameter for {dispatched_arg_name}. "
+                    f"Expected {dispatched_arg.kind.description}, got "
+                    f"{func_1st_arg.kind.description}."
+                )
+
         if _is_union_type(cls):
             from typing import get_args
 
@@ -910,6 +922,27 @@ def singledispatch(func):
 
     funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
+
+    if isfunction(func):
+        from inspect import Parameter, signature
+
+        dispatched_arg = next(iter(signature(func).parameters.values()))
+        dispatched_arg_name = dispatched_arg.name
+
+        if dispatched_arg.kind == Parameter.POSITIONAL_OR_KEYWORD:
+            def wrapper(*args, **kw):
+                if not args:
+                    try:
+                        arg = kw[dispatched_arg_name]
+                    except KeyError:
+                        raise TypeError(f'{funcname} requires at least 1'
+                                        ' positional or keyword argument'
+                                        f' {dispatched_arg_name}')
+                else:
+                    arg = args[0]
+
+                return dispatch(arg.__class__)(*args, **kw)
+
     wrapper.register = register
     wrapper.dispatch = dispatch
     wrapper.registry = types.MappingProxyType(registry)
