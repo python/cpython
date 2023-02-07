@@ -2620,25 +2620,23 @@
 
         TARGET(FOR_ITER) {
             PREDICTED(FOR_ITER);
+            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
+            PyObject *iter = PEEK(1);
+            PyObject *next;
             #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
-                _Py_Specialize_ForIter(TOP(), next_instr, oparg);
+                _Py_Specialize_ForIter(iter, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(FOR_ITER, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            /* before: [iter]; after: [iter, iter()] *or* [] */
-            PyObject *iter = TOP();
-            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
-            if (next != NULL) {
-                PUSH(next);
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-            }
-            else {
+            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
+            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
@@ -2650,63 +2648,81 @@
                 }
                 /* iterator ended normally */
                 assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
-                STACK_SHRINK(1);
                 Py_DECREF(iter);
-                /* Skip END_FOR */
+                STACK_SHRINK(1);
+                /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+                DISPATCH();
             }
+            // Common case: no jump, leave it to the code generator
+            STACK_GROW(1);
+            POKE(1, next);
+            JUMPBY(1);
             DISPATCH();
         }
 
         TARGET(FOR_ITER_LIST) {
+            PyObject *iter = PEEK(1);
+            PyObject *next;
             assert(cframe.use_tracing == 0);
-            _PyListIterObject *it = (_PyListIterObject *)TOP();
-            DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, FOR_ITER);
+            DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
+            _PyListIterObject *it = (_PyListIterObject *)iter;
             STAT_INC(FOR_ITER, hit);
             PyListObject *seq = it->it_seq;
             if (seq) {
                 if (it->it_index < PyList_GET_SIZE(seq)) {
-                    PyObject *next = PyList_GET_ITEM(seq, it->it_index++);
-                    PUSH(Py_NewRef(next));
-                    JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
                     goto end_for_iter_list;  // End of this instruction
                 }
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
+            Py_DECREF(iter);
             STACK_SHRINK(1);
-            Py_DECREF(it);
+            /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+            DISPATCH();
         end_for_iter_list:
+            // Common case: no jump, leave it to the code generator
+            STACK_GROW(1);
+            POKE(1, next);
+            JUMPBY(1);
             DISPATCH();
         }
 
         TARGET(FOR_ITER_TUPLE) {
+            PyObject *iter = PEEK(1);
+            PyObject *next;
             assert(cframe.use_tracing == 0);
-            _PyTupleIterObject *it = (_PyTupleIterObject *)TOP();
+            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             PyTupleObject *seq = it->it_seq;
             if (seq) {
                 if (it->it_index < PyTuple_GET_SIZE(seq)) {
-                    PyObject *next = PyTuple_GET_ITEM(seq, it->it_index++);
-                    PUSH(Py_NewRef(next));
-                    JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
                     goto end_for_iter_tuple;  // End of this instruction
                 }
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
+            Py_DECREF(iter);
             STACK_SHRINK(1);
-            Py_DECREF(it);
+            /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+            DISPATCH();
         end_for_iter_tuple:
+            // Common case: no jump, leave it to the code generator
+            STACK_GROW(1);
+            POKE(1, next);
+            JUMPBY(1);
             DISPATCH();
         }
 
         TARGET(FOR_ITER_RANGE) {
+            PyObject *iter = PEEK(1);
             assert(cframe.use_tracing == 0);
-            _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
@@ -2714,6 +2730,7 @@
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
+                // Jump over END_FOR instruction.
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             }
             else {
@@ -2730,8 +2747,9 @@
         }
 
         TARGET(FOR_ITER_GEN) {
+            PyObject *iter = PEEK(1);
             assert(cframe.use_tracing == 0);
-            PyGenObject *gen = (PyGenObject *)TOP();
+            PyGenObject *gen = (PyGenObject *)iter;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
             STAT_INC(FOR_ITER, hit);

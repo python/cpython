@@ -1,0 +1,2 @@
+Fix :meth:`asyncio.Task.print_stack` description for ``file=None``.
+Patch by Oleg Iarygin.
