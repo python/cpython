@@ -3159,7 +3159,7 @@
             STAT_INC(CALL, hit);
             res = Py_NewRef(Py_TYPE(obj));
             Py_DECREF(obj);
-            Py_DECREF(callable);
+            Py_DECREF(&PyType_Type);  // I.e., callable
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             POKE(1, res);

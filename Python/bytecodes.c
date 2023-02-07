@@ -2542,7 +2542,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             res = Py_NewRef(Py_TYPE(obj));
             Py_DECREF(obj);
-            Py_DECREF(callable);
+            Py_DECREF(&PyType_Type);  // I.e., callable
         }
 
         inst(CALL_NO_KW_STR_1, (unused/1, unused/2, unused/1, null, callable, args[oparg] -- res)) {
