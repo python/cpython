@@ -40,7 +40,7 @@ ENCODER(cp932)
             if (c == 0xf8f0)
                 OUTBYTE1(0xa0);
             else
-                OUTBYTE1(c - 0xfef1 + 0xfd);
+                OUTBYTE1(c - 0xf8f1 + 0xfd);
             NEXT(1, 1);
             continue;
         }

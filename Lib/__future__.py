@@ -33,7 +33,7 @@ in releases at or after that, modules no longer need
 to use the feature in question, but may continue to use such imports.
 
 MandatoryRelease may also be None, meaning that a planned feature got
-dropped.
+dropped or that the release version is undetermined.
 
 Instances of class _Feature have two corresponding methods,
 .getOptionalRelease() and .getMandatoryRelease().
@@ -42,7 +42,7 @@ CompilerFlag is the (bitfield) flag that should be passed in the fourth
 argument to the builtin function compile() to enable the feature in
 dynamically compiled code.  This flag is stored in the .compiler_flag
 attribute on _Future instances.  These values must match the appropriate
-#defines of CO_xxx flags in Include/compile.h.
+#defines of CO_xxx flags in Include/cpython/compile.h.
 
 No feature line is ever to be deleted from this file.
 """
@@ -66,18 +66,20 @@ __all__ = ["all_feature_names"] + all_feature_names
 # code.h and used by compile.h, so that an editor search will find them here.
 # However, they're not exported in __all__, because they don't really belong to
 # this module.
-CO_NESTED            = 0x0010   # nested_scopes
-CO_GENERATOR_ALLOWED = 0        # generators (obsolete, was 0x1000)
-CO_FUTURE_DIVISION   = 0x2000   # division
-CO_FUTURE_ABSOLUTE_IMPORT = 0x4000 # perform absolute imports by default
-CO_FUTURE_WITH_STATEMENT  = 0x8000   # with statement
-CO_FUTURE_PRINT_FUNCTION  = 0x10000   # print function
-CO_FUTURE_UNICODE_LITERALS = 0x20000 # unicode string literals
-CO_FUTURE_BARRY_AS_BDFL = 0x40000
-CO_FUTURE_GENERATOR_STOP  = 0x80000 # StopIteration becomes RuntimeError in generators
-CO_FUTURE_ANNOTATIONS     = 0x100000  # annotations become strings at runtime
+CO_NESTED = 0x0010                      # nested_scopes
+CO_GENERATOR_ALLOWED = 0                # generators (obsolete, was 0x1000)
+CO_FUTURE_DIVISION = 0x20000            # division
+CO_FUTURE_ABSOLUTE_IMPORT = 0x40000     # perform absolute imports by default
+CO_FUTURE_WITH_STATEMENT = 0x80000      # with statement
+CO_FUTURE_PRINT_FUNCTION = 0x100000     # print function
+CO_FUTURE_UNICODE_LITERALS = 0x200000   # unicode string literals
+CO_FUTURE_BARRY_AS_BDFL = 0x400000
+CO_FUTURE_GENERATOR_STOP = 0x800000     # StopIteration becomes RuntimeError in generators
+CO_FUTURE_ANNOTATIONS = 0x1000000       # annotations become strings at runtime
+
 
 class _Feature:
+
     def __init__(self, optionalRelease, mandatoryRelease, compiler_flag):
         self.optional = optionalRelease
         self.mandatory = mandatoryRelease
@@ -88,22 +90,21 @@ class _Feature:
 
         This is a 5-tuple, of the same form as sys.version_info.
         """
-
         return self.optional
 
     def getMandatoryRelease(self):
         """Return release in which this feature will become mandatory.
 
         This is a 5-tuple, of the same form as sys.version_info, or, if
-        the feature was dropped, is None.
+        the feature was dropped, or the release date is undetermined, is None.
         """
-
         return self.mandatory
 
     def __repr__(self):
         return "_Feature" + repr((self.optional,
                                   self.mandatory,
                                   self.compiler_flag))
+
 
 nested_scopes = _Feature((2, 1, 0, "beta",  1),
                          (2, 2, 0, "alpha", 0),
@@ -134,7 +135,7 @@ unicode_literals = _Feature((2, 6, 0, "alpha", 2),
                             CO_FUTURE_UNICODE_LITERALS)
 
 barry_as_FLUFL = _Feature((3, 1, 0, "alpha", 2),
-                          (3, 9, 0, "alpha", 0),
+                          (4, 0, 0, "alpha", 0),
                           CO_FUTURE_BARRY_AS_BDFL)
 
 generator_stop = _Feature((3, 5, 0, "beta", 1),
@@ -142,5 +143,5 @@ generator_stop = _Feature((3, 5, 0, "beta", 1),
                           CO_FUTURE_GENERATOR_STOP)
 
 annotations = _Feature((3, 7, 0, "beta", 1),
-                       (4, 0, 0, "alpha", 0),
+                       None,
                        CO_FUTURE_ANNOTATIONS)

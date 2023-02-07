@@ -2,7 +2,7 @@
 ====================================
 
 .. module:: abc
-   :synopsis: Abstract base classes according to PEP 3119.
+   :synopsis: Abstract base classes according to :pep:`3119`.
 
 .. moduleauthor:: Guido van Rossum
 .. sectionauthor:: Georg Brandl
@@ -18,10 +18,10 @@ see the PEP for why this was added to Python. (See also :pep:`3141` and the
 :mod:`numbers` module regarding a type hierarchy for numbers based on ABCs.)
 
 The :mod:`collections` module has some concrete classes that derive from
-ABCs; these can, of course, be further derived. In addition the
+ABCs; these can, of course, be further derived. In addition, the
 :mod:`collections.abc` submodule has some ABCs that can be used to test whether
-a class or instance provides a particular interface, for example, is it
-hashable or a mapping.
+a class or instance provides a particular interface, for example, if it is
+hashable or if it is a mapping.
 
 
 This module provides the metaclass :class:`ABCMeta` for defining ABCs and
@@ -160,7 +160,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 
 
 
-The :mod:`abc` module also provides the following decorators:
+The :mod:`abc` module also provides the following decorator:
 
 .. decorator:: abstractmethod
 
@@ -174,10 +174,11 @@ The :mod:`abc` module also provides the following decorators:
    to declare abstract methods for properties and descriptors.
 
    Dynamically adding abstract methods to a class, or attempting to modify the
-   abstraction status of a method or class once it is created, are not
-   supported.  The :func:`abstractmethod` only affects subclasses derived using
-   regular inheritance; "virtual subclasses" registered with the ABC's
-   :meth:`register` method are not affected.
+   abstraction status of a method or class once it is created, are only
+   supported using the :func:`update_abstractmethods` function.  The
+   :func:`abstractmethod` only affects subclasses derived using regular
+   inheritance; "virtual subclasses" registered with the ABC's :meth:`register`
+   method are not affected.
 
    When :func:`abstractmethod` is applied in combination with other method
    descriptors, it should be applied as the innermost decorator, as shown in
@@ -185,15 +186,15 @@ The :mod:`abc` module also provides the following decorators:
 
       class C(ABC):
           @abstractmethod
-          def my_abstract_method(self, ...):
+          def my_abstract_method(self, arg1):
               ...
           @classmethod
           @abstractmethod
-          def my_abstract_classmethod(cls, ...):
+          def my_abstract_classmethod(cls, arg2):
               ...
           @staticmethod
           @abstractmethod
-          def my_abstract_staticmethod(...):
+          def my_abstract_staticmethod(arg3):
               ...
 
           @property
@@ -217,7 +218,7 @@ The :mod:`abc` module also provides the following decorators:
    the descriptor must identify itself as abstract using
    :attr:`__isabstractmethod__`. In general, this attribute should be ``True``
    if any of the methods used to compose the descriptor are abstract. For
-   example, Python's built-in property does the equivalent of::
+   example, Python's built-in :class:`property` does the equivalent of::
 
       class Descriptor:
           ...
@@ -235,8 +236,14 @@ The :mod:`abc` module also provides the following decorators:
       super-call in a framework that uses cooperative
       multiple-inheritance.
 
+The :mod:`abc` module also supports the following legacy decorators:
 
 .. decorator:: abstractclassmethod
+
+   .. versionadded:: 3.2
+   .. deprecated:: 3.3
+       It is now possible to use :class:`classmethod` with
+       :func:`abstractmethod`, making this decorator redundant.
 
    A subclass of the built-in :func:`classmethod`, indicating an abstract
    classmethod. Otherwise it is similar to :func:`abstractmethod`.
@@ -248,16 +255,16 @@ The :mod:`abc` module also provides the following decorators:
       class C(ABC):
           @classmethod
           @abstractmethod
-          def my_abstract_classmethod(cls, ...):
+          def my_abstract_classmethod(cls, arg):
               ...
-
-   .. versionadded:: 3.2
-   .. deprecated:: 3.3
-       It is now possible to use :class:`classmethod` with
-       :func:`abstractmethod`, making this decorator redundant.
 
 
 .. decorator:: abstractstaticmethod
+
+   .. versionadded:: 3.2
+   .. deprecated:: 3.3
+       It is now possible to use :class:`staticmethod` with
+       :func:`abstractmethod`, making this decorator redundant.
 
    A subclass of the built-in :func:`staticmethod`, indicating an abstract
    staticmethod. Otherwise it is similar to :func:`abstractmethod`.
@@ -269,25 +276,19 @@ The :mod:`abc` module also provides the following decorators:
       class C(ABC):
           @staticmethod
           @abstractmethod
-          def my_abstract_staticmethod(...):
+          def my_abstract_staticmethod(arg):
               ...
-
-   .. versionadded:: 3.2
-   .. deprecated:: 3.3
-       It is now possible to use :class:`staticmethod` with
-       :func:`abstractmethod`, making this decorator redundant.
 
 
 .. decorator:: abstractproperty
 
+   .. deprecated:: 3.3
+       It is now possible to use :class:`property`, :meth:`property.getter`,
+       :meth:`property.setter` and :meth:`property.deleter` with
+       :func:`abstractmethod`, making this decorator redundant.
+
    A subclass of the built-in :func:`property`, indicating an abstract
    property.
-
-   Using this function requires that the class's metaclass is :class:`ABCMeta`
-   or is derived from it. A class that has a metaclass derived from
-   :class:`ABCMeta` cannot be instantiated unless all of its abstract methods
-   and properties are overridden. The abstract properties can be called using
-   any of the normal 'super' call mechanisms.
 
    This special case is deprecated, as the :func:`property` decorator
    is now correctly identified as abstract when applied to an abstract
@@ -322,12 +323,6 @@ The :mod:`abc` module also provides the following decorators:
               ...
 
 
-   .. deprecated:: 3.3
-       It is now possible to use :class:`property`, :meth:`property.getter`,
-       :meth:`property.setter` and :meth:`property.deleter` with
-       :func:`abstractmethod`, making this decorator redundant.
-
-
 The :mod:`abc` module also provides the following functions:
 
 .. function:: get_cache_token()
@@ -340,6 +335,23 @@ The :mod:`abc` module also provides the following functions:
 
    .. versionadded:: 3.4
 
+.. function:: update_abstractmethods(cls)
+
+   A function to recalculate an abstract class's abstraction status. This
+   function should be called if a class's abstract methods have been
+   implemented or changed after it was created. Usually, this function should
+   be called from within a class decorator.
+
+   Returns *cls*, to allow usage as a class decorator.
+
+   If *cls* is not an instance of :class:`ABCMeta`, does nothing.
+
+   .. note::
+
+      This function assumes that *cls*'s superclasses are already updated.
+      It does not update any subclasses.
+
+   .. versionadded:: 3.10
 
 .. rubric:: Footnotes
 

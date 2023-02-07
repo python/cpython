@@ -16,6 +16,7 @@ overview:
    builtins.rst
    __main__.rst
    warnings.rst
+   dataclasses.rst
    contextlib.rst
    abc.rst
    atexit.rst

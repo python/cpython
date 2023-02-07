@@ -40,6 +40,16 @@ alternatively be passed to :func:`faulthandler.enable`.
 The module is implemented in C, so tracebacks can be dumped on a crash or when
 Python is deadlocked.
 
+The :ref:`Python Development Mode <devmode>` calls :func:`faulthandler.enable`
+at Python startup.
+
+.. seealso::
+
+   Module :mod:`pdb`
+      Interactive source code debugger for Python programs.
+
+   Module :mod:`traceback`
+      Standard interface to extract, format and print stack traces of Python programs.
 
 Dumping the traceback
 ---------------------
@@ -48,6 +58,8 @@ Dumping the traceback
 
    Dump the tracebacks of all threads into *file*. If *all_threads* is
    ``False``, dump only the current thread.
+
+   .. seealso:: :func:`traceback.print_tb`, which can be used to print a traceback object.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
@@ -72,6 +84,10 @@ Fault handler state
 
    .. versionchanged:: 3.6
       On Windows, a handler for Windows exception is also installed.
+
+   .. versionchanged:: 3.10
+      The dump now mentions if a garbage collector collection is running
+      if *all_threads* is true.
 
 .. function:: disable()
 
@@ -100,8 +116,10 @@ Dumping the tracebacks after a timeout
    :func:`cancel_dump_traceback_later` is called: see :ref:`issue with file
    descriptors <faulthandler-fd>`.
 
-   This function is implemented using a watchdog thread and therefore is not
-   available if Python is compiled with threads disabled.
+   This function is implemented using a watchdog thread.
+
+   .. versionchanged:: 3.7
+      This function is now always available.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
@@ -152,15 +170,15 @@ these functions again each time that the file is replaced.
 Example
 -------
 
-.. highlight:: sh
-
 Example of a segmentation fault on Linux with and without enabling the fault
-handler::
+handler:
 
-    $ python3 -c "import ctypes; ctypes.string_at(0)"
+.. code-block:: shell-session
+
+    $ python -c "import ctypes; ctypes.string_at(0)"
     Segmentation fault
 
-    $ python3 -q -X faulthandler
+    $ python -q -X faulthandler
     >>> import ctypes
     >>> ctypes.string_at(0)
     Fatal Python error: Segmentation fault
@@ -169,4 +187,3 @@ handler::
       File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
       File "<stdin>", line 1 in <module>
     Segmentation fault
-

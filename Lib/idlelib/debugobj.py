@@ -71,7 +71,7 @@ class ClassTreeItem(ObjectTreeItem):
 
 class AtomicObjectTreeItem(ObjectTreeItem):
     def IsExpandable(self):
-        return 0
+        return False
 
 class SequenceTreeItem(ObjectTreeItem):
     def IsExpandable(self):
@@ -135,5 +135,8 @@ def _object_browser(parent):  # htest #
     node.update()
 
 if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_debugobj', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_object_browser)

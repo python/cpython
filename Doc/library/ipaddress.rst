@@ -41,7 +41,7 @@ IP addresses, networks and interfaces:
 
    Return an :class:`IPv4Address` or :class:`IPv6Address` object depending on
    the IP address passed as argument.  Either IPv4 or IPv6 addresses may be
-   supplied; integers less than 2**32 will be considered to be IPv4 by default.
+   supplied; integers less than ``2**32`` will be considered to be IPv4 by default.
    A :exc:`ValueError` is raised if *address* does not represent a valid IPv4
    or IPv6 address.
 
@@ -56,7 +56,7 @@ IP addresses, networks and interfaces:
    Return an :class:`IPv4Network` or :class:`IPv6Network` object depending on
    the IP address passed as argument.  *address* is a string or integer
    representing the IP network.  Either IPv4 or IPv6 networks may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default.  *strict*
+   integers less than ``2**32`` will be considered to be IPv4 by default.  *strict*
    is passed to :class:`IPv4Network` or :class:`IPv6Network` constructor.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address, or if the network has host bits set.
@@ -70,7 +70,7 @@ IP addresses, networks and interfaces:
    Return an :class:`IPv4Interface` or :class:`IPv6Interface` object depending
    on the IP address passed as argument.  *address* is a string or integer
    representing the IP address.  Either IPv4 or IPv6 addresses may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default.  A
+   integers less than ``2**32`` will be considered to be IPv4 by default.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address.
 
@@ -91,7 +91,8 @@ Address objects
 The :class:`IPv4Address` and :class:`IPv6Address` objects share a lot of common
 attributes.  Some attributes that are only meaningful for IPv6 addresses are
 also implemented by :class:`IPv4Address` objects, in order to make it easier to
-write code that handles both IP versions correctly.
+write code that handles both IP versions correctly.  Address objects are
+:term:`hashable`, so they can be used as keys in dictionaries.
 
 .. class:: IPv4Address(address)
 
@@ -103,8 +104,7 @@ write code that handles both IP versions correctly.
    1. A string in decimal-dot notation, consisting of four decimal integers in
       the inclusive range 0--255, separated by dots (e.g. ``192.168.0.1``). Each
       integer represents an octet (byte) in the address. Leading zeroes are
-      tolerated only for values less than 8 (as there is no ambiguity
-      between the decimal and octal interpretations of such strings).
+      not tolerated to prevent confusion with octal notation.
    2. An integer that fits into 32 bits.
    3. An integer packed into a :class:`bytes` object of length 4 (most
       significant octet first).
@@ -115,6 +115,27 @@ write code that handles both IP versions correctly.
    IPv4Address('192.168.0.1')
    >>> ipaddress.IPv4Address(b'\xC0\xA8\x00\x01')
    IPv4Address('192.168.0.1')
+
+   .. versionchanged:: 3.8
+
+      Leading zeros are tolerated, even in ambiguous cases that look like
+      octal notation.
+
+   .. versionchanged:: 3.10
+
+      Leading zeros are no longer tolerated and are treated as an error.
+      IPv4 address strings are now parsed as strict as glibc
+      :func:`~socket.inet_pton`.
+
+   .. versionchanged:: 3.9.5
+
+      The above change was also included in Python 3.9 starting with
+      version 3.9.5.
+
+   .. versionchanged:: 3.8.12
+
+      The above change was also included in Python 3.8 starting with
+      version 3.8.12.
 
    .. attribute:: version
 
@@ -201,6 +222,32 @@ write code that handles both IP versions correctly.
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
 
+.. method:: IPv4Address.__format__(fmt)
+
+   Returns a string representation of the IP address, controlled by
+   an explicit format string.
+   *fmt* can be one of the following: ``'s'``, the default option,
+   equivalent to :func:`str`, ``'b'`` for a zero-padded binary string,
+   ``'X'`` or ``'x'`` for an uppercase or lowercase hexadecimal
+   representation, or ``'n'``, which is equivalent to ``'b'`` for IPv4
+   addresses and ``'x'`` for IPv6. For binary and hexadecimal
+   representations, the form specifier ``'#'`` and the grouping option
+   ``'_'`` are available. ``__format__`` is used by ``format``, ``str.format``
+   and f-strings.
+
+      >>> format(ipaddress.IPv4Address('192.168.0.1'))
+      '192.168.0.1'
+      >>> '{:#b}'.format(ipaddress.IPv4Address('192.168.0.1'))
+      '0b11000000101010000000000000000001'
+      >>> f'{ipaddress.IPv6Address("2001:db8::1000"):s}'
+      '2001:db8::1000'
+      >>> format(ipaddress.IPv6Address('2001:db8::1000'), '_X')
+      '2001_0DB8_0000_0000_0000_0000_0000_1000'
+      >>> '{:#_n}'.format(ipaddress.IPv6Address('2001:db8::1000'))
+      '0x2001_0db8_0000_0000_0000_0000_0000_1000'
+
+   .. versionadded:: 3.9
+
 
 .. class:: IPv6Address(address)
 
@@ -216,11 +263,20 @@ write code that handles both IP versions correctly.
       :RFC:`4291` for details.  For example,
       ``"0000:0000:0000:0000:0000:0abc:0007:0def"`` can be compressed to
       ``"::abc:7:def"``.
+
+      Optionally, the string may also have a scope zone ID, expressed
+      with a suffix ``%scope_id``. If present, the scope ID must be non-empty,
+      and may not contain ``%``.
+      See :RFC:`4007` for details.
+      For example, ``fe80::1234%1`` might identify address ``fe80::1234`` on the first link of the node.
    2. An integer that fits into 128 bits.
    3. An integer packed into a :class:`bytes` object of length 16, big-endian.
 
+
    >>> ipaddress.IPv6Address('2001:db8::1000')
    IPv6Address('2001:db8::1000')
+   >>> ipaddress.IPv6Address('ff02::5678%1')
+   IPv6Address('ff02::5678%1')
 
    .. attribute:: compressed
 
@@ -236,8 +292,8 @@ write code that handles both IP versions correctly.
    groups consisting entirely of zeroes included.
 
 
-   For the following attributes, see the corresponding documention of the
-   :class:`IPv4Address` class:
+   For the following attributes and methods, see the corresponding
+   documentation of the :class:`IPv4Address` class:
 
    .. attribute:: packed
    .. attribute:: reverse_pointer
@@ -267,6 +323,12 @@ write code that handles both IP versions correctly.
       ``::FFFF/96``), this property will report the embedded IPv4 address.
       For any other address, this property will be ``None``.
 
+   .. attribute:: scope_id
+
+      For scoped addresses as defined by :RFC:`4007`, this property identifies
+      the particular zone of the address's scope that the address belongs to,
+      as a string. When no scope zone is specified, this property will be ``None``.
+
    .. attribute:: sixtofour
 
       For addresses that appear to be 6to4 addresses  (starting with
@@ -281,6 +343,12 @@ write code that handles both IP versions correctly.
       the embedded ``(server, client)`` IP address pair.  For any other
       address, this property will be ``None``.
 
+.. method:: IPv6Address.__format__(fmt)
+
+   Refer to the corresponding method documentation in
+   :class:`IPv4Address`.
+
+   .. versionadded:: 3.9
 
 Conversion to Strings and Integers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -298,6 +366,8 @@ the :func:`str` and :func:`int` builtin functions::
    >>> int(ipaddress.IPv6Address('::1'))
    1
 
+Note that IPv6 scoped addresses are converted to integers without scope zone ID.
+
 
 Operators
 ^^^^^^^^^
@@ -310,14 +380,19 @@ IPv6).
 Comparison operators
 """"""""""""""""""""
 
-Address objects can be compared with the usual set of comparison operators.  Some
-examples::
+Address objects can be compared with the usual set of comparison operators.
+Same IPv6 addresses with different scope zone IDs are not equal.
+Some examples::
 
    >>> IPv4Address('127.0.0.2') > IPv4Address('127.0.0.1')
    True
    >>> IPv4Address('127.0.0.2') == IPv4Address('127.0.0.1')
    False
    >>> IPv4Address('127.0.0.2') != IPv4Address('127.0.0.1')
+   True
+   >>> IPv6Address('fe80::1234') == IPv6Address('fe80::1234%1')
+   False
+   >>> IPv6Address('fe80::1234%1') != IPv6Address('fe80::1234%2')
    True
 
 
@@ -368,6 +443,8 @@ All attributes implemented by address objects are implemented by network
 objects as well.  In addition, network objects implement additional attributes.
 All of these are common between :class:`IPv4Network` and :class:`IPv6Network`,
 so to avoid duplication they are only documented for :class:`IPv4Network`.
+Network objects are :term:`hashable`, so they can be used as keys in
+dictionaries.
 
 .. class:: IPv4Network(address, strict=True)
 
@@ -377,8 +454,9 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
       a slash (``/``).  The IP address is the network address, and the mask
       can be either a single number, which means it's a *prefix*, or a string
       representation of an IPv4 address.  If it's the latter, the mask is
-      interpreted as a *net mask* if it starts with a non-zero field, or as
-      a *host mask* if it starts with a zero field.  If no mask is provided,
+      interpreted as a *net mask* if it starts with a non-zero field, or as a
+      *host mask* if it starts with a zero field, with the single exception of
+      an all-zero mask which is treated as a *net mask*.  If no mask is provided,
       it's considered to be ``/32``.
 
       For example, the following *address* specifications are equivalent:
@@ -408,7 +486,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    Unless stated otherwise, all network methods accepting other network/address
    objects will raise :exc:`TypeError` if the argument's IP version is
-   incompatible to ``self``
+   incompatible to ``self``.
 
    .. versionchanged:: 3.5
 
@@ -418,7 +496,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: max_prefixlen
 
       Refer to the corresponding attribute documentation in
-      :class:`IPv4Address`
+      :class:`IPv4Address`.
 
    .. attribute:: is_multicast
    .. attribute:: is_private
@@ -428,7 +506,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: is_link_local
 
       These attributes are true for the network as a whole if they are true
-      for both the network address and the broadcast address
+      for both the network address and the broadcast address.
 
    .. attribute:: network_address
 
@@ -442,7 +520,11 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    .. attribute:: hostmask
 
-      The host mask, as a string.
+      The host mask, as an :class:`IPv4Address` object.
+
+   .. attribute:: netmask
+
+      The net mask, as an :class:`IPv4Address` object.
 
    .. attribute:: with_prefixlen
    .. attribute:: compressed
@@ -477,12 +559,19 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
       Returns an iterator over the usable hosts in the network.  The usable
       hosts are all the IP addresses that belong to the network, except the
-      network address itself and the network broadcast address.
+      network address itself and the network broadcast address.  For networks
+      with a mask length of 31, the network address and network broadcast
+      address are also included in the result. Networks with a mask of 32
+      will return a list containing the single host address.
 
          >>> list(ip_network('192.0.2.0/29').hosts())  #doctest: +NORMALIZE_WHITESPACE
          [IPv4Address('192.0.2.1'), IPv4Address('192.0.2.2'),
           IPv4Address('192.0.2.3'), IPv4Address('192.0.2.4'),
           IPv4Address('192.0.2.5'), IPv4Address('192.0.2.6')]
+         >>> list(ip_network('192.0.2.0/31').hosts())
+         [IPv4Address('192.0.2.0'), IPv4Address('192.0.2.1')]
+         >>> list(ip_network('192.0.2.1/32').hosts())
+         [IPv4Address('192.0.2.1')]
 
    .. method:: overlaps(other)
 
@@ -545,7 +634,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    .. method:: subnet_of(other)
 
-      Returns *True* if this network is a subnet of *other*.
+      Return ``True`` if this network is a subnet of *other*.
 
         >>> a = ip_network('192.168.1.0/24')
         >>> b = ip_network('192.168.1.128/30')
@@ -556,7 +645,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    .. method:: supernet_of(other)
 
-      Returns *True* if this network is a supernet of *other*.
+      Return ``True`` if this network is a supernet of *other*.
 
         >>> a = ip_network('192.168.1.0/24')
         >>> b = ip_network('192.168.1.128/30')
@@ -586,15 +675,14 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    Construct an IPv6 network definition.  *address* can be one of the following:
 
-   1. A string consisting of an IP address and an optional mask, separated by
-      a slash (``/``).  The IP address is the network address, and the mask
-      can be either a single number, which means it's a *prefix*, or a string
-      representation of an IPv6 address.  If it's the latter, the mask is
-      interpreted as a *net mask*.  If no mask is provided, it's considered to
-      be ``/128``.
+   1. A string consisting of an IP address and an optional prefix length,
+      separated by a slash (``/``).  The IP address is the network address,
+      and the prefix length must be a single number, the *prefix*.  If no
+      prefix length is provided, it's considered to be ``/128``.
 
-      For example, the following *address* specifications are equivalent:
-      ``2001:db00::0/24`` and ``2001:db00::0/ffff:ff00::``.
+      Note that currently expanded netmasks are not supported.  That means
+      ``2001:db00::0/24`` is a valid argument while ``2001:db00::0/ffff:ff00::``
+      is not.
 
    2. An integer that fits into 128 bits.  This is equivalent to a
       single-address network, with the network address being *address* and
@@ -631,6 +719,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: network_address
    .. attribute:: broadcast_address
    .. attribute:: hostmask
+   .. attribute:: netmask
    .. attribute:: with_prefixlen
    .. attribute:: compressed
    .. attribute:: exploded
@@ -639,6 +728,14 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: num_addresses
    .. attribute:: prefixlen
    .. method:: hosts()
+
+      Returns an iterator over the usable hosts in the network.  The usable
+      hosts are all the IP addresses that belong to the network, except the
+      Subnet-Router anycast address.  For networks with a mask length of 127,
+      the Subnet-Router anycast address is also included in the result.
+      Networks with a mask of 128 will return a list containing the
+      single host address.
+
    .. method:: overlaps(other)
    .. method:: address_exclude(network)
    .. method:: subnets(prefixlen_diff=1, new_prefix=None)
@@ -648,12 +745,12 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. method:: compare_networks(other)
 
       Refer to the corresponding attribute documentation in
-      :class:`IPv4Network`
+      :class:`IPv4Network`.
 
    .. attribute:: is_site_local
 
       These attribute is true for the network as a whole if it is true
-      for both the network address and the broadcast address
+      for both the network address and the broadcast address.
 
 
 Operators
@@ -667,8 +764,8 @@ IPv6).
 Logical operators
 """""""""""""""""
 
-Network objects can be compared with the usual set of logical operators,
-similarly to address objects.
+Network objects can be compared with the usual set of logical operators.
+Network objects are ordered first by network address, then by net mask.
 
 
 Iteration
@@ -717,6 +814,9 @@ Network objects can act as containers of addresses.  Some examples::
 
 Interface objects
 -----------------
+
+Interface objects are :term:`hashable`, so they can be used as keys in
+dictionaries.
 
 .. class:: IPv4Interface(address)
 
@@ -789,6 +889,30 @@ Interface objects
       :class:`IPv4Interface`.
 
 
+Operators
+^^^^^^^^^
+
+Interface objects support some operators.  Unless stated otherwise, operators
+can only be applied between compatible objects (i.e. IPv4 with IPv4, IPv6 with
+IPv6).
+
+
+Logical operators
+"""""""""""""""""
+
+Interface objects can be compared with the usual set of logical operators.
+
+For equality comparison (``==`` and ``!=``), both the IP address and network
+must be the same for the objects to be equal.  An interface will not compare
+equal to any address or network object.
+
+For ordering (``<``, ``>``, etc) the rules are different.  Interface and
+address objects with the same IP version can be compared, and the address
+objects will always sort before the interface objects.  Two interface objects
+are first compared by their networks and, if those are the same, then by their
+IP addresses.
+
+
 Other Module Level Functions
 ----------------------------
 
@@ -854,7 +978,7 @@ The module also provides the following module level functions:
 
    doesn't make sense.  There are some times however, where you may wish to
    have :mod:`ipaddress` sort these anyway.  If you need to do this, you can use
-   this function as the ``key`` argument to :func:`sorted()`.
+   this function as the *key* argument to :func:`sorted()`.
 
    *obj* is either a network or address object.
 
@@ -872,4 +996,4 @@ module defines the following exceptions:
 
 .. exception:: NetmaskValueError(ValueError)
 
-   Any value error related to the netmask.
+   Any value error related to the net mask.

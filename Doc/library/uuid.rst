@@ -1,5 +1,5 @@
-:mod:`uuid` --- UUID objects according to RFC 4122
-==================================================
+:mod:`uuid` --- UUID objects according to :rfc:`4122`
+=====================================================
 
 .. module:: uuid
    :synopsis: UUID objects (universally unique identifiers) according to RFC 4122
@@ -45,12 +45,13 @@ which relays any information about the UUID's safety, using this enumeration:
 .. class:: UUID(hex=None, bytes=None, bytes_le=None, fields=None, int=None, version=None, *, is_safe=SafeUUID.unknown)
 
    Create a UUID from either a string of 32 hexadecimal digits, a string of 16
-   bytes as the *bytes* argument, a string of 16 bytes in little-endian order as
-   the *bytes_le* argument, a tuple of six integers (32-bit *time_low*, 16-bit
-   *time_mid*, 16-bit *time_hi_version*, 8-bit *clock_seq_hi_variant*, 8-bit
-   *clock_seq_low*, 48-bit *node*) as the *fields* argument, or a single 128-bit
-   integer as the *int* argument.  When a string of hex digits is given, curly
-   braces, hyphens, and a URN prefix are all optional.  For example, these
+   bytes in big-endian order as the *bytes* argument, a string of 16 bytes in
+   little-endian order as the *bytes_le* argument, a tuple of six integers
+   (32-bit *time_low*, 16-bit *time_mid*, 16-bit *time_hi_version*,
+   8-bit *clock_seq_hi_variant*, 8-bit *clock_seq_low*, 48-bit *node*) as the
+   *fields* argument, or a single 128-bit integer as the *int* argument.
+   When a string of hex digits is given, curly braces, hyphens,
+   and a URN prefix are all optional.  For example, these
    expressions all yield the same UUID::
 
       UUID('{12345678-1234-5678-1234-567812345678}')
@@ -64,7 +65,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
    Exactly one of *hex*, *bytes*, *bytes_le*, *fields*, or *int* must be given.
    The *version* argument is optional; if given, the resulting UUID will have its
-   variant and version number set according to RFC 4122, overriding bits in the
+   variant and version number set according to :rfc:`4122`, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
    Comparison of UUID objects are made by way of comparing their
@@ -117,7 +118,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.hex
 
-   The UUID as a 32-character hexadecimal string.
+   The UUID as a 32-character lowercase hexadecimal string.
 
 
 .. attribute:: UUID.int
@@ -127,7 +128,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.urn
 
-   The UUID as a URN as specified in RFC 4122.
+   The UUID as a URN as specified in :rfc:`4122`.
 
 
 .. attribute:: UUID.variant
@@ -158,7 +159,7 @@ The :mod:`uuid` module defines the following functions:
    runs, it may launch a separate program, which could be quite slow.  If all
    attempts to obtain the hardware address fail, we choose a random 48-bit
    number with the multicast bit (least significant bit of the first octet)
-   set to 1 as recommended in RFC 4122.  "Hardware address" means the MAC
+   set to 1 as recommended in :rfc:`4122`.  "Hardware address" means the MAC
    address of a network interface.  On a machine with multiple network
    interfaces, universally administered MAC addresses (i.e. where the second
    least significant bit of the first octet is *unset*) will be preferred over
@@ -210,7 +211,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
 
 .. data:: NAMESPACE_DNS
 
-   When this namespace is specified, the *name* string is a fully-qualified domain
+   When this namespace is specified, the *name* string is a fully qualified domain
    name.
 
 
@@ -260,6 +261,47 @@ of the :attr:`variant` attribute:
       internal format of UUIDs, and methods of generating UUIDs.
 
 
+.. _uuid-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.12
+
+The :mod:`uuid` module can be executed as a script from the command line.
+
+.. code-block:: sh
+
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5}] [-n NAMESPACE] [-N NAME]
+
+The following options are accepted:
+
+.. program:: uuid
+
+.. cmdoption:: -h, --help
+
+   Show the help message and exit.
+
+.. cmdoption:: -u <uuid>
+               --uuid <uuid>
+
+   Specify the function name to use to generate the uuid. By default :func:`uuid4`
+   is used.
+
+.. cmdoption:: -n <namespace>
+               --namespace <namespace>
+
+   The namespace is a ``UUID``, or ``@ns`` where ``ns`` is a well-known predefined UUID
+   addressed by namespace name. Such as ``@dns``, ``@url``, ``@oid``, and ``@x500``.
+   Only required for :func:`uuid3` / :func:`uuid5` functions.
+
+.. cmdoption:: -N <name>
+               --name <name>
+
+   The name used as part of generating the uuid. Only required for
+   :func:`uuid3` / :func:`uuid5` functions.
+
+
 .. _uuid-example:
 
 Example
@@ -299,4 +341,23 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> # make a UUID from a 16-byte string
    >>> uuid.UUID(bytes=x.bytes)
    UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+
+.. _uuid-cli-example:
+
+Command-Line Example
+--------------------
+
+Here are some examples of typical usage of the :mod:`uuid` command line interface:
+
+.. code-block:: shell
+
+   # generate a random uuid - by default uuid4() is used
+   $ python -m uuid
+
+   # generate a uuid using uuid1()
+   $ python -m uuid -u uuid1
+
+   # generate a uuid using uuid5
+   $ python -m uuid -u uuid5 -n @url -N example.com
 
