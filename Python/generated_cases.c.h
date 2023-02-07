@@ -1148,17 +1148,19 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
-            PyObject *seq = TOP();
+            PyObject *seq = PEEK(1);
+            PyObject **values = stack_pointer - (1);
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            STACK_SHRINK(1);
             PyObject **items = _PyTuple_ITEMS(seq);
-            while (oparg--) {
-                PUSH(Py_NewRef(items[oparg]));
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
             }
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
+            STACK_SHRINK(1);
+            STACK_GROW(oparg);
+            JUMPBY(1);
             DISPATCH();
         }
 

@@ -862,7 +862,7 @@ dummy_func(
         family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
             UNPACK_SEQUENCE,
             UNPACK_SEQUENCE_TWO_TUPLE,
-            // UNPACK_SEQUENCE_TUPLE,
+            UNPACK_SEQUENCE_TUPLE,
             // UNPACK_SEQUENCE_LIST,
         };
 
@@ -894,19 +894,15 @@ dummy_func(
             Py_DECREF(seq);
         }
 
-        // stack effect: (__0 -- __array[oparg])
-        inst(UNPACK_SEQUENCE_TUPLE) {
-            PyObject *seq = TOP();
+        inst(UNPACK_SEQUENCE_TUPLE, (unused/1, seq -- values[oparg])) {
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            STACK_SHRINK(1);
             PyObject **items = _PyTuple_ITEMS(seq);
-            while (oparg--) {
-                PUSH(Py_NewRef(items[oparg]));
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
             }
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
         }
 
         // stack effect: (__0 -- __array[oparg])
