@@ -66,11 +66,11 @@ _PySys_GetAttr(PyThreadState *tstate, PyObject *name)
     if (sd == NULL) {
         return NULL;
     }
-    PyObject *exc = _PyErr_Fetch1(tstate);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
     PyObject *value = _PyDict_GetItemWithError(sd, name);
-    _PyErr_Restore1(tstate, exc);
+    _PyErr_SetRaisedException(tstate, exc);
     return value;
 }
 
@@ -3706,7 +3706,7 @@ sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
     const char *utf8;
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *error = _PyErr_Fetch1(tstate);
+    PyObject *error = _PyErr_GetRaisedException(tstate);
     file = _PySys_GetAttr(tstate, key);
     message = PyUnicode_FromFormatV(format, va);
     if (message != NULL) {
@@ -3718,7 +3718,7 @@ sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
         }
         Py_DECREF(message);
     }
-    _PyErr_Restore1(tstate, error);
+    _PyErr_SetRaisedException(tstate, error);
 }
 
 void

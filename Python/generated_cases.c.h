@@ -1019,7 +1019,7 @@
                 Py_DECREF(exc_value);
             }
             else {
-                _PyErr_Restore1(tstate, Py_NewRef(exc_value));
+                _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 goto exception_unwind;
             }
             STACK_SHRINK(2);

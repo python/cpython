@@ -1667,11 +1667,11 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     Py_ssize_t ix; (void)ix;
 
 
-    PyObject *exc = _PyErr_Fetch1(tstate);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     ix = _Py_dict_lookup(mp, key, hash, &value);
 
     /* Ignore any exception raised by the lookup */
-    _PyErr_Restore1(tstate, exc);
+    _PyErr_SetRaisedException(tstate, exc);
 
 
     assert(ix >= 0 || value == NULL);

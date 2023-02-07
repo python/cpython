@@ -2905,7 +2905,7 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
         }
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-        PyObject *exc = _PyErr_Fetch1(tstate);
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
         PyObject *args = ((PyBaseExceptionObject *)exc)->args;
         if (exc && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
             _PyErr_Clear(tstate);
@@ -2921,7 +2921,7 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
             Py_XDECREF(exc);
         }
         else {
-            _PyErr_Restore1(tstate, exc);
+            _PyErr_SetRaisedException(tstate, exc);
         }
     }
 }

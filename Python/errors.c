@@ -28,7 +28,7 @@ _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
                const char *format, va_list vargs);
 
 void
-_PyErr_Restore1(PyThreadState *tstate, PyObject *exc)
+_PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc)
 {
     PyObject *old_exc = tstate->current_exception;
     tstate->current_exception = exc;
@@ -61,7 +61,7 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
     }
 #endif
 
-    _PyErr_Restore1(tstate, value);
+    _PyErr_SetRaisedException(tstate, value);
     Py_XDECREF(type);
     Py_XDECREF(traceback);
 }
@@ -425,24 +425,24 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 
 
 PyObject *
-_PyErr_Fetch1(PyThreadState *tstate) {
+_PyErr_GetRaisedException(PyThreadState *tstate) {
     PyObject *exc = tstate->current_exception;
     tstate->current_exception = NULL;
     return exc;
 }
 
 PyObject *
-PyErr_Fetch1(void)
+PyErr_GetRaisedException(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyErr_Fetch1(tstate);
+    return _PyErr_GetRaisedException(tstate);
 }
 
 void
 _PyErr_Fetch(PyThreadState *tstate, PyObject **p_type, PyObject **p_value,
              PyObject **p_traceback)
 {
-    PyObject *exc = _PyErr_Fetch1(tstate);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     *p_value = exc;
     if (exc == NULL) {
         *p_type = NULL;
@@ -624,7 +624,7 @@ _PyErr_ChainExceptions(PyObject *typ, PyObject *val, PyObject *tb)
     }
 }
 
-/* Like PyErr_Restore1(), but if an exception is already set,
+/* Like PyErr_SetRaisedException(), but if an exception is already set,
    set the context associated with it.
 
    The caller is responsible for ensuring that this call won't create
@@ -637,12 +637,12 @@ _PyErr_ChainExceptions1(PyObject *exc)
     }
     PyThreadState *tstate = _PyThreadState_GET();
     if (_PyErr_Occurred(tstate)) {
-        PyObject *exc2 = _PyErr_Fetch1(tstate);
+        PyObject *exc2 = _PyErr_GetRaisedException(tstate);
         PyException_SetContext(exc2, exc);
-        _PyErr_Restore1(tstate, exc2);
+        _PyErr_SetRaisedException(tstate, exc2);
     }
     else {
-        _PyErr_Restore1(tstate, exc);
+        _PyErr_SetRaisedException(tstate, exc);
     }
 }
 

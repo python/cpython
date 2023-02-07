@@ -8,7 +8,7 @@
 #include <Python.h>
 #include <stdbool.h>
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
-#include "pycore_pyerrors.h"      // struct _PyErr_Restore1
+#include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
@@ -3263,7 +3263,7 @@ _PyErr_NoMemory(PyThreadState *tstate)
     }
     PyObject *err = get_memory_error(0, NULL, NULL);
     if (err != NULL) {
-        _PyErr_Restore1(tstate, err);
+        _PyErr_SetRaisedException(tstate, err);
     }
     return NULL;
 }

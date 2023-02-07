@@ -155,7 +155,7 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
 
     // Assert that the correct exception was raised
     if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-        exc = PyErr_Fetch1();
+        exc = PyErr_GetRaisedException();
         PyObject *args = PyException_GetArgs(exc);
         if (!PyTuple_Check(args) || PyTuple_Size(args) != 1) {
             PyErr_SetString(PyExc_AssertionError,

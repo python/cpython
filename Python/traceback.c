@@ -267,7 +267,7 @@ void _PyTraceback_Add(const char *funcname, const char *filename, int lineno)
     /* Save and clear the current exception. Python functions must not be
        called with an exception set. Calling Python functions happens when
        the codec of the filesystem encoding is implemented in pure Python. */
-    PyObject *exc = _PyErr_Fetch1(tstate);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
 
     globals = PyDict_New();
     if (!globals)
@@ -284,7 +284,7 @@ void _PyTraceback_Add(const char *funcname, const char *filename, int lineno)
         goto error;
     frame->f_lineno = lineno;
 
-    _PyErr_Restore1(tstate, exc);
+    _PyErr_SetRaisedException(tstate, exc);
     PyTraceBack_Here(frame);
     Py_DECREF(frame);
     return;

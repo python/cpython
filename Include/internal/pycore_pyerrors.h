@@ -41,14 +41,14 @@ PyAPI_FUNC(void) _PyErr_Fetch(
     PyObject **traceback);
 
 extern PyObject *
-_PyErr_Fetch1(PyThreadState *tstate);
+_PyErr_GetRaisedException(PyThreadState *tstate);
 
 PyAPI_FUNC(int) _PyErr_ExceptionMatches(
     PyThreadState *tstate,
     PyObject *exc);
 
 void
-_PyErr_Restore1(PyThreadState *tstate, PyObject *exc);
+_PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc);
 
 PyAPI_FUNC(void) _PyErr_Restore(
     PyThreadState *tstate,

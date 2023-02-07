@@ -2083,9 +2083,9 @@ PyGC_Collect(void)
     }
     else {
         gcstate->collecting = 1;
-        PyObject *exc = _PyErr_Fetch1(tstate);
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
         n = gc_collect_with_callback(tstate, NUM_GENERATIONS - 1);
-        _PyErr_Restore1(tstate, exc);
+        _PyErr_SetRaisedException(tstate, exc);
         gcstate->collecting = 0;
     }
 
