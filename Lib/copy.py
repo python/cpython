@@ -58,12 +58,11 @@ error = Error   # backward compatibility
 
 __all__ = ["Error", "copy", "deepcopy"]
 
-def copy(x):
+def _copy_fallback(x):
     """Shallow copy operation on arbitrary Python objects.
 
     See the module's __doc__ string for more info.
     """
-
     cls = type(x)
 
     copier = _copy_dispatch.get(cls)
@@ -169,11 +168,13 @@ def _deepcopy_fallback(x, memo=None, _nil=[]):
     return y
 
 try:
-    from _copy import deepcopy
+    from _copy import deepcopy, copy
 except ImportError:
     # the fallback is for projects like PyPy that reuse the stdlib
     deepcopy = _deepcopy_fallback
     deepcopy.__name__ = 'deepcopy'
+    copy = _copy_fallback
+    copy.__name__ = 'copy'
 
 _deepcopy_dispatch = d = {}
 
