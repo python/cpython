@@ -5,7 +5,6 @@
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "clinic/_copy.c.h"
-#include "listobject.h"
 
 /*[clinic input]
 module _copy
@@ -16,11 +15,7 @@ module _copy
 
 typedef struct {
     PyObject *python_copy_module;
-    PyObject *str_private_reconstruct;
     PyObject *str_deepcopy_fallback;
-    PyObject *str_copy_fallback;
-    PyObject *copy_dispatch;
-    PyObject *copyreg_dispatch_table;
 } copy_module_state;
 
 static inline copy_module_state*
@@ -69,15 +64,6 @@ do_deepcopy_fallback(PyObject* module, PyObject* x, PyObject* memo)
     PyObject *args[] = {state->python_copy_module, x, memo};
 
     return PyObject_VectorcallMethod(state->str_deepcopy_fallback, args, 3, NULL);
-}
-
-static PyObject*
-do_copy_fallback(PyObject* module, PyObject* x)
-{
-    copy_module_state *state = get_copy_module_state(module);
-    PyObject *args[] = {state->python_copy_module, x};
-
-    return PyObject_VectorcallMethod(state->str_copy_fallback, args, 2, NULL);
 }
 
 static PyObject*
@@ -403,190 +389,8 @@ _copy_deepcopy_impl(PyObject *module, PyObject *x, PyObject *memo)
     return result;
 }
 
-PyObject *_create_copy_dispatch()
-{
-    PyObject *d = PyDict_New();
-
-    // special cases: copy will return a reference
-    PyDict_SetItem(d, (PyObject *)(&_PyNone_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyLong_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyFloat_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyBool_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyComplex_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyUnicode_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyTuple_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyBytes_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyFrozenSet_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyType_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyRange_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PySlice_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyProperty_Type), (PyObject *)Py_True);
-    //PyDict_SetItem(d, (PyObject *)(&BuiltinFunctionType), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&PyEllipsis_Type), (PyObject *)Py_True);
-    PyDict_SetItem(d, (PyObject *)(&_PyNotImplemented_Type), (PyObject *)Py_True);
-    //PyDict_SetItem(d, (PyObject *)(&_FunctionType_Type), (PyObject *)Py_True);
-    //PyDict_SetItem(d, (PyObject *)(&types.CodeType), (PyObject *)Py_True);
-    //PyDict_SetItem(d, (PyObject *)(&weakref.ref), (PyObject *)Py_True);
-
-    PyObject * list_copy=PyObject_GetAttrString((PyObject *)(&PyList_Type), "copy");
-    PyDict_SetItem(d, (PyObject *)(&PyList_Type), (PyObject *)list_copy);
-    PyObject * dict_copy=PyObject_GetAttrString((PyObject *)(&PyDict_Type), "copy");
-    PyDict_SetItem(d, (PyObject *)(&PyDict_Type), (PyObject *)dict_copy);
-    PyObject * set_copy=PyObject_GetAttrString((PyObject *)(&PySet_Type), "copy");
-    PyDict_SetItem(d, (PyObject *)(&PySet_Type), (PyObject *)set_copy);
-    PyObject * bytearray_copy=PyObject_GetAttrString((PyObject *)(&PyByteArray_Type), "copy");
-    PyDict_SetItem(d, (PyObject *)(&PySet_Type), (PyObject *)bytearray_copy);
-
-    return d;
-}
-
-static void print_str(PyObject *o)
-{
-    PyObject_Print(o, stdout, Py_PRINT_RAW);
-}
-
-
-static PyObject *
-_copy_copy_impl(PyObject *module, PyObject *arg)
-{
-    PyTypeObject *cls = Py_TYPE(arg);
-    copy_module_state *state = get_copy_module_state(module);
-
-    PyObject *dispatcher = PyDict_GetItem(state->copy_dispatch, (PyObject *)cls); // do we need a reference here, or can we borrow?
-    if (dispatcher==Py_True) {
-        // immutable argument
-        Py_DECREF(dispatcher);
-        return Py_NewRef(arg);
-    }
-    else if (dispatcher!=0) {
-        // we have a dispatcher
-        PyObject *c = PyObject_CallOneArg(dispatcher, arg);
-        Py_DECREF(dispatcher);
-        return c;
-    }
-    //Py_DECREF(dispatcher);
-
-    if (PyObject_IsSubclass((PyObject*)cls, (PyObject*)&PyType_Type)) {
-        // treat it as a regular class
-        return Py_NewRef(arg);
-    }
-
-        {
-        PyObject * xx= PyUnicode_InternFromString("__reduce__");
-        //reductor = PyObject_GenericGetAttr(arg, xx); // could we use the PyObject_GetAttr here?
-        PyObject *reductor = PyObject_GetAttr(arg, xx);
-        PyObject * ex= PyUnicode_InternFromString("__reduce_ex__");
-        //reductor = PyObject_GenericGetAttr(arg, xx); // could we use the PyObject_GetAttr here?
-        PyObject *reductor_ex =  PyObject_GetAttr(arg, ex);
-        printf("  __reduce__:  %ld %ld\n", (long)reductor, (long)(reductor_ex) );
-        //Py_XDECREF(reductor);
-    }
-
-    //return do_copy_fallback(module, arg);
-    PyObject * copier=PyObject_GetAttrString((PyObject *)cls, "__copy__");
-    if (copier!=0) {
-        PyObject *c =  PyObject_CallOneArg(copier, arg);
-        Py_DECREF(copier);
-        return c;
-    }
-    //return do_copy_fallback(module, arg);
-
-
-
-    printf("going to reductors\n");
-    PyObject *rv=0;
-    PyObject *reductor = PyDict_GetItem(state->copyreg_dispatch_table, (PyObject *)cls); // borrowed reference
-    {
-        PyObject * xx= PyUnicode_InternFromString("__reduce__");
-        //reductor = PyObject_GenericGetAttr(arg, xx); // could we use the PyObject_GetAttr here?
-        PyObject *reductor = PyObject_GetAttr(arg, xx);
-        //printf("  __reduce__:  %ld\n", (long)reductor);
-        //Py_XDECREF(reductor);
-    }
-    if (reductor!=0)  {
-            Py_INCREF(reductor); // not sure we need this, but to be safe
-            rv = _PyObject_CallOneArg(reductor, arg);
-            Py_DECREF(reductor);
-            printf("rv from copyreg dispatch table\n");
-    } else {
-
-        PyObject * reduce_ex_str= PyUnicode_InternFromString("__reduce_ex__");
-        reductor = PyObject_GetAttr(arg, reduce_ex_str);
-        printf("  reductor from reduce_ex:  %ld\n", (long)reductor);
-        //return do_copy_fallback(module, arg);
-        printf("huh\n");
-        if (reductor!=0) {
-            printf("rv from reduce_ex_str\n");
-            PyObject * four = (PyLong_FromUnsignedLong(4));
-            //rv = PyObject_Vectorcall(reductor, &(four), 1, 0);
-            rv = PyObject_CallMethodOneArg(arg, reduce_ex_str, four);
-            printf("rv from reduce_ex_str\n");
-            Py_DECREF(reductor);
-        }
-        else {
-            // fallback
-        Py_XDECREF(reductor);
-
-            PyObject * xx= PyUnicode_InternFromString("__reduce__");
-            //reductor = PyObject_GenericGetAttr(arg, xx); // could we use the PyObject_GetAttr here?
-            reductor = PyObject_GetAttr(arg, xx);
-        //Py_XDECREF(reductor);
-    printf("fb! %ld\n", (long)reductor);
-            reductor = PyObject_GetAttr(arg, xx);
-    printf("fb! %ld\n", (long)reductor);
-    return do_copy_fallback(module, arg);
-
-    if (reductor!=0) {
-                rv = PyObject_CallNoArgs(reductor);
-                Py_DECREF(reductor);
-                printf("rv from __reduce__ : %ld\n", (long)rv);
-            }
-            else {
-                printf("bad path: ");
-                print_str(arg);
-                printf("\n");
-                print_str(cls);
-                printf("\n");
-
-                PyErr_SetString(PyExc_TypeError, "un(shallow)copyable object of type %s"); // TODO: include cls in string
-                return 0;
-            }
-        }
-        printf("okay\n");
-    }
-        // fallback
-    printf("fb!\n");
-    return do_copy_fallback(module, arg);
-
-    if (PyObject_IsInstance(rv, (PyObject *)(&PyUnicode_Type)) ) {
-        Py_DECREF(rv);
-        return Py_NewRef(arg);
-    }
-
-    // rv is now a tuple-like object
-    PyObject *rv_tuple = PySequence_Tuple(rv); // be safe, make if really a tuple. perhaps some __reduce__ methods return tuple subclass or lists
-    Py_DECREF(rv);
-    assert(PyTuple_Size(rv_tuple)== 2);
-
-    PyObject *args[] = {state->python_copy_module, arg, Py_None, PyTuple_GET_ITEM(rv_tuple, 0), PyTuple_GET_ITEM(rv_tuple, 1)};
-    printf("last reduce: _reconstruct\n");
-    PyObject *c = PyObject_VectorcallMethod(state->str_private_reconstruct, args, 5, NULL);
-    Py_DECREF(rv_tuple);
-    return c;
-//    return _reconstruct(x, None, *rv)
-
-    // fallback
-    printf("fb!\n");
-    return do_copy_fallback(module, arg);
-
-
-
-    return arg;
-}
-
 static PyMethodDef copy_functions[] = {
-    _COPY_DEEPCOPY_METHODDEF,
-    _COPY_COPY_METHODDEF,
+    _COPY_DEEPCOPY_METHODDEF
     {NULL, NULL}
 };
 
@@ -608,26 +412,11 @@ copy_free(void *module)
 static int copy_module_exec(PyObject *module)
 {
     copy_module_state *state = get_copy_module_state(module);
-    state->str_private_reconstruct = PyUnicode_InternFromString("_reconstruct");
-    if (state->str_private_reconstruct == NULL) {
-        return -1;
-    }
     state->str_deepcopy_fallback = PyUnicode_InternFromString("_deepcopy_fallback");
     if (state->str_deepcopy_fallback == NULL) {
         return -1;
     }
-    state->str_copy_fallback = PyUnicode_InternFromString("_copy_fallback");
-    if (state->str_copy_fallback == NULL) {
-        return -1;
-    }
 
-    PyObject *copyregmodule = PyImport_ImportModule("copyreg");
-    if (copyregmodule == NULL) {
-        return -1;
-    }
-    state->copyreg_dispatch_table = (PyObject *)PyObject_GetAttrString(copyregmodule, "dispatch_table");
-    assert(PyDict_CheckExact(state->copyreg_dispatch_table));
-    state->copy_dispatch = _create_copy_dispatch();
     PyObject *copymodule = PyImport_ImportModule("copy");
     if (copymodule == NULL)
         return -1;

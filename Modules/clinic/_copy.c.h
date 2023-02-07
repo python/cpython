@@ -16,18 +16,8 @@ PyDoc_STRVAR(_copy_deepcopy__doc__,
 "\n"
 "See the documentation for the copy module for details.");
 
-PyDoc_STRVAR(_copy_copy__doc__,
-"copy($module, x, /)\n"
-"--\n"
-"\n"
-"Create a shallow copy of x\n"
-"\n"
-"See the documentation for the copy module for details.");
-
 #define _COPY_DEEPCOPY_METHODDEF    \
-    {"deepcopy", _PyCFunction_CAST(_copy_deepcopy), METH_FASTCALL, _copy_deepcopy__doc__}
-#define _COPY_COPY_METHODDEF    \
-    {"copy", _copy_copy, METH_O, _copy_deepcopy__doc__}
+    {"deepcopy", _PyCFunction_CAST(_copy_deepcopy), METH_FASTCALL, _copy_deepcopy__doc__},
 
 static PyObject *
 _copy_deepcopy_impl(PyObject *module, PyObject *x, PyObject *memo);
@@ -52,15 +42,5 @@ skip_optional:
 
 exit:
     return return_value;
-}
-
-static PyObject *
-_copy_copy_impl(PyObject *module, PyObject *arg);
-
-static PyObject *
-_copy_copy(PyObject *module, PyObject *arg)
-{
-    return _copy_copy_impl(module, arg);
-
 }
 /*[clinic end generated code: output=ab88e7f79337ebab input=a9049054013a1b77]*/
