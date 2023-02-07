@@ -2077,7 +2077,7 @@ dummy_func(
             FOR_ITER_LIST,
             FOR_ITER_TUPLE,
             FOR_ITER_RANGE,
-        //     FOR_ITER_GEN,
+            FOR_ITER_GEN,
         };
 
         inst(FOR_ITER, (unused/1, iter -- iter, next)) {
@@ -2189,9 +2189,10 @@ dummy_func(
             DISPATCH();
         }
 
-        inst(FOR_ITER_GEN) {
+        // This is *not* a super-instruction, unique in the family.
+        inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             assert(cframe.use_tracing == 0);
-            PyGenObject *gen = (PyGenObject *)TOP();
+            PyGenObject *gen = (PyGenObject *)iter;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
             STAT_INC(FOR_ITER, hit);

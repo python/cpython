@@ -2746,8 +2746,9 @@
         }
 
         TARGET(FOR_ITER_GEN) {
+            PyObject *iter = PEEK(1);
             assert(cframe.use_tracing == 0);
-            PyGenObject *gen = (PyGenObject *)TOP();
+            PyGenObject *gen = (PyGenObject *)iter;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
