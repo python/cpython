@@ -3565,18 +3565,18 @@
 
         TARGET(CALL_FUNCTION_EX) {
             PREDICTED(CALL_FUNCTION_EX);
-            PyObject *func, *callargs, *kwargs = NULL, *result;
-            if (oparg & 0x01) {
-                kwargs = POP();
+            PyObject *kwargs = (oparg & 1) ? PEEK(((oparg & 1) ? 1 : 0)) : NULL;
+            PyObject *callargs = PEEK(1 + ((oparg & 1) ? 1 : 0));
+            PyObject *func = PEEK(2 + ((oparg & 1) ? 1 : 0));
+            PyObject *null = PEEK(3 + ((oparg & 1) ? 1 : 0));
+            PyObject *result;
+            if (oparg & 1) {
                 // DICT_MERGE is called before this opcode if there are kwargs.
                 // It converts all dict subtypes in kwargs into regular dicts.
                 assert(PyDict_CheckExact(kwargs));
             }
-            callargs = POP();
-            func = TOP();
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-                    Py_DECREF(callargs);
                     goto error;
                 }
                 Py_SETREF(callargs, PySequence_Tuple(callargs));
@@ -3591,12 +3591,11 @@
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
 
-            STACK_SHRINK(1);
-            assert(TOP() == NULL);
-            SET_TOP(result);
-            if (result == NULL) {
-                goto error;
-            }
+            assert(null == NULL);
+            if (result == NULL) { STACK_SHRINK(((oparg & 1) ? 1 : 0)); goto pop_3_error; }
+            STACK_SHRINK(((oparg & 1) ? 1 : 0));
+            STACK_SHRINK(2);
+            POKE(1, result);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }

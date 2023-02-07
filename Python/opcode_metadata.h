@@ -323,7 +323,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return -1;
         case CALL_FUNCTION_EX:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 3;
         case MAKE_FUNCTION:
             return ((oparg & 0x01) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x08) ? 1 : 0) + 1;
         case RETURN_GENERATOR:
@@ -669,7 +669,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return -1;
         case CALL_FUNCTION_EX:
-            return -1;
+            return 1;
         case MAKE_FUNCTION:
             return 1;
         case RETURN_GENERATOR:

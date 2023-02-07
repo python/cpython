@@ -2949,20 +2949,14 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // error: CALL_FUNCTION_EX has irregular stack effect
-        inst(CALL_FUNCTION_EX) {
-            PyObject *func, *callargs, *kwargs = NULL, *result;
-            if (oparg & 0x01) {
-                kwargs = POP();
+        inst(CALL_FUNCTION_EX, (null, func, callargs, kwargs if (oparg & 1) -- result)) {
+            if (oparg & 1) {
                 // DICT_MERGE is called before this opcode if there are kwargs.
                 // It converts all dict subtypes in kwargs into regular dicts.
                 assert(PyDict_CheckExact(kwargs));
             }
-            callargs = POP();
-            func = TOP();
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-                    Py_DECREF(callargs);
                     goto error;
                 }
                 Py_SETREF(callargs, PySequence_Tuple(callargs));
@@ -2977,12 +2971,8 @@ dummy_func(
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
 
-            STACK_SHRINK(1);
-            assert(TOP() == NULL);
-            SET_TOP(result);
-            if (result == NULL) {
-                goto error;
-            }
+            assert(null == NULL);
+            ERROR_IF(result == NULL, error);
             CHECK_EVAL_BREAKER();
         }
 
