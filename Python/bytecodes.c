@@ -2604,11 +2604,13 @@ dummy_func(
             /* Builtin METH_O functions */
             assert(kwnames == NULL);
             int is_meth = method != NULL;
-            int total_args = oparg + is_meth;
-            DEOPT_IF(total_args != 1, CALL);
+            int total_args = oparg;
             if (is_meth) {
                 callable = method;
+                args--;
+                total_args++;
             }
+            DEOPT_IF(total_args != 1, CALL);
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL);
             STAT_INC(CALL, hit);
@@ -2618,7 +2620,7 @@ dummy_func(
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *arg = args[-is_meth];
+            PyObject *arg = args[0];
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
