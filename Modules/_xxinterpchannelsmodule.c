@@ -174,7 +174,9 @@ static int
 clear_module_state(module_state *state)
 {
     /* heap types */
-    (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
+    if (state->ChannelIDType != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
+    }
     Py_CLEAR(state->ChannelIDType);
 
     /* exceptions */
@@ -2269,7 +2271,6 @@ module_exec(PyObject *mod)
     return 0;
 
 error:
-    (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
     _globals_fini();
     return -1;
 }

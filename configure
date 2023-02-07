@@ -24426,6 +24426,7 @@ SRCDIRS="\
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
+  Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sha3 \
@@ -26966,7 +26967,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__SHA256_STATE=$py_cv_module__sha256$as_nl"
   if test "x$py_cv_module__sha256" = xyes; then :
 
-
+    as_fn_append MODULE_BLOCK "MODULE__SHA256_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
 
 
 fi

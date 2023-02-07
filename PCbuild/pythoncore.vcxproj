@@ -100,7 +100,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PySourcePath)Modules\_hacl\include;$(PySourcePath)Modules\_hacl\internal;$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -407,6 +407,7 @@
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\rotatingtree.c" />
     <ClCompile Include="..\Modules\sha1module.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c" />
     <ClCompile Include="..\Modules\sha256module.c" />
     <ClCompile Include="..\Modules\sha512module.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
