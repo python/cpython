@@ -87,6 +87,7 @@ typedef struct pyruntimestate {
     _Py_atomic_address _finalizing;
 
     struct _pymem_allocators allocators;
+    struct _obmalloc_global_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
     struct _time_runtime_state time;
     struct _pythread_runtime_state threads;

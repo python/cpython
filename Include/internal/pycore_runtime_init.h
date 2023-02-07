@@ -25,6 +25,7 @@ extern "C" {
             _pymem_allocators_debug_INIT, \
             _pymem_allocators_obj_arena_INIT, \
         }, \
+        .obmalloc = _obmalloc_global_state_INIT, \
         .pyhash_state = pyhash_state_INIT, \
         .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \

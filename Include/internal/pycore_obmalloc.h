@@ -657,8 +657,11 @@ struct _obmalloc_usage {
 #endif /* WITH_PYMALLOC_RADIX_TREE */
 
 
-struct _obmalloc_state {
+struct _obmalloc_global_state {
     int dump_debug_stats;
+};
+
+struct _obmalloc_state {
     struct _obmalloc_pools pools;
     struct _obmalloc_mgmt mgmt;
     struct _obmalloc_usage usage;
