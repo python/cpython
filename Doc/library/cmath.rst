@@ -89,7 +89,7 @@ Power and logarithmic functions
    logarithms.
 
 
-.. function:: log(x, base=None)
+.. function:: log(x[, base])
 
    Returns the logarithm of *x* to the given *base*. If the *base* is not
    specified, returns the natural logarithm of *x*. There is one branch cut, from 0

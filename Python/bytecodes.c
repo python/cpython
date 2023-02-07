@@ -663,14 +663,10 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        // error: SEND stack effect depends on jump flag
-        inst(SEND) {
+        inst(SEND, (receiver, v -- receiver if (!jump), retval)) {
             assert(frame != &entry_frame);
-            assert(STACK_LEVEL() >= 2);
-            PyObject *v = POP();
-            PyObject *receiver = TOP();
+            bool jump = false;
             PySendResult gen_status;
-            PyObject *retval;
             if (tstate->c_tracefunc == NULL) {
                 gen_status = PyIter_Send(receiver, v, &retval);
             } else {
@@ -695,21 +691,20 @@ dummy_func(
                     gen_status = PYGEN_NEXT;
                 }
             }
-            Py_DECREF(v);
             if (gen_status == PYGEN_ERROR) {
                 assert(retval == NULL);
                 goto error;
             }
+            Py_DECREF(v);
             if (gen_status == PYGEN_RETURN) {
                 assert(retval != NULL);
                 Py_DECREF(receiver);
-                SET_TOP(retval);
                 JUMPBY(oparg);
+                jump = true;
             }
             else {
                 assert(gen_status == PYGEN_NEXT);
                 assert(retval != NULL);
-                PUSH(retval);
             }
         }
 
@@ -2043,31 +2038,30 @@ dummy_func(
             ERROR_IF(iter == NULL, error);
         }
 
-        // stack effect: ( -- )
-        inst(GET_YIELD_FROM_ITER) {
+        inst(GET_YIELD_FROM_ITER, (iterable -- iter)) {
             /* before: [obj]; after [getiter(obj)] */
-            PyObject *iterable = TOP();
-            PyObject *iter;
             if (PyCoro_CheckExact(iterable)) {
                 /* `iterable` is a coroutine */
                 if (!(frame->f_code->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
                     /* and it is used in a 'yield from' expression of a
                        regular generator. */
-                    Py_DECREF(iterable);
-                    SET_TOP(NULL);
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
                     goto error;
                 }
+                iter = iterable;
             }
-            else if (!PyGen_CheckExact(iterable)) {
+            else if (PyGen_CheckExact(iterable)) {
+                iter = iterable;
+            }
+            else {
                 /* `iterable` is not a generator. */
                 iter = PyObject_GetIter(iterable);
-                Py_DECREF(iterable);
-                SET_TOP(iter);
-                if (iter == NULL)
+                if (iter == NULL) {
                     goto error;
+                }
+                Py_DECREF(iterable);
             }
             PREDICT(LOAD_CONST);
         }
@@ -2978,40 +2972,42 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // error: MAKE_FUNCTION has irregular stack effect
-        inst(MAKE_FUNCTION) {
-            PyObject *codeobj = POP();
-            PyFunctionObject *func = (PyFunctionObject *)
+        inst(MAKE_FUNCTION, (defaults    if (oparg & 0x01),
+                             kwdefaults  if (oparg & 0x02),
+                             annotations if (oparg & 0x04),
+                             closure     if (oparg & 0x08),
+                             codeobj -- func)) {
+
+            PyFunctionObject *func_obj = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
 
             Py_DECREF(codeobj);
-            if (func == NULL) {
+            if (func_obj == NULL) {
                 goto error;
             }
 
             if (oparg & 0x08) {
-                assert(PyTuple_CheckExact(TOP()));
-                func->func_closure = POP();
+                assert(PyTuple_CheckExact(closure));
+                func_obj->func_closure = closure;
             }
             if (oparg & 0x04) {
-                assert(PyTuple_CheckExact(TOP()));
-                func->func_annotations = POP();
+                assert(PyTuple_CheckExact(annotations));
+                func_obj->func_annotations = annotations;
             }
             if (oparg & 0x02) {
-                assert(PyDict_CheckExact(TOP()));
-                func->func_kwdefaults = POP();
+                assert(PyDict_CheckExact(kwdefaults));
+                func_obj->func_kwdefaults = kwdefaults;
             }
             if (oparg & 0x01) {
-                assert(PyTuple_CheckExact(TOP()));
-                func->func_defaults = POP();
+                assert(PyTuple_CheckExact(defaults));
+                func_obj->func_defaults = defaults;
             }
 
-            func->func_version = ((PyCodeObject *)codeobj)->co_version;
-            PUSH((PyObject *)func);
+            func_obj->func_version = ((PyCodeObject *)codeobj)->co_version;
+            func = (PyObject *)func_obj;
         }
 
-        // stack effect: ( -- )
-        inst(RETURN_GENERATOR) {
+        inst(RETURN_GENERATOR, (--)) {
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -3034,22 +3030,12 @@ dummy_func(
             goto resume_frame;
         }
 
-        // error: BUILD_SLICE has irregular stack effect
-        inst(BUILD_SLICE) {
-            PyObject *start, *stop, *step, *slice;
-            if (oparg == 3)
-                step = POP();
-            else
-                step = NULL;
-            stop = POP();
-            start = TOP();
+        inst(BUILD_SLICE, (start, stop, step if (oparg == 3) -- slice)) {
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
             Py_DECREF(stop);
             Py_XDECREF(step);
-            SET_TOP(slice);
-            if (slice == NULL)
-                goto error;
+            ERROR_IF(slice == NULL, error);
         }
 
         // error: FORMAT_VALUE has irregular stack effect
@@ -3112,11 +3098,9 @@ dummy_func(
             PUSH(result);
         }
 
-        // stack effect: ( -- __0)
-        inst(COPY) {
-            assert(oparg != 0);
-            PyObject *peek = PEEK(oparg);
-            PUSH(Py_NewRef(peek));
+        inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
+            assert(oparg > 0);
+            top = Py_NewRef(bottom);
         }
 
         inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
@@ -3140,12 +3124,9 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: ( -- )
-        inst(SWAP) {
-            assert(oparg != 0);
-            PyObject *top = TOP();
-            SET_TOP(PEEK(oparg));
-            PEEK(oparg) = top;
+        inst(SWAP, (bottom, unused[oparg-2], top --
+                    top, unused[oparg-2], bottom)) {
+            assert(oparg >= 2);
         }
 
         inst(EXTENDED_ARG, (--)) {

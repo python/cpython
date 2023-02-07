@@ -639,13 +639,12 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_log__doc__,
-"log($module, z, base=None, /)\n"
+"log($module, z, base=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
-"If the base is not specified or is None, returns the\n"
-"natural logarithm (base e) of z.");
+"If the base not specified, returns the natural logarithm (base e) of z.");
 
 #define CMATH_LOG_METHODDEF    \
     {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL, cmath_log__doc__},
@@ -658,7 +657,7 @@ cmath_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_complex x;
-    PyObject *y_obj = Py_None;
+    PyObject *y_obj = NULL;
 
     if (!_PyArg_CheckPositional("log", nargs, 1, 2)) {
         goto exit;
@@ -983,4 +982,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2630f8740909a8f7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0146c656e67f5d5f input=a9049054013a1b77]*/
