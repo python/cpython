@@ -3091,7 +3091,6 @@
             uint32_t func_version = read_u32(&next_instr[1].cache);
             assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
-            // _PyCallCache *cache = (_PyCallCache *)next_instr;
             int is_meth = thing1 != NULL;
             int argcount = oparg + is_meth;
             PyObject *callable = is_meth ? thing1 : thing2;
@@ -3452,7 +3451,6 @@
             PyObject **args = &PEEK(oparg);
             PyObject *self = PEEK(1 + oparg);
             PyObject *method = PEEK(2 + oparg);
-            PyObject *res;
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             assert(oparg == 1);
@@ -3592,7 +3590,6 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
-            PyObject **args = &PEEK(oparg);
             PyObject *method = PEEK(2 + oparg);
             PyObject *res;
             assert(kwnames == NULL);
