@@ -2719,8 +2719,9 @@
         }
 
         TARGET(FOR_ITER_RANGE) {
+            PyObject *iter = PEEK(1);
             assert(cframe.use_tracing == 0);
-            _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
@@ -2728,6 +2729,7 @@
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
+                // Jump over END_FOR instruction.
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             }
             else {

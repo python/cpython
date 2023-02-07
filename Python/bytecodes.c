@@ -2076,7 +2076,7 @@ dummy_func(
             FOR_ITER,
             FOR_ITER_LIST,
             FOR_ITER_TUPLE,
-        //     FOR_ITER_RANGE,
+            FOR_ITER_RANGE,
         //     FOR_ITER_GEN,
         };
 
@@ -2161,10 +2161,11 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        // stack effect: ( -- __0)
-        inst(FOR_ITER_RANGE) {
+        // This is slightly different, when the loop isn't terminated we
+        // jump over the immediately following STORE_FAST instruction.
+        inst(FOR_ITER_RANGE, (unused/1, iter -- iter, unused)) {
             assert(cframe.use_tracing == 0);
-            _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
@@ -2172,6 +2173,7 @@ dummy_func(
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
+                // Jump over END_FOR instruction.
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             }
             else {
@@ -2184,6 +2186,7 @@ dummy_func(
                 // The STORE_FAST is already done.
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
             }
+            DISPATCH();
         }
 
         inst(FOR_ITER_GEN) {
