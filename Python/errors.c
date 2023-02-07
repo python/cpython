@@ -73,6 +73,12 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
     _PyErr_Restore(tstate, type, value, traceback);
 }
 
+void
+PyErr_SetRaisedException(PyObject *exc)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetRaisedException(tstate, exc);
+}
 
 _PyErr_StackItem *
 _PyErr_GetTopmostException(PyThreadState *tstate)
