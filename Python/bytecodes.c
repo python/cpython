@@ -877,14 +877,13 @@ dummy_func(
             ERROR_IF(res == 0, error);
         }
 
-        inst(UNPACK_SEQUENCE_TWO_TUPLE, (seq -- v1, v0)) {
+        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- v1, v0)) {
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
             v1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
             v0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
         }
 
         // stack effect: (__0 -- __array[oparg])

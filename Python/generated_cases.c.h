@@ -1140,10 +1140,10 @@
             v1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
             v0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
             STACK_GROW(1);
             POKE(1, v0);
             POKE(2, v1);
+            JUMPBY(1);
             DISPATCH();
         }
 
