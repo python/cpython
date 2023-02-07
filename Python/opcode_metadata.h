@@ -331,7 +331,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case BUILD_SLICE:
             return ((oparg == 3) ? 1 : 0) + 2;
         case FORMAT_VALUE:
-            return -1;
+            return (((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0) + 1;
         case COPY:
             return (oparg-1) + 1;
         case BINARY_OP:
@@ -677,7 +677,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case BUILD_SLICE:
             return 1;
         case FORMAT_VALUE:
-            return -1;
+            return 1;
         case COPY:
             return (oparg-1) + 2;
         case BINARY_OP:
