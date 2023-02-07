@@ -2949,7 +2949,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_FUNCTION_EX, (null, func, callargs, kwargs if (oparg & 1) -- result)) {
+        inst(CALL_FUNCTION_EX, (unused, func, callargs, kwargs if (oparg & 1) -- result)) {
             if (oparg & 1) {
                 // DICT_MERGE is called before this opcode if there are kwargs.
                 // It converts all dict subtypes in kwargs into regular dicts.
@@ -2959,10 +2959,11 @@ dummy_func(
                 if (check_args_iterable(tstate, func, callargs) < 0) {
                     goto error;
                 }
-                Py_SETREF(callargs, PySequence_Tuple(callargs));
-                if (callargs == NULL) {
+                PyObject *tuple = PySequence_Tuple(callargs);
+                if (tuple == NULL) {
                     goto error;
                 }
+                Py_SETREF(callargs, tuple);
             }
             assert(PyTuple_CheckExact(callargs));
 
@@ -2971,7 +2972,7 @@ dummy_func(
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
 
-            assert(null == NULL);
+            assert(PEEK(3 + (oparg & 1)) == NULL);
             ERROR_IF(result == NULL, error);
             CHECK_EVAL_BREAKER();
         }

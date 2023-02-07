@@ -3568,7 +3568,6 @@
             PyObject *kwargs = (oparg & 1) ? PEEK(((oparg & 1) ? 1 : 0)) : NULL;
             PyObject *callargs = PEEK(1 + ((oparg & 1) ? 1 : 0));
             PyObject *func = PEEK(2 + ((oparg & 1) ? 1 : 0));
-            PyObject *null = PEEK(3 + ((oparg & 1) ? 1 : 0));
             PyObject *result;
             if (oparg & 1) {
                 // DICT_MERGE is called before this opcode if there are kwargs.
@@ -3579,10 +3578,11 @@
                 if (check_args_iterable(tstate, func, callargs) < 0) {
                     goto error;
                 }
-                Py_SETREF(callargs, PySequence_Tuple(callargs));
-                if (callargs == NULL) {
+                PyObject *tuple = PySequence_Tuple(callargs);
+                if (tuple == NULL) {
                     goto error;
                 }
+                Py_SETREF(callargs, tuple);
             }
             assert(PyTuple_CheckExact(callargs));
 
@@ -3591,7 +3591,7 @@
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
 
-            assert(null == NULL);
+            assert(PEEK(3 + (oparg & 1)) == NULL);
             if (result == NULL) { STACK_SHRINK(((oparg & 1) ? 1 : 0)); goto pop_3_error; }
             STACK_SHRINK(((oparg & 1) ? 1 : 0));
             STACK_SHRINK(2);
