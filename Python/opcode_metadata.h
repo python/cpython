@@ -261,15 +261,15 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case GET_YIELD_FROM_ITER:
             return 1;
         case FOR_ITER:
-            return -1;
+            return 1;
         case FOR_ITER_LIST:
-            return -1;
+            return 1;
         case FOR_ITER_TUPLE:
-            return -1;
+            return 1;
         case FOR_ITER_RANGE:
-            return -1;
+            return 1;
         case FOR_ITER_GEN:
-            return -1;
+            return 1;
         case BEFORE_ASYNC_WITH:
             return 1;
         case BEFORE_WITH:
@@ -607,15 +607,15 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case GET_YIELD_FROM_ITER:
             return 1;
         case FOR_ITER:
-            return -1;
+            return 2;
         case FOR_ITER_LIST:
-            return -1;
+            return 2;
         case FOR_ITER_TUPLE:
-            return -1;
+            return 2;
         case FOR_ITER_RANGE:
-            return -1;
+            return 2;
         case FOR_ITER_GEN:
-            return -1;
+            return 2;
         case BEFORE_ASYNC_WITH:
             return 2;
         case BEFORE_WITH:
@@ -829,11 +829,11 @@ struct opcode_metadata {
     [MATCH_KEYS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [GET_ITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [GET_YIELD_FROM_ITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
-    [FOR_ITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [FOR_ITER_LIST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [FOR_ITER_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [FOR_ITER_RANGE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [FOR_ITER_GEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [FOR_ITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
+    [FOR_ITER_LIST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
+    [FOR_ITER_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
+    [FOR_ITER_RANGE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
+    [FOR_ITER_GEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [BEFORE_ASYNC_WITH] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [BEFORE_WITH] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [WITH_EXCEPT_START] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
