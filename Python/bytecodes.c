@@ -859,13 +859,11 @@ dummy_func(
             }
         }
 
-        // stack effect: (__0 -- __array[oparg])
-        inst(UNPACK_SEQUENCE) {
+        inst(UNPACK_SEQUENCE, (unused/1, seq -- unused[oparg])) {
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *seq = TOP();
                 next_instr--;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
@@ -873,25 +871,18 @@ dummy_func(
             STAT_INC(UNPACK_SEQUENCE, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject *seq = POP();
-            PyObject **top = stack_pointer + oparg;
-            if (!unpack_iterable(tstate, seq, oparg, -1, top)) {
-                Py_DECREF(seq);
-                goto error;
-            }
-            STACK_GROW(oparg);
+            PyObject **top = stack_pointer + oparg - 1;
+            int res = unpack_iterable(tstate, seq, oparg, -1, top);
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
+            ERROR_IF(res == 0, error);
         }
 
-        // stack effect: (__0 -- __array[oparg])
-        inst(UNPACK_SEQUENCE_TWO_TUPLE) {
-            PyObject *seq = TOP();
+        inst(UNPACK_SEQUENCE_TWO_TUPLE, (seq -- v1, v0)) {
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            SET_TOP(Py_NewRef(PyTuple_GET_ITEM(seq, 1)));
-            PUSH(Py_NewRef(PyTuple_GET_ITEM(seq, 0)));
+            v1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
+            v0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
         }
@@ -926,17 +917,12 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
         }
 
-        // error: UNPACK_EX has irregular stack effect
-        inst(UNPACK_EX) {
+        inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            PyObject *seq = POP();
-            PyObject **top = stack_pointer + totalargs;
-            if (!unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top)) {
-                Py_DECREF(seq);
-                goto error;
-            }
-            STACK_GROW(totalargs);
+            PyObject **top = stack_pointer + totalargs - 1;
+            int res = unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             Py_DECREF(seq);
+            ERROR_IF(res == 0, error);
         }
 
         family(store_attr, INLINE_CACHE_ENTRIES_STORE_ATTR) = {

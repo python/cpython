@@ -1108,11 +1108,11 @@
 
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
+            PyObject *seq = PEEK(1);
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *seq = TOP();
                 next_instr--;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
@@ -1120,27 +1120,30 @@
             STAT_INC(UNPACK_SEQUENCE, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject *seq = POP();
-            PyObject **top = stack_pointer + oparg;
-            if (!unpack_iterable(tstate, seq, oparg, -1, top)) {
-                Py_DECREF(seq);
-                goto error;
-            }
-            STACK_GROW(oparg);
+            PyObject **top = stack_pointer + oparg - 1;
+            int res = unpack_iterable(tstate, seq, oparg, -1, top);
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
+            if (res == 0) goto pop_1_error;
+            STACK_SHRINK(1);
+            STACK_GROW(oparg);
+            JUMPBY(1);
             DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
-            PyObject *seq = TOP();
+            PyObject *seq = PEEK(1);
+            PyObject *v1;
+            PyObject *v0;
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            SET_TOP(Py_NewRef(PyTuple_GET_ITEM(seq, 1)));
-            PUSH(Py_NewRef(PyTuple_GET_ITEM(seq, 0)));
+            v1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
+            v0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
+            STACK_GROW(1);
+            POKE(1, v0);
+            POKE(2, v1);
             DISPATCH();
         }
 
@@ -1175,15 +1178,13 @@
         }
 
         TARGET(UNPACK_EX) {
+            PyObject *seq = PEEK(1);
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            PyObject *seq = POP();
-            PyObject **top = stack_pointer + totalargs;
-            if (!unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top)) {
-                Py_DECREF(seq);
-                goto error;
-            }
-            STACK_GROW(totalargs);
+            PyObject **top = stack_pointer + totalargs - 1;
+            int res = unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             Py_DECREF(seq);
+            if (res == 0) goto pop_1_error;
+            STACK_GROW((oparg & 0xFF) + (oparg >> 8));
             DISPATCH();
         }
 

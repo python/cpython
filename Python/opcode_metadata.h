@@ -121,15 +121,15 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case DELETE_NAME:
             return 0;
         case UNPACK_SEQUENCE:
-            return -1;
+            return 1;
         case UNPACK_SEQUENCE_TWO_TUPLE:
-            return -1;
+            return 1;
         case UNPACK_SEQUENCE_TUPLE:
             return -1;
         case UNPACK_SEQUENCE_LIST:
             return -1;
         case UNPACK_EX:
-            return -1;
+            return 1;
         case STORE_ATTR:
             return 2;
         case DELETE_ATTR:
@@ -467,15 +467,15 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case DELETE_NAME:
             return 0;
         case UNPACK_SEQUENCE:
-            return -1;
+            return oparg;
         case UNPACK_SEQUENCE_TWO_TUPLE:
-            return -1;
+            return 2;
         case UNPACK_SEQUENCE_TUPLE:
             return -1;
         case UNPACK_SEQUENCE_LIST:
             return -1;
         case UNPACK_EX:
-            return -1;
+            return (oparg & 0xFF) + (oparg >> 8) + 1;
         case STORE_ATTR:
             return 0;
         case DELETE_ATTR:
@@ -759,7 +759,7 @@ struct opcode_metadata {
     [LOAD_BUILD_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [STORE_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DELETE_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [UNPACK_SEQUENCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [UNPACK_SEQUENCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [UNPACK_SEQUENCE_TWO_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [UNPACK_SEQUENCE_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [UNPACK_SEQUENCE_LIST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
