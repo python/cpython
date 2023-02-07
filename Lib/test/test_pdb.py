@@ -1408,6 +1408,28 @@ def test_pdb_issue_gh_91742():
     Author: 'pi' Version: '3.14'
     """
 
+def test_pdb_issue_gh_101517():
+    """See GH-101517
+
+    breakpoint in except* clause
+
+    >>> def test_function():
+    ...     try:
+    ...         raise ExceptionGroup("eg", [KeyError(), ValueError()])
+    ...     except* KeyError:
+    ...         breakpoint()
+    ...
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...     try:
+    ...         test_function()
+    ...     except Exception as e:
+    ...         print(repr(e))
+    ExceptionGroup('eg', [ValueError()])
+    >>>
+    """
+
 def test_pdb_issue_gh_94215():
     """See GH-94215
 

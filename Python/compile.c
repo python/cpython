@@ -3747,9 +3747,10 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         USE_LABEL(c, except);
 
         if (i == n - 1) {
+            loc = location_of_last_executing_statement(handler->v.ExceptHandler.body);
             /* Add exc to the list (if not None it's the unhandled part of the EG) */
-            ADDOP_I(c, NO_LOCATION, LIST_APPEND, 1);
-            ADDOP_JUMP(c, NO_LOCATION, JUMP, reraise_star);
+            ADDOP_I(c, loc, LIST_APPEND, 1);
+            ADDOP_JUMP(c, loc, JUMP, reraise_star);
         }
     }
     /* artificial */
