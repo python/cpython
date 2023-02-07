@@ -2482,7 +2482,6 @@ dummy_func(
         inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, unused/1, thing1, thing2, unused[oparg] -- unused)) {
             assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
-            // _PyCallCache *cache = (_PyCallCache *)next_instr;
             int is_meth = thing1 != NULL;
             int argcount = oparg + is_meth;
             PyObject *callable = is_meth ? thing1 : thing2;
@@ -2755,7 +2754,7 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, unused/1, method, self, args[oparg] -- res)) {
+        inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, unused/1, method, self, args[oparg] -- unused)) {
             assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             assert(oparg == 1);
@@ -2880,7 +2879,7 @@ dummy_func(
             DISPATCH();
         }
 
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, unused/1, method, unused, args[oparg] -- res)) {
+        inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, unused/1, method, unused, unused[oparg] -- res)) {
             assert(kwnames == NULL);
             int is_meth = method != NULL;
             int total_args = oparg + is_meth;
