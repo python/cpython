@@ -34,6 +34,7 @@ MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
 LOAD_CONST = opmap['LOAD_CONST']
+RETURN_CONST = opmap['RETURN_CONST']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
 JUMP_BACKWARD = opmap['JUMP_BACKWARD']
@@ -363,7 +364,7 @@ def _get_const_value(op, arg, co_consts):
     assert op in hasconst
 
     argval = UNKNOWN
-    if op == LOAD_CONST:
+    if op == LOAD_CONST or op == RETURN_CONST:
         if co_consts is not None:
             argval = co_consts[arg]
     return argval
