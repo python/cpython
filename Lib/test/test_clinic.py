@@ -1266,6 +1266,24 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4), ((1, 2, 3, 4), None))
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
 
+    def test_class_new_vararg_only(self):
+        self.assertEqual(ac_tester.class_new_vararg_only(), ((), ))
+        self.assertEqual(ac_tester.class_new_vararg_only(1, 2, 3, 4), ((1, 2, 3, 4), ))
+
+    def test_class_new_vararg(self):
+        with self.assertRaises(TypeError):
+            ac_tester.class_new_vararg()
+        with self.assertRaises(TypeError):
+            ac_tester.class_new_vararg(1, b=2)
+        self.assertEqual(ac_tester.class_new_vararg(1, 2, 3, 4), (1, (2, 3, 4)))
+
+    def test_vararg_with_default(self):
+        with self.assertRaises(TypeError):
+            ac_tester.class_new_vararg_with_default()
+        self.assertEqual(ac_tester.class_new_vararg_with_default(1, b=2), (1, (), 2))
+        self.assertEqual(ac_tester.class_new_vararg_with_default(1, 2, 3, 4), (1, (2, 3, 4), None))
+        self.assertEqual(ac_tester.class_new_vararg_with_default(1, 2, 3, 4, b=5), (1, (2, 3, 4), 5))
+
     def test_gh_32092_oob(self):
         ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
 

@@ -2611,6 +2611,147 @@ exit:
     return return_value;
 }
 
+static PyObject *
+_testclinic_TestClassVarargOnly_impl(PyTypeObject *type,
+                                     Py_ssize_t varargssize,
+                                     PyObject *const *args);
+
+static PyObject *
+_testclinic_TestClassVarargOnly(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t varargssize = PyTuple_GET_SIZE(args);
+    PyTypeObject *base_tp = &TestClass_Type;
+    PyObject *const *__clinic_args;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("TestClassVarargOnly", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("TestClassVarargOnly", PyTuple_GET_SIZE(args), 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = _PyTuple_CAST(args)->ob_item;
+    return_value = _testclinic_TestClassVarargOnly_impl(type, varargssize, __clinic_args);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+_testclinic_TestClassVararg_impl(PyTypeObject *type, PyObject *a,
+                                 Py_ssize_t varargssize,
+                                 PyObject *const *args);
+
+static PyObject *
+_testclinic_TestClassVararg(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "TestClassVararg",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[0];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
+    PyObject *a;
+    PyObject *const *__clinic_args;
+
+    fastargs = _PyArg_UnpackKeywordsWithVarargKwonly(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = PyTuple_GET_ITEM(args, 0);
+    __clinic_args = _PyTuple_CAST(args)->ob_item + 1;
+    return_value = _testclinic_TestClassVararg_impl(type, a, varargssize, __clinic_args);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+_testclinic_TestClassVarargWithDefault_impl(PyTypeObject *type, PyObject *a,
+                                            Py_ssize_t varargssize,
+                                            PyObject *const *args,
+                                            PyObject *b);
+
+static PyObject *
+_testclinic_TestClassVarargWithDefault(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "TestClassVarargWithDefault",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
+    PyObject *a;
+    PyObject *const *__clinic_args;
+    PyObject *b = Py_None;
+
+    fastargs = _PyArg_UnpackKeywordsWithVarargKwonly(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = PyTuple_GET_ITEM(args, 0);
+    __clinic_args = _PyTuple_CAST(args)->ob_item + 1;
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    b = fastargs[0];
+skip_optional_kwonly:
+    return_value = _testclinic_TestClassVarargWithDefault_impl(type, a, varargssize, __clinic_args, b);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(gh_32092_oob__doc__,
 "gh_32092_oob($module, /, pos1, pos2, *varargs, kw1=None, kw2=None)\n"
 "--\n"
@@ -2818,4 +2959,4 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=55622d446938c069 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c000f8420ea57228 input=a9049054013a1b77]*/

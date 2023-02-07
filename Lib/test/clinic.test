@@ -4160,7 +4160,7 @@ TestModule_TestClass1___init___impl(TestClassObject *self,
 
 
 /*[clinic input]
-TestModule.TestClass1.__init__
+TestModule.TestClass2.__init__
 
     pos: object
     *args: object
@@ -4169,12 +4169,12 @@ TestModule.TestClass1.__init__
 [clinic start generated code]*/
 
 static int
-TestModule_TestClass1___init___impl(TestClassObject *self, PyObject *pos,
+TestModule_TestClass2___init___impl(TestClassObject *self, PyObject *pos,
                                     Py_ssize_t varargssize,
                                     PyObject *const *args, PyObject *kw);
 
 static int
-TestModule_TestClass1___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+TestModule_TestClass2___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4198,7 +4198,7 @@ TestModule_TestClass1___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static const char * const _keywords[] = {"pos", "kw", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "TestClass1",
+        .fname = "TestClass2",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -4222,14 +4222,14 @@ TestModule_TestClass1___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     kw = fastargs[0];
 skip_optional_kwonly:
-    return_value = TestModule_TestClass1___init___impl((TestClassObject *)self, pos, varargssize, __clinic_args, kw);
+    return_value = TestModule_TestClass2___init___impl((TestClassObject *)self, pos, varargssize, __clinic_args, kw);
 
 exit:
     return return_value;
 }
 
 static int
-TestModule_TestClass1___init___impl(TestClassObject *self, PyObject *pos,
+TestModule_TestClass2___init___impl(TestClassObject *self, PyObject *pos,
                                     Py_ssize_t varargssize,
                                     PyObject *const *args, PyObject *kw)
-/*[clinic end generated code: output=e565fcea3dd35a86 input=da8e0daa18983316]*/
+/*[clinic end generated code: output=335f080bcb0946ab input=833936c1d51c4329]*/

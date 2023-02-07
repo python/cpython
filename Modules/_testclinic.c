@@ -9,6 +9,12 @@
 
 #include "Python.h"
 
+typedef struct TestClassObject {
+    PyObject_HEAD
+} TestClassObject;
+
+static PyTypeObject TestClass_Type;
+
 #include "clinic/_testclinic.c.h"
 
 
@@ -1086,6 +1092,98 @@ vararg_with_only_defaults_impl(PyObject *module, Py_ssize_t varargssize,
 
 
 
+static PyTypeObject TestClass_Type = {
+        PyVarObject_HEAD_INIT(NULL, 0)
+        .tp_name = "TestClassType",
+        .tp_basicsize = sizeof(TestClassObject),
+        .tp_flags = Py_TPFLAGS_DEFAULT,
+};
+
+/*[clinic input]
+class _testclinic.TestClassVararg "TestClassObject *" "&TestClass_Type"
+class _testclinic.TestClassVarargOnly "TestClassObject *" "&TestClass_Type"
+class _testclinic.TestClassVarargWithDefault "TestClassObject *" "&TestClass_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=97c670b477b79c5a]*/
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClassVarargOnly.__new__
+
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClassVarargOnly_impl(PyTypeObject *type,
+                                     Py_ssize_t varargssize,
+                                     PyObject *const *args)
+/*[clinic end generated code: output=05947a2aa5f8adff input=584464d2a3960b1b]*/
+{
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(1, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClassVararg.__new__
+
+    a: object
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClassVararg_impl(PyTypeObject *type, PyObject *a,
+                                 Py_ssize_t varargssize,
+                                 PyObject *const *args)
+/*[clinic end generated code: output=631d42b9183732a2 input=88e1a6be73982e01]*/
+{
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(2, a, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClassVarargWithDefault.__new__
+
+    a: object
+    *args: object
+    b: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClassVarargWithDefault_impl(PyTypeObject *type, PyObject *a,
+                                            Py_ssize_t varargssize,
+                                            PyObject *const *args,
+                                            PyObject *b)
+/*[clinic end generated code: output=f91a821bb9f592a9 input=19c364f334bc623e]*/
+{
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(3, a, vararg_tuple, b);
+    Py_DECREF(vararg_tuple);
+    return result;
+}
+
+
+
 /*[clinic input]
 gh_32092_oob
 
@@ -1215,6 +1313,18 @@ static PyMethodDef tester_methods[] = {
     VARARG_METHODDEF
     VARARG_WITH_DEFAULT_METHODDEF
     VARARG_WITH_ONLY_DEFAULTS_METHODDEF
+    {"class_new_vararg_only",
+     _PyCFunction_CAST(_testclinic_TestClassVarargOnly),
+     METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("Test vararg parsing in class method `__new__`.")},
+    {"class_new_vararg",
+     _PyCFunction_CAST(_testclinic_TestClassVararg),
+     METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("Test posargs and vararg parsing in class method `__new__`.")},
+    {"class_new_vararg_with_default",
+     _PyCFunction_CAST(_testclinic_TestClassVarargWithDefault),
+     METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("Test vararg and kwargs parsing in class method `__new__`.")},
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
