@@ -1,0 +1,2 @@
+Change repr of :class:`collections.OrderedDict` to use regular dictionary
+formating instead of pair of keys and values.
