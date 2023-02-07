@@ -94,6 +94,7 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
         }
         else {
             PyErr_SetString(PyExc_TypeError, "traceback must be a Traceback or None");
+            Py_XDECREF(value);
             Py_DECREF(type);
             Py_XDECREF(traceback);
             return;
