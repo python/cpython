@@ -1367,7 +1367,7 @@ static PyObject *
 odict_repr(PyODictObject *self)
 {
     int i;
-    PyObject *result = NULL;
+    PyObject *result = NULL, *dcopy = NULL;
 
     if (PyODict_SIZE(self) == 0)
         return PyUnicode_FromFormat("%s()", _PyType_Name(Py_TYPE(self)));
@@ -1377,10 +1377,16 @@ odict_repr(PyODictObject *self)
         return i > 0 ? PyUnicode_FromString("...") : NULL;
     }
 
+    dcopy = PyDict_Copy((PyObject *)self);
+    if (dcopy == NULL) {
+        goto Done;
+    }
+
     result = PyUnicode_FromFormat("%s(%R)",
                                   _PyType_Name(Py_TYPE(self)),
-                                  PyDict_Copy((PyObject *)self));
+                                  dcopy);
 
+Done:
     Py_ReprLeave((PyObject *)self);
     return result;
 }
