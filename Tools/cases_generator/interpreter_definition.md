@@ -11,10 +11,10 @@ instruction semantics and tools for generating the code deriving from
 the instruction definitions.
 
 These tools would be used to:
-* Generate the main interpreter
+* Generate the main interpreter (done)
 * Generate the tier 2 interpreter
 * Generate documentation for instructions
-* Generate metadata about instructions, such as stack use.
+* Generate metadata about instructions, such as stack use (done).
 
 Having a single definition file ensures that there is a single source
 of truth for bytecode semantics.
@@ -119,7 +119,7 @@ and a piece of C code describing its semantics::
     INTEGER
 
   array:
-    object "[" NAME "]"
+    object "[" C-expression "]"
 
   family:
     "family" "(" NAME ")" = "{" NAME ("," NAME)+ "}" ";"
@@ -145,11 +145,17 @@ An `inst` without `stack_effect` is a transitional form to allow the original C 
 definitions to be copied. It lacks information to generate anything other than the
 interpreter, but is useful for initial porting of code.
 
+Stack effect names may be `unused`, indicating the space is to be reserved
+but no use of it will be made in the instruction definition.
+This is useful to ensure that all instructions in a family have the same
+stack effect.
+
 The number in a `stream` define how many codeunits are consumed from the
 instruction stream. It returns a 16, 32 or 64 bit value.
-(TODO: Would it be better if it gave the size in more common units,
-like bytes or bits?)
-(TODO: Need a way to indicate unused cache effect, might be odd size.)
+If the name is `unused` the size can be any value and that many codeunits
+will be skipped in the instruction stream.
+
+By convention cache effects (`stream`) must precede the input effects.
 
 The name `oparg` is pre-defined as a 32 bit value fetched from the instruction stream.
 
@@ -158,10 +164,9 @@ part of the DSL.
 
 Those functions include:
 
-* `DEOPT_IF(cond)`. Deoptimize if `cond` is met.
-* `ERROR_IF(cond, handler)`. Jump to error handler if `cond` is true.
-* `PEEK(n)`. The `n`<sup>th</sup> item on the stack, which is not pushed.
-  (`PEEK(1)` is the top of the stack.)
+* `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
+* `ERROR_IF(cond, label)`. Jump to error handler if `cond` is true.
+* `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
 
 Variables can either be defined in the input, output, or in the C code.
 Variables defined in the input may not be assigned in the C code.
@@ -193,6 +198,8 @@ All members of a family must have the same stack and instruction stream effect.
 
 Examples
 --------
+
+(Another source of examples can be found in the [tests](test_generator.py).)
 
 Some examples:
 
