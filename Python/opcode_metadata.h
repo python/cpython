@@ -127,7 +127,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case UNPACK_SEQUENCE_TUPLE:
             return 1;
         case UNPACK_SEQUENCE_LIST:
-            return -1;
+            return 1;
         case UNPACK_EX:
             return 1;
         case STORE_ATTR:
@@ -473,7 +473,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case UNPACK_SEQUENCE_TUPLE:
             return oparg;
         case UNPACK_SEQUENCE_LIST:
-            return -1;
+            return oparg;
         case UNPACK_EX:
             return (oparg & 0xFF) + (oparg >> 8) + 1;
         case STORE_ATTR:
@@ -762,7 +762,7 @@ struct opcode_metadata {
     [UNPACK_SEQUENCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [UNPACK_SEQUENCE_TWO_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [UNPACK_SEQUENCE_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
-    [UNPACK_SEQUENCE_LIST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [UNPACK_SEQUENCE_LIST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [UNPACK_EX] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [STORE_ATTR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [DELETE_ATTR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
