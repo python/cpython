@@ -9,19 +9,19 @@ from parser import StackEffect
 
 def test_effect_sizes():
     input_effects = [
-        x := StackEffect("x", "", ""),
-        y := StackEffect("y", "", "oparg"),
-        z := StackEffect("z", "", "oparg*2"),
+        x := StackEffect("x", "", "", ""),
+        y := StackEffect("y", "", "", "oparg"),
+        z := StackEffect("z", "", "", "oparg*2"),
     ]
     output_effects = [
-        a := StackEffect("a", "", ""),
-        b := StackEffect("b", "", "oparg*4"),
-        c := StackEffect("c", "", ""),
+        StackEffect("a", "", "", ""),
+        StackEffect("b", "", "", "oparg*4"),
+        StackEffect("c", "", "", ""),
     ]
     other_effects = [
-        p := StackEffect("p", "", "oparg<<1"),
-        q := StackEffect("q", "", ""),
-        r := StackEffect("r", "", ""),
+        StackEffect("p", "", "", "oparg<<1"),
+        StackEffect("q", "", "", ""),
+        StackEffect("r", "", "", ""),
     ]
     assert generate_cases.effect_size(x) == (1, "")
     assert generate_cases.effect_size(y) == (0, "oparg")
@@ -54,6 +54,12 @@ def run_cases_test(input: str, expected: str):
     while lines and lines[0].startswith("// "):
         lines.pop(0)
     actual = "".join(lines)
+    # if actual.rstrip() != expected.rstrip():
+    #     print("Actual:")
+    #     print(actual)
+    #     print("Expected:")
+    #     print(expected)
+    #     print("End")
     assert actual.rstrip() == expected.rstrip()
 
 def test_legacy():
@@ -215,6 +221,20 @@ def test_error_if_plain():
     """
     run_cases_test(input, output)
 
+def test_error_if_plain_with_comment():
+    input = """
+        inst(OP, (--)) {
+            ERROR_IF(cond, label);  // Comment is ok
+        }
+    """
+    output = """
+        TARGET(OP) {
+            if (cond) goto label;
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
 def test_error_if_pop():
     input = """
         inst(OP, (left, right -- res)) {
@@ -319,20 +339,24 @@ def test_super_instruction():
 
 def test_macro_instruction():
     input = """
-        inst(OP1, (counter/1, arg --)) {
-            op1();
+        inst(OP1, (counter/1, left, right -- left, right)) {
+            op1(left, right);
         }
-        op(OP2, (extra/2, arg --)) {
-            op2();
+        op(OP2, (extra/2, arg2, left, right -- res)) {
+            res = op2(arg2, left, right);
         }
         macro(OP) = OP1 + cache/2 + OP2;
+        inst(OP3, (unused/5, arg2, left, right -- res)) {
+            res = op3(arg2, left, right);
+        }
+        family(op, INLINE_CACHE_ENTRIES_OP) = { OP, OP3 };
     """
     output = """
         TARGET(OP1) {
-            PyObject *arg = PEEK(1);
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
             uint16_t counter = read_u16(&next_instr[0].cache);
-            op1();
-            STACK_SHRINK(1);
+            op1(left, right);
             JUMPBY(1);
             DISPATCH();
         }
@@ -340,18 +364,40 @@ def test_macro_instruction():
         TARGET(OP) {
             PyObject *_tmp_1 = PEEK(1);
             PyObject *_tmp_2 = PEEK(2);
+            PyObject *_tmp_3 = PEEK(3);
             {
-                PyObject *arg = _tmp_1;
+                PyObject *right = _tmp_1;
+                PyObject *left = _tmp_2;
                 uint16_t counter = read_u16(&next_instr[0].cache);
-                op1();
+                op1(left, right);
+                _tmp_2 = left;
+                _tmp_1 = right;
             }
             {
-                PyObject *arg = _tmp_2;
+                PyObject *right = _tmp_1;
+                PyObject *left = _tmp_2;
+                PyObject *arg2 = _tmp_3;
+                PyObject *res;
                 uint32_t extra = read_u32(&next_instr[3].cache);
-                op2();
+                res = op2(arg2, left, right);
+                _tmp_3 = res;
             }
             JUMPBY(5);
+            static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             STACK_SHRINK(2);
+            POKE(1, _tmp_3);
+            DISPATCH();
+        }
+
+        TARGET(OP3) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *arg2 = PEEK(3);
+            PyObject *res;
+            res = op3(arg2, left, right);
+            STACK_SHRINK(2);
+            POKE(1, res);
+            JUMPBY(5);
             DISPATCH();
         }
     """
@@ -430,6 +476,51 @@ def test_array_error_if():
             if (oparg == 0) { STACK_SHRINK(oparg); goto pop_1_somewhere; }
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_register():
+    input = """
+        register inst(OP, (counter/1, left, right -- result)) {
+            result = op(left, right);
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject *left = REG(oparg1);
+            PyObject *right = REG(oparg2);
+            PyObject *result;
+            uint16_t counter = read_u16(&next_instr[0].cache);
+            result = op(left, right);
+            Py_XSETREF(REG(oparg3), result);
+            JUMPBY(1);
+            DISPATCH();
+        }
+    """
+    run_cases_test(input, output)
+
+def test_cond_effect():
+    input = """
+        inst(OP, (aa, input if (oparg & 1), cc -- xx, output if (oparg & 2), zz)) {
+            output = spam(oparg, input);
+        }
+    """
+    output = """
+        TARGET(OP) {
+            PyObject *cc = PEEK(1);
+            PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) ? 1 : 0)) : NULL;
+            PyObject *aa = PEEK(2 + ((oparg & 1) ? 1 : 0));
+            PyObject *xx;
+            PyObject *output = NULL;
+            PyObject *zz;
+            output = spam(oparg, input);
+            STACK_SHRINK(((oparg & 1) ? 1 : 0));
+            STACK_GROW(((oparg & 2) ? 1 : 0));
+            POKE(1, zz);
+            if (oparg & 2) { POKE(1 + ((oparg & 2) ? 1 : 0), output); }
+            POKE(2 + ((oparg & 2) ? 1 : 0), xx);
             DISPATCH();
         }
     """

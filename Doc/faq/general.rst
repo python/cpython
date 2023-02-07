@@ -248,8 +248,8 @@ Are there any published articles about Python that I can reference?
 
 It's probably best to cite your favorite book about Python.
 
-The very first article about Python was written in 1991 and is now quite
-outdated.
+The `very first article <https://ir.cwi.nl/pub/18204>`_ about Python was
+written in 1991 and is now quite outdated.
 
     Guido van Rossum and Jelke de Boer, "Interactively Testing Remote Servers
     Using the Python Programming Language", CWI Quarterly, Volume 4, Issue 4

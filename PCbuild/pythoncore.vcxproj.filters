@@ -866,6 +866,9 @@
     <ClCompile Include="..\Modules\sha1module.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\sha256module.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -1323,6 +1326,9 @@
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">
