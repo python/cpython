@@ -1086,15 +1086,21 @@ class CLanguage(Language):
                                      "parameter (after self)")
                 displayname = p.get_displayname(i+1)
                 if vararg != NO_VARARG:
-                    # positional args
                     if i < int(vararg):
-                        parsearg = p.converter.parse_arg('args[%d]' % i, displayname)
-                    # keyword args
+                        # positional args
+                        if new_or_init:
+                            parsearg = p.converter.parse_arg('PyTuple_GET_ITEM(args, %d)' % i, displayname)
+                        else:
+                            parsearg = p.converter.parse_arg('args[%d]' % i, displayname)
                     elif i > int(vararg):
+                        # keyword args
                         parsearg = p.converter.parse_arg('fastargs[%d]' % (i - vararg - 1), displayname)
-                    # vararg
                     else:
-                        parsearg = p.converter.parse_arg('args + %d' % vararg, p.converter.parser_name)
+                        # vararg
+                        if new_or_init:
+                            parsearg = p.converter.parse_arg('_PyTuple_CAST(args)->ob_item + %d' % vararg, p.converter.parser_name)
+                        else:
+                            parsearg = p.converter.parse_arg('args + %d' % vararg, p.converter.parser_name)
                 else:
                     parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
                 if parsearg is None:

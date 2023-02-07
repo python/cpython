@@ -4215,8 +4215,8 @@ TestModule_TestClass1___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    pos = args[0];
-    __clinic_args = args + 1;
+    pos = PyTuple_GET_ITEM(args, 0);
+    __clinic_args = _PyTuple_CAST(args)->ob_item + 1;
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -4232,4 +4232,4 @@ static int
 TestModule_TestClass1___init___impl(TestClassObject *self, PyObject *pos,
                                     Py_ssize_t varargssize,
                                     PyObject *const *args, PyObject *kw)
-/*[clinic end generated code: output=2cfcce182118ec62 input=da8e0daa18983316]*/
+/*[clinic end generated code: output=e565fcea3dd35a86 input=da8e0daa18983316]*/
