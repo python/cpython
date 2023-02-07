@@ -1,2 +1,0 @@
-Fix :func:`~unicodedata.is_normalized` to properly handle the UCD 3.2.0
-cases. Patch by Dong-hee Na.
