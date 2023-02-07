@@ -124,6 +124,7 @@
 
 #define IS_SCOPE_EXIT_OPCODE(opcode) \
         ((opcode) == RETURN_VALUE || \
+         (opcode) == RETURN_CONST || \
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
@@ -354,7 +355,7 @@ basicblock_last_instr(const basicblock *b) {
 static inline int
 basicblock_returns(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE;
+    return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_CONST);
 }
 
 static inline int
@@ -1119,6 +1120,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case RETURN_VALUE:
             return -1;
+        case RETURN_CONST:
+            return 0;
         case SETUP_ANNOTATIONS:
             return 0;
         case YIELD_VALUE:
@@ -9261,6 +9264,10 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         }
                         Py_DECREF(cnt);
                         break;
+                    case RETURN_VALUE:
+                        INSTR_SET_OP1(inst, RETURN_CONST, oparg);
+                        INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
+                        break;
                 }
                 break;
             }
@@ -9723,9 +9730,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* mark used consts */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_opcode == LOAD_CONST ||
-                b->b_instr[i].i_opcode == KW_NAMES) {
-
+            if (HAS_CONST(b->b_instr[i].i_opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 index_map[index] = index;
             }
@@ -9780,9 +9785,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
 
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_opcode == LOAD_CONST ||
-                b->b_instr[i].i_opcode == KW_NAMES) {
-
+            if (HAS_CONST(b->b_instr[i].i_opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);

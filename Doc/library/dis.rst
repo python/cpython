@@ -694,6 +694,13 @@ iterations of the loop.
    Returns with ``STACK[-1]`` to the caller of the function.
 
 
+.. opcode:: RETURN_CONST (consti)
+
+   Returns with ``co_consts[consti]`` to the caller of the function.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: YIELD_VALUE
 
    Yields ``STACK.pop()`` from a :term:`generator`.
