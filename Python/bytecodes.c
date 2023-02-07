@@ -876,6 +876,13 @@ dummy_func(
             }
         }
 
+        family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
+            UNPACK_SEQUENCE,
+            UNPACK_SEQUENCE_TWO_TUPLE,
+            UNPACK_SEQUENCE_TUPLE,
+            UNPACK_SEQUENCE_LIST,
+        };
+
         inst(UNPACK_SEQUENCE, (unused/1, seq -- unused[oparg])) {
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
@@ -894,43 +901,36 @@ dummy_func(
             ERROR_IF(res == 0, error);
         }
 
-        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- v1, v0)) {
+        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- values[oparg])) {
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
+            assert(oparg == 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            v1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
-            v0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            values[0] = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
+            values[1] = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             Py_DECREF(seq);
         }
 
-        // stack effect: (__0 -- __array[oparg])
-        inst(UNPACK_SEQUENCE_TUPLE) {
-            PyObject *seq = TOP();
+        inst(UNPACK_SEQUENCE_TUPLE, (unused/1, seq -- values[oparg])) {
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            STACK_SHRINK(1);
             PyObject **items = _PyTuple_ITEMS(seq);
-            while (oparg--) {
-                PUSH(Py_NewRef(items[oparg]));
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
             }
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
         }
 
-        // stack effect: (__0 -- __array[oparg])
-        inst(UNPACK_SEQUENCE_LIST) {
-            PyObject *seq = TOP();
+        inst(UNPACK_SEQUENCE_LIST, (unused/1, seq -- values[oparg])) {
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            STACK_SHRINK(1);
             PyObject **items = _PyList_ITEMS(seq);
-            while (oparg--) {
-                PUSH(Py_NewRef(items[oparg]));
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
             }
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
         }
 
         inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
@@ -3185,6 +3185,3 @@ family(call, INLINE_CACHE_ENTRIES_CALL) = {
     CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
     CALL_NO_KW_TYPE_1 };
 family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
-family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
-    UNPACK_SEQUENCE, UNPACK_SEQUENCE_LIST,
-    UNPACK_SEQUENCE_TUPLE, UNPACK_SEQUENCE_TWO_TUPLE };
