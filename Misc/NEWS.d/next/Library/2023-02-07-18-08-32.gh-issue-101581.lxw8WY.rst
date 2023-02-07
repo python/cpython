@@ -1,0 +1,2 @@
+Adds ``defer_errors`` flag to :class:`asyncio.TaskGroup` to optionally
+prevent child tasks from being cancelled.
