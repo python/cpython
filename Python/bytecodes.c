@@ -3078,7 +3078,7 @@ dummy_func(
                 Py_DECREF(value);
                 if (result == NULL) {
                     Py_XDECREF(fmt_spec);
-                    goto error;
+                    ERROR_IF(true, error);
                 }
                 value = result;
             }
