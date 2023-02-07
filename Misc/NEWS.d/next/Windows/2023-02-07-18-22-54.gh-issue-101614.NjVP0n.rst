@@ -1,0 +1,1 @@
+Correctly handle extensions built against debug binaries that reference ``python3_d.dll``.
