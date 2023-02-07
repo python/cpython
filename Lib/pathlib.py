@@ -278,6 +278,14 @@ class PurePath(object):
         sep = cls._flavour.sep
         altsep = cls._flavour.altsep
         path = cls._flavour.join(*parts)
+        if isinstance(path, str):
+            # Force-cast str subclasses to str (issue #21127)
+            path = str(path)
+        else:
+            raise TypeError(
+                "argument should be a str object or an os.PathLike "
+                "object returning str, not %r"
+                % type(path))
         if altsep:
             path = path.replace(altsep, sep)
         drv, root, rel = cls._flavour.splitroot(path)
@@ -289,31 +297,9 @@ class PurePath(object):
         return drv, root, parsed
 
     @classmethod
-    def _parse_args(cls, args):
-        # This is useful when you don't want to create an instance, just
-        # canonicalize some constructor arguments.
-        parts = []
-        for a in args:
-            if isinstance(a, PurePath):
-                parts += a._parts
-            else:
-                a = os.fspath(a)
-                if isinstance(a, str):
-                    # Force-cast str subclasses to str (issue #21127)
-                    parts.append(str(a))
-                else:
-                    raise TypeError(
-                        "argument should be a str object or an os.PathLike "
-                        "object returning str, not %r"
-                        % type(a))
-        return cls._parse_parts(parts)
-
-    @classmethod
     def _from_parts(cls, args):
-        # We need to call _parse_args on the instance, so as to get the
-        # right flavour.
         self = object.__new__(cls)
-        drv, root, parts = self._parse_args(args)
+        drv, root, parts = self._parse_parts(args)
         self._drv = drv
         self._root = root
         self._parts = parts
@@ -572,7 +558,7 @@ class PurePath(object):
         anchored).
         """
         drv1, root1, parts1 = self._drv, self._root, self._parts
-        drv2, root2, parts2 = self._parse_args(args)
+        drv2, root2, parts2 = self._parse_parts(args)
         if root2:
             if not drv2 and drv1:
                 return self._from_parsed_parts(drv1, root2, [drv1 + root2] + parts2[1:])
@@ -664,7 +650,7 @@ class PurePath(object):
         return True
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
-# optimizations in PurePath._parse_args().
+# optimizations in PurePath.__slots__.
 os.PathLike.register(PurePath)
 
 
