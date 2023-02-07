@@ -1413,6 +1413,9 @@ class TestThreadState(unittest.TestCase):
         ret = assert_python_ok('-X', 'tracemalloc', '-c', code)
         self.assertIn(b'callback called', ret.out)
 
+    def test_gilstate_matches_current(self):
+        _testcapi.test_current_tstate_matches()
+
 
 class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))

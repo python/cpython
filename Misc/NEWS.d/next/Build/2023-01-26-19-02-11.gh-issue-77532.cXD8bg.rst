@@ -1,1 +1,0 @@
-Minor fixes to allow building with ``PlatformToolset=ClangCL`` on Windows.

@@ -1,1 +1,0 @@
-Fix a Windows :mod:`asyncio` bug with named pipes where a client doing ``os.stat()`` on the pipe would cause an error in the server that disabled serving future requests.
