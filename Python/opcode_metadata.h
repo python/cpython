@@ -469,7 +469,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case UNPACK_SEQUENCE:
             return oparg;
         case UNPACK_SEQUENCE_TWO_TUPLE:
-            return 2;
+            return oparg;
         case UNPACK_SEQUENCE_TUPLE:
             return -1;
         case UNPACK_SEQUENCE_LIST:
@@ -760,7 +760,7 @@ struct opcode_metadata {
     [STORE_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DELETE_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [UNPACK_SEQUENCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
-    [UNPACK_SEQUENCE_TWO_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
+    [UNPACK_SEQUENCE_TWO_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [UNPACK_SEQUENCE_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [UNPACK_SEQUENCE_LIST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [UNPACK_EX] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
