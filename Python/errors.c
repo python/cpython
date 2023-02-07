@@ -35,35 +35,75 @@ _PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc)
     Py_XDECREF(old_exc);
 }
 
+static PyObject*
+_PyErr_CreateException(PyObject *exception_type, PyObject *value)
+{
+    PyObject *exc;
+
+    if (value == NULL || value == Py_None) {
+        exc = _PyObject_CallNoArgs(exception_type);
+    }
+    else if (PyTuple_Check(value)) {
+        exc = PyObject_Call(exception_type, value, NULL);
+    }
+    else {
+        exc = PyObject_CallOneArg(exception_type, value);
+    }
+
+    if (exc != NULL && !PyExceptionInstance_Check(exc)) {
+        PyErr_Format(PyExc_TypeError,
+                     "calling %R should have returned an instance of "
+                     "BaseException, not %s",
+                     exception_type, Py_TYPE(exc)->tp_name);
+        Py_CLEAR(exc);
+    }
+
+    return exc;
+}
+
 void
 _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
                PyObject *traceback)
 {
-#ifdef Py_DEBUG
-    /* Check that we are being passed a normalized exception.
-     *
-     * Exceptions are normalized if all NULL,
-     * or if curexc_type = Py_TYPE(curexc_value) and
-     * curexc_traceback = curexc_value->traceback
-     * and both type and traceback are valid */
-    if (value == NULL) {
-        assert(type == NULL);
+    if (type == NULL) {
+        assert(value == NULL);
         assert(traceback == NULL);
+        _PyErr_SetRaisedException(tstate, NULL);
+        return;
+    }
+    assert(PyExceptionClass_Check(type));
+    if (value != NULL && type == (PyObject *)Py_TYPE(value)) {
+        /* Already normalized */
+        assert(((PyBaseExceptionObject *)value)->traceback != Py_None);
     }
     else {
-        assert(PyExceptionClass_Check(type));
-        assert(type == (PyObject *)Py_TYPE(value));
-        assert(((PyBaseExceptionObject *)value)->traceback != Py_None);
-        assert(traceback == ((PyBaseExceptionObject *)value)->traceback ||
-            (traceback == Py_None &&
-            ((PyBaseExceptionObject *)value)->traceback == NULL)
-        );
+        PyObject *exc = _PyErr_CreateException(type, value);
+        Py_XDECREF(value);
+        if (exc == NULL) {
+            Py_DECREF(type);
+            Py_XDECREF(traceback);
+            return;
+        }
+        value = exc;
     }
-#endif
-
+    assert(PyExceptionInstance_Check(value));
+    if (traceback != NULL && !PyTraceBack_Check(traceback)) {
+        if (traceback == Py_None) {
+            Py_DECREF(Py_None);
+            traceback = NULL;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "traceback must be a Traceback or None");
+            Py_DECREF(type);
+            Py_XDECREF(traceback);
+            return;
+        }
+    }
+    PyObject *old_traceback = ((PyBaseExceptionObject *)value)->traceback;
+    ((PyBaseExceptionObject *)value)->traceback = traceback;
+    Py_XDECREF(old_traceback);
     _PyErr_SetRaisedException(tstate, value);
-    Py_XDECREF(type);
-    Py_XDECREF(traceback);
+    Py_DECREF(type);
 }
 
 void
@@ -92,32 +132,6 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
         exc_info = exc_info->previous_item;
     }
     return exc_info;
-}
-
-static PyObject*
-_PyErr_CreateException(PyObject *exception_type, PyObject *value)
-{
-    PyObject *exc;
-
-    if (value == NULL || value == Py_None) {
-        exc = _PyObject_CallNoArgs(exception_type);
-    }
-    else if (PyTuple_Check(value)) {
-        exc = PyObject_Call(exception_type, value, NULL);
-    }
-    else {
-        exc = PyObject_CallOneArg(exception_type, value);
-    }
-
-    if (exc != NULL && !PyExceptionInstance_Check(exc)) {
-        PyErr_Format(PyExc_TypeError,
-                     "calling %R should have returned an instance of "
-                     "BaseException, not %s",
-                     exception_type, Py_TYPE(exc)->tp_name);
-        Py_CLEAR(exc);
-    }
-
-    return exc;
 }
 
 void
