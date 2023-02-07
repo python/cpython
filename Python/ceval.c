@@ -688,9 +688,6 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 }
 
 
-// GH-89279: Must be a macro to be sure it's inlined by MSVC.
-#define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
-
 #define KWNAMES_LEN() \
     (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
 
