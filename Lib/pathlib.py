@@ -275,9 +275,12 @@ class PurePath(object):
     def _parse_parts(cls, parts):
         if not parts:
             return '', '', []
+        elif len(parts) == 1:
+            path = os.fspath(parts[0])
+        else:
+            path = cls._flavour.join(*parts)
         sep = cls._flavour.sep
         altsep = cls._flavour.altsep
-        path = cls._flavour.join(*parts)
         if altsep:
             path = path.replace(altsep, sep)
         drv, root, rel = cls._flavour.splitroot(path)
