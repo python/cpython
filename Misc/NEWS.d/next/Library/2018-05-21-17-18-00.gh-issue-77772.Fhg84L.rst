@@ -1,0 +1,3 @@
+:class:`ctypes.CDLL`, :class:`ctypes.OleDLL`, :class:`ctypes.WinDLL`,
+and :class:`ctypes.PyDLL` now accept :term:`path-like objects
+<path-like object>` as their ``name`` argument. Patch by Robert Hoelzl.
