@@ -92,6 +92,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case RETURN_VALUE:
             return 1;
+        case RETURN_CONST:
+            return 0;
         case GET_AITER:
             return 1;
         case GET_ANEXT:
@@ -438,6 +440,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case RETURN_VALUE:
             return 0;
+        case RETURN_CONST:
+            return 0;
         case GET_AITER:
             return 1;
         case GET_ANEXT:
@@ -745,6 +749,7 @@ struct opcode_metadata {
     [RAISE_VARARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [INTERPRETER_EXIT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [RETURN_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [RETURN_CONST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [GET_AITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [GET_ANEXT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [GET_AWAITABLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
