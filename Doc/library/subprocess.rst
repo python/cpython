@@ -114,9 +114,10 @@ underlying :class:`Popen` interface can be used directly.
    .. versionchanged:: 3.11.2
 
       Changed Windows shell search order for ``shell=True``. The current
-      directory is now used as the last resort insead of the first candidate.
-      As a result, dropping a malicious program named ``cmd.exe`` works only
-      when no other mechanism to locate ``cmd.exe`` is available.
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 .. class:: CompletedProcess
 
@@ -490,16 +491,17 @@ functions.
    .. versionchanged:: 3.6
       *executable* parameter accepts a :term:`path-like object` on POSIX.
 
-   .. versionchanged:: 3.11.2
-
-      Changed Windows shell search order for ``shell=True``. The current
-      directory is now used as the last resort insead of the first candidate.
-      As a result, dropping a malicious program named ``cmd.exe`` works only
-      when no other mechanism to locate ``cmd.exe`` is available.
-
    .. versionchanged:: 3.8
       *executable* parameter accepts a bytes and :term:`path-like object`
       on Windows.
+
+   .. versionchanged:: 3.11.2
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
@@ -1174,9 +1176,10 @@ calls these functions.
    .. versionchanged:: 3.11.2
 
       Changed Windows shell search order for ``shell=True``. The current
-      directory is now used as the last resort insead of the first candidate.
-      As a result, dropping a malicious program named ``cmd.exe`` works only
-      when no other mechanism to locate ``cmd.exe`` is available.
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 .. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, \
                          shell=False, cwd=None, timeout=None, \
@@ -1213,9 +1216,10 @@ calls these functions.
    .. versionchanged:: 3.11.2
 
       Changed Windows shell search order for ``shell=True``. The current
-      directory is now used as the last resort insead of the first candidate.
-      As a result, dropping a malicious program named ``cmd.exe`` works only
-      when no other mechanism to locate ``cmd.exe`` is available.
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
@@ -1275,9 +1279,10 @@ calls these functions.
    .. versionchanged:: 3.11.2
 
       Changed Windows shell search order for ``shell=True``. The current
-      directory is now used as the last resort insead of the first candidate.
-      As a result, dropping a malicious program named ``cmd.exe`` works only
-      when no other mechanism to locate ``cmd.exe`` is available.
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 
 .. _subprocess-replacements:
