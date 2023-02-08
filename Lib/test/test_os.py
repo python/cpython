@@ -742,6 +742,7 @@ class StatAttributeTests(unittest.TestCase):
         )
         result = os.stat(fname)
         self.assertNotEqual(result.st_size, 0)
+        self.assertTrue(os.path.isfile(fname))
 
     @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
     def test_stat_block_device(self):
@@ -2860,6 +2861,7 @@ class Win32SymlinkTests(unittest.TestCase):
             self.assertEqual(st, os.stat(alias))
             self.assertFalse(stat.S_ISLNK(st.st_mode))
             self.assertEqual(st.st_reparse_tag, stat.IO_REPARSE_TAG_APPEXECLINK)
+            self.assertTrue(os.path.isfile(alias))
             # testing the first one we see is sufficient
             break
         else:
