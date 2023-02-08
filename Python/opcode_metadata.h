@@ -286,44 +286,44 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return 1;
-        case CALL_BOUND_METHOD_EXACT_ARGS:
-            return -1;
         case KW_NAMES:
             return 0;
         case CALL:
-            return -1;
+            return oparg + 2;
+        case CALL_BOUND_METHOD_EXACT_ARGS:
+            return oparg + 2;
         case CALL_PY_EXACT_ARGS:
-            return -1;
+            return oparg + 2;
         case CALL_PY_WITH_DEFAULTS:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_TYPE_1:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_STR_1:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_TUPLE_1:
-            return -1;
+            return oparg + 2;
         case CALL_BUILTIN_CLASS:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_BUILTIN_O:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_BUILTIN_FAST:
-            return -1;
+            return oparg + 2;
         case CALL_BUILTIN_FAST_WITH_KEYWORDS:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_LEN:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_ISINSTANCE:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_LIST_APPEND:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_METHOD_DESCRIPTOR_O:
-            return -1;
+            return oparg + 2;
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS:
-            return -1;
+            return oparg + 2;
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
-            return -1;
+            return oparg + 2;
         case CALL_FUNCTION_EX:
             return ((oparg & 1) ? 1 : 0) + 3;
         case MAKE_FUNCTION:
@@ -634,44 +634,44 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return ((oparg & 1) ? 1 : 0) + 1;
-        case CALL_BOUND_METHOD_EXACT_ARGS:
-            return -1;
         case KW_NAMES:
             return 0;
         case CALL:
-            return -1;
+            return 1;
+        case CALL_BOUND_METHOD_EXACT_ARGS:
+            return 1;
         case CALL_PY_EXACT_ARGS:
-            return -1;
+            return 1;
         case CALL_PY_WITH_DEFAULTS:
-            return -1;
+            return 1;
         case CALL_NO_KW_TYPE_1:
-            return -1;
+            return 1;
         case CALL_NO_KW_STR_1:
-            return -1;
+            return 1;
         case CALL_NO_KW_TUPLE_1:
-            return -1;
+            return 1;
         case CALL_BUILTIN_CLASS:
-            return -1;
+            return 1;
         case CALL_NO_KW_BUILTIN_O:
-            return -1;
+            return 1;
         case CALL_NO_KW_BUILTIN_FAST:
-            return -1;
+            return 1;
         case CALL_BUILTIN_FAST_WITH_KEYWORDS:
-            return -1;
+            return 1;
         case CALL_NO_KW_LEN:
-            return -1;
+            return 1;
         case CALL_NO_KW_ISINSTANCE:
-            return -1;
+            return 1;
         case CALL_NO_KW_LIST_APPEND:
-            return -1;
+            return 1;
         case CALL_NO_KW_METHOD_DESCRIPTOR_O:
-            return -1;
+            return 1;
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
-            return -1;
+            return 1;
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS:
-            return -1;
+            return 1;
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
-            return -1;
+            return 1;
         case CALL_FUNCTION_EX:
             return 1;
         case MAKE_FUNCTION:
@@ -846,25 +846,25 @@ struct opcode_metadata {
     [LOAD_ATTR_METHOD_WITH_VALUES] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_METHOD_NO_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_METHOD_LAZY_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
-    [CALL_BOUND_METHOD_EXACT_ARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [KW_NAMES] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_PY_EXACT_ARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_PY_WITH_DEFAULTS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_TYPE_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_STR_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_TUPLE_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_BUILTIN_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_BUILTIN_O] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_BUILTIN_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_BUILTIN_FAST_WITH_KEYWORDS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_LEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_ISINSTANCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_LIST_APPEND] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_METHOD_DESCRIPTOR_O] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [CALL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_BOUND_METHOD_EXACT_ARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_PY_EXACT_ARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_PY_WITH_DEFAULTS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_TYPE_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_STR_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_TUPLE_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_BUILTIN_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_BUILTIN_O] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_BUILTIN_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_BUILTIN_FAST_WITH_KEYWORDS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_LEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_ISINSTANCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_LIST_APPEND] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_METHOD_DESCRIPTOR_O] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
+    [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [CALL_FUNCTION_EX] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [MAKE_FUNCTION] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [RETURN_GENERATOR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
