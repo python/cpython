@@ -55,7 +55,7 @@ class Annotations:
             for line in fp:
                 line = line.strip()
                 if line[:1] in ("", "#"):
-                    # blank line or a comment
+                    # In case of blank line or a comment
                     continue
                 parts = line.split(":", 4)
                 if len(parts) != 5:
