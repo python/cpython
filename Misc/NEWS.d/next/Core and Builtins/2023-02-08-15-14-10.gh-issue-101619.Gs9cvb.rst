@@ -1,1 +1,1 @@
-Performance improvement of `list_repeat` for the case when `n` is equal to one
+Performance improvement of ``list_repeat`` for the case when ``n`` is equal to one
