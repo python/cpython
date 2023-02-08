@@ -899,7 +899,7 @@ class Analyzer:
                 self.out.emit(f"        case {instr.name}:")
                 self.out.emit(f"            return {effect};")
             self.out.emit("        default:")
-            self.out.emit("            Py_UNREACHABLE();")
+            self.out.emit("            return -1;")
             self.out.emit("    }")
             self.out.emit("}")
             self.out.emit("#endif")

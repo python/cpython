@@ -347,7 +347,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CACHE:
             return 0;
         default:
-            Py_UNREACHABLE();
+            return -1;
     }
 }
 #endif
@@ -697,7 +697,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case CACHE:
             return 0;
         default:
-            Py_UNREACHABLE();
+            return -1;
     }
 }
 #endif
