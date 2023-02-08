@@ -63,7 +63,8 @@ do_deepcopy_fallback(PyObject* module, PyObject* x, PyObject* memo)
     copy_module_state *state = get_copy_module_state(module);
     PyObject *args[] = {state->python_copy_module, x, memo};
 
-    return PyObject_VectorcallMethod(state->str_deepcopy_fallback, args, 3, NULL);
+    return PyObject_VectorcallMethod(state->str_deepcopy_fallback,
+                                     args, 3, NULL);
 }
 
 static PyObject*
