@@ -1074,134 +1074,21 @@ basicblock_next_instr(basicblock *b)
 static int
 stack_effect(int opcode, int oparg, int jump)
 {
+    if (0 <= opcode && opcode < 256) {
+        int popped = _PyOpcode_num_popped(opcode, oparg, jump);
+        int pushed = _PyOpcode_num_pushed(opcode, oparg, jump);
+        if (popped < 0 || pushed < 0) {
+            return PY_INVALID_STACK_EFFECT;
+        }
+        return pushed - popped;
+    }
+
+    // Pseudo ops
     switch (opcode) {
-        case NOP:
-        case EXTENDED_ARG:
-        case RESUME:
-        case CACHE:
-            return 0;
-
-        /* Stack manipulation */
-        case POP_TOP:
-            return -1;
-        case SWAP:
-            return 0;
-        case END_FOR:
-            return -2;
-
-        /* Unary operators */
-        case UNARY_NEGATIVE:
-        case UNARY_NOT:
-        case UNARY_INVERT:
-            return 0;
-
-        case SET_ADD:
-        case LIST_APPEND:
-            return -1;
-        case MAP_ADD:
-            return -2;
-
-        case BINARY_SUBSCR:
-            return -1;
-        case BINARY_SLICE:
-            return -2;
-        case STORE_SUBSCR:
-            return -3;
-        case STORE_SLICE:
-            return -4;
-        case DELETE_SUBSCR:
-            return -2;
-
-        case GET_ITER:
-            return 0;
-
-        case LOAD_BUILD_CLASS:
-            return 1;
-
-        case RETURN_VALUE:
-            return -1;
-        case RETURN_CONST:
-            return 0;
-        case SETUP_ANNOTATIONS:
-            return 0;
-        case YIELD_VALUE:
-            return 0;
         case POP_BLOCK:
-            return 0;
-        case POP_EXCEPT:
-            return -1;
-
-        case STORE_NAME:
-            return -1;
-        case DELETE_NAME:
-            return 0;
-        case UNPACK_SEQUENCE:
-            return oparg-1;
-        case UNPACK_EX:
-            return (oparg&0xFF) + (oparg>>8);
-        case FOR_ITER:
-            return 1;
-        case SEND:
-            return jump > 0 ? -1 : 0;
-        case STORE_ATTR:
-            return -2;
-        case DELETE_ATTR:
-            return -1;
-        case STORE_GLOBAL:
-            return -1;
-        case DELETE_GLOBAL:
-            return 0;
-        case LOAD_CONST:
-            return 1;
-        case LOAD_NAME:
-            return 1;
-        case BUILD_TUPLE:
-        case BUILD_LIST:
-        case BUILD_SET:
-        case BUILD_STRING:
-            return 1-oparg;
-        case BUILD_MAP:
-            return 1 - 2*oparg;
-        case BUILD_CONST_KEY_MAP:
-            return -oparg;
-        case LOAD_ATTR:
-            return (oparg & 1);
-        case COMPARE_OP:
-        case IS_OP:
-        case CONTAINS_OP:
-            return -1;
-        case CHECK_EXC_MATCH:
-            return 0;
-        case CHECK_EG_MATCH:
-            return 0;
-        case IMPORT_NAME:
-            return -1;
-        case IMPORT_FROM:
-            return 1;
-
-        /* Jumps */
-        case JUMP_FORWARD:
-        case JUMP_BACKWARD:
         case JUMP:
-        case JUMP_BACKWARD_NO_INTERRUPT:
         case JUMP_NO_INTERRUPT:
             return 0;
-
-        case JUMP_IF_TRUE_OR_POP:
-        case JUMP_IF_FALSE_OR_POP:
-            return jump ? 0 : -1;
-
-        case POP_JUMP_IF_NONE:
-        case POP_JUMP_IF_NOT_NONE:
-        case POP_JUMP_IF_FALSE:
-        case POP_JUMP_IF_TRUE:
-            return -1;
-
-        case COMPARE_AND_BRANCH:
-            return -2;
-
-        case LOAD_GLOBAL:
-            return (oparg & 1) + 1;
 
         /* Exception handling pseudo-instructions */
         case SETUP_FINALLY:
@@ -1218,109 +1105,13 @@ stack_effect(int opcode, int oparg, int jump)
              * of __(a)enter__ and push 2 values before jumping to the handler
              * if an exception be raised. */
             return jump ? 1 : 0;
-        case PREP_RERAISE_STAR:
-             return -1;
-        case RERAISE:
-            return -1;
-        case PUSH_EXC_INFO:
-            return 1;
 
-        case WITH_EXCEPT_START:
-            return 1;
-
-        case LOAD_FAST:
-        case LOAD_FAST_CHECK:
-            return 1;
-        case STORE_FAST:
-            return -1;
-        case DELETE_FAST:
-            return 0;
-
-        case RETURN_GENERATOR:
-            return 0;
-
-        case RAISE_VARARGS:
-            return -oparg;
-
-        /* Functions and calls */
-        case KW_NAMES:
-            return 0;
-        case CALL:
-            return -1-oparg;
-        case CALL_INTRINSIC_1:
-            return 0;
-        case CALL_FUNCTION_EX:
-            return -2 - ((oparg & 0x01) != 0);
-        case MAKE_FUNCTION:
-            return 0 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
-                ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
-        case BUILD_SLICE:
-            if (oparg == 3)
-                return -2;
-            else
-                return -1;
-
-        /* Closures */
-        case MAKE_CELL:
-        case COPY_FREE_VARS:
-            return 0;
-        case LOAD_CLOSURE:
-            return 1;
-        case LOAD_DEREF:
-        case LOAD_CLASSDEREF:
-            return 1;
-        case STORE_DEREF:
-            return -1;
-        case DELETE_DEREF:
-            return 0;
-
-        /* Iterators and generators */
-        case GET_AWAITABLE:
-            return 0;
-
-        case BEFORE_ASYNC_WITH:
-        case BEFORE_WITH:
-            return 1;
-        case GET_AITER:
-            return 0;
-        case GET_ANEXT:
-            return 1;
-        case GET_YIELD_FROM_ITER:
-            return 0;
-        case END_ASYNC_FOR:
-            return -2;
-        case CLEANUP_THROW:
-            return -2;
-        case FORMAT_VALUE:
-            /* If there's a fmt_spec on the stack, we go from 2->1,
-               else 1->1. */
-            return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
             return 1;
-        case LOAD_ASSERTION_ERROR:
-            return 1;
-        case LIST_EXTEND:
-        case SET_UPDATE:
-        case DICT_MERGE:
-        case DICT_UPDATE:
-            return -1;
-        case MATCH_CLASS:
-            return -2;
-        case GET_LEN:
-        case MATCH_MAPPING:
-        case MATCH_SEQUENCE:
-        case MATCH_KEYS:
-            return 1;
-        case COPY:
-        case PUSH_NULL:
-            return 1;
-        case BINARY_OP:
-            return -1;
-        case INTERPRETER_EXIT:
-            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
+
     return PY_INVALID_STACK_EFFECT; /* not reachable */
 }
 
