@@ -96,7 +96,7 @@ SHA_traverse(PyObject *ptr, visitproc visit, void *arg)
 }
 
 static void
-SHA512_dealloc(PyObject *ptr)
+SHA512_dealloc(SHAobject *ptr)
 {
     Hacl_Streaming_SHA2_free_512(ptr->state);
     PyTypeObject *tp = Py_TYPE(ptr);
@@ -316,7 +316,7 @@ _sha512_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_512(new, buf.buf, buf.len);
+        update_512(new->state, buf.buf, buf.len);
         PyBuffer_Release(&buf);
     }
 
@@ -361,7 +361,7 @@ _sha512_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_512(new, buf.buf, buf.len);
+        update_512(new->state, buf.buf, buf.len);
         PyBuffer_Release(&buf);
     }
 

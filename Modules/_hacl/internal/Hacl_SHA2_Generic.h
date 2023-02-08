@@ -35,9 +35,6 @@ extern "C" {
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-
-
-
 static const
 uint32_t
 Hacl_Impl_SHA2_Generic_h224[8U] =
