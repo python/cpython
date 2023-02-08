@@ -198,7 +198,7 @@ class Instruction:
     # Parts of the underlying instruction definition
     inst: parser.InstDef
     register: bool
-    kind: typing.Literal["inst", "op", "legacy"]  # Legacy means no (input -- output)
+    kind: typing.Literal["inst", "op"]
     name: str
     block: parser.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
@@ -838,8 +838,6 @@ class Analyzer:
         self, thing: parser.InstDef | parser.Super | parser.Macro
     ) -> tuple[AnyInstruction | None, str, str]:
         def effect_str(effects: list[StackEffect]) -> str:
-            if getattr(thing, "kind", None) == "legacy":
-                return str(-1)
             n_effect, sym_effect = list_effect_size(effects)
             if sym_effect:
                 return f"{sym_effect} + {n_effect}" if n_effect else sym_effect
@@ -966,15 +964,12 @@ class Analyzer:
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
         dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
-        if instr.kind == "legacy":
-            assert not instr.register
-        else:
-            if instr.register:
-                directions: list[str] = []
-                directions.extend("DIR_READ" for _ in instr.input_effects)
-                directions.extend("DIR_WRITE" for _ in instr.output_effects)
-                directions.extend("DIR_NONE" for _ in range(3))
-                dir_op1, dir_op2, dir_op3 = directions[:3]
+        if instr.register:
+            directions: list[str] = []
+            directions.extend("DIR_READ" for _ in instr.input_effects)
+            directions.extend("DIR_WRITE" for _ in instr.output_effects)
+            directions.extend("DIR_NONE" for _ in range(3))
+            dir_op1, dir_op2, dir_op3 = directions[:3]
         self.out.emit(
             f"    [{instr.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},"
         )
