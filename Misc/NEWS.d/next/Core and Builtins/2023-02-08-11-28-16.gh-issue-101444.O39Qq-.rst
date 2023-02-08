@@ -1,0 +1,1 @@
+In addition to bytearray, bytes-like object supporting buffer protocol could also bypass unnecessary data copies, thereby giving 3 ~ 4 times speedup.
