@@ -122,5 +122,15 @@ class Test_SJISX0213(multibytecodec_support.TestBase, unittest.TestCase):
         b"\x85G&real;\x85Q = &lang;&#4660;&rang;"
     )
 
+
+class Test_iso2022_jp_2004(unittest.TestCase):
+    def test_gh101180(self):
+        import codecs
+        crashfile_txt = b'8N=d\xcf\x844\x11\x1b\x1b\x0b\x1b\x1b\x1b\x1b\x1b\x1b\x1b\x1b_\x0b\x0b]*\xca\x8c\x01\x00\x00P\x1bK\xf1\x94\xa1\x96'
+        text = crashfile_txt.decode('utf-8')
+        # This would trigger a crash or ASAN failure per the original report.
+        codecs.encode(text, encoding='iso2022_jp_2004', errors='ignore')
+
+
 if __name__ == "__main__":
     unittest.main()
