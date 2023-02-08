@@ -109,7 +109,7 @@ def find_function(funcname, filename):
 
 def getsourcelines(obj):
     lines, lineno = inspect.findsource(obj)
-    if inspect.isframe(obj) and obj.f_globals is obj.f_locals:
+    if inspect.isframe(obj) and obj.f_code.co_name == "<module>":
         # must be a module frame: do not try to cut a block out of it
         return lines, 1
     elif inspect.ismodule(obj):
