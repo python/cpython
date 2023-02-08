@@ -1075,6 +1075,10 @@ static int
 stack_effect(int opcode, int oparg, int jump)
 {
     if (0 <= opcode && opcode < 256) {
+        if (_PyOpcode_Deopt[opcode] != opcode) {
+            // Specialized instructions are not supported.
+            return PY_INVALID_STACK_EFFECT;
+        }
         int popped, pushed;
         if (jump > 0) {
             popped = _PyOpcode_num_popped(opcode, oparg, true);
