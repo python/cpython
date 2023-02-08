@@ -111,7 +111,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
       Added the *text* parameter, as a more understandable alias of *universal_newlines*.
       Added the *capture_output* parameter.
 
-   .. versionchanged:: 3.11.2
+   .. versionchanged:: 3.9.17
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
@@ -476,7 +476,7 @@ functions.
       *executable* parameter accepts a bytes and :term:`path-like object`
       on Windows.
 
-   .. versionchanged:: 3.11.2
+   .. versionchanged:: 3.9.17
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
@@ -1142,7 +1142,7 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
-   .. versionchanged:: 3.11.2
+   .. versionchanged:: 3.9.17
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
@@ -1182,7 +1182,7 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
-   .. versionchanged:: 3.11.2
+   .. versionchanged:: 3.9.17
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
@@ -1245,7 +1245,7 @@ calls these functions.
    .. versionadded:: 3.7
       *text* was added as a more readable alias for *universal_newlines*.
 
-   .. versionchanged:: 3.11.2
+   .. versionchanged:: 3.9.17
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
