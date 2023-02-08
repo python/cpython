@@ -1487,16 +1487,10 @@ class Popen:
                 # to avoid executing unqualified "cmd.exe".
                 comspec = os.environ.get('ComSpec')
                 if not comspec:
-                    system_drive = os.environ.get('SystemDrive') or 'C:'
-                    system_root = os.environ.get('SystemRoot') or os.path.join(
-                        system_drive, 'Windows')
+                    system_root = os.environ.get('SystemRoot')
                     comspec = os.path.join(system_root, 'System32', 'cmd.exe')
                     if not os.path.isfile(comspec):
-                        # cmd.exe is missing, or the system environment
-                        # variables are broken, or they're undefined and the
-                        # system is installed into a non-standard location.
-                        # This is highly unlikely, and we cannot help here.
-                        comspec = 'cmd.exe'
+                        raise FileNotFoundError('cmd.exe not found; neither %ComSpec% nor %SystemRoot% is set')
                 if not executable and os.path.isabs(comspec):
                     executable = comspec
 
