@@ -249,6 +249,8 @@ PyTraceBack_Here(PyFrameObject *frame)
         _PyErr_ChainExceptions(exc, val, tb);
         return -1;
     }
+    assert(PyExceptionInstance_Check(val));
+    PyException_SetTraceback(val, newtb);
     PyErr_Restore(exc, val, newtb);
     Py_XDECREF(tb);
     return 0;
@@ -260,13 +262,12 @@ void _PyTraceback_Add(const char *funcname, const char *filename, int lineno)
     PyObject *globals;
     PyCodeObject *code;
     PyFrameObject *frame;
-    PyObject *exc, *val, *tb;
     PyThreadState *tstate = _PyThreadState_GET();
 
     /* Save and clear the current exception. Python functions must not be
        called with an exception set. Calling Python functions happens when
        the codec of the filesystem encoding is implemented in pure Python. */
-    _PyErr_Fetch(tstate, &exc, &val, &tb);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
 
     globals = PyDict_New();
     if (!globals)
@@ -283,13 +284,13 @@ void _PyTraceback_Add(const char *funcname, const char *filename, int lineno)
         goto error;
     frame->f_lineno = lineno;
 
-    _PyErr_Restore(tstate, exc, val, tb);
+    _PyErr_SetRaisedException(tstate, exc);
     PyTraceBack_Here(frame);
     Py_DECREF(frame);
     return;
 
 error:
-    _PyErr_ChainExceptions(exc, val, tb);
+    _PyErr_ChainExceptions1(exc);
 }
 
 static PyObject *
