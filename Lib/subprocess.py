@@ -1494,6 +1494,8 @@ class Popen:
                             raise FileNotFoundError('shell not found: neither %ComSpec% nor %SystemRoot% is set')
                     if os.path.isabs(comspec):
                         executable = comspec
+                else:
+                    comspec = executable
 
                 args = '{} /c "{}"'.format (comspec, args)
 
