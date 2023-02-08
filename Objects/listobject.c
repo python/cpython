@@ -555,7 +555,20 @@ list_repeat(PyListObject *a, Py_ssize_t n)
     if (input_size == 0 || n <= 0)
         return PyList_New(0);
     assert(n > 0);
-
+    if (n == 1){
+        PyListObject *np = (PyListObject *) list_new_prealloc(input_size);
+        if (np == NULL)
+            return NULL;
+        PyObject **src = a->ob_item;
+        PyObject **src_end = src + input_size;
+        PyObject **dest = np->ob_item;
+        while (src < src_end){
+            Py_INCREF(*src);
+            *dest++ = *src++;
+        }
+        Py_SET_SIZE(np, input_size);
+        return (PyObject *) np;
+    }
     if (input_size > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
     Py_ssize_t output_size = input_size * n;
