@@ -157,7 +157,7 @@ class RegexFlag:
     _numeric_repr_ = hex
 
 # sre exception
-ReCompileError = error = sre_compile.ReCompileError
+ReCompileError = error = _compiler.ReCompileError
 
 # --------------------------------------------------------------------
 # public interface
