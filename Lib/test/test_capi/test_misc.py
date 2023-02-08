@@ -1413,6 +1413,9 @@ class TestThreadState(unittest.TestCase):
         ret = assert_python_ok('-X', 'tracemalloc', '-c', code)
         self.assertIn(b'callback called', ret.out)
 
+    def test_gilstate_matches_current(self):
+        _testcapi.test_current_tstate_matches()
+
 
 class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
@@ -1548,6 +1551,45 @@ class Test_Pep523API(unittest.TestCase):
         def func2(x=None):
             pass
         self.do_test(func2)
+
+
+class Test_ErrSetAndRestore(unittest.TestCase):
+
+    def test_err_set_raised(self):
+        with self.assertRaises(ValueError):
+            _testcapi.err_set_raised(ValueError())
+        v = ValueError()
+        try:
+            _testcapi.err_set_raised(v)
+        except ValueError as ex:
+            self.assertIs(v, ex)
+
+    def test_err_restore(self):
+        with self.assertRaises(ValueError):
+            _testcapi.err_restore(ValueError)
+        with self.assertRaises(ValueError):
+            _testcapi.err_restore(ValueError, 1)
+        with self.assertRaises(ValueError):
+            _testcapi.err_restore(ValueError, 1, None)
+        with self.assertRaises(ValueError):
+            _testcapi.err_restore(ValueError, ValueError())
+        try:
+            _testcapi.err_restore(KeyError, "hi")
+        except KeyError as k:
+            self.assertEqual("hi", k.args[0])
+        try:
+            1/0
+        except Exception as e:
+            tb = e.__traceback__
+        with self.assertRaises(ValueError):
+            _testcapi.err_restore(ValueError, 1, tb)
+        with self.assertRaises(TypeError):
+            _testcapi.err_restore(ValueError, 1, 0)
+        try:
+            _testcapi.err_restore(ValueError, 1, tb)
+        except ValueError as v:
+            self.assertEqual(1, v.args[0])
+            self.assertIs(tb, v.__traceback__.tb_next)
 
 
 if __name__ == "__main__":

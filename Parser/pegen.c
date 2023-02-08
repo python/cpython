@@ -643,13 +643,10 @@ _PyPegen_number_token(Parser *p)
         PyThreadState *tstate = _PyThreadState_GET();
         // The only way a ValueError should happen in _this_ code is via
         // PyLong_FromString hitting a length limit.
-        if (tstate->curexc_type == PyExc_ValueError &&
-            tstate->curexc_value != NULL) {
-            PyObject *type, *value, *tb;
-            // This acts as PyErr_Clear() as we're replacing curexc.
-            PyErr_Fetch(&type, &value, &tb);
-            Py_XDECREF(tb);
-            Py_DECREF(type);
+        if (tstate->current_exception != NULL &&
+            Py_TYPE(tstate->current_exception) == (PyTypeObject *)PyExc_ValueError
+        ) {
+            PyObject *exc = PyErr_GetRaisedException();
             /* Intentionally omitting columns to avoid a wall of 1000s of '^'s
              * on the error message. Nobody is going to overlook their huge
              * numeric literal once given the line. */
@@ -659,8 +656,8 @@ _PyPegen_number_token(Parser *p)
                 t->end_lineno, -1 /* end_col_offset */,
                 "%S - Consider hexadecimal for huge integer literals "
                 "to avoid decimal conversion limits.",
-                value);
-            Py_DECREF(value);
+                exc);
+            Py_DECREF(exc);
         }
         return NULL;
     }

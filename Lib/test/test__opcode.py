@@ -20,8 +20,8 @@ class OpcodeTests(unittest.TestCase):
         # All defined opcodes
         has_arg = dis.hasarg
         for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
-            if code >= 237:
-                # Opcodes 237 and up are internal instrumentation instructions
+            if code >= 230:
+                # Opcodes 230 and up are internal for instrumentation
                 continue
             with self.subTest(opname=name):
                 if code not in has_arg:
@@ -54,8 +54,8 @@ class OpcodeTests(unittest.TestCase):
         has_exc = dis.hasexc
         has_jump = dis.hasjabs + dis.hasjrel
         for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
-            if code >= 237:
-                # Opcodes 237 and up are internal instrumentation instructions
+            if code >= 230:
+                # Opcodes 230 and up are internal for instrumentation
                 continue
             with self.subTest(opname=name):
                 if code not in has_arg:

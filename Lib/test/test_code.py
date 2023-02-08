@@ -342,14 +342,14 @@ class CodeTest(unittest.TestCase):
         def foo():
             pass
 
-        # assert that opcode 238 is invalid
-        self.assertEqual(opname[235], '<235>')
+        # assert that opcode 229 is invalid
+        self.assertEqual(opname[229], '<229>')
 
-        # change first opcode to 0xeb (=235)
+        # change first opcode to 0xeb (=229)
         foo.__code__ = foo.__code__.replace(
-            co_code=b'\xeb' + foo.__code__.co_code[1:])
+            co_code=b'\xe5' + foo.__code__.co_code[1:])
 
-        msg = f"unknown opcode 235"
+        msg = f"unknown opcode 229"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
@@ -723,6 +723,7 @@ class CodeLocationTest(unittest.TestCase):
             pass
         PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
         f.__code__ = f.__code__.replace(
+            co_stacksize=1,
             co_firstlineno=42,
             co_code=bytes(
                 [

@@ -33,6 +33,9 @@ hascompare = []
 hasfree = []
 hasexc = []
 
+
+ENABLE_SPECIALIZATION = True
+
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
 
@@ -161,6 +164,8 @@ def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
+def_op('RETURN_CONST', 121)
+hasconst.append(121)
 def_op('BINARY_OP', 122)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number, no null check
@@ -222,8 +227,10 @@ def_op('CALL_INTRINSIC_1', 173)
 
 # Instrumented instructions
 
-def_op('INSTRUMENTED_FOR_ITER', 237)
-def_op('INSTRUMENTED_INSTRUCTION', 238)
+def_op('INSTRUMENTED_POP_JUMP_IF_NONE', 235)
+def_op('INSTRUMENTED_POP_JUMP_IF_NOT_NONE', 236)
+def_op('INSTRUMENTED_RETURN_CONST', 237)
+def_op('INSTRUMENTED_FOR_ITER', 238)
 def_op('INSTRUMENTED_COMPARE_AND_BRANCH', 239)
 def_op('INSTRUMENTED_RESUME', 240)
 def_op('INSTRUMENTED_CALL', 241)
@@ -236,11 +243,10 @@ def_op('INSTRUMENTED_JUMP_IF_FALSE_OR_POP', 247)
 def_op('INSTRUMENTED_JUMP_IF_TRUE_OR_POP', 249)
 def_op('INSTRUMENTED_POP_JUMP_IF_FALSE', 250)
 def_op('INSTRUMENTED_POP_JUMP_IF_TRUE', 251)
-def_op('INSTRUMENTED_POP_JUMP_IF_NONE', 252)
-def_op('INSTRUMENTED_POP_JUMP_IF_NOT_NONE', 253)
-def_op('INSTRUMENTED_LINE', 254)
 
-# 255 is reserved.
+def_op('INSTRUMENTED_INSTRUCTION', 253)
+def_op('INSTRUMENTED_LINE', 254)
+# 255 will be MARKER
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
