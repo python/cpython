@@ -739,10 +739,9 @@ teedataobject_newinternal(itertools_state *state, PyObject *it)
 }
 
 static PyObject *
-teedataobject_jumplink(teedataobject *tdo)
+teedataobject_jumplink(itertools_state *state, teedataobject *tdo)
 {
     if (tdo->nextlink == NULL) {
-        itertools_state *state = get_module_state_by_cls(Py_TYPE(tdo));
         tdo->nextlink = teedataobject_newinternal(state, tdo->it);
     }
     return Py_XNewRef(tdo->nextlink);
@@ -931,7 +930,7 @@ tee_next(teeobject *to)
     PyObject *value, *link;
 
     if (to->index >= LINKCELLS) {
-        link = teedataobject_jumplink(to->dataobj);
+        link = teedataobject_jumplink(to->state, to->dataobj);
         if (link == NULL)
             return NULL;
         Py_SETREF(to->dataobj, (teedataobject *)link);
