@@ -54,8 +54,8 @@ class Annotations:
         with open(refcount_filename, 'r') as fp:
             for line in fp:
                 line = line.strip()
-                if line[:1] in ("", "#"):
-                    # blank lines and comments
+                if line[0] in ("", "#"):
+                    # blank line or a comment
                     continue
                 parts = line.split(":", 4)
                 if len(parts) != 5:
@@ -81,7 +81,7 @@ class Annotations:
         self.stable_abi_data = {}
         with open(stable_abi_file, 'r') as fp:
             for record in csv.DictReader(fp):
-                role = record['role']
+                #role = record['role']
                 name = record['name']
                 self.stable_abi_data[name] = record
 
