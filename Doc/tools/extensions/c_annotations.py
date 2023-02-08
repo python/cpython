@@ -54,7 +54,7 @@ class Annotations:
         with open(refcount_filename, 'r') as fp:
             for line in fp:
                 line = line.strip()
-                if line[0] in ("", "#"):
+                if line[:1] in ("", "#"):
                     # blank line or a comment
                     continue
                 parts = line.split(":", 4)
