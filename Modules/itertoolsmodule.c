@@ -718,6 +718,7 @@ typedef struct {
     teedataobject *dataobj;
     int index;                  /* 0 <= index <= LINKCELLS */
     PyObject *weakreflist;
+    itertools_state *state;
 } teeobject;
 
 static PyObject *
@@ -995,6 +996,7 @@ tee_fromiterable(itertools_state *state, PyObject *iterable)
     to->dataobj = (teedataobject *)dataobj;
     to->index = 0;
     to->weakreflist = NULL;
+    to->state = state;
     PyObject_GC_Track(to);
 done:
     Py_DECREF(it);
@@ -1051,8 +1053,7 @@ tee_setstate(teeobject *to, PyObject *state)
         PyErr_SetString(PyExc_TypeError, "state is not a tuple");
         return NULL;
     }
-    itertools_state *mod_st = get_module_state_by_cls(Py_TYPE(to));
-    PyTypeObject *tdo_type = mod_st->teedataobject_type;
+    PyTypeObject *tdo_type = to->state->teedataobject_type;
     if (!PyArg_ParseTuple(state, "O!i", tdo_type, &tdo, &index)) {
         return NULL;
     }
