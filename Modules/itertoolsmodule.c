@@ -1648,10 +1648,10 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     isliceobject *lz;
 
     itertools_state *st = find_state_by_type(type);
-    if ((type == st->islice_type || type->tp_init == st->islice_type->tp_init)
-        && !_PyArg_NoKeywords("islice", kwds)) {
+    PyTypeObject *islice_type = st->islice_type;
+    if ((type == islice_type || type->tp_init == islice_type->tp_init) &&
+        !_PyArg_NoKeywords("islice", kwds))
         return NULL;
-    }
 
     if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
         return NULL;
