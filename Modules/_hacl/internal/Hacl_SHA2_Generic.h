@@ -31,7 +31,7 @@ extern "C" {
 #endif
 
 #include <string.h>
-#include "krml/FStar_UInt_8_16_32_64.h"
+#include "krml/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
