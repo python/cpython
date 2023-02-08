@@ -3342,9 +3342,11 @@
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int is_meth = method != NULL;
-            int total_args = oparg + is_meth;
+            int total_args = oparg;
             if (is_meth) {
                 callable = method;
+                args--;
+                total_args++;
             }
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
@@ -3356,7 +3358,7 @@
                 PyCFunction_GET_FUNCTION(callable);
             res = cfunc(
                 PyCFunction_GET_SELF(callable),
-                args - is_meth,
+                args,
                 total_args - KWNAMES_LEN(),
                 kwnames
             );
@@ -3365,7 +3367,7 @@
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i - is_meth]);
+                Py_DECREF(args[i]);
             }
             Py_DECREF(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
