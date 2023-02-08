@@ -741,9 +741,8 @@ teedataobject_newinternal(itertools_state *state, PyObject *it)
 static PyObject *
 teedataobject_jumplink(itertools_state *state, teedataobject *tdo)
 {
-    if (tdo->nextlink == NULL) {
+    if (tdo->nextlink == NULL)
         tdo->nextlink = teedataobject_newinternal(state, tdo->it);
-    }
     return Py_XNewRef(tdo->nextlink);
 }
 
