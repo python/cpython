@@ -2374,56 +2374,58 @@ dummy_func(
             CALL_NO_KW_METHOD_DESCRIPTOR_FAST,
         };
 
-        // Stack is either
-        // [NULL, function, arg1, arg2, ...]
+        // On entry, the stack is either
+        //   [NULL, callable, arg1, arg2, ...]
         // or
-        // [method, self, arg1, arg2, ...]
+        //   [method, self, arg1, arg2, ...]
         // (Some args may be keywords, see KW_NAMES, which sets 'kwnames'.)
-        // It will be replaced with [result].
-        inst(CALL, (unused/1, unused/2, unused/1, thing1, thing2, unused[oparg] -- unused)) {
+        // On exit, the stack is [result].
+        // When calling Python, inline the call using DISPATCH_INLINED().
+        inst(CALL, (unused/1, unused/2, unused/1, method, callable, args[oparg] -- res)) {
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                total_args++;
+            }
             #if ENABLE_SPECIALIZATION
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                int is_meth = thing1 != NULL;
-                int nargs = oparg + is_meth;
-                PyObject *callable = PEEK(nargs + 1);
                 next_instr--;
-                _Py_Specialize_Call(callable, next_instr, nargs, kwnames);
+                _Py_Specialize_Call(callable, next_instr, total_args, kwnames);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(CALL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            int total_args, is_meth;
-            is_meth = thing1 != NULL;
-            PyObject *function = thing2;
-            if (!is_meth && Py_TYPE(function) == &PyMethod_Type) {
-                PyObject *self = ((PyMethodObject *)function)->im_self;
-                PEEK(oparg+1) = thing2 = Py_NewRef(self);
-                PyObject *meth = ((PyMethodObject *)function)->im_func;
-                PEEK(oparg+2) = thing1 = Py_NewRef(meth);
-                Py_DECREF(function);
-                is_meth = 1;
+            if (!is_meth && Py_TYPE(callable) == &PyMethod_Type) {
+                is_meth = 1;  // For consistenct; it's dead, though
+                args--;
+                total_args++;
+                PyObject *self = ((PyMethodObject *)callable)->im_self;
+                args[0] = Py_NewRef(self);
+                method = ((PyMethodObject *)callable)->im_func;
+                args[-1] = Py_NewRef(method);
+                Py_DECREF(callable);
+                callable = method;
             }
-            total_args = oparg + is_meth;
-            function = is_meth ? thing1 : thing2;
             int positional_args = total_args - KWNAMES_LEN();
             // Check if the call can be inlined or not
-            if (Py_TYPE(function) == &PyFunction_Type &&
+            if (Py_TYPE(callable) == &PyFunction_Type &&
                 tstate->interp->eval_frame == NULL &&
-                ((PyFunctionObject *)function)->vectorcall == _PyFunction_Vectorcall)
+                ((PyFunctionObject *)callable)->vectorcall == _PyFunction_Vectorcall)
             {
-                int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
-                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(function));
-                // Manipulate stack directly since we leave using DISPATCH_INLINED().
-                STACK_SHRINK(total_args);
+                int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable))->co_flags;
+                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)function, locals,
-                    stack_pointer, positional_args, kwnames
+                    tstate, (PyFunctionObject *)callable, locals,
+                    args, positional_args, kwnames
                 );
                 kwnames = NULL;
-                STACK_SHRINK(2 - is_meth);
+                // Manipulate stack directly since we leave using DISPATCH_INLINED().
+                STACK_SHRINK(oparg + 2);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
@@ -2433,35 +2435,25 @@ dummy_func(
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-            PyObject *res;
             if (cframe.use_tracing) {
                 res = trace_call_function(
-                    tstate, function, stack_pointer - total_args,
+                    tstate, callable, args,
                     positional_args, kwnames);
             }
             else {
                 res = PyObject_Vectorcall(
-                    function, stack_pointer - total_args,
+                    callable, args,
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                     kwnames);
             }
             kwnames = NULL;
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(function);
-            // Manipulate stack directly since we leave using DISPATCH().
-            /* Clear the stack */
-            STACK_SHRINK(total_args);
+            Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(stack_pointer[i]);
+                Py_DECREF(args[i]);
             }
-            STACK_SHRINK(2 - is_meth);
-            PUSH(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
-            DISPATCH();  // Prevents generator emitting the epologue.
         }
 
         // Start out with [NULL, bound_method, arg1, arg2, ...]

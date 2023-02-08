@@ -2985,51 +2985,54 @@
         TARGET(CALL) {
             PREDICTED(CALL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 4, "incorrect cache size");
-            PyObject *thing2 = PEEK(1 + oparg);
-            PyObject *thing1 = PEEK(2 + oparg);
+            PyObject **args = &PEEK(oparg);
+            PyObject *callable = PEEK(1 + oparg);
+            PyObject *method = PEEK(2 + oparg);
+            PyObject *res;
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                total_args++;
+            }
             #if ENABLE_SPECIALIZATION
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                int is_meth = thing1 != NULL;
-                int nargs = oparg + is_meth;
-                PyObject *callable = PEEK(nargs + 1);
                 next_instr--;
-                _Py_Specialize_Call(callable, next_instr, nargs, kwnames);
+                _Py_Specialize_Call(callable, next_instr, total_args, kwnames);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(CALL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            int total_args, is_meth;
-            is_meth = thing1 != NULL;
-            PyObject *function = thing2;
-            if (!is_meth && Py_TYPE(function) == &PyMethod_Type) {
-                PyObject *self = ((PyMethodObject *)function)->im_self;
-                PEEK(oparg+1) = thing2 = Py_NewRef(self);
-                PyObject *meth = ((PyMethodObject *)function)->im_func;
-                PEEK(oparg+2) = thing1 = Py_NewRef(meth);
-                Py_DECREF(function);
-                is_meth = 1;
+            if (!is_meth && Py_TYPE(callable) == &PyMethod_Type) {
+                is_meth = 1;  // For consistenct; it's dead, though
+                args--;
+                total_args++;
+                PyObject *self = ((PyMethodObject *)callable)->im_self;
+                args[0] = Py_NewRef(self);
+                method = ((PyMethodObject *)callable)->im_func;
+                args[-1] = Py_NewRef(method);
+                Py_DECREF(callable);
+                callable = method;
             }
-            total_args = oparg + is_meth;
-            function = is_meth ? thing1 : thing2;
             int positional_args = total_args - KWNAMES_LEN();
             // Check if the call can be inlined or not
-            if (Py_TYPE(function) == &PyFunction_Type &&
+            if (Py_TYPE(callable) == &PyFunction_Type &&
                 tstate->interp->eval_frame == NULL &&
-                ((PyFunctionObject *)function)->vectorcall == _PyFunction_Vectorcall)
+                ((PyFunctionObject *)callable)->vectorcall == _PyFunction_Vectorcall)
             {
-                int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
-                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(function));
-                // Manipulate stack directly since we leave using DISPATCH_INLINED().
-                STACK_SHRINK(total_args);
+                int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable))->co_flags;
+                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)function, locals,
-                    stack_pointer, positional_args, kwnames
+                    tstate, (PyFunctionObject *)callable, locals,
+                    args, positional_args, kwnames
                 );
                 kwnames = NULL;
-                STACK_SHRINK(2 - is_meth);
+                // Manipulate stack directly since we leave using DISPATCH_INLINED().
+                STACK_SHRINK(oparg + 2);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
@@ -3039,35 +3042,30 @@
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-            PyObject *res;
             if (cframe.use_tracing) {
                 res = trace_call_function(
-                    tstate, function, stack_pointer - total_args,
+                    tstate, callable, args,
                     positional_args, kwnames);
             }
             else {
                 res = PyObject_Vectorcall(
-                    function, stack_pointer - total_args,
+                    callable, args,
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                     kwnames);
             }
             kwnames = NULL;
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(function);
-            // Manipulate stack directly since we leave using DISPATCH().
-            /* Clear the stack */
-            STACK_SHRINK(total_args);
+            Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(stack_pointer[i]);
+                Py_DECREF(args[i]);
             }
-            STACK_SHRINK(2 - is_meth);
-            PUSH(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            POKE(1, res);
+            JUMPBY(4);
             CHECK_EVAL_BREAKER();
-            DISPATCH();  // Prevents generator emitting the epologue.
+            DISPATCH();
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
