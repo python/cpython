@@ -2708,15 +2708,17 @@ dummy_func(
             assert(kwnames == NULL);
             /* len(o) */
             int is_meth = method != NULL;
-            int total_args = oparg + is_meth;
-            DEOPT_IF(total_args != 1, CALL);
+            int total_args = oparg;
             if (is_meth) {
                 callable = method;
+                args--;
+                total_args++;
             }
+            DEOPT_IF(total_args != 1, CALL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[-is_meth];
+            PyObject *arg = args[0];
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
                 goto error;
