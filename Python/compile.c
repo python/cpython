@@ -1075,12 +1075,35 @@ static int
 stack_effect(int opcode, int oparg, int jump)
 {
     if (0 <= opcode && opcode < 256) {
-        int popped = _PyOpcode_num_popped(opcode, oparg, jump);
-        int pushed = _PyOpcode_num_pushed(opcode, oparg, jump);
+        int popped, pushed;
+        if (jump > 0) {
+            popped = _PyOpcode_num_popped(opcode, oparg, true);
+            pushed = _PyOpcode_num_pushed(opcode, oparg, true);
+        }
+        else {
+            popped = _PyOpcode_num_popped(opcode, oparg, false);
+            pushed = _PyOpcode_num_pushed(opcode, oparg, false);
+        }
         if (popped < 0 || pushed < 0) {
             return PY_INVALID_STACK_EFFECT;
         }
-        return pushed - popped;
+        if (jump >= 0) {
+            return pushed - popped;
+        }
+        if (jump < 0) {
+            // Compute max(pushed - popped, alt_pushed - alt_popped)
+            int alt_popped = _PyOpcode_num_popped(opcode, oparg, true);
+            int alt_pushed = _PyOpcode_num_pushed(opcode, oparg, true);
+            if (alt_popped < 0 || alt_pushed < 0) {
+                return PY_INVALID_STACK_EFFECT;
+            }
+            int diff = pushed - popped;
+            int alt_diff = alt_pushed - alt_popped;
+            if (alt_diff > diff) {
+                return alt_diff;
+            }
+            return diff;
+        }
     }
 
     // Pseudo ops
