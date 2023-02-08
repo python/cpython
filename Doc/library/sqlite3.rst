@@ -1950,7 +1950,7 @@ question marks (qmark style) or named placeholders (named style).
 For the qmark style, *parameters* must be a
 :term:`sequence` whose length must match the number of placeholders,
 or a :exc:`ProgrammingError` is raised.
-For the named style, *parameters* should be
+For the named style, *parameters* must be
 an instance of a :class:`dict` (or a subclass),
 which must contain keys for all named parameters;
 any extra items are ignored.
@@ -1979,6 +1979,12 @@ Here's an example of both styles:
    :hide:
 
    [('C', 1972)]
+
+.. deprecated-removed:: 3.12 3.14
+
+   If named placeholders are used and *parameters* is a sequence,
+   :exc:`DeprecationWarning` is raised.
+   Starting with Python 3.14, :exc:`ProgrammingError` will be raised.
 
 .. note::
 
