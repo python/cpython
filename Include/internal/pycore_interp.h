@@ -250,7 +250,7 @@ PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 static inline PyObject*
 _PyInterpreterState_FreelistAlloc(PyInterpreterState *interp, Py_ssize_t size) {
-    int index = SIZE_TO_FREELIST_INDEX(size);
+    Py_ssize_t index = SIZE_TO_FREELIST_INDEX(size);
     assert(index >= 0 && index < INTERP_NUM_FREELISTS);
     return _PyFreeList_Alloc(&interp->freelists[index]);
 }
@@ -258,7 +258,7 @@ _PyInterpreterState_FreelistAlloc(PyInterpreterState *interp, Py_ssize_t size) {
 static inline void
 _PyInterpreterState_FreelistFree(PyInterpreterState * interp, PyObject *op, Py_ssize_t size) {
     /* todo: assert the size is correct? */
-    int index = SIZE_TO_FREELIST_INDEX(size);
+    Py_ssize_t index = SIZE_TO_FREELIST_INDEX(size);
     assert(index >= 0 && index < INTERP_NUM_FREELISTS);
     _PyFreeList_Free(&interp->freelists[index], op);
 }
