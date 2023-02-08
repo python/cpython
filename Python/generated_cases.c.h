@@ -3703,16 +3703,12 @@
         }
 
         TARGET(FORMAT_VALUE) {
-            /* Handles f-string value formatting. */
+            PyObject *fmt_spec = ((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? PEEK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)) : NULL;
+            PyObject *value = PEEK(1 + (((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0));
             PyObject *result;
-            PyObject *fmt_spec;
-            PyObject *value;
+            /* Handles f-string value formatting. */
             PyObject *(*conv_fn)(PyObject *);
             int which_conversion = oparg & FVC_MASK;
-            int have_fmt_spec = (oparg & FVS_MASK) == FVS_HAVE_SPEC;
-
-            fmt_spec = have_fmt_spec ? POP() : NULL;
-            value = POP();
 
             /* See if any conversion is specified. */
             switch (which_conversion) {
@@ -3735,7 +3731,7 @@
                 Py_DECREF(value);
                 if (result == NULL) {
                     Py_XDECREF(fmt_spec);
-                    goto error;
+                    if (true) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
                 }
                 value = result;
             }
@@ -3753,12 +3749,10 @@
                 result = PyObject_Format(value, fmt_spec);
                 Py_DECREF(value);
                 Py_XDECREF(fmt_spec);
-                if (result == NULL) {
-                    goto error;
-                }
+                if (result == NULL) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
             }
-
-            PUSH(result);
+            STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0));
+            POKE(1, result);
             DISPATCH();
         }
 
