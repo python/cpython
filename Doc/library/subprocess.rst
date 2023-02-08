@@ -115,7 +115,7 @@ underlying :class:`Popen` interface can be used directly.
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
-      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
       malicious program named ``cmd.exe`` into a current directory no
       longer works.
 
@@ -499,7 +499,7 @@ functions.
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
-      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
       malicious program named ``cmd.exe`` into a current directory no
       longer works.
 
@@ -1177,7 +1177,7 @@ calls these functions.
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
-      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
       malicious program named ``cmd.exe`` into a current directory no
       longer works.
 
@@ -1217,7 +1217,7 @@ calls these functions.
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
-      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
       malicious program named ``cmd.exe`` into a current directory no
       longer works.
 
@@ -1280,7 +1280,7 @@ calls these functions.
 
       Changed Windows shell search order for ``shell=True``. The current
       directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
-      `%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
       malicious program named ``cmd.exe`` into a current directory no
       longer works.
 
