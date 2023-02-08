@@ -888,8 +888,11 @@ class Analyzer:
         def write_function(
             direction: str, data: list[tuple[AnyInstruction, str]]
         ) -> None:
-            self.out.emit("\n#ifndef NDEBUG")
-            self.out.emit("static int")
+            self.out.emit("")
+            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit(f"extern int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump);")
+            self.out.emit("#else")
+            self.out.emit("int")
             self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg, bool jump) {{")
             self.out.emit("    switch(opcode) {")
             for instr, effect in data:
@@ -903,6 +906,7 @@ class Analyzer:
 
         write_function("popped", popped_data)
         write_function("pushed", pushed_data)
+        self.out.emit("")
 
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
@@ -934,7 +938,7 @@ class Analyzer:
 
             self.write_stack_effect_functions()
 
-            # Write variable definition
+            # Write type definitions
             self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
             self.out.emit("struct opcode_metadata {")
@@ -944,7 +948,14 @@ class Analyzer:
                 self.out.emit("enum Direction dir_op3;")
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
-            self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
+            self.out.emit("};")
+            self.out.emit("")
+
+            # Write metadata array declaration
+            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];")
+            self.out.emit("#else")
+            self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
             for thing in self.everything:
@@ -961,6 +972,7 @@ class Analyzer:
 
             # Write end of array
             self.out.emit("};")
+            self.out.emit("#endif")
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
