@@ -67,7 +67,8 @@ do_deepcopy_fallback(PyObject* module, PyObject* x, PyObject* memo)
 }
 
 static PyObject*
-deepcopy_list(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
+deepcopy_list(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x,
+              Py_hash_t hash_id_x)
 {
     assert(PyList_CheckExact(x));
     Py_ssize_t size = PyList_GET_SIZE(x);
@@ -137,8 +138,7 @@ dict_iter_next(struct dict_iter* di, PyObject** key, PyObject** val)
 {
     int ret = PyDict_Next(di->d, &di->pos, key, val);
     if (((PyDictObject*)di->d)->ma_version_tag != di->tag) {
-        PyErr_SetString(PyExc_RuntimeError,
-            "dict mutated during iteration");
+        PyErr_SetString(PyExc_RuntimeError, "dict mutated during iteration");
         return -1;
     }
     return ret;
@@ -184,8 +184,10 @@ deepcopy_dict(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x,
         ret = PyDict_SetItem(y, key, val);
         Py_DECREF(key);
         Py_DECREF(val);
-        if (ret < 0)
-            break; /* Shouldn't happen - y is presized */
+        if (ret < 0) {
+            /* Shouldn't happen - y is presized */
+            break;
+        }
     }
     /*
      * We're only ok if the iteration ended with ret == 0; otherwise we've
@@ -272,7 +274,6 @@ static PyTypeObject* const atomic_type[] = {
     &PyEllipsis_Type, /* type(Ellipsis) */
     &_PyNotImplemented_Type, /* type(NotImplemented) */
 };
-#define N_ATOMIC_TYPES Py_ARRAY_LENGTH(atomic_type)
 
 typedef PyObject* (deepcopy_dispatcher_handler)(PyObject *module, PyObject* x,
                     PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x);
@@ -287,9 +288,9 @@ static const struct deepcopy_dispatcher deepcopy_dispatch[] = {
     {&PyDict_Type, deepcopy_dict},
     {&PyTuple_Type, deepcopy_tuple},
 };
-#define N_DISPATCHERS Py_ARRAY_LENGTH(deepcopy_dispatch)
 
-static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
+static PyObject*
+do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
 {
     unsigned i;
     PyObject* y, * id_x;
@@ -305,7 +306,7 @@ static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
      * array would have to be quite a lot larger before a smarter data
      * structure is worthwhile.
      */
-    for (i = 0; i < N_ATOMIC_TYPES; ++i) {
+    for (i = 0; i < Py_ARRAY_LENGTH(atomic_type); ++i) {
         if (type_x == atomic_type[i]) {
             return Py_NewRef(x);
         }
@@ -326,7 +327,7 @@ static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
      * Hold on to id_x and its hash a little longer - the dispatch handlers
      * will all need it.
      */
-    for (i = 0; i < N_DISPATCHERS; ++i) {
+    for (i = 0; i < Py_ARRAY_LENGTH(deepcopy_dispatch); ++i) {
         dd = &deepcopy_dispatch[i];
         if (type_x != dd->type) {
             continue;
@@ -395,7 +396,8 @@ _copy_deepcopy_impl(PyObject *module, PyObject *x, PyObject *memo)
 }
 
 static PyMethodDef copy_functions[] = {
-    _COPY_DEEPCOPY_METHODDEF
+    {"deepcopy", _PyCFunction_CAST(_copy_deepcopy),
+        METH_FASTCALL, _copy_deepcopy__doc__},
     {NULL, NULL}
 };
 
