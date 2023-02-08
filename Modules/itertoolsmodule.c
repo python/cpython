@@ -2013,12 +2013,11 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *source;
 
-    itertools_state *st = find_state_by_type(type);
-    if ((type == st->chain_type || type->tp_init == st->chain_type->tp_init)
-        && !_PyArg_NoKeywords("chain", kwds))
-    {
+    itertools_state *state = find_state_by_type(type);
+    PyTypeObject *chain_type = state->chain_type;
+    if ((type == chain_type || type->tp_init == chain_type->tp_init) &&
+        !_PyArg_NoKeywords("chain", kwds))
         return NULL;
-    }
 
     source = PyObject_GetIter(args);
     if (source == NULL)
