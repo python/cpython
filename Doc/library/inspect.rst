@@ -573,7 +573,9 @@ Retrieving source code
    object.  The source code is returned as a list of the lines corresponding to the
    object and the line number indicates where in the original source file the first
    line of code was found.  An :exc:`OSError` is raised if the source code cannot
-   be retrieved.
+   be retrieved.  This
+   will fail with a :exc:`TypeError` if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -585,7 +587,9 @@ Retrieving source code
    Return the text of the source code for an object. The argument may be a module,
    class, method, function, traceback, frame, or code object.  The source code is
    returned as a single string.  An :exc:`OSError` is raised if the source code
-   cannot be retrieved.
+   cannot be retrieved.  This
+   will fail with a :exc:`TypeError` if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
