@@ -1,0 +1,13 @@
+Add new C-API functions for saving and restoring the current exception:
+``PyErr_GetRaisedException`` and ``PyErr_SetRaisedException``.
+These functions take and return a single exception rather than
+the triple of  ``PyErr_Fetch`` and ``PyErr_Restore``.
+This is less error prone and a bit more efficient.
+
+The three arguments forms of saving and restoring the
+current exception: ``PyErr_Fetch`` and ``PyErr_Restore``
+are deprecated.
+
+Also add ``PyException_GetArgs`` and ``PyException_SetArgs``
+as convenience functions to help dealing with
+exceptions in the C API.

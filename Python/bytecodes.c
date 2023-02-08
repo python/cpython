@@ -804,9 +804,7 @@ dummy_func(
                 DECREF_INPUTS();
             }
             else {
-                PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
-                PyObject *exc_traceback = PyException_GetTraceback(exc_value);
-                _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
+                _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 goto exception_unwind;
             }
         }
