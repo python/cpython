@@ -479,7 +479,7 @@ APIs:
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
 
 Pending Removal in Python 3.14
-==============================
+------------------------------
 
 * Deprecated the following :mod:`importlib.abc` classes, scheduled for removal in
   Python 3.14:
