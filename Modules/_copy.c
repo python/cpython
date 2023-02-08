@@ -244,8 +244,7 @@ deepcopy_tuple(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x,
         Py_SETREF(y, x);
     }
     /* Did we do a copy of the same tuple deeper down? */
-    else if ((z = _PyDict_GetItem_KnownHash(memo, id_x, hash_id_x)) != NULL)
-    {
+    else if ((z = _PyDict_GetItem_KnownHash(memo, id_x, hash_id_x)) != NULL) {
         Py_INCREF(z);
         Py_SETREF(y, z);
     }
