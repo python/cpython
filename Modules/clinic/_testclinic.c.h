@@ -2611,6 +2611,106 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(vararg_with_other_name__doc__,
+"vararg_with_other_name($module, /, *strange_name_vararg)\n"
+"--\n"
+"\n");
+
+#define VARARG_WITH_OTHER_NAME_METHODDEF    \
+    {"vararg_with_other_name", _PyCFunction_CAST(vararg_with_other_name), METH_FASTCALL, vararg_with_other_name__doc__},
+
+static PyObject *
+vararg_with_other_name_impl(PyObject *module, Py_ssize_t varargssize,
+                            PyObject *const *strange_name_vararg);
+
+static PyObject *
+vararg_with_other_name(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t varargssize = nargs;
+    PyObject *const *strange_name_vararg;
+
+    if (!_PyArg_CheckPositional("vararg_with_other_name", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    strange_name_vararg = args + 0;
+    return_value = vararg_with_other_name_impl(module, varargssize, strange_name_vararg);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(vararg_with_default_with_other_name__doc__,
+"vararg_with_default_with_other_name($module, /, a, *args, b=False)\n"
+"--\n"
+"\n");
+
+#define VARARG_WITH_DEFAULT_WITH_OTHER_NAME_METHODDEF    \
+    {"vararg_with_default_with_other_name", _PyCFunction_CAST(vararg_with_default_with_other_name), METH_FASTCALL|METH_KEYWORDS, vararg_with_default_with_other_name__doc__},
+
+static PyObject *
+vararg_with_default_with_other_name_impl(PyObject *module, PyObject *other_a,
+                                         Py_ssize_t varargssize,
+                                         PyObject *const *other_args,
+                                         int other_b);
+
+static PyObject *
+vararg_with_default_with_other_name(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "vararg_with_default_with_other_name",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *const *fastargs;
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
+    PyObject *other_a;
+    PyObject *const *other_args;
+    int other_b = 0;
+
+    fastargs = _PyArg_UnpackKeywordsWithVarargKwonly(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    other_a = args[0];
+    other_args = args + 1;
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    other_b = PyObject_IsTrue(fastargs[0]);
+    if (other_b < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = vararg_with_default_with_other_name_impl(module, other_a, varargssize, other_args, other_b);
+
+exit:
+    return return_value;
+}
+
 static PyObject *
 _testclinic_TestClassVarargOnly_impl(PyTypeObject *type,
                                      Py_ssize_t varargssize,
@@ -2959,4 +3059,4 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c000f8420ea57228 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bba2892730e7f50a input=a9049054013a1b77]*/

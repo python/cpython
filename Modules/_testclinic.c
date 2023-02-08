@@ -1091,6 +1091,55 @@ vararg_with_only_defaults_impl(PyObject *module, Py_ssize_t varargssize,
 }
 
 
+/*[clinic input]
+vararg_with_other_name
+
+    *strange_name_vararg: object
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_other_name_impl(PyObject *module, Py_ssize_t varargssize,
+                            PyObject *const *strange_name_vararg)
+/*[clinic end generated code: output=73a50a717838e561 input=db56857a45dfa50e]*/
+{
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, strange_name_vararg);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(1, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
+}
+
+
+/*[clinic input]
+vararg_with_default_with_other_name
+
+    a as other_a: object
+    *args as other_args: object
+    b as other_b: bool = False
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_default_with_other_name_impl(PyObject *module, PyObject *other_a,
+                                         Py_ssize_t varargssize,
+                                         PyObject *const *other_args,
+                                         int other_b)
+/*[clinic end generated code: output=a7ac0fa0c132a04f input=b895540d71cd74f9]*/
+{
+    PyObject *vararg_tuple = pack_varargs_to_tuple(varargssize, other_args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *obj_b = other_b ? Py_True : Py_False;
+    PyObject *result = pack_arguments_newref(3, other_a, vararg_tuple, obj_b);
+    Py_DECREF(vararg_tuple);
+    return result;
+}
+
+
 
 static PyTypeObject TestClass_Type = {
         PyVarObject_HEAD_INIT(NULL, 0)
@@ -1313,6 +1362,8 @@ static PyMethodDef tester_methods[] = {
     VARARG_METHODDEF
     VARARG_WITH_DEFAULT_METHODDEF
     VARARG_WITH_ONLY_DEFAULTS_METHODDEF
+    VARARG_WITH_OTHER_NAME_METHODDEF
+    VARARG_WITH_DEFAULT_WITH_OTHER_NAME_METHODDEF
     {"class_new_vararg_only",
      _PyCFunction_CAST(_testclinic_TestClassVarargOnly),
      METH_VARARGS | METH_KEYWORDS,

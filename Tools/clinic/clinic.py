@@ -968,10 +968,9 @@ class CLanguage(Language):
                 if p.is_vararg():
                     if not new_or_init:
                         parser_code.append(normalize_snippet("""
-                            %s = %s + %d;
+                            %s = args + %d;
                             """ % (
                             p.converter.parser_name,
-                            p.name,
                             vararg
                         ), indent=4))
                     else:
