@@ -1234,6 +1234,8 @@ class ClinicFunctionalTest(unittest.TestCase):
     def test_posonly_vararg(self):
         with self.assertRaises(TypeError):
             ac_tester.posonly_vararg()
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_vararg(1, invalid_kw=2)
         self.assertEqual(ac_tester.posonly_vararg(1, 2), (1, 2, ()))
         self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
         self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
@@ -1242,24 +1244,28 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.vararg_and_posonly()
         with self.assertRaises(TypeError):
-            ac_tester.vararg_and_posonly(1, b=2)
+            ac_tester.vararg_and_posonly(1, invalid_kw=2)
         self.assertEqual(ac_tester.vararg_and_posonly(1, 2, 3, 4), (1, (2, 3, 4)))
 
     def test_vararg(self):
         with self.assertRaises(TypeError):
             ac_tester.vararg()
         with self.assertRaises(TypeError):
-            ac_tester.vararg(1, b=2)
+            ac_tester.vararg(1, invalid_kw=2)
         self.assertEqual(ac_tester.vararg(1, 2, 3, 4), (1, (2, 3, 4)))
 
     def test_vararg_with_default(self):
         with self.assertRaises(TypeError):
             ac_tester.vararg_with_default()
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_with_default(1, invalid_kw=1)
         self.assertEqual(ac_tester.vararg_with_default(1, b=False), (1, (), False))
         self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4), (1, (2, 3, 4), False))
         self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4, b=True), (1, (2, 3, 4), True))
 
     def test_vararg_with_only_defaults(self):
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_with_only_defaults(invalid_kw=1)
         self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))
         self.assertEqual(ac_tester.vararg_with_only_defaults(b=2), ((), 2))
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, b=2), ((1, ), 2))
@@ -1267,17 +1273,24 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
 
     def test_vararg_with_other_name(self):
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_with_other_name(invalid_kw=2)
         self.assertEqual(ac_tester.vararg_with_other_name(), ((), ))
         self.assertEqual(ac_tester.vararg_with_other_name(1, 2, 3, 4), ((1, 2, 3, 4), ))
 
     def test_vararg_with_default_with_other_name(self):
         with self.assertRaises(TypeError):
             ac_tester.vararg_with_default_with_other_name()
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_with_default_with_other_name(1, invalid_kw=2)
         self.assertEqual(ac_tester.vararg_with_default_with_other_name(1, b=False), (1, (), False))
         self.assertEqual(ac_tester.vararg_with_default_with_other_name(1, 2, 3, 4), (1, (2, 3, 4), False))
         self.assertEqual(ac_tester.vararg_with_default_with_other_name(1, 2, 3, 4, b=True), (1, (2, 3, 4), True))
 
     def test_class_new_vararg_only(self):
+        # TODO: Here a TypeError should be raised
+        # with self.assertRaises(TypeError):
+        #     ac_tester.class_new_vararg_only(invalid_kw=1)
         self.assertEqual(ac_tester.class_new_vararg_only(), ((), ))
         self.assertEqual(ac_tester.class_new_vararg_only(1, 2, 3, 4), ((1, 2, 3, 4), ))
 
@@ -1285,12 +1298,14 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.class_new_vararg()
         with self.assertRaises(TypeError):
-            ac_tester.class_new_vararg(1, b=2)
+            ac_tester.class_new_vararg(1, invalid_kw=2)
         self.assertEqual(ac_tester.class_new_vararg(1, 2, 3, 4), (1, (2, 3, 4)))
 
     def test_class_new_vararg_with_default(self):
         with self.assertRaises(TypeError):
             ac_tester.class_new_vararg_with_default()
+        with self.assertRaises(TypeError):
+            ac_tester.class_new_vararg_with_default(1, invalid_kw=2)
         self.assertEqual(ac_tester.class_new_vararg_with_default(1, b=2), (1, (), 2))
         self.assertEqual(ac_tester.class_new_vararg_with_default(1, 2, 3, 4), (1, (2, 3, 4), None))
         self.assertEqual(ac_tester.class_new_vararg_with_default(1, 2, 3, 4, b=5), (1, (2, 3, 4), 5))
