@@ -30,9 +30,9 @@ static int
 memo_keepalive(PyObject* x, PyObject* memo)
 {
     PyObject *memoid = object_id(memo);
-    if (memoid == NULL)
+    if (memoid == NULL) {
         return -1;
-
+    }
     /* try: memo[id(memo)].append(x) */
     PyObject *list = PyDict_GetItem(memo, memoid);
     if (list != NULL) {
@@ -82,8 +82,9 @@ deepcopy_list(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py_
      * getting/setting in the loop below.
      */
     PyObject *y = PyList_GetSlice(x, 0, size);
-    if (y == NULL)
+    if (y == NULL) {
         return NULL;
+    }
     assert(PyList_CheckExact(y));
 
     if (_PyDict_SetItem_KnownHash(memo, id_x, y, hash_id_x) < 0) {
@@ -144,7 +145,8 @@ dict_iter_next(struct dict_iter* di, PyObject** key, PyObject** val)
 }
 
 static PyObject*
-deepcopy_dict(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
+deepcopy_dict(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x,
+              Py_hash_t hash_id_x)
 {
     PyObject* y, * key, * val;
     Py_ssize_t size;
@@ -155,9 +157,9 @@ deepcopy_dict(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py_
     size = PyDict_Size(x);
 
     y = _PyDict_NewPresized(size);
-    if (y == NULL)
+    if (y == NULL) {
         return NULL;
-
+    }
     if (_PyDict_SetItem_KnownHash(memo, id_x, y, hash_id_x) < 0) {
         Py_DECREF(y);
         return NULL;
@@ -198,7 +200,8 @@ deepcopy_dict(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py_
 }
 
 static PyObject*
-deepcopy_tuple(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x)
+deepcopy_tuple(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x,
+               Py_hash_t hash_id_x)
 {
     PyObject* y, * z;
     int all_identical = 1; /* are all members their own deepcopy? */
@@ -207,11 +210,10 @@ deepcopy_tuple(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py
     Py_ssize_t size = PyTuple_GET_SIZE(x);
 
     y = PyTuple_New(size);
-    if (y == NULL)
+    if (y == NULL) {
         return NULL;
-
-    /*
-     * We cannot add y to the memo just yet, since Python code would then be
+    }
+    /* We cannot add y to the memo just yet, since Python code would then be
      * able to observe a tuple with values changing. We do, however, have an
      * advantage over the Python implementation in that we can actually build
      * the tuple directly instead of using an intermediate list object.
@@ -223,8 +225,9 @@ deepcopy_tuple(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x, Py
             Py_DECREF(y);
             return NULL;
         }
-        if (copy != elem)
+        if (copy != elem) {
             all_identical = 0;
+        }
         PyTuple_SET_ITEM(y, i, copy);
     }
 
@@ -272,7 +275,7 @@ static PyTypeObject* const atomic_type[] = {
 #define N_ATOMIC_TYPES Py_ARRAY_LENGTH(atomic_type)
 
 typedef PyObject* (deepcopy_dispatcher_handler)(PyObject *module, PyObject* x,
-                        PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x);
+                    PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x);
 
 struct deepcopy_dispatcher {
     PyTypeObject* type;
@@ -325,13 +328,14 @@ static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
      */
     for (i = 0; i < N_DISPATCHERS; ++i) {
         dd = &deepcopy_dispatch[i];
-        if (type_x != dd->type)
+        if (type_x != dd->type) {
             continue;
-
+        }
         y = dd->handler(module, x, memo, id_x, hash_id_x);
         Py_DECREF(id_x);
-        if (y == NULL)
+        if (y == NULL) {
             return NULL;
+        }
         if (x != y && memo_keepalive(x, memo) < 0) {
             Py_DECREF(y);
             return NULL;
@@ -372,8 +376,9 @@ _copy_deepcopy_impl(PyObject *module, PyObject *x, PyObject *memo)
 
     if (memo == Py_None) {
         memo = PyDict_New();
-        if (memo == NULL)
+        if (memo == NULL) {
             return NULL;
+        }
     }
     else {
         if (!PyDict_CheckExact(memo)) {
@@ -412,14 +417,16 @@ copy_free(void *module)
 static int copy_module_exec(PyObject *module)
 {
     copy_module_state *state = get_copy_module_state(module);
-    state->str_deepcopy_fallback = PyUnicode_InternFromString("_deepcopy_fallback");
+    state->str_deepcopy_fallback =
+            PyUnicode_InternFromString("_deepcopy_fallback");
     if (state->str_deepcopy_fallback == NULL) {
         return -1;
     }
 
     PyObject *copymodule = PyImport_ImportModule("copy");
-    if (copymodule == NULL)
+    if (copymodule == NULL) {
         return -1;
+    }
     state->python_copy_module = copymodule;
 
     return 0;

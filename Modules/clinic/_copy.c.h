@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_gc.h"
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
@@ -25,22 +25,17 @@ _copy_deepcopy_impl(PyObject *module, PyObject *x, PyObject *memo);
 static PyObject *
 _copy_deepcopy(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyObject *return_value = NULL;
     PyObject *x;
     PyObject *memo = Py_None;
 
     if (!_PyArg_CheckPositional("deepcopy", nargs, 1, 2)) {
-        goto exit;
+        return NULL;
     }
     x = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
+    if (nargs == 2) {
+        memo = args[1];
     }
-    memo = args[1];
-skip_optional:
-    return_value = _copy_deepcopy_impl(module, x, memo);
+    return _copy_deepcopy_impl(module, x, memo);
 
-exit:
-    return return_value;
 }
 /*[clinic end generated code: output=ab88e7f79337ebab input=a9049054013a1b77]*/
