@@ -295,6 +295,30 @@ _startsWithArgument(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 }
 
 
+// Unlike regular startsWith, this function requires that the following
+// character is either NULL (that is, the entire string matches) or is one of
+// the characters in 'separators'.
+bool
+_startsWithSeparated(const wchar_t *x, int xLen, const wchar_t *y, int yLen, const wchar_t *separators)
+{
+    if (!x || !y) {
+        return false;
+    }
+    yLen = yLen < 0 ? (int)wcsnlen_s(y, MAXLEN) : yLen;
+    xLen = xLen < 0 ? (int)wcsnlen_s(x, MAXLEN) : xLen;
+    if (xLen < yLen) {
+        return false;
+    }
+    if (xLen == yLen) {
+        return 0 == _compare(x, xLen, y, yLen);
+    }
+    return separators &&
+        0 == _compare(x, yLen, y, yLen) &&
+        wcschr(separators, x[yLen]) != NULL;
+}
+
+
+
 /******************************************************************************\
  ***                               HELP TEXT                                ***
 \******************************************************************************/
@@ -409,6 +433,9 @@ typedef struct {
     bool listPaths;
     // if true, display help message before contiuning
     bool help;
+    // if set, limits search to registry keys with the specified Company
+    // This is intended for debugging and testing only
+    const wchar_t *limitToCompany;
     // dynamically allocated buffers to free later
     struct _SearchInfoBuffer *_buffer;
 } SearchInfo;
@@ -489,6 +516,7 @@ dumpSearchInfo(SearchInfo *search)
     DEBUG_BOOL(list);
     DEBUG_BOOL(listPaths);
     DEBUG_BOOL(help);
+    DEBUG(limitToCompany);
 #undef DEBUG_BOOL
 #undef DEBUG_2
 #undef DEBUG
@@ -1606,6 +1634,10 @@ registrySearch(const SearchInfo *search, EnvironmentInfo **result, HKEY root, in
             }
             break;
         }
+        if (search->limitToCompany && 0 != _compare(search->limitToCompany, -1, buffer, cchBuffer)) {
+            debug(L"# Skipping %s due to PYLAUNCHER_LIMIT_TO_COMPANY\n", buffer);
+            continue;
+        }
         HKEY subkey;
         if (ERROR_SUCCESS == RegOpenKeyExW(root, buffer, 0, KEY_READ, &subkey)) {
             exitCode = _registrySearchTags(search, result, subkey, sortKey, buffer, fallbackArch);
@@ -1884,6 +1916,11 @@ collectEnvironments(const SearchInfo *search, EnvironmentInfo **result)
         }
     }
 
+    if (search->limitToCompany) {
+        debug(L"# Skipping APPX search due to PYLAUNCHER_LIMIT_TO_COMPANY\n");
+        return 0;
+    }
+
     for (struct AppxSearchInfo *info = APPX_SEARCH; info->familyName; ++info) {
         exitCode = appxSearch(search, result, info->familyName, info->tag, info->sortKey);
         if (exitCode && exitCode != RC_NO_PYTHON) {
@@ -2053,12 +2090,15 @@ _companyMatches(const SearchInfo *search, const EnvironmentInfo *env)
 
 
 bool
-_tagMatches(const SearchInfo *search, const EnvironmentInfo *env)
+_tagMatches(const SearchInfo *search, const EnvironmentInfo *env, int searchTagLength)
 {
-    if (!search->tag || !search->tagLength) {
+    if (searchTagLength < 0) {
+        searchTagLength = search->tagLength;
+    }
+    if (!search->tag || !searchTagLength) {
         return true;
     }
-    return _startsWith(env->tag, -1, search->tag, search->tagLength);
+    return _startsWithSeparated(env->tag, -1, search->tag, searchTagLength, L".-");
 }
 
 
@@ -2095,7 +2135,7 @@ _selectEnvironment(const SearchInfo *search, EnvironmentInfo *env, EnvironmentIn
         }
 
         if (!search->oldStyleTag) {
-            if (_companyMatches(search, env) && _tagMatches(search, env)) {
+            if (_companyMatches(search, env) && _tagMatches(search, env, -1)) {
                 // Because of how our sort tree is set up, we will walk up the
                 // "prev" side and implicitly select the "best" best. By
                 // returning straight after a match, we skip the entire "next"
@@ -2120,7 +2160,7 @@ _selectEnvironment(const SearchInfo *search, EnvironmentInfo *env, EnvironmentIn
                 }
             }
 
-            if (_startsWith(env->tag, -1, search->tag, tagLength)) {
+            if (_tagMatches(search, env, tagLength)) {
                 if (exclude32Bit && _is32Bit(env)) {
                     debug(L"# Excluding %s/%s because it looks like 32bit\n", env->company, env->tag);
                 } else if (only32Bit && !_is32Bit(env)) {
@@ -2146,10 +2186,6 @@ selectEnvironment(const SearchInfo *search, EnvironmentInfo *root, EnvironmentIn
     if (!root) {
         *best = NULL;
         return RC_NO_PYTHON_AT_ALL;
-    }
-    if (!root->next && !root->prev) {
-        *best = root;
-        return 0;
     }
 
     EnvironmentInfo *result = NULL;
@@ -2558,6 +2594,17 @@ process(int argc, wchar_t ** argv)
         setvbuf(stderr, (char *)NULL, _IONBF, 0);
         log_fp = stderr;
         debug(L"argv0: %s\nversion: %S\n", argv[0], PY_VERSION);
+    }
+
+    DWORD len = GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", NULL, 0);
+    if (len > 1) {
+        wchar_t *limitToCompany = allocSearchInfoBuffer(&search, len);
+        search.limitToCompany = limitToCompany;
+        if (0 == GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", limitToCompany, len)) {
+            exitCode = RC_INTERNAL_ERROR;
+            winerror(0, L"Failed to read PYLAUNCHER_LIMIT_TO_COMPANY variable");
+            goto abort;
+        }
     }
 
     search.originalCmdLine = GetCommandLineW();

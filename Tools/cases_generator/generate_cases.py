@@ -180,11 +180,8 @@ class Formatter:
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
         elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
-            # NOTE: MOVE_ITEMS() does not actually exist.
-            # The only supported output array forms are:
-            # - unused[...]
-            # - X[...] where X[...] matches an input array exactly
-            self.emit(f"MOVE_ITEMS({dst.name}, {src.name}, {src.size});")
+            # The user code is responsible for writing to the output array.
+            pass
         elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
         else:
@@ -230,7 +227,8 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.block_text, self.predictions = extract_block_text(self.block)
+        self.block_text, self.check_eval_breaker, self.predictions = \
+            extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
@@ -309,10 +307,24 @@ class Instruction:
                 out.declare(ieffect, src)
 
         # Write output stack effect variable declarations
+        isize = string_effect_size(list_effect_size(self.input_effects))
         input_names = {ieffect.name for ieffect in self.input_effects}
-        for oeffect in self.output_effects:
+        for i, oeffect in enumerate(self.output_effects):
             if oeffect.name not in input_names:
-                out.declare(oeffect, None)
+                if oeffect.size:
+                    osize = string_effect_size(
+                        list_effect_size([oeff for oeff in self.output_effects[:i]])
+                    )
+                    offset = "stack_pointer"
+                    if isize != osize:
+                        if isize != "0":
+                            offset += f" - ({isize})"
+                        if osize != "0":
+                            offset += f" + {osize}"
+                    src = StackEffect(offset, "PyObject **")
+                    out.declare(oeffect, src)
+                else:
+                    out.declare(oeffect, None)
 
         # out.emit(f"JUMPBY(OPSIZE({self.inst.name}) - 1);")
 
@@ -426,10 +438,12 @@ class Component:
 
     def write_body(self, out: Formatter, cache_adjust: int) -> None:
         with out.block(""):
+            input_names = {ieffect.name for _, ieffect in self.input_mapping}
             for var, ieffect in self.input_mapping:
                 out.declare(ieffect, var)
             for _, oeffect in self.output_mapping:
-                out.declare(oeffect, None)
+                if oeffect.name not in input_names:
+                    out.declare(oeffect, None)
 
             self.instr.write_body(out, dedent=-4, cache_adjust=cache_adjust)
 
@@ -565,10 +579,10 @@ class Analyzer:
         Raises SystemExit if there is an error.
         """
         self.find_predictions()
-        self.map_families()
-        self.check_families()
         self.analyze_register_instrs()
         self.analyze_supers_and_macros()
+        self.map_families()
+        self.check_families()
 
     def find_predictions(self) -> None:
         """Find the instructions that need PREDICTED() labels."""
@@ -587,11 +601,30 @@ class Analyzer:
                     )
 
     def map_families(self) -> None:
-        """Make instruction names back to their family, if they have one."""
+        """Link instruction names back to their family, if they have one."""
         for family in self.families.values():
             for member in family.members:
                 if member_instr := self.instrs.get(member):
-                    member_instr.family = family
+                    if member_instr.family not in (family, None):
+                        self.error(
+                            f"Instruction {member} is a member of multiple families "
+                            f"({member_instr.family.name}, {family.name}).",
+                            family,
+                        )
+                    else:
+                        member_instr.family = family
+                elif member_macro := self.macro_instrs.get(member):
+                    for part in member_macro.parts:
+                        if isinstance(part, Component):
+                            if part.instr.family not in (family, None):
+                                self.error(
+                                    f"Component {part.instr.name} of macro {member} "
+                                    f"is a member of multiple families "
+                                    f"({part.instr.family.name}, {family.name}).",
+                                    family,
+                                )
+                            else:
+                                part.instr.family = family
                 else:
                     self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
@@ -608,7 +641,11 @@ class Analyzer:
         for family in self.families.values():
             if len(family.members) < 2:
                 self.error(f"Family {family.name!r} has insufficient members", family)
-            members = [member for member in family.members if member in self.instrs]
+            members = [
+                member
+                for member in family.members
+                if member in self.instrs or member in self.macro_instrs
+            ]
             if members != family.members:
                 unknown = set(family.members) - set(members)
                 self.error(
@@ -616,23 +653,41 @@ class Analyzer:
                 )
             if len(members) < 2:
                 continue
-            head = self.instrs[members[0]]
-            cache = head.cache_offset
-            input = len(head.input_effects)
-            output = len(head.output_effects)
+            expected_effects = self.effect_counts(members[0])
             for member in members[1:]:
-                instr = self.instrs[member]
-                c = instr.cache_offset
-                i = len(instr.input_effects)
-                o = len(instr.output_effects)
-                if (c, i, o) != (cache, input, output):
+                member_effects = self.effect_counts(member)
+                if member_effects != expected_effects:
                     self.error(
                         f"Family {family.name!r} has inconsistent "
-                        f"(cache, inputs, outputs) effects:\n"
-                        f"  {family.members[0]} = {(cache, input, output)}; "
-                        f"{member} = {(c, i, o)}",
+                        f"(cache, input, output) effects:\n"
+                        f"  {family.members[0]} = {expected_effects}; "
+                        f"{member} = {member_effects}",
                         family,
                     )
+
+    def effect_counts(self, name: str) -> tuple[int, int, int]:
+        if instr := self.instrs.get(name):
+            cache = instr.cache_offset
+            input = len(instr.input_effects)
+            output = len(instr.output_effects)
+        elif macro := self.macro_instrs.get(name):
+            cache, input, output = 0, 0, 0
+            for part in macro.parts:
+                if isinstance(part, Component):
+                    cache += part.instr.cache_offset
+                    # A component may pop what the previous component pushed,
+                    # so we offset the input/output counts by that.
+                    delta_i = len(part.instr.input_effects)
+                    delta_o = len(part.instr.output_effects)
+                    offset = min(delta_i, output)
+                    input += delta_i - offset
+                    output += delta_o - offset
+                else:
+                    assert isinstance(part, parser.CacheEffect), part
+                    cache += part.size
+        else:
+            assert False, f"Unknown instruction {name!r}"
+        return cache, input, output
 
     def analyze_register_instrs(self) -> None:
         for instr in self.instrs.values():
@@ -820,10 +875,12 @@ class Analyzer:
                 popped_data.append((instr, popped))
                 pushed_data.append((instr, pushed))
 
-        def write_function(direction: str, data: list[tuple[AnyInstruction, str]]) -> None:
+        def write_function(
+            direction: str, data: list[tuple[AnyInstruction, str]]
+        ) -> None:
             self.out.emit("\n#ifndef NDEBUG")
             self.out.emit("static int")
-            self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg) {{")
+            self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg, bool jump) {{")
             self.out.emit("    switch(opcode) {")
             for instr, effect in data:
                 self.out.emit(f"        case {instr.name}:")
@@ -971,6 +1028,8 @@ class Analyzer:
             if not instr.always_exits:
                 for prediction in instr.predictions:
                     self.out.emit(f"PREDICT({prediction});")
+                if instr.check_eval_breaker:
+                    self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
 
     def write_super(self, sup: SuperInstruction) -> None:
@@ -992,6 +1051,7 @@ class Analyzer:
 
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
+        last_instr: Instruction | None = None
         with self.wrap_super_or_macro(mac):
             cache_adjust = 0
             for part in mac.parts:
@@ -999,11 +1059,23 @@ class Analyzer:
                     case parser.CacheEffect(size=size):
                         cache_adjust += size
                     case Component() as comp:
+                        last_instr = comp.instr
                         comp.write_body(self.out, cache_adjust)
                         cache_adjust += comp.instr.cache_offset
 
             if cache_adjust:
                 self.out.emit(f"JUMPBY({cache_adjust});")
+
+            if (
+                last_instr
+                and (family := last_instr.family)
+                and mac.name == family.members[0]
+                and (cache_size := family.size)
+            ):
+                self.out.emit(
+                    f"static_assert({cache_size} == "
+                    f'{cache_adjust}, "incorrect cache size");'
+                )
 
     @contextlib.contextmanager
     def wrap_super_or_macro(self, up: SuperOrMacroInstruction):
@@ -1033,7 +1105,7 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
+def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
 
@@ -1053,6 +1125,12 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
     while blocklines and not blocklines[-1].strip():
         blocklines.pop()
 
+    # Separate CHECK_EVAL_BREAKER() macro from end
+    check_eval_breaker = \
+        blocklines != [] and blocklines[-1].strip() == "CHECK_EVAL_BREAKER();"
+    if check_eval_breaker:
+        del blocklines[-1]
+
     # Separate PREDICT(...) macros from end
     predictions: list[str] = []
     while blocklines and (
@@ -1061,7 +1139,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
         predictions.insert(0, m.group(1))
         blocklines.pop()
 
-    return blocklines, predictions
+    return blocklines, check_eval_breaker, predictions
 
 
 def always_exits(lines: list[str]) -> bool:
