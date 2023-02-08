@@ -1458,6 +1458,8 @@ regen-cases:
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_metadata.h $(srcdir)/Python/opcode_metadata.h.new
 
+Python/compile.o: $(srcdir)/Python/opcode_metadata.h
+
 Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
