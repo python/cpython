@@ -429,20 +429,18 @@ def test_array_input():
 
 def test_array_output():
     input = """
-        inst(OP, (-- below, values[oparg*3], above)) {
-            spam();
+        inst(OP, (unused, unused -- below, values[oparg*3], above)) {
+            spam(values, oparg);
         }
     """
     output = """
         TARGET(OP) {
             PyObject *below;
-            PyObject **values;
+            PyObject **values = stack_pointer - (2) + 1;
             PyObject *above;
-            spam();
-            STACK_GROW(2);
+            spam(values, oparg);
             STACK_GROW(oparg*3);
             POKE(1, above);
-            MOVE_ITEMS(&PEEK(1 + oparg*3), values, oparg*3);
             POKE(2 + oparg*3, below);
             DISPATCH();
         }
@@ -451,18 +449,17 @@ def test_array_output():
 
 def test_array_input_output():
     input = """
-        inst(OP, (below, values[oparg] -- values[oparg], above)) {
-            spam();
+        inst(OP, (values[oparg] -- values[oparg], above)) {
+            spam(values, oparg);
         }
     """
     output = """
         TARGET(OP) {
             PyObject **values = &PEEK(oparg);
-            PyObject *below = PEEK(1 + oparg);
             PyObject *above;
-            spam();
+            spam(values, oparg);
+            STACK_GROW(1);
             POKE(1, above);
-            MOVE_ITEMS(&PEEK(1 + oparg), values, oparg);
             DISPATCH();
         }
     """
@@ -508,20 +505,20 @@ def test_register():
 
 def test_cond_effect():
     input = """
-        inst(OP, (aa, input if (oparg & 1), cc -- xx, output if (oparg & 2), zz)) {
+        inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
             output = spam(oparg, input);
         }
     """
     output = """
         TARGET(OP) {
             PyObject *cc = PEEK(1);
-            PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) ? 1 : 0)) : NULL;
-            PyObject *aa = PEEK(2 + ((oparg & 1) ? 1 : 0));
+            PyObject *input = ((oparg & 1) == 1) ? PEEK(1 + (((oparg & 1) == 1) ? 1 : 0)) : NULL;
+            PyObject *aa = PEEK(2 + (((oparg & 1) == 1) ? 1 : 0));
             PyObject *xx;
             PyObject *output = NULL;
             PyObject *zz;
             output = spam(oparg, input);
-            STACK_SHRINK(((oparg & 1) ? 1 : 0));
+            STACK_SHRINK((((oparg & 1) == 1) ? 1 : 0));
             STACK_GROW(((oparg & 2) ? 1 : 0));
             POKE(1, zz);
             if (oparg & 2) { POKE(1 + ((oparg & 2) ? 1 : 0), output); }

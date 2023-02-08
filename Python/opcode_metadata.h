@@ -92,6 +92,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case RETURN_VALUE:
             return 1;
+        case RETURN_CONST:
+            return 0;
         case GET_AITER:
             return 1;
         case GET_ANEXT:
@@ -125,9 +127,9 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case UNPACK_SEQUENCE_TWO_TUPLE:
             return 1;
         case UNPACK_SEQUENCE_TUPLE:
-            return -1;
+            return 1;
         case UNPACK_SEQUENCE_LIST:
-            return -1;
+            return 1;
         case UNPACK_EX:
             return 1;
         case STORE_ATTR:
@@ -323,7 +325,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return oparg + 2;
         case CALL_FUNCTION_EX:
-            return -1;
+            return ((oparg & 1) ? 1 : 0) + 3;
         case MAKE_FUNCTION:
             return ((oparg & 0x01) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x08) ? 1 : 0) + 1;
         case RETURN_GENERATOR:
@@ -331,7 +333,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case BUILD_SLICE:
             return ((oparg == 3) ? 1 : 0) + 2;
         case FORMAT_VALUE:
-            return -1;
+            return (((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0) + 1;
         case COPY:
             return (oparg-1) + 1;
         case BINARY_OP:
@@ -438,6 +440,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case RETURN_VALUE:
             return 0;
+        case RETURN_CONST:
+            return 0;
         case GET_AITER:
             return 1;
         case GET_ANEXT:
@@ -469,11 +473,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case UNPACK_SEQUENCE:
             return oparg;
         case UNPACK_SEQUENCE_TWO_TUPLE:
-            return 2;
+            return oparg;
         case UNPACK_SEQUENCE_TUPLE:
-            return -1;
+            return oparg;
         case UNPACK_SEQUENCE_LIST:
-            return -1;
+            return oparg;
         case UNPACK_EX:
             return (oparg & 0xFF) + (oparg >> 8) + 1;
         case STORE_ATTR:
@@ -669,7 +673,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return 1;
         case CALL_FUNCTION_EX:
-            return -1;
+            return 1;
         case MAKE_FUNCTION:
             return 1;
         case RETURN_GENERATOR:
@@ -677,7 +681,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case BUILD_SLICE:
             return 1;
         case FORMAT_VALUE:
-            return -1;
+            return 1;
         case COPY:
             return (oparg-1) + 2;
         case BINARY_OP:
@@ -745,6 +749,7 @@ struct opcode_metadata {
     [RAISE_VARARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [INTERPRETER_EXIT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [RETURN_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [RETURN_CONST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [GET_AITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [GET_ANEXT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [GET_AWAITABLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
@@ -760,9 +765,9 @@ struct opcode_metadata {
     [STORE_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [DELETE_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [UNPACK_SEQUENCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
-    [UNPACK_SEQUENCE_TWO_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
-    [UNPACK_SEQUENCE_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [UNPACK_SEQUENCE_LIST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [UNPACK_SEQUENCE_TWO_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
+    [UNPACK_SEQUENCE_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
+    [UNPACK_SEQUENCE_LIST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [UNPACK_EX] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [STORE_ATTR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC000 },
     [DELETE_ATTR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },

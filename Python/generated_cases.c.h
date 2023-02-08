@@ -742,6 +742,23 @@
             goto resume_frame;
         }
 
+        TARGET(RETURN_CONST) {
+            PyObject *retval = GETITEM(consts, oparg);
+            Py_INCREF(retval);
+            assert(EMPTY());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            TRACE_FUNCTION_EXIT();
+            DTRACE_FUNCTION_EXIT();
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(frame != &entry_frame);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = cframe.current_frame = dying->previous;
+            _PyEvalFrameClearAndPop(tstate, dying);
+            _PyFrame_StackPush(frame, retval);
+            goto resume_frame;
+        }
+
         TARGET(GET_AITER) {
             PyObject *obj = PEEK(1);
             PyObject *iter;
@@ -1108,6 +1125,7 @@
 
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
+            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq = PEEK(1);
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
@@ -1132,48 +1150,51 @@
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
             PyObject *seq = PEEK(1);
-            PyObject *v1;
-            PyObject *v0;
+            PyObject **values = stack_pointer - (1);
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
+            assert(oparg == 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            v1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
-            v0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            values[0] = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
+            values[1] = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             Py_DECREF(seq);
-            STACK_GROW(1);
-            POKE(1, v0);
-            POKE(2, v1);
+            STACK_SHRINK(1);
+            STACK_GROW(oparg);
             JUMPBY(1);
             DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
-            PyObject *seq = TOP();
+            PyObject *seq = PEEK(1);
+            PyObject **values = stack_pointer - (1);
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            STACK_SHRINK(1);
             PyObject **items = _PyTuple_ITEMS(seq);
-            while (oparg--) {
-                PUSH(Py_NewRef(items[oparg]));
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
             }
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
+            STACK_SHRINK(1);
+            STACK_GROW(oparg);
+            JUMPBY(1);
             DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
-            PyObject *seq = TOP();
+            PyObject *seq = PEEK(1);
+            PyObject **values = stack_pointer - (1);
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            STACK_SHRINK(1);
             PyObject **items = _PyList_ITEMS(seq);
-            while (oparg--) {
-                PUSH(Py_NewRef(items[oparg]));
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
             }
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
+            STACK_SHRINK(1);
+            STACK_GROW(oparg);
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -3648,24 +3669,24 @@
 
         TARGET(CALL_FUNCTION_EX) {
             PREDICTED(CALL_FUNCTION_EX);
-            PyObject *func, *callargs, *kwargs = NULL, *result;
-            if (oparg & 0x01) {
-                kwargs = POP();
+            PyObject *kwargs = (oparg & 1) ? PEEK(((oparg & 1) ? 1 : 0)) : NULL;
+            PyObject *callargs = PEEK(1 + ((oparg & 1) ? 1 : 0));
+            PyObject *func = PEEK(2 + ((oparg & 1) ? 1 : 0));
+            PyObject *result;
+            if (oparg & 1) {
                 // DICT_MERGE is called before this opcode if there are kwargs.
                 // It converts all dict subtypes in kwargs into regular dicts.
                 assert(PyDict_CheckExact(kwargs));
             }
-            callargs = POP();
-            func = TOP();
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-                    Py_DECREF(callargs);
                     goto error;
                 }
-                Py_SETREF(callargs, PySequence_Tuple(callargs));
-                if (callargs == NULL) {
+                PyObject *tuple = PySequence_Tuple(callargs);
+                if (tuple == NULL) {
                     goto error;
                 }
+                Py_SETREF(callargs, tuple);
             }
             assert(PyTuple_CheckExact(callargs));
 
@@ -3674,12 +3695,11 @@
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
 
-            STACK_SHRINK(1);
-            assert(TOP() == NULL);
-            SET_TOP(result);
-            if (result == NULL) {
-                goto error;
-            }
+            assert(PEEK(3 + (oparg & 1)) == NULL);
+            if (result == NULL) { STACK_SHRINK(((oparg & 1) ? 1 : 0)); goto pop_3_error; }
+            STACK_SHRINK(((oparg & 1) ? 1 : 0));
+            STACK_SHRINK(2);
+            POKE(1, result);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3764,16 +3784,12 @@
         }
 
         TARGET(FORMAT_VALUE) {
-            /* Handles f-string value formatting. */
+            PyObject *fmt_spec = ((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? PEEK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)) : NULL;
+            PyObject *value = PEEK(1 + (((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0));
             PyObject *result;
-            PyObject *fmt_spec;
-            PyObject *value;
+            /* Handles f-string value formatting. */
             PyObject *(*conv_fn)(PyObject *);
             int which_conversion = oparg & FVC_MASK;
-            int have_fmt_spec = (oparg & FVS_MASK) == FVS_HAVE_SPEC;
-
-            fmt_spec = have_fmt_spec ? POP() : NULL;
-            value = POP();
 
             /* See if any conversion is specified. */
             switch (which_conversion) {
@@ -3796,7 +3812,7 @@
                 Py_DECREF(value);
                 if (result == NULL) {
                     Py_XDECREF(fmt_spec);
-                    goto error;
+                    if (true) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
                 }
                 value = result;
             }
@@ -3814,12 +3830,10 @@
                 result = PyObject_Format(value, fmt_spec);
                 Py_DECREF(value);
                 Py_XDECREF(fmt_spec);
-                if (result == NULL) {
-                    goto error;
-                }
+                if (result == NULL) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
             }
-
-            PUSH(result);
+            STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0));
+            POKE(1, result);
             DISPATCH();
         }
 
