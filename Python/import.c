@@ -2692,7 +2692,7 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
     struct _inittab newtab[2];
 
     if (_PyRuntime.imports.inittab != NULL) {
-        Py_FatalError("PyImport_AppendInittab() may be be called after Py_Initialize()");
+        Py_FatalError("PyImport_AppendInittab() may not be called after Py_Initialize()");
     }
 
     memset(newtab, '\0', sizeof newtab);
