@@ -1761,9 +1761,6 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         }
         allargs = newargs;
     }
-    for (int i = 0; i < kwcount; i++) {
-        PyTuple_SET_ITEM(kwnames, i, Py_NewRef(kws[2*i]));
-    }
     PyFrameConstructor constr = {
         .fc_globals = globals,
         .fc_builtins = builtins,
