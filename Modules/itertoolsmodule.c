@@ -3490,6 +3490,7 @@ typedef struct {
     PyObject *it;
     PyObject *binop;
     PyObject *initial;
+    itertools_state *state;
 } accumulateobject;
 
 /*[clinic input]
@@ -3528,6 +3529,7 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
     lz->total = NULL;
     lz->it = it;
     lz->initial = Py_XNewRef(initial);
+    lz->state = find_state_by_type(type);
     return (PyObject *)lz;
 }
 
@@ -3590,8 +3592,7 @@ accumulate_next(accumulateobject *lz)
 static PyObject *
 accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    PyTypeObject *tp = Py_TYPE(lz);
-    itertools_state *state = find_state_by_type(tp);
+    itertools_state *state = lz->state;
 
     if (lz->initial != Py_None) {
         PyObject *it;
