@@ -347,3 +347,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     } while (0);
 
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
+
+#define KWNAMES_LEN() \
+    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))

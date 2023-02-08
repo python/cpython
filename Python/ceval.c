@@ -688,9 +688,6 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 }
 
 
-#define KWNAMES_LEN() \
-    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
-
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
 
