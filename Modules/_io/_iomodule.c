@@ -10,6 +10,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "_iomodule.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #ifdef HAVE_SYS_TYPES_H
@@ -560,7 +561,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
 static inline _PyIO_State*
 get_io_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_PyIO_State *)state;
 }

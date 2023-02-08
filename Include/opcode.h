@@ -76,6 +76,7 @@ extern "C" {
 #define CONTAINS_OP                            118
 #define RERAISE                                119
 #define COPY                                   120
+#define RETURN_CONST                           121
 #define BINARY_OP                              122
 #define SEND                                   123
 #define LOAD_FAST                              124
@@ -179,15 +180,15 @@ extern "C" {
 #define LOAD_GLOBAL_BUILTIN                     86
 #define LOAD_GLOBAL_MODULE                      87
 #define STORE_ATTR_INSTANCE_VALUE              113
-#define STORE_ATTR_SLOT                        121
-#define STORE_ATTR_WITH_HINT                   143
-#define STORE_FAST__LOAD_FAST                  153
-#define STORE_FAST__STORE_FAST                 154
-#define STORE_SUBSCR_DICT                      158
-#define STORE_SUBSCR_LIST_INT                  159
-#define UNPACK_SEQUENCE_LIST                   160
-#define UNPACK_SEQUENCE_TUPLE                  161
-#define UNPACK_SEQUENCE_TWO_TUPLE              166
+#define STORE_ATTR_SLOT                        143
+#define STORE_ATTR_WITH_HINT                   153
+#define STORE_FAST__LOAD_FAST                  154
+#define STORE_FAST__STORE_FAST                 158
+#define STORE_SUBSCR_DICT                      159
+#define STORE_SUBSCR_LIST_INT                  160
+#define UNPACK_SEQUENCE_LIST                   161
+#define UNPACK_SEQUENCE_TUPLE                  166
+#define UNPACK_SEQUENCE_TWO_TUPLE              167
 #define DO_TRACING                             255
 // Tier 2 interpreter ops
 #define RESUME_QUICK                             5
@@ -244,18 +245,18 @@ extern "C" {
 #define LOAD_GLOBAL_BUILTIN                     86
 #define LOAD_GLOBAL_MODULE                      87
 #define STORE_ATTR_INSTANCE_VALUE              113
-#define STORE_ATTR_SLOT                        121
-#define STORE_ATTR_WITH_HINT                   143
-#define STORE_FAST__LOAD_FAST                  153
-#define STORE_FAST__STORE_FAST                 154
-#define STORE_SUBSCR_DICT                      158
-#define STORE_SUBSCR_LIST_INT                  159
-#define UNPACK_SEQUENCE_LIST                   160
-#define UNPACK_SEQUENCE_TUPLE                  161
-#define UNPACK_SEQUENCE_TWO_TUPLE              166
+#define STORE_ATTR_SLOT                        143
+#define STORE_ATTR_WITH_HINT                   153
+#define STORE_FAST__LOAD_FAST                  154
+#define STORE_FAST__STORE_FAST                 158
+#define STORE_SUBSCR_DICT                      159
+#define STORE_SUBSCR_LIST_INT                  160
+#define UNPACK_SEQUENCE_LIST                   161
+#define UNPACK_SEQUENCE_TUPLE                  166
+#define UNPACK_SEQUENCE_TWO_TUPLE              167
 #define DO_TRACING                             255
-#define BINARY_OP_ADD_INT_TYPE_CHECK           167
-#define BINARY_OP_ADD_INT_REST                 168
+#define BINARY_OP_ADD_INT_TYPE_CHECK           168
+#define BINARY_OP_ADD_INT_REST                 169
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \
@@ -265,6 +266,7 @@ extern "C" {
 
 #define HAS_CONST(op) (false\
     || ((op) == LOAD_CONST) \
+    || ((op) == RETURN_CONST) \
     || ((op) == KW_NAMES) \
     )
 

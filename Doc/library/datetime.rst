@@ -975,7 +975,7 @@ Other constructors, all class methods:
    microsecond of the result are all 0, and :attr:`.tzinfo` is ``None``.
 
 
-.. classmethod:: datetime.combine(date, time, tzinfo=self.tzinfo)
+.. classmethod:: datetime.combine(date, time, tzinfo=time.tzinfo)
 
    Return a new :class:`.datetime` object whose date components are equal to the
    given :class:`date` object's, and whose time components

@@ -120,13 +120,12 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
+PyAPI_FUNC(PyThreadState *) _PyThreadState_New(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyThreadState_Bind(PyThreadState *tstate);
 // We keep this around exclusively for stable ABI compatibility.
 PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);
-PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
-    _PyRuntimeState *runtime,
-    PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
 
 static inline void
@@ -137,18 +136,6 @@ _PyThreadState_UpdateTracingState(PyThreadState *tstate)
         (tstate->c_tracefunc != NULL || tstate->c_profilefunc != NULL);
     tstate->cframe->use_tracing = (use_tracing ? 255 : 0);
 }
-
-
-/* PyThreadState status */
-
-#define PyThreadState_UNINITIALIZED 0
-/* Has been initialized to a safe state.
-
-   In order to be effective, this must be set to 0 during or right
-   after allocation. */
-#define PyThreadState_INITIALIZED 1
-#define PyThreadState_BOUND 2
-#define PyThreadState_UNBOUND 3
 
 
 /* Other */

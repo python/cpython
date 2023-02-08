@@ -2832,12 +2832,7 @@ long_add_would_overflow(long a, long b)
 }
 
 /*
-Double and triple length extended precision floating point arithmetic
-based on:
-
-  A Floating-Point Technique for Extending the Available Precision
-  by T. J. Dekker
-  https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+Double and triple length extended precision algorithms from:
 
   Accurate Sum and Dot Product
   by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
@@ -2848,19 +2843,46 @@ based on:
 
 typedef struct{ double hi; double lo; } DoubleLength;
 
-static inline DoubleLength
-twosum(double a, double b)
+static DoubleLength
+dl_sum(double a, double b)
 {
-    // Rump Algorithm 3.1 Error-free transformation of the sum
+    /* Algorithm 3.1 Error-free transformation of the sum */
     double x = a + b;
     double z = x - a;
     double y = (a - (x - z)) + (b - z);
     return (DoubleLength) {x, y};
 }
 
-static inline DoubleLength
+#ifndef UNRELIABLE_FMA
+
+static DoubleLength
+dl_mul(double x, double y)
+{
+    /* Algorithm 3.5. Error-free transformation of a product */
+    double z = x * y;
+    double zz = fma(x, y, -z);
+    return (DoubleLength) {z, zz};
+}
+
+#else
+
+/*
+   The default implementation of dl_mul() depends on the C math library
+   having an accurate fma() function as required by § 7.12.13.1 of the
+   C99 standard.
+
+   The UNRELIABLE_FMA option is provided as a slower but accurate
+   alternative for builds where the fma() function is found wanting.
+   The speed penalty may be modest (17% slower on an Apple M1 Max),
+   so don't hesitate to enable this build option.
+
+   The algorithms are from the T. J. Dekker paper:
+   A Floating-Point Technique for Extending the Available Precision
+   https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+*/
+
+static DoubleLength
 dl_split(double x) {
-    // Rump Algorithm 3.2 Error-free splitting of a floating point number
     // Dekker (5.5) and (5.6).
     double t = x * 134217729.0;  // Veltkamp constant = 2.0 ** 27 + 1
     double hi = t - (t - x);
@@ -2868,7 +2890,7 @@ dl_split(double x) {
     return (DoubleLength) {hi, lo};
 }
 
-static inline DoubleLength
+static DoubleLength
 dl_mul(double x, double y)
 {
     // Dekker (5.12) and mul12()
@@ -2881,25 +2903,27 @@ dl_mul(double x, double y)
     return (DoubleLength) {z, zz};
 }
 
+#endif
+
 typedef struct { double hi; double lo; double tiny; } TripleLength;
 
 static const TripleLength tl_zero = {0.0, 0.0, 0.0};
 
-static inline TripleLength
-tl_fma(TripleLength total, double x, double y)
+static TripleLength
+tl_fma(double x, double y, TripleLength total)
 {
-    // Rump Algorithm 5.10 with K=3 and using SumKVert
+    /* Algorithm 5.10 with SumKVert for K=3 */
     DoubleLength pr = dl_mul(x, y);
-    DoubleLength sm = twosum(total.hi, pr.hi);
-    DoubleLength r1 = twosum(total.lo, pr.lo);
-    DoubleLength r2 = twosum(r1.hi, sm.lo);
+    DoubleLength sm = dl_sum(total.hi, pr.hi);
+    DoubleLength r1 = dl_sum(total.lo, pr.lo);
+    DoubleLength r2 = dl_sum(r1.hi, sm.lo);
     return (TripleLength) {sm.hi, r2.hi, total.tiny + r1.lo + r2.lo};
 }
 
-static inline double
+static double
 tl_to_d(TripleLength total)
 {
-    DoubleLength last = twosum(total.lo, total.hi);
+    DoubleLength last = dl_sum(total.lo, total.hi);
     return total.tiny + last.lo + last.hi;
 }
 
@@ -3066,7 +3090,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 } else {
                     goto finalize_flt_path;
                 }
-                TripleLength new_flt_total = tl_fma(flt_total, flt_p, flt_q);
+                TripleLength new_flt_total = tl_fma(flt_p, flt_q, flt_total);
                 if (isfinite(new_flt_total.hi)) {
                     flt_total = new_flt_total;
                     flt_total_in_use = true;
