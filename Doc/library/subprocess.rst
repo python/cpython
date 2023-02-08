@@ -458,7 +458,7 @@ functions.
    - :const:`0` means unbuffered (read and write are one
      system call and can return short)
    - :const:`1` means line buffered
-     (only usable if ``universal_newlines=True`` i.e., in a text mode)
+     (only usable if ``text=True`` or ``universal_newlines=True``)
    - any other positive value means use a buffer of approximately that
      size
    - negative bufsize (the default) means the system default of
@@ -849,7 +849,8 @@ Instances of the :class:`Popen` class have the following methods:
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
 
-The following attributes are also available:
+The following attributes are also set by the class for you to access.
+Reassigning them to new values is unsupported:
 
 .. attribute:: Popen.args
 
@@ -862,9 +863,9 @@ The following attributes are also available:
 
    If the *stdin* argument was :data:`PIPE`, this attribute is a writeable
    stream object as returned by :func:`open`. If the *encoding* or *errors*
-   arguments were specified or the *universal_newlines* argument was ``True``,
-   the stream is a text stream, otherwise it is a byte stream. If the *stdin*
-   argument was not :data:`PIPE`, this attribute is ``None``.
+   arguments were specified or the *text* or *universal_newlines* argument
+   was ``True``, the stream is a text stream, otherwise it is a byte stream.
+   If the *stdin* argument was not :data:`PIPE`, this attribute is ``None``.
 
 
 .. attribute:: Popen.stdout
@@ -872,9 +873,9 @@ The following attributes are also available:
    If the *stdout* argument was :data:`PIPE`, this attribute is a readable
    stream object as returned by :func:`open`. Reading from the stream provides
    output from the child process. If the *encoding* or *errors* arguments were
-   specified or the *universal_newlines* argument was ``True``, the stream is a
-   text stream, otherwise it is a byte stream. If the *stdout* argument was not
-   :data:`PIPE`, this attribute is ``None``.
+   specified or the *text* or *universal_newlines* argument was ``True``, the
+   stream is a text stream, otherwise it is a byte stream. If the *stdout*
+   argument was not :data:`PIPE`, this attribute is ``None``.
 
 
 .. attribute:: Popen.stderr
@@ -882,9 +883,9 @@ The following attributes are also available:
    If the *stderr* argument was :data:`PIPE`, this attribute is a readable
    stream object as returned by :func:`open`. Reading from the stream provides
    error output from the child process. If the *encoding* or *errors* arguments
-   were specified or the *universal_newlines* argument was ``True``, the stream
-   is a text stream, otherwise it is a byte stream. If the *stderr* argument was
-   not :data:`PIPE`, this attribute is ``None``.
+   were specified or the *text* or *universal_newlines* argument was ``True``, the
+   stream is a text stream, otherwise it is a byte stream. If the *stderr* argument
+   was not :data:`PIPE`, this attribute is ``None``.
 
 .. warning::
 

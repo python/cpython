@@ -666,7 +666,7 @@ Timeouts
             except TimeoutError:
                 pass
 
-            if cm.expired:
+            if cm.expired():
                 print("Looks like we haven't finished on time.")
 
     Timeout context managers can be safely nested.
@@ -1097,7 +1097,7 @@ Task Object
       The *limit* argument is passed to :meth:`get_stack` directly.
 
       The *file* argument is an I/O stream to which the output
-      is written; by default output is written to :data:`sys.stderr`.
+      is written; by default output is written to :data:`sys.stdout`.
 
    .. method:: get_coro()
 
