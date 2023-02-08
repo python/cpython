@@ -874,6 +874,9 @@ class CursorTests(unittest.TestCase):
                 with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
                     self.cu.execute(query, params)
                 self.assertEqual(cm.filename,  __file__)
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    self.cu.executemany(query, [params])
+                self.assertEqual(cm.filename,  __file__)
 
     def test_execute_too_many_params(self):
         category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
