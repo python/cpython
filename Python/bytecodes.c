@@ -2636,9 +2636,11 @@ dummy_func(
             /* Builtin METH_FASTCALL functions, without keywords */
             assert(kwnames == NULL);
             int is_meth = method != NULL;
-            int total_args = oparg + is_meth;
+            int total_args = oparg;
             if (is_meth) {
                 callable = method;
+                args--;
+                total_args++;
             }
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL, CALL);
@@ -2647,13 +2649,13 @@ dummy_func(
             /* res = func(self, args, nargs) */
             res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
-                args - is_meth,
+                args,
                 total_args);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i - is_meth]);
+                Py_DECREF(args[i]);
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
