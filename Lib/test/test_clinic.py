@@ -1277,7 +1277,7 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.class_new_vararg(1, b=2)
         self.assertEqual(ac_tester.class_new_vararg(1, 2, 3, 4), (1, (2, 3, 4)))
 
-    def test_vararg_with_default(self):
+    def test_class_new_vararg_with_default(self):
         with self.assertRaises(TypeError):
             ac_tester.class_new_vararg_with_default()
         self.assertEqual(ac_tester.class_new_vararg_with_default(1, b=2), (1, (), 2))
