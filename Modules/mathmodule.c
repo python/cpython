@@ -641,27 +641,8 @@ m_log2(double x)
         }
     }
 
-    if (x > 0.0) {
-#ifdef HAVE_LOG2
+    if (x > 0.0)
         return log2(x);
-#else
-        double m;
-        int e;
-        m = frexp(x, &e);
-        /* We want log2(m * 2**e) == log(m) / log(2) + e.  Care is needed when
-         * x is just greater than 1.0: in that case e is 1, log(m) is negative,
-         * and we get significant cancellation error from the addition of
-         * log(m) / log(2) to e.  The slight rewrite of the expression below
-         * avoids this problem.
-         */
-        if (x >= 1.0) {
-            return log(2.0 * m) / log(2.0) + (e - 1);
-        }
-        else {
-            return log(m) / log(2.0) + e;
-        }
-#endif
-    }
     else if (x == 0.0) {
         errno = EDOM;
         return -Py_HUGE_VAL; /* log2(0) = -inf, divide-by-zero */
