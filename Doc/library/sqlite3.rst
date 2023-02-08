@@ -1435,6 +1435,11 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
+      .. versionchanged:: 3.12
+
+         :exc:`DeprecationWarning` is raised if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and *parameters* is a sequence.
 
    .. method:: executemany(sql, parameters, /)
 
@@ -1454,6 +1459,12 @@ Cursor objects
          ]
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
+
+      .. versionchanged:: 3.12
+
+         :exc:`DeprecationWarning` is raised if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and the items in *parameters* are sequences.
 
    .. method:: executescript(sql_script, /)
 
@@ -1979,12 +1990,6 @@ Here's an example of both styles:
    :hide:
 
    [('C', 1972)]
-
-.. deprecated-removed:: 3.12 3.14
-
-   If named placeholders are used and *parameters* is a sequence,
-   :exc:`DeprecationWarning` is raised.
-   Starting with Python 3.14, :exc:`ProgrammingError` will be raised.
 
 .. note::
 
