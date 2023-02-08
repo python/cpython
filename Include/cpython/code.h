@@ -55,7 +55,9 @@ typedef struct _PyTier2BB {
 // Bump allocator for basic blocks (overallocated)
 typedef struct _PyTier2BBSpace  {
     struct _PyTier2BBSpace *next;
-    void *water_level;
+    int max_capacity;
+    // How much space has been consumed in bbs.
+    int water_level;
     _PyTier2BB bbs[1];
 } _PyTier2BBSpace;
 
