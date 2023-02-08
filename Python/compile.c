@@ -1074,7 +1074,7 @@ basicblock_next_instr(basicblock *b)
 static int
 stack_effect(int opcode, int oparg, int jump)
 {
-    if (0 <= opcode && opcode < 256) {
+    if (0 <= opcode && opcode <= MAX_REAL_OPCODE) {
         if (_PyOpcode_Deopt[opcode] != opcode) {
             // Specialized instructions are not supported.
             return PY_INVALID_STACK_EFFECT;
