@@ -2479,12 +2479,16 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
-        inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, unused/1, thing1, thing2, unused[oparg] -- unused)) {
+        inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, unused/1, method, callable, args[oparg] -- unused)) {
             assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
-            int is_meth = thing1 != NULL;
-            int argcount = oparg + is_meth;
-            PyObject *callable = is_meth ? thing1 : thing2;
+            int is_meth = method != NULL;
+            int argcount = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                argcount++;
+            }
             DEOPT_IF(!PyFunction_Check(callable), CALL);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version, CALL);
@@ -2493,12 +2497,11 @@ dummy_func(
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
-            // Manipulate stack directly since we leave using DISPATCH_INLINED().
-            STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = stack_pointer[i];
+                new_frame->localsplus[i] = args[i];
             }
-            STACK_SHRINK(2 - is_meth);
+            // Manipulate stack directly since we leave using DISPATCH_INLINED().
+            STACK_SHRINK(oparg + 2);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             DISPATCH_INLINED(new_frame);
         }
