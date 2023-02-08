@@ -1445,22 +1445,17 @@ regen-opcode-targets:
 
 .PHONY: regen-cases
 regen-cases:
-	# Regenerate Python/generated_cases.c.h from Python/bytecodes.c
+	# Regenerate Python/generated_cases.c.h
+	# and Python/opcode_metadata.h
+	# from Python/bytecodes.c
 	# using Tools/cases_generator/generate_cases.py
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
 		-i $(srcdir)/Python/bytecodes.c \
-		-o $(srcdir)/Python/generated_cases.c.h.new
+		-o $(srcdir)/Python/generated_cases.c.h.new \
+		-m $(srcdir)/Python/opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
-	# Regenerate Python/opcode_metadata.h from Python/bytecodes.c
-	# using Tools/cases_generator/generate_cases.py --metadata
-	PYTHONPATH=$(srcdir)/Tools/cases_generator \
-	$(PYTHON_FOR_REGEN) \
-	    $(srcdir)/Tools/cases_generator/generate_cases.py \
-		--metadata \
-		-i $(srcdir)/Python/bytecodes.c \
-		-o $(srcdir)/Python/opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_metadata.h $(srcdir)/Python/opcode_metadata.h.new
 
 Python/ceval.o: \
