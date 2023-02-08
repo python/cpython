@@ -210,11 +210,6 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         This also increases the task's count of cancellation requests.
         """
-        if msg is not None:
-            warnings.warn("Passing 'msg' argument to Task.cancel() "
-                          "is deprecated since Python 3.11, and "
-                          "scheduled for removal in Python 3.14.",
-                          DeprecationWarning, stacklevel=2)
         self._log_traceback = False
         if self.done():
             return False
@@ -587,7 +582,7 @@ def as_completed(fs, *, timeout=None):
     from .queues import Queue  # Import here to avoid circular import problem.
     done = Queue()
 
-    loop = events._get_event_loop()
+    loop = events.get_event_loop()
     todo = {ensure_future(f, loop=loop) for f in set(fs)}
     timeout_handle = None
 
@@ -673,7 +668,7 @@ def _ensure_future(coro_or_future, *, loop=None):
                             'is required')
 
     if loop is None:
-        loop = events._get_event_loop(stacklevel=4)
+        loop = events.get_event_loop()
     try:
         return loop.create_task(coro_or_future)
     except RuntimeError:
@@ -754,7 +749,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     gather won't cancel any other awaitables.
     """
     if not coros_or_futures:
-        loop = events._get_event_loop()
+        loop = events.get_event_loop()
         outer = loop.create_future()
         outer.set_result([])
         return outer
@@ -969,6 +964,7 @@ def _unregister_task(task):
     _all_tasks.discard(task)
 
 
+_py_current_task = current_task
 _py_register_task = _register_task
 _py_unregister_task = _unregister_task
 _py_enter_task = _enter_task
@@ -978,10 +974,12 @@ _py_leave_task = _leave_task
 try:
     from _asyncio import (_register_task, _unregister_task,
                           _enter_task, _leave_task,
-                          _all_tasks, _current_tasks)
+                          _all_tasks, _current_tasks,
+                          current_task)
 except ImportError:
     pass
 else:
+    _c_current_task = current_task
     _c_register_task = _register_task
     _c_unregister_task = _unregister_task
     _c_enter_task = _enter_task

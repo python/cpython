@@ -2,23 +2,9 @@ This directory contains a collection of executable Python scripts that are
 useful while building, extending or managing Python.
 
 2to3                      Main script for running the 2to3 conversion tool
-abitype.py                Converts a C file to use the PEP 384 type definition API
 combinerefs.py            A helper for analyzing PYTHONDUMPREFS output
-diff.py                   Print file diffs in context, unified, or ndiff formats
-eptags.py                 Create Emacs TAGS file for Python modules
-gprof2html.py             Transform gprof(1) output into useful HTML
 idle3                     Main program to start IDLE
-md5sum.py                 Print MD5 checksums of argument files
-ndiff.py                  Intelligent diff between text files (Tim Peters)
-nm2def.py                 Create a template for PC/python_nt.def (Marc Lemburg)
-parseentities.py          Utility for parsing HTML entity definitions
 parse_html5_entities.py   Utility for parsing HTML5 entity definitions
-patchcheck.py             Perform common checks and cleanup before committing
-pathfix.py                Change #!/usr/local/bin/python into something else
-ptags.py                  Create vi tags file for Python modules
 pydoc3                    Python documentation browser
-reindent.py               Change .py files to use 4-space indents
 run_tests.py              Run the test suite with more sensible default options
 stable_abi.py             Stable ABI checks and file generators.
-untabify.py               Replace tabs with spaces in argument files
-win_add2path.py           Add Python to the search path on Windows

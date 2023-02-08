@@ -1,8 +1,6 @@
 import re
-import json
 import pickle
 import unittest
-import warnings
 import importlib.metadata
 
 try:
@@ -259,14 +257,6 @@ class TestEntryPoints(unittest.TestCase):
     def test_hashable(self):
         """EntryPoints should be hashable"""
         hash(self.ep)
-
-    def test_json_dump(self):
-        """
-        json should not expect to be able to dump an EntryPoint
-        """
-        with self.assertRaises(Exception):
-            with warnings.catch_warnings(record=True):
-                json.dumps(self.ep)
 
     def test_module(self):
         assert self.ep.module == 'value'

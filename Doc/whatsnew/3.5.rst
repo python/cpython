@@ -2469,11 +2469,11 @@ Changes in the Python API
   ``opt-`` tag in ``.pyc`` file names. The
   :func:`importlib.util.cache_from_source` has gained an *optimization*
   parameter to help control the ``opt-`` tag. Because of this, the
-  *debug_override* parameter of the function is now deprecated. `.pyo` files
+  *debug_override* parameter of the function is now deprecated. ``.pyo`` files
   are also no longer supported as a file argument to the Python interpreter and
   thus serve no purpose when distributed on their own (i.e. sourceless code
   distribution). Due to the fact that the magic number for bytecode has changed
-  in Python 3.5, all old `.pyo` files from previous versions of Python are
+  in Python 3.5, all old ``.pyo`` files from previous versions of Python are
   invalid regardless of this PEP.
 
 * The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_FD_FRAMES`

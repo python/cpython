@@ -558,6 +558,11 @@ listed below.
    It is **strongly** recommended that you rely on :attr:`__spec__`
    instead instead of this attribute.
 
+   .. versionchanged:: 3.12
+      The value of ``__loader__`` is expected to be the same as
+      ``__spec__.loader``.  The use of ``__loader__`` is deprecated and slated
+      for removal in Python 3.14.
+
 .. attribute:: __package__
 
    The module's ``__package__`` attribute may be set.  Its value must
@@ -567,6 +572,9 @@ listed below.
    should be set to the empty string for top-level modules, or for
    submodules, to the parent package's name.  See :pep:`366` for further
    details.
+
+   This attribute is used instead of ``__name__`` to calculate explicit
+   relative imports for main modules, as defined in :pep:`366`.
 
    It is **strongly** recommended that you rely on :attr:`__spec__`
    instead instead of this attribute.
@@ -822,7 +830,7 @@ The path based finder iterates over every entry in the search path, and
 for each of these, looks for an appropriate :term:`path entry finder`
 (:class:`~importlib.abc.PathEntryFinder`) for the
 path entry.  Because this can be an expensive operation (e.g. there may be
-`stat()` call overheads for this search), the path based finder maintains
+``stat()`` call overheads for this search), the path based finder maintains
 a cache mapping path entries to path entry finders.  This cache is maintained
 in :data:`sys.path_importer_cache` (despite the name, this cache actually
 stores finder objects rather than being limited to :term:`importer` objects).
@@ -1023,25 +1031,6 @@ and ``__main__.__spec__`` is set accordingly, they're still considered
 *distinct* modules. This is due to the fact that blocks guarded by
 ``if __name__ == "__main__":`` checks only execute when the module is used
 to populate the ``__main__`` namespace, and not during normal import.
-
-
-Open issues
-===========
-
-XXX It would be really nice to have a diagram.
-
-XXX * (import_machinery.rst) how about a section devoted just to the
-attributes of modules and packages, perhaps expanding upon or supplanting the
-related entries in the data model reference page?
-
-XXX runpy, pkgutil, et al in the library manual should all get "See Also"
-links at the top pointing to the new import system section.
-
-XXX Add more explanation regarding the different ways in which
-``__main__`` is initialized?
-
-XXX Add more info on ``__main__`` quirks/pitfalls (i.e. copy from
-:pep:`395`).
 
 
 References

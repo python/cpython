@@ -1049,7 +1049,7 @@ code, or when embedding the Python interpreter:
    .. versionchanged:: 3.2
       This function cannot be called before :c:func:`Py_Initialize()` anymore.
 
-   .. deprecated-removed:: 3.9 3.11
+   .. deprecated:: 3.9
 
    .. index:: module: _thread
 
@@ -1063,7 +1063,7 @@ code, or when embedding the Python interpreter:
    .. versionchanged:: 3.7
       The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
 
-   .. deprecated-removed:: 3.9 3.11
+   .. deprecated:: 3.9
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
@@ -1929,11 +1929,11 @@ is not possible due to its implementation being opaque at build time.
    Free the given *key* allocated by :c:func:`PyThread_tss_alloc`, after
    first calling :c:func:`PyThread_tss_delete` to ensure any associated
    thread locals have been unassigned. This is a no-op if the *key*
-   argument is `NULL`.
+   argument is ``NULL``.
 
    .. note::
       A freed key becomes a dangling pointer. You should reset the key to
-      `NULL`.
+      ``NULL``.
 
 
 Methods

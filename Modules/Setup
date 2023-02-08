@@ -280,6 +280,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 # Testing
 
 #_xxsubinterpreters _xxsubinterpretersmodule.c
+#_xxinterpchannels _xxinterpchannelsmodule.c
 #_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 #_testbuffer _testbuffer.c
 #_testinternalcapi _testinternalcapi.c
@@ -291,6 +292,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c
+#_testsinglephase _testsinglephase.c
 
 # ---
 # Uncommenting the following line tells makesetup that all following modules

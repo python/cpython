@@ -304,8 +304,8 @@ process and user.
 
 .. function:: getenv(key, default=None)
 
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are str. Note that
+   Return the value of the environment variable *key* as a string if it exists, or
+   *default* if it doesn't. *key* is a string. Note that
    since :func:`getenv` uses :data:`os.environ`, the mapping of :func:`getenv` is
    similarly also captured on import, and the function may not reflect
    future environment changes.
@@ -319,8 +319,8 @@ process and user.
 
 .. function:: getenvb(key, default=None)
 
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are bytes. Note that
+   Return the value of the environment variable *key* as bytes if it exists, or
+   *default* if it doesn't. *key* must be bytes. Note that
    since :func:`getenvb` uses :data:`os.environb`, the mapping of :func:`getenvb` is
    similarly also captured on import, and the function may not reflect
    future environment changes.
@@ -590,6 +590,44 @@ process and user.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
 
+.. function:: setns(fd, nstype=0)
+
+   Reassociate the current thread with a Linux namespace.
+   See the :manpage:`setns(2)` and :manpage:`namespaces(7)` man pages for more
+   details.
+
+   If *fd* refers to a :file:`/proc/{pid}/ns/` link, ``setns()`` reassociates the
+   calling thread with the namespace associated with that link,
+   and *nstype* may be set to one of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`
+   to impose constraints on the operation
+   (``0`` means no constraints).
+
+   Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
+   :func:`~os.pidfd_open`. In this case, ``setns()`` reassociates the calling thread
+   into one or more of the same namespaces as the thread referred to by *fd*.
+   This is subject to any constraints imposed by *nstype*,
+   which is a bit mask combining one or more of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`,
+   e.g. ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
+   The caller's memberships in unspecified namespaces are left unchanged.
+
+   *fd* can be any object with a :meth:`~io.IOBase.fileno` method, or a raw file descriptor.
+
+   This example reassociates the thread with the ``init`` process's network namespace::
+
+      fd = os.open("/proc/1/ns/net", os.O_RDONLY)
+      os.setns(fd, os.CLONE_NEWNET)
+      os.close(fd)
+
+   .. availability:: Linux >= 3.0 with glibc >= 2.14.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      The :func:`~os.unshare` function.
+
 .. function:: setpgrp()
 
    Call the system call :c:func:`setpgrp` or ``setpgrp(0, 0)`` depending on
@@ -754,6 +792,49 @@ process and user.
 
    .. versionchanged:: 3.9
       The function is now always available and is also available on Windows.
+
+
+.. function:: unshare(flags)
+
+   Disassociate parts of the process execution context, and move them into a
+   newly created namespace.
+   See the :manpage:`unshare(2)`
+   man page for more details.
+   The *flags* argument is a bit mask, combining zero or more of the
+   :ref:`CLONE_* constants <os-unshare-clone-flags>`,
+   that specifies which parts of the execution context should be
+   unshared from their existing associations and moved to a new namespace.
+   If the *flags* argument is ``0``, no changes are made to the calling process's
+   execution context.
+
+   .. availability:: Linux >= 2.6.16.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      The :func:`~os.setns` function.
+
+.. _os-unshare-clone-flags:
+
+Flags to the :func:`unshare` function, if the implementation supports them.
+See :manpage:`unshare(2)` in the Linux manual
+for their exact effect and availability.
+
+.. data:: CLONE_FILES
+          CLONE_FS
+          CLONE_NEWCGROUP
+          CLONE_NEWIPC
+          CLONE_NEWNET
+          CLONE_NEWNS
+          CLONE_NEWPID
+          CLONE_NEWTIME
+          CLONE_NEWUSER
+          CLONE_NEWUTS
+          CLONE_SIGHAND
+          CLONE_SYSVSEM
+          CLONE_THREAD
+          CLONE_VM
 
 
 .. _os-newstreams:
@@ -2340,7 +2421,7 @@ features:
 .. function:: remove(path, *, dir_fd=None)
 
    Remove (delete) the file *path*.  If *path* is a directory, an
-   :exc:`IsADirectoryError` is raised.  Use :func:`rmdir` to remove directories.
+   :exc:`OSError` is raised.  Use :func:`rmdir` to remove directories.
    If the file does not exist, a :exc:`FileNotFoundError` is raised.
 
    This function can support :ref:`paths relative to directory descriptors
@@ -2386,6 +2467,8 @@ features:
    will fail with an :exc:`OSError` subclass in a number of cases:
 
    On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
+   The operation may fail if *src* and *dst* are on different filesystems. Use
+   :func:`shutil.move` to support moves to a different filesystem.
 
    On Unix, if *src* is a file and *dst* is a directory or vice-versa, an
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
@@ -2657,6 +2740,17 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
+   .. method:: is_junction()
+
+      Return ``True`` if this entry is a junction (even if broken);
+      return ``False`` if the entry points to a regular directory, any kind
+      of file, a symlink, or if it doesn't exist anymore.
+
+      The result is cached on the ``os.DirEntry`` object. Call
+      :func:`os.path.isjunction` to fetch up-to-date information.
+
+      .. versionadded:: 3.12
+
    .. method:: stat(*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
@@ -2679,8 +2773,8 @@ features:
    Note that there is a nice correspondence between several attributes
    and methods of ``os.DirEntry`` and of :class:`pathlib.Path`.  In
    particular, the ``name`` attribute has the same
-   meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``
-   and ``stat()`` methods.
+   meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``,
+   ``is_junction()``, and ``stat()`` methods.
 
    .. versionadded:: 3.5
 
@@ -3194,7 +3288,7 @@ features:
    system records access and modification times; see :func:`~os.stat`. The best
    way to preserve exact times is to use the *st_atime_ns* and *st_mtime_ns*
    fields from the :func:`os.stat` result object with the *ns* parameter to
-   `utime`.
+   :func:`utime`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
@@ -3222,7 +3316,8 @@ features:
    filenames)``.
 
    *dirpath* is a string, the path to the directory.  *dirnames* is a list of the
-   names of the subdirectories in *dirpath* (excluding ``'.'`` and ``'..'``).
+   names of the subdirectories in *dirpath* (including symlinks to directories,
+   and excluding ``'.'`` and ``'..'``).
    *filenames* is a list of the names of the non-directory files in *dirpath*.
    Note that the names in the lists contain no path components.  To get a full path
    (which begins with *top*) to a file or directory in *dirpath*, do
@@ -4094,7 +4189,7 @@ written in Python, such as a mail server's external command delivery program.
    library :c:data:`POSIX_SPAWN_RESETIDS` flag.
 
    If the *setsid* argument is ``True``, it will create a new session ID
-   for `posix_spawn`. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
+   for ``posix_spawn``. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
    or :c:data:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
    is raised.
 
@@ -4398,6 +4493,9 @@ written in Python, such as a mail server's external command delivery program.
    number is zero); the high bit of the low byte is set if a core file was
    produced.
 
+   If there are no children that could be waited for, :exc:`ChildProcessError`
+   is raised.
+
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
@@ -4405,75 +4503,39 @@ written in Python, such as a mail server's external command delivery program.
 
    .. seealso::
 
-      :func:`waitpid` can be used to wait for the completion of a specific
-      child process and has more options.
+      The other :func:`!wait*` functions documented below can be used to wait for the
+      completion of a specific child process and have more options.
+      :func:`waitpid` is the only one also available on Windows.
+
 
 .. function:: waitid(idtype, id, options, /)
 
-   Wait for the completion of one or more child processes.
-   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or
-   :data:`P_PIDFD` on Linux.
-   *id* specifies the pid to wait on.
-   *options* is constructed from the ORing of one or more of :data:`WEXITED`,
-   :data:`WSTOPPED` or :data:`WCONTINUED` and additionally may be ORed with
-   :data:`WNOHANG` or :data:`WNOWAIT`. The return value is an object
-   representing the data contained in the :c:type:`siginfo_t` structure, namely:
-   :attr:`si_pid`, :attr:`si_uid`, :attr:`si_signo`, :attr:`si_status`,
-   :attr:`si_code` or ``None`` if :data:`WNOHANG` is specified and there are no
-   children in a waitable state.
+   Wait for the completion of a child process.
+
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or (on Linux) :data:`P_PIDFD`.
+   The interpretation of *id* depends on it; see their individual descriptions.
+
+   *options* is an OR combination of flags.  At least one of :data:`WEXITED`,
+   :data:`WSTOPPED` or :data:`WCONTINUED` is required;
+   :data:`WNOHANG` and :data:`WNOWAIT` are additional optional flags.
+
+   The return value is an object representing the data contained in the
+   :c:type:`!siginfo_t` structure with the following attributes:
+
+   * :attr:`!si_pid` (process ID)
+   * :attr:`!si_uid` (real user ID of the child)
+   * :attr:`!si_signo` (always :data:`~signal.SIGCHLD`)
+   * :attr:`!si_status` (the exit status or signal number, depending on :attr:`!si_code`)
+   * :attr:`!si_code` (see :data:`CLD_EXITED` for possible values)
+
+   If :data:`WNOHANG` is specified and there are no matching children in the
+   requested state, ``None`` is returned.
+   Otherwise, if there are no matching children
+   that could be waited for, :exc:`ChildProcessError` is raised.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
-
-.. data:: P_PID
-          P_PGID
-          P_ALL
-
-   These are the possible values for *idtype* in :func:`waitid`. They affect
-   how *id* is interpreted.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-   .. versionadded:: 3.3
-
-.. data:: P_PIDFD
-
-   This is a Linux-specific *idtype* that indicates that *id* is a file
-   descriptor that refers to a process.
-
-   .. availability:: Linux >= 5.4
-
-   .. versionadded:: 3.9
-
-.. data:: WEXITED
-          WSTOPPED
-          WNOWAIT
-
-   Flags that can be used in *options* in :func:`waitid` that specify what
-   child signal to wait for.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-   .. versionadded:: 3.3
-
-
-.. data:: CLD_EXITED
-          CLD_KILLED
-          CLD_DUMPED
-          CLD_TRAPPED
-          CLD_STOPPED
-          CLD_CONTINUED
-
-   These are the possible values for :attr:`si_code` in the result returned by
-   :func:`waitid`.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.9
-      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitpid(pid, options, /)
@@ -4492,8 +4554,11 @@ written in Python, such as a mail server's external command delivery program.
    ``-1``, status is requested for any process in the process group ``-pid`` (the
    absolute value of *pid*).
 
-   An :exc:`OSError` is raised with the value of errno when the syscall
-   returns -1.
+   *options* is an OR combination of flags.  If it contains :data:`WNOHANG` and
+   there are no matching children in the requested state, ``(0, 0)`` is
+   returned.  Otherwise, if there are no matching children that could be waited
+   for, :exc:`ChildProcessError` is raised.  Other options that can be used are
+   :data:`WUNTRACED` and :data:`WCONTINUED`.
 
    On Windows: Wait for completion of a process given by process handle *pid*, and
    return a tuple containing *pid*, and its exit status shifted left by 8 bits
@@ -4506,7 +4571,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -4519,9 +4584,9 @@ written in Python, such as a mail server's external command delivery program.
    Similar to :func:`waitpid`, except no process id argument is given and a
    3-element tuple containing the child's process id, exit status indication,
    and resource usage information is returned.  Refer to
-   :mod:`resource`.\ :func:`~resource.getrusage` for details on resource usage
-   information.  The option argument is the same as that provided to
-   :func:`waitpid` and :func:`wait4`.
+   :func:`resource.getrusage` for details on resource usage information.  The
+   *options* argument is the same as that provided to :func:`waitpid` and
+   :func:`wait4`.
 
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
@@ -4532,15 +4597,120 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: wait4(pid, options)
 
    Similar to :func:`waitpid`, except a 3-element tuple, containing the child's
-   process id, exit status indication, and resource usage information is returned.
-   Refer to :mod:`resource`.\ :func:`~resource.getrusage` for details on
-   resource usage information.  The arguments to :func:`wait4` are the same
-   as those provided to :func:`waitpid`.
+   process id, exit status indication, and resource usage information is
+   returned.  Refer to :func:`resource.getrusage` for details on resource usage
+   information.  The arguments to :func:`wait4` are the same as those provided
+   to :func:`waitpid`.
 
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
    .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: P_PID
+          P_PGID
+          P_ALL
+          P_PIDFD
+
+   These are the possible values for *idtype* in :func:`waitid`. They affect
+   how *id* is interpreted:
+
+   * :data:`!P_PID` - wait for the child whose PID is *id*.
+   * :data:`!P_PGID` - wait for any child whose progress group ID is *id*.
+   * :data:`!P_ALL` - wait for any child; *id* is ignored.
+   * :data:`!P_PIDFD` - wait for the child identified by the file descriptor
+     *id* (a process file descriptor created with :func:`pidfd_open`).
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. note:: :data:`!P_PIDFD` is only available on Linux >= 5.4.
+
+   .. versionadded:: 3.3
+   .. versionadded:: 3.9
+      The :data:`!P_PIDFD` constant.
+
+
+.. data:: WCONTINUED
+
+   This *options* flag for :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` causes child processes to be reported if they have been
+   continued from a job control stop since they were last reported.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WEXITED
+
+   This *options* flag for :func:`waitid` causes child processes that have terminated to
+   be reported.
+
+   The other ``wait*`` functions always report children that have terminated,
+   so this option is not available for them.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+
+.. data:: WSTOPPED
+
+   This *options* flag for :func:`waitid` causes child processes that have been stopped
+   by the delivery of a signal to be reported.
+
+   This option is not available for the other ``wait*`` functions.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+
+.. data:: WUNTRACED
+
+   This *options* flag for :func:`waitpid`, :func:`wait3`, and :func:`wait4` causes
+   child processes to also be reported if they have been stopped but their
+   current state has not been reported since they were stopped.
+
+   This option is not available for :func:`waitid`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WNOHANG
+
+   This *options* flag causes :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` to return right away if no child process status is available
+   immediately.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WNOWAIT
+
+   This *options* flag causes :func:`waitid` to leave the child in a waitable state, so that
+   a later :func:`!wait*` call can be used to retrieve the child status information again.
+
+   This option is not available for the other ``wait*`` functions.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: CLD_EXITED
+          CLD_KILLED
+          CLD_DUMPED
+          CLD_TRAPPED
+          CLD_STOPPED
+          CLD_CONTINUED
+
+   These are the possible values for :attr:`!si_code` in the result returned by
+   :func:`waitid`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitstatus_to_exitcode(status)
@@ -4573,32 +4743,6 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionadded:: 3.9
-
-
-.. data:: WNOHANG
-
-   The option for :func:`waitpid` to return immediately if no child process status
-   is available immediately. The function returns ``(0, 0)`` in this case.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-
-.. data:: WCONTINUED
-
-   This option causes child processes to be reported if they have been continued
-   from a job control stop since their status was last reported.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-      Some Unix systems.
-
-
-.. data:: WUNTRACED
-
-   This option causes child processes to be reported if they have been stopped but
-   their current state has not been reported since they were stopped.
-
-   .. availability:: Unix, not Emscripten, not WASI.
 
 
 The following functions take a process status code as returned by

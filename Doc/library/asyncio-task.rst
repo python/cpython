@@ -18,6 +18,10 @@ and Tasks.
 Coroutines
 ==========
 
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
+----------------------------------------------------
+
 :term:`Coroutines <coroutine>` declared with the async/await syntax is the
 preferred way of writing asyncio applications.  For example, the following
 snippet of code prints "hello", waits 1 second,
@@ -117,7 +121,7 @@ To actually run a coroutine, asyncio provides the following mechanisms:
 
               print(f"started at {time.strftime('%X')}")
 
-          # The wait is implicit when the context manager exits.
+          # The await is implicit when the context manager exits.
 
           print(f"finished at {time.strftime('%X')}")
 
@@ -229,6 +233,10 @@ is :meth:`loop.run_in_executor`.
 
 Creating Tasks
 ==============
+
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+-----------------------------------------------
 
 .. function:: create_task(coro, *, name=None, context=None)
 
@@ -631,7 +639,7 @@ Timeouts
 
             Change the time the timeout will trigger.
 
-            If *when* is `None`, any current deadline will be removed, and the
+            If *when* is ``None``, any current deadline will be removed, and the
             context manager will wait indefinitely.
 
             If *when* is a float, it is set as the new deadline.
@@ -658,7 +666,7 @@ Timeouts
             except TimeoutError:
                 pass
 
-            if cm.expired:
+            if cm.expired():
                 print("Looks like we haven't finished on time.")
 
     Timeout context managers can be safely nested.
@@ -867,17 +875,17 @@ Running in Threads
        # blocking_io complete at 19:50:54
        # finished main at 19:50:54
 
-   Directly calling `blocking_io()` in any coroutine would block the event loop
+   Directly calling ``blocking_io()`` in any coroutine would block the event loop
    for its duration, resulting in an additional 1 second of run time. Instead,
-   by using `asyncio.to_thread()`, we can run it in a separate thread without
+   by using ``asyncio.to_thread()``, we can run it in a separate thread without
    blocking the event loop.
 
    .. note::
 
-      Due to the :term:`GIL`, `asyncio.to_thread()` can typically only be used
+      Due to the :term:`GIL`, ``asyncio.to_thread()`` can typically only be used
       to make IO-bound functions non-blocking. However, for extension modules
       that release the GIL or alternative Python implementations that don't
-      have one, `asyncio.to_thread()` can also be used for CPU-bound functions.
+      have one, ``asyncio.to_thread()`` can also be used for CPU-bound functions.
 
    .. versionadded:: 3.9
 
@@ -1089,7 +1097,7 @@ Task Object
       The *limit* argument is passed to :meth:`get_stack` directly.
 
       The *file* argument is an I/O stream to which the output
-      is written; by default output is written to :data:`sys.stderr`.
+      is written; by default output is written to :data:`sys.stdout`.
 
    .. method:: get_coro()
 
@@ -1144,10 +1152,8 @@ Task Object
       .. versionchanged:: 3.9
          Added the *msg* parameter.
 
-      .. deprecated-removed:: 3.11 3.14
-         *msg* parameter is ambiguous when multiple :meth:`cancel`
-         are called with different cancellation messages.
-         The argument will be removed.
+      .. versionchanged:: 3.11
+         The ``msg`` parameter is propagated from cancelled task to its awaiter.
 
       .. _asyncio_example_task_cancel:
 

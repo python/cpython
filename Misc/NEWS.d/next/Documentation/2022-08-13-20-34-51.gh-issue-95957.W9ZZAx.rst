@@ -1,2 +1,0 @@
-What's New 3.11 now has instructions for how to provide compiler and
-linker flags for Tcl/Tk and OpenSSL on RHEL 7 and CentOS 7.

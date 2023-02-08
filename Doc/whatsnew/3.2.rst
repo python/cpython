@@ -468,6 +468,7 @@ Some smaller changes made to the core Python language are:
     >>> class LowerCasedDict(dict):
     ...     def __getitem__(self, key):
     ...         return dict.__getitem__(self, key.lower())
+    ...
     >>> lcd = LowerCasedDict(part='widgets', quantity=10)
     >>> 'There are {QUANTITY} {Part} in stock'.format_map(lcd)
     'There are 10 widgets in stock'
@@ -475,6 +476,7 @@ Some smaller changes made to the core Python language are:
     >>> class PlaceholderDict(dict):
     ...     def __missing__(self, key):
     ...         return '<{}>'.format(key)
+    ...
     >>> 'Hello {name}, welcome to {location}'.format_map(PlaceholderDict())
     'Hello <name>, welcome to <location>'
 
@@ -1746,7 +1748,7 @@ names.
   instead of module names for running specific tests (:issue:`10620`).  The new
   test discovery can find tests within packages, locating any test importable
   from the top-level directory.  The top-level directory can be specified with
-  the `-t` option, a pattern for matching files with ``-p``, and a directory to
+  the ``-t`` option, a pattern for matching files with ``-p``, and a directory to
   start discovery with ``-s``:
 
   .. code-block:: shell-session
@@ -1857,7 +1859,7 @@ asyncore
 
 :class:`asyncore.dispatcher` now provides a
 :meth:`~asyncore.dispatcher.handle_accepted()` method
-returning a `(sock, addr)` pair which is called when a connection has actually
+returning a ``(sock, addr)`` pair which is called when a connection has actually
 been established with a new remote endpoint. This is supposed to be used as a
 replacement for old :meth:`~asyncore.dispatcher.handle_accept()` and avoids
 the user  to call :meth:`~asyncore.dispatcher.accept()` directly.
@@ -1886,6 +1888,7 @@ inspect
     >>> from inspect import getgeneratorstate
     >>> def gen():
     ...     yield 'demo'
+    ...
     >>> g = gen()
     >>> getgeneratorstate(g)
     'GEN_CREATED'

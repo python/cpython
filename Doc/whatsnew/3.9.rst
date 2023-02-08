@@ -2,8 +2,6 @@
   What's New In Python 3.9
 ****************************
 
-:Release: |release|
-:Date: |today|
 :Editor: Łukasz Langa
 
 .. Rules for maintenance:
@@ -500,7 +498,7 @@ Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
 the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
 :issue:`33962`.)
 
-Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+Apply syntax highlighting to ``.pyi`` files. (Contributed by Alex
 Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 imaplib

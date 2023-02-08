@@ -11,6 +11,7 @@ import weakref
 from textwrap import dedent
 
 from test import support
+from test.support.ast_helper import ASTTestMixin
 
 def to_tuple(t):
     if t is None or isinstance(t, (str, int, complex)) or t is Ellipsis:
@@ -407,6 +408,24 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(alias.col_offset, 16)
         self.assertEqual(alias.end_col_offset, 17)
 
+        im = ast.parse("from bar import y as z").body[0]
+        alias = im.names[0]
+        self.assertEqual(alias.name, "y")
+        self.assertEqual(alias.asname, "z")
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 22)
+
+        im = ast.parse("import bar as foo").body[0]
+        alias = im.names[0]
+        self.assertEqual(alias.name, "bar")
+        self.assertEqual(alias.asname, "foo")
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 7)
+        self.assertEqual(alias.end_col_offset, 17)
+
     def test_base_classes(self):
         self.assertTrue(issubclass(ast.For, ast.stmt))
         self.assertTrue(issubclass(ast.Name, ast.expr))
@@ -639,18 +658,11 @@ class AST_Tests(unittest.TestCase):
 
     def test_pickling(self):
         import pickle
-        mods = [pickle]
-        try:
-            import cPickle
-            mods.append(cPickle)
-        except ImportError:
-            pass
-        protocols = [0, 1, 2]
-        for mod in mods:
-            for protocol in protocols:
-                for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
-                    ast2 = mod.loads(mod.dumps(ast, protocol))
-                    self.assertEqual(to_tuple(ast2), to_tuple(ast))
+
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
+                ast2 = pickle.loads(pickle.dumps(ast, protocol))
+                self.assertEqual(to_tuple(ast2), to_tuple(ast))
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
@@ -837,7 +849,8 @@ class AST_Tests(unittest.TestCase):
                 details = "Compiling ({!r} + {!r} * {})".format(
                             prefix, repeated, depth)
                 with self.assertRaises(RecursionError, msg=details):
-                    ast.parse(broken)
+                    with support.infinite_recursion():
+                        ast.parse(broken)
 
         check_limit("a", "()")
         check_limit("a", ".b")
@@ -1035,6 +1048,18 @@ Module(
         )
         self.assertEqual(ast.increment_lineno(src).lineno, 2)
         self.assertIsNone(ast.increment_lineno(src).end_lineno)
+
+    def test_increment_lineno_on_module(self):
+        src = ast.parse(dedent("""\
+        a = 1
+        b = 2 # type: ignore
+        c = 3
+        d = 4 # type: ignore@tag
+        """), type_comments=True)
+        ast.increment_lineno(src, n=5)
+        self.assertEqual(src.type_ignores[0].lineno, 7)
+        self.assertEqual(src.type_ignores[1].lineno, 9)
+        self.assertEqual(src.type_ignores[1].tag, '@tag')
 
     def test_iter_fields(self):
         node = ast.parse('foo()', mode='eval')
@@ -1875,7 +1900,7 @@ class ConstantTests(unittest.TestCase):
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opname == 'LOAD_CONST':
+            if instr.opname == 'LOAD_CONST' or instr.opname == 'RETURN_CONST':
                 consts.append(instr.argval)
         return consts
 
@@ -2284,9 +2309,10 @@ class EndPositionTests(unittest.TestCase):
         self.assertIsNone(ast.get_source_segment(s, x))
         self.assertIsNone(ast.get_source_segment(s, y))
 
-class NodeVisitorTests(unittest.TestCase):
+class BaseNodeVisitorCases:
+    # Both `NodeVisitor` and `NodeTranformer` must raise these warnings:
     def test_old_constant_nodes(self):
-        class Visitor(ast.NodeVisitor):
+        class Visitor(self.visitor_class):
             def visit_Num(self, node):
                 log.append((node.lineno, 'Num', node.n))
             def visit_Str(self, node):
@@ -2332,6 +2358,128 @@ class NodeVisitorTests(unittest.TestCase):
             'visit_NameConstant is deprecated; add visit_Constant',
             'visit_Ellipsis is deprecated; add visit_Constant',
         ])
+
+
+class NodeVisitorTests(BaseNodeVisitorCases, unittest.TestCase):
+    visitor_class = ast.NodeVisitor
+
+
+class NodeTransformerTests(ASTTestMixin, BaseNodeVisitorCases, unittest.TestCase):
+    visitor_class = ast.NodeTransformer
+
+    def assertASTTransformation(self, tranformer_class,
+                                initial_code, expected_code):
+        initial_ast = ast.parse(dedent(initial_code))
+        expected_ast = ast.parse(dedent(expected_code))
+
+        tranformer = tranformer_class()
+        result_ast = ast.fix_missing_locations(tranformer.visit(initial_ast))
+
+        self.assertASTEqual(result_ast, expected_ast)
+
+    def test_node_remove_single(self):
+        code = 'def func(arg) -> SomeType: ...'
+        expected = 'def func(arg): ...'
+
+        # Since `FunctionDef.returns` is defined as a single value, we test
+        # the `if isinstance(old_value, AST):` branch here.
+        class SomeTypeRemover(ast.NodeTransformer):
+            def visit_Name(self, node: ast.Name):
+                self.generic_visit(node)
+                if node.id == 'SomeType':
+                    return None
+                return node
+
+        self.assertASTTransformation(SomeTypeRemover, code, expected)
+
+    def test_node_remove_from_list(self):
+        code = """
+        def func(arg):
+            print(arg)
+            yield arg
+        """
+        expected = """
+        def func(arg):
+            print(arg)
+        """
+
+        # Since `FunctionDef.body` is defined as a list, we test
+        # the `if isinstance(old_value, list):` branch here.
+        class YieldRemover(ast.NodeTransformer):
+            def visit_Expr(self, node: ast.Expr):
+                self.generic_visit(node)
+                if isinstance(node.value, ast.Yield):
+                    return None  # Remove `yield` from a function
+                return node
+
+        self.assertASTTransformation(YieldRemover, code, expected)
+
+    def test_node_return_list(self):
+        code = """
+        class DSL(Base, kw1=True): ...
+        """
+        expected = """
+        class DSL(Base, kw1=True, kw2=True, kw3=False): ...
+        """
+
+        class ExtendKeywords(ast.NodeTransformer):
+            def visit_keyword(self, node: ast.keyword):
+                self.generic_visit(node)
+                if node.arg == 'kw1':
+                    return [
+                        node,
+                        ast.keyword('kw2', ast.Constant(True)),
+                        ast.keyword('kw3', ast.Constant(False)),
+                    ]
+                return node
+
+        self.assertASTTransformation(ExtendKeywords, code, expected)
+
+    def test_node_mutate(self):
+        code = """
+        def func(arg):
+            print(arg)
+        """
+        expected = """
+        def func(arg):
+            log(arg)
+        """
+
+        class PrintToLog(ast.NodeTransformer):
+            def visit_Call(self, node: ast.Call):
+                self.generic_visit(node)
+                if isinstance(node.func, ast.Name) and node.func.id == 'print':
+                    node.func.id = 'log'
+                return node
+
+        self.assertASTTransformation(PrintToLog, code, expected)
+
+    def test_node_replace(self):
+        code = """
+        def func(arg):
+            print(arg)
+        """
+        expected = """
+        def func(arg):
+            logger.log(arg, debug=True)
+        """
+
+        class PrintToLog(ast.NodeTransformer):
+            def visit_Call(self, node: ast.Call):
+                self.generic_visit(node)
+                if isinstance(node.func, ast.Name) and node.func.id == 'print':
+                    return ast.Call(
+                        func=ast.Attribute(
+                            ast.Name('logger', ctx=ast.Load()),
+                            attr='log',
+                            ctx=ast.Load(),
+                        ),
+                        args=node.args,
+                        keywords=[ast.keyword('debug', ast.Constant(True))],
+                    )
+                return node
+
+        self.assertASTTransformation(PrintToLog, code, expected)
 
 
 @support.cpython_only

@@ -525,6 +525,11 @@ returned by the call::
 
     my.package.customFormatterFactory(bar='baz', spam=99.9, answer=42)
 
+.. warning:: The values for keys such as ``bar``, ``spam`` and ``answer`` in
+   the above example should not be configuration dictionaries or references such
+   as ``cfg://foo`` or ``ext://bar``, because they will not be processed by the
+   configuration machinery, but passed to the callable as-is.
+
 The key ``'()'`` has been used as the special key because it is not a
 valid keyword parameter name, and so will not clash with the names of
 the keyword arguments used in the call.  The ``'()'`` also serves as a
@@ -552,6 +557,34 @@ following configuration::
 
 the returned formatter will have attribute ``foo`` set to ``'bar'`` and
 attribute ``baz`` set to ``'bozz'``.
+
+.. warning:: The values for attributes such as ``foo`` and ``baz`` in
+   the above example should not be configuration dictionaries or references such
+   as ``cfg://foo`` or ``ext://bar``, because they will not be processed by the
+   configuration machinery, but set as attribute values as-is.
+
+
+.. _handler-config-dict-order:
+
+Handler configuration order
+"""""""""""""""""""""""""""
+
+Handlers are configured in alphabetical order of their keys, and a configured
+handler replaces the configuration dictionary in (a working copy of) the
+``handlers`` dictionary in the schema. If you use a construct such as
+``cfg://handlers.foo``, then initially ``handlers['foo']`` points to the
+configuration dictionary for the handler named ``foo``, and later (once that
+handler has been configured) it points to the configured handler instance.
+Thus, ``cfg://handlers.foo`` could resolve to either a dictionary or a handler
+instance. In general, it is wise to name handlers in a way such that dependent
+handlers are configured _after_ any handlers they depend on; that allows
+something like ``cfg://handlers.foo`` to be used in configuring a handler that
+depends on handler ``foo``. If that dependent handler were named ``bar``,
+problems would result, because the configuration of ``bar`` would be attempted
+before that of ``foo``, and ``foo`` would not yet have been configured.
+However, if the dependent handler were named ``foobar``, it would be configured
+after ``foo``, with the result that ``cfg://handlers.foo`` would resolve to
+configured handler ``foo``, and not its configuration dictionary.
 
 
 .. _logging-config-dict-externalobj:

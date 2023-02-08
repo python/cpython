@@ -1,2 +1,0 @@
-Fix ``!`` in c domain ref target syntax via a ``conf.py`` patch, so it works
-as intended to disable ref target resolution.

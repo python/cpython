@@ -6,6 +6,9 @@ on:
       - opened
       - labeled
 
+permissions:
+  contents: read
+
 jobs:
   add-to-project:
     name: Add issues to projects

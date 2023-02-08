@@ -771,13 +771,7 @@ class SourceLoaderTestHarness:
 
 
 class SourceOnlyLoaderTests(SourceLoaderTestHarness):
-
-    """Test importlib.abc.SourceLoader for source-only loading.
-
-    Reload testing is subsumed by the tests for
-    importlib.util.module_for_loader.
-
-    """
+    """Test importlib.abc.SourceLoader for source-only loading."""
 
     def test_get_source(self):
         # Verify the source code is returned as a string.

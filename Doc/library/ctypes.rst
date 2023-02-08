@@ -6,6 +6,8 @@
 
 .. moduleauthor:: Thomas Heller <theller@python.net>
 
+**Source code:** :source:`Lib/ctypes`
+
 --------------
 
 :mod:`ctypes` is a foreign function library for Python.  It provides C compatible
@@ -359,7 +361,7 @@ from within *IDLE* or *PythonWin*::
    >>> printf(b"%f bottles of beer\n", 42.5)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: Don't know how to convert parameter 2
+   ArgumentError: argument 2: TypeError: Don't know how to convert parameter 2
    >>>
 
 As has been mentioned before, all Python types except integers, strings, and
@@ -370,6 +372,26 @@ that they can be converted to the required C data type::
    An int 1234, a double 3.140000
    31
    >>>
+
+.. _ctypes-calling-variadic-functions:
+
+Calling varadic functions
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On a lot of platforms calling variadic functions through ctypes is exactly the same
+as calling functions with a fixed number of parameters. On some platforms, and in
+particular ARM64 for Apple Platforms, the calling convention for variadic functions
+is different than that for regular functions.
+
+On those platforms it is required to specify the *argtypes* attribute for the
+regular, non-variadic, function arguments:
+
+.. code-block:: python3
+
+   libc.printf.argtypes = [ctypes.c_char_p]
+
+Because specifying the attribute does inhibit portability it is advised to always
+specify ``argtypes`` for all variadic functions.
 
 
 .. _ctypes-calling-functions-with-own-custom-data-types:
@@ -422,7 +444,7 @@ prototype for a C function), and tries to convert the arguments to valid types::
    >>> printf(b"%d %d %d", 1, 2, 3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: wrong type
+   ArgumentError: argument 2: TypeError: wrong type
    >>> printf(b"%s %d %f\n", b"X", 2, 3)
    X 2 3.000000
    13
@@ -443,6 +465,14 @@ integer, string, bytes, a :mod:`ctypes` instance, or an object with an
 
 Return types
 ^^^^^^^^^^^^
+
+.. testsetup::
+
+   from ctypes import CDLL, c_char, c_char_p
+   from ctypes.util import find_library
+   libc = CDLL(find_library('c'))
+   strchr = libc.strchr
+
 
 By default functions are assumed to return the C :c:expr:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
@@ -480,18 +510,19 @@ If you want to avoid the ``ord("x")`` calls above, you can set the
 :attr:`argtypes` attribute, and the second argument will be converted from a
 single character Python bytes object into a C char::
 
+.. doctest::
+
    >>> strchr.restype = c_char_p
    >>> strchr.argtypes = [c_char_p, c_char]
    >>> strchr(b"abcdef", b"d")
-   'def'
+   b'def'
    >>> strchr(b"abcdef", b"def")
    Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: one character string expected
+   ctypes.ArgumentError: argument 2: TypeError: one character bytes, bytearray or integer expected
    >>> print(strchr(b"abcdef", b"x"))
    None
    >>> strchr(b"abcdef", b"d")
-   'def'
+   b'def'
    >>>
 
 You can also use a callable Python object (a function or a class for example) as
@@ -1349,6 +1380,10 @@ way is to instantiate one of the following classes:
    DLLs and determine which one is not found using Windows debugging and
    tracing tools.
 
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
+
 .. seealso::
 
     `Microsoft DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
@@ -1367,12 +1402,20 @@ way is to instantiate one of the following classes:
    .. versionchanged:: 3.3
       :exc:`WindowsError` used to be raised.
 
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
+
 
 .. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
    assumed to return :c:expr:`int` by default.
+
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
 
 The Python :term:`global interpreter lock` is released before calling any
 function exported by these libraries, and reacquired afterwards.
@@ -1386,6 +1429,10 @@ function exported by these libraries, and reacquired afterwards.
    exception is raised.
 
    Thus, this is only useful to call Python C api functions directly.
+
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
 
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
@@ -1418,8 +1465,8 @@ copy of the windows error code.
 
 The *winmode* parameter is used on Windows to specify how the library is loaded
 (since *mode* is ignored). It takes any value that is valid for the Win32 API
-``LoadLibraryEx`` flags parameter. When omitted, the default is to use the flags
-that result in the most secure DLL load to avoiding issues such as DLL
+``LoadLibraryEx`` flags parameter. When omitted, the default is to use the
+flags that result in the most secure DLL load, which avoids issues such as DLL
 hijacking. Passing the full path to the DLL is the safest way to ensure the
 correct library and dependencies are loaded.
 
@@ -1634,12 +1681,12 @@ They are instances of a private class:
    passed arguments.
 
 
-.. audit-event:: ctypes.seh_exception code foreign-functions
+.. audit-event:: ctypes.set_exception code foreign-functions
 
    On Windows, when a foreign function call raises a system exception (for
    example, due to an access violation), it will be captured and replaced with
    a suitable Python exception. Further, an auditing event
-   ``ctypes.seh_exception`` with argument ``code`` will be raised, allowing an
+   ``ctypes.set_exception`` with argument ``code`` will be raised, allowing an
    audit hook to replace the exception with its own.
 
 .. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
@@ -1948,7 +1995,7 @@ Utility functions
 .. function:: GetLastError()
 
    Windows only: Returns the last error code set by Windows in the calling thread.
-   This function calls the Windows `GetLastError()` function directly,
+   This function calls the Windows ``GetLastError()`` function directly,
    it does not return the ctypes-private copy of the error code.
 
 .. function:: get_errno()
@@ -2479,6 +2526,7 @@ fields, or any other data types containing pointer type fields.
       An optional small integer that allows overriding the alignment of
       structure fields in the instance.  :attr:`_pack_` must already be defined
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
+      Setting this attribute to 0 is the same as not setting it at all.
 
 
    .. attribute:: _anonymous_

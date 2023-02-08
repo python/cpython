@@ -587,9 +587,12 @@ class timedelta:
     returning a timedelta, and addition or subtraction of a datetime
     and a timedelta giving a datetime.
 
-    Representation: (days, seconds, microseconds).  Why?  Because I
-    felt like it.
+    Representation: (days, seconds, microseconds).
     """
+    # The representation of (days, seconds, microseconds) was chosen
+    # arbitrarily; the exact rationale originally specified in the docstring
+    # was "Because I felt like it."
+
     __slots__ = '_days', '_seconds', '_microseconds', '_hashcode'
 
     def __new__(cls, days=0, seconds=0, microseconds=0,
@@ -1032,9 +1035,13 @@ class date:
             _MONTHNAMES[self._month],
             self._day, self._year)
 
-    def strftime(self, fmt):
-        "Format using strftime()."
-        return _wrap_strftime(self, fmt, self.timetuple())
+    def strftime(self, format):
+        """
+        Format using strftime().
+
+        Example: "%d/%m/%Y, %H:%M:%S"
+        """
+        return _wrap_strftime(self, format, self.timetuple())
 
     def __format__(self, fmt):
         if not isinstance(fmt, str):
@@ -1549,8 +1556,7 @@ class time:
         except Exception:
             raise ValueError(f'Invalid isoformat string: {time_string!r}')
 
-
-    def strftime(self, fmt):
+    def strftime(self, format):
         """Format using strftime().  The date part of the timestamp passed
         to underlying strftime should not be used.
         """
@@ -1559,7 +1565,7 @@ class time:
         timetuple = (1900, 1, 1,
                      self._hour, self._minute, self._second,
                      0, 1, -1)
-        return _wrap_strftime(self, fmt, timetuple)
+        return _wrap_strftime(self, format, timetuple)
 
     def __format__(self, fmt):
         if not isinstance(fmt, str):
@@ -1783,14 +1789,14 @@ class datetime(date):
         return result
 
     @classmethod
-    def fromtimestamp(cls, t, tz=None):
+    def fromtimestamp(cls, timestamp, tz=None):
         """Construct a datetime from a POSIX timestamp (like time.time()).
 
         A timezone info object may be passed in as well.
         """
         _check_tzinfo_arg(tz)
 
-        return cls._fromtimestamp(t, tz is not None, tz)
+        return cls._fromtimestamp(timestamp, tz is not None, tz)
 
     @classmethod
     def utcfromtimestamp(cls, t):
