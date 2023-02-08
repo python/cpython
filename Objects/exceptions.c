@@ -8,6 +8,7 @@
 #include <Python.h>
 #include <stdbool.h>
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+#include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
@@ -288,13 +289,17 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
         return -1;
     }
-    else if (!(tb == Py_None || PyTraceBack_Check(tb))) {
+    if (PyTraceBack_Check(tb)) {
+        Py_XSETREF(self->traceback, Py_NewRef(tb));
+    }
+    else if (tb == Py_None) {
+        Py_CLEAR(self->traceback);
+    }
+    else {
         PyErr_SetString(PyExc_TypeError,
                         "__traceback__ must be a traceback or None");
         return -1;
     }
-
-    Py_XSETREF(self->traceback, Py_NewRef(tb));
     return 0;
 }
 
@@ -411,6 +416,20 @@ void
 PyException_SetContext(PyObject *self, PyObject *context)
 {
     Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
+}
+
+PyObject *
+PyException_GetArgs(PyObject *self)
+{
+    PyObject *args = _PyBaseExceptionObject_cast(self)->args;
+    return Py_NewRef(args);
+}
+
+void
+PyException_SetArgs(PyObject *self, PyObject *args)
+{
+    Py_INCREF(args);
+    Py_XSETREF(_PyBaseExceptionObject_cast(self)->args, args);
 }
 
 const char *
@@ -3188,20 +3207,19 @@ SimpleExtendsException(PyExc_Exception, ReferenceError,
 
 #define MEMERRORS_SAVE 16
 
+static PyBaseExceptionObject last_resort_memory_error;
+
 static PyObject *
-MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+get_memory_error(int allow_allocation, PyObject *args, PyObject *kwds)
 {
     PyBaseExceptionObject *self;
-
-    /* If this is a subclass of MemoryError, don't use the freelist
-     * and just return a fresh object */
-    if (type != (PyTypeObject *) PyExc_MemoryError) {
-        return BaseException_new(type, args, kwds);
-    }
-
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_freelist == NULL) {
-        return BaseException_new(type, args, kwds);
+        if (!allow_allocation) {
+            return Py_NewRef(&last_resort_memory_error);
+        }
+        PyObject *result = BaseException_new((PyTypeObject *)PyExc_MemoryError, args, kwds);
+        return result;
     }
 
     /* Fetch object from freelist and revive it */
@@ -3219,6 +3237,35 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     _Py_NewReference((PyObject *)self);
     _PyObject_GC_TRACK(self);
     return (PyObject *)self;
+}
+
+static PyBaseExceptionObject last_resort_memory_error;
+
+static PyObject *
+MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    /* If this is a subclass of MemoryError, don't use the freelist
+     * and just return a fresh object */
+    if (type != (PyTypeObject *) PyExc_MemoryError) {
+        return BaseException_new(type, args, kwds);
+    }
+    return get_memory_error(1, args, kwds);
+}
+
+PyObject *
+_PyErr_NoMemory(PyThreadState *tstate)
+{
+    if (Py_IS_TYPE(PyExc_MemoryError, NULL)) {
+        /* PyErr_NoMemory() has been called before PyExc_MemoryError has been
+           initialized by _PyExc_Init() */
+        Py_FatalError("Out of memory and PyExc_MemoryError is not "
+                      "initialized yet");
+    }
+    PyObject *err = get_memory_error(0, NULL, NULL);
+    if (err != NULL) {
+        _PyErr_SetRaisedException(tstate, err);
+    }
+    return NULL;
 }
 
 static void
@@ -3252,6 +3299,7 @@ preallocate_memerrors(void)
     /* We create enough MemoryErrors and then decref them, which will fill
        up the freelist. */
     int i;
+
     PyObject *errors[MEMERRORS_SAVE];
     for (i = 0; i < MEMERRORS_SAVE; i++) {
         errors[i] = MemoryError_new((PyTypeObject *) PyExc_MemoryError,
@@ -3291,6 +3339,9 @@ static PyTypeObject _PyExc_MemoryError = {
 };
 PyObject *PyExc_MemoryError = (PyObject *) &_PyExc_MemoryError;
 
+static PyBaseExceptionObject last_resort_memory_error = {
+    _PyObject_IMMORTAL_INIT(&_PyExc_MemoryError)
+};
 
 /*
  *    BufferError extends Exception

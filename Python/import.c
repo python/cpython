@@ -1592,6 +1592,13 @@ remove_importlib_frames(PyThreadState *tstate)
         Py_DECREF(code);
         tb = next;
     }
+    assert(PyExceptionInstance_Check(value));
+    assert((PyObject *)Py_TYPE(value) == exception);
+    if (base_tb == NULL) {
+        base_tb = Py_None;
+        Py_INCREF(Py_None);
+    }
+    PyException_SetTraceback(value, base_tb);
 done:
     _PyErr_Restore(tstate, exception, value, base_tb);
 }

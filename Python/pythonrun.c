@@ -748,13 +748,10 @@ _Py_HandleSystemExit(int *exitcode_p)
     }
 
  done:
-    /* Restore and clear the exception info, in order to properly decref
-     * the exception, value, and traceback.      If we just exit instead,
-     * these leak, which confuses PYTHONDUMPREFS output, and may prevent
-     * some finalizers from running.
-     */
-    PyErr_Restore(exception, value, tb);
-    PyErr_Clear();
+    /* Cleanup the exception */
+    Py_CLEAR(exception);
+    Py_CLEAR(value);
+    Py_CLEAR(tb);
     *exitcode_p = exitcode;
     return 1;
 }
