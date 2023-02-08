@@ -724,11 +724,11 @@ typedef struct {
 static PyObject *
 teedataobject_newinternal(itertools_state *state, PyObject *it)
 {
-    teedataobject *tdo = PyObject_GC_New(teedataobject,
-                                         state->teedataobject_type);
-    if (tdo == NULL) {
+    teedataobject *tdo;
+
+    tdo = PyObject_GC_New(teedataobject, state->teedataobject_type);
+    if (tdo == NULL)
         return NULL;
-    }
 
     tdo->running = 0;
     tdo->numread = 0;
