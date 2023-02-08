@@ -804,9 +804,7 @@ dummy_func(
                 DECREF_INPUTS();
             }
             else {
-                PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
-                PyObject *exc_traceback = PyException_GetTraceback(exc_value);
-                _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
+                _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 goto exception_unwind;
             }
         }
@@ -876,6 +874,13 @@ dummy_func(
             }
         }
 
+        family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
+            UNPACK_SEQUENCE,
+            UNPACK_SEQUENCE_TWO_TUPLE,
+            UNPACK_SEQUENCE_TUPLE,
+            UNPACK_SEQUENCE_LIST,
+        };
+
         inst(UNPACK_SEQUENCE, (unused/1, seq -- unused[oparg])) {
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
@@ -894,43 +899,36 @@ dummy_func(
             ERROR_IF(res == 0, error);
         }
 
-        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- v1, v0)) {
+        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- values[oparg])) {
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
+            assert(oparg == 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            v1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
-            v0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            values[0] = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
+            values[1] = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             Py_DECREF(seq);
         }
 
-        // stack effect: (__0 -- __array[oparg])
-        inst(UNPACK_SEQUENCE_TUPLE) {
-            PyObject *seq = TOP();
+        inst(UNPACK_SEQUENCE_TUPLE, (unused/1, seq -- values[oparg])) {
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            STACK_SHRINK(1);
             PyObject **items = _PyTuple_ITEMS(seq);
-            while (oparg--) {
-                PUSH(Py_NewRef(items[oparg]));
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
             }
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
         }
 
-        // stack effect: (__0 -- __array[oparg])
-        inst(UNPACK_SEQUENCE_LIST) {
-            PyObject *seq = TOP();
+        inst(UNPACK_SEQUENCE_LIST, (unused/1, seq -- values[oparg])) {
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            STACK_SHRINK(1);
             PyObject **items = _PyList_ITEMS(seq);
-            while (oparg--) {
-                PUSH(Py_NewRef(items[oparg]));
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
             }
             Py_DECREF(seq);
-            JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
         }
 
         inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
@@ -2951,26 +2949,21 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // error: CALL_FUNCTION_EX has irregular stack effect
-        inst(CALL_FUNCTION_EX) {
-            PyObject *func, *callargs, *kwargs = NULL, *result;
-            if (oparg & 0x01) {
-                kwargs = POP();
+        inst(CALL_FUNCTION_EX, (unused, func, callargs, kwargs if (oparg & 1) -- result)) {
+            if (oparg & 1) {
                 // DICT_MERGE is called before this opcode if there are kwargs.
                 // It converts all dict subtypes in kwargs into regular dicts.
                 assert(PyDict_CheckExact(kwargs));
             }
-            callargs = POP();
-            func = TOP();
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-                    Py_DECREF(callargs);
                     goto error;
                 }
-                Py_SETREF(callargs, PySequence_Tuple(callargs));
-                if (callargs == NULL) {
+                PyObject *tuple = PySequence_Tuple(callargs);
+                if (tuple == NULL) {
                     goto error;
                 }
+                Py_SETREF(callargs, tuple);
             }
             assert(PyTuple_CheckExact(callargs));
 
@@ -2979,12 +2972,8 @@ dummy_func(
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
 
-            STACK_SHRINK(1);
-            assert(TOP() == NULL);
-            SET_TOP(result);
-            if (result == NULL) {
-                goto error;
-            }
+            assert(PEEK(3 + (oparg & 1)) == NULL);
+            ERROR_IF(result == NULL, error);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3054,18 +3043,10 @@ dummy_func(
             ERROR_IF(slice == NULL, error);
         }
 
-        // error: FORMAT_VALUE has irregular stack effect
-        inst(FORMAT_VALUE) {
+        inst(FORMAT_VALUE, (value, fmt_spec if ((oparg & FVS_MASK) == FVS_HAVE_SPEC) -- result)) {
             /* Handles f-string value formatting. */
-            PyObject *result;
-            PyObject *fmt_spec;
-            PyObject *value;
             PyObject *(*conv_fn)(PyObject *);
             int which_conversion = oparg & FVC_MASK;
-            int have_fmt_spec = (oparg & FVS_MASK) == FVS_HAVE_SPEC;
-
-            fmt_spec = have_fmt_spec ? POP() : NULL;
-            value = POP();
 
             /* See if any conversion is specified. */
             switch (which_conversion) {
@@ -3088,7 +3069,7 @@ dummy_func(
                 Py_DECREF(value);
                 if (result == NULL) {
                     Py_XDECREF(fmt_spec);
-                    goto error;
+                    ERROR_IF(true, error);
                 }
                 value = result;
             }
@@ -3106,12 +3087,8 @@ dummy_func(
                 result = PyObject_Format(value, fmt_spec);
                 Py_DECREF(value);
                 Py_XDECREF(fmt_spec);
-                if (result == NULL) {
-                    goto error;
-                }
+                ERROR_IF(result == NULL, error);
             }
-
-            PUSH(result);
         }
 
         inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
@@ -3185,6 +3162,3 @@ family(call, INLINE_CACHE_ENTRIES_CALL) = {
     CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
     CALL_NO_KW_TYPE_1 };
 family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
-family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
-    UNPACK_SEQUENCE, UNPACK_SEQUENCE_LIST,
-    UNPACK_SEQUENCE_TUPLE, UNPACK_SEQUENCE_TWO_TUPLE };

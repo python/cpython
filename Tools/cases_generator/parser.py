@@ -263,7 +263,14 @@ class Parser(PLexer):
     @contextual
     def expression(self) -> Expression | None:
         tokens: list[lx.Token] = []
-        while (tkn := self.peek()) and tkn.kind not in (lx.RBRACKET, lx.RPAREN):
+        level = 1
+        while tkn := self.peek():
+            if tkn.kind in (lx.LBRACKET, lx.LPAREN):
+                level += 1
+            elif tkn.kind in (lx.RBRACKET, lx.RPAREN):
+                level -= 1
+                if level == 0:
+                    break
             tokens.append(tkn)
             self.next()
         if not tokens:

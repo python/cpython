@@ -180,11 +180,8 @@ class Formatter:
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
         elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
-            # NOTE: MOVE_ITEMS() does not actually exist.
-            # The only supported output array forms are:
-            # - unused[...]
-            # - X[...] where X[...] matches an input array exactly
-            self.emit(f"MOVE_ITEMS({dst.name}, {src.name}, {src.size});")
+            # The user code is responsible for writing to the output array.
+            pass
         elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
         else:
@@ -230,7 +227,8 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.block_text, self.predictions = extract_block_text(self.block)
+        self.block_text, self.check_eval_breaker, self.predictions = \
+            extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
@@ -309,10 +307,24 @@ class Instruction:
                 out.declare(ieffect, src)
 
         # Write output stack effect variable declarations
+        isize = string_effect_size(list_effect_size(self.input_effects))
         input_names = {ieffect.name for ieffect in self.input_effects}
-        for oeffect in self.output_effects:
+        for i, oeffect in enumerate(self.output_effects):
             if oeffect.name not in input_names:
-                out.declare(oeffect, None)
+                if oeffect.size:
+                    osize = string_effect_size(
+                        list_effect_size([oeff for oeff in self.output_effects[:i]])
+                    )
+                    offset = "stack_pointer"
+                    if isize != osize:
+                        if isize != "0":
+                            offset += f" - ({isize})"
+                        if osize != "0":
+                            offset += f" + {osize}"
+                    src = StackEffect(offset, "PyObject **")
+                    out.declare(oeffect, src)
+                else:
+                    out.declare(oeffect, None)
 
         # out.emit(f"JUMPBY(OPSIZE({self.inst.name}) - 1);")
 
@@ -1016,6 +1028,8 @@ class Analyzer:
             if not instr.always_exits:
                 for prediction in instr.predictions:
                     self.out.emit(f"PREDICT({prediction});")
+                if instr.check_eval_breaker:
+                    self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
 
     def write_super(self, sup: SuperInstruction) -> None:
@@ -1091,7 +1105,7 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
+def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
 
@@ -1111,6 +1125,12 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
     while blocklines and not blocklines[-1].strip():
         blocklines.pop()
 
+    # Separate CHECK_EVAL_BREAKER() macro from end
+    check_eval_breaker = \
+        blocklines != [] and blocklines[-1].strip() == "CHECK_EVAL_BREAKER();"
+    if check_eval_breaker:
+        del blocklines[-1]
+
     # Separate PREDICT(...) macros from end
     predictions: list[str] = []
     while blocklines and (
@@ -1119,7 +1139,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
         predictions.insert(0, m.group(1))
         blocklines.pop()
 
-    return blocklines, predictions
+    return blocklines, check_eval_breaker, predictions
 
 
 def always_exits(lines: list[str]) -> bool:

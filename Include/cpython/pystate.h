@@ -166,9 +166,7 @@ struct _ts {
     PyObject *c_traceobj;
 
     /* The exception currently being raised */
-    PyObject *curexc_type;
-    PyObject *curexc_value;
-    PyObject *curexc_traceback;
+    PyObject *current_exception;
 
     /* Pointer to the top of the exception stack for the exceptions
      * we may be currently handling.  (See _PyErr_StackItem above.)
