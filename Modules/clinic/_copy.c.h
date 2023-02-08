@@ -34,4 +34,4 @@ _copy_deepcopy(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     return _copy_deepcopy_impl(module, args[0], memo);
 
 }
-/*[clinic end generated code: output=ab88e7f79337ebab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5af3e3be221c0b3e input=a9049054013a1b77]*/
