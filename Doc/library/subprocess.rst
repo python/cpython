@@ -450,7 +450,7 @@ functions.
    - :const:`0` means unbuffered (read and write are one
      system call and can return short)
    - :const:`1` means line buffered
-     (only usable if ``universal_newlines=True`` i.e., in a text mode)
+     (only usable if ``text=True`` or ``universal_newlines=True``)
    - any other positive value means use a buffer of approximately that
      size
    - negative bufsize (the default) means the system default of
