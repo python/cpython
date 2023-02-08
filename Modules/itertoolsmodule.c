@@ -954,10 +954,11 @@ tee_traverse(teeobject *to, visitproc visit, void *arg)
 static PyObject *
 tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
 {
-    teeobject *newto = PyObject_GC_New(teeobject, Py_TYPE(to));
-    if (newto == NULL) {
+    teeobject *newto;
+
+    newto = PyObject_GC_New(teeobject, Py_TYPE(to));
+    if (newto == NULL)
         return NULL;
-    }
     newto->dataobj = (teedataobject*)Py_NewRef(to->dataobj);
     newto->index = to->index;
     newto->weakreflist = NULL;
