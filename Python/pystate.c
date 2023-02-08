@@ -717,13 +717,11 @@ PyInterpreterState_New(void)
 
     init_interpreter(interp, runtime, id, old_head, pending_lock);
 
-#if WITH_FREELISTS
     for (int i=0; i < INTERP_NUM_FREELISTS; i++) {
         _PyFreeList_Init(&interp->freelists[i],
                          FREELIST_INDEX_TO_ALLOCATED_SIZE(i),
                          SMALL_OBJECT_FREELIST_SIZE);
     }
-#endif
 
     HEAD_UNLOCK(runtime);
     return interp;
@@ -767,11 +765,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
     HEAD_UNLOCK(runtime);
 
-#if WITH_FREELISTS
     for (int i=0; i < INTERP_NUM_FREELISTS; i++) {
         _PyFreeList_Clear(&interp->freelists[i]);
+        interp->freelists[i].space = 0;
+        interp->freelists[i].capacity = 0;
     }
-#endif
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
