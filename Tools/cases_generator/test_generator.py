@@ -500,20 +500,20 @@ def test_register():
 
 def test_cond_effect():
     input = """
-        inst(OP, (aa, input if (oparg & 1), cc -- xx, output if (oparg & 2), zz)) {
+        inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
             output = spam(oparg, input);
         }
     """
     output = """
         TARGET(OP) {
             PyObject *cc = PEEK(1);
-            PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) ? 1 : 0)) : NULL;
-            PyObject *aa = PEEK(2 + ((oparg & 1) ? 1 : 0));
+            PyObject *input = ((oparg & 1) == 1) ? PEEK(1 + (((oparg & 1) == 1) ? 1 : 0)) : NULL;
+            PyObject *aa = PEEK(2 + (((oparg & 1) == 1) ? 1 : 0));
             PyObject *xx;
             PyObject *output = NULL;
             PyObject *zz;
             output = spam(oparg, input);
-            STACK_SHRINK(((oparg & 1) ? 1 : 0));
+            STACK_SHRINK((((oparg & 1) == 1) ? 1 : 0));
             STACK_GROW(((oparg & 2) ? 1 : 0));
             POKE(1, zz);
             if (oparg & 2) { POKE(1 + ((oparg & 2) ? 1 : 0), output); }
