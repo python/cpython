@@ -3071,16 +3071,16 @@
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
-            PyObject *thing2 = PEEK(1 + oparg);
-            PyObject *thing1 = PEEK(2 + oparg);
-            DEOPT_IF(thing1 != NULL, CALL);
-            DEOPT_IF(Py_TYPE(thing2) != &PyMethod_Type, CALL);
+            PyObject *callable = PEEK(1 + oparg);
+            PyObject *method = PEEK(2 + oparg);
+            DEOPT_IF(method != NULL, CALL);
+            DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *self = ((PyMethodObject *)thing2)->im_self;
-            PEEK(oparg + 1) = Py_NewRef(self);  // thing2
-            PyObject *meth = ((PyMethodObject *)thing2)->im_func;
-            PEEK(oparg + 2) = Py_NewRef(meth);  // thing1
-            Py_DECREF(thing2);
+            PyObject *self = ((PyMethodObject *)callable)->im_self;
+            PEEK(oparg + 1) = Py_NewRef(self);  // callable
+            PyObject *meth = ((PyMethodObject *)callable)->im_func;
+            PEEK(oparg + 2) = Py_NewRef(meth);  // method
+            Py_DECREF(callable);
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
