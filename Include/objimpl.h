@@ -157,6 +157,13 @@ PyAPI_FUNC(int) PyGC_Enable(void);
 PyAPI_FUNC(int) PyGC_Disable(void);
 PyAPI_FUNC(int) PyGC_IsEnabled(void);
 
+/* Visit all live GC-capable objects, similar to gc.get_objects(None).
+ *
+ * Users should avoid allocating or deallocating objects on the Python heap in
+ * the callback. */
+typedef void (*gcvisitobjects_t)(PyObject*, void*);
+PyAPI_FUNC(void) PyGC_VisitObjects(gcvisitobjects_t callback, void* arg);
+
 /* Test if a type has a GC head */
 #define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
