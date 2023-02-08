@@ -1487,9 +1487,9 @@ class Popen:
                 # to avoid executing unqualified "cmd.exe".
                 comspec = os.environ.get('ComSpec')
                 if not comspec:
-                    system_root = os.environ.get('SystemRoot')
+                    system_root = os.environ.get('SystemRoot', '')
                     comspec = os.path.join(system_root, 'System32', 'cmd.exe')
-                    if not os.path.isfile(comspec):
+                    if not os.path.isabs(comspec) or not os.path.isfile(comspec):
                         raise FileNotFoundError('cmd.exe not found; neither %ComSpec% nor %SystemRoot% is set')
                 if not executable and os.path.isabs(comspec):
                     executable = comspec
