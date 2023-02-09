@@ -1401,21 +1401,16 @@ _tracemalloc__get_object_traceback(PyObject *module, PyObject *obj)
 /*[clinic end generated code: output=41ee0553a658b0aa input=29495f1b21c53212]*/
 {
     PyTypeObject *type;
-    void *ptr;
     traceback_t *traceback;
 
     type = Py_TYPE(obj);
-    if (PyType_IS_GC(type)) {
-        const size_t presize = _PyType_PreHeaderSize(type);
-        ptr = (void *)((char *)obj - presize);
-    }
-    else {
-        ptr = (void *)obj;
-    }
+    const size_t presize = _PyType_PreHeaderSize(type);
+    uintptr_t ptr = (uintptr_t)((char *)obj - presize);
 
-    traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, (uintptr_t)ptr);
-    if (traceback == NULL)
+    traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, ptr);
+    if (traceback == NULL) {
         Py_RETURN_NONE;
+    }
 
     return traceback_to_pyobject(traceback, NULL);
 }
@@ -1725,15 +1720,9 @@ _PyTraceMalloc_NewReference(PyObject *op)
         return -1;
     }
 
-    uintptr_t ptr;
     PyTypeObject *type = Py_TYPE(op);
-    if (PyType_IS_GC(type)) {
-        const size_t presize = _PyType_PreHeaderSize(type);
-        ptr = (uintptr_t)((char *)op - presize);
-    }
-    else {
-        ptr = (uintptr_t)op;
-    }
+    const size_t presize = _PyType_PreHeaderSize(type);
+    uintptr_t ptr = (uintptr_t)((char *)op - presize);
 
     int res = -1;
 
