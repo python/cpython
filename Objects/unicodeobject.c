@@ -2455,33 +2455,42 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
 
         if (*f == 'u') {
             if (longflag) {
-                len = sprintf(buffer, "%lu", va_arg(*vargs, unsigned long));
+                len = PyOS_snprintf(buffer, sizeof(buffer),
+                                    "%lu", va_arg(*vargs, unsigned long));
             }
             else if (longlongflag) {
-                len = sprintf(buffer, "%llu", va_arg(*vargs, unsigned long long));
+                len = PyOS_snprintf(buffer, sizeof(buffer),
+                                    "%llu", va_arg(*vargs, unsigned long long));
             }
             else if (size_tflag) {
-                len = sprintf(buffer, "%zu", va_arg(*vargs, size_t));
+                len = PyOS_snprintf(buffer, sizeof(buffer),
+                                    "%zu", va_arg(*vargs, size_t));
             }
             else {
-                len = sprintf(buffer, "%u", va_arg(*vargs, unsigned int));
+                len = PyOS_snprintf(buffer, sizeof(buffer),
+                                    "%u", va_arg(*vargs, unsigned int));
             }
         }
         else if (*f == 'x') {
-            len = sprintf(buffer, "%x", va_arg(*vargs, int));
+            len = PyOS_snprintf(buffer, sizeof(buffer),
+                                "%x", va_arg(*vargs, int));
         }
         else {
             if (longflag) {
-                len = sprintf(buffer, "%li", va_arg(*vargs, long));
+                len = PyOS_snprintf(buffer, sizeof(buffer),
+                                    "%li", va_arg(*vargs, long));
             }
             else if (longlongflag) {
-                len = sprintf(buffer, "%lli", va_arg(*vargs, long long));
+                len = PyOS_snprintf(buffer, sizeof(buffer),
+                                    "%lli", va_arg(*vargs, long long));
             }
             else if (size_tflag) {
-                len = sprintf(buffer, "%zi", va_arg(*vargs, Py_ssize_t));
+                len = PyOS_snprintf(buffer, sizeof(buffer),
+                                    "%zi", va_arg(*vargs, Py_ssize_t));
             }
             else {
-                len = sprintf(buffer, "%i", va_arg(*vargs, int));
+                len = PyOS_snprintf(buffer, sizeof(buffer),
+                                    "%i", va_arg(*vargs, int));
             }
         }
         assert(len >= 0);
@@ -2530,7 +2539,8 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     {
         char number[MAX_LONG_LONG_CHARS];
 
-        len = sprintf(number, "%p", va_arg(*vargs, void*));
+        len = PyOS_snprintf(number, sizeof(number),
+                            "%p", va_arg(*vargs, void*));
         assert(len >= 0);
 
         /* %p is ill-defined:  ensure leading 0x. */
@@ -8104,7 +8114,8 @@ charmap_encoding_error(
         for (collpos = collstartpos; collpos < collendpos; ++collpos) {
             char buffer[2+29+1+1];
             char *cp;
-            sprintf(buffer, "&#%d;", (int)PyUnicode_READ_CHAR(unicode, collpos));
+            PyOS_snprintf(buffer, sizeof(buffer),
+                          "&#%d;", (int)PyUnicode_READ_CHAR(unicode, collpos));
             for (cp = buffer; *cp; ++cp) {
                 x = charmapencode_output(*cp, mapping, res, respos);
                 if (x==enc_EXCEPTION)

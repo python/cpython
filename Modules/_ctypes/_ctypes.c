@@ -392,9 +392,9 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
         strcat(new_prefix, "(");
         for (k = 0; k < ndim; ++k) {
             if (k < ndim-1) {
-                sprintf(buf, "%zd,", shape[k]);
+                PyOS_snprintf(buf, sizeof(buf), "%zd,", shape[k]);
             } else {
-                sprintf(buf, "%zd)", shape[k]);
+                PyOS_snprintf(buf, sizeof(buf), "%zd)", shape[k]);
             }
             strcat(new_prefix, buf);
         }
@@ -4851,10 +4851,10 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         return NULL;
     }
 #ifdef MS_WIN64
-    sprintf(name, "%.200s_Array_%Id",
+    PyOS_snprintf(name, sizeof(name), "%.200s_Array_%Id",
         ((PyTypeObject *)itemtype)->tp_name, length);
 #else
-    sprintf(name, "%.200s_Array_%ld",
+    PyOS_snprintf(name, sizeof(name), "%.200s_Array_%ld",
         ((PyTypeObject *)itemtype)->tp_name, (long)length);
 #endif
 
