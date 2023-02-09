@@ -683,13 +683,38 @@ backslashreplace(_PyBytesWriter *writer, char *str,
     return str;
 }
 
+static Py_ssize_t
+xmlcharrefreplace_get_incr(Py_UCS4 ch)
+{
+    Py_ssize_t incr;
+
+    if (ch < 10)
+        incr = 2+1+1;
+    else if (ch < 100)
+        incr = 2+2+1;
+    else if (ch < 1000)
+        incr = 2+3+1;
+    else if (ch < 10000)
+        incr = 2+4+1;
+    else if (ch < 100000)
+        incr = 2+5+1;
+    else if (ch < 1000000)
+        incr = 2+6+1;
+    else {
+        assert(ch <= MAX_UNICODE);
+        incr = 2+7+1;
+    }
+
+    return incr;
+}
+
 /* Implementation of the "xmlcharrefreplace" error handler for 8-bit encodings:
    ASCII, Latin1, UTF-8, etc. */
 static char*
 xmlcharrefreplace(_PyBytesWriter *writer, char *str,
                   PyObject *unicode, Py_ssize_t collstart, Py_ssize_t collend)
 {
-    Py_ssize_t size, i;
+    Py_ssize_t size, incr, i;
     Py_UCS4 ch;
     int kind;
     const void *data;
@@ -700,25 +725,9 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
     size = 0;
     /* determine replacement size */
     for (i = collstart; i < collend; ++i) {
-        Py_ssize_t incr;
-
         ch = PyUnicode_READ(kind, data, i);
-        if (ch < 10)
-            incr = 2+1+1;
-        else if (ch < 100)
-            incr = 2+2+1;
-        else if (ch < 1000)
-            incr = 2+3+1;
-        else if (ch < 10000)
-            incr = 2+4+1;
-        else if (ch < 100000)
-            incr = 2+5+1;
-        else if (ch < 1000000)
-            incr = 2+6+1;
-        else {
-            assert(ch <= MAX_UNICODE);
-            incr = 2+7+1;
-        }
+        incr = xmlcharrefreplace_get_incr(ch);
+
         if (size > PY_SSIZE_T_MAX - incr) {
             PyErr_SetString(PyExc_OverflowError,
                             "encoded result is too long for a Python string");
@@ -733,8 +742,9 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
-        size = PyOS_snprintf(str, 10 + 1,  // see `incr` for the size
-                             "&#%d;", PyUnicode_READ(kind, data, i));
+        ch = PyUnicode_READ(kind, data, i);
+        incr = xmlcharrefreplace_get_incr(ch);
+        size = PyOS_snprintf(str, incr + 1,  "&#%d;", ch);
         if (size < 0) {
             return NULL;
         }
