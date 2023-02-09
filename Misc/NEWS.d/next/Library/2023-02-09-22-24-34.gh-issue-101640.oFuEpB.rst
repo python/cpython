@@ -1,0 +1,2 @@
+:class:`argparse.ArgumentParser` no longer tries to use :data:`sys.stderr`
+when it is set to ``None``. Patch by Oleg Iarygin.
