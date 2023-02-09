@@ -91,7 +91,6 @@ PyAPI_FUNC(int) _PyMem_GetAllocatorName(
 PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
 
-#if WITH_FREELISTS
 /* Free lists.
  *
  * Free lists have a pointer to their first entry and
@@ -111,7 +110,8 @@ typedef struct _freelist {
 
 extern void *_PyFreeList_HalfFillAndAllocate(_PyFreeList *list);
 extern void _PyFreeList_FreeToFull(_PyFreeList *list, void *ptr);
-
+extern void _PyFreeList_Clear(_PyFreeList *list);
+extern void _PyFreeList_Disable(_PyFreeList *list);
 
 static inline void *
 _PyFreeList_Alloc(_PyFreeList *list) {
@@ -151,12 +151,13 @@ static inline void
 _PyFreeList_Init(_PyFreeList *list, int size, int capacity)
 {
     list->ptr = NULL;
-    list->space = list->capacity = capacity;
     list->size = size;
+#if WITH_FREELISTS
+    list->space = list->capacity = capacity;
+#else
+    _PyFreeList_Disable(list);
+#endif
 }
-
-extern void _PyFreeList_Clear(_PyFreeList *list);
-#endif  /* WITH_FREELISTS */
 
 #ifdef __cplusplus
 }

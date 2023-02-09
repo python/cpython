@@ -718,7 +718,6 @@ PyObject_Free(void *ptr)
 #endif
 
 
-#if WITH_FREELISTS
 void *
 _PyFreeList_HalfFillAndAllocate(_PyFreeList *list)
 {
@@ -760,6 +759,12 @@ _PyFreeList_Clear(_PyFreeList *list)
 }
 
 void
+_PyFreeList_Disable(_PyFreeList *list)
+{
+    list->space = list->capacity = 0;
+}
+
+void
 _PyFreeList_FreeToFull(_PyFreeList *list, void *ptr)
 {
     assert(list->space == 0);
@@ -769,7 +774,6 @@ _PyFreeList_FreeToFull(_PyFreeList *list, void *ptr)
     }
     _PyFreeList_Clear(list);
 }
-#endif  /* WITH_FREELISTS */
 
 #ifdef WITH_PYMALLOC
 

@@ -767,8 +767,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     for (int i=0; i < INTERP_NUM_FREELISTS; i++) {
         _PyFreeList_Clear(&interp->freelists[i]);
-        interp->freelists[i].space = 0;
-        interp->freelists[i].capacity = 0;
+        _PyFreeList_Disable(&interp->freelists[i]);
     }
 
     /* It is possible that any of the objects below have a finalizer
