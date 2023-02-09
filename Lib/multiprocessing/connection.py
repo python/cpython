@@ -102,7 +102,7 @@ def address_type(address):
         return 'AF_INET'
     elif type(address) is str and address.startswith('\\\\'):
         return 'AF_PIPE'
-    elif type(address) is str:
+    elif type(address) is str or util.is_abstract_socket_namespace(address):
         return 'AF_UNIX'
     else:
         raise ValueError('address type of %r unrecognized' % address)
@@ -183,10 +183,9 @@ class _ConnectionBase:
         self._check_closed()
         self._check_writable()
         m = memoryview(buf)
-        # HACK for byte-indexing of non-bytewise buffers (e.g. array.array)
         if m.itemsize > 1:
-            m = memoryview(bytes(m))
-        n = len(m)
+            m = m.cast('B')
+        n = m.nbytes
         if offset < 0:
             raise ValueError("offset is negative")
         if n < offset:
@@ -389,23 +388,33 @@ class Connection(_ConnectionBase):
 
     def _send_bytes(self, buf):
         n = len(buf)
-        # For wire compatibility with 3.2 and lower
-        header = struct.pack("!i", n)
-        if n > 16384:
-            # The payload is large so Nagle's algorithm won't be triggered
-            # and we'd better avoid the cost of concatenation.
+        if n > 0x7fffffff:
+            pre_header = struct.pack("!i", -1)
+            header = struct.pack("!Q", n)
+            self._send(pre_header)
             self._send(header)
             self._send(buf)
         else:
-            # Issue #20540: concatenate before sending, to avoid delays due
-            # to Nagle's algorithm on a TCP socket.
-            # Also note we want to avoid sending a 0-length buffer separately,
-            # to avoid "broken pipe" errors if the other end closed the pipe.
-            self._send(header + buf)
+            # For wire compatibility with 3.7 and lower
+            header = struct.pack("!i", n)
+            if n > 16384:
+                # The payload is large so Nagle's algorithm won't be triggered
+                # and we'd better avoid the cost of concatenation.
+                self._send(header)
+                self._send(buf)
+            else:
+                # Issue #20540: concatenate before sending, to avoid delays due
+                # to Nagle's algorithm on a TCP socket.
+                # Also note we want to avoid sending a 0-length buffer separately,
+                # to avoid "broken pipe" errors if the other end closed the pipe.
+                self._send(header + buf)
 
     def _recv_bytes(self, maxsize=None):
         buf = self._recv(4)
         size, = struct.unpack("!i", buf.getvalue())
+        if size == -1:
+            buf = self._recv(8)
+            size, = struct.unpack("!Q", buf.getvalue())
         if maxsize is not None and size > maxsize:
             return None
         return self._recv(size)
@@ -587,7 +596,8 @@ class SocketListener(object):
         self._family = family
         self._last_accepted = None
 
-        if family == 'AF_UNIX':
+        if family == 'AF_UNIX' and not util.is_abstract_socket_namespace(address):
+            # Linux abstract socket namespaces do not need to be explicitly unlinked
             self._unlink = util.Finalize(
                 self, os.unlink, args=(address,), exitpriority=0
                 )
@@ -717,6 +727,74 @@ MESSAGE_LENGTH = 20
 CHALLENGE = b'#CHALLENGE#'
 WELCOME = b'#WELCOME#'
 FAILURE = b'#FAILURE#'
+
+# multiprocessing.connection Authentication Handshake Protocol Description
+# (as documented for reference after reading the existing code)
+# =============================================================================
+#
+# On Windows: native pipes with "overlapped IO" are used to send the bytes,
+# instead of the length prefix SIZE scheme described below. (ie: the OS deals
+# with message sizes for us)
+#
+# Protocol error behaviors:
+#
+# On POSIX, any failure to receive the length prefix into SIZE, for SIZE greater
+# than the requested maxsize to receive, or receiving fewer than SIZE bytes
+# results in the connection being closed and auth to fail.
+#
+# On Windows, receiving too few bytes is never a low level _recv_bytes read
+# error, receiving too many will trigger an error only if receive maxsize
+# value was larger than 128 OR the if the data arrived in smaller pieces.
+#
+#      Serving side                           Client side
+#     ------------------------------  ---------------------------------------
+# 0.                                  Open a connection on the pipe.
+# 1.  Accept connection.
+# 2.  New random 20 bytes -> MESSAGE
+# 3.  send 4 byte length (net order)
+#     prefix followed by:
+#       b'#CHALLENGE#' + MESSAGE
+# 4.                                  Receive 4 bytes, parse as network byte
+#                                     order integer. If it is -1, receive an
+#                                     additional 8 bytes, parse that as network
+#                                     byte order. The result is the length of
+#                                     the data that follows -> SIZE.
+# 5.                                  Receive min(SIZE, 256) bytes -> M1
+# 6.                                  Assert that M1 starts with:
+#                                       b'#CHALLENGE#'
+# 7.                                  Strip that prefix from M1 into -> M2
+# 8.                                  Compute HMAC-MD5 of AUTHKEY, M2 -> C_DIGEST
+# 9.                                  Send 4 byte length prefix (net order)
+#                                     followed by C_DIGEST bytes.
+# 10. Compute HMAC-MD5 of AUTHKEY,
+#     MESSAGE into -> M_DIGEST.
+# 11. Receive 4 or 4+8 byte length
+#     prefix (#4 dance) -> SIZE.
+# 12. Receive min(SIZE, 256) -> C_D.
+# 13. Compare M_DIGEST == C_D:
+# 14a: Match? Send length prefix &
+#       b'#WELCOME#'
+#    <- RETURN
+# 14b: Mismatch? Send len prefix &
+#       b'#FAILURE#'
+#    <- CLOSE & AuthenticationError
+# 15.                                 Receive 4 or 4+8 byte length prefix (net
+#                                     order) again as in #4 into -> SIZE.
+# 16.                                 Receive min(SIZE, 256) bytes -> M3.
+# 17.                                 Compare M3 == b'#WELCOME#':
+# 17a.                                Match? <- RETURN
+# 17b.                                Mismatch? <- CLOSE & AuthenticationError
+#
+# If this RETURNed, the connection remains open: it has been authenticated.
+#
+# Length prefixes are used consistently even though every step so far has
+# always been a singular specific fixed length.  This may help us evolve
+# the protocol in the future without breaking backwards compatibility.
+#
+# Similarly the initial challenge message from the serving side has always
+# been 20 bytes, but clients can accept a 100+ so using the length of the
+# opening challenge message as an indicator of protocol version may work.
+
 
 def deliver_challenge(connection, authkey):
     import hmac
@@ -927,7 +1005,7 @@ else:
                             return ready
 
 #
-# Make connection and socket objects sharable if possible
+# Make connection and socket objects shareable if possible
 #
 
 if sys.platform == 'win32':

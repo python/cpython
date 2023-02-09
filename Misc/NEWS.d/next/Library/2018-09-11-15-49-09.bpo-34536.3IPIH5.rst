@@ -1,2 +1,0 @@
-`Enum._missing_`:  raise `ValueError` if None returned and `TypeError` if
-non-member is returned.

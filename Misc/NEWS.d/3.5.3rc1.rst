@@ -1,7 +1,29 @@
+.. release date: 2017-01-02
+.. bpo: 27278
+.. date: 9755
+.. nonce: y_HkGw
+.. original section: Library
+.. section: Security
+
+Fix os.urandom() implementation using getrandom() on Linux.  Truncate size
+to INT_MAX and loop until we collected enough random bytes, instead of
+casting a directly Py_ssize_t to int.
+
+..
+
+.. bpo: 22636
+.. date: 9753
+.. nonce: 3fQW_g
+.. original section: Library
+.. section: Security
+
+Avoid shell injection problems with ctypes.util.find_library().
+
+..
+
 .. bpo: 29073
 .. date: 9898
 .. nonce: EFpHQ7
-.. release date: 2017-01-02
 .. section: Core and Builtins
 
 bytearray formatting no longer truncates on first null byte.
@@ -81,8 +103,8 @@ astral characters.  Patch by Xiang Zhang.
 .. nonce: RYbEGH
 .. section: Core and Builtins
 
-Extra slash no longer added to sys.path components in case of empty compile-
-time PYTHONPATH components.
+Extra slash no longer added to sys.path components in case of empty
+compile-time PYTHONPATH components.
 
 ..
 
@@ -349,8 +371,8 @@ Patch written by Xiang Zhang.
 .. section: Core and Builtins
 
 Standard __import__() no longer look up "__import__" in globals or builtins
-for importing submodules or "from import".  Fixed handling an error of non-
-string package name.
+for importing submodules or "from import".  Fixed handling an error of
+non-string package name.
 
 ..
 
@@ -751,7 +773,6 @@ command.
 .. section: Library
 
 Fixed calendar functions for extreme months: 0001-01 and 9999-12.
-
 Methods itermonthdays() and itermonthdays2() are reimplemented so that they
 don't call itermonthdates() which can cause datetime.date under/overflow.
 
@@ -811,7 +832,7 @@ In the traceback module, restore the formatting of exception messages like
 .. nonce: 3UhyPo
 .. section: Library
 
-Allow falsy values to be used for msg parameter of subTest().
+Allow false values to be used for msg parameter of subTest().
 
 ..
 
@@ -1036,7 +1057,7 @@ attack (CVE-2016-2183).
 .. nonce: WI70Tc
 .. section: Library
 
-Add ChaCha20 Poly1305 to ssl module's default ciper list. (Required OpenSSL
+Add ChaCha20 Poly1305 to ssl module's default cipher list. (Required OpenSSL
 1.1.0 or LibreSSL).
 
 ..
@@ -1124,10 +1145,10 @@ after a commit.
 .. nonce: cYraeH
 .. section: Library
 
-A new version of typing.py from https://github.com/python/typing: -
-Collection (only for 3.6) (Issue #27598) - Add FrozenSet to __all__
-(upstream #261) - fix crash in _get_type_vars() (upstream #259) - Remove the
-dict constraint in ForwardRef._eval_type (upstream #252)
+A new version of typing.py from https://github.com/python/typing:
+Collection (only for 3.6) (Issue #27598). Add FrozenSet to __all__
+(upstream #261). Fix crash in _get_type_vars() (upstream #259). Remove the
+dict constraint in ForwardRef._eval_type (upstream #252).
 
 ..
 
@@ -1402,20 +1423,8 @@ Zijlstra.
 When an exception is raised within the context being managed by a
 contextlib.ExitStack() and one of the exit stack generators catches and
 raises it in a chain, do not re-raise the original exception when exiting,
-let the new chained one through.  This avoids the PEP 479 bug described in
+let the new chained one through.  This avoids the :pep:`479` bug described in
 issue25782.
-
-..
-
-.. bpo: 27278
-.. date: 9755
-.. nonce: y_HkGw
-.. original section: Library
-.. section: Security
-
-Fix os.urandom() implementation using getrandom() on Linux.  Truncate size
-to INT_MAX and loop until we collected enough random bytes, instead of
-casting a directly Py_ssize_t to int.
 
 ..
 
@@ -1425,16 +1434,6 @@ casting a directly Py_ssize_t to int.
 .. section: Library
 
 Fixed ttk.TreeView selection operations with item id's containing spaces.
-
-..
-
-.. bpo: 22636
-.. date: 9753
-.. nonce: 3fQW_g
-.. original section: Library
-.. section: Security
-
-Avoid shell injection problems with ctypes.util.find_library().
 
 ..
 
@@ -2070,9 +2069,9 @@ Update message in validate_ucrtbase.py
 .. section: Build
 
 Cause lack of llvm-profdata tool when using clang as required for PGO
-linking to be a configure time error rather than make time when --with-
-optimizations is enabled.  Also improve our ability to find the llvm-
-profdata tool on MacOS and some Linuxes.
+linking to be a configure time error rather than make time when
+--with-optimizations is enabled.  Also improve our ability to find the
+llvm-profdata tool on MacOS and some Linuxes.
 
 ..
 
@@ -2131,7 +2130,7 @@ CPP invocation in configure must use CPPFLAGS. Patch by Chi Hsuan Yen.
 .. section: Build
 
 The configure script now inserts comments into the makefile to prevent the
-pgen and _freeze_importlib executables from being cross- compiled.
+pgen and _freeze_importlib executables from being cross-compiled.
 
 ..
 

@@ -1,7 +1,19 @@
+.. release date: 2017-06-17
+.. bpo: 29591
+.. date: 9966
+.. nonce: ExKblw
+.. original section: Library
+.. section: Security
+
+Update expat copy from 2.1.1 to 2.2.0 to get fixes of CVE-2016-0718 and
+CVE-2016-4472. See https://sourceforge.net/p/expat/bugs/537/ for more
+information.
+
+..
+
 .. bpo: 30682
 .. date: 9989
 .. nonce: zZm88E
-.. release date: 2017-06-17
 .. section: Core and Builtins
 
 Removed a too-strict assertion that failed for certain f-strings, such as
@@ -221,18 +233,6 @@ Sundaresan.
 
 re.compile() no longer raises a BytesWarning when compiling a bytes instance
 with misplaced inline modifier.  Patch by Roy Williams.
-
-..
-
-.. bpo: 29591
-.. date: 9966
-.. nonce: ExKblw
-.. original section: Library
-.. section: Security
-
-Update expat copy from 2.1.1 to 2.2.0 to get fixes of CVE-2016-0718 and
-CVE-2016-4472. See https://sourceforge.net/p/expat/bugs/537/ for more
-information.
 
 ..
 
@@ -872,7 +872,6 @@ the link targets for :func:`bytes` and :func:`bytearray` are now their
 respective type definitions, rather than the corresponding builtin function
 entries. Use :ref:`bytes <func-bytes>` and :ref:`bytearray <func-bytearray>`
 to reference the latter.
-
 In order to ensure this and future cross-reference updates are applied
 automatically, the daily documentation builds now disable the default output
 caching features in Sphinx.

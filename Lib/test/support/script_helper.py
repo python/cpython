@@ -11,11 +11,13 @@ import py_compile
 import zipfile
 
 from importlib.util import source_from_cache
-from test.support import make_legacy_pyc, strip_python_stderr
+from test import support
+from test.support.import_helper import make_legacy_pyc
 
 
 # Cached result of the expensive test performed in the function below.
 __cached_interp_requires_environment = None
+
 
 def interpreter_requires_environment():
     """
@@ -40,6 +42,10 @@ def interpreter_requires_environment():
         if 'PYTHONHOME' in os.environ:
             __cached_interp_requires_environment = True
             return True
+        # cannot run subprocess, assume we don't need it
+        if not support.has_subprocess_support:
+            __cached_interp_requires_environment = False
+            return False
 
         # Try running an interpreter with -E to see if it works or not.
         try:
@@ -85,6 +91,7 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
 
 
 # Executing the interpreter in a subprocess
+@support.requires_subprocess()
 def run_python_until_end(*args, **env_vars):
     env_required = interpreter_requires_environment()
     cwd = env_vars.pop('__cwd', None)
@@ -134,14 +141,16 @@ def run_python_until_end(*args, **env_vars):
             proc.kill()
             subprocess._cleanup()
     rc = proc.returncode
-    err = strip_python_stderr(err)
     return _PythonRunResult(rc, out, err), cmd_line
 
-def _assert_python(expected_success, *args, **env_vars):
+
+@support.requires_subprocess()
+def _assert_python(expected_success, /, *args, **env_vars):
     res, cmd_line = run_python_until_end(*args, **env_vars)
     if (res.rc and expected_success) or (not res.rc and not expected_success):
         res.fail(cmd_line)
     return res
+
 
 def assert_python_ok(*args, **env_vars):
     """
@@ -156,6 +165,7 @@ def assert_python_ok(*args, **env_vars):
     """
     return _assert_python(True, *args, **env_vars)
 
+
 def assert_python_failure(*args, **env_vars):
     """
     Assert that running the interpreter with `args` and optional environment
@@ -166,6 +176,8 @@ def assert_python_failure(*args, **env_vars):
     """
     return _assert_python(False, *args, **env_vars)
 
+
+@support.requires_subprocess()
 def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     """Run a Python subprocess with the given arguments.
 
@@ -188,6 +200,7 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
                             stdout=stdout, stderr=stderr,
                             **kw)
 
+
 def kill_python(p):
     """Run the given Popen process until completion and return stdout."""
     p.stdin.close()
@@ -199,42 +212,43 @@ def kill_python(p):
     subprocess._cleanup()
     return data
 
+
 def make_script(script_dir, script_basename, source, omit_suffix=False):
     script_filename = script_basename
     if not omit_suffix:
         script_filename += os.extsep + 'py'
     script_name = os.path.join(script_dir, script_filename)
     # The script should be encoded to UTF-8, the default string encoding
-    script_file = open(script_name, 'w', encoding='utf-8')
-    script_file.write(source)
-    script_file.close()
+    with open(script_name, 'w', encoding='utf-8') as script_file:
+        script_file.write(source)
     importlib.invalidate_caches()
     return script_name
+
 
 def make_zip_script(zip_dir, zip_basename, script_name, name_in_zip=None):
     zip_filename = zip_basename+os.extsep+'zip'
     zip_name = os.path.join(zip_dir, zip_filename)
-    zip_file = zipfile.ZipFile(zip_name, 'w')
-    if name_in_zip is None:
-        parts = script_name.split(os.sep)
-        if len(parts) >= 2 and parts[-2] == '__pycache__':
-            legacy_pyc = make_legacy_pyc(source_from_cache(script_name))
-            name_in_zip = os.path.basename(legacy_pyc)
-            script_name = legacy_pyc
-        else:
-            name_in_zip = os.path.basename(script_name)
-    zip_file.write(script_name, name_in_zip)
-    zip_file.close()
+    with zipfile.ZipFile(zip_name, 'w') as zip_file:
+        if name_in_zip is None:
+            parts = script_name.split(os.sep)
+            if len(parts) >= 2 and parts[-2] == '__pycache__':
+                legacy_pyc = make_legacy_pyc(source_from_cache(script_name))
+                name_in_zip = os.path.basename(legacy_pyc)
+                script_name = legacy_pyc
+            else:
+                name_in_zip = os.path.basename(script_name)
+        zip_file.write(script_name, name_in_zip)
     #if test.support.verbose:
-    #    zip_file = zipfile.ZipFile(zip_name, 'r')
-    #    print 'Contents of %r:' % zip_name
-    #    zip_file.printdir()
-    #    zip_file.close()
+    #    with zipfile.ZipFile(zip_name, 'r') as zip_file:
+    #        print 'Contents of %r:' % zip_name
+    #        zip_file.printdir()
     return zip_name, os.path.join(zip_name, name_in_zip)
+
 
 def make_pkg(pkg_dir, init_source=''):
     os.mkdir(pkg_dir)
     make_script(pkg_dir, '__init__', init_source)
+
 
 def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
                  source, depth=1, compiled=False):
@@ -252,17 +266,37 @@ def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     script_name_in_zip = os.path.join(pkg_names[-1], os.path.basename(script_name))
     zip_filename = zip_basename+os.extsep+'zip'
     zip_name = os.path.join(zip_dir, zip_filename)
-    zip_file = zipfile.ZipFile(zip_name, 'w')
-    for name in pkg_names:
-        init_name_in_zip = os.path.join(name, init_basename)
-        zip_file.write(init_name, init_name_in_zip)
-    zip_file.write(script_name, script_name_in_zip)
-    zip_file.close()
+    with zipfile.ZipFile(zip_name, 'w') as zip_file:
+        for name in pkg_names:
+            init_name_in_zip = os.path.join(name, init_basename)
+            zip_file.write(init_name, init_name_in_zip)
+        zip_file.write(script_name, script_name_in_zip)
     for name in unlink:
         os.unlink(name)
     #if test.support.verbose:
-    #    zip_file = zipfile.ZipFile(zip_name, 'r')
-    #    print 'Contents of %r:' % zip_name
-    #    zip_file.printdir()
-    #    zip_file.close()
+    #    with zipfile.ZipFile(zip_name, 'r') as zip_file:
+    #        print 'Contents of %r:' % zip_name
+    #        zip_file.printdir()
     return zip_name, os.path.join(zip_name, script_name_in_zip)
+
+
+@support.requires_subprocess()
+def run_test_script(script):
+    # use -u to try to get the full output if the test hangs or crash
+    if support.verbose:
+        def title(text):
+            return f"===== {text} ======"
+
+        name = f"script {os.path.basename(script)}"
+        print()
+        print(title(name), flush=True)
+        # In verbose mode, the child process inherit stdout and stdout,
+        # to see output in realtime and reduce the risk of losing output.
+        args = [sys.executable, "-E", "-X", "faulthandler", "-u", script, "-v"]
+        proc = subprocess.run(args)
+        print(title(f"{name} completed: exit code {proc.returncode}"),
+              flush=True)
+        if proc.returncode:
+            raise AssertionError(f"{name} failed")
+    else:
+        assert_python_ok("-u", script, "-v")

@@ -3,12 +3,12 @@
 
 import os, sys, errno
 import unittest
-from test import support
+from test.support import import_helper
 import threading
-from platform import machine
+from platform import machine, win32_edition
 
 # Do this first so test will be skipped if module doesn't exist
-support.import_module('winreg', required_on=['win'])
+import_helper.import_module('winreg', required_on=['win'])
 # Now import everything
 from winreg import *
 
@@ -41,10 +41,11 @@ test_data = [
     ("String Val",    "A string value",                        REG_SZ),
     ("StringExpand",  "The path is %path%",                    REG_EXPAND_SZ),
     ("Multi-string",  ["Lots", "of", "string", "values"],      REG_MULTI_SZ),
+    ("Multi-nul",     ["", "", "", ""],                        REG_MULTI_SZ),
     ("Raw Data",      b"binary\x00data",                       REG_BINARY),
     ("Big String",    "x"*(2**14-1),                           REG_SZ),
     ("Big Binary",    b"x"*(2**14),                            REG_BINARY),
-    # Two and three kanjis, meaning: "Japan" and "Japanese")
+    # Two and three kanjis, meaning: "Japan" and "Japanese".
     ("Japanese 日本", "日本語", REG_SZ),
 ]
 
@@ -112,7 +113,6 @@ class BaseWinregTests(unittest.TestCase):
                       "does not close the actual key!")
         except OSError:
             pass
-
     def _read_test_data(self, root_key, subkeystr="sub_key", OpenKey=OpenKey):
         # Check we can get default value for this key.
         val = QueryValue(root_key, test_key_name)
@@ -229,7 +229,7 @@ class LocalWinregTests(BaseWinregTests):
         h.Close()
         self.assertEqual(h.handle, 0)
 
-    def test_inexistant_remote_registry(self):
+    def test_nonexistent_remote_registry(self):
         connect = lambda: ConnectRegistry("abcdefghijkl", HKEY_CURRENT_USER)
         self.assertRaises(OSError, connect)
 
@@ -339,6 +339,23 @@ class LocalWinregTests(BaseWinregTests):
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
+    def test_setvalueex_negative_one_check(self):
+        # Test for Issue #43984, check -1 was not set by SetValueEx.
+        # Py2Reg, which gets called by SetValueEx, wasn't checking return
+        # value by PyLong_AsUnsignedLong, thus setting -1 as value in the registry.
+        # The implementation now checks PyLong_AsUnsignedLong return value to assure
+        # the value set was not -1.
+        try:
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
+                with self.assertRaises(OverflowError):
+                    SetValueEx(ck, "test_name_dword", None, REG_DWORD, -1)
+                    SetValueEx(ck, "test_name_qword", None, REG_QWORD, -1)
+                self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_dword")
+                self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_qword")
+
+        finally:
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
     def test_queryvalueex_return_value(self):
         # Test for Issue #16759, return unsigned int from QueryValueEx.
         # Reg2Py, which gets called by QueryValueEx, was returning a value
@@ -399,6 +416,7 @@ class Win64WinregTests(BaseWinregTests):
         DeleteKeyEx(key=HKEY_CURRENT_USER, sub_key=test_key_name,
                     access=KEY_ALL_ACCESS, reserved=0)
 
+    @unittest.skipIf(win32_edition() in ('WindowsCoreHeadless', 'IoTEdgeOS'), "APIs not available on WindowsCoreHeadless")
     def test_reflection_functions(self):
         # Test that we can call the query, enable, and disable functions
         # on a key which isn't on the reflection list with no consequences.
@@ -487,12 +505,9 @@ class Win64WinregTests(BaseWinregTests):
         with self.assertRaises(FileNotFoundError) as ctx:
             QueryValue(HKEY_CLASSES_ROOT, 'some_value_that_does_not_exist')
 
-def test_main():
-    support.run_unittest(LocalWinregTests, RemoteWinregTests,
-                         Win64WinregTests)
 
 if __name__ == "__main__":
     if not REMOTE_NAME:
         print("Remote registry calls can be tested using",
               "'test_winreg.py --remote \\\\machine_name'")
-    test_main()
+    unittest.main()

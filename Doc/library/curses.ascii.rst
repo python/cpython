@@ -7,6 +7,8 @@
 .. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
 .. sectionauthor:: Eric S. Raymond <esr@thyrsus.com>
 
+**Source code:** :source:`Lib/curses/ascii.py`
+
 --------------
 
 The :mod:`curses.ascii` module supplies name constants for ASCII characters and
@@ -206,6 +208,10 @@ byte value; they return a value of the same type.
 The following function takes either a single-character string or integer value;
 it returns a string.
 
+
+.. index::
+   single: ^ (caret); in curses module
+   single: ! (exclamation); in curses module
 
 .. function:: unctrl(c)
 
