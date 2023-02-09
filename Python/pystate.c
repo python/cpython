@@ -638,6 +638,14 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
+    /* Initialize obmalloc, but only for subinterpreters,
+       since the main interpreter is initialized statically. */
+    if (interp != &runtime->_main_interpreter) {
+        poolp temp[OBMALLOC_USED_POOLS_SIZE] = \
+                _obmalloc_pools_INIT(interp->obmalloc.pools);
+        memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
+    }
+
     _PyEval_InitState(&interp->ceval, pending_lock);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
