@@ -4608,6 +4608,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->starmap_type);
     Py_VISIT(state->takewhile_type);
     Py_VISIT(state->tee_type);
+    Py_VISIT(state->teedataobject_type);
     Py_VISIT(state->ziplongest_type);
     return 0;
 }
@@ -4636,6 +4637,7 @@ itertoolsmodule_clear(PyObject *mod)
     Py_CLEAR(state->starmap_type);
     Py_CLEAR(state->takewhile_type);
     Py_CLEAR(state->tee_type);
+    Py_CLEAR(state->teedataobject_type);
     Py_CLEAR(state->ziplongest_type);
     return 0;
 }
