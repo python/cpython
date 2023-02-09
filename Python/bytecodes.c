@@ -89,10 +89,7 @@ dummy_func(
 
         inst(RESUME, (--)) {
             if (cframe.use_tracing == 0) {
-                PyObject *retval = NULL;
-                if (_PyCode_Tier2Warmup(tstate, frame, throwflag, next_instr, stack_pointer, &retval)) {
-                    return retval;
-                }
+                next_instr = _PyCode_Tier2Warmup(frame, next_instr);
             }
             GO_TO_INSTRUCTION(RESUME_QUICK);
         }
@@ -1884,14 +1881,10 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (--)) {
-            JUMPBY(-oparg);
-            CHECK_EVAL_BREAKER();
             if (cframe.use_tracing == 0) {
-                PyObject *retval = NULL;
-                if (_PyCode_Tier2Warmup(tstate, frame, throwflag, next_instr, stack_pointer, &retval)) {
-                    return retval;
-                }
+                next_instr = _PyCode_Tier2Warmup(frame, next_instr);
             }
+            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
 
         inst(JUMP_BACKWARD_QUICK, (--)) {

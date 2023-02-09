@@ -47,10 +47,6 @@
 #define OR_DTRACE_LINE
 #endif
 
-#ifdef USE_COMPUTED_GOTOS
-    #undef USE_COMPUTED_GOTOS
-#endif
-
 #ifdef HAVE_COMPUTED_GOTOS
     #ifndef USE_COMPUTED_GOTOS
     #define USE_COMPUTED_GOTOS 1
@@ -63,56 +59,25 @@
     #define USE_COMPUTED_GOTOS 0
 #endif
 
-#ifdef INSTRUCTION_START
-    #undef INSTRUCTION_START
-#endif
-
-#ifndef TIER2_PROFILING
-    #ifdef Py_STATS
-    #define INSTRUCTION_START(op) \
-        do { \
-            frame->prev_instr = next_instr++; \
-            OPCODE_EXE_INC(op); \
-            if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
-            lastopcode = op; \
-        } while (0)
-    #else
-    #define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
-    #endif
+#ifdef Py_STATS
+#define INSTRUCTION_START(op) \
+    do { \
+        frame->prev_instr = next_instr++; \
+        OPCODE_EXE_INC(op); \
+        if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
+        lastopcode = op; \
+    } while (0)
 #else
-    #define INSTRUCTION_START(op) \
-        do { \
-            frame->prev_instr = next_instr++; \
-            fprintf(stderr, "%d\n", op); \
-        } while (0)
-#endif /* TIER2_PROFILING */
-
-#ifdef TARGET
-#undef TARGET
+#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
 #endif
 
-#ifdef DISPATCH_GOTO
-#undef DISPATCH_GOTO
-#endif
-
-#ifndef TIER2_PROFILING
-    #if USE_COMPUTED_GOTOS
-    #  define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
-    #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
-    #else
-    #  define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
-    #  define DISPATCH_GOTO() goto dispatch_opcode
-    #endif
+#if USE_COMPUTED_GOTOS
+#  define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
+#  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-    #if USE_COMPUTED_GOTOS
-    #  define TARGET(op) TARGET_TIER2_PROFILE_##op: INSTRUCTION_START(op);
-    #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
-    #else
-    #  define TARGET(op) case op: TARGET_TIER2_PROFILE_##op: INSTRUCTION_START(op);
-    #  define DISPATCH_GOTO() goto dispatch_opcode
-    #endif
-#endif /* TIER2_PROFILING */
-
+#  define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
+#  define DISPATCH_GOTO() goto dispatch_opcode
+#endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
@@ -122,9 +87,6 @@
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
-#ifdef DISPATCH
-#undef DISPATCH
-#endif
 
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
@@ -136,10 +98,6 @@
         DISPATCH_GOTO(); \
     }
 
-#ifdef DISPATCH_SAME_OPARG
-#undef DISPATCH_SAME_OPARG
-#endif
-
 #define DISPATCH_SAME_OPARG() \
     { \
         opcode = _Py_OPCODE(*next_instr); \
@@ -147,10 +105,6 @@
         opcode |= cframe.use_tracing OR_DTRACE_LINE; \
         DISPATCH_GOTO(); \
     }
-
-#ifdef DISPATCH_INLINED
-#undef DISPATCH_INLINED
-#endif
 
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
@@ -162,10 +116,6 @@
         goto start_frame;                               \
     } while (0)
 
-#ifdef CHECK_EVAL_BREAKER
-#undef CHECK_EVAL_BREAKER
-#endif
-
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     if (_Py_atomic_load_relaxed_int32(eval_breaker)) { \
@@ -175,12 +125,9 @@
 
 /* Tuple access macros */
 
-
 #ifndef Py_DEBUG
 #define GETITEM(v, i) PyTuple_GET_ITEM((v), (i))
 #else
-#ifndef _GETITEM_DEF_H
-#define _GETITEM_DEF_H
 static inline PyObject *
 GETITEM(PyObject *v, Py_ssize_t i) {
     assert(PyTuple_Check(v));
@@ -188,26 +135,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     assert(i < PyTuple_GET_SIZE(v));
     return PyTuple_GET_ITEM(v, i);
 }
-#endif /* _GETITEM_DEF_H */
 #endif
 
 /* Code access macros */
-
-#ifdef INSTR_OFFSET
-#undef INSTR_OFFSET
-#endif
-
-#ifdef NEXTOPARG
-#undef NEXTOPARG
-#endif
-
-#ifdef JUMPTO
-#undef JUMPTO
-#endif
-
-#ifdef JUMPBY
-#undef JUMPBY
-#endif
 
 /* The integer overflow is checked by an assertion below. */
 // TODO change this calculation when interpreter is bb aware.
@@ -246,23 +176,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 */
 
-#ifdef PREDICT_ID
-#undef PREDICT_ID
-#endif
-
-#ifndef TIER2_PROFILING
 #define PREDICT_ID(op)          PRED_##op
-#else
-#define PREDICT_ID(op)          PRED_TIER2_PROFILING_##op
-#endif
-
-#ifdef PREDICT
-#undef PREDICT
-#endif
-
-#ifdef PREDICTED
-#undef PREDICTED
-#endif
 
 #if USE_COMPUTED_GOTOS
 #define PREDICT(op)             if (0) goto PREDICT_ID(op)
@@ -336,7 +250,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define SETLOCAL(i, value)      do { PyObject *tmp = GETLOCAL(i); \
                                      GETLOCAL(i) = value; \
                                      Py_XDECREF(tmp); } while (0)
-
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 

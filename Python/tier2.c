@@ -1,22 +1,16 @@
 #include "Python.h"
 #include "pycore_code.h"
 #include "pycore_frame.h"
-#include "pycore_interp.h"
 
 #include "opcode.h"
-#include "pystate.h"
-#include "pytypedefs.h"
 
 static _Py_CODEUNIT *
 _PyCode_Tier2Initialize(_PyInterpreterFrame *, _Py_CODEUNIT *);
 
 // Tier 2 warmup counter
-int
-_PyCode_Tier2Warmup(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag, _Py_CODEUNIT *next_instr, PyObject **stack_pointer, PyObject **retval)
+_Py_CODEUNIT *
+_PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 {
-    if (tstate->interp->eval_frame != NULL) {
-        return 0;
-    }
     PyCodeObject *code = frame->f_code;
     if (code->_tier2_warmup != 0) {
         code->_tier2_warmup++;
@@ -24,20 +18,13 @@ _PyCode_Tier2Warmup(PyThreadState *tstate, _PyInterpreterFrame *frame, int throw
             // If it fails, due to lack of memory or whatever,
             // just fall back to the tier 1 interpreter.
             _Py_CODEUNIT *next = _PyCode_Tier2Initialize(frame, next_instr);
-            // Swap out the profiler to use the profiling eval loop.
-            frame->prev_instr = next_instr - 1;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            // Do something with entry_frame here, maybe set the current frame to an entry
-            // frame and check for that in RETURN_VALUE?
-            *retval = _PyEval_EvalFrameTier2Profile(tstate, frame, throwflag);
-            PyObject_Print(*retval, stderr, Py_PRINT_RAW);
-            return 1;
-            
+            if (next != NULL) {
+                return next;
+            }
         }
     }
-    return 0;
+    return next_instr;
 }
-
 
 
 static _PyTier2BBSpace *
@@ -70,6 +57,7 @@ static _Py_CODEUNIT *
 _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 {
     int curr = _Py_OPCODE(*(next_instr - 1));
+    assert(curr == RESUME || curr == JUMP_BACKWARD);
     PyCodeObject *co = frame->f_code;
     assert(co->_bb_space == NULL);
     // 1. Initialize basic blocks space.

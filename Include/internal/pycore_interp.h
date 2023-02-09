@@ -230,7 +230,6 @@ PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
-PyObject *_PyEval_EvalFrameTier2Profile(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag);
 #ifdef __cplusplus
 }
 #endif
