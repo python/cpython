@@ -641,8 +641,9 @@ m_log2(double x)
         }
     }
 
-    if (x > 0.0)
+    if (x > 0.0) {
         return log2(x);
+    }
     else if (x == 0.0) {
         errno = EDOM;
         return -Py_HUGE_VAL; /* log2(0) = -inf, divide-by-zero */
