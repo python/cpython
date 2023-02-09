@@ -2361,13 +2361,14 @@ PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
+    const size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));
-    if (basicsize > (size_t)PY_SSIZE_T_MAX - sizeof(PyGC_Head)) {
+    if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
         return (PyVarObject *)PyErr_NoMemory();
     }
 
     PyGC_Head *g = AS_GC(op);
-    g = (PyGC_Head *)PyObject_Realloc(g,  sizeof(PyGC_Head) + basicsize);
+    g = (PyGC_Head *)PyObject_Realloc(g,  presize + basicsize);
     if (g == NULL)
         return (PyVarObject *)PyErr_NoMemory();
     op = (PyVarObject *) FROM_GC(g);
