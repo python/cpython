@@ -128,11 +128,11 @@ class TaskGroup:
             # Exceptions are heavy objects that can have object
             # cycles (bad for GC); let's not keep a reference to
             # a bunch of them.
-            errors = self._errors
-            self._errors = None
-
-            me = BaseExceptionGroup('unhandled errors in a TaskGroup', errors)
-            raise me from None
+            try:
+                me = BaseExceptionGroup('unhandled errors in a TaskGroup', self._errors)
+                raise me from None
+            finally:
+                self._errors = None
 
     def create_task(self, coro, *, name=None, context=None):
         if not self._entered:

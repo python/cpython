@@ -855,7 +855,8 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
-    if (self->connection->isolation_level
+    if (self->connection->autocommit == AUTOCOMMIT_LEGACY
+        && self->connection->isolation_level
         && self->statement->is_dml
         && sqlite3_get_autocommit(self->connection->db))
     {
@@ -1033,7 +1034,9 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
 
     // Commit if needed
     sqlite3 *db = self->connection->db;
-    if (!sqlite3_get_autocommit(db)) {
+    if (self->connection->autocommit == AUTOCOMMIT_LEGACY
+        && !sqlite3_get_autocommit(db))
+    {
         int rc = SQLITE_OK;
 
         Py_BEGIN_ALLOW_THREADS
@@ -1120,8 +1123,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         PyObject *factory = self->row_factory;
         PyObject *args[] = { (PyObject *)self, row, };
         PyObject *new_row = PyObject_Vectorcall(factory, args, 2, NULL);
-        Py_DECREF(row);
-        row = new_row;
+        Py_SETREF(row, new_row);
     }
     return row;
 }

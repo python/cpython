@@ -14,13 +14,13 @@
 
 --------------
 
-This module defines classes which implement the client side of the HTTP and
+This module defines classes that implement the client side of the HTTP and
 HTTPS protocols.  It is normally not used directly --- the module
 :mod:`urllib.request` uses it to handle URLs that use HTTP and HTTPS.
 
 .. seealso::
 
-    The `Requests package <https://requests.readthedocs.io/en/master/>`_
+    The `Requests package <https://requests.readthedocs.io/en/latest/>`_
     is recommended for a higher-level HTTP client interface.
 
 .. note::
@@ -37,7 +37,7 @@ The module provides the following classes:
                           blocksize=8192)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
-   server.  It should be instantiated passing it a host and optional port
+   server.  It should be instantiated by passing it a host and optional port
    number.  If no port number is passed, the port is extracted from the host
    string if it has the form ``host:port``, else the default HTTP port (80) is
    used.  If the optional *timeout* parameter is given, blocking
@@ -61,16 +61,15 @@ The module provides the following classes:
 
    .. versionchanged:: 3.4
       The  *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
-      not longer supported.
+      no longer supported.
 
    .. versionchanged:: 3.7
       *blocksize* parameter was added.
 
 
-.. class:: HTTPSConnection(host, port=None, key_file=None, \
-                           cert_file=None[, timeout], \
-                           source_address=None, *, context=None, \
-                           check_hostname=None, blocksize=8192)
+.. class:: HTTPSConnection(host, port=None, *[, timeout], \
+                           source_address=None, context=None, \
+                           blocksize=8192)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
@@ -96,6 +95,16 @@ The module provides the following classes:
       :func:`ssl._create_unverified_context` can be passed to the *context*
       parameter.
 
+   .. deprecated:: 3.6
+       *key_file* and *cert_file* are deprecated in favor of *context*.
+       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+       :func:`ssl.create_default_context` select the system's trusted CA
+       certificates for you.
+
+       The *check_hostname* parameter is also deprecated; the
+       :attr:`ssl.SSLContext.check_hostname` attribute of *context* should
+       be used instead.
+
    .. versionchanged:: 3.8
       This class now enables TLS 1.3
       :attr:`ssl.SSLContext.post_handshake_auth` for the default *context* or
@@ -106,16 +115,9 @@ The module provides the following classes:
       ``http/1.1`` when no *context* is given. Custom *context* should set
       ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
 
-   .. deprecated:: 3.6
-
-       *key_file* and *cert_file* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
-       The *check_hostname* parameter is also deprecated; the
-       :attr:`ssl.SSLContext.check_hostname` attribute of *context* should
-       be used instead.
+   .. versionchanged:: 3.12
+       The deprecated *key_file*, *cert_file* and *check_hostname* parameters
+       have been removed.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, method=None, url=None)
@@ -344,11 +346,11 @@ HTTPConnection Objects
    Set the host and the port for HTTP Connect Tunnelling. This allows running
    the connection through a proxy server.
 
-   The host and port arguments specify the endpoint of the tunneled connection
+   The *host* and *port* arguments specify the endpoint of the tunneled connection
    (i.e. the address included in the CONNECT request, *not* the address of the
    proxy server).
 
-   The headers argument should be a mapping of extra HTTP headers to send with
+   The *headers* argument should be a mapping of extra HTTP headers to send with
    the CONNECT request.
 
    For example, to tunnel through a HTTPS proxy server running locally on port
@@ -474,7 +476,7 @@ statement.
 
    Return the value of the header *name*, or *default* if there is no header
    matching *name*.  If there is more than one  header with the name *name*,
-   return all of the values joined by ', '.  If 'default' is any iterable other
+   return all of the values joined by ', '.  If *default* is any iterable other
    than a single string, its elements are similarly returned joined by commas.
 
 .. method:: HTTPResponse.getheaders()
@@ -578,7 +580,7 @@ Here is an example session that uses the ``HEAD`` method.  Note that the
    >>> data == b''
    True
 
-Here is an example session that shows how to ``POST`` requests::
+Here is an example session that uses the ``POST`` method::
 
    >>> import http.client, urllib.parse
    >>> params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
@@ -594,14 +596,13 @@ Here is an example session that shows how to ``POST`` requests::
    b'Redirecting to <a href="https://bugs.python.org/issue12524">https://bugs.python.org/issue12524</a>'
    >>> conn.close()
 
-Client side ``HTTP PUT`` requests are very similar to ``POST`` requests. The
-difference lies only the server side where HTTP server will allow resources to
-be created via ``PUT`` request. It should be noted that custom HTTP methods
+Client side HTTP ``PUT`` requests are very similar to ``POST`` requests. The
+difference lies only on the server side where HTTP servers will allow resources to
+be created via ``PUT`` requests. It should be noted that custom HTTP methods
 are also handled in :class:`urllib.request.Request` by setting the appropriate
-method attribute. Here is an example session that shows how to send a ``PUT``
-request using http.client::
+method attribute. Here is an example session that uses the ``PUT`` method::
 
-    >>> # This creates an HTTP message
+    >>> # This creates an HTTP request
     >>> # with the content of BODY as the enclosed representation
     >>> # for the resource http://localhost:8080/file
     ...

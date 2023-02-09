@@ -34,6 +34,7 @@ MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
 LOAD_CONST = opmap['LOAD_CONST']
+RETURN_CONST = opmap['RETURN_CONST']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
 JUMP_BACKWARD = opmap['JUMP_BACKWARD']
@@ -363,7 +364,7 @@ def _get_const_value(op, arg, co_consts):
     assert op in hasconst
 
     argval = UNKNOWN
-    if op == LOAD_CONST:
+    if op == LOAD_CONST or op == RETURN_CONST:
         if co_consts is not None:
             argval = co_consts[arg]
     return argval
@@ -483,7 +484,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif deop in haslocal or deop in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
             elif deop in hascompare:
-                argval = cmp_op[arg]
+                argval = cmp_op[arg>>4]
                 argrepr = argval
             elif deop == FORMAT_VALUE:
                 argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
@@ -512,9 +513,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             for i in range(size):
                 offset += 2
                 # Only show the fancy argrepr for a CACHE instruction when it's
-                # the first entry for a particular cache value and the
-                # instruction using it is actually quickened:
-                if i == 0 and op != deop:
+                # the first entry for a particular cache value:
+                if i == 0:
                     data = code[offset: offset + 2 * size]
                     argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
                 else:
@@ -667,7 +667,6 @@ def _find_imports(co):
     the corresponding args to __import__.
     """
     IMPORT_NAME = opmap['IMPORT_NAME']
-    LOAD_CONST = opmap['LOAD_CONST']
 
     consts = co.co_consts
     names = co.co_names

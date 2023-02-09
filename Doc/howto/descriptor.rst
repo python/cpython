@@ -847,7 +847,7 @@ afterwards, :meth:`__set_name__` will need to be called manually.
 ORM example
 -----------
 
-The following code is simplified skeleton showing how data descriptors could
+The following code is a simplified skeleton showing how data descriptors could
 be used to implement an `object relational mapping
 <https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping>`_.
 
@@ -1535,6 +1535,8 @@ by member descriptors:
         def __get__(self, obj, objtype=None):
             'Emulate member_get() in Objects/descrobject.c'
             # Also see PyMember_GetOne() in Python/structmember.c
+            if obj is None:
+                return self
             value = obj._slotvalues[self.offset]
             if value is null:
                 raise AttributeError(self.name)
@@ -1563,13 +1565,13 @@ variables:
     class Type(type):
         'Simulate how the type metaclass adds member objects for slots'
 
-        def __new__(mcls, clsname, bases, mapping):
+        def __new__(mcls, clsname, bases, mapping, **kwargs):
             'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)
-            return type.__new__(mcls, clsname, bases, mapping)
+            return type.__new__(mcls, clsname, bases, mapping, **kwargs)
 
 The :meth:`object.__new__` method takes care of creating instances that have
 slots instead of an instance dictionary.  Here is a rough simulation in pure
@@ -1580,7 +1582,7 @@ Python:
     class Object:
         'Simulate how object.__new__() allocates memory for __slots__'
 
-        def __new__(cls, *args):
+        def __new__(cls, *args, **kwargs):
             'Emulate object_new() in Objects/typeobject.c'
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
@@ -1593,7 +1595,7 @@ Python:
             cls = type(self)
             if hasattr(cls, 'slot_names') and name not in cls.slot_names:
                 raise AttributeError(
-                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                    f'{cls.__name__!r} object has no attribute {name!r}'
                 )
             super().__setattr__(name, value)
 
@@ -1602,7 +1604,7 @@ Python:
             cls = type(self)
             if hasattr(cls, 'slot_names') and name not in cls.slot_names:
                 raise AttributeError(
-                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                    f'{cls.__name__!r} object has no attribute {name!r}'
                 )
             super().__delattr__(name)
 

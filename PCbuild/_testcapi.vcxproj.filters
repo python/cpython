@@ -12,6 +12,9 @@
     <ClCompile Include="..\Modules\_testcapimodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\getargs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\vectorcall.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -22,6 +25,30 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\unicode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\pytime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\datetime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\docstring.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\mem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\watchers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\float.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\long.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\structmember.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,1 +1,0 @@
-The :mod:`smtpd` module was removed per the schedule in :pep:`594`.

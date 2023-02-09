@@ -682,8 +682,7 @@ mbuf_add_view(_PyManagedBufferObject *mbuf, const Py_buffer *src)
     init_suboffsets(dest, src);
     init_flags(mv);
 
-    mv->mbuf = mbuf;
-    Py_INCREF(mbuf);
+    mv->mbuf = (_PyManagedBufferObject*)Py_NewRef(mbuf);
     mbuf->exports++;
 
     return (PyObject *)mv;
@@ -713,8 +712,7 @@ mbuf_add_incomplete_view(_PyManagedBufferObject *mbuf, const Py_buffer *src,
     dest = &mv->view;
     init_shared_values(dest, src);
 
-    mv->mbuf = mbuf;
-    Py_INCREF(mbuf);
+    mv->mbuf = (_PyManagedBufferObject*)Py_NewRef(mbuf);
     mbuf->exports++;
 
     return (PyObject *)mv;
@@ -1102,8 +1100,7 @@ static PyObject *
 memory_enter(PyObject *self, PyObject *args)
 {
     CHECK_RELEASED(self);
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -1135,6 +1132,7 @@ get_native_fmtchar(char *result, const char *fmt)
     case 'n': case 'N': size = sizeof(Py_ssize_t); break;
     case 'f': size = sizeof(float); break;
     case 'd': size = sizeof(double); break;
+    case 'e': size = sizeof(float) / 2; break;
     case '?': size = sizeof(_Bool); break;
     case 'P': size = sizeof(void *); break;
     }
@@ -1178,6 +1176,7 @@ get_native_fmtstr(const char *fmt)
     case 'N': RETURN("N");
     case 'f': RETURN("f");
     case 'd': RETURN("d");
+    case 'e': RETURN("e");
     case '?': RETURN("?");
     case 'P': RETURN("P");
     }
@@ -1513,8 +1512,7 @@ memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
     }
 
 
-    view->obj = (PyObject *)self;
-    Py_INCREF(view->obj);
+    view->obj = Py_NewRef(self);
     self->exports++;
 
     return 0;
@@ -1697,6 +1695,12 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
 
     CHECK_RELEASED_AGAIN(self);
 
+#if PY_LITTLE_ENDIAN
+    int endian = 1;
+#else
+    int endian = 0;
+#endif
+
     switch (fmt[0]) {
 
     /* signed integers and fast path for 'B' */
@@ -1725,6 +1729,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     /* floats */
     case 'f': UNPACK_SINGLE(d, ptr, float); goto convert_double;
     case 'd': UNPACK_SINGLE(d, ptr, double); goto convert_double;
+    case 'e': d = PyFloat_Unpack2(ptr, endian); goto convert_double;
 
     /* bytes object */
     case 'c': goto convert_bytes;
@@ -1786,6 +1791,11 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
     double d;
     void *p;
 
+#if PY_LITTLE_ENDIAN
+    int endian = 1;
+#else
+    int endian = 0;
+#endif
     switch (fmt[0]) {
     /* signed integers */
     case 'b': case 'h': case 'i': case 'l':
@@ -1862,7 +1872,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         break;
 
     /* floats */
-    case 'f': case 'd':
+    case 'f': case 'd': case 'e':
         d = PyFloat_AsDouble(item);
         if (d == -1.0 && PyErr_Occurred())
             goto err_occurred;
@@ -1870,8 +1880,13 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         if (fmt[0] == 'f') {
             PACK_SINGLE(ptr, d, float);
         }
-        else {
+        else if (fmt[0] == 'd') {
             PACK_SINGLE(ptr, d, double);
+        }
+        else {
+            if (PyFloat_Pack2(d, ptr, endian) < 0) {
+                goto err_occurred;
+            }
         }
         break;
 
@@ -1882,7 +1897,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
             return -1; /* preserve original error */
         CHECK_RELEASED_INT_AGAIN(self);
         PACK_SINGLE(ptr, ld, _Bool);
-         break;
+        break;
 
     /* bytes object */
     case 'c':
@@ -2028,10 +2043,9 @@ struct_unpack_single(const char *ptr, struct unpacker *x)
         return NULL;
 
     if (PyTuple_GET_SIZE(v) == 1) {
-        PyObject *tmp = PyTuple_GET_ITEM(v, 0);
-        Py_INCREF(tmp);
+        PyObject *res = Py_NewRef(PyTuple_GET_ITEM(v, 0));
         Py_DECREF(v);
-        return tmp;
+        return res;
     }
 
     return v;
@@ -2477,8 +2491,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
             return unpack_single(self, view->buf, fmt);
         }
         else if (key == Py_Ellipsis) {
-            Py_INCREF(self);
-            return (PyObject *)self;
+            return Py_NewRef(self);
         }
         else {
             PyErr_SetString(PyExc_TypeError,
@@ -2748,6 +2761,17 @@ unpack_cmp(const char *p, const char *q, char fmt,
     /* XXX DBL_EPSILON? */
     case 'f': CMP_SINGLE(p, q, float); return equal;
     case 'd': CMP_SINGLE(p, q, double); return equal;
+    case 'e': {
+#if PY_LITTLE_ENDIAN
+        int endian = 1;
+#else
+        int endian = 0;
+#endif
+        /* Note: PyFloat_Unpack2 should never fail */
+        double u = PyFloat_Unpack2(p, endian);
+        double v = PyFloat_Unpack2(q, endian);
+        return (u == v);
+    }
 
     /* bytes object */
     case 'c': return *p == *q;
@@ -2927,8 +2951,7 @@ result:
     unpacker_free(unpack_v);
     unpacker_free(unpack_w);
 
-    Py_XINCREF(res);
-    return res;
+    return Py_XNewRef(res);
 }
 
 /**************************************************************************/
@@ -3022,8 +3045,7 @@ memory_obj_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
     if (view->obj == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(view->obj);
-    return view->obj;
+    return Py_NewRef(view->obj);
 }
 
 static PyObject *
@@ -3251,8 +3273,7 @@ memory_iter(PyObject *seq)
     it->it_fmt = fmt;
     it->it_length = memory_length(obj);
     it->it_index = 0;
-    Py_INCREF(seq);
-    it->it_seq = obj;
+    it->it_seq = (PyMemoryViewObject*)Py_NewRef(obj);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }

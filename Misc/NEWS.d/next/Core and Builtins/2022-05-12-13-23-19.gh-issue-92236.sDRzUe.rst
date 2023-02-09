@@ -1,2 +1,0 @@
-Remove spurious "LINE" event when starting a generator or coroutine, visible
-tracing functions implemented in C.

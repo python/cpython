@@ -1,2 +1,0 @@
-Fix problem with ``test_ssl`` ``test_get_ciphers`` on systems that require
-perfect forward secrecy (PFS) ciphers.

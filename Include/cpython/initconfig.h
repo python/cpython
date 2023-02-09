@@ -178,6 +178,7 @@ typedef struct PyConfig {
     wchar_t *check_hash_pycs_mode;
     int use_frozen_modules;
     int safe_path;
+    int int_max_str_digits;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
@@ -212,10 +213,6 @@ typedef struct PyConfig {
     // If equal to 0, stop Python initialization before the "main" phase.
     int _init_main;
 
-    // If non-zero, disallow threads, subprocesses, and fork.
-    // Default: 0.
-    int _isolated_interpreter;
-
     // If non-zero, we believe we're running from a source tree.
     int _is_python_build;
 } PyConfig;
@@ -243,6 +240,31 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     PyWideStringList *list,
     Py_ssize_t length, wchar_t **items);
 
+
+/* --- PyInterpreterConfig ------------------------------------ */
+
+typedef struct {
+    int allow_fork;
+    int allow_exec;
+    int allow_threads;
+    int allow_daemon_threads;
+} _PyInterpreterConfig;
+
+#define _PyInterpreterConfig_INIT \
+    { \
+        .allow_fork = 0, \
+        .allow_exec = 0, \
+        .allow_threads = 1, \
+        .allow_daemon_threads = 0, \
+    }
+
+#define _PyInterpreterConfig_LEGACY_INIT \
+    { \
+        .allow_fork = 1, \
+        .allow_exec = 1, \
+        .allow_threads = 1, \
+        .allow_daemon_threads = 1, \
+    }
 
 /* --- Helper functions --------------------------------------- */
 

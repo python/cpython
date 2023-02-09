@@ -765,6 +765,7 @@ Example of counting days to an event::
     >>> my_birthday = date(today.year, 6, 24)
     >>> if my_birthday < today:
     ...     my_birthday = my_birthday.replace(year=today.year + 1)
+    ...
     >>> my_birthday
     datetime.date(2008, 6, 24)
     >>> time_to_birthday = abs(my_birthday - today)
@@ -974,19 +975,18 @@ Other constructors, all class methods:
    microsecond of the result are all 0, and :attr:`.tzinfo` is ``None``.
 
 
-.. classmethod:: datetime.combine(date, time, tzinfo=self.tzinfo)
+.. classmethod:: datetime.combine(date, time, tzinfo=time.tzinfo)
 
    Return a new :class:`.datetime` object whose date components are equal to the
    given :class:`date` object's, and whose time components
    are equal to the given :class:`.time` object's. If the *tzinfo*
    argument is provided, its value is used to set the :attr:`.tzinfo` attribute
    of the result, otherwise the :attr:`~.time.tzinfo` attribute of the *time* argument
-   is used.
+   is used.  If the *date* argument is a :class:`.datetime` object, its time components
+   and :attr:`.tzinfo` attributes are ignored.
 
    For any :class:`.datetime` object *d*,
-   ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``. If date is a
-   :class:`.datetime` object, its time components and :attr:`.tzinfo` attributes
-   are ignored.
+   ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``.
 
    .. versionchanged:: 3.6
       Added the *tzinfo* argument.
@@ -1350,7 +1350,7 @@ Instance methods:
 
       Because naive ``datetime`` objects are treated by many ``datetime`` methods
       as local times, it is preferred to use aware datetimes to represent times
-      in UTC; as a result, using ``utcfromtimetuple`` may give misleading
+      in UTC; as a result, using :meth:`datetime.utctimetuple` may give misleading
       results. If you have a naive ``datetime`` representing UTC, use
       ``datetime.replace(tzinfo=timezone.utc)`` to make it aware, at which point
       you can use :meth:`.datetime.timetuple`.
@@ -1769,7 +1769,7 @@ Other constructor:
    ISO 8601 format, with the following exceptions:
 
    1. Time zone offsets may have fractional seconds.
-   2. The leading `T`, normally required in cases where there may be ambiguity between
+   2. The leading ``T``, normally required in cases where there may be ambiguity between
       a date and a time, is not required.
    3. Fractional seconds may have any number of digits (anything beyond 6 will
       be truncated).
@@ -2265,7 +2265,7 @@ where historical changes have been made to civil time.
   two digits of ``offset.hours`` and ``offset.minutes`` respectively.
 
   .. versionchanged:: 3.6
-     Name generated from ``offset=timedelta(0)`` is now plain `'UTC'`, not
+     Name generated from ``offset=timedelta(0)`` is now plain ``'UTC'``, not
      ``'UTC+00:00'``.
 
 
@@ -2601,7 +2601,7 @@ Notes:
 
 (9)
    When used with the :meth:`strptime` method, the leading zero is optional
-   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%J``, ``%U``,
+   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
 .. rubric:: Footnotes

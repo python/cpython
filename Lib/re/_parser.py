@@ -984,24 +984,28 @@ def parse(str, flags=0, state=None):
 
     return p
 
-def parse_template(source, state):
+def parse_template(source, pattern):
     # parse 're' replacement string into list of literals and
     # group references
     s = Tokenizer(source)
     sget = s.get
-    groups = []
-    literals = []
+    result = []
     literal = []
     lappend = literal.append
+    def addliteral():
+        if s.istext:
+            result.append(''.join(literal))
+        else:
+            # The tokenizer implicitly decodes bytes objects as latin-1, we must
+            # therefore re-encode the final representation.
+            result.append(''.join(literal).encode('latin-1'))
+        del literal[:]
     def addgroup(index, pos):
-        if index > state.groups:
+        if index > pattern.groups:
             raise s.error("invalid group reference %d" % index, pos)
-        if literal:
-            literals.append(''.join(literal))
-            del literal[:]
-        groups.append((len(literals), index))
-        literals.append(None)
-    groupindex = state.groupindex
+        addliteral()
+        result.append(index)
+    groupindex = pattern.groupindex
     while True:
         this = sget()
         if this is None:
@@ -1063,22 +1067,5 @@ def parse_template(source, state):
                 lappend(this)
         else:
             lappend(this)
-    if literal:
-        literals.append(''.join(literal))
-    if not isinstance(source, str):
-        # The tokenizer implicitly decodes bytes objects as latin-1, we must
-        # therefore re-encode the final representation.
-        literals = [None if s is None else s.encode('latin-1') for s in literals]
-    return groups, literals
-
-def expand_template(template, match):
-    g = match.group
-    empty = match.string[:0]
-    groups, literals = template
-    literals = literals[:]
-    try:
-        for index, group in groups:
-            literals[index] = g(group) or empty
-    except IndexError:
-        raise error("invalid group reference %d" % index) from None
-    return empty.join(literals)
+    addliteral()
+    return result

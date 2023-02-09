@@ -534,6 +534,22 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
       is intended to be implemented by subclasses and so raises a
       :exc:`NotImplementedError`.
 
+      .. warning:: This method is called after a handler-level lock is acquired, which
+         is released after this method returns. When you override this method, note
+         that you should be careful when calling anything that invokes other parts of
+         the logging API which might do locking, because that might result in a
+         deadlock. Specifically:
+
+         * Logging configuration APIs acquire the module-level lock, and then
+           individual handler-level locks as those handlers are configured.
+
+         * Many logging APIs lock the module-level lock. If such an API is called
+           from this method, it could cause a deadlock if a configuration call is
+           made on another thread, because that thread will try to acquire the
+           module-level lock *before* the handler-level lock, whereas this thread
+           tries to acquire the module-level lock *after* the handler-level lock
+           (because in this method, the handler-level lock has already been acquired).
+
 For a list of handlers included as standard, see :mod:`logging.handlers`.
 
 .. _formatter-objects:
@@ -661,6 +677,35 @@ Formatter Objects
       Formats the specified stack information (a string as returned by
       :func:`traceback.print_stack`, but with the last newline removed) as a
       string. This default implementation just returns the input value.
+
+.. class:: BufferingFormatter(linefmt=None)
+
+   A base formatter class suitable for subclassing when you want to format a
+   number of records. You can pass a :class:`Formatter` instance which you want
+   to use to format each line (that corresponds to a single record). If not
+   specified, the default formatter (which just outputs the event message) is
+   used as the line formatter.
+
+   .. method:: formatHeader(records)
+
+      Return a header for a list of *records*. The base implementation just
+      returns the empty string. You will need to override this method if you
+      want specific behaviour, e.g. to show the count of records, a title or a
+      separator line.
+
+   .. method:: formatFooter(records)
+
+      Return a footer for a list of *records*. The base implementation just
+      returns the empty string. You will need to override this method if you
+      want specific behaviour, e.g. to show the count of records or a separator
+      line.
+
+   .. method:: format(records)
+
+      Return formatted text for a list of *records*. The base implementation
+      just returns the empty string if there are no records; otherwise, it
+      returns the concatenation of the header, each record formatted with the
+      line formatter, and the footer.
 
 .. _filter:
 
