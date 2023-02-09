@@ -227,7 +227,8 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.block_text, self.predictions = extract_block_text(self.block)
+        self.block_text, self.check_eval_breaker, self.predictions = \
+            extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
@@ -390,9 +391,11 @@ class Instruction:
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
         extra = " " * -dedent
+        names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
         for line in self.block_text:
             if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*(?://.*)?$", line):
                 space, cond, label = m.groups()
+                space = extra + space
                 # ERROR_IF() must pop the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.
                 # NOTE: If the label doesn't exist, just add it to ceval.c.
@@ -411,16 +414,25 @@ class Instruction:
                     symbolic = ""
                 if symbolic:
                     out.write_raw(
-                        f"{extra}{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
+                        f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
                     )
                 else:
-                    out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
+                    out.write_raw(f"{space}if ({cond}) goto {label};\n")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 if not self.register:
-                    space = m.group(1)
+                    space = extra + m.group(1)
                     for ieff in self.input_effects:
-                        if ieff.name not in self.unmoved_names:
-                            out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
+                        if ieff.name in names_to_skip:
+                            continue
+                        if ieff.size:
+                            out.write_raw(
+                                f"{space}for (int _i = {ieff.size}; --_i >= 0;) {{\n"
+                            )
+                            out.write_raw(f"{space}    Py_DECREF({ieff.name}[_i]);\n")
+                            out.write_raw(f"{space}}}\n")
+                        else:
+                            decref = "XDECREF" if ieff.cond else "DECREF"
+                            out.write_raw(f"{space}Py_{decref}({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
 
@@ -1027,6 +1039,8 @@ class Analyzer:
             if not instr.always_exits:
                 for prediction in instr.predictions:
                     self.out.emit(f"PREDICT({prediction});")
+                if instr.check_eval_breaker:
+                    self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
 
     def write_super(self, sup: SuperInstruction) -> None:
@@ -1102,7 +1116,7 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
+def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
 
@@ -1122,6 +1136,12 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
     while blocklines and not blocklines[-1].strip():
         blocklines.pop()
 
+    # Separate CHECK_EVAL_BREAKER() macro from end
+    check_eval_breaker = \
+        blocklines != [] and blocklines[-1].strip() == "CHECK_EVAL_BREAKER();"
+    if check_eval_breaker:
+        del blocklines[-1]
+
     # Separate PREDICT(...) macros from end
     predictions: list[str] = []
     while blocklines and (
@@ -1130,7 +1150,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
         predictions.insert(0, m.group(1))
         blocklines.pop()
 
-    return blocklines, predictions
+    return blocklines, check_eval_breaker, predictions
 
 
 def always_exits(lines: list[str]) -> bool:

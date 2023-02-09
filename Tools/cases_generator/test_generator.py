@@ -177,15 +177,16 @@ def test_overlap():
     """
     run_cases_test(input, output)
 
-def test_predictions():
+def test_predictions_and_eval_breaker():
     input = """
         inst(OP1, (--)) {
         }
         inst(OP2, (--)) {
         }
-        inst(OP3, (--)) {
+        inst(OP3, (arg -- res)) {
             DEOPT_IF(xxx, OP1);
             PREDICT(OP2);
+            CHECK_EVAL_BREAKER();
         }
     """
     output = """
@@ -200,8 +201,12 @@ def test_predictions():
         }
 
         TARGET(OP3) {
+            PyObject *arg = PEEK(1);
+            PyObject *res;
             DEOPT_IF(xxx, OP1);
+            POKE(1, res);
             PREDICT(OP2);
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
     """
@@ -500,20 +505,20 @@ def test_register():
 
 def test_cond_effect():
     input = """
-        inst(OP, (aa, input if (oparg & 1), cc -- xx, output if (oparg & 2), zz)) {
+        inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
             output = spam(oparg, input);
         }
     """
     output = """
         TARGET(OP) {
             PyObject *cc = PEEK(1);
-            PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) ? 1 : 0)) : NULL;
-            PyObject *aa = PEEK(2 + ((oparg & 1) ? 1 : 0));
+            PyObject *input = ((oparg & 1) == 1) ? PEEK(1 + (((oparg & 1) == 1) ? 1 : 0)) : NULL;
+            PyObject *aa = PEEK(2 + (((oparg & 1) == 1) ? 1 : 0));
             PyObject *xx;
             PyObject *output = NULL;
             PyObject *zz;
             output = spam(oparg, input);
-            STACK_SHRINK(((oparg & 1) ? 1 : 0));
+            STACK_SHRINK((((oparg & 1) == 1) ? 1 : 0));
             STACK_GROW(((oparg & 2) ? 1 : 0));
             POKE(1, zz);
             if (oparg & 2) { POKE(1 + ((oparg & 2) ? 1 : 0), output); }

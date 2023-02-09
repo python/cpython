@@ -3470,6 +3470,41 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+err_set_raised(PyObject *self, PyObject *exc)
+{
+    Py_INCREF(exc);
+    PyErr_SetRaisedException(exc);
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
+static PyObject *
+err_restore(PyObject *self, PyObject *args) {
+    PyObject *type = NULL, *value = NULL, *traceback = NULL;
+    switch(PyTuple_Size(args)) {
+        case 3:
+            traceback = PyTuple_GetItem(args, 2);
+            Py_INCREF(traceback);
+            /* fall through */
+        case 2:
+            value = PyTuple_GetItem(args, 1);
+            Py_INCREF(value);
+            /* fall through */
+        case 1:
+            type = PyTuple_GetItem(args, 0);
+            Py_INCREF(type);
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError,
+                        "wrong number of arguments");
+            return NULL;
+    }
+    PyErr_Restore(type, value, traceback);
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -3622,6 +3657,8 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
+    {"err_set_raised", err_set_raised, METH_O, NULL},
+    {"err_restore", err_restore, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
