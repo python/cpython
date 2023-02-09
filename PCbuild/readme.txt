@@ -165,7 +165,11 @@ _lzma
     Homepage:
         http://tukaani.org/xz/
 _ssl
+<<<<<<< HEAD
     Python wrapper for version 1.1.1c of the OpenSSL secure sockets
+=======
+    Python wrapper for version 1.1.1t of the OpenSSL secure sockets
+>>>>>>> f42aca4d8d (gh-101726: Update the OpenSSL version to 1.1.1t (GH-101727))
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
