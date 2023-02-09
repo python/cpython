@@ -1388,6 +1388,7 @@ odict_repr(PyODictObject *self)
 
 Done:
     Py_ReprLeave((PyObject *)self);
+    Py_XDECREF(dcopy);
     return result;
 }
 
