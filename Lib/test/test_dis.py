@@ -350,9 +350,9 @@ dis_traceback = """\
 
 %3d        LOAD_FAST_CHECK          1 (tb)
            RETURN_VALUE
-        >> PUSH_EXC_INFO
 
-%3d        LOAD_GLOBAL              0 (Exception)
+%3d     >> PUSH_EXC_INFO
+           LOAD_GLOBAL              0 (Exception)
            CHECK_EXC_MATCH
            POP_JUMP_IF_FALSE       23 (to 82)
            STORE_FAST               0 (e)
@@ -1728,8 +1728,8 @@ expected_opinfo_jumpy = [
   Instruction(opname='COPY', opcode=120, arg=3, argval=3, argrepr='', offset=320, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=322, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='RERAISE', opcode=119, arg=1, argval=1, argrepr='', offset=324, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='PUSH_EXC_INFO', opcode=35, arg=None, argval=None, argrepr='', offset=326, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=328, starts_line=22, is_jump_target=False, positions=None),
+  Instruction(opname='PUSH_EXC_INFO', opcode=35, arg=None, argval=None, argrepr='', offset=326, starts_line=22, is_jump_target=False, positions=None),
+  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=328, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='CHECK_EXC_MATCH', opcode=36, arg=None, argval=None, argrepr='', offset=340, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_JUMP_IF_FALSE', opcode=114, arg=16, argval=376, argrepr='to 376', offset=342, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=344, starts_line=None, is_jump_target=False, positions=None),
