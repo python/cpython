@@ -2366,12 +2366,12 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
     if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
         return (PyVarObject *)PyErr_NoMemory();
     }
-
-    PyGC_Head *g = AS_GC(op);
-    g = (PyGC_Head *)PyObject_Realloc(g,  presize + basicsize);
-    if (g == NULL)
+    char *mem = (char *)op - presize;
+    mem = (char *)PyObject_Realloc(mem,  presize + basicsize);
+    if (mem == NULL) {
         return (PyVarObject *)PyErr_NoMemory();
-    op = (PyVarObject *) FROM_GC(g);
+    }
+    op = (PyVarObject *) (mem + presize);
     Py_SET_SIZE(op, nitems);
     return op;
 }
