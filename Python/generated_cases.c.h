@@ -24,7 +24,10 @@
 
         TARGET(RESUME) {
             if (cframe.use_tracing == 0) {
-                next_instr = _PyCode_Tier2Warmup(frame, next_instr);
+                PyObject *retval = NULL;
+                if (_PyCode_Tier2Warmup(tstate, frame, throwflag, next_instr, stack_pointer, &retval)) {
+                    return retval;
+                }
             }
             GO_TO_INSTRUCTION(RESUME_QUICK);
         }
@@ -2417,14 +2420,18 @@
 
         TARGET(JUMP_BACKWARD) {
             PREDICTED(JUMP_BACKWARD);
+            JUMPBY(-oparg);
+            CHECK_EVAL_BREAKER();
             if (cframe.use_tracing == 0) {
-                next_instr = _PyCode_Tier2Warmup(frame, next_instr);
+                PyObject *retval = NULL;
+                if (_PyCode_Tier2Warmup(tstate, frame, throwflag, next_instr, stack_pointer, &retval)) {
+                    return retval;
+                }
             }
-            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+            DISPATCH();
         }
 
         TARGET(JUMP_BACKWARD_QUICK) {
-            PREDICTED(JUMP_BACKWARD_QUICK);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
