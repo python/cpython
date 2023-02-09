@@ -867,6 +867,7 @@ class CursorTests(unittest.TestCase):
             ("select :a, ?, ?", (1, 2, 3)),
             ("select ?, :b, ?", (1, 2, 3)),
             ("select ?, ?, :c", (1, 2, 3)),
+            ("select :a, :b, ?", (1, 2, 3)),
         )
         msg = "Binding.*is a named parameter"
         for query, params in dataset:
