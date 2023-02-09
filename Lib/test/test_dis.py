@@ -610,6 +610,54 @@ ExceptionTable:
        _tryfinallyconst.__code__.co_firstlineno + 4,
        )
 
+def _tryexcept():
+    try:
+        x = 1
+    except Exception as e:
+        y = 2
+
+dis_tryexcept = """\
+%3d        RESUME                   0
+
+%3d        NOP
+
+%3d        LOAD_CONST               1 (1)
+           STORE_FAST               0 (x)
+           RETURN_CONST             0 (None)
+
+%3d     >> PUSH_EXC_INFO
+           LOAD_GLOBAL              0 (Exception)
+           CHECK_EXC_MATCH
+           POP_JUMP_IF_FALSE       12 (to 52)
+           STORE_FAST               1 (e)
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           POP_EXCEPT
+           LOAD_CONST               0 (None)
+           STORE_FAST               1 (e)
+           DELETE_FAST              1 (e)
+           RETURN_CONST             0 (None)
+        >> LOAD_CONST               0 (None)
+           STORE_FAST               1 (e)
+           DELETE_FAST              1 (e)
+           RERAISE                  1
+
+%3d     >> RERAISE                  0
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
+ExceptionTable:
+4 rows
+""" % (_tryexcept.__code__.co_firstlineno,
+       _tryexcept.__code__.co_firstlineno + 1,
+       _tryexcept.__code__.co_firstlineno + 2,
+       _tryexcept.__code__.co_firstlineno + 3,
+       _tryexcept.__code__.co_firstlineno + 4,
+       _tryexcept.__code__.co_firstlineno + 3,
+       )
+
+
 def _g(x):
     yield x
 
@@ -1019,6 +1067,9 @@ class DisTests(DisTestBase):
     def test_disassemble_try_finally(self):
         self.do_disassembly_test(_tryfinally, dis_tryfinally)
         self.do_disassembly_test(_tryfinallyconst, dis_tryfinallyconst)
+
+    def test_disassemble_try_except(self):
+        self.do_disassembly_test(_tryexcept, dis_tryexcept)
 
     def test_dis_none(self):
         try:
