@@ -657,6 +657,59 @@ ExceptionTable:
        _tryexcept.__code__.co_firstlineno + 3,
        )
 
+def _tryexceptstar():
+    try:
+        x = 1
+    except* Exception:
+        y = 2
+
+dis_tryexceptstar = """\
+%3d        RESUME                   0
+
+%3d        NOP
+
+%3d        LOAD_CONST               1 (1)
+           STORE_FAST               0 (x)
+           RETURN_CONST             0 (None)
+
+%3d     >> PUSH_EXC_INFO
+           BUILD_LIST               0
+           COPY                     2
+           LOAD_GLOBAL              0 (Exception)
+           CHECK_EG_MATCH
+           COPY                     1
+           POP_JUMP_IF_NOT_NONE     2 (to 38)
+           POP_TOP
+           JUMP_FORWARD             6 (to 50)
+        >> POP_TOP
+
+%3d        LOAD_CONST               2 (2)
+           STORE_FAST               1 (y)
+           JUMP_FORWARD             2 (to 50)
+        >> LIST_APPEND              3
+           POP_TOP
+        >> LIST_APPEND              1
+           PREP_RERAISE_STAR
+           COPY                     1
+           POP_JUMP_IF_NOT_NONE     3 (to 64)
+           POP_TOP
+           POP_EXCEPT
+           RETURN_CONST             0 (None)
+        >> SWAP                     2
+           POP_EXCEPT
+           RERAISE                  0
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
+ExceptionTable:
+4 rows
+""" % (_tryexceptstar.__code__.co_firstlineno,
+       _tryexceptstar.__code__.co_firstlineno + 1,
+       _tryexceptstar.__code__.co_firstlineno + 2,
+       _tryexceptstar.__code__.co_firstlineno + 3,
+       _tryexceptstar.__code__.co_firstlineno + 4,
+       )
+
 
 def _g(x):
     yield x
@@ -1070,6 +1123,9 @@ class DisTests(DisTestBase):
 
     def test_disassemble_try_except(self):
         self.do_disassembly_test(_tryexcept, dis_tryexcept)
+
+    def test_disassemble_try_exceptstar(self):
+        self.do_disassembly_test(_tryexceptstar, dis_tryexceptstar)
 
     def test_dis_none(self):
         try:

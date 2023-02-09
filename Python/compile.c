@@ -3467,8 +3467,9 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, except);
 
-    ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, cleanup);
-    ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
+    loc = LOC((excepthandler_ty)asdl_seq_GET(s->v.TryStar.handlers, 0));
+    ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
+    ADDOP(c, loc, PUSH_EXC_INFO);
 
     /* Runtime will push a block here, so we need to account for that */
     RETURN_IF_ERROR(
