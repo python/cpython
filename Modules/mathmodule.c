@@ -158,7 +158,7 @@ m_sinpi(double x)
     return copysign(1.0, x)*r;
 }
 
-/* Implementation of the real gamma function.  Kept here to workaround
+/* Implementation of the real gamma function.  Kept here to work around
    issues (see e.g. #70309) with quality of libm's tgamma/lgamma implementations
    on various platforms (Windows, MacOS).  In extensive but non-exhaustive
    random tests, this function proved accurate to within <= 10 ulps across the
