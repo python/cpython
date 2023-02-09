@@ -53,9 +53,9 @@
 
 This article explains the new features in Python 3.0, compared to 2.6.
 Python 3.0, also known as "Python 3000" or "Py3K", is the first ever
-*intentionally backwards incompatible* Python release.  There are more
-changes than in a typical release, and more that are important for all
-Python users.  Nevertheless, after digesting the changes, you'll find
+*intentionally backwards incompatible* Python release. Python 3.0 was released on December 3, 2008.
+There are more changes than in a typical release, and more that are important for all
+Python users. Nevertheless, after digesting the changes, you'll find
 that Python really hasn't changed all that much -- by and large, we're
 mostly fixing well-known annoyances and warts, and removing a lot of
 old cruft.
@@ -663,7 +663,7 @@ Some other changes to standard library modules, not covered by
   :data:`string.ascii_letters` etc. instead.  (The reason for the
   removal is that :data:`string.letters` and friends had
   locale-specific behavior, which is a bad idea for such
-  attractively-named global "constants".)
+  attractively named global "constants".)
 
 * Renamed module :mod:`__builtin__` to :mod:`builtins` (removing the
   underscores, adding an 's').  The :data:`__builtins__` variable

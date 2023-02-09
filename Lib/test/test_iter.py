@@ -2,7 +2,7 @@
 
 import sys
 import unittest
-from test.support import run_unittest, cpython_only
+from test.support import cpython_only
 from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
 import pickle
@@ -80,6 +80,16 @@ class NoIterClass:
 class BadIterableClass:
     def __iter__(self):
         raise ZeroDivisionError
+
+class CallableIterClass:
+    def __init__(self):
+        self.i = 0
+    def __call__(self):
+        i = self.i
+        self.i = i + 1
+        if i > 100:
+            raise IndexError # Emergency stop
+        return i
 
 # Main test suite
 
@@ -237,16 +247,7 @@ class TestCase(unittest.TestCase):
 
     # Test two-argument iter() with callable instance
     def test_iter_callable(self):
-        class C:
-            def __init__(self):
-                self.i = 0
-            def __call__(self):
-                i = self.i
-                self.i = i + 1
-                if i > 100:
-                    raise IndexError # Emergency stop
-                return i
-        self.check_iterator(iter(C(), 10), list(range(10)), pickle=False)
+        self.check_iterator(iter(CallableIterClass(), 10), list(range(10)), pickle=True)
 
     # Test two-argument iter() with function
     def test_iter_function(self):
@@ -1037,9 +1038,5 @@ class TestCase(unittest.TestCase):
         self.assertRaises(ZeroDivisionError, iter, BadIterableClass())
 
 
-def test_main():
-    run_unittest(TestCase)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

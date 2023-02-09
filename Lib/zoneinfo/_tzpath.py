@@ -118,7 +118,7 @@ def available_timezones():
     # Start with loading from the tzdata package if it exists: this has a
     # pre-assembled list of zones that only requires opening one file.
     try:
-        with resources.open_text("tzdata", "zones") as f:
+        with resources.files("tzdata").joinpath("zones").open("r") as f:
             for zone in f:
                 zone = zone.strip()
                 if zone:

@@ -64,8 +64,8 @@ Module Objects
    If *module* is not a module object (or a subtype of a module object),
    :exc:`SystemError` is raised and ``NULL`` is returned.
 
-   It is recommended extensions use other :c:func:`PyModule_\*` and
-   :c:func:`PyObject_\*` functions rather than directly manipulate a module's
+   It is recommended extensions use other ``PyModule_*`` and
+   ``PyObject_*`` functions rather than directly manipulate a module's
    :attr:`~object.__dict__`.
 
 
@@ -220,6 +220,12 @@ or request "multi-phase initialization" by returning the definition struct itsel
       precisely, this function is not called if :c:member:`m_size` is greater
       than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
       is ``NULL``.
+
+      Like :c:member:`PyTypeObject.tp_clear`, this function is not *always*
+      called before a module is deallocated. For example, when reference
+      counting is enough to determine that an object is no longer used,
+      the cyclic garbage collector is not involved and
+      :c:member:`~PyModuleDef.m_free` is called directly.
 
       .. versionchanged:: 3.9
          No longer called before the module state is allocated.

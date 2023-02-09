@@ -1,6 +1,9 @@
 #ifndef Py_PYCORECONFIG_H
 #define Py_PYCORECONFIG_H
 #ifndef Py_LIMITED_API
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -139,9 +142,12 @@ typedef struct PyConfig {
     unsigned long hash_seed;
     int faulthandler;
     int tracemalloc;
+    int perf_profiling;
     int import_time;
+    int code_debug_ranges;
     int show_ref_count;
     int dump_refs;
+    wchar_t *dump_refs_file;
     int malloc_stats;
     wchar_t *filesystem_encoding;
     wchar_t *filesystem_errors;
@@ -170,6 +176,9 @@ typedef struct PyConfig {
     int legacy_windows_stdio;
 #endif
     wchar_t *check_hash_pycs_mode;
+    int use_frozen_modules;
+    int safe_path;
+    int int_max_str_digits;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
@@ -181,6 +190,7 @@ typedef struct PyConfig {
     /* --- Path configuration outputs ----------- */
     int module_search_paths_set;
     PyWideStringList module_search_paths;
+    wchar_t *stdlib_dir;
     wchar_t *executable;
     wchar_t *base_executable;
     wchar_t *prefix;
@@ -203,9 +213,8 @@ typedef struct PyConfig {
     // If equal to 0, stop Python initialization before the "main" phase.
     int _init_main;
 
-    // If non-zero, disallow threads, subprocesses, and fork.
-    // Default: 0.
-    int _isolated_interpreter;
+    // If non-zero, we believe we're running from a source tree.
+    int _is_python_build;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
@@ -232,6 +241,31 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     Py_ssize_t length, wchar_t **items);
 
 
+/* --- PyInterpreterConfig ------------------------------------ */
+
+typedef struct {
+    int allow_fork;
+    int allow_exec;
+    int allow_threads;
+    int allow_daemon_threads;
+} _PyInterpreterConfig;
+
+#define _PyInterpreterConfig_INIT \
+    { \
+        .allow_fork = 0, \
+        .allow_exec = 0, \
+        .allow_threads = 1, \
+        .allow_daemon_threads = 0, \
+    }
+
+#define _PyInterpreterConfig_LEGACY_INIT \
+    { \
+        .allow_fork = 1, \
+        .allow_exec = 1, \
+        .allow_threads = 1, \
+        .allow_daemon_threads = 1, \
+    }
+
 /* --- Helper functions --------------------------------------- */
 
 /* Get the original command line arguments, before Python modified them.
@@ -239,5 +273,8 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
    See also PyConfig.orig_argv. */
 PyAPI_FUNC(void) Py_GetArgcArgv(int *argc, wchar_t ***argv);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* !Py_LIMITED_API */
 #endif /* !Py_PYCORECONFIG_H */

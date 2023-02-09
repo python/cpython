@@ -549,7 +549,7 @@ Pass ``--timeout=$(TESTTIMEOUT)`` option to the default profile task
 .. section: Build
 
 Removed the grep -q and -E flags in the tzpath validation section of the
-configure script to better accomodate users of some platforms (specifically
+configure script to better accommodate users of some platforms (specifically
 Solaris 10).
 
 ..
