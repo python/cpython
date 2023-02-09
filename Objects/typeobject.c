@@ -229,6 +229,13 @@ _PyType_CheckConsistency(PyTypeObject *type)
         CHECK(type->tp_traverse != NULL);
     }
 
+    if (_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
+        CHECK(type->tp_version_tag != 0);
+    }
+    else {
+        CHECK(type->tp_version_tag == 0);
+    }
+
     if (type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION) {
         CHECK(type->tp_new == NULL);
         CHECK(PyDict_Contains(type->tp_dict, &_Py_ID(__new__)) == 0);
@@ -4469,8 +4476,6 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_READY;
-    type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    type->tp_version_tag = 0;
 
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         _PyStaticType_ClearWeakRefs(type);
@@ -6969,6 +6974,12 @@ PyType_Ready(PyTypeObject *type)
     /* Historically, all static types were immutable. See bpo-43908 */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+    }
+
+    /* All immutable types must have a static valid version tag */
+    if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
+        type->tp_version_tag = next_version_tag++;
+        type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
     }
 
     if (type_ready(type) < 0) {
