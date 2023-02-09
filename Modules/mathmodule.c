@@ -875,7 +875,9 @@ is_error(double x)
 */
 
 static PyObject *
-math_1(PyObject *arg, double (*func) (double), int can_overflow)
+math_1_to_whatever(PyObject *arg, double (*func) (double),
+                   PyObject *(*from_double_func) (double),
+                   int can_overflow)
 {
     double x, r;
     x = PyFloat_AsDouble(arg);
@@ -901,7 +903,7 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow)
         /* this branch unnecessary on most platforms */
         return NULL;
 
-    return PyFloat_FromDouble(r);
+    return (*from_double_func)(r);
 }
 
 /* variant of math_1, to be used when the function being wrapped is known to
@@ -948,6 +950,12 @@ math_1a(PyObject *arg, double (*func) (double))
    ValueError and the 'overflow' floating-point exception mapping to
    OverflowError.
 */
+
+static PyObject *
+math_1(PyObject *arg, double (*func) (double), int can_overflow)
+{
+    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow);
+}
 
 static PyObject *
 math_2(PyObject *const *args, Py_ssize_t nargs,
