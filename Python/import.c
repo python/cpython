@@ -2651,7 +2651,7 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     int res = 0;
 
     if (_PyRuntime.imports.inittab != NULL) {
-        Py_FatalError("PyImport_ExtendInittab() may be be called after Py_Initialize()");
+        Py_FatalError("PyImport_ExtendInittab() may not be called after Py_Initialize()");
     }
 
     /* Count the number of entries in both tables */
