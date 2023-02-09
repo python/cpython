@@ -961,6 +961,7 @@ tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
     newto->dataobj = (teedataobject*)Py_NewRef(to->dataobj);
     newto->index = to->index;
     newto->weakreflist = NULL;
+    newto->state = to->state;
     PyObject_GC_Track(newto);
     return (PyObject *)newto;
 }
