@@ -1316,7 +1316,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. data:: Py_TPFLAGS_VALID_VERSION_TAG
 
       Internal. Do not set or unset this flag.
-      To indicate that a class has changed call :cfunc:`PyType_Modified()`
+      To indicate that a class has changed call :c:func:`PyType_Modified`
 
       .. warning::
          This flag is present in header files, but is an internal feature and should
