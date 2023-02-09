@@ -2,6 +2,7 @@
 #include "pycore_fileutils.h"     // _Py_write_noraise()
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_object.h"        // _PyType_PreHeaderSize
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_traceback.h"
@@ -1405,7 +1406,8 @@ _tracemalloc__get_object_traceback(PyObject *module, PyObject *obj)
 
     type = Py_TYPE(obj);
     if (PyType_IS_GC(type)) {
-        ptr = (void *)((char *)obj - sizeof(PyGC_Head));
+        const size_t presize = _PyType_PreHeaderSize(type);
+        ptr = (void *)((char *)obj - presize);
     }
     else {
         ptr = (void *)obj;
@@ -1726,7 +1728,8 @@ _PyTraceMalloc_NewReference(PyObject *op)
     uintptr_t ptr;
     PyTypeObject *type = Py_TYPE(op);
     if (PyType_IS_GC(type)) {
-        ptr = (uintptr_t)((char *)op - sizeof(PyGC_Head));
+        const size_t presize = _PyType_PreHeaderSize(type);
+        ptr = (uintptr_t)((char *)op - presize);
     }
     else {
         ptr = (uintptr_t)op;
