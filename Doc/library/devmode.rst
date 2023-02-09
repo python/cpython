@@ -13,13 +13,15 @@ detected.
 It can be enabled using the :option:`-X dev <-X>` command line option or by
 setting the :envvar:`PYTHONDEVMODE` environment variable to ``1``.
 
+See also :ref:`Python debug build <debug-build>`.
+
 Effects of the Python Development Mode
 ======================================
 
 Enabling the Python Development Mode is similar to the following command, but
 with additional effects described below::
 
-    PYTHONMALLOC=debug PYTHONASYNCIODEBUG=1 python3 -W default -X faulthandler
+    PYTHONMALLOC=debug PYTHONASYNCIODEBUG=1 python -W default -X faulthandler
 
 Effects of the Python Development Mode:
 
@@ -93,6 +95,9 @@ The Python Development Mode does not prevent the :option:`-O` command line
 option from removing :keyword:`assert` statements nor from setting
 :const:`__debug__` to ``False``.
 
+The Python Development Mode can only be enabled at the Python startup. Its
+value can be read from :data:`sys.flags.dev_mode <sys.flags>`.
+
 .. versionchanged:: 3.8
    The :class:`io.IOBase` destructor now logs ``close()`` exceptions.
 
@@ -123,14 +128,14 @@ any warning. Example using README.txt, which has 269 lines:
 
 .. code-block:: shell-session
 
-    $ python3 script.py README.txt
+    $ python script.py README.txt
     269
 
 Enabling the Python Development Mode displays a :exc:`ResourceWarning` warning:
 
 .. code-block:: shell-session
 
-    $ python3 -X dev script.py README.txt
+    $ python -X dev script.py README.txt
     269
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='README.rst' mode='r' encoding='UTF-8'>
       main()
@@ -141,7 +146,7 @@ opened:
 
 .. code-block:: shell-session
 
-    $ python3 -X dev -X tracemalloc=5 script.py README.rst
+    $ python -X dev -X tracemalloc=5 script.py README.rst
     269
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='README.rst' mode='r' encoding='UTF-8'>
       main()
@@ -185,7 +190,7 @@ By default, Python does not emit any warning:
 
 .. code-block:: shell-session
 
-    $ python3 script.py
+    $ python script.py
     import os
 
 The Python Development Mode shows a :exc:`ResourceWarning` and logs a "Bad file
@@ -193,7 +198,7 @@ descriptor" error when finalizing the file object:
 
 .. code-block:: shell-session
 
-    $ python3 script.py
+    $ python script.py
     import os
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='script.py' mode='r' encoding='UTF-8'>
       main()

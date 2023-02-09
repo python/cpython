@@ -120,7 +120,7 @@ def is_abstract_socket_namespace(address):
         return address[0] == 0
     elif isinstance(address, str):
         return address[0] == "\0"
-    raise TypeError('address type of {address!r} unrecognized')
+    raise TypeError(f'address type of {address!r} unrecognized')
 
 
 abstract_sockets_supported = _platform_supports_abstract_sockets()
@@ -367,13 +367,13 @@ atexit.register(_exit_function)
 
 class ForkAwareThreadLock(object):
     def __init__(self):
-        self._reset()
-        register_after_fork(self, ForkAwareThreadLock._reset)
-
-    def _reset(self):
         self._lock = threading.Lock()
         self.acquire = self._lock.acquire
         self.release = self._lock.release
+        register_after_fork(self, ForkAwareThreadLock._at_fork_reinit)
+
+    def _at_fork_reinit(self):
+        self._lock._at_fork_reinit()
 
     def __enter__(self):
         return self._lock.__enter__()
@@ -419,7 +419,7 @@ def _close_stdin():
     try:
         fd = os.open(os.devnull, os.O_RDONLY)
         try:
-            sys.stdin = open(fd, closefd=False)
+            sys.stdin = open(fd, encoding="utf-8", closefd=False)
         except:
             os.close(fd)
             raise
@@ -446,13 +446,15 @@ def _flush_std_streams():
 
 def spawnv_passfds(path, args, passfds):
     import _posixsubprocess
+    import subprocess
     passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
-            args, [os.fsencode(path)], True, passfds, None, None,
+            args, [path], True, passfds, None, None,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
-            False, False, None, None, None, -1, None)
+            False, False, -1, None, None, None, -1, None,
+            subprocess._USE_VFORK)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)

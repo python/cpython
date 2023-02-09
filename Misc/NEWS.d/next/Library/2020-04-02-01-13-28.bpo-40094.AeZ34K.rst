@@ -1,3 +1,0 @@
-CGIHTTPRequestHandler of http.server now logs the CGI script exit code,
-rather than the CGI script exit status of os.waitpid(). For example, if the
-script is killed by signal 11, it now logs: "CGI script exit code -11."

@@ -1,19 +1,19 @@
 import unittest
 from test import support
+from test.support import import_helper
 import builtins
 import contextlib
 import copy
+import enum
 import io
 import os
 import pickle
-import shutil
-import subprocess
 import sys
 import weakref
 from unittest import mock
 
-py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
-c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
+py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
+c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
 
 def importable(name):
     try:
@@ -31,6 +31,13 @@ def mock_get_command_stdout(data):
 
 class BaseTestUUID:
     uuid = None
+
+    def test_safe_uuid_enum(self):
+        class CheckedSafeUUID(enum.Enum):
+            safe = 0
+            unsafe = -1
+            unknown = None
+        enum._test_simple_enum(CheckedSafeUUID, py_uuid.SafeUUID)
 
     def test_UUID(self):
         equal = self.assertEqual
@@ -640,7 +647,7 @@ class BaseTestUUID:
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @support.requires_fork()
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
         # the same sequence of UUIDs in the parent and any
@@ -667,6 +674,64 @@ class BaseTestUUID:
         strong = self.uuid.uuid4()
         weak = weakref.ref(strong)
         self.assertIs(strong, weak())
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
+    def test_cli_namespace_required_for_uuid3(self):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-N", "python.org"])
+    def test_cli_name_required_for_uuid3(self):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+
+    @mock.patch.object(sys, "argv", [""])
+    def test_cli_uuid4_outputted_with_no_args(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output uuid should be in the format of uuid4
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 4)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid3_ouputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 3)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid5", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid5_ouputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 5)
+
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
@@ -854,17 +919,6 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         node = self.uuid._netstat_getnode()
         self.check_node(node, 'netstat')
 
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    def test_ipconfig_getnode(self):
-        node = self.uuid._ipconfig_getnode()
-        self.check_node(node, 'ipconfig')
-
-    @unittest.skipUnless(importable('win32wnet'), 'requires win32wnet')
-    @unittest.skipUnless(importable('netbios'), 'requires netbios')
-    def test_netbios_getnode(self):
-        node = self.uuid._netbios_getnode()
-        self.check_node(node)
-
     def test_random_getnode(self):
         node = self.uuid._random_getnode()
         # The multicast bit, i.e. the least significant bit of first octet,
@@ -875,6 +929,13 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
         node2 = self.uuid._random_getnode()
         self.assertNotEqual(node2, node, '%012x' % node)
+
+class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = py_uuid
+
+@unittest.skipUnless(c_uuid, 'requires the C _uuid module')
+class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = c_uuid
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_unix_getnode(self):
@@ -887,18 +948,9 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         self.check_node(node, 'unix')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_windll_getnode(self):
         node = self.uuid._windll_getnode()
         self.check_node(node)
-
-
-class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
-    uuid = py_uuid
-
-@unittest.skipUnless(c_uuid, 'requires the C _uuid module')
-class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
-    uuid = c_uuid
 
 
 if __name__ == '__main__':
