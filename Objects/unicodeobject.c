@@ -733,8 +733,7 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
-        size = PyOS_snprintf(str, 10 + 1, "&#%d;",  // see `incr` above
-                             PyUnicode_READ(kind, data, i));
+        size = sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
         if (size < 0) {
             return NULL;
         }
