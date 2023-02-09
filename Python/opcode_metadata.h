@@ -2,8 +2,10 @@
 // from Python/bytecodes.c
 // Do not edit!
 
-#ifndef NDEBUG
-static int
+#ifndef NEED_OPCODE_TABLES
+extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
+#else
+int
 _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
@@ -345,13 +347,15 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CACHE:
             return 0;
         default:
-            Py_UNREACHABLE();
+            return -1;
     }
 }
 #endif
 
-#ifndef NDEBUG
-static int
+#ifndef NEED_OPCODE_TABLES
+extern int _PyOpcode_num_pushed(int opcode, int oparg, bool jump);
+#else
+int
 _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
@@ -693,10 +697,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case CACHE:
             return 0;
         default:
-            Py_UNREACHABLE();
+            return -1;
     }
 }
 #endif
+
 enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };
 enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC0000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
@@ -705,7 +710,12 @@ struct opcode_metadata {
     enum Direction dir_op3;
     bool valid_entry;
     enum InstructionFormat instr_format;
-} _PyOpcode_opcode_metadata[256] = {
+};
+
+#ifndef NEED_OPCODE_TABLES
+extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];
+#else
+const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [NOP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [RESUME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_CLOSURE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
@@ -876,3 +886,4 @@ struct opcode_metadata {
     [EXTENDED_ARG] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CACHE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
 };
+#endif
