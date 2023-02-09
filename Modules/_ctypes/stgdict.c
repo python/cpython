@@ -612,7 +612,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 PyErr_NoMemory();
                 return -1;
             }
-            sprintf(buf, "%s:%s:", fieldfmt, fieldname);
+            PyOS_snprintf(buf, len + 2 + 1, "%s:%s:", fieldfmt, fieldname);
 
             ptr = stgdict->format;
             if (dict->shape != NULL) {
