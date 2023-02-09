@@ -1949,22 +1949,15 @@ monitor_raise(PyThreadState *tstate,
     if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_RAISE] == 0) {
         return;
     }
-    PyObject *type, *value, *orig_traceback;
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
     int err;
-    _PyErr_Fetch(tstate, &type, &value, &orig_traceback);
-    if (value == NULL) {
-        value = Py_NewRef(Py_None);
-    }
-    _PyErr_NormalizeException(tstate, &type, &value, &orig_traceback);
-    assert(value != NULL && value != Py_None);
-    err = _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_RAISE, frame, instr, value);
+    err = _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_RAISE, frame, instr, exc);
     if (err == 0) {
-        _PyErr_Restore(tstate, type, value, orig_traceback);
+        PyErr_SetRaisedException(exc);
     }
     else {
-        Py_XDECREF(type);
-        Py_XDECREF(value);
-        Py_XDECREF(orig_traceback);
+        Py_DECREF(exc);
     }
 }
 

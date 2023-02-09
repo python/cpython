@@ -938,31 +938,8 @@
             PyObject *retval;
             assert(frame != &entry_frame);
             bool jump = false;
-            PySendResult gen_status;
-            if (tstate->c_tracefunc == NULL) {
-                gen_status = PyIter_Send(receiver, v, &retval);
-            } else {
-                if (Py_IsNone(v) && PyIter_Check(receiver)) {
-                    retval = Py_TYPE(receiver)->tp_iternext(receiver);
-                }
-                else {
-                    retval = PyObject_CallMethodOneArg(receiver, &_Py_ID(send), v);
-                }
-                if (retval == NULL) {
-                    if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        monitor_raise(tstate, frame, next_instr-1);
-                    }
-                    if (_PyGen_FetchStopIterationValue(&retval) == 0) {
-                        gen_status = PYGEN_RETURN;
-                    }
-                    else {
-                        gen_status = PYGEN_ERROR;
-                    }
-                }
-                else {
-                    gen_status = PYGEN_NEXT;
-                }
-            }
+
+            PySendResult gen_status = PyIter_Send(receiver, v, &retval);
             if (gen_status == PYGEN_ERROR) {
                 assert(retval == NULL);
                 goto error;
