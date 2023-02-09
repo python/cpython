@@ -193,6 +193,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [RAISE_VARARGS] = RAISE_VARARGS,
     [RERAISE] = RERAISE,
     [RESUME] = RESUME,
+    [RETURN_CONST] = RETURN_CONST,
     [RETURN_GENERATOR] = RETURN_GENERATOR,
     [RETURN_VALUE] = RETURN_VALUE,
     [SEND] = SEND,
@@ -350,7 +351,7 @@ static const char *const _PyOpcode_OpName[264] = {
     [CONTAINS_OP] = "CONTAINS_OP",
     [RERAISE] = "RERAISE",
     [COPY] = "COPY",
-    [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
+    [RETURN_CONST] = "RETURN_CONST",
     [BINARY_OP] = "BINARY_OP",
     [SEND] = "SEND",
     [LOAD_FAST] = "LOAD_FAST",
@@ -382,20 +383,20 @@ static const char *const _PyOpcode_OpName[264] = {
     [YIELD_VALUE] = "YIELD_VALUE",
     [RESUME] = "RESUME",
     [MATCH_CLASS] = "MATCH_CLASS",
+    [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
     [STORE_FAST__STORE_FAST] = "STORE_FAST__STORE_FAST",
-    [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
     [FORMAT_VALUE] = "FORMAT_VALUE",
     [BUILD_CONST_KEY_MAP] = "BUILD_CONST_KEY_MAP",
     [BUILD_STRING] = "BUILD_STRING",
+    [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
     [STORE_SUBSCR_LIST_INT] = "STORE_SUBSCR_LIST_INT",
     [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
     [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
-    [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [LIST_EXTEND] = "LIST_EXTEND",
     [SET_UPDATE] = "SET_UPDATE",
     [DICT_MERGE] = "DICT_MERGE",
     [DICT_UPDATE] = "DICT_UPDATE",
-    [166] = "<166>",
+    [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [167] = "<167>",
     [168] = "<168>",
     [169] = "<169>",
@@ -497,7 +498,6 @@ static const char *const _PyOpcode_OpName[264] = {
 #endif
 
 #define EXTRA_CASES \
-    case 166: \
     case 167: \
     case 168: \
     case 169: \

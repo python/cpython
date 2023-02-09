@@ -164,6 +164,8 @@ def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
+def_op('RETURN_CONST', 121)
+hasconst.append(121)
 def_op('BINARY_OP', 122)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number, no null check
