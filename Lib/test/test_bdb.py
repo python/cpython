@@ -433,8 +433,9 @@ class TracerRun():
         not_empty = ''
         if self.tracer.set_list:
             not_empty += 'All paired tuples have not been processed, '
-            not_empty += ('the last one was number %d' %
+            not_empty += ('the last one was number %d\n' %
                           self.tracer.expect_set_no)
+            not_empty += repr(self.tracer.set_list)
 
         # Make a BdbNotExpectedError a unittest failure.
         if type_ is not None and issubclass(BdbNotExpectedError, type_):

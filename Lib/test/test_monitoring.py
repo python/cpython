@@ -538,13 +538,69 @@ class LineMontoringTest(unittest.TestCase):
             self.assertEqual(events, expected)
             self.assertEqual(events2, expected)
         finally:
-            sys.monitoring.set_events(TEST_TOOL2, 0)
+            sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.set_events(TEST_TOOL2, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.register_callback(TEST_TOOL2, E.LINE, None)
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
 
+    def check_lines(self, func, expected, tool=TEST_TOOL):
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            events = []
+            recorder = RecorderWithDisable(events)
+            sys.monitoring.register_callback(tool, E.LINE, recorder)
+            sys.monitoring.set_events(tool, E.LINE)
+            func()
+            sys.monitoring.set_events(tool, 0)
+            sys.monitoring.register_callback(tool, E.LINE, None)
+            lines = [ line - func.__code__.co_firstlineno for line in events[1:-1] ]
+            self.assertEqual(lines, expected)
+        finally:
+            sys.monitoring.set_events(tool, 0)
 
 
+    def test_linear(self):
 
+        def func():
+            line = 1
+            line = 2
+            line = 3
+            line = 4
+            line = 5
+
+        self.check_lines(func, [1,2,3,4,5])
+
+    def test_branch(self):
+        def func():
+            if "true".startswith("t"):
+                line = 2
+                line = 3
+            else:
+                line = 5
+            line = 6
+
+        self.check_lines(func, [1,2,3,6])
+
+    def test_try_except(self):
+
+        def func1():
+            try:
+                line = 2
+                line = 3
+            except:
+                line = 5
+            line = 6
+
+        self.check_lines(func1, [1,2,3,6])
+
+        def func2():
+            try:
+                line = 2
+                raise 3
+            except:
+                line = 5
+            line = 6
+
+        self.check_lines(func2, [1,2,3,4,5,6])
