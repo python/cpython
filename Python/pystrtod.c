@@ -1239,7 +1239,8 @@ format_float_short(double d, char format_code,
     /* Now that we've done zero padding, add an exponent if needed. */
     if (use_exp) {
         *p++ = float_strings[OFS_E][0];
-        exp_len = PyOS_snprintf(p, 5, "%+.02d", exp); // see `bufsize` comments
+        /* See `bufsize` comments for the max size. */
+        exp_len = PyOS_snprintf(p, 5 + 1, "%+.02d", exp);
         p += exp_len;
     }
   exit:
