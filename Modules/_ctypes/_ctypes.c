@@ -2639,7 +2639,8 @@ unique_key(CDataObject *target, Py_ssize_t index)
     size_t bytes_left;
 
     Py_BUILD_ASSERT(sizeof(string) - 1 > sizeof(Py_ssize_t) * 2);
-    cp += sprintf(cp, "%x", Py_SAFE_DOWNCAST(index, Py_ssize_t, int));
+    cp += PyOS_snprintf(cp, sizeof(Py_ssize_t), "%x",
+                        Py_SAFE_DOWNCAST(index, Py_ssize_t, int));
     while (target->b_base) {
         bytes_left = sizeof(string) - (cp - string) - 1;
         /* Hex format needs 2 characters per byte */
@@ -2648,7 +2649,8 @@ unique_key(CDataObject *target, Py_ssize_t index)
                             "ctypes object structure too deep");
             return NULL;
         }
-        cp += sprintf(cp, ":%x", Py_SAFE_DOWNCAST(target->b_index, Py_ssize_t, int));
+        cp += PyOS_snprintf(cp, bytes_left, ":%x",
+                            Py_SAFE_DOWNCAST(target->b_index, Py_ssize_t, int));
         target = target->b_base;
     }
     return PyUnicode_FromStringAndSize(string, cp-string);
