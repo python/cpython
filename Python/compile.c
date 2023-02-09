@@ -5447,7 +5447,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (compiler_make_closure(c, loc, co, 0) < 0) {
         goto error;
     }
-    Py_DECREF(co);
+    Py_CLEAR(co);
 
     if (compiler_comprehension_iter(c, loc, outermost)) {
         goto error;
