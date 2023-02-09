@@ -270,14 +270,15 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
 
         case 'd':
             if (longflag) {
-                snprintf(buffer, sizeof(buffer), "%ld", va_arg(vargs, long));
+                PyOS_snprintf(buffer, sizeof(buffer),
+                              "%ld", va_arg(vargs, long));
             }
             else if (size_tflag) {
-                snprintf(buffer, sizeof(buffer),
-                         "%zd", va_arg(vargs, Py_ssize_t));
+                PyOS_snprintf(buffer, sizeof(buffer),
+                              "%zd", va_arg(vargs, Py_ssize_t));
             }
             else {
-                snprintf(buffer, sizeof(buffer), "%d", va_arg(vargs, int));
+                PyOS_snprintf(buffer, sizeof(buffer), "%d", va_arg(vargs, int));
             }
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
@@ -285,28 +286,29 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
 
         case 'u':
             if (longflag) {
-                snprintf(buffer, sizeof(buffer),
-                         "%lu", va_arg(vargs, unsigned long));
+                PyOS_snprintf(buffer, sizeof(buffer),
+                              "%lu", va_arg(vargs, unsigned long));
             }
             else if (size_tflag) {
-                snprintf(buffer, sizeof(buffer), "%zu", va_arg(vargs, size_t));
+                PyOS_snprintf(buffer, sizeof(buffer),
+                              "%zu", va_arg(vargs, size_t));
             }
             else {
-                snprintf(buffer, sizeof(buffer),
-                         "%u", va_arg(vargs, unsigned int));
+                PyOS_snprintf(buffer, sizeof(buffer),
+                              "%u", va_arg(vargs, unsigned int));
             }
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
             break;
 
         case 'i':
-            snprintf(buffer, sizeof(buffer), "%i", va_arg(vargs, int));
+            PyOS_snprintf(buffer, sizeof(buffer), "%i", va_arg(vargs, int));
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
             break;
 
         case 'x':
-            snprintf(buffer, sizeof(buffer), "%x", va_arg(vargs, int));
+            PyOS_snprintf(buffer, sizeof(buffer), "%x", va_arg(vargs, int));
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
             break;
@@ -332,7 +334,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
         }
 
         case 'p':
-            snprintf(buffer, sizeof(buffer), "%p", va_arg(vargs, void*));
+            PyOS_snprintf(buffer, sizeof(buffer), "%p", va_arg(vargs, void*));
             assert(strlen(buffer) < sizeof(buffer));
             /* %p is ill-defined:  ensure leading 0x. */
             if (buffer[1] == 'X')

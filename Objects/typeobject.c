@@ -4730,9 +4730,9 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
        for heaptypes. */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         char msg[200];
-        snprintf(msg, sizeof(msg),
-                "type_traverse() called on non-heap type '%.100s'",
-                type->tp_name);
+        PyOS_snprintf(msg, sizeof(msg),
+                      "type_traverse() called on non-heap type '%.100s'",
+                      type->tp_name);
         _PyObject_ASSERT_FAILED_MSG((PyObject *)type, msg);
     }
 

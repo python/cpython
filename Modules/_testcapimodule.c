@@ -1097,7 +1097,7 @@ test_capsule(PyObject *self, PyObject *Py_UNUSED(ignored))
 #undef FAIL
 #define FAIL(x) \
         { \
-        snprintf(buffer, sizeof(buffer), \
+        PyOS_snprintf(buffer, sizeof(buffer), \
             "%s module: \"%s\" attribute: \"%s\"", \
             x, known->module, known->attribute); \
         error = buffer; \

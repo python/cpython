@@ -232,7 +232,7 @@ _Py_PrintSpecializationStats(int to_file)
         hex_name[40] = '\0';
         char buf[64];
         assert(strlen(dirname) + 40 + strlen(".txt") < 64);
-        snprintf(buf, sizeof(buf), "%s%s.txt", dirname, hex_name);
+        PyOS_snprintf(buf, sizeof(buf), "%s%s.txt", dirname, hex_name);
         FILE *fout = fopen(buf, "w");
         if (fout) {
             out = fout;
