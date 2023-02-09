@@ -1418,6 +1418,7 @@ class TraceTestCase(unittest.TestCase):
              (3, 'line'),
              (3, 'exception'),
              (4, 'line'),
+             (4, 'line'),
              (6, 'line'),
              (7, 'line'),
              (7, 'return')])
@@ -1439,6 +1440,7 @@ class TraceTestCase(unittest.TestCase):
              (2, 'line'),
              (3, 'line'),
              (3, 'exception'),
+             (4, 'line'),
              (4, 'line'),
              (6, 'line'),
              (7, 'line'),
@@ -1481,6 +1483,7 @@ class TraceTestCase(unittest.TestCase):
              (8, 'line'),
              (10, 'line'),
              (11, 'line'),
+             (10, 'line'),
              (12, 'line'),
              (13, 'line'),
              (14, 'line'),

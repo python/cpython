@@ -3633,7 +3633,6 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, orelse);
     NEW_JUMP_TARGET_LABEL(c, end);
     NEW_JUMP_TARGET_LABEL(c, cleanup);
-    NEW_JUMP_TARGET_LABEL(c, reraise_star);
 
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
 
@@ -3659,7 +3658,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     for (Py_ssize_t i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.TryStar.handlers, i);
-        location loc = LOC(handler);
+        loc = LOC(handler);
         NEW_JUMP_TARGET_LABEL(c, next_except);
         except = next_except;
         NEW_JUMP_TARGET_LABEL(c, handle_match);
@@ -3745,21 +3744,17 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* add exception raised to the res list */
         ADDOP_I(c, NO_LOCATION, LIST_APPEND, 3); // exc
         ADDOP(c, NO_LOCATION, POP_TOP); // lasti
-        ADDOP_JUMP(c, NO_LOCATION, JUMP, except);
 
         USE_LABEL(c, except);
-
         if (i == n - 1) {
             /* Add exc to the list (if not None it's the unhandled part of the EG) */
             ADDOP_I(c, NO_LOCATION, LIST_APPEND, 1);
-            ADDOP_JUMP(c, NO_LOCATION, JUMP, reraise_star);
         }
     }
     /* artificial */
     compiler_pop_fblock(c, EXCEPTION_GROUP_HANDLER, NO_LABEL);
     NEW_JUMP_TARGET_LABEL(c, reraise);
 
-    USE_LABEL(c, reraise_star);
     ADDOP(c, NO_LOCATION, PREP_RERAISE_STAR);
     ADDOP_I(c, NO_LOCATION, COPY, 1);
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_NOT_NONE, reraise);
@@ -3774,7 +3769,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     ADDOP_I(c, NO_LOCATION, SWAP, 2);
     ADDOP(c, NO_LOCATION, POP_EXCEPT);
-    ADDOP_I(c, NO_LOCATION, RERAISE, 0);
+    ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c, NO_LOCATION);
