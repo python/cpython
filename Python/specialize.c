@@ -232,7 +232,7 @@ _Py_PrintSpecializationStats(int to_file)
         hex_name[40] = '\0';
         char buf[64];
         assert(strlen(dirname) + 40 + strlen(".txt") < 64);
-        sprintf(buf, "%s%s.txt", dirname, hex_name);
+        snprintf(buf, sizeof(buf), "%s%s.txt", dirname, hex_name);
         FILE *fout = fopen(buf, "w");
         if (fout) {
             out = fout;
@@ -1084,7 +1084,7 @@ PyObject *descr, DescriptorClassification kind)
             if (dict) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
                 return 0;
-            }  
+            }
             assert(owner_cls->tp_dictoffset > 0);
             assert(owner_cls->tp_dictoffset <= INT16_MAX);
             _py_set_opcode(instr, LOAD_ATTR_METHOD_LAZY_DICT);

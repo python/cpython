@@ -1324,8 +1324,9 @@ _get_peer_alt_names (_sslmodulestate *state, X509 *certificate) {
                 } else if (name->d.ip->length == 16) {
                     /* PyUnicode_FromFormat() does not support %X */
                     unsigned char *p = name->d.ip->data;
-                    len = sprintf(
+                    len = snprintf(
                         buf,
+                        sizeof(buf),
                         "%X:%X:%X:%X:%X:%X:%X:%X",
                         p[0] << 8 | p[1],
                         p[2] << 8 | p[3],

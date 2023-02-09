@@ -1559,11 +1559,13 @@ make_freplacement(PyObject *object)
 {
     char freplacement[64];
     if (PyTime_Check(object))
-        sprintf(freplacement, "%06d", TIME_GET_MICROSECOND(object));
+        snprintf(freplacement, sizeof(freplacement),
+                 "%06d", TIME_GET_MICROSECOND(object));
     else if (PyDateTime_Check(object))
-        sprintf(freplacement, "%06d", DATE_GET_MICROSECOND(object));
+        snprintf(freplacement, sizeof(freplacement),
+                 "%06d", DATE_GET_MICROSECOND(object));
     else
-        sprintf(freplacement, "%06d", 0);
+        snprintf(freplacement, sizeof(freplacement), "%06d", 0);
 
     return PyBytes_FromStringAndSize(freplacement, strlen(freplacement));
 }

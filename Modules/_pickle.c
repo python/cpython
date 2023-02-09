@@ -2098,7 +2098,7 @@ save_long(PicklerObject *self, PyObject *obj)
             }
         }
         else {
-            sprintf(pdata, "%c%ld\n", INT,  val);
+            snprintf(pdata, sizeof(pdata), "%c%ld\n", INT,  val);
             len = strlen(pdata);
         }
         if (_Pickler_Write(self, pdata, len) < 0)

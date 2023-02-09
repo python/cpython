@@ -139,7 +139,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
     if (serv == NULL || servlen == 0) {
         /* what we should do? */
     } else if (flags & NI_NUMERICSERV) {
-        sprintf(numserv, "%d", ntohs(port));
+        snprintf(numserv, sizeof(numserv), "%d", ntohs(port));
         if (strlen(numserv) > servlen)
             return ENI_MEMORY;
         strcpy(serv, numserv);
