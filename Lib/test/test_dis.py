@@ -690,8 +690,7 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
            POP_TOP
            JUMP_BACKWARD           11 (to 10)
         >> END_FOR
-           LOAD_CONST               0 (None)
-           RETURN_VALUE
+           RETURN_CONST             0 (None)
         >> CALL_INTRINSIC_1         3
            RERAISE                  1
 ExceptionTable:
