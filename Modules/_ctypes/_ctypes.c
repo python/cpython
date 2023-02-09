@@ -2639,7 +2639,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
     size_t bytes_left;
 
     Py_BUILD_ASSERT(sizeof(string) - 1 > sizeof(Py_ssize_t) * 2);
-    cp += PyOS_snprintf(cp, sizeof(Py_ssize_t), "%x",
+    cp += PyOS_snprintf(cp, sizeof(string), "%x",
                         Py_SAFE_DOWNCAST(index, Py_ssize_t, int));
     while (target->b_base) {
         bytes_left = sizeof(string) - (cp - string) - 1;
