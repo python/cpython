@@ -354,6 +354,13 @@ gen_close(PyGenObject *gen, PyObject *args)
     PyObject *yf = _PyGen_yf(gen);
     int err = 0;
 
+    if (gen->gi_frame_state == FRAME_CREATED) {
+        gen->gi_frame_state = FRAME_COMPLETED;
+        Py_RETURN_NONE;
+    }
+    if (gen->gi_frame_state >= FRAME_COMPLETED) {
+        Py_RETURN_NONE;
+    }
     if (yf) {
         PyFrameState state = gen->gi_frame_state;
         gen->gi_frame_state = FRAME_EXECUTING;
@@ -361,8 +368,23 @@ gen_close(PyGenObject *gen, PyObject *args)
         gen->gi_frame_state = state;
         Py_DECREF(yf);
     }
-    if (err == 0)
+    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
+    /* It is possible for the previous instruction to not be a
+     * YIELD_VALUE if the debugger has changed the lineno. */
+    if (err == 0 && frame->prev_instr->opcode == YIELD_VALUE) {
+        assert(frame->prev_instr[1].opcode == RESUME);
+        int exception_handler_depth = frame->prev_instr->oparg;
+        assert(exception_handler_depth > 0);
+        /* We can safely ignore the outermost try block
+         * as it automatically generated to handle
+         * StopIteration. */
+        if (exception_handler_depth == 1) {
+            Py_RETURN_NONE;
+        }
+    }
+    if (err == 0) {
         PyErr_SetNone(PyExc_GeneratorExit);
+    }
     retval = gen_send_ex(gen, Py_None, 1, 1);
     if (retval) {
         const char *msg = "generator ignored GeneratorExit";
@@ -769,7 +791,7 @@ gen_sizeof(PyGenObject *gen, PyObject *Py_UNUSED(ignored))
     Py_ssize_t res;
     res = offsetof(PyGenObject, gi_iframe) + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = gen->gi_code;
-    res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
+    res += _PyFrame_NumSlotsForCodeObject(code) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
 
@@ -850,7 +872,7 @@ static PyObject *
 make_gen(PyTypeObject *type, PyFunctionObject *func)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    int slots = code->co_nlocalsplus + code->co_stacksize;
+    int slots = _PyFrame_NumSlotsForCodeObject(code);
     PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, slots);
     if (gen == NULL) {
         return NULL;
@@ -903,8 +925,11 @@ _Py_MakeCoro(PyFunctionObject *func)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        assert(_PyEval_GetFrame());
-        PyObject *cr_origin = compute_cr_origin(origin_depth, _PyEval_GetFrame()->previous);
+        _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+        assert(frame);
+        assert(_PyFrame_IsIncomplete(frame));
+        frame = _PyFrame_GetFirstComplete(frame->previous);
+        PyObject *cr_origin = compute_cr_origin(origin_depth, frame);
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
@@ -1286,7 +1311,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     /* First count how many frames we have */
     int frame_count = 0;
     for (; frame && frame_count < origin_depth; ++frame_count) {
-        frame = frame->previous;
+        frame = _PyFrame_GetFirstComplete(frame->previous);
     }
 
     /* Now collect them */
@@ -1305,7 +1330,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
             return NULL;
         }
         PyTuple_SET_ITEM(cr_origin, i, frameinfo);
-        frame = frame->previous;
+        frame = _PyFrame_GetFirstComplete(frame->previous);
     }
 
     return cr_origin;
@@ -1970,13 +1995,13 @@ PyTypeObject _PyAsyncGenWrappedValue_Type = {
 
 
 PyObject *
-_PyAsyncGenValueWrapperNew(PyObject *val)
+_PyAsyncGenValueWrapperNew(PyThreadState *tstate, PyObject *val)
 {
     _PyAsyncGenWrappedValue *o;
     assert(val);
 
 #if _PyAsyncGen_MAXFREELIST > 0
-    struct _Py_async_gen_state *state = get_async_gen_state();
+    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
 #ifdef Py_DEBUG
     // _PyAsyncGenValueWrapperNew() must not be called after _PyAsyncGen_Fini()
     assert(state->value_numfree != -1);

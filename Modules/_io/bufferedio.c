@@ -746,26 +746,26 @@ _buffered_init(buffered *self)
 int
 _PyIO_trap_eintr(void)
 {
-    static PyObject *eintr_int = NULL;
     PyObject *typ, *val, *tb;
     PyOSErrorObject *env_err;
-
-    if (eintr_int == NULL) {
-        eintr_int = PyLong_FromLong(EINTR);
-        assert(eintr_int != NULL);
-    }
     if (!PyErr_ExceptionMatches(PyExc_OSError))
         return 0;
     PyErr_Fetch(&typ, &val, &tb);
     PyErr_NormalizeException(&typ, &val, &tb);
     env_err = (PyOSErrorObject *) val;
     assert(env_err != NULL);
-    if (env_err->myerrno != NULL &&
-        PyObject_RichCompareBool(env_err->myerrno, eintr_int, Py_EQ) > 0) {
-        Py_DECREF(typ);
-        Py_DECREF(val);
-        Py_XDECREF(tb);
-        return 1;
+    if (env_err->myerrno != NULL) {
+        assert(EINTR > 0 && EINTR < INT_MAX);
+        assert(PyLong_CheckExact(env_err->myerrno));
+        int overflow;
+        int myerrno = PyLong_AsLongAndOverflow(env_err->myerrno, &overflow);
+        PyErr_Clear();
+        if (myerrno == EINTR) {
+            Py_DECREF(typ);
+            Py_DECREF(val);
+            Py_XDECREF(tb);
+            return 1;
+        }
     }
     /* This silences any error set by PyObject_RichCompareBool() */
     PyErr_Restore(typ, val, tb);

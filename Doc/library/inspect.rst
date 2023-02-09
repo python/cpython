@@ -343,14 +343,35 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. function:: iscoroutinefunction(object)
 
-   Return ``True`` if the object is a :term:`coroutine function`
-   (a function defined with an :keyword:`async def` syntax).
+   Return ``True`` if the object is a :term:`coroutine function` (a function
+   defined with an :keyword:`async def` syntax), a :func:`functools.partial`
+   wrapping a :term:`coroutine function`, or a sync function marked with
+   :func:`markcoroutinefunction`.
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
+
+   .. versionchanged:: 3.12
+      Sync functions marked with :func:`markcoroutinefunction` now return
+      ``True``.
+
+
+.. function:: markcoroutinefunction(func)
+
+   Decorator to mark a callable as a :term:`coroutine function` if it would not
+   otherwise be detected by :func:`iscoroutinefunction`.
+
+   This may be of use for sync functions that return a :term:`coroutine`, if
+   the function is passed to an API that requires :func:`iscoroutinefunction`.
+
+   When possible, using an :keyword:`async def` function is preferred. Also
+   acceptable is calling the function and testing the return with
+   :func:`iscoroutine`.
+
+   .. versionadded:: 3.12
 
 
 .. function:: iscoroutine(object)
@@ -715,6 +736,7 @@ function.
 
          >>> def test(a, b):
          ...     pass
+         ...
          >>> sig = signature(test)
          >>> new_sig = sig.replace(return_annotation="new return anno")
          >>> str(new_sig)
@@ -1054,6 +1076,7 @@ Classes and functions
     >>> from inspect import getcallargs
     >>> def f(a, b=1, *pos, **named):
     ...     pass
+    ...
     >>> getcallargs(f, 1, 2, 3) == {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
     True
     >>> getcallargs(f, a=2, x=4) == {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}

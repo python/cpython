@@ -285,6 +285,7 @@ def _syscmd_ver(system='', release='', version='',
                                            stdin=subprocess.DEVNULL,
                                            stderr=subprocess.DEVNULL,
                                            text=True,
+                                           encoding="locale",
                                            shell=True)
         except (OSError, subprocess.CalledProcessError) as why:
             #print('Command %s failed: %s' % (cmd, why))
@@ -824,6 +825,7 @@ class _Processor:
                 ['uname', '-p'],
                 stderr=subprocess.DEVNULL,
                 text=True,
+                encoding="utf8",
             ).strip()
         except (OSError, subprocess.CalledProcessError):
             pass
@@ -1290,7 +1292,7 @@ def platform(aliased=0, terse=0):
         else:
             platform = _platform(system, release, version, csd)
 
-    elif system in ('Linux',):
+    elif system == 'Linux':
         # check for libc vs. glibc
         libcname, libcversion = libc_ver()
         platform = _platform(system, release, machine, processor,

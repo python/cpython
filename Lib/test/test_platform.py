@@ -329,7 +329,7 @@ class PlatformTest(unittest.TestCase):
 
     def test_java_ver(self):
         res = platform.java_ver()
-        if sys.platform == 'java':
+        if sys.platform == 'java':  # Is never actually checked in CI
             self.assertTrue(all(res))
 
     def test_win32_ver(self):

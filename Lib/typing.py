@@ -371,10 +371,13 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
                 ForwardRef(arg) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
+            is_unpacked = t.__unpacked__
             if _should_unflatten_callable_args(t, args):
                 t = t.__origin__[(args[:-1], args[-1])]
             else:
                 t = t.__origin__[args]
+            if is_unpacked:
+                t = Unpack[t]
         ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
@@ -828,7 +831,7 @@ class ForwardRef(_Final, _root=True):
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
         if arg[0] == '*':
-            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0]
+            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
         try:
@@ -1194,7 +1197,7 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
 
     Parameter specification variables can be introspected. e.g.:
 
-       P.__name__ == 'T'
+       P.__name__ == 'P'
        P.__bound__ == None
        P.__covariant__ == False
        P.__contravariant__ == False
@@ -1940,10 +1943,14 @@ def _no_init_or_replace_init(self, *args, **kwargs):
 
 def _caller(depth=1, default='__main__'):
     try:
+        return sys._getframemodulename(depth + 1) or default
+    except AttributeError:  # For platforms without _getframemodulename()
+        pass
+    try:
         return sys._getframe(depth + 1).f_globals.get('__name__', default)
     except (AttributeError, ValueError):  # For platforms without _getframe()
-        return None
-
+        pass
+    return None
 
 def _allow_reckless_class_checks(depth=3):
     """Allow instance and class checks for special stdlib modules.
@@ -3363,6 +3370,7 @@ def dataclass_transform(
     eq_default: bool = True,
     order_default: bool = False,
     kw_only_default: bool = False,
+    frozen_default: bool = False,
     field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
     **kwargs: Any,
 ) -> Callable[[T], T]:
@@ -3416,6 +3424,8 @@ def dataclass_transform(
         assumed to be True or False if it is omitted by the caller.
     - ``kw_only_default`` indicates whether the ``kw_only`` parameter is
         assumed to be True or False if it is omitted by the caller.
+    - ``frozen_default`` indicates whether the ``frozen`` parameter is
+        assumed to be True or False if it is omitted by the caller.
     - ``field_specifiers`` specifies a static list of supported classes
         or functions that describe fields, similar to ``dataclasses.field()``.
     - Arbitrary other keyword arguments are accepted in order to allow for
@@ -3432,6 +3442,7 @@ def dataclass_transform(
             "eq_default": eq_default,
             "order_default": order_default,
             "kw_only_default": kw_only_default,
+            "frozen_default": frozen_default,
             "field_specifiers": field_specifiers,
             "kwargs": kwargs,
         }

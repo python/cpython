@@ -673,10 +673,6 @@ mult(Bigint *a, Bigint *b)
 
 #ifndef Py_USING_MEMORY_DEBUGGER
 
-/* p5s is a linked list of powers of 5 of the form 5**(2**i), i >= 2 */
-
-static Bigint *p5s;
-
 /* multiply the Bigint b by 5**k.  Returns a pointer to the result, or NULL on
    failure; if the returned pointer is distinct from b then the original
    Bigint b will have been Bfree'd.   Ignores the sign of b. */
@@ -696,7 +692,7 @@ pow5mult(Bigint *b, int k)
 
     if (!(k >>= 2))
         return b;
-    p5 = p5s;
+    p5 = _PyRuntime.dtoa.p5s;
     if (!p5) {
         /* first time */
         p5 = i2b(625);
@@ -704,7 +700,7 @@ pow5mult(Bigint *b, int k)
             Bfree(b);
             return NULL;
         }
-        p5s = p5;
+        _PyRuntime.dtoa.p5s = p5;
         p5->next = 0;
     }
     for(;;) {

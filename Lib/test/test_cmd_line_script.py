@@ -753,6 +753,9 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
 
     @unittest.skipUnless(os.path.exists('/dev/fd/0'), 'requires /dev/fd platform')
+    @unittest.skipIf(sys.platform.startswith("freebsd") and
+                     os.stat("/dev").st_dev == os.stat("/dev/fd").st_dev,
+                     "Requires fdescfs mounted on /dev/fd on FreeBSD")
     def test_script_as_dev_fd(self):
         # GH-87235: On macOS passing a non-trivial script to /dev/fd/N can cause
         # problems because all open /dev/fd/N file descriptors share the same

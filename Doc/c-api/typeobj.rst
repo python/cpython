@@ -147,6 +147,8 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_watched`]         | char                              |                   |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
 
@@ -450,6 +452,7 @@ slot typedefs
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`Py_ssize_t`     |                      |
+|                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`objobjproc`        | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -2090,6 +2093,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
 
 
+.. c:member:: char PyTypeObject.tp_watched
+
+   Internal. Do not use.
+
+   .. versionadded:: 3.12
+
+
 .. _static-types:
 
 Static Types
@@ -2624,7 +2634,7 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t)
 
-.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t)
+.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *)
 
 .. c:type:: int (*objobjproc)(PyObject *, PyObject *)
 

@@ -325,9 +325,13 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
     long which_l = PyLong_AsLong(which_watcher);
     if (which_l == 0) {
         watcher_id = PyCode_AddWatcher(first_code_object_callback);
+        num_code_object_created_events[0] = 0;
+        num_code_object_destroyed_events[0] = 0;
     }
     else if (which_l == 1) {
         watcher_id = PyCode_AddWatcher(second_code_object_callback);
+        num_code_object_created_events[1] = 0;
+        num_code_object_destroyed_events[1] = 0;
     }
     else {
         return NULL;
@@ -345,6 +349,11 @@ clear_code_watcher(PyObject *self, PyObject *watcher_id)
     long watcher_id_l = PyLong_AsLong(watcher_id);
     if (PyCode_ClearWatcher(watcher_id_l) < 0) {
         return NULL;
+    }
+    // reset static events counters
+    if (watcher_id_l >= 0 && watcher_id_l < NUM_CODE_WATCHERS) {
+        num_code_object_created_events[watcher_id_l] = 0;
+        num_code_object_destroyed_events[watcher_id_l] = 0;
     }
     Py_RETURN_NONE;
 }
@@ -621,14 +630,16 @@ static PyMethodDef test_methods[] = {
     {"clear_dict_watcher",       clear_dict_watcher,      METH_O,       NULL},
     {"watch_dict",               watch_dict,              METH_VARARGS, NULL},
     {"unwatch_dict",             unwatch_dict,            METH_VARARGS, NULL},
-    {"get_dict_watcher_events",  get_dict_watcher_events, METH_NOARGS,  NULL},
+    {"get_dict_watcher_events",
+     (PyCFunction) get_dict_watcher_events,               METH_NOARGS,  NULL},
 
     // Type watchers.
     {"add_type_watcher",         add_type_watcher,        METH_O,       NULL},
     {"clear_type_watcher",       clear_type_watcher,      METH_O,       NULL},
     {"watch_type",               watch_type,              METH_VARARGS, NULL},
     {"unwatch_type",             unwatch_type,            METH_VARARGS, NULL},
-    {"get_type_modified_events", get_type_modified_events, METH_NOARGS, NULL},
+    {"get_type_modified_events",
+     (PyCFunction) get_type_modified_events,              METH_NOARGS, NULL},
 
     // Code object watchers.
     {"add_code_watcher",         add_code_watcher,        METH_O,       NULL},

@@ -125,6 +125,7 @@ __all__ = [
     "ismodule",
     "isroutine",
     "istraceback",
+    "markcoroutinefunction",
     "signature",
     "stack",
     "trace",
@@ -391,12 +392,31 @@ def isgeneratorfunction(obj):
     See help(isfunction) for a list of attributes."""
     return _has_code_flag(obj, CO_GENERATOR)
 
+# A marker for markcoroutinefunction and iscoroutinefunction.
+_is_coroutine_marker = object()
+
+def _has_coroutine_mark(f):
+    while ismethod(f):
+        f = f.__func__
+    f = functools._unwrap_partial(f)
+    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_marker
+
+def markcoroutinefunction(func):
+    """
+    Decorator to ensure callable is recognised as a coroutine function.
+    """
+    if hasattr(func, '__func__'):
+        func = func.__func__
+    func._is_coroutine_marker = _is_coroutine_marker
+    return func
+
 def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
-    Coroutine functions are defined with "async def" syntax.
+    Coroutine functions are normally defined with "async def" syntax, but may
+    be marked via markcoroutinefunction.
     """
-    return _has_code_flag(obj, CO_COROUTINE)
+    return _has_code_flag(obj, CO_COROUTINE) or _has_coroutine_mark(obj)
 
 def isasyncgenfunction(obj):
     """Return true if the object is an asynchronous generator function.
@@ -1160,7 +1180,6 @@ class BlockFinder:
         self.started = False
         self.passline = False
         self.indecorator = False
-        self.decoratorhasargs = False
         self.last = 1
         self.body_col0 = None
 
@@ -1175,13 +1194,6 @@ class BlockFinder:
                     self.islambda = True
                 self.started = True
             self.passline = True    # skip to the end of the line
-        elif token == "(":
-            if self.indecorator:
-                self.decoratorhasargs = True
-        elif token == ")":
-            if self.indecorator:
-                self.indecorator = False
-                self.decoratorhasargs = False
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]
@@ -1189,7 +1201,7 @@ class BlockFinder:
                 raise EndOfBlock
             # hitting a NEWLINE when in a decorator without args
             # ends the decorator
-            if self.indecorator and not self.decoratorhasargs:
+            if self.indecorator:
                 self.indecorator = False
         elif self.passline:
             pass
@@ -2108,7 +2120,7 @@ def _signature_strip_non_python_syntax(signature):
     self_parameter = None
     last_positional_only = None
 
-    lines = [l.encode('ascii') for l in signature.split('\n')]
+    lines = [l.encode('ascii') for l in signature.split('\n') if l]
     generator = iter(lines).__next__
     token_stream = tokenize.tokenize(generator)
 
@@ -2207,11 +2219,11 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             try:
                 value = eval(s, sys_module_dict)
             except NameError:
-                raise RuntimeError()
+                raise ValueError
 
         if isinstance(value, (str, int, float, bytes, bool, type(None))):
             return ast.Constant(value)
-        raise RuntimeError()
+        raise ValueError
 
     class RewriteSymbolics(ast.NodeTransformer):
         def visit_Attribute(self, node):
@@ -2221,7 +2233,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 a.append(n.attr)
                 n = n.value
             if not isinstance(n, ast.Name):
-                raise RuntimeError()
+                raise ValueError
             a.append(n.id)
             value = ".".join(reversed(a))
             return wrap_value(value)
@@ -2231,6 +2243,21 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 raise ValueError()
             return wrap_value(node.id)
 
+        def visit_BinOp(self, node):
+            # Support constant folding of a couple simple binary operations
+            # commonly used to define default values in text signatures
+            left = self.visit(node.left)
+            right = self.visit(node.right)
+            if not isinstance(left, ast.Constant) or not isinstance(right, ast.Constant):
+                raise ValueError
+            if isinstance(node.op, ast.Add):
+                return ast.Constant(left.value + right.value)
+            elif isinstance(node.op, ast.Sub):
+                return ast.Constant(left.value - right.value)
+            elif isinstance(node.op, ast.BitOr):
+                return ast.Constant(left.value | right.value)
+            raise ValueError
+
     def p(name_node, default_node, default=empty):
         name = parse_name(name_node)
         if default_node and default_node is not _empty:
@@ -2238,7 +2265,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 default_node = RewriteSymbolics().visit(default_node)
                 default = ast.literal_eval(default_node)
             except ValueError:
-                return None
+                raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
         parameters.append(Parameter(name, kind, default=default, annotation=empty))
 
     # non-keyword-only parameters
@@ -2451,10 +2478,18 @@ def _signature_from_callable(obj, *,
         pass
     else:
         if sig is not None:
+            # since __text_signature__ is not writable on classes, __signature__
+            # may contain text (or be a callable that returns text);
+            # if so, convert it
+            o_sig = sig
+            if not isinstance(sig, (Signature, str)) and callable(sig):
+                sig = sig()
+            if isinstance(sig, str):
+                sig = _signature_fromstr(sigcls, obj, sig)
             if not isinstance(sig, Signature):
                 raise TypeError(
                     'unexpected object {!r} in __signature__ '
-                    'attribute'.format(sig))
+                    'attribute'.format(o_sig))
             return sig
 
     try:

@@ -1,1 +1,0 @@
-Reworded docstring of the default ``__contains__`` to clarify that it returns a :class:`bool`.
