@@ -151,7 +151,7 @@ class AsyncTree:
                 # only count calls that will actually result a task scheduled to the event loop
                 # (if yield_result is non-None, it will return synchronously)
                 self.task_count += 1
-            return asyncio.Task(coro, loop=loop, name=name, context=context, yield_result=yield_result)
+            return asyncio.tasks._PyTask(coro, loop=loop, name=name, context=context, yield_result=yield_result)
 
         def counting_task_factory(loop, coro, *, name=None, context=None, yield_result=None):
             return counting_task_constructor(coro, loop=loop, name=name, context=context, yield_result=yield_result)
