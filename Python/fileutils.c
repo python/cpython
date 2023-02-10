@@ -1162,8 +1162,6 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     }
 
     _Py_attribute_data_to_stat(&info, 0, status);
-    /* specific to fstat() */
-    status->st_ino = (((uint64_t)info.nFileIndexHigh) << 32) + info.nFileIndexLow;
     return 0;
 #else
     return fstat(fd, status);
