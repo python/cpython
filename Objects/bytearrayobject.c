@@ -2395,7 +2395,7 @@ bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 
     /* _PyEval_GetBuiltin can invoke arbitrary code.
      * calls must be *before* access of `it` pointers,
-     * since C/C++ parameter eval order is undefined.
+     * since C parameter eval order is undefined.
      * see issue #101765 */
 
     if (it->it_seq != NULL) {
