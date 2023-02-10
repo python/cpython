@@ -7,6 +7,8 @@ from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
 import pickle
 import collections.abc
+import functools
+import contextlib
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -249,29 +251,34 @@ class TestCase(unittest.TestCase):
         # where iter `__reduce__` calls could lead to a segfault or SystemError
         # depending on the order of C argument evaluation, which is undefined
 
-        # Backup builtins.iter
+        # Backup builtins
         builtins = __builtins__
-        orig_iter = builtins["iter"]
+        orig = {"iter": iter, "reversed": reversed}
 
-        def run(item, init=None, sentinel=None):
+        def run(builtin_name, item, init=None, sentinel=None):
             if init is not None:
                 args = init if isinstance(init, tuple) else (init,)
                 item = item(*args)
             it = iter(item) if sentinel is None else iter(item, sentinel)
 
             class CustomStr:
+                def __init__(self, name, iterator):
+                    self.name = name
+                    self.iterator = iterator
                 def __hash__(self):
-                    return hash("iter")
+                    return hash(self.name)
                 def __eq__(self, other):
-                    # Here we exhaust `it`, possibly changing our `it_seq` pointer to NULL
-                    # The `__reduce__` call should correctly get the pointers after this call
-                    list(it)
-                    return other == "iter"
+                    # Here we exhaust our iterator, possibly changing
+                    # its `it_seq` pointer to NULL
+                    # The `__reduce__` call should correctly get
+                    # the pointers after this call
+                    list(self.iterator)
+                    return other == self.name
 
             # del is required here
             # to avoid calling the last test case's custom __eq__
-            del builtins["iter"]
-            builtins[CustomStr()] = orig_iter
+            del builtins[builtin_name]
+            builtins[CustomStr(builtin_name, it)] = orig[builtin_name]
 
             return it.__reduce__()
 
@@ -285,19 +292,34 @@ class TestCase(unittest.TestCase):
         ]
 
         try:
+            run_iter = functools.partial(run, "iter")
             # The returned value of `__reduce__` should not only be valid
             # but also *empty*, as `it` was exhausted during `__eq__`
             # i.e "xyz" returns (iter, ("",))
-            self.assertEqual(run(str, "xyz"), (orig_iter, ("",)))
-            self.assertEqual(run(list, range(8)), (orig_iter, ([],)))
+            self.assertEqual(run_iter(str, "xyz"), (orig["iter"], ("",)))
+            self.assertEqual(run_iter(list, range(8)), (orig["iter"], ([],)))
+
+            # _PyEval_GetBuiltin is also called for `reversed` in a branch of
+            # listiter_reduce_general
+            self.assertEqual(
+                run("reversed", orig["reversed"], list(range(8))),
+                (iter, ([],))
+            )
+
             for case in types:
-                self.assertEqual(run(*case), (orig_iter, ((),)))
+                self.assertEqual(run_iter(*case), (orig["iter"], ((),)))
         finally:
             # del is required here
             # to avoid calling our custom __eq__
-            del builtins["iter"]
-            # Restore original iter
-            builtins["iter"] = orig_iter
+            # we also need to supress KeyErrors in case
+            # a failed test deletes the key without setting anything
+            with contextlib.suppress(KeyError):
+                del builtins["iter"]
+            with contextlib.suppress(KeyError):
+                del builtins["reversed"]
+            # Restore original builtins
+            for key, func in orig.items():
+                builtins[key] = func
 
     # Test a new_style class with __iter__ but no next() method
     def test_new_style_iter_class(self):
