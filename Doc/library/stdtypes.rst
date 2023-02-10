@@ -4232,6 +4232,10 @@ The constructors for both classes work the same:
 
       Test *x* for non-membership in *s*.
 
+   .. describe:: iter(s)
+
+      Return an iterator over the elements in *s* (in arbitrary order).
+
    .. method:: isdisjoint(other)
 
       Return ``True`` if the set has no elements in common with *other*.  Sets are
