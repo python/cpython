@@ -1,0 +1,2 @@
+Add length hints to the :mod:`itertools`: ``combinations``,
+``combinations_with_replacement``, ``permutations`` and ``product``
