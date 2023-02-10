@@ -1459,7 +1459,7 @@ Cursor objects
          An :term:`iterable` or :term:`iterator` of parameters
          to bind with the placeholders in *sql*.
          See :ref:`sqlite3-placeholders`.
-      :type parameters: :term:`iterable`
+      :type parameters: :term:`iterable` | :term:`iterator`
 
       :raises ProgrammingError:
          If *sql* contains more than one SQL statement,
