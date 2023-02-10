@@ -5189,22 +5189,23 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
     return result;
 }
 
+static PyObject *strptime_module = NULL;
+
 /* Return new datetime from _strptime.strptime_datetime(). */
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
-    static PyObject *module = NULL;
     PyObject *string, *format;
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
-    if (module == NULL) {
-        module = PyImport_ImportModule("_strptime");
-        if (module == NULL)
+    if (strptime_module == NULL) {
+        strptime_module = PyImport_ImportModule("_strptime");
+        if (strptime_module == NULL)
             return NULL;
     }
-    return PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
+    return PyObject_CallMethodObjArgs(strptime_module, &_Py_ID(_strptime_datetime),
                                          cls, string, format, NULL);
 }
 
@@ -6863,12 +6864,17 @@ _datetime_exec(PyObject *module)
     return 0;
 }
 
+static void module_free(void*) {
+    strptime_module = NULL;
+}
+ 
 static struct PyModuleDef datetimemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
     .m_doc = "Fast implementation of the datetime type.",
     .m_size = -1,
     .m_methods = module_methods,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC
