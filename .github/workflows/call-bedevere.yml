@@ -1,0 +1,24 @@
+name: Look for missing information
+
+on:
+  # PR synchronization is a push into the branch associated with the PR
+  pull_request:
+    types: [opened, edited, synchronize, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited]
+  pull_request_review_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  call_bedevere:
+    name: Call Sir Bedevere
+    runs-on: ubuntu-latest
+    steps:
+      - uses: arhadthedev/bedevere@2afca7c2baea52d31302d7fb20df284ef2099c62
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event: ${{ toJSON(github.event) }}
