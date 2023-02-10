@@ -45,10 +45,10 @@ typedef struct {
 
 // What the tier 2 interpreter executes
 typedef struct _PyTier2BB {
-    // Stores the start pointer in the tier 1 bytecode.
-    // So that when we exit the trace we can calculate where to return.
-    struct _PyTier2BB *bb_next;
-    _Py_CODEUNIT *tier1_start;
+    struct _PyTier2BB *successor_bb;
+    // Stores the end pointer in the tier 1 bytecode.
+    // So that when we exit the BB we can calculate where to return.
+    _Py_CODEUNIT *tier1_end;
     _Py_CODEUNIT u_code[1];
 } _PyTier2BB;
 
@@ -122,8 +122,11 @@ typedef struct _PyTier2BBSpace  {
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     char *_co_linearray;          /* array of line offsets */                  \
     int _tier2_warmup;            /* warmup counter for tier 2 */              \
-    _PyTier2BB *_bb_next;         /* the tier 2 basic block to execute (if any) */ \
+    _PyTier2BB *_entry_bb;        /* the tier 2 basic block to execute (if any) */ \
     _PyTier2BBSpace *_bb_space;   /* linked list storing basic blocks */       \
+    int _jump_target_count;      /* Number of entries in _jump_targets */      \
+    /* sorted ascending offsets (from start of co_code_adaptive) for jump targets */ \
+    int *_jump_targets;                                                        \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \

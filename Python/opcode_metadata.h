@@ -10,6 +10,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case RESUME:
             return 0;
+        case RESUME_QUICK:
+            return 0;
         case LOAD_CLOSURE:
             return 0;
         case LOAD_FAST_CHECK:
@@ -56,11 +58,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case BINARY_OP_ADD_FLOAT:
             return 2;
+        case BINARY_OP_ADD_INT:
+            return 2;
         case BINARY_OP_ADD_INT_TYPE_CHECK:
             return 2;
         case BINARY_OP_ADD_INT_REST:
-            return 2;
-        case BINARY_OP_ADD_INT:
             return 2;
         case BINARY_SUBSCR:
             return 2;
@@ -362,6 +364,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case RESUME:
             return 0;
+        case RESUME_QUICK:
+            return 0;
         case LOAD_CLOSURE:
             return 1;
         case LOAD_FAST_CHECK:
@@ -408,11 +412,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case BINARY_OP_ADD_FLOAT:
             return 1;
+        case BINARY_OP_ADD_INT:
+            return 1;
         case BINARY_OP_ADD_INT_TYPE_CHECK:
             return 2;
         case BINARY_OP_ADD_INT_REST:
-            return 1;
-        case BINARY_OP_ADD_INT:
             return 1;
         case BINARY_SUBSCR:
             return 1;
@@ -715,7 +719,8 @@ struct opcode_metadata {
     enum InstructionFormat instr_format;
 } _PyOpcode_opcode_metadata[256] = {
     [NOP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
-    [RESUME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [RESUME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [RESUME_QUICK] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_CLOSURE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_FAST_CHECK] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
@@ -740,6 +745,8 @@ struct opcode_metadata {
     [BINARY_OP_INPLACE_ADD_UNICODE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [BINARY_OP_ADD_FLOAT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
     [BINARY_OP_ADD_INT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
+    [BINARY_OP_ADD_INT_TYPE_CHECK] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [BINARY_OP_ADD_INT_REST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [BINARY_SUBSCR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC000 },
     [BINARY_SLICE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [STORE_SLICE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },

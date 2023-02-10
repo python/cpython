@@ -121,7 +121,8 @@ _PyFrame_Initialize(
     frame->f_locals = locals;
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
-    frame->prev_instr = (code->_bb_next == NULL ? _PyCode_CODE(code) - 1 : code->_bb_next->u_code - 1);
+    // @TODO CHANGE ME
+    frame->prev_instr = _PyCode_CODE(code);
     frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
