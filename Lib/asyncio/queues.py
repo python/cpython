@@ -8,6 +8,7 @@ __all__ = (
 )
 
 import collections
+import enum
 import heapq
 from types import GenericAlias
 
@@ -30,9 +31,10 @@ class QueueShutDown(Exception):
     pass
 
 
-_queue_alive = "alive"
-_queue_shutdown = "shutdown"
-_queue_shutdown_immediate = "shutdown-immediate"
+class _QueueState(enum.Enum):
+    ALIVE = "alive"
+    SHUTDOWN = "shutdown"
+    SHUTDOWN_IMMEDIATE = "shutdown-immediate"
 
 
 class Queue(mixins._LoopBoundMixin):
@@ -58,7 +60,7 @@ class Queue(mixins._LoopBoundMixin):
         self._finished = locks.Event()
         self._finished.set()
         self._init(maxsize)
-        self.shutdown_state = _queue_alive
+        self._shutdown_state = _QueueState.ALIVE
 
     # These three are overridable in subclasses.
 
@@ -99,6 +101,8 @@ class Queue(mixins._LoopBoundMixin):
             result += f' _putters[{len(self._putters)}]'
         if self._unfinished_tasks:
             result += f' tasks={self._unfinished_tasks}'
+        if self._shutdown_state is not _QueueState.ALIVE:
+            result += f' shutdown={self._shutdown_state.value}'
         return result
 
     def qsize(self):
@@ -131,7 +135,7 @@ class Queue(mixins._LoopBoundMixin):
         Put an item into the queue. If the queue is full, wait until a free
         slot is available before adding item.
         """
-        if self.shutdown_state != _queue_alive:
+        if self._shutdown_state is not _QueueState.ALIVE:
             raise QueueShutDown
         while self.full():
             putter = self._get_loop().create_future()
@@ -152,7 +156,7 @@ class Queue(mixins._LoopBoundMixin):
                     # the call.  Wake up the next in line.
                     self._wakeup_next(self._putters)
                 raise
-            if self.shutdown_state != _queue_alive:
+            if self._shutdown_state is not _QueueState.ALIVE:
                 raise QueueShutDown
         return self.put_nowait(item)
 
@@ -161,7 +165,7 @@ class Queue(mixins._LoopBoundMixin):
 
         If no free slot is immediately available, raise QueueFull.
         """
-        if self.shutdown_state != _queue_alive:
+        if self._shutdown_state is not _QueueState.ALIVE:
             raise QueueShutDown
         if self.full():
             raise QueueFull
@@ -175,10 +179,10 @@ class Queue(mixins._LoopBoundMixin):
 
         If queue is empty, wait until an item is available.
         """
-        if self.shutdown_state == _queue_shutdown_immediate:
+        if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
             raise QueueShutDown
         while self.empty():
-            if self.shutdown_state != _queue_alive:
+            if self._shutdown_state is not _QueueState.ALIVE:
                 raise QueueShutDown
             getter = self._get_loop().create_future()
             self._getters.append(getter)
@@ -198,7 +202,7 @@ class Queue(mixins._LoopBoundMixin):
                     # the call.  Wake up the next in line.
                     self._wakeup_next(self._getters)
                 raise
-            if self.shutdown_state == _queue_shutdown_immediate:
+            if self._shutdown_state is not _QueueState.ALIVE:
                 raise QueueShutDown
         return self.get_nowait()
 
@@ -208,10 +212,10 @@ class Queue(mixins._LoopBoundMixin):
         Return an item if one is immediately available, else raise QueueEmpty.
         """
         if self.empty():
-            if self.shutdown_state != _queue_alive:
+            if self._shutdown_state is not _QueueState.ALIVE:
                 raise QueueShutDown
             raise QueueEmpty
-        elif self.shutdown_state == _queue_shutdown_immediate:
+        elif self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
             raise QueueShutDown
         item = self._get()
         self._wakeup_next(self._putters)
@@ -258,17 +262,20 @@ class Queue(mixins._LoopBoundMixin):
         and join() if 'immediate'. The QueueShutDown exception is raised.
         """
         if immediate:
-            self.shutdown_state = _queue_shutdown_immediate
+            self._shutdown_state = _QueueState.SHUTDOWN_IMMEDIATE
             while self._getters:
                 getter = self._getters.popleft()
                 if not getter.done():
                     getter.set_result(None)
         else:
-            self.shutdown_state = _queue_shutdown
+            self._shutdown_state =  _QueueState.SHUTDOWN
         while self._putters:
             putter = self._putters.popleft()
             if not putter.done():
                 putter.set_result(None)
+        # Release 'joined' tasks/coros
+        self._finished.set()
+
 
 class PriorityQueue(Queue):
     """A subclass of Queue; retrieves entries in priority order (lowest first).
