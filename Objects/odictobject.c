@@ -1385,6 +1385,7 @@ odict_repr(PyODictObject *self)
     result = PyUnicode_FromFormat("%s(%R)",
                                   _PyType_Name(Py_TYPE(self)),
                                   dcopy);
+    Py_DECREF(dcopy);
 
 Done:
     Py_ReprLeave((PyObject *)self);
