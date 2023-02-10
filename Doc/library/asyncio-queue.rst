@@ -111,7 +111,7 @@ Queue
       All blocked callers of put() will be unblocked, and also get()
       and join() if *immediate* is true.
 
-      .. versionadded:: 3.12
+      .. versionadded:: 3.13
 
    .. method:: task_done()
 
@@ -174,7 +174,7 @@ Exceptions
    Exception raised when getting an item from or putting an item onto a
    queue which has been shut down.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 Examples
