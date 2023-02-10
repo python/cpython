@@ -1456,7 +1456,7 @@ Cursor objects
          A single SQL :abbr:`DML (Data Manipulation Language)` statement.
 
       :param parameters:
-         A :term:`sequence` or :term:`iterator` of parameters
+         An :term:`iterable` or :term:`iterator` of parameters
          to bind with the placeholders in *sql*.
          See :ref:`sqlite3-placeholders`.
       :type parameters: :term:`iterable`
