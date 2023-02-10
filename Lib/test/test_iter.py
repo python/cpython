@@ -250,12 +250,14 @@ class TestCase(unittest.TestCase):
         # depending on the order of C argument evaluation, which is undefined
 
         # Backup builtins.iter
-        builtins = __builtins__.__dict__ if hasattr(__builtins__, "__dict__") else __builtins__
+        builtins = __builtins__
         orig_iter = builtins["iter"]
 
-        def run(item):
-            (fn, *flag), *initializer = item
-            it = iter(fn(*initializer), *flag)
+        def run(item, init=None, sentinel=None):
+            if init is not None:
+                args = init if isinstance(init, tuple) else (init,)
+                item = item(*args)
+            it = iter(item) if sentinel is None else iter(item, sentinel)
 
             class CustomStr:
                 def __hash__(self):
@@ -266,28 +268,35 @@ class TestCase(unittest.TestCase):
                     list(it)
                     return other == "iter"
 
+            # del is required here
+            # to avoid calling the last test case's custom __eq__
             del builtins["iter"]
             builtins[CustomStr()] = orig_iter
 
             return it.__reduce__()
 
         types = [
-            ([EmptyIterClass],),
-            ([bytes], 8),
-            ([bytearray], 8),
-            ([tuple], range(8)),
-            ([lambda: (lambda: 0), 0],),
-            ([tuple[int]],)  # GenericAlias
+            (EmptyIterClass, ()),
+            (bytes, 8),
+            (bytearray, 8),
+            (tuple, range(8)),
+            (lambda: 0, None, 0),
+            (tuple[int],)  # GenericAlias
         ]
 
         try:
-            self.assertEqual(run(([str], "xyz")), (orig_iter, ("",)))
-            self.assertEqual(run(([list], range(8))), (orig_iter, ([],)))
+            # The returned value of `__reduce__` should not only be valid
+            # but also *empty*, as `it` was exhausted during `__eq__`
+            # i.e "xyz" returns (iter, ("",))
+            self.assertEqual(run(str, "xyz"), (orig_iter, ("",)))
+            self.assertEqual(run(list, range(8)), (orig_iter, ([],)))
             for case in types:
-                self.assertEqual(run(case), (orig_iter, ((),)))
+                self.assertEqual(run(*case), (orig_iter, ((),)))
         finally:
-            # Restore original iter
+            # del is required here
+            # to avoid calling our custom __eq__
             del builtins["iter"]
+            # Restore original iter
             builtins["iter"] = orig_iter
 
     # Test a new_style class with __iter__ but no next() method
