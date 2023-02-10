@@ -2386,7 +2386,7 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     lz->pools = pools;
     lz->indices = indices;
     lz->result = NULL;
-    lz->productsize = productsize;
+    lz->productsize = productsize;  // TODO to the power of the repeat parameter if specified
     lz->stopped = 0;
 
     return (PyObject *)lz;
