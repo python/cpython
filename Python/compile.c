@@ -5254,9 +5254,11 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 // comprehension
                 Py_INCREF(outv);
                 if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v)) {
+                    Py_DECREF(outv);
                     return ERROR;
                 }
                 if (PyDict_SetItem(state->temp_symbols, k, outv)) {
+                    Py_DECREF(outv);
                     return ERROR;
                 }
                 Py_DECREF(outv);
@@ -5422,6 +5424,8 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         if (pop_inlined_comprehension_state(c, loc, inline_state)) {
             goto error;
         }
+        Py_XDECREF(inline_state.pushed_locals);
+        Py_XDECREF(inline_state.temp_symbols);
         return SUCCESS;
     }
 
@@ -5468,6 +5472,7 @@ error_in_scope:
     }
 error:
     Py_XDECREF(co);
+    Py_XDECREF(entry);
     Py_XDECREF(inline_state.pushed_locals);
     Py_XDECREF(inline_state.temp_symbols);
     return ERROR;

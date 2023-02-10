@@ -927,6 +927,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         Py_DECREF(child_free);
         if (!temp)
             goto error;
+        Py_DECREF(temp);
         /* Check if any children have free variables */
         if (entry->ste_free || entry->ste_child_free)
             ste->ste_child_free = 1;
