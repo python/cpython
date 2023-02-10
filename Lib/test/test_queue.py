@@ -276,6 +276,193 @@ class BaseQueueTestMixin(BlockingTestMixin):
         except self.queue.ShutDown:
             pass
 
+    def test_get_shutdown(self):
+        q = self.type2test(2)
+        results = []
+        go = threading.Event()
+
+        def get_once(q, go):
+            try:
+                go.wait()
+                msg = q.get()
+                results.append(False)
+            except self.queue.ShutDown:
+                results.append(True)
+                return True
+
+        tests = (
+            (get_once, (q, go)),
+            (get_once, (q, go)),
+        )
+        threads = []
+        for f, params in tests:
+            thread = threading.Thread(target=f, args=params)
+            thread.start()
+            threads.append(thread)
+        q.shutdown()
+        go.set()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(results, [True]*len(tests))
+
+    def test_put_shutdown(self):
+        q = self.type2test(2)
+        results = []
+        go = threading.Event()
+
+        def put_twice(q, msg, go):
+            q.put(msg)
+            go.wait()
+            try:
+                q.put(msg)
+                results.append(False)
+            except self.queue.ShutDown:
+                results.append(True)
+                return msg
+
+        tests = (
+            (put_twice, (q, 100, go)),
+            (put_twice, (q, 200, go)),
+        )
+        threads = []
+        for f, params in tests:
+            thread = threading.Thread(target=f, args=params)
+            thread.start()
+            threads.append(thread)
+        q.shutdown()
+        go.set()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(results, [True]*len(tests))
+
+    def _join_shutdown(self, immediate):
+        q = self.type2test()
+        results = []
+        go = threading.Event()
+
+        def join(q, go):
+            go.wait()
+            q.join()
+            results.append(True)
+
+        tests = (
+            (join, (q, go)),
+            (join, (q, go)),
+        )
+        threads = []
+        for f, params in tests:
+            thread = threading.Thread(target=f, args=params)
+            thread.start()
+            threads.append(thread)
+        go.set()
+        q.shutdown(immediate)
+        for t in threads:
+            t.join()
+
+        self.assertEqual(results, [True]*len(tests))
+
+    def test_join_shutdown_immediate(self):
+        return self._join_shutdown(True)
+
+    def test_join_shutdown(self):
+        return self._join_shutdown(False)
+
+    def _put_and_join_shutdown(self, immediate):
+        q = self.type2test(2)
+        results = []
+        go = threading.Event()
+
+        def put_twice(q, msg, go):
+            q.put(msg)
+            go.wait()
+            try:
+                q.put(msg)
+                results.append(False)
+            except self.queue.ShutDown:
+                results.append(True)
+                return msg
+
+        def join(q, go):
+            go.wait()
+            q.join()
+            results.append(True)
+
+        tests = (
+            (put_twice, (q, 100, go)),
+            (put_twice, (q, 200, go)),
+            (join, (q, go)),
+            (join, (q, go)),
+        )
+        threads = []
+        for f, params in tests:
+            thread = threading.Thread(target=f, args=params)
+            thread.start()
+            threads.append(thread)
+        go.set()
+        q.shutdown(immediate)
+        if not immediate:
+            self.assertTrue(q.unfinished_tasks, 2)
+            for i in range(2):
+                thread = threading.Thread(target=q.task_done)
+                thread.start()
+                threads.append(thread)
+
+        for t in threads:
+            t.join()
+
+        self.assertEqual(results, [True]*len(tests))
+
+    def test_put_and_join_shutdown_immediate(self):
+        return self._put_and_join_shutdown(True)
+
+    def test_put_and_join_shutdown(self):
+        return self._put_and_join_shutdown(False)
+
+    def _get_and_join_shutdown(self, immediate):
+        q = self.type2test()
+        results = []
+        go = threading.Event()
+
+        def get_once(q, go):
+            try:
+                go.wait()
+                msg = q.get()
+                results.append(False)
+            except self.queue.ShutDown:
+                results.append(True)
+                return True
+
+        def join(q, go):
+            go.wait()
+            q.join()
+            results.append(True)
+
+        tests = (
+            (get_once, (q, go)),
+            (get_once, (q, go)),
+            (join, (q, go)),
+            (join, (q, go)),
+        )
+        threads = []
+        for f, params in tests:
+            thread = threading.Thread(target=f, args=params)
+            thread.start()
+            threads.append(thread)
+        go.set()
+        q.shutdown(immediate)
+        for t in threads:
+            t.join()
+
+        self.assertEqual(results, [True]*len(tests))
+
+    def test_get_and_join_shutdown_immediate(self):
+        return self._get_and_join_shutdown(True)
+
+    def test_get_and_join_shutdown(self):
+        return self._get_and_join_shutdown(False)
+
 class QueueTest(BaseQueueTestMixin):
 
     def setUp(self):
