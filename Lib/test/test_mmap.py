@@ -906,6 +906,7 @@ class LargeMmapTests(unittest.TestCase):
                 f.seek(num_zeroes)
                 f.write(tail)
                 f.flush()
+                return f
             except (OSError, OverflowError, ValueError):
                 try:
                     f.close()
@@ -916,10 +917,9 @@ class LargeMmapTests(unittest.TestCase):
             with ThreadPoolExecutor(max_workers=1) as pool:
 	            worker = pool.submit(potentially_superlong_seek)
 	            try:
-		            worker.result(timeout=min(SHORT_TIMEOUT, 5.0))
+		            return worker.result(timeout=min(SHORT_TIMEOUT, 5.0))
 	            except TimeoutError:
 		            raise unittest.SkipTest('skip honest creation of a huge file')
-            return f
 
     def test_large_offset(self):
         with self._make_test_file(0x14FFFFFFF, b" ") as f:
