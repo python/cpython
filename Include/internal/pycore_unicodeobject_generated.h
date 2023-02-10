@@ -580,6 +580,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(coro);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(coro_result);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(count);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(cwd);
