@@ -133,6 +133,7 @@ extern "C" {
 #define INSTRUMENTED_JUMP_IF_TRUE_OR_POP       248
 #define INSTRUMENTED_POP_JUMP_IF_FALSE         249
 #define INSTRUMENTED_POP_JUMP_IF_TRUE          250
+#define INSTRUMENTED_END_FOR                   251
 #define INSTRUMENTED_INSTRUCTION               253
 #define INSTRUMENTED_LINE                      254
 #define MIN_PSEUDO_OPCODE                      256

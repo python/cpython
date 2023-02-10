@@ -539,7 +539,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
             (vectorcallfunc)sys_trace_exception_func, PyTrace_EXCEPTION,
-                        PY_MONITORING_EVENT_RAISE, -1)) {
+                        PY_MONITORING_EVENT_RAISE, PY_MONITORING_EVENT_STOP_ITERATION)) {
             return -1;
         }
         if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
@@ -584,6 +584,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_RAISE) | (1 << PY_MONITORING_EVENT_LINE) |
             (1 << PY_MONITORING_EVENT_JUMP) | (1 << PY_MONITORING_EVENT_BRANCH) |
             (1 << PY_MONITORING_EVENT_PY_UNWIND) | (1 << PY_MONITORING_EVENT_PY_THROW) |
+            (1 << PY_MONITORING_EVENT_STOP_ITERATION) |
             (1 << PY_MONITORING_EVENT_EXCEPTION_HANDLED);
         if (tstate->interp->f_opcode_trace_set) {
             events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);

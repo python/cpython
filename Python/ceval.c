@@ -178,7 +178,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 
 static void monitor_raise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr);
+                 _Py_CODEUNIT *instr, int event);
 static void monitor_unwind(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
@@ -905,7 +905,7 @@ error:
                 PyTraceBack_Here(f);
             }
         }
-        monitor_raise(tstate, frame, next_instr-1);
+        monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_RAISE);
 
 exception_unwind:
         {
@@ -1944,15 +1944,15 @@ Error:
 static void
 monitor_raise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr)
+                 _Py_CODEUNIT *instr, int event)
 {
-    if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_RAISE] == 0) {
+    if (tstate->interp->monitoring_matrix.tools[event] == 0) {
         return;
     }
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
     int err;
-    err = _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_RAISE, frame, instr, exc);
+    err = _Py_call_instrumentation_arg(tstate, event, frame, instr, exc);
     if (err == 0) {
         PyErr_SetRaisedException(exc);
     }

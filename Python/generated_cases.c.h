@@ -235,6 +235,20 @@
             DISPATCH();
         }
 
+        TARGET(INSTRUMENTED_END_FOR) {
+            PyObject *pop2 = PEEK(1);
+            PyObject *pop1 = PEEK(2);
+            /* Need to create a fake StopIteration error here,
+             * to conform to PEP 380 */
+            PyErr_SetNone(PyExc_StopIteration);
+            monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
+            PyErr_SetRaisedException(NULL);
+            Py_DECREF(pop1);
+            Py_DECREF(pop2);
+            STACK_SHRINK(2);
+            DISPATCH();
+        }
+
         TARGET(UNARY_NEGATIVE) {
             PyObject *value = PEEK(1);
             PyObject *res;
@@ -947,7 +961,7 @@
             if (retval == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
                 ) {
-                    monitor_raise(tstate, frame, next_instr-1);
+                    monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_RAISE);
                 }
                 if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                     assert(retval != NULL);
@@ -2711,11 +2725,12 @@
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, next_instr-1);
+                    monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_RAISE);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
+                assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].opcode == END_FOR ||
+                       next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].opcode == INSTRUMENTED_END_FOR);
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
@@ -2741,13 +2756,14 @@
             else {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        monitor_raise(tstate, frame, here);
                         goto error;
                     }
+                    monitor_raise(tstate, frame, here, PY_MONITORING_EVENT_RAISE);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
+                assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].opcode == END_FOR ||
+                       next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].opcode == INSTRUMENTED_END_FOR);
                 STACK_SHRINK(1);
                 Py_DECREF(iter);
                 /* Skip END_FOR */
@@ -2852,7 +2868,8 @@
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            assert(_Py_OPCODE(*next_instr) == END_FOR);
+            assert(next_instr->opcode == END_FOR ||
+                   next_instr->opcode == INSTRUMENTED_END_FOR);
             DISPATCH_INLINED(gen_frame);
         }
 

@@ -604,3 +604,52 @@ class LineMontoringTest(unittest.TestCase):
             line = 6
 
         self.check_lines(func2, [1,2,3,4,5,6])
+
+
+class ExceptionRecorder:
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, offset, exc):
+        self.events.append(type(exc))
+
+class ExceptionMontoringTest(unittest.TestCase):
+
+    def check_events(self, func, expected, tool=TEST_TOOL, events=E.RAISE):
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            event_list = []
+            recorder = ExceptionRecorder(event_list)
+            sys.monitoring.register_callback(tool, events, recorder)
+            sys.monitoring.set_events(tool, events)
+            func()
+            sys.monitoring.set_events(tool, 0)
+            sys.monitoring.register_callback(tool, events, None)
+            self.assertEqual(event_list, expected)
+        finally:
+            sys.monitoring.set_events(tool, 0)
+            sys.monitoring.register_callback(tool, events, None)
+
+
+    def test_simple_try_except(self):
+
+        def func1():
+            try:
+                line = 2
+                raise KeyError
+            except:
+                line = 5
+            line = 6
+
+        self.check_events(func1, [KeyError])
+
+        def gen():
+            yield 1
+            return 2
+
+        def implicit_stop_iteration():
+            for _ in gen():
+                pass
+
+        self.check_events(implicit_stop_iteration, [StopIteration], events=E.STOP_ITERATION)

@@ -1084,7 +1084,7 @@ PyObject *descr, DescriptorClassification kind)
             if (dict) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
                 return 0;
-            }  
+            }
             assert(owner_cls->tp_dictoffset > 0);
             assert(owner_cls->tp_dictoffset <= INT16_MAX);
             _py_set_opcode(instr, LOAD_ATTR_METHOD_LAZY_DICT);
@@ -2170,7 +2170,9 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
         goto success;
     }
     else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
-        assert(_Py_OPCODE(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1]) == END_FOR);
+        assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].opcode == END_FOR  ||
+            instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].opcode == INSTRUMENTED_END_FOR
+        );
         _py_set_opcode(instr, FOR_ITER_GEN);
         goto success;
     }
