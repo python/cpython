@@ -82,6 +82,13 @@ microbenchmark scenario.
         help="Print the results (runtime and number of Tasks created).",
     )
     parser.add_argument(
+        "-g",
+        "--gather",
+        action="store_true",
+        default=False,
+        help="Use gather (if not specified, use TaskGroup if available, otherwise use gather).",
+    )
+    parser.add_argument(
         "-e",
         "--eager",
         action="store_true",
@@ -96,11 +103,17 @@ class AsyncTree:
         self,
         memoizable_percentage=DEFAULT_MEMOIZABLE_PERCENTAGE,
         cpu_probability=DEFAULT_CPU_PROBABILITY,
+        use_gather=None,
+        use_eager_factory=None,
     ):
         self.suspense_count = 0
         self.task_count = 0
         self.memoizable_percentage = memoizable_percentage
         self.cpu_probability = cpu_probability
+        has_taskgroups = hasattr(asyncio, "TaskGroup")
+        self.use_gather = use_gather or (not has_taskgroups)
+        has_eager_factory = hasattr(asyncio, "create_eager_task_factory")
+        self.use_eager_factory = use_eager_factory and has_eager_factory
         self.cache = {}
         # set to deterministic random, so that the results are reproducible
         random.seed(0)
@@ -119,14 +132,19 @@ class AsyncTree:
             await self.suspense_func()
             return
 
-        await asyncio.gather(
-            *[self.recurse(recurse_level - 1) for _ in range(NUM_RECURSE_BRANCHES)]
-        )
+        if self.use_gather:
+            await asyncio.gather(
+                *[self.recurse(recurse_level - 1) for _ in range(NUM_RECURSE_BRANCHES)]
+            )
+        else:
+            async with asyncio.TaskGroup() as tg:
+                for _ in range(NUM_RECURSE_BRANCHES):
+                    tg.create_task(self.recurse(recurse_level - 1))
 
     async def run_benchmark(self):
         await self.recurse(NUM_RECURSE_LEVELS)
 
-    def run(self, use_eager_factory):
+    def run(self):
 
         def counting_task_constructor(coro, *, loop=None, name=None, context=None, yield_result=None):
             if yield_result is None:
@@ -142,7 +160,7 @@ class AsyncTree:
             self.run_benchmark(),
             task_factory=(
                 asyncio.create_eager_task_factory(counting_task_constructor)
-                if use_eager_factory else counting_task_factory
+                if self.use_eager_factory else counting_task_factory
             ),
         )
 
@@ -192,14 +210,19 @@ if __name__ == "__main__":
         "cpu_io_mixed": CpuIoMixedAsyncTree,
     }
     async_tree_class = trees[scenario]
-    async_tree = async_tree_class(args.memoizable_percentage, args.cpu_probability)
+    async_tree = async_tree_class(
+        args.memoizable_percentage, args.cpu_probability, args.gather, args.eager)
 
     start_time = time.perf_counter()
-    async_tree.run(args.eager)
+    async_tree.run()
     end_time = time.perf_counter()
 
     if args.print:
+        eager_or_tg = "gather" if async_tree.use_gather else "TaskGroup"
+        task_factory = "eager" if async_tree.use_eager_factory else "standard"
         print(f"Scenario: {scenario}")
+        print(f"Method: {eager_or_tg}")
+        print(f"Task factory: {task_factory}")
         print(f"Time: {end_time - start_time} s")
         print(f"Tasks created: {async_tree.task_count}")
         print(f"Suspense called: {async_tree.suspense_count}")
