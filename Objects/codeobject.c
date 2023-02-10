@@ -410,10 +410,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->_co_linearray_entry_size = 0;
     co->_co_linearray = NULL;
     co->_tier2_warmup = -64;
-    co->_entry_bb = NULL;
-    co->_bb_space = NULL;
-    co->_jump_target_count = 0;
-    co->_jump_targets = NULL;
+    co->_tier2_info = NULL;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
     int entry_point = 0;
@@ -1669,6 +1666,30 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
 }
 
 static void
+code_tier2_fini(PyCodeObject *co)
+{
+    if (co->_tier2_info == NULL) {
+        return;
+    }
+    _PyTier2Info *t2_info = co->_tier2_info;
+    t2_info->_entry_bb = NULL;
+    t2_info->_jump_target_count = 0;
+    if (t2_info->_bb_space != NULL) {
+        // Traverse the linked list
+        for (_PyTier2BBSpace *curr = t2_info->_bb_space; curr != NULL;) {
+            _PyTier2BBSpace *prev = curr;
+            curr = curr->next;
+            PyMem_Free(prev);
+        }
+        t2_info->_bb_space = NULL;
+    }
+    if (t2_info->_jump_targets != NULL) {
+        PyMem_Free(t2_info->_jump_targets);
+        t2_info->_jump_targets = NULL;
+    }
+}
+
+static void
 code_dealloc(PyCodeObject *co)
 {
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
@@ -1710,20 +1731,8 @@ code_dealloc(PyCodeObject *co)
     if (co->_co_linearray) {
         PyMem_Free(co->_co_linearray);
     }
-    co->_entry_bb = NULL;
-    co->_jump_target_count = 0;
-    if (co->_bb_space != NULL) {
-        // Traverse the linked list
-        for (_PyTier2BBSpace *curr = co->_bb_space; curr != NULL;) {
-            _PyTier2BBSpace *prev = curr;
-            curr = curr->next;
-            PyMem_Free(prev);
-        }
-        co->_bb_space = NULL;
-    }
-    if (co->_jump_targets != NULL) {
-        PyMem_Free(co->_jump_targets);
-    }
+    code_tier2_fini(co);
+    co->_tier2_info = NULL;
     PyObject_Free(co);
 }
 
@@ -2301,20 +2310,8 @@ _PyStaticCode_Fini(PyCodeObject *co)
         PyMem_Free(co->_co_cached);
         co->_co_cached = NULL;
     }
-    co->_entry_bb = NULL;
-    co->_jump_target_count = 0;
-    if (co->_bb_space != NULL) {
-        // Traverse the linked list
-        for (_PyTier2BBSpace *curr = co->_bb_space; curr != NULL;) {
-            _PyTier2BBSpace *prev = curr;
-            curr = curr->next;
-            PyMem_Free(prev);
-        }
-        co->_bb_space = NULL;
-    }
-    if (co->_jump_targets != NULL) {
-        PyMem_Free(co->_jump_targets);
-    }
+    code_tier2_fini(co);
+    co->_tier2_info = NULL;
     co->co_extra = NULL;
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *)co);

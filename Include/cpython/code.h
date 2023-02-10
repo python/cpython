@@ -61,6 +61,14 @@ typedef struct _PyTier2BBSpace  {
     _PyTier2BB bbs[1];
 } _PyTier2BBSpace;
 
+typedef struct _PyTier2Info {
+    _PyTier2BB *_entry_bb;        /* the tier 2 basic block to execute (if any) */
+    _PyTier2BBSpace *_bb_space;   /* linked list storing basic blocks */
+    int _jump_target_count;      /* Number of entries in _jump_targets */
+    /* sorted ascending offsets (from start of co_code_adaptive) for jump targets */
+    int *_jump_targets;
+} _PyTier2Info;
+
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
 #define _PyCode_DEF(SIZE) {                                                    \
@@ -122,11 +130,7 @@ typedef struct _PyTier2BBSpace  {
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     char *_co_linearray;          /* array of line offsets */                  \
     int _tier2_warmup;            /* warmup counter for tier 2 */              \
-    _PyTier2BB *_entry_bb;        /* the tier 2 basic block to execute (if any) */ \
-    _PyTier2BBSpace *_bb_space;   /* linked list storing basic blocks */       \
-    int _jump_target_count;      /* Number of entries in _jump_targets */      \
-    /* sorted ascending offsets (from start of co_code_adaptive) for jump targets */ \
-    int *_jump_targets;                                                        \
+    _PyTier2Info *_tier2_info;        /* info required for tier 2, lazily alloc */ \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \

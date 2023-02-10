@@ -138,6 +138,7 @@ compare_ints(const void *a, const void *b)
 static int
 _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
 {
+    assert(co->_tier2_info != NULL);
     // Remove all the RESUME instructions.
     // Count all the jump targets.
     Py_ssize_t jump_target_count = 0;
@@ -166,7 +167,7 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
     if (end - start != (int)(end - start)) {
         return 1;
     }
-    co->_jump_target_count = (int)jump_target_count;
+    co->_tier2_info->_jump_target_count = (int)jump_target_count;
     int *jump_targets = PyMem_Malloc(jump_target_count * sizeof(int));
     if (jump_targets == NULL) {
         return 1;
@@ -183,7 +184,7 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
         curr++;
     }
     qsort(jump_targets, jump_target_count, sizeof(int), compare_ints);
-    co->_jump_targets = jump_targets;
+    co->_tier2_info->_jump_targets = jump_targets;
     return 0;
 }
 
@@ -191,13 +192,14 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
 _Py_CODEUNIT *
 _PyTier2_Code_DetectBB(PyCodeObject *co, _Py_CODEUNIT *start)
 {
+    assert(co->_tier2_info != NULL);
     // There are only two cases that a BB ends.
     // 1. If there's a branch instruction / scope exit.
     // 2. If the instruction is a jump target.
     _Py_CODEUNIT *instr_end = _PyCode_GetEnd(co);
     _Py_CODEUNIT *curr = start;
-    int *jump_target_offsets = co->_jump_targets;
-    int jump_target_count = co->_jump_target_count;
+    int *jump_target_offsets = co->_tier2_info->_jump_targets;
+    int jump_target_count = co->_tier2_info->_jump_target_count;
     int curr_jump = 0;
     while (curr < instr_end) {
         _Py_CODEUNIT instr = *curr;
@@ -222,7 +224,12 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     int curr = _Py_OPCODE(*(next_instr - 1));
     assert(curr == RESUME);
     PyCodeObject *co = frame->f_code;
-    assert(co->_bb_space == NULL);
+    assert(co->_tier2_info == NULL);
+    _PyTier2Info *t2_info = PyMem_Malloc(sizeof(_PyTier2Info));
+    if (t2_info == NULL) {
+        return NULL;
+    }
+    co->_tier2_info = t2_info;
     // 0. Single pass: mark jump targets
     // 1. Initialize basic blocks space.
     // 2. Create the entry BB (if it is, else the current BB).
@@ -233,10 +240,11 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 
     _PyTier2BBSpace *bb_space = _PyTier2_CreateBBSpace(space_to_alloc);
     if (bb_space == NULL) {
+        PyMem_Free(t2_info);
         return NULL;
     }
 
-    co->_bb_space = bb_space;
+    t2_info->_bb_space = bb_space;
 
     //_Py_CODEUNIT *entry_bb_end = _PyTier2_Code_DetectBB(co, _PyCode_CODE(co));
     _Py_CODEUNIT *entry_bb_end = _PyCode_GetEnd(co);
@@ -251,7 +259,7 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     }
 
     
-    co->_entry_bb = bb_ptr;
+    t2_info->_entry_bb = bb_ptr;
 
     // Set the instruction pointer to the next one in the bb
     Py_ssize_t offset_from_start = (frame->prev_instr - _PyCode_CODE(co));
@@ -273,9 +281,10 @@ cleanup:
 static _PyTier2BB *
 _PyCode_Tier2BBNew(PyCodeObject *co, _Py_CODEUNIT *instr_start, _Py_CODEUNIT *instr_end)
 {
-    assert(co->_bb_space != NULL);
+    assert(co->_tier2_info != NULL);
+    assert(co->_tier2_info->_bb_space != NULL);
 
-    _PyTier2BBSpace *bb_space = co->_bb_space;
+    _PyTier2BBSpace *bb_space = co->_tier2_info->_bb_space;
     Py_ssize_t amount_to_alloc = (instr_start - instr_end) * sizeof(_Py_CODEUNIT *) + sizeof(_PyTier2BB);
     assert(bb_space->water_level + amount_to_alloc == (int)(bb_space->water_level + amount_to_alloc));
 
@@ -287,7 +296,7 @@ _PyCode_Tier2BBNew(PyCodeObject *co, _Py_CODEUNIT *instr_start, _Py_CODEUNIT *in
         }
         next_bb_space->next = bb_space;
         // We want to make our bb_space point to the most recent one to get O(1) BB allocations.
-        co->_bb_space = next_bb_space;
+        co->_tier2_info->_bb_space = next_bb_space;
         bb_space = next_bb_space;
     }
     return _PyTier2_InitBBNoCheck(bb_space, _PyCode_GetEnd(co), instr_start, instr_end);

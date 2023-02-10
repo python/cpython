@@ -278,11 +278,7 @@ class Printer:
             self.write(f"._co_cached = NULL,")
             self.write("._co_linearray = NULL,")
             self.write("._tier2_warmup = -64,")
-            self.write("._entry_bb = NULL,")
-            self.write("._bb_space = NULL,")
-            self.write("._jump_target_count = 0,")
-            self.write("._jump_targets = NULL,")
-            self.write(f".co_code_adaptive = {co_code_adaptive},")
+            self.write("._tier2_info = NULL,")
             for i, op in enumerate(code.co_code[::2]):
                 if op == RESUME:
                     self.write(f"._co_firsttraceable = {i},")

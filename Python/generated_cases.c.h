@@ -23,9 +23,9 @@
         }
 
         TARGET(RESUME) {
-            if (cframe.use_tracing == 0) {
-                next_instr = _PyCode_Tier2Warmup(frame, next_instr);
-            }
+            //if (cframe.use_tracing == 0) {
+            //    next_instr = _PyCode_Tier2Warmup(frame, next_instr);
+            //}
             GO_TO_INSTRUCTION(RESUME_QUICK);
         }
 
