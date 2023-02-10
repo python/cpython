@@ -11,6 +11,15 @@
    by Raymond D. Hettinger <python@rcn.com>
 */
 
+// TODO borrow math.factorial from other module
+long factorial(int n)
+{
+  if (n == 0)
+    return 1;
+  else
+    return(n * factorial(n - 1));
+}
+
 typedef struct {
     PyTypeObject *combinations_type;
     PyTypeObject *cwr_type;
@@ -2297,6 +2306,7 @@ typedef struct {
     PyObject *pools;        /* tuple of pool tuples */
     Py_ssize_t *indices;    /* one index per pool */
     PyObject *result;       /* most recently returned result tuple */
+    Py_ssize_t productsize; /* size of the input */
     int stopped;            /* set to 1 when the iterator is exhausted */
 } productobject;
 
@@ -2310,6 +2320,7 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *pools = NULL;
     Py_ssize_t *indices = NULL;
     Py_ssize_t i;
+    Py_ssize_t productsize = 1;
 
     if (kwds != NULL) {
         char *kwlist[] = {"repeat", 0};
@@ -2354,6 +2365,7 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     for (i=0; i < nargs ; ++i) {
         PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *pool = PySequence_Tuple(item);
+        productsize *= PyObject_Length(pool);
         if (pool == NULL)
             goto error;
         PyTuple_SET_ITEM(pools, i, pool);
@@ -2374,6 +2386,7 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     lz->pools = pools;
     lz->indices = indices;
     lz->result = NULL;
+    lz->productsize = productsize;
     lz->stopped = 0;
 
     return (PyObject *)lz;
@@ -2394,6 +2407,14 @@ product_dealloc(productobject *lz)
     if (lz->indices != NULL)
         PyMem_Free(lz->indices);
     Py_TYPE(lz)->tp_free(lz);
+}
+
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyObject *
+product_len(productobject *po, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromSize_t(po->productsize);
 }
 
 static PyObject *
@@ -2583,6 +2604,8 @@ static PyMethodDef product_methods[] = {
      setstate_doc},
     {"__sizeof__",      (PyCFunction)product_sizeof,      METH_NOARGS,
      sizeof_doc},
+    {"__length_hint__", (PyCFunction)product_len,         METH_NOARGS,
+     length_hint_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2653,6 +2676,7 @@ typedef struct {
     Py_ssize_t *indices;    /* one index per result element */
     PyObject *result;       /* most recently returned result tuple */
     Py_ssize_t r;           /* size of result tuple */
+    Py_ssize_t poolsize;    /* size of the input */
     int stopped;            /* set to 1 when the iterator is exhausted */
 } combinationsobject;
 
@@ -2704,6 +2728,7 @@ itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
     co->pool = pool;
     co->indices = indices;
     co->result = NULL;
+    co->poolsize = n;
     co->r = r;
     co->stopped = r > n ? 1 : 0;
 
@@ -2727,6 +2752,15 @@ combinations_dealloc(combinationsobject *co)
         PyMem_Free(co->indices);
     tp->tp_free(co);
     Py_DECREF(tp);
+}
+
+static PyObject *
+combinations_len(combinationsobject *co, PyObject *Py_UNUSED(ignored))
+{
+    if (co->r >= co->poolsize) {
+        return PyLong_FromSize_t(0);
+    }
+    return PyLong_FromSize_t(factorial(co->poolsize) / factorial(co->r) / factorial(co->poolsize - co->r));
 }
 
 static PyObject *
@@ -2908,6 +2942,8 @@ static PyMethodDef combinations_methods[] = {
      setstate_doc},
     {"__sizeof__",      (PyCFunction)combinations_sizeof,      METH_NOARGS,
      sizeof_doc},
+    {"__length_hint__", (PyCFunction)combinations_len,         METH_NOARGS,
+     length_hint_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2967,6 +3003,7 @@ typedef struct {
     Py_ssize_t *indices;    /* one index per result element */
     PyObject *result;       /* most recently returned result tuple */
     Py_ssize_t r;           /* size of result tuple */
+    Py_ssize_t poolsize;    /* size of the input */
     int stopped;            /* set to 1 when the cwr iterator is exhausted */
 } cwrobject;
 
@@ -3019,6 +3056,7 @@ itertools_combinations_with_replacement_impl(PyTypeObject *type,
     co->indices = indices;
     co->result = NULL;
     co->r = r;
+    co->poolsize = n;
     co->stopped = !n && r;
 
     return (PyObject *)co;
@@ -3041,6 +3079,12 @@ cwr_dealloc(cwrobject *co)
         PyMem_Free(co->indices);
     tp->tp_free(co);
     Py_DECREF(tp);
+}
+
+static PyObject *
+cwr_len(cwrobject *co, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromSize_t(factorial(co->poolsize + co->r - 1) / factorial(co->r) / factorial(co->poolsize - 1));
 }
 
 static PyObject *
@@ -3212,6 +3256,8 @@ static PyMethodDef cwr_methods[] = {
      setstate_doc},
     {"__sizeof__",      (PyCFunction)cwr_sizeof,      METH_NOARGS,
      sizeof_doc},
+    {"__length_hint__", (PyCFunction)cwr_len,         METH_NOARGS,
+     length_hint_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -3272,6 +3318,7 @@ typedef struct {
     Py_ssize_t *cycles;     /* one rollover counter per element in the result */
     PyObject *result;       /* most recently returned result tuple */
     Py_ssize_t r;           /* size of result tuple */
+    Py_ssize_t poolsize;    /* size of the input */
     int stopped;            /* set to 1 when the iterator is exhausted */
 } permutationsobject;
 
@@ -3296,12 +3343,14 @@ itertools_permutations_impl(PyTypeObject *type, PyObject *iterable,
     PyObject *pool = NULL;
     Py_ssize_t *indices = NULL;
     Py_ssize_t *cycles = NULL;
+    Py_ssize_t poolsize;
     Py_ssize_t i;
 
     pool = PySequence_Tuple(iterable);
     if (pool == NULL)
         goto error;
     n = PyTuple_GET_SIZE(pool);
+    poolsize = PyObject_Length(pool);
 
     r = n;
     if (robj != Py_None) {
@@ -3340,6 +3389,7 @@ itertools_permutations_impl(PyTypeObject *type, PyObject *iterable,
     po->cycles = cycles;
     po->result = NULL;
     po->r = r;
+    po->poolsize = poolsize;
     po->stopped = r > n ? 1 : 0;
 
     return (PyObject *)po;
@@ -3364,6 +3414,15 @@ permutations_dealloc(permutationsobject *po)
     PyMem_Free(po->cycles);
     tp->tp_free(po);
     Py_DECREF(tp);
+}
+
+static PyObject *
+permutations_len(permutationsobject *po, PyObject *Py_UNUSED(ignored))
+{
+    if (po->r > po->poolsize) {
+        return PyLong_FromSize_t(0);
+    }
+    return PyLong_FromSize_t(factorial(po->poolsize) / factorial(po->poolsize - po->r));
 }
 
 static PyObject *
@@ -3574,13 +3633,15 @@ permutations_setstate(permutationsobject *po, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef permuations_methods[] = {
+static PyMethodDef permutations_methods[] = {
     {"__reduce__",      (PyCFunction)permutations_reduce,      METH_NOARGS,
      reduce_doc},
     {"__setstate__",    (PyCFunction)permutations_setstate,    METH_O,
      setstate_doc},
     {"__sizeof__",      (PyCFunction)permutations_sizeof,      METH_NOARGS,
      sizeof_doc},
+    {"__length_hint__", (PyCFunction)permutations_len,         METH_NOARGS,
+    length_hint_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -3591,7 +3652,7 @@ static PyType_Slot permutations_slots[] = {
     {Py_tp_traverse, permutations_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, permutations_next},
-    {Py_tp_methods, permuations_methods},
+    {Py_tp_methods, permutations_methods},
     {Py_tp_new, itertools_permutations},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -4454,8 +4515,6 @@ repeat_len(repeatobject *ro, PyObject *Py_UNUSED(ignored))
     }
     return PyLong_FromSize_t(ro->cnt);
 }
-
-PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
 repeat_reduce(repeatobject *ro, PyObject *Py_UNUSED(ignored))
