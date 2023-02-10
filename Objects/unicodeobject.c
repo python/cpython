@@ -684,25 +684,32 @@ backslashreplace(_PyBytesWriter *writer, char *str,
 }
 
 static Py_ssize_t
-xmlcharrefreplace_get_incr(Py_UCS4 ch)
+get_xmlcharref_length(Py_UCS4 ch)
 {
     Py_ssize_t incr;
 
-    if (ch < 10)
-        incr = 2+1+1;
-    else if (ch < 100)
-        incr = 2+2+1;
-    else if (ch < 1000)
-        incr = 2+3+1;
-    else if (ch < 10000)
-        incr = 2+4+1;
-    else if (ch < 100000)
-        incr = 2+5+1;
-    else if (ch < 1000000)
-        incr = 2+6+1;
+    /* `2 + 1` part is `&#` + `;` */
+    if (ch < 10) {
+        incr = 2 + 1 + 1;
+    }
+    else if (ch < 100) {
+        incr = 2 + 2 + 1;
+    }
+    else if (ch < 1000) {
+        incr = 2 + 3 + 1;
+    }
+    else if (ch < 10000) {
+        incr = 2 + 4 + 1;
+    }
+    else if (ch < 100000) {
+        incr = 2 + 5 + 1;
+    }
+    else if (ch < 1000000) {
+        incr = 2 + 6 + 1;
+    }
     else {
         assert(ch <= MAX_UNICODE);
-        incr = 2+7+1;
+        incr = 2 + 7 + 1;
     }
 
     return incr;
@@ -726,7 +733,7 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
     /* determine replacement size */
     for (i = collstart; i < collend; ++i) {
         ch = PyUnicode_READ(kind, data, i);
-        incr = xmlcharrefreplace_get_incr(ch);
+        incr = get_xmlcharref_length(ch);
 
         if (size > PY_SSIZE_T_MAX - incr) {
             PyErr_SetString(PyExc_OverflowError,
@@ -743,7 +750,7 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
         ch = PyUnicode_READ(kind, data, i);
-        incr = xmlcharrefreplace_get_incr(ch);
+        incr = get_xmlcharref_length(ch);
         size = PyOS_snprintf(str, incr + 1,  "&#%d;", ch);
         if (size < 0) {
             return NULL;
