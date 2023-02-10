@@ -655,9 +655,9 @@ class StreamReader:
 
         If n is zero, return empty bytes object immediately.
 
-        If n is positive, this function try to read `n` bytes, and may return
+        If n is positive, this function tries to read `n` bytes, and may return
         less or equal bytes than requested, but at least one byte. If EOF was
-        received before any byte is read, this function returns empty byte
+        received before any byte is read, this function returns an empty bytes
         object.
 
         Returned value is not limited with limit, configured at stream
