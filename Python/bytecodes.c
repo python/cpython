@@ -680,9 +680,8 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        inst(SEND, (receiver, v -- receiver if (!jump), retval)) {
+        inst(SEND, (receiver, v -- receiver, retval)) {
             assert(frame != &entry_frame);
-            bool jump = false;
             PySendResult gen_status;
             if (tstate->c_tracefunc == NULL) {
                 gen_status = PyIter_Send(receiver, v, &retval);
@@ -715,9 +714,7 @@ dummy_func(
             Py_DECREF(v);
             if (gen_status == PYGEN_RETURN) {
                 assert(retval != NULL);
-                Py_DECREF(receiver);
                 JUMPBY(oparg);
-                jump = true;
             }
             else {
                 assert(gen_status == PYGEN_NEXT);
@@ -796,12 +793,13 @@ dummy_func(
             }
         }
 
-        inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value -- value)) {
+        inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value -- none, value)) {
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
                 value = Py_NewRef(((PyStopIterationObject *)exc_value)->value);
                 DECREF_INPUTS();
+                none = Py_NewRef(Py_None);
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));

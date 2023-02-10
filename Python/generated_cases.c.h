@@ -886,7 +886,6 @@
             PyObject *receiver = PEEK(2);
             PyObject *retval;
             assert(frame != &entry_frame);
-            bool jump = false;
             PySendResult gen_status;
             if (tstate->c_tracefunc == NULL) {
                 gen_status = PyIter_Send(receiver, v, &retval);
@@ -919,16 +918,12 @@
             Py_DECREF(v);
             if (gen_status == PYGEN_RETURN) {
                 assert(retval != NULL);
-                Py_DECREF(receiver);
                 JUMPBY(oparg);
-                jump = true;
             }
             else {
                 assert(gen_status == PYGEN_NEXT);
                 assert(retval != NULL);
             }
-            STACK_SHRINK(1);
-            STACK_GROW(((!jump) ? 1 : 0));
             POKE(1, retval);
             DISPATCH();
         }
@@ -1026,6 +1021,7 @@
             PyObject *exc_value = PEEK(1);
             PyObject *last_sent_val = PEEK(2);
             PyObject *sub_iter = PEEK(3);
+            PyObject *none;
             PyObject *value;
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
@@ -1034,13 +1030,15 @@
                 Py_DECREF(sub_iter);
                 Py_DECREF(last_sent_val);
                 Py_DECREF(exc_value);
+                none = Py_NewRef(Py_None);
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 goto exception_unwind;
             }
-            STACK_SHRINK(2);
+            STACK_SHRINK(1);
             POKE(1, value);
+            POKE(2, none);
             DISPATCH();
         }
 

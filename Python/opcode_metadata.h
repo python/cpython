@@ -453,7 +453,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case GET_AWAITABLE:
             return 1;
         case SEND:
-            return ((!jump) ? 1 : 0) + 1;
+            return 2;
         case YIELD_VALUE:
             return 1;
         case POP_EXCEPT:
@@ -465,7 +465,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case END_ASYNC_FOR:
             return 0;
         case CLEANUP_THROW:
-            return 1;
+            return 2;
         case LOAD_ASSERTION_ERROR:
             return 1;
         case LOAD_BUILD_CLASS:
