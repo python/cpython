@@ -491,8 +491,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: enumerate(iterable, start=0)
 
-   Return an enumerate object. *iterable* must be a sequence, an
-   :term:`iterator`, or some other object which supports iteration.
+   Return an enumerate object. *iterable* must be a sequence or some other :term:`iterable`.
    The :meth:`~iterator.__next__` method of the iterator returned by
    :func:`enumerate` returns a tuple containing a count (from *start* which
    defaults to 0) and the values obtained from iterating over *iterable*.
@@ -623,10 +622,9 @@ are always available.  They are listed here in alphabetical order.
 .. function:: filter(function, iterable)
 
    Construct an iterator from those elements of *iterable* for which *function*
-   returns true.  *iterable* may be either a sequence, a container which
-   supports iteration, or an iterator.  If *function* is ``None``, the identity
-   function is assumed, that is, all elements of *iterable* that are false are
-   removed.
+   returns true.  *iterable* must be a sequence or some other :term:`iterable`.
+   If *function* is ``None``, the identity function is assumed, that is, all
+   elements of *iterable* that are false are removed.
 
    Note that ``filter(function, iterable)`` is equivalent to the generator
    expression ``(item for item in iterable if function(item))`` if function is
