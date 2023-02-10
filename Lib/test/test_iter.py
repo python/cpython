@@ -266,9 +266,8 @@ class TestCase(unittest.TestCase):
                     list(it)
                     return other == "iter"
 
-            _iter = builtins["iter"]
             del builtins["iter"]
-            builtins[CustomStr()] = _iter
+            builtins[CustomStr()] = orig_iter
 
             return it.__reduce__()
 
@@ -277,11 +276,12 @@ class TestCase(unittest.TestCase):
             ([bytes], 8),
             ([bytearray], 8),
             ([tuple], range(8)),
-            ([lambda: (lambda: 0), 0],)
+            ([lambda: (lambda: 0), 0],),
+            ([tuple[int]],)  # GenericAlias
         ]
 
         try:
-            self.assertEqual(run(([str], "xyz")), (orig_iter, ("xyz",), 0))
+            self.assertEqual(run(([str], "xyz")), (orig_iter, ("",)))
             self.assertEqual(run(([list], range(8))), (orig_iter, ([],)))
             for case in types:
                 self.assertEqual(run(case), (orig_iter, ((),)))
