@@ -3443,8 +3443,6 @@ static PyObject *
 listiter_reduce_general(void *_it, int forward)
 {
     PyObject *list;
-    PyObject *iter;
-    PyObject *reversed;
 
     /* _PyEval_GetBuiltin can invoke arbitrary code.
      * calls must be *before* access of `_it` pointers,
@@ -3453,13 +3451,13 @@ listiter_reduce_general(void *_it, int forward)
 
     /* the objects are not the same, index is of different types! */
     if (forward) {
-        iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+        PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
         _PyListIterObject *it = (_PyListIterObject *)_it;
         if (it->it_seq) {
             return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
         }
     } else {
-        reversed = _PyEval_GetBuiltin(&_Py_ID(reversed));
+        PyObject *reversed = _PyEval_GetBuiltin(&_Py_ID(reversed));
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq) {
             return Py_BuildValue("N(O)n", reversed, it->it_seq, it->it_index);
