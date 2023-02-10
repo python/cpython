@@ -91,6 +91,12 @@ class CallableIterClass:
             raise IndexError # Emergency stop
         return i
 
+class EmptyIterClass:
+    def __len__(self):
+        return 0
+    def __getitem__(self, i):
+        raise StopIteration
+
 # Main test suite
 
 class TestCase(unittest.TestCase):
@@ -237,6 +243,52 @@ class TestCase(unittest.TestCase):
         self.assertEqual(list(exhit), [])
         self.assertEqual(list(empit), [5, 6])
         self.assertEqual(list(a), [0, 1, 2, 3, 4, 5, 6])
+
+    def test_reduce_mutating_builtins_iter(self):
+        # This is a reproducer of issue #101765
+        # where iter `__reduce__` calls could lead to a segfault or SystemError
+        # depending on the order of C argument evaluation, which is undefined
+
+        # Backup builtins.iter
+        builtins = __builtins__.__dict__ if hasattr(__builtins__, "__dict__") else __builtins__
+        orig_iter = builtins["iter"]
+
+        def run(item):
+            (fn, *flag), *initializer = item
+            it = iter(fn(*initializer), *flag)
+
+            class CustomStr:
+                def __hash__(self):
+                    return hash("iter")
+                def __eq__(self, other):
+                    # Here we exhaust `it`, possibly changing our `it_seq` pointer to NULL
+                    # The `__reduce__` call should correctly get the pointers after this call
+                    list(it)
+                    return other == "iter"
+
+            _iter = builtins["iter"]
+            del builtins["iter"]
+            builtins[CustomStr()] = _iter
+
+            return it.__reduce__()
+
+        types = [
+            ([EmptyIterClass],),
+            ([bytes], 8),
+            ([bytearray], 8),
+            ([tuple], range(8)),
+            ([lambda: (lambda: 0), 0],)
+        ]
+
+        try:
+            self.assertEqual(run(([str], "xyz")), (orig_iter, ("xyz",), 0))
+            self.assertEqual(run(([list], range(8))), (orig_iter, ([],)))
+            for case in types:
+                self.assertEqual(run(case), (orig_iter, ((),)))
+        finally:
+            # Restore original iter
+            del builtins["iter"]
+            builtins["iter"] = orig_iter
 
     # Test a new_style class with __iter__ but no next() method
     def test_new_style_iter_class(self):
