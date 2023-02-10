@@ -2204,7 +2204,10 @@ AS_CASE([$ac_sys_system],
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
     AS_VAR_IF([enable_wasm_pthreads], [yes], [
-      # Note: update CFLAGS because ac_compile/ac_link needs this too
+      # Note: update CFLAGS because ac_compile/ac_link needs this too.
+      # without this, configure fails to find pthread_create, sem_init,
+      # etc because they are only available in the sysroot for
+      # wasm32-wasi-threads.
       CFLAGS="$CFLAGS -target wasm32-wasi-threads -pthread"
       AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
