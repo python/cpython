@@ -35,8 +35,6 @@ class _QueueState(enum.Enum):
     SHUTDOWN = "shutdown"
     SHUTDOWN_IMMEDIATE = "shutdown_immediate"
 
-E
-
 
 class Queue:
     '''Create a queue object with a given maximum size.
