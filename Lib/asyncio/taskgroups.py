@@ -141,13 +141,11 @@ class TaskGroup:
             raise RuntimeError(f"TaskGroup {self!r} is finished")
         if self._aborting:
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
-        if hasattr(self._loop, "eager_task_factory"):
-            task = self._loop.eager_task_factory(coro, name=name, context=context)
-        elif context is None:
+        if context is None:
             task = self._loop.create_task(coro)
         else:
             task = self._loop.create_task(coro, context=context)
-        if not task.done():  # If it's done already, it's a future
+        if name is not None and not task.done():  # If it's done already, it's a future
             tasks._set_task_name(task, name)
         task.add_done_callback(self._on_task_done)
         self._tasks.add(task)
