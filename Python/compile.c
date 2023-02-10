@@ -7996,6 +7996,7 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
         switch (instr->i_opcode) {
             case DELETE_FAST:
             case LOAD_FAST_AND_CLEAR:
+            case STORE_FAST_MAYBE_NULL:
                 unsafe_mask |= bit;
                 break;
             case STORE_FAST:
@@ -8050,6 +8051,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
             switch (instr->i_opcode) {
                 case DELETE_FAST:
                 case LOAD_FAST_AND_CLEAR:
+                case STORE_FAST_MAYBE_NULL:
                     states[arg - 64] = blocknum - 1;
                     break;
                 case STORE_FAST:
