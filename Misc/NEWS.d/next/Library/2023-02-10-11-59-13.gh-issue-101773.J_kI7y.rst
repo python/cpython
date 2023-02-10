@@ -1,0 +1,1 @@
+Optimize :class:`fractions.Fraction` for small components.
