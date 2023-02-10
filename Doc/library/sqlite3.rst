@@ -1422,7 +1422,7 @@ Cursor objects
       optionally binding Python values using
       :ref:`placeholders <sqlite3-placeholders>`.
 
-      :param unicode sql:
+      :param str sql:
          A single SQL statement.
 
       :param parameters:
@@ -1452,14 +1452,14 @@ Cursor objects
 
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
 
-      :param unicode sql:
+      :param str sql:
          A single SQL :abbr:`DML (Data Manipulation Language)` statement.
 
       :param parameters:
          A :term:`sequence` or :term:`iterator` of parameters
          to bind with the placeholders in *sql*.
          See :ref:`sqlite3-placeholders`.
-      :type parameters: :term:`sequence` | :term:`iterator`
+      :type parameters: :term:`iterable`
 
       :raises ProgrammingError:
          If *sql* contains more than one SQL statement,
