@@ -256,10 +256,7 @@ class TestCase(unittest.TestCase):
         builtins_dict = builtins.__dict__
         orig = {"iter": iter, "reversed": reversed}
 
-        def run(builtin_name, item, init=None, sentinel=None):
-            if init is not None:
-                args = init if isinstance(init, tuple) else (init,)
-                item = item(*args)
+        def run(builtin_name, item, sentinel=None):
             it = iter(item) if sentinel is None else iter(item, sentinel)
 
             class CustomStr:
@@ -277,18 +274,19 @@ class TestCase(unittest.TestCase):
                     return other == self.name
 
             # del is required here
-            # to avoid calling the last test case's custom __eq__
+            # since only setting will result in
+            # both keys existing with a hash collision
             del builtins_dict[builtin_name]
             builtins_dict[CustomStr(builtin_name, it)] = orig[builtin_name]
 
             return it.__reduce__()
 
         types = [
-            (EmptyIterClass, ()),
-            (bytes, 8),
-            (bytearray, 8),
-            (tuple, range(8)),
-            (lambda: 0, None, 0),
+            (EmptyIterClass(),),
+            (bytes(8),),
+            (bytearray(8),),
+            ((1, 2, 3),),
+            (lambda: 0, 0),
             (tuple[int],)  # GenericAlias
         ]
 
@@ -297,29 +295,25 @@ class TestCase(unittest.TestCase):
             # The returned value of `__reduce__` should not only be valid
             # but also *empty*, as `it` was exhausted during `__eq__`
             # i.e "xyz" returns (iter, ("",))
-            self.assertEqual(run_iter(str, "xyz"), (orig["iter"], ("",)))
-            self.assertEqual(run_iter(list, range(8)), (orig["iter"], ([],)))
+            self.assertEqual(run_iter("xyz"), (orig["iter"], ("",)))
+            self.assertEqual(run_iter([1, 2, 3]), (orig["iter"], ([],)))
 
             # _PyEval_GetBuiltin is also called for `reversed` in a branch of
             # listiter_reduce_general
             self.assertEqual(
-                run("reversed", orig["reversed"], list(range(8))),
+                run("reversed", orig["reversed"](list(range(8)))),
                 (iter, ([],))
             )
 
             for case in types:
                 self.assertEqual(run_iter(*case), (orig["iter"], ((),)))
         finally:
-            # del is required here
-            # to avoid calling our custom __eq__
-            # we also need to supress KeyErrors in case
-            # a failed test deletes the key without setting anything
-            with contextlib.suppress(KeyError):
-                del builtins_dict["iter"]
-            with contextlib.suppress(KeyError):
-                del builtins_dict["reversed"]
             # Restore original builtins
+            # need to suppress KeyErrors in case
+            # a failed test deletes the key without setting anything
             for key, func in orig.items():
+                with contextlib.suppress(KeyError):
+                    del builtins_dict[key]
                 builtins_dict[key] = func
 
     # Test a new_style class with __iter__ but no next() method
