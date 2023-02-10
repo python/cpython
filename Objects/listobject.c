@@ -3447,7 +3447,7 @@ listiter_reduce_general(void *_it, int forward)
     PyObject *reversed;
 
     /* _PyEval_GetBuiltin can invoke arbitrary code.
-     * calls must be *before* access of _it pointers,
+     * calls must be *before* access of `_it` pointers,
      * since C/C++ parameter eval order is undefined.
      * see issue #101765 */
 
