@@ -92,13 +92,6 @@ class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
 #undef clinic_state_by_cls
 #undef clinic_state
 
-#define FREE_AND_CLEAR(ptr)     \
-do {                            \
-    void *tmp = (void *)ptr;    \
-    ptr = NULL;                 \
-    PyMem_Free(tmp);            \
-} while (0)
-
 /* batched object ************************************************************/
 
 /* Note:  The built-in zip() function includes a "strict" argument
@@ -169,19 +162,12 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
     return (PyObject *)bo;
 }
 
-static int
-batched_clear(batchedobject *bo)
-{
-    Py_CLEAR(bo->it);
-    return 0;
-}
-
 static void
 batched_dealloc(batchedobject *bo)
 {
     PyTypeObject *tp = Py_TYPE(bo);
     PyObject_GC_UnTrack(bo);
-    (void)batched_clear(bo);
+    Py_XDECREF(bo->it);
     tp->tp_free(bo);
     Py_DECREF(tp);
 }
@@ -242,7 +228,6 @@ batched_next(batchedobject *bo)
 
 static PyType_Slot batched_slots[] = {
     {Py_tp_dealloc, batched_dealloc},
-    {Py_tp_clear, batched_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)batched_new__doc__},
     {Py_tp_traverse, batched_traverse},
@@ -303,20 +288,13 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     return (PyObject *)po;
 }
 
-static int
-pairwise_clear(pairwiseobject *po)
-{
-    Py_CLEAR(po->it);
-    Py_CLEAR(po->old);
-    return 0;
-}
-
 static void
 pairwise_dealloc(pairwiseobject *po)
 {
     PyTypeObject *tp = Py_TYPE(po);
     PyObject_GC_UnTrack(po);
-    (void)pairwise_clear(po);
+    Py_XDECREF(po->it);
+    Py_XDECREF(po->old);
     tp->tp_free(po);
     Py_DECREF(tp);
 }
@@ -361,7 +339,6 @@ pairwise_next(pairwiseobject *po)
 
 static PyType_Slot pairwise_slots[] = {
     {Py_tp_dealloc, pairwise_dealloc},
-    {Py_tp_clear, pairwise_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)pairwise_new__doc__},
     {Py_tp_traverse, pairwise_traverse},
@@ -433,23 +410,16 @@ itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
     return (PyObject *)gbo;
 }
 
-static int
-groupby_clear(groupbyobject *gbo)
-{
-    Py_CLEAR(gbo->it);
-    Py_CLEAR(gbo->keyfunc);
-    Py_CLEAR(gbo->tgtkey);
-    Py_CLEAR(gbo->currkey);
-    Py_CLEAR(gbo->currvalue);
-    return 0;
-}
-
 static void
 groupby_dealloc(groupbyobject *gbo)
 {
     PyTypeObject *tp = Py_TYPE(gbo);
     PyObject_GC_UnTrack(gbo);
-    (void)groupby_clear(gbo);
+    Py_XDECREF(gbo->it);
+    Py_XDECREF(gbo->keyfunc);
+    Py_XDECREF(gbo->tgtkey);
+    Py_XDECREF(gbo->currkey);
+    Py_XDECREF(gbo->currvalue);
     tp->tp_free(gbo);
     Py_DECREF(tp);
 }
@@ -580,7 +550,6 @@ static PyMethodDef groupby_methods[] = {
 
 static PyType_Slot groupby_slots[] = {
     {Py_tp_dealloc, groupby_dealloc},
-    {Py_tp_clear, groupby_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_groupby__doc__},
     {Py_tp_traverse, groupby_traverse},
@@ -640,20 +609,13 @@ _grouper_create(groupbyobject *parent, PyObject *tgtkey)
     return (PyObject *)igo;
 }
 
-static int
-_grouper_clear(_grouperobject *igo)
-{
-    Py_CLEAR(igo->parent);
-    Py_CLEAR(igo->tgtkey);
-    return 0;
-}
-
 static void
 _grouper_dealloc(_grouperobject *igo)
 {
     PyTypeObject *tp = Py_TYPE(igo);
     PyObject_GC_UnTrack(igo);
-    (void)_grouper_clear(igo);
+    Py_DECREF(igo->parent);
+    Py_DECREF(igo->tgtkey);
     PyObject_GC_Del(igo);
     Py_DECREF(tp);
 }
@@ -711,7 +673,6 @@ static PyMethodDef _grouper_methods[] = {
 
 static PyType_Slot _grouper_slots[] = {
     {Py_tp_dealloc, _grouper_dealloc},
-    {Py_tp_clear, _grouper_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_traverse, _grouper_traverse},
     {Py_tp_iter, PyObject_SelfIter},
@@ -858,7 +819,7 @@ teedataobject_dealloc(teedataobject *tdo)
 {
     PyTypeObject *tp = Py_TYPE(tdo);
     PyObject_GC_UnTrack(tdo);
-    (void)teedataobject_clear(tdo);
+    teedataobject_clear(tdo);
     PyObject_GC_Del(tdo);
     Py_DECREF(tp);
 }
@@ -1071,7 +1032,7 @@ tee_dealloc(teeobject *to)
 {
     PyTypeObject *tp = Py_TYPE(to);
     PyObject_GC_UnTrack(to);
-    (void)tee_clear(to);
+    tee_clear(to);
     PyObject_GC_Del(to);
     Py_DECREF(tp);
 }
@@ -1260,20 +1221,13 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
     return (PyObject *)lz;
 }
 
-static int
-cycle_clear(cycleobject *lz)
-{
-    Py_CLEAR(lz->it);
-    Py_CLEAR(lz->saved);
-    return 0;
-}
-
 static void
 cycle_dealloc(cycleobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)cycle_clear(lz);
+    Py_XDECREF(lz->it);
+    Py_XDECREF(lz->saved);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -1370,7 +1324,6 @@ static PyMethodDef cycle_methods[] = {
 
 static PyType_Slot cycle_slots[] = {
     {Py_tp_dealloc, cycle_dealloc},
-    {Py_tp_clear, cycle_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_cycle__doc__},
     {Py_tp_traverse, cycle_traverse},
@@ -1436,20 +1389,13 @@ itertools_dropwhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
     return (PyObject *)lz;
 }
 
-static int
-dropwhile_clear(dropwhileobject *lz)
-{
-    Py_CLEAR(lz->func);
-    Py_CLEAR(lz->it);
-    return 0;
-}
-
 static void
 dropwhile_dealloc(dropwhileobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)dropwhile_clear(lz);
+    Py_XDECREF(lz->func);
+    Py_XDECREF(lz->it);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -1522,7 +1468,6 @@ static PyMethodDef dropwhile_methods[] = {
 
 static PyType_Slot dropwhile_slots[] = {
     {Py_tp_dealloc, dropwhile_dealloc},
-    {Py_tp_clear, dropwhile_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_dropwhile__doc__},
     {Py_tp_traverse, dropwhile_traverse},
@@ -1586,20 +1531,13 @@ itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
     return (PyObject *)lz;
 }
 
-static int
-takewhile_clear(takewhileobject *lz)
-{
-    Py_CLEAR(lz->func);
-    Py_CLEAR(lz->it);
-    return 0;
-}
-
 static void
 takewhile_dealloc(takewhileobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)takewhile_clear(lz);
+    Py_XDECREF(lz->func);
+    Py_XDECREF(lz->it);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -1669,7 +1607,6 @@ static PyMethodDef takewhile_reduce_methods[] = {
 
 static PyType_Slot takewhile_slots[] = {
     {Py_tp_dealloc, takewhile_dealloc},
-    {Py_tp_clear, takewhile_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_takewhile__doc__},
     {Py_tp_traverse, takewhile_traverse},
@@ -1788,19 +1725,12 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)lz;
 }
 
-static int
-islice_clear(isliceobject *lz)
-{
-    Py_CLEAR(lz->it);
-    return 0;
-}
-
 static void
 islice_dealloc(isliceobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)islice_clear(lz);
+    Py_XDECREF(lz->it);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -1916,7 +1846,6 @@ but returns an iterator.");
 
 static PyType_Slot islice_slots[] = {
     {Py_tp_dealloc, islice_dealloc},
-    {Py_tp_clear, islice_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)islice_doc},
     {Py_tp_traverse, islice_traverse},
@@ -1978,20 +1907,13 @@ itertools_starmap_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
     return (PyObject *)lz;
 }
 
-static int
-starmap_clear(starmapobject *lz)
-{
-    Py_CLEAR(lz->func);
-    Py_CLEAR(lz->it);
-    return 0;
-}
-
 static void
 starmap_dealloc(starmapobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)starmap_clear(lz);
+    Py_XDECREF(lz->func);
+    Py_XDECREF(lz->it);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -2042,7 +1964,6 @@ static PyMethodDef starmap_methods[] = {
 
 static PyType_Slot starmap_slots[] = {
     {Py_tp_dealloc, starmap_dealloc},
-    {Py_tp_clear, starmap_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_starmap__doc__},
     {Py_tp_traverse, starmap_traverse},
@@ -2126,20 +2047,13 @@ itertools_chain_from_iterable(PyTypeObject *type, PyObject *arg)
     return chain_new_internal(type, source);
 }
 
-static int
-chain_clear(chainobject *lz)
-{
-    Py_CLEAR(lz->source);
-    Py_CLEAR(lz->active);
-    return 0;
-}
-
 static void
 chain_dealloc(chainobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)chain_clear(lz);
+    Py_XDECREF(lz->active);
+    Py_XDECREF(lz->source);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -2254,7 +2168,6 @@ static PyMethodDef chain_methods[] = {
 
 static PyType_Slot chain_slots[] = {
     {Py_tp_dealloc, chain_dealloc},
-    {Py_tp_clear, chain_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)chain_doc},
     {Py_tp_traverse, chain_traverse},
@@ -2368,21 +2281,15 @@ error:
     return NULL;
 }
 
-static int
-product_clear(productobject *lz)
-{
-    Py_CLEAR(lz->pools);
-    Py_CLEAR(lz->result);
-    FREE_AND_CLEAR(lz->indices);
-    return 0;
-}
-
 static void
 product_dealloc(productobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)product_clear(lz);
+    Py_XDECREF(lz->pools);
+    Py_XDECREF(lz->result);
+    if (lz->indices != NULL)
+        PyMem_Free(lz->indices);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -2594,7 +2501,6 @@ product((0,1), (0,1), (0,1)) --> (0,0,0) (0,0,1) (0,1,0) (0,1,1) (1,0,0) ...");
 
 static PyType_Slot product_slots[] = {
     {Py_tp_dealloc, product_dealloc},
-    {Py_tp_clear, product_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)product_doc},
     {Py_tp_traverse, product_traverse},
@@ -2686,21 +2592,15 @@ error:
     return NULL;
 }
 
-static int
-combinations_clear(combinationsobject *co)
-{
-    Py_CLEAR(co->pool);
-    Py_CLEAR(co->result);
-    FREE_AND_CLEAR(co->indices);
-    return 0;
-}
-
 static void
 combinations_dealloc(combinationsobject *co)
 {
     PyTypeObject *tp = Py_TYPE(co);
     PyObject_GC_UnTrack(co);
-    (void)combinations_clear(co);
+    Py_XDECREF(co->pool);
+    Py_XDECREF(co->result);
+    if (co->indices != NULL)
+        PyMem_Free(co->indices);
     tp->tp_free(co);
     Py_DECREF(tp);
 }
@@ -2889,7 +2789,6 @@ static PyMethodDef combinations_methods[] = {
 
 static PyType_Slot combinations_slots[] = {
     {Py_tp_dealloc, combinations_dealloc},
-    {Py_tp_clear, combinations_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_combinations__doc__},
     {Py_tp_traverse, combinations_traverse},
@@ -3007,21 +2906,15 @@ error:
     return NULL;
 }
 
-static int
-cwr_clear(cwrobject *co)
-{
-    Py_CLEAR(co->pool);
-    Py_CLEAR(co->result);
-    FREE_AND_CLEAR(co->indices);
-    return 0;
-}
-
 static void
 cwr_dealloc(cwrobject *co)
 {
     PyTypeObject *tp = Py_TYPE(co);
     PyObject_GC_UnTrack(co);
-    (void)cwr_clear(co);
+    Py_XDECREF(co->pool);
+    Py_XDECREF(co->result);
+    if (co->indices != NULL)
+        PyMem_Free(co->indices);
     tp->tp_free(co);
     Py_DECREF(tp);
 }
@@ -3200,7 +3093,6 @@ static PyMethodDef cwr_methods[] = {
 
 static PyType_Slot cwr_slots[] = {
     {Py_tp_dealloc, cwr_dealloc},
-    {Py_tp_clear, cwr_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_combinations_with_replacement__doc__},
     {Py_tp_traverse, cwr_traverse},
@@ -3337,22 +3229,15 @@ error:
     return NULL;
 }
 
-static int
-permutations_clear(permutationsobject *po)
-{
-    Py_CLEAR(po->pool);
-    Py_CLEAR(po->result);
-    FREE_AND_CLEAR(po->indices);
-    FREE_AND_CLEAR(po->cycles);
-    return 0;
-}
-
 static void
 permutations_dealloc(permutationsobject *po)
 {
     PyTypeObject *tp = Py_TYPE(po);
     PyObject_GC_UnTrack(po);
-    (void)permutations_clear(po);
+    Py_XDECREF(po->pool);
+    Py_XDECREF(po->result);
+    PyMem_Free(po->indices);
+    PyMem_Free(po->cycles);
     tp->tp_free(po);
     Py_DECREF(tp);
 }
@@ -3577,7 +3462,6 @@ static PyMethodDef permuations_methods[] = {
 
 static PyType_Slot permutations_slots[] = {
     {Py_tp_dealloc, permutations_dealloc},
-    {Py_tp_clear, permutations_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_permutations__doc__},
     {Py_tp_traverse, permutations_traverse},
@@ -3649,22 +3533,15 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
     return (PyObject *)lz;
 }
 
-static int
-accumulate_clear(accumulateobject *lz)
-{
-    Py_CLEAR(lz->binop);
-    Py_CLEAR(lz->total);
-    Py_CLEAR(lz->it);
-    Py_CLEAR(lz->initial);
-    return 0;
-}
-
 static void
 accumulate_dealloc(accumulateobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)accumulate_clear(lz);
+    Py_XDECREF(lz->binop);
+    Py_XDECREF(lz->total);
+    Py_XDECREF(lz->it);
+    Py_XDECREF(lz->initial);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -3765,7 +3642,6 @@ static PyMethodDef accumulate_methods[] = {
 
 static PyType_Slot accumulate_slots[] = {
     {Py_tp_dealloc, accumulate_dealloc},
-    {Py_tp_clear, accumulate_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_accumulate__doc__},
     {Py_tp_traverse, accumulate_traverse},
@@ -3840,20 +3716,13 @@ fail:
     return NULL;
 }
 
-static int
-compress_clear(compressobject *lz)
-{
-    Py_CLEAR(lz->data);
-    Py_CLEAR(lz->selectors);
-    return 0;
-}
-
 static void
 compress_dealloc(compressobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)compress_clear(lz);
+    Py_XDECREF(lz->data);
+    Py_XDECREF(lz->selectors);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -3918,7 +3787,6 @@ static PyMethodDef compress_methods[] = {
 
 static PyType_Slot compress_slots[] = {
     {Py_tp_dealloc, compress_dealloc},
-    {Py_tp_clear, compress_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_compress__doc__},
     {Py_tp_traverse, compress_traverse},
@@ -3982,20 +3850,13 @@ itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
     return (PyObject *)lz;
 }
 
-static int
-filterfalse_clear(filterfalseobject *lz)
-{
-    Py_CLEAR(lz->func);
-    Py_CLEAR(lz->it);
-    return 0;
-}
-
 static void
 filterfalse_dealloc(filterfalseobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)filterfalse_clear(lz);
+    Py_XDECREF(lz->func);
+    Py_XDECREF(lz->it);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -4057,7 +3918,6 @@ static PyMethodDef filterfalse_methods[] = {
 
 static PyType_Slot filterfalse_slots[] = {
     {Py_tp_dealloc, filterfalse_dealloc},
-    {Py_tp_clear, filterfalse_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_filterfalse__doc__},
     {Py_tp_traverse, filterfalse_traverse},
@@ -4197,20 +4057,13 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
     return (PyObject *)lz;
 }
 
-static int
-count_clear(countobject *lz)
-{
-    Py_CLEAR(lz->long_cnt);
-    Py_CLEAR(lz->long_step);
-    return 0;
-}
-
 static void
 count_dealloc(countobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)count_clear(lz);
+    Py_XDECREF(lz->long_cnt);
+    Py_XDECREF(lz->long_step);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -4294,7 +4147,6 @@ static PyMethodDef count_methods[] = {
 
 static PyType_Slot count_slots[] = {
     {Py_tp_dealloc, count_dealloc},
-    {Py_tp_clear, count_clear},
     {Py_tp_repr, count_repr},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_count__doc__},
@@ -4350,19 +4202,12 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)ro;
 }
 
-static int
-repeat_clear(repeatobject *ro)
-{
-    Py_CLEAR(ro->element);
-    return 0;
-}
-
 static void
 repeat_dealloc(repeatobject *ro)
 {
     PyTypeObject *tp = Py_TYPE(ro);
     PyObject_GC_UnTrack(ro);
-    (void)repeat_clear(ro);
+    Py_XDECREF(ro->element);
     tp->tp_free(ro);
     Py_DECREF(tp);
 }
@@ -4434,7 +4279,6 @@ endlessly.");
 
 static PyType_Slot repeat_slots[] = {
     {Py_tp_dealloc, repeat_dealloc},
-    {Py_tp_clear, repeat_clear},
     {Py_tp_repr, repeat_repr},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)repeat_doc},
@@ -4535,21 +4379,14 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)lz;
 }
 
-static int
-zip_longest_clear(ziplongestobject *lz)
-{
-    Py_CLEAR(lz->ittuple);
-    Py_CLEAR(lz->result);
-    Py_CLEAR(lz->fillvalue);
-    return 0;
-}
-
 static void
 zip_longest_dealloc(ziplongestobject *lz)
 {
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
-    (void)zip_longest_clear(lz);
+    Py_XDECREF(lz->ittuple);
+    Py_XDECREF(lz->result);
+    Py_XDECREF(lz->fillvalue);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
@@ -4693,7 +4530,6 @@ defaults to None or can be specified by a keyword argument.\n\
 
 static PyType_Slot ziplongest_slots[] = {
     {Py_tp_dealloc, zip_longest_dealloc},
-    {Py_tp_clear, zip_longest_clear},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)zip_longest_doc},
     {Py_tp_traverse, zip_longest_traverse},
