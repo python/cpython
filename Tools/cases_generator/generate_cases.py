@@ -7,11 +7,14 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 import argparse
 import contextlib
 import dataclasses
+import itertools
 import os
 import posixpath
 import re
 import sys
 import typing
+
+from typing import Iterable
 
 import parser
 from parser import StackEffect
@@ -38,7 +41,12 @@ arg_parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 arg_parser.add_argument(
-    "-i", "--input", type=str, help="Instruction definitions", default=DEFAULT_INPUT
+    "-i",
+    "--input",
+    action="append",
+    type=str,
+    help="Instruction definitions (use multiple times for multiple inputs)",
+    default=[]
 )
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
@@ -492,32 +500,30 @@ INSTR_FMT_PREFIX = "INSTR_FMT_"
 class Analyzer:
     """Parse input, analyze it, and write to output."""
 
-    filename: str
+    input_filenames: list[str]
     output_filename: str
     metadata_filename: str
-    src: str
     errors: int = 0
 
-    def __init__(self, filename: str, output_filename: str, metadata_filename: str):
+    def __init__(self, input_filenames: list[str], output_filename: str, metadata_filename: str):
         """Read the input file."""
-        self.filename = filename
+        self.input_filenames = input_filenames
         self.output_filename = output_filename
         self.metadata_filename = metadata_filename
-        with open(filename) as f:
-            self.src = f.read()
 
     def error(self, msg: str, node: parser.Node) -> None:
         lineno = 0
+        filename = "<unknown file>"
         if context := node.context:
+            filename = context.owner.filename
             # Use line number of first non-comment in the node
             for token in context.owner.tokens[context.begin : context.end]:
                 lineno = token.line
                 if token.kind != "COMMENT":
                     break
-        print(f"{self.filename}:{lineno}: {msg}", file=sys.stderr)
+        print(f"{filename}:{lineno}: {msg}", file=sys.stderr)
         self.errors += 1
 
-    everything: list[parser.InstDef | parser.Super | parser.Macro]
     instrs: dict[str, Instruction]  # Includes ops
     supers: dict[str, parser.Super]
     super_instrs: dict[str, SuperInstruction]
@@ -525,60 +531,83 @@ class Analyzer:
     macro_instrs: dict[str, MacroInstruction]
     families: dict[str, parser.Family]
 
+    def every_thing(self) -> Iterable[parser.InstDef | parser.Super | parser.Macro]:
+        return itertools.chain(
+            map(lambda i: i.inst, self.instrs.values()),
+            self.supers.values(),
+            self.macros.values(),
+        )
+
     def parse(self) -> None:
         """Parse the source text.
 
         We only want the parser to see the stuff between the
         begin and end markers.
         """
-        psr = parser.Parser(self.src, filename=self.filename)
 
-        # Skip until begin marker
-        while tkn := psr.next(raw=True):
-            if tkn.text == BEGIN_MARKER:
-                break
-        else:
-            raise psr.make_syntax_error(
-                f"Couldn't find {BEGIN_MARKER!r} in {psr.filename}"
-            )
-        start = psr.getpos()
-
-        # Find end marker, then delete everything after it
-        while tkn := psr.next(raw=True):
-            if tkn.text == END_MARKER:
-                break
-        del psr.tokens[psr.getpos() - 1 :]
-
-        # Parse from start
-        psr.setpos(start)
-        self.everything = []
         self.instrs = {}
         self.supers = {}
         self.macros = {}
         self.families = {}
-        thing: parser.InstDef | parser.Super | parser.Macro | parser.Family | None
-        while thing := psr.definition():
-            match thing:
-                case parser.InstDef(name=name):
-                    self.instrs[name] = Instruction(thing)
-                    self.everything.append(thing)
-                case parser.Super(name):
-                    self.supers[name] = thing
-                    self.everything.append(thing)
-                case parser.Macro(name):
-                    self.macros[name] = thing
-                    self.everything.append(thing)
-                case parser.Family(name):
-                    self.families[name] = thing
-                case _:
-                    typing.assert_never(thing)
-        if not psr.eof():
-            raise psr.make_syntax_error("Extra stuff at the end")
 
+        for filename in self.input_filenames:
+            with open(filename) as file:
+                src = file.read()
+
+            psr = parser.Parser(src, filename=filename)
+
+            # Skip until begin marker
+            while tkn := psr.next(raw=True):
+                if tkn.text == BEGIN_MARKER:
+                    break
+            else:
+                raise psr.make_syntax_error(
+                    f"Couldn't find {BEGIN_MARKER!r} in {psr.filename}"
+                )
+            start = psr.getpos()
+
+            # Find end marker, then delete everything after it
+            while tkn := psr.next(raw=True):
+                if tkn.text == END_MARKER:
+                    break
+            del psr.tokens[psr.getpos() - 1 :]
+
+            # Parse from start
+            psr.setpos(start)
+            thing: parser.InstDef | parser.Super | parser.Macro | parser.Family | None
+            thing_first_token = psr.peek()
+            while thing := psr.definition():
+                match thing:
+                    case parser.InstDef(name=name):
+                        if name in self.instrs and not thing.override:
+                            raise psr.make_syntax_error(
+                                f"Duplicate definition of '{name}' @ {thing.context} "
+                                f"previous definition @ {self.instrs[name].inst.context}",
+                                thing_first_token,
+                            )
+                        if name not in self.instrs and thing.override:
+                            raise psr.make_syntax_error(
+                                f"Definition of '{name}' @ {thing.context} is supposed to be "
+                                "an override but no previous definition exists.",
+                                thing_first_token,
+                            )
+                        self.instrs[name] = Instruction(thing)
+                    case parser.Super(name):
+                        self.supers[name] = thing
+                    case parser.Macro(name):
+                        self.macros[name] = thing
+                    case parser.Family(name):
+                        self.families[name] = thing
+                    case _:
+                        typing.assert_never(thing)
+            if not psr.eof():
+                raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
+
+        files = " + ".join(self.input_filenames)
         print(
             f"Read {len(self.instrs)} instructions/ops, "
             f"{len(self.supers)} supers, {len(self.macros)} macros, "
-            f"and {len(self.families)} families from {self.filename}",
+            f"and {len(self.families)} families from {files}",
             file=sys.stderr,
         )
 
@@ -878,7 +907,7 @@ class Analyzer:
     def write_stack_effect_functions(self) -> None:
         popped_data: list[tuple[AnyInstruction, str]] = []
         pushed_data: list[tuple[AnyInstruction, str]] = []
-        for thing in self.everything:
+        for thing in self.every_thing():
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
                 popped_data.append((instr, popped))
@@ -907,12 +936,15 @@ class Analyzer:
         write_function("pushed", pushed_data)
         self.out.emit("")
 
+    def source_files(self) -> str:
+        return "\n  ".join(os.path.relpath(filename, ROOT) for filename in self.input_filenames)
+
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
 
         # Compute the set of all instruction formats.
         all_formats: set[str] = set()
-        for thing in self.everything:
+        for thing in self.every_thing():
             match thing:
                 case parser.InstDef():
                     format = self.instrs[thing.name].instr_fmt
@@ -957,7 +989,7 @@ class Analyzer:
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
-            for thing in self.everything:
+            for thing in self.every_thing():
                 match thing:
                     case parser.InstDef():
                         if thing.kind != "op":
@@ -1018,7 +1050,7 @@ class Analyzer:
             n_instrs = 0
             n_supers = 0
             n_macros = 0
-            for thing in self.everything:
+            for thing in self.every_thing():
                 match thing:
                     case parser.InstDef():
                         if thing.kind != "op":
@@ -1190,6 +1222,8 @@ def variable_used(node: parser.Node, name: str) -> bool:
 def main():
     """Parse command line, parse input, analyze, write output."""
     args = arg_parser.parse_args()  # Prints message and sys.exit(2) on error
+    if len(args.input) == 0:
+        args.input.append(DEFAULT_INPUT)
     a = Analyzer(args.input, args.output, args.metadata)  # Raises OSError if input unreadable
     a.parse()  # Raises SyntaxError on failure
     a.analyze()  # Prints messages and sets a.errors on failure
