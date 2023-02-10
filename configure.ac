@@ -6508,6 +6508,7 @@ SRCDIRS="\
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
+  Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sha3 \
@@ -7197,7 +7198,9 @@ dnl By default we always compile these even when OpenSSL is available
 dnl (issue #14693). The modules are small.
 PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
 PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
-PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
+PY_STDLIB_MOD([_sha256],
+  [test "$with_builtin_sha256" = yes], [],
+  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
 PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2],

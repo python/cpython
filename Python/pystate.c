@@ -266,10 +266,10 @@ unbind_tstate(PyThreadState *tstate)
    thread state for an OS level thread is when there are multiple
    interpreters.
 
-   The PyGILState_*() APIs don't work with multiple
-   interpreters (see bpo-10915 and bpo-15751), so this function
-   sets TSS only once.  Thus, the first thread state created for that
-   given OS level thread will "win", which seems reasonable behaviour.
+   Before 3.12, the PyGILState_*() APIs didn't work with multiple
+   interpreters (see bpo-10915 and bpo-15751), so this function used
+   to set TSS only once.  Thus, the first thread state created for that
+   given OS level thread would "win", which seemed reasonable behaviour.
 */
 
 static void
@@ -286,10 +286,6 @@ bind_gilstate_tstate(PyThreadState *tstate)
     assert(tstate != tcur);
 
     if (tcur != NULL) {
-        // The original gilstate implementation only respects the
-        // first thread state set.
-        // XXX Skipping like this does not play nice with multiple interpreters.
-        return;
         tcur->_status.bound_gilstate = 0;
     }
     gilstate_tss_set(runtime, tstate);
@@ -1379,9 +1375,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 
-    Py_CLEAR(tstate->curexc_type);
-    Py_CLEAR(tstate->curexc_value);
-    Py_CLEAR(tstate->curexc_traceback);
+    Py_CLEAR(tstate->current_exception);
 
     Py_CLEAR(tstate->exc_state.exc_value);
 
@@ -1738,20 +1732,7 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
         tstate_activate(newts);
     }
 
-    /* It should not be possible for more than one thread state
-       to be used for a thread.  Check this the best we can in debug
-       builds.
-    */
-    // XXX The above isn't true when multiple interpreters are involved.
 #if defined(Py_DEBUG)
-    if (newts && gilstate_tss_initialized(runtime)) {
-        PyThreadState *check = gilstate_tss_get(runtime);
-        if (check != newts) {
-            if (check && check->interp == newts->interp) {
-                Py_FatalError("Invalid thread state for this thread");
-            }
-        }
-    }
     errno = err;
 #endif
     return oldts;

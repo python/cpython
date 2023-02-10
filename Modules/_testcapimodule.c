@@ -1534,6 +1534,42 @@ crash_no_current_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
     return NULL;
 }
 
+/* Test that the GILState thread and the "current" thread match. */
+static PyObject *
+test_current_tstate_matches(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyThreadState *orig_tstate = PyThreadState_Get();
+
+    if (orig_tstate != PyGILState_GetThisThreadState()) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "current thread state doesn't match GILState");
+        return NULL;
+    }
+
+    const char *err = NULL;
+    PyThreadState_Swap(NULL);
+    PyThreadState *substate = Py_NewInterpreter();
+
+    if (substate != PyThreadState_Get()) {
+        err = "subinterpreter thread state not current";
+        goto finally;
+    }
+    if (substate != PyGILState_GetThisThreadState()) {
+        err = "subinterpreter thread state doesn't match GILState";
+        goto finally;
+    }
+
+finally:
+    Py_EndInterpreter(substate);
+    PyThreadState_Swap(orig_tstate);
+
+    if (err != NULL) {
+        PyErr_SetString(PyExc_RuntimeError, err);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 /* To run some code in a sub-interpreter. */
 static PyObject *
 run_in_subinterp(PyObject *self, PyObject *args)
@@ -2201,7 +2237,7 @@ dict_get_version(PyObject *self, PyObject *args)
         return NULL;
 
     _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS    
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     version = dict->ma_version_tag;
     _Py_COMP_DIAG_POP
 
@@ -3029,6 +3065,144 @@ eval_get_func_desc(PyObject *self, PyObject *func)
 }
 
 static PyObject *
+eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
+{
+    PyObject *result = NULL;
+    PyObject *code;
+    PyObject *globals;
+    PyObject *locals = NULL;
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *defaults = NULL;
+    PyObject *kw_defaults = NULL;
+    PyObject *closure = NULL;
+
+    PyObject **c_kwargs = NULL;
+
+    if (!PyArg_UnpackTuple(pos_args,
+                           "eval_code_ex",
+                           2,
+                           8,
+                           &code,
+                           &globals,
+                           &locals,
+                           &args,
+                           &kwargs,
+                           &defaults,
+                           &kw_defaults,
+                           &closure))
+    {
+        goto exit;
+    }
+
+    if (!PyCode_Check(code)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "code must be a Python code object");
+        goto exit;
+    }
+
+    if (!PyDict_Check(globals)) {
+        PyErr_SetString(PyExc_TypeError, "globals must be a dict");
+        goto exit;
+    }
+
+    if (locals && !PyMapping_Check(locals)) {
+        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
+        goto exit;
+    }
+    if (locals == Py_None) {
+        locals = NULL;
+    }
+
+    PyObject **c_args = NULL;
+    Py_ssize_t c_args_len = 0;
+
+    if (args)
+    {
+        if (!PyTuple_Check(args)) {
+            PyErr_SetString(PyExc_TypeError, "args must be a tuple");
+            goto exit;
+        } else {
+            c_args = &PyTuple_GET_ITEM(args, 0);
+            c_args_len = PyTuple_Size(args);
+        }
+    }
+
+    Py_ssize_t c_kwargs_len = 0;
+
+    if (kwargs)
+    {
+        if (!PyDict_Check(kwargs)) {
+            PyErr_SetString(PyExc_TypeError, "keywords must be a dict");
+            goto exit;
+        } else {
+            c_kwargs_len = PyDict_Size(kwargs);
+            if (c_kwargs_len > 0) {
+                c_kwargs = PyMem_NEW(PyObject*, 2 * c_kwargs_len);
+                if (!c_kwargs) {
+                    PyErr_NoMemory();
+                    goto exit;
+                }
+
+                Py_ssize_t i = 0;
+                Py_ssize_t pos = 0;
+
+                while (PyDict_Next(kwargs,
+                                   &pos,
+                                   &c_kwargs[i],
+                                   &c_kwargs[i + 1]))
+                {
+                    i += 2;
+                }
+                c_kwargs_len = i / 2;
+                /* XXX This is broken if the caller deletes dict items! */
+            }
+        }
+    }
+
+
+    PyObject **c_defaults = NULL;
+    Py_ssize_t c_defaults_len = 0;
+
+    if (defaults && PyTuple_Check(defaults)) {
+        c_defaults = &PyTuple_GET_ITEM(defaults, 0);
+        c_defaults_len = PyTuple_Size(defaults);
+    }
+
+    if (kw_defaults && !PyDict_Check(kw_defaults)) {
+        PyErr_SetString(PyExc_TypeError, "kw_defaults must be a dict");
+        goto exit;
+    }
+
+    if (closure && !PyTuple_Check(closure)) {
+        PyErr_SetString(PyExc_TypeError, "closure must be a tuple of cells");
+        goto exit;
+    }
+
+
+    result = PyEval_EvalCodeEx(
+        code,
+        globals,
+        locals,
+        c_args,
+        (int)c_args_len,
+        c_kwargs,
+        (int)c_kwargs_len,
+        c_defaults,
+        (int)c_defaults_len,
+        kw_defaults,
+        closure
+    );
+
+exit:
+    if (c_kwargs) {
+        PyMem_DEL(c_kwargs);
+    }
+
+    return result;
+}
+
+static PyObject *
 get_feature_macros(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *result = PyDict_New();
@@ -3296,6 +3470,41 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+err_set_raised(PyObject *self, PyObject *exc)
+{
+    Py_INCREF(exc);
+    PyErr_SetRaisedException(exc);
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
+static PyObject *
+err_restore(PyObject *self, PyObject *args) {
+    PyObject *type = NULL, *value = NULL, *traceback = NULL;
+    switch(PyTuple_Size(args)) {
+        case 3:
+            traceback = PyTuple_GetItem(args, 2);
+            Py_INCREF(traceback);
+            /* fall through */
+        case 2:
+            value = PyTuple_GetItem(args, 1);
+            Py_INCREF(value);
+            /* fall through */
+        case 1:
+            type = PyTuple_GetItem(args, 0);
+            Py_INCREF(type);
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError,
+                        "wrong number of arguments");
+            return NULL;
+    }
+    PyErr_Restore(type, value, traceback);
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -3349,11 +3558,13 @@ static PyMethodDef TestMethods[] = {
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},
     {"argparsing",              argparsing,                      METH_VARARGS},
     {"code_newempty",           code_newempty,                   METH_VARARGS},
+    {"eval_code_ex",            eval_eval_code_ex,               METH_VARARGS},
     {"make_exception_with_doc", _PyCFunction_CAST(make_exception_with_doc),
      METH_VARARGS | METH_KEYWORDS},
     {"make_memoryview_from_NULL_pointer", make_memoryview_from_NULL_pointer,
      METH_NOARGS},
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
+    {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
@@ -3446,6 +3657,8 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
+    {"err_set_raised", err_set_raised, METH_O, NULL},
+    {"err_restore", err_restore, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

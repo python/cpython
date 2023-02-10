@@ -1445,23 +1445,20 @@ regen-opcode-targets:
 
 .PHONY: regen-cases
 regen-cases:
-	# Regenerate Python/generated_cases.c.h from Python/bytecodes.c
+	# Regenerate Python/generated_cases.c.h
+	# and Python/opcode_metadata.h
+	# from Python/bytecodes.c
 	# using Tools/cases_generator/generate_cases.py
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
 		-i $(srcdir)/Python/bytecodes.c \
-		-o $(srcdir)/Python/generated_cases.c.h.new
+		-o $(srcdir)/Python/generated_cases.c.h.new \
+		-m $(srcdir)/Python/opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
-	# Regenerate Python/opcode_metadata.h from Python/bytecodes.c
-	# using Tools/cases_generator/generate_cases.py --metadata
-	PYTHONPATH=$(srcdir)/Tools/cases_generator \
-	$(PYTHON_FOR_REGEN) \
-	    $(srcdir)/Tools/cases_generator/generate_cases.py \
-		--metadata \
-		-i $(srcdir)/Python/bytecodes.c \
-		-o $(srcdir)/Python/opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_metadata.h $(srcdir)/Python/opcode_metadata.h.new
+
+Python/compile.o: $(srcdir)/Python/opcode_metadata.h
 
 Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
@@ -1816,7 +1813,15 @@ commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
-sharedinstall: $(DESTSHARED) all
+sharedinstall: all
+		@for i in $(DESTDIRS); \
+		do \
+			if test ! -d $(DESTDIR)$$i; then \
+				echo "Creating directory $$i"; \
+				$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
+			else    true; \
+			fi; \
+		done
 		@for i in X $(SHAREDMODS); do \
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
@@ -1826,17 +1831,6 @@ sharedinstall: $(DESTSHARED) all
 				$(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
 			fi; \
 		  fi; \
-		done
-
-
-$(DESTSHARED):
-		@for i in $(DESTDIRS); \
-		do \
-			if test ! -d $(DESTDIR)$$i; then \
-				echo "Creating directory $$i"; \
-				$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
-			else    true; \
-			fi; \
 		done
 
 # Install the interpreter with $(VERSION) affixed
@@ -2612,7 +2606,7 @@ MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h
-MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h $(srcdir)/Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h $(srcdir)/Modules/_hacl/include/krml/lowstar_endianness.h $(srcdir)/Modules/_hacl/include/krml/internal/target.h $(srcdir)/Modules/_hacl/Hacl_Streaming_SHA2.h
 MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/sha3.c $(srcdir)/Modules/_sha3/sha3.h $(srcdir)/Modules/hashlib.h
 MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c

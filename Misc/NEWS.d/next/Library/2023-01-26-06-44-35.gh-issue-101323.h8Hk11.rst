@@ -1,2 +1,0 @@
-Fix a bug where errors where not thrown by zlib._ZlibDecompressor if
-encountered during decompressing.
