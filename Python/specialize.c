@@ -2197,7 +2197,7 @@ _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr)
         goto success;
     }
     SPECIALIZATION_FAIL(SEND,
-                        _PySpecialization_ClassifyIterator(iter));
+                        _PySpecialization_ClassifyIterator(receiver));
     STAT_INC(SEND, failure);
     _py_set_opcode(instr, SEND);
     cache->counter = adaptive_counter_backoff(cache->counter);
