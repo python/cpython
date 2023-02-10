@@ -718,7 +718,7 @@ PyInterpreterState_New(void)
     init_interpreter(interp, runtime, id, old_head, pending_lock);
 
     for (int i=0; i < INTERP_NUM_FREELISTS; i++) {
-        _PyFreeList_Init(&interp->freelists[i],
+        _PyFreeList_Init(&interp->freelists[i], i,
                          FREELIST_INDEX_TO_ALLOCATED_SIZE(i),
                          SMALL_OBJECT_FREELIST_SIZE);
     }

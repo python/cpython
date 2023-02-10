@@ -106,6 +106,9 @@ typedef struct _freelist {
     uint32_t space;
     uint16_t size;
     uint16_t capacity;
+#ifdef Py_STATS
+    int size_class;
+#endif
 } _PyFreeList;
 
 extern void *_PyFreeList_HalfFillAndAllocate(_PyFreeList *list);
@@ -116,7 +119,7 @@ extern void _PyFreeList_Disable(_PyFreeList *list);
 static inline void *
 _PyFreeList_Alloc(_PyFreeList *list) {
 #ifdef Py_STATS
-    if (_py_stats) _py_stats->object_stats.from_generic_freelist++;
+    if (_py_stats) _py_stats->freelist_stats[list->size_class].allocations++;
 #endif
     if (list->ptr != NULL) {
         void *result = list->ptr;
@@ -125,7 +128,7 @@ _PyFreeList_Alloc(_PyFreeList *list) {
         return result;
     }
 #ifdef Py_STATS
-    if (_py_stats) _py_stats->object_stats.generic_freelist_empty++;
+    if (_py_stats) _py_stats->freelist_stats[list->size_class].empty++;
 #endif
     return _PyFreeList_HalfFillAndAllocate(list);
 }
@@ -133,7 +136,7 @@ _PyFreeList_Alloc(_PyFreeList *list) {
 static inline void
 _PyFreeList_Free(_PyFreeList *list, void *ptr) {
 #ifdef Py_STATS
-    if (_py_stats) _py_stats->object_stats.to_generic_freelist++;
+    if (_py_stats) _py_stats->freelist_stats[list->size_class].frees++;
 #endif
     if (list->space) {
         *((void **)ptr) = list->ptr;
@@ -142,16 +145,19 @@ _PyFreeList_Free(_PyFreeList *list, void *ptr) {
         return;
     }
 #ifdef Py_STATS
-    if (_py_stats) _py_stats->object_stats.generic_freelist_full++;
+    if (_py_stats) _py_stats->freelist_stats[list->size_class].full++;
 #endif
     _PyFreeList_FreeToFull(list, ptr);
 }
 
 static inline void
-_PyFreeList_Init(_PyFreeList *list, int size, int capacity)
+_PyFreeList_Init(_PyFreeList *list, int size_class, int size, int capacity)
 {
     list->ptr = NULL;
     list->size = size;
+#ifdef Py_STATS
+    list->size_class = size_class;
+#endif
 #if WITH_FREELISTS
     list->space = list->capacity = capacity;
 #else

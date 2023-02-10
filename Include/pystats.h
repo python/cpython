@@ -48,6 +48,13 @@ typedef struct _call_stats {
     uint64_t eval_calls[EVAL_CALL_KINDS];
 } CallStats;
 
+typedef struct _generic_freelist_stats {
+    uint64_t allocations;
+    uint64_t frees;
+    uint64_t empty;
+    uint64_t full;
+} GenericFreelistStats;
+
 typedef struct _object_stats {
     uint64_t increfs;
     uint64_t decrefs;
@@ -60,10 +67,6 @@ typedef struct _object_stats {
     uint64_t frees;
     uint64_t to_freelist;
     uint64_t from_freelist;
-    uint64_t to_generic_freelist;
-    uint64_t from_generic_freelist;
-    uint64_t generic_freelist_empty;
-    uint64_t generic_freelist_full;
     uint64_t new_values;
     uint64_t dict_materialized_on_request;
     uint64_t dict_materialized_new_key;
@@ -82,6 +85,7 @@ typedef struct _stats {
     OpcodeStats opcode_stats[256];
     CallStats call_stats;
     ObjectStats object_stats;
+    GenericFreelistStats freelist_stats[30];  // INTERP_NUM_FREELISTS
 } PyStats;
 
 

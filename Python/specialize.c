@@ -174,10 +174,6 @@ print_object_stats(FILE *out, ObjectStats *stats)
 {
     fprintf(out, "Object allocations from freelist: %" PRIu64 "\n", stats->from_freelist);
     fprintf(out, "Object frees to freelist: %" PRIu64 "\n", stats->to_freelist);
-    fprintf(out, "Object allocations from generic freelist: %" PRIu64 "\n", stats->from_generic_freelist);
-    fprintf(out, "Object frees to generic freelist: %" PRIu64 "\n", stats->to_generic_freelist);
-    fprintf(out, "Object allocations when generic freelist is empty: %" PRIu64 "\n", stats->generic_freelist_empty);
-    fprintf(out, "Object frees when generic freelist is full: %" PRIu64 "\n", stats->generic_freelist_full);
     fprintf(out, "Object allocations: %" PRIu64 "\n", stats->allocations);
     fprintf(out, "Object allocations to 512 bytes: %" PRIu64 "\n", stats->allocations512);
     fprintf(out, "Object allocations to 4 kbytes: %" PRIu64 "\n", stats->allocations4k);
@@ -200,10 +196,25 @@ print_object_stats(FILE *out, ObjectStats *stats)
 }
 
 static void
+print_freelist_stats(FILE *out, GenericFreelistStats freelist_stats[INTERP_NUM_FREELISTS])
+{
+    for (int i=0; i<INTERP_NUM_FREELISTS; i++) {
+        GenericFreelistStats *stats = &(freelist_stats[i]);
+        if (stats->allocations > 0) {
+            fprintf(out, "Allocations from freelist[%d]: %" PRIu64 "\n", i, stats->allocations);
+            fprintf(out, "Frees into freelist[%d]: %" PRIu64 "\n", i, stats->frees);
+            fprintf(out, "Freelist[%d] empty: %" PRIu64 "\n", i, stats->empty);
+            fprintf(out, "Freelist[%d] full: %" PRIu64 "\n", i, stats->full);
+        }
+    }
+}
+
+static void
 print_stats(FILE *out, PyStats *stats) {
     print_spec_stats(out, stats->opcode_stats);
     print_call_stats(out, &stats->call_stats);
     print_object_stats(out, &stats->object_stats);
+    print_freelist_stats(out, stats->freelist_stats);
 }
 
 void
