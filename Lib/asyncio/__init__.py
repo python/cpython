@@ -62,7 +62,7 @@ def create_eager_task_factory(custom_task_constructor):
             return fut
         else:
             task = custom_task_constructor(
-                coro, loop=loop, name=name, context=context, yield_result=result)
+                coro, loop=loop, name=name, context=context, coro_result=result)
             if task._source_traceback:
                 del task._source_traceback[-1]
             return task

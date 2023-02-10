@@ -96,7 +96,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     _log_destroy_pending = True
 
     def __init__(self, coro, *, loop=None, name=None, context=None,
-                                yield_result=_NOT_SET):
+                                coro_result=_NOT_SET):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -120,10 +120,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         else:
             self._context = context
 
-        if yield_result is _NOT_SET:
+        if coro_result is _NOT_SET:
             self._loop.call_soon(self.__step, context=self._context)
         else:
-            self.__step2(yield_result)
+            self.__step2(coro_result)
         _register_task(self)
 
     def __del__(self):
