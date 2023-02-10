@@ -104,6 +104,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case SEND:
             return 2;
+        case SEND_GEN:
+            return 2;
         case YIELD_VALUE:
             return 1;
         case POP_EXCEPT:
@@ -454,6 +456,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case SEND:
             return 2;
+        case SEND_GEN:
+            return 1;
         case YIELD_VALUE:
             return 1;
         case POP_EXCEPT:
@@ -763,7 +767,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [GET_AITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [GET_ANEXT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [GET_AWAITABLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [SEND] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [SEND] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
+    [SEND_GEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [YIELD_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [POP_EXCEPT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [RERAISE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },

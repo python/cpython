@@ -475,10 +475,10 @@ dis_asyncwith = """\
            BEFORE_ASYNC_WITH
            GET_AWAITABLE            1
            LOAD_CONST               0 (None)
-        >> SEND                     3 (to 22)
+        >> SEND                     3 (to 24)
            YIELD_VALUE              2
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     4 (to 14)
+           JUMP_BACKWARD_NO_INTERRUPT     5 (to 14)
         >> SWAP                     2
            POP_TOP
            POP_TOP
@@ -492,10 +492,10 @@ dis_asyncwith = """\
            CALL                     2
            GET_AWAITABLE            2
            LOAD_CONST               0 (None)
-        >> SEND                     3 (to 60)
+        >> SEND                     3 (to 64)
            YIELD_VALUE              2
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     4 (to 52)
+           JUMP_BACKWARD_NO_INTERRUPT     5 (to 54)
         >> POP_TOP
            POP_TOP
 
@@ -504,21 +504,21 @@ dis_asyncwith = """\
            RETURN_CONST             0 (None)
 
 %3d     >> CLEANUP_THROW
-           JUMP_BACKWARD           26 (to 22)
+           JUMP_BACKWARD           27 (to 24)
         >> CLEANUP_THROW
-           JUMP_BACKWARD            9 (to 60)
+           JUMP_BACKWARD            9 (to 64)
         >> PUSH_EXC_INFO
            WITH_EXCEPT_START
            GET_AWAITABLE            2
            LOAD_CONST               0 (None)
-        >> SEND                     4 (to 96)
+        >> SEND                     4 (to 102)
            YIELD_VALUE              3
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     4 (to 86)
+           JUMP_BACKWARD_NO_INTERRUPT     5 (to 90)
         >> CLEANUP_THROW
         >> SWAP                     2
            POP_TOP
-           POP_JUMP_IF_TRUE         1 (to 104)
+           POP_JUMP_IF_TRUE         1 (to 110)
            RERAISE                  2
         >> POP_TOP
            POP_EXCEPT

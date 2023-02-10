@@ -187,6 +187,7 @@ extern "C" {
 #define UNPACK_SEQUENCE_LIST                   159
 #define UNPACK_SEQUENCE_TUPLE                  160
 #define UNPACK_SEQUENCE_TWO_TUPLE              161
+#define SEND_GEN                               166
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
