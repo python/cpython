@@ -9,6 +9,7 @@ import pickle
 import collections.abc
 import functools
 import contextlib
+import builtins
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -252,7 +253,7 @@ class TestCase(unittest.TestCase):
         # depending on the order of C argument evaluation, which is undefined
 
         # Backup builtins
-        builtins = __builtins__
+        builtins_dict = builtins.__dict__
         orig = {"iter": iter, "reversed": reversed}
 
         def run(builtin_name, item, init=None, sentinel=None):
@@ -277,8 +278,8 @@ class TestCase(unittest.TestCase):
 
             # del is required here
             # to avoid calling the last test case's custom __eq__
-            del builtins[builtin_name]
-            builtins[CustomStr(builtin_name, it)] = orig[builtin_name]
+            del builtins_dict[builtin_name]
+            builtins_dict[CustomStr(builtin_name, it)] = orig[builtin_name]
 
             return it.__reduce__()
 
@@ -314,12 +315,12 @@ class TestCase(unittest.TestCase):
             # we also need to supress KeyErrors in case
             # a failed test deletes the key without setting anything
             with contextlib.suppress(KeyError):
-                del builtins["iter"]
+                del builtins_dict["iter"]
             with contextlib.suppress(KeyError):
-                del builtins["reversed"]
+                del builtins_dict["reversed"]
             # Restore original builtins
             for key, func in orig.items():
-                builtins[key] = func
+                builtins_dict[key] = func
 
     # Test a new_style class with __iter__ but no next() method
     def test_new_style_iter_class(self):
