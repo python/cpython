@@ -183,7 +183,7 @@ class Fraction(numbers.Rational):
     __slots__ = ('_numerator', '_denominator')
 
     # We're immutable, so use __new__ not __init__
-    def __new__(cls, numerator=0, denominator=None):
+    def __new__(cls, numerator=0, denominator=None, *, _normalize=True):
         """Constructs a Rational.
 
         Takes a string like '3/2' or '1.5', another Rational instance, a
@@ -279,11 +279,12 @@ class Fraction(numbers.Rational):
 
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
-        g = math.gcd(numerator, denominator)
-        if denominator < 0:
-            g = -g
-        numerator //= g
-        denominator //= g
+        if _normalize:
+            g = math.gcd(numerator, denominator)
+            if denominator < 0:
+                g = -g
+            numerator //= g
+            denominator //= g
         self._numerator = numerator
         self._denominator = denominator
         return self
