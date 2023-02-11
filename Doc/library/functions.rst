@@ -1635,6 +1635,8 @@ are always available.  They are listed here in alphabetical order.
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
+   .. versionchanged:: 3.10
+      The slice object can be :term:`hashable`.
 
 .. function:: sorted(iterable, /, *, key=None, reverse=False)
 
