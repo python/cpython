@@ -317,7 +317,7 @@ class Fraction(numbers.Rational):
 
     @classmethod
     def _from_pair(cls, numerator, denominator, /):
-        """Convert a pair of int's to a rational number.
+        """Convert a pair of int's to a rational number, for internal use.
 
         The ratio of integers should be in lowest terms and
         the denominator is positive.
