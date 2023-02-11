@@ -300,7 +300,7 @@ class Fraction(numbers.Rational):
         elif not isinstance(f, float):
             raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
                             (cls.__name__, f, type(f).__name__))
-        return cls(*f.as_integer_ratio())
+        return cls._from_pair(*f.as_integer_ratio())
 
     @classmethod
     def from_decimal(cls, dec):
@@ -312,7 +312,7 @@ class Fraction(numbers.Rational):
             raise TypeError(
                 "%s.from_decimal() only takes Decimals, not %r (%s)" %
                 (cls.__name__, dec, type(dec).__name__))
-        return cls(*dec.as_integer_ratio())
+        return cls._from_pair(*dec.as_integer_ratio())
 
     @classmethod
     def _from_pair(cls, numerator, denominator, /):
