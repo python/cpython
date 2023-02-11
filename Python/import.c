@@ -1592,6 +1592,13 @@ remove_importlib_frames(PyThreadState *tstate)
         Py_DECREF(code);
         tb = next;
     }
+    assert(PyExceptionInstance_Check(value));
+    assert((PyObject *)Py_TYPE(value) == exception);
+    if (base_tb == NULL) {
+        base_tb = Py_None;
+        Py_INCREF(Py_None);
+    }
+    PyException_SetTraceback(value, base_tb);
 done:
     _PyErr_Restore(tstate, exception, value, base_tb);
 }
@@ -2644,7 +2651,7 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     int res = 0;
 
     if (_PyRuntime.imports.inittab != NULL) {
-        Py_FatalError("PyImport_ExtendInittab() may be be called after Py_Initialize()");
+        Py_FatalError("PyImport_ExtendInittab() may not be called after Py_Initialize()");
     }
 
     /* Count the number of entries in both tables */
@@ -2692,7 +2699,7 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
     struct _inittab newtab[2];
 
     if (_PyRuntime.imports.inittab != NULL) {
-        Py_FatalError("PyImport_AppendInittab() may be be called after Py_Initialize()");
+        Py_FatalError("PyImport_AppendInittab() may not be called after Py_Initialize()");
     }
 
     memset(newtab, '\0', sizeof newtab);

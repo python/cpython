@@ -149,9 +149,11 @@ extern "C" {
 
 #define _PyLong_DIGIT_INIT(val) \
     { \
-        _PyVarObject_IMMORTAL_INIT(&PyLong_Type, \
-                                   ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1))), \
-        .ob_digit = { ((val) >= 0 ? (val) : -(val)) }, \
+        .ob_base = _PyObject_IMMORTAL_INIT(&PyLong_Type), \
+        .long_value  = { \
+            ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1)), \
+            { ((val) >= 0 ? (val) : -(val)) }, \
+        } \
     }
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \

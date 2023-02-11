@@ -272,19 +272,6 @@ class PurePath(object):
         return (self.__class__, tuple(self._parts))
 
     @classmethod
-    def _split_root(cls, part):
-        sep = cls._flavour.sep
-        rel = cls._flavour.splitdrive(part)[1].lstrip(sep)
-        anchor = part.removesuffix(rel)
-        if anchor:
-            anchor = cls._flavour.normpath(anchor)
-        drv, root = cls._flavour.splitdrive(anchor)
-        if drv.startswith(sep):
-            # UNC paths always have a root.
-            root = sep
-        return drv, root, rel
-
-    @classmethod
     def _parse_parts(cls, parts):
         if not parts:
             return '', '', []
@@ -293,7 +280,10 @@ class PurePath(object):
         path = cls._flavour.join(*parts)
         if altsep:
             path = path.replace(altsep, sep)
-        drv, root, rel = cls._split_root(path)
+        drv, root, rel = cls._flavour.splitroot(path)
+        if drv.startswith(sep):
+            # pathlib assumes that UNC paths always have a root.
+            root = sep
         unfiltered_parsed = [drv + root] + rel.split(sep)
         parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
@@ -493,9 +483,9 @@ class PurePath(object):
         """Return a new path with the file name changed."""
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
-        drv, root, parts = self._parse_parts((name,))
-        if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
-            or drv or root or len(parts) != 1):
+        f = self._flavour
+        drv, root, tail = f.splitroot(name)
+        if drv or root or not tail or f.sep in tail or (f.altsep and f.altsep in tail):
             raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
