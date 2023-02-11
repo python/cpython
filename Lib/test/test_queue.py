@@ -282,20 +282,20 @@ class BaseQueueTestMixin(BlockingTestMixin):
         go = threading.Event()
 
         def get_once(q, go):
+            go.wait()
             try:
-                go.wait()
                 msg = q.get()
                 results.append(False)
             except self.queue.ShutDown:
                 results.append(True)
                 return True
 
-        tests = (
+        thrds = (
             (get_once, (q, go)),
             (get_once, (q, go)),
         )
         threads = []
-        for f, params in tests:
+        for f, params in thrds:
             thread = threading.Thread(target=f, args=params)
             thread.start()
             threads.append(thread)
@@ -304,15 +304,17 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for t in threads:
             t.join()
 
-        self.assertEqual(results, [True]*len(tests))
+        self.assertEqual(results, [True]*len(thrds))
 
     def test_put_shutdown(self):
         q = self.type2test(2)
         results = []
         go = threading.Event()
+        q.put("Y")
+        q.put("D")
+        # queue fulled
 
-        def put_twice(q, msg, go):
-            q.put(msg)
+        def put_once(q, msg, go):
             go.wait()
             try:
                 q.put(msg)
@@ -321,12 +323,12 @@ class BaseQueueTestMixin(BlockingTestMixin):
                 results.append(True)
                 return msg
 
-        tests = (
-            (put_twice, (q, 100, go)),
-            (put_twice, (q, 200, go)),
+        thrds = (
+            (put_once, (q, 100, go)),
+            (put_once, (q, 200, go)),
         )
         threads = []
-        for f, params in tests:
+        for f, params in thrds:
             thread = threading.Thread(target=f, args=params)
             thread.start()
             threads.append(thread)
@@ -335,7 +337,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for t in threads:
             t.join()
 
-        self.assertEqual(results, [True]*len(tests))
+        self.assertEqual(results, [True]*len(thrds))
 
     def _join_shutdown(self, immediate):
         q = self.type2test()
@@ -347,12 +349,12 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.join()
             results.append(True)
 
-        tests = (
+        thrds = (
             (join, (q, go)),
             (join, (q, go)),
         )
         threads = []
-        for f, params in tests:
+        for f, params in thrds:
             thread = threading.Thread(target=f, args=params)
             thread.start()
             threads.append(thread)
@@ -361,7 +363,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for t in threads:
             t.join()
 
-        self.assertEqual(results, [True]*len(tests))
+        self.assertEqual(results, [True]*len(thrds))
 
     def test_join_shutdown_immediate(self):
         return self._join_shutdown(True)
@@ -373,9 +375,11 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q = self.type2test(2)
         results = []
         go = threading.Event()
+        q.put("Y")
+        q.put("D")
+        # queue fulled
 
-        def put_twice(q, msg, go):
-            q.put(msg)
+        def put_once(q, msg, go):
             go.wait()
             try:
                 q.put(msg)
@@ -389,14 +393,14 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.join()
             results.append(True)
 
-        tests = (
-            (put_twice, (q, 100, go)),
-            (put_twice, (q, 200, go)),
+        thrds = (
+            (put_once, (q, 100, go)),
+            (put_once, (q, 200, go)),
             (join, (q, go)),
             (join, (q, go)),
         )
         threads = []
-        for f, params in tests:
+        for f, params in thrds:
             thread = threading.Thread(target=f, args=params)
             thread.start()
             threads.append(thread)
@@ -412,7 +416,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for t in threads:
             t.join()
 
-        self.assertEqual(results, [True]*len(tests))
+        self.assertEqual(results, [True]*len(thrds))
 
     def test_put_and_join_shutdown_immediate(self):
         return self._put_and_join_shutdown(True)
@@ -426,8 +430,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
         go = threading.Event()
 
         def get_once(q, go):
+            go.wait()
             try:
-                go.wait()
                 msg = q.get()
                 results.append(False)
             except self.queue.ShutDown:
@@ -439,14 +443,14 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.join()
             results.append(True)
 
-        tests = (
+        thrds = (
             (get_once, (q, go)),
             (get_once, (q, go)),
             (join, (q, go)),
             (join, (q, go)),
         )
         threads = []
-        for f, params in tests:
+        for f, params in thrds:
             thread = threading.Thread(target=f, args=params)
             thread.start()
             threads.append(thread)
@@ -455,7 +459,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for t in threads:
             t.join()
 
-        self.assertEqual(results, [True]*len(tests))
+        self.assertEqual(results, [True]*len(thrds))
 
     def test_get_and_join_shutdown_immediate(self):
         return self._get_and_join_shutdown(True)
