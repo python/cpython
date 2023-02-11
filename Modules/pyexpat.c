@@ -1881,7 +1881,12 @@ error:
 static void
 pyexpat_capsule_destructor(PyObject *capsule)
 {
-    PyMem_Free(PyCapsule_GetPointer(capsule, PyExpat_CAPSULE_NAME));
+    void *p = PyCapsule_GetPointer(capsule, PyExpat_CAPSULE_NAME);
+    if (p == NULL) {
+        PyErr_WriteUnraisable(capsule);
+        return;
+    }
+    PyMem_Free(p);
 }
 
 
