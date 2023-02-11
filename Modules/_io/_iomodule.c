@@ -612,7 +612,9 @@ iomodule_free(PyObject *mod) {
  * Module definition
  */
 
+#define clinic_state() (IO_STATE())
 #include "clinic/_iomodule.c.h"
+#undef clinic_state
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
@@ -659,7 +661,6 @@ static PyTypeObject* static_types[] = {
 #endif
 
     // PyTextIOBase_Type(PyIOBase_Type) subclasses
-    &PyStringIO_Type,
     &PyTextIOWrapper_Type,
 };
 
@@ -673,6 +674,17 @@ _PyIO_Fini(void)
     }
 }
 
+#define ADD_TYPE(module, type, spec, base)                               \
+do {                                                                     \
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec,        \
+                                                    (PyObject *)base);   \
+    if (type == NULL) {                                                  \
+        goto fail;                                                       \
+    }                                                                    \
+    if (PyModule_AddType(module, type) < 0) {                            \
+        goto fail;                                                       \
+    }                                                                    \
+} while (0)
 
 PyMODINIT_FUNC
 PyInit__io(void)
@@ -707,7 +719,6 @@ PyInit__io(void)
     // Set type base classes
     PyFileIO_Type.tp_base = &PyRawIOBase_Type;
     PyBytesIO_Type.tp_base = &PyBufferedIOBase_Type;
-    PyStringIO_Type.tp_base = &PyTextIOBase_Type;
 #ifdef MS_WINDOWS
     PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
 #endif
@@ -724,6 +735,8 @@ PyInit__io(void)
             goto fail;
         }
     }
+
+    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, &PyTextIOBase_Type);
 
     state->initialized = 1;
 

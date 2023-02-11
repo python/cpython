@@ -4,6 +4,8 @@
 
 #include "exports.h"
 
+#include "structmember.h"
+
 /* ABCs */
 extern PyTypeObject PyIOBase_Type;
 extern PyTypeObject PyRawIOBase_Type;
@@ -13,13 +15,15 @@ extern PyTypeObject PyTextIOBase_Type;
 /* Concrete classes */
 extern PyTypeObject PyFileIO_Type;
 extern PyTypeObject PyBytesIO_Type;
-extern PyTypeObject PyStringIO_Type;
 extern PyTypeObject PyBufferedReader_Type;
 extern PyTypeObject PyBufferedWriter_Type;
 extern PyTypeObject PyBufferedRWPair_Type;
 extern PyTypeObject PyBufferedRandom_Type;
 extern PyTypeObject PyTextIOWrapper_Type;
 extern PyTypeObject PyIncrementalNewlineDecoder_Type;
+
+/* Type specs */
+extern PyType_Spec stringio_spec;
 
 #ifdef MS_WINDOWS
 extern PyTypeObject PyWindowsConsoleIO_Type;
@@ -140,6 +144,9 @@ typedef struct {
     PyObject *locale_module;
 
     PyObject *unsupported_operation;
+
+    /* Types */
+    PyTypeObject *PyStringIO_Type;
 } _PyIO_State;
 
 #define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
