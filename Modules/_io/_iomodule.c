@@ -315,7 +315,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* Create the Raw file stream */
     {
-        PyObject *RawIO_class = (PyObject *)&PyFileIO_Type;
+        _PyIO_State *state = get_io_state(module);
+        PyObject *RawIO_class = (PyObject *)state->PyFileIO_Type;
 #ifdef MS_WINDOWS
         const PyConfig *config = _Py_GetConfig();
         if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
@@ -646,7 +647,6 @@ static PyTypeObject* static_types[] = {
     &PyBufferedRandom_Type,
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    &PyFileIO_Type,
     &_PyBytesIOBuffer_Type,
 #ifdef MS_WINDOWS
     &PyWindowsConsoleIO_Type,
@@ -706,7 +706,6 @@ PyInit__io(void)
     }
 
     // Set type base classes
-    PyFileIO_Type.tp_base = &PyRawIOBase_Type;
     PyBytesIO_Type.tp_base = &PyBufferedIOBase_Type;
 #ifdef MS_WINDOWS
     PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
@@ -723,6 +722,9 @@ PyInit__io(void)
             goto fail;
         }
     }
+
+    // PyRawIOBase_Type(PyIOBase_Type) subclasses
+    ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, &PyRawIOBase_Type);
 
     // PyTextIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, &PyTextIOBase_Type);
