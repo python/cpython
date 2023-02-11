@@ -1,0 +1,1 @@
+Fix bug when the first argument of ``set_richcompare`` points to a non-set object.

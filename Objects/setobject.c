@@ -1789,7 +1789,7 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
     PyObject *r1;
     int r2;
 
-    if(!PyAnySet_Check(w))
+    if(!PyAnySet_Check(v) || !PyAnySet_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
 
     switch (op) {
