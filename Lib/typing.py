@@ -123,6 +123,8 @@ __all__ = [
     'final',
     'get_args',
     'get_origin',
+    'get_orig_bases',
+    'get_orig_class',
     'get_type_hints',
     'is_typeddict',
     'Never',
