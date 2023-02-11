@@ -4250,6 +4250,23 @@ class GetUtilitiesTestCase(TestCase):
                          (Concatenate[int, P], int))
         self.assertEqual(get_args(list | str), (list, str))
 
+    def test_get_orig_class(self):
+        T = TypeVar('T')
+        class C(Generic[T]): pass
+        self.assertEqual(get_orig_class(C[int]()), C[int])
+        self.assertIsNone(get_orig_class(list[int]()))
+        self.assertIsNone(get_orig_class(int))
+
+    def test_get_orig_bases(self):
+        T = TypeVar('T')
+        class C(Generic[T]): pass
+        class D(C[int]): pass
+        class E(C[str], float): pass
+        self.assertEqual(get_orig_bases(C), (Generic[T],))
+        self.assertEqual(get_orig_bases(D), (C[int],))
+        self.assertEqual(get_orig_bases(int), None)
+        self.assertEqual(get_orig_bases(E), (C[str], float))
+
 
 class CollectionsAbcTests(BaseTestCase):
 

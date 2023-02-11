@@ -2328,6 +2328,42 @@ Introspection helpers
 
    .. versionadded:: 3.8
 
+.. function:: get_orig_bases(tp, /)
+
+    Returns the objects in the bases list in the class's definition before 
+    they were modified by ``__mro_entries__``. This is useful for 
+    introspecting ``Generic``\s.
+
+    Examples::
+
+        T = TypeVar("T")
+
+        class Foo(Generic[T]): ...
+
+        class Bar(Foo[int], float): ...
+
+        get_orig_bases(Foo) == (Generic[T],)
+        get_orig_bases(Bar) == (Foo[int], float)
+        get_orig_bases(int) == None
+
+.. function:: get_orig_class(tp, /)
+
+    Returns the ``GenericAlias`` object that was instanciated to create ``tp``.
+
+    Examples::
+
+        T = TypeVar("T")
+
+        class Foo(Generic[T]): ...
+
+        get_orig_class(Foo[int]()) == Foo[int]
+        get_orig_class(list[int]()) == None
+        get_orig_class(int) == None
+
+    .. warning::
+
+        This function will not work inside of the class initalisation process.
+
 .. function:: is_typeddict(tp)
 
    Check if a type is a :class:`TypedDict`.

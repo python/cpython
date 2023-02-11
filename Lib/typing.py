@@ -2273,6 +2273,52 @@ def get_args(tp):
     return ()
 
 
+@overload
+def get_orig_bases(tp: type[object], /) -> tuple[type[Any], ...] | None: ...
+@overload
+def get_orig_bases(tp: Any, /) -> None: ...
+def get_orig_bases(tp: Any, /) -> tuple[type[Any], ...] | None:
+    """Get the __orig_bases__ (see PEP 560) of a class.
+
+    Examples::
+
+        class Foo(Generic[T]): ...
+
+        class Bar(Foo[int]): ...
+
+        get_orig_bases(Foo) == Generic[T]
+        get_orig_bases(Bar) == Foo[int]
+        get_orig_bases(int) == None
+    """
+    if isisinstance(cls, type):
+        try:
+            return cls.__orig_bases__
+        except AttributeError:
+            pass
+    return None
+
+
+def get_orig_class(tp: Any, /) -> GenericAlias | None:
+    """Get the __orig_class__ for an instance of a Generic subclass.
+
+    Examples::
+
+        class Foo(Generic[T]): ...
+
+        get_orig_class(Foo[int]()) == Foo[int]
+        get_orig_class(list[int]()) == None
+        get_orig_class(int) == None
+
+    Warning
+    -------
+    This will always None in the __init__/__new__ methods of the class.
+    """
+    try:
+        return cls.__orig_class__
+    except AttributeError:
+        return None
+
+
 def is_typeddict(tp):
     """Check if an annotation is a TypedDict class
 
