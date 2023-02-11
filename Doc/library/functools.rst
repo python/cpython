@@ -95,7 +95,7 @@ The :mod:`functools` module defines the following functions:
    ``__dict__`` can cause object instances to use slightly more memory.
 
    If a mutable mapping is not available, an effect similar to
-   :func:`cached_property` can be achieved by a stacking :func:`property` on top
+   :func:`cached_property` can be achieved by stacking :func:`property` on top
    of :func:`cache`::
 
        class DataSet:
