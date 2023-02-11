@@ -6864,8 +6864,8 @@ _datetime_exec(PyObject *module)
     return 0;
 }
 
-static void module_free(void*) {
-    strptime_module = NULL;
+static void module_free(void *_) {
+    Py_CLEAR(strptime_module);
 }
  
 static struct PyModuleDef datetimemodule = {
