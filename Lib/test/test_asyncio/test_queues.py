@@ -570,11 +570,12 @@ class _QueueShutdownTestMixin:
         self.assertIn("shutdown-immediate", repr(q))
 
     async def test_get_shutdown_immediate(self):
+        q = self.q_class()
         results = []
-        maxsize = 2
-        delay = 1e-3
+        go = asyncio.Event()
 
-        async def get_once(q):
+        async def get_once(q, go):
+            await go.wait()
             try:
                 msg = await q.get()
                 results.append(False)
@@ -582,29 +583,76 @@ class _QueueShutdownTestMixin:
                 results.append(True)
                 return True
 
-        async def shutdown(q, delay, immediate):
-            await asyncio.sleep(delay)
+        async def shutdown(q, go, immediate):
             q.shutdown(immediate)
+            go.set()
             return True
 
-        q = self.q_class(maxsize)
-        t = [asyncio.create_task(get_once(q)) for _ in range(maxsize)]
-        t += [asyncio.create_task(shutdown(q, delay, True))]
+        tasks = (
+            (get_once, (q, go)),
+            (get_once, (q, go)),
+        )
+        t = []
+        for coro, params in tasks:
+            t.append(asyncio.create_task(coro(*params)))
+        t.append(asyncio.create_task(shutdown(q, go, True)))
         res = await asyncio.gather(*t)
 
-        self.assertEqual(results, [True]*maxsize)
+        self.assertEqual(results, [True]*len(tasks))
 
+
+    async def _put_shutdown(self, immediate):
+        q = self.q_class(2)
+        results = []
+        go = asyncio.Event()
+        await q.put("Y")
+        await q.put("D")
+        # queue fulled
+
+        async def put_once(q, go, msg):
+            await go.wait()
+            try:
+                await q.put(msg)
+                results.append(False)
+            except asyncio.QueueShutDown:
+                results.append(True)
+                return msg
+
+        async def shutdown(q, go, immediate):
+            q.shutdown(immediate)
+            go.set()
+
+        tasks = (
+            (put_once, (q, go, 100)),
+            (put_once, (q, go, 200)),
+        )
+        t = []
+        for coro, params in tasks:
+            t.append(asyncio.create_task(coro(*params)))
+        t.append(asyncio.create_task(shutdown(q, go, immediate)))
+        res = await asyncio.gather(*t)
+
+        self.assertEqual(results, [True]*len(tasks))
 
     async def test_put_shutdown(self):
-        maxsize = 2
+        return await self._put_shutdown(False)
+
+    async def test_put_shutdown_immediate(self):
+        return await self._put_shutdown(True)
+
+
+    async def _put_and_join_shutdown(self, immediate):
+        q = self.q_class(2)
         results = []
         go = asyncio.Event()
+        await q.put("Y")
+        await q.put("D")
+        # queue fulled
 
-        async def put_twice(q, go, msg):
-            await q.put(msg)
+        async def put_once(q, go, msg):
             await go.wait()
             try:
-                await q.put(msg+maxsize)
+                await q.put(msg)
                 results.append(False)
             except asyncio.QueueShutDown:
                 results.append(True)
@@ -614,46 +662,31 @@ class _QueueShutdownTestMixin:
             q.shutdown(immediate)
             go.set()
 
-        q = self.q_class(maxsize)
-        t = [asyncio.create_task(put_twice(q, go, i+1)) for i in range(maxsize)]
-        t += [asyncio.create_task(shutdown(q, go, False))]
-        res = await asyncio.gather(*t)
-
-        self.assertEqual(results, [True]*maxsize)
-
-
-    async def test_put_and_join_shutdown(self):
-        maxsize = 2
-        results = []
-        go = asyncio.Event()
-
-        async def put_twice(q, go, msg):
-            await q.put(msg)
-            await go.wait()
-            try:
-                await q.put(msg+100)
-                results.append(False)
-            except asyncio.QueueShutDown:
-                results.append(True)
-                return msg
-
-        async def shutdown(q, go, immediate):
-            q.shutdown(immediate)
-            go.set()
-
-        async def join(q, delay):
+        async def join(q, go):
             await go.wait()
             await q.join()
             results.append(True)
             return True
 
-        q = self.q_class(maxsize)
-        t = [asyncio.create_task(put_twice(q, go, i+1)) for i in range(maxsize)]
-        t += [asyncio.create_task(shutdown(q, go, True)),
-                asyncio.create_task(join(q, go))]
+        tasks = (
+            (put_once, (q, go, 'E')),
+            (put_once, (q, go, 'W')),
+            (join, (q, go)),
+            (join, (q, go)),
+        )
+        t = []
+        for coro, params in tasks:
+            t.append(asyncio.create_task(coro(*params)))
+        t.append(asyncio.create_task(shutdown(q, go, immediate)))
         res = await asyncio.gather(*t)
 
-        self.assertEqual(results, [True]*(maxsize+1))
+        self.assertEqual(results, [True]*len(tasks))
+
+    async def test_put_and_join_shutdown(self):
+        return await self._put_and_join_shutdown(False)
+
+    async def test_put_and_join_shutdown_immediate(self):
+        return await self._put_and_join_shutdown(True)
 
 
 class QueueShutdownTests(
