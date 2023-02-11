@@ -4,6 +4,7 @@
 
 #include "exports.h"
 
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"
 
 /* ABCs */
@@ -152,6 +153,14 @@ typedef struct {
 
 #define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
 #define IO_STATE() _PyIO_get_module_state()
+
+static inline _PyIO_State *
+get_io_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (_PyIO_State *)state;
+}
 
 extern _PyIO_State *_PyIO_get_module_state(void);
 
