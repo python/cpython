@@ -315,10 +315,15 @@ class Fraction(numbers.Rational):
         return cls(*dec.as_integer_ratio())
 
     @classmethod
-    def _from_pair(cls, num, den):
+    def _from_pair(cls, numerator, denominator, /):
+        """Convert a pair of int's to a rational number.
+
+        The ratio of integers should be in lowest terms and
+        the denominator is positive.
+        """
         obj = super(Fraction, cls).__new__(cls)
-        obj._numerator = num
-        obj._denominator = den
+        obj._numerator = numerator
+        obj._denominator = denominator
         return obj
 
     def is_integer(self):
