@@ -2273,11 +2273,7 @@ def get_args(tp):
     return ()
 
 
-@overload
-def get_orig_bases(tp: type[object], /) -> tuple[type[Any], ...] | None: ...
-@overload
-def get_orig_bases(tp: Any, /) -> None: ...
-def get_orig_bases(tp: Any, /) -> tuple[type[Any], ...] | None:
+def get_orig_bases(tp: "Any", /) -> tuple[type["Any"], ...] | None:
     """Get the __orig_bases__ (see PEP 560) of a class.
 
     Examples::
@@ -2290,15 +2286,15 @@ def get_orig_bases(tp: Any, /) -> tuple[type[Any], ...] | None:
         get_orig_bases(Bar) == Foo[int]
         get_orig_bases(int) == None
     """
-    if isisinstance(cls, type):
+    if isinstance(tp, type):
         try:
-            return cls.__orig_bases__
+            return tp.__orig_bases__
         except AttributeError:
             pass
     return None
 
 
-def get_orig_class(tp: Any, /) -> GenericAlias | None:
+def get_orig_class(tp: "Any", /) -> GenericAlias | None:
     """Get the __orig_class__ for an instance of a Generic subclass.
 
     Examples::
@@ -2314,7 +2310,7 @@ def get_orig_class(tp: Any, /) -> GenericAlias | None:
     This will always None in the __init__/__new__ methods of the class.
     """
     try:
-        return cls.__orig_class__
+        return tp.__orig_class__
     except AttributeError:
         return None
 
