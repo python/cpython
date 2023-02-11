@@ -19,11 +19,11 @@ extern PyTypeObject PyBufferedReader_Type;
 extern PyTypeObject PyBufferedWriter_Type;
 extern PyTypeObject PyBufferedRWPair_Type;
 extern PyTypeObject PyBufferedRandom_Type;
-extern PyTypeObject PyTextIOWrapper_Type;
 extern PyTypeObject PyIncrementalNewlineDecoder_Type;
 
 /* Type specs */
 extern PyType_Spec stringio_spec;
+extern PyType_Spec textiowrapper_spec;
 
 #ifdef MS_WINDOWS
 extern PyTypeObject PyWindowsConsoleIO_Type;
@@ -147,6 +147,7 @@ typedef struct {
 
     /* Types */
     PyTypeObject *PyStringIO_Type;
+    PyTypeObject *PyTextIOWrapper_Type;
 } _PyIO_State;
 
 #define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))

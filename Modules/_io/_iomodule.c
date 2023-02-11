@@ -417,7 +417,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     }
 
     /* wraps into a TextIOWrapper */
-    wrapper = PyObject_CallFunction((PyObject *)&PyTextIOWrapper_Type,
+    _PyIO_State *state = IO_STATE();
+    wrapper = PyObject_CallFunction((PyObject *)state->PyTextIOWrapper_Type,
                                     "OsssO",
                                     buffer,
                                     encoding, errors, newline,
@@ -659,9 +660,6 @@ static PyTypeObject* static_types[] = {
 #ifdef MS_WINDOWS
     &PyWindowsConsoleIO_Type,
 #endif
-
-    // PyTextIOBase_Type(PyIOBase_Type) subclasses
-    &PyTextIOWrapper_Type,
 };
 
 
@@ -726,7 +724,6 @@ PyInit__io(void)
     PyBufferedWriter_Type.tp_base = &PyBufferedIOBase_Type;
     PyBufferedRWPair_Type.tp_base = &PyBufferedIOBase_Type;
     PyBufferedRandom_Type.tp_base = &PyBufferedIOBase_Type;
-    PyTextIOWrapper_Type.tp_base = &PyTextIOBase_Type;
 
     // Add types
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
@@ -736,7 +733,10 @@ PyInit__io(void)
         }
     }
 
+    // PyTextIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, &PyTextIOBase_Type);
+    ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec,
+             &PyTextIOBase_Type);
 
     state->initialized = 1;
 
