@@ -2824,7 +2824,7 @@ Introspection helpers
 
 .. function:: get_orig_class(tp, /)
 
-    Returns the ``GenericAlias`` object that was instanciated to create ``tp``.
+    Returns the ``GenericAlias`` object that was instantiated to create ``tp``.
 
     Examples::
 
