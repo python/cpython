@@ -1,1 +1,0 @@
-Add a brief note to indicate that any new ``sys.implementation`` required attributes must go through the PEP process.

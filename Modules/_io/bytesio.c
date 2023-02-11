@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_object.h"
-#include "structmember.h"       /* for offsetof() */
+#include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -176,7 +176,7 @@ resize_buffer(bytesio *self, size_t size)
    object. Returns the number of bytes written, or -1 on error.
    Inlining is disabled because it's significantly decreases performance
    of writelines() in PGO build. */
-_Py_NO_INLINE static Py_ssize_t
+Py_NO_INLINE static Py_ssize_t
 write_bytes(bytesio *self, PyObject *b)
 {
     if (check_closed(self)) {
@@ -324,8 +324,7 @@ _io_BytesIO_getbuffer_impl(bytesio *self)
     buf = (bytesiobuf *) type->tp_alloc(type, 0);
     if (buf == NULL)
         return NULL;
-    Py_INCREF(self);
-    buf->source = self;
+    buf->source = (bytesio*)Py_NewRef(self);
     view = PyMemoryView_FromObject((PyObject *) buf);
     Py_DECREF(buf);
     return view;
@@ -356,8 +355,7 @@ _io_BytesIO_getvalue_impl(bytesio *self)
                 return NULL;
         }
     }
-    Py_INCREF(self->buf);
-    return self->buf;
+    return Py_NewRef(self->buf);
 }
 
 /*[clinic input]
@@ -393,7 +391,7 @@ _io_BytesIO_tell_impl(bytesio *self)
 static PyObject *
 read_bytes(bytesio *self, Py_ssize_t size)
 {
-    char *output;
+    const char *output;
 
     assert(self->buf != NULL);
     assert(size <= self->string_size);
@@ -401,8 +399,7 @@ read_bytes(bytesio *self, Py_ssize_t size)
         self->pos == 0 && size == PyBytes_GET_SIZE(self->buf) &&
         self->exports == 0) {
         self->pos += size;
-        Py_INCREF(self->buf);
-        return self->buf;
+        return Py_NewRef(self->buf);
     }
 
     output = PyBytes_AS_STRING(self->buf) + self->pos;
@@ -502,7 +499,7 @@ _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg)
 {
     Py_ssize_t maxsize, size, n;
     PyObject *result, *line;
-    char *output;
+    const char *output;
 
     CHECK_CLOSED(self);
 
@@ -791,8 +788,7 @@ bytesio_getstate(bytesio *self, PyObject *Py_UNUSED(ignored))
     if (initvalue == NULL)
         return NULL;
     if (self->dict == NULL) {
-        Py_INCREF(Py_None);
-        dict = Py_None;
+        dict = Py_NewRef(Py_None);
     }
     else {
         dict = PyDict_Copy(self->dict);
@@ -875,8 +871,7 @@ bytesio_setstate(bytesio *self, PyObject *state)
                 return NULL;
         }
         else {
-            Py_INCREF(dict);
-            self->dict = dict;
+            self->dict = Py_NewRef(dict);
         }
     }
 
@@ -943,8 +938,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
     }
     if (initvalue && initvalue != Py_None) {
         if (PyBytes_CheckExact(initvalue)) {
-            Py_INCREF(initvalue);
-            Py_XSETREF(self->buf, initvalue);
+            Py_XSETREF(self->buf, Py_NewRef(initvalue));
             self->string_size = PyBytes_GET_SIZE(initvalue);
         }
         else {
@@ -963,17 +957,15 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 static PyObject *
 bytesio_sizeof(bytesio *self, void *unused)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
-        Py_ssize_t s = _PySys_GetSizeOf(self->buf);
-        if (s == -1) {
+        size_t s = _PySys_GetSizeOf(self->buf);
+        if (s == (size_t)-1) {
             return NULL;
         }
         res += s;
     }
-    return PyLong_FromSsize_t(res);
+    return PyLong_FromSize_t(res);
 }
 
 static int
@@ -1124,7 +1116,7 @@ static PyBufferProcs bytesiobuf_as_buffer = {
     (releasebufferproc) bytesiobuf_releasebuffer,
 };
 
-PyTypeObject _PyBytesIOBuffer_Type = {
+Py_EXPORTED_SYMBOL PyTypeObject _PyBytesIOBuffer_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_io._BytesIOBuffer",                      /*tp_name*/
     sizeof(bytesiobuf),                        /*tp_basicsize*/

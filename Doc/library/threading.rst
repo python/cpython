@@ -9,17 +9,43 @@
 --------------
 
 This module constructs higher-level threading interfaces on top of the lower
-level :mod:`_thread` module.  See also the :mod:`queue` module.
+level :mod:`_thread` module.
 
 .. versionchanged:: 3.7
    This module used to be optional, it is now always available.
 
+.. seealso::
+
+   :class:`concurrent.futures.ThreadPoolExecutor` offers a higher level interface
+   to push tasks to a background thread without blocking execution of the
+   calling thread, while still being able to retrieve their results when needed.
+
+   :mod:`queue` provides a thread-safe interface for exchanging data between
+   running threads.
+
+   :mod:`asyncio` offers an alternative approach to achieving task level
+   concurrency without requiring the use of multiple operating system threads.
+
 .. note::
 
-   While they are not listed below, the ``camelCase`` names used for some
-   methods and functions in this module in the Python 2.x series are still
-   supported by this module.
+   In the Python 2.x series, this module contained ``camelCase`` names
+   for some methods and functions. These are deprecated as of Python 3.10,
+   but they are still supported for compatibility with Python 2.5 and lower.
 
+
+.. impl-detail::
+
+   In CPython, due to the :term:`Global Interpreter Lock
+   <global interpreter lock>`, only one thread
+   can execute Python code at once (even though certain performance-oriented
+   libraries might overcome this limitation).
+   If you want your application to make better use of the computational
+   resources of multi-core machines, you are advised to use
+   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
+   However, threading is still an appropriate model if you want to run
+   multiple I/O-bound tasks simultaneously.
+
+.. include:: ../includes/wasm-notavail.rst
 
 This module defines the following functions:
 
@@ -29,6 +55,8 @@ This module defines the following functions:
    Return the number of :class:`Thread` objects currently alive.  The returned
    count is equal to the length of the list returned by :func:`.enumerate`.
 
+   The function ``activeCount`` is a deprecated alias for this function.
+
 
 .. function:: current_thread()
 
@@ -36,6 +64,8 @@ This module defines the following functions:
    of control.  If the caller's thread of control was not created through the
    :mod:`threading` module, a dummy thread object with limited functionality is
    returned.
+
+   The function ``currentThread`` is a deprecated alias for this function.
 
 
 .. function:: excepthook(args, /)
@@ -62,8 +92,8 @@ This module defines the following functions:
    should be cleared explicitly to break the reference cycle when the
    exception is no longer needed.
 
-   Storing *object* using a custom hook can resurrect it if it is set to an
-   object which is being finalized. Avoid storing *object* after the custom
+   Storing *thread* using a custom hook can resurrect it if it is set to an
+   object which is being finalized. Avoid storing *thread* after the custom
    hook completes to avoid resurrecting objects.
 
    .. seealso::
@@ -71,6 +101,13 @@ This module defines the following functions:
 
    .. versionadded:: 3.8
 
+.. data:: __excepthook__
+
+   Holds the original value of :func:`threading.excepthook`. It is saved so that the
+   original value can be restored in case they happen to get replaced with
+   broken or alternative objects.
+
+   .. versionadded:: 3.10
 
 .. function:: get_ident()
 
@@ -90,17 +127,18 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
    .. versionadded:: 3.8
 
 
 .. function:: enumerate()
 
-   Return a list of all :class:`Thread` objects currently alive.  The list
-   includes daemonic threads, dummy thread objects created by
-   :func:`current_thread`, and the main thread.  It excludes terminated threads
-   and threads that have not yet been started.
+   Return a list of all :class:`Thread` objects currently active.  The list
+   includes daemonic threads and dummy thread objects created by
+   :func:`current_thread`.  It excludes terminated threads and threads
+   that have not yet been started.  However, the main thread is always part
+   of the result, even when terminated.
 
 
 .. function:: main_thread()
@@ -120,6 +158,26 @@ This module defines the following functions:
    The *func* will be passed to  :func:`sys.settrace` for each thread, before its
    :meth:`~Thread.run` method is called.
 
+.. function:: settrace_all_threads(func)
+
+   Set a trace function for all threads started from the :mod:`threading` module
+   and all Python threads that are currently executing.
+
+   The *func* will be passed to  :func:`sys.settrace` for each thread, before its
+   :meth:`~Thread.run` method is called.
+
+   .. versionadded:: 3.12
+
+.. function:: gettrace()
+
+   .. index::
+      single: trace function
+      single: debugger
+
+   Get the trace function as set by :func:`settrace`.
+
+   .. versionadded:: 3.10
+
 
 .. function:: setprofile(func)
 
@@ -128,6 +186,24 @@ This module defines the following functions:
    Set a profile function for all threads started from the :mod:`threading` module.
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`~Thread.run` method is called.
+
+.. function:: setprofile_all_threads(func)
+
+   Set a profile function for all threads started from the :mod:`threading` module
+   and all Python threads that are currently executing.
+
+   The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
+   :meth:`~Thread.run` method is called.
+
+   .. versionadded:: 3.12
+
+.. function:: getprofile()
+
+   .. index:: single: profile function
+
+   Get the profiler function as set by :func:`setprofile`.
+
+   .. versionadded:: 3.10
 
 
 .. function:: stack_size([size])
@@ -147,7 +223,9 @@ This module defines the following functions:
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
 
-   .. availability:: Windows, systems with POSIX threads.
+   .. availability:: Windows, pthreads.
+
+      Unix platforms with POSIX threads support.
 
 
 This module also defines the following constant:
@@ -248,7 +326,7 @@ There is the possibility that "dummy thread objects" are created. These are
 thread objects corresponding to "alien threads", which are threads of control
 started outside the threading module, such as directly from C code.  Dummy
 thread objects have limited functionality; they are always considered alive and
-daemonic, and cannot be :meth:`~Thread.join`\ ed.  They are never deleted,
+daemonic, and cannot be :ref:`joined <meth-thread-join>`.  They are never deleted,
 since it is impossible to detect the termination of alien threads.
 
 
@@ -264,10 +342,12 @@ since it is impossible to detect the termination of alien threads.
    *target* is the callable object to be invoked by the :meth:`run` method.
    Defaults to ``None``, meaning nothing is called.
 
-   *name* is the thread name.  By default, a unique name is constructed of the
-   form "Thread-*N*" where *N* is a small decimal number.
+   *name* is the thread name. By default, a unique name is constructed
+   of the form "Thread-*N*" where *N* is a small decimal number,
+   or "Thread-*N* (target)" where "target" is ``target.__name__`` if the
+   *target* argument is specified.
 
-   *args* is the argument tuple for the target invocation.  Defaults to ``()``.
+   *args* is a list or tuple of arguments for the target invocation.  Defaults to ``()``.
 
    *kwargs* is a dictionary of keyword arguments for the target invocation.
    Defaults to ``{}``.
@@ -280,7 +360,8 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
-   Daemon threads must not be used in subinterpreters.
+   .. versionchanged:: 3.10
+      Use the *target* name if *name* argument is omitted.
 
    .. versionchanged:: 3.3
       Added the *daemon* argument.
@@ -296,12 +377,6 @@ since it is impossible to detect the termination of alien threads.
       This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
 
-      Raise a :exc:`RuntimeError` if the thread is a daemon thread and the
-      method is called from a subinterpreter.
-
-      .. versionchanged:: 3.9
-         In a subinterpreter, spawning a daemon thread now raises an exception.
-
    .. method:: run()
 
       Method representing the thread's activity.
@@ -310,6 +385,21 @@ since it is impossible to detect the termination of alien threads.
       method invokes the callable object passed to the object's constructor as
       the *target* argument, if any, with positional and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
+
+      Using list or tuple as the *args* argument which passed to the :class:`Thread`
+      could achieve the same effect.
+
+      Example::
+
+         >>> from threading import Thread
+         >>> t = Thread(target=print, args=[1])
+         >>> t.run()
+         1
+         >>> t = Thread(target=print, args=(1,))
+         >>> t.run()
+         1
+
+   .. _meth-thread-join:
 
    .. method:: join(timeout=None)
 
@@ -328,7 +418,7 @@ since it is impossible to detect the termination of alien threads.
       When the *timeout* argument is not present or ``None``, the operation will
       block until the thread terminates.
 
-      A thread can be :meth:`~Thread.join`\ ed many times.
+      A thread can be joined many times.
 
       :meth:`~Thread.join` raises a :exc:`RuntimeError` if an attempt is made
       to join the current thread as that would cause a deadlock. It is also
@@ -344,8 +434,10 @@ since it is impossible to detect the termination of alien threads.
    .. method:: getName()
                setName()
 
-      Old getter/setter API for :attr:`~Thread.name`; use it directly as a
+      Deprecated getter/setter API for :attr:`~Thread.name`; use it directly as a
       property instead.
+
+      .. deprecated:: 3.10
 
    .. attribute:: ident
 
@@ -357,13 +449,12 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: native_id
 
-      The native integral thread ID of this thread.
+      The Thread ID (``TID``) of this thread, as assigned by the OS (kernel).
       This is a non-negative integer, or ``None`` if the thread has not
       been started. See the :func:`get_native_id` function.
-      This represents the Thread ID (``TID``) as assigned to the
-      thread by the OS (kernel).  Its value may be used to uniquely identify
-      this particular thread system-wide (until the thread terminates,
-      after which the value may be recycled by the OS).
+      This value may be used to uniquely identify this particular thread
+      system-wide (until the thread terminates, after which the value
+      may be recycled by the OS).
 
       .. note::
 
@@ -371,7 +462,7 @@ since it is impossible to detect the termination of alien threads.
          system-wide) from the time the thread is created until the thread
          has been terminated.
 
-      .. availability:: Requires :func:`get_native_id` function.
+      .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
       .. versionadded:: 3.8
 
@@ -385,8 +476,8 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: daemon
 
-      A boolean value indicating whether this thread is a daemon thread (True)
-      or not (False).  This must be set before :meth:`~Thread.start` is called,
+      A boolean value indicating whether this thread is a daemon thread (``True``)
+      or not (``False``).  This must be set before :meth:`~Thread.start` is called,
       otherwise :exc:`RuntimeError` is raised.  Its initial value is inherited
       from the creating thread; the main thread is not a daemon thread and
       therefore all threads created in the main thread default to
@@ -397,20 +488,10 @@ since it is impossible to detect the termination of alien threads.
    .. method:: isDaemon()
                setDaemon()
 
-      Old getter/setter API for :attr:`~Thread.daemon`; use it directly as a
+      Deprecated getter/setter API for :attr:`~Thread.daemon`; use it directly as a
       property instead.
 
-
-.. impl-detail::
-
-   In CPython, due to the :term:`Global Interpreter Lock`, only one thread
-   can execute Python code at once (even though certain performance-oriented
-   libraries might overcome this limitation).
-   If you want your application to make better use of the computational
-   resources of multi-core machines, you are advised to use
-   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
-   However, threading is still an appropriate model if you want to run
-   multiple I/O-bound tasks simultaneously.
+      .. deprecated:: 3.10
 
 
 .. _lock-objects:
@@ -470,7 +551,7 @@ All methods are executed atomically.
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
-      when *blocking* is false.
+      when *blocking* is ``False``.
 
       The return value is ``True`` if the lock is acquired successfully,
       ``False`` if not (for example if the *timeout* expired).
@@ -495,6 +576,11 @@ All methods are executed atomically.
       When invoked on an unlocked lock, a :exc:`RuntimeError` is raised.
 
       There is no return value.
+
+   .. method:: locked()
+
+      Return ``True`` if the lock is acquired.
+
 
 
 .. _rlock-objects:
@@ -542,17 +628,17 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
       is unlocked, only one at a time will be able to grab ownership of the lock.
       There is no return value in this case.
 
-      When invoked with the *blocking* argument set to true, do the same thing as when
-      called without arguments, and return true.
+      When invoked with the *blocking* argument set to ``True``, do the same thing as when
+      called without arguments, and return ``True``.
 
-      When invoked with the *blocking* argument set to false, do not block.  If a call
-      without an argument would block, return false immediately; otherwise, do the
-      same thing as when called without arguments, and return true.
+      When invoked with the *blocking* argument set to ``False``, do not block.  If a call
+      without an argument would block, return ``False`` immediately; otherwise, do the
+      same thing as when called without arguments, and return ``True``.
 
       When invoked with the floating-point *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
-      and as long as the lock cannot be acquired.  Return true if the lock has
-      been acquired, false if the timeout has elapsed.
+      and as long as the lock cannot be acquired.  Return ``True`` if the lock has
+      been acquired, ``False`` if the timeout has elapsed.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
@@ -742,6 +828,8 @@ item to the buffer only needs to wake up one consumer thread.
       calling thread has not acquired the lock when this method is called, a
       :exc:`RuntimeError` is raised.
 
+      The method ``notifyAll`` is a deprecated alias for this method.
+
 
 .. _semaphore-objects:
 
@@ -784,20 +872,20 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       When invoked without arguments:
 
       * If the internal counter is larger than zero on entry, decrement it by
-        one and return true immediately.
+        one and return ``True`` immediately.
       * If the internal counter is zero on entry, block until awoken by a call to
         :meth:`~Semaphore.release`.  Once awoken (and the counter is greater
-        than 0), decrement the counter by 1 and return true.  Exactly one
+        than 0), decrement the counter by 1 and return ``True``.  Exactly one
         thread will be awoken by each call to :meth:`~Semaphore.release`.  The
         order in which threads are awoken should not be relied on.
 
-      When invoked with *blocking* set to false, do not block.  If a call
-      without an argument would block, return false immediately; otherwise, do
-      the same thing as when called without arguments, and return true.
+      When invoked with *blocking* set to ``False``, do not block.  If a call
+      without an argument would block, return ``False`` immediately; otherwise, do
+      the same thing as when called without arguments, and return ``True``.
 
       When invoked with a *timeout* other than ``None``, it will block for at
       most *timeout* seconds.  If acquire does not complete successfully in
-      that interval, return false.  Return true otherwise.
+      that interval, return ``False``.  Return ``True`` otherwise.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
@@ -877,7 +965,9 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
    .. method:: is_set()
 
-      Return true if and only if the internal flag is true.
+      Return ``True`` if and only if the internal flag is true.
+
+      The method ``isSet`` is a deprecated alias for this method.
 
    .. method:: set()
 
@@ -901,7 +991,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
       floating point number specifying a timeout for the operation in seconds
       (or fractions thereof).
 
-      This method returns true if and only if the internal flag has been set to
+      This method returns ``True`` if and only if the internal flag has been set to
       true, either before the wait call or after the wait starts, so it will
       always return ``True`` except if a timeout is given and the operation
       times out.

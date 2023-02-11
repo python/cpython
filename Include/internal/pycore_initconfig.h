@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_pystate.h"   /* _PyRuntimeState */
+/* Forward declaration */
+struct pyruntimestate;
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -35,15 +36,19 @@ extern "C" {
         ._type = _PyStatus_TYPE_EXIT, \
         .exitcode = (EXITCODE)}
 #define _PyStatus_IS_ERROR(err) \
-    (err._type == _PyStatus_TYPE_ERROR)
+    ((err)._type == _PyStatus_TYPE_ERROR)
 #define _PyStatus_IS_EXIT(err) \
-    (err._type == _PyStatus_TYPE_EXIT)
+    ((err)._type == _PyStatus_TYPE_EXIT)
 #define _PyStatus_EXCEPTION(err) \
-    (err._type != _PyStatus_TYPE_OK)
+    ((err)._type != _PyStatus_TYPE_OK)
+#define _PyStatus_UPDATE_FUNC(err) \
+    do { (err).func = _PyStatus_GET_FUNC(); } while (0)
+
+PyObject* _PyErr_SetFromPyStatus(PyStatus status);
 
 /* --- PyWideStringList ------------------------------------------------ */
 
-#define PyWideStringList_INIT (PyWideStringList){.length = 0, .items = NULL}
+#define _PyWideStringList_INIT (PyWideStringList){.length = 0, .items = NULL}
 
 #ifndef NDEBUG
 PyAPI_FUNC(int) _PyWideStringList_CheckConsistency(const PyWideStringList *list);
@@ -58,7 +63,7 @@ PyAPI_FUNC(PyObject*) _PyWideStringList_AsList(const PyWideStringList *list);
 
 /* --- _PyArgv ---------------------------------------------------- */
 
-typedef struct {
+typedef struct _PyArgv {
     Py_ssize_t argc;
     int use_bytes_argv;
     char * const *bytes_argv;
@@ -97,6 +102,7 @@ typedef struct {
     int isolated;             /* -I option */
     int use_environment;      /* -E option */
     int dev_mode;             /* -X dev and PYTHONDEVMODE */
+    int warn_default_encoding;     /* -X warn_default_encoding and PYTHONWARNDEFAULTENCODING */
 } _PyPreCmdline;
 
 #define _PyPreCmdline_INIT \
@@ -122,7 +128,7 @@ PyAPI_FUNC(void) _PyPreConfig_InitCompatConfig(PyPreConfig *preconfig);
 extern void _PyPreConfig_InitFromConfig(
     PyPreConfig *preconfig,
     const PyConfig *config);
-extern void _PyPreConfig_InitFromPreConfig(
+extern PyStatus _PyPreConfig_InitFromPreConfig(
     PyPreConfig *preconfig,
     const PyPreConfig *config2);
 extern PyObject* _PyPreConfig_AsDict(const PyPreConfig *preconfig);
@@ -135,8 +141,6 @@ extern PyStatus _PyPreConfig_Write(const PyPreConfig *preconfig);
 
 /* --- PyConfig ---------------------------------------------- */
 
-#define _Py_CONFIG_VERSION 1
-
 typedef enum {
     /* Py_Initialize() API: backward compatibility with Python 3.6 and 3.7 */
     _PyConfig_INIT_COMPAT = 1,
@@ -148,14 +152,23 @@ PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
 extern PyStatus _PyConfig_Copy(
     PyConfig *config,
     const PyConfig *config2);
-extern PyStatus _PyConfig_InitPathConfig(PyConfig *config);
-extern PyStatus _PyConfig_SetPathConfig(
-    const PyConfig *config);
-extern void _PyConfig_Write(const PyConfig *config,
-    _PyRuntimeState *runtime);
+extern PyStatus _PyConfig_InitPathConfig(
+    PyConfig *config,
+    int compute_path_config);
+extern PyStatus _PyConfig_InitImportConfig(PyConfig *config);
+extern PyStatus _PyConfig_Read(PyConfig *config, int compute_path_config);
+extern PyStatus _PyConfig_Write(const PyConfig *config,
+    struct pyruntimestate *runtime);
 extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);
+
+PyAPI_FUNC(PyObject*) _PyConfig_AsDict(const PyConfig *config);
+PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
+
+extern void _Py_DumpPathConfig(PyThreadState *tstate);
+
+PyAPI_FUNC(PyObject*) _Py_Get_Getpath_CodeObject(void);
 
 
 /* --- Function used for testing ---------------------------------- */
