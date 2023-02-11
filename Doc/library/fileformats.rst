@@ -14,5 +14,4 @@ that aren't markup languages and are not related to e-mail.
    configparser.rst
    tomllib.rst
    netrc.rst
-   xdrlib.rst
    plistlib.rst

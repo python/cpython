@@ -12,6 +12,9 @@ from test.support import threading_helper
 from test import lock_tests
 
 
+threading_helper.requires_working_threading(module=True)
+
+
 class ModuleLockAsRLockTests:
     locktype = classmethod(lambda cls: cls.LockType("some_lock"))
 
@@ -146,4 +149,4 @@ def setUpModule():
 
 
 if __name__ == '__main__':
-    unittets.main()
+    unittest.main()

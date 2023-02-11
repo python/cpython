@@ -13,8 +13,7 @@
 #endif
 
 #include "Python.h"
-
-#include "impl/blake2.h"
+#include "blake2module.h"
 
 extern PyType_Spec blake2b_type_spec;
 extern PyType_Spec blake2s_type_spec;
