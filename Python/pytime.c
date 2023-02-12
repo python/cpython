@@ -311,8 +311,10 @@ pytime_double_to_denominator(double d, time_t *sec, long *numerator,
        assumption that time_t is a two's complement integer type with no trap
        representation, and that `PY_TIME_T_MIN` is within the representable
        range of a C double.
+
+       Note: we want the `if` condition below to be true for NaNs; therefore,
+       resist any temptation to simplify by applying De Morgan's laws.
     */
-    assert(fmod(intpart, 1.0) == 0.0);
     if (!((double)PY_TIME_T_MIN <= intpart && intpart < -(double)PY_TIME_T_MIN)) {
         pytime_time_t_overflow();
         return -1;
@@ -369,7 +371,6 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         (void)modf(d, &intpart);
 
         /* See comments in pytime_double_to_denominator */
-        assert(fmod(intpart, 1.0) == 0.0);
         if (!((double)PY_TIME_T_MIN <= intpart && intpart < -(double)PY_TIME_T_MIN)) {
             pytime_time_t_overflow();
             return -1;
@@ -537,7 +538,6 @@ pytime_from_double(_PyTime_t *tp, double value, _PyTime_round_t round,
     d = pytime_round(d, round);
 
     /* See comments in pytime_double_to_denominator */
-    assert(fmod(d, 1.0) == 0.0);
     if (!((double)_PyTime_MIN <= d && d < -(double)_PyTime_MIN)) {
         pytime_time_t_overflow();
         return -1;
