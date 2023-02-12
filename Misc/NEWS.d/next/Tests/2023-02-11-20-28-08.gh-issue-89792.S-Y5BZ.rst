@@ -1,0 +1,3 @@
+``test_tools`` now copies up to 10x less source data to a temporary
+directory during the ``freeze`` test by ignoring git metadata and other
+artifacts.
