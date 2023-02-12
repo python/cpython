@@ -1638,7 +1638,6 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.12
       Slice objects are now :term:`hashable` (provided :attr:`~slice.start`,
       :attr:`~slice.stop`, and :attr:`~slice.step` are hashable).
-      The slice object can be :term:`hashable`.
 
 .. function:: sorted(iterable, /, *, key=None, reverse=False)
 
