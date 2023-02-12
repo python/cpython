@@ -438,8 +438,15 @@ async def wait_for(fut, timeout):
 
     If the wait is cancelled, the task is also cancelled.
 
+    If the task supresses the cancellation and returns a value instead,
+    that value is returned.
+
     This function is a coroutine.
     """
+
+    # When timeout <= 0, `asyncio.timeout` raises `TimeoutError`
+    # whereas `wait_for` disables the timeout so we special case
+    # it here to preserve the behavior.
 
     if timeout is not None and timeout <= 0:
         fut = ensure_future(fut)

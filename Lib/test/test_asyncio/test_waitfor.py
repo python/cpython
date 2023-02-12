@@ -263,8 +263,10 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         await self._test_cancel_wait_for(60.0)
 
     async def test_wait_for_cancel_suppressed(self):
-        # See https://github.com/python/cpython/issues/84849
-        # See https://github.com/python/cpython/pull/28149
+        # GH-86296: Supressing CancelledError is discouraged
+        # but if a task subpresses CancelledError and returns a value,
+        # `wait_for` should return the value instead of raising CancelledError.
+        # This is the same behavior as `asyncio.timeout`.
 
         async def return_42():
             try:
