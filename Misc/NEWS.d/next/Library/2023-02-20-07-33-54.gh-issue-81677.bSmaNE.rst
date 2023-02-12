@@ -1,0 +1,2 @@
+Basic support of annotations in :func:`inspect.signature` handling of
+``__text_signature__``.  Patch by Sergey B Kirpichev.
