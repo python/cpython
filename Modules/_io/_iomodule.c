@@ -638,7 +638,6 @@ static PyTypeObject* static_types[] = {
     &PyIncrementalNewlineDecoder_Type,
 
     // PyIOBase_Type subclasses
-    &PyBufferedIOBase_Type,
     &PyRawIOBase_Type,
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
@@ -714,24 +713,23 @@ PyInit__io(void)
     }
 
     // PyIOBase_Type subclasses
-    ADD_TYPE(m, state->PyTextIOBase_Type, &textiobase_spec, &PyIOBase_Type);
+    PyTypeObject *base = &PyIOBase_Type;
+    ADD_TYPE(m, state->PyTextIOBase_Type, &textiobase_spec, base);
+    ADD_TYPE(m, state->PyBufferedIOBase_Type, &bufferediobase_spec, base);
 
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, &PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec,
-             &PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec,
-             &PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec,
-             &PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec,
-             &PyBufferedIOBase_Type);
+    base = state->PyBufferedIOBase_Type;
+    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, base);
+    ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec, base);
+    ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec, base);
+    ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec, base);
+    ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec, base);
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, &PyRawIOBase_Type);
 
     // PyTextIOBase_Type(PyIOBase_Type) subclasses
-    PyTypeObject *base = state->PyTextIOBase_Type;
+    base = state->PyTextIOBase_Type;
     ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, base);
     ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec, base);
 

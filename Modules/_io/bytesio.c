@@ -7,7 +7,7 @@
 module _io
 class _io.BytesIO "bytesio *" "clinic_state()->PyBytesIO_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7f50ec034f5c0b26]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=48ede2f330f847c3]*/
 
 typedef struct {
     PyObject_HEAD

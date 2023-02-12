@@ -16,14 +16,14 @@
 
 /*[clinic input]
 module _io
-class _io._BufferedIOBase "PyObject *" "&PyBufferedIOBase_Type"
-class _io._Buffered "buffered *" "&PyBufferedIOBase_Type"
+class _io._BufferedIOBase "PyObject *" "clinic_state()->PyBufferedIOBase_Type"
+class _io._Buffered "buffered *" "clinic_state()->PyBufferedIOBase_Type"
 class _io.BufferedReader "buffered *" "clinic_state()->PyBufferedReader_Type"
 class _io.BufferedWriter "buffered *" "clinic_state()->PyBufferedWriter_Type"
 class _io.BufferedRWPair "rwpair *" "clinic_state()->PyBufferedRWPair_Type"
 class _io.BufferedRandom "buffered *" "clinic_state()->PyBufferedRandom_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=abd685b9d94b9888]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3b3ef9cbbbad4590]*/
 
 /*
  * BufferedIOBase class, inherits from IOBase.
@@ -2323,6 +2323,21 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
 #include "clinic/bufferedio.c.h"
 #undef clinic_state
 
+static void
+bufferediobase_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    _PyObject_GC_UNTRACK(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static int
+bufferediobase_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
 
 static PyMethodDef bufferediobase_methods[] = {
     _IO__BUFFEREDIOBASE_DETACH_METHODDEF
@@ -2334,57 +2349,20 @@ static PyMethodDef bufferediobase_methods[] = {
     {NULL, NULL}
 };
 
-PyTypeObject PyBufferedIOBase_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io._BufferedIOBase",      /*tp_name*/
-    0,                          /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    0,                          /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
-    bufferediobase_doc,         /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    bufferediobase_methods,     /* tp_methods */
-    0,                          /* tp_members */
-    0,                          /* tp_getset */
-    &PyIOBase_Type,             /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    0,                          /* tp_init */
-    0,                          /* tp_alloc */
-    0,                          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot bufferediobase_slots[] = {
+    {Py_tp_dealloc, bufferediobase_dealloc},
+    {Py_tp_doc, (void *)bufferediobase_doc},
+    {Py_tp_methods, bufferediobase_methods},
+    {Py_tp_traverse, bufferediobase_traverse},
+    {0, NULL},
 };
 
+PyType_Spec bufferediobase_spec = {
+    .name = "_io._BufferedIOBase",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = bufferediobase_slots,
+};
 
 static PyMethodDef bufferedreader_methods[] = {
     /* BufferedIOMixin methods */

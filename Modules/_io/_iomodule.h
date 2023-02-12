@@ -10,12 +10,12 @@
 /* ABCs */
 extern PyTypeObject PyIOBase_Type;
 extern PyTypeObject PyRawIOBase_Type;
-extern PyTypeObject PyBufferedIOBase_Type;
 
 /* Concrete classes */
 extern PyTypeObject PyIncrementalNewlineDecoder_Type;
 
 /* Type specs */
+extern PyType_Spec bufferediobase_spec;
 extern PyType_Spec bufferedrandom_spec;
 extern PyType_Spec bufferedreader_spec;
 extern PyType_Spec bufferedrwpair_spec;
@@ -147,6 +147,7 @@ typedef struct {
     PyObject *unsupported_operation;
 
     /* Types */
+    PyTypeObject *PyBufferedIOBase_Type;
     PyTypeObject *PyBufferedRWPair_Type;
     PyTypeObject *PyBufferedRandom_Type;
     PyTypeObject *PyBufferedReader_Type;
