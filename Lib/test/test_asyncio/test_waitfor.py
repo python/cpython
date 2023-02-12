@@ -279,8 +279,7 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
 
 
     async def test_wait_for_issue86296(self):
-        # GH-86296: The task should get cancelled
-        # and not run to completion.
+        # GH-86296: The task should get cancelled and not run to completion.
 
         async def inner():
             return
