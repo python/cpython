@@ -319,7 +319,8 @@ class WaitForShieldTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(task.cancelled())
 
     async def test_none_timeout(self):
-        # With timeout=None the timeout is disables so it runs to completion.
+        # With timeout=None the timeout is disabled so it
+        # runs till completion.
         async def coro():
             await asyncio.sleep(0.1)
             return 'done'
