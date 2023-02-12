@@ -1,9 +1,8 @@
 from test.support import verbose, reap_children
 from test.support.import_helper import import_module
 
-# Skip these tests if termios or fcntl are not available
+# Skip these tests if termios is not available
 import_module('termios')
-import_module("fcntl")
 
 import errno
 import os
@@ -94,7 +93,7 @@ class PtyTest(unittest.TestCase):
         if _HAVE_WINSZ:
             try:
                 self.stdin_dim = tty.tcgetwinsize(pty.STDIN_FILENO)
-                self.addCleanup(tty.tcsetwinsize, pty.STDIN_FILENO, \
+                self.addCleanup(tty.tcsetwinsize, pty.STDIN_FILENO,
                                 self.stdin_dim)
             except tty.error:
                 pass
@@ -116,7 +115,7 @@ class PtyTest(unittest.TestCase):
             mode = None
 
         new_dim = None
-        if self.stdin_dim != None:
+        if self.stdin_dim:
             try:
                 # Modify pty.STDIN_FILENO window size; we need to
                 # check if pty.openpty() is able to set pty slave
@@ -139,12 +138,12 @@ class PtyTest(unittest.TestCase):
         try:
             debug("Calling pty.openpty()")
             try:
-                master_fd, slave_fd, slave_name = pty.openpty(mode, new_dim, \
+                master_fd, slave_fd, slave_name = pty.openpty(mode, new_dim,
                                                               True)
             except TypeError:
                 master_fd, slave_fd = pty.openpty()
                 slave_name = None
-            debug(f"Got master_fd '{master_fd}', slave_fd '{slave_fd}', slave_name '{slave_name}'")
+            debug(f"Got {master_fd=}, {slave_fd=}, {slave_name=}")
         except OSError:
             # " An optional feature could not be imported " ... ?
             raise unittest.SkipTest("Pseudo-terminals (seemingly) not functional.")
@@ -386,28 +385,6 @@ class SmallPtyTests(unittest.TestCase):
         self.assertEqual([read_from_stdout_fd, masters[1]], rfds)
         self.assertEqual(os.read(read_from_stdout_fd, 20), b'from master')
         self.assertEqual(os.read(masters[1], 20), b'from stdin')
-
-    # def test__copy_eof_on_all(self):
-    #     """Test the empty read EOF case on both master_fd and stdin."""
-    #     read_from_stdout_fd, mock_stdout_fd = self._pipe()
-    #     pty.STDOUT_FILENO = mock_stdout_fd
-    #     mock_stdin_fd, write_to_stdin_fd = self._pipe()
-    #     pty.STDIN_FILENO = mock_stdin_fd
-    #     socketpair = self._socketpair()
-    #     masters = [s.fileno() for s in socketpair]
-
-    #     socketpair[1].close()
-    #     os.close(write_to_stdin_fd)
-
-    #     pty.select = self._mock_select
-    #     self.select_rfds_lengths.append(2)
-    #     self.select_rfds_results.append([mock_stdin_fd, masters[0]])
-    #     # We expect that both fds were removed from the fds list as they
-    #     # both encountered an EOF before the second select call.
-    #     self.select_rfds_lengths.append(0)
-
-    #     # We expect the function to return without error.
-    #     self.assertEqual(pty._copy(masters[0]), None)
 
     def test__restore_tty_mode_normal_return(self):
         """Test that spawn resets the tty mode no when _copy returns normally."""
