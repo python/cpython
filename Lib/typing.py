@@ -371,10 +371,13 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
                 ForwardRef(arg) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
+            is_unpacked = t.__unpacked__
             if _should_unflatten_callable_args(t, args):
                 t = t.__origin__[(args[:-1], args[-1])]
             else:
                 t = t.__origin__[args]
+            if is_unpacked:
+                t = Unpack[t]
         ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
@@ -828,7 +831,7 @@ class ForwardRef(_Final, _root=True):
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
         if arg[0] == '*':
-            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0]
+            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
         try:
@@ -1940,10 +1943,14 @@ def _no_init_or_replace_init(self, *args, **kwargs):
 
 def _caller(depth=1, default='__main__'):
     try:
+        return sys._getframemodulename(depth + 1) or default
+    except AttributeError:  # For platforms without _getframemodulename()
+        pass
+    try:
         return sys._getframe(depth + 1).f_globals.get('__name__', default)
     except (AttributeError, ValueError):  # For platforms without _getframe()
-        return None
-
+        pass
+    return None
 
 def _allow_reckless_class_checks(depth=3):
     """Allow instance and class checks for special stdlib modules.

@@ -3143,8 +3143,7 @@ init_dump_ascii_wstr(const wchar_t *str)
 void
 _Py_DumpPathConfig(PyThreadState *tstate)
 {
-    PyObject *exc_type, *exc_value, *exc_tb;
-    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
 
     PySys_WriteStderr("Python path configuration:\n");
 
@@ -3202,5 +3201,5 @@ _Py_DumpPathConfig(PyThreadState *tstate)
         PySys_WriteStderr("  ]\n");
     }
 
-    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    _PyErr_SetRaisedException(tstate, exc);
 }

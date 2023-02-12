@@ -56,10 +56,10 @@ textiobase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(textiobase_read_doc,
-    "Read at most n characters from stream.\n"
+    "Read at most size characters from stream.\n"
     "\n"
-    "Read from underlying buffer until we have n characters or we hit EOF.\n"
-    "If n is negative or omitted, read until EOF.\n"
+    "Read from underlying buffer until we have size characters or we hit EOF.\n"
+    "If size is negative or omitted, read until EOF.\n"
     );
 
 static PyObject *

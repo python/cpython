@@ -653,7 +653,7 @@ class NonCallableMock(Base):
         elif _is_magic(name):
             raise AttributeError(name)
         if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
-            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')):
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
                     f"for the mock if {name!r} is meant to be an attribute.")
@@ -1062,6 +1062,14 @@ class NonCallableMock(Base):
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 
 
+# Denylist for forbidden attribute names in safe mode
+_ATTRIB_DENY_LIST = frozenset({
+    name.removeprefix("assert_")
+    for name in dir(NonCallableMock)
+    if name.startswith("assert_")
+})
+
+
 class _AnyComparer(list):
     """A list which checks if it contains a call which may have an
     argument of ANY, flipping the components of item and self from
@@ -1231,9 +1239,11 @@ class Mock(CallableMixin, NonCallableMock):
       `return_value` attribute.
 
     * `unsafe`: By default, accessing any attribute whose name starts with
-      *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
-       AttributeError. Passing `unsafe=True` will allow access to
-      these attributes.
+      *assert*, *assret*, *asert*, *aseert*, or *assrt* raises an AttributeError.
+      Additionally, an AttributeError is raised when accessing
+      attributes that match the name of an assertion method without the prefix
+      `assert_`, e.g. accessing `called_once` instead of `assert_called_once`.
+      Passing `unsafe=True` will allow access to these attributes.
 
     * `wraps`: Item for the mock object to wrap. If `wraps` is not None then
       calling the Mock will pass the call through to the wrapped object
@@ -2207,7 +2217,15 @@ class AsyncMockMixin(Base):
         code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
         code_mock.__dict__["_spec_class"] = CodeType
         code_mock.__dict__["_spec_signature"] = _CODE_SIG
-        code_mock.co_flags = inspect.CO_COROUTINE
+        code_mock.co_flags = (
+            inspect.CO_COROUTINE
+            + inspect.CO_VARARGS
+            + inspect.CO_VARKEYWORDS
+        )
+        code_mock.co_argcount = 0
+        code_mock.co_varnames = ('args', 'kwargs')
+        code_mock.co_posonlyargcount = 0
+        code_mock.co_kwonlyargcount = 0
         self.__dict__['__code__'] = code_mock
         self.__dict__['__name__'] = 'AsyncMock'
         self.__dict__['__defaults__'] = tuple()
