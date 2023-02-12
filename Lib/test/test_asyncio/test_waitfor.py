@@ -301,5 +301,49 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(reached_end)
 
 
+class WaitForShieldTests(unittest.IsolatedAsyncioTestCase):
+
+    async def test_zero_timeout(self):
+        # With timeout=0 the task gets cancelled immediately
+        # and the shielded task is not run.
+        async def coro():
+            await asyncio.sleep(0.1)
+            return 'done'
+
+        task = asyncio.create_task(coro())
+        with self.assertRaises(asyncio.TimeoutError):
+            await asyncio.wait_for(asyncio.shield(task), timeout=0)
+
+        self.assertFalse(task.done())
+        self.assertFalse(task.cancelled())
+
+    async def test_none_timeout(self):
+        # With timeout=None the timeout is desables so it runs to completion.
+        async def coro():
+            await asyncio.sleep(0.1)
+            return 'done'
+
+        task = asyncio.create_task(coro())
+        await asyncio.wait_for(asyncio.shield(task), timeout=None)
+
+        self.assertTrue(task.done())
+        self.assertEqual(await task, "done")
+
+    async def test_shielded_timeout(self):
+        # `shield` prevents the task from being cancelled.
+
+        async def coro():
+            await asyncio.sleep(1)
+            return 'done'
+
+        task = asyncio.create_task(coro())
+        with self.assertRaises(asyncio.TimeoutError):
+            await asyncio.wait_for(asyncio.shield(task), timeout=0.1)
+
+        self.assertFalse(task.done())
+        self.assertFalse(task.cancelled())
+        self.assertEqual(await task, "done")
+
+
 if __name__ == '__main__':
     unittest.main()
