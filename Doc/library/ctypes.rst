@@ -1380,6 +1380,10 @@ way is to instantiate one of the following classes:
    DLLs and determine which one is not found using Windows debugging and
    tracing tools.
 
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
+
 .. seealso::
 
     `Microsoft DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
@@ -1398,12 +1402,20 @@ way is to instantiate one of the following classes:
    .. versionchanged:: 3.3
       :exc:`WindowsError` used to be raised.
 
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
+
 
 .. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
    assumed to return :c:expr:`int` by default.
+
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
 
 The Python :term:`global interpreter lock` is released before calling any
 function exported by these libraries, and reacquired afterwards.
@@ -1417,6 +1429,10 @@ function exported by these libraries, and reacquired afterwards.
    exception is raised.
 
    Thus, this is only useful to call Python C api functions directly.
+
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
 
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
@@ -2510,6 +2526,7 @@ fields, or any other data types containing pointer type fields.
       An optional small integer that allows overriding the alignment of
       structure fields in the instance.  :attr:`_pack_` must already be defined
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
+      Setting this attribute to 0 is the same as not setting it at all.
 
 
    .. attribute:: _anonymous_

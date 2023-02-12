@@ -1,0 +1,4 @@
+``test_tools`` now copies up to 10x less source data to a temporary directory
+during the ``freeze`` test by ignoring git metadata and other artifacts.  It
+also limits its python build parallelism based on os.cpu_count instead of hard
+coding it as 8 cores.

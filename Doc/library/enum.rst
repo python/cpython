@@ -922,6 +922,6 @@ Notes
 
    or you can reassign the appropriate :meth:`str`, etc., in your enum::
 
-       >>> from enum import IntEnum
+       >>> from enum import Enum, IntEnum
        >>> class MyIntEnum(IntEnum):
-       ...     __str__ = IntEnum.__str__
+       ...     __str__ = Enum.__str__
