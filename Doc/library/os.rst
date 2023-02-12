@@ -212,6 +212,13 @@ process and user.
       cause memory leaks.  Refer to the system documentation for
       :c:func:`putenv`.
 
+   .. note::
+
+      On Windows, the keys are converted to uppercase. This also applies when
+      getting, setting, or deleting an item. For example,
+      ``environ['monty'] = 'python'`` maps the key ``'MONTY'`` to the value
+      ``'python'``.
+
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
    :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
