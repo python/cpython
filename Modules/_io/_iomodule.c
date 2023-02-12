@@ -642,9 +642,6 @@ static PyTypeObject* static_types[] = {
     &PyRawIOBase_Type,
     &PyTextIOBase_Type,
 
-    // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
-    &PyBytesIO_Type,
-
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     &_PyBytesIOBuffer_Type,
 #ifdef MS_WINDOWS
@@ -705,7 +702,6 @@ PyInit__io(void)
     }
 
     // Set type base classes
-    PyBytesIO_Type.tp_base = &PyBufferedIOBase_Type;
 #ifdef MS_WINDOWS
     PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
 #endif
@@ -719,6 +715,7 @@ PyInit__io(void)
     }
 
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
+    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, &PyBufferedIOBase_Type);
     ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec,
              &PyBufferedIOBase_Type);
     ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec,

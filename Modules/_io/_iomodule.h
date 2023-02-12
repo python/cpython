@@ -14,7 +14,6 @@ extern PyTypeObject PyBufferedIOBase_Type;
 extern PyTypeObject PyTextIOBase_Type;
 
 /* Concrete classes */
-extern PyTypeObject PyBytesIO_Type;
 extern PyTypeObject PyIncrementalNewlineDecoder_Type;
 
 /* Type specs */
@@ -22,6 +21,7 @@ extern PyType_Spec bufferedrandom_spec;
 extern PyType_Spec bufferedreader_spec;
 extern PyType_Spec bufferedrwpair_spec;
 extern PyType_Spec bufferedwriter_spec;
+extern PyType_Spec bytesio_spec;
 extern PyType_Spec fileio_spec;
 extern PyType_Spec stringio_spec;
 extern PyType_Spec textiowrapper_spec;
@@ -151,6 +151,7 @@ typedef struct {
     PyTypeObject *PyBufferedRandom_Type;
     PyTypeObject *PyBufferedReader_Type;
     PyTypeObject *PyBufferedWriter_Type;
+    PyTypeObject *PyBytesIO_Type;
     PyTypeObject *PyFileIO_Type;
     PyTypeObject *PyStringIO_Type;
     PyTypeObject *PyTextIOWrapper_Type;
