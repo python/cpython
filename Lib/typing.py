@@ -2482,7 +2482,8 @@ def get_orig_class(tp: "Any", /) -> GenericAlias | None:
 
     Warning
     -------
-    This will always None in the __init__/__new__ methods of the class.
+    This will always return None in the inside of the class initalisation 
+    process.
     """
     try:
         return tp.__orig_class__

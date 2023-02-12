@@ -5358,18 +5358,27 @@ class GetUtilitiesTestCase(TestCase):
     def test_get_orig_class(self):
         T = TypeVar('T')
         class C(Generic[T]): pass
+        class D(C[int]): ...
+        class E(C[str], float): pass
         self.assertEqual(get_orig_class(C[int]()), C[int])
+        self.assertIsNone(get_orig_class(C()))
+        self.assertIsNone(get_orig_class(D()))
+        self.assertIsNone(get_orig_class(E()))
         self.assertIsNone(get_orig_class(list[int]()))
         self.assertIsNone(get_orig_class(int))
 
     def test_get_orig_bases(self):
         T = TypeVar('T')
+        class A: pass
+        class B(object): pass
         class C(Generic[T]): pass
         class D(C[int]): pass
         class E(C[str], float): pass
+        self.assertIsNone(get_orig_bases(A))
+        self.assertIsNone(get_orig_bases(B))
         self.assertEqual(get_orig_bases(C), (Generic[T],))
         self.assertEqual(get_orig_bases(D), (C[int],))
-        self.assertEqual(get_orig_bases(int), None)
+        self.assertIsNone(get_orig_bases(int))
         self.assertEqual(get_orig_bases(E), (C[str], float))
 
 
