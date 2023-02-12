@@ -1,8 +1,11 @@
 from test.support import verbose, reap_children
 from test.support.import_helper import import_module
 
-# Skip these tests if termios is not available
+# Skip these tests if termios or fcntl are not available
 import_module('termios')
+# fcntl is a proxy for not being one of the wasm32 platforms even though we
+# don't use this module... a proper check for what crashes those is needed.
+import_module("fcntl")
 
 import errno
 import os
