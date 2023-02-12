@@ -1,0 +1,2 @@
+:mod:`cgi`: Remove ``cgi.log()``, deprecated since Python 3.10. Use
+:mod:`logging` instead. Patch by Hugo van Kemenade.

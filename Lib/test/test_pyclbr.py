@@ -221,7 +221,7 @@ class PyclbrTest(TestCase):
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
-            cm('cgi', ignore=('log',))      # set with = in module
+            cm('cgi')      # set with = in module
         cm('pickle', ignore=('partial', 'PickleBuffer'))
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)

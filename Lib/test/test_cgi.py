@@ -223,20 +223,6 @@ Content-Length: 3
                     else:
                         self.assertEqual(fs.getvalue(key), expect_val[0])
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_log(self):
-        cgi.log("Testing")
-
-        cgi.logfp = StringIO()
-        cgi.initlog("%s", "Testing initlog 1")
-        cgi.log("%s", "Testing log 2")
-        self.assertEqual(cgi.logfp.getvalue(), "Testing initlog 1\nTesting log 2\n")
-        if os.path.exists(os.devnull):
-            cgi.logfp = None
-            cgi.logfile = os.devnull
-            cgi.initlog("%s", "Testing log 3")
-            self.addCleanup(cgi.closelog)
-            cgi.log("Testing log 4")
 
     def test_fieldstorage_readline(self):
         # FieldStorage uses readline, which has the capacity to read all

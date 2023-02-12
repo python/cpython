@@ -700,6 +700,9 @@ Removed
   *context* parameter instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
+* :mod:`cgi`: Remove ``cgi.log()``, deprecated since Python 3.10.
+  Use :mod:`logging` instead.
+  (Contributed by Hugo van Kemenade in :gh:`101850`.)
 
 Porting to Python 3.12
 ======================
