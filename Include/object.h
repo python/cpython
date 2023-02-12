@@ -511,6 +511,9 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline void Py_INCREF(PyObject *op)
 {
+    if (op == NULL) {
+        return;
+    }
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
     _Py_IncRef(op);
