@@ -282,22 +282,24 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         # GH-86296: The task should get cancelled and not run to completion.
 
         async def inner():
-            return
+            return 'done'
 
+        inner_task = asyncio.create_task(inner())
         reached_end = False
 
         async def wait_for_coro():
-            await asyncio.wait_for(inner(), timeout=100)
+            await asyncio.wait_for(inner_task, timeout=100)
             await asyncio.sleep(1)
             nonlocal reached_end
             reached_end = True
 
         task = asyncio.create_task(wait_for_coro())
-        await asyncio.sleep(0)
         self.assertFalse(task.done())
         task.cancel()
         with self.assertRaises(asyncio.CancelledError):
             await task
+        self.assertTrue(inner_task.done())
+        self.assertEqual(await inner_task, 'done')
         self.assertFalse(reached_end)
 
 
