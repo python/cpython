@@ -1178,9 +1178,9 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     Py_CLEAR(codec_info);
 
     _PyIO_State *state = IO_STATE();
-    if (Py_IS_TYPE(buffer, &PyBufferedReader_Type) ||
-        Py_IS_TYPE(buffer, &PyBufferedWriter_Type) ||
-        Py_IS_TYPE(buffer, &PyBufferedRandom_Type))
+    if (Py_IS_TYPE(buffer, state->PyBufferedReader_Type) ||
+        Py_IS_TYPE(buffer, state->PyBufferedWriter_Type) ||
+        Py_IS_TYPE(buffer, state->PyBufferedRandom_Type))
     {
         if (_PyObject_LookupAttr(buffer, &_Py_ID(raw), &raw) < 0)
             goto error;

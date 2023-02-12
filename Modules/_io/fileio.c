@@ -53,7 +53,7 @@
 module _io
 class _io.FileIO "fileio *" "clinic_state()->PyFileIO_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1c77708b41fda70c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ac25ec278f4d6703]*/
 
 typedef struct {
     PyObject_HEAD

@@ -386,16 +386,20 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         return result;
     }
 
+    _PyIO_State *state = IO_STATE();
     /* wraps into a buffered file */
     {
         PyObject *Buffered_class;
 
-        if (updating)
-            Buffered_class = (PyObject *)&PyBufferedRandom_Type;
-        else if (creating || writing || appending)
-            Buffered_class = (PyObject *)&PyBufferedWriter_Type;
-        else if (reading)
-            Buffered_class = (PyObject *)&PyBufferedReader_Type;
+        if (updating) {
+            Buffered_class = (PyObject *)state->PyBufferedRandom_Type;
+        }
+        else if (creating || writing || appending) {
+            Buffered_class = (PyObject *)state->PyBufferedWriter_Type;
+        }
+        else if (reading) {
+            Buffered_class = (PyObject *)state->PyBufferedReader_Type;
+        }
         else {
             PyErr_Format(PyExc_ValueError,
                          "unknown mode: '%s'", mode);
@@ -417,7 +421,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     }
 
     /* wraps into a TextIOWrapper */
-    _PyIO_State *state = IO_STATE();
     wrapper = PyObject_CallFunction((PyObject *)state->PyTextIOWrapper_Type,
                                     "OsssO",
                                     buffer,
@@ -641,10 +644,6 @@ static PyTypeObject* static_types[] = {
 
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
     &PyBytesIO_Type,
-    &PyBufferedReader_Type,
-    &PyBufferedWriter_Type,
-    &PyBufferedRWPair_Type,
-    &PyBufferedRandom_Type,
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     &_PyBytesIOBuffer_Type,
@@ -710,10 +709,6 @@ PyInit__io(void)
 #ifdef MS_WINDOWS
     PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
 #endif
-    PyBufferedReader_Type.tp_base = &PyBufferedIOBase_Type;
-    PyBufferedWriter_Type.tp_base = &PyBufferedIOBase_Type;
-    PyBufferedRWPair_Type.tp_base = &PyBufferedIOBase_Type;
-    PyBufferedRandom_Type.tp_base = &PyBufferedIOBase_Type;
 
     // Add types
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
@@ -722,6 +717,16 @@ PyInit__io(void)
             goto fail;
         }
     }
+
+    // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
+    ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec,
+             &PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec,
+             &PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec,
+             &PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec,
+             &PyBufferedIOBase_Type);
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, &PyRawIOBase_Type);
