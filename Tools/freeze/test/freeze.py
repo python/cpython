@@ -80,7 +80,19 @@ def copy_source_tree(newroot, oldroot):
         if newroot == SRCDIR:
             raise Exception('this probably isn\'t what you wanted')
         shutil.rmtree(newroot)
-    shutil.copytree(oldroot, newroot)
+
+    def ignore_non_src(src, names):
+        """Turns what could be a 1000M copy into a 100M copy."""
+        # Don't copy the ~600M+ of needless git repo metadata.
+        # source only, ignore cached .pyc files.
+        subdirs_to_skip = {'.git', '__pycache__'}
+        if os.path.basename(src) == 'Doc':
+            # Another potential ~250M+ of non test related data.
+            subdirs_to_skip.add('build')
+            subdirs_to_skip.add('venv')
+        return subdirs_to_skip
+
+    shutil.copytree(oldroot, newroot, ignore=ignore_non_src)
     if os.path.exists(os.path.join(newroot, 'Makefile')):
         _run_quiet([MAKE, 'clean'], newroot)
 
