@@ -397,18 +397,18 @@ static const char *const _PyOpcode_OpName[263] = {
     [DICT_MERGE] = "DICT_MERGE",
     [DICT_UPDATE] = "DICT_UPDATE",
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
-    [BINARY_OP_ADD_INT_TYPE_CHECK] = "BINARY_OP_ADD_INT_TYPE_CHECK",
-    [BINARY_OP_ADD_INT_REST] = "BINARY_OP_ADD_INT_REST",
-    [169] = "<169>",
-    [170] = "<170>",
+    [BB_ENTER_FRAME] = "BB_ENTER_FRAME",
+    [BB_EXIT_FRAME] = "BB_EXIT_FRAME",
+    [BB_TYPE_BRANCH] = "BB_TYPE_BRANCH",
+    [BB_ITER] = "BB_ITER",
     [CALL] = "CALL",
     [KW_NAMES] = "KW_NAMES",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
-    [174] = "<174>",
-    [175] = "<175>",
-    [176] = "<176>",
-    [177] = "<177>",
-    [178] = "<178>",
+    [BB_BRANCH_OR_POP] = "BB_BRANCH_OR_POP",
+    [BB_POP_THEN_BRANCH] = "BB_POP_THEN_BRANCH",
+    [BB_POP_BRANCH] = "BB_POP_BRANCH",
+    [BINARY_CHECK_INT] = "BINARY_CHECK_INT",
+    [BINARY_OP_ADD_INT_REST] = "BINARY_OP_ADD_INT_REST",
     [179] = "<179>",
     [180] = "<180>",
     [181] = "<181>",
@@ -498,13 +498,6 @@ static const char *const _PyOpcode_OpName[263] = {
 
 
 #define EXTRA_CASES \
-    case 169: \
-    case 170: \
-    case 174: \
-    case 175: \
-    case 176: \
-    case 177: \
-    case 178: \
     case 179: \
     case 180: \
     case 181: \

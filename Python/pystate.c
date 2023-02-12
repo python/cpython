@@ -643,6 +643,10 @@ init_interpreter(PyInterpreterState *interp,
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
 
+    // Tier 2 interpreter information
+    interp->tier2_bytecode_scratchsize = 0;
+    interp->tier2_bytecode_scratch = NULL;
+
     interp->_initialized = 1;
 }
 

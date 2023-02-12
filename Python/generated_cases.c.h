@@ -2,7 +2,7 @@
 // from Python\bytecodes.c
 // Do not edit!
 
-        #define UOP_BINARY_OP_ADD_INT_TYPE_CHECK() \
+        #define UOP_BINARY_CHECK_INT() \
         do { \
             assert(cframe.use_tracing == 0);\
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);\
@@ -23,9 +23,9 @@
         }
 
         TARGET(RESUME) {
-            //if (cframe.use_tracing == 0) {
-            //    next_instr = _PyCode_Tier2Warmup(frame, next_instr);
-            //}
+            if (cframe.use_tracing == 0) {
+                next_instr = _PyCode_Tier2Warmup(frame, next_instr);
+            }
             GO_TO_INSTRUCTION(RESUME_QUICK);
         }
 
@@ -414,7 +414,7 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sum;
-            UOP_BINARY_OP_ADD_INT_TYPE_CHECK();
+            UOP_BINARY_CHECK_INT();
             UOP_BINARY_OP_ADD_INT_REST();
             STACK_SHRINK(1);
             POKE(1, sum);
@@ -422,7 +422,7 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_OP_ADD_INT_TYPE_CHECK) {
+        TARGET(BINARY_CHECK_INT) {
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             assert(cframe.use_tracing == 0);

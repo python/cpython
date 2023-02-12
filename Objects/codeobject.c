@@ -1673,7 +1673,6 @@ code_tier2_fini(PyCodeObject *co)
     }
     _PyTier2Info *t2_info = co->_tier2_info;
     t2_info->_entry_bb = NULL;
-    t2_info->_jump_target_count = 0;
     if (t2_info->_bb_space != NULL) {
         // Traverse the linked list
         for (_PyTier2BBSpace *curr = t2_info->_bb_space; curr != NULL;) {
@@ -1683,10 +1682,26 @@ code_tier2_fini(PyCodeObject *co)
         }
         t2_info->_bb_space = NULL;
     }
-    if (t2_info->_jump_targets != NULL) {
-        PyMem_Free(t2_info->_jump_targets);
-        t2_info->_jump_targets = NULL;
+    
+    if (t2_info->jump_target_count > 0 &&
+        t2_info->jump_targets != NULL) {
+        PyMem_Free(t2_info->jump_targets);
+        t2_info->jump_targets = NULL;
     }
+    if (t2_info->types_stack != NULL) {
+        PyMem_Free(t2_info->types_stack);
+        t2_info->types_stack = NULL;
+    }
+    t2_info->jump_target_count = 0;
+    PyMem_Free(t2_info);
+    //if (t2_info->i_code != NULL) {
+    //    if (t2_info->i_code->_jump_targets != NULL) {
+    //        PyMem_Free(t2_info->i_code->_jump_targets);
+    //        t2_info->i_code->_jump_targets = NULL;
+    //    }
+    //    PyMem_Free(t2_info->i_code);
+    //    t2_info->i_code = NULL;
+    //}
 }
 
 static void

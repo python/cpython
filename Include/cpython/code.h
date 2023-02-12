@@ -43,14 +43,40 @@ typedef struct {
 } _PyCoCached;
 
 
+//// Used to store intermediate code information for the tier 2 "translator".
+//// This is eventually finally converted to _PyTier2BB s.
+//// Code Object -> _PyTier2IntermediateCode -> _PyTier2BB s.
+//typedef struct _PyTier2IntermediateCode {
+//    /* Number of entries in _jump_targets */
+//    int _jump_target_count;
+//    /* sorted ascending offsets (from start of field code) for jump targets */
+//    // The offsets are in number of _Py_CODEUNITs
+//    int *_jump_targets;
+//    int n_instrs;
+//    _Py_CODEUNIT code[1];
+//} _PyTier2IntermediateCode;
+
+
 // What the tier 2 interpreter executes
 typedef struct _PyTier2BB {
-    struct _PyTier2BB *successor_bb;
-    // Stores the end pointer in the tier 1 bytecode.
-    // So that when we exit the BB we can calculate where to return.
+    _Py_CODEUNIT *successor_bb;
+    // The other BB to go should BB_BRANCH fail.
+    _Py_CODEUNIT *alternate_bb;
+    // Array of types. This corresponds to the fast locals array.
+    int type_context_len;
+    PyTypeObject **type_context;
+    //// Stores the end pointer in the intermediate bytecode.
+    //// So that when we hit BB_BRANCH, we know what's the next
+    //// thing to generate.
+    //_Py_CODEUNIT *intermediate_code_end;
     _Py_CODEUNIT *tier1_end;
+    // There's extra memory at the end of this.
+    int n_instrs;
     _Py_CODEUNIT u_code[1];
 } _PyTier2BB;
+
+// Find the start of the BB from u_code.
+#define _PyTier2BB_FROM_UCODE(code) (_PyTier2BB *)(((char *)code) - offsetof(_PyTier2BB, u_code))
 
 // Bump allocator for basic blocks (overallocated)
 typedef struct _PyTier2BBSpace  {
@@ -58,15 +84,20 @@ typedef struct _PyTier2BBSpace  {
     int max_capacity;
     // How much space has been consumed in bbs.
     int water_level;
+    // There's extra memory at the end of this.
     _PyTier2BB bbs[1];
 } _PyTier2BBSpace;
 
+// Tier 2 info stored in the code object. Lazily allocated.
 typedef struct _PyTier2Info {
     _PyTier2BB *_entry_bb;        /* the tier 2 basic block to execute (if any) */
     _PyTier2BBSpace *_bb_space;   /* linked list storing basic blocks */
-    int _jump_target_count;      /* Number of entries in _jump_targets */
-    /* sorted ascending offsets (from start of co_code_adaptive) for jump targets */
-    int *_jump_targets;
+    //_PyTier2IntermediateCode *i_code;  /* intermediate bytecode to generate tier 2 basic blocks */
+    // Keeps track of offset of jump targets (in number of codeunits)
+    // from co_code_adaptive.
+    int jump_target_count;
+    int *jump_targets;
+    PyTypeObject **types_stack;
 } _PyTier2Info;
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are

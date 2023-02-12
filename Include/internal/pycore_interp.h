@@ -186,6 +186,12 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
+    // TIER 2 INTERPRETER INFORMATION
+
+    // Bytecode scratchspace when emitting tier 2 bytecode.
+    int tier2_bytecode_scratchsize;
+    _Py_CODEUNIT *tier2_bytecode_scratch;
+
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.
        These fields should not be accessed directly outside of init.

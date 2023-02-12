@@ -442,6 +442,29 @@ _macro_ops = [
     'BINARY_OP_ADD_INT',
 ]
 _uops = [
-    'BINARY_OP_ADD_INT_TYPE_CHECK',
+    # Tier 2 BB opcodes
+    'BB_ENTER_FRAME',
+    'BB_EXIT_FRAME',
+    ## These branches correspond to the jump instructions
+    'BB_TYPE_BRANCH',
+    'BB_ITER',              # FOR_ITER
+    'BB_BRANCH_OR_POP',     # JUMP_IF_FALSE_OR_POP, JUMP_IF_TRUE_OR_POP
+    'BB_POP_THEN_BRANCH',   # POP_JUMP_IF_FALSE, POP_JUMP_IF_TRUE
+    'BB_POP_BRANCH',        # POP_JUMP_IF_NOT_NONE, POP_JUMP_IF_NONE
+
+    # Common type checks
+    # These instructions check that one operand is a certain type.
+    # Their oparg is the offset from TOS to read.
+    # 'UNARY_CHECK_INT',
+    # 'UNARY_CHECK_FLOAT',
+    # 'UNARY_CHECK_STR',
+
+    # These instructions check that both operands are a certain type.
+    # The benefit is that they save some dispatch overhead versus the
+    # single operand forms.
+    'BINARY_CHECK_INT',
+    # 'BINARY_CHECK_FLOAT',
+    # 'BINARY_CHECK_STR',
+    # BINARY_OP_ADD_INT,
     'BINARY_OP_ADD_INT_REST',
 ]

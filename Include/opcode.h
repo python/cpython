@@ -253,8 +253,15 @@ extern "C" {
 #define UNPACK_SEQUENCE_TUPLE                  161
 #define UNPACK_SEQUENCE_TWO_TUPLE              166
 #define DO_TRACING                             255
-#define BINARY_OP_ADD_INT_TYPE_CHECK           167
-#define BINARY_OP_ADD_INT_REST                 168
+#define BB_ENTER_FRAME                         167
+#define BB_EXIT_FRAME                          168
+#define BB_TYPE_BRANCH                         169
+#define BB_ITER                                170
+#define BB_BRANCH_OR_POP                       174
+#define BB_POP_THEN_BRANCH                     175
+#define BB_POP_BRANCH                          176
+#define BINARY_CHECK_INT                       177
+#define BINARY_OP_ADD_INT_REST                 178
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \
