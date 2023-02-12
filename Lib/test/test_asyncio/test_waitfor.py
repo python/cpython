@@ -279,7 +279,8 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
 
 
     async def test_wait_for_issue86296(self):
-        # See https://github.com/python/cpython/issues/86296
+        # GH-86296: The task should get cancelled
+        # and not run to completion.
 
         async def inner():
             return
@@ -318,7 +319,7 @@ class WaitForShieldTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(task.cancelled())
 
     async def test_none_timeout(self):
-        # With timeout=None the timeout is desables so it runs to completion.
+        # With timeout=None the timeout is disables so it runs to completion.
         async def coro():
             await asyncio.sleep(0.1)
             return 'done'
