@@ -331,8 +331,7 @@ class WaitForShieldTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await task, "done")
 
     async def test_shielded_timeout(self):
-        # `shield` prevents the task from being cancelled.
-
+        # shield prevents the task from being cancelled.
         async def coro():
             await asyncio.sleep(1)
             return 'done'
