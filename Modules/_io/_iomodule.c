@@ -640,7 +640,6 @@ static PyTypeObject* static_types[] = {
     // PyIOBase_Type subclasses
     &PyBufferedIOBase_Type,
     &PyRawIOBase_Type,
-    &PyTextIOBase_Type,
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     &_PyBytesIOBuffer_Type,
@@ -714,6 +713,9 @@ PyInit__io(void)
         }
     }
 
+    // PyIOBase_Type subclasses
+    ADD_TYPE(m, state->PyTextIOBase_Type, &textiobase_spec, &PyIOBase_Type);
+
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, &PyBufferedIOBase_Type);
     ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec,
@@ -729,9 +731,9 @@ PyInit__io(void)
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, &PyRawIOBase_Type);
 
     // PyTextIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, &PyTextIOBase_Type);
-    ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec,
-             &PyTextIOBase_Type);
+    PyTypeObject *base = state->PyTextIOBase_Type;
+    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, base);
+    ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec, base);
 
     state->initialized = 1;
 

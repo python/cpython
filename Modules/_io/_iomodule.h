@@ -11,7 +11,6 @@
 extern PyTypeObject PyIOBase_Type;
 extern PyTypeObject PyRawIOBase_Type;
 extern PyTypeObject PyBufferedIOBase_Type;
-extern PyTypeObject PyTextIOBase_Type;
 
 /* Concrete classes */
 extern PyTypeObject PyIncrementalNewlineDecoder_Type;
@@ -24,6 +23,7 @@ extern PyType_Spec bufferedwriter_spec;
 extern PyType_Spec bytesio_spec;
 extern PyType_Spec fileio_spec;
 extern PyType_Spec stringio_spec;
+extern PyType_Spec textiobase_spec;
 extern PyType_Spec textiowrapper_spec;
 
 #ifdef MS_WINDOWS
@@ -154,6 +154,7 @@ typedef struct {
     PyTypeObject *PyBytesIO_Type;
     PyTypeObject *PyFileIO_Type;
     PyTypeObject *PyStringIO_Type;
+    PyTypeObject *PyTextIOBase_Type;
     PyTypeObject *PyTextIOWrapper_Type;
 } _PyIO_State;
 

@@ -130,6 +130,21 @@ textiobase_errors_get(PyObject *self, void *context)
     Py_RETURN_NONE;
 }
 
+static int
+textiobase_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static void
+textiobase_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    _PyObject_GC_UNTRACK(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
+}
 
 static PyMethodDef textiobase_methods[] = {
     {"detach", textiobase_detach, METH_NOARGS, textiobase_detach_doc},
@@ -146,57 +161,21 @@ static PyGetSetDef textiobase_getset[] = {
     {NULL}
 };
 
-PyTypeObject PyTextIOBase_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io._TextIOBase",          /*tp_name*/
-    0,                          /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    0,                          /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
-    textiobase_doc,             /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    textiobase_methods,         /* tp_methods */
-    0,                          /* tp_members */
-    textiobase_getset,          /* tp_getset */
-    &PyIOBase_Type,             /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    0,                          /* tp_init */
-    0,                          /* tp_alloc */
-    0,                          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot textiobase_slots[] = {
+    {Py_tp_dealloc, textiobase_dealloc},
+    {Py_tp_doc, (void *)textiobase_doc},
+    {Py_tp_methods, textiobase_methods},
+    {Py_tp_getset, textiobase_getset},
+    {Py_tp_traverse, textiobase_traverse},
+    {0, NULL},
 };
 
+PyType_Spec textiobase_spec = {
+    .name = "_io._TextIOBase",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = textiobase_slots,
+};
 
 /* IncrementalNewlineDecoder */
 
