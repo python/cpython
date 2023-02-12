@@ -280,6 +280,8 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_wait_for_issue86296(self):
         # GH-86296: The task should get cancelled and not run to completion.
+        # inner completes in one cycle of the event loop so it
+        # complete before the task is cancelled.
 
         async def inner():
             return 'done'
@@ -295,6 +297,8 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
 
         task = asyncio.create_task(wait_for_coro())
         self.assertFalse(task.done())
+        # Run the task
+        await asyncio.sleep(0)
         task.cancel()
         with self.assertRaises(asyncio.CancelledError):
             await task
