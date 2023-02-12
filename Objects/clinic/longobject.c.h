@@ -231,9 +231,7 @@ PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
 "\n"
-"Return a pair of integers, whose ratio is equal to the original int.\n"
-"\n"
-"The ratio is in lowest terms and with a positive denominator.\n"
+"Given an int x, return the tuple (x, 1).\n"
 "\n"
 ">>> (10).as_integer_ratio()\n"
 "(10, 1)\n"
@@ -484,4 +482,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=a54a033e8082de9e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c605329a5c582559 input=a9049054013a1b77]*/

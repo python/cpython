@@ -602,8 +602,7 @@ class`. In addition, it provides a few more methods:
 
 .. method:: int.as_integer_ratio()
 
-   Given an integer ``x``, ``x.as_integer_ratio()`` returns the tuple
-   ``(x, 1)``.
+   Given an int ``x``, return the tuple ``(x, 1)``.
 
    .. versionadded:: 3.8
 

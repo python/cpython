@@ -6020,9 +6020,7 @@ int_bit_count_impl(PyObject *self)
 /*[clinic input]
 int.as_integer_ratio
 
-Return a pair of integers, whose ratio is equal to the original int.
-
-The ratio is in lowest terms and with a positive denominator.
+Given an int x, return the tuple (x, 1).
 
 >>> (10).as_integer_ratio()
 (10, 1)
@@ -6034,7 +6032,7 @@ The ratio is in lowest terms and with a positive denominator.
 
 static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=e60803ae1cc8621a input=c60aa1da86b7a47b]*/
+/*[clinic end generated code: output=e60803ae1cc8621a input=773adde26ef0a5c3]*/
 {
     PyObject *ratio_tuple;
     PyObject *numerator = long_long(self);
