@@ -335,28 +335,6 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
-Modules/itertoolsmodule.c	-	_grouper_type	-
-Modules/itertoolsmodule.c	-	accumulate_type	-
-Modules/itertoolsmodule.c	-	batched_type	-
-Modules/itertoolsmodule.c	-	chain_type	-
-Modules/itertoolsmodule.c	-	combinations_type	-
-Modules/itertoolsmodule.c	-	compress_type	-
-Modules/itertoolsmodule.c	-	count_type	-
-Modules/itertoolsmodule.c	-	cwr_type	-
-Modules/itertoolsmodule.c	-	cycle_type	-
-Modules/itertoolsmodule.c	-	dropwhile_type	-
-Modules/itertoolsmodule.c	-	filterfalse_type	-
-Modules/itertoolsmodule.c	-	groupby_type	-
-Modules/itertoolsmodule.c	-	islice_type	-
-Modules/itertoolsmodule.c	-	pairwise_type	-
-Modules/itertoolsmodule.c	-	permutations_type	-
-Modules/itertoolsmodule.c	-	product_type	-
-Modules/itertoolsmodule.c	-	repeat_type	-
-Modules/itertoolsmodule.c	-	starmap_type	-
-Modules/itertoolsmodule.c	-	takewhile_type	-
-Modules/itertoolsmodule.c	-	tee_type	-
-Modules/itertoolsmodule.c	-	teedataobject_type	-
-Modules/itertoolsmodule.c	-	ziplongest_type	-
 
 
 ##################################

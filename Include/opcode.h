@@ -76,6 +76,7 @@ extern "C" {
 #define CONTAINS_OP                            118
 #define RERAISE                                119
 #define COPY                                   120
+#define RETURN_CONST                           121
 #define BINARY_OP                              122
 #define SEND                                   123
 #define LOAD_FAST                              124
@@ -179,13 +180,13 @@ extern "C" {
 #define STORE_ATTR_INSTANCE_VALUE               86
 #define STORE_ATTR_SLOT                         87
 #define STORE_ATTR_WITH_HINT                   113
-#define STORE_FAST__LOAD_FAST                  121
-#define STORE_FAST__STORE_FAST                 143
-#define STORE_SUBSCR_DICT                      153
-#define STORE_SUBSCR_LIST_INT                  154
-#define UNPACK_SEQUENCE_LIST                   158
-#define UNPACK_SEQUENCE_TUPLE                  159
-#define UNPACK_SEQUENCE_TWO_TUPLE              160
+#define STORE_FAST__LOAD_FAST                  143
+#define STORE_FAST__STORE_FAST                 153
+#define STORE_SUBSCR_DICT                      154
+#define STORE_SUBSCR_LIST_INT                  158
+#define UNPACK_SEQUENCE_LIST                   159
+#define UNPACK_SEQUENCE_TUPLE                  160
+#define UNPACK_SEQUENCE_TWO_TUPLE              161
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
@@ -196,6 +197,7 @@ extern "C" {
 
 #define HAS_CONST(op) (false\
     || ((op) == LOAD_CONST) \
+    || ((op) == RETURN_CONST) \
     || ((op) == KW_NAMES) \
     )
 

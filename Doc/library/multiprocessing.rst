@@ -126,6 +126,11 @@ to start a process.  These *start methods* are
 
     Available on POSIX systems.  Currently the default on POSIX except macOS.
 
+    .. note::
+       The default start method will change away from *fork* in Python 3.14.
+       Code that requires *fork* should explicitly specify that via
+       :func:`get_context` or :func:`set_start_method`.
+
   *forkserver*
     When the program starts and selects the *forkserver* start method,
     a server process is spawned.  From then on, whenever a new process
@@ -138,11 +143,6 @@ to start a process.  These *start methods* are
     Available on POSIX platforms which support passing file descriptors
     over Unix pipes such as Linux.
 
-.. versionchanged:: 3.12
-   Implicit use of the *fork* start method as the default now raises a
-   :exc:`DeprecationWarning`. Code that requires it should explicitly
-   specify *fork* via :func:`get_context` or :func:`set_start_method`.
-   The default will change away from *fork* in 3.14.
 
 .. versionchanged:: 3.8
 
@@ -1107,6 +1107,7 @@ Miscellaneous
    launched (before creating a :class:`Pool` or starting a :class:`Process`).
 
    Only meaningful when using the ``'forkserver'`` start method.
+   See :ref:`multiprocessing-start-methods`.
 
    .. versionadded:: 3.4
 

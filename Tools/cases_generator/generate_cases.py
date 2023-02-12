@@ -43,10 +43,7 @@ arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 arg_parser.add_argument(
-    "-m",
-    "--metadata",
-    action="store_true",
-    help=f"Generate metadata instead, changes output default to {DEFAULT_METADATA_OUTPUT}",
+    "-m", "--metadata", type=str, help="Generated metadata", default=DEFAULT_METADATA_OUTPUT
 )
 
 
@@ -180,11 +177,8 @@ class Formatter:
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
         elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
-            # NOTE: MOVE_ITEMS() does not actually exist.
-            # The only supported output array forms are:
-            # - unused[...]
-            # - X[...] where X[...] matches an input array exactly
-            self.emit(f"MOVE_ITEMS({dst.name}, {src.name}, {src.size});")
+            # The user code is responsible for writing to the output array.
+            pass
         elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
         else:
@@ -230,7 +224,8 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.block_text, self.predictions = extract_block_text(self.block)
+        self.block_text, self.check_eval_breaker, self.predictions = \
+            extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
@@ -309,10 +304,24 @@ class Instruction:
                 out.declare(ieffect, src)
 
         # Write output stack effect variable declarations
+        isize = string_effect_size(list_effect_size(self.input_effects))
         input_names = {ieffect.name for ieffect in self.input_effects}
-        for oeffect in self.output_effects:
+        for i, oeffect in enumerate(self.output_effects):
             if oeffect.name not in input_names:
-                out.declare(oeffect, None)
+                if oeffect.size:
+                    osize = string_effect_size(
+                        list_effect_size([oeff for oeff in self.output_effects[:i]])
+                    )
+                    offset = "stack_pointer"
+                    if isize != osize:
+                        if isize != "0":
+                            offset += f" - ({isize})"
+                        if osize != "0":
+                            offset += f" + {osize}"
+                    src = StackEffect(offset, "PyObject **")
+                    out.declare(oeffect, src)
+                else:
+                    out.declare(oeffect, None)
 
         # out.emit(f"JUMPBY(OPSIZE({self.inst.name}) - 1);")
 
@@ -379,9 +388,11 @@ class Instruction:
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
         extra = " " * -dedent
+        names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
         for line in self.block_text:
             if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*(?://.*)?$", line):
                 space, cond, label = m.groups()
+                space = extra + space
                 # ERROR_IF() must pop the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.
                 # NOTE: If the label doesn't exist, just add it to ceval.c.
@@ -400,16 +411,25 @@ class Instruction:
                     symbolic = ""
                 if symbolic:
                     out.write_raw(
-                        f"{extra}{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
+                        f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
                     )
                 else:
-                    out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
+                    out.write_raw(f"{space}if ({cond}) goto {label};\n")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 if not self.register:
-                    space = m.group(1)
+                    space = extra + m.group(1)
                     for ieff in self.input_effects:
-                        if ieff.name not in self.unmoved_names:
-                            out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
+                        if ieff.name in names_to_skip:
+                            continue
+                        if ieff.size:
+                            out.write_raw(
+                                f"{space}for (int _i = {ieff.size}; --_i >= 0;) {{\n"
+                            )
+                            out.write_raw(f"{space}    Py_DECREF({ieff.name}[_i]);\n")
+                            out.write_raw(f"{space}}}\n")
+                        else:
+                            decref = "XDECREF" if ieff.cond else "DECREF"
+                            out.write_raw(f"{space}Py_{decref}({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
 
@@ -475,13 +495,15 @@ class Analyzer:
 
     filename: str
     output_filename: str
+    metadata_filename: str
     src: str
     errors: int = 0
 
-    def __init__(self, filename: str, output_filename: str):
+    def __init__(self, filename: str, output_filename: str, metadata_filename: str):
         """Read the input file."""
         self.filename = filename
         self.output_filename = output_filename
+        self.metadata_filename = metadata_filename
         with open(filename) as f:
             self.src = f.read()
 
@@ -866,21 +888,25 @@ class Analyzer:
         def write_function(
             direction: str, data: list[tuple[AnyInstruction, str]]
         ) -> None:
-            self.out.emit("\n#ifndef NDEBUG")
-            self.out.emit("static int")
+            self.out.emit("")
+            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit(f"extern int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump);")
+            self.out.emit("#else")
+            self.out.emit("int")
             self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg, bool jump) {{")
             self.out.emit("    switch(opcode) {")
             for instr, effect in data:
                 self.out.emit(f"        case {instr.name}:")
                 self.out.emit(f"            return {effect};")
             self.out.emit("        default:")
-            self.out.emit("            Py_UNREACHABLE();")
+            self.out.emit("            return -1;")
             self.out.emit("    }")
             self.out.emit("}")
             self.out.emit("#endif")
 
         write_function("popped", popped_data)
         write_function("pushed", pushed_data)
+        self.out.emit("")
 
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
@@ -901,7 +927,7 @@ class Analyzer:
         # Turn it into a list of enum definitions.
         format_enums = [INSTR_FMT_PREFIX + format for format in sorted(all_formats)]
 
-        with open(self.output_filename, "w") as f:
+        with open(self.metadata_filename, "w") as f:
             # Write provenance header
             f.write(f"// This file is generated by {THIS} --metadata\n")
             f.write(f"// from {os.path.relpath(self.filename, ROOT)}\n")
@@ -912,7 +938,7 @@ class Analyzer:
 
             self.write_stack_effect_functions()
 
-            # Write variable definition
+            # Write type definitions
             self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
             self.out.emit("struct opcode_metadata {")
@@ -922,7 +948,14 @@ class Analyzer:
                 self.out.emit("enum Direction dir_op3;")
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
-            self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
+            self.out.emit("};")
+            self.out.emit("")
+
+            # Write metadata array declaration
+            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];")
+            self.out.emit("#else")
+            self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
             for thing in self.everything:
@@ -939,6 +972,7 @@ class Analyzer:
 
             # Write end of array
             self.out.emit("};")
+            self.out.emit("#endif")
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
@@ -1016,6 +1050,8 @@ class Analyzer:
             if not instr.always_exits:
                 for prediction in instr.predictions:
                     self.out.emit(f"PREDICT({prediction});")
+                if instr.check_eval_breaker:
+                    self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
 
     def write_super(self, sup: SuperInstruction) -> None:
@@ -1091,7 +1127,7 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
+def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
 
@@ -1111,6 +1147,12 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
     while blocklines and not blocklines[-1].strip():
         blocklines.pop()
 
+    # Separate CHECK_EVAL_BREAKER() macro from end
+    check_eval_breaker = \
+        blocklines != [] and blocklines[-1].strip() == "CHECK_EVAL_BREAKER();"
+    if check_eval_breaker:
+        del blocklines[-1]
+
     # Separate PREDICT(...) macros from end
     predictions: list[str] = []
     while blocklines and (
@@ -1119,7 +1161,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
         predictions.insert(0, m.group(1))
         blocklines.pop()
 
-    return blocklines, predictions
+    return blocklines, check_eval_breaker, predictions
 
 
 def always_exits(lines: list[str]) -> bool:
@@ -1153,18 +1195,13 @@ def variable_used(node: parser.Node, name: str) -> bool:
 def main():
     """Parse command line, parse input, analyze, write output."""
     args = arg_parser.parse_args()  # Prints message and sys.exit(2) on error
-    if args.metadata:
-        if args.output == DEFAULT_OUTPUT:
-            args.output = DEFAULT_METADATA_OUTPUT
-    a = Analyzer(args.input, args.output)  # Raises OSError if input unreadable
+    a = Analyzer(args.input, args.output, args.metadata)  # Raises OSError if input unreadable
     a.parse()  # Raises SyntaxError on failure
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
-    if args.metadata:
-        a.write_metadata()
-    else:
-        a.write_instructions()  # Raises OSError if output can't be written
+    a.write_instructions()  # Raises OSError if output can't be written
+    a.write_metadata()
 
 
 if __name__ == "__main__":
