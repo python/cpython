@@ -127,7 +127,6 @@ def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
 
-def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90             # real opcodes from here have an argument:
@@ -224,6 +223,7 @@ def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
+def_op('CALL_INTRINSIC_2', 174)
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
