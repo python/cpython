@@ -160,7 +160,7 @@ static void *opcode_targets[256] = {
     &&TARGET_UNPACK_SEQUENCE_LIST,
     &&TARGET_UNPACK_SEQUENCE_TUPLE,
     &&TARGET_UNPACK_SEQUENCE_TWO_TUPLE,
-    &&_unknown_opcode,
+    &&TARGET_SEND_GEN,
     &&TARGET_LIST_EXTEND,
     &&TARGET_SET_UPDATE,
     &&TARGET_DICT_MERGE,
