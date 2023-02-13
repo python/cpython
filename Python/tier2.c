@@ -13,31 +13,9 @@
 // BB_BRANCH instruction: 1
 #define BB_EPILOG 1
 
-static _Py_CODEUNIT *_PyCode_Tier2Initialize(_PyInterpreterFrame *, _Py_CODEUNIT *);
-
 static inline int IS_SCOPE_EXIT_OPCODE(int opcode);
 
 ////////// CEVAL functions
-
-// Tier 2 warmup counter
-_Py_CODEUNIT *
-_PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
-{
-    PyCodeObject *code = frame->f_code;
-    if (code->_tier2_warmup != 0) {
-        code->_tier2_warmup++;
-        if (code->_tier2_warmup == 0) {
-            // If it fails, due to lack of memory or whatever,
-            // just fall back to the tier 1 interpreter.
-            _Py_CODEUNIT *next = _PyCode_Tier2Initialize(frame, next_instr);
-            return next_instr;
-            if (next != NULL) {
-                return next;
-            }
-        }
-    }
-    return next_instr;
-}
 
 ////////// Utility functions
 
@@ -417,6 +395,9 @@ emit_i(_Py_CODEUNIT *write_curr, int opcode, int oparg)
     return write_curr;
 }
 
+// Note: we're copying over the actual caches to preserve information!
+// This way instructions that we can't type propagate over still stay
+// optimized.
 static inline _Py_CODEUNIT *
 copy_cache_entries(_Py_CODEUNIT *write_curr, _Py_CODEUNIT *cache, int n_entries)
 {
@@ -447,7 +428,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _Py_CODEUNIT *start,
 #define JUMPBY(x) i += x + 1; continue;
 #define BASIC_PUSH(v)     (*stack_pointer++ = (v))
 #define BASIC_POP()       (*--stack_pointer)
-#define DISPATCH()        write_i = emit_i(write_i, opcode, oparg); write_i = copy_cache_entries(write_i, curr+1, caches); break;
+#define DISPATCH()        write_i = emit_i(write_i, opcode, oparg); write_i = copy_cache_entries(write_i, curr+1, caches); i += caches; continue;
     assert(co->_tier2_info != NULL);
     // There are only two cases that a BB ends.
     // 1. If there's a branch instruction / scope exit.
@@ -481,6 +462,9 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _Py_CODEUNIT *start,
         _Py_CODEUNIT action;
 
         switch (opcode) {
+        case COMPARE_AND_BRANCH:
+            opcode = COMPARE_OP;
+            DISPATCH();
         //case LOAD_FAST:
         //    BASIC_PUSH(type_context[oparg]);
         //    DISPATCH();
@@ -542,8 +526,6 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _Py_CODEUNIT *start,
             }
             DISPATCH();
         }
-
-        i += caches;
 
     }
 end:
@@ -804,4 +786,62 @@ cleanup:
     PyMem_Free(t2_info);
     PyMem_Free(bb_space);
     return NULL;
+}
+
+////////// CEVAL FUNCTIONS
+
+// Tier 2 warmup counter
+_Py_CODEUNIT *
+_PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
+{
+    PyCodeObject *code = frame->f_code;
+    if (code->_tier2_warmup != 0) {
+        code->_tier2_warmup++;
+        if (code->_tier2_warmup == 0) {
+            // If it fails, due to lack of memory or whatever,
+            // just fall back to the tier 1 interpreter.
+            _Py_CODEUNIT *next = _PyCode_Tier2Initialize(frame, next_instr);
+            return next_instr;
+            if (next != NULL) {
+                return next;
+            }
+        }
+    }
+    return next_instr;
+}
+
+// Executes successor/alternate BB, depending on direction
+// Lazily generates successive BBs when required.
+// direction: 1 for successor, 0 for alternative.
+_Py_CODEUNIT *
+_PyTier2BB_ExecuteNextBB(_PyInterpreterFrame *frame, _PyTier2BB **curr_bb, int direction)
+{
+    PyCodeObject *co = frame->f_code;
+    _PyTier2BB *curr = *curr_bb;
+    if (BB_SUC) {
+        if (curr->successor_bb == NULL) {
+            _PyTier2BB *succ = _PyTier2_Code_DetectAndEmitBB(co,
+                curr->tier1_end, curr->type_context_len, curr->type_context);
+            curr->successor_bb = succ;
+            *curr_bb = succ;
+            return succ->u_code;
+        }
+        else {
+            *curr_bb = curr->successor_bb;
+            return curr->successor_bb->u_code;
+        }
+    }
+    else {
+        if (curr->alternate_bb == NULL) {
+            _PyTier2BB *alt = _PyTier2_Code_DetectAndEmitBB(co,
+                curr->tier1_end, curr->type_context_len, curr->type_context);
+            curr->alternate_bb = alt;
+            *curr_bb = alt;
+            return alt->u_code;
+        }
+        else {
+            *curr_bb = curr->alternate_bb;
+            return curr->alternate_bb->u_code;
+        }
+    }
 }

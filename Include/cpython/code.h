@@ -59,9 +59,9 @@ typedef struct {
 
 // What the tier 2 interpreter executes
 typedef struct _PyTier2BB {
-    _Py_CODEUNIT *successor_bb;
+    struct _PyTier2BB *successor_bb;
     // The other BB to go should BB_BRANCH fail.
-    _Py_CODEUNIT *alternate_bb;
+    struct _PyTier2BB *alternate_bb;
     // Array of types. This corresponds to the fast locals array.
     int type_context_len;
     PyTypeObject **type_context;

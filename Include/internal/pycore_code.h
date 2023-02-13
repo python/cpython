@@ -241,6 +241,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 
 /* Tier 2 interpreter */
 extern _Py_CODEUNIT *_PyCode_Tier2Warmup(struct _PyInterpreterFrame *, _Py_CODEUNIT *);
+extern _Py_CODEUNIT *_PyTier2BB_ExecuteNextBB(struct _PyInterpreterFrame *frame, _PyTier2BB **curr_bb, int direction);
 
 #ifdef Py_STATS
 
@@ -499,6 +500,9 @@ extern uint32_t _Py_next_func_version;
 
 #define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
 
+
+#define BB_SUC 1
+#define BB_ALT 0
 
 #ifdef __cplusplus
 }

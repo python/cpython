@@ -447,7 +447,7 @@ _uops = [
     'BB_EXIT_FRAME',
     ## These branches correspond to the jump instructions
     'BB_TYPE_BRANCH',
-    'BB_ITER',              # FOR_ITER
+    'BB_ITER',              # FOR_ITER's null (iterator) check
     'BB_BRANCH_OR_POP',     # JUMP_IF_FALSE_OR_POP, JUMP_IF_TRUE_OR_POP
     'BB_POP_THEN_BRANCH',   # POP_JUMP_IF_FALSE, POP_JUMP_IF_TRUE
     'BB_POP_BRANCH',        # POP_JUMP_IF_NOT_NONE, POP_JUMP_IF_NONE
