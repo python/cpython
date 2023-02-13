@@ -1,0 +1,1 @@
+Fixes installer correctly upgrading existing ``py.exe`` launcher installs.
