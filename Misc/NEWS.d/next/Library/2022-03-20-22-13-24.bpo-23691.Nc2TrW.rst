@@ -1,1 +1,0 @@
-Protect the :func:`re.finditer` iterator from re-entering.

@@ -843,12 +843,11 @@ def singledispatch(func):
         return get_origin(cls) in {Union, types.UnionType}
 
     def _is_valid_dispatch_type(cls):
-        if isinstance(cls, type) and not isinstance(cls, GenericAlias):
+        if isinstance(cls, type):
             return True
         from typing import get_args
         return (_is_union_type(cls) and
-                all(isinstance(arg, type) and not isinstance(arg, GenericAlias)
-                    for arg in get_args(cls)))
+                all(isinstance(arg, type) for arg in get_args(cls)))
 
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func

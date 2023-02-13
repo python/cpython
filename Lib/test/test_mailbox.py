@@ -10,10 +10,15 @@ import io
 import tempfile
 from test import support
 from test.support import os_helper
+from test.support import socket_helper
 import unittest
 import textwrap
 import mailbox
 import glob
+
+
+if not socket_helper.has_gethostname:
+    raise unittest.SkipTest("test requires gethostname()")
 
 
 class TestBase:

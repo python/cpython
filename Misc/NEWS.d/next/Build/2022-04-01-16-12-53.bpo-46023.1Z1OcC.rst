@@ -1,2 +1,0 @@
-``makesetup`` now detects and skips all duplicated module definitions. The
-first entry wins.

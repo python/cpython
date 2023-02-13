@@ -17,15 +17,22 @@ from test.libregrtest.runtest import (
     ChildError, DidNotRun)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.pgo import setup_pgo_tests
-from test.libregrtest.utils import removepy, count, format_duration, printlist
+from test.libregrtest.utils import (removepy, count, format_duration,
+                                    printlist, get_build_info)
 from test import support
 from test.support import os_helper
+from test.support import threading_helper
 
 
 # bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
 # Used to protect against threading._shutdown() hang.
 # Must be smaller than buildbot "1200 seconds without output" limit.
 EXIT_TIMEOUT = 120.0
+
+EXITCODE_BAD_TEST = 2
+EXITCODE_INTERRUPTED = 130
+EXITCODE_ENV_CHANGED = 3
+EXITCODE_NO_TESTS_RAN = 4
 
 
 class Regrtest:
@@ -305,13 +312,22 @@ class Regrtest:
             printlist(self.skipped, file=sys.stderr)
 
     def rerun_failed_tests(self):
+        self.log()
+
+        if self.ns.python:
+            # Temp patch for https://github.com/python/cpython/issues/94052
+            self.log(
+                "Re-running failed tests is not supported with --python "
+                "host runner option."
+            )
+            return
+
         self.ns.verbose = True
         self.ns.failfast = False
         self.ns.verbose3 = False
 
         self.first_result = self.get_tests_result()
 
-        self.log()
         self.log("Re-running failed tests in verbose mode")
         rerun_list = list(self.need_rerun)
         self.need_rerun.clear()
@@ -476,13 +492,17 @@ class Regrtest:
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
+        print("== Python build:", ' '.join(get_build_info()))
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:
             print("== CPU count:", cpu_count)
         print("== encodings: locale=%s, FS=%s"
-              % (locale.getpreferredencoding(False),
-                 sys.getfilesystemencoding()))
+              % (locale.getencoding(), sys.getfilesystemencoding()))
+
+    def no_tests_run(self):
+        return not any((self.good, self.bad, self.skipped, self.interrupted,
+                        self.environment_changed))
 
     def get_tests_result(self):
         result = []
@@ -490,9 +510,8 @@ class Regrtest:
             result.append("FAILURE")
         elif self.ns.fail_env_changed and self.environment_changed:
             result.append("ENV CHANGED")
-        elif not any((self.good, self.bad, self.skipped, self.interrupted,
-            self.environment_changed)):
-            result.append("NO TEST RUN")
+        elif self.no_tests_run():
+            result.append("NO TESTS RAN")
 
         if self.interrupted:
             result.append("INTERRUPTED")
@@ -600,6 +619,16 @@ class Regrtest:
             for s in ET.tostringlist(root):
                 f.write(s)
 
+    def fix_umask(self):
+        if support.is_emscripten:
+            # Emscripten has default umask 0o777, which breaks some tests.
+            # see https://github.com/emscripten-core/emscripten/issues/17269
+            old_mask = os.umask(0)
+            if old_mask == 0o777:
+                os.umask(0o027)
+            else:
+                os.umask(old_mask)
+
     def set_temp_dir(self):
         if self.ns.tempdir:
             self.tmp_dir = self.ns.tempdir
@@ -628,11 +657,16 @@ class Regrtest:
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
         # testing (see the -j option).
-        pid = os.getpid()
-        if self.worker_test_name is not None:
-            test_cwd = 'test_python_worker_{}'.format(pid)
+        # Emscripten and WASI have stubbed getpid(), Emscripten has only
+        # milisecond clock resolution. Use randint() instead.
+        if sys.platform in {"emscripten", "wasi"}:
+            nounce = random.randint(0, 1_000_000)
         else:
-            test_cwd = 'test_python_{}'.format(pid)
+            nounce = os.getpid()
+        if self.worker_test_name is not None:
+            test_cwd = 'test_python_worker_{}'.format(nounce)
+        else:
+            test_cwd = 'test_python_{}'.format(nounce)
         test_cwd += os_helper.FS_NONASCII
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
@@ -655,6 +689,8 @@ class Regrtest:
 
         self.set_temp_dir()
 
+        self.fix_umask()
+
         if self.ns.cleanup:
             self.cleanup()
             sys.exit(0)
@@ -676,7 +712,8 @@ class Regrtest:
         except SystemExit as exc:
             # bpo-38203: Python can hang at exit in Py_Finalize(), especially
             # on threading._shutdown() call: put a timeout
-            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+            if threading_helper.can_start_thread:
+                faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
 
             sys.exit(exc.code)
 
@@ -723,11 +760,13 @@ class Regrtest:
         self.save_xml_result()
 
         if self.bad:
-            sys.exit(2)
+            sys.exit(EXITCODE_BAD_TEST)
         if self.interrupted:
-            sys.exit(130)
+            sys.exit(EXITCODE_INTERRUPTED)
         if self.ns.fail_env_changed and self.environment_changed:
-            sys.exit(3)
+            sys.exit(EXITCODE_ENV_CHANGED)
+        if self.no_tests_run():
+            sys.exit(EXITCODE_NO_TESTS_RAN)
         sys.exit(0)
 
 

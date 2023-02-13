@@ -1,1 +1,0 @@
-Improve performance of ``bytearray_repeat`` and ``bytearray_irepeat`` by reducing the number of invocations of ``memcpy``.

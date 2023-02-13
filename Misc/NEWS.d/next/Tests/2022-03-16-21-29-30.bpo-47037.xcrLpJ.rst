@@ -1,2 +1,0 @@
-Skip ``strftime("%4Y")`` feature test on Windows. It can cause an assertion
-error in debug builds.

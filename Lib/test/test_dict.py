@@ -1094,6 +1094,21 @@ class DictTest(unittest.TestCase):
         d.update(o.__dict__)
         self.assertEqual(list(d), ["c", "b", "a"])
 
+    @support.cpython_only
+    def test_splittable_to_generic_combinedtable(self):
+        """split table must be correctly resized and converted to generic combined table"""
+        class C:
+            pass
+
+        a = C()
+        a.x = 1
+        d = a.__dict__
+        before_resize = sys.getsizeof(d)
+        d[2] = 2 # split table is resized to a generic combined table
+
+        self.assertGreater(sys.getsizeof(d), before_resize)
+        self.assertEqual(list(d), ['x', 2])
+
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}

@@ -1,1 +1,0 @@
-Add :func:`hashlib.file_digest` helper for efficient hashing of file object.

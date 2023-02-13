@@ -1,1 +1,0 @@
-Allow unpacking types.GenericAlias objects, e.g. ``*tuple[int, str]``.

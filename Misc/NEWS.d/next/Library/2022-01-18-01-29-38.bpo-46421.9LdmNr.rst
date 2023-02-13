@@ -1,3 +1,0 @@
-Fix a unittest issue where if the command was invoked as ``python -m
-unittest`` and the filename(s) began with a dot (.), a ``ValueError`` is
-returned.
