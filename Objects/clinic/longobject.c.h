@@ -231,14 +231,7 @@ PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
 "\n"
-"Given an integer x, return the tuple (int(x), 1).\n"
-"\n"
-">>> (10).as_integer_ratio()\n"
-"(10, 1)\n"
-">>> (-10).as_integer_ratio()\n"
-"(-10, 1)\n"
-">>> (0).as_integer_ratio()\n"
-"(0, 1)");
+"Given an integer x, return the tuple (int(x), 1).");
 
 #define INT_AS_INTEGER_RATIO_METHODDEF    \
     {"as_integer_ratio", (PyCFunction)int_as_integer_ratio, METH_NOARGS, int_as_integer_ratio__doc__},
@@ -482,4 +475,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=ab356b117be2e104 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ee121cbd8c96cd2 input=a9049054013a1b77]*/

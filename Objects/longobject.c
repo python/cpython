@@ -6021,18 +6021,11 @@ int_bit_count_impl(PyObject *self)
 int.as_integer_ratio
 
 Given an integer x, return the tuple (int(x), 1).
-
->>> (10).as_integer_ratio()
-(10, 1)
->>> (-10).as_integer_ratio()
-(-10, 1)
->>> (0).as_integer_ratio()
-(0, 1)
 [clinic start generated code]*/
 
 static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=e60803ae1cc8621a input=61de2d707e10af00]*/
+/*[clinic end generated code: output=e60803ae1cc8621a input=258f5b08307e7dcd]*/
 {
     PyObject *ratio_tuple;
     PyObject *numerator = long_long(self);
