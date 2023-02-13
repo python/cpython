@@ -628,9 +628,6 @@ mult(Bigint *a, Bigint *b)
     return c;
 }
 
-/* p5s is a linked list of powers of 5 of the form 5**(2**i), i >= 2 */
-
-static Bigint *p5s;
 
 /* multiply the Bigint b by 5**k.  Returns a pointer to the result, or NULL on
    failure; if the returned pointer is distinct from b then the original
