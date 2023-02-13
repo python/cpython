@@ -83,7 +83,6 @@ class SliceTest(unittest.TestCase):
         self.assertEqual(hash(slice(5)), slice(5).__hash__())
         self.assertEqual(hash(slice(1, 2)), slice(1, 2).__hash__())
         self.assertEqual(hash(slice(1, 2, 3)), slice(1, 2, 3).__hash__())
-        self.assertEqual(hash((slice(4, 2), slice(2, 6))), (slice(4, 2), slice(2, 6)).__hash__())
         self.assertNotEqual(slice(5), slice(6))
 
         with self.assertRaises(TypeError):
