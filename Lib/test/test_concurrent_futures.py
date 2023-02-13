@@ -711,7 +711,6 @@ create_executor_tests(WaitTests,
 
 
 class AsCompletedTests:
-    # TODO(brian@sweetapp.com): Should have a test with a non-zero timeout.
     def test_no_timeout(self):
         future1 = self.executor.submit(mul, 2, 21)
         future2 = self.executor.submit(mul, 7, 6)
@@ -728,24 +727,29 @@ class AsCompletedTests:
                  future1, future2]),
                 completed)
 
-    def test_zero_timeout(self):
-        future1 = self.executor.submit(time.sleep, 2)
-        completed_futures = set()
-        try:
-            for future in futures.as_completed(
-                    [CANCELLED_AND_NOTIFIED_FUTURE,
-                     EXCEPTION_FUTURE,
-                     SUCCESSFUL_FUTURE,
-                     future1],
-                    timeout=0):
-                completed_futures.add(future)
-        except futures.TimeoutError:
-            pass
+    def test_future_times_out(self):
+        """Test ``futures.as_completed`` timing out before
+        completing it's final future."""
+        already_completed = {CANCELLED_AND_NOTIFIED_FUTURE,
+                             EXCEPTION_FUTURE,
+                             SUCCESSFUL_FUTURE}
 
-        self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
-                              EXCEPTION_FUTURE,
-                              SUCCESSFUL_FUTURE]),
-                         completed_futures)
+        for timeout in (0, 0.01):
+            with self.subTest(timeout):
+
+                future = self.executor.submit(time.sleep, 0.1)
+                completed_futures = set()
+                try:
+                    for f in futures.as_completed(
+                        already_completed | {future},
+                        timeout
+                    ):
+                        completed_futures.add(f)
+                except futures.TimeoutError:
+                    pass
+
+                # Check that ``future`` wasn't completed.
+                self.assertEqual(completed_futures, already_completed)
 
     def test_duplicate_futures(self):
         # Issue 20367. Duplicate futures should not raise exceptions or give

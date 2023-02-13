@@ -87,7 +87,6 @@ typedef struct {
     int co_nlocalsplus;           /* number of local + cell + free variables */ \
     int co_framesize;             /* Size of frame in words */                 \
     int co_nlocals;               /* number of local variables */              \
-    int co_nplaincellvars;        /* number of non-arg cell variables */       \
     int co_ncellvars;             /* total number of cell variables */         \
     int co_nfreevars;             /* number of free variables */               \
     uint32_t co_version;          /* version number */                         \
@@ -155,6 +154,11 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 static inline Py_ssize_t PyCode_GetNumFree(PyCodeObject *op) {
     assert(PyCode_Check(op));
     return op->co_nfreevars;
+}
+
+static inline int PyCode_GetFirstFree(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return op->co_nlocalsplus - op->co_nfreevars;
 }
 
 #define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)

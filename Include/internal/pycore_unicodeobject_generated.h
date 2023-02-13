@@ -1180,6 +1180,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(sizehint);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(skip_file_prefixes);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(sleep);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(sock);

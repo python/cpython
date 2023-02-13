@@ -366,6 +366,10 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                     return
 
                 f = self._proactor.accept_pipe(pipe)
+            except BrokenPipeError:
+                if pipe and pipe.fileno() != -1:
+                    pipe.close()
+                self.call_soon(loop_accept_pipe)
             except OSError as exc:
                 if pipe and pipe.fileno() != -1:
                     self.call_exception_handler({
@@ -377,6 +381,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                 elif self._debug:
                     logger.warning("Accept pipe failed on pipe %r",
                                    pipe, exc_info=True)
+                self.call_soon(loop_accept_pipe)
             except exceptions.CancelledError:
                 if pipe:
                     pipe.close()
