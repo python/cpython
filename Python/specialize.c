@@ -128,6 +128,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
     fprintf(out, "opcode[%d].specializable : 1\n", BINARY_SLICE);
     fprintf(out, "opcode[%d].specializable : 1\n", COMPARE_OP);
     fprintf(out, "opcode[%d].specializable : 1\n", STORE_SLICE);
+    fprintf(out, "opcode[%d].specializable : 1\n", SEND);
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Caches[i]) {
             fprintf(out, "opcode[%d].specializable : 1\n", i);
@@ -2184,5 +2185,27 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
     return;
 success:
     STAT_INC(FOR_ITER, success);
+    cache->counter = adaptive_counter_cooldown();
+}
+
+void
+_Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    assert(_PyOpcode_Caches[SEND] == INLINE_CACHE_ENTRIES_SEND);
+    _PySendCache *cache = (_PySendCache *)(instr + 1);
+    PyTypeObject *tp = Py_TYPE(receiver);
+    if (tp == &PyGen_Type || tp == &PyCoro_Type) {
+        _py_set_opcode(instr, SEND_GEN);
+        goto success;
+    }
+    SPECIALIZATION_FAIL(SEND,
+                        _PySpecialization_ClassifyIterator(receiver));
+    STAT_INC(SEND, failure);
+    _py_set_opcode(instr, SEND);
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+success:
+    STAT_INC(SEND, success);
     cache->counter = adaptive_counter_cooldown();
 }
