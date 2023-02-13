@@ -25,7 +25,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    An :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
    that support a full repertoire of SMTP and ESMTP operations. If the optional
-   host and port parameters are given, the SMTP :meth:`connect` method is
+   *host* and *port* parameters are given, the SMTP :meth:`connect` method is
    called with those parameters during initialization.  If specified,
    *local_hostname* is used as the FQDN of the local host in the HELO/EHLO
    command.  Otherwise, the local hostname is found using
@@ -37,9 +37,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    raised.  The optional *source_address* parameter allows binding
    to some specific source address in a machine with multiple network
    interfaces, and/or to some specific source TCP port. It takes a 2-tuple
-   (host, port), for the socket to bind to as its source address before
-   connecting. If omitted (or if host or port are ``''`` and/or 0 respectively)
-   the OS default behavior will be used.
+   ``(host, port)``, for the socket to bind to as its source address before
+   connecting. If omitted (or if *host* or *port* are ``''`` and/or ``0``
+   respectively) the OS default behavior will be used.
 
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`SMTP.quit` methods.
