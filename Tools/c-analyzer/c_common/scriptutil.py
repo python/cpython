@@ -192,7 +192,7 @@ def add_verbosity_cli(parser):
     parser.add_argument('-q', '--quiet', action='count', default=0)
     parser.add_argument('-v', '--verbose', action='count', default=0)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
         key = 'verbosity'
         if key in ns:
@@ -208,7 +208,7 @@ def add_traceback_cli(parser):
     parser.add_argument('--no-traceback', '--no-tb', dest='traceback',
                         action='store_const', const=False)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
         key = 'traceback_cm'
         if key in ns:
@@ -262,7 +262,7 @@ def add_sepval_cli(parser, opt, dest, choices, *, sep=',', **kwargs):
         #kwargs.setdefault('metavar', opt.upper())
         parser.add_argument(opt, dest=dest, action='append', **kwargs)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
 
         # XXX Use normalize_selection()?
@@ -293,7 +293,7 @@ def add_file_filtering_cli(parser, *, excluded=None):
 
     excluded = tuple(excluded or ())
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
         key = 'iter_filenames'
         if key in ns:
@@ -307,7 +307,9 @@ def add_file_filtering_cli(parser, *, excluded=None):
             exclude=tuple(_parse_files(_exclude)),
             # We use the default for "show_header"
         )
-        ns[key] = (lambda files: fsutil.iter_filenames(files, **kwargs))
+        def process_filenames(filenames, relroot=None):
+            return fsutil.process_filenames(filenames, relroot=relroot, **kwargs)
+        ns[key] = process_filenames
     return process_args
 
 
@@ -321,7 +323,7 @@ def add_progress_cli(parser, *, threshold=VERBOSITY, **kwargs):
     parser.add_argument('--no-progress', dest='track_progress', action='store_false')
     parser.set_defaults(track_progress=True)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         if args.track_progress:
             ns = vars(args)
             verbosity = ns.get('verbosity', VERBOSITY)
@@ -337,7 +339,7 @@ def add_failure_filtering_cli(parser, pool, *, default=False):
                         metavar=f'"{{all|{"|".join(sorted(pool))}}},..."')
     parser.add_argument('--no-fail', dest='fail', action='store_const', const=())
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
 
         fail = ns.pop('fail')
@@ -369,7 +371,7 @@ def add_failure_filtering_cli(parser, pool, *, default=False):
 def add_kind_filtering_cli(parser, *, default=None):
     parser.add_argument('--kinds', action='append')
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
 
         kinds = []
@@ -484,18 +486,18 @@ def _flatten_processors(processors):
             yield from _flatten_processors(proc)
 
 
-def process_args(args, processors, *, keys=None):
+def process_args(args, argv, processors, *, keys=None):
     processors = _flatten_processors(processors)
     ns = vars(args)
     extracted = {}
     if keys is None:
         for process_args in processors:
-            for key in process_args(args):
+            for key in process_args(args, argv=argv):
                 extracted[key] = ns.pop(key)
     else:
         remainder = set(keys)
         for process_args in processors:
-            hanging = process_args(args)
+            hanging = process_args(args, argv=argv)
             if isinstance(hanging, str):
                 hanging = [hanging]
             for key in hanging or ():
@@ -508,8 +510,8 @@ def process_args(args, processors, *, keys=None):
     return extracted
 
 
-def process_args_by_key(args, processors, keys):
-    extracted = process_args(args, processors, keys=keys)
+def process_args_by_key(args, argv, processors, keys):
+    extracted = process_args(args, argv, processors, keys=keys)
     return [extracted[key] for key in keys]
 
 
@@ -529,42 +531,46 @@ def set_command(name, add_cli):
 ##################################
 # main() helpers
 
-def filter_filenames(filenames, iter_filenames=None):
-    for filename, check, _ in _iter_filenames(filenames, iter_filenames):
+def filter_filenames(filenames, process_filenames=None, relroot=fsutil.USE_CWD):
+    # We expect each filename to be a normalized, absolute path.
+    for filename, _, check, _ in _iter_filenames(filenames, process_filenames, relroot):
         if (reason := check()):
             logger.debug(f'{filename}: {reason}')
             continue
         yield filename
 
 
-def main_for_filenames(filenames, iter_filenames=None):
-    for filename, check, show in _iter_filenames(filenames, iter_filenames):
+def main_for_filenames(filenames, process_filenames=None, relroot=fsutil.USE_CWD):
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    for filename, relfile, check, show in _iter_filenames(filenames, process_filenames, relroot):
         if show:
             print()
+            print(relfile)
             print('-------------------------------------------')
-            print(filename)
         if (reason := check()):
             print(reason)
             continue
-        yield filename
+        yield filename, relfile
 
 
-def _iter_filenames(filenames, iter_files):
-    if iter_files is None:
-        iter_files = fsutil.iter_filenames
-        yield from iter_files(filenames)
+def _iter_filenames(filenames, process, relroot):
+    if process is None:
+        yield from fsutil.process_filenames(filenames, relroot=relroot)
         return
 
     onempty = Exception('no filenames provided')
-    items = iter_files(filenames)
+    items = process(filenames, relroot=relroot)
     items, peeked = iterutil.peek_and_iter(items)
     if not items:
         raise onempty
     if isinstance(peeked, str):
+        if relroot and relroot is not fsutil.USE_CWD:
+            relroot = os.path.abspath(relroot)
         check = (lambda: True)
         for filename, ismany in iterutil.iter_many(items, onempty):
-            yield filename, check, ismany
-    elif len(peeked) == 3:
+            relfile = fsutil.format_filename(filename, relroot, fixroot=False)
+            yield filename, relfile, check, ismany
+    elif len(peeked) == 4:
         yield from items
     else:
         raise NotImplementedError

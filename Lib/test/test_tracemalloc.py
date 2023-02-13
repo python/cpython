@@ -85,6 +85,25 @@ def traceback_filename(filename):
     return traceback_lineno(filename, 0)
 
 
+class TestTraceback(unittest.TestCase):
+    def test_repr(self):
+        def get_repr(*args) -> str:
+            return repr(tracemalloc.Traceback(*args))
+
+        self.assertEqual(get_repr(()), "<Traceback ()>")
+        self.assertEqual(get_repr((), 0), "<Traceback () total_nframe=0>")
+
+        frames = (("f1", 1), ("f2", 2))
+        exp_repr_frames = (
+            "(<Frame filename='f2' lineno=2>,"
+            " <Frame filename='f1' lineno=1>)"
+        )
+        self.assertEqual(get_repr(frames),
+                         f"<Traceback {exp_repr_frames}>")
+        self.assertEqual(get_repr(frames, 2),
+                         f"<Traceback {exp_repr_frames} total_nframe=2>")
+
+
 class TestTracemallocEnabled(unittest.TestCase):
     def setUp(self):
         if tracemalloc.is_tracing():
@@ -327,7 +346,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork()')
+    @support.requires_fork()
     def test_fork(self):
         # check that tracemalloc is still working after fork
         pid = os.fork()
@@ -340,6 +359,20 @@ class TestTracemallocEnabled(unittest.TestCase):
                 os._exit(exitcode)
         else:
             support.wait_process(pid, exitcode=0)
+
+    def test_no_incomplete_frames(self):
+        tracemalloc.stop()
+        tracemalloc.start(8)
+
+        def f(x):
+            def g():
+                return x
+            return g
+
+        obj = f(0).__closure__[0]
+        traceback = tracemalloc.get_object_traceback(obj)
+        self.assertIn("test_tracemalloc", traceback[-1].filename)
+        self.assertNotIn("test_tracemalloc", traceback[-2].filename)
 
 
 class TestSnapshot(unittest.TestCase):
@@ -1063,14 +1096,5 @@ class TestCAPI(unittest.TestCase):
             self.untrack()
 
 
-def test_main():
-    support.run_unittest(
-        TestTracemallocEnabled,
-        TestSnapshot,
-        TestFilters,
-        TestCommandLine,
-        TestCAPI,
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

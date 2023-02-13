@@ -23,8 +23,8 @@ and a path within the archive can be specified to only import from a
 subdirectory.  For example, the path :file:`example.zip/lib/` would only
 import from the :file:`lib/` subdirectory within the archive.
 
-Any files may be present in the ZIP archive, but only files :file:`.py` and
-:file:`.pyc` are available for import.  ZIP import of dynamic modules
+Any files may be present in the ZIP archive, but importers are only invoked for
+:file:`.py` and :file:`.pyc` files.  ZIP import of dynamic modules
 (:file:`.pyd`, :file:`.so`) is disallowed. Note that if an archive only contains
 :file:`.py` files, Python will not attempt to modify the archive by adding the
 corresponding :file:`.pyc` file, meaning that if a ZIP archive
@@ -121,7 +121,7 @@ zipimporter Objects
    .. method:: get_code(fullname)
 
       Return the code object for the specified module. Raise
-      :exc:`ZipImportError` if the module couldn't be found.
+      :exc:`ZipImportError` if the module couldn't be imported.
 
 
    .. method:: get_data(pathname)
@@ -137,7 +137,7 @@ zipimporter Objects
 
       Return the value ``__file__`` would be set to if the specified module
       was imported. Raise :exc:`ZipImportError` if the module couldn't be
-      found.
+      imported.
 
       .. versionadded:: 3.1
 
@@ -159,12 +159,20 @@ zipimporter Objects
    .. method:: load_module(fullname)
 
       Load the module specified by *fullname*. *fullname* must be the fully
-      qualified (dotted) module name. It returns the imported module, or raises
-      :exc:`ZipImportError` if it wasn't found.
+      qualified (dotted) module name. Returns the imported module on success,
+      raises :exc:`ZipImportError` on failure.
 
       .. deprecated:: 3.10
 
          Use :meth:`exec_module` instead.
+
+
+   .. method:: invalidate_caches()
+
+      Clear out the internal cache of information about files found within
+      the ZIP archive.
+
+      .. versionadded:: 3.10
 
 
    .. attribute:: archive

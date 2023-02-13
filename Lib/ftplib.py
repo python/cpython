@@ -102,7 +102,9 @@ class FTP:
     sock = None
     file = None
     welcome = None
-    passiveserver = 1
+    passiveserver = True
+    # Disables https://bugs.python.org/issue43285 security if set to True.
+    trust_server_pasv_ipv4_address = False
 
     def __init__(self, host='', user='', passwd='', acct='',
                  timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None, *,
@@ -320,8 +322,13 @@ class FTP:
         return sock
 
     def makepasv(self):
+        """Internal: Does the PASV or EPSV handshake -> (address, port)"""
         if self.af == socket.AF_INET:
-            host, port = parse227(self.sendcmd('PASV'))
+            untrusted_host, port = parse227(self.sendcmd('PASV'))
+            if self.trust_server_pasv_ipv4_address:
+                host = untrusted_host
+            else:
+                host = self.sock.getpeername()[0]
         else:
             host, port = parse229(self.sendcmd('EPSV'), self.sock.getpeername())
         return host, port
@@ -427,10 +434,7 @@ class FTP:
         """
         self.voidcmd('TYPE I')
         with self.transfercmd(cmd, rest) as conn:
-            while 1:
-                data = conn.recv(blocksize)
-                if not data:
-                    break
+            while data := conn.recv(blocksize):
                 callback(data)
             # shutdown ssl layer
             if _SSLSocket is not None and isinstance(conn, _SSLSocket):
@@ -489,10 +493,7 @@ class FTP:
         """
         self.voidcmd('TYPE I')
         with self.transfercmd(cmd, rest) as conn:
-            while 1:
-                buf = fp.read(blocksize)
-                if not buf:
-                    break
+            while buf := fp.read(blocksize):
                 conn.sendall(buf)
                 if callback:
                     callback(buf)
@@ -554,7 +555,7 @@ class FTP:
         LIST command.  (This *should* only be used for a pathname.)'''
         cmd = 'LIST'
         func = None
-        if args[-1:] and type(args[-1]) != type(''):
+        if args[-1:] and not isinstance(args[-1], str):
             args, func = args[:-1], args[-1]
         for arg in args:
             if arg:
@@ -706,28 +707,12 @@ else:
         '221 Goodbye.'
         >>>
         '''
-        ssl_version = ssl.PROTOCOL_TLS_CLIENT
 
         def __init__(self, host='', user='', passwd='', acct='',
-                     keyfile=None, certfile=None, context=None,
-                     timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None, *,
-                     encoding='utf-8'):
-            if context is not None and keyfile is not None:
-                raise ValueError("context and keyfile arguments are mutually "
-                                 "exclusive")
-            if context is not None and certfile is not None:
-                raise ValueError("context and certfile arguments are mutually "
-                                 "exclusive")
-            if keyfile is not None or certfile is not None:
-                import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a "
-                              "custom context instead", DeprecationWarning, 2)
-            self.keyfile = keyfile
-            self.certfile = certfile
+                     *, context=None, timeout=_GLOBAL_DEFAULT_TIMEOUT,
+                     source_address=None, encoding='utf-8'):
             if context is None:
-                context = ssl._create_stdlib_context(self.ssl_version,
-                                                     certfile=certfile,
-                                                     keyfile=keyfile)
+                context = ssl._create_stdlib_context()
             self.context = context
             self._prot_p = False
             super().__init__(host, user, passwd, acct,
@@ -742,7 +727,7 @@ else:
             '''Set up secure control connection by using TLS/SSL.'''
             if isinstance(self.sock, ssl.SSLSocket):
                 raise ValueError("Already using TLS")
-            if self.ssl_version >= ssl.PROTOCOL_TLS:
+            if self.context.protocol >= ssl.PROTOCOL_TLS:
                 resp = self.voidcmd('AUTH TLS')
             else:
                 resp = self.voidcmd('AUTH SSL')
