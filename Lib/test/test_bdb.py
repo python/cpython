@@ -57,9 +57,9 @@ import importlib
 import linecache
 from contextlib import contextmanager
 from itertools import islice, repeat
-import test.support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import patch_list
 
 
 class BdbException(Exception): pass
@@ -714,9 +714,18 @@ class StateTestCase(BaseTestCase):
         with TracerRun(self) as tracer:
             tracer.runcall(tfunc_main)
 
+    @patch_list(sys.meta_path)
     def test_skip(self):
         # Check that tracing is skipped over the import statement in
         # 'tfunc_import()'.
+
+        # Remove all but the standard importers.
+        sys.meta_path[:] = (
+            item
+            for item in sys.meta_path
+            if item.__module__.startswith('_frozen_importlib')
+        )
+
         code = """
             def main():
                 lno = 3
@@ -1193,13 +1202,12 @@ class IssuesTestCase(BaseTestCase):
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
 
-def test_main():
-    test.support.run_unittest(
-        StateTestCase,
-        RunTestCase,
-        BreakpointTestCase,
-        IssuesTestCase,
-    )
+
+class TestRegressions(unittest.TestCase):
+    def test_format_stack_entry_no_lineno(self):
+        # See gh-101517
+        Bdb().format_stack_entry((sys._getframe(), None))
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -3,11 +3,11 @@ import importlib
 import io
 import sys
 import types
-from pathlib import Path, PurePath
+import pathlib
 
-from .. import data01
-from .. import zipdata01
-from importlib.abc import ResourceReader
+from . import data01
+from . import zipdata01
+from importlib.resources.abc import ResourceReader
 from test.support import import_helper
 
 
@@ -94,36 +94,13 @@ class CommonTests(metaclass=abc.ABCMeta):
 
     def test_pathlib_path(self):
         # Passing in a pathlib.PurePath object for the path should succeed.
-        path = PurePath('utf-8.file')
+        path = pathlib.PurePath('utf-8.file')
         self.execute(data01, path)
-
-    def test_absolute_path(self):
-        # An absolute path is a ValueError.
-        path = Path(__file__)
-        full_path = path.parent / 'utf-8.file'
-        with self.assertRaises(ValueError):
-            self.execute(data01, full_path)
-
-    def test_relative_path(self):
-        # A reative path is a ValueError.
-        with self.assertRaises(ValueError):
-            self.execute(data01, '../data01/utf-8.file')
 
     def test_importing_module_as_side_effect(self):
         # The anchor package can already be imported.
         del sys.modules[data01.__name__]
         self.execute(data01.__name__, 'utf-8.file')
-
-    def test_non_package_by_name(self):
-        # The anchor package cannot be a module.
-        with self.assertRaises(TypeError):
-            self.execute(__name__, 'utf-8.file')
-
-    def test_non_package_by_package(self):
-        # The anchor package cannot be a module.
-        with self.assertRaises(TypeError):
-            module = sys.modules['test.test_importlib.resources.util']
-            self.execute(module, 'utf-8.file')
 
     def test_missing_path(self):
         # Attempting to open or read or request the path for a
@@ -156,7 +133,7 @@ class ZipSetupBase:
 
     @classmethod
     def setUpClass(cls):
-        data_path = Path(cls.ZIP_MODULE.__file__)
+        data_path = pathlib.Path(cls.ZIP_MODULE.__file__)
         data_dir = data_path.parent
         cls._zip_path = str(data_dir / 'ziptestdata.zip')
         sys.path.append(cls._zip_path)

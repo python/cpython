@@ -37,6 +37,7 @@ extern PyObject* PyInit__weakref(void);
 /* XXX: These two should really be extracted to standalone extensions. */
 extern PyObject* PyInit_xxsubtype(void);
 extern PyObject* PyInit__xxsubinterpreters(void);
+extern PyObject* PyInit__xxinterpchannels(void);
 extern PyObject* PyInit__random(void);
 extern PyObject* PyInit_itertools(void);
 extern PyObject* PyInit__collections(void);
@@ -72,9 +73,8 @@ extern PyObject* _PyWarnings_Init(void);
 extern PyObject* PyInit__string(void);
 extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
-
 extern PyObject* PyInit__contextvars(void);
-
+extern PyObject* PyInit__tokenize(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -83,7 +83,6 @@ extern PyObject* PyMarshal_Init(void);
 extern PyObject* PyInit__imp(void);
 
 struct _inittab _PyImport_Inittab[] = {
-
     {"_abc", PyInit__abc},
     {"array", PyInit_array},
     {"_ast", PyInit__ast},
@@ -105,6 +104,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_blake2", PyInit__blake2},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
+    {"_tokenize", PyInit__tokenize},
     {"_typing", PyInit__typing},
     {"_statistics", PyInit__statistics},
 #ifdef WIN32
@@ -135,6 +135,7 @@ struct _inittab _PyImport_Inittab[] = {
 
     {"xxsubtype", PyInit_xxsubtype},
     {"_xxsubinterpreters", PyInit__xxsubinterpreters},
+    {"_xxinterpchannels", PyInit__xxinterpchannels},
 #ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},
 #endif

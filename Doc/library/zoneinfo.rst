@@ -9,6 +9,8 @@
 .. moduleauthor:: Paul Ganssle <paul@ganssle.io>
 .. sectionauthor:: Paul Ganssle <paul@ganssle.io>
 
+**Source code:** :source:`Lib/zoneinfo`
+
 --------------
 
 The :mod:`zoneinfo` module provides a concrete time zone implementation to
@@ -27,6 +29,7 @@ first-party `tzdata`_ package available on PyPI.
         First-party package maintained by the CPython core developers to supply
         time zone data via PyPI.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Using ``ZoneInfo``
 ------------------

@@ -763,7 +763,7 @@ as a positional-only argument.
 .. nonce: qLkNh8
 .. section: Library
 
-Enum: fix regression involving inheriting a multiply-inherited enum
+Enum: fix regression involving inheriting a multiply inherited enum
 
 ..
 
@@ -949,7 +949,7 @@ branches, are now handled by docsbuild-script.
 .. nonce: W_updK
 .. section: Tests
 
-Reenable test_gdb on gdb 9.2 and newer:
+Re-enable test_gdb on gdb 9.2 and newer:
 https://bugzilla.redhat.com/show_bug.cgi?id=1866884 bug is fixed in gdb
 10.1.
 

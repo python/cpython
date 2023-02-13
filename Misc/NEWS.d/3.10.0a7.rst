@@ -172,7 +172,7 @@ regression introduced in python3.7
 .. nonce: Ns3a_F
 .. section: Core and Builtins
 
-Tracing now has correct line numbers for attribute accesses when the the
+Tracing now has correct line numbers for attribute accesses when the
 attribute is on a different line from the object. Improves debugging and
 profiling for multi-line method chains.
 
@@ -195,7 +195,7 @@ decoded as Unicode characters outside the [U+0000; U+10ffff] range.
 .. nonce: lCzIg0
 .. section: Core and Builtins
 
-Fix a bug that was causing the parser to crash when emiting syntax errors
+Fix a bug that was causing the parser to crash when emitting syntax errors
 when reading input from stdin. Patch by Pablo Galindo
 
 ..
@@ -574,7 +574,7 @@ raised. Patch by Erlend E. Aasland.
 .. nonce: t9XEkQ
 .. section: Library
 
-Fix a regression introduced in GH-24562, where an empty bytestring was
+Fix a regression introduced in PR 24562, where an empty bytestring was
 fetched as ``None`` instead of ``b''`` in :mod:`sqlite3`. Patch by Mariusz
 Felisiak.
 
@@ -855,7 +855,7 @@ Aasland.
 .. nonce: iIeiLg
 .. section: IDLE
 
-Document that IDLE can fail on Unix either from misconfigured IP masquerage
+Document that IDLE can fail on Unix either from misconfigured IP masquerade
 rules or failure displaying complex colored (non-ascii) characters.
 
 ..

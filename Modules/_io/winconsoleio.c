@@ -8,7 +8,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_object.h"
+#include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
 #ifdef MS_WINDOWS
 
@@ -155,8 +156,6 @@ typedef struct {
 
 PyTypeObject PyWindowsConsoleIO_Type;
 
-_Py_IDENTIFIER(name);
-
 int
 _PyWindowsConsoleIO_closed(PyObject *self)
 {
@@ -195,9 +194,8 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    _Py_IDENTIFIER(close);
-    res = _PyObject_CallMethodIdOneArg((PyObject*)&PyRawIOBase_Type,
-                                       &PyId_close, (PyObject*)self);
+    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+                                    &_Py_ID(close), (PyObject*)self);
     if (!self->closefd) {
         self->fd = -1;
         return res;
@@ -237,7 +235,7 @@ winconsoleio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 _io._WindowsConsoleIO.__init__
     file as nameobj: object
     mode: str = "r"
-    closefd: bool(accept={int}) = True
+    closefd: bool = True
     opener: object = None
 
 Open a console buffer by file descriptor.
@@ -251,7 +249,7 @@ static int
 _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
                                     const char *mode, int closefd,
                                     PyObject *opener)
-/*[clinic end generated code: output=3fd9cbcdd8d95429 input=06ae4b863c63244b]*/
+/*[clinic end generated code: output=3fd9cbcdd8d95429 input=7a3eed6bbe998fd9]*/
 {
     const char *s;
     wchar_t *name = NULL;
@@ -393,7 +391,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     self->blksize = DEFAULT_BUFFER_SIZE;
     memset(self->buf, 0, 4);
 
-    if (_PyObject_SetAttrId((PyObject *)self, &PyId_name, nameobj) < 0)
+    if (PyObject_SetAttr((PyObject *)self, &_Py_ID(name), nameobj) < 0)
         goto error;
 
     goto done;
@@ -956,7 +954,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
 {
     BOOL res = TRUE;
     wchar_t *wbuf;
-    DWORD len, wlen, n = 0;
+    DWORD len, wlen, orig_len, n = 0;
     HANDLE handle;
 
     if (self->fd == -1)
@@ -986,6 +984,21 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
        have to reduce and recalculate. */
     while (wlen > 32766 / sizeof(wchar_t)) {
         len /= 2;
+        orig_len = len;
+        /* Reduce the length until we hit the final byte of a UTF-8 sequence
+         * (top bit is unset). Fix for github issue 82052.
+         */
+        while (len > 0 && (((char *)b->buf)[len-1] & 0x80) != 0)
+            --len;
+        /* If we hit a length of 0, something has gone wrong. This shouldn't
+         * be possible, as valid UTF-8 can have at most 3 non-final bytes
+         * before a final one, and our buffer is way longer than that.
+         * But to be on the safe side, if we hit this issue we just restore
+         * the original length and let the console API sort it out.
+         */
+        if (len == 0) {
+            len = orig_len;
+        }
         wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
     }
     Py_END_ALLOW_THREADS

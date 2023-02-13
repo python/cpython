@@ -1,7 +1,0 @@
-In ``importlib.metadata``, restore compatibility in the result from
-``Distribution.entry_points`` (``EntryPoints``) to honor expectations in
-older implementations and issuing deprecation warnings for these cases: A. ``EntryPoints`` objects are once again mutable, allowing   for ``sort()``
-and other list-based mutation operations.   Avoid deprecation warnings by
-casting to a   mutable sequence (e.g.   ``list(dist.entry_points).sort()``). B. ``EntryPoints`` results once again allow   for access by index. To avoid
-deprecation warnings,   cast the result to a Sequence first   (e.g.
-``tuple(dist.entry_points)[0]``).

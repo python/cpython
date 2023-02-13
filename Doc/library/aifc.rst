@@ -3,6 +3,7 @@
 
 .. module:: aifc
    :synopsis: Read and write audio files in AIFF or AIFC format.
+   :deprecated:
 
 **Source code:** :source:`Lib/aifc.py`
 
@@ -10,6 +11,11 @@
    single: Audio Interchange File Format
    single: AIFF
    single: AIFF-C
+
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`aifc` module is deprecated
+   (see :pep:`PEP 594 <594#aifc>` for details).
 
 --------------
 
