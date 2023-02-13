@@ -65,11 +65,13 @@ class Queue(object):
     def __getstate__(self):
         context.assert_spawning(self)
         return (self._ignore_epipe, self._maxsize, self._reader, self._writer,
-                self._rlock, self._wlock, self._sem, self._opid)
+                self._rlock, self._wlock, self._sem, self._opid,
+                self._shutdown_state)
 
     def __setstate__(self, state):
         (self._ignore_epipe, self._maxsize, self._reader, self._writer,
-         self._rlock, self._wlock, self._sem, self._opid) = state
+         self._rlock, self._wlock, self._sem, self._opid,
+         self._shutdown_state) = state
         self._reset()
 
     def _after_fork(self):
@@ -158,6 +160,9 @@ class Queue(object):
 
     def put_nowait(self, obj):
         return self.put(obj, False)
+
+    def shutdown(self, immediate=True):
+        pass
 
     def close(self):
         self._closed = True
