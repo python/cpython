@@ -1605,9 +1605,11 @@ class GeneralModuleTests(unittest.TestCase):
         # Issue #30710: test that getaddrinfo does not raise OverflowError
         import _testcapi
         with self.assertRaises(socket.gaierror):
-            socket.getaddrinfo(None, _testcapi.LONG_MAX + 1)
+            socket.getaddrinfo(None, _testcapi.ULONG_MAX + 1)
         with self.assertRaises(socket.gaierror):
             socket.getaddrinfo(None, _testcapi.LONG_MIN - 1)
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, -1)
 
     def test_getnameinfo(self):
         # only IP addresses are allowed
