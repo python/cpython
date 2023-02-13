@@ -432,6 +432,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a5 3516 (Add COMPARE_AND_BRANCH instruction)
 #     Python 3.12a5 3517 (Change YIELD_VALUE oparg to exception block depth)
 #     Python 3.12a5 3518 (Add RETURN_CONST instruction)
+#     Python 3.12a5 3519 (Modify SEND instruction)
 
 #     Python 3.13 will start with 3550
 
@@ -444,7 +445,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3518).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3519).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

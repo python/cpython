@@ -1789,6 +1789,8 @@ compiler_add_yield_from(struct compiler *c, location loc, int await)
     ADDOP(c, loc, CLEANUP_THROW);
 
     USE_LABEL(c, exit);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
     return SUCCESS;
 }
 
