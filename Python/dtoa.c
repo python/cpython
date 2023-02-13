@@ -628,7 +628,6 @@ mult(Bigint *a, Bigint *b)
     return c;
 }
 
-
 /* multiply the Bigint b by 5**k.  Returns a pointer to the result, or NULL on
    failure; if the returned pointer is distinct from b then the original
    Bigint b will have been Bfree'd.   Ignores the sign of b. */
