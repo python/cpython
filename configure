@@ -13689,57 +13689,6 @@ fi
 
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_enable_shared_cache in -lsqlite3" >&5
-$as_echo_n "checking for sqlite3_enable_shared_cache in -lsqlite3... " >&6; }
-if ${ac_cv_lib_sqlite3_sqlite3_enable_shared_cache+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lsqlite3  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char sqlite3_enable_shared_cache ();
-int
-main ()
-{
-return sqlite3_enable_shared_cache ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_sqlite3_sqlite3_enable_shared_cache=yes
-else
-  ac_cv_lib_sqlite3_sqlite3_enable_shared_cache=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" >&5
-$as_echo "$ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" >&6; }
-if test "x$ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSQLITE3 1
-_ACEOF
-
-  LIBS="-lsqlite3 $LIBS"
-
-else
-
-    have_supported_sqlite3=no
-
-fi
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_progress_handler in -lsqlite3" >&5
 $as_echo_n "checking for sqlite3_progress_handler in -lsqlite3... " >&6; }
 if ${ac_cv_lib_sqlite3_sqlite3_progress_handler+:} false; then :
