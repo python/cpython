@@ -7,7 +7,6 @@
 
 import sys
 import traceback
-import argparse
 from codeop import CommandCompiler, compile_command
 
 __all__ = ["InteractiveInterpreter", "InteractiveConsole", "interact",
@@ -41,7 +40,7 @@ class InteractiveInterpreter:
 
         Arguments are as for compile_command().
 
-        One several things can happen:
+        One of several things can happen:
 
         1) The input is incorrect; compile_command() raised an
         exception (SyntaxError or OverflowError).  A syntax traceback
@@ -303,6 +302,8 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None):
 
 
 if __name__ == "__main__":
+    import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', action='store_true',
                        help="don't print version and copyright messages")

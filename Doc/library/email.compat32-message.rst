@@ -5,7 +5,8 @@
 
 .. module:: email.message
    :synopsis: The base class representing email messages in a fashion
-              backward compatible with python3.2
+              backward compatible with Python 3.2
+   :noindex:
 
 
 The :class:`Message` class is very similar to the
@@ -22,7 +23,7 @@ policy :attr:`~email.policy.Compat32`.  If you are going to use another policy,
 you should be using the :class:`~email.message.EmailMessage` class instead.
 
 An email message consists of *headers* and a *payload*.  Headers must be
-:rfc:`5233` style names and values, where the field name and value are
+:rfc:`5322` style names and values, where the field name and value are
 separated by a colon.  The colon is not part of either the field name or the
 field value.  The payload may be a simple text message, or a binary object, or
 a structured sequence of sub-messages each with their own set of headers and
@@ -67,7 +68,7 @@ Here are the methods of the :class:`Message` class:
 
       Return the entire message flattened as a string.  When optional *unixfrom*
       is true, the envelope header is included in the returned string.
-      *unixfrom* defaults to ``False``.  For backward compabitility reasons,
+      *unixfrom* defaults to ``False``.  For backward compatibility reasons,
       *maxheaderlen* defaults to ``0``, so if you want a different value you
       must override it explicitly (the value specified for *max_line_length* in
       the policy will be ignored by this method).  The *policy* argument may be
@@ -82,7 +83,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.Generator` instance and use its
       :meth:`~email.generator.Generator.flatten` method directly.  For example::
 
@@ -124,7 +125,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.BytesGenerator` instance and use its
       :meth:`~email.generator.BytesGenerator.flatten` method directly.
       For example::
@@ -149,10 +150,10 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: is_multipart()
 
-      Return ``True`` if the message's payload is a list of sub-\
-      :class:`Message` objects, otherwise return ``False``.  When
+      Return ``True`` if the message's payload is a list of
+      sub-\ :class:`Message` objects, otherwise return ``False``.  When
       :meth:`is_multipart` returns ``False``, the payload should be a string
-      object (which might be a CTE encoded binary payload.  (Note that
+      object (which might be a CTE encoded binary payload).  (Note that
       :meth:`is_multipart` returning ``True`` does not necessarily mean that
       "msg.get_content_maintype() == 'multipart'" will return the ``True``.
       For example, ``is_multipart`` will return ``True`` when the
@@ -297,7 +298,7 @@ Here are the methods of the :class:`Message` class:
    In a model generated from bytes, any header values that (in contravention of
    the RFCs) contain non-ASCII bytes will, when retrieved through this
    interface, be represented as :class:`~email.header.Header` objects with
-   a charset of `unknown-8bit`.
+   a charset of ``unknown-8bit``.
 
 
    .. method:: __len__()
@@ -307,7 +308,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __contains__(name)
 
-      Return true if the message object has a field named *name*. Matching is
+      Return ``True`` if the message object has a field named *name*. Matching is
       done case-insensitively and *name* should not include the trailing colon.
       Used for the ``in`` operator, e.g.::
 
@@ -660,10 +661,14 @@ Here are the methods of the :class:`Message` class:
 
       .. testsetup::
 
-         >>> from email import message_from_binary_file
-         >>> with open('Lib/test/test_email/data/msg_16.txt', 'rb') as f:
-         ...     msg = message_from_binary_file(f)
-         >>> from email.iterators import _structure
+         import email
+         from email import message_from_binary_file
+         from os.path import join, dirname
+         lib_dir = dirname(dirname(email.__file__))
+         file_path = join(lib_dir, 'test/test_email/data/msg_16.txt')
+         with open(file_path, 'rb') as f:
+             msg = message_from_binary_file(f)
+         from email.iterators import _structure
 
       .. doctest::
 
@@ -686,7 +691,7 @@ Here are the methods of the :class:`Message` class:
       .. doctest::
 
          >>> for part in msg.walk():
-         ...     print(part.get_content_maintype() == 'multipart'),
+         ...     print(part.get_content_maintype() == 'multipart',
          ...           part.is_multipart())
          True True
          False False
@@ -698,11 +703,11 @@ Here are the methods of the :class:`Message` class:
          >>> _structure(msg)
          multipart/report
              text/plain
-         message/delivery-status
-             text/plain
-             text/plain
-         message/rfc822
-             text/plain
+             message/delivery-status
+                 text/plain
+                 text/plain
+             message/rfc822
+                 text/plain
 
       Here the ``message`` parts are not ``multiparts``, but they do contain
       subparts. ``is_multipart()`` returns ``True`` and ``walk`` descends

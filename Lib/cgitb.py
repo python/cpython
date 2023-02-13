@@ -31,6 +31,11 @@ import tempfile
 import time
 import tokenize
 import traceback
+import warnings
+from html import escape as html_escape
+
+warnings._deprecated(__name__, remove=(3, 13))
+
 
 def reset():
     """Return a string that resets the CGI and browser to a known state."""
@@ -69,7 +74,7 @@ def lookup(name, frame, locals):
         return 'global', frame.f_globals[name]
     if '__builtins__' in frame.f_globals:
         builtins = frame.f_globals['__builtins__']
-        if type(builtins) is type({}):
+        if isinstance(builtins, dict):
             if name in builtins:
                 return 'builtin', builtins[name]
         else:
@@ -105,10 +110,16 @@ def html(einfo, context=5):
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
     date = time.ctime(time.time())
-    head = '<body bgcolor="#f0f0f8">' + pydoc.html.heading(
-        '<big><big>%s</big></big>' %
-        strong(pydoc.html.escape(str(etype))),
-        '#ffffff', '#6622aa', pyver + '<br>' + date) + '''
+    head = f'''
+<body bgcolor="#f0f0f8">
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#6622aa">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br>
+<big><big><strong>{html_escape(str(etype))}</strong></big></big></font></td>
+<td align=right valign=bottom>
+<font color="#ffffff" face="helvetica, arial">{pyver}<br>{date}</font></td>
+</tr></table>
 <p>A problem occurred in a Python script.  Here is the sequence of
 function calls leading up to the error, in the order they occurred.</p>'''
 
@@ -124,8 +135,9 @@ function calls leading up to the error, in the order they occurred.</p>'''
         args, varargs, varkw, locals = inspect.getargvalues(frame)
         call = ''
         if func != '?':
-            call = 'in ' + strong(func) + \
-                inspect.formatargvalues(args, varargs, varkw, locals,
+            call = 'in ' + strong(pydoc.html.escape(func))
+            if func != "<module>":
+                call += inspect.formatargvalues(args, varargs, varkw, locals,
                     formatvalue=lambda value: '=' + pydoc.html.repr(value))
 
         highlight = {}
@@ -180,8 +192,8 @@ function calls leading up to the error, in the order they occurred.</p>'''
 
 
 <!-- The above is a description of an error in a Python program, formatted
-     for a Web browser because the 'cgitb' module was enabled.  In case you
-     are not reading this in a Web browser, here is the original traceback:
+     for a web browser because the 'cgitb' module was enabled.  In case you
+     are not reading this in a web browser, here is the original traceback:
 
 %s
 -->
@@ -207,8 +219,9 @@ function calls leading up to the error, in the order they occurred.
         args, varargs, varkw, locals = inspect.getargvalues(frame)
         call = ''
         if func != '?':
-            call = 'in ' + func + \
-                inspect.formatargvalues(args, varargs, varkw, locals,
+            call = 'in ' + func
+            if func != "<module>":
+                call += inspect.formatargvalues(args, varargs, varkw, locals,
                     formatvalue=lambda value: '=' + pydoc.text.repr(value))
 
         highlight = {}
@@ -282,7 +295,7 @@ class Hook:
 
         if self.display:
             if plain:
-                doc = doc.replace('&', '&amp;').replace('<', '&lt;')
+                doc = pydoc.html.escape(doc)
                 self.file.write('<pre>' + doc + '</pre>\n')
             else:
                 self.file.write(doc + '\n')

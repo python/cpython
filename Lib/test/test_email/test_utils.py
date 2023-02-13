@@ -48,6 +48,25 @@ class DateTimeTests(unittest.TestCase):
             utils.parsedate_to_datetime(self.datestring + ' -0000'),
             self.naive_dt)
 
+    def test_parsedate_to_datetime_with_invalid_raises_valueerror(self):
+        # See also test_parsedate_returns_None_for_invalid_strings in test_email.
+        invalid_dates = [
+            '',
+            ' ',
+            '0',
+            'A Complete Waste of Time',
+            'Wed, 3 Apr 2002 12.34.56.78+0800'
+            'Tue, 06 Jun 2017 27:39:33 +0600',
+            'Tue, 06 Jun 2017 07:39:33 +2600',
+            'Tue, 06 Jun 2017 27:39:33',
+            '17 June , 2022',
+            'Friday, -Nov-82 16:14:55 EST',
+            'Friday, Nov--82 16:14:55 EST',
+            'Friday, 19-Nov- 16:14:55 EST',
+        ]
+        for dtstr in invalid_dates:
+            with self.subTest(dtstr=dtstr):
+                self.assertRaises(ValueError, utils.parsedate_to_datetime, dtstr)
 
 class LocaltimeTests(unittest.TestCase):
 
@@ -75,6 +94,7 @@ class LocaltimeTests(unittest.TestCase):
         t2 = utils.localtime(t1)
         self.assertEqual(t1, t2)
 
+    @test.support.run_with_tz('Europe/Minsk')
     def test_localtime_daylight_true_dst_true(self):
         test.support.patch(self, time, 'daylight', True)
         t0 = datetime.datetime(2012, 3, 12, 1, 1)
@@ -82,6 +102,7 @@ class LocaltimeTests(unittest.TestCase):
         t2 = utils.localtime(t1)
         self.assertEqual(t1, t2)
 
+    @test.support.run_with_tz('Europe/Minsk')
     def test_localtime_daylight_false_dst_true(self):
         test.support.patch(self, time, 'daylight', False)
         t0 = datetime.datetime(2012, 3, 12, 1, 1)
