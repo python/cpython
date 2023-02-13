@@ -42,7 +42,8 @@ another rational number, or from a string.
 
    where the optional ``sign`` may be either '+' or '-' and
    ``numerator`` and ``denominator`` (if present) are strings of
-   decimal digits.  In addition, any string that represents a finite
+   decimal digits (underscores may be used to delimit digits as with
+   integral literals in code).  In addition, any string that represents a finite
    value and is accepted by the :class:`float` constructor is also
    accepted by the :class:`Fraction` constructor.  In either form the
    input string may also have leading and/or trailing whitespace.
@@ -84,6 +85,26 @@ another rational number, or from a string.
       The :class:`Fraction` constructor now accepts :class:`float` and
       :class:`decimal.Decimal` instances.
 
+   .. versionchanged:: 3.9
+      The :func:`math.gcd` function is now used to normalize the *numerator*
+      and *denominator*. :func:`math.gcd` always return a :class:`int` type.
+      Previously, the GCD type depended on *numerator* and *denominator*.
+
+   .. versionchanged:: 3.11
+      Underscores are now permitted when creating a :class:`Fraction` instance
+      from a string, following :PEP:`515` rules.
+
+   .. versionchanged:: 3.11
+      :class:`Fraction` implements ``__int__`` now to satisfy
+      ``typing.SupportsInt`` instance checks.
+
+   .. versionchanged:: 3.12
+      Space is allowed around the slash for string inputs: ``Fraction('2 / 3')``.
+
+   .. versionchanged:: 3.12
+      :class:`Fraction` instances now support float-style formatting, with
+      presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
+      and ``"%""``.
 
    .. attribute:: numerator
 
@@ -94,10 +115,23 @@ another rational number, or from a string.
       Denominator of the Fraction in lowest term.
 
 
-   .. method:: from_float(flt)
+   .. method:: as_integer_ratio()
 
-      This class method constructs a :class:`Fraction` representing the exact
-      value of *flt*, which must be a :class:`float`. Beware that
+      Return a tuple of two integers, whose ratio is equal
+      to the Fraction and with a positive denominator.
+
+      .. versionadded:: 3.8
+
+   .. method:: is_integer()
+
+      Return ``True`` if the Fraction is an integer.
+
+      .. versionadded:: 3.12
+
+   .. classmethod:: from_float(flt)
+
+      Alternative constructor which only accepts instances of
+      :class:`float` or :class:`numbers.Integral`. Beware that
       ``Fraction.from_float(0.3)`` is not the same value as ``Fraction(3, 10)``.
 
       .. note::
@@ -106,10 +140,10 @@ another rational number, or from a string.
          :class:`Fraction` instance directly from a :class:`float`.
 
 
-   .. method:: from_decimal(dec)
+   .. classmethod:: from_decimal(dec)
 
-      This class method constructs a :class:`Fraction` representing the exact
-      value of *dec*, which must be a :class:`decimal.Decimal` instance.
+      Alternative constructor which only accepts instances of
+      :class:`decimal.Decimal` or :class:`numbers.Integral`.
 
       .. note::
 
@@ -164,17 +198,28 @@ another rational number, or from a string.
       ``ndigits`` is negative), again rounding half toward even.  This
       method can also be accessed through the :func:`round` function.
 
+   .. method:: __format__(format_spec, /)
 
-.. function:: gcd(a, b)
+      Provides support for float-style formatting of :class:`Fraction`
+      instances via the :meth:`str.format` method, the :func:`format` built-in
+      function, or :ref:`Formatted string literals <f-strings>`. The
+      presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
+      and ``"%"`` are supported. For these presentation types, formatting for a
+      :class:`Fraction` object ``x`` follows the rules outlined for
+      the :class:`float` type in the :ref:`formatspec` section.
 
-   Return the greatest common divisor of the integers *a* and *b*.  If either
-   *a* or *b* is nonzero, then the absolute value of ``gcd(a, b)`` is the
-   largest integer that divides both *a* and *b*.  ``gcd(a,b)`` has the same
-   sign as *b* if *b* is nonzero; otherwise it takes the sign of *a*.  ``gcd(0,
-   0)`` returns ``0``.
+      Here are some examples::
 
-   .. deprecated:: 3.5
-      Use :func:`math.gcd` instead.
+         >>> from fractions import Fraction
+         >>> format(Fraction(1, 7), '.40g')
+         '0.1428571428571428571428571428571428571429'
+         >>> format(Fraction('1234567.855'), '_.2f')
+         '1_234_567.86'
+         >>> f"{Fraction(355, 113):*>20.6e}"
+         '********3.141593e+00'
+         >>> old_price, new_price = 499, 672
+         >>> "{:.2%} price increase".format(Fraction(new_price, old_price) - 1)
+         '34.67% price increase'
 
 
 .. seealso::

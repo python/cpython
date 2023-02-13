@@ -74,7 +74,7 @@ Panel objects have the following methods:
 
 .. method:: Panel.hidden()
 
-   Returns true if the panel is hidden (not visible), false otherwise.
+   Returns ``True`` if the panel is hidden (not visible), ``False`` otherwise.
 
 
 .. method:: Panel.hide()

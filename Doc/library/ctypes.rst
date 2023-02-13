@@ -6,6 +6,8 @@
 
 .. moduleauthor:: Thomas Heller <theller@python.net>
 
+**Source code:** :source:`Lib/ctypes`
+
 --------------
 
 :mod:`ctypes` is a foreign function library for Python.  It provides C compatible
@@ -20,7 +22,7 @@ ctypes tutorial
 
 Note: The code samples in this tutorial use :mod:`doctest` to make sure that
 they actually work.  Since some code samples behave differently under Linux,
-Windows, or Mac OS X, they contain doctest directives in comments.
+Windows, or macOS, they contain doctest directives in comments.
 
 Note: Some code samples reference the ctypes :class:`c_int` type.  On platforms
 where ``sizeof(long) == sizeof(int)`` it is an alias to :class:`c_long`.
@@ -80,7 +82,7 @@ the library by creating an instance of CDLL by calling the constructor::
    <CDLL 'libc.so.6', handle ... at ...>
    >>>
 
-.. XXX Add section for Mac OS X.
+.. XXX Add section for macOS.
 
 
 .. _ctypes-accessing-functions-from-loaded-dlls:
@@ -148,25 +150,17 @@ Calling functions
 ^^^^^^^^^^^^^^^^^
 
 You can call these functions like any other Python callable. This example uses
-the ``time()`` function, which returns system time in seconds since the Unix
-epoch, and the ``GetModuleHandleA()`` function, which returns a win32 module
-handle.
+the ``rand()`` function, which takes no arguments and returns a pseudo-random integer::
 
-This example calls both functions with a NULL pointer (``None`` should be used
-as the NULL pointer)::
+   >>> print(libc.rand())  # doctest: +SKIP
+   1804289383
 
-   >>> print(libc.time(None))  # doctest: +SKIP
-   1150640792
+On Windows, you can call the ``GetModuleHandleA()`` function, which returns a win32 module
+handle (passing ``None`` as single argument to call it with a ``NULL`` pointer)::
+
    >>> print(hex(windll.kernel32.GetModuleHandleA(None)))  # doctest: +WINDOWS
    0x1d000000
    >>>
-
-.. note::
-
-   :mod:`ctypes` may raise a :exc:`ValueError` after calling the function, if
-   it detects that an invalid number of arguments were passed.  This behavior
-   should not be relied upon.  It is deprecated in 3.6.2, and will be removed
-   in 3.7.
 
 :exc:`ValueError` is raised when you call an ``stdcall`` function with the
 ``cdecl`` calling convention, or vice versa::
@@ -204,9 +198,9 @@ calls).
 ``None``, integers, bytes objects and (unicode) strings are the only native
 Python objects that can directly be used as parameters in these function calls.
 ``None`` is passed as a C ``NULL`` pointer, bytes objects and strings are passed
-as pointer to the memory block that contains their data (:c:type:`char *` or
-:c:type:`wchar_t *`).  Python integers are passed as the platforms default C
-:c:type:`int` type, their value is masked to fit into the C type.
+as pointer to the memory block that contains their data (:c:expr:`char *` or
+:c:expr:`wchar_t *`).  Python integers are passed as the platforms default C
+:c:expr:`int` type, their value is masked to fit into the C type.
 
 Before we move on calling functions with other parameter types, we have to learn
 more about :mod:`ctypes` data types.
@@ -222,49 +216,51 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | ctypes type          | C type                                   | Python type                |
 +======================+==========================================+============================+
-| :class:`c_bool`      | :c:type:`_Bool`                          | bool (1)                   |
+| :class:`c_bool`      | :c:expr:`_Bool`                          | bool (1)                   |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_char`      | :c:type:`char`                           | 1-character bytes object   |
+| :class:`c_char`      | :c:expr:`char`                           | 1-character bytes object   |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar`     | :c:type:`wchar_t`                        | 1-character string         |
+| :class:`c_wchar`     | :c:expr:`wchar_t`                        | 1-character string         |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_byte`      | :c:type:`char`                           | int                        |
+| :class:`c_byte`      | :c:expr:`char`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ubyte`     | :c:type:`unsigned char`                  | int                        |
+| :class:`c_ubyte`     | :c:expr:`unsigned char`                  | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_short`     | :c:type:`short`                          | int                        |
+| :class:`c_short`     | :c:expr:`short`                          | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ushort`    | :c:type:`unsigned short`                 | int                        |
+| :class:`c_ushort`    | :c:expr:`unsigned short`                 | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_int`       | :c:type:`int`                            | int                        |
+| :class:`c_int`       | :c:expr:`int`                            | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint`      | :c:type:`unsigned int`                   | int                        |
+| :class:`c_uint`      | :c:expr:`unsigned int`                   | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_long`      | :c:type:`long`                           | int                        |
+| :class:`c_long`      | :c:expr:`long`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulong`     | :c:type:`unsigned long`                  | int                        |
+| :class:`c_ulong`     | :c:expr:`unsigned long`                  | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_longlong`  | :c:type:`__int64` or :c:type:`long long` | int                        |
+| :class:`c_longlong`  | :c:expr:`__int64` or :c:expr:`long long` | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulonglong` | :c:type:`unsigned __int64` or            | int                        |
-|                      | :c:type:`unsigned long long`             |                            |
+| :class:`c_ulonglong` | :c:expr:`unsigned __int64` or            | int                        |
+|                      | :c:expr:`unsigned long long`             |                            |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_size_t`    | :c:type:`size_t`                         | int                        |
+| :class:`c_size_t`    | :c:expr:`size_t`                         | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
-|                      | :c:type:`Py_ssize_t`                     |                            |
+| :class:`c_ssize_t`   | :c:expr:`ssize_t` or                     | int                        |
+|                      | :c:expr:`Py_ssize_t`                     |                            |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_float`     | :c:type:`float`                          | float                      |
+| :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_double`    | :c:type:`double`                         | float                      |
+| :class:`c_float`     | :c:expr:`float`                          | float                      |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_longdouble`| :c:type:`long double`                    | float                      |
+| :class:`c_double`    | :c:expr:`double`                         | float                      |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_char_p`    | :c:type:`char *` (NUL terminated)        | bytes object or ``None``   |
+| :class:`c_longdouble`| :c:expr:`long double`                    | float                      |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar_p`   | :c:type:`wchar_t *` (NUL terminated)     | string or ``None``         |
+| :class:`c_char_p`    | :c:expr:`char *` (NUL terminated)        | bytes object or ``None``   |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_void_p`    | :c:type:`void *`                         | int or ``None``            |
+| :class:`c_wchar_p`   | :c:expr:`wchar_t *` (NUL terminated)     | string or ``None``         |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_void_p`    | :c:expr:`void *`                         | int or ``None``            |
 +----------------------+------------------------------------------+----------------------------+
 
 (1)
@@ -337,10 +333,9 @@ property::
    10 b'Hi\x00lo\x00\x00\x00\x00\x00'
    >>>
 
-The :func:`create_string_buffer` function replaces the :func:`c_buffer` function
-(which is still available as an alias), as well as the :func:`c_string` function
-from earlier ctypes releases.  To create a mutable memory block containing
-unicode characters of the C type :c:type:`wchar_t` use the
+The :func:`create_string_buffer` function replaces the old :func:`c_buffer`
+function (which is still available as an alias).  To create a mutable memory
+block containing unicode characters of the C type :c:expr:`wchar_t`, use the
 :func:`create_unicode_buffer` function.
 
 
@@ -366,7 +361,7 @@ from within *IDLE* or *PythonWin*::
    >>> printf(b"%f bottles of beer\n", 42.5)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: Don't know how to convert parameter 2
+   ArgumentError: argument 2: TypeError: Don't know how to convert parameter 2
    >>>
 
 As has been mentioned before, all Python types except integers, strings, and
@@ -377,6 +372,26 @@ that they can be converted to the required C data type::
    An int 1234, a double 3.140000
    31
    >>>
+
+.. _ctypes-calling-variadic-functions:
+
+Calling varadic functions
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On a lot of platforms calling variadic functions through ctypes is exactly the same
+as calling functions with a fixed number of parameters. On some platforms, and in
+particular ARM64 for Apple Platforms, the calling convention for variadic functions
+is different than that for regular functions.
+
+On those platforms it is required to specify the *argtypes* attribute for the
+regular, non-variadic, function arguments:
+
+.. code-block:: python3
+
+   libc.printf.argtypes = [ctypes.c_char_p]
+
+Because specifying the attribute does inhibit portability it is advised to always
+specify ``argtypes`` for all variadic functions.
 
 
 .. _ctypes-calling-functions-with-own-custom-data-types:
@@ -429,7 +444,7 @@ prototype for a C function), and tries to convert the arguments to valid types::
    >>> printf(b"%d %d %d", 1, 2, 3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: wrong type
+   ArgumentError: argument 2: TypeError: wrong type
    >>> printf(b"%s %d %f\n", b"X", 2, 3)
    X 2 3.000000
    13
@@ -451,9 +466,32 @@ integer, string, bytes, a :mod:`ctypes` instance, or an object with an
 Return types
 ^^^^^^^^^^^^
 
-By default functions are assumed to return the C :c:type:`int` type.  Other
+.. testsetup::
+
+   from ctypes import CDLL, c_char, c_char_p
+   from ctypes.util import find_library
+   libc = CDLL(find_library('c'))
+   strchr = libc.strchr
+
+
+By default functions are assumed to return the C :c:expr:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
+
+The C prototype of ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
+might be of a different type than the default return type ``int``, you should
+specify the ``restype``::
+
+   >>> libc.time.restype = c_time_t
+
+The argument types can be specified using ``argtypes``::
+
+   >>> libc.time.argtypes = (POINTER(c_time_t),)
+
+To call the function with a ``NULL`` pointer as first argument, use ``None``::
+
+   >>> print(libc.time(None))  # doctest: +SKIP
+   1150640792
 
 Here is a more advanced example, it uses the ``strchr`` function, which expects
 a string pointer and a char, and returns a pointer to a string::
@@ -472,18 +510,19 @@ If you want to avoid the ``ord("x")`` calls above, you can set the
 :attr:`argtypes` attribute, and the second argument will be converted from a
 single character Python bytes object into a C char::
 
+.. doctest::
+
    >>> strchr.restype = c_char_p
    >>> strchr.argtypes = [c_char_p, c_char]
    >>> strchr(b"abcdef", b"d")
-   'def'
+   b'def'
    >>> strchr(b"abcdef", b"def")
    Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: one character string expected
+   ctypes.ArgumentError: argument 2: TypeError: one character bytes, bytearray or integer expected
    >>> print(strchr(b"abcdef", b"x"))
    None
    >>> strchr(b"abcdef", b"d")
-   'def'
+   b'def'
    >>>
 
 You can also use a callable Python object (a function or a class for example) as
@@ -576,7 +615,7 @@ Here is a simple example of a POINT structure, which contains two integers named
    >>> POINT(1, 2, 3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: too many initializers
+   TypeError: too many initializers
    >>>
 
 You can, however, build much more complicated structures.  A structure can
@@ -624,7 +663,7 @@ Structure/union alignment and byte order
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, Structure and Union fields are aligned in the same way the C
-compiler does it. It is possible to override this behavior be specifying a
+compiler does it. It is possible to override this behavior by specifying a
 :attr:`_pack_` class attribute in the subclass definition. This must be set to a
 positive integer and specifies the maximum alignment for the fields. This is
 what ``#pragma pack(n)`` also does in MSVC.
@@ -922,13 +961,13 @@ attribute later, after the class statement::
    ...                  ("next", POINTER(cell))]
    >>>
 
-Lets try it. We create two instances of ``cell``, and let them point to each
+Let's try it. We create two instances of ``cell``, and let them point to each
 other, and finally follow the pointer chain a few times::
 
    >>> c1 = cell()
-   >>> c1.name = "foo"
+   >>> c1.name = b"foo"
    >>> c2 = cell()
-   >>> c2.name = "bar"
+   >>> c2.name = b"bar"
    >>> c1.next = pointer(c2)
    >>> c2.next = pointer(c1)
    >>> p = c1
@@ -1025,6 +1064,22 @@ As we can easily check, our array is sorted now::
    1 5 7 33 99
    >>>
 
+The function factories can be used as decorator factories, so we may as well
+write::
+
+   >>> @CFUNCTYPE(c_int, POINTER(c_int), POINTER(c_int))
+   ... def py_cmp_func(a, b):
+   ...     print("py_cmp_func", a[0], b[0])
+   ...     return a[0] - b[0]
+   ...
+   >>> qsort(ia, len(ia), sizeof(c_int), py_cmp_func)
+   py_cmp_func 5 1
+   py_cmp_func 33 99
+   py_cmp_func 7 33
+   py_cmp_func 1 7
+   py_cmp_func 5 7
+   >>>
+
 .. note::
 
    Make sure you keep references to :func:`CFUNCTYPE` objects as long as they
@@ -1044,18 +1099,16 @@ Accessing values exported from dlls
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some shared libraries not only export functions, they also export variables. An
-example in the Python library itself is the :c:data:`Py_OptimizeFlag`, an integer
-set to 0, 1, or 2, depending on the :option:`-O` or :option:`-OO` flag given on
-startup.
+example in the Python library itself is the :c:data:`Py_Version`, Python
+runtime version number encoded in a single constant integer.
 
 :mod:`ctypes` can access values like this with the :meth:`in_dll` class methods of
 the type.  *pythonapi* is a predefined symbol giving access to the Python C
 api::
 
-   >>> opt_flag = c_int.in_dll(pythonapi, "Py_OptimizeFlag")
-   >>> print(opt_flag)
-   c_long(0)
-   >>>
+   >>> version = ctypes.c_int.in_dll(ctypes.pythonapi, "Py_Version")
+   >>> print(hex(version.value))
+   0x30c00a0
 
 If the interpreter would have been started with :option:`-O`, the sample would
 have printed ``c_long(1)``, or ``c_long(2)`` if :option:`-OO` would have been
@@ -1066,8 +1119,8 @@ An extended example which also demonstrates the use of pointers accesses the
 
 Quoting the docs for that value:
 
-   This pointer is initialized to point to an array of :c:type:`struct _frozen`
-   records, terminated by one whose members are all *NULL* or zero.  When a frozen
+   This pointer is initialized to point to an array of :c:struct:`_frozen`
+   records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
    module is imported, it is searched in this table.  Third-party code could play
    tricks with this to provide a dynamically created collection of frozen modules.
 
@@ -1079,22 +1132,24 @@ size, we show only how this table can be read with :mod:`ctypes`::
    >>> class struct_frozen(Structure):
    ...     _fields_ = [("name", c_char_p),
    ...                 ("code", POINTER(c_ubyte)),
-   ...                 ("size", c_int)]
+   ...                 ("size", c_int),
+   ...                 ("get_code", POINTER(c_ubyte)),  # Function pointer
+   ...                ]
    ...
    >>>
 
-We have defined the :c:type:`struct _frozen` data type, so we can get the pointer
+We have defined the :c:struct:`_frozen` data type, so we can get the pointer
 to the table::
 
    >>> FrozenTable = POINTER(struct_frozen)
-   >>> table = FrozenTable.in_dll(pythonapi, "PyImport_FrozenModules")
+   >>> table = FrozenTable.in_dll(pythonapi, "_PyImport_FrozenBootstrap")
    >>>
 
 Since ``table`` is a ``pointer`` to the array of ``struct_frozen`` records, we
 can iterate over it, but we just have to make sure that our loop terminates,
 because pointers have no size. Sooner or later it would probably crash with an
 access violation or whatever, so it's better to break out of the loop when we
-hit the NULL entry::
+hit the ``NULL`` entry::
 
    >>> for item in table:
    ...     if item.name is None:
@@ -1103,14 +1158,12 @@ hit the NULL entry::
    ...
    _frozen_importlib 31764
    _frozen_importlib_external 41499
-   __hello__ 161
-   __phello__ -161
-   __phello__.spam 161
+   zipimport 12345
    >>>
 
 The fact that standard Python has a frozen module and a frozen package
-(indicated by the negative size member) is not well known, it is only used for
-testing. Try it out with ``import __hello__`` for example.
+(indicated by the negative ``size`` member) is not well known, it is only used
+for testing. Try it out with ``import __hello__`` for example.
 
 
 .. _ctypes-surprises:
@@ -1159,15 +1212,20 @@ Keep in mind that retrieving sub-objects from Structure, Unions, and Arrays
 doesn't *copy* the sub-object, instead it retrieves a wrapper object accessing
 the root-object's underlying buffer.
 
-Another example that may behave different from what one would expect is this::
+Another example that may behave differently from what one would expect is this::
 
    >>> s = c_char_p()
-   >>> s.value = "abc def ghi"
+   >>> s.value = b"abc def ghi"
    >>> s.value
-   'abc def ghi'
+   b'abc def ghi'
    >>> s.value is s.value
    False
    >>>
+
+.. note::
+
+   Objects instantiated from :class:`c_char_p` can only have their value set to bytes
+   or integers.
 
 Why is it printing ``False``?  ctypes instances are objects containing a memory
 block plus some :term:`descriptor`\s accessing the contents of the memory.
@@ -1274,7 +1332,7 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On OS X, :func:`find_library` tries several predefined naming schemes and paths
+On macOS, :func:`find_library` tries several predefined naming schemes and paths
 to locate the library, and returns a full pathname if successful::
 
    >>> from ctypes.util import find_library
@@ -1306,14 +1364,33 @@ There are several ways to load shared libraries into the Python process.  One
 way is to instantiate one of the following classes:
 
 
-.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
    Instances of this class represent loaded shared libraries. Functions in these
    libraries use the standard C calling convention, and are assumed to return
-   :c:type:`int`.
+   :c:expr:`int`.
+
+   On Windows creating a :class:`CDLL` instance may fail even if the DLL name
+   exists. When a dependent DLL of the loaded DLL is not found, a
+   :exc:`OSError` error is raised with the message *"[WinError 126] The
+   specified module could not be found".* This error message does not contain
+   the name of the missing DLL because the Windows API does not return this
+   information making this error hard to diagnose. To resolve this error and
+   determine which DLL is not found, you need to find the list of dependent
+   DLLs and determine which one is not found using Windows debugging and
+   tracing tools.
+
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
+
+.. seealso::
+
+    `Microsoft DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
+    -- A tool to find DLL dependents.
 
 
-.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1325,16 +1402,20 @@ way is to instantiate one of the following classes:
    .. versionchanged:: 3.3
       :exc:`WindowsError` used to be raised.
 
+   .. versionchanged:: 3.12
 
-.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+      The *name* parameter can now be a :term:`path-like object`.
+
+
+.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
-   assumed to return :c:type:`int` by default.
+   assumed to return :c:expr:`int` by default.
 
-   On Windows CE only the standard calling convention is used, for convenience the
-   :class:`WinDLL` and :class:`OleDLL` use the standard calling convention on this
-   platform.
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
 
 The Python :term:`global interpreter lock` is released before calling any
 function exported by these libraries, and reacquired afterwards.
@@ -1348,6 +1429,10 @@ function exported by these libraries, and reacquired afterwards.
    exception is raised.
 
    Thus, this is only useful to call Python C api functions directly.
+
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
 
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
@@ -1377,6 +1462,17 @@ the Windows error code which is managed by the :func:`GetLastError` and
 :func:`SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
 :func:`ctypes.set_last_error` are used to request and change the ctypes private
 copy of the windows error code.
+
+The *winmode* parameter is used on Windows to specify how the library is loaded
+(since *mode* is ignored). It takes any value that is valid for the Win32 API
+``LoadLibraryEx`` flags parameter. When omitted, the default is to use the
+flags that result in the most secure DLL load, which avoids issues such as DLL
+hijacking. Passing the full path to the DLL is the safest way to ensure the
+correct library and dependencies are loaded.
+
+.. versionchanged:: 3.8
+   Added *winmode* parameter.
+
 
 .. data:: RTLD_GLOBAL
    :noindex:
@@ -1479,9 +1575,26 @@ object is available:
 
    An instance of :class:`PyDLL` that exposes Python C API functions as
    attributes.  Note that all these functions are assumed to return C
-   :c:type:`int`, which is of course not always the truth, so you have to assign
+   :c:expr:`int`, which is of course not always the truth, so you have to assign
    the correct :attr:`restype` attribute to use these functions.
 
+.. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
+
+   Loading a library through any of these objects raises an
+   :ref:`auditing event <auditing>` ``ctypes.dlopen`` with string argument
+   ``name``, the name used to load the library.
+
+.. audit-event:: ctypes.dlsym library,name ctypes.LibraryLoader
+
+   Accessing a function on a loaded library raises an auditing event
+   ``ctypes.dlsym`` with arguments ``library`` (the library object) and ``name``
+   (the symbol's name as a string or integer).
+
+.. audit-event:: ctypes.dlsym/handle handle,name ctypes.LibraryLoader
+
+   In cases when only the library handle is available rather than the object,
+   accessing a function raises an auditing event ``ctypes.dlsym/handle`` with
+   arguments ``handle`` (the raw library handle) and ``name``.
 
 .. _ctypes-foreign-functions:
 
@@ -1508,10 +1621,10 @@ They are instances of a private class:
    .. attribute:: restype
 
       Assign a ctypes type to specify the result type of the foreign function.
-      Use ``None`` for :c:type:`void`, a function not returning anything.
+      Use ``None`` for :c:expr:`void`, a function not returning anything.
 
       It is possible to assign a callable Python object that is not a ctypes
-      type, in this case the function is assumed to return a C :c:type:`int`, and
+      type, in this case the function is assumed to return a C :c:expr:`int`, and
       the callable will be called with this integer, allowing further
       processing or error checking.  Using this is deprecated, for more flexible
       post processing or error checking use a ctypes data type as
@@ -1568,6 +1681,19 @@ They are instances of a private class:
    passed arguments.
 
 
+.. audit-event:: ctypes.set_exception code foreign-functions
+
+   On Windows, when a foreign function call raises a system exception (for
+   example, due to an access violation), it will be captured and replaced with
+   a suitable Python exception. Further, an auditing event
+   ``ctypes.set_exception`` with argument ``code`` will be raised, allowing an
+   audit hook to replace the exception with its own.
+
+.. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
+
+   Some ways to invoke foreign function calls may raise an auditing event
+   ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
+
 .. _ctypes-function-prototypes:
 
 Function prototypes
@@ -1577,7 +1703,9 @@ Foreign functions can also be created by instantiating function prototypes.
 Function prototypes are similar to function prototypes in C; they describe a
 function (return type, argument types, calling convention) without defining an
 implementation.  The factory functions must be called with the desired result
-type and the argument types of the function.
+type and the argument types of the function, and can be used as decorator
+factories, and as such, be applied to functions through the ``@wrapper`` syntax.
+See :ref:`ctypes-callback-functions` for examples.
 
 
 .. function:: CFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
@@ -1593,8 +1721,7 @@ type and the argument types of the function.
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
    Windows only: The returned function prototype creates functions that use the
-   ``stdcall`` calling convention, except on Windows CE where
-   :func:`WINFUNCTYPE` is the same as :func:`CFUNCTYPE`.  The function will
+   ``stdcall`` calling convention.  The function will
    release the GIL during the call.  *use_errno* and *use_last_error* have the
    same meaning as above.
 
@@ -1757,6 +1884,8 @@ Utility functions
    Returns the address of the memory buffer as integer.  *obj* must be an
    instance of a ctypes type.
 
+   .. audit-event:: ctypes.addressof obj ctypes.addressof
+
 
 .. function:: alignment(obj_or_type)
 
@@ -1799,6 +1928,7 @@ Utility functions
    termination character. An integer can be passed as second argument which allows
    specifying the size of the array if the length of the bytes should not be used.
 
+   .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
 
 .. function:: create_unicode_buffer(init_or_size, size=None)
@@ -1815,6 +1945,7 @@ Utility functions
    allows specifying the size of the array if the length of the string should not
    be used.
 
+   .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
 
 .. function:: DllCanUnloadNow()
@@ -1864,7 +1995,7 @@ Utility functions
 .. function:: GetLastError()
 
    Windows only: Returns the last error code set by Windows in the calling thread.
-   This function calls the Windows `GetLastError()` function directly,
+   This function calls the Windows ``GetLastError()`` function directly,
    it does not return the ctypes-private copy of the error code.
 
 .. function:: get_errno()
@@ -1872,10 +2003,14 @@ Utility functions
    Returns the current value of the ctypes-private copy of the system
    :data:`errno` variable in the calling thread.
 
+   .. audit-event:: ctypes.get_errno "" ctypes.get_errno
+
 .. function:: get_last_error()
 
    Windows only: returns the current value of the ctypes-private copy of the system
    :data:`LastError` variable in the calling thread.
+
+   .. audit-event:: ctypes.get_last_error "" ctypes.get_last_error
 
 .. function:: memmove(dst, src, count)
 
@@ -1920,6 +2055,7 @@ Utility functions
    Set the current value of the ctypes-private copy of the system :data:`errno`
    variable in the calling thread to *value* and return the previous value.
 
+   .. audit-event:: ctypes.set_errno errno ctypes.set_errno
 
 
 .. function:: set_last_error(value)
@@ -1928,6 +2064,7 @@ Utility functions
    :data:`LastError` variable in the calling thread to *value* and return the
    previous value.
 
+   .. audit-event:: ctypes.set_last_error error ctypes.set_last_error
 
 
 .. function:: sizeof(obj_or_type)
@@ -1941,6 +2078,8 @@ Utility functions
    This function returns the C string starting at memory address *address* as a bytes
    object. If size is specified, it is used as size, otherwise the string is assumed
    to be zero-terminated.
+
+   .. audit-event:: ctypes.string_at address,size ctypes.string_at
 
 
 .. function:: WinError(code=None, descr=None)
@@ -1961,6 +2100,8 @@ Utility functions
    *address* as a string.  If *size* is specified, it is used as the number of
    characters of the string, otherwise the string is assumed to be
    zero-terminated.
+
+   .. audit-event:: ctypes.wstring_at address,size ctypes.wstring_at
 
 
 .. _ctypes-data-types:
@@ -1989,6 +2130,7 @@ Data types
       source buffer in bytes; the default is zero.  If the source buffer is not
       large enough a :exc:`ValueError` is raised.
 
+      .. audit-event:: ctypes.cdata/buffer pointer,size,offset ctypes._CData.from_buffer
 
    .. method:: _CData.from_buffer_copy(source[, offset])
 
@@ -1998,10 +2140,18 @@ Data types
       is zero.  If the source buffer is not large enough a :exc:`ValueError` is
       raised.
 
+      .. audit-event:: ctypes.cdata/buffer pointer,size,offset ctypes._CData.from_buffer_copy
+
    .. method:: from_address(address)
 
       This method returns a ctypes type instance using the memory specified by
       *address* which must be an integer.
+
+      .. audit-event:: ctypes.cdata address ctypes._CData.from_address
+
+         This method, and others that indirectly call this method, raises an
+         :ref:`auditing event <auditing>` ``ctypes.cdata`` with argument
+         ``address``.
 
    .. method:: from_param(obj)
 
@@ -2087,21 +2237,21 @@ These are the fundamental ctypes data types:
 
 .. class:: c_byte
 
-   Represents the C :c:type:`signed char` datatype, and interprets the value as
+   Represents the C :c:expr:`signed char` datatype, and interprets the value as
    small integer.  The constructor accepts an optional integer initializer; no
    overflow checking is done.
 
 
 .. class:: c_char
 
-   Represents the C :c:type:`char` datatype, and interprets the value as a single
+   Represents the C :c:expr:`char` datatype, and interprets the value as a single
    character.  The constructor accepts an optional string initializer, the
    length of the string must be exactly one character.
 
 
 .. class:: c_char_p
 
-   Represents the C :c:type:`char *` datatype when it points to a zero-terminated
+   Represents the C :c:expr:`char *` datatype when it points to a zero-terminated
    string.  For a general character pointer that may also point to binary data,
    ``POINTER(c_char)`` must be used.  The constructor accepts an integer
    address, or a bytes object.
@@ -2109,68 +2259,68 @@ These are the fundamental ctypes data types:
 
 .. class:: c_double
 
-   Represents the C :c:type:`double` datatype.  The constructor accepts an
+   Represents the C :c:expr:`double` datatype.  The constructor accepts an
    optional float initializer.
 
 
 .. class:: c_longdouble
 
-   Represents the C :c:type:`long double` datatype.  The constructor accepts an
+   Represents the C :c:expr:`long double` datatype.  The constructor accepts an
    optional float initializer.  On platforms where ``sizeof(long double) ==
    sizeof(double)`` it is an alias to :class:`c_double`.
 
 .. class:: c_float
 
-   Represents the C :c:type:`float` datatype.  The constructor accepts an
+   Represents the C :c:expr:`float` datatype.  The constructor accepts an
    optional float initializer.
 
 
 .. class:: c_int
 
-   Represents the C :c:type:`signed int` datatype.  The constructor accepts an
+   Represents the C :c:expr:`signed int` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.  On platforms
    where ``sizeof(int) == sizeof(long)`` it is an alias to :class:`c_long`.
 
 
 .. class:: c_int8
 
-   Represents the C 8-bit :c:type:`signed int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`signed int` datatype.  Usually an alias for
    :class:`c_byte`.
 
 
 .. class:: c_int16
 
-   Represents the C 16-bit :c:type:`signed int` datatype.  Usually an alias for
+   Represents the C 16-bit :c:expr:`signed int` datatype.  Usually an alias for
    :class:`c_short`.
 
 
 .. class:: c_int32
 
-   Represents the C 32-bit :c:type:`signed int` datatype.  Usually an alias for
+   Represents the C 32-bit :c:expr:`signed int` datatype.  Usually an alias for
    :class:`c_int`.
 
 
 .. class:: c_int64
 
-   Represents the C 64-bit :c:type:`signed int` datatype.  Usually an alias for
+   Represents the C 64-bit :c:expr:`signed int` datatype.  Usually an alias for
    :class:`c_longlong`.
 
 
 .. class:: c_long
 
-   Represents the C :c:type:`signed long` datatype.  The constructor accepts an
+   Represents the C :c:expr:`signed long` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_longlong
 
-   Represents the C :c:type:`signed long long` datatype.  The constructor accepts
+   Represents the C :c:expr:`signed long long` datatype.  The constructor accepts
    an optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_short
 
-   Represents the C :c:type:`signed short` datatype.  The constructor accepts an
+   Represents the C :c:expr:`signed short` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.
 
 
@@ -2186,85 +2336,92 @@ These are the fundamental ctypes data types:
    .. versionadded:: 3.2
 
 
+.. class:: c_time_t
+
+   Represents the C :c:type:`time_t` datatype.
+
+   .. versionadded:: 3.12
+
+
 .. class:: c_ubyte
 
-   Represents the C :c:type:`unsigned char` datatype, it interprets the value as
+   Represents the C :c:expr:`unsigned char` datatype, it interprets the value as
    small integer.  The constructor accepts an optional integer initializer; no
    overflow checking is done.
 
 
 .. class:: c_uint
 
-   Represents the C :c:type:`unsigned int` datatype.  The constructor accepts an
+   Represents the C :c:expr:`unsigned int` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.  On platforms
    where ``sizeof(int) == sizeof(long)`` it is an alias for :class:`c_ulong`.
 
 
 .. class:: c_uint8
 
-   Represents the C 8-bit :c:type:`unsigned int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`unsigned int` datatype.  Usually an alias for
    :class:`c_ubyte`.
 
 
 .. class:: c_uint16
 
-   Represents the C 16-bit :c:type:`unsigned int` datatype.  Usually an alias for
+   Represents the C 16-bit :c:expr:`unsigned int` datatype.  Usually an alias for
    :class:`c_ushort`.
 
 
 .. class:: c_uint32
 
-   Represents the C 32-bit :c:type:`unsigned int` datatype.  Usually an alias for
+   Represents the C 32-bit :c:expr:`unsigned int` datatype.  Usually an alias for
    :class:`c_uint`.
 
 
 .. class:: c_uint64
 
-   Represents the C 64-bit :c:type:`unsigned int` datatype.  Usually an alias for
+   Represents the C 64-bit :c:expr:`unsigned int` datatype.  Usually an alias for
    :class:`c_ulonglong`.
 
 
 .. class:: c_ulong
 
-   Represents the C :c:type:`unsigned long` datatype.  The constructor accepts an
+   Represents the C :c:expr:`unsigned long` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_ulonglong
 
-   Represents the C :c:type:`unsigned long long` datatype.  The constructor
+   Represents the C :c:expr:`unsigned long long` datatype.  The constructor
    accepts an optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_ushort
 
-   Represents the C :c:type:`unsigned short` datatype.  The constructor accepts
+   Represents the C :c:expr:`unsigned short` datatype.  The constructor accepts
    an optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_void_p
 
-   Represents the C :c:type:`void *` type.  The value is represented as integer.
+   Represents the C :c:expr:`void *` type.  The value is represented as integer.
    The constructor accepts an optional integer initializer.
 
 
 .. class:: c_wchar
 
-   Represents the C :c:type:`wchar_t` datatype, and interprets the value as a
+   Represents the C :c:expr:`wchar_t` datatype, and interprets the value as a
    single character unicode string.  The constructor accepts an optional string
    initializer, the length of the string must be exactly one character.
 
 
 .. class:: c_wchar_p
 
-   Represents the C :c:type:`wchar_t *` datatype, which must be a pointer to a
+   Represents the C :c:expr:`wchar_t *` datatype, which must be a pointer to a
    zero-terminated wide character string.  The constructor accepts an integer
    address, or a string.
 
 
 .. class:: c_bool
 
-   Represent the C :c:type:`bool` datatype (more accurately, :c:type:`_Bool` from
+   Represent the C :c:expr:`bool` datatype (more accurately, :c:expr:`_Bool` from
    C99).  Its value can be ``True`` or ``False``, and the constructor accepts any object
    that has a truth value.
 
@@ -2277,8 +2434,8 @@ These are the fundamental ctypes data types:
 
 .. class:: py_object
 
-   Represents the C :c:type:`PyObject *` datatype.  Calling this without an
-   argument creates a ``NULL`` :c:type:`PyObject *` pointer.
+   Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
+   argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
 The :mod:`ctypes.wintypes` module provides quite some other Windows specific
 data types, for example :c:type:`HWND`, :c:type:`WPARAM`, or :c:type:`DWORD`.  Some
@@ -2296,6 +2453,18 @@ Structured data types
    Abstract base class for unions in native byte order.
 
 
+.. class:: BigEndianUnion(*args, **kw)
+
+   Abstract base class for unions in *big endian* byte order.
+
+   .. versionadded:: 3.11
+
+.. class:: LittleEndianUnion(*args, **kw)
+
+   Abstract base class for unions in *little endian* byte order.
+
+   .. versionadded:: 3.11
+
 .. class:: BigEndianStructure(*args, **kw)
 
    Abstract base class for structures in *big endian* byte order.
@@ -2305,8 +2474,8 @@ Structured data types
 
    Abstract base class for structures in *little endian* byte order.
 
-Structures with non-native byte order cannot contain pointer type fields, or any
-other data types containing pointer type fields.
+Structures and unions with non-native byte order cannot contain pointer type
+fields, or any other data types containing pointer type fields.
 
 
 .. class:: Structure(*args, **kw)
@@ -2347,7 +2516,7 @@ other data types containing pointer type fields.
       and so on).  Later assignments to the :attr:`_fields_` class variable will
       raise an AttributeError.
 
-      It is possible to defined sub-subclasses of structure types, they inherit
+      It is possible to define sub-subclasses of structure types, they inherit
       the fields of the base class plus the :attr:`_fields_` defined in the
       sub-subclass, if any.
 
@@ -2357,6 +2526,7 @@ other data types containing pointer type fields.
       An optional small integer that allows overriding the alignment of
       structure fields in the instance.  :attr:`_pack_` must already be defined
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
+      Setting this attribute to 0 is the same as not setting it at all.
 
 
    .. attribute:: _anonymous_
@@ -2395,7 +2565,7 @@ other data types containing pointer type fields.
          td.lptdesc = POINTER(some_type)
          td.u.lptdesc = POINTER(some_type)
 
-   It is possible to defined sub-subclasses of structures, they inherit the
+   It is possible to define sub-subclasses of structures, they inherit the
    fields of the base class.  If the subclass definition has a separate
    :attr:`_fields_` variable, the fields specified in this are appended to the
    fields of the base class.
@@ -2413,12 +2583,12 @@ other data types containing pointer type fields.
 Arrays and pointers
 ^^^^^^^^^^^^^^^^^^^
 
-.. class:: Array(\*args)
+.. class:: Array(*args)
 
    Abstract base class for arrays.
 
    The recommended way to create concrete array types is by multiplying any
-   :mod:`ctypes` data type with a positive integer.  Alternatively, you can subclass
+   :mod:`ctypes` data type with a non-negative integer.  Alternatively, you can subclass
    this type and define :attr:`_length_` and :attr:`_type_` class variables.
    Array elements can be read and written using standard
    subscript and slice accesses; for slice reads, the resulting object is
@@ -2465,4 +2635,3 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
-

@@ -1,18 +1,112 @@
 """Simple text browser for IDLE
 
 """
-from tkinter import Toplevel, Frame, Button, Text
-from tkinter import DISABLED, SUNKEN, VERTICAL, WORD
-from tkinter import RIGHT, LEFT, TOP, BOTTOM, BOTH, X, Y
-from tkinter.ttk import Scrollbar
+from tkinter import Toplevel, Text, TclError,\
+    HORIZONTAL, VERTICAL, NS, EW, NSEW, NONE, WORD, SUNKEN
+from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
+from idlelib.colorizer import color_config
 
-class TextViewer(Toplevel):
+
+class AutoHideScrollbar(Scrollbar):
+    """A scrollbar that is automatically hidden when not needed.
+
+    Only the grid geometry manager is supported.
+    """
+    def set(self, lo, hi):
+        if float(lo) > 0.0 or float(hi) < 1.0:
+            self.grid()
+        else:
+            self.grid_remove()
+        super().set(lo, hi)
+
+    def pack(self, **kwargs):
+        raise TclError(f'{self.__class__.__name__} does not support "pack"')
+
+    def place(self, **kwargs):
+        raise TclError(f'{self.__class__.__name__} does not support "place"')
+
+
+class ScrollableTextFrame(Frame):
+    """Display text with scrollbar(s)."""
+
+    def __init__(self, master, wrap=NONE, **kwargs):
+        """Create a frame for Textview.
+
+        master - master widget for this frame
+        wrap - type of text wrapping to use ('word', 'char' or 'none')
+
+        All parameters except for 'wrap' are passed to Frame.__init__().
+
+        The Text widget is accessible via the 'text' attribute.
+
+        Note: Changing the wrapping mode of the text widget after
+        instantiation is not supported.
+        """
+        super().__init__(master, **kwargs)
+
+        text = self.text = Text(self, wrap=wrap)
+        text.grid(row=0, column=0, sticky=NSEW)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        # vertical scrollbar
+        self.yscroll = AutoHideScrollbar(self, orient=VERTICAL,
+                                         takefocus=False,
+                                         command=text.yview)
+        self.yscroll.grid(row=0, column=1, sticky=NS)
+        text['yscrollcommand'] = self.yscroll.set
+
+        # horizontal scrollbar - only when wrap is set to NONE
+        if wrap == NONE:
+            self.xscroll = AutoHideScrollbar(self, orient=HORIZONTAL,
+                                             takefocus=False,
+                                             command=text.xview)
+            self.xscroll.grid(row=1, column=0, sticky=EW)
+            text['xscrollcommand'] = self.xscroll.set
+        else:
+            self.xscroll = None
+
+
+class ViewFrame(Frame):
+    "Display TextFrame and Close button."
+    def __init__(self, parent, contents, wrap='word'):
+        """Create a frame for viewing text with a "Close" button.
+
+        parent - parent widget for this frame
+        contents - text to display
+        wrap - type of text wrapping to use ('word', 'char' or 'none')
+
+        The Text widget is accessible via the 'text' attribute.
+        """
+        super().__init__(parent)
+        self.parent = parent
+        self.bind('<Return>', self.ok)
+        self.bind('<Escape>', self.ok)
+        self.textframe = ScrollableTextFrame(self, relief=SUNKEN, height=700)
+
+        text = self.text = self.textframe.text
+        text.insert('1.0', contents)
+        text.configure(wrap=wrap, highlightthickness=0, state='disabled')
+        color_config(text)
+        text.focus_set()
+
+        self.button_ok = button_ok = Button(
+                self, text='Close', command=self.ok, takefocus=False)
+        self.textframe.pack(side='top', expand=True, fill='both')
+        button_ok.pack(side='bottom')
+
+    def ok(self, event=None):
+        """Dismiss text viewer dialog."""
+        self.parent.destroy()
+
+
+class ViewWindow(Toplevel):
     "A simple text viewer dialog for IDLE."
 
-    def __init__(self, parent, title, text, modal=True,
-                 _htest=False, _utest=False):
+    def __init__(self, parent, title, contents, modal=True, wrap=WORD,
+                 *, _htest=False, _utest=False):
         """Show the given text in a scrollable window with a 'close' button.
 
         If modal is left True, users cannot interact with other windows
@@ -20,75 +114,56 @@ class TextViewer(Toplevel):
 
         parent - parent of this dialog
         title - string which is title of popup dialog
-        text - text to display in dialog
+        contents - text to display in dialog
+        wrap - type of text wrapping to use ('word', 'char' or 'none')
         _htest - bool; change box location when running htest.
         _utest - bool; don't wait_window when running unittest.
         """
-        Toplevel.__init__(self, parent)
-        self.configure(borderwidth=5)
+        super().__init__(parent)
+        self['borderwidth'] = 5
         # Place dialog below parent if running htest.
-        self.geometry("=%dx%d+%d+%d" % (750, 500,
-                           parent.winfo_rootx() + 10,
-                           parent.winfo_rooty() + (10 if not _htest else 100)))
-        # TODO: get fg/bg from theme.
-        self.bg = '#ffffff'
-        self.fg = '#000000'
+        x = parent.winfo_rootx() + 10
+        y = parent.winfo_rooty() + (10 if not _htest else 100)
+        self.geometry(f'=750x500+{x}+{y}')
 
-        self.create_widgets()
         self.title(title)
+        self.viewframe = ViewFrame(self, contents, wrap=wrap)
         self.protocol("WM_DELETE_WINDOW", self.ok)
-        self.parent = parent
-        self.text.focus_set()
-        # Bind keys for closing this dialog.
-        self.bind('<Return>', self.ok)
-        self.bind('<Escape>', self.ok)
-        self.text.insert(0.0, text)
-        self.text.config(state=DISABLED)
+        self.button_ok = button_ok = Button(self, text='Close',
+                                            command=self.ok, takefocus=False)
+        self.viewframe.pack(side='top', expand=True, fill='both')
 
-        if modal:
+        self.is_modal = modal
+        if self.is_modal:
             self.transient(parent)
             self.grab_set()
             if not _utest:
                 self.wait_window()
 
-    def create_widgets(self):
-        "Create Frame with Text (with vertical Scrollbar) and Button."
-        frame = Frame(self, relief=SUNKEN, height=700)
-        frame_buttons = Frame(self)
-        self.button_ok = Button(frame_buttons, text='Close',
-                                command=self.ok, takefocus=False)
-        self.scrollbar = Scrollbar(frame, orient=VERTICAL, takefocus=False)
-        self.text = Text(frame, wrap=WORD, highlightthickness=0,
-                             fg=self.fg, bg=self.bg)
-        self.scrollbar.config(command=self.text.yview)
-        self.text.config(yscrollcommand=self.scrollbar.set)
-        
-        self.button_ok.pack()
-        self.scrollbar.pack(side=RIGHT, fill=Y)
-        self.text.pack(side=LEFT, expand=True, fill=BOTH)
-        frame_buttons.pack(side=BOTTOM, fill=X)
-        frame.pack(side=TOP, expand=True, fill=BOTH)
-
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
+        if self.is_modal:
+            self.grab_release()
         self.destroy()
 
 
-def view_text(parent, title, text, modal=True, _utest=False):
-    """Create TextViewer for given text.
+def view_text(parent, title, contents, modal=True, wrap='word', _utest=False):
+    """Create text viewer for given text.
 
     parent - parent of this dialog
     title - string which is the title of popup dialog
-    text - text to display in this dialog
+    contents - text to display in this dialog
+    wrap - type of text wrapping to use ('word', 'char' or 'none')
     modal - controls if users can interact with other windows while this
             dialog is displayed
     _utest - bool; controls wait_window on unittest
     """
-    return TextViewer(parent, title, text, modal, _utest=_utest)
+    return ViewWindow(parent, title, contents, modal, wrap=wrap, _utest=_utest)
 
 
-def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
-    """Create TextViewer for text in filename.
+def view_file(parent, title, filename, encoding, modal=True, wrap='word',
+              _utest=False):
+    """Create text viewer for text in filename.
 
     Return error message if file cannot be read.  Otherwise calls view_text
     with contents of the file.
@@ -98,19 +173,21 @@ def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
             contents = file.read()
     except OSError:
         showerror(title='File Load Error',
-                  message='Unable to load file %r .' % filename,
+                  message=f'Unable to load file {filename!r} .',
                   parent=parent)
     except UnicodeDecodeError as err:
         showerror(title='Unicode Decode Error',
                   message=str(err),
                   parent=parent)
     else:
-        return view_text(parent, title, contents, modal, _utest=_utest)
+        return view_text(parent, title, contents, modal, wrap=wrap,
+                         _utest=_utest)
     return None
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_textview', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_textview', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
-    run(TextViewer)
+    run(ViewWindow)
