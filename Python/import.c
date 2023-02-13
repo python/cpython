@@ -489,9 +489,8 @@ _extensions_cache_clear(void)
     Py_CLEAR(_PyRuntime.imports.extensions);
 }
 
-int
-_PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
-                               PyObject *filename, PyObject *modules)
+static int
+fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 {
     if (mod == NULL || !PyModule_Check(mod)) {
         PyErr_BadInternalCall();
@@ -505,11 +504,7 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (PyObject_SetItem(modules, name, mod) < 0) {
-        return -1;
-    }
     if (_PyState_AddModule(tstate, mod, def) < 0) {
-        PyMapping_DelItem(modules, name);
         return -1;
     }
 
@@ -542,14 +537,38 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
 }
 
 int
+_PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
+                               PyObject *filename, PyObject *modules)
+{
+    if (PyObject_SetItem(modules, name, mod) < 0) {
+        return -1;
+    }
+    if (fix_up_extension(mod, name, filename) < 0) {
+        PyMapping_DelItem(modules, name);
+        return -1;
+    }
+    return 0;
+}
+
+int
 _PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
 {
-    int res;
+    int res = -1;
     PyObject *nameobj;
     nameobj = PyUnicode_InternFromString(name);
-    if (nameobj == NULL)
+    if (nameobj == NULL) {
         return -1;
-    res = _PyImport_FixupExtensionObject(mod, nameobj, nameobj, modules);
+    }
+    if (PyObject_SetItem(modules, nameobj, mod) < 0) {
+        goto finally;
+    }
+    if (fix_up_extension(mod, nameobj, nameobj) < 0) {
+        PyMapping_DelItem(modules, nameobj);
+        goto finally;
+    }
+    res = 0;
+
+finally:
     Py_DECREF(nameobj);
     return res;
 }
