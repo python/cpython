@@ -394,48 +394,6 @@ Bfree(Bigint *v)
 #undef private_mem
 #undef freelist
 
-#else
-
-/* Alternative versions of Balloc and Bfree that use PyMem_Malloc and
-   PyMem_Free directly in place of the custom memory allocation scheme above.
-   These are provided for the benefit of memory debugging tools like
-   Valgrind. */
-
-/* Allocate space for a Bigint with up to 1<<k digits */
-
-static Bigint *
-Balloc(int k)
-{
-    int x;
-    Bigint *rv;
-    unsigned int len;
-
-    x = 1 << k;
-    len = (sizeof(Bigint) + (x-1)*sizeof(ULong) + sizeof(double) - 1)
-        /sizeof(double);
-
-    rv = (Bigint*)MALLOC(len*sizeof(double));
-    if (rv == NULL)
-        return NULL;
-
-    rv->k = k;
-    rv->maxwds = x;
-    rv->sign = rv->wds = 0;
-    return rv;
-}
-
-/* Free a Bigint allocated with Balloc */
-
-static void
-Bfree(Bigint *v)
-{
-    if (v) {
-        FREE((void*)v);
-    }
-}
-
-#endif /* Py_USING_MEMORY_DEBUGGER */
-
 #define Bcopy(x,y) memcpy((char *)&x->sign, (char *)&y->sign,   \
                           y->wds*sizeof(Long) + 2*sizeof(int))
 
