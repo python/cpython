@@ -1519,6 +1519,10 @@ class property(object):
             self.__doc__ = doc
         except AttributeError:  # read-only or dict-less class
             pass
+        self.__name__ = None
+
+    def __set_name__(self, owner, name):
+        self.__name__ = name
 
     def __get__(self, inst, type=None):
         if inst is None:
@@ -1547,6 +1551,7 @@ static PyMemberDef property_members[] = {
     {"fset", _Py_T_OBJECT, offsetof(propertyobject, prop_set), Py_READONLY},
     {"fdel", _Py_T_OBJECT, offsetof(propertyobject, prop_del), Py_READONLY},
     {"__doc__",  _Py_T_OBJECT, offsetof(propertyobject, prop_doc), 0},
+    {"__name__", _Py_T_OBJECT, offsetof(propertyobject, prop_name), 0},
     {0}
 };
 

@@ -183,6 +183,26 @@ class PropertyTests(unittest.TestCase):
             fake_prop.__init__('fget', 'fset', 'fdel', 'doc')
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
+    def test_property_name(self):
+        def getter(self):
+            return 42
+
+        class A:
+            @property
+            def foo(self):
+                return 1
+
+            bar = property(getter)
+
+        self.assertEqual(A.foo.__name__, 'foo')
+        self.assertEqual(A.bar.__name__, 'bar')
+
+        A.baz = property(getter)
+        self.assertIsNone(A.baz.__name__)
+        A.baz.__name__ = 'mybaz'
+        self.assertEqual(A.baz.__name__, 'mybaz')
+        self.assertEqual(A.bar.__name__, 'bar')  # not affected
+
     def test_property_set_name_incorrect_args(self):
         p = property()
 
