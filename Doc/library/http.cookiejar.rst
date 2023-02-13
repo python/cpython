@@ -633,6 +633,11 @@ internal consistency, so you should know what you're doing if you do that.
    case :attr:`version` is 0.
 
 
+.. attribute:: Cookie.domain
+
+   Cookie domain (a string).
+
+
 .. attribute:: Cookie.name
 
    Cookie name (a string).
