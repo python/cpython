@@ -2155,8 +2155,8 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
     vl = (PyLongObject*)v;
     wl = (PyLongObject*)w;
 
-    v0 = Py_SIZE(vl) == 0 ? 0 : (sdigit)vl->ob_digit[0];
-    w0 = Py_SIZE(wl) == 0 ? 0 : (sdigit)wl->ob_digit[0];
+    v0 = Py_SIZE(vl) == 0 ? 0 : (sdigit)vl->long_value.ob_digit[0];
+    w0 = Py_SIZE(wl) == 0 ? 0 : (sdigit)wl->long_value.ob_digit[0];
 
     if (Py_SIZE(vl) < 0)
         v0 = -v0;

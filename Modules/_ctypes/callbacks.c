@@ -275,15 +275,14 @@ static void _CallPythonObject(void *mem,
                                       "of ctypes callback function",
                                       callable);
         }
-        else if (keep == Py_None) {
-            /* Nothing to keep */
-            Py_DECREF(keep);
-        }
         else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
-            if (-1 == PyErr_WarnEx(PyExc_RuntimeWarning,
-                                   "memory leak in callback function.",
-                                   1))
-            {
+            if (keep == Py_None) {
+                /* Nothing to keep */
+                Py_DECREF(keep);
+            }
+            else if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                                  "memory leak in callback function.",
+                                  1) == -1) {
                 _PyErr_WriteUnraisableMsg("on converting result "
                                           "of ctypes callback function",
                                           callable);

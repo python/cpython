@@ -637,6 +637,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(signed)
         STRUCT_FOR_ID(size)
         STRUCT_FOR_ID(sizehint)
+        STRUCT_FOR_ID(skip_file_prefixes)
         STRUCT_FOR_ID(sleep)
         STRUCT_FOR_ID(sock)
         STRUCT_FOR_ID(sort)

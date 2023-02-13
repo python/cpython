@@ -1,6 +1,0 @@
-Several improvements to :func:`inspect.signature`'s handling of ``__text_signature``.
-- Fixes a case where :func:`inspect.signature` dropped parameters
-- Fixes a case where :func:`inspect.signature` raised :exc:`tokenize.TokenError`
-- Allows :func:`inspect.signature` to understand defaults involving binary operations of constants
-- :func:`inspect.signature` is documented as only raising :exc:`TypeError` or :exc:`ValueError`, but sometimes raised :exc:`RuntimeError`. These cases now raise :exc:`ValueError`
-- Removed a dead code path
