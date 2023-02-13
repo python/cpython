@@ -1,0 +1,1 @@
+Remove deprecated ``co_lnotab`` from code objects as per :pep:`626`.

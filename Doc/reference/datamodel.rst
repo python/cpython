@@ -962,7 +962,6 @@ Internal types
          single: co_filename (code object attribute)
          single: co_firstlineno (code object attribute)
          single: co_flags (code object attribute)
-         single: co_lnotab (code object attribute)
          single: co_name (code object attribute)
          single: co_names (code object attribute)
          single: co_nlocals (code object attribute)
@@ -989,9 +988,7 @@ Internal types
       a tuple containing the literals used by the bytecode; :attr:`co_names` is
       a tuple containing the names used by the bytecode; :attr:`co_filename` is
       the filename from which the code was compiled; :attr:`co_firstlineno` is
-      the first line number of the function; :attr:`co_lnotab` is a string
-      encoding the mapping from bytecode offsets to line numbers (for details
-      see the source code of the interpreter); :attr:`co_stacksize` is the
+      the first line number of the function; :attr:`co_stacksize` is the
       required stack size; :attr:`co_flags` is an integer encoding a number
       of flags for the interpreter.
 
