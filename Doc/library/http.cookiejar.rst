@@ -632,6 +632,10 @@ internal consistency, so you should know what you're doing if you do that.
    :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
    case :attr:`version` is 0.
 
+.. attribute:: Cookie.domain
+
+   Cookie domain (a string).
+
 
 .. attribute:: Cookie.name
 
