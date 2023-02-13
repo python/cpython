@@ -34,7 +34,11 @@
             <Custom Before="SetLauncherInstallDirectoryLM" Action="SetLauncherInstallDirectoryCU">NOT Installed AND NOT ALLUSERS=1</Custom>
             <Custom Before="CostFinalize" Action="SetLauncherInstallDirectoryLM">NOT Installed AND ALLUSERS=1</Custom>
 
+            <?if $(var.UpgradeMinimumVersion)="3.11.0.0" ?>
             <RemoveExistingProducts After="InstallValidate">UPGRADE or REMOVE_350_LAUNCHER or REMOVE_360A1_LAUNCHER or UPGRADE_3_11_0 or UPGRADE_3_11_1</RemoveExistingProducts>
+            <?else ?>
+            <RemoveExistingProducts After="InstallValidate">UPGRADE or REMOVE_350_LAUNCHER or REMOVE_360A1_LAUNCHER</RemoveExistingProducts>
+            <?endif ?>
         </InstallExecuteSequence>
 
         <?if $(var.UpgradeMinimumVersion)="3.11.0.0" ?>
