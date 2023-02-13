@@ -504,7 +504,7 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     *message = NULL;
     *filename = NULL;
 
-    /* new style errors.  `err' is an instance */
+    /* new style errors. 'err' is an instance */
     *message = PyObject_GetAttr(err, &_Py_ID(msg));
     if (!*message)
         goto finally;
@@ -715,7 +715,7 @@ _Py_HandleSystemExit(int *exitcode_p)
     }
 
     if (PyExceptionInstance_Check(value)) {
-        /* The error code should be in the `code' attribute. */
+        /* The error code should be in the 'code' attribute. */
         PyObject *code = PyObject_GetAttr(value, &_Py_ID(code));
         if (code) {
             Py_SETREF(value, code);
