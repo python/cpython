@@ -319,7 +319,6 @@ Modules/_collectionsmodule.c	-	tuplegetter_type	-
 Modules/_io/bytesio.c	-	_PyBytesIOBuffer_Type	-
 Modules/_io/iobase.c	-	PyIOBase_Type	-
 Modules/_io/iobase.c	-	PyRawIOBase_Type	-
-Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-

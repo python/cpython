@@ -717,8 +717,9 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
     }
 
     if (self->readuniversal) {
+        _PyIO_State *state = IO_STATE();
         self->decoder = PyObject_CallFunctionObjArgs(
-            (PyObject *)&PyIncrementalNewlineDecoder_Type,
+            (PyObject *)state->PyIncrementalNewlineDecoder_Type,
             Py_None, self->readtranslate ? Py_True : Py_False, NULL);
         if (self->decoder == NULL)
             return -1;

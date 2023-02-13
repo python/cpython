@@ -635,7 +635,6 @@ struct PyModuleDef _PyIO_Module = {
 static PyTypeObject* static_types[] = {
     // Base classes
     &PyIOBase_Type,
-    &PyIncrementalNewlineDecoder_Type,
 
     // PyIOBase_Type subclasses
     &PyRawIOBase_Type,
@@ -711,6 +710,9 @@ PyInit__io(void)
             goto fail;
         }
     }
+
+    // Concrete classes
+    ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &nldecoder_spec, NULL);
 
     // PyIOBase_Type subclasses
     PyTypeObject *base = &PyIOBase_Type;
