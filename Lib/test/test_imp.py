@@ -1,19 +1,23 @@
 import gc
 import importlib
 import importlib.util
+import shutil
 import os
 import os.path
 import py_compile
 import sys
+import tempfile
 from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
+import textwrap
 import unittest
 import warnings
 imp = warnings_helper.import_deprecated('imp')
 import _imp
+import _xxsubinterpreters as _interpreters
 
 
 OS_PATH_NAME = os.path.__name__
@@ -66,6 +70,17 @@ class ImportTests(unittest.TestCase):
         mod = importlib.import_module('test.encoded_modules')
         self.test_strings = mod.test_strings
         self.test_path = mod.__path__
+
+    def _copy_extension(self, name):
+        fileobj, pathname, _ = imp.find_module('_testsinglephase')
+        fileobj.close()
+
+        dirname = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dirname)
+
+        copied = os.path.join(dirname, os.path.basename(pathname))
+        shutil.copyfile(pathname, copied)
+        return copied
 
     # test_import_encoded_module moved to test_source_encoding.py
 
@@ -250,6 +265,48 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(mod2.__name__, '_testimportmultiple_bar')
         with self.assertRaises(ImportError):
             imp.load_dynamic('nonexistent', pathname)
+
+    @requires_load_dynamic
+    def test_singlephase_multiple_interpreters(self):
+        # Currently, for every single-phrase init module loaded
+        # in multiple interpreters, those interpreters share a
+        # PyModuleDef for that object, which can be a problem.
+
+        # This single-phase module has global state, which is shared
+        # by the interpreters.
+        name = '_testsinglephase'
+        filename = self._copy_extension(name)
+
+        interp1 = _interpreters.create(isolated=False)
+        self.addCleanup(_interpreters.destroy, interp1)
+        interp2 = _interpreters.create(isolated=False)
+        self.addCleanup(_interpreters.destroy, interp2)
+
+        script = textwrap.dedent(f'''
+            from test.support import warnings_helper
+            imp = warnings_helper.import_deprecated('imp')
+            module = imp.load_dynamic({name!r}, {filename!r})
+
+            init_count =  module.initialized_count()
+            if init_count != %d:
+                raise Exception(init_count)
+
+            lookedup = module.look_up_self()
+            if lookedup is not module:
+                raise Exception((module, lookedup))
+            ''')
+        # Use an interpreter that gets destroyed right away.
+        ret = support.run_in_subinterp(script % 1)
+        self.assertEqual(ret, 0)
+
+        # The module's init func gets run again.
+        # The module's globals did not get destroyed.
+        _interpreters.run_string(interp1, script % 2)
+
+        # The module's init func is not run again.
+        # The second interpreter copies the module's m_copy.
+        # However, globals are still shared.
+        _interpreters.run_string(interp2, script % 2)
 
     @requires_load_dynamic
     def test_singlephase_variants(self):
