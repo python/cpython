@@ -294,7 +294,7 @@ def version_splitter(s):
     flush()
     return tuple(version)
 
-def version_comparitor(version1, version2):
+def version_comparator(version1, version2):
     iterator = itertools.zip_longest(version_splitter(version1), version_splitter(version2), fillvalue=0)
     for i, (a, b) in enumerate(iterator):
         if a < b:
@@ -4121,7 +4121,7 @@ class DSLParser:
 
     def directive_version(self, required):
         global version
-        if version_comparitor(version, required) < 0:
+        if version_comparator(version, required) < 0:
             fail("Insufficient Clinic version!\n  Version: " + version + "\n  Required: " + required)
 
     def directive_module(self, name):

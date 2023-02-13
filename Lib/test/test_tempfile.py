@@ -1015,7 +1015,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         self.assertRaises(ValueError, use_closed)
 
     def test_context_man_not_del_on_close_if_delete_on_close_false(self):
-        # Issue gh-58451: tempfile.NamedTemporaryFile is not particulary useful
+        # Issue gh-58451: tempfile.NamedTemporaryFile is not particularly useful
         # on Windows
         # A NamedTemporaryFile is NOT deleted when closed if
         # delete_on_close=False, but is deleted on context manager exit
