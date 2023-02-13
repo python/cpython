@@ -1,1 +1,1 @@
-Update icons for macOS 11.0.
+Update icons for macOS 11.0. Patch by Forrest Jiang.
