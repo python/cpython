@@ -3867,7 +3867,6 @@ dnl hence CPPFLAGS instead of CFLAGS.
       PY_CHECK_SQLITE_FUNC([sqlite3_column_decltype])
       PY_CHECK_SQLITE_FUNC([sqlite3_column_double])
       PY_CHECK_SQLITE_FUNC([sqlite3_complete])
-      PY_CHECK_SQLITE_FUNC([sqlite3_enable_shared_cache])
       PY_CHECK_SQLITE_FUNC([sqlite3_progress_handler])
       PY_CHECK_SQLITE_FUNC([sqlite3_result_double])
       PY_CHECK_SQLITE_FUNC([sqlite3_set_authorizer])

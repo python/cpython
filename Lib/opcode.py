@@ -167,7 +167,7 @@ def_op('COPY', 120)
 def_op('RETURN_CONST', 121)
 hasconst.append(121)
 def_op('BINARY_OP', 122)
-jrel_op('SEND', 123) # Number of bytes to skip
+jrel_op('SEND', 123)            # Number of words to skip
 def_op('LOAD_FAST', 124)        # Local variable number, no null check
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
@@ -374,6 +374,9 @@ _specializations = {
         "UNPACK_SEQUENCE_TUPLE",
         "UNPACK_SEQUENCE_TWO_TUPLE",
     ],
+    "SEND": [
+        "SEND_GEN",
+    ],
 }
 _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family
@@ -431,6 +434,9 @@ _cache_format = {
         "min_args": 1,
     },
     "STORE_SUBSCR": {
+        "counter": 1,
+    },
+    "SEND": {
         "counter": 1,
     },
 }
