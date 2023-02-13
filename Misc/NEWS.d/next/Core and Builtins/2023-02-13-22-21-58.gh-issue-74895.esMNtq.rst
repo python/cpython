@@ -1,0 +1,3 @@
+:mod:`socket.getaddrinfo` raises :class:`socket.gaierror` instead of
+:class:`OverflowError` when the numeric port number is out of the C long
+range. Patch by Radek Smejkal.
