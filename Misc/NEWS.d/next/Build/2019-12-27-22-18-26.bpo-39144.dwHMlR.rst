@@ -1,1 +1,0 @@
-The ctags and etags build targets both include Modules/_ctypes and Python standard library source files.

@@ -25,13 +25,13 @@ Type check macros
 .. c:function:: int PyByteArray_Check(PyObject *o)
 
    Return true if the object *o* is a bytearray object or an instance of a
-   subtype of the bytearray type.
+   subtype of the bytearray type.  This function always succeeds.
 
 
 .. c:function:: int PyByteArray_CheckExact(PyObject *o)
 
    Return true if the object *o* is a bytearray object, but not an instance of a
-   subtype of the bytearray type.
+   subtype of the bytearray type.  This function always succeeds.
 
 
 Direct API functions
@@ -41,8 +41,6 @@ Direct API functions
 
    Return a new bytearray object from any object, *o*, that implements the
    :ref:`buffer protocol <bufferobjects>`.
-
-   .. XXX expand about the buffer protocol, at least somewhere
 
 
 .. c:function:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
@@ -79,9 +77,9 @@ These macros trade safety for speed and they don't check pointers.
 
 .. c:function:: char* PyByteArray_AS_STRING(PyObject *bytearray)
 
-   Macro version of :c:func:`PyByteArray_AsString`.
+   Similar to :c:func:`PyByteArray_AsString`, but without error checking.
 
 
 .. c:function:: Py_ssize_t PyByteArray_GET_SIZE(PyObject *bytearray)
 
-   Macro version of :c:func:`PyByteArray_Size`.
+   Similar to :c:func:`PyByteArray_Size`, but without error checking.

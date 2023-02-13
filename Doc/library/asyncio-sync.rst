@@ -28,6 +28,7 @@ asyncio has the following basic synchronization primitives:
 * :class:`Condition`
 * :class:`Semaphore`
 * :class:`BoundedSemaphore`
+* :class:`Barrier`
 
 
 ---------
@@ -36,7 +37,7 @@ asyncio has the following basic synchronization primitives:
 Lock
 ====
 
-.. class:: Lock(\*, loop=None)
+.. class:: Lock()
 
    Implements a mutex lock for asyncio tasks.  Not thread-safe.
 
@@ -63,8 +64,8 @@ Lock
        finally:
            lock.release()
 
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    .. coroutinemethod:: acquire()
 
@@ -96,7 +97,7 @@ Lock
 Event
 =====
 
-.. class:: Event(\*, loop=None)
+.. class:: Event()
 
    An event object.  Not thread-safe.
 
@@ -104,13 +105,12 @@ Event
    that some event has happened.
 
    An Event object manages an internal flag that can be set to *true*
-   with the :meth:`set` method and reset to *false* with the
-   :meth:`clear` method.  The :meth:`wait` method blocks until the
+   with the :meth:`~Event.set` method and reset to *false* with the
+   :meth:`clear` method.  The :meth:`~Event.wait` method blocks until the
    flag is set to *true*.  The flag is set to *false* initially.
 
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    .. _asyncio_example_sync_event:
 
@@ -142,7 +142,7 @@ Event
       Wait until the event is set.
 
       If the event is set, return ``True`` immediately.
-      Otherwise block until another task calls :meth:`set`.
+      Otherwise block until another task calls :meth:`~Event.set`.
 
    .. method:: set()
 
@@ -155,8 +155,8 @@ Event
 
       Clear (unset) the event.
 
-      Tasks awaiting on :meth:`wait` will now block until the
-      :meth:`set` method is called again.
+      Tasks awaiting on :meth:`~Event.wait` will now block until the
+      :meth:`~Event.set` method is called again.
 
    .. method:: is_set()
 
@@ -166,7 +166,7 @@ Event
 Condition
 =========
 
-.. class:: Condition(lock=None, \*, loop=None)
+.. class:: Condition(lock=None)
 
    A Condition object.  Not thread-safe.
 
@@ -184,9 +184,8 @@ Condition
    ``None``.  In the latter case a new Lock object is created
    automatically.
 
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    The preferred way to use a Condition is an :keyword:`async with`
    statement::
@@ -270,7 +269,7 @@ Condition
 Semaphore
 =========
 
-.. class:: Semaphore(value=1, \*, loop=None)
+.. class:: Semaphore(value=1)
 
    A Semaphore object.  Not thread-safe.
 
@@ -284,9 +283,8 @@ Semaphore
    internal counter (``1`` by default). If the given value is
    less than ``0`` a :exc:`ValueError` is raised.
 
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    The preferred way to use a Semaphore is an :keyword:`async with`
    statement::
@@ -332,7 +330,7 @@ Semaphore
 BoundedSemaphore
 ================
 
-.. class:: BoundedSemaphore(value=1, \*, loop=None)
+.. class:: BoundedSemaphore(value=1)
 
    A bounded semaphore object.  Not thread-safe.
 
@@ -340,15 +338,123 @@ BoundedSemaphore
    a :exc:`ValueError` in :meth:`~Semaphore.release` if it
    increases the internal counter above the initial *value*.
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
+
+Barrier
+=======
+
+.. class:: Barrier(parties)
+
+   A barrier object.  Not thread-safe.
+
+   A barrier is a simple synchronization primitive that allows to block until
+   *parties* number of tasks are waiting on it.
+   Tasks can wait on the :meth:`~Barrier.wait` method and would be blocked until
+   the specified number of tasks end up waiting on :meth:`~Barrier.wait`.
+   At that point all of the waiting tasks would unblock simultaneously.
+
+   :keyword:`async with` can be used as an alternative to awaiting on
+   :meth:`~Barrier.wait`.
+
+   The barrier can be reused any number of times.
+
+   .. _asyncio_example_barrier:
+
+   Example::
+
+      async def example_barrier():
+         # barrier with 3 parties
+         b = asyncio.Barrier(3)
+
+         # create 2 new waiting tasks
+         asyncio.create_task(b.wait())
+         asyncio.create_task(b.wait())
+
+         await asyncio.sleep(0)
+         print(b)
+
+         # The third .wait() call passes the barrier
+         await b.wait()
+         print(b)
+         print("barrier passed")
+
+         await asyncio.sleep(0)
+         print(b)
+
+      asyncio.run(example_barrier())
+
+   Result of this example is::
+
+      <asyncio.locks.Barrier object at 0x... [filling, waiters:2/3]>
+      <asyncio.locks.Barrier object at 0x... [draining, waiters:0/3]>
+      barrier passed
+      <asyncio.locks.Barrier object at 0x... [filling, waiters:0/3]>
+
+   .. versionadded:: 3.11
+
+   .. coroutinemethod:: wait()
+
+      Pass the barrier. When all the tasks party to the barrier have called
+      this function, they are all unblocked simultaneously.
+
+      When a waiting or blocked task in the barrier is cancelled,
+      this task exits the barrier which stays in the same state.
+      If the state of the barrier is "filling", the number of waiting task
+      decreases by 1.
+
+      The return value is an integer in the range of 0 to ``parties-1``, different
+      for each task. This can be used to select a task to do some special
+      housekeeping, e.g.::
+
+         ...
+         async with barrier as position:
+            if position == 0:
+               # Only one task prints this
+               print('End of *draining phase*')
+
+      This method may raise a :class:`BrokenBarrierError` exception if the
+      barrier is broken or reset while a task is waiting.
+      It could raise a :exc:`CancelledError` if a task is cancelled.
+
+   .. coroutinemethod:: reset()
+
+      Return the barrier to the default, empty state.  Any tasks waiting on it
+      will receive the :class:`BrokenBarrierError` exception.
+
+      If a barrier is broken it may be better to just leave it and create a new one.
+
+   .. coroutinemethod:: abort()
+
+      Put the barrier into a broken state.  This causes any active or future
+      calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.
+      Use this for example if one of the tasks needs to abort, to avoid infinite
+      waiting tasks.
+
+   .. attribute:: parties
+
+      The number of tasks required to pass the barrier.
+
+   .. attribute:: n_waiting
+
+      The number of tasks currently waiting in the barrier while filling.
+
+   .. attribute:: broken
+
+      A boolean that is ``True`` if the barrier is in the broken state.
+
+
+.. exception:: BrokenBarrierError
+
+   This exception, a subclass of :exc:`RuntimeError`, is raised when the
+   :class:`Barrier` object is reset or broken.
 
 ---------
 
 
-.. deprecated:: 3.7
+.. versionchanged:: 3.9
 
    Acquiring a lock using ``await lock`` or ``yield from lock`` and/or
    :keyword:`with` statement (``with await lock``, ``with (yield from
-   lock)``) is deprecated.  Use ``async with lock`` instead.
+   lock)``) was removed.  Use ``async with lock`` instead.

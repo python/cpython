@@ -1,2 +1,0 @@
-Fix ttk.Scale.configure([name]) to return configuration tuple for name
-or all options.  Giovanni Lombardo contributed part of the patch.

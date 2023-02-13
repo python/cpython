@@ -40,6 +40,16 @@ alternatively be passed to :func:`faulthandler.enable`.
 The module is implemented in C, so tracebacks can be dumped on a crash or when
 Python is deadlocked.
 
+The :ref:`Python Development Mode <devmode>` calls :func:`faulthandler.enable`
+at Python startup.
+
+.. seealso::
+
+   Module :mod:`pdb`
+      Interactive source code debugger for Python programs.
+
+   Module :mod:`traceback`
+      Standard interface to extract, format and print stack traces of Python programs.
 
 Dumping the traceback
 ---------------------
@@ -48,6 +58,8 @@ Dumping the traceback
 
    Dump the tracebacks of all threads into *file*. If *all_threads* is
    ``False``, dump only the current thread.
+
+   .. seealso:: :func:`traceback.print_tb`, which can be used to print a traceback object.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
@@ -72,6 +84,10 @@ Fault handler state
 
    .. versionchanged:: 3.6
       On Windows, a handler for Windows exception is also installed.
+
+   .. versionchanged:: 3.10
+      The dump now mentions if a garbage collector collection is running
+      if *all_threads* is true.
 
 .. function:: disable()
 
@@ -159,10 +175,10 @@ handler:
 
 .. code-block:: shell-session
 
-    $ python3 -c "import ctypes; ctypes.string_at(0)"
+    $ python -c "import ctypes; ctypes.string_at(0)"
     Segmentation fault
 
-    $ python3 -q -X faulthandler
+    $ python -q -X faulthandler
     >>> import ctypes
     >>> ctypes.string_at(0)
     Fatal Python error: Segmentation fault
@@ -171,4 +187,3 @@ handler:
       File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
       File "<stdin>", line 1 in <module>
     Segmentation fault
-

@@ -9,7 +9,7 @@ functionality over this module.
 from _imp import (lock_held, acquire_lock, release_lock,
                   get_frozen_object, is_frozen_package,
                   init_frozen, is_builtin, is_frozen,
-                  _fix_co_filename)
+                  _fix_co_filename, _frozen_module_names)
 try:
     from _imp import create_dynamic
 except ImportError:
@@ -28,7 +28,8 @@ import tokenize
 import types
 import warnings
 
-warnings.warn("the imp module is deprecated in favour of importlib; "
+warnings.warn("the imp module is deprecated in favour of importlib and slated "
+              "for removal in Python 3.12; "
               "see the module's documentation for alternative uses",
               DeprecationWarning, stacklevel=2)
 
