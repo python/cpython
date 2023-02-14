@@ -38,11 +38,6 @@ extern "C" {
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .imports = { \
-            .lock = { \
-                .mutex = NULL, \
-                .thread = PYTHREAD_INVALID_THREAD_ID, \
-                .level = 0, \
-            }, \
             .find_and_load = { \
                 .header = 1, \
             }, \
