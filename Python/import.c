@@ -652,6 +652,51 @@ PyState_RemoveModule(PyModuleDef* def)
 }
 
 
+/*********************/
+/* extension modules */
+/*********************/
+
+/* Make sure name is fully qualified.
+
+   This is a bit of a hack: when the shared library is loaded,
+   the module name is "package.module", but the module calls
+   PyModule_Create*() with just "module" for the name.  The shared
+   library loader squirrels away the true name of the module in
+   _Py_PackageContext, and PyModule_Create*() will substitute this
+   (if the name actually matches).
+*/
+const char *
+_PyImport_ResolveNameWithPackageContext(const char *name)
+{
+    if (_Py_PackageContext != NULL) {
+        const char *p = strrchr(_Py_PackageContext, '.');
+        if (p != NULL && strcmp(name, p+1) == 0) {
+            name = _Py_PackageContext;
+            _Py_PackageContext = NULL;
+        }
+    }
+    return name;
+}
+
+const char *
+_PyImport_SwapPackageContext(const char *newcontext)
+{
+    const char *oldcontext = _Py_PackageContext;
+    _Py_PackageContext = newcontext;
+    return oldcontext;
+}
+
+
+/*******************/
+
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+#include <emscripten.h>
+EM_JS(PyObject*, _PyImport_InitFunc_TrampolineCall, (PyModInitFunction func), {
+    return wasmTable.get(func)();
+});
+#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
+
+
 /*****************************/
 /* single-phase init modules */
 /*****************************/
@@ -720,37 +765,6 @@ For "basic" modules there are other quirks:
 Generally, when multiple interpreters are involved, some of the above
 gets even messier.
 */
-
-/* Make sure name is fully qualified.
-
-   This is a bit of a hack: when the shared library is loaded,
-   the module name is "package.module", but the module calls
-   PyModule_Create*() with just "module" for the name.  The shared
-   library loader squirrels away the true name of the module in
-   _Py_PackageContext, and PyModule_Create*() will substitute this
-   (if the name actually matches).
-*/
-const char *
-_PyImport_ResolveNameWithPackageContext(const char *name)
-{
-    if (_Py_PackageContext != NULL) {
-        const char *p = strrchr(_Py_PackageContext, '.');
-        if (p != NULL && strcmp(name, p+1) == 0) {
-            name = _Py_PackageContext;
-            _Py_PackageContext = NULL;
-        }
-    }
-    return name;
-}
-
-const char *
-_PyImport_SwapPackageContext(const char *newcontext)
-{
-    const char *oldcontext = _Py_PackageContext;
-    _Py_PackageContext = newcontext;
-    return oldcontext;
-}
-
 
 /* Magic for extension modules (built-in as well as dynamically
    loaded).  To prevent initializing an extension module more than
@@ -930,16 +944,6 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     }
     return mod;
 }
-
-
-/*******************/
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#include <emscripten.h>
-EM_JS(PyObject*, _PyImport_InitFunc_TrampolineCall, (PyModInitFunction func), {
-    return wasmTable.get(func)();
-});
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 
 /*******************/
