@@ -276,7 +276,7 @@ corresponding Unix manual entries for more information on calls.");
 
 #if defined(HAVE_SYS_XATTR_H) && defined(__linux__) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
 #  define USE_XATTRS
-#  include <linux/limits.h>
+#  include <linux/limits.h>  // Needed for XATTR_SIZE_MAX on musl libc.
 #endif
 
 #ifdef USE_XATTRS
