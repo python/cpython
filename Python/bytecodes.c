@@ -727,6 +727,7 @@ dummy_func(
             else {
                 assert(retval != NULL);
             }
+            Py_DECREF(v);
         }
 
         inst(SEND_GEN, (unused/1, receiver, v -- receiver)) {
