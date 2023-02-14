@@ -20,10 +20,14 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
-#include "structmember.h"         // PyMemberDef
+#include "structmember.h"         // for offsetof(), T_OBJECT
 #include <float.h>                // FLT_MAX
 #include <signal.h>
+#ifndef MS_WINDOWS
+#include <unistd.h>
+#endif
 
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>             // W_STOPCODE
@@ -870,6 +874,46 @@ test_thread_state(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+#ifndef MS_WINDOWS
+static PyThread_type_lock wait_done = NULL;
+
+static void wait_for_lock(void *unused) {
+    PyThread_acquire_lock(wait_done, 1);
+    PyThread_release_lock(wait_done);
+    PyThread_free_lock(wait_done);
+    wait_done = NULL;
+}
+
+// These can be used to test things that care about the existence of another
+// thread that the threading module doesn't know about.
+
+static PyObject *
+spawn_pthread_waiter(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    if (wait_done) {
+        PyErr_SetString(PyExc_RuntimeError, "thread already running");
+        return NULL;
+    }
+    wait_done = PyThread_allocate_lock();
+    if (wait_done == NULL)
+        return PyErr_NoMemory();
+    PyThread_acquire_lock(wait_done, 1);
+    PyThread_start_new_thread(wait_for_lock, NULL);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+end_spawned_pthread(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    if (!wait_done) {
+        PyErr_SetString(PyExc_RuntimeError, "call _spawn_pthread_waiter 1st");
+        return NULL;
+    }
+    PyThread_release_lock(wait_done);
+    Py_RETURN_NONE;
+}
+#endif  // not MS_WINDOWS
+
 /* test Py_AddPendingCalls using threads */
 static int _pending_callback(void *arg)
 {
@@ -1490,6 +1534,42 @@ crash_no_current_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
     return NULL;
 }
 
+/* Test that the GILState thread and the "current" thread match. */
+static PyObject *
+test_current_tstate_matches(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyThreadState *orig_tstate = PyThreadState_Get();
+
+    if (orig_tstate != PyGILState_GetThisThreadState()) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "current thread state doesn't match GILState");
+        return NULL;
+    }
+
+    const char *err = NULL;
+    PyThreadState_Swap(NULL);
+    PyThreadState *substate = Py_NewInterpreter();
+
+    if (substate != PyThreadState_Get()) {
+        err = "subinterpreter thread state not current";
+        goto finally;
+    }
+    if (substate != PyGILState_GetThisThreadState()) {
+        err = "subinterpreter thread state doesn't match GILState";
+        goto finally;
+    }
+
+finally:
+    Py_EndInterpreter(substate);
+    PyThreadState_Swap(orig_tstate);
+
+    if (err != NULL) {
+        PyErr_SetString(PyExc_RuntimeError, err);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 /* To run some code in a sub-interpreter. */
 static PyObject *
 run_in_subinterp(PyObject *self, PyObject *args)
@@ -1593,6 +1673,58 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     PyThreadState_Swap(mainstate);
 
     return PyLong_FromLong(r);
+}
+
+static void
+_xid_capsule_destructor(PyObject *capsule)
+{
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data != NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        PyMem_Free(data);
+    }
+}
+
+static PyObject *
+get_crossinterp_data(PyObject *self, PyObject *args)
+{
+    PyObject *obj = NULL;
+    if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
+        return NULL;
+    }
+
+    _PyCrossInterpreterData *data = PyMem_NEW(_PyCrossInterpreterData, 1);
+    if (data == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
+        PyMem_Free(data);
+        return NULL;
+    }
+    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
+    if (capsule == NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        PyMem_Free(data);
+    }
+    return capsule;
+}
+
+static PyObject *
+restore_crossinterp_data(PyObject *self, PyObject *args)
+{
+    PyObject *capsule = NULL;
+    if (!PyArg_ParseTuple(args, "O:restore_crossinterp_data", &capsule)) {
+        return NULL;
+    }
+
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data == NULL) {
+        return NULL;
+    }
+    return _PyCrossInterpreterData_NewObject(data);
 }
 
 static void
@@ -1835,12 +1967,19 @@ temporary_c_thread(void *data)
     PyThread_release_lock(test_c_thread->exit_event);
 }
 
+static test_c_thread_t test_c_thread;
+
 static PyObject *
-call_in_temporary_c_thread(PyObject *self, PyObject *callback)
+call_in_temporary_c_thread(PyObject *self, PyObject *args)
 {
     PyObject *res = NULL;
-    test_c_thread_t test_c_thread;
+    PyObject *callback = NULL;
     long thread;
+    int wait = 1;
+    if (!PyArg_ParseTuple(args, "O|i", &callback, &wait))
+    {
+        return NULL;
+    }
 
     test_c_thread.start_event = PyThread_allocate_lock();
     test_c_thread.exit_event = PyThread_allocate_lock();
@@ -1866,6 +2005,10 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
     PyThread_acquire_lock(test_c_thread.start_event, 1);
     PyThread_release_lock(test_c_thread.start_event);
 
+    if (!wait) {
+        Py_RETURN_NONE;
+    }
+
     Py_BEGIN_ALLOW_THREADS
         PyThread_acquire_lock(test_c_thread.exit_event, 1);
         PyThread_release_lock(test_c_thread.exit_event);
@@ -1875,11 +2018,30 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
 
 exit:
     Py_CLEAR(test_c_thread.callback);
-    if (test_c_thread.start_event)
+    if (test_c_thread.start_event) {
         PyThread_free_lock(test_c_thread.start_event);
-    if (test_c_thread.exit_event)
+        test_c_thread.start_event = NULL;
+    }
+    if (test_c_thread.exit_event) {
         PyThread_free_lock(test_c_thread.exit_event);
+        test_c_thread.exit_event = NULL;
+    }
     return res;
+}
+
+static PyObject *
+join_temporary_c_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(test_c_thread.exit_event, 1);
+        PyThread_release_lock(test_c_thread.exit_event);
+    Py_END_ALLOW_THREADS
+    Py_CLEAR(test_c_thread.callback);
+    PyThread_free_lock(test_c_thread.start_event);
+    test_c_thread.start_event = NULL;
+    PyThread_free_lock(test_c_thread.exit_event);
+    test_c_thread.exit_event = NULL;
+    Py_RETURN_NONE;
 }
 
 /* marshal */
@@ -2066,78 +2228,6 @@ getitem_with_error(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-tracemalloc_track(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-    void *ptr;
-    Py_ssize_t size;
-    int release_gil = 0;
-    int res;
-
-    if (!PyArg_ParseTuple(args, "IOn|i", &domain, &ptr_obj, &size, &release_gil))
-        return NULL;
-    ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred())
-        return NULL;
-
-    if (release_gil) {
-        Py_BEGIN_ALLOW_THREADS
-        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
-        Py_END_ALLOW_THREADS
-    }
-    else {
-        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
-    }
-
-    if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Track error");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-tracemalloc_untrack(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-    void *ptr;
-    int res;
-
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj))
-        return NULL;
-    ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred())
-        return NULL;
-
-    res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
-    if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Untrack error");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-tracemalloc_get_traceback(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-    void *ptr;
-
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj))
-        return NULL;
-    ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred())
-        return NULL;
-
-    return _PyTraceMalloc_GetTraceback(domain, (uintptr_t)ptr);
-}
-
-static PyObject *
 dict_get_version(PyObject *self, PyObject *args)
 {
     PyDictObject *dict;
@@ -2146,7 +2236,10 @@ dict_get_version(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
         return NULL;
 
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     version = dict->ma_version_tag;
+    _Py_COMP_DIAG_POP
 
     static_assert(sizeof(unsigned long long) >= sizeof(version),
                   "version is larger than unsigned long long");
@@ -2912,6 +3005,22 @@ frame_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+frame_new(PyObject *self, PyObject *args)
+{
+    PyObject *code, *globals, *locals;
+    if (!PyArg_ParseTuple(args, "OOO", &code, &globals, &locals)) {
+        return NULL;
+    }
+    if (!PyCode_Check(code)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyThreadState *tstate = PyThreadState_Get();
+
+    return (PyObject *)PyFrame_New(tstate, (PyCodeObject *)code, globals, locals);
+}
+
+static PyObject *
 test_frame_getvar(PyObject *self, PyObject *args)
 {
     PyObject *frame, *name;
@@ -2953,6 +3062,144 @@ static PyObject *
 eval_get_func_desc(PyObject *self, PyObject *func)
 {
     return PyUnicode_FromString(PyEval_GetFuncDesc(func));
+}
+
+static PyObject *
+eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
+{
+    PyObject *result = NULL;
+    PyObject *code;
+    PyObject *globals;
+    PyObject *locals = NULL;
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *defaults = NULL;
+    PyObject *kw_defaults = NULL;
+    PyObject *closure = NULL;
+
+    PyObject **c_kwargs = NULL;
+
+    if (!PyArg_UnpackTuple(pos_args,
+                           "eval_code_ex",
+                           2,
+                           8,
+                           &code,
+                           &globals,
+                           &locals,
+                           &args,
+                           &kwargs,
+                           &defaults,
+                           &kw_defaults,
+                           &closure))
+    {
+        goto exit;
+    }
+
+    if (!PyCode_Check(code)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "code must be a Python code object");
+        goto exit;
+    }
+
+    if (!PyDict_Check(globals)) {
+        PyErr_SetString(PyExc_TypeError, "globals must be a dict");
+        goto exit;
+    }
+
+    if (locals && !PyMapping_Check(locals)) {
+        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
+        goto exit;
+    }
+    if (locals == Py_None) {
+        locals = NULL;
+    }
+
+    PyObject **c_args = NULL;
+    Py_ssize_t c_args_len = 0;
+
+    if (args)
+    {
+        if (!PyTuple_Check(args)) {
+            PyErr_SetString(PyExc_TypeError, "args must be a tuple");
+            goto exit;
+        } else {
+            c_args = &PyTuple_GET_ITEM(args, 0);
+            c_args_len = PyTuple_Size(args);
+        }
+    }
+
+    Py_ssize_t c_kwargs_len = 0;
+
+    if (kwargs)
+    {
+        if (!PyDict_Check(kwargs)) {
+            PyErr_SetString(PyExc_TypeError, "keywords must be a dict");
+            goto exit;
+        } else {
+            c_kwargs_len = PyDict_Size(kwargs);
+            if (c_kwargs_len > 0) {
+                c_kwargs = PyMem_NEW(PyObject*, 2 * c_kwargs_len);
+                if (!c_kwargs) {
+                    PyErr_NoMemory();
+                    goto exit;
+                }
+
+                Py_ssize_t i = 0;
+                Py_ssize_t pos = 0;
+
+                while (PyDict_Next(kwargs,
+                                   &pos,
+                                   &c_kwargs[i],
+                                   &c_kwargs[i + 1]))
+                {
+                    i += 2;
+                }
+                c_kwargs_len = i / 2;
+                /* XXX This is broken if the caller deletes dict items! */
+            }
+        }
+    }
+
+
+    PyObject **c_defaults = NULL;
+    Py_ssize_t c_defaults_len = 0;
+
+    if (defaults && PyTuple_Check(defaults)) {
+        c_defaults = &PyTuple_GET_ITEM(defaults, 0);
+        c_defaults_len = PyTuple_Size(defaults);
+    }
+
+    if (kw_defaults && !PyDict_Check(kw_defaults)) {
+        PyErr_SetString(PyExc_TypeError, "kw_defaults must be a dict");
+        goto exit;
+    }
+
+    if (closure && !PyTuple_Check(closure)) {
+        PyErr_SetString(PyExc_TypeError, "closure must be a tuple of cells");
+        goto exit;
+    }
+
+
+    result = PyEval_EvalCodeEx(
+        code,
+        globals,
+        locals,
+        c_args,
+        (int)c_args_len,
+        c_kwargs,
+        (int)c_kwargs_len,
+        c_defaults,
+        (int)c_defaults_len,
+        kw_defaults,
+        closure
+    );
+
+exit:
+    if (c_kwargs) {
+        PyMem_DEL(c_kwargs);
+    }
+
+    return result;
 }
 
 static PyObject *
@@ -3223,6 +3470,41 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+err_set_raised(PyObject *self, PyObject *exc)
+{
+    Py_INCREF(exc);
+    PyErr_SetRaisedException(exc);
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
+static PyObject *
+err_restore(PyObject *self, PyObject *args) {
+    PyObject *type = NULL, *value = NULL, *traceback = NULL;
+    switch(PyTuple_Size(args)) {
+        case 3:
+            traceback = PyTuple_GetItem(args, 2);
+            Py_INCREF(traceback);
+            /* fall through */
+        case 2:
+            value = PyTuple_GetItem(args, 1);
+            Py_INCREF(value);
+            /* fall through */
+        case 1:
+            type = PyTuple_GetItem(args, 0);
+            Py_INCREF(type);
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError,
+                        "wrong number of arguments");
+            return NULL;
+    }
+    PyErr_Restore(type, value, traceback);
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -3262,6 +3544,10 @@ static PyMethodDef TestMethods[] = {
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
+#ifndef MS_WINDOWS
+    {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},
+    {"_end_spawned_pthread",    end_spawned_pthread,             METH_NOARGS},
+#endif
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
 #ifdef HAVE_GETTIMEOFDAY
     {"profile_int",             profile_int,                     METH_NOARGS},
@@ -3272,19 +3558,24 @@ static PyMethodDef TestMethods[] = {
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},
     {"argparsing",              argparsing,                      METH_VARARGS},
     {"code_newempty",           code_newempty,                   METH_VARARGS},
+    {"eval_code_ex",            eval_eval_code_ex,               METH_VARARGS},
     {"make_exception_with_doc", _PyCFunction_CAST(make_exception_with_doc),
      METH_VARARGS | METH_KEYWORDS},
     {"make_memoryview_from_NULL_pointer", make_memoryview_from_NULL_pointer,
      METH_NOARGS},
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
+    {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
+    {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
+    {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     {"with_tp_del",             with_tp_del,                     METH_VARARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
-    {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
+    {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
+    {"join_temporary_c_thread", join_temporary_c_thread, METH_NOARGS},
     {"pymarshal_write_long_to_file",
         pymarshal_write_long_to_file, METH_VARARGS},
     {"pymarshal_write_object_to_file",
@@ -3301,9 +3592,6 @@ static PyMethodDef TestMethods[] = {
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"Py_CompileString",     pycompilestring, METH_O},
-    {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
-    {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
-    {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
     {"dict_get_version", dict_get_version, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
@@ -3352,6 +3640,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
     {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
@@ -3368,148 +3657,9 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
+    {"err_set_raised", err_set_raised, METH_O, NULL},
+    {"err_restore", err_restore, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
-};
-
-typedef struct {
-    char bool_member;
-    char byte_member;
-    unsigned char ubyte_member;
-    short short_member;
-    unsigned short ushort_member;
-    int int_member;
-    unsigned int uint_member;
-    long long_member;
-    unsigned long ulong_member;
-    Py_ssize_t pyssizet_member;
-    float float_member;
-    double double_member;
-    char inplace_member[6];
-    long long longlong_member;
-    unsigned long long ulonglong_member;
-} all_structmembers;
-
-typedef struct {
-    PyObject_HEAD
-    all_structmembers structmembers;
-} test_structmembers;
-
-static struct PyMemberDef test_members[] = {
-    {"T_BOOL", T_BOOL, offsetof(test_structmembers, structmembers.bool_member), 0, NULL},
-    {"T_BYTE", T_BYTE, offsetof(test_structmembers, structmembers.byte_member), 0, NULL},
-    {"T_UBYTE", T_UBYTE, offsetof(test_structmembers, structmembers.ubyte_member), 0, NULL},
-    {"T_SHORT", T_SHORT, offsetof(test_structmembers, structmembers.short_member), 0, NULL},
-    {"T_USHORT", T_USHORT, offsetof(test_structmembers, structmembers.ushort_member), 0, NULL},
-    {"T_INT", T_INT, offsetof(test_structmembers, structmembers.int_member), 0, NULL},
-    {"T_UINT", T_UINT, offsetof(test_structmembers, structmembers.uint_member), 0, NULL},
-    {"T_LONG", T_LONG, offsetof(test_structmembers, structmembers.long_member), 0, NULL},
-    {"T_ULONG", T_ULONG, offsetof(test_structmembers, structmembers.ulong_member), 0, NULL},
-    {"T_PYSSIZET", T_PYSSIZET, offsetof(test_structmembers, structmembers.pyssizet_member), 0, NULL},
-    {"T_FLOAT", T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
-    {"T_DOUBLE", T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},
-    {"T_STRING_INPLACE", T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
-    {"T_LONGLONG", T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
-    {"T_ULONGLONG", T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
-    {NULL}
-};
-
-
-static PyObject *
-test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    static char *keywords[] = {
-        "T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT",
-        "T_INT", "T_UINT", "T_LONG", "T_ULONG", "T_PYSSIZET",
-        "T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",
-        "T_LONGLONG", "T_ULONGLONG",
-        NULL};
-    static const char fmt[] = "|bbBhHiIlknfds#LK";
-    test_structmembers *ob;
-    const char *s = NULL;
-    Py_ssize_t string_len = 0;
-    ob = PyObject_New(test_structmembers, type);
-    if (ob == NULL)
-        return NULL;
-    memset(&ob->structmembers, 0, sizeof(all_structmembers));
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
-                                     &ob->structmembers.bool_member,
-                                     &ob->structmembers.byte_member,
-                                     &ob->structmembers.ubyte_member,
-                                     &ob->structmembers.short_member,
-                                     &ob->structmembers.ushort_member,
-                                     &ob->structmembers.int_member,
-                                     &ob->structmembers.uint_member,
-                                     &ob->structmembers.long_member,
-                                     &ob->structmembers.ulong_member,
-                                     &ob->structmembers.pyssizet_member,
-                                     &ob->structmembers.float_member,
-                                     &ob->structmembers.double_member,
-                                     &s, &string_len
-                                     , &ob->structmembers.longlong_member,
-                                     &ob->structmembers.ulonglong_member
-        )) {
-        Py_DECREF(ob);
-        return NULL;
-    }
-    if (s != NULL) {
-        if (string_len > 5) {
-            Py_DECREF(ob);
-            PyErr_SetString(PyExc_ValueError, "string too long");
-            return NULL;
-        }
-        strcpy(ob->structmembers.inplace_member, s);
-    }
-    else {
-        strcpy(ob->structmembers.inplace_member, "");
-    }
-    return (PyObject *)ob;
-}
-
-static void
-test_structmembers_free(PyObject *ob)
-{
-    PyObject_Free(ob);
-}
-
-static PyTypeObject test_structmembersType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "test_structmembersType",
-    sizeof(test_structmembers),         /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    test_structmembers_free,            /* destructor tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    PyObject_GenericSetAttr,            /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    0,                                  /* tp_flags */
-    "Type containing all structmember types",
-    0,                                  /* traverseproc tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    0,                                  /* tp_methods */
-    test_members,                       /* tp_members */
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    test_structmembers_new,             /* tp_new */
 };
 
 
@@ -4064,11 +4214,6 @@ PyInit__testcapi(void)
 
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
 
-    Py_SET_TYPE(&test_structmembersType, &PyType_Type);
-    Py_INCREF(&test_structmembersType);
-    /* don't use a name starting with "test", since we don't want
-       test_capi to automatically call this */
-    PyModule_AddObject(m, "_test_structmembersType", (PyObject *)&test_structmembersType);
     if (PyType_Ready(&matmulType) < 0)
         return NULL;
     Py_INCREF(&matmulType);
@@ -4195,6 +4340,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Float(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Structmember(m) < 0) {
         return NULL;
     }
 

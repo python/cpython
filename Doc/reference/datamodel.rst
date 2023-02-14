@@ -2823,7 +2823,7 @@ Customizing positional arguments in class pattern matching
 
 When using a class name in a pattern, positional arguments in the pattern are not
 allowed by default, i.e. ``case MyClass(x, y)`` is typically invalid without special
-support in ``MyClass``. To be able to use that kind of patterns, the class needs to
+support in ``MyClass``. To be able to use that kind of pattern, the class needs to
 define a *__match_args__* attribute.
 
 .. data:: object.__match_args__
@@ -2949,6 +2949,14 @@ are awaitable.
    Must return an :term:`iterator`.  Should be used to implement
    :term:`awaitable` objects.  For instance, :class:`asyncio.Future` implements
    this method to be compatible with the :keyword:`await` expression.
+
+   .. note::
+
+      The language doesn't place any restriction on the type or value of the
+      objects yielded by the iterator returned by ``__await__``, as this is
+      specific to the implementation of the asynchronous execution framework
+      (e.g. :mod:`asyncio`) that will be managing the :term:`awaitable` object.
+
 
 .. versionadded:: 3.5
 

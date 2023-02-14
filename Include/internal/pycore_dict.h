@@ -39,7 +39,7 @@ extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
  * Returns the version number, or zero if it was not possible to get a version number. */
 extern uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys);
 
-extern Py_ssize_t _PyDict_KeysSize(PyDictKeysObject *keys);
+extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
 
 /* _Py_dict_lookup() returns index of entry which can be used like DK_ENTRIES(dk)[index].
  * -1 when no entry found, -3 when compare raises error.
@@ -122,18 +122,27 @@ struct _dictvalues {
     PyObject *values[1];
 };
 
-#define DK_LOG_SIZE(dk)  ((dk)->dk_log2_size)
+#define DK_LOG_SIZE(dk)  _Py_RVALUE((dk)->dk_log2_size)
 #if SIZEOF_VOID_P > 4
 #define DK_SIZE(dk)      (((int64_t)1)<<DK_LOG_SIZE(dk))
 #else
 #define DK_SIZE(dk)      (1<<DK_LOG_SIZE(dk))
 #endif
-#define DK_ENTRIES(dk) \
-    (assert((dk)->dk_kind == DICT_KEYS_GENERAL), \
-     (PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
-#define DK_UNICODE_ENTRIES(dk) \
-    (assert((dk)->dk_kind != DICT_KEYS_GENERAL), \
-     (PyDictUnicodeEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+
+static inline void* _DK_ENTRIES(PyDictKeysObject *dk) {
+    int8_t *indices = (int8_t*)(dk->dk_indices);
+    size_t index = (size_t)1 << dk->dk_log2_index_bytes;
+    return (&indices[index]);
+}
+static inline PyDictKeyEntry* DK_ENTRIES(PyDictKeysObject *dk) {
+    assert(dk->dk_kind == DICT_KEYS_GENERAL);
+    return (PyDictKeyEntry*)_DK_ENTRIES(dk);
+}
+static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
+    assert(dk->dk_kind != DICT_KEYS_GENERAL);
+    return (PyDictUnicodeEntry*)_DK_ENTRIES(dk);
+}
+
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
 #define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)

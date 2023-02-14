@@ -1947,12 +1947,12 @@ Loading and running tests
    .. attribute:: testNamePatterns
 
       List of Unix shell-style wildcard test name patterns that test methods
-      have to match to be included in test suites (see ``-v`` option).
+      have to match to be included in test suites (see ``-k`` option).
 
       If this attribute is not ``None`` (the default), all test methods to be
       included in test suites must match one of the patterns in this list.
       Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
-      so unlike patterns passed to the ``-v`` option, simple substring patterns
+      so unlike patterns passed to the ``-k`` option, simple substring patterns
       will have to be converted using ``*`` wildcards.
 
       This affects all the :meth:`loadTestsFrom\*` methods.

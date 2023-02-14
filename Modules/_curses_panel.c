@@ -424,7 +424,7 @@ _curses_panel_panel_replace_impl(PyCursesPanelObject *self,
         PyErr_SetString(state->PyCursesError, "replace_panel() returned ERR");
         return NULL;
     }
-    Py_SETREF(po->wo, Py_NewRef(win));
+    Py_SETREF(po->wo, (PyCursesWindowObject*)Py_NewRef(win));
     Py_RETURN_NONE;
 }
 

@@ -233,12 +233,12 @@ static inline PyObject* unicode_new_empty(void)
 */
 static inline PyObject *get_interned_dict(void)
 {
-    return _PyRuntime.global_objects.interned;
+    return _Py_CACHED_OBJECT(interned_strings);
 }
 
 static inline void set_interned_dict(PyObject *dict)
 {
-    _PyRuntime.global_objects.interned = dict;
+    _Py_CACHED_OBJECT(interned_strings) = dict;
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
@@ -4530,6 +4530,9 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     }
     s += ascii_decode(s, end, PyUnicode_1BYTE_DATA(u));
     if (s == end) {
+        if (consumed) {
+            *consumed = size;
+        }
         return u;
     }
 
@@ -5694,8 +5697,6 @@ PyUnicode_AsUTF16String(PyObject *unicode)
 
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
-static _PyUnicode_Name_CAPI *ucnhash_capi = NULL;
-
 PyObject *
 _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
                                Py_ssize_t size,
@@ -5708,6 +5709,8 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     const char *end;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
+    _PyUnicode_Name_CAPI *ucnhash_capi;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
 
     // so we can remember if we've seen an invalid escape char or not
     *first_invalid_escape = NULL;
@@ -5855,6 +5858,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
 
             /* \N{name} */
         case 'N':
+            ucnhash_capi = interp->unicode.ucnhash_capi;
             if (ucnhash_capi == NULL) {
                 /* load the unicode data module */
                 ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
@@ -5866,6 +5870,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
                         );
                     goto onError;
                 }
+                interp->unicode.ucnhash_capi = ucnhash_capi;
             }
 
             message = "malformed \\N character escape";
@@ -12441,7 +12446,7 @@ unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
 /*[clinic input]
 str.splitlines as unicode_splitlines
 
-    keepends: bool(accept={int}) = False
+    keepends: bool = False
 
 Return a list of the lines in the string, breaking at line boundaries.
 
@@ -12451,7 +12456,7 @@ true.
 
 static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends)
-/*[clinic end generated code: output=f664dcdad153ec40 input=b508e180459bdd8b]*/
+/*[clinic end generated code: output=f664dcdad153ec40 input=ba6ad05ee85d2b55]*/
 {
     return PyUnicode_Splitlines(self, keepends);
 }
@@ -13572,8 +13577,7 @@ _PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
         for (i = 0; i < numdigits; i++)
             *b1++ = *buf++;
         *b1 = '\0';
-        Py_DECREF(result);
-        result = r1;
+        Py_SETREF(result, r1);
         buf = PyBytes_AS_STRING(result);
         len = numnondigits + prec;
     }
@@ -13590,8 +13594,7 @@ _PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
         || buf != PyUnicode_DATA(result)) {
         PyObject *unicode;
         unicode = _PyUnicode_FromASCII(buf, len);
-        Py_DECREF(result);
-        result = unicode;
+        Py_SETREF(result, unicode);
     }
     else if (len != PyUnicode_GET_LENGTH(result)) {
         if (PyUnicode_Resize(&result, len) < 0)
@@ -15127,10 +15130,10 @@ _PyUnicode_Fini(PyInterpreterState *interp)
         assert(get_interned_dict() == NULL);
         // bpo-47182: force a unicodedata CAPI capsule re-import on
         // subsequent initialization of main interpreter.
-        ucnhash_capi = NULL;
     }
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
+    interp->unicode.ucnhash_capi = NULL;
 
     unicode_clear_identifiers(state);
 }

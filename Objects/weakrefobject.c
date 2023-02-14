@@ -824,8 +824,7 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
                        during GC.  Return that one instead of this one
                        to avoid violating the invariants of the list
                        of weakrefs for ob. */
-                    Py_DECREF(result);
-                    result = (PyWeakReference*)Py_NewRef(ref);
+                    Py_SETREF(result, (PyWeakReference*)Py_NewRef(ref));
                 }
             }
             else {
@@ -888,8 +887,7 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
                        during GC.  Return that one instead of this one
                        to avoid violating the invariants of the list
                        of weakrefs for ob. */
-                    Py_DECREF(result);
-                    result = (PyWeakReference*)Py_NewRef(proxy);
+                    Py_SETREF(result, (PyWeakReference*)Py_NewRef(proxy));
                     goto skip_insert;
                 }
                 prev = ref;

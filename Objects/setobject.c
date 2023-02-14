@@ -1270,8 +1270,7 @@ set_intersection_multi(PySetObject *so, PyObject *args)
             Py_DECREF(result);
             return NULL;
         }
-        Py_DECREF(result);
-        result = newresult;
+        Py_SETREF(result, newresult);
     }
     return result;
 }
@@ -1958,12 +1957,11 @@ done:
 static PyObject *
 set_sizeof(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(so));
-    if (so->table != so->smalltable)
-        res = res + (so->mask + 1) * sizeof(setentry);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(so));
+    if (so->table != so->smalltable) {
+        res += ((size_t)so->mask + 1) * sizeof(setentry);
+    }
+    return PyLong_FromSize_t(res);
 }
 
 PyDoc_STRVAR(sizeof_doc, "S.__sizeof__() -> size of S in memory, in bytes");

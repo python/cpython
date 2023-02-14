@@ -378,6 +378,19 @@ class AsyncGenTest(unittest.TestCase):
 
         self.compare_generators(sync_gen_wrapper(), async_gen_wrapper())
 
+    def test_async_gen_exception_12(self):
+        async def gen():
+            await anext(me)
+            yield 123
+
+        me = gen()
+        ai = me.__aiter__()
+        an = ai.__anext__()
+
+        with self.assertRaisesRegex(RuntimeError,
+                r'anext\(\): asynchronous generator is already running'):
+            an.__next__()
+
     def test_async_gen_3_arg_deprecation_warning(self):
         async def gen():
             yield 123

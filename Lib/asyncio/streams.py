@@ -125,7 +125,7 @@ class FlowControlMixin(protocols.Protocol):
 
     def __init__(self, loop=None):
         if loop is None:
-            self._loop = events._get_event_loop(stacklevel=4)
+            self._loop = events.get_event_loop()
         else:
             self._loop = loop
         self._paused = False
@@ -378,7 +378,8 @@ class StreamWriter:
 
     async def start_tls(self, sslcontext, *,
                         server_hostname=None,
-                        ssl_handshake_timeout=None):
+                        ssl_handshake_timeout=None,
+                        ssl_shutdown_timeout=None):
         """Upgrade an existing stream-based connection to TLS."""
         server_side = self._protocol._client_connected_cb is not None
         protocol = self._protocol
@@ -386,7 +387,8 @@ class StreamWriter:
         new_transport = await self._loop.start_tls(  # type: ignore
             self._transport, protocol, sslcontext,
             server_side=server_side, server_hostname=server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
         self._transport = new_transport
         protocol._replace_writer(self)
 
@@ -404,7 +406,7 @@ class StreamReader:
 
         self._limit = limit
         if loop is None:
-            self._loop = events._get_event_loop()
+            self._loop = events.get_event_loop()
         else:
             self._loop = loop
         self._buffer = bytearray()
@@ -688,7 +690,7 @@ class StreamReader:
             await self._wait_for_data('read')
 
         # This will work right even if buffer is less than n bytes
-        data = bytes(self._buffer[:n])
+        data = bytes(memoryview(self._buffer)[:n])
         del self._buffer[:n]
 
         self._maybe_resume_transport()
@@ -730,7 +732,7 @@ class StreamReader:
             data = bytes(self._buffer)
             self._buffer.clear()
         else:
-            data = bytes(self._buffer[:n])
+            data = bytes(memoryview(self._buffer)[:n])
             del self._buffer[:n]
         self._maybe_resume_transport()
         return data

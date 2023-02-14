@@ -906,8 +906,7 @@ descr_new(PyTypeObject *descrtype, PyTypeObject *type, const char *name)
         descr->d_type = (PyTypeObject*)Py_XNewRef(type);
         descr->d_name = PyUnicode_InternFromString(name);
         if (descr->d_name == NULL) {
-            Py_DECREF(descr);
-            descr = NULL;
+            Py_SETREF(descr, NULL);
         }
         else {
             descr->d_qualname = NULL;
@@ -1713,7 +1712,9 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
     if (new == NULL)
         return NULL;
 
-    Py_XSETREF(((propertyobject *) new)->prop_name, Py_XNewRef(pold->prop_name));
+    if (PyObject_TypeCheck((new), &PyProperty_Type)) {
+        Py_XSETREF(((propertyobject *) new)->prop_name, Py_XNewRef(pold->prop_name));
+    }
     return new;
 }
 
