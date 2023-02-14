@@ -1476,6 +1476,10 @@ Cursor objects
          If *sql* contains more than one SQL statement,
          or is not a DML statment.
 
+      :raises DeprecationWarning:
+         If :ref:`named placeholders <sqlite3-placeholders>` are used
+         and the items in *parameters* are sequences.
+
       Example:
 
       .. testcode:: sqlite3.cursor
