@@ -180,14 +180,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #if USE_COMPUTED_GOTOS
 #define PREDICT(op)             if (0) goto PREDICT_ID(op)
 #else
-#define PREDICT(op) \
+#define PREDICT(next_op) \
     do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = word.op.code | cframe.use_tracing OR_DTRACE_LINE; \
-        if (opcode == op) { \
+        if (opcode == next_op) { \
             oparg = word.op.arg; \
-            INSTRUCTION_START(op); \
-            goto PREDICT_ID(op); \
+            INSTRUCTION_START(next_op); \
+            goto PREDICT_ID(next_op); \
         } \
     } while(0)
 #endif
