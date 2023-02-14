@@ -1906,6 +1906,27 @@ dummy_func(
             }
         }
 
+        inst(BB_TEST_POP_IF_FALSE, (cond -- )) {
+            if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = true;
+            }
+            else if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = false;
+            }
+            else {
+                int err = PyObject_IsTrue(cond);
+                Py_DECREF(cond);
+                if (err == 0) {
+                    bb_test = false;
+                }
+                else {
+                    ERROR_IF(err < 0, error);
+                }
+            }
+        }
+
         inst(POP_JUMP_IF_TRUE, (cond -- )) {
             if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
@@ -1926,50 +1947,27 @@ dummy_func(
             }
         }
 
-        inst(BB_POP_THEN_BRANCH, (cond -- )) {
-            // POP_JUMP_IF_FALSE
-            if (oparg) {
-                if (Py_IsTrue(cond)) {
-                    _Py_DECREF_NO_DEALLOC(cond);
-                    next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_SUC);
-                }
-                else if (Py_IsFalse(cond)) {
-                    _Py_DECREF_NO_DEALLOC(cond);
-                    next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
-                }
-                else {
-                    int err = PyObject_IsTrue(cond);
-                    Py_DECREF(cond);
-                    if (err == 0) {
-                        next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
-                    }
-                    else {
-                        ERROR_IF(err < 0, error);
-                    }
-                }
+        inst(BB_TEST_POP_IF_TRUE, (cond -- )) {
+            if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = true;
             }
-            // POP_JUMP_IF_TRUE
+            else if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = false;
+            }
             else {
-                if (Py_IsFalse(cond)) {
-                    _Py_DECREF_NO_DEALLOC(cond);
-                    next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_SUC);
-                }
-                else if (Py_IsTrue(cond)) {
-                    _Py_DECREF_NO_DEALLOC(cond);
-                    next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
+                int err = PyObject_IsTrue(cond);
+                Py_DECREF(cond);
+                if (err > 0) {
+                    bb_test = false;
                 }
                 else {
-                    int err = PyObject_IsTrue(cond);
-                    Py_DECREF(cond);
-                    if (err > 0) {
-                        next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
-                    }
-                    else {
-                        ERROR_IF(err < 0, error);
-                    }
+                    ERROR_IF(err < 0, error);
                 }
             }
         }
+
 
         inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
             if (!Py_IsNone(value)) {
@@ -1978,6 +1976,17 @@ dummy_func(
             }
             else {
                 _Py_DECREF_NO_DEALLOC(value);
+            }
+        }
+
+        inst(BB_TEST_POP_IF_NOT_NONE, (value -- )) {
+            if (!Py_IsNone(value)) {
+                Py_DECREF(value);
+                bb_test = false;
+            }
+            else {
+                _Py_DECREF_NO_DEALLOC(value);
+                bb_test = true;
             }
         }
 
@@ -1991,18 +2000,15 @@ dummy_func(
             }
         }
 
-        inst(BB_POP_BRANCH, (value--)) {
-            // oparg 1: POP_JUMP_IF_NOT_NONE
-            // oparg 0: POP_JUMP_IF_NONE
-            if (oparg - Py_IsNone(value)) {
-                Py_DECREF(value);
-                next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
+        inst(BB_TEST_POP_IF_NONE, (value -- )) {
+            if (Py_IsNone(value)) {
+                _Py_DECREF_NO_DEALLOC(value);
+                bb_test = false;
             }
             else {
                 Py_DECREF(value);
-                next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_SUC);
+                bb_test = true;
             }
-
         }
 
         inst(JUMP_IF_FALSE_OR_POP, (cond -- cond if (jump))) {
@@ -2022,6 +2028,33 @@ dummy_func(
                 }
                 else if (err == 0) {
                     JUMPBY(oparg);
+                    jump = true;
+                }
+                else {
+                    goto error;
+                }
+            }
+        }
+
+        inst(BB_TEST_IF_FALSE_OR_POP, (cond -- cond if (jump))) {
+            bool jump = false;
+            int err;
+            if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = true;
+            }
+            else if (Py_IsFalse(cond)) {
+                bb_test = false;
+                jump = true;
+            }
+            else {
+                err = PyObject_IsTrue(cond);
+                if (err > 0) {
+                    bb_test = true;
+                    Py_DECREF(cond);
+                }
+                else if (err == 0) {
+                    bb_test = false;
                     jump = true;
                 }
                 else {
@@ -2055,61 +2088,31 @@ dummy_func(
             }
         }
 
-        inst(BB_BRANCH_OR_POP, cond -- cond if (jump))) {
+        inst(BB_TEST_IF_TRUE_OR_POP, (cond -- cond if (jump))) {
             bool jump = false;
             int err;
-            // JUMP_IF_FALSE_OR_POP
-            if (oparg) {
-                if (Py_IsTrue(cond)) {
-                    _Py_DECREF_NO_DEALLOC(cond);
-                    next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_SUC);
-                }
-                else if (Py_IsFalse(cond)) {
-                    next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
-                    jump = true;
-                }
-                else {
-                    err = PyObject_IsTrue(cond);
-                    if (err > 0) {
-                        Py_DECREF(cond);
-                        next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_SUC);
-                    }
-                    else if (err == 0) {
-                        next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
-                        jump = true;
-                    }
-                    else {
-                        goto error;
-                    }
-                }
-
+            if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = true;
+            }
+            else if (Py_IsTrue(cond)) {
+                bb_test = false;
+                jump = true;
             }
             else {
-                // JUMP_IF_TRUE_OR_POP
-                if (Py_IsFalse(cond)) {
-                    _Py_DECREF_NO_DEALLOC(cond);
-                    next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_SUC);
-                }
-                else if (Py_IsTrue(cond)) {
-                    next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
+                err = PyObject_IsTrue(cond);
+                if (err > 0) {
+                    bb_test = false;
                     jump = true;
                 }
+                else if (err == 0) {
+                    bb_test = true;
+                    Py_DECREF(cond);
+                }
                 else {
-                    err = PyObject_IsTrue(cond);
-                    if (err > 0) {
-                        next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
-                        jump = true;
-                    }
-                    else if (err == 0) {
-                        Py_DECREF(cond);
-                        next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_SUC);
-                    }
-                    else {
-                        goto error;
-                    }
+                    goto error;
                 }
             }
-            
         }
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
@@ -2247,7 +2250,7 @@ dummy_func(
         }
 
         // FOR_ITER
-        inst(BB_ITER, (unused / 1, iter -- iter, next)) {
+        inst(BB_TEST_ITER, (unused / 1, iter -- iter, next)) {
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
@@ -2263,10 +2266,9 @@ dummy_func(
                 assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                next_instr = _PyTier2BB_ExecuteNextBB(frame, &curr_bb, BB_ALT);
-                DISPATCH();
+                bb_test = false;
             }
+            bb_test = true;
         }
 
         inst(FOR_ITER_LIST, (unused/1, iter -- iter, next)) {
@@ -3289,12 +3291,6 @@ dummy_func(
             Py_UNREACHABLE();
         }
 
-        //// TIER 2 BASIC BLOCK INSTRUCTIONS
-        //inst(BB_TYPE_BRANCH, (--)) {
-        //    if (should_bb_branch) {
-
-        //    }
-        //}
 
 
 // END BYTECODES //

@@ -57,46 +57,36 @@ typedef struct {
 //} _PyTier2IntermediateCode;
 
 
-// What the tier 2 interpreter executes
-typedef struct _PyTier2BB {
-    struct _PyTier2BB *successor_bb;
-    // The other BB to go should BB_BRANCH fail.
-    struct _PyTier2BB *alternate_bb;
+// Tier 2 interpreter information
+typedef struct _PyTier2BBMetadata {
     // Array of types. This corresponds to the fast locals array.
     int type_context_len;
     PyTypeObject **type_context;
-    //// Stores the end pointer in the intermediate bytecode.
-    //// So that when we hit BB_BRANCH, we know what's the next
-    //// thing to generate.
-    //_Py_CODEUNIT *intermediate_code_end;
     _Py_CODEUNIT *tier1_end;
-    // There's extra memory at the end of this.
-    int n_instrs;
-    _Py_CODEUNIT u_code[1];
-} _PyTier2BB;
-
-// Find the start of the BB from u_code.
-#define _PyTier2BB_FROM_UCODE(code) (_PyTier2BB *)(((char *)code) - offsetof(_PyTier2BB, u_code))
+} _PyTier2BBMetadata;
 
 // Bump allocator for basic blocks (overallocated)
 typedef struct _PyTier2BBSpace  {
     struct _PyTier2BBSpace *next;
-    int max_capacity;
-    // How much space has been consumed in bbs.
-    int water_level;
+    // (in bytes)
+    Py_ssize_t max_capacity;
+    // How much space has been consumed in bbs. (in bytes)
+    Py_ssize_t water_level;
     // There's extra memory at the end of this.
-    _PyTier2BB bbs[1];
+    _Py_CODEUNIT u_code[1];
 } _PyTier2BBSpace;
+
+#define _PyTier2BBSpace_NBYTES_USED(space) sizeof(_PyTier2BBSpace) + space->max_capacity
 
 // Tier 2 info stored in the code object. Lazily allocated.
 typedef struct _PyTier2Info {
-    _PyTier2BB *_entry_bb;        /* the tier 2 basic block to execute (if any) */
+    _Py_CODEUNIT *_entry_bb;        /* the tier 2 basic block to execute (if any) */
     _PyTier2BBSpace *_bb_space;   /* linked list storing basic blocks */
     //_PyTier2IntermediateCode *i_code;  /* intermediate bytecode to generate tier 2 basic blocks */
     // Keeps track of offset of jump targets (in number of codeunits)
     // from co_code_adaptive.
-    int jump_target_count;
-    int *jump_targets;
+    int backward_jump_count;
+    int *backward_jump_offsets;
     PyTypeObject **types_stack;
 } _PyTier2Info;
 

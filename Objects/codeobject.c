@@ -1683,16 +1683,16 @@ code_tier2_fini(PyCodeObject *co)
         t2_info->_bb_space = NULL;
     }
     
-    if (t2_info->jump_target_count > 0 &&
-        t2_info->jump_targets != NULL) {
-        PyMem_Free(t2_info->jump_targets);
-        t2_info->jump_targets = NULL;
+    if (t2_info->backward_jump_count > 0 &&
+        t2_info->backward_jump_offsets != NULL) {
+        PyMem_Free(t2_info->backward_jump_offsets);
+        t2_info->backward_jump_offsets = NULL;
     }
     if (t2_info->types_stack != NULL) {
         PyMem_Free(t2_info->types_stack);
         t2_info->types_stack = NULL;
     }
-    t2_info->jump_target_count = 0;
+    t2_info->backward_jump_count = 0;
     PyMem_Free(t2_info);
     //if (t2_info->i_code != NULL) {
     //    if (t2_info->i_code->_jump_targets != NULL) {

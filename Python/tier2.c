@@ -10,42 +10,28 @@
 #define BB_DEBUG 1
 
 // Number of potential extra instructions at end of a BB, for branch or cleanup purposes.
-// BB_BRANCH instruction: 1
-#define BB_EPILOG 1
+#define BB_EPILOG 0
 
 static inline int IS_SCOPE_EXIT_OPCODE(int opcode);
 
-////////// CEVAL functions
+////////// TYPE CONTEXT FUNCTIONS
+
+static PyTypeObject **
+initialize_type_context(PyCodeObject *co, int *type_context_len) {
+    int nlocals = co->co_nlocals;
+    PyTypeObject **type_context = PyMem_Malloc(nlocals * sizeof(PyTypeObject *));
+    if (type_context == NULL) {
+        return NULL;
+    }
+    // Initialize to uknown type.
+    for (int i = 0; i < nlocals; i++) {
+        type_context[i] = NULL;
+    }
+    *type_context_len = nlocals;
+    return type_context;
+}
 
 ////////// Utility functions
-
-// Checks that we have enough scratch space for the current code object. Else allocate more.
-static _Py_CODEUNIT *
-_PyInterpreter_GetScratchSpace(PyCodeObject *co)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    int n_instrs = (int)Py_SIZE(co);
-    Py_ssize_t space_to_alloc = _PyCode_NBYTES(co);
-    int overalloc = 2;
-    if (interp->tier2_bytecode_scratchsize == 0 ||
-        interp->tier2_bytecode_scratch == NULL) {
-        interp->tier2_bytecode_scratch = PyMem_Malloc(space_to_alloc * overalloc);
-        if (interp->tier2_bytecode_scratch == NULL) {
-            return NULL;
-        }
-        interp->tier2_bytecode_scratchsize = Py_SIZE(co) * overalloc;
-        return interp->tier2_bytecode_scratch;
-    }
-    if (interp->tier2_bytecode_scratchsize < n_instrs) {
-        PyMem_Free(interp->tier2_bytecode_scratch);
-        interp->tier2_bytecode_scratch = PyMem_Malloc(space_to_alloc * overalloc);
-        if (interp->tier2_bytecode_scratch == NULL) {
-            return NULL;
-        }
-        interp->tier2_bytecode_scratchsize = Py_SIZE(co) * overalloc;
-    }
-    return interp->tier2_bytecode_scratch;
-}
 
 // Gets end of the bytecode for a code object.
 _Py_CODEUNIT *
@@ -73,12 +59,12 @@ _PyCode_GetLogicalEnd(PyCodeObject *co)
     return end;
 }
 
-// Gets end of the bytecode for a tier 2 BB.
-_Py_CODEUNIT *
-_PyTier2BB_UCodeEnd(_PyTier2BB *bb)
-{
-    return (_Py_CODEUNIT *)(bb->u_code + bb->n_instrs);
-}
+//// Gets end of the bytecode for a tier 2 BB.
+//_Py_CODEUNIT *
+//_PyTier2BB_UCodeEnd(_PyTier2BB *bb)
+//{
+//    return (_Py_CODEUNIT *)(bb->u_code + bb->n_instrs);
+//}
 
 ////////// BB SPACE FUNCTIONS
 
@@ -92,62 +78,59 @@ _PyTier2_CreateBBSpace(Py_ssize_t space_to_alloc)
     }
     bb_space->next = NULL;
     bb_space->water_level = 0;
-    assert((int)(space_to_alloc - sizeof(_PyTier2BB)) == (space_to_alloc - sizeof(_PyTier2BB)));
-    bb_space->max_capacity = (int)(space_to_alloc - sizeof(_PyTier2BB));
+    bb_space->max_capacity = (space_to_alloc - sizeof(_PyTier2BBSpace));
     return bb_space;
 }
 
-////////// TIER 2 BB FUNCTIONS
-
-/* Init a BB in BB space without any checks for waterlevel. */
-static _PyTier2BB *
-_PyTier2_InitBBNoCheck(_PyTier2BBSpace *bb_space, _Py_CODEUNIT *tier1_end,
-    _Py_CODEUNIT *instr_start, _Py_CODEUNIT *instr_end)
-{
-    Py_ssize_t ninstrs = (instr_end - instr_start) + BB_EPILOG;
-    assert(ninstrs == (int)ninstrs);
-    Py_ssize_t nbytes = ninstrs * sizeof(_Py_CODEUNIT);
-    _PyTier2BB *bb_ptr = &bb_space->bbs[bb_space->water_level];
-    bb_ptr->tier1_end = tier1_end;
-    bb_ptr->n_instrs = (int)ninstrs;
-    bb_ptr->successor_bb = NULL;
-    bb_ptr->alternate_bb = NULL;
-    // @TODO, add type context.
-    memcpy(bb_ptr->u_code, (const void *)instr_start, nbytes);
-    assert(bb_space->water_level + nbytes == (int)nbytes);
-    bb_space->water_level += (int)nbytes;
-    return bb_ptr;
-}
-
-/* Allocates and initializes a new basic block. If there's not enough space in
-   the overallocated array, create a new array.
-
-   Make sure to call _PyCode_Tier2Initialize before this!
-*/
-static _PyTier2BB *
-_PyCode_Tier2BBNew(PyCodeObject *co, _Py_CODEUNIT *tier1_end, _Py_CODEUNIT *instr_start, _Py_CODEUNIT *instr_end)
+static _PyTier2BBSpace *
+_PyTier2_BBSpaceCheckAndReallocIfNeeded(PyCodeObject *co, Py_ssize_t space_requested)
 {
     assert(co->_tier2_info != NULL);
     assert(co->_tier2_info->_bb_space != NULL);
-
-    _PyTier2BBSpace *bb_space = co->_tier2_info->_bb_space;
-    Py_ssize_t amount_to_alloc = (instr_start - instr_end) * sizeof(_Py_CODEUNIT *) + sizeof(_PyTier2BB);
-    assert(bb_space->water_level + amount_to_alloc == (int)(bb_space->water_level + amount_to_alloc));
-
-    // Need to allocate a new array.
-    if (bb_space->water_level + amount_to_alloc > bb_space->max_capacity) {
-        _PyTier2BBSpace *next_bb_space = _PyTier2_CreateBBSpace(bb_space->max_capacity + amount_to_alloc);
-        if (next_bb_space == NULL) {
+    _PyTier2BBSpace *curr = co->_tier2_info->_bb_space;
+    // Note: overallocate
+    Py_ssize_t new_size = sizeof(_PyTier2BBSpace) + (curr->water_level + space_requested) * 2;
+    // Overflow or over max capacity
+    if (new_size < 0 || curr->water_level + space_requested > curr->max_capacity) {
+        // Try realloc first
+        if (PyMem_Realloc(curr, new_size) == NULL) {
+            // Too much trouble. just fall back to tier 1
+            //// Try malloc then memcpy if realloc fails (which it might for a large reallocation)
+            //_PyTier2BBSpace *new_space = PyMem_Malloc(new_size);
+            //if (new_space == NULL) {
+            //    return NULL;
+            //}
+            //memcpy(new_space, curr, _PyTier2BBSpace_NBYTES_USED(curr));
+            //PyMem_Free(curr);
+            //co->_tier2_info->_bb_space = new_space;
+            //return new_space;
             return NULL;
         }
-        next_bb_space->next = bb_space;
-        // We want to make our bb_space point to the most recent one to get O(1) BB allocations.
-        co->_tier2_info->_bb_space = next_bb_space;
-        bb_space = next_bb_space;
     }
-    return _PyTier2_InitBBNoCheck(bb_space, tier1_end, instr_start, instr_end);
+    return curr;
 }
 
+
+static _PyTier2BBMetadata *
+_PyTier2_AllocateBBMetaData(PyCodeObject *co, _Py_CODEUNIT *tier1_end)
+{
+    int type_context_len = 0;
+    PyTypeObject **type_context = initialize_type_context(co, &type_context_len);
+    if (type_context == NULL) {
+        return NULL;
+    }
+
+    _PyTier2BBMetadata *metadata = PyMem_Malloc(sizeof(_PyTier2BBMetadata));
+    if (metadata == NULL) {
+        PyMem_Free(type_context);
+        return NULL;
+    }
+
+    metadata->tier1_end = tier1_end;
+    metadata->type_context = type_context;
+    metadata->type_context_len = type_context_len;
+    return metadata;
+}
 
 /* Opcode detection functions. Keep in sync with compile.c and dis! */
 
@@ -181,6 +164,13 @@ IS_JREL_OPCODE(int opcode)
 
     }
 }
+
+static inline int
+IS_JUMP_BACKWARDS_OPCODE(int opcode)
+{
+    return opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD;
+}
+
 
 // dis.hasjrel || dis.hasjabs
 static inline int
@@ -316,35 +306,44 @@ emit_type_guard(_Py_CODEUNIT *write_curr, _Py_CODEUNIT guard)
 {
     *write_curr = guard;
     write_curr++;
-    _py_set_opcode(write_curr, BB_TYPE_BRANCH);
+    _py_set_opcode(write_curr, BB_BRANCH);
     write_curr++;
     return write_curr;
 }
 
 static inline _Py_CODEUNIT *
-emit_logical_branch(_Py_CODEUNIT *write_curr, int branch)
+emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int code_offset)
 {
     int opcode;
-    int oparg = 0;
+    int oparg = _Py_OPARG(branch);
     // @TODO handle JUMP_BACKWARDS and JUMP_BACKWARDS_NO_INTERRUPT
-    switch (branch) {
+    switch (_Py_OPCODE(branch)) {
+    case JUMP_BACKWARD:
+        // The initial backwards jump needs to find the right basic block.
+        // Subsequent jumps don't need to check this anymore. They can just
+        // jump directly with BB_JUMP_BACKWARD.
+        opcode = BB_JUMP_BACKWARD_LAZY;
+        break;
     case FOR_ITER:
-        opcode = BB_ITER;
+        opcode = BB_TEST_ITER;
         break;
     case JUMP_IF_FALSE_OR_POP:
-        oparg = 1;
+        opcode = BB_TEST_IF_FALSE_OR_POP;
+        break;
     case JUMP_IF_TRUE_OR_POP:
-        opcode = BB_BRANCH_OR_POP;
+        opcode = BB_TEST_IF_TRUE_OR_POP;
         break;
     case POP_JUMP_IF_FALSE:
-        oparg = 1;
+        opcode = BB_TEST_POP_IF_FALSE;
+        break;
     case POP_JUMP_IF_TRUE:
-        opcode = BB_POP_THEN_BRANCH;
+        opcode = BB_TEST_POP_IF_TRUE;
         break;
     case POP_JUMP_IF_NOT_NONE:
-        oparg = 1;
+        opcode = BB_TEST_POP_IF_NOT_NONE;
+        break;
     case POP_JUMP_IF_NONE:
-        opcode = BB_POP_BRANCH;
+        opcode = BB_TEST_POP_IF_NONE;
         break;
     default:
         // Honestly shouldn't happen because branches that
@@ -357,30 +356,46 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, int branch)
 #if BB_DEBUG
     fprintf(stderr, "emitted logical branch\n");
 #endif
+    // We prefix with an empty EXTENDED_ARG, just in case the future jumps
+    // are not large enough to handle the bytecode format.
+    _py_set_opcode(write_curr, EXTENDED_ARG);
+    write_curr->oparg = 0;
+    write_curr++;
     _py_set_opcode(write_curr, opcode);
     write_curr->oparg = oparg;
     write_curr++;
+    // Each guard also holds 2 CACHE entries. This stores an int32 of the
+    // offset from start of the code object (in _Py_CODEUNITs) that the current guard
+    // can generate the basic block from.
+    _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
+    _py_set_opcode(write_curr, CACHE);
+    write_curr++;
+    _py_set_opcode(write_curr, CACHE);
+    write_curr++;
+    write_u32(cache->offset, (uint32_t)code_offset);
     return write_curr;
 }
 
 static inline _Py_CODEUNIT *
-emit_scope_exit(_Py_CODEUNIT *write_curr, int exit)
+emit_scope_exit(_Py_CODEUNIT *write_curr, _Py_CODEUNIT exit)
 {
-    switch (exit) {
+    switch (_Py_OPCODE(exit)) {
     case RETURN_VALUE:
     case RETURN_CONST:
     case INTERPRETER_EXIT:
 #if BB_DEBUG
         fprintf(stderr, "emitted scope exit\n");
 #endif
-        // @TODO we can propogate and chain BBs across call boundaries
-        // Thanks to CPython's inlined call frames.
-        _py_set_opcode(write_curr, BB_EXIT_FRAME);
-        return write_curr + 1;
+        //// @TODO we can propogate and chain BBs across call boundaries
+        //// Thanks to CPython's inlined call frames.
+        //_py_set_opcode(write_curr, BB_EXIT_FRAME);
+        *write_curr = exit;
+        write_curr++;
+        return write_curr;
     default:
         // The rest are forbidden.
 #if BB_DEBUG
-        fprintf(stderr, "emit_scope_exit unreachable %d\n", exit);
+        fprintf(stderr, "emit_scope_exit unreachable %d\n", _Py_OPCODE(exit));
 #endif
         Py_UNREACHABLE();
     }
@@ -410,7 +425,7 @@ copy_cache_entries(_Py_CODEUNIT *write_curr, _Py_CODEUNIT *cache, int n_entries)
 }
 
 // Detects a BB from the current instruction start to the end of the first basic block it sees.
-// Then emits the instructions for a _PyTier2BB.
+// Then emits the instructions into the bb space.
 //
 // Instructions emitted depend on the type_context.
 // For example, if it sees a BINARY_ADD instruction, but it knows the two operands are already of
@@ -420,9 +435,9 @@ copy_cache_entries(_Py_CODEUNIT *write_curr, _Py_CODEUNIT *cache, int n_entries)
 // and the basic block will end at the first of the chain.
 // 
 // Note: a BB end also includes a type guard.
-_PyTier2BB *
+_PyTier2BBMetadata *
 _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _Py_CODEUNIT *start,
-    int n_typecontext, PyTypeObject **type_context)
+    int n_typecontext, PyTypeObject **type_context, _Py_CODEUNIT *t2_start)
 {
 #define END() goto end;
 #define JUMPBY(x) i += x + 1; continue;
@@ -439,9 +454,10 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _Py_CODEUNIT *start,
     if (type_context_copy == NULL) {
         return NULL;
     }
+
     memcpy(type_context_copy, type_context, n_typecontext * sizeof(PyTypeObject *));
 
-    _Py_CODEUNIT *start_i = _PyInterpreter_GetScratchSpace(co);
+    _Py_CODEUNIT *start_i = t2_start;
     _Py_CODEUNIT *write_i = start_i;
     PyTypeObject **stack_pointer = co->_tier2_info->types_stack;
     int tos = -1;
@@ -462,9 +478,9 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _Py_CODEUNIT *start,
         _Py_CODEUNIT action;
 
         switch (opcode) {
-        case COMPARE_AND_BRANCH:
-            opcode = COMPARE_OP;
-            DISPATCH();
+        //case COMPARE_AND_BRANCH:
+        //    opcode = COMPARE_OP;
+        //    DISPATCH();
         //case LOAD_FAST:
         //    BASIC_PUSH(type_context[oparg]);
         //    DISPATCH();
@@ -510,7 +526,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _Py_CODEUNIT *start,
             // These are definitely the end of a basic block.
             if (IS_SCOPE_EXIT_OPCODE(opcode)) {
                 // Emit the scope exit instruction.
-                write_i = emit_scope_exit(write_i, opcode);
+                write_i = emit_scope_exit(write_i, instr);
                 END();
             }
 
@@ -521,7 +537,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _Py_CODEUNIT *start,
                     // JUMP offset (oparg) + current instruction + cache entries
                     JUMPBY(oparg);
                 }
-                write_i = emit_logical_branch(write_i, opcode);
+                write_i = emit_logical_branch(write_i, instr, i);
                 END();
             }
             DISPATCH();
@@ -533,30 +549,8 @@ end:
 //    fprintf(stderr, "i is %Id\n", i);
 //#endif
     // Create the tier 2 BB
-    return _PyCode_Tier2BBNew(co, _PyCode_CODE(co) + i, start_i, write_i);
+    return _PyTier2_AllocateBBMetaData(co, _PyCode_CODE(co) + i);
 }
-
-
-//// The exits of BBs need to use BB_BRANCH instruction.
-//static void
-//_PyTier2BB_RewriteExitBranch(_PyTier2BB *bb)
-//{
-//    _Py_CODEUNIT *last_instr = _PyTier2BB_UCodeEnd(bb) - BB_EPILOG;
-//    int op = _PyOpcode_Deopt[_Py_OPCODE(*last_instr)];
-//    assert(IS_TERMINATOR_OPCODE(op));
-//    if (IS_JUMP_OPCODE(op)) {
-//        _Py_CODEUNIT lasti = *last_instr;
-//        _py_set_opcode(last_instr, BB_BRANCH);
-//        // Write the original jump instruction after to know where
-//        // to start generating the next BB from.
-//        _Py_SET_OPCODE
-//        return;
-//    }
-//    assert(IS_SCOPE_EXIT_OPCODE(op));
-//    assert(op == RETURN_VALUE || op == RETURN_CONST);
-//    // Need to FRAME_EXIT.
-//
-//}
 
 
 ////////// _PyTier2Info FUNCTIONS
@@ -579,7 +573,7 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
     assert(co->_tier2_info != NULL);
     // Remove all the RESUME instructions.
     // Count all the jump targets.
-    Py_ssize_t jump_target_count = 0;
+    Py_ssize_t backwards_jump_count = 0;
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT *instr_ptr = _PyCode_CODE(co) + i;
         _Py_CODEUNIT instr = *instr_ptr;
@@ -592,26 +586,26 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
         default:
             // We want to track all guard instructions as
             // jumps too.
-            jump_target_count += IS_JUMP_OPCODE(opcode); // + INSTR_HAS_GUARD(instr);
+            backwards_jump_count += IS_JUMP_BACKWARDS_OPCODE(opcode); // + INSTR_HAS_GUARD(instr);
         }
         i += _PyOpcode_Caches[opcode];
     }
 
     // Impossibly big.
-    if (jump_target_count != (int)jump_target_count) {
+    if (backwards_jump_count != (int)backwards_jump_count) {
         return 1;
     }
 
     // Find all the jump target instructions
     // Don't allocate a zero byte space as this may be undefined behavior.
-    if (jump_target_count == 0) {
-        co->_tier2_info->jump_targets = NULL;
+    if (backwards_jump_count == 0) {
+        co->_tier2_info->backward_jump_offsets = NULL;
         // Successful (no jump targets)!
-        co->_tier2_info->jump_target_count = (int)jump_target_count;
+        co->_tier2_info->backward_jump_count = (int)backwards_jump_count;
         return 0;
     }
-    int *jump_targets = PyMem_Malloc(jump_target_count * sizeof(int));
-    if (jump_targets == NULL) {
+    int *backward_jump_offsets = PyMem_Malloc(backwards_jump_count * sizeof(int));
+    if (backward_jump_offsets == NULL) {
         return 1;
     }
     _Py_CODEUNIT *start = _PyCode_CODE(co);
@@ -621,36 +615,27 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
         _Py_CODEUNIT instr = *curr;
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instr)];
         int oparg = _Py_OPARG(instr);
-        //switch (opcode) {
-        //// KEEP IN SYNC WITH INSTR_HAS_GUARD
-        //case BINARY_OP:
-        //    if (oparg == NB_ADD) {
-        //        jump_targets[curr_i] = (int)(curr - start) + INLINE_CACHE_ENTRIES_BINARY_OP;
-        //        curr_i++;
-        //    }
-        //    break;
-        //default:
-        if (IS_JUMP_OPCODE(opcode)) {
+        if (IS_JUMP_BACKWARDS_OPCODE(opcode)) {
             _Py_CODEUNIT *target = curr + _Py_OPARG(instr);
             // (in terms of offset from start of co_code_adaptive)
-            jump_targets[curr_i] = (int)(target - start);
+            backward_jump_offsets[curr_i] = (int)(target - start);
             curr_i++;
         }
         //}
         i += _PyOpcode_Caches[opcode];
     }
-    assert(curr_i == jump_target_count);
-    qsort(jump_targets, jump_target_count, sizeof(int), compare_ints);
+    assert(curr_i == backwards_jump_count);
+    qsort(backward_jump_offsets, backwards_jump_count, sizeof(int), compare_ints);
 #if BB_DEBUG
-    fprintf(stderr, "JUMP TARGET COUNT: %lld\n", jump_target_count);
-    fprintf(stderr, "JUMP TARGET OFFSETS (FROM START OF CODE): ");
-    for (Py_ssize_t i = 0; i < jump_target_count; i++) {
-        fprintf(stderr, "%d ,", jump_targets[i]);
+    fprintf(stderr, "BACKWARD JUMP COUNNT : %Id\n", backwards_jump_count);
+    fprintf(stderr, "BACKWARD JUMP TARGET OFFSETS (FROM START OF CODE): ");
+    for (Py_ssize_t i = 0; i < backwards_jump_count; i++) {
+        fprintf(stderr, "%d ,", backward_jump_offsets[i]);
     }
     fprintf(stderr, "\n");
 #endif
-    co->_tier2_info->jump_target_count = (int)jump_target_count;
-    co->_tier2_info->jump_targets = jump_targets;
+    co->_tier2_info->backward_jump_count = (int)backwards_jump_count;
+    co->_tier2_info->backward_jump_offsets = backward_jump_offsets;
     return 0;
 }
 
@@ -697,21 +682,6 @@ _PyTier2Info_Initialize(PyCodeObject *co)
     return t2_info;
 }
 
-////////// TYPE CONTEXT FUNCTIONS
-
-static PyTypeObject **
-initialize_type_context(PyCodeObject *co) {
-    int nlocals = co->co_nlocals;
-    PyTypeObject **type_context = PyMem_Malloc(nlocals * sizeof(PyTypeObject *));
-    if (type_context == NULL) {
-        return NULL;
-    }
-    // Initialize to uknown type.
-    for (int i = 0; i < nlocals; i++) {
-        type_context[i] = NULL;
-    }
-    return type_context;
-}
 
 ////////// OVERALL TIER2 FUNCTIONS
 
@@ -737,10 +707,6 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
         }
     }
 
-    if (_PyInterpreter_GetScratchSpace(co) == NULL) {
-        return NULL;
-    }
-
     _PyTier2Info *t2_info = _PyTier2Info_Initialize(co);
     if (t2_info == NULL) {
         return NULL;
@@ -750,7 +716,7 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     fprintf(stderr, "INITIALIZING\n");
 #endif
 
-    Py_ssize_t space_to_alloc = (sizeof(_PyTier2BB) + _PyCode_NBYTES(co)) * 2;
+    Py_ssize_t space_to_alloc = (_PyCode_NBYTES(co)) * 3;
 
     _PyTier2BBSpace *bb_space = _PyTier2_CreateBBSpace(space_to_alloc);
     if (bb_space == NULL) {
@@ -763,24 +729,27 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 
     t2_info->_bb_space = bb_space;
 
-    PyTypeObject **type_context = initialize_type_context(co);
+    int type_context_len = 0;
+    PyTypeObject **type_context = initialize_type_context(co, &type_context_len);
     if (type_context == NULL) {
         goto cleanup;
     }
-    _PyTier2BB *bb_ptr = _PyTier2_Code_DetectAndEmitBB(co, _PyCode_CODE(co), co->co_nlocals, type_context);
-    if (bb_ptr == NULL) {
+    _Py_CODEUNIT *t2_code = bb_space->u_code;
+    _PyTier2BBMetadata *meta = _PyTier2_Code_DetectAndEmitBB(
+        co, _PyCode_CODE(co), type_context_len, type_context, t2_code);
+    if (meta == NULL) {
         goto cleanup;
     }
 #if BB_DEBUG
-    fprintf(stderr, "ENTRY BB END IS: %d\n", (int)(bb_ptr->tier1_end - _PyCode_CODE(co)));
+    fprintf(stderr, "ENTRY BB END IS: %d\n", (int)(meta->tier1_end - _PyCode_CODE(co)));
 #endif
 
     
-    t2_info->_entry_bb = bb_ptr;
+    t2_info->_entry_bb = t2_code;
 
     // Set the starting instruction to the entry BB.
     // frame->prev_instr = bb_ptr->u_code - 1;
-    return bb_ptr->u_code;
+    return t2_code;
 
 cleanup:
     PyMem_Free(t2_info);
@@ -810,38 +779,34 @@ _PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     return next_instr;
 }
 
-// Executes successor/alternate BB, depending on direction
-// Lazily generates successive BBs when required.
-// direction: 1 for successor, 0 for alternative.
+//// Executes successor/alternate BB
+//// Lazily generates successive BBs when required.
+
 _Py_CODEUNIT *
-_PyTier2BB_ExecuteNextBB(_PyInterpreterFrame *frame, _PyTier2BB **curr_bb, int direction)
+_PyTier2_GenerateNextBB(_PyInterpreterFrame *frame, _Py_CODEUNIT *curr_tier1,
+    _Py_CODEUNIT *curr_tier2)
 {
-    PyCodeObject *co = frame->f_code;
-    _PyTier2BB *curr = *curr_bb;
-    if (BB_SUC) {
-        if (curr->successor_bb == NULL) {
-            _PyTier2BB *succ = _PyTier2_Code_DetectAndEmitBB(co,
-                curr->tier1_end, curr->type_context_len, curr->type_context);
-            curr->successor_bb = succ;
-            *curr_bb = succ;
-            return succ->u_code;
-        }
-        else {
-            *curr_bb = curr->successor_bb;
-            return curr->successor_bb->u_code;
-        }
+    // Be a pessimist and assume we need to write the entire code into the BB.
+    _PyTier2BBSpace *space = _PyTier2_BBSpaceCheckAndReallocIfNeeded(
+        frame->f_code, _PyCode_NBYTES(frame->f_code));
+    if (space == NULL) {
+        // DEOPTIMIZE TO TIER 1?
+        return NULL;
     }
-    else {
-        if (curr->alternate_bb == NULL) {
-            _PyTier2BB *alt = _PyTier2_Code_DetectAndEmitBB(co,
-                curr->tier1_end, curr->type_context_len, curr->type_context);
-            curr->alternate_bb = alt;
-            *curr_bb = alt;
-            return alt->u_code;
-        }
-        else {
-            *curr_bb = curr->alternate_bb;
-            return curr->alternate_bb->u_code;
-        }
+    // Write to the top of the space. That is automatically where the next instruction
+    // should execute.
+    // start writing at curr_tier2
+    int type_context_len = 0;
+    PyTypeObject **type_context = initialize_type_context(frame->f_code, &type_context_len);
+    if (type_context == NULL) {
+        return NULL;
     }
+    _PyTier2BBMetadata *metadata = _PyTier2_Code_DetectAndEmitBB(
+        frame->f_code, curr_tier1, type_context_len,
+        type_context, curr_tier2);
+    if (metadata == NULL) {
+        PyMem_Free(type_context);
+        return NULL;
+    }
+    return curr_tier2;
 }

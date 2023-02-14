@@ -242,15 +242,27 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case POP_JUMP_IF_FALSE:
             return 1;
+        case BB_TEST_POP_IF_FALSE:
+            return 1;
         case POP_JUMP_IF_TRUE:
+            return 1;
+        case BB_TEST_POP_IF_TRUE:
             return 1;
         case POP_JUMP_IF_NOT_NONE:
             return 1;
+        case BB_TEST_POP_IF_NOT_NONE:
+            return 1;
         case POP_JUMP_IF_NONE:
+            return 1;
+        case BB_TEST_POP_IF_NONE:
             return 1;
         case JUMP_IF_FALSE_OR_POP:
             return 1;
+        case BB_TEST_IF_FALSE_OR_POP:
+            return 1;
         case JUMP_IF_TRUE_OR_POP:
+            return 1;
+        case BB_TEST_IF_TRUE_OR_POP:
             return 1;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
@@ -269,6 +281,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case GET_YIELD_FROM_ITER:
             return 1;
         case FOR_ITER:
+            return 1;
+        case BB_TEST_ITER:
             return 1;
         case FOR_ITER_LIST:
             return 1;
@@ -596,15 +610,27 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case POP_JUMP_IF_FALSE:
             return 0;
+        case BB_TEST_POP_IF_FALSE:
+            return 0;
         case POP_JUMP_IF_TRUE:
+            return 0;
+        case BB_TEST_POP_IF_TRUE:
             return 0;
         case POP_JUMP_IF_NOT_NONE:
             return 0;
+        case BB_TEST_POP_IF_NOT_NONE:
+            return 0;
         case POP_JUMP_IF_NONE:
+            return 0;
+        case BB_TEST_POP_IF_NONE:
             return 0;
         case JUMP_IF_FALSE_OR_POP:
             return (jump ? 1 : 0);
+        case BB_TEST_IF_FALSE_OR_POP:
+            return (jump ? 1 : 0);
         case JUMP_IF_TRUE_OR_POP:
+            return (jump ? 1 : 0);
+        case BB_TEST_IF_TRUE_OR_POP:
             return (jump ? 1 : 0);
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
@@ -623,6 +649,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case GET_YIELD_FROM_ITER:
             return 1;
         case FOR_ITER:
+            return 2;
+        case BB_TEST_ITER:
             return 2;
         case FOR_ITER_LIST:
             return 2;
@@ -836,11 +864,17 @@ struct opcode_metadata {
     [JUMP_FORWARD] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [JUMP_BACKWARD] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [POP_JUMP_IF_FALSE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BB_TEST_POP_IF_FALSE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [POP_JUMP_IF_TRUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BB_TEST_POP_IF_TRUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [POP_JUMP_IF_NOT_NONE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BB_TEST_POP_IF_NOT_NONE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [POP_JUMP_IF_NONE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BB_TEST_POP_IF_NONE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [JUMP_IF_FALSE_OR_POP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BB_TEST_IF_FALSE_OR_POP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [JUMP_IF_TRUE_OR_POP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BB_TEST_IF_TRUE_OR_POP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [JUMP_BACKWARD_NO_INTERRUPT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [GET_LEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [MATCH_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
@@ -850,6 +884,7 @@ struct opcode_metadata {
     [GET_ITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [GET_YIELD_FROM_ITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [FOR_ITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
+    [BB_TEST_ITER] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [FOR_ITER_LIST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [FOR_ITER_TUPLE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [FOR_ITER_RANGE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },

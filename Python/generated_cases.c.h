@@ -2447,6 +2447,30 @@
             DISPATCH();
         }
 
+        TARGET(BB_TEST_POP_IF_FALSE) {
+            PyObject *cond = PEEK(1);
+            if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = true;
+            }
+            else if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = false;
+            }
+            else {
+                int err = PyObject_IsTrue(cond);
+                Py_DECREF(cond);
+                if (err == 0) {
+                    bb_test = false;
+                }
+                else {
+                    if (err < 0) goto pop_1_error;
+                }
+            }
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
         TARGET(POP_JUMP_IF_TRUE) {
             PyObject *cond = PEEK(1);
             if (Py_IsFalse(cond)) {
@@ -2470,6 +2494,30 @@
             DISPATCH();
         }
 
+        TARGET(BB_TEST_POP_IF_TRUE) {
+            PyObject *cond = PEEK(1);
+            if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = true;
+            }
+            else if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = false;
+            }
+            else {
+                int err = PyObject_IsTrue(cond);
+                Py_DECREF(cond);
+                if (err > 0) {
+                    bb_test = false;
+                }
+                else {
+                    if (err < 0) goto pop_1_error;
+                }
+            }
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
         TARGET(POP_JUMP_IF_NOT_NONE) {
             PyObject *value = PEEK(1);
             if (!Py_IsNone(value)) {
@@ -2483,6 +2531,20 @@
             DISPATCH();
         }
 
+        TARGET(BB_TEST_POP_IF_NOT_NONE) {
+            PyObject *value = PEEK(1);
+            if (!Py_IsNone(value)) {
+                Py_DECREF(value);
+                bb_test = false;
+            }
+            else {
+                _Py_DECREF_NO_DEALLOC(value);
+                bb_test = true;
+            }
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
         TARGET(POP_JUMP_IF_NONE) {
             PyObject *value = PEEK(1);
             if (Py_IsNone(value)) {
@@ -2491,6 +2553,20 @@
             }
             else {
                 Py_DECREF(value);
+            }
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
+        TARGET(BB_TEST_POP_IF_NONE) {
+            PyObject *value = PEEK(1);
+            if (Py_IsNone(value)) {
+                _Py_DECREF_NO_DEALLOC(value);
+                bb_test = false;
+            }
+            else {
+                Py_DECREF(value);
+                bb_test = true;
             }
             STACK_SHRINK(1);
             DISPATCH();
@@ -2525,6 +2601,37 @@
             DISPATCH();
         }
 
+        TARGET(BB_TEST_IF_FALSE_OR_POP) {
+            PyObject *cond = PEEK(1);
+            bool jump = false;
+            int err;
+            if (Py_IsTrue(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = true;
+            }
+            else if (Py_IsFalse(cond)) {
+                bb_test = false;
+                jump = true;
+            }
+            else {
+                err = PyObject_IsTrue(cond);
+                if (err > 0) {
+                    bb_test = true;
+                    Py_DECREF(cond);
+                }
+                else if (err == 0) {
+                    bb_test = false;
+                    jump = true;
+                }
+                else {
+                    goto error;
+                }
+            }
+            STACK_SHRINK(1);
+            STACK_GROW((jump ? 1 : 0));
+            DISPATCH();
+        }
+
         TARGET(JUMP_IF_TRUE_OR_POP) {
             PyObject *cond = PEEK(1);
             bool jump = false;
@@ -2543,6 +2650,37 @@
                     jump = true;
                 }
                 else if (err == 0) {
+                    Py_DECREF(cond);
+                }
+                else {
+                    goto error;
+                }
+            }
+            STACK_SHRINK(1);
+            STACK_GROW((jump ? 1 : 0));
+            DISPATCH();
+        }
+
+        TARGET(BB_TEST_IF_TRUE_OR_POP) {
+            PyObject *cond = PEEK(1);
+            bool jump = false;
+            int err;
+            if (Py_IsFalse(cond)) {
+                _Py_DECREF_NO_DEALLOC(cond);
+                bb_test = true;
+            }
+            else if (Py_IsTrue(cond)) {
+                bb_test = false;
+                jump = true;
+            }
+            else {
+                err = PyObject_IsTrue(cond);
+                if (err > 0) {
+                    bb_test = false;
+                    jump = true;
+                }
+                else if (err == 0) {
+                    bb_test = true;
                     Py_DECREF(cond);
                 }
                 else {
@@ -2715,6 +2853,33 @@
                 DISPATCH();
             }
             // Common case: no jump, leave it to the code generator
+            STACK_GROW(1);
+            POKE(1, next);
+            JUMPBY(1);
+            DISPATCH();
+        }
+
+        TARGET(BB_TEST_ITER) {
+            PyObject *iter = PEEK(1);
+            PyObject *next;
+            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next == NULL) {
+                if (_PyErr_Occurred(tstate)) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        goto error;
+                    }
+                    else if (tstate->c_tracefunc != NULL) {
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                    }
+                    _PyErr_Clear(tstate);
+                }
+                /* iterator ended normally */
+                assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                bb_test = false;
+            }
+            bb_test = true;
             STACK_GROW(1);
             POKE(1, next);
             JUMPBY(1);

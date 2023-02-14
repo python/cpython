@@ -92,6 +92,12 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
+typedef struct {
+    uint16_t offset[2];
+} _PyBBBranchCache;
+
+#define INLINE_CACHE_ENTRIES_BB_BRANCH CACHE_ENTRIES(_PyBBBranchCache)
+
 // Borrowed references to common callables:
 struct callable_cache {
     PyObject *isinstance;
@@ -241,7 +247,6 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 
 /* Tier 2 interpreter */
 extern _Py_CODEUNIT *_PyCode_Tier2Warmup(struct _PyInterpreterFrame *, _Py_CODEUNIT *);
-extern _Py_CODEUNIT *_PyTier2BB_ExecuteNextBB(struct _PyInterpreterFrame *frame, _PyTier2BB **curr_bb, int direction);
 
 #ifdef Py_STATS
 

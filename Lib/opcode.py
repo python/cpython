@@ -443,14 +443,33 @@ _macro_ops = [
 ]
 _uops = [
     # Tier 2 BB opcodes
-    'BB_ENTER_FRAME',
-    'BB_EXIT_FRAME',
-    ## These branches correspond to the jump instructions
-    'BB_TYPE_BRANCH',
-    'BB_ITER',              # FOR_ITER's null (iterator) check
-    'BB_BRANCH_OR_POP',     # JUMP_IF_FALSE_OR_POP, JUMP_IF_TRUE_OR_POP
-    'BB_POP_THEN_BRANCH',   # POP_JUMP_IF_FALSE, POP_JUMP_IF_TRUE
-    'BB_POP_BRANCH',        # POP_JUMP_IF_NOT_NONE, POP_JUMP_IF_NONE
+    # Frame creation
+    # 'BB_ENTER_FRAME',
+    # 'BB_EXIT_FRAME',
+    # Initial generic branching instruction.
+    'BB_BRANCH',
+    # The BB_BRANCH transitions to one of these two.
+    # This happens when the fall through is generated, but not the other branch.
+    'BB_BRANCH_IF_FLAG_UNSET',
+    'BB_BRANCH_IF_FLAG_SET',
+    # The final form is that once both branches are generated, we can just
+    # override these instructions with a generic JUMP.
+
+    # These tests correspond to the jump instructions
+    # FOR_ITER's null (iterator) check
+    'BB_TEST_ITER',
+    # JUMP_IF_FALSE_OR_POP, JUMP_IF_TRUE_OR_POP
+    'BB_TEST_IF_FALSE_OR_POP',
+    'BB_TEST_IF_TRUE_OR_POP',
+    # POP_JUMP_IF_FALSE, POP_JUMP_IF_TRUE
+    'BB_TEST_POP_IF_FALSE',
+    'BB_TEST_POP_IF_TRUE',
+    # POP_JUMP_IF_NOT_NONE, POP_JUMP_IF_NONE
+    'BB_TEST_POP_IF_NOT_NONE',
+    'BB_TEST_POP_IF_NONE',
+    # JUMP_BACKWARD
+    'BB_JUMP_BACKWARD',
+    'BB_JUMP_BACKWARD_LAZY',
 
     # Common type checks
     # These instructions check that one operand is a certain type.

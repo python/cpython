@@ -253,15 +253,20 @@ extern "C" {
 #define UNPACK_SEQUENCE_TUPLE                  161
 #define UNPACK_SEQUENCE_TWO_TUPLE              166
 #define DO_TRACING                             255
-#define BB_ENTER_FRAME                         167
-#define BB_EXIT_FRAME                          168
-#define BB_TYPE_BRANCH                         169
-#define BB_ITER                                170
-#define BB_BRANCH_OR_POP                       174
-#define BB_POP_THEN_BRANCH                     175
-#define BB_POP_BRANCH                          176
-#define BINARY_CHECK_INT                       177
-#define BINARY_OP_ADD_INT_REST                 178
+#define BB_BRANCH                              167
+#define BB_BRANCH_IF_FLAG_UNSET                168
+#define BB_BRANCH_IF_FLAG_SET                  169
+#define BB_TEST_ITER                           170
+#define BB_TEST_IF_FALSE_OR_POP                174
+#define BB_TEST_IF_TRUE_OR_POP                 175
+#define BB_TEST_POP_IF_FALSE                   176
+#define BB_TEST_POP_IF_TRUE                    177
+#define BB_TEST_POP_IF_NOT_NONE                178
+#define BB_TEST_POP_IF_NONE                    179
+#define BB_JUMP_BACKWARD                       180
+#define BB_JUMP_BACKWARD_LAZY                  181
+#define BINARY_CHECK_INT                       182
+#define BINARY_OP_ADD_INT_REST                 183
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

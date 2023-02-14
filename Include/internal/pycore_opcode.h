@@ -397,23 +397,23 @@ static const char *const _PyOpcode_OpName[263] = {
     [DICT_MERGE] = "DICT_MERGE",
     [DICT_UPDATE] = "DICT_UPDATE",
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
-    [BB_ENTER_FRAME] = "BB_ENTER_FRAME",
-    [BB_EXIT_FRAME] = "BB_EXIT_FRAME",
-    [BB_TYPE_BRANCH] = "BB_TYPE_BRANCH",
-    [BB_ITER] = "BB_ITER",
+    [BB_BRANCH] = "BB_BRANCH",
+    [BB_BRANCH_IF_FLAG_UNSET] = "BB_BRANCH_IF_FLAG_UNSET",
+    [BB_BRANCH_IF_FLAG_SET] = "BB_BRANCH_IF_FLAG_SET",
+    [BB_TEST_ITER] = "BB_TEST_ITER",
     [CALL] = "CALL",
     [KW_NAMES] = "KW_NAMES",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
-    [BB_BRANCH_OR_POP] = "BB_BRANCH_OR_POP",
-    [BB_POP_THEN_BRANCH] = "BB_POP_THEN_BRANCH",
-    [BB_POP_BRANCH] = "BB_POP_BRANCH",
+    [BB_TEST_IF_FALSE_OR_POP] = "BB_TEST_IF_FALSE_OR_POP",
+    [BB_TEST_IF_TRUE_OR_POP] = "BB_TEST_IF_TRUE_OR_POP",
+    [BB_TEST_POP_IF_FALSE] = "BB_TEST_POP_IF_FALSE",
+    [BB_TEST_POP_IF_TRUE] = "BB_TEST_POP_IF_TRUE",
+    [BB_TEST_POP_IF_NOT_NONE] = "BB_TEST_POP_IF_NOT_NONE",
+    [BB_TEST_POP_IF_NONE] = "BB_TEST_POP_IF_NONE",
+    [BB_JUMP_BACKWARD] = "BB_JUMP_BACKWARD",
+    [BB_JUMP_BACKWARD_LAZY] = "BB_JUMP_BACKWARD_LAZY",
     [BINARY_CHECK_INT] = "BINARY_CHECK_INT",
     [BINARY_OP_ADD_INT_REST] = "BINARY_OP_ADD_INT_REST",
-    [179] = "<179>",
-    [180] = "<180>",
-    [181] = "<181>",
-    [182] = "<182>",
-    [183] = "<183>",
     [184] = "<184>",
     [185] = "<185>",
     [186] = "<186>",
@@ -498,11 +498,6 @@ static const char *const _PyOpcode_OpName[263] = {
 
 
 #define EXTRA_CASES \
-    case 179: \
-    case 180: \
-    case 181: \
-    case 182: \
-    case 183: \
     case 184: \
     case 185: \
     case 186: \
