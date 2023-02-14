@@ -373,7 +373,7 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
  * match.
  *
  * Third party code unintentionally rely on problematic fpcasts. The call
- * trampoline mitigates common occurences of bad fpcasts on Emscripten.
+ * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
  */
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 #define _PyCFunction_TrampolineCall(meth, self, args) \

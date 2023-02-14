@@ -192,7 +192,7 @@ added onto a running total.  That can make a difference in overall accuracy
 so that the errors do not accumulate to the point where they affect the
 final total:
 
-   >>> sum([0.1] * 10) == 1.0
+   >>> 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 == 1.0
    False
    >>> math.fsum([0.1] * 10) == 1.0
    True

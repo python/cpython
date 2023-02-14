@@ -1085,6 +1085,7 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
            subsequent call to getaddrinfo() does not destroy the
            outcome of the first call. */
         if (error) {
+            res = NULL;  // no-op, remind us that it is invalid; gh-100795
             set_gaierror(error);
             return -1;
         }
@@ -1195,6 +1196,7 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
 #endif
     Py_END_ALLOW_THREADS
     if (error) {
+        res = NULL;  // no-op, remind us that it is invalid; gh-100795
         set_gaierror(error);
         return -1;
     }
@@ -2928,8 +2930,8 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
 {
     long block;
 
-    block = PyLong_AsLong(arg);
-    if (block == -1 && PyErr_Occurred())
+    block = PyObject_IsTrue(arg);
+    if (block < 0)
         return NULL;
 
     s->sock_timeout = _PyTime_FromSeconds(block ? -1 : 0);
@@ -6648,7 +6650,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     struct addrinfo *res0 = NULL;
     PyObject *hobj = NULL;
     PyObject *pobj = (PyObject *)NULL;
-    char pbuf[30];
+    PyObject *pstr = NULL;
     const char *hptr, *pptr;
     int family, socktype, protocol, flags;
     int error;
@@ -6678,11 +6680,13 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         return NULL;
     }
     if (PyLong_CheckExact(pobj)) {
-        long value = PyLong_AsLong(pobj);
-        if (value == -1 && PyErr_Occurred())
+        pstr = PyObject_Str(pobj);
+        if (pstr == NULL)
             goto err;
-        PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", value);
-        pptr = pbuf;
+        assert(PyUnicode_Check(pstr));
+        pptr = PyUnicode_AsUTF8(pstr);
+        if (pptr == NULL)
+            goto err;
     } else if (PyUnicode_Check(pobj)) {
         pptr = PyUnicode_AsUTF8(pobj);
         if (pptr == NULL)
@@ -6719,6 +6723,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     error = getaddrinfo(hptr, pptr, &hints, &res0);
     Py_END_ALLOW_THREADS
     if (error) {
+        res0 = NULL;  // gh-100795
         set_gaierror(error);
         goto err;
     }
@@ -6747,12 +6752,14 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         Py_DECREF(single);
     }
     Py_XDECREF(idna);
+    Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
     return all;
  err:
     Py_XDECREF(all);
     Py_XDECREF(idna);
+    Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
     return (PyObject *)NULL;
@@ -6815,6 +6822,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     error = getaddrinfo(hostp, pbuf, &hints, &res);
     Py_END_ALLOW_THREADS
     if (error) {
+        res = NULL;  // gh-100795
         set_gaierror(error);
         goto fail;
     }
@@ -8351,6 +8359,9 @@ PyInit__socket(void)
 #ifdef  IP_TRANSPARENT
     PyModule_AddIntMacro(m, IP_TRANSPARENT);
 #endif
+#ifdef  IP_PKTINFO
+    PyModule_AddIntMacro(m, IP_PKTINFO);
+#endif
 #ifdef IP_BIND_ADDRESS_NO_PORT
     PyModule_AddIntMacro(m, IP_BIND_ADDRESS_NO_PORT);
 #endif
@@ -8484,17 +8495,77 @@ PyInit__socket(void)
 #ifdef  TCP_QUICKACK
     PyModule_AddIntMacro(m, TCP_QUICKACK);
 #endif
-#ifdef  TCP_FASTOPEN
-    PyModule_AddIntMacro(m, TCP_FASTOPEN);
-#endif
 #ifdef  TCP_CONGESTION
     PyModule_AddIntMacro(m, TCP_CONGESTION);
+#endif
+#ifdef  TCP_MD5SIG
+    PyModule_AddIntMacro(m, TCP_MD5SIG);
+#endif
+#ifdef  TCP_THIN_LINEAR_TIMEOUTS
+    PyModule_AddIntMacro(m, TCP_THIN_LINEAR_TIMEOUTS);
+#endif
+#ifdef  TCP_THIN_DUPACK
+    PyModule_AddIntMacro(m, TCP_THIN_DUPACK);
 #endif
 #ifdef  TCP_USER_TIMEOUT
     PyModule_AddIntMacro(m, TCP_USER_TIMEOUT);
 #endif
+#ifdef  TCP_REPAIR
+    PyModule_AddIntMacro(m, TCP_REPAIR);
+#endif
+#ifdef  TCP_REPAIR_QUEUE
+    PyModule_AddIntMacro(m, TCP_REPAIR_QUEUE);
+#endif
+#ifdef  TCP_QUEUE_SEQ
+    PyModule_AddIntMacro(m, TCP_QUEUE_SEQ);
+#endif
+#ifdef  TCP_REPAIR_OPTIONS
+    PyModule_AddIntMacro(m, TCP_REPAIR_OPTIONS);
+#endif
+#ifdef  TCP_FASTOPEN
+    PyModule_AddIntMacro(m, TCP_FASTOPEN);
+#endif
+#ifdef  TCP_TIMESTAMP
+    PyModule_AddIntMacro(m, TCP_TIMESTAMP);
+#endif
 #ifdef  TCP_NOTSENT_LOWAT
     PyModule_AddIntMacro(m, TCP_NOTSENT_LOWAT);
+#endif
+#ifdef  TCP_CC_INFO
+    PyModule_AddIntMacro(m, TCP_CC_INFO);
+#endif
+#ifdef  TCP_SAVE_SYN
+    PyModule_AddIntMacro(m, TCP_SAVE_SYN);
+#endif
+#ifdef  TCP_SAVED_SYN
+    PyModule_AddIntMacro(m, TCP_SAVED_SYN);
+#endif
+#ifdef  TCP_REPAIR_WINDOW
+    PyModule_AddIntMacro(m, TCP_REPAIR_WINDOW);
+#endif
+#ifdef  TCP_FASTOPEN_CONNECT
+    PyModule_AddIntMacro(m, TCP_FASTOPEN_CONNECT);
+#endif
+#ifdef  TCP_ULP
+    PyModule_AddIntMacro(m, TCP_ULP);
+#endif
+#ifdef  TCP_MD5SIG_EXT
+    PyModule_AddIntMacro(m, TCP_MD5SIG_EXT);
+#endif
+#ifdef  TCP_FASTOPEN_KEY
+    PyModule_AddIntMacro(m, TCP_FASTOPEN_KEY);
+#endif
+#ifdef  TCP_FASTOPEN_NO_COOKIE
+    PyModule_AddIntMacro(m, TCP_FASTOPEN_NO_COOKIE);
+#endif
+#ifdef  TCP_ZEROCOPY_RECEIVE
+    PyModule_AddIntMacro(m, TCP_ZEROCOPY_RECEIVE);
+#endif
+#ifdef  TCP_INQ
+    PyModule_AddIntMacro(m, TCP_INQ);
+#endif
+#ifdef  TCP_TX_DELAY
+    PyModule_AddIntMacro(m, TCP_TX_DELAY);
 #endif
 
     /* IPX options */

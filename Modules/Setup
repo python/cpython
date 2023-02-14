@@ -280,6 +280,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 # Testing
 
 #_xxsubinterpreters _xxsubinterpretersmodule.c
+#_xxinterpchannels _xxinterpchannelsmodule.c
 #_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 #_testbuffer _testbuffer.c
 #_testinternalcapi _testinternalcapi.c

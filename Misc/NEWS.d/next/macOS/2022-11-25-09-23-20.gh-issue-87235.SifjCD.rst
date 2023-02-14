@@ -1,1 +1,0 @@
-On macOS ``python3 /dev/fd/9 9</path/to/script.py`` failed for any script longer than a couple of bytes.

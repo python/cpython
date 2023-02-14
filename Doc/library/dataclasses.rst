@@ -79,7 +79,8 @@ Module contents
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
+                match_args=True, kw_only=False, slots=False, weakref_slot=False)
      class C:
          ...
 
@@ -551,7 +552,7 @@ parameters to :meth:`__post_init__`.  Also see the warning about how
 Class variables
 ---------------
 
-One of two places where :func:`dataclass` actually inspects the type
+One of the few places where :func:`dataclass` actually inspects the type
 of a field is to determine if a field is a class variable as defined
 in :pep:`526`.  It does this by checking if the type of the field is
 ``typing.ClassVar``.  If a field is a ``ClassVar``, it is excluded
@@ -562,7 +563,7 @@ module-level :func:`fields` function.
 Init-only variables
 -------------------
 
-The other place where :func:`dataclass` inspects a type annotation is to
+Another place where :func:`dataclass` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
 if the type of a field is of type ``dataclasses.InitVar``.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only

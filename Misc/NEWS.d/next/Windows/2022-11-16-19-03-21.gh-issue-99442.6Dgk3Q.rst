@@ -1,2 +1,0 @@
-Fix handling in :ref:`launcher` when ``argv[0]`` does not include a file
-extension.

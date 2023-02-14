@@ -9,6 +9,7 @@
    Keep this file in sync with Programs/_freeze_module.py.
 */
 
+
 #include <Python.h>
 #include <marshal.h>
 #include "pycore_fileutils.h"     // _Py_stat_struct
@@ -21,6 +22,8 @@
 #ifndef MS_WINDOWS
 #include <unistd.h>
 #endif
+
+uint32_t _Py_next_func_version = 1;
 
 /* Empty initializer for deepfrozen modules */
 int _Py_Deepfreeze_Init(void)

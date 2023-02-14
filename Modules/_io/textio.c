@@ -56,10 +56,10 @@ textiobase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(textiobase_read_doc,
-    "Read at most n characters from stream.\n"
+    "Read at most size characters from stream.\n"
     "\n"
-    "Read from underlying buffer until we have n characters or we hit EOF.\n"
-    "If n is negative or omitted, read until EOF.\n"
+    "Read from underlying buffer until we have size characters or we hit EOF.\n"
+    "If size is negative or omitted, read until EOF.\n"
     );
 
 static PyObject *
@@ -212,7 +212,7 @@ typedef struct {
 /*[clinic input]
 _io.IncrementalNewlineDecoder.__init__
     decoder: object
-    translate: int
+    translate: bool
     errors: object(c_default="NULL") = "strict"
 
 Codec used when reading a file in universal newlines mode.
@@ -229,7 +229,7 @@ static int
 _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *decoder, int translate,
                                             PyObject *errors)
-/*[clinic end generated code: output=fbd04d443e764ec2 input=89db6b19c6b126bf]*/
+/*[clinic end generated code: output=fbd04d443e764ec2 input=ed547aa257616b0e]*/
 {
 
     if (errors == NULL) {
@@ -484,13 +484,13 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
 /*[clinic input]
 _io.IncrementalNewlineDecoder.decode
     input: object
-    final: bool(accept={int}) = False
+    final: bool = False
 [clinic start generated code]*/
 
 static PyObject *
 _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
                                           PyObject *input, int final)
-/*[clinic end generated code: output=0d486755bb37a66e input=a4ea97f26372d866]*/
+/*[clinic end generated code: output=0d486755bb37a66e input=90e223c70322c5cd]*/
 {
     return _PyIncrementalNewlineDecoder_decode((PyObject *) self, input, final);
 }
@@ -1023,8 +1023,8 @@ _io.TextIOWrapper.__init__
     encoding: str(accept={str, NoneType}) = None
     errors: object = None
     newline: str(accept={str, NoneType}) = None
-    line_buffering: bool(accept={int}) = False
-    write_through: bool(accept={int}) = False
+    line_buffering: bool = False
+    write_through: bool = False
 
 Character and line based layer over a BufferedIOBase object, buffer.
 
@@ -1061,7 +1061,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=72590963698f289b]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=e6cfaaaf6059d4f5]*/
 {
     PyObject *raw, *codec_info = NULL;
     PyObject *res;

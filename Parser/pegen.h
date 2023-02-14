@@ -42,7 +42,7 @@ typedef struct {
 } Token;
 
 typedef struct {
-    char *str;
+    const char *str;
     int type;
 } KeywordToken;
 

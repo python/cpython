@@ -61,10 +61,16 @@ module syslog
 
 #include "clinic/syslogmodule.c.h"
 
-/*  only one instance, only one syslog, so globals should be ok  */
-static PyObject *S_ident_o = NULL;                      /*  identifier, held by openlog()  */
+/*  only one instance, only one syslog, so globals should be ok,
+ *  these fields are writable from the main interpreter only. */
+static PyObject *S_ident_o = NULL;  // identifier, held by openlog()
 static char S_log_open = 0;
 
+static inline int
+is_main_interpreter(void)
+{
+    return (PyInterpreterState_Get() == PyInterpreterState_Main());
+}
 
 static PyObject *
 syslog_get_argv(void)
@@ -135,6 +141,13 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
                     long facility)
 /*[clinic end generated code: output=5476c12829b6eb75 input=8a987a96a586eee7]*/
 {
+    // Since the sys.openlog changes the process level state of syslog library,
+    // this operation is only allowed for the main interpreter.
+    if (!is_main_interpreter()) {
+        PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.openlog()");
+        return NULL;
+    }
+
     const char *ident_str = NULL;
 
     if (ident) {
@@ -195,6 +208,11 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
 
     /*  if log is not opened, open it now  */
     if (!S_log_open) {
+        if (!is_main_interpreter()) {
+            PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.syslog() "
+                                                "until the syslog is opened by the main interpreter");
+            return NULL;
+        }
         PyObject *openlog_ret = syslog_openlog_impl(module, NULL, 0, LOG_USER);
         if (openlog_ret == NULL) {
             return NULL;
@@ -229,6 +247,13 @@ static PyObject *
 syslog_closelog_impl(PyObject *module)
 /*[clinic end generated code: output=97890a80a24b1b84 input=fb77a54d447acf07]*/
 {
+    // Since the sys.closelog changes the process level state of syslog library,
+    // this operation is only allowed for the main interpreter.
+    if (!is_main_interpreter()) {
+        PyErr_SetString(PyExc_RuntimeError, "sunbinterpreter can't use syslog.closelog()");
+        return NULL;
+    }
+
     if (PySys_Audit("syslog.closelog", NULL) < 0) {
         return NULL;
     }

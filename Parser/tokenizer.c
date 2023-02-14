@@ -97,6 +97,7 @@ tok_new(void)
     tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
+    tok->report_warnings = 1;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif
@@ -1201,6 +1202,10 @@ indenterror(struct tok_state *tok)
 static int
 parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
+    if (!tok->report_warnings) {
+        return 0;
+    }
+
     PyObject *errmsg;
     va_list vargs;
     va_start(vargs, format);
@@ -2239,6 +2244,9 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
         }
     }
     struct token token;
+    // We don't want to report warnings here because it could cause infinite recursion
+    // if fetching the encoding shows a warning.
+    tok->report_warnings = 0;
     while (tok->lineno < 2 && tok->done == E_OK) {
         _PyTokenizer_Get(tok, &token);
     }

@@ -1049,7 +1049,7 @@ code, or when embedding the Python interpreter:
    .. versionchanged:: 3.2
       This function cannot be called before :c:func:`Py_Initialize()` anymore.
 
-   .. deprecated-removed:: 3.9 3.11
+   .. deprecated:: 3.9
 
    .. index:: module: _thread
 
@@ -1063,7 +1063,7 @@ code, or when embedding the Python interpreter:
    .. versionchanged:: 3.7
       The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
 
-   .. deprecated-removed:: 3.9 3.11
+   .. deprecated:: 3.9
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
