@@ -252,6 +252,205 @@ class ImportTests(unittest.TestCase):
             imp.load_dynamic('nonexistent', pathname)
 
     @requires_load_dynamic
+    def test_singlephase_variants(self):
+        '''Exercise the most meaningful variants described in Python/import.c.'''
+        self.maxDiff = None
+
+        basename = '_testsinglephase'
+        fileobj, pathname, _ = imp.find_module(basename)
+        fileobj.close()
+
+        modules = {}
+        def load(name):
+            assert name not in modules
+            module = imp.load_dynamic(name, pathname)
+            self.assertNotIn(module, modules.values())
+            modules[name] = module
+            return module
+
+        def re_load(name, module):
+            assert sys.modules[name] is module
+            before = type(module)(module.__name__)
+            before.__dict__.update(vars(module))
+
+            reloaded = imp.load_dynamic(name, pathname)
+
+            return before, reloaded
+
+        def check_common(name, module):
+            summed = module.sum(1, 2)
+            lookedup = module.look_up_self()
+            initialized = module.initialized()
+            cached = sys.modules[name]
+
+            # module.__name__  might not match, but the spec will.
+            self.assertEqual(module.__spec__.name, name)
+            if initialized is not None:
+                self.assertIsInstance(initialized, float)
+                self.assertGreater(initialized, 0)
+            self.assertEqual(summed, 3)
+            self.assertTrue(issubclass(module.error, Exception))
+            self.assertEqual(module.int_const, 1969)
+            self.assertEqual(module.str_const, 'something different')
+            self.assertIs(cached, module)
+
+            return lookedup, initialized, cached
+
+        def check_direct(name, module, lookedup):
+            # The module has its own PyModuleDef, with a matching name.
+            self.assertEqual(module.__name__, name)
+            self.assertIs(lookedup, module)
+
+        def check_indirect(name, module, lookedup, orig):
+            # The module re-uses another's PyModuleDef, with a different name.
+            assert orig is not module
+            assert orig.__name__ != name
+            self.assertNotEqual(module.__name__, name)
+            self.assertIs(lookedup, module)
+
+        def check_basic(module, initialized):
+            init_count = module.initialized_count()
+
+            self.assertIsNot(initialized, None)
+            self.assertIsInstance(init_count, int)
+            self.assertGreater(init_count, 0)
+
+            return init_count
+
+        def check_common_reloaded(name, module, cached, before, reloaded):
+            recached = sys.modules[name]
+
+            self.assertEqual(reloaded.__spec__.name, name)
+            self.assertEqual(reloaded.__name__, before.__name__)
+            self.assertEqual(before.__dict__, module.__dict__)
+            self.assertIs(recached, reloaded)
+
+        def check_basic_reloaded(module, lookedup, initialized, init_count,
+                                 before, reloaded):
+            relookedup = reloaded.look_up_self()
+            reinitialized = reloaded.initialized()
+            reinit_count = reloaded.initialized_count()
+
+            self.assertIs(reloaded, module)
+            self.assertIs(reloaded.__dict__, module.__dict__)
+            # It only happens to be the same but that's good enough here.
+            # We really just want to verify that the re-loaded attrs
+            # didn't change.
+            self.assertIs(relookedup, lookedup)
+            self.assertEqual(reinitialized, initialized)
+            self.assertEqual(reinit_count, init_count)
+
+        def check_with_reinit_reloaded(module, lookedup, initialized,
+                                       before, reloaded):
+            relookedup = reloaded.look_up_self()
+            reinitialized = reloaded.initialized()
+
+            self.assertIsNot(reloaded, module)
+            self.assertIsNot(reloaded, module)
+            self.assertNotEqual(reloaded.__dict__, module.__dict__)
+            self.assertIs(relookedup, reloaded)
+            if initialized is None:
+                self.assertIs(reinitialized, None)
+            else:
+                self.assertGreater(reinitialized, initialized)
+
+        # Check the "basic" module.
+
+        name = basename
+        expected_init_count = 1
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            check_direct(name, mod, lookedup)
+            init_count = check_basic(mod, initialized)
+            self.assertEqual(init_count, expected_init_count)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_basic_reloaded(mod, lookedup, initialized, init_count,
+                                 before, reloaded)
+        basic = mod
+
+        # Check its indirect variants.
+
+        name = f'{basename}_basic_wrapper'
+        expected_init_count += 1
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            check_indirect(name, mod, lookedup, basic)
+            init_count = check_basic(mod, initialized)
+            self.assertEqual(init_count, expected_init_count)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_basic_reloaded(mod, lookedup, initialized, init_count,
+                                 before, reloaded)
+
+            # Currently _PyState_AddModule() always replaces the cached module.
+            self.assertIs(basic.look_up_self(), mod)
+            self.assertEqual(basic.initialized_count(), expected_init_count)
+
+        # The cached module shouldn't be changed after this point.
+        basic_lookedup = mod
+
+        # Check its direct variant.
+
+        name = f'{basename}_basic_copy'
+        expected_init_count += 1
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            check_direct(name, mod, lookedup)
+            init_count = check_basic(mod, initialized)
+            self.assertEqual(init_count, expected_init_count)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_basic_reloaded(mod, lookedup, initialized, init_count,
+                                 before, reloaded)
+
+            # This should change the cached module for _testsinglephase.
+            self.assertIs(basic.look_up_self(), basic_lookedup)
+            self.assertEqual(basic.initialized_count(), expected_init_count)
+
+        # Check the non-basic variant that has no state.
+
+        name = f'{basename}_with_reinit'
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            self.assertIs(initialized, None)
+            check_direct(name, mod, lookedup)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_with_reinit_reloaded(mod, lookedup, initialized,
+                                       before, reloaded)
+
+            # This should change the cached module for _testsinglephase.
+            self.assertIs(basic.look_up_self(), basic_lookedup)
+            self.assertEqual(basic.initialized_count(), expected_init_count)
+
+        # Check the basic variant that has state.
+
+        name = f'{basename}_with_state'
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            self.assertIsNot(initialized, None)
+            check_direct(name, mod, lookedup)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_with_reinit_reloaded(mod, lookedup, initialized,
+                                       before, reloaded)
+
+            # This should change the cached module for _testsinglephase.
+            self.assertIs(basic.look_up_self(), basic_lookedup)
+            self.assertEqual(basic.initialized_count(), expected_init_count)
+
+    @requires_load_dynamic
     def test_load_dynamic_ImportError_path(self):
         # Issue #1559549 added `name` and `path` attributes to ImportError
         # in order to provide better detail. Issue #10854 implemented those
