@@ -1435,10 +1435,6 @@ Cursor objects
       :raises ProgrammingError:
          If *sql* contains more than one SQL statement.
 
-      :raises DeprecationWarning:
-         If :ref:`named placeholders <sqlite3-placeholders>` are used
-         and *parameters* is a sequence instead of a :class:`dict`.
-
       If :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`,
       :attr:`~Connection.isolation_level` is not ``None``,
@@ -1448,10 +1444,9 @@ Cursor objects
 
       .. versionchanged:: 3.12
 
-         :exc:`DeprecationWarning` is raised
-         if
+         :exc:`DeprecationWarning` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
-         and *parameters* is a sequence.
+         and *parameters* is a sequence instead of a :class:`dict`.
 
       Use :meth:`executescript` to execute multiple SQL statements.
 
@@ -1476,10 +1471,6 @@ Cursor objects
          If *sql* contains more than one SQL statement,
          or is not a DML statment.
 
-      :raises DeprecationWarning:
-         If :ref:`named placeholders <sqlite3-placeholders>` are used
-         and the items in *parameters* are sequences instead of :class:`dict`\s.
-
       Example:
 
       .. testcode:: sqlite3.cursor
@@ -1493,9 +1484,10 @@ Cursor objects
 
       .. versionchanged:: 3.12
 
-         :exc:`DeprecationWarning` is raised if
+         :exc:`DeprecationWarning` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
-         and the items in *parameters* are sequences.
+         and the items in *parameters* are sequences
+         instead of :class:`dict`\s.
 
    .. method:: executescript(sql_script, /)
 
