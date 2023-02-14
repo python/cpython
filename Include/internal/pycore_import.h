@@ -55,6 +55,19 @@ extern int _PyImport_InitDefaultImportFunc(PyInterpreterState *interp);
 extern int _PyImport_IsDefaultImportFunc(PyInterpreterState *interp,
                                          PyObject *func);
 
+extern PyObject * _PyImport_GetImportlibLoader(
+        PyInterpreterState *interp,
+        const char *loader_name);
+extern PyObject * _PyImport_GetImportlibExternalLoader(
+        PyInterpreterState *interp,
+        const char *loader_name);
+extern PyObject * _PyImport_BlessMyLoader(
+        PyInterpreterState *interp,
+        PyObject *module_globals);
+extern PyObject * _PyImport_ImportlibModuleRepr(
+        PyInterpreterState *interp,
+        PyObject *module);
+
 
 #ifdef HAVE_FORK
 extern PyStatus _PyImport_ReInitLock(void);

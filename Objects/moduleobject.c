@@ -688,12 +688,11 @@ module_dealloc(PyModuleObject *m)
     Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
-static PyObject *
+PyObject *
 module_repr(PyModuleObject *m)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-
-    return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
+    return _PyImport_ImportlibModuleRepr(interp, (PyObject *)m);
 }
 
 /* Check if the "_initializing" attribute of the module spec is set to true.

@@ -2233,8 +2233,8 @@ add_main_module(PyInterpreterState *interp)
         if (PyErr_Occurred()) {
             return _PyStatus_ERR("Failed to test __main__.__loader__");
         }
-        PyObject *loader = PyObject_GetAttrString(interp->importlib,
-                                                  "BuiltinImporter");
+        PyObject *loader = _PyImport_GetImportlibLoader(interp,
+                                                        "BuiltinImporter");
         if (loader == NULL) {
             return _PyStatus_ERR("Failed to retrieve BuiltinImporter");
         }

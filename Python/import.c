@@ -157,6 +157,7 @@ _PyImport_ClearCore(PyInterpreterState *interp)
 {
     Py_CLEAR(interp->modules);
     Py_CLEAR(interp->modules_by_index);
+    Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
 }
 
@@ -1857,6 +1858,54 @@ const char *
 PyImport_GetMagicTag(void)
 {
     return _PySys_ImplCacheTag;
+}
+
+
+/*************/
+/* importlib */
+/*************/
+
+PyObject *
+_PyImport_GetImportlibLoader(PyInterpreterState *interp,
+                             const char *loader_name)
+{
+    return PyObject_GetAttrString(interp->importlib, loader_name);
+}
+
+PyObject *
+_PyImport_GetImportlibExternalLoader(PyInterpreterState *interp,
+                                     const char *loader_name)
+{
+    PyObject *bootstrap = PyObject_GetAttrString(interp->importlib,
+                                                 "_bootstrap_external");
+    if (bootstrap == NULL) {
+        return NULL;
+    }
+
+    PyObject *loader_type = PyObject_GetAttrString(bootstrap, loader_name);
+    Py_DECREF(bootstrap);
+    return loader_type;
+}
+
+PyObject *
+_PyImport_BlessMyLoader(PyInterpreterState *interp, PyObject *module_globals)
+{
+    PyObject *external = PyObject_GetAttrString(interp->importlib,
+                                                "_bootstrap_external");
+    if (external == NULL) {
+        return NULL;
+    }
+
+    PyObject *loader = PyObject_CallMethod(external, "_bless_my_loader",
+                                           "O", module_globals, NULL);
+    Py_DECREF(external);
+    return loader;
+}
+
+PyObject *
+_PyImport_ImportlibModuleRepr(PyInterpreterState *interp, PyObject *m)
+{
+    return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }
 
 
