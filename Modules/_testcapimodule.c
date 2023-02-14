@@ -1464,7 +1464,8 @@ test_pep3118_obsolete_write_locks(PyObject* self, PyObject *Py_UNUSED(ignored))
         goto error;
 
     /* bytesiobuf_getbuffer() */
-    PyTypeObject *type = _PyImport_GetModuleAttrString("_io", "_BytesIOBuffer");
+    PyTypeObject *type = (PyTypeObject *)_PyImport_GetModuleAttrString(
+            "_io", "_BytesIOBuffer");
     if (type == NULL) {
         return NULL;
     }
