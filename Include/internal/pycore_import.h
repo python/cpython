@@ -70,11 +70,18 @@ extern PyObject * _PyImport_ImportlibModuleRepr(
         PyObject *module);
 
 
+extern PyStatus _PyImport_Init(void);
+extern void _PyImport_Fini(void);
+extern void _PyImport_Fini2(void);
+
 extern PyStatus _PyImport_InitCore(
         PyThreadState *tstate,
         PyObject *sysmod,
         int importlib);
 extern PyStatus _PyImport_InitExternal(PyThreadState *tstate);
+extern void _PyImport_FiniCore(PyInterpreterState *interp);
+extern void _PyImport_FiniExternal(PyInterpreterState *interp);
+
 
 #ifdef HAVE_FORK
 extern PyStatus _PyImport_ReInitLock(void);

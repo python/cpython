@@ -100,6 +100,7 @@ static inline void _extensions_cache_clear(void);
 void
 _PyImport_Fini(void)
 {
+    /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
     _extensions_cache_clear();
     if (import_lock != NULL) {
         PyThread_free_lock(import_lock);
@@ -145,6 +146,9 @@ static int init_importlib(PyThreadState *tstate, PyObject *sysmod);
 PyStatus
 _PyImport_InitCore(PyThreadState *tstate, PyObject *sysmod, int importlib)
 {
+    // XXX Initialize here: interp->modules and interp->import_func.
+    // XXX Initialize here: sys.modules and sys.meta_path.
+
     if (importlib) {
         /* This call sets up builtin and frozen import support */
         if (init_importlib(tstate, sysmod) < 0) {
@@ -167,14 +171,37 @@ _PyImport_IsInitialized(PyInterpreterState *interp)
     return 1;
 }
 
+/* Clear the direct per-interpreter import state, if not cleared already. */
 void
 _PyImport_ClearCore(PyInterpreterState *interp)
 {
+    /* interp->modules should have been cleaned up and cleared already
+       by _PyImport_FiniCore(). */
     Py_CLEAR(interp->modules);
     Py_CLEAR(interp->modules_by_index);
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
 }
+
+void
+_PyImport_FiniCore(PyInterpreterState *interp)
+{
+    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+
+    if (_PySys_ClearAttrString(interp, "meta_path", verbose) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+
+    // XXX Pull in most of finalize_modules() in pylifecycle.c.
+
+    if (_PySys_ClearAttrString(interp, "modules", verbose) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+
+    _PyImport_ClearCore(interp);
+}
+
+// XXX Add something like _PyImport_Disable() for use early in interp fini?
 
 
 /* "external" imports */
@@ -222,6 +249,8 @@ _PyImport_InitExternal(PyThreadState *tstate)
 {
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
+    // XXX Initialize here: sys.path_hooks and sys.path_importer_cache.
+
     if (init_importlib_external(tstate->interp) != 0) {
         _PyErr_Print(tstate);
         return _PyStatus_ERR("external importer setup failed");
@@ -235,6 +264,20 @@ _PyImport_InitExternal(PyThreadState *tstate)
     return _PyStatus_OK();
 }
 
+void
+_PyImport_FiniExternal(PyInterpreterState *interp)
+{
+    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+
+    // XXX Uninstall importlib metapath importers here?
+
+    if (_PySys_ClearAttrString(interp, "path_importer_cache", verbose) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+    if (_PySys_ClearAttrString(interp, "path_hooks", verbose) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+}
 
 /*******************/
 /* the import lock */

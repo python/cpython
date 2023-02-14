@@ -1306,8 +1306,11 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
     static const char * const sys_deletes[] = {
         "path", "argv", "ps1", "ps2",
         "last_type", "last_value", "last_traceback",
-        "path_hooks", "path_importer_cache", "meta_path",
         "__interactivehook__",
+        // path_hooks and path_importer_cache are cleared
+        // by _PyImport_FiniExternal().
+        // XXX Clear meta_path in _PyImport_FiniCore().
+        "meta_path",
         NULL
     };
 
@@ -1328,10 +1331,7 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
 
     const char * const *p;
     for (p = sys_deletes; *p != NULL; p++) {
-        if (verbose) {
-            PySys_WriteStderr("# clear sys.%s\n", *p);
-        }
-        if (PyDict_SetItemString(interp->sysdict, *p, Py_None) < 0) {
+        if (_PySys_ClearAttrString(interp, *p, verbose) < 0) {
             PyErr_WriteUnraisable(NULL);
         }
     }
@@ -1503,6 +1503,7 @@ finalize_clear_sys_builtins_dict(PyInterpreterState *interp, int verbose)
 
 
 /* Clear modules, as good as we can */
+// XXX Move most of this to import.c.
 static void
 finalize_modules(PyThreadState *tstate)
 {
@@ -1788,6 +1789,8 @@ Py_FinalizeEx(void)
     runtime->initialized = 0;
     runtime->core_initialized = 0;
 
+    // XXX Call something like _PyImport_Disable() here?
+
     /* Destroy the state of all threads of the interpreter, except of the
        current thread. In practice, only daemon threads should still be alive,
        except if wait_for_thread_shutdown() has been cancelled by CTRL+C.
@@ -1837,6 +1840,7 @@ Py_FinalizeEx(void)
     PyGC_Collect();
 
     /* Destroy all modules */
+    _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
 
     /* Print debug stats if any */
@@ -1870,7 +1874,9 @@ Py_FinalizeEx(void)
        so it is possible to use tracemalloc in objects destructor. */
     _PyTraceMalloc_Fini();
 
-    /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
+    /* Finalize any remaining import state */
+    // XXX Move these up to where finalize_modules() is currently.
+    _PyImport_FiniCore(tstate->interp);
     _PyImport_Fini();
 
     /* unload faulthandler module */
@@ -2110,6 +2116,10 @@ Py_EndInterpreter(PyThreadState *tstate)
         Py_FatalError("not the last thread");
     }
 
+    // XXX Call something like _PyImport_Disable() here?
+
+    _PyImport_FiniExternal(tstate->interp);
+    _PyImport_FiniCore(tstate->interp);
     finalize_modules(tstate);
 
     finalize_interp_clear(tstate);

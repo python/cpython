@@ -30,7 +30,6 @@ PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 /* Various one-time initializers */
 
 extern void _Py_InitVersion(void);
-extern PyStatus _PyImport_Init(void);
 extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
 extern PyObject * _PyBuiltin_Init(PyInterpreterState *interp);
@@ -54,8 +53,6 @@ extern int _Py_Deepfreeze_Init(void);
 extern int _PySignal_Init(int install_signal_handlers);
 extern void _PySignal_Fini(void);
 
-extern void _PyImport_Fini(void);
-extern void _PyImport_Fini2(void);
 extern void _PyGC_Fini(PyInterpreterState *interp);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyFaulthandler_Fini(void);
