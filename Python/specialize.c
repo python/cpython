@@ -291,19 +291,19 @@ _PyCode_Quicken(PyCodeObject *code)
         }
         switch (previous_opcode << 8 | opcode) {
             case LOAD_CONST << 8 | LOAD_FAST:
-                _Py_OPCODE(instructions[i - 1]) = LOAD_CONST__LOAD_FAST;
+                _Py_SET_OPCODE(instructions[i - 1], LOAD_CONST__LOAD_FAST);
                 break;
             case LOAD_FAST << 8 | LOAD_CONST:
-                _Py_OPCODE(instructions[i - 1]) = LOAD_FAST__LOAD_CONST;
+                _Py_SET_OPCODE(instructions[i - 1], LOAD_FAST__LOAD_CONST);
                 break;
             case LOAD_FAST << 8 | LOAD_FAST:
-                _Py_OPCODE(instructions[i - 1]) = LOAD_FAST__LOAD_FAST;
+                _Py_SET_OPCODE(instructions[i - 1], LOAD_FAST__LOAD_FAST);
                 break;
             case STORE_FAST << 8 | LOAD_FAST:
-                _Py_OPCODE(instructions[i - 1]) = STORE_FAST__LOAD_FAST;
+                _Py_SET_OPCODE(instructions[i - 1], STORE_FAST__LOAD_FAST);
                 break;
             case STORE_FAST << 8 | STORE_FAST:
-                _Py_OPCODE(instructions[i - 1]) = STORE_FAST__STORE_FAST;
+                _Py_SET_OPCODE(instructions[i - 1], STORE_FAST__STORE_FAST);
                 break;
             case COMPARE_OP << 8 | POP_JUMP_IF_TRUE:
             case COMPARE_OP << 8 | POP_JUMP_IF_FALSE:
@@ -314,8 +314,8 @@ _PyCode_Quicken(PyCodeObject *code)
                 if (opcode == POP_JUMP_IF_FALSE) {
                     mask = mask ^ 0xf;
                 }
-                _Py_OPCODE(instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP]) = COMPARE_AND_BRANCH;
-                _Py_OPARG(instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP]) = (oparg & 0xf0) | mask;
+                _Py_SET_OPCODE(instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP], COMPARE_AND_BRANCH);
+                _Py_SET_OPARG(instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP], (oparg & 0xf0) | mask);
                 break;
             }
         }

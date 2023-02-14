@@ -33,7 +33,15 @@ _py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
     word->_op.opcode = opcode;
 }
 
-#define _Py_SET_OPCODE(word, opcode) _py_set_opocde(&(word), opcode)
+#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), opcode)
+
+static inline void
+_py_set_oparg(_Py_CODEUNIT *word, uint8_t oparg)
+{
+    word->_op.oparg = oparg;
+}
+
+#define _Py_SET_OPARG(word, opcode) _py_set_oparg(&(word), opcode)
 
 typedef struct {
     PyObject *_co_code;
