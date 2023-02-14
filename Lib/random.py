@@ -50,7 +50,7 @@ from warnings import warn as _warn
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from math import tau as TWOPI, floor as _floor, isfinite as _isfinite
-from math import lgamma as _lgamma, fabs as _fabs
+from math import lgamma as _lgamma, fabs as _fabs, log2 as _log2
 from os import urandom as _urandom
 from _collections_abc import Sequence as _Sequence
 from operator import index as _index
@@ -239,7 +239,7 @@ class Random(_random.Random):
         "Return a random int in the range [0,n).  Defined for n > 0."
 
         getrandbits = self.getrandbits
-        k = n.bit_length()  # don't use (n-1) here because n can be 1
+        k = n.bit_length()
         r = getrandbits(k)  # 0 <= r < 2**k
         while r >= n:
             r = getrandbits(k)
@@ -336,7 +336,10 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        if not seq:
+
+        # As an accommodation for NumPy, we don't use "if not seq"
+        # because bool(numpy.array()) raises a ValueError.
+        if not len(seq):
             raise IndexError('Cannot choose from an empty sequence')
         return seq[self._randbelow(len(seq))]
 
@@ -577,7 +580,7 @@ class Random(_random.Random):
         """
         return _exp(self.normalvariate(mu, sigma))
 
-    def expovariate(self, lambd):
+    def expovariate(self, lambd=1.0):
         """Exponential distribution.
 
         lambd is 1.0 divided by the desired mean.  It should be
@@ -764,11 +767,11 @@ class Random(_random.Random):
             # BG: Geometric method by Devroye with running time of O(np).
             # https://dl.acm.org/doi/pdf/10.1145/42372.42381
             x = y = 0
-            c = _log(1.0 - p)
+            c = _log2(1.0 - p)
             if not c:
                 return x
             while True:
-                y += _floor(_log(random()) / c) + 1
+                y += _floor(_log2(random()) / c) + 1
                 if y > n:
                     return x
                 x += 1
@@ -846,7 +849,7 @@ class SystemRandom(Random):
     """
 
     def random(self):
-        """Get the next random number in the range [0.0, 1.0)."""
+        """Get the next random number in the range 0.0 <= X < 1.0."""
         return (int.from_bytes(_urandom(7)) >> 3) * RECIP_BPF
 
     def getrandbits(self, k):

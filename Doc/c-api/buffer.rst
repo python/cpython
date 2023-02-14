@@ -99,7 +99,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       For :term:`contiguous` arrays, the value points to the beginning of
       the memory block.
 
-   .. c:member:: void *obj
+   .. c:member:: PyObject *obj
 
       A new reference to the exporting object. The reference is owned by
       the consumer and automatically decremented and set to ``NULL`` by

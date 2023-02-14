@@ -189,7 +189,8 @@ wider range of codecs when working with binary files:
 
    .. note::
 
-      Underlying encoded files are always opened in binary mode.
+      If *encoding* is not ``None``, then the
+      underlying encoded files are always opened in binary mode.
       No automatic conversion of ``'\n'`` is done on reading and writing.
       The *mode* argument may be any binary mode acceptable to the built-in
       :func:`open` function; the ``'b'`` is automatically added.
@@ -1530,7 +1531,7 @@ functions can be used directly if desired.
 
 This module implements the ANSI codepage (CP_ACP).
 
-.. availability:: Windows only.
+.. availability:: Windows.
 
 .. versionchanged:: 3.3
    Support any error handler.

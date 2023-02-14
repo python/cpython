@@ -708,7 +708,8 @@ class UTF16Test(ReadTest, unittest.TestCase):
                                          "spamspam", self.spambe)
 
     def test_bug691291(self):
-        # Files are always opened in binary mode, even if no binary mode was
+        # If encoding is not None, then
+        # files are always opened in binary mode, even if no binary mode was
         # specified.  This means that no automatic conversion of '\n' is done
         # on reading and writing.
         s1 = 'Hello\r\nworld\r\n'
@@ -1550,6 +1551,12 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual("python.org.".encode("idna"), b"python.org.")
         self.assertEqual("pyth\xf6n.org".encode("idna"), b"xn--pythn-mua.org")
         self.assertEqual("pyth\xf6n.org.".encode("idna"), b"xn--pythn-mua.org.")
+
+    def test_builtin_decode_length_limit(self):
+        with self.assertRaisesRegex(UnicodeError, "way too long"):
+            (b"xn--016c"+b"a"*1100).decode("idna")
+        with self.assertRaisesRegex(UnicodeError, "too long"):
+            (b"xn--016c"+b"a"*70).decode("idna")
 
     def test_stream(self):
         r = codecs.getreader("idna")(io.BytesIO(b"abc"))

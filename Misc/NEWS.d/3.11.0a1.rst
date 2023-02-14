@@ -1445,7 +1445,7 @@ asynchronous.
 .. nonce: NOwcDJ
 .. section: Library
 
-Fix clang rpath issue in :mod:`distutils`. The UnixCCompiler now uses
+Fix clang rpath issue in ``distutils``. The UnixCCompiler now uses
 correct clang option to add a runtime library directory (rpath) to a shared
 library.
 
@@ -2798,7 +2798,7 @@ documentation for deprecations.
 .. nonce: rvyf2v
 .. section: Library
 
-Restore back :func:`parse_makefile` in :mod:`distutils.sysconfig` because it
+Restore back :func:`parse_makefile` in ``distutils.sysconfig`` because it
 behaves differently than the similar implementation in :mod:`sysconfig`.
 
 ..
