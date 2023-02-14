@@ -77,7 +77,7 @@ another rational number, or from a string.
 
    The :class:`Fraction` class inherits from the abstract base class
    :class:`numbers.Rational`, and implements all of the methods and
-   operations from that class.  :class:`Fraction` instances are hashable,
+   operations from that class.  :class:`Fraction` instances are :term:`hashable`,
    and should be treated as immutable.  In addition,
    :class:`Fraction` has the following properties and methods:
 
