@@ -1,1 +1,1 @@
-gh-101892 : Updated Cython/objects/iterobject.c Line 217
+Callable iterators no longer raise :class:`SystemError` by exhausting themselves.
