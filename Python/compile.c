@@ -274,31 +274,31 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
-            _Py_SET_OPCODE(*codestr, EXTENDED_ARG);
-            _Py_SET_OPARG(*codestr, (oparg >> 24) & 0xFF);
+            codestr->op.code = EXTENDED_ARG;
+            codestr->op.arg = (oparg >> 24) & 0xFF;
             codestr++;
             /* fall through */
         case 3:
-            _Py_SET_OPCODE(*codestr, EXTENDED_ARG);
-            _Py_SET_OPARG(*codestr, (oparg >> 16) & 0xFF);
+            codestr->op.code = EXTENDED_ARG;
+            codestr->op.arg = (oparg >> 16) & 0xFF;
             codestr++;
             /* fall through */
         case 2:
-            _Py_SET_OPCODE(*codestr, EXTENDED_ARG);
-            _Py_SET_OPARG(*codestr, (oparg >> 8) & 0xFF);
+            codestr->op.code = EXTENDED_ARG;
+            codestr->op.arg = (oparg >> 8) & 0xFF;
             codestr++;
             /* fall through */
         case 1:
-            _Py_SET_OPCODE(*codestr, opcode);
-            _Py_SET_OPARG(*codestr, oparg & 0xFF);
+            codestr->op.code = opcode;
+            codestr->op.arg = oparg & 0xFF;
             codestr++;
             break;
         default:
             Py_UNREACHABLE();
     }
     while (caches--) {
-        _Py_SET_OPCODE(*codestr, CACHE);
-        _Py_SET_OPARG(*codestr, 0);
+        codestr->op.code = CACHE;
+        codestr->op.arg = 0;
         codestr++;
     }
 }
