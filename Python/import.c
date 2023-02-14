@@ -693,611 +693,6 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 }
 
 
-/*******************/
-/* builtin modules */
-/*******************/
-
-static int fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename);
-
-int
-_PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
-{
-    int res = -1;
-    PyObject *nameobj;
-    nameobj = PyUnicode_InternFromString(name);
-    if (nameobj == NULL) {
-        return -1;
-    }
-    if (PyObject_SetItem(modules, nameobj, mod) < 0) {
-        goto finally;
-    }
-    if (fix_up_extension(mod, nameobj, nameobj) < 0) {
-        PyMapping_DelItem(modules, nameobj);
-        goto finally;
-    }
-    res = 0;
-
-finally:
-    Py_DECREF(nameobj);
-    return res;
-}
-
-/* Helper to test for built-in module */
-
-static int
-is_builtin(PyObject *name)
-{
-    int i;
-    struct _inittab *inittab = _PyRuntime.imports.inittab;
-    for (i = 0; inittab[i].name != NULL; i++) {
-        if (_PyUnicode_EqualToASCIIString(name, inittab[i].name)) {
-            if (inittab[i].initfunc == NULL)
-                return -1;
-            else
-                return 1;
-        }
-    }
-    return 0;
-}
-
-static PyObject * import_find_extension(PyThreadState *tstate,
-                                        PyObject *name, PyObject *filename);
-
-static PyObject*
-create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
-{
-    PyObject *mod = import_find_extension(tstate, name, name);
-    if (mod || _PyErr_Occurred(tstate)) {
-        return mod;
-    }
-
-    PyObject *modules = tstate->interp->modules;
-    for (struct _inittab *p = _PyRuntime.imports.inittab; p->name != NULL; p++) {
-        if (_PyUnicode_EqualToASCIIString(name, p->name)) {
-            if (p->initfunc == NULL) {
-                /* Cannot re-init internal module ("sys" or "builtins") */
-                mod = PyImport_AddModuleObject(name);
-                return Py_XNewRef(mod);
-            }
-            mod = _PyImport_InitFunc_TrampolineCall(*p->initfunc);
-            if (mod == NULL) {
-                return NULL;
-            }
-
-            if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
-                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
-            }
-            else {
-                /* Remember pointer to module init function. */
-                PyModuleDef *def = PyModule_GetDef(mod);
-                if (def == NULL) {
-                    return NULL;
-                }
-
-                def->m_base.m_init = p->initfunc;
-                if (_PyImport_FixupExtensionObject(mod, name, name,
-                                                   modules) < 0) {
-                    return NULL;
-                }
-                return mod;
-            }
-        }
-    }
-
-    // not found
-    Py_RETURN_NONE;
-}
-
-
-/*****************************/
-/* the builtin modules table */
-/*****************************/
-
-/* API for embedding applications that want to add their own entries
-   to the table of built-in modules.  This should normally be called
-   *before* Py_Initialize().  When the table resize fails, -1 is
-   returned and the existing table is unchanged.
-
-   After a similar function by Just van Rossum. */
-
-int
-PyImport_ExtendInittab(struct _inittab *newtab)
-{
-    struct _inittab *p;
-    size_t i, n;
-    int res = 0;
-
-    if (_PyRuntime.imports.inittab != NULL) {
-        Py_FatalError("PyImport_ExtendInittab() may not be called after Py_Initialize()");
-    }
-
-    /* Count the number of entries in both tables */
-    for (n = 0; newtab[n].name != NULL; n++)
-        ;
-    if (n == 0)
-        return 0; /* Nothing to do */
-    for (i = 0; PyImport_Inittab[i].name != NULL; i++)
-        ;
-
-    /* Force default raw memory allocator to get a known allocator to be able
-       to release the memory in _PyImport_Fini2() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* Allocate new memory for the combined table */
-    p = NULL;
-    if (i + n <= SIZE_MAX / sizeof(struct _inittab) - 1) {
-        size_t size = sizeof(struct _inittab) * (i + n + 1);
-        p = PyMem_RawRealloc(inittab_copy, size);
-    }
-    if (p == NULL) {
-        res = -1;
-        goto done;
-    }
-
-    /* Copy the tables into the new memory at the first call
-       to PyImport_ExtendInittab(). */
-    if (inittab_copy != PyImport_Inittab) {
-        memcpy(p, PyImport_Inittab, (i+1) * sizeof(struct _inittab));
-    }
-    memcpy(p + i, newtab, (n + 1) * sizeof(struct _inittab));
-    PyImport_Inittab = inittab_copy = p;
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return res;
-}
-
-/* Shorthand to add a single entry given a name and a function */
-
-int
-PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
-{
-    struct _inittab newtab[2];
-
-    if (_PyRuntime.imports.inittab != NULL) {
-        Py_FatalError("PyImport_AppendInittab() may not be called after Py_Initialize()");
-    }
-
-    memset(newtab, '\0', sizeof newtab);
-
-    newtab[0].name = name;
-    newtab[0].initfunc = initfunc;
-
-    return PyImport_ExtendInittab(newtab);
-}
-
-
-PyObject *
-_PyImport_GetBuiltinModuleNames(void)
-{
-    PyObject *list = PyList_New(0);
-    if (list == NULL) {
-        return NULL;
-    }
-    struct _inittab *inittab = _PyRuntime.imports.inittab;
-    for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
-        PyObject *name = PyUnicode_FromString(inittab[i].name);
-        if (name == NULL) {
-            Py_DECREF(list);
-            return NULL;
-        }
-        if (PyList_Append(list, name) < 0) {
-            Py_DECREF(name);
-            Py_DECREF(list);
-            return NULL;
-        }
-        Py_DECREF(name);
-    }
-    return list;
-}
-
-
-/******************/
-/* frozen modules */
-/******************/
-
-/* Return true if the name is an alias.  In that case, "alias" is set
-   to the original module name.  If it is an alias but the original
-   module isn't known then "alias" is set to NULL while true is returned. */
-static bool
-resolve_module_alias(const char *name, const struct _module_alias *aliases,
-                     const char **alias)
-{
-    const struct _module_alias *entry;
-    for (entry = aliases; ; entry++) {
-        if (entry->name == NULL) {
-            /* It isn't an alias. */
-            return false;
-        }
-        if (strcmp(name, entry->name) == 0) {
-            if (alias != NULL) {
-                *alias = entry->orig;
-            }
-            return true;
-        }
-    }
-}
-
-static bool
-use_frozen(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    int override = interp->override_frozen_modules;
-    if (override > 0) {
-        return true;
-    }
-    else if (override < 0) {
-        return false;
-    }
-    else {
-        return interp->config.use_frozen_modules;
-    }
-}
-
-static PyObject *
-list_frozen_module_names(void)
-{
-    PyObject *names = PyList_New(0);
-    if (names == NULL) {
-        return NULL;
-    }
-    bool enabled = use_frozen();
-    const struct _frozen *p;
-#define ADD_MODULE(name) \
-    do { \
-        PyObject *nameobj = PyUnicode_FromString(name); \
-        if (nameobj == NULL) { \
-            goto error; \
-        } \
-        int res = PyList_Append(names, nameobj); \
-        Py_DECREF(nameobj); \
-        if (res != 0) { \
-            goto error; \
-        } \
-    } while(0)
-    // We always use the bootstrap modules.
-    for (p = _PyImport_FrozenBootstrap; ; p++) {
-        if (p->name == NULL) {
-            break;
-        }
-        ADD_MODULE(p->name);
-    }
-    // Frozen stdlib modules may be disabled.
-    for (p = _PyImport_FrozenStdlib; ; p++) {
-        if (p->name == NULL) {
-            break;
-        }
-        if (enabled) {
-            ADD_MODULE(p->name);
-        }
-    }
-    for (p = _PyImport_FrozenTest; ; p++) {
-        if (p->name == NULL) {
-            break;
-        }
-        if (enabled) {
-            ADD_MODULE(p->name);
-        }
-    }
-#undef ADD_MODULE
-    // Add any custom modules.
-    if (PyImport_FrozenModules != NULL) {
-        for (p = PyImport_FrozenModules; ; p++) {
-            if (p->name == NULL) {
-                break;
-            }
-            PyObject *nameobj = PyUnicode_FromString(p->name);
-            if (nameobj == NULL) {
-                goto error;
-            }
-            int found = PySequence_Contains(names, nameobj);
-            if (found < 0) {
-                Py_DECREF(nameobj);
-                goto error;
-            }
-            else if (found) {
-                Py_DECREF(nameobj);
-            }
-            else {
-                int res = PyList_Append(names, nameobj);
-                Py_DECREF(nameobj);
-                if (res != 0) {
-                    goto error;
-                }
-            }
-        }
-    }
-    return names;
-
-error:
-    Py_DECREF(names);
-    return NULL;
-}
-
-typedef enum {
-    FROZEN_OKAY,
-    FROZEN_BAD_NAME,    // The given module name wasn't valid.
-    FROZEN_NOT_FOUND,   // It wasn't in PyImport_FrozenModules.
-    FROZEN_DISABLED,    // -X frozen_modules=off (and not essential)
-    FROZEN_EXCLUDED,    /* The PyImport_FrozenModules entry has NULL "code"
-                           (module is present but marked as unimportable, stops search). */
-    FROZEN_INVALID,     /* The PyImport_FrozenModules entry is bogus
-                           (eg. does not contain executable code). */
-} frozen_status;
-
-static inline void
-set_frozen_error(frozen_status status, PyObject *modname)
-{
-    const char *err = NULL;
-    switch (status) {
-        case FROZEN_BAD_NAME:
-        case FROZEN_NOT_FOUND:
-            err = "No such frozen object named %R";
-            break;
-        case FROZEN_DISABLED:
-            err = "Frozen modules are disabled and the frozen object named %R is not essential";
-            break;
-        case FROZEN_EXCLUDED:
-            err = "Excluded frozen object named %R";
-            break;
-        case FROZEN_INVALID:
-            err = "Frozen object named %R is invalid";
-            break;
-        case FROZEN_OKAY:
-            // There was no error.
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
-    if (err != NULL) {
-        PyObject *msg = PyUnicode_FromFormat(err, modname);
-        if (msg == NULL) {
-            PyErr_Clear();
-        }
-        PyErr_SetImportError(msg, modname, NULL);
-        Py_XDECREF(msg);
-    }
-}
-
-static const struct _frozen *
-look_up_frozen(const char *name)
-{
-    const struct _frozen *p;
-    // We always use the bootstrap modules.
-    for (p = _PyImport_FrozenBootstrap; ; p++) {
-        if (p->name == NULL) {
-            // We hit the end-of-list sentinel value.
-            break;
-        }
-        if (strcmp(name, p->name) == 0) {
-            return p;
-        }
-    }
-    // Prefer custom modules, if any.  Frozen stdlib modules can be
-    // disabled here by setting "code" to NULL in the array entry.
-    if (PyImport_FrozenModules != NULL) {
-        for (p = PyImport_FrozenModules; ; p++) {
-            if (p->name == NULL) {
-                break;
-            }
-            if (strcmp(name, p->name) == 0) {
-                return p;
-            }
-        }
-    }
-    // Frozen stdlib modules may be disabled.
-    if (use_frozen()) {
-        for (p = _PyImport_FrozenStdlib; ; p++) {
-            if (p->name == NULL) {
-                break;
-            }
-            if (strcmp(name, p->name) == 0) {
-                return p;
-            }
-        }
-        for (p = _PyImport_FrozenTest; ; p++) {
-            if (p->name == NULL) {
-                break;
-            }
-            if (strcmp(name, p->name) == 0) {
-                return p;
-            }
-        }
-    }
-    return NULL;
-}
-
-struct frozen_info {
-    PyObject *nameobj;
-    const char *data;
-    PyObject *(*get_code)(void);
-    Py_ssize_t size;
-    bool is_package;
-    bool is_alias;
-    const char *origname;
-};
-
-static frozen_status
-find_frozen(PyObject *nameobj, struct frozen_info *info)
-{
-    if (info != NULL) {
-        memset(info, 0, sizeof(*info));
-    }
-
-    if (nameobj == NULL || nameobj == Py_None) {
-        return FROZEN_BAD_NAME;
-    }
-    const char *name = PyUnicode_AsUTF8(nameobj);
-    if (name == NULL) {
-        // Note that this function previously used
-        // _PyUnicode_EqualToASCIIString().  We clear the error here
-        // (instead of propagating it) to match the earlier behavior
-        // more closely.
-        PyErr_Clear();
-        return FROZEN_BAD_NAME;
-    }
-
-    const struct _frozen *p = look_up_frozen(name);
-    if (p == NULL) {
-        return FROZEN_NOT_FOUND;
-    }
-    if (info != NULL) {
-        info->nameobj = nameobj;  // borrowed
-        info->data = (const char *)p->code;
-        info->get_code = p->get_code;
-        info->size = p->size;
-        info->is_package = p->is_package;
-        if (p->size < 0) {
-            // backward compatibility with negative size values
-            info->size = -(p->size);
-            info->is_package = true;
-        }
-        info->origname = name;
-        info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
-                                              &info->origname);
-    }
-    if (p->code == NULL && p->size == 0 && p->get_code != NULL) {
-        /* It is only deepfrozen. */
-        return FROZEN_OKAY;
-    }
-    if (p->code == NULL) {
-        /* It is frozen but marked as un-importable. */
-        return FROZEN_EXCLUDED;
-    }
-    if (p->code[0] == '\0' || p->size == 0) {
-        /* Does not contain executable code. */
-        return FROZEN_INVALID;
-    }
-    return FROZEN_OKAY;
-}
-
-static PyObject *
-unmarshal_frozen_code(struct frozen_info *info)
-{
-    if (info->get_code) {
-        PyObject *code = info->get_code();
-        assert(code != NULL);
-        return code;
-    }
-    PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
-    if (co == NULL) {
-        /* Does not contain executable code. */
-        set_frozen_error(FROZEN_INVALID, info->nameobj);
-        return NULL;
-    }
-    if (!PyCode_Check(co)) {
-        // We stick with TypeError for backward compatibility.
-        PyErr_Format(PyExc_TypeError,
-                     "frozen object %R is not a code object",
-                     info->nameobj);
-        Py_DECREF(co);
-        return NULL;
-    }
-    return co;
-}
-
-
-static PyObject * module_dict_for_exec(PyThreadState *tstate, PyObject *name);
-static PyObject * exec_code_in_module(PyThreadState *tstate,
-                                      PyObject *name, PyObject *module_dict,
-                                      PyObject *code_object);
-
-/* Initialize a frozen module.
-   Return 1 for success, 0 if the module is not found, and -1 with
-   an exception set if the initialization failed.
-   This function is also used from frozenmain.c */
-
-int
-PyImport_ImportFrozenModuleObject(PyObject *name)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *co, *m, *d = NULL;
-    int err;
-
-    struct frozen_info info;
-    frozen_status status = find_frozen(name, &info);
-    if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
-        return 0;
-    }
-    else if (status == FROZEN_BAD_NAME) {
-        return 0;
-    }
-    else if (status != FROZEN_OKAY) {
-        set_frozen_error(status, name);
-        return -1;
-    }
-    co = unmarshal_frozen_code(&info);
-    if (co == NULL) {
-        return -1;
-    }
-    if (info.is_package) {
-        /* Set __path__ to the empty list */
-        PyObject *l;
-        m = import_add_module(tstate, name);
-        if (m == NULL)
-            goto err_return;
-        d = PyModule_GetDict(m);
-        l = PyList_New(0);
-        if (l == NULL) {
-            Py_DECREF(m);
-            goto err_return;
-        }
-        err = PyDict_SetItemString(d, "__path__", l);
-        Py_DECREF(l);
-        Py_DECREF(m);
-        if (err != 0)
-            goto err_return;
-    }
-    d = module_dict_for_exec(tstate, name);
-    if (d == NULL) {
-        goto err_return;
-    }
-    m = exec_code_in_module(tstate, name, d, co);
-    if (m == NULL) {
-        goto err_return;
-    }
-    Py_DECREF(m);
-    /* Set __origname__ (consumed in FrozenImporter._setup_module()). */
-    PyObject *origname;
-    if (info.origname) {
-        origname = PyUnicode_FromString(info.origname);
-        if (origname == NULL) {
-            goto err_return;
-        }
-    }
-    else {
-        origname = Py_NewRef(Py_None);
-    }
-    err = PyDict_SetItemString(d, "__origname__", origname);
-    Py_DECREF(origname);
-    if (err != 0) {
-        goto err_return;
-    }
-    Py_DECREF(d);
-    Py_DECREF(co);
-    return 1;
-
-err_return:
-    Py_XDECREF(d);
-    Py_DECREF(co);
-    return -1;
-}
-
-int
-PyImport_ImportFrozenModule(const char *name)
-{
-    PyObject *nameobj;
-    int ret;
-    nameobj = PyUnicode_InternFromString(name);
-    if (nameobj == NULL)
-        return -1;
-    ret = PyImport_ImportFrozenModuleObject(nameobj);
-    Py_DECREF(nameobj);
-    return ret;
-}
-
-
 /*********************/
 /* extension modules */
 /*********************/
@@ -1631,6 +1026,236 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
 }
 
 
+/*******************/
+/* builtin modules */
+/*******************/
+
+int
+_PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
+{
+    int res = -1;
+    PyObject *nameobj;
+    nameobj = PyUnicode_InternFromString(name);
+    if (nameobj == NULL) {
+        return -1;
+    }
+    if (PyObject_SetItem(modules, nameobj, mod) < 0) {
+        goto finally;
+    }
+    if (fix_up_extension(mod, nameobj, nameobj) < 0) {
+        PyMapping_DelItem(modules, nameobj);
+        goto finally;
+    }
+    res = 0;
+
+finally:
+    Py_DECREF(nameobj);
+    return res;
+}
+
+/* Helper to test for built-in module */
+
+static int
+is_builtin(PyObject *name)
+{
+    int i;
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    for (i = 0; inittab[i].name != NULL; i++) {
+        if (_PyUnicode_EqualToASCIIString(name, inittab[i].name)) {
+            if (inittab[i].initfunc == NULL)
+                return -1;
+            else
+                return 1;
+        }
+    }
+    return 0;
+}
+
+static PyObject*
+create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
+{
+    PyObject *mod = import_find_extension(tstate, name, name);
+    if (mod || _PyErr_Occurred(tstate)) {
+        return mod;
+    }
+
+    PyObject *modules = tstate->interp->modules;
+    for (struct _inittab *p = _PyRuntime.imports.inittab; p->name != NULL; p++) {
+        if (_PyUnicode_EqualToASCIIString(name, p->name)) {
+            if (p->initfunc == NULL) {
+                /* Cannot re-init internal module ("sys" or "builtins") */
+                mod = PyImport_AddModuleObject(name);
+                return Py_XNewRef(mod);
+            }
+            mod = _PyImport_InitFunc_TrampolineCall(*p->initfunc);
+            if (mod == NULL) {
+                return NULL;
+            }
+
+            if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
+                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
+            }
+            else {
+                /* Remember pointer to module init function. */
+                PyModuleDef *def = PyModule_GetDef(mod);
+                if (def == NULL) {
+                    return NULL;
+                }
+
+                def->m_base.m_init = p->initfunc;
+                if (_PyImport_FixupExtensionObject(mod, name, name,
+                                                   modules) < 0) {
+                    return NULL;
+                }
+                return mod;
+            }
+        }
+    }
+
+    // not found
+    Py_RETURN_NONE;
+}
+
+
+/*****************************/
+/* the builtin modules table */
+/*****************************/
+
+/* API for embedding applications that want to add their own entries
+   to the table of built-in modules.  This should normally be called
+   *before* Py_Initialize().  When the table resize fails, -1 is
+   returned and the existing table is unchanged.
+
+   After a similar function by Just van Rossum. */
+
+int
+PyImport_ExtendInittab(struct _inittab *newtab)
+{
+    struct _inittab *p;
+    size_t i, n;
+    int res = 0;
+
+    if (_PyRuntime.imports.inittab != NULL) {
+        Py_FatalError("PyImport_ExtendInittab() may not be called after Py_Initialize()");
+    }
+
+    /* Count the number of entries in both tables */
+    for (n = 0; newtab[n].name != NULL; n++)
+        ;
+    if (n == 0)
+        return 0; /* Nothing to do */
+    for (i = 0; PyImport_Inittab[i].name != NULL; i++)
+        ;
+
+    /* Force default raw memory allocator to get a known allocator to be able
+       to release the memory in _PyImport_Fini2() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* Allocate new memory for the combined table */
+    p = NULL;
+    if (i + n <= SIZE_MAX / sizeof(struct _inittab) - 1) {
+        size_t size = sizeof(struct _inittab) * (i + n + 1);
+        p = PyMem_RawRealloc(inittab_copy, size);
+    }
+    if (p == NULL) {
+        res = -1;
+        goto done;
+    }
+
+    /* Copy the tables into the new memory at the first call
+       to PyImport_ExtendInittab(). */
+    if (inittab_copy != PyImport_Inittab) {
+        memcpy(p, PyImport_Inittab, (i+1) * sizeof(struct _inittab));
+    }
+    memcpy(p + i, newtab, (n + 1) * sizeof(struct _inittab));
+    PyImport_Inittab = inittab_copy = p;
+
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return res;
+}
+
+/* Shorthand to add a single entry given a name and a function */
+
+int
+PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
+{
+    struct _inittab newtab[2];
+
+    if (_PyRuntime.imports.inittab != NULL) {
+        Py_FatalError("PyImport_AppendInittab() may not be called after Py_Initialize()");
+    }
+
+    memset(newtab, '\0', sizeof newtab);
+
+    newtab[0].name = name;
+    newtab[0].initfunc = initfunc;
+
+    return PyImport_ExtendInittab(newtab);
+}
+
+
+PyObject *
+_PyImport_GetBuiltinModuleNames(void)
+{
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
+        PyObject *name = PyUnicode_FromString(inittab[i].name);
+        if (name == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        if (PyList_Append(list, name) < 0) {
+            Py_DECREF(name);
+            Py_DECREF(list);
+            return NULL;
+        }
+        Py_DECREF(name);
+    }
+    return list;
+}
+
+
+/********************/
+/* the magic number */
+/********************/
+
+/* Helper for pythonrun.c -- return magic number and tag. */
+
+long
+PyImport_GetMagicNumber(void)
+{
+    long res;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *external, *pyc_magic;
+
+    external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
+    if (external == NULL)
+        return -1;
+    pyc_magic = PyObject_GetAttrString(external, "_RAW_MAGIC_NUMBER");
+    Py_DECREF(external);
+    if (pyc_magic == NULL)
+        return -1;
+    res = PyLong_AsLong(pyc_magic);
+    Py_DECREF(pyc_magic);
+    return res;
+}
+
+
+extern const char * _PySys_ImplCacheTag;
+
+const char *
+PyImport_GetMagicTag(void)
+{
+    return _PySys_ImplCacheTag;
+}
+
+
 /*********************************/
 /* a Python module's code object */
 /*********************************/
@@ -1830,38 +1455,403 @@ update_compiled_module(PyCodeObject *co, PyObject *newname)
 }
 
 
-/********************/
-/* the magic number */
-/********************/
+/******************/
+/* frozen modules */
+/******************/
 
-/* Helper for pythonrun.c -- return magic number and tag. */
-
-long
-PyImport_GetMagicNumber(void)
+/* Return true if the name is an alias.  In that case, "alias" is set
+   to the original module name.  If it is an alias but the original
+   module isn't known then "alias" is set to NULL while true is returned. */
+static bool
+resolve_module_alias(const char *name, const struct _module_alias *aliases,
+                     const char **alias)
 {
-    long res;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *external, *pyc_magic;
+    const struct _module_alias *entry;
+    for (entry = aliases; ; entry++) {
+        if (entry->name == NULL) {
+            /* It isn't an alias. */
+            return false;
+        }
+        if (strcmp(name, entry->name) == 0) {
+            if (alias != NULL) {
+                *alias = entry->orig;
+            }
+            return true;
+        }
+    }
+}
 
-    external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
-    if (external == NULL)
-        return -1;
-    pyc_magic = PyObject_GetAttrString(external, "_RAW_MAGIC_NUMBER");
-    Py_DECREF(external);
-    if (pyc_magic == NULL)
-        return -1;
-    res = PyLong_AsLong(pyc_magic);
-    Py_DECREF(pyc_magic);
-    return res;
+static bool
+use_frozen(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    int override = interp->override_frozen_modules;
+    if (override > 0) {
+        return true;
+    }
+    else if (override < 0) {
+        return false;
+    }
+    else {
+        return interp->config.use_frozen_modules;
+    }
+}
+
+static PyObject *
+list_frozen_module_names(void)
+{
+    PyObject *names = PyList_New(0);
+    if (names == NULL) {
+        return NULL;
+    }
+    bool enabled = use_frozen();
+    const struct _frozen *p;
+#define ADD_MODULE(name) \
+    do { \
+        PyObject *nameobj = PyUnicode_FromString(name); \
+        if (nameobj == NULL) { \
+            goto error; \
+        } \
+        int res = PyList_Append(names, nameobj); \
+        Py_DECREF(nameobj); \
+        if (res != 0) { \
+            goto error; \
+        } \
+    } while(0)
+    // We always use the bootstrap modules.
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        ADD_MODULE(p->name);
+    }
+    // Frozen stdlib modules may be disabled.
+    for (p = _PyImport_FrozenStdlib; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        if (enabled) {
+            ADD_MODULE(p->name);
+        }
+    }
+    for (p = _PyImport_FrozenTest; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        if (enabled) {
+            ADD_MODULE(p->name);
+        }
+    }
+#undef ADD_MODULE
+    // Add any custom modules.
+    if (PyImport_FrozenModules != NULL) {
+        for (p = PyImport_FrozenModules; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            PyObject *nameobj = PyUnicode_FromString(p->name);
+            if (nameobj == NULL) {
+                goto error;
+            }
+            int found = PySequence_Contains(names, nameobj);
+            if (found < 0) {
+                Py_DECREF(nameobj);
+                goto error;
+            }
+            else if (found) {
+                Py_DECREF(nameobj);
+            }
+            else {
+                int res = PyList_Append(names, nameobj);
+                Py_DECREF(nameobj);
+                if (res != 0) {
+                    goto error;
+                }
+            }
+        }
+    }
+    return names;
+
+error:
+    Py_DECREF(names);
+    return NULL;
+}
+
+typedef enum {
+    FROZEN_OKAY,
+    FROZEN_BAD_NAME,    // The given module name wasn't valid.
+    FROZEN_NOT_FOUND,   // It wasn't in PyImport_FrozenModules.
+    FROZEN_DISABLED,    // -X frozen_modules=off (and not essential)
+    FROZEN_EXCLUDED,    /* The PyImport_FrozenModules entry has NULL "code"
+                           (module is present but marked as unimportable, stops search). */
+    FROZEN_INVALID,     /* The PyImport_FrozenModules entry is bogus
+                           (eg. does not contain executable code). */
+} frozen_status;
+
+static inline void
+set_frozen_error(frozen_status status, PyObject *modname)
+{
+    const char *err = NULL;
+    switch (status) {
+        case FROZEN_BAD_NAME:
+        case FROZEN_NOT_FOUND:
+            err = "No such frozen object named %R";
+            break;
+        case FROZEN_DISABLED:
+            err = "Frozen modules are disabled and the frozen object named %R is not essential";
+            break;
+        case FROZEN_EXCLUDED:
+            err = "Excluded frozen object named %R";
+            break;
+        case FROZEN_INVALID:
+            err = "Frozen object named %R is invalid";
+            break;
+        case FROZEN_OKAY:
+            // There was no error.
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    if (err != NULL) {
+        PyObject *msg = PyUnicode_FromFormat(err, modname);
+        if (msg == NULL) {
+            PyErr_Clear();
+        }
+        PyErr_SetImportError(msg, modname, NULL);
+        Py_XDECREF(msg);
+    }
+}
+
+static const struct _frozen *
+look_up_frozen(const char *name)
+{
+    const struct _frozen *p;
+    // We always use the bootstrap modules.
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
+        if (p->name == NULL) {
+            // We hit the end-of-list sentinel value.
+            break;
+        }
+        if (strcmp(name, p->name) == 0) {
+            return p;
+        }
+    }
+    // Prefer custom modules, if any.  Frozen stdlib modules can be
+    // disabled here by setting "code" to NULL in the array entry.
+    if (PyImport_FrozenModules != NULL) {
+        for (p = PyImport_FrozenModules; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+    }
+    // Frozen stdlib modules may be disabled.
+    if (use_frozen()) {
+        for (p = _PyImport_FrozenStdlib; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+        for (p = _PyImport_FrozenTest; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+    }
+    return NULL;
+}
+
+struct frozen_info {
+    PyObject *nameobj;
+    const char *data;
+    PyObject *(*get_code)(void);
+    Py_ssize_t size;
+    bool is_package;
+    bool is_alias;
+    const char *origname;
+};
+
+static frozen_status
+find_frozen(PyObject *nameobj, struct frozen_info *info)
+{
+    if (info != NULL) {
+        memset(info, 0, sizeof(*info));
+    }
+
+    if (nameobj == NULL || nameobj == Py_None) {
+        return FROZEN_BAD_NAME;
+    }
+    const char *name = PyUnicode_AsUTF8(nameobj);
+    if (name == NULL) {
+        // Note that this function previously used
+        // _PyUnicode_EqualToASCIIString().  We clear the error here
+        // (instead of propagating it) to match the earlier behavior
+        // more closely.
+        PyErr_Clear();
+        return FROZEN_BAD_NAME;
+    }
+
+    const struct _frozen *p = look_up_frozen(name);
+    if (p == NULL) {
+        return FROZEN_NOT_FOUND;
+    }
+    if (info != NULL) {
+        info->nameobj = nameobj;  // borrowed
+        info->data = (const char *)p->code;
+        info->get_code = p->get_code;
+        info->size = p->size;
+        info->is_package = p->is_package;
+        if (p->size < 0) {
+            // backward compatibility with negative size values
+            info->size = -(p->size);
+            info->is_package = true;
+        }
+        info->origname = name;
+        info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
+                                              &info->origname);
+    }
+    if (p->code == NULL && p->size == 0 && p->get_code != NULL) {
+        /* It is only deepfrozen. */
+        return FROZEN_OKAY;
+    }
+    if (p->code == NULL) {
+        /* It is frozen but marked as un-importable. */
+        return FROZEN_EXCLUDED;
+    }
+    if (p->code[0] == '\0' || p->size == 0) {
+        /* Does not contain executable code. */
+        return FROZEN_INVALID;
+    }
+    return FROZEN_OKAY;
+}
+
+static PyObject *
+unmarshal_frozen_code(struct frozen_info *info)
+{
+    if (info->get_code) {
+        PyObject *code = info->get_code();
+        assert(code != NULL);
+        return code;
+    }
+    PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
+    if (co == NULL) {
+        /* Does not contain executable code. */
+        set_frozen_error(FROZEN_INVALID, info->nameobj);
+        return NULL;
+    }
+    if (!PyCode_Check(co)) {
+        // We stick with TypeError for backward compatibility.
+        PyErr_Format(PyExc_TypeError,
+                     "frozen object %R is not a code object",
+                     info->nameobj);
+        Py_DECREF(co);
+        return NULL;
+    }
+    return co;
 }
 
 
-extern const char * _PySys_ImplCacheTag;
+/* Initialize a frozen module.
+   Return 1 for success, 0 if the module is not found, and -1 with
+   an exception set if the initialization failed.
+   This function is also used from frozenmain.c */
 
-const char *
-PyImport_GetMagicTag(void)
+int
+PyImport_ImportFrozenModuleObject(PyObject *name)
 {
-    return _PySys_ImplCacheTag;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *co, *m, *d = NULL;
+    int err;
+
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
+        return 0;
+    }
+    else if (status == FROZEN_BAD_NAME) {
+        return 0;
+    }
+    else if (status != FROZEN_OKAY) {
+        set_frozen_error(status, name);
+        return -1;
+    }
+    co = unmarshal_frozen_code(&info);
+    if (co == NULL) {
+        return -1;
+    }
+    if (info.is_package) {
+        /* Set __path__ to the empty list */
+        PyObject *l;
+        m = import_add_module(tstate, name);
+        if (m == NULL)
+            goto err_return;
+        d = PyModule_GetDict(m);
+        l = PyList_New(0);
+        if (l == NULL) {
+            Py_DECREF(m);
+            goto err_return;
+        }
+        err = PyDict_SetItemString(d, "__path__", l);
+        Py_DECREF(l);
+        Py_DECREF(m);
+        if (err != 0)
+            goto err_return;
+    }
+    d = module_dict_for_exec(tstate, name);
+    if (d == NULL) {
+        goto err_return;
+    }
+    m = exec_code_in_module(tstate, name, d, co);
+    if (m == NULL) {
+        goto err_return;
+    }
+    Py_DECREF(m);
+    /* Set __origname__ (consumed in FrozenImporter._setup_module()). */
+    PyObject *origname;
+    if (info.origname) {
+        origname = PyUnicode_FromString(info.origname);
+        if (origname == NULL) {
+            goto err_return;
+        }
+    }
+    else {
+        origname = Py_NewRef(Py_None);
+    }
+    err = PyDict_SetItemString(d, "__origname__", origname);
+    Py_DECREF(origname);
+    if (err != 0) {
+        goto err_return;
+    }
+    Py_DECREF(d);
+    Py_DECREF(co);
+    return 1;
+
+err_return:
+    Py_XDECREF(d);
+    Py_DECREF(co);
+    return -1;
+}
+
+int
+PyImport_ImportFrozenModule(const char *name)
+{
+    PyObject *nameobj;
+    int ret;
+    nameobj = PyUnicode_InternFromString(name);
+    if (nameobj == NULL)
+        return -1;
+    ret = PyImport_ImportFrozenModuleObject(nameobj);
+    Py_DECREF(nameobj);
+    return ret;
 }
 
 
