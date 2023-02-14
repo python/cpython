@@ -79,219 +79,6 @@ static struct _inittab *inittab_copy = NULL;
     (interp)->imports.import_func
 
 
-/*********************/
-/* runtime lifecycle */
-/*********************/
-
-static int init_builtin_modules_table(void);
-
-PyStatus
-_PyImport_Init(void)
-{
-    if (_PyRuntime.imports.inittab != NULL) {
-        return _PyStatus_ERR("global import state already initialized");
-    }
-
-    PyStatus status = _PyStatus_OK();
-
-    /* Force default raw memory allocator to get a known allocator to be able
-       to release the memory in _PyImport_Fini() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    if (init_builtin_modules_table() != 0) {
-        status = PyStatus_NoMemory();
-        goto done;
-    }
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return status;
-}
-
-static inline void _extensions_cache_clear(void);
-static void fini_builtin_modules_table(void);
-
-void
-_PyImport_Fini(void)
-{
-    /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
-    _extensions_cache_clear();
-    if (import_lock != NULL) {
-        PyThread_free_lock(import_lock);
-        import_lock = NULL;
-    }
-
-    /* Use the same memory allocator as _PyImport_Init(). */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* Free memory allocated by _PyImport_Init() */
-    fini_builtin_modules_table();
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-}
-
-void
-_PyImport_Fini2(void)
-{
-    /* Use the same memory allocator than PyImport_ExtendInittab(). */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    // Reset PyImport_Inittab
-    PyImport_Inittab = _PyImport_Inittab;
-
-    /* Free memory allocated by PyImport_ExtendInittab() */
-    PyMem_RawFree(inittab_copy);
-    inittab_copy = NULL;
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-}
-
-
-/*************************/
-/* interpreter lifecycle */
-/*************************/
-
-static int init_importlib(PyThreadState *tstate, PyObject *sysmod);
-
-PyStatus
-_PyImport_InitCore(PyThreadState *tstate, PyObject *sysmod, int importlib)
-{
-    // XXX Initialize here: interp->modules and interp->import_func.
-    // XXX Initialize here: sys.modules and sys.meta_path.
-
-    if (importlib) {
-        /* This call sets up builtin and frozen import support */
-        if (init_importlib(tstate, sysmod) < 0) {
-            return _PyStatus_ERR("failed to initialize importlib");
-        }
-    }
-
-    return _PyStatus_OK();
-}
-
-/* In some corner cases it is important to be sure that the import
-   machinery has been initialized (or not cleaned up yet).  For
-   example, see issue #4236 and PyModule_Create2(). */
-
-int
-_PyImport_IsInitialized(PyInterpreterState *interp)
-{
-    if (MODULES(interp) == NULL)
-        return 0;
-    return 1;
-}
-
-/* Clear the direct per-interpreter import state, if not cleared already. */
-void
-_PyImport_ClearCore(PyInterpreterState *interp)
-{
-    /* interp->modules should have been cleaned up and cleared already
-       by _PyImport_FiniCore(). */
-    Py_CLEAR(MODULES(interp));
-    Py_CLEAR(MODULES_BY_INDEX(interp));
-    Py_CLEAR(IMPORTLIB(interp));
-    Py_CLEAR(IMPORT_FUNC(interp));
-}
-
-void
-_PyImport_FiniCore(PyInterpreterState *interp)
-{
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
-
-    if (_PySys_ClearAttrString(interp, "meta_path", verbose) < 0) {
-        PyErr_WriteUnraisable(NULL);
-    }
-
-    // XXX Pull in most of finalize_modules() in pylifecycle.c.
-
-    if (_PySys_ClearAttrString(interp, "modules", verbose) < 0) {
-        PyErr_WriteUnraisable(NULL);
-    }
-
-    _PyImport_ClearCore(interp);
-}
-
-// XXX Add something like _PyImport_Disable() for use early in interp fini?
-
-
-/* "external" imports */
-
-static int
-init_zipimport(PyThreadState *tstate, int verbose)
-{
-    PyObject *path_hooks = PySys_GetObject("path_hooks");
-    if (path_hooks == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                         "unable to get sys.path_hooks");
-        return -1;
-    }
-
-    if (verbose) {
-        PySys_WriteStderr("# installing zipimport hook\n");
-    }
-
-    PyObject *zipimporter = _PyImport_GetModuleAttrString("zipimport", "zipimporter");
-    if (zipimporter == NULL) {
-        _PyErr_Clear(tstate); /* No zipimporter object -- okay */
-        if (verbose) {
-            PySys_WriteStderr("# can't import zipimport.zipimporter\n");
-        }
-    }
-    else {
-        /* sys.path_hooks.insert(0, zipimporter) */
-        int err = PyList_Insert(path_hooks, 0, zipimporter);
-        Py_DECREF(zipimporter);
-        if (err < 0) {
-            return -1;
-        }
-        if (verbose) {
-            PySys_WriteStderr("# installed zipimport hook\n");
-        }
-    }
-
-    return 0;
-}
-
-static int init_importlib_external(PyInterpreterState *interp);
-
-PyStatus
-_PyImport_InitExternal(PyThreadState *tstate)
-{
-    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
-
-    // XXX Initialize here: sys.path_hooks and sys.path_importer_cache.
-
-    if (init_importlib_external(tstate->interp) != 0) {
-        _PyErr_Print(tstate);
-        return _PyStatus_ERR("external importer setup failed");
-    }
-
-    if (init_zipimport(tstate, verbose) != 0) {
-        PyErr_Print();
-        return _PyStatus_ERR("initializing zipimport failed");
-    }
-
-    return _PyStatus_OK();
-}
-
-void
-_PyImport_FiniExternal(PyInterpreterState *interp)
-{
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
-
-    // XXX Uninstall importlib metapath importers here?
-
-    if (_PySys_ClearAttrString(interp, "path_importer_cache", verbose) < 0) {
-        PyErr_WriteUnraisable(NULL);
-    }
-    if (_PySys_ClearAttrString(interp, "path_hooks", verbose) < 0) {
-        PyErr_WriteUnraisable(NULL);
-    }
-}
-
 /*******************/
 /* the import lock */
 /*******************/
@@ -2789,6 +2576,211 @@ PyImport_Import(PyObject *module_name)
     Py_XDECREF(from_list);
 
     return r;
+}
+
+
+/*********************/
+/* runtime lifecycle */
+/*********************/
+
+PyStatus
+_PyImport_Init(void)
+{
+    if (_PyRuntime.imports.inittab != NULL) {
+        return _PyStatus_ERR("global import state already initialized");
+    }
+
+    PyStatus status = _PyStatus_OK();
+
+    /* Force default raw memory allocator to get a known allocator to be able
+       to release the memory in _PyImport_Fini() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (init_builtin_modules_table() != 0) {
+        status = PyStatus_NoMemory();
+        goto done;
+    }
+
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return status;
+}
+
+void
+_PyImport_Fini(void)
+{
+    /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
+    _extensions_cache_clear();
+    if (import_lock != NULL) {
+        PyThread_free_lock(import_lock);
+        import_lock = NULL;
+    }
+
+    /* Use the same memory allocator as _PyImport_Init(). */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* Free memory allocated by _PyImport_Init() */
+    fini_builtin_modules_table();
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+}
+
+void
+_PyImport_Fini2(void)
+{
+    /* Use the same memory allocator than PyImport_ExtendInittab(). */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    // Reset PyImport_Inittab
+    PyImport_Inittab = _PyImport_Inittab;
+
+    /* Free memory allocated by PyImport_ExtendInittab() */
+    PyMem_RawFree(inittab_copy);
+    inittab_copy = NULL;
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+}
+
+
+/*************************/
+/* interpreter lifecycle */
+/*************************/
+
+PyStatus
+_PyImport_InitCore(PyThreadState *tstate, PyObject *sysmod, int importlib)
+{
+    // XXX Initialize here: interp->modules and interp->import_func.
+    // XXX Initialize here: sys.modules and sys.meta_path.
+
+    if (importlib) {
+        /* This call sets up builtin and frozen import support */
+        if (init_importlib(tstate, sysmod) < 0) {
+            return _PyStatus_ERR("failed to initialize importlib");
+        }
+    }
+
+    return _PyStatus_OK();
+}
+
+/* In some corner cases it is important to be sure that the import
+   machinery has been initialized (or not cleaned up yet).  For
+   example, see issue #4236 and PyModule_Create2(). */
+
+int
+_PyImport_IsInitialized(PyInterpreterState *interp)
+{
+    if (MODULES(interp) == NULL)
+        return 0;
+    return 1;
+}
+
+/* Clear the direct per-interpreter import state, if not cleared already. */
+void
+_PyImport_ClearCore(PyInterpreterState *interp)
+{
+    /* interp->modules should have been cleaned up and cleared already
+       by _PyImport_FiniCore(). */
+    Py_CLEAR(MODULES(interp));
+    Py_CLEAR(MODULES_BY_INDEX(interp));
+    Py_CLEAR(IMPORTLIB(interp));
+    Py_CLEAR(IMPORT_FUNC(interp));
+}
+
+void
+_PyImport_FiniCore(PyInterpreterState *interp)
+{
+    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+
+    if (_PySys_ClearAttrString(interp, "meta_path", verbose) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+
+    // XXX Pull in most of finalize_modules() in pylifecycle.c.
+
+    if (_PySys_ClearAttrString(interp, "modules", verbose) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+
+    _PyImport_ClearCore(interp);
+}
+
+// XXX Add something like _PyImport_Disable() for use early in interp fini?
+
+
+/* "external" imports */
+
+static int
+init_zipimport(PyThreadState *tstate, int verbose)
+{
+    PyObject *path_hooks = PySys_GetObject("path_hooks");
+    if (path_hooks == NULL) {
+        _PyErr_SetString(tstate, PyExc_RuntimeError,
+                         "unable to get sys.path_hooks");
+        return -1;
+    }
+
+    if (verbose) {
+        PySys_WriteStderr("# installing zipimport hook\n");
+    }
+
+    PyObject *zipimporter = _PyImport_GetModuleAttrString("zipimport", "zipimporter");
+    if (zipimporter == NULL) {
+        _PyErr_Clear(tstate); /* No zipimporter object -- okay */
+        if (verbose) {
+            PySys_WriteStderr("# can't import zipimport.zipimporter\n");
+        }
+    }
+    else {
+        /* sys.path_hooks.insert(0, zipimporter) */
+        int err = PyList_Insert(path_hooks, 0, zipimporter);
+        Py_DECREF(zipimporter);
+        if (err < 0) {
+            return -1;
+        }
+        if (verbose) {
+            PySys_WriteStderr("# installed zipimport hook\n");
+        }
+    }
+
+    return 0;
+}
+
+PyStatus
+_PyImport_InitExternal(PyThreadState *tstate)
+{
+    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
+
+    // XXX Initialize here: sys.path_hooks and sys.path_importer_cache.
+
+    if (init_importlib_external(tstate->interp) != 0) {
+        _PyErr_Print(tstate);
+        return _PyStatus_ERR("external importer setup failed");
+    }
+
+    if (init_zipimport(tstate, verbose) != 0) {
+        PyErr_Print();
+        return _PyStatus_ERR("initializing zipimport failed");
+    }
+
+    return _PyStatus_OK();
+}
+
+void
+_PyImport_FiniExternal(PyInterpreterState *interp)
+{
+    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+
+    // XXX Uninstall importlib metapath importers here?
+
+    if (_PySys_ClearAttrString(interp, "path_importer_cache", verbose) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+    if (_PySys_ClearAttrString(interp, "path_hooks", verbose) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
 }
 
 
