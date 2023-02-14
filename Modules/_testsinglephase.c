@@ -59,9 +59,11 @@ init_state(module_state *state)
            state->str_const == NULL);
 
     state->initialized = _PyTime_GetMonotonicClock();
-    if (state->initialized < 0) {
+    if (state->initialized == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "could not get current time");
         goto error;
     }
+    assert(state->initialized > 0);
 
     /* Add an exception type */
     state->error = PyErr_NewException("_testsinglephase.error", NULL, NULL);
