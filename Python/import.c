@@ -4,7 +4,7 @@
 
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
+#include "pycore_interp.h"        // struct _import_runtime_state
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pyhash.h"        // _Py_KeyedHash()
@@ -156,6 +156,7 @@ void
 _PyImport_ClearCore(PyInterpreterState *interp)
 {
     Py_CLEAR(interp->modules);
+    Py_CLEAR(interp->modules_by_index);
 }
 
 static PyObject* create_builtin(PyThreadState *tstate,
@@ -678,6 +679,36 @@ PyState_RemoveModule(PyModuleDef* def)
     }
 
     return PyList_SetItem(interp->modules_by_index, index, Py_NewRef(Py_None));
+}
+
+
+// Used by finalize_modules()
+void
+_PyImport_ClearModulesByIndex(PyInterpreterState *interp)
+{
+    if (!interp->modules_by_index) {
+        return;
+    }
+
+    Py_ssize_t i;
+    for (i = 0; i < PyList_GET_SIZE(interp->modules_by_index); i++) {
+        PyObject *m = PyList_GET_ITEM(interp->modules_by_index, i);
+        if (PyModule_Check(m)) {
+            /* cleanup the saved copy of module dicts */
+            PyModuleDef *md = PyModule_GetDef(m);
+            if (md) {
+                Py_CLEAR(md->m_base.m_copy);
+            }
+        }
+    }
+
+    /* Setting modules_by_index to NULL could be dangerous, so we
+       clear the list instead. */
+    if (PyList_SetSlice(interp->modules_by_index,
+                        0, PyList_GET_SIZE(interp->modules_by_index),
+                        NULL)) {
+        PyErr_WriteUnraisable(interp->modules_by_index);
+    }
 }
 
 

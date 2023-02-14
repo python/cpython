@@ -774,7 +774,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->codec_error_registry);
 
     assert(interp->modules == NULL);
-    Py_CLEAR(interp->modules_by_index);
+    assert(interp->modules_by_index == NULL);
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
 
@@ -947,36 +947,6 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 #endif
-
-
-// Used by finalize_modules()
-void
-_PyInterpreterState_ClearModules(PyInterpreterState *interp)
-{
-    if (!interp->modules_by_index) {
-        return;
-    }
-
-    Py_ssize_t i;
-    for (i = 0; i < PyList_GET_SIZE(interp->modules_by_index); i++) {
-        PyObject *m = PyList_GET_ITEM(interp->modules_by_index, i);
-        if (PyModule_Check(m)) {
-            /* cleanup the saved copy of module dicts */
-            PyModuleDef *md = PyModule_GetDef(m);
-            if (md) {
-                Py_CLEAR(md->m_base.m_copy);
-            }
-        }
-    }
-
-    /* Setting modules_by_index to NULL could be dangerous, so we
-       clear the list instead. */
-    if (PyList_SetSlice(interp->modules_by_index,
-                        0, PyList_GET_SIZE(interp->modules_by_index),
-                        NULL)) {
-        PyErr_WriteUnraisable(interp->modules_by_index);
-    }
-}
 
 
 //----------

@@ -1650,7 +1650,7 @@ finalize_modules(PyThreadState *tstate)
     // clear PyInterpreterState.modules_by_index and
     // clear PyModuleDef.m_base.m_copy (of extensions not using the multi-phase
     // initialization API)
-    _PyInterpreterState_ClearModules(interp);
+    _PyImport_ClearModulesByIndex(interp);
 
     // Clear and delete the modules directory.  Actual modules will
     // still be there only if imported during the execution of some

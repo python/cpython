@@ -205,7 +205,6 @@ struct _is {
 
 /* other API */
 
-extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
 

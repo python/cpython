@@ -49,6 +49,8 @@ extern PyObject * _PyImport_InitModules(PyInterpreterState *interp);
 extern PyObject * _PyImport_GetModules(PyInterpreterState *interp);
 extern void _PyImport_ClearModules(PyInterpreterState *interp);
 
+extern void _PyImport_ClearModulesByIndex(PyInterpreterState *interp);
+
 
 #ifdef HAVE_FORK
 extern PyStatus _PyImport_ReInitLock(void);
