@@ -439,7 +439,7 @@ are intended primarily for static type checking.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
-generics is cached, and most types in the typing module are hashable and
+generics is cached, and most types in the typing module are :term:`hashable` and
 comparable for equality.
 
 
