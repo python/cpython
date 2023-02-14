@@ -773,10 +773,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
 
-    assert(interp->modules == NULL);
-    assert(interp->modules_by_index == NULL);
-    assert(interp->importlib == NULL);
-    assert(interp->import_func == NULL);
+    assert(interp->imports.modules == NULL);
+    assert(interp->imports.modules_by_index == NULL);
+    assert(interp->imports.importlib == NULL);
+    assert(interp->imports.import_func == NULL);
 
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->dict);
