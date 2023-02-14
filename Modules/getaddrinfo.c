@@ -346,7 +346,7 @@ getaddrinfo(const char*hostname, const char*servname,
             if (maybe_port < 0 || maybe_port > 0xffff) {
                 ERR(EAI_SERVICE);
             }
-            port = htons((u_short)result);
+            port = htons((u_short)maybe_port);
         } else {
             struct servent *sp;
             const char *proto;
