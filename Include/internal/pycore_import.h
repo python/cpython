@@ -37,6 +37,8 @@ struct _import_runtime_state {
 };
 
 extern Py_ssize_t _PyImport_GetNextModuleIndex(void);
+extern const char * _PyImport_ResolveNameWithPackageContext(const char *name);
+extern const char * _PyImport_SwapPackageContext(const char *newcontext);
 
 
 #ifdef HAVE_FORK
