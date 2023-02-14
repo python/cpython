@@ -116,7 +116,8 @@ common_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL) {
         Py_RETURN_NONE;
     }
-    return PyLong_FromLong(state->initialized);
+    double d = _PyTime_AsSecondsDouble(state->initialized);
+    return PyFloat_FromDouble(d);
 }
 
 #define INITIALIZED_METHODDEF \

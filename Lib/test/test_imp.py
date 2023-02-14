@@ -286,7 +286,7 @@ class ImportTests(unittest.TestCase):
             # module.__name__  might not match, but the spec will.
             self.assertEqual(module.__spec__.name, name)
             if initialized is not None:
-                self.assertIsInstance(initialized, int)
+                self.assertIsInstance(initialized, float)
                 self.assertGreater(initialized, 0)
             self.assertEqual(summed, 3)
             self.assertTrue(issubclass(module.error, Exception))
