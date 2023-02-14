@@ -51,6 +51,26 @@ clear_state(module_state *state)
 }
 
 static int
+_set_initialized(_PyTime_t *initialized)
+{
+    /* We go strictly monotonic to ensure each time is unique. */
+    _PyTime_t prev;
+    if (_PyTime_GetMonotonicClockWithInfo(&prev, NULL) != 0) {
+        return -1;
+    }
+    /* We do a busy sleep since the interval should be super short. */
+    _PyTime_t t;
+    do {
+        if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) != 0) {
+            return -1;
+        }
+    } while (t == prev);
+
+    *initialized = t;
+    return 0;
+}
+
+static int
 init_state(module_state *state)
 {
     assert(state->initialized == 0 &&
@@ -58,9 +78,7 @@ init_state(module_state *state)
            state->int_const == NULL &&
            state->str_const == NULL);
 
-    state->initialized = _PyTime_GetMonotonicClock();
-    if (state->initialized == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "could not get current time");
+    if (_set_initialized(&state->initialized) != 0) {
         goto error;
     }
     assert(state->initialized > 0);
