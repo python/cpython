@@ -14,7 +14,7 @@
 #include <stdbool.h>
 
 #include "krml/lowstar_endianness.h"
-#include "krml/FStar_UInt_8_16_32_64.h"
+#include "krml/types.h"
 #include "krml/internal/target.h"
 static inline uint64_t FStar_UInt64_eq_mask(uint64_t a, uint64_t b)
 {
