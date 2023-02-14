@@ -768,16 +768,6 @@ iterations of the loop.
 
    .. versionadded:: 3.11
 
-.. opcode:: PREP_RERAISE_STAR
-
-   Combines the raised and reraised exceptions list from ``STACK[-1]``, into an
-   exception group to propagate from a try-except* block. Uses the original exception
-   group from ``STACK[-2]`` to reconstruct the structure of reraised exceptions. Pops
-   two items from the stack and pushes the exception to reraise or ``None``
-   if there isn't one.
-
-   .. versionadded:: 3.11
-
 .. opcode:: WITH_EXCEPT_START
 
     Calls the function in position 4 on the stack with arguments (type, val, tb)
@@ -1515,7 +1505,8 @@ iterations of the loop.
 .. opcode:: CALL_INTRINSIC_1
 
    Calls an intrinsic function with one argument. Passes ``STACK[-1]`` as the
-   argument and sets ``STACK[-1]`` to the result. Used to implement functionality that is necessary but not performance critical.
+   argument and sets ``STACK[-1]`` to the result. Used to implement
+   functionality that is necessary but not performance critical.
 
     The operand determines which intrinsic function is called:
 
@@ -1526,6 +1517,19 @@ iterations of the loop.
     * ``4`` Wraps an aync generator value
     * ``5`` Performs the unary ``+`` operation
     * ``6`` Converts a list to a tuple
+
+   .. versionadded:: 3.12
+
+.. opcode:: CALL_INTRINSIC_2
+
+   Calls an intrinsic function with two arguments. Passes ``STACK[-2]``, ``STACK[-1]`` as the
+   arguments and sets ``STACK[-1]`` to the result. Used to implement functionality that is
+   necessary but not performance critical.
+
+    The operand determines which intrinsic function is called:
+
+    * ``0`` Not valid
+    * ``1`` Calculates the :exc:`ExceptionGroup` to raise from a ``try-except*``.
 
    .. versionadded:: 3.12
 

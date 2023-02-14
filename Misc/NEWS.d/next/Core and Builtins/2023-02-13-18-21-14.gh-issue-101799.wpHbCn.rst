@@ -1,0 +1,2 @@
+Add :opcode:`CALL_INTRINSIC_2` and use it instead of
+:opcode:`PREP_RERAISE_STAR`.
