@@ -1437,7 +1437,7 @@ Cursor objects
 
       :raises DeprecationWarning:
          If :ref:`named placeholders <sqlite3-placeholders>` are used
-         and *parameters* is a sequence.
+         and *parameters* is a sequence instead of a :class:`dict`.
 
       If :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`,
@@ -1478,7 +1478,7 @@ Cursor objects
 
       :raises DeprecationWarning:
          If :ref:`named placeholders <sqlite3-placeholders>` are used
-         and the items in *parameters* are sequences.
+         and the items in *parameters* are sequences instead of :class:`dict`\s.
 
       Example:
 
