@@ -88,6 +88,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case CALL_INTRINSIC_1:
             return 1;
+        case CALL_INTRINSIC_2:
+            return 2;
         case RAISE_VARARGS:
             return oparg;
         case INTERPRETER_EXIT:
@@ -112,8 +114,6 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case RERAISE:
             return oparg + 1;
-        case PREP_RERAISE_STAR:
-            return 2;
         case END_ASYNC_FOR:
             return 2;
         case CLEANUP_THROW:
@@ -440,6 +440,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case CALL_INTRINSIC_1:
             return 1;
+        case CALL_INTRINSIC_2:
+            return 1;
         case RAISE_VARARGS:
             return 0;
         case INTERPRETER_EXIT:
@@ -464,8 +466,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case RERAISE:
             return oparg;
-        case PREP_RERAISE_STAR:
-            return 1;
         case END_ASYNC_FOR:
             return 0;
         case CLEANUP_THROW:
@@ -760,6 +760,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [STORE_SUBSCR_DICT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
     [DELETE_SUBSCR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [CALL_INTRINSIC_1] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [CALL_INTRINSIC_2] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [RAISE_VARARGS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [INTERPRETER_EXIT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [RETURN_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
@@ -772,7 +773,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [YIELD_VALUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [POP_EXCEPT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [RERAISE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [PREP_RERAISE_STAR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [END_ASYNC_FOR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [CLEANUP_THROW] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [LOAD_ASSERTION_ERROR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
