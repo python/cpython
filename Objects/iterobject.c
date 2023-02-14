@@ -214,7 +214,7 @@ calliter_iternext(calliterobject *it)
     }
 
     result = _PyObject_CallNoArgs(it->it_callable);
-    if (result != NULL) {
+    if (result != NULL && it->it_callable != NULL) {
         int ok;
 
         ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
