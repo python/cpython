@@ -101,10 +101,6 @@ get_math_module_state(PyObject *module)
 
 static const double pi = 3.141592653589793238462643383279502884197;
 static const double logpi = 1.144729885849400174143427351353058711647;
-#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
-static const double sqrtpi = 1.772453850905516027298167483341145182798;
-#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
-
 
 /* Version of PyFloat_AsDouble() with in-line fast paths
    for exact floats and integers.  Gives a substantial
@@ -162,7 +158,9 @@ m_sinpi(double x)
     return copysign(1.0, x)*r;
 }
 
-/* Implementation of the real gamma function.  In extensive but non-exhaustive
+/* Implementation of the real gamma function.  Kept here to work around
+   issues (see e.g. gh-70309) with quality of libm's tgamma/lgamma implementations
+   on various platforms (Windows, MacOS).  In extensive but non-exhaustive
    random tests, this function proved accurate to within <= 10 ulps across the
    entire float domain.  Note that accuracy may depend on the quality of the
    system math functions, the pow function in particular.  Special cases
@@ -458,163 +456,6 @@ m_lgamma(double x)
     return r;
 }
 
-#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
-
-/*
-   Implementations of the error function erf(x) and the complementary error
-   function erfc(x).
-
-   Method: we use a series approximation for erf for small x, and a continued
-   fraction approximation for erfc(x) for larger x;
-   combined with the relations erf(-x) = -erf(x) and erfc(x) = 1.0 - erf(x),
-   this gives us erf(x) and erfc(x) for all x.
-
-   The series expansion used is:
-
-      erf(x) = x*exp(-x*x)/sqrt(pi) * [
-                     2/1 + 4/3 x**2 + 8/15 x**4 + 16/105 x**6 + ...]
-
-   The coefficient of x**(2k-2) here is 4**k*factorial(k)/factorial(2*k).
-   This series converges well for smallish x, but slowly for larger x.
-
-   The continued fraction expansion used is:
-
-      erfc(x) = x*exp(-x*x)/sqrt(pi) * [1/(0.5 + x**2 -) 0.5/(2.5 + x**2 - )
-                              3.0/(4.5 + x**2 - ) 7.5/(6.5 + x**2 - ) ...]
-
-   after the first term, the general term has the form:
-
-      k*(k-0.5)/(2*k+0.5 + x**2 - ...).
-
-   This expansion converges fast for larger x, but convergence becomes
-   infinitely slow as x approaches 0.0.  The (somewhat naive) continued
-   fraction evaluation algorithm used below also risks overflow for large x;
-   but for large x, erfc(x) == 0.0 to within machine precision.  (For
-   example, erfc(30.0) is approximately 2.56e-393).
-
-   Parameters: use series expansion for abs(x) < ERF_SERIES_CUTOFF and
-   continued fraction expansion for ERF_SERIES_CUTOFF <= abs(x) <
-   ERFC_CONTFRAC_CUTOFF.  ERFC_SERIES_TERMS and ERFC_CONTFRAC_TERMS are the
-   numbers of terms to use for the relevant expansions.  */
-
-#define ERF_SERIES_CUTOFF 1.5
-#define ERF_SERIES_TERMS 25
-#define ERFC_CONTFRAC_CUTOFF 30.0
-#define ERFC_CONTFRAC_TERMS 50
-
-/*
-   Error function, via power series.
-
-   Given a finite float x, return an approximation to erf(x).
-   Converges reasonably fast for small x.
-*/
-
-static double
-m_erf_series(double x)
-{
-    double x2, acc, fk, result;
-    int i, saved_errno;
-
-    x2 = x * x;
-    acc = 0.0;
-    fk = (double)ERF_SERIES_TERMS + 0.5;
-    for (i = 0; i < ERF_SERIES_TERMS; i++) {
-        acc = 2.0 + x2 * acc / fk;
-        fk -= 1.0;
-    }
-    /* Make sure the exp call doesn't affect errno;
-       see m_erfc_contfrac for more. */
-    saved_errno = errno;
-    result = acc * x * exp(-x2) / sqrtpi;
-    errno = saved_errno;
-    return result;
-}
-
-/*
-   Complementary error function, via continued fraction expansion.
-
-   Given a positive float x, return an approximation to erfc(x).  Converges
-   reasonably fast for x large (say, x > 2.0), and should be safe from
-   overflow if x and nterms are not too large.  On an IEEE 754 machine, with x
-   <= 30.0, we're safe up to nterms = 100.  For x >= 30.0, erfc(x) is smaller
-   than the smallest representable nonzero float.  */
-
-static double
-m_erfc_contfrac(double x)
-{
-    double x2, a, da, p, p_last, q, q_last, b, result;
-    int i, saved_errno;
-
-    if (x >= ERFC_CONTFRAC_CUTOFF)
-        return 0.0;
-
-    x2 = x*x;
-    a = 0.0;
-    da = 0.5;
-    p = 1.0; p_last = 0.0;
-    q = da + x2; q_last = 1.0;
-    for (i = 0; i < ERFC_CONTFRAC_TERMS; i++) {
-        double temp;
-        a += da;
-        da += 2.0;
-        b = da + x2;
-        temp = p; p = b*p - a*p_last; p_last = temp;
-        temp = q; q = b*q - a*q_last; q_last = temp;
-    }
-    /* Issue #8986: On some platforms, exp sets errno on underflow to zero;
-       save the current errno value so that we can restore it later. */
-    saved_errno = errno;
-    result = p / q * x * exp(-x2) / sqrtpi;
-    errno = saved_errno;
-    return result;
-}
-
-#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
-
-/* Error function erf(x), for general x */
-
-static double
-m_erf(double x)
-{
-#ifdef HAVE_ERF
-    return erf(x);
-#else
-    double absx, cf;
-
-    if (Py_IS_NAN(x))
-        return x;
-    absx = fabs(x);
-    if (absx < ERF_SERIES_CUTOFF)
-        return m_erf_series(x);
-    else {
-        cf = m_erfc_contfrac(absx);
-        return x > 0.0 ? 1.0 - cf : cf - 1.0;
-    }
-#endif
-}
-
-/* Complementary error function erfc(x), for general x. */
-
-static double
-m_erfc(double x)
-{
-#ifdef HAVE_ERFC
-    return erfc(x);
-#else
-    double absx, cf;
-
-    if (Py_IS_NAN(x))
-        return x;
-    absx = fabs(x);
-    if (absx < ERF_SERIES_CUTOFF)
-        return 1.0 - m_erf_series(x);
-    else {
-        cf = m_erfc_contfrac(absx);
-        return x > 0.0 ? cf : 2.0 - cf;
-    }
-#endif
-}
-
 /*
    wrapper for atan2 that deals directly with special cases before
    delegating to the platform libm for the remaining cases.  This
@@ -801,25 +642,7 @@ m_log2(double x)
     }
 
     if (x > 0.0) {
-#ifdef HAVE_LOG2
         return log2(x);
-#else
-        double m;
-        int e;
-        m = frexp(x, &e);
-        /* We want log2(m * 2**e) == log(m) / log(2) + e.  Care is needed when
-         * x is just greater than 1.0: in that case e is 1, log(m) is negative,
-         * and we get significant cancellation error from the addition of
-         * log(m) / log(2) to e.  The slight rewrite of the expression below
-         * avoids this problem.
-         */
-        if (x >= 1.0) {
-            return log(2.0 * m) / log(2.0) + (e - 1);
-        }
-        else {
-            return log(m) / log(2.0) + e;
-        }
-#endif
     }
     else if (x == 0.0) {
         errno = EDOM;
@@ -1052,9 +875,7 @@ is_error(double x)
 */
 
 static PyObject *
-math_1_to_whatever(PyObject *arg, double (*func) (double),
-                   PyObject *(*from_double_func) (double),
-                   int can_overflow)
+math_1(PyObject *arg, double (*func) (double), int can_overflow)
 {
     double x, r;
     x = PyFloat_AsDouble(arg);
@@ -1080,7 +901,7 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
         /* this branch unnecessary on most platforms */
         return NULL;
 
-    return (*from_double_func)(r);
+    return PyFloat_FromDouble(r);
 }
 
 /* variant of math_1, to be used when the function being wrapped is known to
@@ -1127,12 +948,6 @@ math_1a(PyObject *arg, double (*func) (double))
    ValueError and the 'overflow' floating-point exception mapping to
    OverflowError.
 */
-
-static PyObject *
-math_1(PyObject *arg, double (*func) (double), int can_overflow)
-{
-    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow);
-}
 
 static PyObject *
 math_2(PyObject *const *args, Py_ssize_t nargs,
@@ -1261,10 +1076,10 @@ FUNC1(cos, cos, 0,
 FUNC1(cosh, cosh, 1,
       "cosh($module, x, /)\n--\n\n"
       "Return the hyperbolic cosine of x.")
-FUNC1A(erf, m_erf,
+FUNC1A(erf, erf,
        "erf($module, x, /)\n--\n\n"
        "Error function at x.")
-FUNC1A(erfc, m_erfc,
+FUNC1A(erfc, erfc,
        "erfc($module, x, /)\n--\n\n"
        "Complementary error function at x.")
 FUNC1(exp, exp, 1,
@@ -1358,30 +1173,30 @@ FUNC1(tanh, tanh, 0,
    Dickinson's post at <http://bugs.python.org/file10357/msum4.py>.
    See those links for more details, proofs and other references.
 
-   Note 1: IEEE 754R floating point semantics are assumed,
-   but the current implementation does not re-establish special
-   value semantics across iterations (i.e. handling -Inf + Inf).
+   Note 1: IEEE 754 floating-point semantics with a rounding mode of
+   roundTiesToEven are assumed.
 
-   Note 2:  No provision is made for intermediate overflow handling;
-   therefore, sum([1e+308, 1e-308, 1e+308]) returns 1e+308 while
-   sum([1e+308, 1e+308, 1e-308]) raises an OverflowError due to the
+   Note 2: No provision is made for intermediate overflow handling;
+   therefore, fsum([1e+308, -1e+308, 1e+308]) returns 1e+308 while
+   fsum([1e+308, 1e+308, -1e+308]) raises an OverflowError due to the
    overflow of the first partial sum.
 
-   Note 3: The intermediate values lo, yr, and hi are declared volatile so
-   aggressive compilers won't algebraically reduce lo to always be exactly 0.0.
-   Also, the volatile declaration forces the values to be stored in memory as
-   regular doubles instead of extended long precision (80-bit) values.  This
-   prevents double rounding because any addition or subtraction of two doubles
-   can be resolved exactly into double-sized hi and lo values.  As long as the
-   hi value gets forced into a double before yr and lo are computed, the extra
-   bits in downstream extended precision operations (x87 for example) will be
-   exactly zero and therefore can be losslessly stored back into a double,
-   thereby preventing double rounding.
+   Note 3: The algorithm has two potential sources of fragility. First, C
+   permits arithmetic operations on `double`s to be performed in an
+   intermediate format whose range and precision may be greater than those of
+   `double` (see for example C99 §5.2.4.2.2, paragraph 8). This can happen for
+   example on machines using the now largely historical x87 FPUs. In this case,
+   `fsum` can produce incorrect results. If `FLT_EVAL_METHOD` is `0` or `1`, or
+   `FLT_EVAL_METHOD` is `2` and `long double` is identical to `double`, then we
+   should be safe from this source of errors. Second, an aggressively
+   optimizing compiler can re-associate operations so that (for example) the
+   statement `yr = hi - x;` is treated as `yr = (x + y) - x` and then
+   re-associated as `yr = y + (x - x)`, giving `y = yr` and `lo = 0.0`. That
+   re-association would be in violation of the C standard, and should not occur
+   except possibly in the presence of unsafe optimizations (e.g., -ffast-math,
+   -fassociative-math). Such optimizations should be avoided for this module.
 
-   Note 4: A similar implementation is in Modules/cmathmodule.c.
-   Be sure to update both when making changes.
-
-   Note 5: The signature of math.fsum() differs from builtins.sum()
+   Note 4: The signature of math.fsum() differs from builtins.sum()
    because the start argument doesn't make sense in the context of
    accurate summation.  Since the partials table is collapsed before
    returning a result, sum(seq2, start=sum(seq1)) may not equal the
@@ -1467,7 +1282,7 @@ math_fsum(PyObject *module, PyObject *seq)
     Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
     double x, y, t, ps[NUM_PARTIALS], *p = ps;
     double xsave, special_sum = 0.0, inf_sum = 0.0;
-    volatile double hi, yr, lo;
+    double hi, yr, lo = 0.0;
 
     iter = PyObject_GetIter(seq);
     if (iter == NULL)
@@ -2832,64 +2647,68 @@ long_add_would_overflow(long a, long b)
 }
 
 /*
-Double length extended precision floating point arithmetic
-based on ideas from three sources:
+Double and triple length extended precision algorithms from:
 
-  Improved Kahan–Babuška algorithm by Arnold Neumaier
-  https://www.mat.univie.ac.at/~neum/scan/01.pdf
-
-  A Floating-Point Technique for Extending the Available Precision
-  by T. J. Dekker
-  https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
-
-  Ultimately Fast Accurate Summation by Siegfried M. Rump
-  https://www.tuhh.de/ti3/paper/rump/Ru08b.pdf
-
-The double length routines allow for quite a bit of instruction
-level parallelism.  On a 3.22 Ghz Apple M1 Max, the incremental
-cost of increasing the input vector size by one is 6.25 nsec.
-
-dl_zero() returns an extended precision zero
-dl_split() exactly splits a double into two half precision components.
-dl_add() performs compensated summation to keep a running total.
-dl_mul() implements lossless multiplication of doubles.
-dl_fma() implements an extended precision fused-multiply-add.
-dl_to_d() converts from extended precision to double precision.
+  Accurate Sum and Dot Product
+  by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
+  https://doi.org/10.1137/030601818
+  https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
 
 */
 
 typedef struct{ double hi; double lo; } DoubleLength;
 
-static inline DoubleLength
-dl_zero()
+static DoubleLength
+dl_sum(double a, double b)
 {
-    return (DoubleLength) {0.0, 0.0};
-}
-static inline DoubleLength
-dl_add(DoubleLength total, double x)
-{
-    double s = total.hi + x;
-    double c = total.lo;
-    if (fabs(total.hi) >= fabs(x)) {
-        c += (total.hi - s) + x;
-    } else {
-        c += (x - s) + total.hi;
-    }
-    return (DoubleLength) {s, c};
+    /* Algorithm 3.1 Error-free transformation of the sum */
+    double x = a + b;
+    double z = x - a;
+    double y = (a - (x - z)) + (b - z);
+    return (DoubleLength) {x, y};
 }
 
-static inline DoubleLength
+#ifndef UNRELIABLE_FMA
+
+static DoubleLength
+dl_mul(double x, double y)
+{
+    /* Algorithm 3.5. Error-free transformation of a product */
+    double z = x * y;
+    double zz = fma(x, y, -z);
+    return (DoubleLength) {z, zz};
+}
+
+#else
+
+/*
+   The default implementation of dl_mul() depends on the C math library
+   having an accurate fma() function as required by § 7.12.13.1 of the
+   C99 standard.
+
+   The UNRELIABLE_FMA option is provided as a slower but accurate
+   alternative for builds where the fma() function is found wanting.
+   The speed penalty may be modest (17% slower on an Apple M1 Max),
+   so don't hesitate to enable this build option.
+
+   The algorithms are from the T. J. Dekker paper:
+   A Floating-Point Technique for Extending the Available Precision
+   https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+*/
+
+static DoubleLength
 dl_split(double x) {
-    double t = x * 134217729.0;  /* Veltkamp constant = float(0x8000001) */
+    // Dekker (5.5) and (5.6).
+    double t = x * 134217729.0;  // Veltkamp constant = 2.0 ** 27 + 1
     double hi = t - (t - x);
     double lo = x - hi;
     return (DoubleLength) {hi, lo};
 }
 
-static inline DoubleLength
+static DoubleLength
 dl_mul(double x, double y)
 {
-    /* Dekker mul12().  Section (5.12) */
+    // Dekker (5.12) and mul12()
     DoubleLength xx = dl_split(x);
     DoubleLength yy = dl_split(y);
     double p = xx.hi * yy.hi;
@@ -2899,18 +2718,28 @@ dl_mul(double x, double y)
     return (DoubleLength) {z, zz};
 }
 
-static inline DoubleLength
-dl_fma(DoubleLength total, double p, double q)
+#endif
+
+typedef struct { double hi; double lo; double tiny; } TripleLength;
+
+static const TripleLength tl_zero = {0.0, 0.0, 0.0};
+
+static TripleLength
+tl_fma(double x, double y, TripleLength total)
 {
-    DoubleLength product = dl_mul(p, q);
-    total = dl_add(total, product.hi);
-    return  dl_add(total, product.lo);
+    /* Algorithm 5.10 with SumKVert for K=3 */
+    DoubleLength pr = dl_mul(x, y);
+    DoubleLength sm = dl_sum(total.hi, pr.hi);
+    DoubleLength r1 = dl_sum(total.lo, pr.lo);
+    DoubleLength r2 = dl_sum(r1.hi, sm.lo);
+    return (TripleLength) {sm.hi, r2.hi, total.tiny + r1.lo + r2.lo};
 }
 
-static inline double
-dl_to_d(DoubleLength total)
+static double
+tl_to_d(TripleLength total)
 {
-    return total.hi + total.lo;
+    DoubleLength last = dl_sum(total.lo, total.hi);
+    return total.tiny + last.lo + last.hi;
 }
 
 /*[clinic input]
@@ -2941,7 +2770,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     bool int_path_enabled = true, int_total_in_use = false;
     bool flt_path_enabled = true, flt_total_in_use = false;
     long int_total = 0;
-    DoubleLength flt_total = dl_zero();
+    TripleLength flt_total = tl_zero;
 
     p_it = PyObject_GetIter(p);
     if (p_it == NULL) {
@@ -3027,7 +2856,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             }
 
           finalize_int_path:
-            //  # We're finished, overflowed, or have a non-int
+            // We're finished, overflowed, or have a non-int
             int_path_enabled = false;
             if (int_total_in_use) {
                 term_i = PyLong_FromLong(int_total);
@@ -3076,7 +2905,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 } else {
                     goto finalize_flt_path;
                 }
-                DoubleLength new_flt_total = dl_fma(flt_total, flt_p, flt_q);
+                TripleLength new_flt_total = tl_fma(flt_p, flt_q, flt_total);
                 if (isfinite(new_flt_total.hi)) {
                     flt_total = new_flt_total;
                     flt_total_in_use = true;
@@ -3090,7 +2919,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
             // We're finished, overflowed, have a non-float, or got a non-finite value
             flt_path_enabled = false;
             if (flt_total_in_use) {
-                term_i = PyFloat_FromDouble(dl_to_d(flt_total));
+                term_i = PyFloat_FromDouble(tl_to_d(flt_total));
                 if (term_i == NULL) {
                     goto err_exit;
                 }
@@ -3101,7 +2930,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 Py_SETREF(total, new_total);
                 new_total = NULL;
                 Py_CLEAR(term_i);
-                flt_total = dl_zero();
+                flt_total = tl_zero;
                 flt_total_in_use = false;
             }
         }

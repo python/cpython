@@ -286,7 +286,7 @@ static WCHAR *FormatError(DWORD code)
 #ifndef DONT_USE_SEH
 static void SetException(DWORD code, EXCEPTION_RECORD *pr)
 {
-    if (PySys_Audit("ctypes.seh_exception", "I", code) < 0) {
+    if (PySys_Audit("ctypes.set_exception", "I", code) < 0) {
         /* An exception was set by the audit hook */
         return;
     }

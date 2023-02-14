@@ -1,1 +1,0 @@
-Fix ``unittest.mock.Mock`` not respecting the spec for attribute names prefixed with ``assert``.

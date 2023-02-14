@@ -436,6 +436,7 @@ Constants
       ``TCP_FASTOPEN_CONNECT``, ``TCP_ULP``, ``TCP_MD5SIG_EXT``,
       ``TCP_FASTOPEN_KEY``, ``TCP_FASTOPEN_NO_COOKIE``,
       ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
+      Added ``IP_PKTINFO``.
 
 .. data:: AF_CAN
           PF_CAN

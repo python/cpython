@@ -47,15 +47,13 @@ enum _frameowner {
 };
 
 typedef struct _PyInterpreterFrame {
-    /* "Specials" section */
+    PyCodeObject *f_code; /* Strong reference */
+    struct _PyInterpreterFrame *previous;
     PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
-    PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
-    /* Linkage section */
-    struct _PyInterpreterFrame *previous;
     // NOTE: This is not necessarily the last instruction started in the given
     // frame. Rather, it is the code unit *prior to* the *next* instruction. For
     // example, it may be an inline CACHE entry, an instruction we just jumped
@@ -164,6 +162,21 @@ _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&
     frame->prev_instr < _PyCode_CODE(frame->f_code) + frame->f_code->_co_firsttraceable;
+}
+
+static inline _PyInterpreterFrame *
+_PyFrame_GetFirstComplete(_PyInterpreterFrame *frame)
+{
+    while (frame && _PyFrame_IsIncomplete(frame)) {
+        frame = frame->previous;
+    }
+    return frame;
+}
+
+static inline _PyInterpreterFrame *
+_PyThreadState_GetFrame(PyThreadState *tstate)
+{
+    return _PyFrame_GetFirstComplete(tstate->cframe->current_frame);
 }
 
 /* For use by _PyFrame_GetFrameObject

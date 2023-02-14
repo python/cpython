@@ -1653,11 +1653,9 @@ class MockTest(unittest.TestCase):
             m.has_calls()
 
         class Foo(object):
-            def called_once(self):
-                pass
+            def called_once(self): pass
 
-            def has_calls(self):
-                pass
+            def has_calls(self): pass
 
         m = Mock(spec=Foo)
         m.called_once()
@@ -1679,11 +1677,9 @@ class MockTest(unittest.TestCase):
     # gh-100739
     def test_mock_safe_with_spec(self):
         class Foo(object):
-            def assert_bar(self):
-                pass
+            def assert_bar(self): pass
 
-            def assertSome(self):
-                pass
+            def assertSome(self): pass
 
         m = Mock(spec=Foo)
         m.assert_bar()
