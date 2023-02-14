@@ -776,7 +776,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     assert(interp->modules == NULL);
     assert(interp->modules_by_index == NULL);
     Py_CLEAR(interp->importlib);
-    Py_CLEAR(interp->import_func);
+    assert(interp->import_func == NULL);
 
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->dict);

@@ -157,6 +157,7 @@ _PyImport_ClearCore(PyInterpreterState *interp)
 {
     Py_CLEAR(interp->modules);
     Py_CLEAR(interp->modules_by_index);
+    Py_CLEAR(interp->import_func);
 }
 
 static PyObject* create_builtin(PyThreadState *tstate,
@@ -1932,6 +1933,25 @@ PyImport_GetImporter(PyObject *path)
 /*********************/
 /* importing modules */
 /*********************/
+
+int
+_PyImport_InitDefaultImportFunc(PyInterpreterState *interp)
+{
+    // Get the __import__ function
+    PyObject *import_func = _PyDict_GetItemStringWithError(interp->builtins,
+                                                           "__import__");
+    if (import_func == NULL) {
+        return -1;
+    }
+    interp->import_func = Py_NewRef(import_func);
+    return 0;
+}
+
+int
+_PyImport_IsDefaultImportFunc(PyInterpreterState *interp, PyObject *func)
+{
+    return func == interp->import_func;
+}
 
 
 /* Import a module, either built-in, frozen, or external, and return

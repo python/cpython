@@ -855,13 +855,9 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     Py_DECREF(bimod);
 
-    // Get the __import__ function
-    PyObject *import_func = _PyDict_GetItemStringWithError(interp->builtins,
-                                                           "__import__");
-    if (import_func == NULL) {
+    if (_PyImport_InitDefaultImportFunc(interp) < 0) {
         goto error;
     }
-    interp->import_func = Py_NewRef(import_func);
 
     assert(!_PyErr_Occurred(tstate));
     return _PyStatus_OK();
