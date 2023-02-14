@@ -3400,11 +3400,10 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 
     PyInterpreterState *interp = tstate->interp;
 
-    PyObject *modules = PyDict_New();
+    PyObject *modules = _PyImport_InitModules(interp);
     if (modules == NULL) {
         goto error;
     }
-    interp->modules = modules;
 
     PyObject *sysmod = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
     if (sysmod == NULL) {
@@ -3417,7 +3416,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
     interp->sysdict = Py_NewRef(sysdict);
 
-    if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
+    if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
         goto error;
     }
 
@@ -3431,7 +3430,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return status;
     }
 
-    if (_PyImport_FixupBuiltin(sysmod, "sys", interp->modules) < 0) {
+    if (_PyImport_FixupBuiltin(sysmod, "sys", modules) < 0) {
         goto error;
     }
 

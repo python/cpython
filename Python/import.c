@@ -152,6 +152,12 @@ _PyImport_IsInitialized(PyInterpreterState *interp)
     return 1;
 }
 
+void
+_PyImport_ClearCore(PyInterpreterState *interp)
+{
+    Py_CLEAR(interp->modules);
+}
+
 static PyObject* create_builtin(PyThreadState *tstate,
                                 PyObject *name, PyObject *spec);
 static int exec_builtin_or_dynamic(PyObject *mod);
@@ -332,6 +338,29 @@ _PyImport_ReInitLock(void)
 /***************/
 /* sys.modules */
 /***************/
+
+PyObject *
+_PyImport_InitModules(PyInterpreterState *interp)
+{
+    assert(interp->modules == NULL);
+    interp->modules = PyDict_New();
+    if (interp->modules == NULL) {
+        return NULL;
+    }
+    return interp->modules;
+}
+
+PyObject *
+_PyImport_GetModules(PyInterpreterState *interp)
+{
+    return interp->modules;
+}
+
+void
+_PyImport_ClearModules(PyInterpreterState *interp)
+{
+    Py_SETREF(interp->modules, NULL);
+}
 
 PyObject *
 PyImport_GetModuleDict(void)

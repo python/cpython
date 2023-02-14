@@ -772,11 +772,13 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
-    Py_CLEAR(interp->modules);
+
+    assert(interp->modules == NULL);
     Py_CLEAR(interp->modules_by_index);
-    Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
+
+    Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->dict);
 #ifdef HAVE_FORK
     Py_CLEAR(interp->before_forkers);
@@ -836,6 +838,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     // garbage. It can be different than the current Python thread state
     // of 'interp'.
     PyThreadState *current_tstate = current_fast_get(interp->runtime);
+    _PyImport_ClearCore(interp);
     interpreter_clear(interp, current_tstate);
 }
 
@@ -843,6 +846,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
 void
 _PyInterpreterState_Clear(PyThreadState *tstate)
 {
+    _PyImport_ClearCore(tstate->interp);
     interpreter_clear(tstate->interp, tstate);
 }
 
@@ -1058,11 +1062,12 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
 PyObject *
 _PyInterpreterState_GetMainModule(PyInterpreterState *interp)
 {
-    if (interp->modules == NULL) {
+    PyObject *modules = _PyImport_GetModules(interp);
+    if (modules == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
         return NULL;
     }
-    return PyMapping_GetItemString(interp->modules, "__main__");
+    return PyMapping_GetItemString(modules, "__main__");
 }
 
 PyObject *

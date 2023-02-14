@@ -214,7 +214,7 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
            gone, then we can't even use PyImport_GetModule without triggering
            an interpreter abort.
         */
-        if (!interp->modules) {
+        if (!_PyImport_GetModules(interp)) {
             return NULL;
         }
         warnings_module = PyImport_GetModule(&_Py_ID(warnings));

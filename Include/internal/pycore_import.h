@@ -36,12 +36,18 @@ struct _import_runtime_state {
     const char * pkgcontext;
 };
 
+extern void _PyImport_ClearCore(PyInterpreterState *interp);
+
 extern Py_ssize_t _PyImport_GetNextModuleIndex(void);
 extern const char * _PyImport_ResolveNameWithPackageContext(const char *name);
 extern const char * _PyImport_SwapPackageContext(const char *newcontext);
 
 extern int _PyImport_GetDLOpenFlags(PyInterpreterState *interp);
 extern void _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val);
+
+extern PyObject * _PyImport_InitModules(PyInterpreterState *interp);
+extern PyObject * _PyImport_GetModules(PyInterpreterState *interp);
+extern void _PyImport_ClearModules(PyInterpreterState *interp);
 
 
 #ifdef HAVE_FORK

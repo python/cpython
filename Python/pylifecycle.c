@@ -818,7 +818,8 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
 
-    if (_PyImport_FixupBuiltin(bimod, "builtins", interp->modules) < 0) {
+    PyObject *modules = _PyImport_GetModules(interp);
+    if (_PyImport_FixupBuiltin(bimod, "builtins", modules) < 0) {
         goto error;
     }
 
@@ -1584,7 +1585,7 @@ static void
 finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    PyObject *modules = interp->modules;
+    PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
         // Already done
         return;
@@ -1654,7 +1655,7 @@ finalize_modules(PyThreadState *tstate)
     // Clear and delete the modules directory.  Actual modules will
     // still be there only if imported during the execution of some
     // destructor.
-    Py_SETREF(interp->modules, NULL);
+    _PyImport_ClearModules(interp);
 
     // Collect garbage once more
     _PyGC_CollectNoFail(tstate);
@@ -2735,7 +2736,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     if (interp == NULL) {
         return;
     }
-    PyObject *modules = interp->modules;
+    PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL || !PyDict_Check(modules)) {
         return;
     }
