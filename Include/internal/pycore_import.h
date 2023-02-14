@@ -52,8 +52,9 @@ extern void _PyImport_ClearModules(PyInterpreterState *interp);
 extern void _PyImport_ClearModulesByIndex(PyInterpreterState *interp);
 
 extern int _PyImport_InitDefaultImportFunc(PyInterpreterState *interp);
-extern int _PyImport_IsDefaultImportFunc(PyInterpreterState *interp,
-                                         PyObject *func);
+extern int _PyImport_IsDefaultImportFunc(
+        PyInterpreterState *interp,
+        PyObject *func);
 
 extern PyObject * _PyImport_GetImportlibLoader(
         PyInterpreterState *interp,
@@ -69,10 +70,16 @@ extern PyObject * _PyImport_ImportlibModuleRepr(
         PyObject *module);
 
 
+extern PyStatus _PyImport_InitCore(
+        PyThreadState *tstate,
+        PyObject *sysmod,
+        int importlib);
+extern PyStatus _PyImport_InitExternal(PyThreadState *tstate);
+
 #ifdef HAVE_FORK
 extern PyStatus _PyImport_ReInitLock(void);
 #endif
-extern PyObject* _PyImport_BootstrapImp(PyThreadState *tstate);
+
 
 extern PyObject* _PyImport_GetBuiltinModuleNames(void);
 

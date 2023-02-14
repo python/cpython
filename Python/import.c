@@ -140,6 +140,21 @@ _PyImport_Fini2(void)
 /* interpreter lifecycle */
 /*************************/
 
+static int init_importlib(PyThreadState *tstate, PyObject *sysmod);
+
+PyStatus
+_PyImport_InitCore(PyThreadState *tstate, PyObject *sysmod, int importlib)
+{
+    if (importlib) {
+        /* This call sets up builtin and frozen import support */
+        if (init_importlib(tstate, sysmod) < 0) {
+            return _PyStatus_ERR("failed to initialize importlib");
+        }
+    }
+
+    return _PyStatus_OK();
+}
+
 /* In some corner cases it is important to be sure that the import
    machinery has been initialized (or not cleaned up yet).  For
    example, see issue #4236 and PyModule_Create2(). */
@@ -161,71 +176,19 @@ _PyImport_ClearCore(PyInterpreterState *interp)
     Py_CLEAR(interp->import_func);
 }
 
-static PyObject* create_builtin(PyThreadState *tstate,
-                                PyObject *name, PyObject *spec);
-static int exec_builtin_or_dynamic(PyObject *mod);
 
-// Import the _imp extension by calling manually _imp.create_builtin() and
-// _imp.exec_builtin() since importlib is not initialized yet. Initializing
-// importlib requires the _imp module: this function fix the bootstrap issue.
-PyObject*
-_PyImport_BootstrapImp(PyThreadState *tstate)
+/* "external" imports */
+
+static int
+init_zipimport(PyThreadState *tstate, int verbose)
 {
-    PyObject *name = PyUnicode_FromString("_imp");
-    if (name == NULL) {
-        return NULL;
-    }
-
-    // Mock a ModuleSpec object just good enough for PyModule_FromDefAndSpec():
-    // an object with just a name attribute.
-    //
-    // _imp.__spec__ is overridden by importlib._bootstrap._instal() anyway.
-    PyObject *attrs = Py_BuildValue("{sO}", "name", name);
-    if (attrs == NULL) {
-        goto error;
-    }
-    PyObject *spec = _PyNamespace_New(attrs);
-    Py_DECREF(attrs);
-    if (spec == NULL) {
-        goto error;
-    }
-
-    // Create the _imp module from its definition.
-    PyObject *mod = create_builtin(tstate, name, spec);
-    Py_CLEAR(name);
-    Py_DECREF(spec);
-    if (mod == NULL) {
-        goto error;
-    }
-    assert(mod != Py_None);  // not found
-
-    // Execute the _imp module: call imp_module_exec().
-    if (exec_builtin_or_dynamic(mod) < 0) {
-        Py_DECREF(mod);
-        goto error;
-    }
-    return mod;
-
-error:
-    Py_XDECREF(name);
-    return NULL;
-}
-
-
-PyStatus
-_PyImportZip_Init(PyThreadState *tstate)
-{
-    PyObject *path_hooks;
-    int err = 0;
-
-    path_hooks = PySys_GetObject("path_hooks");
+    PyObject *path_hooks = PySys_GetObject("path_hooks");
     if (path_hooks == NULL) {
         _PyErr_SetString(tstate, PyExc_RuntimeError,
                          "unable to get sys.path_hooks");
-        goto error;
+        return -1;
     }
 
-    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
     if (verbose) {
         PySys_WriteStderr("# installing zipimport hook\n");
     }
@@ -239,21 +202,37 @@ _PyImportZip_Init(PyThreadState *tstate)
     }
     else {
         /* sys.path_hooks.insert(0, zipimporter) */
-        err = PyList_Insert(path_hooks, 0, zipimporter);
+        int err = PyList_Insert(path_hooks, 0, zipimporter);
         Py_DECREF(zipimporter);
         if (err < 0) {
-            goto error;
+            return -1;
         }
         if (verbose) {
             PySys_WriteStderr("# installed zipimport hook\n");
         }
     }
 
-    return _PyStatus_OK();
+    return 0;
+}
 
-  error:
-    PyErr_Print();
-    return _PyStatus_ERR("initializing zipimport failed");
+static int init_importlib_external(PyInterpreterState *interp);
+
+PyStatus
+_PyImport_InitExternal(PyThreadState *tstate)
+{
+    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
+
+    if (init_importlib_external(tstate->interp) != 0) {
+        _PyErr_Print(tstate);
+        return _PyStatus_ERR("external importer setup failed");
+    }
+
+    if (init_zipimport(tstate, verbose) != 0) {
+        PyErr_Print();
+        return _PyStatus_ERR("initializing zipimport failed");
+    }
+
+    return _PyStatus_OK();
 }
 
 
@@ -1368,6 +1347,31 @@ _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val)
 #endif  // HAVE_DLOPEN
 
 
+/* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
+static int
+exec_builtin_or_dynamic(PyObject *mod) {
+    PyModuleDef *def;
+    void *state;
+
+    if (!PyModule_Check(mod)) {
+        return 0;
+    }
+
+    def = PyModule_GetDef(mod);
+    if (def == NULL) {
+        return 0;
+    }
+
+    state = PyModule_GetState(mod);
+    if (state) {
+        /* Already initialized; skip reload */
+        return 0;
+    }
+
+    return PyModule_ExecDef(mod, def);
+}
+
+
 /*******************/
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
@@ -1864,6 +1868,125 @@ PyImport_GetMagicTag(void)
 /*************/
 /* importlib */
 /*************/
+
+/* Import the _imp extension by calling manually _imp.create_builtin() and
+   _imp.exec_builtin() since importlib is not initialized yet. Initializing
+   importlib requires the _imp module: this function fix the bootstrap issue.
+ */
+static PyObject*
+bootstrap_imp(PyThreadState *tstate)
+{
+    PyObject *name = PyUnicode_FromString("_imp");
+    if (name == NULL) {
+        return NULL;
+    }
+
+    // Mock a ModuleSpec object just good enough for PyModule_FromDefAndSpec():
+    // an object with just a name attribute.
+    //
+    // _imp.__spec__ is overridden by importlib._bootstrap._instal() anyway.
+    PyObject *attrs = Py_BuildValue("{sO}", "name", name);
+    if (attrs == NULL) {
+        goto error;
+    }
+    PyObject *spec = _PyNamespace_New(attrs);
+    Py_DECREF(attrs);
+    if (spec == NULL) {
+        goto error;
+    }
+
+    // Create the _imp module from its definition.
+    PyObject *mod = create_builtin(tstate, name, spec);
+    Py_CLEAR(name);
+    Py_DECREF(spec);
+    if (mod == NULL) {
+        goto error;
+    }
+    assert(mod != Py_None);  // not found
+
+    // Execute the _imp module: call imp_module_exec().
+    if (exec_builtin_or_dynamic(mod) < 0) {
+        Py_DECREF(mod);
+        goto error;
+    }
+    return mod;
+
+error:
+    Py_XDECREF(name);
+    return NULL;
+}
+
+/* Global initializations.  Can be undone by Py_FinalizeEx().  Don't
+   call this twice without an intervening Py_FinalizeEx() call.  When
+   initializations fail, a fatal error is issued and the function does
+   not return.  On return, the first thread and interpreter state have
+   been created.
+
+   Locking: you must hold the interpreter lock while calling this.
+   (If the lock has not yet been initialized, that's equivalent to
+   having the lock, but you cannot use multiple threads.)
+
+*/
+static int
+init_importlib(PyThreadState *tstate, PyObject *sysmod)
+{
+    assert(!_PyErr_Occurred(tstate));
+
+    PyInterpreterState *interp = tstate->interp;
+    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+
+    // Import _importlib through its frozen version, _frozen_importlib.
+    if (verbose) {
+        PySys_FormatStderr("import _frozen_importlib # frozen\n");
+    }
+    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
+        return -1;
+    }
+    PyObject *importlib = PyImport_AddModule("_frozen_importlib"); // borrowed
+    if (importlib == NULL) {
+        return -1;
+    }
+    interp->importlib = Py_NewRef(importlib);
+
+    // Import the _imp module
+    if (verbose) {
+        PySys_FormatStderr("import _imp # builtin\n");
+    }
+    PyObject *imp_mod = bootstrap_imp(tstate);
+    if (imp_mod == NULL) {
+        return -1;
+    }
+    if (_PyImport_SetModuleString("_imp", imp_mod) < 0) {
+        Py_DECREF(imp_mod);
+        return -1;
+    }
+
+    // Install importlib as the implementation of import
+    PyObject *value = PyObject_CallMethod(importlib, "_install",
+                                          "OO", sysmod, imp_mod);
+    Py_DECREF(imp_mod);
+    if (value == NULL) {
+        return -1;
+    }
+    Py_DECREF(value);
+
+    assert(!_PyErr_Occurred(tstate));
+    return 0;
+}
+
+
+static int
+init_importlib_external(PyInterpreterState *interp)
+{
+    PyObject *value;
+    value = PyObject_CallMethod(interp->importlib,
+                                "_install_external_importers", "");
+    if (value == NULL) {
+        return -1;
+    }
+    Py_DECREF(value);
+    return 0;
+}
 
 PyObject *
 _PyImport_GetImportlibLoader(PyInterpreterState *interp,
@@ -3012,30 +3135,6 @@ _imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->override_frozen_modules = override;
     Py_RETURN_NONE;
-}
-
-/* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
-static int
-exec_builtin_or_dynamic(PyObject *mod) {
-    PyModuleDef *def;
-    void *state;
-
-    if (!PyModule_Check(mod)) {
-        return 0;
-    }
-
-    def = PyModule_GetDef(mod);
-    if (def == NULL) {
-        return 0;
-    }
-
-    state = PyModule_GetState(mod);
-    if (state) {
-        /* Already initialized; skip reload */
-        return 0;
-    }
-
-    return PyModule_ExecDef(mod, def);
 }
 
 #ifdef HAVE_DYNAMIC_LOADING
