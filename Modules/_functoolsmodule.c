@@ -365,6 +365,7 @@ partial_repr(partialobject *pto)
 {
     PyObject *result = NULL;
     PyObject *arglist;
+    PyObject *mod;
     Py_ssize_t i, n;
     PyObject *key, *value;
     int status;
@@ -399,8 +400,20 @@ partial_repr(partialobject *pto)
         if (arglist == NULL)
             goto done;
     }
-    result = PyUnicode_FromFormat("%s(%R%U)", Py_TYPE(pto)->tp_name,
-                                  pto->fn, arglist);
+
+    mod = PyObject_GetAttrString((PyObject *)pto, "__module__");
+    if (mod == NULL) {
+        result = PyUnicode_FromFormat("%s(%R%U)", Py_TYPE(pto)->tp_name, pto->fn, arglist);
+    }
+    else {
+        if (strcmp(PyUnicode_AsUTF8(mod), "functools") == 0) {
+            result = PyUnicode_FromFormat("%s(%R%U)", Py_TYPE(pto)->tp_name, pto->fn, arglist);
+        }
+        else {
+            result = PyUnicode_FromFormat("%U.%s(%R%U)", mod, Py_TYPE(pto)->tp_name, pto->fn, arglist);
+        }
+    }
+
     Py_DECREF(arglist);
 
  done:
