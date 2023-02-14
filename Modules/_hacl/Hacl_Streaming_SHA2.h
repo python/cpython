@@ -32,10 +32,9 @@ extern "C" {
 
 #include <string.h>
 #include "python_hacl_namespaces.h"
-#include "krml/FStar_UInt_8_16_32_64.h"
+#include "krml/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
-
 
 
 
@@ -48,6 +47,16 @@ typedef struct Hacl_Streaming_SHA2_state_sha2_224_s
 Hacl_Streaming_SHA2_state_sha2_224;
 
 typedef Hacl_Streaming_SHA2_state_sha2_224 Hacl_Streaming_SHA2_state_sha2_256;
+
+typedef struct Hacl_Streaming_SHA2_state_sha2_384_s
+{
+  uint64_t *block_state;
+  uint8_t *buf;
+  uint64_t total_len;
+}
+Hacl_Streaming_SHA2_state_sha2_384;
+
+typedef Hacl_Streaming_SHA2_state_sha2_384 Hacl_Streaming_SHA2_state_sha2_512;
 
 /**
 Allocate initial state for the SHA2_256 hash. The state is to be freed by
@@ -127,6 +136,78 @@ void Hacl_Streaming_SHA2_free_224(Hacl_Streaming_SHA2_state_sha2_224 *p);
 Hash `input`, of len `input_len`, into `dst`, an array of 28 bytes.
 */
 void Hacl_Streaming_SHA2_sha224(uint8_t *input, uint32_t input_len, uint8_t *dst);
+
+Hacl_Streaming_SHA2_state_sha2_384 *Hacl_Streaming_SHA2_create_in_512(void);
+
+/**
+Copies the state passed as argument into a newly allocated state (deep copy).
+The state is to be freed by calling `free_512`. Cloning the state this way is
+useful, for instance, if your control-flow diverges and you need to feed
+more (different) data into the hash in each branch.
+*/
+Hacl_Streaming_SHA2_state_sha2_384
+*Hacl_Streaming_SHA2_copy_512(Hacl_Streaming_SHA2_state_sha2_384 *s0);
+
+void Hacl_Streaming_SHA2_init_512(Hacl_Streaming_SHA2_state_sha2_384 *s);
+
+/**
+Feed an arbitrary amount of data into the hash. This function returns 0 for
+success, or 1 if the combined length of all of the data passed to `update_512`
+(since the last call to `init_512`) exceeds 2^125-1 bytes.
+
+This function is identical to the update function for SHA2_384.
+*/
+uint32_t
+Hacl_Streaming_SHA2_update_512(
+  Hacl_Streaming_SHA2_state_sha2_384 *p,
+  uint8_t *input,
+  uint32_t input_len
+);
+
+/**
+Write the resulting hash into `dst`, an array of 64 bytes. The state remains
+valid after a call to `finish_512`, meaning the user may feed more data into
+the hash via `update_512`. (The finish_512 function operates on an internal copy of
+the state and therefore does not invalidate the client-held state `p`.)
+*/
+void Hacl_Streaming_SHA2_finish_512(Hacl_Streaming_SHA2_state_sha2_384 *p, uint8_t *dst);
+
+/**
+Free a state allocated with `create_in_512`.
+
+This function is identical to the free function for SHA2_384.
+*/
+void Hacl_Streaming_SHA2_free_512(Hacl_Streaming_SHA2_state_sha2_384 *s);
+
+/**
+Hash `input`, of len `input_len`, into `dst`, an array of 64 bytes.
+*/
+void Hacl_Streaming_SHA2_sha512(uint8_t *input, uint32_t input_len, uint8_t *dst);
+
+Hacl_Streaming_SHA2_state_sha2_384 *Hacl_Streaming_SHA2_create_in_384(void);
+
+void Hacl_Streaming_SHA2_init_384(Hacl_Streaming_SHA2_state_sha2_384 *s);
+
+uint32_t
+Hacl_Streaming_SHA2_update_384(
+  Hacl_Streaming_SHA2_state_sha2_384 *p,
+  uint8_t *input,
+  uint32_t input_len
+);
+
+/**
+Write the resulting hash into `dst`, an array of 48 bytes. The state remains
+valid after a call to `finish_384`, meaning the user may feed more data into
+the hash via `update_384`.
+*/
+void Hacl_Streaming_SHA2_finish_384(Hacl_Streaming_SHA2_state_sha2_384 *p, uint8_t *dst);
+
+void Hacl_Streaming_SHA2_free_384(Hacl_Streaming_SHA2_state_sha2_384 *p);
+
+/**
+Hash `input`, of len `input_len`, into `dst`, an array of 48 bytes.
+*/
+void Hacl_Streaming_SHA2_sha384(uint8_t *input, uint32_t input_len, uint8_t *dst);
 
 #if defined(__cplusplus)
 }
