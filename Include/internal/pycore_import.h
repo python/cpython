@@ -36,6 +36,8 @@ struct _import_runtime_state {
     const char * pkgcontext;
 };
 
+extern Py_ssize_t _PyImport_GetNextModuleIndex(void);
+
 
 #ifdef HAVE_FORK
 extern PyStatus _PyImport_ReInitLock(void);

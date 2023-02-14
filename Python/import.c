@@ -543,6 +543,13 @@ remove_module(PyThreadState *tstate, PyObject *name)
 /* per-interpreter modules-by-index */
 /************************************/
 
+Py_ssize_t
+_PyImport_GetNextModuleIndex(void)
+{
+    _PyRuntime.imports.last_module_index++;
+    return _PyRuntime.imports.last_module_index;
+}
+
 PyObject*
 PyState_FindModule(PyModuleDef* module)
 {
