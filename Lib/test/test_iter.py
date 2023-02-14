@@ -267,6 +267,22 @@ class TestCase(unittest.TestCase):
             return i
         self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
 
+    # Test two-argument iter() with function that empties its associated
+    # iterator with list() (or anything else but next()) then returns
+    # a non-sentinel value.
+    def test_iter_function_concealing_reentrant_exhaustion(self):
+        HAS_MORE = 1
+        NO_MORE = 2
+        def spam():
+            if not spam.is_reentrant:
+                spam.is_reentrant = True
+                list(spam.iterator)
+                return HAS_MORE
+            return NO_MORE
+        spam.is_reentrant = False
+        spam.iterator = iter(spam, NO_MORE)
+        next(spam.iterator)
+
     # Test exception propagation through function iterator
     def test_exception_function(self):
         def spam(state=[0]):
