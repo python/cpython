@@ -3867,7 +3867,6 @@ dnl hence CPPFLAGS instead of CFLAGS.
       PY_CHECK_SQLITE_FUNC([sqlite3_column_decltype])
       PY_CHECK_SQLITE_FUNC([sqlite3_column_double])
       PY_CHECK_SQLITE_FUNC([sqlite3_complete])
-      PY_CHECK_SQLITE_FUNC([sqlite3_enable_shared_cache])
       PY_CHECK_SQLITE_FUNC([sqlite3_progress_handler])
       PY_CHECK_SQLITE_FUNC([sqlite3_result_double])
       PY_CHECK_SQLITE_FUNC([sqlite3_set_authorizer])
@@ -7201,7 +7200,9 @@ PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
 PY_STDLIB_MOD([_sha256],
   [test "$with_builtin_sha256" = yes], [],
   [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
-PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
+PY_STDLIB_MOD([_sha512],
+  [test "$with_builtin_sha512" = yes], [],
+  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2],
   [test "$with_builtin_blake2" = yes], [],

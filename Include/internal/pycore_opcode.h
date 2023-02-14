@@ -50,6 +50,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [COMPARE_OP] = 1,
     [LOAD_GLOBAL] = 5,
     [BINARY_OP] = 1,
+    [SEND] = 1,
     [COMPARE_AND_BRANCH] = 1,
     [CALL] = 4,
 };
@@ -196,6 +197,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [RETURN_GENERATOR] = RETURN_GENERATOR,
     [RETURN_VALUE] = RETURN_VALUE,
     [SEND] = SEND,
+    [SEND_GEN] = SEND,
     [SETUP_ANNOTATIONS] = SETUP_ANNOTATIONS,
     [SET_ADD] = SET_ADD,
     [SET_UPDATE] = SET_UPDATE,
@@ -395,7 +397,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [SET_UPDATE] = "SET_UPDATE",
     [DICT_MERGE] = "DICT_MERGE",
     [DICT_UPDATE] = "DICT_UPDATE",
-    [166] = "<166>",
+    [SEND_GEN] = "SEND_GEN",
     [167] = "<167>",
     [168] = "<168>",
     [169] = "<169>",
@@ -496,7 +498,6 @@ static const char *const _PyOpcode_OpName[263] = {
 #endif
 
 #define EXTRA_CASES \
-    case 166: \
     case 167: \
     case 168: \
     case 169: \
