@@ -447,7 +447,7 @@ is helpful.
 Navigating the Tcl/Tk Reference Manual
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-As noted, the official `Tk commands <https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm>`_
+As noted, the official `Tk commands`_
 reference manual (man pages) is often the most accurate description of what
 specific operations on widgets do. Even when you know the name of the option
 or method that you need, you may still have a few places to look.
