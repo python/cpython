@@ -40,6 +40,9 @@ extern Py_ssize_t _PyImport_GetNextModuleIndex(void);
 extern const char * _PyImport_ResolveNameWithPackageContext(const char *name);
 extern const char * _PyImport_SwapPackageContext(const char *newcontext);
 
+extern int _PyImport_GetDLOpenFlags(PyInterpreterState *interp);
+extern void _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val);
+
 
 #ifdef HAVE_FORK
 extern PyStatus _PyImport_ReInitLock(void);

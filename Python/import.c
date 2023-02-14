@@ -1291,6 +1291,20 @@ _PyImport_SwapPackageContext(const char *newcontext)
     return oldcontext;
 }
 
+#ifdef HAVE_DLOPEN
+int
+_PyImport_GetDLOpenFlags(PyInterpreterState *interp)
+{
+    return interp->dlopenflags;
+}
+
+void
+_PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val)
+{
+    interp->dlopenflags = new_val;
+}
+#endif  // HAVE_DLOPEN
+
 
 /*******************/
 
