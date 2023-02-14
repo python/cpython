@@ -172,13 +172,28 @@ dummy_func(
 
         macro(END_FOR) = POP_TOP + POP_TOP;
 
-        inst(INSTRUMENTED_END_FOR, (pop1, pop2 --)) {
+        inst(INSTRUMENTED_END_FOR, (receiver, discard --)) {
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
-            PyErr_SetNone(PyExc_StopIteration);
-            monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
-            PyErr_SetRaisedException(NULL);
+            if (PyGen_Check(receiver)) {
+                PyErr_SetNone(PyExc_StopIteration);
+                monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
+                PyErr_SetRaisedException(NULL);
+            }
             DECREF_INPUTS();
+        }
+
+        inst(END_SEND, (receiver, value -- value)) {
+            Py_DECREF(receiver);
+        }
+
+        inst(INSTRUMENTED_END_SEND, (receiver, value -- value)) {
+            if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
+                PyErr_SetObject(PyExc_StopIteration, value);
+                monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
+                PyErr_SetRaisedException(NULL);
+            }
+            Py_DECREF(receiver);
         }
 
         inst(UNARY_NEGATIVE, (value -- res)) {
@@ -756,6 +771,20 @@ dummy_func(
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             assert(frame != &entry_frame);
+            if ((Py_TYPE(receiver) == &PyGen_Type ||
+                Py_TYPE(receiver) == &PyCoro_Type) && ((PyGenObject *)receiver)->gi_frame_state < FRAME_EXECUTING)
+            {
+                PyGenObject *gen = (PyGenObject *)receiver;
+                _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+                frame->yield_offset = oparg;
+                STACK_SHRINK(1);
+                _PyFrame_StackPush(gen_frame, v);
+                gen->gi_frame_state = FRAME_EXECUTING;
+                gen->gi_exc_state.previous_item = tstate->exc_info;
+                tstate->exc_info = &gen->gi_exc_state;
+                JUMPBY(INLINE_CACHE_ENTRIES_SEND + oparg);
+                DISPATCH_INLINED(gen_frame);
+            }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
                 retval = Py_TYPE(receiver)->tp_iternext(receiver);
             }
@@ -766,10 +795,10 @@ dummy_func(
                 if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
                 ) {
                     monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_RAISE);
-                    assert(retval != NULL);
-                    JUMPBY(oparg);
                 }
                 if (_PyGen_FetchStopIterationValue(&retval) == 0) {
+                    assert(retval != NULL);
+                    JUMPBY(oparg);
                 }
                 else {
                     goto error;

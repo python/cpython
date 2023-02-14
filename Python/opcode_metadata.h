@@ -42,6 +42,10 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1+1;
         case INSTRUMENTED_END_FOR:
             return 2;
+        case END_SEND:
+            return 2;
+        case INSTRUMENTED_END_SEND:
+            return 2;
         case UNARY_NEGATIVE:
             return 1;
         case UNARY_NOT:
@@ -432,6 +436,10 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0+0;
         case INSTRUMENTED_END_FOR:
             return 0;
+        case END_SEND:
+            return 1;
+        case INSTRUMENTED_END_SEND:
+            return 1;
         case UNARY_NEGATIVE:
             return 1;
         case UNARY_NOT:
@@ -813,6 +821,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [PUSH_NULL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [END_FOR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [INSTRUMENTED_END_FOR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [END_SEND] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [INSTRUMENTED_END_SEND] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [UNARY_NEGATIVE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [UNARY_NOT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [UNARY_INVERT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
