@@ -1613,7 +1613,7 @@ class GeneralModuleTests(unittest.TestCase):
         # prior to 3.12 did for ints outside of a [LONG_MIN, LONG_MAX] range.
         # Leave the error up to the underlying string based platform C API.
 
-        from import _testcapi import ULONG_MAX, LONG_MAX, LONG_MIN
+        from _testcapi import ULONG_MAX, LONG_MAX, LONG_MIN
         try:
             socket.getaddrinfo(None, ULONG_MAX + 1)
         except OverflowError:
