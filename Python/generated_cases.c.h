@@ -689,6 +689,20 @@
             DISPATCH();
         }
 
+        TARGET(CALL_INTRINSIC_2) {
+            PyObject *value1 = PEEK(1);
+            PyObject *value2 = PEEK(2);
+            PyObject *res;
+            assert(oparg <= MAX_INTRINSIC_2);
+            res = _PyIntrinsics_BinaryFunctions[oparg](tstate, value2, value1);
+            Py_DECREF(value2);
+            Py_DECREF(value1);
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            POKE(1, res);
+            DISPATCH();
+        }
+
         TARGET(RAISE_VARARGS) {
             PyObject **args = &PEEK(oparg);
             PyObject *cause = NULL, *exc = NULL;
@@ -997,22 +1011,6 @@
             PyObject *tb = PyException_GetTraceback(exc);
             _PyErr_Restore(tstate, typ, exc, tb);
             goto exception_unwind;
-        }
-
-        TARGET(PREP_RERAISE_STAR) {
-            PyObject *excs = PEEK(1);
-            PyObject *orig = PEEK(2);
-            PyObject *val;
-            assert(PyList_Check(excs));
-
-            val = _PyExc_PrepReraiseStar(orig, excs);
-            Py_DECREF(orig);
-            Py_DECREF(excs);
-
-            if (val == NULL) goto pop_2_error;
-            STACK_SHRINK(1);
-            POKE(1, val);
-            DISPATCH();
         }
 
         TARGET(END_ASYNC_FOR) {
