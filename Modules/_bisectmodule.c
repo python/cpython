@@ -5,6 +5,7 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_ceval.h" // _Py_EnterRecursiveCall()
 
 /*[clinic input]
 module _bisect
@@ -66,7 +67,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
     if (sq_item == NULL) {
         return -1;
     }
-    if (Py_EnterRecursiveCall("in _bisect.bisect_right") < 0) {
+    if (_Py_EnterRecursiveCall("in _bisect.bisect_right") < 0) {
         return -1;
     }
     PyTypeObject *tp = Py_TYPE(item);
@@ -136,10 +137,10 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
         else
             lo = mid + 1;
     }
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     return lo;
 error:
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     Py_XDECREF(litem);
     return -1;
 }
@@ -246,7 +247,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
     if (sq_item == NULL) {
         return -1;
     }
-    if (Py_EnterRecursiveCall("in _bisect.bisect_left") < 0) {
+    if (_Py_EnterRecursiveCall("in _bisect.bisect_left") < 0) {
         return -1;
     }
     PyTypeObject *tp = Py_TYPE(item);
@@ -316,10 +317,10 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
         else
             hi = mid;
     }
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     return lo;
 error:
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     Py_XDECREF(litem);
     return -1;
 }
