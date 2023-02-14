@@ -1850,7 +1850,7 @@ code_hash(PyCodeObject *co)
     for (int i = 0; i < Py_SIZE(co); i++) {
         int deop = _PyOpcode_Deopt[_PyCode_CODE(co)[i].op.code];
         SCRAMBLE_IN(deop);
-        SCRAMBLE_IN(_PyCode_CODE(co)[i].op.code);
+        SCRAMBLE_IN(_PyCode_CODE(co)[i].op.arg);
         i += _PyOpcode_Caches[deop];
     }
     if ((Py_hash_t)uhash == -1) {
