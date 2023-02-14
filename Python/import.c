@@ -1112,6 +1112,31 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
 }
 
 
+PyObject *
+_PyImport_GetBuiltinModuleNames(void)
+{
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
+        PyObject *name = PyUnicode_FromString(inittab[i].name);
+        if (name == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        if (PyList_Append(list, name) < 0) {
+            Py_DECREF(name);
+            Py_DECREF(list);
+            return NULL;
+        }
+        Py_DECREF(name);
+    }
+    return list;
+}
+
+
 /******************/
 /* frozen modules */
 /******************/
