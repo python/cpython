@@ -63,32 +63,26 @@ static struct _inittab *inittab_copy = NULL;
 /* runtime lifecycle */
 /*********************/
 
+static int init_builtin_modules_table(void);
+
 PyStatus
 _PyImport_Init(void)
 {
     if (_PyRuntime.imports.inittab != NULL) {
         return _PyStatus_ERR("global import state already initialized");
     }
-    PyStatus status = _PyStatus_OK();
 
-    size_t size;
-    for (size = 0; PyImport_Inittab[size].name != NULL; size++)
-        ;
-    size++;
+    PyStatus status = _PyStatus_OK();
 
     /* Force default raw memory allocator to get a known allocator to be able
        to release the memory in _PyImport_Fini() */
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    /* Make the copy. */
-    struct _inittab *copied = PyMem_RawMalloc(size * sizeof(struct _inittab));
-    if (copied == NULL) {
+    if (init_builtin_modules_table() != 0) {
         status = PyStatus_NoMemory();
         goto done;
     }
-    memcpy(copied, PyImport_Inittab, size * sizeof(struct _inittab));
-    _PyRuntime.imports.inittab = copied;
 
 done:
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
@@ -96,6 +90,7 @@ done:
 }
 
 static inline void _extensions_cache_clear(void);
+static void fini_builtin_modules_table(void);
 
 void
 _PyImport_Fini(void)
@@ -112,9 +107,7 @@ _PyImport_Fini(void)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     /* Free memory allocated by _PyImport_Init() */
-    struct _inittab *inittab = _PyRuntime.imports.inittab;
-    _PyRuntime.imports.inittab = NULL;
-    PyMem_RawFree(inittab);
+    fini_builtin_modules_table();
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -1238,6 +1231,34 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
     return PyImport_ExtendInittab(newtab);
 }
 
+
+/* the internal table */
+
+static int
+init_builtin_modules_table(void)
+{
+    size_t size;
+    for (size = 0; PyImport_Inittab[size].name != NULL; size++)
+        ;
+    size++;
+
+    /* Make the copy. */
+    struct _inittab *copied = PyMem_RawMalloc(size * sizeof(struct _inittab));
+    if (copied == NULL) {
+        return -1;
+    }
+    memcpy(copied, PyImport_Inittab, size * sizeof(struct _inittab));
+    _PyRuntime.imports.inittab = copied;
+    return 0;
+}
+
+static void
+fini_builtin_modules_table(void)
+{
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    _PyRuntime.imports.inittab = NULL;
+    PyMem_RawFree(inittab);
+}
 
 PyObject *
 _PyImport_GetBuiltinModuleNames(void)
