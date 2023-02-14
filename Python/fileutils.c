@@ -2481,6 +2481,64 @@ error:
     return -1;
 }
 #else   /* MS_WINDOWS */
+int
+_Py_get_blocking(int fd)
+{
+    HANDLE handle;
+    DWORD mode;
+    BOOL success;
+
+    handle = _Py_get_osfhandle(fd);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    success = GetNamedPipeHandleStateW(handle, &mode,
+                                       NULL, NULL, NULL, NULL, 0);
+    Py_END_ALLOW_THREADS
+    
+    if (!success) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+    
+    return !(mode & PIPE_NOWAIT);
+}
+
+int
+_Py_set_blocking(int fd, int blocking)
+{
+    HANDLE handle;
+    DWORD mode;
+    BOOL success;
+
+    handle = _Py_get_osfhandle(fd);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    success = GetNamedPipeHandleStateW(handle, &mode,
+                                       NULL, NULL, NULL, NULL, 0);
+    if (success) {
+        if (blocking) {
+            mode &= ~PIPE_NOWAIT;
+        }
+        else {
+            mode |= PIPE_NOWAIT;
+        }
+        success = SetNamedPipeHandleState(handle, &mode, NULL, NULL);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+    return 0;
+}
+
 void*
 _Py_get_osfhandle_noraise(int fd)
 {
