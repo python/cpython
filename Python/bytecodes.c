@@ -501,7 +501,14 @@ dummy_func(
         inst(CALL_INTRINSIC_1, (value -- res)) {
             assert(oparg <= MAX_INTRINSIC_1);
             res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
-            Py_DECREF(value);
+            DECREF_INPUTS();
+            ERROR_IF(res == NULL, error);
+        }
+
+        inst(CALL_INTRINSIC_2, (value2, value1 -- res)) {
+            assert(oparg <= MAX_INTRINSIC_2);
+            res = _PyIntrinsics_BinaryFunctions[oparg](tstate, value2, value1);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
@@ -786,15 +793,6 @@ dummy_func(
             PyObject *tb = PyException_GetTraceback(exc);
             _PyErr_Restore(tstate, typ, exc, tb);
             goto exception_unwind;
-        }
-
-        inst(PREP_RERAISE_STAR, (orig, excs -- val)) {
-            assert(PyList_Check(excs));
-
-            val = _PyExc_PrepReraiseStar(orig, excs);
-            DECREF_INPUTS();
-
-            ERROR_IF(val == NULL, error);
         }
 
         inst(END_ASYNC_FOR, (awaitable, exc -- )) {
@@ -2383,7 +2381,7 @@ dummy_func(
         }
 
         // Cache layout: counter/1, func_version/2, min_args/1
-        // Neither CALL_INTRINSIC_1 nor CALL_FUNCTION_EX are members!
+        // Neither CALL_INTRINSIC_1/2 nor CALL_FUNCTION_EX are members!
         family(call, INLINE_CACHE_ENTRIES_CALL) = {
             CALL,
             CALL_BOUND_METHOD_EXACT_ARGS,
