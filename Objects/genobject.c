@@ -371,9 +371,9 @@ gen_close(PyGenObject *gen, PyObject *args)
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
     /* It is possible for the previous instruction to not be a
      * YIELD_VALUE if the debugger has changed the lineno. */
-    if (err == 0 && frame->prev_instr->opcode == YIELD_VALUE) {
-        assert(frame->prev_instr[1].opcode == RESUME);
-        int exception_handler_depth = frame->prev_instr->oparg;
+    if (err == 0 && _Py_OPCODE(frame->prev_instr[0]) == YIELD_VALUE) {
+        assert(_Py_OPCODE(frame->prev_instr[1]) == RESUME);
+        int exception_handler_depth = _Py_OPCODE(frame->prev_instr[0]);
         assert(exception_handler_depth > 0);
         /* We can safely ignore the outermost try block
          * as it automatically generated to handle

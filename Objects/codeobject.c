@@ -1507,10 +1507,10 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
         _Py_CODEUNIT instruction = instructions[i];
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
-        instructions[i].opcode = opcode;
+        _Py_OPCODE(instructions[i]) = opcode;
         while (caches--) {
-            instructions[++i].opcode = CACHE;
-            instructions[i].oparg = 0;
+            _Py_OPCODE(instructions[++i]) = CACHE;
+            _Py_OPARG(instructions[i]) = 0;
         }
     }
 }
@@ -1763,8 +1763,8 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        co_instr.opcode = _PyOpcode_Deopt[_Py_OPCODE(co_instr)];
-        cp_instr.opcode =_PyOpcode_Deopt[_Py_OPCODE(cp_instr)];
+        _Py_OPCODE(co_instr) = _PyOpcode_Deopt[_Py_OPCODE(co_instr)];
+        _Py_OPCODE(cp_instr) =_PyOpcode_Deopt[_Py_OPCODE(cp_instr)];
         eq = co_instr.cache == cp_instr.cache;
         if (!eq) {
             goto unequal;

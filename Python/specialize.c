@@ -291,31 +291,31 @@ _PyCode_Quicken(PyCodeObject *code)
         }
         switch (previous_opcode << 8 | opcode) {
             case LOAD_CONST << 8 | LOAD_FAST:
-                instructions[i - 1].opcode = LOAD_CONST__LOAD_FAST;
+                _Py_OPCODE(instructions[i - 1]) = LOAD_CONST__LOAD_FAST;
                 break;
             case LOAD_FAST << 8 | LOAD_CONST:
-                instructions[i - 1].opcode = LOAD_FAST__LOAD_CONST;
+                _Py_OPCODE(instructions[i - 1]) = LOAD_FAST__LOAD_CONST;
                 break;
             case LOAD_FAST << 8 | LOAD_FAST:
-                instructions[i - 1].opcode = LOAD_FAST__LOAD_FAST;
+                _Py_OPCODE(instructions[i - 1]) = LOAD_FAST__LOAD_FAST;
                 break;
             case STORE_FAST << 8 | LOAD_FAST:
-                instructions[i - 1].opcode = STORE_FAST__LOAD_FAST;
+                _Py_OPCODE(instructions[i - 1]) = STORE_FAST__LOAD_FAST;
                 break;
             case STORE_FAST << 8 | STORE_FAST:
-                instructions[i - 1].opcode = STORE_FAST__STORE_FAST;
+                _Py_OPCODE(instructions[i - 1]) = STORE_FAST__STORE_FAST;
                 break;
             case COMPARE_OP << 8 | POP_JUMP_IF_TRUE:
             case COMPARE_OP << 8 | POP_JUMP_IF_FALSE:
             {
-                int oparg = instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg;
+                int oparg = _Py_OPARG(instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP]);
                 assert((oparg >> 4) <= Py_GE);
                 int mask = compare_masks[oparg >> 4];
                 if (opcode == POP_JUMP_IF_FALSE) {
                     mask = mask ^ 0xf;
                 }
-                instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].opcode = COMPARE_AND_BRANCH;
-                instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP].oparg = (oparg & 0xf0) | mask;
+                _Py_OPCODE(instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP]) = COMPARE_AND_BRANCH;
+                _Py_OPARG(instructions[i - 1 - INLINE_CACHE_ENTRIES_COMPARE_OP]) = (oparg & 0xf0) | mask;
                 break;
             }
         }
