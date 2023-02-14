@@ -52,11 +52,16 @@ static struct _inittab *inittab_copy = NULL;
 /* runtime-global import state */
 /*******************************/
 
+#define INITTAB _PyRuntime.imports.inittab
+#define LAST_MODULE_INDEX _PyRuntime.imports.last_module_index
+#define EXTENSIONS _PyRuntime.imports.extensions
+
 #define import_lock _PyRuntime.imports.lock.mutex
 #define import_lock_thread _PyRuntime.imports.lock.thread
 #define import_lock_level _PyRuntime.imports.lock.level
 
-#define _Py_PackageContext (_PyRuntime.imports.pkgcontext)
+#define FIND_AND_LOAD _PyRuntime.imports.find_and_load
+#define PKGCONTEXT (_PyRuntime.imports.pkgcontext)
 
 
 /*******************************/
@@ -402,8 +407,8 @@ remove_module(PyThreadState *tstate, PyObject *name)
 Py_ssize_t
 _PyImport_GetNextModuleIndex(void)
 {
-    _PyRuntime.imports.last_module_index++;
-    return _PyRuntime.imports.last_module_index;
+    LAST_MODULE_INDEX++;
+    return LAST_MODULE_INDEX;
 }
 
 PyObject*
@@ -546,17 +551,17 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
    the module name is "package.module", but the module calls
    PyModule_Create*() with just "module" for the name.  The shared
    library loader squirrels away the true name of the module in
-   _Py_PackageContext, and PyModule_Create*() will substitute this
-   (if the name actually matches).
+   _PyRuntime.imports.pkgcontext, and PyModule_Create*() will
+   substitute this (if the name actually matches).
 */
 const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
-    if (_Py_PackageContext != NULL) {
-        const char *p = strrchr(_Py_PackageContext, '.');
+    if (PKGCONTEXT != NULL) {
+        const char *p = strrchr(PKGCONTEXT, '.');
         if (p != NULL && strcmp(name, p+1) == 0) {
-            name = _Py_PackageContext;
-            _Py_PackageContext = NULL;
+            name = PKGCONTEXT;
+            PKGCONTEXT = NULL;
         }
     }
     return name;
@@ -565,8 +570,8 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
 const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
-    const char *oldcontext = _Py_PackageContext;
-    _Py_PackageContext = newcontext;
+    const char *oldcontext = PKGCONTEXT;
+    PKGCONTEXT = newcontext;
     return oldcontext;
 }
 
@@ -708,7 +713,7 @@ gets even messier.
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
-    PyObject *extensions = _PyRuntime.imports.extensions;
+    PyObject *extensions = EXTENSIONS;
     if (extensions == NULL) {
         return NULL;
     }
@@ -724,13 +729,13 @@ _extensions_cache_get(PyObject *filename, PyObject *name)
 static int
 _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 {
-    PyObject *extensions = _PyRuntime.imports.extensions;
+    PyObject *extensions = EXTENSIONS;
     if (extensions == NULL) {
         extensions = PyDict_New();
         if (extensions == NULL) {
             return -1;
         }
-        _PyRuntime.imports.extensions = extensions;
+        EXTENSIONS = extensions;
     }
     PyObject *key = PyTuple_Pack(2, filename, name);
     if (key == NULL) {
@@ -747,7 +752,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 static void
 _extensions_cache_clear(void)
 {
-    Py_CLEAR(_PyRuntime.imports.extensions);
+    Py_CLEAR(EXTENSIONS);
 }
 
 static int
@@ -902,7 +907,7 @@ static int
 is_builtin(PyObject *name)
 {
     int i;
-    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    struct _inittab *inittab = INITTAB;
     for (i = 0; inittab[i].name != NULL; i++) {
         if (_PyUnicode_EqualToASCIIString(name, inittab[i].name)) {
             if (inittab[i].initfunc == NULL)
@@ -923,7 +928,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     }
 
     PyObject *modules = MODULES(tstate->interp);
-    for (struct _inittab *p = _PyRuntime.imports.inittab; p->name != NULL; p++) {
+    for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
             if (p->initfunc == NULL) {
                 /* Cannot re-init internal module ("sys" or "builtins") */
@@ -978,7 +983,7 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     size_t i, n;
     int res = 0;
 
-    if (_PyRuntime.imports.inittab != NULL) {
+    if (INITTAB != NULL) {
         Py_FatalError("PyImport_ExtendInittab() may not be called after Py_Initialize()");
     }
 
@@ -1026,7 +1031,7 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
 {
     struct _inittab newtab[2];
 
-    if (_PyRuntime.imports.inittab != NULL) {
+    if (INITTAB != NULL) {
         Py_FatalError("PyImport_AppendInittab() may not be called after Py_Initialize()");
     }
 
@@ -1055,15 +1060,15 @@ init_builtin_modules_table(void)
         return -1;
     }
     memcpy(copied, PyImport_Inittab, size * sizeof(struct _inittab));
-    _PyRuntime.imports.inittab = copied;
+    INITTAB = copied;
     return 0;
 }
 
 static void
 fini_builtin_modules_table(void)
 {
-    struct _inittab *inittab = _PyRuntime.imports.inittab;
-    _PyRuntime.imports.inittab = NULL;
+    struct _inittab *inittab = INITTAB;
+    INITTAB = NULL;
     PyMem_RawFree(inittab);
 }
 
@@ -1074,7 +1079,7 @@ _PyImport_GetBuiltinModuleNames(void)
     if (list == NULL) {
         return NULL;
     }
-    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    struct _inittab *inittab = INITTAB;
     for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
         PyObject *name = PyUnicode_FromString(inittab[i].name);
         if (name == NULL) {
@@ -2251,8 +2256,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     PyObject *mod = NULL;
     PyInterpreterState *interp = tstate->interp;
     int import_time = _PyInterpreterState_GetConfig(interp)->import_time;
-#define import_level _PyRuntime.imports.find_and_load.import_level
-#define accumulated _PyRuntime.imports.find_and_load.accumulated
+#define import_level FIND_AND_LOAD.import_level
+#define accumulated FIND_AND_LOAD.accumulated
 
     _PyTime_t t1 = 0, accumulated_copy = accumulated;
 
@@ -2273,7 +2278,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
      * _PyDict_GetItemIdWithError().
      */
     if (import_time) {
-#define header _PyRuntime.imports.find_and_load.header
+#define header FIND_AND_LOAD.header
         if (header) {
             fputs("import time: self [us] | cumulative | imported package\n",
                   stderr);
@@ -2586,7 +2591,7 @@ PyImport_Import(PyObject *module_name)
 PyStatus
 _PyImport_Init(void)
 {
-    if (_PyRuntime.imports.inittab != NULL) {
+    if (INITTAB != NULL) {
         return _PyStatus_ERR("global import state already initialized");
     }
 
