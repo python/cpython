@@ -1442,11 +1442,13 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
-      .. versionchanged:: 3.12
+      .. deprecated-removed:: 3.12 3.14
 
          :exc:`DeprecationWarning` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
          and *parameters* is a sequence instead of a :class:`dict`.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
 
       Use :meth:`executescript` to execute multiple SQL statements.
 
@@ -1482,12 +1484,14 @@ Cursor objects
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
 
-      .. versionchanged:: 3.12
+      .. deprecated-removed:: 3.12 3.14
 
          :exc:`DeprecationWarning` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
          and the items in *parameters* are sequences
          instead of :class:`dict`\s.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
 
    .. method:: executescript(sql_script, /)
 
