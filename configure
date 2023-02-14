@@ -26950,7 +26950,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__SHA512_STATE=$py_cv_module__sha512$as_nl"
   if test "x$py_cv_module__sha512" = xyes; then :
 
-
+    as_fn_append MODULE_BLOCK "MODULE__SHA512_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
 
 
 fi
