@@ -688,7 +688,7 @@ module_dealloc(PyModuleObject *m)
     Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
-PyObject *
+static PyObject *
 module_repr(PyModuleObject *m)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();

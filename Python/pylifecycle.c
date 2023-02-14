@@ -2119,8 +2119,8 @@ Py_EndInterpreter(PyThreadState *tstate)
     // XXX Call something like _PyImport_Disable() here?
 
     _PyImport_FiniExternal(tstate->interp);
-    _PyImport_FiniCore(tstate->interp);
     finalize_modules(tstate);
+    _PyImport_FiniCore(tstate->interp);
 
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate->interp);
