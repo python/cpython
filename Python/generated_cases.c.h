@@ -236,17 +236,17 @@
         }
 
         TARGET(INSTRUMENTED_END_FOR) {
-            PyObject *discard = PEEK(1);
+            PyObject *value = PEEK(1);
             PyObject *receiver = PEEK(2);
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
-                PyErr_SetNone(PyExc_StopIteration);
+                PyErr_SetObject(PyExc_StopIteration, value);
                 monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
                 PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(receiver);
-            Py_DECREF(discard);
+            Py_DECREF(value);
             STACK_SHRINK(2);
             DISPATCH();
         }

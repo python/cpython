@@ -172,11 +172,11 @@ dummy_func(
 
         macro(END_FOR) = POP_TOP + POP_TOP;
 
-        inst(INSTRUMENTED_END_FOR, (receiver, discard --)) {
+        inst(INSTRUMENTED_END_FOR, (receiver, value --)) {
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
-                PyErr_SetNone(PyExc_StopIteration);
+                PyErr_SetObject(PyExc_StopIteration, value);
                 monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
                 PyErr_SetRaisedException(NULL);
             }
