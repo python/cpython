@@ -82,6 +82,7 @@ class Regrtest:
         self.tests_to_shard.add('test_io')
         self.tests_to_shard.add('test_imaplib')
         self.tests_to_shard.add('test_subprocess')
+        self.tests_to_shard.add('test_xmlrpc')
 
         # test results
         self.good = []
