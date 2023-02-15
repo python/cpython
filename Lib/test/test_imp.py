@@ -10,10 +10,13 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
+import textwrap
 import unittest
 import warnings
 imp = warnings_helper.import_deprecated('imp')
 import _imp
+import _testinternalcapi
+import _xxsubinterpreters as _interpreters
 
 
 OS_PATH_NAME = os.path.__name__
@@ -252,6 +255,71 @@ class ImportTests(unittest.TestCase):
             imp.load_dynamic('nonexistent', pathname)
 
     @requires_load_dynamic
+    def test_singlephase_multiple_interpreters(self):
+        # Currently, for every single-phrase init module loaded
+        # in multiple interpreters, those interpreters share a
+        # PyModuleDef for that object, which can be a problem.
+
+        # This single-phase module has global state, which is shared
+        # by the interpreters.
+        import _testsinglephase
+        name = _testsinglephase.__name__
+        filename = _testsinglephase.__file__
+
+        del sys.modules[name]
+        _testsinglephase._clear_globals()
+        _testinternalcapi.clear_extension(name, filename)
+        init_count = _testsinglephase.initialized_count()
+        assert init_count == -1, (init_count,)
+
+        def clean_up():
+            _testsinglephase._clear_globals()
+            _testinternalcapi.clear_extension(name, filename)
+        self.addCleanup(clean_up)
+
+        interp1 = _interpreters.create(isolated=False)
+        self.addCleanup(_interpreters.destroy, interp1)
+        interp2 = _interpreters.create(isolated=False)
+        self.addCleanup(_interpreters.destroy, interp2)
+
+        script = textwrap.dedent(f'''
+            import _testsinglephase
+
+            expected = %d
+            init_count =  _testsinglephase.initialized_count()
+            if init_count != expected:
+                raise Exception(init_count)
+
+            lookedup = _testsinglephase.look_up_self()
+            if lookedup is not _testsinglephase:
+                raise Exception((_testsinglephase, lookedup))
+
+            # Attrs set in the module init func are in m_copy.
+            _initialized = _testsinglephase._initialized
+            initialized = _testsinglephase.initialized()
+            if _initialized != initialized:
+                raise Exception((_initialized, initialized))
+
+            # Attrs set after loading are not in m_copy.
+            if hasattr(_testsinglephase, 'spam'):
+                raise Exception(_testsinglephase.spam)
+            _testsinglephase.spam = expected
+            ''')
+
+        # Use an interpreter that gets destroyed right away.
+        ret = support.run_in_subinterp(script % 1)
+        self.assertEqual(ret, 0)
+
+        # The module's init func gets run again.
+        # The module's globals did not get destroyed.
+        _interpreters.run_string(interp1, script % 2)
+
+        # The module's init func is not run again.
+        # The second interpreter copies the module's m_copy.
+        # However, globals are still shared.
+        _interpreters.run_string(interp2, script % 2)
+
+    @requires_load_dynamic
     def test_singlephase_variants(self):
         '''Exercise the most meaningful variants described in Python/import.c.'''
         self.maxDiff = None
@@ -259,6 +327,11 @@ class ImportTests(unittest.TestCase):
         basename = '_testsinglephase'
         fileobj, pathname, _ = imp.find_module(basename)
         fileobj.close()
+
+        def clean_up():
+            import _testsinglephase
+            _testsinglephase._clear_globals()
+        self.addCleanup(clean_up)
 
         modules = {}
         def load(name):

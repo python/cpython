@@ -632,6 +632,28 @@ exec_builtin_or_dynamic(PyObject *mod) {
 }
 
 
+static int clear_singlephase_extension(PyInterpreterState *interp,
+                                       PyObject *name, PyObject *filename);
+
+// Currently, this is only used for testing.
+// (See _testinternalcapi.clear_extension().)
+int
+_PyImport_ClearExtension(PyObject *name, PyObject *filename)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    /* Clearing a module's C globals is up to the module. */
+    if (clear_singlephase_extension(interp, name, filename) < 0) {
+        return -1;
+    }
+
+    // In the future we'll probably also make sure the extension's
+    // file handle (and DL handle) is closed (requires saving it).
+
+    return 0;
+}
+
+
 /*******************/
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
@@ -766,8 +788,30 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     return 0;
 }
 
+static int
+_extensions_cache_delete(PyObject *filename, PyObject *name)
+{
+    PyObject *extensions = EXTENSIONS;
+    if (extensions == NULL) {
+        return 0;
+    }
+    PyObject *key = PyTuple_Pack(2, filename, name);
+    if (key == NULL) {
+        return -1;
+    }
+    if (PyDict_DelItem(extensions, key) < 0) {
+        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+            Py_DECREF(key);
+            return -1;
+        }
+        PyErr_Clear();
+    }
+    Py_DECREF(key);
+    return 0;
+}
+
 static void
-_extensions_cache_clear(void)
+_extensions_cache_clear_all(void)
 {
     Py_CLEAR(EXTENSIONS);
 }
@@ -888,6 +932,34 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
                            name, filename);
     }
     return mod;
+}
+
+static int
+clear_singlephase_extension(PyInterpreterState *interp,
+                            PyObject *name, PyObject *filename)
+{
+    PyModuleDef *def = _extensions_cache_get(filename, name);
+    if (def == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+
+    /* Clear data set when the module was initially loaded. */
+    def->m_base.m_init = NULL;
+    Py_CLEAR(def->m_base.m_copy);
+    // We leave m_index alone since there's no reason to reset it.
+
+    /* Clear the PyState_*Module() cache entry. */
+    if (_modules_by_index_check(interp, def->m_base.m_index) == NULL) {
+        if (_modules_by_index_clear(interp, def) < 0) {
+            return -1;
+        }
+    }
+
+    /* Clear the cached module def. */
+    return _extensions_cache_delete(filename, name);
 }
 
 
@@ -2633,7 +2705,7 @@ void
 _PyImport_Fini(void)
 {
     /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
-    _extensions_cache_clear();
+    _extensions_cache_clear_all();
     if (import_lock != NULL) {
         PyThread_free_lock(import_lock);
         import_lock = NULL;

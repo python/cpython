@@ -153,6 +153,9 @@ PyAPI_DATA(const struct _frozen *) _PyImport_FrozenStdlib;
 PyAPI_DATA(const struct _frozen *) _PyImport_FrozenTest;
 extern const struct _module_alias * _PyImport_FrozenAliases;
 
+// for testing
+PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
+
 #ifdef __cplusplus
 }
 #endif
