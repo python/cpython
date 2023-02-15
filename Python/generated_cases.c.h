@@ -934,6 +934,7 @@
             else {
                 assert(retval != NULL);
             }
+            Py_DECREF(v);
             POKE(1, retval);
             JUMPBY(1);
             DISPATCH();
