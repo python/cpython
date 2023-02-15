@@ -4,6 +4,7 @@ import sys
 import sysconfig
 import tempfile
 import tokenize
+from io import StringIO
 from typing import IO, Dict, List, Optional, Set, Tuple
 
 from pegen.c_generator import CParserGenerator
@@ -243,9 +244,26 @@ def build_python_generator(
     output_file: str,
     skip_actions: bool = False,
 ) -> ParserGenerator:
+    # Generate the parser and write it to a StringIO object
+    result = StringIO()
+    gen: ParserGenerator = PythonParserGenerator(grammar, result)  # TODO: skip_actions
+    gen.generate(grammar_file)
+
+    # Validate the output
+    new_result = StringIO()
+    try:
+        exec(result.getvalue())
+        generated_parser = globals()['GeneratedParser']
+        gen = generated_parser(new_result)
+        gen.parse('')  # Parse an empty string to trigger initialization
+    except Exception:
+        # Validation failed, do not write the output file
+        return None
+
+    # Validation succeeded, write the output to a file
     with open(output_file, "w") as file:
-        gen: ParserGenerator = PythonParserGenerator(grammar, file)  # TODO: skip_actions
-        gen.generate(grammar_file)
+        file.write(result.getvalue())
+
     return gen
 
 
@@ -312,10 +330,19 @@ def build_python_parser_and_generator(
         skip_actions (bool, optional): Whether to pretend no rule has any actions.
     """
     grammar, parser, tokenizer = build_parser(grammar_file, verbose_tokenizer, verbose_parser)
-    gen = build_python_generator(
-        grammar,
-        grammar_file,
-        output_file,
-        skip_actions=skip_actions,
-    )
-    return grammar, parser, tokenizer, gen
+    result = StringIO()
+    gen: ParserGenerator = PythonParserGenerator(grammar, result)
+    gen.generate(grammar_file)
+    new_result = StringIO()
+    try:
+        exec(result.getvalue(), {})
+        GrammarParser = locals()['GeneratedParser']
+        gen: ParserGenerator = PythonParserGenerator(grammar, new_result)
+        GrammarParser(grammar, gen)
+    except Exception:
+        pass
+    else:
+        with open(output_file, "w") as f:
+            f.write(result.getvalue())
+        return grammar, parser, tokenizer, gen
+    raise Exception("Failed to generate parser and generator")
