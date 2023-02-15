@@ -268,8 +268,8 @@ class TestCase(unittest.TestCase):
         self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
 
     # Test two-argument iter() with function that empties its associated
-    # iterator via list() (or anything else but next()) then returns
-    # a non-sentinel value.
+    # iterator via list() (or anything else but next()) but returns
+    # a non-sentinel value thus claiming that the iterator can yield more.
     def test_iter_function_concealing_reentrant_exhaustion(self):
         HAS_MORE = 1
         NO_MORE = 2
