@@ -641,9 +641,9 @@ class HighPage(Frame):
             ('list', 'builtin'), ('(', 'normal'),
             ('None', 'keyword'), (')\n', 'normal'),
             ('  breakpoint("line")', 'break'), ('\n\n', 'normal'),
-            ('>>>', 'console'), (' 3.14**2\n', 'normal'),
+            ('>>>:-)', 'console'), (' 3.14**2\n', 'normal'),
             ('9.8596', 'stdout'), ('\n', 'normal'),
-            ('>>>', 'console'), (' pri ', 'normal'),
+            ('>>>:-)', 'console'), (' pri ', 'normal'),
             ('n', 'error'), ('t(\n', 'normal'),
             ('SyntaxError', 'stderr'), ('\n', 'normal'))
         for string, tag in string_tags:
