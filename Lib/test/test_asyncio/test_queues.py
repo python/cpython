@@ -571,7 +571,7 @@ class _QueueShutdownTestMixin:
         q.shutdown()
         self.assertEqual("shutdown-immediate", q._shutdown_state.value)
 
-    async def test_get_shutdown_immediate(self):
+    async def test_shutdown_immediate_get(self):
         q = self.q_class()
         results = []
         go = asyncio.Event()
@@ -603,7 +603,7 @@ class _QueueShutdownTestMixin:
         self.assertEqual(results, [True]*len(tasks))
 
 
-    async def _put_shutdown(self, immediate):
+    async def _shutdown_put(self, immediate):
         q = self.q_class(2)
         results = []
         go = asyncio.Event()
@@ -636,14 +636,14 @@ class _QueueShutdownTestMixin:
 
         self.assertEqual(results, [True]*len(tasks))
 
-    async def test_put_shutdown(self):
-        return await self._put_shutdown(False)
+    async def test_shutdown_put(self):
+        return await self._shutdown_put(False)
 
-    async def test_put_shutdown_immediate(self):
-        return await self._put_shutdown(True)
+    async def test_shutdown_immediate_put(self):
+        return await self._shutdown_put(True)
 
 
-    async def _put_and_join_shutdown(self, immediate):
+    async def _shutdown_put_and_join(self, immediate):
         q = self.q_class(2)
         results = []
         go = asyncio.Event()
@@ -684,11 +684,11 @@ class _QueueShutdownTestMixin:
 
         self.assertEqual(results, [True]*len(tasks))
 
-    async def test_put_and_join_shutdown(self):
-        return await self._put_and_join_shutdown(False)
+    async def test_shutdown_put_and_join(self):
+        return await self._shutdown_put_and_join(False)
 
-    async def test_put_and_join_shutdown_immediate(self):
-        return await self._put_and_join_shutdown(True)
+    async def test_shutdown_immediate_put_and_join(self):
+        return await self._shutdown_put_and_join(True)
 
 
 class QueueShutdownTests(

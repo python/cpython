@@ -278,7 +278,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.shutdown(immediate=False)
         self.assertEqual("shutdown-immediate", q.shutdown_state.value)
 
-    def test_get_shutdown(self):
+    def test_shutdown_get(self):
         q = self.type2test(2)
         results = []
         go = threading.Event()
@@ -308,7 +308,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
         self.assertEqual(results, [True]*len(thrds))
 
-    def test_put_shutdown(self):
+    def test_shutdown_put(self):
         q = self.type2test(2)
         results = []
         go = threading.Event()
@@ -341,7 +341,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
         self.assertEqual(results, [True]*len(thrds))
 
-    def _join_shutdown(self, immediate):
+    def _shutdown_join(self, immediate):
         q = self.type2test()
         results = []
         go = threading.Event()
@@ -367,13 +367,13 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
         self.assertEqual(results, [True]*len(thrds))
 
-    def test_join_shutdown_immediate(self):
-        return self._join_shutdown(True)
+    def test_shutdown_immediate_join(self):
+        return self._shutdown_join(True)
 
-    def test_join_shutdown(self):
-        return self._join_shutdown(False)
+    def test_shutdown_join(self):
+        return self._shutdown_join(False)
 
-    def _put_and_join_shutdown(self, immediate):
+    def _shutdown_put_and_join(self, immediate):
         q = self.type2test(2)
         results = []
         go = threading.Event()
@@ -420,13 +420,13 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
         self.assertEqual(results, [True]*len(thrds))
 
-    def test_put_and_join_shutdown_immediate(self):
-        return self._put_and_join_shutdown(True)
+    def test_shutdown_immediate_put_and_join(self):
+        return self._shutdown_put_and_join(True)
 
-    def test_put_and_join_shutdown(self):
-        return self._put_and_join_shutdown(False)
+    def test_shutdown_put_and_join(self):
+        return self._shutdown_put_and_join(False)
 
-    def _get_and_join_shutdown(self, immediate):
+    def _shutdown_get_and_join(self, immediate):
         q = self.type2test()
         results = []
         go = threading.Event()
@@ -463,11 +463,11 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
         self.assertEqual(results, [True]*len(thrds))
 
-    def test_get_and_join_shutdown_immediate(self):
-        return self._get_and_join_shutdown(True)
+    def test_shutdown_immediate_get_and_join(self):
+        return self._shutdown_get_and_join(True)
 
-    def test_get_and_join_shutdown(self):
-        return self._get_and_join_shutdown(False)
+    def test__shutdown_get_and_join(self):
+        return self._shutdown_get_and_join(False)
 
 class QueueTest(BaseQueueTestMixin):
 
