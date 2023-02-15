@@ -285,13 +285,19 @@ class ImportTests(unittest.TestCase):
         script = textwrap.dedent(f'''
             import _testsinglephase
 
+            expected = %d
             init_count =  _testsinglephase.initialized_count()
-            if init_count != %d:
+            if init_count != expected:
                 raise Exception(init_count)
 
             lookedup = _testsinglephase.look_up_self()
             if lookedup is not _testsinglephase:
                 raise Exception((_testsinglephase, lookedup))
+
+            # Attrs set after loading are not in m_copy.
+            if hasattr(_testsinglephase, 'spam'):
+                raise Exception(_testsinglephase.spam)
+            _testsinglephase.spam = expected
             ''')
 
         # Use an interpreter that gets destroyed right away.
