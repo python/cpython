@@ -501,7 +501,14 @@ dummy_func(
         inst(CALL_INTRINSIC_1, (value -- res)) {
             assert(oparg <= MAX_INTRINSIC_1);
             res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
-            Py_DECREF(value);
+            DECREF_INPUTS();
+            ERROR_IF(res == NULL, error);
+        }
+
+        inst(CALL_INTRINSIC_2, (value2, value1 -- res)) {
+            assert(oparg <= MAX_INTRINSIC_2);
+            res = _PyIntrinsics_BinaryFunctions[oparg](tstate, value2, value1);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
@@ -680,49 +687,64 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        inst(SEND, (receiver, v -- receiver if (!jump), retval)) {
+        family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
+            SEND,
+            SEND_GEN,
+        };
+
+        inst(SEND, (unused/1, receiver, v -- receiver, retval)) {
+            #if ENABLE_SPECIALIZATION
+            _PySendCache *cache = (_PySendCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                next_instr--;
+                _Py_Specialize_Send(receiver, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(SEND, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             assert(frame != &entry_frame);
-            bool jump = false;
-            PySendResult gen_status;
-            if (tstate->c_tracefunc == NULL) {
-                gen_status = PyIter_Send(receiver, v, &retval);
-            } else {
-                if (Py_IsNone(v) && PyIter_Check(receiver)) {
-                    retval = Py_TYPE(receiver)->tp_iternext(receiver);
-                }
-                else {
-                    retval = PyObject_CallMethodOneArg(receiver, &_Py_ID(send), v);
-                }
-                if (retval == NULL) {
-                    if (tstate->c_tracefunc != NULL
-                            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
-                    if (_PyGen_FetchStopIterationValue(&retval) == 0) {
-                        gen_status = PYGEN_RETURN;
-                    }
-                    else {
-                        gen_status = PYGEN_ERROR;
-                    }
-                }
-                else {
-                    gen_status = PYGEN_NEXT;
-                }
-            }
-            if (gen_status == PYGEN_ERROR) {
-                assert(retval == NULL);
-                goto error;
-            }
-            Py_DECREF(v);
-            if (gen_status == PYGEN_RETURN) {
-                assert(retval != NULL);
-                Py_DECREF(receiver);
-                JUMPBY(oparg);
-                jump = true;
+            if (Py_IsNone(v) && PyIter_Check(receiver)) {
+                retval = Py_TYPE(receiver)->tp_iternext(receiver);
             }
             else {
-                assert(gen_status == PYGEN_NEXT);
+                retval = PyObject_CallMethodOneArg(receiver, &_Py_ID(send), v);
+            }
+            if (retval == NULL) {
+                if (tstate->c_tracefunc != NULL
+                        && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                if (_PyGen_FetchStopIterationValue(&retval) == 0) {
+                    assert(retval != NULL);
+                    JUMPBY(oparg);
+                }
+                else {
+                    assert(retval == NULL);
+                    goto error;
+                }
+            }
+            else {
                 assert(retval != NULL);
             }
+        }
+
+        inst(SEND_GEN, (unused/1, receiver, v -- receiver)) {
+            assert(cframe.use_tracing == 0);
+            PyGenObject *gen = (PyGenObject *)receiver;
+            DEOPT_IF(Py_TYPE(gen) != &PyGen_Type &&
+                     Py_TYPE(gen) != &PyCoro_Type, SEND);
+            DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, SEND);
+            STAT_INC(SEND, hit);
+            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            frame->yield_offset = oparg;
+            STACK_SHRINK(1);
+            _PyFrame_StackPush(gen_frame, v);
+            gen->gi_frame_state = FRAME_EXECUTING;
+            gen->gi_exc_state.previous_item = tstate->exc_info;
+            tstate->exc_info = &gen->gi_exc_state;
+            JUMPBY(INLINE_CACHE_ENTRIES_SEND + oparg);
+            DISPATCH_INLINED(gen_frame);
         }
 
         inst(YIELD_VALUE, (retval -- unused)) {
@@ -773,15 +795,6 @@ dummy_func(
             goto exception_unwind;
         }
 
-        inst(PREP_RERAISE_STAR, (orig, excs -- val)) {
-            assert(PyList_Check(excs));
-
-            val = _PyExc_PrepReraiseStar(orig, excs);
-            DECREF_INPUTS();
-
-            ERROR_IF(val == NULL, error);
-        }
-
         inst(END_ASYNC_FOR, (awaitable, exc -- )) {
             assert(exc && PyExceptionInstance_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
@@ -796,12 +809,13 @@ dummy_func(
             }
         }
 
-        inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value -- value)) {
+        inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value -- none, value)) {
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
                 value = Py_NewRef(((PyStopIterationObject *)exc_value)->value);
                 DECREF_INPUTS();
+                none = Py_NewRef(Py_None);
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
@@ -2367,7 +2381,7 @@ dummy_func(
         }
 
         // Cache layout: counter/1, func_version/2, min_args/1
-        // Neither CALL_INTRINSIC_1 nor CALL_FUNCTION_EX are members!
+        // Neither CALL_INTRINSIC_1/2 nor CALL_FUNCTION_EX are members!
         family(call, INLINE_CACHE_ENTRIES_CALL) = {
             CALL,
             CALL_BOUND_METHOD_EXACT_ARGS,

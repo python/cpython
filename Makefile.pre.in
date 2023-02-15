@@ -207,6 +207,7 @@ ENSUREPIP=      @ENSUREPIP@
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
+LIBHACL_A= Modules/_hacl/libHacl_Streaming_SHA2.a
 
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
@@ -571,6 +572,23 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h
 
+##########################################################################
+# hashlib's HACL* library
+
+LIBHACL_OBJS= \
+                Modules/_hacl/Hacl_Streaming_SHA2.o
+
+LIBHACL_HEADERS= \
+                Modules/_hacl/Hacl_Streaming_SHA2.h \
+                Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
+                Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h \
+                Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h \
+                Modules/_hacl/include/krml/internal/target.h \
+                Modules/_hacl/include/krml/lowstar_endianness.h \
+                Modules/_hacl/include/krml/types.h \
+                Modules/_hacl/internal/Hacl_SHA2_Generic.h \
+                Modules/_hacl/python_hacl_namespaces.h
+
 #########################################################################
 # Rules
 
@@ -889,6 +907,17 @@ Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c $(LIBEXPAT_HEADERS) $(P
 $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
+
+##########################################################################
+# Build HACL* static libraries for hashlib: libHacl_Streaming_SHA2.a
+LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+
+Modules/_hacl/Hacl_Streaming_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Streaming_SHA2.c $(LIBHACL_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Streaming_SHA2.c
+
+$(LIBHACL_A): $(LIBHACL_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHACL_OBJS)
 
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
@@ -2606,9 +2635,9 @@ MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h
-MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h $(srcdir)/Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h $(srcdir)/Modules/_hacl/include/krml/lowstar_endianness.h $(srcdir)/Modules/_hacl/include/krml/internal/target.h $(srcdir)/Modules/_hacl/Hacl_Streaming_SHA2.h
+MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) $(LIBHACL_A)
 MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/sha3.c $(srcdir)/Modules/_sha3/sha3.h $(srcdir)/Modules/hashlib.h
-MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) $(LIBHACL_A)
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h

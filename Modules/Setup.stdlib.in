@@ -79,8 +79,8 @@
 # hashing builtins, can be disabled with --without-builtin-hashlib-hashes
 @MODULE__MD5_TRUE@_md5 md5module.c
 @MODULE__SHA1_TRUE@_sha1 sha1module.c
-@MODULE__SHA256_TRUE@_sha256 sha256module.c _hacl/Hacl_Streaming_SHA2.c
-@MODULE__SHA512_TRUE@_sha512 sha512module.c
+@MODULE__SHA256_TRUE@_sha256 sha256module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Streaming_SHA2.a
+@MODULE__SHA512_TRUE@_sha512 sha512module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Streaming_SHA2.a
 @MODULE__SHA3_TRUE@_sha3 _sha3/sha3module.c
 @MODULE__BLAKE2_TRUE@_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
 
