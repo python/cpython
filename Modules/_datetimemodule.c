@@ -69,7 +69,9 @@ class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCa
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81bec0fa19837f63]*/
 
+#define clinic_state() (GLOBAL_STATE())
 #include "clinic/_datetimemodule.c.h"
+#undef clinic_state
 
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
@@ -6699,6 +6701,18 @@ datetime_destructor(PyObject *op)
 static int
 _datetime_exec(PyObject *module)
 {
+#define ADD_TYPE(mod, var, spec, base)                                  \
+    do {                                                                \
+        var = (PyTypeObject *)PyType_FromMetaclass(NULL, mod, spec,     \
+                                                   (PyObject *)base);   \
+        if (var == NULL) {                                              \
+            return -1;                                                  \
+        }                                                               \
+        if (PyModule_AddType(mod, var) < 0) {                           \
+            return -1;                                                  \
+        }                                                               \
+    } while (0)
+
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
@@ -6724,6 +6738,8 @@ _datetime_exec(PyObject *module)
     if (PyType_Ready(&PyDateTime_IsoCalendarDateType) < 0) {
         return -1;
     }
+
+#undef ADD_TYPE
 
 #define DATETIME_ADD_MACRO(dict, c, value_expr)         \
     do {                                                \
