@@ -274,12 +274,12 @@ class TestCase(unittest.TestCase):
         HAS_MORE = 1
         NO_MORE = 2
         def spam():
-            if not spam.is_reentrant:
-                spam.is_reentrant = True
-                list(spam.iterator)
+            if spam.need_reentrance:
+                spam.need_reentrance = False
+                list(spam.iterator) # Implicitly call ourselves
                 return HAS_MORE
             return NO_MORE
-        spam.is_reentrant = False
+        spam.need_reentrance = True
         spam.iterator = iter(spam, NO_MORE)
         next(spam.iterator)
 
