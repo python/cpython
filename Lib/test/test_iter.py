@@ -281,7 +281,8 @@ class TestCase(unittest.TestCase):
             return NO_MORE
         spam.need_reentrance = True
         spam.iterator = iter(spam, NO_MORE)
-        next(spam.iterator)
+        with self.assertRaises(StopIteration):
+            next(spam.iterator)
 
     # Test exception propagation through function iterator
     def test_exception_function(self):
