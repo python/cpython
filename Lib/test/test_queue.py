@@ -244,37 +244,39 @@ class BaseQueueTestMixin(BlockingTestMixin):
     def test_shutdown_empty(self):
         q = self.type2test()
         q.shutdown()
-        try:
+        with self.assertRaises(self.queue.ShutDown):
             q.put("data")
-            self.fail("Didn't appear to shut-down queue")
-        except self.queue.ShutDown:
-            pass
-        try:
+        with self.assertRaises(self.queue.ShutDown):
             q.get()
-            self.fail("Didn't appear to shut-down queue")
-        except self.queue.ShutDown:
-            pass
 
     def test_shutdown_nonempty(self):
         q = self.type2test()
         q.put("data")
         q.shutdown()
         q.get()
-        try:
+        with self.assertRaises(self.queue.ShutDown):
             q.get()
-            self.fail("Didn't appear to shut-down queue")
-        except self.queue.ShutDown:
-            pass
 
     def test_shutdown_immediate(self):
         q = self.type2test()
         q.put("data")
         q.shutdown(immediate=True)
-        try:
+        with self.assertRaises(self.queue.ShutDown):
             q.get()
-            self.fail("Didn't appear to shut-down queue")
-        except self.queue.ShutDown:
-            pass
+
+    def test_shutdown_transition(self):
+        # allowed transitions would be from alive via shutdown to immediate
+        q = self.type2test()
+        self.assertEqual("alive", q.shutdown_state.value)
+
+        q.shutdown()
+        self.assertEqual("shutdown", q.shutdown_state.value)
+
+        q.shutdown(immediate=True)
+        self.assertEqual("shutdown-immediate", q.shutdown_state.value)
+
+        q.shutdown(immediate=False)
+        self.assertEqual("shutdown-immediate", q.shutdown_state.value)
 
     def test_get_shutdown(self):
         q = self.type2test(2)
