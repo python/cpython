@@ -172,12 +172,10 @@ class HashLibTestCase(unittest.TestCase):
         _sha1 = self._conditional_import_module('_sha1')
         if _sha1:
             add_builtin_constructor('sha1')
-        _sha256 = self._conditional_import_module('_sha256')
-        if _sha256:
+        _sha2 = self._conditional_import_module('_sha2')
+        if _sha2:
             add_builtin_constructor('sha224')
             add_builtin_constructor('sha256')
-        _sha512 = self._conditional_import_module('_sha512')
-        if _sha512:
             add_builtin_constructor('sha384')
             add_builtin_constructor('sha512')
         if _blake2:
@@ -371,19 +369,20 @@ class HashLibTestCase(unittest.TestCase):
         # 2 is for hashlib.name(...) and hashlib.new(name, ...)
         self.assertGreaterEqual(len(constructors), 2)
         for hash_object_constructor in constructors:
-            m = hash_object_constructor(data, **kwargs)
-            computed = m.hexdigest() if not shake else m.hexdigest(length)
-            self.assertEqual(
-                    computed, hexdigest,
-                    "Hash algorithm %s constructed using %s returned hexdigest"
-                    " %r for %d byte input data that should have hashed to %r."
-                    % (name, hash_object_constructor,
-                       computed, len(data), hexdigest))
-            computed = m.digest() if not shake else m.digest(length)
-            digest = bytes.fromhex(hexdigest)
-            self.assertEqual(computed, digest)
-            if not shake:
-                self.assertEqual(len(digest), m.digest_size)
+            with self.subTest(implementation=hash_object_constructor):
+                m = hash_object_constructor(data, **kwargs)
+                computed = m.hexdigest() if not shake else m.hexdigest(length)
+                self.assertEqual(
+                        computed, hexdigest,
+                        "Hash algorithm %s constructed using %s returned hexdigest"
+                        " %r for %d byte input data that should have hashed to %r."
+                        % (name, hash_object_constructor,
+                           computed, len(data), hexdigest))
+                computed = m.digest() if not shake else m.digest(length)
+                digest = bytes.fromhex(hexdigest)
+                self.assertEqual(computed, digest)
+                if not shake:
+                    self.assertEqual(len(digest), m.digest_size)
 
         if not shake and kwargs.get("key") is None:
             # skip shake and blake2 extended parameter tests
@@ -404,14 +403,15 @@ class HashLibTestCase(unittest.TestCase):
 
         try:
             for digest in digests:
-                buf = io.BytesIO(data)
-                buf.seek(0)
-                self.assertEqual(
-                    hashlib.file_digest(buf, digest).hexdigest(), hexdigest
-                )
-                with open(os_helper.TESTFN, "rb") as f:
-                    digestobj = hashlib.file_digest(f, digest)
-                self.assertEqual(digestobj.hexdigest(), hexdigest)
+                with self.subTest(msg="check_file_digest", implementation=digest):
+                    buf = io.BytesIO(data)
+                    buf.seek(0)
+                    self.assertEqual(
+                        hashlib.file_digest(buf, digest).hexdigest(), hexdigest
+                    )
+                    with open(os_helper.TESTFN, "rb") as f:
+                        digestobj = hashlib.file_digest(f, digest)
+                    self.assertEqual(digestobj.hexdigest(), hexdigest)
         finally:
             os.unlink(os_helper.TESTFN)
 
