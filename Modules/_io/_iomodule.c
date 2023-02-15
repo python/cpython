@@ -631,13 +631,6 @@ struct PyModuleDef _PyIO_Module = {
     (freefunc)iomodule_free,
 };
 
-
-void
-_PyIO_Fini(void)
-{
-    return;
-}
-
 #define ADD_TYPE(module, type, spec, base)                               \
 do {                                                                     \
     type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec,        \

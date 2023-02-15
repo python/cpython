@@ -31,8 +31,6 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
 
-extern void _PyIO_Fini(void);
-
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
 
@@ -1766,10 +1764,6 @@ finalize_interp_clear(PyThreadState *tstate)
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
-
-    if (is_main_interp) {
-        _PyIO_Fini();
-    }
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
