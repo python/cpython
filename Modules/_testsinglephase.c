@@ -134,6 +134,16 @@ init_module(PyObject *module, module_state *state)
     if (PyModule_AddObjectRef(module, "str_const", state->str_const) != 0) {
         return -1;
     }
+
+    double d = _PyTime_AsSecondsDouble(state->initialized);
+    PyObject *initialized = PyFloat_FromDouble(d);
+    if (initialized == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "_initialized", initialized) != 0) {
+        return -1;
+    }
+
     return 0;
 }
 

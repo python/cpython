@@ -294,6 +294,12 @@ class ImportTests(unittest.TestCase):
             if lookedup is not _testsinglephase:
                 raise Exception((_testsinglephase, lookedup))
 
+            # Attrs set in the module init func are in m_copy.
+            _initialized = _testsinglephase._initialized
+            initialized = _testsinglephase.initialized()
+            if _initialized != initialized:
+                raise Exception((_initialized, initialized))
+
             # Attrs set after loading are not in m_copy.
             if hasattr(_testsinglephase, 'spam'):
                 raise Exception(_testsinglephase.spam)
