@@ -468,7 +468,6 @@ _uops = [
     'BB_TEST_POP_IF_NOT_NONE',
     'BB_TEST_POP_IF_NONE',
     # JUMP_BACKWARD
-    'BB_JUMP_BACKWARD',
     'BB_JUMP_BACKWARD_LAZY',
 
     # Common type checks

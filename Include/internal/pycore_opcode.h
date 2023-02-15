@@ -410,10 +410,10 @@ static const char *const _PyOpcode_OpName[263] = {
     [BB_TEST_POP_IF_TRUE] = "BB_TEST_POP_IF_TRUE",
     [BB_TEST_POP_IF_NOT_NONE] = "BB_TEST_POP_IF_NOT_NONE",
     [BB_TEST_POP_IF_NONE] = "BB_TEST_POP_IF_NONE",
-    [BB_JUMP_BACKWARD] = "BB_JUMP_BACKWARD",
     [BB_JUMP_BACKWARD_LAZY] = "BB_JUMP_BACKWARD_LAZY",
     [BINARY_CHECK_INT] = "BINARY_CHECK_INT",
     [BINARY_OP_ADD_INT_REST] = "BINARY_OP_ADD_INT_REST",
+    [183] = "<183>",
     [184] = "<184>",
     [185] = "<185>",
     [186] = "<186>",
@@ -498,6 +498,7 @@ static const char *const _PyOpcode_OpName[263] = {
 
 
 #define EXTRA_CASES \
+    case 183: \
     case 184: \
     case 185: \
     case 186: \

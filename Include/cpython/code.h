@@ -72,7 +72,6 @@ typedef struct _PyTier2BBMetadata {
 
 // Bump allocator for basic blocks (overallocated)
 typedef struct _PyTier2BBSpace  {
-    struct _PyTier2BBSpace *next;
     // (in bytes)
     Py_ssize_t max_capacity;
     // How much space has been consumed in bbs. (in bytes)

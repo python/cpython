@@ -1699,14 +1699,6 @@ code_tier2_fini(PyCodeObject *co)
     }
     t2_info->bb_data_len = 0;
     PyMem_Free(t2_info);
-    //if (t2_info->i_code != NULL) {
-    //    if (t2_info->i_code->_jump_targets != NULL) {
-    //        PyMem_Free(t2_info->i_code->_jump_targets);
-    //        t2_info->i_code->_jump_targets = NULL;
-    //    }
-    //    PyMem_Free(t2_info->i_code);
-    //    t2_info->i_code = NULL;
-    //}
 }
 
 static void
