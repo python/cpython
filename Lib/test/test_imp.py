@@ -387,7 +387,7 @@ class ImportTests(unittest.TestCase):
             check_basic_reloaded(mod, lookedup, initialized, init_count,
                                  before, reloaded)
 
-            # Currently _PyState_AddModule() always replaces the cached module.
+            # Currently PyState_AddModule() always replaces the cached module.
             self.assertIs(basic.look_up_self(), mod)
             self.assertEqual(basic.initialized_count(), expected_init_count)
 
