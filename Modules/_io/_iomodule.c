@@ -321,7 +321,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 #ifdef HAVE_WINDOWS_CONSOLE_IO
         const PyConfig *config = _Py_GetConfig();
         if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
-            RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
+            RawIO_class = (PyObject *)state->PyWindowsConsoleIO_Type;
             encoding = "utf-8";
         }
 #endif
@@ -662,22 +662,12 @@ static PyTypeObject* static_types[] = {
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     &_PyBytesIOBuffer_Type,
-#ifdef HAVE_WINDOWS_CONSOLE_IO
-    &PyWindowsConsoleIO_Type,
-#endif
 };
 
 
 PyStatus
 _PyIO_InitTypes(PyInterpreterState *interp)
 {
-#ifdef HAVE_WINDOWS_CONSOLE_IO
-    if (_Py_IsMainInterpreter(interp)) {
-        // Set type base classes
-        PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
-    }
-#endif
-
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
         if (_PyStaticType_InitBuiltin(interp, type) < 0) {
@@ -750,23 +740,24 @@ PyInit__io(void)
     }
 
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, &PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec,
-             &PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec,
-             &PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec,
-             &PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec,
-             &PyBufferedIOBase_Type);
+    PyTypeObject *base = &PyBufferedIOBase_Type;
+    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, base);
+    ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec, base);
+    ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec, base);
+    ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec, base);
+    ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec, base);
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, &PyRawIOBase_Type);
+    base = &PyRawIOBase_Type;
+    ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, base);
+#ifdef MS_WINDOWS
+    ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec, base);
+#endif
 
     // PyTextIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, &PyTextIOBase_Type);
-    ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec,
-             &PyTextIOBase_Type);
+    base = &PyTextIOBase_Type;
+    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, base);
+    ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec, base);
 
     state->initialized = 1;
 

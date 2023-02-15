@@ -27,8 +27,8 @@ extern PyType_Spec stringio_spec;
 extern PyType_Spec textiowrapper_spec;
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
-extern PyTypeObject PyWindowsConsoleIO_Type;
-#endif /* HAVE_WINDOWS_CONSOLE_IO */
+extern PyType_Spec winconsoleio_spec;
+#endif
 
 /* These functions are used as METH_NOARGS methods, are normally called
  * with args=NULL, and return a new reference.
@@ -155,6 +155,9 @@ typedef struct {
     PyTypeObject *PyFileIO_Type;
     PyTypeObject *PyStringIO_Type;
     PyTypeObject *PyTextIOWrapper_Type;
+#ifdef MS_WINDOWS
+    PyTypeObject *PyWindowsConsoleIO_Type;
+#endif
 } _PyIO_State;
 
 #define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
