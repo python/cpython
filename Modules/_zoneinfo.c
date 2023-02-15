@@ -2622,6 +2622,7 @@ new_weak_cache(void)
     return weak_cache;
 }
 
+// This function is not idempotent and must be called on a new module object.
 static int
 initialize_caches(zoneinfo_state *state)
 {
