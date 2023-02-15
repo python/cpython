@@ -152,12 +152,6 @@ extern void _PySignal_AfterFork(void);
 #endif
 
 
-PyAPI_FUNC(int) _PyState_AddModule(
-    PyThreadState *tstate,
-    PyObject* module,
-    PyModuleDef* def);
-
-
 PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 #define HEAD_LOCK(runtime) \

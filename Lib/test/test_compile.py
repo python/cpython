@@ -741,7 +741,7 @@ if 1:
         # RETURN_VALUE opcode.  This does not always crash an interpreter.
         # When you build with the clang memory sanitizer it reliably aborts.
         self.assertEqual(
-            'RETURN_VALUE',
+            'RETURN_CONST',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     def test_dont_merge_constants(self):
@@ -822,10 +822,9 @@ if 1:
 
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertLessEqual(len(opcodes), 4)
-            self.assertEqual('LOAD_CONST', opcodes[-2].opname)
-            self.assertEqual(None, opcodes[-2].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
+            self.assertLessEqual(len(opcodes), 3)
+            self.assertEqual('RETURN_CONST', opcodes[-1].opname)
+            self.assertEqual(None, opcodes[-1].argval)
 
     def test_false_while_loop(self):
         def break_in_while():
@@ -841,10 +840,9 @@ if 1:
         # Check that we did not raise but we also don't generate bytecode
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertEqual(3, len(opcodes))
-            self.assertEqual('LOAD_CONST', opcodes[1].opname)
+            self.assertEqual(2, len(opcodes))
+            self.assertEqual('RETURN_CONST', opcodes[1].opname)
             self.assertEqual(None, opcodes[1].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[2].opname)
 
     def test_consts_in_conditionals(self):
         def and_true(x):
@@ -1311,7 +1309,7 @@ assert (a > 0 and
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
@@ -1328,7 +1326,7 @@ assert (a > 0 and
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'YIELD_VALUE',
             line=1, end_line=2, column=1, end_column=8, occurrence=2)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_list_comprehension(self):
