@@ -1,6 +1,4 @@
-# Test hashlib module
-#
-# $Id$
+# Test the hashlib module.
 #
 #  Copyright (C) 2005-2010   Gregory P. Smith (greg@krypto.org)
 #  Licensed to PSF under a Contributor Agreement.
@@ -28,7 +26,6 @@ from test.support import warnings_helper
 from http.client import HTTPException
 
 
-# default builtin hash module
 default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
 # --with-builtin-hashlib-hashes override
 builtin_hashes = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
@@ -66,6 +63,7 @@ except ImportError:
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
 
 # bpo-46913: Don't test the _sha3 extension on a Python UBSAN build
+# TODO(gh-99108): Revisit this after _sha3 uses HACL*.
 SKIP_SHA3 = support.check_sanitizer(ub=True)
 requires_sha3 = unittest.skipUnless(not SKIP_SHA3, 'requires _sha3')
 
@@ -107,7 +105,7 @@ class HashLibTestCase(unittest.TestCase):
 
     shakes = {'shake_128', 'shake_256'}
 
-    # Issue #14693: fallback modules are always compiled under POSIX
+    # gh-58898: Fallback modules are always compiled under POSIX.
     _warn_on_extension_import = (os.name == 'posix' or support.Py_DEBUG)
 
     def _conditional_import_module(self, module_name):
@@ -116,7 +114,7 @@ class HashLibTestCase(unittest.TestCase):
             return importlib.import_module(module_name)
         except ModuleNotFoundError as error:
             if self._warn_on_extension_import and module_name in builtin_hashes:
-                warnings.warn('Did a C extension fail to compile? %s' % error)
+                warnings.warn(f'Did a C extension fail to compile? {error}')
         return None
 
     def __init__(self, *args, **kwargs):
@@ -147,7 +145,7 @@ class HashLibTestCase(unittest.TestCase):
         _hashlib = self._conditional_import_module('_hashlib')
         self._hashlib = _hashlib
         if _hashlib:
-            # These two algorithms should always be present when this module
+            # These algorithms should always be present when this module
             # is compiled.  If not, something was compiled wrong.
             self.assertTrue(hasattr(_hashlib, 'openssl_md5'))
             self.assertTrue(hasattr(_hashlib, 'openssl_sha1'))
@@ -202,6 +200,12 @@ class HashLibTestCase(unittest.TestCase):
     @property
     def is_fips_mode(self):
         return get_fips_mode()
+
+    def test_types_unconstructable(self):
+        for h in self.hash_constructors:
+            implementation = type(h(b'', usedforsecurity=False))
+            with self.assertRaises(TypeError):
+                implementation()
 
     def test_hash_array(self):
         a = array.array("b", range(10))
