@@ -69,22 +69,25 @@ _SWAP_SLASH_AND_NEWLINE = str.maketrans({'/': '\n', '\n': '/'})
 
 
 @functools.lru_cache()
+def _translate(pattern, recursive):
+    if recursive:
+        if pattern == '**\n':
+            return r'[\S\s]*^'
+        elif pattern == '**':
+            return r'[\S\s]*'
+        elif '**' in pattern:
+            raise ValueError("Invalid pattern: '**' can only be an entire path component")
+    return fnmatch._translate(pattern)
+
+
+@functools.lru_cache()
 def _make_matcher(path_cls, pattern, recursive):
     pattern = path_cls(pattern)
     if not pattern._parts:
         raise ValueError("empty pattern")
     result = [r'\A' if pattern._drv or pattern._root else '^']
     for line in pattern._lines_normcase.splitlines(keepends=True):
-        if recursive:
-            if line == '**\n':
-                result.append(r'[\S\s]*^')
-                continue
-            elif line == '**':
-                result.append(r'[\S\s]*')
-                continue
-            elif '**' in line:
-                raise ValueError("Invalid pattern: '**' can only be an entire path component")
-        result.append(fnmatch._translate(line))
+        result.append(_translate(line, recursive))
     result.append(r'\Z')
     return re.compile(''.join(result), flags=re.MULTILINE)
 
