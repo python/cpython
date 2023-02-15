@@ -484,7 +484,7 @@ static PyType_Slot sha512_type_slots[] = {
 // Using PyType_GetModuleState() on these types is safe since they
 // cannot be subclassed: they don't have the Py_TPFLAGS_BASETYPE flag.
 static PyType_Spec sha224_type_spec = {
-    .name = "_sha2.sha224",
+    .name = "_sha2.SHA224Type",
     .basicsize = sizeof(SHA256object),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
               Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
@@ -492,7 +492,7 @@ static PyType_Spec sha224_type_spec = {
 };
 
 static PyType_Spec sha256_type_spec = {
-    .name = "_sha2.sha256",
+    .name = "_sha2.SHA256Type",
     .basicsize = sizeof(SHA256object),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
               Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
@@ -500,7 +500,7 @@ static PyType_Spec sha256_type_spec = {
 };
 
 static PyType_Spec sha384_type_spec = {
-    .name = "_sha2.sha384",
+    .name = "_sha2.SHA384Type",
     .basicsize =  sizeof(SHA512object),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
               Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
@@ -508,7 +508,7 @@ static PyType_Spec sha384_type_spec = {
 };
 
 static PyType_Spec sha512_type_spec = {
-    .name = "_sha2.sha512",
+    .name = "_sha2.SHA512Type",
     .basicsize =  sizeof(SHA512object),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
               Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
@@ -765,24 +765,16 @@ static int sha2_exec(PyObject *module)
         return -1;
     }
 
-    Py_INCREF((PyObject *)state->sha224_type);
-    if (PyModule_AddObject(module, "SHA224Type", (PyObject *)state->sha224_type) < 0) {
-        Py_DECREF((PyObject *)state->sha224_type);
+    if (PyModule_AddType((PyObject *)state->sha224_type) < 0) {
         return -1;
     }
-    Py_INCREF((PyObject *)state->sha256_type);
-    if (PyModule_AddObject(module, "SHA256Type", (PyObject *)state->sha256_type) < 0) {
-        Py_DECREF((PyObject *)state->sha256_type);
+    if (PyModule_AddType((PyObject *)state->sha256_type) < 0) {
         return -1;
     }
-    Py_INCREF((PyObject *)state->sha384_type);
-    if (PyModule_AddObject(module, "SHA384Type", (PyObject *)state->sha384_type) < 0) {
-        Py_DECREF((PyObject *)state->sha384_type);
+    if (PyModule_AddType((PyObject *)state->sha384_type) < 0) {
         return -1;
     }
-    Py_INCREF((PyObject *)state->sha512_type);
-    if (PyModule_AddObject(module, "SHA512Type", (PyObject *)state->sha512_type) < 0) {
-        Py_DECREF((PyObject *)state->sha512_type);
+    if (PyModule_AddType((PyObject *)state->sha512_type) < 0) {
         return -1;
     }
 
