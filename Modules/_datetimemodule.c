@@ -6864,7 +6864,7 @@ _datetime_exec(PyObject *module)
 }
 
 static struct PyModuleDef datetimemodule = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
     .m_doc = "Fast implementation of the datetime type.",
     .m_size = -1,
