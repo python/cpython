@@ -40,6 +40,13 @@
 
 #define PyTimezone_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeZoneType)
 
+typedef struct {
+} datetime_state;
+
+static datetime_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
+
 /*[clinic input]
 module datetime
 class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
