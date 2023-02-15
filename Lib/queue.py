@@ -33,7 +33,7 @@ class ShutDown(Exception):
 class _QueueState(enum.Enum):
     ALIVE = "alive"
     SHUTDOWN = "shutdown"
-    SHUTDOWN_IMMEDIATE = "shutdown_immediate"
+    SHUTDOWN_IMMEDIATE = "shutdown-immediate"
 
 
 class Queue:
@@ -244,6 +244,9 @@ class Queue:
         and join() if 'immediate'. The ShutDown exception is raised.
         '''
         with self.mutex:
+            if self.shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
+                return
+
             if immediate:
                 self.shutdown_state = _QueueState.SHUTDOWN_IMMEDIATE
                 self.not_empty.notify_all()

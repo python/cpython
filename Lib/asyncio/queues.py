@@ -261,6 +261,9 @@ class Queue(mixins._LoopBoundMixin):
         All blocked callers of put() will be unblocked, and also get()
         and join() if 'immediate'. The QueueShutDown exception is raised.
         """
+        if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
+            return
+
         if immediate:
             self._shutdown_state = _QueueState.SHUTDOWN_IMMEDIATE
             while self._getters:
@@ -268,12 +271,12 @@ class Queue(mixins._LoopBoundMixin):
                 if not getter.done():
                     getter.set_result(None)
         else:
-            self._shutdown_state =  _QueueState.SHUTDOWN
+            self._shutdown_state = _QueueState.SHUTDOWN
         while self._putters:
             putter = self._putters.popleft()
             if not putter.done():
                 putter.set_result(None)
-        # Release 'joined' tasks/coros
+        # Release 'blocked' tasks/coros via `.join()`
         self._finished.set()
 
 
