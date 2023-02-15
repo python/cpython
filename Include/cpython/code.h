@@ -29,24 +29,24 @@ typedef union {
 #define _Py_OPCODE(word) ((word).op.code)
 #define _Py_OPARG(word) ((word).op.arg)
 
-static inline uint16_t
+static inline _Py_CODEUNIT
 _py_make_codeunit(uint8_t opcode, uint8_t oparg)
 {
     // No designated initialisers because of C++ compat
     _Py_CODEUNIT word;
     word.op.code = opcode;
     word.op.arg = oparg;
-    return word.cache;
+    return word;
 }
 
 static inline void
-_py_set_opcode(_Py_CODEUNIT *word, uint16_t packed_opcode)
+_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
 {
-    word->cache = packed_opcode;
+    word->op.code = opcode;
 }
 
 #define _Py_MAKE_CODEUNIT(opcode, oparg) _py_make_codeunit((opcode), (oparg))
-#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), opcode)
+#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), (opcode))
 
 
 typedef struct {
