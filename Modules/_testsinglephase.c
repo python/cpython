@@ -17,12 +17,27 @@ typedef struct {
     PyObject *str_const;
 } module_state;
 
+
 /* Process-global state is only used by _testsinglephase
    since it's the only one that does not support re-init. */
 static struct {
     int initialized_count;
     module_state module;
-} global_state = { .initialized_count = -1 };
+} global_state = {
+
+#define NOT_INITIALIZED -1
+    .initialized_count = NOT_INITIALIZED,
+};
+
+static void clear_state(module_state *state);
+
+static void
+clear_global_state(void)
+{
+    clear_state(&global_state.module);
+    global_state.initialized_count = NOT_INITIALIZED;
+}
+
 
 static inline module_state *
 get_module_state(PyObject *module)
@@ -105,6 +120,7 @@ error:
     clear_state(state);
     return -1;
 }
+
 
 static int
 init_module(PyObject *module, module_state *state)
@@ -198,8 +214,26 @@ basic_initialized_count(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 #define INITIALIZED_COUNT_METHODDEF \
-    {"initialized_count", basic_initialized_count, METH_VARARGS, \
+    {"initialized_count", basic_initialized_count, METH_NOARGS, \
      basic_initialized_count_doc}
+
+
+PyDoc_STRVAR(basic__clear_globals_doc,
+"_clear_globals()\n\
+\n\
+Free all global state and set it to uninitialized.");
+
+static PyObject *
+basic__clear_globals(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    assert(PyModule_GetDef(self)->m_size == -1);
+    clear_global_state();
+    Py_RETURN_NONE;
+}
+
+#define _CLEAR_GLOBALS_METHODDEF \
+    {"_clear_globals", basic__clear_globals, METH_NOARGS, \
+     basic__clear_globals_doc}
 
 
 /*********************************************/
@@ -223,6 +257,7 @@ static PyMethodDef TestMethods_Basic[] = {
     SUM_METHODDEF,
     INITIALIZED_METHODDEF,
     INITIALIZED_COUNT_METHODDEF,
+    _CLEAR_GLOBALS_METHODDEF,
     {NULL, NULL}           /* sentinel */
 };
 

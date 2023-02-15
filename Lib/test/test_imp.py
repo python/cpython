@@ -317,6 +317,11 @@ class ImportTests(unittest.TestCase):
         fileobj, pathname, _ = imp.find_module(basename)
         fileobj.close()
 
+        def clean_up():
+            import _testsinglephase
+            _testsinglephase._clear_globals()
+        self.addCleanup(clean_up)
+
         modules = {}
         def load(name):
             assert name not in modules
