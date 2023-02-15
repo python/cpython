@@ -442,7 +442,6 @@ _modules_by_index_set(PyInterpreterState *interp,
                       PyModuleDef *def, PyObject *module)
 {
     assert(def != NULL);
-    assert(def == PyModule_GetDef(module));
     assert(def->m_slots == NULL);
     assert(def->m_base.m_index > 0);
 
