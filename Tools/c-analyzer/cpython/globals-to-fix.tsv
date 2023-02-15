@@ -418,7 +418,6 @@ Modules/_ctypes/_ctypes.c	-	_unpickle	-
 Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	cache	-
 Modules/_cursesmodule.c	-	ModDict	-
 Modules/_datetimemodule.c	datetime_strptime	module	-
-Modules/_datetimemodule.c	-	PyDateTime_TimeZone_UTC	-
 Modules/_datetimemodule.c	-	PyDateTime_Epoch	-
 
 ## state
