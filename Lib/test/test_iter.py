@@ -91,6 +91,12 @@ class CallableIterClass:
             raise IndexError # Emergency stop
         return i
 
+
+def exhaust(iterator):
+    """Exhaust an iterator without raising StopIteration."""
+    list(iterator) 
+
+
 # Main test suite
 
 class TestCase(unittest.TestCase):
@@ -267,19 +273,22 @@ class TestCase(unittest.TestCase):
             return i
         self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
 
-    # Test two-argument iter() with function that empties its associated
-    # iterator via list() (or anything else but next()) but returns
-    # a non-sentinel value thus claiming that the iterator can yield more.
+    # Test two-argument iter() with function that exhausts its 
+    # associated iterator but forgets to either return a sentinel value
+    # or raise `StopIteration`.
     def test_iter_function_concealing_reentrant_exhaustion(self):
         HAS_MORE = 1
         NO_MORE = 2
         def spam():
-            if spam.not_emptied:
-                spam.not_emptied = False
-                list(spam.iterator) # Implicitly call ourselves
-                return HAS_MORE
-            return NO_MORE
-        spam.not_emptied = True
+            # Touching the iterator with exhaust() below will call
+            # spam() once again
+            if spam.is_recursive_call:
+                return NO_MORE
+            spam.is_recursive_call = True
+            exhaust(spam.iterator)
+            return HAS_MORE
+            
+        spam.is_recursive_call = False
         spam.iterator = iter(spam, NO_MORE)
         with self.assertRaises(StopIteration):
             next(spam.iterator)
