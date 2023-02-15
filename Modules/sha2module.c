@@ -22,6 +22,7 @@
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bswap32()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
@@ -765,16 +766,16 @@ static int sha2_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddType((PyObject *)state->sha224_type) < 0) {
+    if (PyModule_AddType(module, (PyObject *)state->sha224_type) < 0) {
         return -1;
     }
-    if (PyModule_AddType((PyObject *)state->sha256_type) < 0) {
+    if (PyModule_AddType(module, (PyObject *)state->sha256_type) < 0) {
         return -1;
     }
-    if (PyModule_AddType((PyObject *)state->sha384_type) < 0) {
+    if (PyModule_AddType(module, (PyObject *)state->sha384_type) < 0) {
         return -1;
     }
-    if (PyModule_AddType((PyObject *)state->sha512_type) < 0) {
+    if (PyModule_AddType(module, (PyObject *)state->sha512_type) < 0) {
         return -1;
     }
 
