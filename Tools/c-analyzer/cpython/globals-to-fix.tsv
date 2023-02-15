@@ -316,7 +316,6 @@ Modules/_collectionsmodule.c	-	deque_type	-
 Modules/_collectionsmodule.c	-	dequeiter_type	-
 Modules/_collectionsmodule.c	-	dequereviter_type	-
 Modules/_collectionsmodule.c	-	tuplegetter_type	-
-Modules/_io/bytesio.c	-	_PyBytesIOBuffer_Type	-
 Modules/_io/iobase.c	-	PyIOBase_Type	-
 Modules/_io/iobase.c	-	PyRawIOBase_Type	-
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-

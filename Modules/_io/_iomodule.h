@@ -18,6 +18,7 @@ extern PyType_Spec bufferedreader_spec;
 extern PyType_Spec bufferedrwpair_spec;
 extern PyType_Spec bufferedwriter_spec;
 extern PyType_Spec bytesio_spec;
+extern PyType_Spec bytesiobuf_spec;
 extern PyType_Spec fileio_spec;
 extern PyType_Spec nldecoder_spec;
 extern PyType_Spec stringio_spec;
@@ -150,6 +151,7 @@ typedef struct {
     PyTypeObject *PyBufferedRandom_Type;
     PyTypeObject *PyBufferedReader_Type;
     PyTypeObject *PyBufferedWriter_Type;
+    PyTypeObject *PyBytesIOBuffer_Type;
     PyTypeObject *PyBytesIO_Type;
     PyTypeObject *PyFileIO_Type;
     PyTypeObject *PyIncrementalNewlineDecoder_Type;
@@ -174,5 +176,3 @@ extern _PyIO_State *_PyIO_get_module_state(void);
 #ifdef MS_WINDOWS
 extern char _PyIO_get_console_type(PyObject *);
 #endif
-
-extern Py_EXPORTED_SYMBOL PyTypeObject _PyBytesIOBuffer_Type;
