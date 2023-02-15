@@ -7,9 +7,6 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"
 
-/* ABCs */
-extern PyTypeObject PyIOBase_Type;
-
 /* Type specs */
 extern PyType_Spec bufferediobase_spec;
 extern PyType_Spec bufferedrandom_spec;
@@ -19,6 +16,7 @@ extern PyType_Spec bufferedwriter_spec;
 extern PyType_Spec bytesio_spec;
 extern PyType_Spec bytesiobuf_spec;
 extern PyType_Spec fileio_spec;
+extern PyType_Spec iobase_spec;
 extern PyType_Spec nldecoder_spec;
 extern PyType_Spec rawiobase_spec;
 extern PyType_Spec stringio_spec;
@@ -153,6 +151,7 @@ typedef struct {
     PyTypeObject *PyBytesIOBuffer_Type;
     PyTypeObject *PyBytesIO_Type;
     PyTypeObject *PyFileIO_Type;
+    PyTypeObject *PyIOBase_Type;
     PyTypeObject *PyIncrementalNewlineDecoder_Type;
     PyTypeObject *PyRawIOBase_Type;
     PyTypeObject *PyStringIO_Type;

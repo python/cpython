@@ -632,19 +632,10 @@ struct PyModuleDef _PyIO_Module = {
 };
 
 
-static PyTypeObject* static_types[] = {
-    // Base classes
-    &PyIOBase_Type,
-};
-
-
 void
 _PyIO_Fini(void)
 {
-    for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types) - 1; i >= 0; i--) {
-        PyTypeObject *exc = static_types[i];
-        _PyStaticType_Dealloc(exc);
-    }
+    return;
 }
 
 #define ADD_TYPE(module, type, spec, base)                               \
@@ -689,19 +680,14 @@ PyInit__io(void)
         goto fail;
     }
 
-    // Add types
-    for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
-        PyTypeObject *type = static_types[i];
-        if (PyModule_AddType(m, type) < 0) {
-            goto fail;
-        }
-    }
-
     // Concrete classes
     ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &nldecoder_spec, NULL);
 
+    // Base classes
+    ADD_TYPE(m, state->PyIOBase_Type, &iobase_spec, NULL);
+
     // PyIOBase_Type subclasses
-    PyTypeObject *base = &PyIOBase_Type;
+    PyTypeObject *base = state->PyIOBase_Type;
     ADD_TYPE(m, state->PyTextIOBase_Type, &textiobase_spec, base);
     ADD_TYPE(m, state->PyBufferedIOBase_Type, &bufferediobase_spec, base);
     ADD_TYPE(m, state->PyRawIOBase_Type, &rawiobase_spec, base);
