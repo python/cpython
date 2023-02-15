@@ -21,11 +21,6 @@ struct _import_runtime_state {
        This is initialized lazily in _PyImport_FixupExtensionObject().
        Modules are added there and looked up in _imp.find_extension(). */
     PyObject *extensions;
-    struct {
-        int import_level;
-        _PyTime_t accumulated;
-        int header;
-    } find_and_load;
     /* Package context -- the full module name for package imports */
     const char * pkgcontext;
 };
@@ -68,6 +63,12 @@ struct _import_state {
         unsigned long thread;
         int level;
     } lock;
+    /* diagnostic info in PyImport_ImportModuleLevelObject() */
+    struct {
+        int import_level;
+        _PyTime_t accumulated;
+        int header;
+    } find_and_load;
 };
 
 #ifdef HAVE_DLOPEN
@@ -90,6 +91,9 @@ struct _import_state {
             .mutex = NULL, \
             .thread = PYTHREAD_INVALID_THREAD_ID, \
             .level = 0, \
+        }, \
+        .find_and_load = { \
+            .header = 1, \
         }, \
     }
 

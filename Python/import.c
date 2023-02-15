@@ -56,7 +56,6 @@ static struct _inittab *inittab_copy = NULL;
 #define LAST_MODULE_INDEX _PyRuntime.imports.last_module_index
 #define EXTENSIONS _PyRuntime.imports.extensions
 
-#define FIND_AND_LOAD _PyRuntime.imports.find_and_load
 #define PKGCONTEXT (_PyRuntime.imports.pkgcontext)
 
 
@@ -85,6 +84,9 @@ static struct _inittab *inittab_copy = NULL;
     (interp)->imports.lock.thread
 #define IMPORT_LOCK_LEVEL(interp) \
     (interp)->imports.lock.level
+
+#define FIND_AND_LOAD(interp) \
+    (interp)->imports.find_and_load
 
 
 /*******************/
@@ -2276,8 +2278,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     PyObject *mod = NULL;
     PyInterpreterState *interp = tstate->interp;
     int import_time = _PyInterpreterState_GetConfig(interp)->import_time;
-#define import_level FIND_AND_LOAD.import_level
-#define accumulated FIND_AND_LOAD.accumulated
+#define import_level FIND_AND_LOAD(interp).import_level
+#define accumulated FIND_AND_LOAD(interp).accumulated
 
     _PyTime_t t1 = 0, accumulated_copy = accumulated;
 
@@ -2298,7 +2300,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
      * _PyDict_GetItemIdWithError().
      */
     if (import_time) {
-#define header FIND_AND_LOAD.header
+#define header FIND_AND_LOAD(interp).header
         if (header) {
             fputs("import time: self [us] | cumulative | imported package\n",
                   stderr);
