@@ -23,7 +23,6 @@ extern PyTypeObject PyIncrementalNewlineDecoder_Type;
 
 #ifdef MS_WINDOWS
 extern PyTypeObject PyWindowsConsoleIO_Type;
-#define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), (PyTypeObject*)&PyWindowsConsoleIO_Type))
 #endif /* MS_WINDOWS */
 
 /* These functions are used as METH_NOARGS methods, are normally called
