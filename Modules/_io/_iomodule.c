@@ -671,9 +671,6 @@ static PyTypeObject* static_types[] = {
     &PyBufferedIOBase_Type,
     &PyRawIOBase_Type,
     &PyTextIOBase_Type,
-
-    // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    &_PyBytesIOBuffer_Type,
 };
 
 
@@ -771,7 +768,7 @@ PyInit__io(void)
              state->PyBufferedIOBase_Type);
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    state->PyBytesIOBuffer_Type = (PyTypeObject *)Py_NewRef(&_PyBytesIOBuffer_Type);
+    ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);  // XXX: should be subclass of PyRawIOBase_Type?
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, state->PyRawIOBase_Type);
 #ifdef MS_WINDOWS
     ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec,
