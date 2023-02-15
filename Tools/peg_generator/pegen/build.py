@@ -330,19 +330,10 @@ def build_python_parser_and_generator(
         skip_actions (bool, optional): Whether to pretend no rule has any actions.
     """
     grammar, parser, tokenizer = build_parser(grammar_file, verbose_tokenizer, verbose_parser)
-    result = StringIO()
-    gen: ParserGenerator = PythonParserGenerator(grammar, result)
-    gen.generate(grammar_file)
-    new_result = StringIO()
-    try:
-        exec(result.getvalue(), {})
-        GrammarParser = locals()['GeneratedParser']
-        gen: ParserGenerator = PythonParserGenerator(grammar, new_result)
-        GrammarParser(grammar, gen)
-    except Exception:
-        pass
-    else:
-        with open(output_file, "w") as f:
-            f.write(result.getvalue())
-        return grammar, parser, tokenizer, gen
-    raise Exception("Failed to generate parser and generator")
+    gen = build_python_generator(
+        grammar,
+        grammar_file,
+        output_file,
+        skip_actions=skip_actions,
+    )
+    return grammar, parser, tokenizer, gen
