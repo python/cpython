@@ -18,9 +18,9 @@
 /*[clinic input]
 module _io
 class _io._IOBase "PyObject *" "&PyIOBase_Type"
-class _io._RawIOBase "PyObject *" "&PyRawIOBase_Type"
+class _io._RawIOBase "PyObject *" "clinic_state()->PyRawIOBase_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d29a4d076c2b211c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=248f8b2f8bd58b45]*/
 
 /*
  * IOBase class, an abstract class
@@ -786,7 +786,9 @@ _io__IOBase_writelines(PyObject *self, PyObject *lines)
     Py_RETURN_NONE;
 }
 
+#define clinic_state() (IO_STATE())
 #include "clinic/iobase.c.h"
+#undef clinic_state
 
 static PyMethodDef iobase_methods[] = {
     {"seek", iobase_seek, METH_VARARGS, iobase_seek_doc},
@@ -1010,6 +1012,22 @@ rawiobase_write(PyObject *self, PyObject *args)
     return NULL;
 }
 
+static void
+rawiobase_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    _PyObject_GC_UNTRACK(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static int
+rawiobase_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static PyMethodDef rawiobase_methods[] = {
     _IO__RAWIOBASE_READ_METHODDEF
     _IO__RAWIOBASE_READALL_METHODDEF
@@ -1018,53 +1036,17 @@ static PyMethodDef rawiobase_methods[] = {
     {NULL, NULL}
 };
 
-PyTypeObject PyRawIOBase_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io._RawIOBase",                /*tp_name*/
-    0,                          /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    0,                          /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
-    rawiobase_doc,              /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    rawiobase_methods,          /* tp_methods */
-    0,                          /* tp_members */
-    0,                          /* tp_getset */
-    &PyIOBase_Type,             /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    0,                          /* tp_init */
-    0,                          /* tp_alloc */
-    0,                          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot rawiobase_slots[] = {
+    {Py_tp_dealloc, rawiobase_dealloc},
+    {Py_tp_doc, (void *)rawiobase_doc},
+    {Py_tp_methods, rawiobase_methods},
+    {Py_tp_traverse, rawiobase_traverse},
+    {0, NULL},
+};
+
+PyType_Spec rawiobase_spec = {
+    .name = "_io._RawIOBase",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = rawiobase_slots,
 };

@@ -9,7 +9,6 @@
 
 /* ABCs */
 extern PyTypeObject PyIOBase_Type;
-extern PyTypeObject PyRawIOBase_Type;
 
 /* Type specs */
 extern PyType_Spec bufferediobase_spec;
@@ -21,6 +20,7 @@ extern PyType_Spec bytesio_spec;
 extern PyType_Spec bytesiobuf_spec;
 extern PyType_Spec fileio_spec;
 extern PyType_Spec nldecoder_spec;
+extern PyType_Spec rawiobase_spec;
 extern PyType_Spec stringio_spec;
 extern PyType_Spec textiobase_spec;
 extern PyType_Spec textiowrapper_spec;
@@ -154,6 +154,7 @@ typedef struct {
     PyTypeObject *PyBytesIO_Type;
     PyTypeObject *PyFileIO_Type;
     PyTypeObject *PyIncrementalNewlineDecoder_Type;
+    PyTypeObject *PyRawIOBase_Type;
     PyTypeObject *PyStringIO_Type;
     PyTypeObject *PyTextIOBase_Type;
     PyTypeObject *PyTextIOWrapper_Type;

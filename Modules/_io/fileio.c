@@ -142,7 +142,9 @@ _io_FileIO_close_impl(fileio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+
+    _PyIO_State *state = IO_STATE();
+    res = PyObject_CallMethodOneArg((PyObject*)state->PyRawIOBase_Type,
                                      &_Py_ID(close), (PyObject *)self);
     if (!self->closefd) {
         self->fd = -1;

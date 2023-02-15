@@ -635,9 +635,6 @@ struct PyModuleDef _PyIO_Module = {
 static PyTypeObject* static_types[] = {
     // Base classes
     &PyIOBase_Type,
-
-    // PyIOBase_Type subclasses
-    &PyRawIOBase_Type,
 };
 
 
@@ -707,6 +704,7 @@ PyInit__io(void)
     PyTypeObject *base = &PyIOBase_Type;
     ADD_TYPE(m, state->PyTextIOBase_Type, &textiobase_spec, base);
     ADD_TYPE(m, state->PyBufferedIOBase_Type, &bufferediobase_spec, base);
+    ADD_TYPE(m, state->PyRawIOBase_Type, &rawiobase_spec, base);
 
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
     base = state->PyBufferedIOBase_Type;
@@ -717,7 +715,7 @@ PyInit__io(void)
     ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec, base);
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    base = &PyRawIOBase_Type;
+    base = state->PyRawIOBase_Type;
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, base);
     ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);  // XXX: should be subclass of PyRawIOBase_Type?
 #ifdef MS_WINDOWS

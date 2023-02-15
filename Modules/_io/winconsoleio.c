@@ -137,7 +137,7 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
 module _io
 class _io._WindowsConsoleIO "winconsoleio *" "clinic_state()->PyWindowsConsoleIO_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e897fdc1fba4e131]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=05526e723011ab36]*/
 
 typedef struct {
     PyObject_HEAD
@@ -194,7 +194,9 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+
+    _PyIO_State *state = IO_STATE();
+    res = PyObject_CallMethodOneArg((PyObject*)state->PyRawIOBase_Type,
                                     &_Py_ID(close), (PyObject*)self);
     if (!self->closefd) {
         self->fd = -1;
