@@ -1,0 +1,2 @@
+Fix the :func:`build_python_generator` and
+:func:`build_python_parser_and_generator` to validate the output file
