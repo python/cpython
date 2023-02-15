@@ -69,25 +69,25 @@ _SWAP_SLASH_AND_NEWLINE = str.maketrans({'/': '\n', '\n': '/'})
 
 
 @functools.lru_cache()
-def _translate(pattern, recursive):
-    if recursive:
-        if pattern == '**\n':
-            return r'[\S\s]*^'
-        elif pattern == '**':
-            return r'[\S\s]*'
-        elif '**' in pattern:
-            raise ValueError("Invalid pattern: '**' can only be an entire path component")
-    return fnmatch._translate(pattern)
+def _translate(pattern):
+    if pattern == '**\n':
+        return r'[\S\s]*^'
+    elif pattern == '**':
+        return r'[\S\s]*'
+    elif '**' in pattern:
+        raise ValueError("Invalid pattern: '**' can only be an entire path component")
+    else:
+        return fnmatch._translate(pattern)
 
 
 @functools.lru_cache()
-def _make_matcher(path_cls, pattern, recursive):
+def _make_matcher(path_cls, pattern):
     pattern = path_cls(pattern)
     if not pattern._parts:
         raise ValueError("empty pattern")
     result = [r'\A' if pattern._drv or pattern._root else '^']
     for line in pattern._lines_normcase.splitlines(keepends=True):
-        result.append(_translate(line, recursive))
+        result.append(_translate(line))
     result.append(r'\Z')
     return re.compile(''.join(result), flags=re.MULTILINE)
 
@@ -672,11 +672,11 @@ class PurePath(object):
         path = self._flavour.normcase(self.as_posix())
         return path.translate(_SWAP_SLASH_AND_NEWLINE)
 
-    def match(self, path_pattern, recursive=False):
+    def match(self, path_pattern):
         """
         Return True if this path matches the given pattern.
         """
-        matcher = _make_matcher(type(self), path_pattern, recursive)
+        matcher = _make_matcher(type(self), path_pattern)
         return matcher.search(self._lines_normcase) is not None
 
 
