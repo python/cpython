@@ -54,10 +54,6 @@ extern void _PyIO_Fini(void);
 
 #ifdef MS_WINDOWS
 #  undef BYTE
-
-   extern PyTypeObject PyWindowsConsoleIO_Type;
-#  define PyWindowsConsoleIO_Check(op) \
-       (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
@@ -2358,8 +2354,16 @@ create_stdio(const PyConfig *config, PyObject* io,
 
 #ifdef MS_WINDOWS
     /* Windows console IO is always UTF-8 encoded */
-    if (PyWindowsConsoleIO_Check(raw))
+    PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
+            &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
+    if (winconsoleio_type == NULL) {
+        goto error;
+    }
+    int is_subclass = PyObject_TypeCheck(raw, winconsoleio_type);
+    Py_DECREF(winconsoleio_type);
+    if (is_subclass) {
         encoding = L"utf-8";
+    }
 #endif
 
     text = PyUnicode_FromString(name);
