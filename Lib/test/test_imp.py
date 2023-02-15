@@ -1,12 +1,10 @@
 import gc
 import importlib
 import importlib.util
-import shutil
 import os
 import os.path
 import py_compile
 import sys
-import tempfile
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -17,6 +15,7 @@ import unittest
 import warnings
 imp = warnings_helper.import_deprecated('imp')
 import _imp
+import _testinternalcapi
 import _xxsubinterpreters as _interpreters
 
 
@@ -70,17 +69,6 @@ class ImportTests(unittest.TestCase):
         mod = importlib.import_module('test.encoded_modules')
         self.test_strings = mod.test_strings
         self.test_path = mod.__path__
-
-    def _copy_extension(self, name):
-        fileobj, pathname, _ = imp.find_module('_testsinglephase')
-        fileobj.close()
-
-        dirname = tempfile.mkdtemp()
-        self.addCleanup(os_helper.rmtree, dirname)
-
-        copied = os.path.join(dirname, os.path.basename(pathname))
-        shutil.copyfile(pathname, copied)
-        return copied
 
     # test_import_encoded_module moved to test_source_encoding.py
 
@@ -274,8 +262,20 @@ class ImportTests(unittest.TestCase):
 
         # This single-phase module has global state, which is shared
         # by the interpreters.
-        name = '_testsinglephase'
-        filename = self._copy_extension(name)
+        import _testsinglephase
+        name = _testsinglephase.__name__
+        filename = _testsinglephase.__file__
+
+        del sys.modules[name]
+        _testsinglephase._clear_globals()
+        _testinternalcapi.clear_extension(name, filename)
+        init_count = _testsinglephase.initialized_count()
+        assert init_count == -1, (init_count,)
+
+        def clean_up():
+            _testsinglephase._clear_globals()
+            _testinternalcapi.clear_extension(name, filename)
+        self.addCleanup(clean_up)
 
         interp1 = _interpreters.create(isolated=False)
         self.addCleanup(_interpreters.destroy, interp1)
@@ -283,18 +283,17 @@ class ImportTests(unittest.TestCase):
         self.addCleanup(_interpreters.destroy, interp2)
 
         script = textwrap.dedent(f'''
-            from test.support import warnings_helper
-            imp = warnings_helper.import_deprecated('imp')
-            module = imp.load_dynamic({name!r}, {filename!r})
+            import _testsinglephase
 
-            init_count =  module.initialized_count()
+            init_count =  _testsinglephase.initialized_count()
             if init_count != %d:
                 raise Exception(init_count)
 
-            lookedup = module.look_up_self()
-            if lookedup is not module:
-                raise Exception((module, lookedup))
+            lookedup = _testsinglephase.look_up_self()
+            if lookedup is not _testsinglephase:
+                raise Exception((_testsinglephase, lookedup))
             ''')
+
         # Use an interpreter that gets destroyed right away.
         ret = support.run_in_subinterp(script % 1)
         self.assertEqual(ret, 0)
