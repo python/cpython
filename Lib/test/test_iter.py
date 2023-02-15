@@ -94,7 +94,7 @@ class CallableIterClass:
 
 def exhaust(iterator):
     """Exhaust an iterator without raising StopIteration."""
-    list(iterator) 
+    list(iterator)
 
 
 # Main test suite
@@ -273,7 +273,7 @@ class TestCase(unittest.TestCase):
             return i
         self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
 
-    # Test two-argument iter() with function that exhausts its 
+    # Test two-argument iter() with function that exhausts its
     # associated iterator but forgets to either return a sentinel value
     # or raise `StopIteration`.
     def test_iter_function_concealing_reentrant_exhaustion(self):
@@ -287,7 +287,7 @@ class TestCase(unittest.TestCase):
             spam.is_recursive_call = True
             exhaust(spam.iterator)
             return HAS_MORE
-            
+
         spam.is_recursive_call = False
         spam.iterator = iter(spam, NO_MORE)
         with self.assertRaises(StopIteration):
