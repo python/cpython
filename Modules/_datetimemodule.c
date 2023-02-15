@@ -41,6 +41,14 @@
 #define PyTimezone_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeZoneType)
 
 typedef struct {
+    /* Conversion factors. */
+    PyObject *us_per_ms;       // 1000
+    PyObject *us_per_second;   // 1000000
+    PyObject *us_per_minute;   // 1e6 * 60 as Python int
+    PyObject *us_per_hour;     // 1e6 * 3600 as Python int
+    PyObject *us_per_day;      // 1e6 * 3600 * 24 as Python int
+    PyObject *us_per_week;     // 1e6*3600*24*7 as Python int
+    PyObject *seconds_per_day; // 3600*24 as Python int
 } datetime_state;
 
 static datetime_state global_state;
@@ -1815,19 +1823,6 @@ cmperror(PyObject *a, PyObject *b)
 }
 
 /* ---------------------------------------------------------------------------
- * Cached Python objects; these are set by the module init function.
- */
-
-/* Conversion factors. */
-static PyObject *us_per_ms = NULL;      /* 1000 */
-static PyObject *us_per_second = NULL;  /* 1000000 */
-static PyObject *us_per_minute = NULL;  /* 1e6 * 60 as Python int */
-static PyObject *us_per_hour = NULL;    /* 1e6 * 3600 as Python int */
-static PyObject *us_per_day = NULL;     /* 1e6 * 3600 * 24 as Python int */
-static PyObject *us_per_week = NULL;    /* 1e6*3600*24*7 as Python int */
-static PyObject *seconds_per_day = NULL; /* 3600*24 as Python int */
-
-/* ---------------------------------------------------------------------------
  * Class implementations.
  */
 
@@ -1852,7 +1847,8 @@ delta_to_microseconds(PyDateTime_Delta *self)
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
         goto Done;
-    x2 = PyNumber_Multiply(x1, seconds_per_day);        /* days in seconds */
+    datetime_state *st = GLOBAL_STATE();
+    x2 = PyNumber_Multiply(x1, st->seconds_per_day);        /* days in seconds */
     if (x2 == NULL)
         goto Done;
     Py_SETREF(x1, NULL);
@@ -1869,7 +1865,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     /* x1 = */ x2 = NULL;
 
     /* x3 has days+seconds in seconds */
-    x1 = PyNumber_Multiply(x3, us_per_second);          /* us */
+    x1 = PyNumber_Multiply(x3, st->us_per_second);          /* us */
     if (x1 == NULL)
         goto Done;
     Py_SETREF(x3, NULL);
@@ -1924,7 +1920,8 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
-    tuple = checked_divmod(pyus, us_per_second);
+    datetime_state *st = GLOBAL_STATE();
+    tuple = checked_divmod(pyus, st->us_per_second);
     if (tuple == NULL) {
         goto Done;
     }
@@ -1942,7 +1939,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     num = Py_NewRef(PyTuple_GET_ITEM(tuple, 0));        /* leftover seconds */
     Py_DECREF(tuple);
 
-    tuple = checked_divmod(num, seconds_per_day);
+    tuple = checked_divmod(num, st->seconds_per_day);
     if (tuple == NULL)
         goto Done;
     Py_DECREF(num);
@@ -2542,28 +2539,29 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         y = accum("microseconds", x, us, _PyLong_GetOne(), &leftover_us);
         CLEANUP;
     }
+    datetime_state *st = GLOBAL_STATE();
     if (ms) {
-        y = accum("milliseconds", x, ms, us_per_ms, &leftover_us);
+        y = accum("milliseconds", x, ms, st->us_per_ms, &leftover_us);
         CLEANUP;
     }
     if (second) {
-        y = accum("seconds", x, second, us_per_second, &leftover_us);
+        y = accum("seconds", x, second, st->us_per_second, &leftover_us);
         CLEANUP;
     }
     if (minute) {
-        y = accum("minutes", x, minute, us_per_minute, &leftover_us);
+        y = accum("minutes", x, minute, st->us_per_minute, &leftover_us);
         CLEANUP;
     }
     if (hour) {
-        y = accum("hours", x, hour, us_per_hour, &leftover_us);
+        y = accum("hours", x, hour, st->us_per_hour, &leftover_us);
         CLEANUP;
     }
     if (day) {
-        y = accum("days", x, day, us_per_day, &leftover_us);
+        y = accum("days", x, day, st->us_per_day, &leftover_us);
         CLEANUP;
     }
     if (week) {
-        y = accum("weeks", x, week, us_per_week, &leftover_us);
+        y = accum("weeks", x, week, st->us_per_week, &leftover_us);
         CLEANUP;
     }
     if (leftover_us) {
@@ -2718,7 +2716,8 @@ delta_total_seconds(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (total_microseconds == NULL)
         return NULL;
 
-    total_seconds = PyNumber_TrueDivide(total_microseconds, us_per_second);
+    datetime_state *st = GLOBAL_STATE();
+    total_seconds = PyNumber_TrueDivide(total_microseconds, st->us_per_second);
 
     Py_DECREF(total_microseconds);
     return total_seconds;
@@ -6873,49 +6872,49 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
-    us_per_ms = PyLong_FromLong(1000);
-    if (us_per_ms == NULL) {
+    st->us_per_ms = PyLong_FromLong(1000);
+    if (st->us_per_ms == NULL) {
         goto error;
     }
-    us_per_second = PyLong_FromLong(1000000);
-    if (us_per_second == NULL) {
+    st->us_per_second = PyLong_FromLong(1000000);
+    if (st->us_per_second == NULL) {
         goto error;
     }
-    us_per_minute = PyLong_FromLong(60000000);
-    if (us_per_minute == NULL) {
+    st->us_per_minute = PyLong_FromLong(60000000);
+    if (st->us_per_minute == NULL) {
         goto error;
     }
-    seconds_per_day = PyLong_FromLong(24 * 3600);
-    if (seconds_per_day == NULL) {
+    st->seconds_per_day = PyLong_FromLong(24 * 3600);
+    if (st->seconds_per_day == NULL) {
         goto error;
     }
 
     /* The rest are too big for 32-bit ints, but even
      * us_per_week fits in 40 bits, so doubles should be exact.
      */
-    us_per_hour = PyLong_FromDouble(3600000000.0);
-    if (us_per_hour == NULL) {
+    st->us_per_hour = PyLong_FromDouble(3600000000.0);
+    if (st->us_per_hour == NULL) {
         goto error;
     }
-    us_per_day = PyLong_FromDouble(86400000000.0);
-    if (us_per_day == NULL) {
+    st->us_per_day = PyLong_FromDouble(86400000000.0);
+    if (st->us_per_day == NULL) {
         goto error;
     }
-    us_per_week = PyLong_FromDouble(604800000000.0);
-    if (us_per_week == NULL) {
+    st->us_per_week = PyLong_FromDouble(604800000000.0);
+    if (st->us_per_week == NULL) {
         goto error;
     }
 
     return 0;
 
 error:
-    Py_XDECREF(us_per_ms);
-    Py_XDECREF(us_per_second);
-    Py_XDECREF(us_per_minute);
-    Py_XDECREF(us_per_hour);
-    Py_XDECREF(us_per_day);
-    Py_XDECREF(us_per_week);
-    Py_XDECREF(seconds_per_day);
+    Py_CLEAR(st->us_per_ms);
+    Py_CLEAR(st->us_per_second);
+    Py_CLEAR(st->us_per_minute);
+    Py_CLEAR(st->us_per_hour);
+    Py_CLEAR(st->us_per_day);
+    Py_CLEAR(st->us_per_week);
+    Py_CLEAR(st->seconds_per_day);
     return -1;
 }
 
