@@ -93,7 +93,9 @@ typedef struct {
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
 typedef struct {
-    uint16_t offset[2];
+    // Unique ID (for this code object) for this basic block. This indexes into
+    // the PyTier2Info bb_data field.
+    uint16_t bb_id;
 } _PyBBBranchCache;
 
 #define INLINE_CACHE_ENTRIES_BB_BRANCH CACHE_ENTRIES(_PyBBBranchCache)

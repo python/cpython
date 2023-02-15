@@ -59,10 +59,15 @@ typedef struct {
 
 // Tier 2 interpreter information
 typedef struct _PyTier2BBMetadata {
+    // Index into _PyTier2Info->bb_data
+    int id;
     // Array of types. This corresponds to the fast locals array.
     int type_context_len;
     PyTypeObject **type_context;
+    _Py_CODEUNIT *tier2_start;
     _Py_CODEUNIT *tier1_end;
+    // Type stack state
+    PyTypeObject **types_stack;
 } _PyTier2BBMetadata;
 
 // Bump allocator for basic blocks (overallocated)
@@ -80,14 +85,26 @@ typedef struct _PyTier2BBSpace  {
 
 // Tier 2 info stored in the code object. Lazily allocated.
 typedef struct _PyTier2Info {
-    _Py_CODEUNIT *_entry_bb;        /* the tier 2 basic block to execute (if any) */
-    _PyTier2BBSpace *_bb_space;   /* linked list storing basic blocks */
-    //_PyTier2IntermediateCode *i_code;  /* intermediate bytecode to generate tier 2 basic blocks */
+    /* the tier 2 basic block to execute (if any) */
+    _Py_CODEUNIT *_entry_bb;
+    _PyTier2BBSpace *_bb_space;
     // Keeps track of offset of jump targets (in number of codeunits)
     // from co_code_adaptive.
     int backward_jump_count;
     int *backward_jump_offsets;
+    // Each backward jump offset will have a corresponding array of _PyTier2BBMetadata *
+    // This allows us to find a suitable BB on a backward jump.
+    // So backward jump offset [1, 2, 3 ,4]
+    // will have [[BB_ID1, BB_ID2], [BB_ID3,], [], []]
+    // etc.
+    int *backward_jump_target_bb_ids;
     PyTypeObject **types_stack;
+    // Max len of bb_data
+    int bb_data_len;
+    // Current index to write into in bb_data. Incremented after each write.
+    // This also assigns the BB ID.
+    int bb_data_curr;
+    _PyTier2BBMetadata **bb_data;
 } _PyTier2Info;
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are

@@ -418,6 +418,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
         _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
         entry_point++;
     }
+
     co->_co_firsttraceable = entry_point;
     _PyCode_Quicken(co);
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
@@ -1693,6 +1694,10 @@ code_tier2_fini(PyCodeObject *co)
         t2_info->types_stack = NULL;
     }
     t2_info->backward_jump_count = 0;
+    if (t2_info->bb_data != NULL && t2_info->bb_data_len > 0) {
+        PyMem_Free(t2_info->bb_data);
+    }
+    t2_info->bb_data_len = 0;
     PyMem_Free(t2_info);
     //if (t2_info->i_code != NULL) {
     //    if (t2_info->i_code->_jump_targets != NULL) {
