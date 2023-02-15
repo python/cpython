@@ -369,20 +369,19 @@ class HashLibTestCase(unittest.TestCase):
         # 2 is for hashlib.name(...) and hashlib.new(name, ...)
         self.assertGreaterEqual(len(constructors), 2)
         for hash_object_constructor in constructors:
-            with self.subTest(implementation=hash_object_constructor):
-                m = hash_object_constructor(data, **kwargs)
-                computed = m.hexdigest() if not shake else m.hexdigest(length)
-                self.assertEqual(
-                        computed, hexdigest,
-                        "Hash algorithm %s constructed using %s returned hexdigest"
-                        " %r for %d byte input data that should have hashed to %r."
-                        % (name, hash_object_constructor,
-                           computed, len(data), hexdigest))
-                computed = m.digest() if not shake else m.digest(length)
-                digest = bytes.fromhex(hexdigest)
-                self.assertEqual(computed, digest)
-                if not shake:
-                    self.assertEqual(len(digest), m.digest_size)
+            m = hash_object_constructor(data, **kwargs)
+            computed = m.hexdigest() if not shake else m.hexdigest(length)
+            self.assertEqual(
+                    computed, hexdigest,
+                    "Hash algorithm %s constructed using %s returned hexdigest"
+                    " %r for %d byte input data that should have hashed to %r."
+                    % (name, hash_object_constructor,
+                       computed, len(data), hexdigest))
+            computed = m.digest() if not shake else m.digest(length)
+            digest = bytes.fromhex(hexdigest)
+            self.assertEqual(computed, digest)
+            if not shake:
+                self.assertEqual(len(digest), m.digest_size)
 
         if not shake and kwargs.get("key") is None:
             # skip shake and blake2 extended parameter tests
@@ -403,15 +402,14 @@ class HashLibTestCase(unittest.TestCase):
 
         try:
             for digest in digests:
-                with self.subTest(msg="check_file_digest", implementation=digest):
-                    buf = io.BytesIO(data)
-                    buf.seek(0)
-                    self.assertEqual(
-                        hashlib.file_digest(buf, digest).hexdigest(), hexdigest
-                    )
-                    with open(os_helper.TESTFN, "rb") as f:
-                        digestobj = hashlib.file_digest(f, digest)
-                    self.assertEqual(digestobj.hexdigest(), hexdigest)
+                buf = io.BytesIO(data)
+                buf.seek(0)
+                self.assertEqual(
+                    hashlib.file_digest(buf, digest).hexdigest(), hexdigest
+                )
+                with open(os_helper.TESTFN, "rb") as f:
+                    digestobj = hashlib.file_digest(f, digest)
+                self.assertEqual(digestobj.hexdigest(), hexdigest)
         finally:
             os.unlink(os_helper.TESTFN)
 
