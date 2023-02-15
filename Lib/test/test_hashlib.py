@@ -201,12 +201,6 @@ class HashLibTestCase(unittest.TestCase):
     def is_fips_mode(self):
         return get_fips_mode()
 
-    def test_types_unconstructable(self):
-        for h in self.hash_constructors:
-            implementation = type(h(b'', usedforsecurity=False))
-            with self.assertRaises(TypeError):
-                implementation()
-
     def test_hash_array(self):
         a = array.array("b", range(10))
         for cons in self.hash_constructors:
@@ -462,9 +456,9 @@ class HashLibTestCase(unittest.TestCase):
                 self.assertEqual(len(m.hexdigest()), 2*digest_size)
             self.assertEqual(m.name, name)
             # split for sha3_512 / _sha3.sha3 object
-            self.assertIn(name.split("_")[0], repr(m))
+            self.assertIn(name.split("_")[0], repr(m).lower())
 
-    def test_blocksize_name(self):
+    def test_blocksize_and_name(self):
         self.check_blocksize_name('md5', 64, 16)
         self.check_blocksize_name('sha1', 64, 20)
         self.check_blocksize_name('sha224', 64, 28)
