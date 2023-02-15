@@ -720,16 +720,8 @@ PyInit__io(void)
     // Add types
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
-        // Private type not exposed in the _io module
-        if (type == &_PyBytesIOBuffer_Type) {
-            if (PyType_Ready(type) < 0) {
-                goto fail;
-            }
-        }
-        else {
-            if (PyModule_AddType(m, type) < 0) {
-                goto fail;
-            }
+        if (PyModule_AddType(m, type) < 0) {
+            goto fail;
         }
     }
 

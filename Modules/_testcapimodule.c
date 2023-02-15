@@ -1448,12 +1448,10 @@ test_from_contiguous(PyObject* self, PyObject *Py_UNUSED(ignored))
 }
 
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
-extern PyTypeObject _PyBytesIOBuffer_Type;
 
 static PyObject *
 test_pep3118_obsolete_write_locks(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
-    PyTypeObject *type = &_PyBytesIOBuffer_Type;
     PyObject *b;
     char *dummy[1];
     int ret, match;
@@ -1466,7 +1464,13 @@ test_pep3118_obsolete_write_locks(PyObject* self, PyObject *Py_UNUSED(ignored))
         goto error;
 
     /* bytesiobuf_getbuffer() */
+    PyTypeObject *type = (PyTypeObject *)_PyImport_GetModuleAttrString(
+            "_io", "_BytesIOBuffer");
+    if (type == NULL) {
+        return NULL;
+    }
     b = type->tp_alloc(type, 0);
+    Py_DECREF(type);
     if (b == NULL) {
         return NULL;
     }

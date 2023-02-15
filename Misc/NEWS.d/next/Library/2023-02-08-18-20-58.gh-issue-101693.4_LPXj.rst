@@ -1,0 +1,6 @@
+In :meth:`sqlite3.Cursor.execute`, :exc:`DeprecationWarning` is now emitted
+when :ref:`named placeholders <sqlite3-placeholders>` are used together with
+parameters supplied as a :term:`sequence` instead of as a :class:`dict`.
+Starting from Python 3.14, using named placeholders with parameters supplied
+as a sequence will raise a :exc:`~sqlite3.ProgrammingError`.
+Patch by Erlend E. Aasland.

@@ -428,6 +428,71 @@ PyImport_GetMagicTag(void)
 }
 
 
+/*
+We support a number of kinds of single-phase init builtin/extension modules:
+
+* "basic"
+    * no module state (PyModuleDef.m_size == -1)
+    * does not support repeated init (we use PyModuleDef.m_base.m_copy)
+    * may have process-global state
+    * the module's def is cached in _PyRuntime.imports.extensions,
+      by (name, filename)
+* "reinit"
+    * no module state (PyModuleDef.m_size == 0)
+    * supports repeated init (m_copy is never used)
+    * should not have any process-global state
+    * its def is never cached in _PyRuntime.imports.extensions
+      (except, currently, under the main interpreter, for some reason)
+* "with state"  (almost the same as reinit)
+    * has module state (PyModuleDef.m_size > 0)
+    * supports repeated init (m_copy is never used)
+    * should not have any process-global state
+    * its def is never cached in _PyRuntime.imports.extensions
+      (except, currently, under the main interpreter, for some reason)
+
+There are also variants within those classes:
+
+* two or more modules share a PyModuleDef
+    * a module's init func uses another module's PyModuleDef
+    * a module's init func calls another's module's init func
+    * a module's init "func" is actually a variable statically initialized
+      to another module's init func
+* two or modules share "methods"
+    * a module's init func copies another module's PyModuleDef
+      (with a different name)
+* (basic-only) two or modules share process-global state
+
+In the first case, where modules share a PyModuleDef, the following
+notable weirdness happens:
+
+* the module's __name__ matches the def, not the requested name
+* the last module (with the same def) to be imported for the first time wins
+    * returned by PyState_Find_Module() (via interp->modules_by_index)
+    * (non-basic-only) its init func is used when re-loading any of them
+      (via the def's m_init)
+    * (basic-only) the copy of its __dict__ is used when re-loading any of them
+      (via the def's m_copy)
+
+However, the following happens as expected:
+
+* a new module object (with its own __dict__) is created for each request
+* the module's __spec__ has the requested name
+* the loaded module is cached in sys.modules under the requested name
+* the m_index field of the shared def is not changed,
+  so at least PyState_FindModule() will always look in the same place
+
+For "basic" modules there are other quirks:
+
+* (whether sharing a def or not) when loaded the first time,
+  m_copy is set before _init_module_attrs() is called
+  in importlib._bootstrap.module_from_spec(),
+  so when the module is re-loaded, the previous value
+  for __wpec__ (and others) is reset, possibly unexpectedly.
+
+Generally, when multiple interpreters are involved, some of the above
+gets even messier.
+*/
+
 /* Magic for extension modules (built-in as well as dynamically
    loaded).  To prevent initializing an extension module more than
    once, we keep a static dictionary 'extensions' keyed by the tuple
@@ -489,9 +554,8 @@ _extensions_cache_clear(void)
     Py_CLEAR(_PyRuntime.imports.extensions);
 }
 
-int
-_PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
-                               PyObject *filename, PyObject *modules)
+static int
+fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 {
     if (mod == NULL || !PyModule_Check(mod)) {
         PyErr_BadInternalCall();
@@ -505,16 +569,13 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (PyObject_SetItem(modules, name, mod) < 0) {
-        return -1;
-    }
     if (_PyState_AddModule(tstate, mod, def) < 0) {
-        PyMapping_DelItem(modules, name);
         return -1;
     }
 
     // bpo-44050: Extensions and def->m_base.m_copy can be updated
     // when the extension module doesn't support sub-interpreters.
+    // XXX Why special-case the main interpreter?
     if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
         if (def->m_size == -1) {
             if (def->m_base.m_copy) {
@@ -542,14 +603,38 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
 }
 
 int
+_PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
+                               PyObject *filename, PyObject *modules)
+{
+    if (PyObject_SetItem(modules, name, mod) < 0) {
+        return -1;
+    }
+    if (fix_up_extension(mod, name, filename) < 0) {
+        PyMapping_DelItem(modules, name);
+        return -1;
+    }
+    return 0;
+}
+
+int
 _PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
 {
-    int res;
+    int res = -1;
     PyObject *nameobj;
     nameobj = PyUnicode_InternFromString(name);
-    if (nameobj == NULL)
+    if (nameobj == NULL) {
         return -1;
-    res = _PyImport_FixupExtensionObject(mod, nameobj, nameobj, modules);
+    }
+    if (PyObject_SetItem(modules, nameobj, mod) < 0) {
+        goto finally;
+    }
+    if (fix_up_extension(mod, nameobj, nameobj) < 0) {
+        PyMapping_DelItem(modules, nameobj);
+        goto finally;
+    }
+    res = 0;
+
+finally:
     Py_DECREF(nameobj);
     return res;
 }
