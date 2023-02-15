@@ -52,6 +52,9 @@ typedef struct {
 
     /* The interned UTC timezone instance */
     PyObject *PyDateTime_TimeZone_UTC;
+
+    /* The interned Epoch datetime instance */
+    PyObject *PyDateTime_Epoch;
 } datetime_state;
 
 static datetime_state global_state;
@@ -1156,9 +1159,6 @@ typedef struct
     PyObject *offset;
     PyObject *name;
 } PyDateTime_TimeZone;
-
-/* The interned Epoch datetime instance */
-static PyObject *PyDateTime_Epoch;
 
 /* Create new timezone instance checking offset range.  This
    function does not check the name argument.  Caller must assure
@@ -6145,7 +6145,8 @@ local_timezone(PyDateTime_DateTime *utc_time)
     PyObject *one_second;
     PyObject *seconds;
 
-    delta = datetime_subtract((PyObject *)utc_time, PyDateTime_Epoch);
+    datetime_state *st = GLOBAL_STATE();
+    delta = datetime_subtract((PyObject *)utc_time, st->PyDateTime_Epoch);
     if (delta == NULL)
         return NULL;
     one_second = new_delta(0, 1, 0, 0);
@@ -6382,8 +6383,9 @@ datetime_timestamp(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
     PyObject *result;
 
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
+        datetime_state *st = GLOBAL_STATE();
         PyObject *delta;
-        delta = datetime_subtract((PyObject *)self, PyDateTime_Epoch);
+        delta = datetime_subtract((PyObject *)self, st->PyDateTime_Epoch);
         if (delta == NULL)
             return NULL;
         result = delta_total_seconds(delta, NULL);
@@ -6830,9 +6832,9 @@ _datetime_exec(PyObject *module)
     DATETIME_ADD_MACRO(d, "max", x);
 
     /* Epoch */
-    PyDateTime_Epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0,
+    st->PyDateTime_Epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0,
                                     st->PyDateTime_TimeZone_UTC, 0);
-    if (PyDateTime_Epoch == NULL) {
+    if (st->PyDateTime_Epoch == NULL) {
         return -1;
     }
 
