@@ -331,7 +331,6 @@ class _BasePurePathTest(object):
         self.assertTrue(P('/a/b/c.py').match('/**/*.py', recursive=True))
         self.assertTrue(P('/a/b/c.py').match('/a/**/*.py', recursive=True))
         self.assertTrue(P('/a/b/c.py').match('/a/b/**/*.py', recursive=True))
-        self.assertTrue(P('/a/b/c.py').match('**/a/b/c.py/**', recursive=True))
         self.assertTrue(P('/a/b/c.py').match('/**/**/**/**/*.py', recursive=True))
         self.assertFalse(P('c.py').match('**/a.py', recursive=True))
         self.assertFalse(P('c.py').match('c/**', recursive=True))

@@ -64,16 +64,23 @@ def _is_wildcard_pattern(pat):
 # Globbing helpers
 #
 
+
+_SWAP_SLASH_AND_NEWLINE = str.maketrans({'/': '\n', '\n': '/'})
+
+
 @functools.lru_cache()
 def _make_matcher(path_cls, pattern, recursive):
     pattern = path_cls(pattern)
     if not pattern._parts:
         raise ValueError("empty pattern")
     result = [r'\A' if pattern._drv or pattern._root else '^']
-    for line in pattern._lines_normcase:
+    for line in pattern._lines_normcase.splitlines(keepends=True):
         if recursive:
             if line == '**\n':
-                result.append('(.*\n)*')
+                result.append(r'[\S\s]*^')
+                continue
+            elif line == '**':
+                result.append(r'[\S\s]*')
                 continue
             elif '**' in line:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
@@ -659,14 +666,16 @@ class PurePath(object):
 
     @property
     def _lines_normcase(self):
-        return [f'{part}\n' for part in self._parts_normcase]
+        path = self._flavour.normcase(self.as_posix())
+        return path.translate(_SWAP_SLASH_AND_NEWLINE)
 
     def match(self, path_pattern, recursive=False):
         """
         Return True if this path matches the given pattern.
         """
         matcher = _make_matcher(type(self), path_pattern, recursive)
-        return matcher.search(''.join(self._lines_normcase)) is not None
+        return matcher.search(self._lines_normcase) is not None
+
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
 # optimizations in PurePath._parse_args().
