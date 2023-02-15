@@ -620,15 +620,14 @@ static PyMethodDef module_methods[] = {
 };
 
 struct PyModuleDef _PyIO_Module = {
-    PyModuleDef_HEAD_INIT,
-    "io",
-    module_doc,
-    sizeof(_PyIO_State),
-    module_methods,
-    NULL,
-    iomodule_traverse,
-    iomodule_clear,
-    (freefunc)iomodule_free,
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "io",
+    .m_doc = module_doc,
+    .m_size = sizeof(_PyIO_State),
+    .m_methods = module_methods,
+    .m_traverse = iomodule_traverse,
+    .m_clear = iomodule_clear,
+    .m_free = iomodule_free,
 };
 
 #define ADD_TYPE(module, type, spec, base)                               \
