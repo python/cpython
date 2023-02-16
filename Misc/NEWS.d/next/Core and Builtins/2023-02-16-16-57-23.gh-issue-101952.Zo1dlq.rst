@@ -1,0 +1,1 @@
+Fix possible segfault in ``BUILD_SET`` opcode, when new set created.
