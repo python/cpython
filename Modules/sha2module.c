@@ -273,10 +273,10 @@ SHA256Type_digest_impl(SHA256object *self)
 /*[clinic end generated code: output=3a2e3997a98ee792 input=f1f4cfea5cbde35c]*/
 {
     uint8_t digest[SHA256_DIGESTSIZE];
+    assert(self->digestsize <= SHA256_DIGESTSIZE);
     // HACL* performs copies under the hood so that self->state remains valid
     // after this call.
     Hacl_Streaming_SHA2_finish_256(self->state, digest);
-    assert(self->digestsize <= sizeof(digest));
     return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
@@ -291,10 +291,10 @@ SHA512Type_digest_impl(SHA512object *self)
 /*[clinic end generated code: output=dd8c6320070458e0 input=f6470dd359071f4b]*/
 {
     uint8_t digest[SHA512_DIGESTSIZE];
+    assert(self->digestsize <= SHA512_DIGESTSIZE);
     // HACL* performs copies under the hood so that self->state remains valid
     // after this call.
     Hacl_Streaming_SHA2_finish_512(self->state, digest);
-    assert(self->digestsize <= sizeof(digest));
     return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
@@ -309,8 +309,8 @@ SHA256Type_hexdigest_impl(SHA256object *self)
 /*[clinic end generated code: output=96cb68996a780ab3 input=0cc4c714693010d1]*/
 {
     uint8_t digest[SHA256_DIGESTSIZE];
+    assert(self->digestsize <= SHA256_DIGESTSIZE);
     Hacl_Streaming_SHA2_finish_256(self->state, digest);
-    assert(self->digestsize <= sizeof(digest));
     return _Py_strhex((const char *)digest, self->digestsize);
 }
 
@@ -325,8 +325,8 @@ SHA512Type_hexdigest_impl(SHA512object *self)
 /*[clinic end generated code: output=cbd6f844aba1fe7c input=498b877b25cbe0a2]*/
 {
     uint8_t digest[SHA512_DIGESTSIZE];
+    assert(self->digestsize <= SHA512_DIGESTSIZE);
     Hacl_Streaming_SHA2_finish_512(self->state, digest);
-    assert(self->digestsize <= sizeof(digest));
     return _Py_strhex((const char *)digest, self->digestsize);
 }
 
@@ -766,16 +766,16 @@ static int sha2_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddType(module, (PyObject *)state->sha224_type) < 0) {
+    if (PyModule_AddType(module, state->sha224_type) < 0) {
         return -1;
     }
-    if (PyModule_AddType(module, (PyObject *)state->sha256_type) < 0) {
+    if (PyModule_AddType(module, state->sha256_type) < 0) {
         return -1;
     }
-    if (PyModule_AddType(module, (PyObject *)state->sha384_type) < 0) {
+    if (PyModule_AddType(module, state->sha384_type) < 0) {
         return -1;
     }
-    if (PyModule_AddType(module, (PyObject *)state->sha512_type) < 0) {
+    if (PyModule_AddType(module, state->sha512_type) < 0) {
         return -1;
     }
 
