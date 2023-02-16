@@ -313,7 +313,7 @@ class WaitForShieldTests(unittest.IsolatedAsyncioTestCase):
         # `asyncio.shield` creates a new task which wraps the passed in
         # awaitable and shields it from cancellation so with timeout=0
         # the task returned by `asyncio.shield` aka shielded_task gets
-        # cancelled immediately and the task wrapped by is scheduled
+        # cancelled immediately and the task wrapped by it is scheduled
         # to run.
 
         async def coro():
