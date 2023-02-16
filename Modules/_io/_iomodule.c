@@ -607,7 +607,7 @@ iomodule_free(PyObject *mod) {
  * Module definition
  */
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (get_io_state(module))
 #include "clinic/_iomodule.c.h"
 #undef clinic_state
 
