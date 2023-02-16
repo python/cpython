@@ -74,6 +74,8 @@ static struct _inittab *inittab_copy = NULL;
     (interp)->imports.modules_by_index
 #define IMPORTLIB(interp) \
     (interp)->imports.importlib
+#define OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp) \
+    (interp)->imports.override_multi_interp_extensions_check
 #define OVERRIDE_FROZEN_MODULES(interp) \
     (interp)->imports.override_frozen_modules
 #ifdef HAVE_DLOPEN
@@ -814,6 +816,38 @@ static void
 _extensions_cache_clear_all(void)
 {
     Py_CLEAR(EXTENSIONS);
+}
+
+
+static bool
+check_multi_interp_extensions(PyInterpreterState *interp)
+{
+    int override = OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp);
+    if (override < 0) {
+        return false;
+    }
+    else if (override > 0) {
+        return true;
+    }
+    else if (_PyInterpreterState_HasFeature(
+                interp, Py_RTFLAGS_MULTI_INTERP_EXTENSIONS)) {
+        return true;
+    }
+    return false;
+}
+
+int
+_PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    if (check_multi_interp_extensions(interp)) {
+        assert(!_Py_IsMainInterpreter(interp));
+        PyErr_Format(PyExc_ImportError,
+                     "module %s does not support loading in subinterpreters",
+                     name);
+        return -1;
+    }
+    return 0;
 }
 
 static int
@@ -3297,6 +3331,34 @@ _imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_imp._override_multi_interp_extensions_check
+
+    override: int
+    /
+
+(internal-only) Override PyInterpreterConfig.check_multi_interp_extensions.
+
+(-1: "never", 1: "always", 0: no override)
+[clinic start generated code]*/
+
+static PyObject *
+_imp__override_multi_interp_extensions_check_impl(PyObject *module,
+                                                  int override)
+/*[clinic end generated code: output=3ff043af52bbf280 input=e086a2ea181f92ae]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_Py_IsMainInterpreter(interp)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "_imp._override_multi_interp_extensions_check() "
+                        "cannot be used in the main interpreter");
+        return NULL;
+    }
+    int oldvalue = OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp);
+    OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp) = override;
+    return PyLong_FromLong(oldvalue);
+}
+
 #ifdef HAVE_DYNAMIC_LOADING
 
 /*[clinic input]
@@ -3329,18 +3391,23 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     PyThreadState *tstate = _PyThreadState_GET();
     mod = import_find_extension(tstate, name, path);
-    if (mod != NULL || PyErr_Occurred()) {
-        Py_DECREF(name);
-        Py_DECREF(path);
-        return mod;
+    if (mod != NULL) {
+        const char *name_buf = PyUnicode_AsUTF8(name);
+        assert(name_buf != NULL);
+        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+            Py_DECREF(mod);
+            mod = NULL;
+        }
+        goto finally;
+    }
+    else if (PyErr_Occurred()) {
+        goto finally;
     }
 
     if (file != NULL) {
         fp = _Py_fopen_obj(path, "r");
         if (fp == NULL) {
-            Py_DECREF(name);
-            Py_DECREF(path);
-            return NULL;
+            goto finally;
         }
     }
     else
@@ -3348,10 +3415,12 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     mod = _PyImport_LoadDynamicModuleWithSpec(spec, fp);
 
-    Py_DECREF(name);
-    Py_DECREF(path);
     if (fp)
         fclose(fp);
+
+finally:
+    Py_DECREF(name);
+    Py_DECREF(path);
     return mod;
 }
 
@@ -3436,6 +3505,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_IS_FROZEN_METHODDEF
     _IMP__FROZEN_MODULE_NAMES_METHODDEF
     _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF
+    _IMP__OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF

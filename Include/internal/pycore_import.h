@@ -64,6 +64,7 @@ struct _import_state {
     /* override for config->use_frozen_modules (for tests)
        (-1: "off", 1: "on", 0: no override) */
     int override_frozen_modules;
+    int override_multi_interp_extensions_check;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
@@ -152,6 +153,10 @@ PyAPI_DATA(const struct _frozen *) _PyImport_FrozenBootstrap;
 PyAPI_DATA(const struct _frozen *) _PyImport_FrozenStdlib;
 PyAPI_DATA(const struct _frozen *) _PyImport_FrozenTest;
 extern const struct _module_alias * _PyImport_FrozenAliases;
+
+PyAPI_FUNC(int) _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
+    const char *name);
+
 
 // for testing
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
