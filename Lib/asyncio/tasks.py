@@ -443,6 +443,24 @@ async def wait_for(fut, timeout):
 
     This function is a coroutine.
     """
+    # The special case for timeout <= 0 is for the follwing case:
+    #
+    # async def test_waitfor():
+    #     func_started = False
+    #
+    #     async def func():
+    #         nonlocal func_started
+    #         func_started = True
+    #
+    #     try:
+    #         await asyncio.wait_for(func(), 0)
+    #     except asyncio.TimeoutError:
+    #         assert not func_started
+    #     else:
+    #         assert False
+    #
+    # asyncio.run(test_waitfor())
+
 
     if timeout is not None and timeout <= 0:
         fut = ensure_future(fut)
