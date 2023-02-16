@@ -321,7 +321,7 @@ class ImportTests(unittest.TestCase):
 
     @requires_load_dynamic
     def test_singlephase_variants(self):
-        '''Exercise the most meaningful variants described in Python/import.c.'''
+        # Exercise the most meaningful variants described in Python/import.c.
         self.maxDiff = None
 
         basename = '_testsinglephase'
