@@ -1353,7 +1353,7 @@
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 5, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             PyObject *null = NULL;
             PyObject *v;
             #if ENABLE_SPECIALIZATION
@@ -1412,7 +1412,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             POKE(1, v);
             if (oparg & 1) { POKE(1 + ((oparg & 1) ? 1 : 0), null); }
-            JUMPBY(5);
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -1420,7 +1420,7 @@
             PyObject *null = NULL;
             PyObject *res;
             uint16_t index = read_u16(&next_instr[1].cache);
-            uint32_t version = read_u32(&next_instr[2].cache);
+            uint16_t version = read_u16(&next_instr[2].cache);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1436,7 +1436,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             POKE(1, res);
             if (oparg & 1) { POKE(1 + ((oparg & 1) ? 1 : 0), null); }
-            JUMPBY(5);
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -1444,8 +1444,8 @@
             PyObject *null = NULL;
             PyObject *res;
             uint16_t index = read_u16(&next_instr[1].cache);
-            uint32_t mod_version = read_u32(&next_instr[2].cache);
-            uint16_t bltn_version = read_u16(&next_instr[4].cache);
+            uint16_t mod_version = read_u16(&next_instr[2].cache);
+            uint16_t bltn_version = read_u16(&next_instr[3].cache);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
@@ -1464,7 +1464,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             POKE(1, res);
             if (oparg & 1) { POKE(1 + ((oparg & 1) ? 1 : 0), null); }
-            JUMPBY(5);
+            JUMPBY(4);
             DISPATCH();
         }
 
