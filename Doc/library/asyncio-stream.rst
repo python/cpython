@@ -206,14 +206,14 @@ StreamReader
 
    .. coroutinemethod:: read(n=-1)
 
-      Read up to *n* bytes.
+      Read up to *n* bytes from the stream.
 
       If *n* is not provided, or set to ``-1``,
       read until EOF. After EOF is received, return all read bytes.
       If EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
 
-      If *n* is zero, return empty ``bytes`` object immediately.
+      If *n* is ``0``, return an empty ``bytes`` object immediately.
 
       If *n* is positive, this function tries to read *n* bytes, and may return
       less or equal bytes than requested, but at least one byte. If EOF was
