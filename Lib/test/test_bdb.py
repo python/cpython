@@ -1203,5 +1203,11 @@ class IssuesTestCase(BaseTestCase):
                 tracer.runcall(tfunc_import)
 
 
+class TestRegressions(unittest.TestCase):
+    def test_format_stack_entry_no_lineno(self):
+        # See gh-101517
+        Bdb().format_stack_entry((sys._getframe(), None))
+
+
 if __name__ == "__main__":
     unittest.main()

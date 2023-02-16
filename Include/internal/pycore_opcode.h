@@ -50,6 +50,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [COMPARE_OP] = 1,
     [LOAD_GLOBAL] = 5,
     [BINARY_OP] = 1,
+    [SEND] = 1,
     [COMPARE_AND_BRANCH] = 1,
     [CALL] = 4,
 };
@@ -86,6 +87,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [CALL_BUILTIN_FAST_WITH_KEYWORDS] = CALL,
     [CALL_FUNCTION_EX] = CALL_FUNCTION_EX,
     [CALL_INTRINSIC_1] = CALL_INTRINSIC_1,
+    [CALL_INTRINSIC_2] = CALL_INTRINSIC_2,
     [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = CALL,
     [CALL_NO_KW_BUILTIN_FAST] = CALL,
     [CALL_NO_KW_BUILTIN_O] = CALL,
@@ -186,15 +188,16 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [POP_JUMP_IF_NOT_NONE] = POP_JUMP_IF_NOT_NONE,
     [POP_JUMP_IF_TRUE] = POP_JUMP_IF_TRUE,
     [POP_TOP] = POP_TOP,
-    [PREP_RERAISE_STAR] = PREP_RERAISE_STAR,
     [PUSH_EXC_INFO] = PUSH_EXC_INFO,
     [PUSH_NULL] = PUSH_NULL,
     [RAISE_VARARGS] = RAISE_VARARGS,
     [RERAISE] = RERAISE,
     [RESUME] = RESUME,
+    [RETURN_CONST] = RETURN_CONST,
     [RETURN_GENERATOR] = RETURN_GENERATOR,
     [RETURN_VALUE] = RETURN_VALUE,
     [SEND] = SEND,
+    [SEND_GEN] = SEND,
     [SETUP_ANNOTATIONS] = SETUP_ANNOTATIONS,
     [SET_ADD] = SET_ADD,
     [SET_UPDATE] = SET_UPDATE,
@@ -316,7 +319,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [SETUP_ANNOTATIONS] = "SETUP_ANNOTATIONS",
     [STORE_ATTR_INSTANCE_VALUE] = "STORE_ATTR_INSTANCE_VALUE",
     [STORE_ATTR_SLOT] = "STORE_ATTR_SLOT",
-    [PREP_RERAISE_STAR] = "PREP_RERAISE_STAR",
+    [STORE_ATTR_WITH_HINT] = "STORE_ATTR_WITH_HINT",
     [POP_EXCEPT] = "POP_EXCEPT",
     [STORE_NAME] = "STORE_NAME",
     [DELETE_NAME] = "DELETE_NAME",
@@ -341,7 +344,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [JUMP_FORWARD] = "JUMP_FORWARD",
     [JUMP_IF_FALSE_OR_POP] = "JUMP_IF_FALSE_OR_POP",
     [JUMP_IF_TRUE_OR_POP] = "JUMP_IF_TRUE_OR_POP",
-    [STORE_ATTR_WITH_HINT] = "STORE_ATTR_WITH_HINT",
+    [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
     [POP_JUMP_IF_FALSE] = "POP_JUMP_IF_FALSE",
     [POP_JUMP_IF_TRUE] = "POP_JUMP_IF_TRUE",
     [LOAD_GLOBAL] = "LOAD_GLOBAL",
@@ -349,7 +352,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [CONTAINS_OP] = "CONTAINS_OP",
     [RERAISE] = "RERAISE",
     [COPY] = "COPY",
-    [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
+    [RETURN_CONST] = "RETURN_CONST",
     [BINARY_OP] = "BINARY_OP",
     [SEND] = "SEND",
     [LOAD_FAST] = "LOAD_FAST",
@@ -389,7 +392,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
     [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
-    [161] = "<161>",
+    [SEND_GEN] = "SEND_GEN",
     [LIST_EXTEND] = "LIST_EXTEND",
     [SET_UPDATE] = "SET_UPDATE",
     [DICT_MERGE] = "DICT_MERGE",
@@ -402,7 +405,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [CALL] = "CALL",
     [KW_NAMES] = "KW_NAMES",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
-    [174] = "<174>",
+    [CALL_INTRINSIC_2] = "CALL_INTRINSIC_2",
     [175] = "<175>",
     [176] = "<176>",
     [177] = "<177>",
@@ -495,13 +498,11 @@ static const char *const _PyOpcode_OpName[263] = {
 #endif
 
 #define EXTRA_CASES \
-    case 161: \
     case 166: \
     case 167: \
     case 168: \
     case 169: \
     case 170: \
-    case 174: \
     case 175: \
     case 176: \
     case 177: \
