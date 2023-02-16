@@ -308,14 +308,17 @@ _io_BytesIO_flush_impl(bytesio *self)
 /*[clinic input]
 _io.BytesIO.getbuffer
 
+    cls: defining_class
+    /
+
 Get a read-write view over the contents of the BytesIO object.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_getbuffer_impl(bytesio *self)
-/*[clinic end generated code: output=72cd7c6e13aa09ed input=8f738ef615865176]*/
+_io_BytesIO_getbuffer_impl(bytesio *self, PyTypeObject *cls)
+/*[clinic end generated code: output=045091d7ce87fe4e input=0668fbb48f95dffa]*/
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     PyTypeObject *type = state->PyBytesIOBuffer_Type;
     bytesiobuf *buf;
     PyObject *view;
@@ -987,7 +990,7 @@ bytesio_clear(bytesio *self)
 }
 
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/bytesio.c.h"
 #undef clinic_state
 

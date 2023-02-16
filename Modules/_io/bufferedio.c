@@ -106,16 +106,17 @@ _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
 }
 
 static PyObject *
-bufferediobase_unsupported(const char *message)
+bufferediobase_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
 /*[clinic input]
 _io._BufferedIOBase.detach
+
+    cls: defining_class
+    /
 
 Disconnect this buffer from its underlying raw stream and return it.
 
@@ -124,10 +125,11 @@ state.
 [clinic start generated code]*/
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self)
-/*[clinic end generated code: output=754977c8d10ed88c input=822427fb58fe4169]*/
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=b87b135d67cd4448 input=0b61a7b4357c1ea7]*/
 {
-    return bufferediobase_unsupported("detach");
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return bufferediobase_unsupported(state, "detach");
 }
 
 PyDoc_STRVAR(bufferediobase_read_doc,
@@ -151,7 +153,8 @@ PyDoc_STRVAR(bufferediobase_read_doc,
 static PyObject *
 bufferediobase_read(PyObject *self, PyObject *args)
 {
-    return bufferediobase_unsupported("read");
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return bufferediobase_unsupported(state, "read");
 }
 
 PyDoc_STRVAR(bufferediobase_read1_doc,
@@ -164,7 +167,8 @@ PyDoc_STRVAR(bufferediobase_read1_doc,
 static PyObject *
 bufferediobase_read1(PyObject *self, PyObject *args)
 {
-    return bufferediobase_unsupported("read1");
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return bufferediobase_unsupported(state, "read1");
 }
 
 PyDoc_STRVAR(bufferediobase_write_doc,
@@ -179,7 +183,8 @@ PyDoc_STRVAR(bufferediobase_write_doc,
 static PyObject *
 bufferediobase_write(PyObject *self, PyObject *args)
 {
-    return bufferediobase_unsupported("write");
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return bufferediobase_unsupported(state, "write");
 }
 
 
@@ -1287,20 +1292,22 @@ end:
 
 /*[clinic input]
 _io._Buffered.truncate
+    cls: defining_class
     pos: object = None
     /
 [clinic start generated code]*/
 
 static PyObject *
-_io__Buffered_truncate_impl(buffered *self, PyObject *pos)
-/*[clinic end generated code: output=667ca03c60c270de input=8a1be34d57cca2d3]*/
+_io__Buffered_truncate_impl(buffered *self, PyTypeObject *cls, PyObject *pos)
+/*[clinic end generated code: output=fe3882fbffe79f1a input=f5b737d97d76303f]*/
 {
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
     CHECK_CLOSED(self, "truncate of closed file")
     if (!self->writable) {
-        return bufferediobase_unsupported("truncate");
+        _PyIO_State *state = get_io_state_by_cls(cls);
+        return bufferediobase_unsupported(state, "truncate");
     }
     if (!ENTER_BUFFERED(self))
         return NULL;
@@ -1331,7 +1338,7 @@ buffered_iternext(buffered *self)
 
     CHECK_INITIALIZED(self);
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     tp = Py_TYPE(self);
     if (Py_IS_TYPE(tp, state->PyBufferedReader_Type) ||
         Py_IS_TYPE(tp, state->PyBufferedRandom_Type))
@@ -1433,7 +1440,7 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
         return -1;
     _bufferedreader_reset_buf(self);
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (
         Py_IS_TYPE(self, state->PyBufferedReader_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
@@ -1791,7 +1798,7 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (
         Py_IS_TYPE(self, state->PyBufferedWriter_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
@@ -2101,7 +2108,7 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
     if (_PyIOBase_check_writable(writer, Py_True) == NULL)
         return -1;
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->reader = (buffered *) PyObject_CallFunction(
             (PyObject *)state->PyBufferedReader_Type,
             "On", reader, buffer_size);
@@ -2311,7 +2318,7 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (Py_IS_TYPE(self, state->PyBufferedRandom_Type) &&
                                 Py_IS_TYPE(raw, state->PyFileIO_Type));
 
@@ -2319,7 +2326,7 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     return 0;
 }
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/bufferedio.c.h"
 #undef clinic_state
 

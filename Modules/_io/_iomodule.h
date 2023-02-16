@@ -137,7 +137,6 @@ extern Py_off_t PyNumber_AsOff_t(PyObject *item, PyObject *err);
 extern PyModuleDef _PyIO_Module;
 
 typedef struct {
-    int initialized;
     PyObject *locale_module;
 
     PyObject *unsupported_operation;
@@ -162,9 +161,6 @@ typedef struct {
 #endif
 } _PyIO_State;
 
-#define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
-#define IO_STATE() _PyIO_get_module_state()
-
 static inline _PyIO_State *
 get_io_state(PyObject *module)
 {
@@ -173,7 +169,21 @@ get_io_state(PyObject *module)
     return (_PyIO_State *)state;
 }
 
-extern _PyIO_State *_PyIO_get_module_state(void);
+static inline _PyIO_State *
+get_io_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (_PyIO_State *)state;
+}
+
+static inline _PyIO_State *
+find_io_state_by_def(PyTypeObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef(type, &_PyIO_Module);
+    assert(mod != NULL);
+    return get_io_state(mod);
+}
 
 #ifdef MS_WINDOWS
 extern char _PyIO_get_console_type(PyObject *);

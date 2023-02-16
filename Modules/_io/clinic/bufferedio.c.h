@@ -92,15 +92,19 @@ PyDoc_STRVAR(_io__BufferedIOBase_detach__doc__,
 "state.");
 
 #define _IO__BUFFEREDIOBASE_DETACH_METHODDEF    \
-    {"detach", (PyCFunction)_io__BufferedIOBase_detach, METH_NOARGS, _io__BufferedIOBase_detach__doc__},
+    {"detach", _PyCFunction_CAST(_io__BufferedIOBase_detach), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_detach__doc__},
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self);
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_io__BufferedIOBase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
+_io__BufferedIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io__BufferedIOBase_detach_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "detach() takes no arguments");
+        return NULL;
+    }
+    return _io__BufferedIOBase_detach_impl(self, cls);
 }
 
 PyDoc_STRVAR(_io__Buffered_peek__doc__,
@@ -369,26 +373,41 @@ PyDoc_STRVAR(_io__Buffered_truncate__doc__,
 "\n");
 
 #define _IO__BUFFERED_TRUNCATE_METHODDEF    \
-    {"truncate", _PyCFunction_CAST(_io__Buffered_truncate), METH_FASTCALL, _io__Buffered_truncate__doc__},
+    {"truncate", _PyCFunction_CAST(_io__Buffered_truncate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__Buffered_truncate__doc__},
 
 static PyObject *
-_io__Buffered_truncate_impl(buffered *self, PyObject *pos);
+_io__Buffered_truncate_impl(buffered *self, PyTypeObject *cls, PyObject *pos);
 
 static PyObject *
-_io__Buffered_truncate(buffered *self, PyObject *const *args, Py_ssize_t nargs)
+_io__Buffered_truncate(buffered *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "truncate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     PyObject *pos = Py_None;
 
-    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
     pos = args[0];
-skip_optional:
-    return_value = _io__Buffered_truncate_impl(self, pos);
+skip_optional_posonly:
+    return_value = _io__Buffered_truncate_impl(self, cls, pos);
 
 exit:
     return return_value;
@@ -714,4 +733,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8412b10c04259bb8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da047f54b16cb309 input=a9049054013a1b77]*/

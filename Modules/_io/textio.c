@@ -34,11 +34,9 @@ PyDoc_STRVAR(textiobase_doc,
     );
 
 static PyObject *
-_unsupported(const char *message)
+_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
@@ -52,7 +50,8 @@ PyDoc_STRVAR(textiobase_detach_doc,
 static PyObject *
 textiobase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _unsupported("detach");
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return _unsupported(state, "detach");
 }
 
 PyDoc_STRVAR(textiobase_read_doc,
@@ -65,7 +64,8 @@ PyDoc_STRVAR(textiobase_read_doc,
 static PyObject *
 textiobase_read(PyObject *self, PyObject *args)
 {
-    return _unsupported("read");
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return _unsupported(state, "read");
 }
 
 PyDoc_STRVAR(textiobase_readline_doc,
@@ -77,7 +77,8 @@ PyDoc_STRVAR(textiobase_readline_doc,
 static PyObject *
 textiobase_readline(PyObject *self, PyObject *args)
 {
-    return _unsupported("readline");
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return _unsupported(state, "readline");
 }
 
 PyDoc_STRVAR(textiobase_write_doc,
@@ -89,7 +90,8 @@ PyDoc_STRVAR(textiobase_write_doc,
 static PyObject *
 textiobase_write(PyObject *self, PyObject *args)
 {
-    return _unsupported("write");
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return _unsupported(state, "write");
 }
 
 PyDoc_STRVAR(textiobase_encoding_doc,
@@ -871,7 +873,7 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
         return -1;
 
     if (self->readuniversal) {
-        _PyIO_State *state = IO_STATE();
+        _PyIO_State *state = self->state;
         PyObject *incrementalDecoder = PyObject_CallFunctionObjArgs(
             (PyObject *)state->PyIncrementalNewlineDecoder_Type,
             self->decoder, self->readtranslate ? Py_True : Py_False, NULL);
@@ -888,7 +890,7 @@ _textiowrapper_decode(PyObject *decoder, PyObject *bytes, int eof)
 {
     PyObject *chars;
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(decoder));
     if (Py_IS_TYPE(decoder, state->PyIncrementalNewlineDecoder_Type))
         chars = _PyIncrementalNewlineDecoder_decode(decoder, bytes, eof);
     else
@@ -1178,7 +1180,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Finished sorting out the codec details */
     Py_CLEAR(codec_info);
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     if (Py_IS_TYPE(buffer, state->PyBufferedReader_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedWriter_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedRandom_Type))
@@ -1328,7 +1330,8 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
     /* Check if something is in the read buffer */
     if (self->decoded_chars != NULL) {
         if (encoding != Py_None || errors != Py_None || newline_obj != NULL) {
-            _unsupported("It is not possible to set the encoding or newline "
+            _unsupported(self->state,
+                        "It is not possible to set the encoding or newline "
                          "of stream after the first read");
             return NULL;
         }
@@ -1596,7 +1599,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     CHECK_CLOSED(self);
 
     if (self->encoder == NULL)
-        return _unsupported("not writable");
+        return _unsupported(self->state, "not writable");
 
     Py_INCREF(text);
 
@@ -1777,7 +1780,7 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
      */
 
     if (self->decoder == NULL) {
-        _unsupported("not readable");
+        _unsupported(self->state, "not readable");
         return -1;
     }
 
@@ -1902,7 +1905,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
     CHECK_CLOSED(self);
 
     if (self->decoder == NULL)
-        return _unsupported("not readable");
+        return _unsupported(self->state, "not readable");
 
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
@@ -2433,7 +2436,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     Py_INCREF(cookieObj);
 
     if (!self->seekable) {
-        _unsupported("underlying stream is not seekable");
+        _unsupported(self->state, "underlying stream is not seekable");
         goto fail;
     }
 
@@ -2447,7 +2450,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
 
         if (cmp == 0) {
-            _unsupported("can't do nonzero cur-relative seeks");
+            _unsupported(self->state, "can't do nonzero cur-relative seeks");
             goto fail;
         }
 
@@ -2467,7 +2470,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
 
         if (cmp == 0) {
-            _unsupported("can't do nonzero end-relative seeks");
+            _unsupported(self->state, "can't do nonzero end-relative seeks");
             goto fail;
         }
 
@@ -2630,7 +2633,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     CHECK_CLOSED(self);
 
     if (!self->seekable) {
-        _unsupported("underlying stream is not seekable");
+        _unsupported(self->state, "underlying stream is not seekable");
         goto fail;
     }
     if (!self->telling) {
@@ -3062,8 +3065,7 @@ textiowrapper_iternext(textio *self)
     CHECK_ATTACHED(self);
 
     self->telling = 0;
-    _PyIO_State *state = IO_STATE();
-    if (Py_IS_TYPE(self, state->PyTextIOWrapper_Type)) {
+    if (Py_IS_TYPE(self, self->state->PyTextIOWrapper_Type)) {
         /* Skip method call overhead for speed */
         line = _textiowrapper_readline(self, -1);
     }
@@ -3155,7 +3157,7 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
     return 0;
 }
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/textio.c.h"
 #undef clinic_state
 

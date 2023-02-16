@@ -181,6 +181,9 @@ internal_close(winconsoleio *self)
 /*[clinic input]
 _io._WindowsConsoleIO.close
 
+    cls: defining_class
+    /
+
 Close the console object.
 
 A closed console object cannot be used for further I/O operations.
@@ -188,14 +191,14 @@ close() may be called more than once without error.
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_close_impl(winconsoleio *self)
-/*[clinic end generated code: output=27ef95b66c29057b input=68c4e5754f8136c2]*/
+_io__WindowsConsoleIO_close_impl(winconsoleio *self, PyTypeObject *cls)
+/*[clinic end generated code: output=e50c1808c063e1e2 input=f200f26059fb2ecf]*/
 {
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     res = PyObject_CallMethodOneArg((PyObject*)state->PyRawIOBase_Type,
                                     &_Py_ID(close), (PyObject*)self);
     if (!self->closefd) {
@@ -449,12 +452,10 @@ err_closed(void)
 }
 
 static PyObject *
-err_mode(const char *action)
+err_mode(_PyIO_State *state, const char *action)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_Format(state->unsupported_operation,
-                     "Console buffer does not support %s", action);
+    PyErr_Format(state->unsupported_operation,
+                 "Console buffer does not support %s", action);
     return NULL;
 }
 
@@ -639,7 +640,8 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
         return -1;
     }
     if (!self->readable) {
-        err_mode("reading");
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+        err_mode(state, "reading");
         return -1;
     }
     if (len == 0)
@@ -893,6 +895,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
 
 /*[clinic input]
 _io._WindowsConsoleIO.read
+    cls: defining_class
     size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
@@ -904,16 +907,19 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
-/*[clinic end generated code: output=57df68af9f4b22d0 input=8bc73bc15d0fa072]*/
+_io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
+                                Py_ssize_t size)
+/*[clinic end generated code: output=7e569a586537c0ae input=a14570a5da273365]*/
 {
     PyObject *bytes;
     Py_ssize_t bytes_size;
 
     if (self->fd == -1)
         return err_closed();
-    if (!self->readable)
-        return err_mode("reading");
+    if (!self->readable) {
+        _PyIO_State *state = get_io_state_by_cls(cls);
+        return err_mode(state, "reading");
+    }
 
     if (size < 0)
         return _io__WindowsConsoleIO_readall_impl(self);
@@ -944,6 +950,7 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
 
 /*[clinic input]
 _io._WindowsConsoleIO.write
+    cls: defining_class
     b: Py_buffer
     /
 
@@ -954,8 +961,9 @@ The number of bytes actually written is returned.
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
-/*[clinic end generated code: output=775bdb16fbf9137b input=be35fb624f97c941]*/
+_io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
+                                 Py_buffer *b)
+/*[clinic end generated code: output=e8019f480243cb29 input=10ac37c19339dfbe]*/
 {
     BOOL res = TRUE;
     wchar_t *wbuf;
@@ -964,8 +972,10 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
 
     if (self->fd == -1)
         return err_closed();
-    if (!self->writable)
-        return err_mode("writing");
+    if (!self->writable) {
+        _PyIO_State *state = get_io_state_by_cls(cls);
+        return err_mode(state, "writing");
+    }
 
     handle = _Py_get_osfhandle(self->fd);
     if (handle == INVALID_HANDLE_VALUE)
@@ -1078,7 +1088,7 @@ _io__WindowsConsoleIO_isatty_impl(winconsoleio *self)
     Py_RETURN_TRUE;
 }
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/winconsoleio.c.h"
 #undef clinic_state
 

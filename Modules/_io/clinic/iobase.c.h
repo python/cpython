@@ -136,15 +136,19 @@ PyDoc_STRVAR(_io__IOBase_fileno__doc__,
 "OSError is raised if the IO object does not use a file descriptor.");
 
 #define _IO__IOBASE_FILENO_METHODDEF    \
-    {"fileno", (PyCFunction)_io__IOBase_fileno, METH_NOARGS, _io__IOBase_fileno__doc__},
+    {"fileno", _PyCFunction_CAST(_io__IOBase_fileno), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase_fileno__doc__},
 
 static PyObject *
-_io__IOBase_fileno_impl(PyObject *self);
+_io__IOBase_fileno_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_io__IOBase_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
+_io__IOBase_fileno(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io__IOBase_fileno_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "fileno() takes no arguments");
+        return NULL;
+    }
+    return _io__IOBase_fileno_impl(self, cls);
 }
 
 PyDoc_STRVAR(_io__IOBase_isatty__doc__,
@@ -316,4 +320,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=b7246a2087eb966b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=98f212f95ac26d74 input=a9049054013a1b77]*/

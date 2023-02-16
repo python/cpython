@@ -401,7 +401,7 @@ stringio_iternext(stringio *self)
     CHECK_CLOSED(self);
     ENSURE_REALIZED(self);
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     if (Py_IS_TYPE(self, state->PyStringIO_Type)) {
         /* Skip method call overhead for speed */
         line = _stringio_readline(self, -1);
@@ -717,7 +717,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
     }
 
     if (self->readuniversal) {
-        _PyIO_State *state = IO_STATE();
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
         self->decoder = PyObject_CallFunctionObjArgs(
             (PyObject *)state->PyIncrementalNewlineDecoder_Type,
             Py_None, self->readtranslate ? Py_True : Py_False, NULL);
@@ -969,7 +969,7 @@ stringio_newlines(stringio *self, void *context)
     return PyObject_GetAttr(self->decoder, &_Py_ID(newlines));
 }
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/stringio.c.h"
 #undef clinic_state
 

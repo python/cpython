@@ -71,11 +71,9 @@ PyDoc_STRVAR(iobase_doc,
 
 /* Internal methods */
 static PyObject *
-iobase_unsupported(const char *message)
+iobase_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
@@ -97,7 +95,8 @@ PyDoc_STRVAR(iobase_seek_doc,
 static PyObject *
 iobase_seek(PyObject *self, PyObject *args)
 {
-    return iobase_unsupported("seek");
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return iobase_unsupported(state, "seek");
 }
 
 /*[clinic input]
@@ -122,7 +121,8 @@ PyDoc_STRVAR(iobase_truncate_doc,
 static PyObject *
 iobase_truncate(PyObject *self, PyObject *args)
 {
-    return iobase_unsupported("truncate");
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return iobase_unsupported(state, "truncate");
 }
 
 static int
@@ -384,7 +384,8 @@ _PyIOBase_check_seekable(PyObject *self, PyObject *args)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        iobase_unsupported("File or stream is not seekable.");
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+        iobase_unsupported(state, "File or stream is not seekable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -417,7 +418,8 @@ _PyIOBase_check_readable(PyObject *self, PyObject *args)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        iobase_unsupported("File or stream is not readable.");
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+        iobase_unsupported(state, "File or stream is not readable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -450,7 +452,8 @@ _PyIOBase_check_writable(PyObject *self, PyObject *args)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        iobase_unsupported("File or stream is not writable.");
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+        iobase_unsupported(state, "File or stream is not writable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -483,16 +486,20 @@ iobase_exit(PyObject *self, PyObject *args)
 /*[clinic input]
 _io._IOBase.fileno
 
+    cls: defining_class
+    /
+
 Returns underlying file descriptor if one exists.
 
 OSError is raised if the IO object does not use a file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
-_io__IOBase_fileno_impl(PyObject *self)
-/*[clinic end generated code: output=7cc0973f0f5f3b73 input=4e37028947dc1cc8]*/
+_io__IOBase_fileno_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=7caaa32a6f4ada3d input=9e960cc21e8889a3]*/
 {
-    return iobase_unsupported("fileno");
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return iobase_unsupported(state, "fileno");
 }
 
 /*[clinic input]
@@ -789,7 +796,7 @@ _io__IOBase_writelines(PyObject *self, PyObject *lines)
     Py_RETURN_NONE;
 }
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/iobase.c.h"
 #undef clinic_state
 
