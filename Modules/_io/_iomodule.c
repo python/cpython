@@ -314,8 +314,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     }
 
     /* Create the Raw file stream */
+    _PyIO_State *state = get_io_state(module);
     {
-        _PyIO_State *state = get_io_state(module);
         PyObject *RawIO_class = (PyObject *)state->PyFileIO_Type;
 #ifdef MS_WINDOWS
         const PyConfig *config = _Py_GetConfig();
@@ -386,7 +386,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         return result;
     }
 
-    _PyIO_State *state = IO_STATE();
     /* wraps into a buffered file */
     {
         PyObject *Buffered_class;
