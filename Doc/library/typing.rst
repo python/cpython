@@ -439,7 +439,7 @@ are intended primarily for static type checking.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
-generics is cached, and most types in the typing module are hashable and
+generics is cached, and most types in the typing module are :term:`hashable` and
 comparable for equality.
 
 
@@ -2776,10 +2776,6 @@ Introspection helpers
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
-
-   .. versionchanged:: 3.10
-      Calling ``get_type_hints()`` on a class no longer returns the annotations
-      of its base classes.
 
    .. versionchanged:: 3.11
       Previously, ``Optional[t]`` was added for function and method annotations

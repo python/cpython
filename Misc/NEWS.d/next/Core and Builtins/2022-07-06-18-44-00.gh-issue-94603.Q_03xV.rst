@@ -1,1 +1,0 @@
-Improve performance of ``list.pop`` for small lists.

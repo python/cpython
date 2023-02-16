@@ -10,6 +10,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "_iomodule.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #ifdef HAVE_SYS_TYPES_H
@@ -560,7 +561,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
 static inline _PyIO_State*
 get_io_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_PyIO_State *)state;
 }
@@ -719,16 +720,8 @@ PyInit__io(void)
     // Add types
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
-        // Private type not exposed in the _io module
-        if (type == &_PyBytesIOBuffer_Type) {
-            if (PyType_Ready(type) < 0) {
-                goto fail;
-            }
-        }
-        else {
-            if (PyModule_AddType(m, type) < 0) {
-                goto fail;
-            }
+        if (PyModule_AddType(m, type) < 0) {
+            goto fail;
         }
     }
 

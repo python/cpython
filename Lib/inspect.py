@@ -399,8 +399,6 @@ def _has_coroutine_mark(f):
     while ismethod(f):
         f = f.__func__
     f = functools._unwrap_partial(f)
-    if not (isfunction(f) or _signature_is_functionlike(f)):
-        return False
     return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_marker
 
 def markcoroutinefunction(func):

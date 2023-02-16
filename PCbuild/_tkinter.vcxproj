@@ -111,6 +111,7 @@
   <ItemGroup>
     <_TclTkDLL Include="$(tcltkdir)\bin\$(tclDllName)" />
     <_TclTkDLL Include="$(tcltkdir)\bin\$(tkDllName)" />
+    <_TclTkDLL Include="$(tcltkdir)\bin\$(tclZlibDllName)" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">
