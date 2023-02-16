@@ -240,7 +240,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     int fstat_result;
     int async_err = 0;
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     assert(PyFileIO_Check(state, self));
     if (self->fd >= 0) {
         if (self->closefd) {

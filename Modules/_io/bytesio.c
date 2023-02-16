@@ -986,7 +986,7 @@ bytesio_clear(bytesio *self)
 }
 
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/bytesio.c.h"
 #undef clinic_state
 

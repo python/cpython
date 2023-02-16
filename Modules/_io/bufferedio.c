@@ -1331,7 +1331,7 @@ buffered_iternext(buffered *self)
 
     CHECK_INITIALIZED(self);
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     tp = Py_TYPE(self);
     if (Py_IS_TYPE(tp, state->PyBufferedReader_Type) ||
         Py_IS_TYPE(tp, state->PyBufferedRandom_Type))
@@ -1433,7 +1433,7 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
         return -1;
     _bufferedreader_reset_buf(self);
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (
         Py_IS_TYPE(self, state->PyBufferedReader_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
@@ -1791,7 +1791,7 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (
         Py_IS_TYPE(self, state->PyBufferedWriter_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
@@ -2101,7 +2101,7 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
     if (_PyIOBase_check_writable(writer, Py_True) == NULL)
         return -1;
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->reader = (buffered *) PyObject_CallFunction(
             (PyObject *)state->PyBufferedReader_Type,
             "On", reader, buffer_size);
@@ -2311,7 +2311,7 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (Py_IS_TYPE(self, state->PyBufferedRandom_Type) &&
                                 Py_IS_TYPE(raw, state->PyFileIO_Type));
 
@@ -2319,7 +2319,7 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     return 0;
 }
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/bufferedio.c.h"
 #undef clinic_state
 

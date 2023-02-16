@@ -168,6 +168,14 @@ get_io_state(PyObject *module)
     return (_PyIO_State *)state;
 }
 
+static inline _PyIO_State *
+find_io_state_by_def(PyTypeObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef(type, &_PyIO_Module);
+    assert(mod != NULL);
+    return get_io_state(mod);
+}
+
 extern _PyIO_State *_PyIO_get_module_state(void);
 
 #ifdef MS_WINDOWS
