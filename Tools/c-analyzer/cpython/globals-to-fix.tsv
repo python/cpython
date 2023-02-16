@@ -403,7 +403,6 @@ Modules/_pickle.c	-	PicklerMemoProxyType	-
 Modules/_pickle.c	-	Pickler_Type	-
 Modules/_pickle.c	-	UnpicklerMemoProxyType	-
 Modules/_pickle.c	-	Unpickler_Type	-
-Modules/_zoneinfo.c	-	PyZoneInfo_ZoneInfoType	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
 Modules/socketmodule.c	-	sock_type	-
@@ -442,11 +441,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 Modules/_ctypes/callproc.c	_ctypes_get_errobj	error_object_name	-
 Modules/_ctypes/_ctypes.c	CreateSwappedType	suffix	-
 
-## other - during module init
-Modules/_zoneinfo.c	-	io_open	-
-Modules/_zoneinfo.c	-	_tzpath_find_tzfile	-
-Modules/_zoneinfo.c	-	_common_mod	-
-
 ##-----------------------
 ## other
 
@@ -481,8 +475,6 @@ Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
-Modules/_zoneinfo.c	-	TIMEDELTA_CACHE	-
-Modules/_zoneinfo.c	-	ZONEINFO_WEAK_CACHE	-
 
 
 ##################################
@@ -556,9 +548,6 @@ Modules/_tkinter.c	-	HeadFHCD	-
 Modules/_tkinter.c	-	stdin_ready	-
 Modules/_tkinter.c	-	event_tstate	-
 Modules/_xxsubinterpretersmodule.c	-	_globals	-
-Modules/_zoneinfo.c	-	ZONEINFO_STRONG_CACHE	-
-Modules/_zoneinfo.c	-	ZONEINFO_STRONG_CACHE_MAX_SIZE	-
-Modules/_zoneinfo.c	-	NO_TTINFO	-
 Modules/readline.c	-	completer_word_break_characters	-
 Modules/readline.c	-	_history_length	-
 Modules/readline.c	-	should_auto_add_history	-
