@@ -13930,7 +13930,6 @@ os_set_handle_inheritable_impl(PyObject *module, intptr_t handle,
 }
 #endif /* MS_WINDOWS */
 
-#ifndef MS_WINDOWS
 /*[clinic input]
 os.get_blocking -> bool
     fd: int
@@ -13978,7 +13977,6 @@ os_set_blocking_impl(PyObject *module, int fd, int blocking)
         return NULL;
     Py_RETURN_NONE;
 }
-#endif   /* !MS_WINDOWS */
 
 
 /*[clinic input]
