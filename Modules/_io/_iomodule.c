@@ -582,6 +582,15 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
         return 0;
     Py_VISIT(state->locale_module);
     Py_VISIT(state->unsupported_operation);
+
+    Py_VISIT(state->PyBufferedRWPair_Type);
+    Py_VISIT(state->PyBufferedRandom_Type);
+    Py_VISIT(state->PyBufferedReader_Type);
+    Py_VISIT(state->PyBufferedWriter_Type);
+    Py_VISIT(state->PyBytesIO_Type);
+    Py_VISIT(state->PyFileIO_Type);
+    Py_VISIT(state->PyStringIO_Type);
+    Py_VISIT(state->PyTextIOWrapper_Type);
     return 0;
 }
 
@@ -594,6 +603,15 @@ iomodule_clear(PyObject *mod) {
     if (state->locale_module != NULL)
         Py_CLEAR(state->locale_module);
     Py_CLEAR(state->unsupported_operation);
+
+    Py_CLEAR(state->PyBufferedRWPair_Type);
+    Py_CLEAR(state->PyBufferedRandom_Type);
+    Py_CLEAR(state->PyBufferedReader_Type);
+    Py_CLEAR(state->PyBufferedWriter_Type);
+    Py_CLEAR(state->PyBytesIO_Type);
+    Py_CLEAR(state->PyFileIO_Type);
+    Py_CLEAR(state->PyStringIO_Type);
+    Py_CLEAR(state->PyTextIOWrapper_Type);
     return 0;
 }
 
