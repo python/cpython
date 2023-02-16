@@ -1684,6 +1684,9 @@
 [function._PyObject_NewVar]
     added = '3.2'
     abi_only = true
+[function._PyState_AddModule]
+    added = '3.2'
+    abi_only = true
 [function._PyThreadState_Init]
     added = '3.2'
     abi_only = true
