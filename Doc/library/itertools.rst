@@ -838,6 +838,22 @@ which incur interpreter overhead.
        "Returns the sequence elements n times"
        return chain.from_iterable(repeat(tuple(iterable), n))
 
+   def sum_of_squares(it):
+       "Add up the squares of the input values."
+       # sum_of_squares([10, 20, 30]) -> 1400
+       return math.sumprod(*tee(it))
+
+   def transpose(it):
+       "Swap the rows and columns of the input."
+       # transpose([(1, 2, 3), (11, 22, 33)]) --> (1, 11) (2, 22) (3, 33)
+       return zip(*it, strict=True)
+
+   def matmul(m1, m2):
+       "Multiply two matrices."
+       # matmul([(7, 5), (3, 5)], [[2, 5], [7, 9]]) --> (49, 80), (41, 60)
+       n = len(m2[0])
+       return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
+
    def convolve(signal, kernel):
        # See:  https://betterexplained.com/articles/intuitive-convolution/
        # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
@@ -1206,6 +1222,17 @@ which incur interpreter overhead.
 
     >>> list(ncycles('abc', 3))
     ['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']
+
+    >>> sum_of_squares([10, 20, 30])
+    1400
+
+    >>> list(transpose([(1, 2, 3), (11, 22, 33)]))
+    [(1, 11), (2, 22), (3, 33)]
+
+    >>> list(matmul([(7, 5), (3, 5)], [[2, 5], [7, 9]]))
+    [(49, 80), (41, 60)]
+    >>> list(matmul([[2, 5], [7, 9], [3, 4]], [[7, 11, 5, 4, 9], [3, 5, 2, 6, 3]]))
+    [(29, 47, 20, 38, 33), (76, 122, 53, 82, 90), (33, 53, 23, 36, 39)]
 
     >>> data = [20, 40, 24, 32, 20, 28, 16]
     >>> list(convolve(data, [0.25, 0.25, 0.25, 0.25]))

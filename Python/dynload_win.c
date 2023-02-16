@@ -125,14 +125,15 @@ static char *GetPythonImport (HINSTANCE hModule)
                 !strncmp(import_name,"python",6)) {
                 char *pch;
 
-#ifndef _DEBUG
-                /* In a release version, don't claim that python3.dll is
-                   a Python DLL. */
+                /* Don't claim that python3.dll is a Python DLL. */
+#ifdef _DEBUG
+                if (strcmp(import_name, "python3_d.dll") == 0) {
+#else
                 if (strcmp(import_name, "python3.dll") == 0) {
+#endif
                     import_data += 20;
                     continue;
                 }
-#endif
 
                 /* Ensure python prefix is followed only
                    by numbers to the end of the basename */

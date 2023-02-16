@@ -33,6 +33,9 @@ hascompare = []
 hasfree = []
 hasexc = []
 
+
+ENABLE_SPECIALIZATION = True
+
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
 
@@ -124,7 +127,6 @@ def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
 
-def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90             # real opcodes from here have an argument:
@@ -161,8 +163,10 @@ def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
+def_op('RETURN_CONST', 121)
+hasconst.append(121)
 def_op('BINARY_OP', 122)
-jrel_op('SEND', 123) # Number of bytes to skip
+jrel_op('SEND', 123)            # Number of words to skip
 def_op('LOAD_FAST', 124)        # Local variable number, no null check
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
@@ -189,6 +193,8 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
+def_op('COMPARE_AND_BRANCH', 141)   # Comparison and jump
+hascompare.append(141)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -217,6 +223,7 @@ def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
+def_op('CALL_INTRINSIC_2', 174)
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
@@ -309,10 +316,10 @@ _specializations = {
         "CALL_NO_KW_TUPLE_1",
         "CALL_NO_KW_TYPE_1",
     ],
-    "COMPARE_OP": [
-        "COMPARE_OP_FLOAT_JUMP",
-        "COMPARE_OP_INT_JUMP",
-        "COMPARE_OP_STR_JUMP",
+    "COMPARE_AND_BRANCH": [
+        "COMPARE_AND_BRANCH_FLOAT",
+        "COMPARE_AND_BRANCH_INT",
+        "COMPARE_AND_BRANCH_STR",
     ],
     "FOR_ITER": [
         "FOR_ITER_LIST",
@@ -363,6 +370,9 @@ _specializations = {
         "UNPACK_SEQUENCE_TUPLE",
         "UNPACK_SEQUENCE_TWO_TUPLE",
     ],
+    "SEND": [
+        "SEND_GEN",
+    ],
 }
 _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family
@@ -391,7 +401,9 @@ _cache_format = {
     },
     "COMPARE_OP": {
         "counter": 1,
-        "mask": 1,
+    },
+    "COMPARE_AND_BRANCH": {
+        "counter": 1,
     },
     "BINARY_SUBSCR": {
         "counter": 1,
@@ -418,6 +430,9 @@ _cache_format = {
         "min_args": 1,
     },
     "STORE_SUBSCR": {
+        "counter": 1,
+    },
+    "SEND": {
         "counter": 1,
     },
 }

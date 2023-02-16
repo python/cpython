@@ -87,13 +87,16 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_name = Py_NewRef(constr->fc_name);
     op->func_qualname = Py_NewRef(constr->fc_qualname);
     op->func_code = Py_NewRef(constr->fc_code);
-    op->func_defaults = NULL;
-    op->func_kwdefaults = NULL;
+    op->func_defaults = Py_XNewRef(constr->fc_defaults);
+    op->func_kwdefaults = Py_XNewRef(constr->fc_kwdefaults);
     op->func_closure = Py_XNewRef(constr->fc_closure);
     op->func_doc = Py_NewRef(Py_None);
     op->func_dict = NULL;
     op->func_weakreflist = NULL;
-    op->func_module = NULL;
+    op->func_module = Py_XNewRef(PyDict_GetItem(op->func_globals, &_Py_ID(__name__)));
+    if (!op->func_module) {
+        PyErr_Clear();
+    }
     op->func_annotations = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;

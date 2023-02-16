@@ -1797,12 +1797,10 @@ class ExtensionBuiltTest(unittest.TestCase):
         self.assertTrue(hasattr(py_zoneinfo.ZoneInfo, "_weak_cache"))
 
     def test_gc_tracked(self):
-        # The pure Python version is tracked by the GC but (for now) the C
-        # version is not.
         import gc
 
         self.assertTrue(gc.is_tracked(py_zoneinfo.ZoneInfo))
-        self.assertFalse(gc.is_tracked(c_zoneinfo.ZoneInfo))
+        self.assertTrue(gc.is_tracked(c_zoneinfo.ZoneInfo))
 
 
 @dataclasses.dataclass(frozen=True)

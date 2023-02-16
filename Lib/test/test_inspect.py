@@ -223,6 +223,10 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.iscoroutinefunction(Cl))
         # instances with async def __call__ are NOT recognised.
         self.assertFalse(inspect.iscoroutinefunction(Cl()))
+        # unless explicitly marked.
+        self.assertTrue(inspect.iscoroutinefunction(
+            inspect.markcoroutinefunction(Cl())
+        ))
 
         class Cl2:
             @inspect.markcoroutinefunction
@@ -232,6 +236,10 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.iscoroutinefunction(Cl2))
         # instances with marked __call__ are NOT recognised.
         self.assertFalse(inspect.iscoroutinefunction(Cl2()))
+        # unless explicitly marked.
+        self.assertTrue(inspect.iscoroutinefunction(
+            inspect.markcoroutinefunction(Cl2())
+        ))
 
         class Cl3:
             @inspect.markcoroutinefunction

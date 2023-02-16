@@ -1,1 +1,0 @@
-Fix crash in :mod:`pyexpat` by statically allocating ``PyExpat_CAPI`` capsule.

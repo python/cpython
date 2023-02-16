@@ -1,7 +1,0 @@
-``Mock`` objects which are not unsafe will now raise an
-``AttributeError`` when accessing an attribute that matches the name
-of an assertion but without the prefix ``assert_``, e.g. accessing
-``called_once`` instead of ``assert_called_once``.
-This is in addition to this already happening for accessing attributes
-with prefixes ``assert``, ``assret``, ``asert``, ``aseert``,
-and ``assrt``.

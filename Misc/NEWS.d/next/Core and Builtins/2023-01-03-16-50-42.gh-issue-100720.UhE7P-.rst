@@ -1,1 +1,0 @@
-Added ``_PyFrame_NumSlotsForCodeObject``, which returns the number of slots needed in a frame for a given code object.

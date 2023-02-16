@@ -1684,9 +1684,6 @@
 [function._PyObject_NewVar]
     added = '3.2'
     abi_only = true
-[function._PyState_AddModule]
-    added = '3.2'
-    abi_only = true
 [function._PyThreadState_Init]
     added = '3.2'
     abi_only = true
@@ -2333,6 +2330,15 @@
     added = '3.12'
 [function.PyVectorcall_Call]
     added = '3.12'
+[function.PyErr_GetRaisedException]
+    added = '3.12'
+[function.PyErr_SetRaisedException]
+    added = '3.12'
+[function.PyException_GetArgs]
+    added = '3.12'
+[function.PyException_SetArgs]
+    added = '3.12'
+
 [typedef.vectorcallfunc]
     added = '3.12'
 [function.PyObject_Vectorcall]
