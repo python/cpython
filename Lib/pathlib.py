@@ -19,10 +19,6 @@ from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
-try:
-    from nt import _getfullpathname
-except ImportError:
-    _getfullpathname = None
 
 
 __all__ = [
@@ -831,9 +827,9 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        elif self._drv and _getfullpathname:
+        elif self._drv:
             # There is a CWD on each drive-letter drive.
-            cwd = _getfullpathname(self._drv)
+            cwd = self._flavour.abspath(self._drv)
         else:
             cwd = os.getcwd()
         return self._from_parts([cwd] + self._parts)
