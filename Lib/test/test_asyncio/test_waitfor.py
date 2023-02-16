@@ -310,18 +310,30 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
 class WaitForShieldTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_zero_timeout(self):
-        # With timeout=0 the task gets cancelled immediately
-        # and the shielded task is not run.
+        # `asyncio.shield` creates a new task which wraps the passed in
+        # awaitable and shields it from cancellation so with timeout=0
+        # the task returned by `asyncio.shield` aka shielded_task gets
+        # cancelled immediately and the task wrapped by is scheduled
+        # to run.
+
         async def coro():
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)
             return 'done'
 
         task = asyncio.create_task(coro())
         with self.assertRaises(asyncio.TimeoutError):
-            await asyncio.wait_for(asyncio.shield(task), timeout=0)
+            shielded_task = asyncio.shield(task)
+            await asyncio.wait_for(shielded_task, timeout=0)
 
+        # Task is running in background
         self.assertFalse(task.done())
         self.assertFalse(task.cancelled())
+        self.assertTrue(shielded_task.cancelled())
+
+        # Wait for the task to complete
+        await asyncio.sleep(0.1)
+        self.assertTrue(task.done())
+
 
     async def test_none_timeout(self):
         # With timeout=None the timeout is disabled so it
@@ -339,12 +351,12 @@ class WaitForShieldTests(unittest.IsolatedAsyncioTestCase):
     async def test_shielded_timeout(self):
         # shield prevents the task from being cancelled.
         async def coro():
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
             return 'done'
 
         task = asyncio.create_task(coro())
         with self.assertRaises(asyncio.TimeoutError):
-            await asyncio.wait_for(asyncio.shield(task), timeout=0.1)
+            await asyncio.wait_for(asyncio.shield(task), timeout=0.01)
 
         self.assertFalse(task.done())
         self.assertFalse(task.cancelled())
