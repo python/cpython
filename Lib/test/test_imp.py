@@ -16,10 +16,19 @@ import warnings
 imp = warnings_helper.import_deprecated('imp')
 import _imp
 import _testinternalcapi
-import _xxsubinterpreters as _interpreters
+try:
+    import _xxsubinterpreters as _interpreters
+except ModuleNotFoundError:
+    _interpreters = None
 
 
 OS_PATH_NAME = os.path.__name__
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(_interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 def requires_load_dynamic(meth):
@@ -254,6 +263,7 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             imp.load_dynamic('nonexistent', pathname)
 
+    @requires_subinterpreters
     @requires_load_dynamic
     def test_singlephase_multiple_interpreters(self):
         # Currently, for every single-phrase init module loaded
