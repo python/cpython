@@ -2688,7 +2688,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     }
     PyObject *locals = frame->f_locals;
     /* Fast path for not overloaded __import__. */
-    if (import_func == tstate->interp->import_func) {
+    if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
