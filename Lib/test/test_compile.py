@@ -1155,6 +1155,17 @@ if 1:
             with self.subTest(expr=expr):
                 compile(expr, "<single>", "exec")
 
+    def test_multi_line_lambda_as_argument(self):
+        # See gh-101928
+        compile("""
+def foo(param, lambda_exp):
+    pass
+
+foo(param=0,
+    lambda_exp=lambda:
+    1)
+        """, "<test>", "exec")
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
