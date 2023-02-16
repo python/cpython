@@ -443,7 +443,7 @@ async def wait_for(fut, timeout):
 
     This function is a coroutine.
     """
-    # The special case for timeout <= 0 is for the follwing case:
+    # The special case for timeout <= 0 is for the following case:
     #
     # async def test_waitfor():
     #     func_started = False
