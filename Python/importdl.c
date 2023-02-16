@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"
+#include "pycore_import.h"
 #include "pycore_pystate.h"
 #include "pycore_runtime.h"
 
@@ -202,6 +203,10 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     }
 
     /* Fall back to single-phase init mechanism */
+
+    if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+        goto error;
+    }
 
     if (hook_prefix == nonascii_prefix) {
         /* don't allow legacy init for non-ASCII module names */
