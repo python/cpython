@@ -66,6 +66,8 @@ def _is_wildcard_pattern(pat):
 
 
 _SWAP_SLASH_AND_NEWLINE = str.maketrans({'/': '\n', '\n': '/'})
+_FNMATCH_PADDING = fnmatch.translate('_').split('_')
+_FNMATCH_SLICE = slice(len(_FNMATCH_PADDING[0]), -len(_FNMATCH_PADDING[1]))
 
 
 @functools.lru_cache()
@@ -77,7 +79,7 @@ def _translate(pattern):
     elif '**' in pattern:
         raise ValueError("Invalid pattern: '**' can only be an entire path component")
     else:
-        return fnmatch._translate(pattern)
+        return fnmatch.translate(pattern)[_FNMATCH_SLICE]
 
 
 @functools.lru_cache()
