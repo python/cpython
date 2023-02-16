@@ -1247,7 +1247,7 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
 {
     PyObject *f = ctx->file;
 
-    if (_Py_EnterRecursiveCall(" in print_chained") < 0) {
+    if (_Py_EnterRecursiveCall(" in print_chained")) {
         return -1;
     }
     bool need_close = ctx->need_close;
