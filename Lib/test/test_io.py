@@ -1046,7 +1046,7 @@ class CIOTest(IOTest):
 class TestIOCTypes(unittest.TestCase):
     def setUp(self):
         _io = import_helper.import_module("_io")
-        self.types = (
+        self.types = [
             _io.BufferedRWPair,
             _io.BufferedRandom,
             _io.BufferedReader,
@@ -1061,7 +1061,7 @@ class TestIOCTypes(unittest.TestCase):
             _io._IOBase,
             _io._RawIOBase,
             _io._TextIOBase,
-        )
+        ]
         if sys.platform == "win32":
             self.types.append(_io._WindowsConsoleIO)
         self._io = _io
