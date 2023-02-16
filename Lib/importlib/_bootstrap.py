@@ -89,6 +89,7 @@ class _BlockingOnManager:
             # gh-101766: glboal cache should be cleaned-up
             # if there is no more _blocking_on for this thread.
             del _blocking_on[self.thread_id]
+            del self.blocked_on
 
 
 class _DeadlockError(RuntimeError):
