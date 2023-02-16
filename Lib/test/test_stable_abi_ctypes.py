@@ -864,6 +864,7 @@ SYMBOL_NAMES = (
     "_PyObject_GC_Resize",
     "_PyObject_New",
     "_PyObject_NewVar",
+    "_PyState_AddModule",
     "_PyThreadState_Init",
     "_PyThreadState_Prealloc",
     "_PyWeakref_CallableProxyType",

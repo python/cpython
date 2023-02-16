@@ -197,6 +197,7 @@ gilstate_tss_clear(_PyRuntimeState *runtime)
 }
 
 
+#ifndef NDEBUG
 static inline int tstate_is_alive(PyThreadState *tstate);
 
 static inline int
@@ -204,6 +205,7 @@ tstate_is_bound(PyThreadState *tstate)
 {
     return tstate->_status.bound && !tstate->_status.unbound;
 }
+#endif  // !NDEBUG
 
 static void bind_gilstate_tstate(PyThreadState *);
 static void unbind_gilstate_tstate(PyThreadState *);
@@ -1119,6 +1121,7 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
 /* the per-thread runtime state */
 /********************************/
 
+#ifndef NDEBUG
 static inline int
 tstate_is_alive(PyThreadState *tstate)
 {
@@ -1127,6 +1130,7 @@ tstate_is_alive(PyThreadState *tstate)
             !tstate->_status.cleared &&
             !tstate->_status.finalizing);
 }
+#endif
 
 
 //----------
