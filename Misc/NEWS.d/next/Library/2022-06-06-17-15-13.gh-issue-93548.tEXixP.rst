@@ -1,1 +1,0 @@
-new example for UTF-8 credentials in the documentation of imaplib (SASL PLAIN authentication)
