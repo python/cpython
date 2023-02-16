@@ -333,6 +333,11 @@ class ImportTests(unittest.TestCase):
             _testsinglephase._clear_globals()
         self.addCleanup(clean_up)
 
+        def add_ext_cleanup(name):
+            def clean_up():
+                _testinternalcapi.clear_extension(name, pathname)
+            self.addCleanup(clean_up)
+
         modules = {}
         def load(name):
             assert name not in modules
@@ -430,6 +435,7 @@ class ImportTests(unittest.TestCase):
         # Check the "basic" module.
 
         name = basename
+        add_ext_cleanup(name)
         expected_init_count = 1
         with self.subTest(name):
             mod = load(name)
@@ -447,6 +453,7 @@ class ImportTests(unittest.TestCase):
         # Check its indirect variants.
 
         name = f'{basename}_basic_wrapper'
+        add_ext_cleanup(name)
         expected_init_count += 1
         with self.subTest(name):
             mod = load(name)
@@ -470,6 +477,7 @@ class ImportTests(unittest.TestCase):
         # Check its direct variant.
 
         name = f'{basename}_basic_copy'
+        add_ext_cleanup(name)
         expected_init_count += 1
         with self.subTest(name):
             mod = load(name)
@@ -490,6 +498,7 @@ class ImportTests(unittest.TestCase):
         # Check the non-basic variant that has no state.
 
         name = f'{basename}_with_reinit'
+        add_ext_cleanup(name)
         with self.subTest(name):
             mod = load(name)
             lookedup, initialized, cached = check_common(name, mod)
@@ -508,6 +517,7 @@ class ImportTests(unittest.TestCase):
         # Check the basic variant that has state.
 
         name = f'{basename}_with_state'
+        add_ext_cleanup(name)
         with self.subTest(name):
             mod = load(name)
             lookedup, initialized, cached = check_common(name, mod)
