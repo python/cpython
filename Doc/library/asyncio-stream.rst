@@ -209,15 +209,16 @@ StreamReader
       Read up to *n* bytes from the stream.
 
       If *n* is not provided, or set to ``-1``,
-      read until EOF. After EOF is received, return all read bytes.
+      read until EOF, then return all read :class:`bytes`.
       If EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
 
       If *n* is ``0``, return an empty ``bytes`` object immediately.
 
-      If *n* is positive, this function tries to read *n* bytes, and may return
-      less or equal bytes than requested, but at least one byte. If EOF was
-      received before any byte is read, this function returns an empty
+      If *n* is positive, wait for at least 1 byte to become available
+      (or EOF), then return the available ``bytes`` which might be less
+      than *n*.
+      If EOF is received before any byte is read, return an empty
       ``bytes`` object.
 
    .. coroutinemethod:: readline()
