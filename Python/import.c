@@ -465,7 +465,7 @@ _modules_by_index_set(PyInterpreterState *interp,
 }
 
 static int
-_modules_by_index_clear(PyInterpreterState *interp, PyModuleDef *def)
+_modules_by_index_clear_one(PyInterpreterState *interp, PyModuleDef *def)
 {
     Py_ssize_t index = def->m_base.m_index;
     const char *err = _modules_by_index_check(interp, index);
@@ -546,7 +546,7 @@ PyState_RemoveModule(PyModuleDef* def)
                          "PyState_RemoveModule called on module with slots");
         return -1;
     }
-    return _modules_by_index_clear(tstate->interp, def);
+    return _modules_by_index_clear_one(tstate->interp, def);
 }
 
 
@@ -1007,7 +1007,7 @@ clear_singlephase_extension(PyInterpreterState *interp,
 
     /* Clear the PyState_*Module() cache entry. */
     if (_modules_by_index_check(interp, def->m_base.m_index) == NULL) {
-        if (_modules_by_index_clear(interp, def) < 0) {
+        if (_modules_by_index_clear_one(interp, def) < 0) {
             return -1;
         }
     }
