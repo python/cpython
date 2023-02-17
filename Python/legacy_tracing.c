@@ -169,65 +169,12 @@ sys_trace_return(
     _PyLegacyEventHandler *self, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    PyThreadState *tstate = _PyThreadState_GET();
     assert(!PyErr_Occurred());
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
     assert(PyCode_Check(args[0]));
-    PyCodeObject *code = (PyCodeObject *)args[0];
     PyObject *val = args[2];
     PyObject *res = call_trace_func(self, val);
-//     if ((code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))  &&
-//         res != NULL && tstate->c_tracefunc != NULL
-//     ) {
-//         /* Fake PEP 380 StopIteration exception event */
-//         Py_DECREF(res);
-//         PyObject *stop_iter_args[2] = { NULL, val };
-//         PyObject *exc = PyObject_Vectorcall(PyExc_StopIteration,
-//                                             &stop_iter_args[1],
-//                                             1 | PY_VECTORCALL_ARGUMENTS_OFFSET,
-//                                             NULL);
-//         if (exc == NULL) {
-//             return NULL;
-//         }
-//         /* The event occurs in the caller frame, for historical reasons */
-//         _PyInterpreterFrame *frame = _PyEval_GetFrame();
-//         frame = frame->previous;
-//         while (frame && _PyFrame_IsIncomplete(frame)) {
-//             frame = frame->previous;
-//         }
-//         PyFrameObject* frame_obj = NULL;
-//         if (frame != NULL) {
-//             frame_obj = _PyFrame_GetFrameObject(frame);
-//         } else {
-//             PyErr_SetString(PyExc_SystemError,
-//                             "Missing frame when calling trace function.");
-//             return NULL;
-//         }
-//         if (frame_obj == NULL) {
-//             Py_DECREF(exc);
-//             return NULL;
-//         }
-//         PyObject *type = (PyObject *)Py_TYPE(exc);
-//         PyObject *tb = PyException_GetTraceback(exc);
-//         if (tb == NULL) {
-//             tb = Py_NewRef(Py_None);
-//         }
-//         PyObject * tuple = PyTuple_Pack(3, type, exc, tb);
-//         Py_DECREF(tb);
-//         if (tuple == NULL) {
-//             Py_DECREF(exc);
-//             return NULL;
-//         }
-//         Py_INCREF(frame_obj);
-//         int err = tstate->c_tracefunc(tstate->c_traceobj, frame_obj, PyTrace_EXCEPTION, tuple);
-//         Py_DECREF(frame_obj);
-//         Py_DECREF(tuple);
-//         Py_DECREF(exc);
-//         if (err) {
-//             return NULL;
-//         }
-//     }
     return res;
 }
 
