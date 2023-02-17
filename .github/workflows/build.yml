@@ -157,6 +157,8 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v3
+    - name: Install OpenSSL@1.1
+      run: brew install openssl@1.1
     - name: Prepare homebrew environment variables
       run: |
         echo "LDFLAGS=-L$(brew --prefix tcl-tk)/lib" >> $GITHUB_ENV
