@@ -879,6 +879,7 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
         v = NULL;
     }
     Py_XSETREF(f->f_trace, Py_XNewRef(v));
+    f->f_last_traced_line = -1;
     return 0;
 }
 

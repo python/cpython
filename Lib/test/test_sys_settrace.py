@@ -2809,5 +2809,22 @@ class TestEdgeCases(unittest.TestCase):
         sys.settrace(sys.gettrace())
 
 
+class TestLinesAfterTraceStarted(TraceTestCase):
+
+    def test_events(self):
+        tracer = Tracer()
+        sys._getframe().f_trace = tracer.trace
+        sys.settrace(tracer.trace)
+        line = 4
+        line = 5
+        sys.settrace(None)
+        self.compare_events(
+            TestLinesAfterTraceStarted.test_events.__code__.co_firstlineno,
+            tracer.events, [
+                (4, 'line'),
+                (5, 'line'),
+                (6, 'line')])
+
+
 if __name__ == "__main__":
     unittest.main()
