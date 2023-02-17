@@ -6,6 +6,14 @@ extern "C" {
 
 #define CODE_MAX_WATCHERS 8
 
+typedef struct {
+    // Unique ID (for this code object) for this basic block. This indexes into
+    // the PyTier2Info bb_data field.
+    uint16_t bb_id;
+} _PyBBBranchCache;
+
+#define INLINE_CACHE_ENTRIES_BB_BRANCH CACHE_ENTRIES(_PyBBBranchCache)
+
 /* PEP 659
  * Specialization and quickening structs and helper functions
  */
@@ -93,12 +101,10 @@ typedef struct {
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
 typedef struct {
-    // Unique ID (for this code object) for this basic block. This indexes into
-    // the PyTier2Info bb_data field.
-    uint16_t bb_id;
-} _PyBBBranchCache;
+    uint16_t counter;
+} _PySendCache;
 
-#define INLINE_CACHE_ENTRIES_BB_BRANCH CACHE_ENTRIES(_PyBBBranchCache)
+#define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
 
 // Borrowed references to common callables:
 struct callable_cache {
@@ -241,6 +247,7 @@ extern void _Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs,
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);

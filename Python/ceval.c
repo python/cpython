@@ -688,12 +688,6 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 }
 
 
-// GH-89279: Must be a macro to be sure it's inlined by MSVC.
-#define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
-
-#define KWNAMES_LEN() \
-    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
-
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
 
@@ -2697,7 +2691,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     }
     PyObject *locals = frame->f_locals;
     /* Fast path for not overloaded __import__. */
-    if (import_func == tstate->interp->import_func) {
+    if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
