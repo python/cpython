@@ -322,7 +322,7 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.type_ignores, [])
 
     def test_longargs(self):
-        for tree in self.parse_all(longargs):
+        for tree in self.parse_all(longargs, minver=8):
             for t in tree.body:
                 # The expected args are encoded in the function name
                 todo = set(t.name[1:])
@@ -390,13 +390,21 @@ class TypeCommentTests(unittest.TestCase):
         arg = tree.argtypes[0]
         self.assertEqual(arg.id, "int")
         self.assertEqual(tree.returns.value.id, "List")
-        self.assertEqual(tree.returns.slice.value.id, "str")
+        self.assertEqual(tree.returns.slice.id, "str")
 
         tree = parse_func_type_input("(int, *str, **Any) -> float")
         self.assertEqual(tree.argtypes[0].id, "int")
         self.assertEqual(tree.argtypes[1].id, "str")
         self.assertEqual(tree.argtypes[2].id, "Any")
         self.assertEqual(tree.returns.id, "float")
+
+        tree = parse_func_type_input("(*int) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        tree = parse_func_type_input("(**int) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        tree = parse_func_type_input("(*int, **str) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        self.assertEqual(tree.argtypes[1].id, "str")
 
         with self.assertRaises(SyntaxError):
             tree = parse_func_type_input("(int, *str, *Any) -> float")

@@ -10,15 +10,16 @@
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
-           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce',
-           'TopologicalSorter', 'CycleError',
-           'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod']
+           'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
+           'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
+           'cached_property']
 
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
+from types import GenericAlias
 
 
 ################################################################################
@@ -85,82 +86,86 @@ def wraps(wrapped,
 # infinite recursion that could occur when the operator dispatch logic
 # detects a NotImplemented result and then calls a reflected method.
 
-def _gt_from_lt(self, other, NotImplemented=NotImplemented):
+def _gt_from_lt(self, other):
     'Return a > b.  Computed by @total_ordering from (not a < b) and (a != b).'
-    op_result = self.__lt__(other)
+    op_result = type(self).__lt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result and self != other
 
-def _le_from_lt(self, other, NotImplemented=NotImplemented):
+def _le_from_lt(self, other):
     'Return a <= b.  Computed by @total_ordering from (a < b) or (a == b).'
-    op_result = self.__lt__(other)
+    op_result = type(self).__lt__(self, other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
-def _ge_from_lt(self, other, NotImplemented=NotImplemented):
+def _ge_from_lt(self, other):
     'Return a >= b.  Computed by @total_ordering from (not a < b).'
-    op_result = self.__lt__(other)
+    op_result = type(self).__lt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
 
-def _ge_from_le(self, other, NotImplemented=NotImplemented):
+def _ge_from_le(self, other):
     'Return a >= b.  Computed by @total_ordering from (not a <= b) or (a == b).'
-    op_result = self.__le__(other)
+    op_result = type(self).__le__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result or self == other
 
-def _lt_from_le(self, other, NotImplemented=NotImplemented):
+def _lt_from_le(self, other):
     'Return a < b.  Computed by @total_ordering from (a <= b) and (a != b).'
-    op_result = self.__le__(other)
+    op_result = type(self).__le__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result and self != other
 
-def _gt_from_le(self, other, NotImplemented=NotImplemented):
+def _gt_from_le(self, other):
     'Return a > b.  Computed by @total_ordering from (not a <= b).'
-    op_result = self.__le__(other)
+    op_result = type(self).__le__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
 
-def _lt_from_gt(self, other, NotImplemented=NotImplemented):
+def _lt_from_gt(self, other):
     'Return a < b.  Computed by @total_ordering from (not a > b) and (a != b).'
-    op_result = self.__gt__(other)
+    op_result = type(self).__gt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result and self != other
 
-def _ge_from_gt(self, other, NotImplemented=NotImplemented):
+def _ge_from_gt(self, other):
     'Return a >= b.  Computed by @total_ordering from (a > b) or (a == b).'
-    op_result = self.__gt__(other)
+    op_result = type(self).__gt__(self, other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
-def _le_from_gt(self, other, NotImplemented=NotImplemented):
+def _le_from_gt(self, other):
     'Return a <= b.  Computed by @total_ordering from (not a > b).'
-    op_result = self.__gt__(other)
+    op_result = type(self).__gt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
 
-def _le_from_ge(self, other, NotImplemented=NotImplemented):
+def _le_from_ge(self, other):
     'Return a <= b.  Computed by @total_ordering from (not a >= b) or (a == b).'
-    op_result = self.__ge__(other)
+    op_result = type(self).__ge__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result or self == other
 
-def _gt_from_ge(self, other, NotImplemented=NotImplemented):
+def _gt_from_ge(self, other):
     'Return a > b.  Computed by @total_ordering from (a >= b) and (a != b).'
-    op_result = self.__ge__(other)
+    op_result = type(self).__ge__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result and self != other
 
-def _lt_from_ge(self, other, NotImplemented=NotImplemented):
+def _lt_from_ge(self, other):
     'Return a < b.  Computed by @total_ordering from (not a >= b).'
-    op_result = self.__ge__(other)
+    op_result = type(self).__ge__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
@@ -192,250 +197,6 @@ def total_ordering(cls):
             opfunc.__name__ = opname
             setattr(cls, opname, opfunc)
     return cls
-
-################################################################################
-### topological sort
-################################################################################
-
-_NODE_OUT = -1
-_NODE_DONE = -2
-
-
-class _NodeInfo:
-    __slots__ = 'node', 'npredecessors', 'successors'
-
-    def __init__(self, node):
-        # The node this class is augmenting.
-        self.node = node
-
-        # Number of predecessors, generally >= 0. When this value falls to 0,
-        # and is returned by get_ready(), this is set to _NODE_OUT and when the
-        # node is marked done by a call to done(), set to _NODE_DONE.
-        self.npredecessors = 0
-
-        # List of successor nodes. The list can contain duplicated elements as
-        # long as they're all reflected in the successor's npredecessors attribute).
-        self.successors = []
-
-
-class CycleError(ValueError):
-    """Subclass of ValueError raised by TopologicalSorterif cycles exist in the graph
-
-    If multiple cycles exist, only one undefined choice among them will be reported
-    and included in the exception. The detected cycle can be accessed via the second
-    element in the *args* attribute of the exception instance and consists in a list
-    of nodes, such that each node is, in the graph, an immediate predecessor of the
-    next node in the list. In the reported list, the first and the last node will be
-    the same, to make it clear that it is cyclic.
-    """
-    pass
-
-
-class TopologicalSorter:
-    """Provides functionality to topologically sort a graph of hashable nodes"""
-
-    def __init__(self, graph=None):
-        self._node2info = {}
-        self._ready_nodes = None
-        self._npassedout = 0
-        self._nfinished = 0
-
-        if graph is not None:
-            for node, predecessors in graph.items():
-                self.add(node, *predecessors)
-
-    def _get_nodeinfo(self, node):
-        if (result := self._node2info.get(node)) is None:
-            self._node2info[node] = result = _NodeInfo(node)
-        return result
-
-    def add(self, node, *predecessors):
-        """Add a new node and its predecessors to the graph.
-
-        Both the *node* and all elements in *predecessors* must be hashable.
-
-        If called multiple times with the same node argument, the set of dependencies
-        will be the union of all dependencies passed in.
-
-        It is possible to add a node with no dependencies (*predecessors* is not provided)
-        as well as provide a dependency twice. If a node that has not been provided before
-        is included among *predecessors* it will be automatically added to the graph with
-        no predecessors of its own.
-
-        Raises ValueError if called after "prepare".
-        """
-        if self._ready_nodes is not None:
-            raise ValueError("Nodes cannot be added after a call to prepare()")
-
-        # Create the node -> predecessor edges
-        nodeinfo = self._get_nodeinfo(node)
-        nodeinfo.npredecessors += len(predecessors)
-
-        # Create the predecessor -> node edges
-        for pred in predecessors:
-            pred_info = self._get_nodeinfo(pred)
-            pred_info.successors.append(node)
-
-    def prepare(self):
-        """Mark the graph as finished and check for cycles in the graph.
-
-        If any cycle is detected, "CycleError" will be raised, but "get_ready" can
-        still be used to obtain as many nodes as possible until cycles block more
-        progress. After a call to this function, the graph cannot be modified and
-        therefore no more nodes can be added using "add".
-        """
-        if self._ready_nodes is not None:
-            raise ValueError("cannot prepare() more than once")
-
-        self._ready_nodes = [i.node for i in self._node2info.values()
-                             if i.npredecessors == 0]
-        # ready_nodes is set before we look for cycles on purpose:
-        # if the user wants to catch the CycleError, that's fine,
-        # they can continue using the instance to grab as many
-        # nodes as possible before cycles block more progress
-        cycle = self._find_cycle()
-        if cycle:
-            raise CycleError(f"nodes are in a cycle", cycle)
-
-    def get_ready(self):
-        """Return a tuple of all the nodes that are ready.
-
-        Initially it returns all nodes with no predecessors; once those are marked
-        as processed by calling "done", further calls will return all new nodes that
-        have all their predecessors already processed. Once no more progress can be made,
-        empty tuples are returned.
-
-        Raises ValueError if called without calling "prepare" previously.
-        """
-        if self._ready_nodes is None:
-            raise ValueError("prepare() must be called first")
-
-        # Get the nodes that are ready and mark them
-        result = tuple(self._ready_nodes)
-        n2i = self._node2info
-        for node in result:
-            n2i[node].npredecessors = _NODE_OUT
-
-        # Clean the list of nodes that are ready and update
-        # the counter of nodes that we have returned.
-        self._ready_nodes.clear()
-        self._npassedout += len(result)
-
-        return result
-
-    def is_active(self):
-        """Return True if more progress can be made and ``False`` otherwise.
-
-        Progress can be made if cycles do not block the resolution and either there
-        are still nodes ready that haven't yet been returned by "get_ready" or the
-        number of nodes marked "done" is less than the number that have been returned
-        by "get_ready".
-
-        Raises ValueError if called without calling "prepare" previously.
-        """
-        if self._ready_nodes is None:
-            raise ValueError("prepare() must be called first")
-        return self._nfinished < self._npassedout or bool(self._ready_nodes)
-
-    def __bool__(self):
-        return self.is_active()
-
-    def done(self, *nodes):
-        """Marks a set of nodes returned by "get_ready" as processed.
-
-        This method unblocks any successor of each node in *nodes* for being returned
-        in the future by a a call to "get_ready"
-
-        Raises :exec:`ValueError` if any node in *nodes* has already been marked as
-        processed by a previous call to this method, if a node was not added to the
-        graph by using "add" or if called without calling "prepare" previously or if
-        node has not yet been returned by "get_ready".
-        """
-
-        if self._ready_nodes is None:
-            raise ValueError("prepare() must be called first")
-
-        n2i = self._node2info
-
-        for node in nodes:
-
-            # Check if we know about this node (it was added previously using add()
-            if (nodeinfo := n2i.get(node)) is None:
-                raise ValueError(f"node {node!r} was not added using add()")
-
-            # If the node has not being returned (marked as ready) previously, inform the user.
-            stat = nodeinfo.npredecessors
-            if stat != _NODE_OUT:
-                if stat >= 0:
-                    raise ValueError(f"node {node!r} was not passed out (still not ready)")
-                elif stat == _NODE_DONE:
-                    raise ValueError(f"node {node!r} was already marked done")
-                else:
-                    assert False, f"node {node!r}: unknown status {stat}"
-
-            # Mark the node as processed
-            nodeinfo.npredecessors = _NODE_DONE
-
-            # Go to all the successors and reduce the number of predecessors, collecting all the ones
-            # that are ready to be returned in the next get_ready() call.
-            for successor in nodeinfo.successors:
-                successor_info = n2i[successor]
-                successor_info.npredecessors -= 1
-                if successor_info.npredecessors == 0:
-                    self._ready_nodes.append(successor)
-            self._nfinished += 1
-
-    def _find_cycle(self):
-        n2i = self._node2info
-        stack = []
-        itstack = []
-        seen = set()
-        node2stacki = {}
-
-        for node in n2i:
-            if node in seen:
-                continue
-
-            while True:
-                if node in seen:
-                    # If we have seen already the node and is in the
-                    # current stack we have found a cycle.
-                    if node in node2stacki:
-                        return stack[node2stacki[node]:] + [node]
-                    # else go on to get next successor
-                else:
-                    seen.add(node)
-                    itstack.append(iter(n2i[node].successors).__next__)
-                    node2stacki[node] = len(stack)
-                    stack.append(node)
-
-                # Backtrack to the topmost stack entry with
-                # at least another successor.
-                while stack:
-                    try:
-                        node = itstack[-1]()
-                        break
-                    except StopIteration:
-                        del node2stacki[stack.pop()]
-                        itstack.pop()
-                else:
-                    break
-        return None
-
-    def static_order(self):
-        """Returns an iterable of nodes in a topological order.
-
-        The particular order that is returned may depend on the specific
-        order in which the items were inserted in the graph.
-
-        Using this method does not require to call "prepare" or "done". If any
-        cycle is detected, :exc:`CycleError` will be raised.
-        """
-        self.prepare()
-        while self.is_active():
-            node_group = self.get_ready()
-            yield from node_group
-            self.done(*node_group)
 
 
 ################################################################################
@@ -475,14 +236,14 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, sequence[, initial]) -> value
+    reduce(function, iterable[, initial]) -> value
 
-    Apply a function of two arguments cumulatively to the items of a sequence,
-    from left to right, so as to reduce the sequence to a single value.
-    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
+    Apply a function of two arguments cumulatively to the items of a sequence
+    or iterable, from left to right, so as to reduce the iterable to a single
+    value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
     ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
-    of the sequence in the calculation, and serves as a default when the
-    sequence is empty.
+    of the iterable in the calculation, and serves as a default when the
+    iterable is empty.
     """
 
     it = iter(sequence)
@@ -491,7 +252,8 @@ def reduce(function, sequence, initial=_initial_missing):
         try:
             value = next(it)
         except StopIteration:
-            raise TypeError("reduce() of empty sequence with no initial value") from None
+            raise TypeError(
+                "reduce() of empty iterable with no initial value") from None
     else:
         value = initial
 
@@ -651,6 +413,9 @@ class partialmethod(object):
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 # Helper functions
 
 def _unwrap_partial(func):
@@ -727,7 +492,7 @@ def lru_cache(maxsize=128, typed=False):
     with f.cache_info().  Clear the cache and statistics with f.cache_clear().
     Access the underlying function with f.__wrapped__.
 
-    See:  http://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
+    See:  https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
 
     """
 
@@ -880,13 +645,22 @@ except ImportError:
 
 
 ################################################################################
+### cache -- simplified access to the infinity cache
+################################################################################
+
+def cache(user_function, /):
+    'Simple lightweight unbounded cache.  Sometimes called "memoize".'
+    return lru_cache(maxsize=None)(user_function)
+
+
+################################################################################
 ### singledispatch() - single-dispatch generic function decorator
 ################################################################################
 
 def _c3_merge(sequences):
     """Merges MROs in *sequences* to a single MRO using the C3 algorithm.
 
-    Adapted from http://www.python.org/download/releases/2.3/mro/.
+    Adapted from https://www.python.org/download/releases/2.3/mro/.
 
     """
     result = []
@@ -966,6 +740,7 @@ def _compose_mro(cls, types):
     # Remove entries which are already present in the __mro__ or unrelated.
     def is_related(typ):
         return (typ not in bases and hasattr(typ, '__mro__')
+                                 and not isinstance(typ, GenericAlias)
                                  and issubclass(cls, typ))
     types = [n for n in types if is_related(n)]
     # Remove entries which are strict bases of other entries (they will end up
@@ -1063,6 +838,17 @@ def singledispatch(func):
             dispatch_cache[cls] = impl
         return impl
 
+    def _is_union_type(cls):
+        from typing import get_origin, Union
+        return get_origin(cls) in {Union, types.UnionType}
+
+    def _is_valid_dispatch_type(cls):
+        if isinstance(cls, type):
+            return True
+        from typing import get_args
+        return (_is_union_type(cls) and
+                all(isinstance(arg, type) for arg in get_args(cls)))
+
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
 
@@ -1070,9 +856,15 @@ def singledispatch(func):
 
         """
         nonlocal cache_token
-        if func is None:
-            if isinstance(cls, type):
+        if _is_valid_dispatch_type(cls):
+            if func is None:
                 return lambda f: register(cls, f)
+        else:
+            if func is not None:
+                raise TypeError(
+                    f"Invalid first argument to `register()`. "
+                    f"{cls!r} is not a class or union type."
+                )
             ann = getattr(cls, '__annotations__', {})
             if not ann:
                 raise TypeError(
@@ -1085,12 +877,25 @@ def singledispatch(func):
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
             argname, cls = next(iter(get_type_hints(func).items()))
-            if not isinstance(cls, type):
-                raise TypeError(
-                    f"Invalid annotation for {argname!r}. "
-                    f"{cls!r} is not a class."
-                )
-        registry[cls] = func
+            if not _is_valid_dispatch_type(cls):
+                if _is_union_type(cls):
+                    raise TypeError(
+                        f"Invalid annotation for {argname!r}. "
+                        f"{cls!r} not all arguments are classes."
+                    )
+                else:
+                    raise TypeError(
+                        f"Invalid annotation for {argname!r}. "
+                        f"{cls!r} is not a class."
+                    )
+
+        if _is_union_type(cls):
+            from typing import get_args
+
+            for arg in get_args(cls):
+                registry[arg] = func
+        else:
+            registry[cls] = func
         if cache_token is None and hasattr(cls, '__abstractmethods__'):
             cache_token = get_cache_token()
         dispatch_cache.clear()
@@ -1203,3 +1008,5 @@ class cached_property:
                         )
                         raise TypeError(msg) from None
         return val
+
+    __class_getitem__ = classmethod(GenericAlias)
