@@ -418,14 +418,6 @@ Querying the error indicator
          PyErr_SetRaisedException(exc);
       }
 
-   .. seealso::
-
-      * :c:func:`PyErr_SetRaisedException`,
-        to set the current raised exception.
-
-      * :c:func:`PyErr_GetHandledException`,
-         to fetch the exception currently being handled.
-
    .. versionadded:: 3.12
 
 
@@ -434,7 +426,7 @@ Querying the error indicator
    Set *exc* as the exception currently being raised.
    If another exception is already raised, it is cleared first.
 
-   .. caution::
+   .. warning::
 
       This call steals a reference to *exc*, which must be a valid exception.
 
