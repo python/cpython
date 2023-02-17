@@ -86,6 +86,20 @@ class PackedPoint(Structure):
     _pack_ = 2
     _fields_ = [("x", c_long), ("y", c_long)]
 
+class PointMidPad(Structure):
+    _fields_ = [("x", c_byte), ("y", c_uint)]
+
+class PackedPointMidPad(Structure):
+    _pack_ = 2
+    _fields_ = [("x", c_byte), ("y", c_uint64)]
+
+class PointEndPad(Structure):
+    _fields_ = [("x", c_uint), ("y", c_byte)]
+
+class PackedPointEndPad(Structure):
+    _pack_ = 2
+    _fields_ = [("x", c_uint64), ("y", c_byte)]
+
 class Point2(Structure):
     pass
 Point2._fields_ = [("x", c_long), ("y", c_long)]
@@ -185,11 +199,14 @@ native_types = [
 
     ## structures and unions
 
-    (Point,                     "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point),
-    # packed structures do not implement the pep
-    (PackedPoint,               "B",                                   (),  PackedPoint),
-    (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point2),
-    (EmptyStruct,               "T{}",                                 (),  EmptyStruct),
+    (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),   (),  Point2),
+    (Point,                     "T{<l:x:<l:y:}".replace('l', s_long),   (),  Point),
+    (PackedPoint,               "T{<l:x:<l:y:}".replace('l', s_long),   (),  PackedPoint),
+    (PointMidPad,               "T{<b:x:3x<I:y:}".replace('I', s_uint), (),  PointMidPad),
+    (PackedPointMidPad,         "T{<b:x:x<Q:y:}",                       (),  PackedPointMidPad),
+    (PointEndPad,               "T{<I:x:<b:y:3x}".replace('I', s_uint), (),  PointEndPad),
+    (PackedPointEndPad,         "T{<Q:x:<b:y:x}",                       (),  PackedPointEndPad),
+    (EmptyStruct,               "T{}",                                  (),  EmptyStruct),
     # the pep doesn't support unions
     (aUnion,                    "B",                                   (),  aUnion),
     # structure with sub-arrays
