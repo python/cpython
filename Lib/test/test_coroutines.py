@@ -1186,6 +1186,70 @@ class CoroutineTest(unittest.TestCase):
         _, result = run_async(g())
         self.assertIsNone(result.__context__)
 
+    def test_with__aexit__signatures(self):
+        class Base:
+            async def __aenter__(self):
+                return self
+
+        class CM1(Base):
+            async def __aexit__(self, exc):
+                nonlocal exit_args
+                exit_args = exc
+
+        class CM2(Base):
+            async def __aexit__(self, typ, exc, tb):
+                nonlocal exit_args
+                exit_args = (typ, exc, tb)
+
+        class CM3(Base):
+            async def __aexit__(self, typ, exc, *args):
+                nonlocal exit_args
+                exit_args = (typ, exc, *args)
+
+        class CM4(Base):
+            async def __aexit__(self, typ, *args):
+                nonlocal exit_args
+                exit_args = (typ, *args)
+
+        class CM5(Base):
+            async def __aexit__(self, *args):
+                nonlocal exit_args
+                exit_args = args
+
+        for CM in [CM1, CM2, CM3, CM4, CM5]:
+            exit_args = None
+            async def foo():
+                async with CM() as cm:
+                    1/0
+
+            f = foo()
+            try:
+                result, _ = run_async(f)
+            except Exception as e:
+                exc = e
+            if CM == CM1:
+                self.assertEqual(exit_args, exc)
+            else:
+                self.assertEqual(exit_args[1], exc)
+                self.assertIsInstance(exit_args[1], exit_args[0])
+                self.assertIsInstance(exit_args[2], types.TracebackType)
+
+        for CM in [CM1, CM2, CM3, CM4, CM5]:
+            exit_args = None
+            async def foo():
+                async with CM() as cm:
+                    pass
+
+            f = foo()
+            try:
+                result, _ = run_async(f)
+            except Exception as e:
+                exc = e
+            if CM == CM1:
+                self.assertEqual(exit_args, None)
+            else:
+                self.assertEqual(exit_args, (None, None, None))
+
     def test_with_1(self):
         class Manager:
             def __init__(self, name):
