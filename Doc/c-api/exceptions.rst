@@ -418,6 +418,9 @@ Querying the error indicator
          PyErr_SetRaisedException(exc);
       }
 
+   .. seealso:: :c:func:`PyErr_GetRaisedException`,
+                to save the current raised exception.
+
    .. versionadded:: 3.12
 
 
@@ -429,9 +432,6 @@ Querying the error indicator
    .. warning::
 
       This call steals a reference to *exc*, which must be a valid exception.
-
-   .. seealso:: :c:func:`PyErr_GetRaisedException`,
-                to save the current raised exception.
 
    .. versionadded:: 3.12
 
