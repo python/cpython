@@ -852,8 +852,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
     def test_match_common(self):
         P = self.cls
         # Absolute patterns.
-        self.assertTrue(P('c:/b.py').match('/*.py'))
-        self.assertTrue(P('c:/b.py').match('c:*.py'))
+        self.assertTrue(P('c:/b.py').match('*:/*.py'))
         self.assertTrue(P('c:/b.py').match('c:/*.py'))
         self.assertFalse(P('d:/b.py').match('c:/*.py'))  # wrong drive
         self.assertFalse(P('b.py').match('/*.py'))
@@ -864,7 +863,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertFalse(P('/b.py').match('c:*.py'))
         self.assertFalse(P('/b.py').match('c:/*.py'))
         # UNC patterns.
-        self.assertTrue(P('//some/share/a.py').match('/*.py'))
+        self.assertTrue(P('//some/share/a.py').match('//*/*/*.py'))
         self.assertTrue(P('//some/share/a.py').match('//some/share/*.py'))
         self.assertFalse(P('//other/share/a.py').match('//some/share/*.py'))
         self.assertFalse(P('//some/share/a/b.py').match('//some/share/*.py'))
@@ -872,6 +871,10 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertTrue(P('B.py').match('b.PY'))
         self.assertTrue(P('c:/a/B.Py').match('C:/A/*.pY'))
         self.assertTrue(P('//Some/Share/B.Py').match('//somE/sharE/*.pY'))
+        # Path anchor doesn't match pattern anchor
+        self.assertFalse(P('c:/b.py').match('/*.py'))  # 'c:/' vs '/'
+        self.assertFalse(P('c:/b.py').match('c:*.py'))  # 'c:/' vs 'c:'
+        self.assertFalse(P('//some/share/a.py').match('/*.py'))  # '//some/share/' vs '/'
 
     def test_ordering_common(self):
         # Case-insensitivity.
