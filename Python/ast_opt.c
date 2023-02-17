@@ -113,7 +113,7 @@ fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return make_const(node, newval, arena);
 }
 
-/* Check whether a collection doesn't contain too many items (including
+/* Check whether a collection doesn't containing too much items (including
    subcollections).  This protects from creating a constant that needs
    too much time for calculating a hash.
    "limit" is the maximal number of items.
