@@ -1,0 +1,1 @@
+Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
