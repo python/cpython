@@ -57,6 +57,8 @@ This module defines the following constants and functions:
    When the function raises a :exc:`SystemExit` exception, it is silently
    ignored.
 
+   .. audit-event:: _thread.start_new_thread function,args,kwargs start_new_thread
+
    .. versionchanged:: 3.8
       :func:`sys.unraisablehook` is now used to handle unhandled exceptions.
 

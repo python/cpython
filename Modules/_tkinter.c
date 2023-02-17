@@ -1105,8 +1105,7 @@ fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
     PyMem_Free(bytes);
     if (res != NULL && bigValue.sign == MP_NEG) {
         PyObject *res2 = PyNumber_Negative(res);
-        Py_DECREF(res);
-        res = res2;
+        Py_SETREF(res, res2);
     }
     mp_clear(&bigValue);
     return res;
@@ -2164,8 +2163,7 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
     for (i = 0; i < argc; i++) {
         PyObject *s = unicodeFromTclString(argv[i]);
         if (!s) {
-            Py_DECREF(v);
-            v = NULL;
+            Py_SETREF(v, NULL);
             goto finally;
         }
         PyTuple_SET_ITEM(v, i, s);
@@ -2834,7 +2832,7 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
 {
 
     int wantobjects = -1;
-    if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects))
+    if (!PyArg_ParseTuple(args, "|p:wantobjects", &wantobjects))
         return NULL;
     if (wantobjects == -1)
         return PyBool_FromLong(((TkappObject*)self)->wantobjects);
@@ -2980,11 +2978,11 @@ _tkinter.create
     screenName: str(accept={str, NoneType}) = None
     baseName: str = ""
     className: str = "Tk"
-    interactive: bool(accept={int}) = False
-    wantobjects: bool(accept={int}) = False
-    wantTk: bool(accept={int}) = True
+    interactive: bool = False
+    wantobjects: bool = False
+    wantTk: bool = True
         if false, then Tk_Init() doesn't get called
-    sync: bool(accept={int}) = False
+    sync: bool = False
         if true, then pass -sync to wish
     use: str(accept={str, NoneType}) = None
         if not None, then pass -use to wish
@@ -2997,7 +2995,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use)
-/*[clinic end generated code: output=e3315607648e6bb4 input=da9b17ee7358d862]*/
+/*[clinic end generated code: output=e3315607648e6bb4 input=09afef9adea70a19]*/
 {
     /* XXX baseName is not used anymore;
      * try getting rid of it. */

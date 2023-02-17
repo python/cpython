@@ -137,11 +137,9 @@ get_timezone_utc_capi(PyObject *self, PyObject *args)
         return NULL;
     }
     if (macro) {
-        Py_INCREF(PyDateTime_TimeZone_UTC);
-        return PyDateTime_TimeZone_UTC;
+        return Py_NewRef(PyDateTime_TimeZone_UTC);
     }
-    Py_INCREF(PyDateTimeAPI->TimeZone_UTC);
-    return PyDateTimeAPI->TimeZone_UTC;
+    return Py_NewRef(PyDateTimeAPI->TimeZone_UTC);
 }
 
 static PyObject *

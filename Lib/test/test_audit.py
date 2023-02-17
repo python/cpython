@@ -186,6 +186,35 @@ class AuditTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    def test_sys_getframemodulename(self):
+        returncode, events, stderr = self.run_python("test_sys_getframemodulename")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys._getframemodulename", "0")]
+
+        self.assertEqual(actual, expected)
+
+
+    def test_threading(self):
+        returncode, events, stderr = self.run_python("test_threading")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [
+            ("_thread.start_new_thread", "(<test_func>, (), None)"),
+            ("test.test_func", "()"),
+        ]
+
+        self.assertEqual(actual, expected)
+
+
     def test_wmi_exec_query(self):
         import_helper.import_module("_wmi")
         returncode, events, stderr = self.run_python("test_wmi_exec_query")

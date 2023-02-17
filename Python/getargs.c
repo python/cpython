@@ -202,9 +202,9 @@ _PyArg_VaParse_SizeT(PyObject *args, const char *format, va_list va)
 static int
 cleanup_ptr(PyObject *self, void *ptr)
 {
-    if (ptr) {
-        PyMem_Free(ptr);
-    }
+    void **pptr = (void **)ptr;
+    PyMem_Free(*pptr);
+    *pptr = NULL;
     return 0;
 }
 
@@ -1116,7 +1116,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                     PyErr_NoMemory();
                     RETURN_ERR_OCCURRED;
                 }
-                if (addcleanup(*buffer, freelist, cleanup_ptr)) {
+                if (addcleanup(buffer, freelist, cleanup_ptr)) {
                     Py_DECREF(s);
                     return converterr(
                         "(cleanup problem)",
@@ -1162,7 +1162,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 PyErr_NoMemory();
                 RETURN_ERR_OCCURRED;
             }
-            if (addcleanup(*buffer, freelist, cleanup_ptr)) {
+            if (addcleanup(buffer, freelist, cleanup_ptr)) {
                 Py_DECREF(s);
                 return converterr("(cleanup problem)",
                                 arg, msgbuf, bufsize);
@@ -2598,7 +2598,25 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
             current_arg = NULL;
         }
 
-        buf[i + vararg + 1] = current_arg;
+        /* If an arguments is passed in as a keyword argument,
+         * it should be placed before `buf[vararg]`.
+         *
+         * For example:
+         * def f(a, /, b, *args):
+         *     pass
+         * f(1, b=2)
+         *
+         * This `buf` array should be: [1, 2, NULL].
+         * In this case, nargs < vararg.
+         *
+         * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
+         * so the index is `i + 1`. */
+        if (nargs < vararg) {
+            buf[i] = current_arg;
+        }
+        else {
+            buf[i + 1] = current_arg;
+        }
 
         if (current_arg) {
             --nkwargs;

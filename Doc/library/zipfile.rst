@@ -273,7 +273,8 @@ ZipFile Objects
    Access a member of the archive as a binary file-like object.  *name*
    can be either the name of a file within the archive or a :class:`ZipInfo`
    object.  The *mode* parameter, if included, must be ``'r'`` (the default)
-   or ``'w'``.  *pwd* is the password used to decrypt encrypted ZIP files.
+   or ``'w'``.  *pwd* is the password used to decrypt encrypted ZIP files as a
+   :class:`bytes` object.
 
    :meth:`~ZipFile.open` is also a context manager and therefore supports the
    :keyword:`with` statement::
@@ -325,7 +326,7 @@ ZipFile Objects
    must be its full name or a :class:`ZipInfo` object.  Its file information is
    extracted as accurately as possible.  *path* specifies a different directory
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
-   *pwd* is the password used for encrypted files.
+   *pwd* is the password used for encrypted files as a :class:`bytes` object.
 
    Returns the normalized path created (a directory or new file).
 
@@ -352,7 +353,7 @@ ZipFile Objects
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
-   used for encrypted files.
+   used for encrypted files as a :class:`bytes` object.
 
    .. warning::
 
@@ -377,16 +378,16 @@ ZipFile Objects
 
 .. method:: ZipFile.setpassword(pwd)
 
-   Set *pwd* as default password to extract encrypted files.
+   Set *pwd* (a :class:`bytes` object) as default password to extract encrypted files.
 
 
 .. method:: ZipFile.read(name, pwd=None)
 
    Return the bytes of the file *name* in the archive.  *name* is the name of the
    file in the archive, or a :class:`ZipInfo` object.  The archive must be open for
-   read or append. *pwd* is the password used for encrypted  files and, if specified,
-   it will override the default password set with :meth:`setpassword`.  Calling
-   :meth:`read` on a ZipFile that uses a compression method other than
+   read or append. *pwd* is the password used for encrypted files as a :class:`bytes`
+   object and, if specified, overrides the default password set with :meth:`setpassword`.
+   Calling :meth:`read` on a ZipFile that uses a compression method other than
    :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or
    :const:`ZIP_LZMA` will raise a :exc:`NotImplementedError`. An error will also
    be raised if the corresponding compression module is not available.
@@ -550,6 +551,12 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Added support for text and binary modes for open. Default
       mode is now text.
 
+   .. versionchanged:: 3.11.2
+      The ``encoding`` parameter can be supplied as a positional argument
+      without causing a :exc:`TypeError`. As it could in 3.9. Code needing to
+      be compatible with unpatched 3.10 and 3.11 versions must pass all
+      :class:`io.TextIOWrapper` arguments, ``encoding`` included, as keywords.
+
 .. method:: Path.iterdir()
 
    Enumerate the children of the current directory.
@@ -594,6 +601,12 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
    keyword arguments are passed through to
    :class:`io.TextIOWrapper` (except ``buffer``, which is
    implied by the context).
+
+   .. versionchanged:: 3.11.2
+      The ``encoding`` parameter can be supplied as a positional argument
+      without causing a :exc:`TypeError`. As it could in 3.9. Code needing to
+      be compatible with unpatched 3.10 and 3.11 versions must pass all
+      :class:`io.TextIOWrapper` arguments, ``encoding`` included, as keywords.
 
 .. method:: Path.read_bytes()
 
@@ -672,6 +685,7 @@ The :class:`PyZipFile` constructor takes the same parameters as the
           >>> def notests(s):
           ...     fn = os.path.basename(s)
           ...     return (not (fn == 'test' or fn.startswith('test_')))
+          ...
           >>> zf.writepy('myprog', filterfunc=notests)
 
       The :meth:`writepy` method makes archives with file names like

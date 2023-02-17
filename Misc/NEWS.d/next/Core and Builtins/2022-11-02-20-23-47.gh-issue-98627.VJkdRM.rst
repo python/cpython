@@ -1,0 +1,5 @@
+When an interpreter is configured to check (and only then), importing an
+extension module will now fail when the extension does not support multiple
+interpreters (i.e. doesn't implement PEP 489 multi-phase init). This does
+not apply to the main interpreter, nor to subinterpreters created with
+``Py_NewInterpreter()``.

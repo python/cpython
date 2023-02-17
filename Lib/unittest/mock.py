@@ -411,15 +411,18 @@ class NonCallableMock(Base):
     # necessary.
     _lock = RLock()
 
-    def __new__(cls, /, *args, **kw):
+    def __new__(
+            cls, spec=None, wraps=None, name=None, spec_set=None,
+            parent=None, _spec_state=None, _new_name='', _new_parent=None,
+            _spec_as_instance=False, _eat_self=None, unsafe=False, **kwargs
+        ):
         # every instance has its own class
         # so we can create magic methods on the
         # class without stomping on other mocks
         bases = (cls,)
         if not issubclass(cls, AsyncMockMixin):
             # Check if spec is an async object or function
-            bound_args = _MOCK_SIG.bind_partial(cls, *args, **kw).arguments
-            spec_arg = bound_args.get('spec_set', bound_args.get('spec'))
+            spec_arg = spec_set or spec
             if spec_arg is not None and _is_async_obj(spec_arg):
                 bases = (AsyncMockMixin, cls)
         new = type(cls.__name__, bases, {'__doc__': cls.__doc__})
@@ -505,10 +508,6 @@ class NonCallableMock(Base):
         _spec_signature = None
         _spec_asyncs = []
 
-        for attr in dir(spec):
-            if iscoroutinefunction(getattr(spec, attr, None)):
-                _spec_asyncs.append(attr)
-
         if spec is not None and not _is_list(spec):
             if isinstance(spec, type):
                 _spec_class = spec
@@ -518,7 +517,13 @@ class NonCallableMock(Base):
                                         _spec_as_instance, _eat_self)
             _spec_signature = res and res[1]
 
-            spec = dir(spec)
+            spec_list = dir(spec)
+
+            for attr in spec_list:
+                if iscoroutinefunction(getattr(spec, attr, None)):
+                    _spec_asyncs.append(attr)
+
+            spec = spec_list
 
         __dict__ = self.__dict__
         __dict__['_spec_class'] = _spec_class
@@ -647,8 +652,8 @@ class NonCallableMock(Base):
                 raise AttributeError("Mock object has no attribute %r" % name)
         elif _is_magic(name):
             raise AttributeError(name)
-        if not self._mock_unsafe:
-            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')):
+        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
                     f"for the mock if {name!r} is meant to be an attribute.")
@@ -1014,14 +1019,14 @@ class NonCallableMock(Base):
 
         For non-callable mocks the callable variant will be used (rather than
         any custom subclass)."""
-        _new_name = kw.get("_new_name")
-        if _new_name in self.__dict__['_spec_asyncs']:
-            return AsyncMock(**kw)
-
         if self._mock_sealed:
             attribute = f".{kw['name']}" if "name" in kw else "()"
             mock_name = self._extract_mock_name() + attribute
             raise AttributeError(mock_name)
+
+        _new_name = kw.get("_new_name")
+        if _new_name in self.__dict__['_spec_asyncs']:
+            return AsyncMock(**kw)
 
         _type = type(self)
         if issubclass(_type, MagicMock) and _new_name in _async_method_magics:
@@ -1057,7 +1062,12 @@ class NonCallableMock(Base):
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 
 
-_MOCK_SIG = inspect.signature(NonCallableMock.__init__)
+# Denylist for forbidden attribute names in safe mode
+_ATTRIB_DENY_LIST = frozenset({
+    name.removeprefix("assert_")
+    for name in dir(NonCallableMock)
+    if name.startswith("assert_")
+})
 
 
 class _AnyComparer(list):
@@ -1229,9 +1239,11 @@ class Mock(CallableMixin, NonCallableMock):
       `return_value` attribute.
 
     * `unsafe`: By default, accessing any attribute whose name starts with
-      *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
-       AttributeError. Passing `unsafe=True` will allow access to
-      these attributes.
+      *assert*, *assret*, *asert*, *aseert*, or *assrt* raises an AttributeError.
+      Additionally, an AttributeError is raised when accessing
+      attributes that match the name of an assertion method without the prefix
+      `assert_`, e.g. accessing `called_once` instead of `assert_called_once`.
+      Passing `unsafe=True` will allow access to these attributes.
 
     * `wraps`: Item for the mock object to wrap. If `wraps` is not None then
       calling the Mock will pass the call through to the wrapped object
@@ -2138,10 +2150,8 @@ class NonCallableMagicMock(MagicMixin, NonCallableMock):
 
 
 class AsyncMagicMixin(MagicMixin):
-    def __init__(self, /, *args, **kw):
-        self._mock_set_magics()  # make magic work for kwargs in init
-        _safe_super(AsyncMagicMixin, self).__init__(*args, **kw)
-        self._mock_set_magics()  # fix magic broken by upper level init
+    pass
+
 
 class MagicMock(MagicMixin, Mock):
     """
@@ -2183,6 +2193,10 @@ class MagicProxy(Base):
         return self.create_mock()
 
 
+_CODE_ATTRS = dir(CodeType)
+_CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+
+
 class AsyncMockMixin(Base):
     await_count = _delegating_property('await_count')
     await_args = _delegating_property('await_args')
@@ -2200,8 +2214,18 @@ class AsyncMockMixin(Base):
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
-        code_mock = NonCallableMock(spec_set=CodeType)
-        code_mock.co_flags = inspect.CO_COROUTINE
+        code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
+        code_mock.__dict__["_spec_class"] = CodeType
+        code_mock.__dict__["_spec_signature"] = _CODE_SIG
+        code_mock.co_flags = (
+            inspect.CO_COROUTINE
+            + inspect.CO_VARARGS
+            + inspect.CO_VARKEYWORDS
+        )
+        code_mock.co_argcount = 0
+        code_mock.co_varnames = ('args', 'kwargs')
+        code_mock.co_posonlyargcount = 0
+        code_mock.co_kwonlyargcount = 0
         self.__dict__['__code__'] = code_mock
         self.__dict__['__name__'] = 'AsyncMock'
         self.__dict__['__defaults__'] = tuple()

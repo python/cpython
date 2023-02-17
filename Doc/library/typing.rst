@@ -439,7 +439,7 @@ are intended primarily for static type checking.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
-generics is cached, and most types in the typing module are hashable and
+generics is cached, and most types in the typing module are :term:`hashable` and
 comparable for equality.
 
 
@@ -1339,7 +1339,7 @@ These are not used in annotations. They are building blocks for creating generic
     ``Unpack[Ts]``.)
 
     Type variable tuples must *always* be unpacked. This helps distinguish type
-    variable types from normal type variables::
+    variable tuples from normal type variables::
 
         x: Ts          # Not valid
         x: tuple[Ts]   # Not valid
@@ -2575,6 +2575,10 @@ Functions and decorators
      assumed to be True or False if it is omitted by the caller.
    * ``kw_only_default`` indicates whether the ``kw_only`` parameter is
      assumed to be True or False if it is omitted by the caller.
+   * ``frozen_default`` indicates whether the ``frozen`` parameter is
+     assumed to be True or False if it is omitted by the caller.
+
+     .. versionadded:: 3.12
    * ``field_specifiers`` specifies a static list of supported classes
      or functions that describe fields, similar to ``dataclasses.field()``.
    * Arbitrary other keyword arguments are accepted in order to allow for

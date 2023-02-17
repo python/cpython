@@ -350,14 +350,8 @@ static int
 set_main_loader(PyObject *d, PyObject *filename, const char *loader_name)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *bootstrap = PyObject_GetAttrString(interp->importlib,
-                                                 "_bootstrap_external");
-    if (bootstrap == NULL) {
-        return -1;
-    }
-
-    PyObject *loader_type = PyObject_GetAttrString(bootstrap, loader_name);
-    Py_DECREF(bootstrap);
+    PyObject *loader_type = _PyImport_GetImportlibExternalLoader(interp,
+                                                                 loader_name);
     if (loader_type == NULL) {
         return -1;
     }
@@ -515,8 +509,7 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     if (v == Py_None) {
         Py_DECREF(v);
         _Py_DECLARE_STR(anon_string, "<string>");
-        *filename = &_Py_STR(anon_string);
-        Py_INCREF(*filename);
+        *filename = Py_NewRef(&_Py_STR(anon_string));
     }
     else {
         *filename = v;
@@ -719,8 +712,7 @@ _Py_HandleSystemExit(int *exitcode_p)
         /* The error code should be in the `code' attribute. */
         PyObject *code = PyObject_GetAttr(value, &_Py_ID(code));
         if (code) {
-            Py_DECREF(value);
-            value = code;
+            Py_SETREF(value, code);
             if (value == Py_None)
                 goto done;
         }
@@ -750,13 +742,10 @@ _Py_HandleSystemExit(int *exitcode_p)
     }
 
  done:
-    /* Restore and clear the exception info, in order to properly decref
-     * the exception, value, and traceback.      If we just exit instead,
-     * these leak, which confuses PYTHONDUMPREFS output, and may prevent
-     * some finalizers from running.
-     */
-    PyErr_Restore(exception, value, tb);
-    PyErr_Clear();
+    /* Cleanup the exception */
+    Py_CLEAR(exception);
+    Py_CLEAR(value);
+    Py_CLEAR(tb);
     *exitcode_p = exitcode;
     return 1;
 }
@@ -1688,7 +1677,8 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
      * uncaught exception to trigger an unexplained signal exit from a future
      * Py_Main() based one.
      */
-    _Py_UnhandledKeyboardInterrupt = 0;
+    // XXX Isn't this dealt with by the move to _PyRuntimeState?
+    _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
     if (globals != NULL && _PyDict_GetItemStringWithError(globals, "__builtins__") == NULL) {
@@ -1702,7 +1692,7 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
     if (!v && _PyErr_Occurred(tstate) == PyExc_KeyboardInterrupt) {
-        _Py_UnhandledKeyboardInterrupt = 1;
+        _PyRuntime.signals.unhandled_keyboard_interrupt = 1;
     }
     return v;
 }

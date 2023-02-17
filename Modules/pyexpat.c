@@ -710,7 +710,7 @@ pyexpat.xmlparser.Parse
 
     cls: defining_class
     data: object
-    isfinal: bool(accept={int}) = False
+    isfinal: bool = False
     /
 
 Parse XML data.
@@ -721,7 +721,7 @@ Parse XML data.
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
                              PyObject *data, int isfinal)
-/*[clinic end generated code: output=8faffe07fe1f862a input=fc97f833558ca715]*/
+/*[clinic end generated code: output=8faffe07fe1f862a input=d0eb2a69fab3b9f1]*/
 {
     const char *s;
     Py_ssize_t slen;
@@ -1879,11 +1879,16 @@ error:
 #endif
 
 static void
-pyexpat_destructor(PyObject *op)
+pyexpat_capsule_destructor(PyObject *capsule)
 {
-    void *p = PyCapsule_GetPointer(op, PyExpat_CAPSULE_NAME);
+    void *p = PyCapsule_GetPointer(capsule, PyExpat_CAPSULE_NAME);
+    if (p == NULL) {
+        PyErr_WriteUnraisable(capsule);
+        return;
+    }
     PyMem_Free(p);
 }
+
 
 static int
 pyexpat_exec(PyObject *mod)
@@ -1972,7 +1977,7 @@ pyexpat_exec(PyObject *mod)
     MYCONST(XML_PARAM_ENTITY_PARSING_ALWAYS);
 #undef MYCONST
 
-    struct PyExpat_CAPI *capi = PyMem_Calloc(1, sizeof(struct PyExpat_CAPI));
+    struct PyExpat_CAPI *capi = PyMem_Malloc(sizeof(*capi));
     if (capi == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -2009,7 +2014,7 @@ pyexpat_exec(PyObject *mod)
 
     /* export using capsule */
     PyObject *capi_object = PyCapsule_New(capi, PyExpat_CAPSULE_NAME,
-                                          pyexpat_destructor);
+                                          pyexpat_capsule_destructor);
     if (capi_object == NULL) {
         PyMem_Free(capi);
         return -1;

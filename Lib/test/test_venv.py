@@ -594,7 +594,9 @@ class BasicTest(BaseTest):
         # For python built with shared enabled. We need to set
         # LD_LIBRARY_PATH so the non-installed python can find and link
         # libpython.so
-        ld_library_path = os.path.abspath(os.path.dirname(sys.executable))
+        ld_library_path = sysconfig.get_config_var("LIBDIR")
+        if not ld_library_path or sysconfig.is_python_build():
+            ld_library_path = os.path.abspath(os.path.dirname(sys.executable))
         if sys.platform == 'darwin':
             ld_library_path_env = "DYLD_LIBRARY_PATH"
         else:
