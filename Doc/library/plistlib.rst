@@ -177,8 +177,7 @@ Generating a plist::
         someMoreData = b"<lots of binary gunk>" * 10,
         aDate = datetime.datetime.now()
     )
-    with open("blah.plist", 'wb') as fp:
-        plistlib.dump(pl, fp)
+    print(plistlib.dumps(pl).decode())
 
 Parsing a plist::
 
