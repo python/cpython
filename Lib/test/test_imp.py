@@ -315,6 +315,8 @@ class ImportTests(unittest.TestCase):
         # This single-phase module has global state, which is shared
         # by all interpreters.
         import _testsinglephase
+        name = _testsinglephase.__name__
+        filename = _testsinglephase.__file__
 
         # Start and end clean.
         _forget_extension(_testsinglephase)
@@ -334,6 +336,15 @@ class ImportTests(unittest.TestCase):
         self.addCleanup(_interpreters.destroy, interp1)
         interp2 = _interpreters.create(isolated=False)
         self.addCleanup(_interpreters.destroy, interp2)
+        for interpid in [interp1, interp2]:
+            _interpreters.run_string(interpid, 'import _testinternalcapi, sys')
+
+        def clear_subinterp(interpid):
+            _interpreters.run_string(interpid, textwrap.dedent(f'''
+                del sys.modules[{name!r}]
+                _testsinglephase._clear_globals()
+                _testinternalcapi.clear_extension({name!r}, {filename!r})
+                '''))
 
         with self.subTest('without resetting; '
                           'already loaded in main interpreter'):
@@ -361,6 +372,10 @@ class ImportTests(unittest.TestCase):
                 initialized = _testsinglephase.state_initialized()
                 if _initialized != initialized:
                     raise Exception((_initialized, initialized))
+                if _initialized != {initialized}:
+                    raise Exception((_initialized, {initialized}))
+                if initialized != {initialized}:
+                    raise Exception((initialized, {initialized}))
 
                 # Attrs set after loading are not in m_copy.
                 if hasattr(_testsinglephase, 'spam'):
@@ -371,6 +386,70 @@ class ImportTests(unittest.TestCase):
             # Use an interpreter that gets destroyed right away.
             ret = support.run_in_subinterp(script)
             self.assertEqual(ret, 0)
+
+            # The module's init func gets run again.
+            # The module's globals did not get destroyed.
+            _interpreters.run_string(interp1, script)
+
+            # The module's init func is not run again.
+            # The second interpreter copies the module's m_copy.
+            # However, globals are still shared.
+            _interpreters.run_string(interp2, script)
+
+        _forget_extension(_testsinglephase)
+        for interpid in [interp1, interp2]:
+            clear_subinterp(interpid)
+
+        with self.subTest('without resetting; '
+                          'already loaded in deleted interpreter'):
+
+            # Use an interpreter that gets destroyed right away.
+            ret = support.run_in_subinterp(textwrap.dedent(f'''
+                import _testsinglephase
+
+                # This is the first time loaded since reset.
+                init_count =  _testsinglephase.initialized_count()
+                if init_count != 1:
+                    raise Exception(init_count)
+
+                # Attrs set in the module init func are in m_copy.
+                _initialized = _testsinglephase._module_initialized
+                initialized = _testsinglephase.state_initialized()
+                if _initialized != initialized:
+                    raise Exception((_initialized, initialized))
+                if _initialized == {initialized}:
+                    raise Exception((_initialized, {initialized}))
+                if initialized == {initialized}:
+                    raise Exception((initialized, {initialized}))
+
+                # Attrs set after loading are not in m_copy.
+                if hasattr(_testsinglephase, 'spam'):
+                    raise Exception(_testsinglephase.spam)
+                _testsinglephase.spam = 'spam, spam, mash, spam, eggs, and spam'
+                '''))
+            self.assertEqual(ret, 0)
+
+            script = textwrap.dedent(f'''
+                import _testsinglephase
+
+                init_count =  _testsinglephase.initialized_count()
+                if init_count != 2:
+                    raise Exception(init_count)
+
+                # Attrs set in the module init func are in m_copy.
+                # Both of the following were set in module init,
+                # which didn't happen in this interpreter
+                # (unfortunately).
+                _initialized = _testsinglephase._module_initialized
+                initialized = _testsinglephase.state_initialized()
+                if _initialized != initialized:
+                    raise Exception((_initialized, initialized))
+
+                # Attrs set after loading are not in m_copy.
+                if hasattr(_testsinglephase, 'spam'):
+                    raise Exception(_testsinglephase.spam)
+                _testsinglephase.spam = 'spam, spam, spam, spam, ...'
+                ''')
 
             # The module's init func gets run again.
             # The module's globals did not get destroyed.
