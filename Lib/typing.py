@@ -2482,7 +2482,7 @@ def get_orig_class(tp: "Any", /) -> GenericAlias | None:
 
     Warning
     -------
-    This will always return None in the inside of the class initalisation 
+    This will always return None in the inside of the class initalisation
     process.
     """
     try:
