@@ -976,7 +976,12 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        return self._from_parts([self.cwd()] + self._parts)
+        elif self._drv:
+            # There is a CWD on each drive-letter drive.
+            cwd = self._flavour.pathmod.abspath(self._drv)
+        else:
+            cwd = self.cwd()
+        return self._from_parts([cwd] + self._parts)
 
     def resolve(self, strict=False):
         """
