@@ -263,7 +263,6 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             imp.load_dynamic('nonexistent', pathname)
 
-    @unittest.skip('known refleak (temporarily skipping)')
     @requires_subinterpreters
     @requires_load_dynamic
     def test_singlephase_multiple_interpreters(self):
@@ -330,7 +329,6 @@ class ImportTests(unittest.TestCase):
         # However, globals are still shared.
         _interpreters.run_string(interp2, script % 2)
 
-    @unittest.skip('known refleak (temporarily skipping)')
     @requires_load_dynamic
     def test_singlephase_variants(self):
         # Exercise the most meaningful variants described in Python/import.c.
