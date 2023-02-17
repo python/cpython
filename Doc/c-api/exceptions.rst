@@ -408,7 +408,7 @@ Querying the error indicator
    This function is used by code that needs to catch exceptions,
    or code that needs to save and restore the error indicator temporarily.
 
-   Example::
+   For example::
 
       {
          PyObject *exc = PyErr_GetRaisedException();
@@ -418,10 +418,13 @@ Querying the error indicator
          PyErr_SetRaisedException(exc);
       }
 
-   Use :c:func:`PyErr_GetHandledException` to fetch the exception
-   currently being handled.
+   .. seealso::
 
-   .. seealso:: :c:func:`PyErr_SetRaisedException`
+      * :c:func:`PyErr_SetRaisedException`,
+        to set the current raised exception.
+
+      * :c:func:`PyErr_GetHandledException`,
+         to fetch the exception currently being handled.
 
    .. versionadded:: 3.12
 
@@ -431,11 +434,12 @@ Querying the error indicator
    Set *exc* as the exception currently being raised.
    If another exception is already raised, it is cleared first.
 
-   .. note::
+   .. caution::
 
       This call steals a reference to *exc*, which must be a valid exception.
 
-   .. seealso:: :c:func:`PyErr_GetRaisedException`
+   .. seealso:: :c:func:`PyErr_GetRaisedException`,
+                to save the current raised exception.
 
    .. versionadded:: 3.12
 
