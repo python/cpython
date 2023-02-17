@@ -1338,6 +1338,7 @@ def main():
         sys.exit(f"Found {a.errors} errors")
     a.write_instructions()  # Raises OSError if output can't be written
     a.write_metadata()
+    a.output_filename = TIER2_MACRO_TO_MICRO_MAP_OUTPUT
     a.write_macromap_and_typedata()
 
 
