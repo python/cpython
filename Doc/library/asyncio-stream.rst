@@ -208,16 +208,15 @@ StreamReader
 
       Read up to *n* bytes from the stream.
 
-      If *n* is not provided, or set to ``-1``,
+      If *n* is not provided or set to ``-1``,
       read until EOF, then return all read :class:`bytes`.
       If EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
 
       If *n* is ``0``, return an empty ``bytes`` object immediately.
 
-      If *n* is positive, wait for at least 1 byte to become available
-      (or EOF), then return the available ``bytes`` which might be less
-      than *n*.
+      If *n* is positive, return at most *n* available ``bytes``
+      as soon as at least 1 byte is available in the internal buffer.
       If EOF is received before any byte is read, return an empty
       ``bytes`` object.
 
