@@ -271,10 +271,11 @@ IS_FORBIDDEN_OPCODE(int opcode)
     // Closures
     case LOAD_DEREF:
     case MAKE_CELL:
-    // @TODO backward jumps should be supported!
-    case JUMP_BACKWARD:
-    case JUMP_BACKWARD_NO_INTERRUPT:
+    // DELETE_FAST
+    case DELETE_FAST:
+    // TODO: Pattern matching add here
         return 1;
+
     default:
         return 0;
     }
@@ -402,16 +403,14 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
     fprintf(stderr, "emitted logical branch\n");
 #endif
     // We prefix with an empty EXTENDED_ARG, just in case the future jumps
-    // are not large enough to handle the bytecode format.
+    // are not large enough to handle the bytecode format when jumping to
+    // the 2nd bb.
     _py_set_opcode(write_curr, EXTENDED_ARG);
     write_curr->oparg = 0;
     write_curr++;
     _py_set_opcode(write_curr, opcode);
     write_curr->oparg = oparg;
     write_curr++;
-    // Each guard also holds 2 CACHE entries. This stores an int32 of the
-    // offset from start of the code object (in _Py_CODEUNITs) that the current guard
-    // can generate the basic block from.
     _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
     for (int i = 0; i < INLINE_CACHE_ENTRIES_BB_BRANCH; i++) {
         _py_set_opcode(write_curr, CACHE);
@@ -508,7 +507,13 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
 #define JUMPBY(x) i += x + 1; continue;
 #define BASIC_PUSH(v)     (*stack_pointer++ = (v))
 #define BASIC_POP()       (*--stack_pointer)
-#define DISPATCH()        write_i = emit_i(write_i, opcode, oparg); write_i = copy_cache_entries(write_i, curr+1, caches); i += caches; continue;
+#define DISPATCH()        write_i = emit_i(write_i, opcode, oparg); \
+                          write_i = copy_cache_entries(write_i, curr+1, caches); \
+                          i += caches; \
+                          continue;
+#define DISPATCH_GOTO() goto dispatch_opcode;
+
+                             
     assert(co->_tier2_info != NULL);
     // There are only two cases that a BB ends.
     // 1. If there's a branch instruction / scope exit.
@@ -530,13 +535,14 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     PyTypeObject **stack_pointer = co->_tier2_info->types_stack;
     int tos = -1;
 
+
     // A meta-interpreter for types.
     Py_ssize_t i = 0;
     for (; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT *curr = _PyCode_CODE(co) + i;
-        _Py_CODEUNIT instr = *curr;
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instr)];
-        int oparg = _Py_OPARG(instr);
+        _Py_CODEUNIT *next_instr = curr + 1;
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(*curr)];
+        int oparg = _Py_OPARG(*curr);
         int caches = _PyOpcode_Caches[opcode];
 
         // Just because an instruction requires a guard doesn't mean it's the end of a BB.
@@ -545,7 +551,16 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
         _Py_CODEUNIT guard_instr;
         _Py_CODEUNIT action;
 
+    dispatch_opcode:
         switch (opcode) {
+        case EXTENDED_ARG:
+            write_i = emit_i(write_i, EXTENDED_ARG, _Py_OPARG(*curr));
+            curr++;
+            next_instr++;
+            oparg = oparg << 8 | _Py_OPARG(*curr);
+            opcode = _Py_OPCODE(*curr);
+            caches = _PyOpcode_Caches[opcode];
+            DISPATCH_GOTO();
         // We need to rewrite the pseudo-branch instruction.
         case COMPARE_AND_BRANCH:
             opcode = COMPARE_OP;
@@ -613,7 +628,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
             // These are definitely the end of a basic block.
             if (IS_SCOPE_EXIT_OPCODE(opcode)) {
                 // Emit the scope exit instruction.
-                write_i = emit_scope_exit(write_i, instr);
+                write_i = emit_scope_exit(write_i, *curr);
                 END();
             }
 
@@ -628,7 +643,8 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
                 }
                 // Get the BB ID without incrementing it.
                 // AllocateBBMetaData will increment.
-                write_i = emit_logical_branch(write_i, instr, co->_tier2_info->bb_data_curr);
+                write_i = emit_logical_branch(write_i, *curr,
+                    co->_tier2_info->bb_data_curr);
                 END();
             }
             DISPATCH();

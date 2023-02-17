@@ -453,11 +453,11 @@ _uops = [
     # 'BB_ENTER_FRAME',
     # 'BB_EXIT_FRAME',
     # Initial generic branching instruction.
-    'BB_BRANCH',
+    'BB_BRANCH', # When both exits have not been generated.
     # The BB_BRANCH transitions to one of these two.
     # This happens when the fall through is generated, but not the other branch.
-    'BB_BRANCH_IF_FLAG_UNSET',
-    'BB_BRANCH_IF_FLAG_SET',
+    'BB_BRANCH_IF_FLAG_UNSET',  # When alternate exit is not yet generated.
+    'BB_BRANCH_IF_FLAG_SET',    # When successor exit is not yet generated.
     # The final form is that once both branches are generated, we can just
     # override these instructions with a generic JUMP.
 
