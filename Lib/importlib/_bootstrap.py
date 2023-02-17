@@ -85,11 +85,6 @@ class _BlockingOnManager:
     def __exit__(self, *args, **kwargs):
         """Remove self.lock from this thread's _blocking_on list."""
         self.blocked_on.remove(self.lock)
-        if len(self.blocked_on) == 0:
-            # gh-101766: glboal cache should be cleaned-up
-            # if there is no more _blocking_on for this thread.
-            del _blocking_on[self.thread_id]
-            del self.blocked_on
 
 
 class _DeadlockError(RuntimeError):
