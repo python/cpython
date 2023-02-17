@@ -5,6 +5,7 @@ __author__ = "Mike Bland"
 __email__ = "mbland at acm dot org"
 
 import sys
+import types
 import unittest
 from collections import deque
 from contextlib import _GeneratorContextManager, contextmanager, nullcontext
@@ -748,6 +749,116 @@ class NestedWith(unittest.TestCase):
             self.assertEqual(2, a2)
             self.assertEqual(10, b1)
             self.assertEqual(20, b2)
+
+
+class TestSingleArgExit(unittest.TestCase):
+
+    def test_single_arg_exit(self):
+        class CM:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc):
+                self.exit_called_with = exc
+
+        with CM() as cm:
+            pass
+        self.assertIsNone(cm.exit_called_with)
+
+        try:
+            with CM() as cm:
+                1/0
+        except Exception as e:
+            exc = e
+        self.assertEqual(cm.exit_called_with, exc)
+
+    def test_single_arg_exit_suppress(self):
+        class CM:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc):
+                self.exit_called_with = exc
+                return True
+
+        with CM() as cm:
+            pass
+        self.assertIsNone(cm.exit_called_with)
+
+        with CM() as cm:
+            1/0
+        self.assertIsInstance(cm.exit_called_with, ZeroDivisionError)
+
+    def test_multiarg_exits(self):
+        class CM1:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc_info):
+                self.exit_called_with = exc_info
+
+        class CM2:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, typ, *exc_info):
+                self.exit_called_with = (typ, *exc_info)
+
+        class CM3:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, typ, exc, tb):
+                self.exit_called_with = (typ, exc, tb)
+
+        for CM in [CM1, CM2, CM3]:
+            with CM() as cm:
+                pass
+            self.assertEqual(cm.exit_called_with, (None, None, None))
+
+            try:
+                with CM() as cm:
+                    1/0
+            except Exception as e:
+                exc = e
+            self.assertEqual(cm.exit_called_with, (type(exc), exc, exc.__traceback__))
+
+    def test_multiarg_exits_suppress(self):
+        class CM1:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc_info):
+                self.exit_called_with = exc_info
+                return True
+
+        class CM2:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, typ, *exc_info):
+                self.exit_called_with = (typ, *exc_info)
+                return True
+
+        class CM3:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, typ, exc, tb):
+                self.exit_called_with = (typ, exc, tb)
+                return True
+
+        for CM in [CM1, CM2, CM3]:
+            with CM() as cm:
+                pass
+            self.assertEqual(cm.exit_called_with, (None, None, None))
+
+            with CM() as cm:
+                1/0
+            self.assertEqual(cm.exit_called_with[0], ZeroDivisionError)
+            self.assertIsInstance(cm.exit_called_with[1], ZeroDivisionError)
+            self.assertIsInstance(cm.exit_called_with[2], types.TracebackType)
+
 
 if __name__ == '__main__':
     unittest.main()
