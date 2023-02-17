@@ -332,11 +332,11 @@ _PyGen_yf(PyGenObject *gen)
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */
-            assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
+            assert(_PyCode_CODE(gen->gi_code)[0].op.code != SEND);
             return NULL;
         }
         _Py_CODEUNIT next = frame->prev_instr[1];
-        if (_Py_OPCODE(next) != RESUME || _Py_OPARG(next) < 2)
+        if (next.op.code != RESUME || next.op.arg < 2)
         {
             /* Not in a yield from */
             return NULL;
@@ -371,9 +371,9 @@ gen_close(PyGenObject *gen, PyObject *args)
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
     /* It is possible for the previous instruction to not be a
      * YIELD_VALUE if the debugger has changed the lineno. */
-    if (err == 0 && frame->prev_instr->opcode == YIELD_VALUE) {
-        assert(frame->prev_instr[1].opcode == RESUME);
-        int exception_handler_depth = frame->prev_instr->oparg;
+    if (err == 0 && frame->prev_instr[0].op.code == YIELD_VALUE) {
+        assert(frame->prev_instr[1].op.code == RESUME);
+        int exception_handler_depth = frame->prev_instr[0].op.code;
         assert(exception_handler_depth > 0);
         /* We can safely ignore the outermost try block
          * as it automatically generated to handle

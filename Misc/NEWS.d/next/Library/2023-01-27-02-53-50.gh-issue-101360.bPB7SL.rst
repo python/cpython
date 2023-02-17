@@ -1,0 +1,3 @@
+Fix anchor matching in :meth:`pathlib.PureWindowsPath.match`. Path and
+pattern anchors are now matched with :mod:`fnmatch`, just like other path
+parts. This allows patterns such as ``"*:/Users/*"`` to be matched.
