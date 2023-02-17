@@ -1761,10 +1761,7 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, jump_target_label blo
 static int
 compiler_call_exit_with_nones(struct compiler *c, location loc)
 {
-    ADDOP_LOAD_CONST(c, loc, Py_None);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
-    ADDOP_I(c, loc, CALL, 2);
+    ADDOP(c, loc, CALL_EXIT_WITH_NONES);
     return SUCCESS;
 }
 

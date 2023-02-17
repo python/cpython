@@ -2292,6 +2292,19 @@ dummy_func(
             }
         }
 
+        inst(CALL_EXIT_WITH_NONES, (exit_func -- res)) {
+            if (is_legacy___exit__(exit_func)) {
+                PyObject *stack[4] = {NULL, Py_None, Py_None, Py_None};
+                res = PyObject_Vectorcall(exit_func, stack + 1,
+                        3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            }
+            else {
+                res = PyObject_CallOneArg(exit_func, Py_None);
+            }
+            DECREF_INPUTS();
+            ERROR_IF(res == NULL, error);
+        }
+
         inst(WITH_EXCEPT_START, (exit_func, lasti, unused, val -- exit_func, lasti, unused, val, res)) {
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
@@ -2301,17 +2314,21 @@ dummy_func(
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
             */
-            PyObject *exc, *tb;
-
             assert(val && PyExceptionInstance_Check(val));
-            exc = PyExceptionInstance_Class(val);
-            tb = PyException_GetTraceback(val);
-            Py_XDECREF(tb);
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject *stack[4] = {NULL, exc, val, tb};
-            res = PyObject_Vectorcall(exit_func, stack + 1,
-                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+
+            if (is_legacy___exit__(exit_func)) {
+                PyObject *exc = PyExceptionInstance_Class(val);
+                PyObject *tb = PyException_GetTraceback(val);
+                Py_XDECREF(tb);
+                PyObject *stack[4] = {NULL, exc, val, tb};
+                res = PyObject_Vectorcall(exit_func, stack + 1,
+                        3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            }
+            else {
+                res = PyObject_CallOneArg(exit_func, val);
+            }
             ERROR_IF(res == NULL, error);
         }
 

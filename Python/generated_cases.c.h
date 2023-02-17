@@ -2881,6 +2881,23 @@
             DISPATCH();
         }
 
+        TARGET(CALL_EXIT_WITH_NONES) {
+            PyObject *exit_func = PEEK(1);
+            PyObject *res;
+            if (is_legacy___exit__(exit_func)) {
+                PyObject *stack[4] = {NULL, Py_None, Py_None, Py_None};
+                res = PyObject_Vectorcall(exit_func, stack + 1,
+                        3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            }
+            else {
+                res = PyObject_CallOneArg(exit_func, Py_None);
+            }
+            Py_DECREF(exit_func);
+            if (res == NULL) goto pop_1_error;
+            POKE(1, res);
+            DISPATCH();
+        }
+
         TARGET(WITH_EXCEPT_START) {
             PyObject *val = PEEK(1);
             PyObject *lasti = PEEK(3);
@@ -2894,17 +2911,21 @@
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
             */
-            PyObject *exc, *tb;
-
             assert(val && PyExceptionInstance_Check(val));
-            exc = PyExceptionInstance_Class(val);
-            tb = PyException_GetTraceback(val);
-            Py_XDECREF(tb);
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject *stack[4] = {NULL, exc, val, tb};
-            res = PyObject_Vectorcall(exit_func, stack + 1,
-                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+
+            if (is_legacy___exit__(exit_func)) {
+                PyObject *exc = PyExceptionInstance_Class(val);
+                PyObject *tb = PyException_GetTraceback(val);
+                Py_XDECREF(tb);
+                PyObject *stack[4] = {NULL, exc, val, tb};
+                res = PyObject_Vectorcall(exit_func, stack + 1,
+                        3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            }
+            else {
+                res = PyObject_CallOneArg(exit_func, val);
+            }
             if (res == NULL) goto error;
             STACK_GROW(1);
             POKE(1, res);

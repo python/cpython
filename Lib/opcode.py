@@ -126,6 +126,7 @@ def_op('RETURN_GENERATOR', 75)
 def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
+def_op('CALL_EXIT_WITH_NONES', 86)
 
 def_op('POP_EXCEPT', 89)
 

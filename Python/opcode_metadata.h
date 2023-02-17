@@ -280,6 +280,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case BEFORE_WITH:
             return 1;
+        case CALL_EXIT_WITH_NONES:
+            return 1;
         case WITH_EXCEPT_START:
             return 4;
         case PUSH_EXC_INFO:
@@ -632,6 +634,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 2;
         case BEFORE_WITH:
             return 2;
+        case CALL_EXIT_WITH_NONES:
+            return 1;
         case WITH_EXCEPT_START:
             return 5;
         case PUSH_EXC_INFO:
@@ -856,6 +860,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [FOR_ITER_GEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC },
     [BEFORE_ASYNC_WITH] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [BEFORE_WITH] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [CALL_EXIT_WITH_NONES] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [WITH_EXCEPT_START] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [PUSH_EXC_INFO] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBC00000000 },
