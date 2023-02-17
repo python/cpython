@@ -65,25 +65,12 @@ def _is_wildcard_pattern(pat):
 #
 
 
-_FNMATCH_PADDING = fnmatch.translate('_').split('_')
-_FNMATCH_SLICE = slice(len(_FNMATCH_PADDING[0]), -len(_FNMATCH_PADDING[1]))
-
-
-@functools.lru_cache()
-def _translate(pattern):
-    if pattern == '**\n':
-        return r'[\S\s]*^'
-    elif pattern == '**':
-        return r'[\S\s]*'
-    elif '**' in pattern:
-        raise ValueError("Invalid pattern: '**' can only be an entire path component")
-    else:
-        return fnmatch.translate(pattern)[_FNMATCH_SLICE]
-
-
-@functools.lru_cache()
-def _make_matcher_trans(flavour):
-    return str.maketrans({flavour.sep: '\n', '\n': flavour.sep})
+_FNMATCH_PREFIX, _FNMATCH_SUFFIX = fnmatch.translate('_').split('_')
+_FNMATCH_SLICE = slice(len(_FNMATCH_PREFIX), -len(_FNMATCH_SUFFIX))
+_SWAP_SEP_AND_NEWLINE = {
+    '/': str.maketrans({'/': '\n', '\n': '/'}),
+    '\\': str.maketrans({'\\': '\n', '\n': '\\'}),
+}
 
 
 @functools.lru_cache()
@@ -91,11 +78,19 @@ def _make_matcher(path_cls, pattern):
     pattern = path_cls(pattern)
     if not pattern._parts:
         raise ValueError("empty pattern")
-    result = [r'\A' if pattern._drv or pattern._root else '^']
-    for line in pattern._lines_normcase.splitlines(keepends=True):
-        result.append(_translate(line))
-    result.append(r'\Z')
-    return re.compile(''.join(result), flags=re.MULTILINE)
+    parts = [r'\A' if pattern._drv or pattern._root else '^']
+    for part in pattern._lines_normcase.splitlines(keepends=True):
+        if part == '**\n':
+            part = r'[\s\S]*^'
+        elif part == '**':
+            part = r'[\s\S]*'
+        elif '**' in part:
+            raise ValueError("Invalid pattern: '**' can only be an entire path component")
+        else:
+            part = fnmatch.translate(part)[_FNMATCH_SLICE]
+        parts.append(part)
+    parts.append(r'\Z')
+    return re.compile(''.join(parts), flags=re.MULTILINE)
 
 
 @functools.lru_cache()
@@ -286,7 +281,8 @@ class PurePath(object):
     """
     __slots__ = (
         '_drv', '_root', '_parts',
-        '_str', '_hash', '_parts_tuple', '_parts_normcase_cached',
+        '_str', '_hash', '_parts_tuple',
+        '_parts_normcase_cached', '_lines_normcase_cached',
     )
     _flavour = os.path
 
@@ -414,6 +410,18 @@ class PurePath(object):
             prefix = 'file://'
             path = str(self)
         return prefix + urlquote_from_bytes(os.fsencode(path))
+
+    @property
+    def _lines_normcase(self):
+        # Case-normalized path with separators and newlines swapped, for
+        # pattern matching.
+        try:
+            return self._lines_normcase_cached
+        except AttributeError:
+            path = self._flavour.normcase(str(self))
+            trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
+            self._lines_normcase_cached = path.translate(trans)
+            return self._lines_normcase_cached
 
     @property
     def _parts_normcase(self):
@@ -672,11 +680,6 @@ class PurePath(object):
             return False
         name = self._parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
-
-    @property
-    def _lines_normcase(self):
-        trans = _make_matcher_trans(self._flavour)
-        return self._flavour.normcase(str(self)).translate(trans)
 
     def match(self, path_pattern):
         """
