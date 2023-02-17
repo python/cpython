@@ -418,8 +418,8 @@ Querying the error indicator
          PyErr_SetRaisedException(exc);
       }
 
-   .. seealso:: :c:func:`PyErr_GetRaisedException`,
-                to save the current raised exception.
+   .. seealso:: :c:func:`PyErr_GetHandledException`,
+                to save the exception currently being handled.
 
    .. versionadded:: 3.12
 
