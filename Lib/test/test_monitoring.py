@@ -608,29 +608,43 @@ class LineMontoringTest(unittest.TestCase):
 
 class ExceptionRecorder:
 
+    event_type = E.RAISE
+
     def __init__(self, events):
         self.events = events
 
     def __call__(self, code, offset, exc):
-        self.events.append(type(exc))
+        self.events.append(("raise", type(exc)))
 
-class ExceptionMontoringTest(unittest.TestCase):
+class CheckEvents(unittest.TestCase):
 
-    def check_events(self, func, expected, tool=TEST_TOOL, events=E.RAISE):
+    def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         try:
             self.assertEqual(sys.monitoring._all_events(), {})
             event_list = []
-            recorder = ExceptionRecorder(event_list)
-            sys.monitoring.register_callback(tool, events, recorder)
-            sys.monitoring.set_events(tool, events)
+            all_events = 0
+            for recorder in recorders:
+                ev = recorder.event_type
+                sys.monitoring.register_callback(tool, ev, recorder(event_list))
+                all_events |= ev
+            sys.monitoring.set_events(tool, all_events)
             func()
             sys.monitoring.set_events(tool, 0)
-            sys.monitoring.register_callback(tool, events, None)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
             self.assertEqual(event_list, expected)
         finally:
             sys.monitoring.set_events(tool, 0)
-            sys.monitoring.register_callback(tool, events, None)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
 
+class StopiterationRecorder(ExceptionRecorder):
+
+    event_type = E.STOP_ITERATION
+
+class ExceptionMontoringTest(CheckEvents):
+
+    recorder = ExceptionRecorder
 
     def test_simple_try_except(self):
 
@@ -642,7 +656,7 @@ class ExceptionMontoringTest(unittest.TestCase):
                 line = 5
             line = 6
 
-        self.check_events(func1, [KeyError])
+        self.check_events(func1, [("raise", KeyError)])
 
         def gen():
             yield 1
@@ -652,4 +666,104 @@ class ExceptionMontoringTest(unittest.TestCase):
             for _ in gen():
                 pass
 
-        self.check_events(implicit_stop_iteration, [StopIteration], events=E.STOP_ITERATION)
+        self.check_events(implicit_stop_iteration, [("raise", StopIteration)], recorders=(StopiterationRecorder,))
+
+class LineRecorder:
+
+    event_type = E.LINE
+
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, line):
+        self.events.append(("line", code.co_name, line - code.co_firstlineno))
+
+class CallRecorder:
+
+    event_type = E.CALL
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, offset, func, arg):
+        self.events.append(("call", func.__name__, arg))
+
+class CEventRecorder:
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, offset, func, arg):
+        self.events.append((self.event_name, func.__name__, arg))
+
+class CReturnRecorder(CEventRecorder):
+
+    event_type = E.C_RETURN
+    event_name = "C return"
+
+class CRaiseRecorder(CEventRecorder):
+
+    event_type = E.C_RAISE
+    event_name = "C raise"
+
+MANY_RECORDERS = ExceptionRecorder, CallRecorder, LineRecorder, CReturnRecorder, CRaiseRecorder
+
+class TestManyEvents(CheckEvents):
+
+    def test_simple(self):
+
+        def func1():
+            line1 = 1
+            line2 = 2
+            line3 = 3
+
+        self.check_events(func1, recorders = MANY_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('call', 'func1', None),
+            ('line', 'func1', 1),
+            ('line', 'func1', 2),
+            ('line', 'func1', 3),
+            ('line', 'check_events', 11),
+            ('call', 'set_events', 2)])
+
+    def test_c_call(self):
+
+        def func2():
+            line1 = 1
+            [].append(2)
+            line3 = 3
+
+        self.check_events(func2, recorders = MANY_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('call', 'func2', None),
+            ('line', 'func2', 1),
+            ('line', 'func2', 2),
+            ('call', 'append', [2]),
+            ('C return', 'append', [2]),
+            ('line', 'func2', 3),
+            ('line', 'check_events', 11),
+            ('call', 'set_events', 2)])
+
+    def test_try_except(self):
+
+        def func3():
+            try:
+                line = 2
+                raise KeyError
+            except:
+                line = 5
+            line = 6
+
+        self.check_events(func3, recorders = MANY_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('call', 'func3', None),
+            ('line', 'func3', 1),
+            ('line', 'func3', 2),
+            ('line', 'func3', 3),
+            ('raise', KeyError),
+            ('line', 'func3', 4),
+            ('line', 'func3', 5),
+            ('line', 'func3', 6),
+            ('line', 'check_events', 11),
+            ('call', 'set_events', 2)])

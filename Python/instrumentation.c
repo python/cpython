@@ -1403,8 +1403,10 @@ initialize_lines(PyCodeObject *code)
         switch (inst.deinstrumented_opcode) {
             case END_ASYNC_FOR:
             case END_FOR:
+            case END_SEND:
             case RESUME:
                 /* END_FOR cannot start a line, as it is skipped by FOR_ITER
+                 * END_SEND cannot start a line, as it is skipped by SEND
                 * RESUME must not be instrumented with INSTRUMENT_LINE */
                 line_data[i].original_opcode = 0;
                 break;
@@ -1807,7 +1809,7 @@ monitoring_register_callback_impl(PyObject *module, int tool_id, int event,
         return NULL;
     }
     if (_Py_popcount32(event) != 1) {
-        PyErr_SetString(PyExc_ValueError, "The callaback can only be set for one event at a time");
+        PyErr_SetString(PyExc_ValueError, "The callback can only be set for one event at a time");
     }
     int event_id = _Py_bit_length(event)-1;
     if (event_id < 0 || event_id >= PY_MONITORING_EVENTS) {
