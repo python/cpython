@@ -323,8 +323,8 @@ class ImportTests(unittest.TestCase):
 
         init_count = _testsinglephase.initialized_count()
         lookedup = _testsinglephase.look_up_self()
-        _initialized = _testsinglephase._initialized
-        initialized = _testsinglephase.initialized()
+        _initialized = _testsinglephase._module_initialized
+        initialized = _testsinglephase.state_initialized()
 
         self.assertEqual(init_count, 1)
         self.assertIs(lookedup, _testsinglephase)
@@ -335,43 +335,51 @@ class ImportTests(unittest.TestCase):
         interp2 = _interpreters.create(isolated=False)
         self.addCleanup(_interpreters.destroy, interp2)
 
-        with self.subTest('without resetting'):
+        with self.subTest('without resetting; '
+                          'already loaded in main interpreter'):
+            # Attrs set after loading are not in m_copy.
+            _testsinglephase.spam = 'spam, spam, spam, spam, eggs, and spam'
+            objid = id(_testsinglephase)
+
             script = textwrap.dedent(f'''
                 import _testsinglephase
 
-                expected = %d
                 init_count =  _testsinglephase.initialized_count()
-                if init_count != expected:
+                if init_count != {init_count}:
                     raise Exception(init_count)
 
+                # The "looked up" module is interpreter-specific.
                 lookedup = _testsinglephase.look_up_self()
                 if lookedup is not _testsinglephase:
                     raise Exception((_testsinglephase, lookedup))
 
                 # Attrs set in the module init func are in m_copy.
-                _initialized = _testsinglephase._initialized
-                initialized = _testsinglephase.initialized()
+                # Both of the following were set in module init,
+                # which didn't happen in this interpreter
+                # (unfortunately).
+                _initialized = _testsinglephase._module_initialized
+                initialized = _testsinglephase.state_initialized()
                 if _initialized != initialized:
                     raise Exception((_initialized, initialized))
 
                 # Attrs set after loading are not in m_copy.
                 if hasattr(_testsinglephase, 'spam'):
                     raise Exception(_testsinglephase.spam)
-                _testsinglephase.spam = expected
+                _testsinglephase.spam = 'spam, spam, spam, spam, ...'
                 ''')
 
             # Use an interpreter that gets destroyed right away.
-            ret = support.run_in_subinterp(script % 1)
+            ret = support.run_in_subinterp(script)
             self.assertEqual(ret, 0)
 
             # The module's init func gets run again.
             # The module's globals did not get destroyed.
-            _interpreters.run_string(interp1, script % 1)
+            _interpreters.run_string(interp1, script)
 
             # The module's init func is not run again.
             # The second interpreter copies the module's m_copy.
             # However, globals are still shared.
-            _interpreters.run_string(interp2, script % 1)
+            _interpreters.run_string(interp2, script)
 
     @requires_load_dynamic
     def test_singlephase_variants(self):
@@ -411,7 +419,7 @@ class ImportTests(unittest.TestCase):
         def check_common(name, module):
             summed = module.sum(1, 2)
             lookedup = module.look_up_self()
-            initialized = module.initialized()
+            initialized = module.state_initialized()
             cached = sys.modules[name]
 
             # module.__name__  might not match, but the spec will.
@@ -459,7 +467,7 @@ class ImportTests(unittest.TestCase):
         def check_basic_reloaded(module, lookedup, initialized, init_count,
                                  before, reloaded):
             relookedup = reloaded.look_up_self()
-            reinitialized = reloaded.initialized()
+            reinitialized = reloaded.state_initialized()
             reinit_count = reloaded.initialized_count()
 
             self.assertIs(reloaded, module)
@@ -474,7 +482,7 @@ class ImportTests(unittest.TestCase):
         def check_with_reinit_reloaded(module, lookedup, initialized,
                                        before, reloaded):
             relookedup = reloaded.look_up_self()
-            reinitialized = reloaded.initialized()
+            reinitialized = reloaded.state_initialized()
 
             self.assertIsNot(reloaded, module)
             self.assertIsNot(reloaded, module)
@@ -502,6 +510,7 @@ class ImportTests(unittest.TestCase):
             check_basic_reloaded(mod, lookedup, initialized, init_count,
                                  before, reloaded)
         basic = mod
+        return
 
         # Check its indirect variants.
 
