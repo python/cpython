@@ -4469,6 +4469,8 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_READY;
+    type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
+    type->tp_version_tag = 0;
 
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         _PyStaticType_ClearWeakRefs(type);
