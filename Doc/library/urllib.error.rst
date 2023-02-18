@@ -42,7 +42,7 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
    .. attribute:: url
 
       Contains the request URL.
-      Is an alias for *filename* attribute.
+      An alias for *filename* attribute.
 
    .. attribute:: code
 
@@ -53,19 +53,19 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
    .. attribute:: reason
 
       This is usually a string explaining the reason for this error.
-      Is an alias for *msg* attribute.
+      An alias for *msg* attribute.
 
    .. attribute:: headers
 
       The HTTP response headers for the HTTP request that caused the
       :exc:`HTTPError`.
-      Is an alias for *hdrs* attribute.
+      An alias for *hdrs* attribute.
 
       .. versionadded:: 3.4
 
    .. attribute:: fp
 
-      A file-like object with the HTTP error body.
+      A file-like object where the HTTP error body can be read from.
 
 .. exception:: ContentTooShortError(msg, content)
 
