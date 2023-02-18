@@ -22,10 +22,12 @@ _COMPRESS_LEVEL_TRADEOFF = 6
 _COMPRESS_LEVEL_BEST = 9
 
 READ_BUFFER_SIZE = 128 * 1024
+DEFAULT_WRITE_BUFFER_SIZE = 4 * io.DEFAULT_BUFFER_SIZE
 
 
 def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
-         encoding=None, errors=None, newline=None, buffer_size=4*io.DEFAULT_BUFFER_SIZE):
+         encoding=None, errors=None, newline=None,
+         buffer_size=DEFAULT_WRITE_BUFFER_SIZE):
     """Open a gzip-compressed file in binary or text mode.
 
     The filename argument can be an actual filename (a str or bytes object), or
@@ -150,7 +152,7 @@ class GzipFile(_compression.BaseStream):
 
     def __init__(self, filename=None, mode=None,
                  compresslevel=_COMPRESS_LEVEL_BEST, fileobj=None, mtime=None,
-                 buffer_size=4*io.DEFAULT_BUFFER_SIZE):
+                 buffer_size=DEFAULT_WRITE_BUFFER_SIZE):
         """Constructor for the GzipFile class.
 
         At least one of fileobj and filename must be given a
