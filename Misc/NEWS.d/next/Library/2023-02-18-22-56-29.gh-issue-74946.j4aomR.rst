@@ -1,0 +1,2 @@
+Add ``count`` argument to :pdbcmd:`step` and :pdbcmd:`next` commands of
+:mod:`pdb`. Patch by Louie Lu.
