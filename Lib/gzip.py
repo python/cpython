@@ -300,6 +300,7 @@ class GzipFile(_compression.BaseStream):
         return self._buffer.write(data)
 
     def _write_raw(self, data):
+        # Called by our self._buffer underlying WriteBufferStream.
         if isinstance(data, (bytes, bytearray)):
             length = len(data)
         else:
