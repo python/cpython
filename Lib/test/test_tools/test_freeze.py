@@ -8,6 +8,8 @@ from test import support
 from test.support import os_helper
 from test.test_tools import imports_under_tool, skip_if_missing
 
+
+support.requires('extralargefile','test requires extra disk spaces and a long time to run')
 skip_if_missing('freeze')
 with imports_under_tool('freeze', 'test'):
     import freeze as helper
