@@ -1,0 +1,3 @@
+Restore ability to launch older 32-bit versions from the :file:`py.exe`
+launcher when both 32-bit and 64-bit installs of the same version are
+available.

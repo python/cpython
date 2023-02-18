@@ -1224,6 +1224,36 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertIs(D[T].__origin__, D)
         self.assertIs(D[Unpack[Ts]].__origin__, D)
 
+    def test_get_type_hints_on_unpack_args(self):
+        Ts = TypeVarTuple('Ts')
+
+        def func1(*args: *Ts): pass
+        self.assertEqual(gth(func1), {'args': Unpack[Ts]})
+
+        def func2(*args: *tuple[int, str]): pass
+        self.assertEqual(gth(func2), {'args': Unpack[tuple[int, str]]})
+
+        class CustomVariadic(Generic[*Ts]): pass
+
+        def func3(*args: *CustomVariadic[int, str]): pass
+        self.assertEqual(gth(func3), {'args': Unpack[CustomVariadic[int, str]]})
+
+    def test_get_type_hints_on_unpack_args_string(self):
+        Ts = TypeVarTuple('Ts')
+
+        def func1(*args: '*Ts'): pass
+        self.assertEqual(gth(func1, localns={'Ts': Ts}),
+                        {'args': Unpack[Ts]})
+
+        def func2(*args: '*tuple[int, str]'): pass
+        self.assertEqual(gth(func2), {'args': Unpack[tuple[int, str]]})
+
+        class CustomVariadic(Generic[*Ts]): pass
+
+        def func3(*args: '*CustomVariadic[int, str]'): pass
+        self.assertEqual(gth(func3, localns={'CustomVariadic': CustomVariadic}),
+                         {'args': Unpack[CustomVariadic[int, str]]})
+
     def test_tuple_args_are_correct(self):
         Ts = TypeVarTuple('Ts')
 

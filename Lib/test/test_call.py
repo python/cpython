@@ -934,6 +934,16 @@ class TestRecursion(unittest.TestCase):
         finally:
             sys.setrecursionlimit(depth)
 
+class TestFunctionWithManyArgs(unittest.TestCase):
+    def test_function_with_many_args(self):
+        for N in (10, 500, 1000):
+            with self.subTest(N=N):
+                args = ",".join([f"a{i}" for i in range(N)])
+                src = f"def f({args}) : return a{N//2}"
+                l = {}
+                exec(src, {}, l)
+                self.assertEqual(l['f'](*range(N)), N//2)
+
 
 if __name__ == "__main__":
     unittest.main()

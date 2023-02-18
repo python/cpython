@@ -492,7 +492,7 @@ dis_asyncwith = """\
            GET_AWAITABLE            1
            LOAD_CONST               0 (None)
         >> SEND                     3 (to 22)
-           YIELD_VALUE              3
+           YIELD_VALUE              2
            RESUME                   3
            JUMP_BACKWARD_NO_INTERRUPT     4 (to 14)
         >> POP_TOP
@@ -526,7 +526,7 @@ dis_asyncwith = """\
            GET_AWAITABLE            2
            LOAD_CONST               0 (None)
         >> SEND                     4 (to 92)
-           YIELD_VALUE              6
+           YIELD_VALUE              3
            RESUME                   3
            JUMP_BACKWARD_NO_INTERRUPT     4 (to 82)
         >> CLEANUP_THROW

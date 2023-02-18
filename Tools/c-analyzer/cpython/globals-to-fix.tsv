@@ -371,11 +371,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 ##-----------------------
 ## static types
 
-Modules/_asynciomodule.c	-	FutureIterType	-
-Modules/_asynciomodule.c	-	FutureType	-
-Modules/_asynciomodule.c	-	PyRunningLoopHolder_Type	-
-Modules/_asynciomodule.c	-	TaskStepMethWrapper_Type	-
-Modules/_asynciomodule.c	-	TaskType	-
 Modules/_ctypes/_ctypes.c	-	DictRemover_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArrayType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArray_Type	-
@@ -466,21 +461,10 @@ Modules/xxmodule.c	-	ErrorObject	-
 ## cached - initialized once
 
 ## manually cached PyUnicodeOjbect
-Modules/_asynciomodule.c	-	context_kwname	-
 Modules/_ctypes/callproc.c	_ctypes_get_errobj	error_object_name	-
 Modules/_ctypes/_ctypes.c	CreateSwappedType	suffix	-
 
 ## other - during module init
-Modules/_asynciomodule.c	-	asyncio_mod	-
-Modules/_asynciomodule.c	-	traceback_extract_stack	-
-Modules/_asynciomodule.c	-	asyncio_future_repr_func	-
-Modules/_asynciomodule.c	-	asyncio_get_event_loop_policy	-
-Modules/_asynciomodule.c	-	asyncio_iscoroutine_func	-
-Modules/_asynciomodule.c	-	asyncio_task_get_stack_func	-
-Modules/_asynciomodule.c	-	asyncio_task_print_stack_func	-
-Modules/_asynciomodule.c	-	asyncio_task_repr_func	-
-Modules/_asynciomodule.c	-	asyncio_InvalidStateError	-
-Modules/_asynciomodule.c	-	asyncio_CancelledError	-
 Modules/_zoneinfo.c	-	io_open	-
 Modules/_zoneinfo.c	-	_tzpath_find_tzfile	-
 Modules/_zoneinfo.c	-	_common_mod	-
@@ -512,12 +496,8 @@ Modules/_decimal/_decimal.c	-	SignalTuple	-
 Modules/arraymodule.c	array_array___reduce_ex___impl	array_reconstructor	-
 
 ## state
-Modules/_asynciomodule.c	-	cached_running_holder	-
 Modules/_asynciomodule.c	-	fi_freelist	-
 Modules/_asynciomodule.c	-	fi_freelist_len	-
-Modules/_asynciomodule.c	-	all_tasks	-
-Modules/_asynciomodule.c	-	current_tasks	-
-Modules/_asynciomodule.c	-	iscoroutine_typecache	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
@@ -539,7 +519,6 @@ Modules/pyexpat.c	PyUnknownEncodingHandler	template_buffer	-
 
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
-Modules/_asynciomodule.c	-	module_initialized	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
 Modules/_cursesmodule.c	-	initialised	-
@@ -585,8 +564,6 @@ Modules/socketmodule.c	-	sock_cloexec_works	-
 ##-----------------------
 ## state
 
-Modules/_asynciomodule.c	-	cached_running_holder_tsid	-
-Modules/_asynciomodule.c	-	task_name_counter	-
 Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
 Modules/_curses_panel.c	-	lop	-

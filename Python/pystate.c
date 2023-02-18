@@ -400,6 +400,11 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
         return status;
     }
 
+    if (PyThread_tss_create(&runtime->trashTSSkey) != 0) {
+        _PyRuntimeState_Fini(runtime);
+        return _PyStatus_NO_MEMORY();
+    }
+
     init_runtime(runtime, open_code_hook, open_code_userdata, audit_hook_head,
                  unicode_next_index, lock1, lock2, lock3, lock4);
 
@@ -411,6 +416,10 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
     if (current_tss_initialized(runtime)) {
         current_tss_fini(runtime);
+    }
+
+    if (PyThread_tss_is_created(&runtime->trashTSSkey)) {
+        PyThread_tss_delete(&runtime->trashTSSkey);
     }
 
     /* Force the allocator used by _PyRuntimeState_Init(). */
@@ -469,6 +478,13 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     PyStatus status = current_tss_reinit(runtime);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    if (PyThread_tss_is_created(&runtime->trashTSSkey)) {
+        PyThread_tss_delete(&runtime->trashTSSkey);
+    }
+    if (PyThread_tss_create(&runtime->trashTSSkey) != 0) {
+        return _PyStatus_NO_MEMORY();
     }
 
     return _PyStatus_OK();

@@ -731,16 +731,18 @@ def uuid5(namespace, name):
 
 def main():
     """Run the uuid command line interface."""
-    uuid_funcs = {"uuid1": uuid1,
-                  "uuid3": uuid3,
-                  "uuid4": uuid4,
-                  "uuid5": uuid5}
+    uuid_funcs = {
+        "uuid1": uuid1,
+        "uuid3": uuid3,
+        "uuid4": uuid4,
+        "uuid5": uuid5
+    }
     uuid_namespace_funcs = ("uuid3", "uuid5")
     namespaces = {
-        "NAMESPACE_DNS": NAMESPACE_DNS,
-        "NAMESPACE_URL": NAMESPACE_URL,
-        "NAMESPACE_OID": NAMESPACE_OID,
-        "NAMESPACE_X500": NAMESPACE_X500
+        "@dns": NAMESPACE_DNS,
+        "@url": NAMESPACE_URL,
+        "@oid": NAMESPACE_OID,
+        "@x500": NAMESPACE_X500
     }
 
     import argparse
@@ -748,11 +750,13 @@ def main():
         description="Generates a uuid using the selected uuid function.")
     parser.add_argument("-u", "--uuid", choices=uuid_funcs.keys(), default="uuid4",
                         help="The function to use to generate the uuid. "
-                             "By default uuid4 function is used.")
-    parser.add_argument("-ns", "--namespace",
-                        help="The namespace used as part of generating the uuid. "
+                        "By default uuid4 function is used.")
+    parser.add_argument("-n", "--namespace",
+                        help="The namespace is a UUID, or '@ns' where 'ns' is a "
+                        "well-known predefined UUID addressed by namespace name. "
+                        "Such as @dns, @url, @oid, and @x500. "
                         "Only required for uuid3/uuid5 functions.")
-    parser.add_argument("-n", "--name",
+    parser.add_argument("-N", "--name",
                         help="The name used as part of generating the uuid. "
                         "Only required for uuid3/uuid5 functions.")
 

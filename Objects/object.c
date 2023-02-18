@@ -2225,22 +2225,20 @@ finally:
  * object, with refcount 0.  Py_DECREF must already have been called on it.
  */
 static void
-_PyTrash_thread_deposit_object(PyObject *op)
+_PyTrash_thread_deposit_object(struct _py_trashcan *trash, PyObject *op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
-    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)tstate->trash_delete_later);
-    tstate->trash_delete_later = op;
+    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)trash->delete_later);
+    trash->delete_later = op;
 }
 
 /* Deallocate all the objects in the gcstate->trash_delete_later list.
  * Called when the call-stack unwinds again. */
 static void
-_PyTrash_thread_destroy_chain(void)
+_PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     /* We need to increase trash_delete_nesting here, otherwise,
        _PyTrash_thread_destroy_chain will be called recursively
        and then possibly crash.  An example that may crash without
@@ -2252,13 +2250,13 @@ _PyTrash_thread_destroy_chain(void)
                tups = [(tup,) for tup in tups]
            del tups
     */
-    assert(tstate->trash_delete_nesting == 0);
-    ++tstate->trash_delete_nesting;
-    while (tstate->trash_delete_later) {
-        PyObject *op = tstate->trash_delete_later;
+    assert(trash->delete_nesting == 0);
+    ++trash->delete_nesting;
+    while (trash->delete_later) {
+        PyObject *op = trash->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        tstate->trash_delete_later =
+        trash->delete_later =
             (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
 
         /* Call the deallocator directly.  This used to try to
@@ -2269,22 +2267,64 @@ _PyTrash_thread_destroy_chain(void)
          */
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
         (*dealloc)(op);
-        assert(tstate->trash_delete_nesting == 1);
+        assert(trash->delete_nesting == 1);
     }
-    --tstate->trash_delete_nesting;
+    --trash->delete_nesting;
+}
+
+
+static struct _py_trashcan *
+_PyTrash_get_state(PyThreadState *tstate)
+{
+    if (tstate != NULL) {
+        return &tstate->trash;
+    }
+    // The current thread must be finalizing.
+    // Fall back to using thread-local state.
+    // XXX Use thread-local variable syntax?
+    assert(PyThread_tss_is_created(&_PyRuntime.trashTSSkey));
+    struct _py_trashcan *trash =
+        (struct _py_trashcan *)PyThread_tss_get(&_PyRuntime.trashTSSkey);
+    if (trash == NULL) {
+        trash = PyMem_RawMalloc(sizeof(struct _py_trashcan));
+        if (trash == NULL) {
+            Py_FatalError("Out of memory");
+        }
+        PyThread_tss_set(&_PyRuntime.trashTSSkey, (void *)trash);
+    }
+    return trash;
+}
+
+static void
+_PyTrash_clear_state(PyThreadState *tstate)
+{
+    if (tstate != NULL) {
+        assert(tstate->trash.delete_later == NULL);
+        return;
+    }
+    if (PyThread_tss_is_created(&_PyRuntime.trashTSSkey)) {
+        struct _py_trashcan *trash =
+            (struct _py_trashcan *)PyThread_tss_get(&_PyRuntime.trashTSSkey);
+        if (trash != NULL) {
+            PyThread_tss_set(&_PyRuntime.trashTSSkey, (void *)NULL);
+            PyMem_RawFree(trash);
+        }
+    }
 }
 
 
 int
 _PyTrash_begin(PyThreadState *tstate, PyObject *op)
 {
-    if (tstate->trash_delete_nesting >= _PyTrash_UNWIND_LEVEL) {
+    // XXX Make sure the GIL is held.
+    struct _py_trashcan *trash = _PyTrash_get_state(tstate);
+    if (trash->delete_nesting >= _PyTrash_UNWIND_LEVEL) {
         /* Store the object (to be deallocated later) and jump past
          * Py_TRASHCAN_END, skipping the body of the deallocator */
-        _PyTrash_thread_deposit_object(op);
+        _PyTrash_thread_deposit_object(trash, op);
         return 1;
     }
-    ++tstate->trash_delete_nesting;
+    ++trash->delete_nesting;
     return 0;
 }
 
@@ -2292,9 +2332,14 @@ _PyTrash_begin(PyThreadState *tstate, PyObject *op)
 void
 _PyTrash_end(PyThreadState *tstate)
 {
-    --tstate->trash_delete_nesting;
-    if (tstate->trash_delete_later && tstate->trash_delete_nesting <= 0) {
-        _PyTrash_thread_destroy_chain();
+    // XXX Make sure the GIL is held.
+    struct _py_trashcan *trash = _PyTrash_get_state(tstate);
+    --trash->delete_nesting;
+    if (trash->delete_nesting <= 0) {
+        if (trash->delete_later != NULL) {
+            _PyTrash_thread_destroy_chain(trash);
+        }
+        _PyTrash_clear_state(tstate);
     }
 }
 
@@ -2371,7 +2416,7 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = type->tp_dealloc;
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *old_exc_type = tstate->curexc_type;
+    PyObject *old_exc_type = tstate != NULL ? tstate->curexc_type : NULL;
     // Keep the old exception type alive to prevent undefined behavior
     // on (tstate->curexc_type != old_exc_type) below
     Py_XINCREF(old_exc_type);
@@ -2387,7 +2432,7 @@ _Py_Dealloc(PyObject *op)
 #ifdef Py_DEBUG
     // gh-89373: The tp_dealloc function must leave the current exception
     // unchanged.
-    if (tstate->curexc_type != old_exc_type) {
+    if (tstate != NULL && tstate->curexc_type != old_exc_type) {
         const char *err;
         if (old_exc_type == NULL) {
             err = "Deallocator of type '%s' raised an exception";

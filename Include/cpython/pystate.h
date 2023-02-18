@@ -107,6 +107,11 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+struct _py_trashcan {
+    int delete_nesting;
+    PyObject *delete_later;
+};
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -160,8 +165,7 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
-    int trash_delete_nesting;
-    PyObject *trash_delete_later;
+    struct _py_trashcan trash;
 
     /* Called when a thread state is deleted normally, but not when it
      * is destroyed after fork().

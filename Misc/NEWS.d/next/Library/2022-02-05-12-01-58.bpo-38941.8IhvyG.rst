@@ -1,0 +1,4 @@
+The :mod:`xml.etree.ElementTree` module now emits :exc:`DeprecationWarning`
+when testing the truth value of an :class:`xml.etree.ElementTree.Element`.
+Before, the Python implementation emitted :exc:`FutureWarning`, and the C
+implementation emitted nothing.
