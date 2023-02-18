@@ -3,7 +3,6 @@
 import __future__
 import ast
 import unittest
-from test import support
 from test.support import import_helper
 from textwrap import dedent
 import os
@@ -61,7 +60,7 @@ class FutureTest(unittest.TestCase):
     def test_badfuture7(self):
         with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future7
-        self.check_syntax_error(cm.exception, "badsyntax_future7", 3, 53)
+        self.check_syntax_error(cm.exception, "badsyntax_future7", 3, 54)
 
     def test_badfuture8(self):
         with self.assertRaises(SyntaxError) as cm:

@@ -5,8 +5,6 @@ buildbot        Batchfiles for running on Windows buildbot workers.
 
 ccbench         A Python threads-based concurrency benchmark. (*)
 
-demo            Several Python programming demos.
-
 freeze          Create a stand-alone executable from a Python program.
 
 gdb             Python code to be run inside gdb, to make it easier to

@@ -192,17 +192,14 @@ those made in the suite of the for-loop::
 
 Names in the target list are not deleted when the loop is finished, but if the
 sequence is empty, they will not have been assigned to at all by the loop.  Hint:
-the built-in function :func:`range` returns an iterator of integers suitable to
-emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
-returns the list ``[0, 1, 2]``.
+the built-in type :func:`range` represents immutable arithmetic sequences of integers.
+For instance, iterating ``range(3)`` successively yields 0, 1, and then 2.
 
 .. versionchanged:: 3.11
    Starred elements are now allowed in the expression list.
 
+
 .. _try:
-.. _except:
-.. _except_star:
-.. _finally:
 
 The :keyword:`!try` statement
 =============================
@@ -215,7 +212,7 @@ The :keyword:`!try` statement
    keyword: as
    single: : (colon); compound statement
 
-The :keyword:`try` statement specifies exception handlers and/or cleanup code
+The :keyword:`!try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist:: python-grammar
@@ -231,40 +228,56 @@ for a group of statements:
    try3_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
+Additional information on exceptions can be found in section :ref:`exceptions`,
+and information on using the :keyword:`raise` statement to generate exceptions
+may be found in section :ref:`raise`.
 
-The :keyword:`except` clause(s) specify one or more exception handlers. When no
+
+.. _except:
+
+:keyword:`!except` clause
+-------------------------
+
+The :keyword:`!except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
 When an exception occurs in the :keyword:`!try` suite, a search for an exception
-handler is started.  This search inspects the except clauses in turn until one
-is found that matches the exception.  An expression-less except clause, if
-present, must be last; it matches any exception.  For an except clause with an
-expression, that expression is evaluated, and the clause matches the exception
+handler is started. This search inspects the :keyword:`!except` clauses in turn
+until one is found that matches the exception.
+An expression-less :keyword:`!except` clause, if present, must be last;
+it matches any exception.
+For an :keyword:`!except` clause with an expression,
+that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
 compatible with an exception if the object is the class or a
 :term:`non-virtual base class <abstract base class>` of the exception object,
 or a tuple containing an item that is the class or a non-virtual base class
 of the exception object.
 
-If no except clause matches the exception, the search for an exception handler
+If no :keyword:`!except` clause matches the exception,
+the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
 
-If the evaluation of an expression in the header of an except clause raises an
-exception, the original search for a handler is canceled and a search starts for
+If the evaluation of an expression
+in the header of an :keyword:`!except` clause raises an exception,
+the original search for a handler is canceled and a search starts for
 the new exception in the surrounding code and on the call stack (it is treated
 as if the entire :keyword:`try` statement raised the exception).
 
 .. index:: single: as; except clause
 
-When a matching except clause is found, the exception is assigned to the target
-specified after the :keyword:`!as` keyword in that except clause, if present, and
-the except clause's suite is executed.  All except clauses must have an
-executable block.  When the end of this block is reached, execution continues
-normally after the entire try statement.  (This means that if two nested
-handlers exist for the same exception, and the exception occurs in the try
-clause of the inner handler, the outer handler will not handle the exception.)
+When a matching :keyword:`!except` clause is found,
+the exception is assigned to the target
+specified after the :keyword:`!as` keyword in that :keyword:`!except` clause,
+if present, and the :keyword:`!except` clause's suite is executed.
+All :keyword:`!except` clauses must have an executable block.
+When the end of this block is reached, execution continues
+normally after the entire :keyword:`try` statement.
+(This means that if two nested handlers exist for the same exception,
+and the exception occurs in the :keyword:`!try` clause of the inner handler,
+the outer handler will not handle the exception.)
 
 When an exception has been assigned using ``as target``, it is cleared at the
-end of the except clause.  This is as if ::
+end of the :keyword:`!except` clause.  This is as if ::
 
    except E as N:
        foo
@@ -278,7 +291,8 @@ was translated to ::
            del N
 
 This means the exception must be assigned to a different name to be able to
-refer to it after the except clause.  Exceptions are cleared because with the
+refer to it after the :keyword:`!except` clause.
+Exceptions are cleared because with the
 traceback attached to them, they form a reference cycle with the stack frame,
 keeping all locals in that frame alive until the next garbage collection occurs.
 
@@ -286,7 +300,8 @@ keeping all locals in that frame alive until the next garbage collection occurs.
    module: sys
    object: traceback
 
-Before an except clause's suite is executed, details about the exception are
+Before an :keyword:`!except` clause's suite is executed,
+details about the exception are
 stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
 :func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
 exception instance and a traceback object (see section :ref:`types`) identifying
@@ -312,17 +327,24 @@ when leaving an exception handler::
    >>> print(sys.exc_info())
    (None, None, None)
 
+
 .. index::
    keyword: except_star
 
-The :keyword:`except*<except_star>` clause(s) are used for handling
-:exc:`ExceptionGroup`\ s. The exception type for matching is interpreted as in
+.. _except_star:
+
+:keyword:`!except*` clause
+--------------------------
+
+The :keyword:`!except*` clause(s) are used for handling
+:exc:`ExceptionGroup`\s. The exception type for matching is interpreted as in
 the case of :keyword:`except`, but in the case of exception groups we can have
 partial matches when the type matches some of the exceptions in the group.
-This means that multiple except* clauses can execute, each handling part of
-the exception group. Each clause executes once and handles an exception group
+This means that multiple :keyword:`!except*` clauses can execute,
+each handling part of the exception group.
+Each clause executes at most once and handles an exception group
 of all matching exceptions.  Each exception in the group is handled by at most
-one except* clause, the first that matches it. ::
+one :keyword:`!except*` clause, the first that matches it. ::
 
    >>> try:
    ...     raise ExceptionGroup("eg",
@@ -340,17 +362,29 @@ one except* clause, the first that matches it. ::
      +-+---------------- 1 ----------------
        | ValueError: 1
        +------------------------------------
-   >>>
 
-   Any remaining exceptions that were not handled by any except* clause
-   are re-raised at the end, combined into an exception group along with
-   all exceptions that were raised from within except* clauses.
 
-   An except* clause must have a matching type, and this type cannot be a
-   subclass of :exc:`BaseExceptionGroup`. It is not possible to mix except
-   and except* in the same :keyword:`try`. :keyword:`break`,
-   :keyword:`continue` and :keyword:`return` cannot appear in an except*
-   clause.
+Any remaining exceptions that were not handled by any :keyword:`!except*`
+clause are re-raised at the end, combined into an exception group along with
+all exceptions that were raised from within :keyword:`!except*` clauses.
+
+If the raised exception is not an exception group and its type matches
+one of the :keyword:`!except*` clauses, it is caught and wrapped by an
+exception group with an empty message string. ::
+
+   >>> try:
+   ...     raise BlockingIOError
+   ... except* BlockingIOError as e:
+   ...     print(repr(e))
+   ...
+   ExceptionGroup('', (BlockingIOError()))
+
+An :keyword:`!except*` clause must have a matching type,
+and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
+It is not possible to mix :keyword:`except` and :keyword:`!except*`
+in the same :keyword:`try`.
+:keyword:`break`, :keyword:`continue` and :keyword:`return`
+cannot appear in an :keyword:`!except*` clause.
 
 
 .. index::
@@ -359,17 +393,28 @@ one except* clause, the first that matches it. ::
    statement: break
    statement: continue
 
+.. _except_else:
+
+:keyword:`!else` clause
+-----------------------
+
 The optional :keyword:`!else` clause is executed if the control flow leaves the
 :keyword:`try` suite, no exception was raised, and no :keyword:`return`,
 :keyword:`continue`, or :keyword:`break` statement was executed.  Exceptions in
 the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
+
 .. index:: keyword: finally
 
-If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
+.. _finally:
+
+:keyword:`!finally` clause
+--------------------------
+
+If :keyword:`!finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`!else` clauses.  If an exception occurs in any of the clauses and is
+:keyword:`else` clauses.  If an exception occurs in any of the clauses and is
 not handled, the exception is temporarily saved. The :keyword:`!finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
@@ -387,7 +432,7 @@ or :keyword:`continue` statement, the saved exception is discarded::
    42
 
 The exception information is not available to the program during execution of
-the :keyword:`finally` clause.
+the :keyword:`!finally` clause.
 
 .. index::
    statement: return
@@ -396,10 +441,10 @@ the :keyword:`finally` clause.
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
 executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally`
-statement, the :keyword:`finally` clause is also executed 'on the way out.'
+statement, the :keyword:`!finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
-statement executed.  Since the :keyword:`finally` clause always executes, a
+statement executed.  Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
 always be the last one executed::
 
@@ -412,13 +457,9 @@ always be the last one executed::
    >>> foo()
    'finally'
 
-Additional information on exceptions can be found in section :ref:`exceptions`,
-and information on using the :keyword:`raise` statement to generate exceptions
-may be found in section :ref:`raise`.
-
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
-   :keyword:`finally` clause due to a problem with the implementation.
+   :keyword:`!finally` clause due to a problem with the implementation.
 
 
 .. _with:
@@ -464,7 +505,7 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
       method returns without an error, then :meth:`__exit__` will always be
       called. Thus, if an error occurs during the assignment to the target list,
       it will be treated the same as an error occurring within the suite would
-      be. See step 6 below.
+      be. See step 7 below.
 
 #. The suite is executed.
 
@@ -551,6 +592,7 @@ The :keyword:`!match` statement
    keyword: if
    keyword: as
    pair: match; case
+   single: as; match statement
    single: : (colon); compound statement
 
 .. versionadded:: 3.10
@@ -1122,7 +1164,7 @@ subject value:
 
    These classes accept a single positional argument, and the pattern there is matched
    against the whole object rather than an attribute. For example ``int(0|1)`` matches
-   the value ``0``, but not the values ``0.0`` or ``False``.
+   the value ``0``, but not the value ``0.0``.
 
 In simple terms ``CLS(P1, attr=P2)`` matches only if the following happens:
 
@@ -1495,7 +1537,7 @@ Is semantically equivalent to::
     else:
         SUITE2
 
-See also :meth:`__aiter__` and :meth:`__anext__` for details.
+See also :meth:`~object.__aiter__` and :meth:`~object.__anext__` for details.
 
 It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
 body of a coroutine function.
@@ -1537,7 +1579,7 @@ is semantically equivalent to::
         if not hit_except:
             await aexit(manager, None, None, None)
 
-See also :meth:`__aenter__` and :meth:`__aexit__` for details.
+See also :meth:`~object.__aenter__` and :meth:`~object.__aexit__` for details.
 
 It is a :exc:`SyntaxError` to use an ``async with`` statement outside the
 body of a coroutine function.

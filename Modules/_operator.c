@@ -722,8 +722,7 @@ _operator_is_not_impl(PyObject *module, PyObject *a, PyObject *b)
 {
     PyObject *result;
     result = (a != b) ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 /* compare_digest **********************************************************/
@@ -731,9 +730,9 @@ _operator_is_not_impl(PyObject *module, PyObject *a, PyObject *b)
 /*
  * timing safe compare
  *
- * Returns 1 of the strings are equal.
+ * Returns 1 if the strings are equal.
  * In case of len(a) != len(b) the function tries to keep the timing
- * dependent on the length of b. CPU cache locally may still alter timing
+ * dependent on the length of b. CPU cache locality may still alter timing
  * a bit.
  */
 static int
@@ -839,7 +838,7 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
                     PyUnicode_GET_LENGTH(a),
                     PyUnicode_GET_LENGTH(b));
     }
-    /* fallback to buffer interface for bytes, bytesarray and other */
+    /* fallback to buffer interface for bytes, bytearray and other */
     else {
         Py_buffer view_a;
         Py_buffer view_b;
@@ -1010,8 +1009,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    Py_INCREF(item);
-    ig->item = item;
+    ig->item = Py_NewRef(item);
     ig->nitems = nitems;
     ig->index = -1;
     if (PyLong_CheckExact(item)) {
@@ -1095,8 +1093,7 @@ itemgetter_call_impl(itemgetterobject *ig, PyObject *obj)
             && ig->index < PyTuple_GET_SIZE(obj))
         {
             result = PyTuple_GET_ITEM(obj, ig->index);
-            Py_INCREF(result);
-            return result;
+            return Py_NewRef(result);
         }
         return PyObject_GetItem(obj, ig->item);
     }
@@ -1162,8 +1159,7 @@ static PyMemberDef itemgetter_members[] = {
 };
 
 PyDoc_STRVAR(itemgetter_doc,
-"itemgetter(item, ...) --> itemgetter object\n\
-\n\
+"itemgetter(item, /, *items)\n--\n\n\
 Return a callable object that fetches the given item(s) from its operand.\n\
 After f = itemgetter(2), the call f(r) returns r[2].\n\
 After g = itemgetter(2, 5, 3), the call g(r) returns (r[2], r[5], r[3])");
@@ -1441,8 +1437,7 @@ dotjoinattr(PyObject *attr, PyObject **attrsep)
         }
         return PyUnicode_Join(*attrsep, attr);
     } else {
-        Py_INCREF(attr);
-        return attr;
+        return Py_NewRef(attr);
     }
 }
 
@@ -1523,8 +1518,7 @@ static PyMemberDef attrgetter_members[] = {
 };
 
 PyDoc_STRVAR(attrgetter_doc,
-"attrgetter(attr, ...) --> attrgetter object\n\
-\n\
+"attrgetter(attr, /, *attrs)\n--\n\n\
 Return a callable object that fetches the given attribute(s) from its operand.\n\
 After f = attrgetter('name'), the call f(r) returns r.name.\n\
 After g = attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).\n\
@@ -1596,8 +1590,7 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyUnicode_InternInPlace(&name);
     mc->name = name;
 
-    Py_XINCREF(kwds);
-    mc->kwds = kwds;
+    mc->kwds = Py_XNewRef(kwds);
 
     mc->args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (mc->args == NULL) {
@@ -1742,26 +1735,19 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         newargs = PyTuple_New(1 + callargcount);
         if (newargs == NULL)
             return NULL;
-        Py_INCREF(mc->name);
-        PyTuple_SET_ITEM(newargs, 0, mc->name);
+        PyTuple_SET_ITEM(newargs, 0, Py_NewRef(mc->name));
         for (i = 0; i < callargcount; ++i) {
             PyObject *arg = PyTuple_GET_ITEM(mc->args, i);
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(newargs, i + 1, arg);
+            PyTuple_SET_ITEM(newargs, i + 1, Py_NewRef(arg));
         }
         return Py_BuildValue("ON", Py_TYPE(mc), newargs);
     }
     else {
-        PyObject *functools;
         PyObject *partial;
         PyObject *constructor;
         PyObject *newargs[2];
 
-        functools = PyImport_ImportModule("functools");
-        if (!functools)
-            return NULL;
-        partial = PyObject_GetAttr(functools, &_Py_ID(partial));
-        Py_DECREF(functools);
+        partial = _PyImport_GetModuleAttrString("functools", "partial");
         if (!partial)
             return NULL;
 
@@ -1780,8 +1766,7 @@ static PyMethodDef methodcaller_methods[] = {
     {NULL}
 };
 PyDoc_STRVAR(methodcaller_doc,
-"methodcaller(name, ...) --> methodcaller object\n\
-\n\
+"methodcaller(name, /, *args, **kwargs)\n--\n\n\
 Return a callable object that calls the given method on its operand.\n\
 After f = methodcaller('name'), the call f(r) returns r.name().\n\
 After g = methodcaller('name', 'date', foo=1), the call g(r) returns\n\

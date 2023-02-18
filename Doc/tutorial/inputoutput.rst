@@ -133,7 +133,17 @@ applies :func:`repr`::
    >>> print(f'My hovercraft is full of {animals!r}.')
    My hovercraft is full of 'eels'.
 
-For a reference on these format specifications, see
+The ``=`` specifier can be used to expand an expression to the text of the
+expression, an equal sign, then the representation of the evaluated expression:
+
+   >>> bugs = 'roaches'
+   >>> count = 13
+   >>> area = 'living room'
+   >>> print(f'Debugging {bugs=} {count=} {area=}')
+   Debugging bugs='roaches' count=13 area='living room'
+
+See :ref:`self-documenting expressions <bpo-36817-whatsnew>` for more information
+on the ``=`` specifier. For a reference on these format specifications, see
 the reference guide for the :ref:`formatspec`.
 
 .. _tut-string-format:
@@ -166,7 +176,7 @@ are referred to by using the name of the argument. ::
 Positional and keyword arguments can be arbitrarily combined::
 
    >>> print('The story of {0}, {1}, and {other}.'.format('Bill', 'Manfred',
-                                                          other='Georg'))
+   ...                                                    other='Georg'))
    The story of Bill, Manfred, and Georg.
 
 If you have a really long format string that you don't want to split up, it
@@ -179,7 +189,7 @@ square brackets ``'[]'`` to access the keys. ::
    ...       'Dcab: {0[Dcab]:d}'.format(table))
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
-This could also be done by passing the table as keyword arguments with the '**'
+This could also be done by passing the ``table`` dictionary as keyword arguments with the ``**``
 notation. ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
@@ -189,7 +199,7 @@ notation. ::
 This is particularly useful in combination with the built-in function
 :func:`vars`, which returns a dictionary containing all local variables.
 
-As an example, the following lines produce a tidily-aligned
+As an example, the following lines produce a tidily aligned
 set of columns giving integers and their squares and cubes::
 
    >>> for x in range(1, 11):
@@ -468,7 +478,7 @@ becomes complicated.
 Rather than having users constantly writing and debugging code to save
 complicated data types to files, Python allows you to use the popular data
 interchange format called `JSON (JavaScript Object Notation)
-<http://json.org>`_.  The standard module called :mod:`json` can take Python
+<https://json.org>`_.  The standard module called :mod:`json` can take Python
 data hierarchies, and convert them to string representations; this process is
 called :dfn:`serializing`.  Reconstructing the data from the string representation
 is called :dfn:`deserializing`.  Between serializing and deserializing, the

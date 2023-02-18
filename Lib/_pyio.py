@@ -303,22 +303,6 @@ except AttributeError:
     open_code = _open_code_with_warning
 
 
-def __getattr__(name):
-    if name == "OpenWrapper":
-        # bpo-43680: Until Python 3.9, _pyio.open was not a static method and
-        # builtins.open was set to OpenWrapper to not become a bound method
-        # when set to a class variable. _io.open is a built-in function whereas
-        # _pyio.open is a Python function. In Python 3.10, _pyio.open() is now
-        # a static method, and builtins.open() is now io.open().
-        import warnings
-        warnings.warn('OpenWrapper is deprecated, use open instead',
-                      DeprecationWarning, stacklevel=2)
-        global OpenWrapper
-        OpenWrapper = open
-        return OpenWrapper
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
 # In normal operation, both `UnsupportedOperation`s should be bound to the
 # same object.
 try:
@@ -654,10 +638,7 @@ class RawIOBase(IOBase):
     def readall(self):
         """Read until EOF, using multiple read() call."""
         res = bytearray()
-        while True:
-            data = self.read(DEFAULT_BUFFER_SIZE)
-            if not data:
-                break
+        while data := self.read(DEFAULT_BUFFER_SIZE):
             res += data
         if res:
             return bytes(res)
@@ -1145,6 +1126,7 @@ class BufferedReader(_BufferedIOMixin):
         do at most one raw read to satisfy it.  We never return more
         than self.buffer_size.
         """
+        self._checkClosed("peek of closed file")
         with self._read_lock:
             return self._peek_unlocked(size)
 
@@ -1163,6 +1145,7 @@ class BufferedReader(_BufferedIOMixin):
         """Reads up to size bytes, with at most one read() system call."""
         # Returns up to size bytes.  If at least one byte is buffered, we
         # only return buffered bytes.  Otherwise, we do one raw read.
+        self._checkClosed("read of closed file")
         if size < 0:
             size = self.buffer_size
         if size == 0:
@@ -1179,6 +1162,8 @@ class BufferedReader(_BufferedIOMixin):
     # performance reasons).
     def _readinto(self, buf, read1):
         """Read data into *buf* with at most one system call."""
+
+        self._checkClosed("readinto of closed file")
 
         # Need to create a memoryview object of type 'b', otherwise
         # we may not be able to assign bytes to it, and slicing it
@@ -1229,6 +1214,7 @@ class BufferedReader(_BufferedIOMixin):
     def seek(self, pos, whence=0):
         if whence not in valid_seek_flags:
             raise ValueError("invalid whence value")
+        self._checkClosed("seek of closed file")
         with self._read_lock:
             if whence == 1:
                 pos -= len(self._read_buf) - self._read_pos

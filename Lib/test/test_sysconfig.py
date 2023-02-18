@@ -11,7 +11,6 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
-from test.support.warnings_helper import check_warnings
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -370,7 +369,7 @@ class TestSysConfig(unittest.TestCase):
                 base = base.replace(sys.base_prefix, sys.prefix)
             if HAS_USER_BASE:
                 user_path = get_path(name, 'posix_user')
-                expected = global_path.replace(base, user, 1)
+                expected = os.path.normpath(global_path.replace(base, user, 1))
                 # bpo-44860: platlib of posix_user doesn't use sys.platlibdir,
                 # whereas posix_prefix does.
                 if name == 'platlib':
@@ -439,6 +438,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(my_platform, test_platform)
 
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     def test_srcdir(self):
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')
@@ -451,7 +451,11 @@ class TestSysConfig(unittest.TestCase):
             # should be a full source checkout.
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
-            self.assertTrue(sysconfig._is_python_source_dir(srcdir))
+            # <srcdir>/PC/pyconfig.h always exists even if unused on POSIX.
+            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
+            self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
+            pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
+            self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
         elif os.name == 'posix':
             makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
             # Issue #19340: srcdir has been realpath'ed already

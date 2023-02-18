@@ -448,7 +448,11 @@ class Message:
         self._headers = newheaders
 
     def __contains__(self, name):
-        return name.lower() in [k.lower() for k, v in self._headers]
+        name_lower = name.lower()
+        for k, v in self._headers:
+            if name_lower == k.lower():
+                return True
+        return False
 
     def __iter__(self):
         for field, value in self._headers:

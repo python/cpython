@@ -255,17 +255,18 @@ class socket(_socket.socket):
                self.type,
                self.proto)
         if not closed:
+            # getsockname and getpeername may not be available on WASI.
             try:
                 laddr = self.getsockname()
                 if laddr:
                     s += ", laddr=%s" % str(laddr)
-            except error:
+            except (error, AttributeError):
                 pass
             try:
                 raddr = self.getpeername()
                 if raddr:
                     s += ", raddr=%s" % str(raddr)
-            except error:
+            except (error, AttributeError):
                 pass
         s += '>'
         return s
@@ -784,11 +785,11 @@ def getfqdn(name=''):
 
     First the hostname returned by gethostbyaddr() is checked, then
     possibly existing aliases. In case no FQDN is available and `name`
-    was given, it is returned unchanged. If `name` was empty or '0.0.0.0',
+    was given, it is returned unchanged. If `name` was empty, '0.0.0.0' or '::',
     hostname from gethostname() is returned.
     """
     name = name.strip()
-    if not name or name == '0.0.0.0':
+    if not name or name in ('0.0.0.0', '::'):
         name = gethostname()
     try:
         hostname, aliases, ipaddrs = gethostbyaddr(name)
