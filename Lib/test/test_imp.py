@@ -1,4 +1,5 @@
 import gc
+import json
 import importlib
 import importlib.util
 import os
@@ -312,6 +313,78 @@ class ImportTests(unittest.TestCase):
         # in multiple interpreters, those interpreters share a
         # PyModuleDef for that object, which can be a problem.
 
+        def parse_snapshot(data):
+            if isinstance(data, str):
+                data = json.loads(data.decode())
+            elif isinstance(data, bytes):
+                data = json.loads(data)
+            spam = data.pop('spam', None)
+            has_spam = data.pop('has_spam', False)
+            snapshot = type(sys.implementation)(**data)
+            if has_spam:
+                snapshot.spam = spam
+            return snapshot
+
+        def check_common(snapshot):
+            # The "looked up" module is interpreter-specific
+            # (interp->imports.modules_by_index was set for the module).
+            self.assertEqual(snapshot.lookedup, snapshot.objid)
+            with self.assertRaises(AttributeError):
+                snapshot.spam
+
+        def check_fresh(snapshot):
+            """
+            The module had not been loaded before (at least since fully reset).
+            """
+            # The module's init func was run.
+            # A copy of the module's __dict__ was stored in def->m_base.m_copy.
+            # The previous m_copy was deleted first.
+            # _PyRuntime.imports.extensions was set.
+            self.assertEqual(snapshot.init_count, 1)
+            # The global state was initialized.
+            # The module attrs were initialized from that state.
+            self.assertEqual(snapshot.module_initialized,
+                             snapshot.state_initialized)
+
+        def check_semi_fresh(snapshot, base, prev):
+            """
+            The module had been loaded before and then reset
+            (but the module global state wasn't).
+            """
+            # The module's init func was run again.
+            # A copy of the module's __dict__ was stored in def->m_base.m_copy.
+            # The previous m_copy was deleted first.
+            # The module globals did not get reset.
+            self.assertNotEqual(snapshot.objid, base.objid)
+            self.assertNotEqual(snapshot.objid, prev.objid)
+            self.assertEqual(snapshot.init_count, prev.init_count + 1)
+            # The global state was updated.
+            # The module attrs were initialized from that state.
+            self.assertEqual(snapshot.module_initialized,
+                             snapshot.state_initialized)
+            self.assertNotEqual(snapshot.state_initialized,
+                                base.state_initialized)
+            self.assertNotEqual(snapshot.state_initialized,
+                                prev.state_initialized)
+
+        def check_copied(snapshot, base):
+            """
+            The module had been loaded before and never reset.
+            """
+            # The module's init func was not run again.
+            # The interpreter copied m_copy, as set by the other interpreter,
+            # with objects owned by the other interpreter.
+            # The module globals did not get reset.
+            self.assertNotEqual(snapshot.objid, base.objid)
+            self.assertEqual(snapshot.init_count, base.init_count)
+            # The global state was not updated since the init func did not run.
+            # The module attrs were not directly initialized from that state.
+            # The state and module attrs still match the previous loading.
+            self.assertEqual(snapshot.module_initialized,
+                             snapshot.state_initialized)
+            self.assertEqual(snapshot.state_initialized,
+                             base.state_initialized)
+
         # This single-phase module has global state, which is shared
         # by all interpreters.
         import _testsinglephase
@@ -323,78 +396,87 @@ class ImportTests(unittest.TestCase):
         import _testsinglephase
         self.addCleanup(_forget_extension, _testsinglephase)
 
-        init_count = _testsinglephase.initialized_count()
-        lookedup = _testsinglephase.look_up_self()
-        _initialized = _testsinglephase._module_initialized
-        initialized = _testsinglephase.state_initialized()
+        # Check the main interpreter.
+        main_snap = parse_snapshot(dict(
+            objid=id(_testsinglephase),
+            init_count=_testsinglephase.initialized_count(),
+            lookedup=id(_testsinglephase.look_up_self()),
+            state_initialized=_testsinglephase.state_initialized(),
+            module_initialized=_testsinglephase._module_initialized,
+        ))
+        check_common(main_snap)
+        check_fresh(main_snap)
 
-        self.assertEqual(init_count, 1)
-        self.assertIs(lookedup, _testsinglephase)
-        self.assertEqual(_initialized, initialized)
-
+        # Set up the interpreters.
+        setup_script = textwrap.dedent('''
+            import sys
+            import _testinternalcapi
+            ''')
         interp1 = _interpreters.create(isolated=False)
         self.addCleanup(_interpreters.destroy, interp1)
         interp2 = _interpreters.create(isolated=False)
         self.addCleanup(_interpreters.destroy, interp2)
         for interpid in [interp1, interp2]:
-            _interpreters.run_string(interpid, 'import _testinternalcapi, sys')
+            _interpreters.run_string(interpid, setup_script)
 
+        cleanup_script = textwrap.dedent(f'''
+            sys.modules.pop({name!r}, None)
+            _testinternalcapi.clear_extension({name!r}, {filename!r})
+            ''')
         def clear_subinterp(interpid):
+            _interpreters.run_string(interpid, cleanup_script)
             _interpreters.run_string(interpid, textwrap.dedent(f'''
-                del sys.modules[{name!r}]
                 _testsinglephase._clear_globals()
-                _testinternalcapi.clear_extension({name!r}, {filename!r})
                 '''))
+
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+
+        script = textwrap.dedent(f'''
+            import json
+            import os
+
+            import _testsinglephase
+
+            data = dict(
+                objid=id(_testsinglephase),
+                init_count=_testsinglephase.initialized_count(),
+                lookedup=id(_testsinglephase.look_up_self()),
+                state_initialized=_testsinglephase.state_initialized(),
+                module_initialized=_testsinglephase._module_initialized,
+                has_spam=hasattr(_testsinglephase, 'spam'),
+                spam=getattr(_testsinglephase, 'spam', None),
+            )
+            os.write({w}, json.dumps(data).encode())
+            ''')
+
+        def read_data():
+            text = os.read(r, 500)
+            return parse_snapshot(text)
 
         with self.subTest('without resetting; '
                           'already loaded in main interpreter'):
             # Attrs set after loading are not in m_copy.
             _testsinglephase.spam = 'spam, spam, spam, spam, eggs, and spam'
-            objid = id(_testsinglephase)
-
-            script = textwrap.dedent(f'''
-                import _testsinglephase
-
-                init_count =  _testsinglephase.initialized_count()
-                if init_count != {init_count}:
-                    raise Exception(init_count)
-
-                # The "looked up" module is interpreter-specific.
-                lookedup = _testsinglephase.look_up_self()
-                if lookedup is not _testsinglephase:
-                    raise Exception((_testsinglephase, lookedup))
-
-                # Attrs set in the module init func are in m_copy.
-                # Both of the following were set in module init,
-                # which didn't happen in this interpreter
-                # (unfortunately).
-                _initialized = _testsinglephase._module_initialized
-                initialized = _testsinglephase.state_initialized()
-                if _initialized != initialized:
-                    raise Exception((_initialized, initialized))
-                if _initialized != {initialized}:
-                    raise Exception((_initialized, {initialized}))
-                if initialized != {initialized}:
-                    raise Exception((initialized, {initialized}))
-
-                # Attrs set after loading are not in m_copy.
-                if hasattr(_testsinglephase, 'spam'):
-                    raise Exception(_testsinglephase.spam)
-                _testsinglephase.spam = 'spam, spam, spam, spam, ...'
-                ''')
 
             # Use an interpreter that gets destroyed right away.
             ret = support.run_in_subinterp(script)
             self.assertEqual(ret, 0)
+            snap = read_data()
+            check_common(snap)
+            check_copied(snap, main_snap)
 
-            # The module's init func gets run again.
-            # The module's globals did not get destroyed.
+            # Use several interpreters that overlap.
             _interpreters.run_string(interp1, script)
+            snap = read_data()
+            check_common(snap)
+            check_copied(snap, main_snap)
 
-            # The module's init func is not run again.
-            # The second interpreter copies the module's m_copy.
-            # However, globals are still shared.
             _interpreters.run_string(interp2, script)
+            snap = read_data()
+            check_common(snap)
+            check_copied(snap, main_snap)
 
         _forget_extension(_testsinglephase)
         for interpid in [interp1, interp2]:
@@ -402,63 +484,60 @@ class ImportTests(unittest.TestCase):
 
         with self.subTest('without resetting; '
                           'already loaded in deleted interpreter'):
+            # Use an interpreter that gets destroyed right away.
+            ret = support.run_in_subinterp(os.linesep.join([
+                script,
+                textwrap.dedent('''
+                    # Attrs set after loading are not in m_copy.
+                    _testsinglephase.spam = 'spam, spam, mash, spam, eggs, and spam'
+                ''')]))
+            self.assertEqual(ret, 0)
+            base = read_data()
+            check_common(base)
+            check_fresh(base)
+
+            # Use several interpreters that overlap.
+            _interpreters.run_string(interp1, script)
+            interp1_snap = read_data()
+            check_common(interp1_snap)
+            check_semi_fresh(interp1_snap, main_snap, base)
+
+            _interpreters.run_string(interp2, script)
+            snap = read_data()
+            check_common(snap)
+            check_copied(snap, interp1_snap)
+
+        with self.subTest('resetting between each interpreter'):
+            _testsinglephase._clear_globals()
 
             # Use an interpreter that gets destroyed right away.
-            ret = support.run_in_subinterp(textwrap.dedent(f'''
-                import _testsinglephase
-
-                # This is the first time loaded since reset.
-                init_count =  _testsinglephase.initialized_count()
-                if init_count != 1:
-                    raise Exception(init_count)
-
-                # Attrs set in the module init func are in m_copy.
-                _initialized = _testsinglephase._module_initialized
-                initialized = _testsinglephase.state_initialized()
-                if _initialized != initialized:
-                    raise Exception((_initialized, initialized))
-                if _initialized == {initialized}:
-                    raise Exception((_initialized, {initialized}))
-                if initialized == {initialized}:
-                    raise Exception((initialized, {initialized}))
-
-                # Attrs set after loading are not in m_copy.
-                if hasattr(_testsinglephase, 'spam'):
-                    raise Exception(_testsinglephase.spam)
-                _testsinglephase.spam = 'spam, spam, mash, spam, eggs, and spam'
-                '''))
+            ret = support.run_in_subinterp(os.linesep.join([
+                setup_script,
+                cleanup_script,
+                script,
+                textwrap.dedent('''
+                    # Attrs set after loading are not in m_copy.
+                    _testsinglephase.spam = 'spam, spam, mash, spam, eggs, and spam'
+                ''')]))
             self.assertEqual(ret, 0)
+            base = read_data()
+            check_common(base)
+            check_fresh(base)
 
-            script = textwrap.dedent(f'''
-                import _testsinglephase
-
-                init_count =  _testsinglephase.initialized_count()
-                if init_count != 2:
-                    raise Exception(init_count)
-
-                # Attrs set in the module init func are in m_copy.
-                # Both of the following were set in module init,
-                # which didn't happen in this interpreter
-                # (unfortunately).
-                _initialized = _testsinglephase._module_initialized
-                initialized = _testsinglephase.state_initialized()
-                if _initialized != initialized:
-                    raise Exception((_initialized, initialized))
-
-                # Attrs set after loading are not in m_copy.
-                if hasattr(_testsinglephase, 'spam'):
-                    raise Exception(_testsinglephase.spam)
-                _testsinglephase.spam = 'spam, spam, spam, spam, ...'
-                ''')
-
-            # The module's init func gets run again.
-            # The module's globals did not get destroyed.
+            # Use several interpreters that overlap.
+            clear_subinterp(interp1)
+            #_interpreters.run_string(interpid, cleanup_script)
             _interpreters.run_string(interp1, script)
+            snap = read_data()
+            check_common(snap)
+            check_fresh(snap)
 
-            # The module's init func is not run again.
-            # The second interpreter copies the module's m_copy.
-            # However, globals are still shared.
+            clear_subinterp(interp2)
+            #_interpreters.run_string(interpid, cleanup_script)
             _interpreters.run_string(interp2, script)
+            snap = read_data()
+            check_common(snap)
+            check_fresh(snap)
 
     @requires_load_dynamic
     def test_singlephase_variants(self):
