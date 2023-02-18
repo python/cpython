@@ -1520,7 +1520,8 @@ class ZipFile:
         with self.open(name, "r", pwd) as fp:
             return fp.read()
 
-    def open(self, name, mode="r", pwd=None, *, force_zip64=False):
+    def open(self, name, mode="r", pwd=None, *, force_zip64=False,
+             compress_type=None, compresslevel=None):
         """Return file-like object for 'name'.
 
         name is a string for the file name within the ZIP file, or a ZipInfo
@@ -1555,6 +1556,12 @@ class ZipFile:
         else:
             # Get info object for name
             zinfo = self.getinfo(name)
+
+        if compress_type is not None:
+            zinfo.compress_type = compress_type
+
+        if compresslevel is not None:
+            zinfo._compresslevel = compresslevel
 
         if mode == 'w':
             return self._open_to_write(zinfo, force_zip64=force_zip64)
