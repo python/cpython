@@ -6173,7 +6173,7 @@ class ZoneInfoTest(unittest.TestCase):
                 self.assertEqual(ldt.fold, 0)
 
     @unittest.skipUnless(
-        hasattr(time, "tzset"), "time module has no attribute tzset"
+        hasattr(_time, "tzset"), "time module has no attribute tzset"
     )
     def test_system_transitions(self):
         if ('Riyadh8' in self.zonename or

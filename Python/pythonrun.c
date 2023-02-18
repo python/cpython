@@ -350,14 +350,8 @@ static int
 set_main_loader(PyObject *d, PyObject *filename, const char *loader_name)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *bootstrap = PyObject_GetAttrString(interp->importlib,
-                                                 "_bootstrap_external");
-    if (bootstrap == NULL) {
-        return -1;
-    }
-
-    PyObject *loader_type = PyObject_GetAttrString(bootstrap, loader_name);
-    Py_DECREF(bootstrap);
+    PyObject *loader_type = _PyImport_GetImportlibExternalLoader(interp,
+                                                                 loader_name);
     if (loader_type == NULL) {
         return -1;
     }
@@ -748,13 +742,10 @@ _Py_HandleSystemExit(int *exitcode_p)
     }
 
  done:
-    /* Restore and clear the exception info, in order to properly decref
-     * the exception, value, and traceback.      If we just exit instead,
-     * these leak, which confuses PYTHONDUMPREFS output, and may prevent
-     * some finalizers from running.
-     */
-    PyErr_Restore(exception, value, tb);
-    PyErr_Clear();
+    /* Cleanup the exception */
+    Py_CLEAR(exception);
+    Py_CLEAR(value);
+    Py_CLEAR(tb);
     *exitcode_p = exitcode;
     return 1;
 }

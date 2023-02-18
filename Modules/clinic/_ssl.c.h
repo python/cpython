@@ -435,10 +435,10 @@ static PyObject *
 _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = get_state_type(type)->PySSLContext_Type;
     int proto_version;
 
-    if ((type == get_state_type(type)->PySSLContext_Type ||
-         type->tp_init == get_state_type(type)->PySSLContext_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
@@ -1028,14 +1028,13 @@ static PyObject *
 _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = get_state_type(type)->PySSLMemoryBIO_Type;
 
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
-         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoPositional("MemoryBIO", args)) {
         goto exit;
     }
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
-         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
@@ -1543,4 +1542,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=a3d97a19163bb044 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d9b81fa81f520f0 input=a9049054013a1b77]*/
