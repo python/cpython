@@ -1,0 +1,1 @@
+Add a new C-API function for iterating over GC'able objects using a callback: ``PyGC_VisitObjects``.
