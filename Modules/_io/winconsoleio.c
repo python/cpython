@@ -260,7 +260,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     int fd_is_own = 0;
     HANDLE handle = NULL;
 
-    assert(PyWindowsConsoleIO_Check(self));
+    assert(PyObject_TypeCheck(self, (PyTypeObject *)&PyWindowsConsoleIO_Type));
     if (self->fd >= 0) {
         if (self->closefd) {
             /* Have to close the existing file first. */
@@ -1173,7 +1173,5 @@ PyTypeObject PyWindowsConsoleIO_Type = {
     0,                                          /* tp_version_tag */
     0,                                          /* tp_finalize */
 };
-
-PyObject * _PyWindowsConsoleIO_Type = (PyObject*)&PyWindowsConsoleIO_Type;
 
 #endif /* MS_WINDOWS */

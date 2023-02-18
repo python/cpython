@@ -1255,7 +1255,9 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
 {
     int posonly_conflicts = 0;
     PyObject* posonly_names = PyList_New(0);
-
+    if (posonly_names == NULL) {
+        goto fail;
+    }
     for(int k=0; k < co->co_posonlyargcount; k++){
         PyObject* posonly_name = PyTuple_GET_ITEM(co->co_localsplusnames, k);
 
@@ -2688,7 +2690,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     }
     PyObject *locals = frame->f_locals;
     /* Fast path for not overloaded __import__. */
-    if (import_func == tstate->interp->import_func) {
+    if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;

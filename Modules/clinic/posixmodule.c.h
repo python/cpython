@@ -10402,8 +10402,6 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-#if !defined(MS_WINDOWS)
-
 PyDoc_STRVAR(os_get_blocking__doc__,
 "get_blocking($module, fd, /)\n"
 "--\n"
@@ -10438,10 +10436,6 @@ os_get_blocking(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-
-#endif /* !defined(MS_WINDOWS) */
-
-#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_set_blocking__doc__,
 "set_blocking($module, fd, blocking, /)\n"
@@ -10481,8 +10475,6 @@ os_set_blocking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-
-#endif /* !defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os_DirEntry_is_symlink__doc__,
 "is_symlink($self, /)\n"
@@ -11789,14 +11781,6 @@ exit:
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
 
-#ifndef OS_GET_BLOCKING_METHODDEF
-    #define OS_GET_BLOCKING_METHODDEF
-#endif /* !defined(OS_GET_BLOCKING_METHODDEF) */
-
-#ifndef OS_SET_BLOCKING_METHODDEF
-    #define OS_SET_BLOCKING_METHODDEF
-#endif /* !defined(OS_SET_BLOCKING_METHODDEF) */
-
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
@@ -11812,4 +11796,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=a3f76228b549e8ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1b0eb6a76b1a0e28 input=a9049054013a1b77]*/

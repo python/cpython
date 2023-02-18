@@ -80,7 +80,19 @@ def copy_source_tree(newroot, oldroot):
         if newroot == SRCDIR:
             raise Exception('this probably isn\'t what you wanted')
         shutil.rmtree(newroot)
-    shutil.copytree(oldroot, newroot)
+
+    def ignore_non_src(src, names):
+        """Turns what could be a 1000M copy into a 100M copy."""
+        # Don't copy the ~600M+ of needless git repo metadata.
+        # source only, ignore cached .pyc files.
+        subdirs_to_skip = {'.git', '__pycache__'}
+        if os.path.basename(src) == 'Doc':
+            # Another potential ~250M+ of non test related data.
+            subdirs_to_skip.add('build')
+            subdirs_to_skip.add('venv')
+        return subdirs_to_skip
+
+    shutil.copytree(oldroot, newroot, ignore=ignore_non_src)
     if os.path.exists(os.path.join(newroot, 'Makefile')):
         _run_quiet([MAKE, 'clean'], newroot)
 
@@ -151,16 +163,25 @@ def prepare(script=None, outdir=None):
     if not MAKE:
         raise UnsupportedError('make')
 
+    cores = os.cpu_count()
+    if cores and cores >= 3:
+        # this test is most often run as part of the whole suite with a lot
+        # of other tests running in parallel, from 1-2 vCPU systems up to
+        # people's NNN core beasts. Don't attempt to use it all.
+        parallel = f'-j{cores*2//3}'
+    else:
+        parallel = '-j2'
+
     # Build python.
-    print(f'building python in {builddir}...')
+    print(f'building python {parallel=} in {builddir}...')
     if os.path.exists(os.path.join(srcdir, 'Makefile')):
         # Out-of-tree builds require a clean srcdir.
         _run_quiet([MAKE, '-C', srcdir, 'clean'])
-    _run_quiet([MAKE, '-C', builddir, '-j8'])
+    _run_quiet([MAKE, '-C', builddir, parallel])
 
     # Install the build.
     print(f'installing python into {prefix}...')
-    _run_quiet([MAKE, '-C', builddir, '-j8', 'install'])
+    _run_quiet([MAKE, '-C', builddir, 'install'])
     python = os.path.join(prefix, 'bin', 'python3')
 
     return outdir, scriptfile, python
