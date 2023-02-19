@@ -1,27 +1,18 @@
 /* Boolean type, a subtype of int */
 
 #include "Python.h"
-#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
-#include "longintrepr.h"
+#include "pycore_object.h"      // _Py_FatalRefcountError()
+#include "pycore_runtime.h"       // _Py_ID()
+
+#include <stddef.h>
 
 /* We define bool_repr to return "False" or "True" */
-
-static PyObject *false_str = NULL;
-static PyObject *true_str = NULL;
 
 static PyObject *
 bool_repr(PyObject *self)
 {
-    PyObject *s;
-
-    if (self == Py_True)
-        s = true_str ? true_str :
-            (true_str = PyUnicode_InternFromString("True"));
-    else
-        s = false_str ? false_str :
-            (false_str = PyUnicode_InternFromString("False"));
-    Py_XINCREF(s);
-    return s;
+    PyObject *res = self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
+    return Py_NewRef(res);
 }
 
 /* Function to return a bool from a C long */
@@ -34,8 +25,7 @@ PyObject *PyBool_FromLong(long ok)
         result = Py_True;
     else
         result = Py_False;
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 /* We define bool_new to always return either Py_True or Py_False */
@@ -165,8 +155,8 @@ bool_dealloc(PyObject* Py_UNUSED(ignore))
 PyTypeObject PyBool_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bool",
-    sizeof(struct _longobject),
-    0,
+    offsetof(struct _longobject, long_value.ob_digit),  /* tp_basicsize */
+    sizeof(digit),                              /* tp_itemsize */
     bool_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
@@ -207,11 +197,11 @@ PyTypeObject PyBool_Type = {
 /* The objects representing bool values False and True */
 
 struct _longobject _Py_FalseStruct = {
-    PyVarObject_HEAD_INIT(&PyBool_Type, 0)
-    { 0 }
+    PyObject_HEAD_INIT(&PyBool_Type)
+    { 0, { 0 } }
 };
 
 struct _longobject _Py_TrueStruct = {
-    PyVarObject_HEAD_INIT(&PyBool_Type, 1)
-    { 1 }
+    PyObject_HEAD_INIT(&PyBool_Type)
+    { 1, { 1 } }
 };

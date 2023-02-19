@@ -1,3 +1,0 @@
-Fixed a bug in the :mod:`_ssl` module that was throwing :exc:`OverflowError`
-when using :meth:`_ssl._SSLSocket.write` and :meth:`_ssl._SSLSocket.read`
-for a big value of the ``len`` parameter. Patch by Pablo Galindo

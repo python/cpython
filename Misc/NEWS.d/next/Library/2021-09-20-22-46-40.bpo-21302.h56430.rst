@@ -1,4 +1,0 @@
-On Windows, :func:`time.sleep` now uses a waitable timer which has a resolution
-of 100 nanoseconds (10\ :sup:`-7` seconds). Previously, it had a resolution of
-1 millisecond (10\ :sup:`-3` seconds).
-Patch by Livius and Victor Stinner.

@@ -1,2 +1,0 @@
-Fix auto history tests of test_readline: sometimes, the newline character is
-not written at the end, so don't expect it in the output.

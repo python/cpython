@@ -1,4 +1,0 @@
-Constructors of subclasses of some buitin classes (e.g. :class:`tuple`,
-:class:`list`, :class:`frozenset`) no longer accept arbitrary keyword
-arguments. Subclass of :class:`set` can now define a ``__new__()`` method
-with additional keyword parameters without overriding also ``__init__()``.

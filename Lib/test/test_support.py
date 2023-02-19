@@ -9,7 +9,6 @@ import subprocess
 import sys
 import tempfile
 import textwrap
-import time
 import unittest
 import warnings
 
@@ -123,15 +122,18 @@ class TestSupport(unittest.TestCase):
             os_helper.unlink(mod_filename)
             os_helper.rmtree('__pycache__')
 
+    @support.requires_working_socket()
     def test_HOST(self):
         s = socket.create_server((socket_helper.HOST, 0))
         s.close()
 
+    @support.requires_working_socket()
     def test_find_unused_port(self):
         port = socket_helper.find_unused_port()
         s = socket.create_server((socket_helper.HOST, port))
         s.close()
 
+    @support.requires_working_socket()
     def test_bind_port(self):
         s = socket.socket()
         socket_helper.bind_port(s)
@@ -198,7 +200,7 @@ class TestSupport(unittest.TestCase):
                                         f'temporary directory {path!r}: '),
                         warn)
 
-    @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
+    @support.requires_fork()
     def test_temp_dir__forked_child(self):
         """Test that a forked child process does not remove the directory."""
         # See bpo-30028 for details.
@@ -447,6 +449,7 @@ class TestSupport(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
                          'need os.waitpid() and os.WNOHANG')
+    @support.requires_fork()
     def test_reap_children(self):
         # Make sure that there is no other pending child process
         support.reap_children()
@@ -457,32 +460,19 @@ class TestSupport(unittest.TestCase):
             # child process: do nothing, just exit
             os._exit(0)
 
-        t0 = time.monotonic()
-        deadline = time.monotonic() + support.SHORT_TIMEOUT
-
         was_altered = support.environment_altered
         try:
             support.environment_altered = False
             stderr = io.StringIO()
 
-            while True:
-                if time.monotonic() > deadline:
-                    self.fail("timeout")
-
-                old_stderr = sys.__stderr__
-                try:
-                    sys.__stderr__ = stderr
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                with support.swap_attr(support.print_warning, 'orig_stderr', stderr):
                     support.reap_children()
-                finally:
-                    sys.__stderr__ = old_stderr
 
                 # Use environment_altered to check if reap_children() found
                 # the child process
                 if support.environment_altered:
                     break
-
-                # loop until the child process completed
-                time.sleep(0.100)
 
             msg = "Warning -- reap_children() reaped child process %s" % pid
             self.assertIn(msg, stderr.getvalue())
@@ -494,6 +484,7 @@ class TestSupport(unittest.TestCase):
         # pending child process
         support.reap_children()
 
+    @support.requires_subprocess()
     def check_options(self, args, func, expected=None):
         code = f'from test.support import {func}; print(repr({func}()))'
         cmd = [sys.executable, *args, '-c', code]
@@ -521,6 +512,7 @@ class TestSupport(unittest.TestCase):
             ['-E'],
             ['-v'],
             ['-b'],
+            ['-P'],
             ['-q'],
             ['-I'],
             # same option multiple times
@@ -540,7 +532,8 @@ class TestSupport(unittest.TestCase):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')
 
-        self.check_options(['-I', '-E', '-s'], 'args_from_interpreter_flags',
+        self.check_options(['-I', '-E', '-s', '-P'],
+                           'args_from_interpreter_flags',
                            ['-I'])
 
     def test_optim_args_from_interpreter_flags(self):
@@ -660,10 +653,14 @@ class TestSupport(unittest.TestCase):
             self.assertFalse(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
+    @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
+    @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux
         # kernel or glibc versions, os.urandom() keeps a FD open on
         # /dev/urandom device and Python has 4 FD opens instead of 3.
+        # Test is unstable on Emscripten. The platform starts and stops
+        # background threads that use pipes and epoll fds.
         start = os_helper.fd_count()
         fd = os.open(__file__, os.O_RDONLY)
         try:
@@ -674,14 +671,8 @@ class TestSupport(unittest.TestCase):
 
     def check_print_warning(self, msg, expected):
         stderr = io.StringIO()
-
-        old_stderr = sys.__stderr__
-        try:
-            sys.__stderr__ = stderr
+        with support.swap_attr(support.print_warning, 'orig_stderr', stderr):
             support.print_warning(msg)
-        finally:
-            sys.__stderr__ = old_stderr
-
         self.assertEqual(stderr.getvalue(), expected)
 
     def test_print_warning(self):
@@ -689,6 +680,12 @@ class TestSupport(unittest.TestCase):
                                  "Warning -- msg\n")
         self.check_print_warning("a\nb",
                                  'Warning -- a\nWarning -- b\n')
+
+    def test_has_strftime_extensions(self):
+        if support.is_emscripten or sys.platform == "win32":
+            self.assertFalse(support.has_strftime_extensions)
+        else:
+            self.assertTrue(support.has_strftime_extensions)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc
