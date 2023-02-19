@@ -402,51 +402,36 @@ Querying the error indicator
 
 .. c:function:: PyObject *PyErr_GetRaisedException(void)
 
-   Returns the exception currently being raised, clearing the exception at
-   the same time. Do not confuse this with the exception currently being
-   handled which can be accessed with  :c:func:`PyErr_GetHandledException`.
+   Return the exception currently being raised, clearing the error indicator at
+   the same time.
 
-   .. note::
+   This function is used by code that needs to catch exceptions,
+   or code that needs to save and restore the error indicator temporarily.
 
-      This function is normally only used by code that needs to catch exceptions or
-      by code that needs to save and restore the error indicator temporarily, e.g.::
+   For example::
 
-         {
-            PyObject *exc = PyErr_GetRaisedException();
+      {
+         PyObject *exc = PyErr_GetRaisedException();
 
-            /* ... code that might produce other errors ... */
+         /* ... code that might produce other errors ... */
 
-            PyErr_SetRaisedException(exc);
-         }
+         PyErr_SetRaisedException(exc);
+      }
+
+   .. seealso:: :c:func:`PyErr_GetHandledException`,
+                to save the exception currently being handled.
 
    .. versionadded:: 3.12
 
 
 .. c:function:: void PyErr_SetRaisedException(PyObject *exc)
 
-   Sets the exception currently being raised ``exc``.
-   If the exception is already set, it is cleared first.
+   Set *exc* as the exception currently being raised,
+   clearing the existing exception if one is set.
 
-   ``exc`` must be a valid exception.
-   (Violating this rules will cause subtle problems later.)
-   This call consumes a reference to the ``exc`` object: you must own a
-   reference to that object before the call and after the call you no longer own
-   that reference.
-   (If you don't understand this, don't use this function. I warned you.)
+   .. warning::
 
-   .. note::
-
-      This function is normally only used by code that needs to save and restore the
-      error indicator temporarily.  Use :c:func:`PyErr_GetRaisedException` to save
-      the current exception, e.g.::
-
-         {
-            PyObject *exc = PyErr_GetRaisedException();
-
-            /* ... code that might produce other errors ... */
-
-            PyErr_SetRaisedException(exc);
-         }
+      This call steals a reference to *exc*, which must be a valid exception.
 
    .. versionadded:: 3.12
 

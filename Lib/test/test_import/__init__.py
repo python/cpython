@@ -21,7 +21,7 @@ from unittest import mock
 from test.support import os_helper
 from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
-    is_wasi)
+    is_wasi, run_in_subinterp_with_config)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
@@ -30,6 +30,14 @@ from test.support import script_helper
 from test.support import threading_helper
 from test.test_importlib.util import uncache
 from types import ModuleType
+try:
+    import _testsinglephase
+except ImportError:
+    _testsinglephase = None
+try:
+    import _testmultiphase
+except ImportError:
+    _testmultiphase = None
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -1390,6 +1398,216 @@ class CircularImportTests(unittest.TestCase):
         self.assertEqual(type(x), ModuleType)
         with self.assertRaises(AttributeError):
             unwritable.x = 42
+
+
+class SubinterpImportTests(unittest.TestCase):
+
+    RUN_KWARGS = dict(
+        allow_fork=False,
+        allow_exec=False,
+        allow_threads=True,
+        allow_daemon_threads=False,
+    )
+
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def pipe(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        if hasattr(os, 'set_blocking'):
+            os.set_blocking(r, False)
+        return (r, w)
+
+    def import_script(self, name, fd, check_override=None):
+        override_text = ''
+        if check_override is not None:
+            override_text = f'''
+            import _imp
+            _imp._override_multi_interp_extensions_check({check_override})
+            '''
+        return textwrap.dedent(f'''
+            import os, sys
+            {override_text}
+            try:
+                import {name}
+            except ImportError as exc:
+                text = 'ImportError: ' + str(exc)
+            else:
+                text = 'okay'
+            os.write({fd}, text.encode('utf-8'))
+            ''')
+
+    def run_shared(self, name, *,
+                   check_singlephase_setting=False,
+                   check_singlephase_override=None,
+                   ):
+        """
+        Try importing the named module in a subinterpreter.
+
+        The subinterpreter will be in the current process.
+        The module will have already been imported in the main interpreter.
+        Thus, for extension/builtin modules, the module definition will
+        have been loaded already and cached globally.
+
+        "check_singlephase_setting" determines whether or not
+        the interpreter will be configured to check for modules
+        that are not compatible with use in multiple interpreters.
+
+        This should always return "okay" for all modules if the
+        setting is False (with no override).
+        """
+        __import__(name)
+
+        kwargs = dict(
+            **self.RUN_KWARGS,
+            check_multi_interp_extensions=check_singlephase_setting,
+        )
+
+        r, w = self.pipe()
+        script = self.import_script(name, w, check_singlephase_override)
+
+        ret = run_in_subinterp_with_config(script, **kwargs)
+        self.assertEqual(ret, 0)
+        return os.read(r, 100)
+
+    def check_compatible_shared(self, name, *, strict=False):
+        # Verify that the named module may be imported in a subinterpreter.
+        # (See run_shared() for more info.)
+        out = self.run_shared(name, check_singlephase_setting=strict)
+        self.assertEqual(out, b'okay')
+
+    def check_incompatible_shared(self, name):
+        # Differences from check_compatible_shared():
+        #  * verify that import fails
+        #  * "strict" is always True
+        out = self.run_shared(name, check_singlephase_setting=True)
+        self.assertEqual(
+            out.decode('utf-8'),
+            f'ImportError: module {name} does not support loading in subinterpreters',
+        )
+
+    def check_compatible_isolated(self, name, *, strict=False):
+        # Differences from check_compatible_shared():
+        #  * subinterpreter in a new process
+        #  * module has never been imported before in that process
+        #  * this tests importing the module for the first time
+        _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
+            import _testcapi, sys
+            assert (
+                {name!r} in sys.builtin_module_names or
+                {name!r} not in sys.modules
+            ), repr({name!r})
+            ret = _testcapi.run_in_subinterp_with_config(
+                {self.import_script(name, "sys.stdout.fileno()")!r},
+                **{self.RUN_KWARGS},
+                check_multi_interp_extensions={strict},
+            )
+            assert ret == 0, ret
+            '''))
+        self.assertEqual(err, b'')
+        self.assertEqual(out, b'okay')
+
+    def check_incompatible_isolated(self, name):
+        # Differences from check_compatible_isolated():
+        #  * verify that import fails
+        #  * "strict" is always True
+        _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
+            import _testcapi, sys
+            assert {name!r} not in sys.modules, {name!r}
+            ret = _testcapi.run_in_subinterp_with_config(
+                {self.import_script(name, "sys.stdout.fileno()")!r},
+                **{self.RUN_KWARGS},
+                check_multi_interp_extensions=True,
+            )
+            assert ret == 0, ret
+            '''))
+        self.assertEqual(err, b'')
+        self.assertEqual(
+            out.decode('utf-8'),
+            f'ImportError: module {name} does not support loading in subinterpreters',
+        )
+
+    def test_builtin_compat(self):
+        module = 'sys'
+        with self.subTest(f'{module}: not strict'):
+            self.check_compatible_shared(module, strict=False)
+        with self.subTest(f'{module}: strict, shared'):
+            self.check_compatible_shared(module, strict=True)
+
+    @cpython_only
+    def test_frozen_compat(self):
+        module = '_frozen_importlib'
+        if __import__(module).__spec__.origin != 'frozen':
+            raise unittest.SkipTest(f'{module} is unexpectedly not frozen')
+        with self.subTest(f'{module}: not strict'):
+            self.check_compatible_shared(module, strict=False)
+        with self.subTest(f'{module}: strict, shared'):
+            self.check_compatible_shared(module, strict=True)
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    def test_single_init_extension_compat(self):
+        module = '_testsinglephase'
+        with self.subTest(f'{module}: not strict'):
+            self.check_compatible_shared(module, strict=False)
+        with self.subTest(f'{module}: strict, shared'):
+            self.check_incompatible_shared(module)
+        with self.subTest(f'{module}: strict, isolated'):
+            self.check_incompatible_isolated(module)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_multi_init_extension_compat(self):
+        module = '_testmultiphase'
+        with self.subTest(f'{module}: not strict'):
+            self.check_compatible_shared(module, strict=False)
+        with self.subTest(f'{module}: strict, shared'):
+            self.check_compatible_shared(module, strict=True)
+        with self.subTest(f'{module}: strict, isolated'):
+            self.check_compatible_isolated(module, strict=True)
+
+    def test_python_compat(self):
+        module = 'threading'
+        if __import__(module).__spec__.origin == 'frozen':
+            raise unittest.SkipTest(f'{module} is unexpectedly frozen')
+        with self.subTest(f'{module}: not strict'):
+            self.check_compatible_shared(module, strict=False)
+        with self.subTest(f'{module}: strict, shared'):
+            self.check_compatible_shared(module, strict=True)
+        with self.subTest(f'{module}: strict, isolated'):
+            self.check_compatible_isolated(module, strict=True)
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    def test_singlephase_check_with_setting_and_override(self):
+        module = '_testsinglephase'
+
+        def check_compatible(setting, override):
+            out = self.run_shared(
+                module,
+                check_singlephase_setting=setting,
+                check_singlephase_override=override,
+            )
+            self.assertEqual(out, b'okay')
+
+        def check_incompatible(setting, override):
+            out = self.run_shared(
+                module,
+                check_singlephase_setting=setting,
+                check_singlephase_override=override,
+            )
+            self.assertNotEqual(out, b'okay')
+
+        with self.subTest('config: check enabled; override: enabled'):
+            check_incompatible(True, 1)
+        with self.subTest('config: check enabled; override: use config'):
+            check_incompatible(True, 0)
+        with self.subTest('config: check enabled; override: disabled'):
+            check_compatible(True, -1)
+
+        with self.subTest('config: check disabled; override: enabled'):
+            check_incompatible(False, 1)
+        with self.subTest('config: check disabled; override: use config'):
+            check_compatible(False, 0)
+        with self.subTest('config: check disabled; override: disabled'):
+            check_compatible(False, -1)
 
 
 if __name__ == '__main__':
