@@ -71,6 +71,9 @@ class Test_TestProgram(unittest.TestCase):
         def testUnexpectedSuccess(self):
             pass
 
+    class Empty(unittest.TestCase):
+        pass
+
     class TestLoader(unittest.TestLoader):
         """Test loader that returns a suite containing testsuite."""
 
@@ -134,12 +137,13 @@ class Test_TestProgram(unittest.TestCase):
 
     def test_Exit(self):
         stream = BufferedWriter()
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(SystemExit) as cm:
             unittest.main(
                 argv=["foobar"],
                 testRunner=unittest.TextTestRunner(stream=stream),
                 exit=True,
                 testLoader=self.TestLoader(self.FooBar))
+        self.assertEqual(cm.exception.code, 1)
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
         self.assertIn('\nERROR: testError ', out)
@@ -162,6 +166,17 @@ class Test_TestProgram(unittest.TestCase):
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
+
+    def test_ExitEmptySuite(self):
+        stream = BufferedWriter()
+        with self.assertRaises(SystemExit) as cm:
+            unittest.main(
+                argv=["empty"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                testLoader=self.TestLoader(self.Empty))
+        self.assertEqual(cm.exception.code, 5)
+        out = stream.getvalue()
+        self.assertIn('\nNO TESTS RUN\n', out)
 
 
 class InitialisableProgram(unittest.TestProgram):

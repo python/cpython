@@ -273,6 +273,11 @@ class TestProgram(object):
             testRunner = self.testRunner
         self.result = testRunner.run(self.test)
         if self.exit:
-            sys.exit(not self.result.wasSuccessful())
+            if self.result.testsRun == 0:
+                sys.exit(5)
+            elif not self.result.wasSuccessful():
+                sys.exit(1)
+            else:
+                sys.exit(0)
 
 main = TestProgram
