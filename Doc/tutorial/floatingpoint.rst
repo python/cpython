@@ -186,16 +186,33 @@ Since the representation is exact, it is useful for reliably porting values
 across different versions of Python (platform independence) and exchanging
 data with other languages that support the same format (such as Java and C99).
 
-Another helpful tool is the :func:`math.fsum` function which helps mitigate
-loss-of-precision during summation.  It tracks "lost digits" as values are
-added onto a running total.  That can make a difference in overall accuracy
-so that the errors do not accumulate to the point where they affect the
-final total:
+Another helpful tool is the :func:`sum` function which helps mitigate
+loss-of-precision during summation.  It uses extended precision for
+intermediate rounding steps as values are added onto a running total.
+That can make a difference in overall accuracy so that the errors do not
+accumulate to the point where they affect the final total::
 
    >>> 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 == 1.0
    False
-   >>> math.fsum([0.1] * 10) == 1.0
+   >>> sum([0.1] * 10) == 1.0
    True
+
+The :func:`math.fsum()` goes further and tracks all of the "lost digits"
+as values are added onto a running total so that the result has only a
+single rounding.  This is slower than :func:`sum` but will be more
+accurate in uncommon cases where large magnitude inputs mostly cancel
+each other out leaving a final sum near zero::
+
+    >>> arr = [-125546.2071591587, 0.04336622547760194, 18741774.60535662,
+    ...        57.207123035704896, 454267277684011.1, -0.04815896904694777,
+    ...        -18741774.600527752, -454267277558522.1]
+    >>> float(sum(map(Fraction, arr)))   # Exact summation with single rounding
+    5.777552047891987e-12
+    >>> math.fsum(arr)                   # Single rounding
+    5.777552047891987e-12
+    >>> sum(arr)                         # Multiple roundings in extended precision
+    5.777545108998083e-12
+
 
 .. _tut-fp-error:
 
