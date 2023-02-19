@@ -870,7 +870,7 @@ care of lookups or updates*:
             conn.execute(self.store, [value, obj.key])
             conn.commit()
 
-*Formatting string is not recommended for building SQL queries. Since it is just an example and we didn't want to make the code more complicated (in fact, using them in our example is quite justified), we decided to use it. You have to validate the data before putting it into a query string or trust an end-user, which sometimes is not the best option. Use placeholders instead, as we did in `WHERE` clause.
+*Formatting string is not recommended for building SQL queries. Since it is just an example and we didn't want to make the code more complicated (in fact, using them in our example is quite justified), we decided to use it. You have to validate the data before putting it into a query string or trust an end-user, which sometimes is not the best option. Use placeholders instead, as we did in ``WHERE`` clause.
 
 We can use the :class:`Field` class to define `models
 <https://en.wikipedia.org/wiki/Database_model>`_ that describe the schema for
