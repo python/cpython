@@ -108,21 +108,21 @@ simply rounding the *display* of the true machine value.
 One illusion may beget another.  For example, since 0.1 is not exactly 1/10,
 summing three values of 0.1 may not yield exactly 0.3, either::
 
-   >>> .1 + .1 + .1 == .3
+   >>> 0.1 + 0.1 + 0.1 == 0.3
    False
 
 Also, since the 0.1 cannot get any closer to the exact value of 1/10 and
 0.3 cannot get any closer to the exact value of 3/10, then pre-rounding with
 :func:`round` function cannot help::
 
-   >>> round(.1, 1) + round(.1, 1) + round(.1, 1) == round(.3, 1)
+   >>> round(0.1, 1) + round(0.1, 1) + round(0.1, 1) == round(0.3, 1)
    False
 
 Though the numbers cannot be made closer to their intended exact values,
 the :func:`round` function can be useful for post-rounding so that results
 with inexact values become comparable to one another::
 
-    >>> round(.1 + .1 + .1, 10) == round(.3, 10)
+    >>> round(0.1 + 0.1 + 0.1, 10) == round(0.3, 10)
     True
 
 Binary floating-point arithmetic holds many surprises like this.  The problem
