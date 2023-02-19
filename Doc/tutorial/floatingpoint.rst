@@ -119,11 +119,10 @@ Also, since the 0.1 cannot get any closer to the exact value of 1/10 and
    False
 
 Though the numbers cannot be made closer to their intended exact values,
-the :func:`round` function can be useful for post-rounding so that results
-with inexact values become comparable to one another::
+the :func:`math.isclose` function can be useful for comparing inexact values::
 
-    >>> round(0.1 + 0.1 + 0.1, 10) == round(0.3, 10)
-    True
+   >>> math.isclose(0.1 + 0.1 + 0.1, 0.3)
+   True
 
 Binary floating-point arithmetic holds many surprises like this.  The problem
 with "0.1" is explained in precise detail below, in the "Representation Error"
