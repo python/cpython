@@ -438,8 +438,6 @@ Querying the error indicator
 
 .. c:function:: void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
 
-    As of 3.12, this function is deprecated. Use :c:func:`PyErr_GetRaisedException` instead.
-
    Retrieve the error indicator into three variables whose addresses are passed.
    If the error indicator is not set, set all three variables to ``NULL``.  If it is
    set, it will be cleared and you own a reference to each object retrieved.  The
@@ -447,8 +445,11 @@ Querying the error indicator
 
    .. note::
 
-      This function is normally only used by code that needs to catch exceptions or
-      by code that needs to save and restore the error indicator temporarily, e.g.::
+      This function is normally only used by legacy code that needs to catch
+      exceptions or by code that needs to save and restore the error indicator
+      temporarily.
+
+      For example::
 
          {
             PyObject *type, *value, *traceback;
@@ -461,10 +462,10 @@ Querying the error indicator
 
    .. deprecated:: 3.12
 
+      Use :c:func:`PyErr_GetRaisedException` instead.
+
 
 .. c:function:: void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
-
-    As of 3.12, this function is deprecated. Use :c:func:`PyErr_SetRaisedException` instead.
 
    Set the error indicator from the three objects.  If the error indicator is
    already set, it is cleared first.  If the objects are ``NULL``, the error
@@ -478,18 +479,16 @@ Querying the error indicator
 
    .. note::
 
-      This function is normally only used by code that needs to save and restore the
-      error indicator temporarily.  Use :c:func:`PyErr_Fetch` to save the current
-      error indicator.
+      This function is normally only used by legacy code that needs to
+      save and restore the error indicator temporarily.
+      Use :c:func:`PyErr_Fetch` to save the current error indicator.
 
    .. deprecated:: 3.12
 
+      Use :c:func:`PyErr_SetRaisedException` instead.
+
 
 .. c:function:: void PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
-
-   As of 3.12, this function is deprecated.
-   Use :c:func:`PyErr_GetRaisedException` instead of :c:func:`PyErr_Fetch` to avoid
-   any possible de-normalization.
 
    Under certain circumstances, the values returned by :c:func:`PyErr_Fetch` below
    can be "unnormalized", meaning that ``*exc`` is a class object but ``*val`` is
@@ -508,6 +507,9 @@ Querying the error indicator
          }
 
    .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_GetRaisedException` instead,
+      to avoid any possible de-normalization.
 
 
 .. c:function:: PyObject* PyErr_GetHandledException(void)
@@ -756,14 +758,12 @@ Exception Objects
 
 .. c:function:: PyObject* PyException_GetArgs(PyObject *ex)
 
-   Return args of the given exception as a new reference,
-   as accessible from Python through :attr:`args`.
+   Return :attr:`~BaseException.args` of exception *ex*.
 
 
 .. c:function:: void PyException_SetArgs(PyObject *ex, PyObject *args)
 
-   Set the args of the given exception,
-   as accessible from Python through :attr:`args`.
+   Set :attr:`~BaseException.args` of exception *ex* to *args*:
 
 
 .. _unicodeexceptions:
