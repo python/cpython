@@ -10,6 +10,7 @@ Floating Point Arithmetic:  Issues and Limitations
 **************************************************
 
 .. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
+.. sectionauthor:: Raymond Hettinger <python at rcn dot com>
 
 
 Floating-point numbers are represented in computer hardware as base 2 (binary)
