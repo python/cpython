@@ -426,8 +426,8 @@ Querying the error indicator
 
 .. c:function:: void PyErr_SetRaisedException(PyObject *exc)
 
-   Set *exc* as the exception currently being raised.
-   If another exception is already raised, it is cleared first.
+   Set *exc* as the exception currently being raised,
+   clearing the existing exception if one is set.
 
    .. warning::
 
