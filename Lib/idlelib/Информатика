@@ -1,0 +1,15 @@
+pyramid(300, 'blue')
+
+fd(200)
+
+pyramid (400,'orange')
+
+fd(350)
+
+pyramid(100,'purple')
+
+bird(-200,200,30)
+
+bird(-200,250,20)
+
+bird(-180,300,10)
