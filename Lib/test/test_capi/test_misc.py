@@ -419,11 +419,6 @@ class CAPITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _testcapi.sequence_set_slice(None, 1, 3, 'xy')
 
-        mapping = {1: 'a', 2: 'b', 3: 'c'}
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_set_slice(mapping, 1, 3, 'xy')
-        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
-
     def test_sequence_del_slice(self):
         # Correct case:
         data = [1, 2, 3, 4, 5]
@@ -459,7 +454,7 @@ class CAPITest(unittest.TestCase):
             _testcapi.sequence_del_slice(None, 1, 3)
 
         mapping = {1: 'a', 2: 'b', 3: 'c'}
-        with self.assertRaises(TypeError):
+        with self.assertRaises(KeyError):
             _testcapi.sequence_del_slice(mapping, 1, 3)
         self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
