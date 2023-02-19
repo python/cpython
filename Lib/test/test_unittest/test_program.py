@@ -71,15 +71,19 @@ class Test_TestProgram(unittest.TestCase):
         def testUnexpectedSuccess(self):
             pass
 
-    class FooBarLoader(unittest.TestLoader):
-        """Test loader that returns a suite containing FooBar."""
+    class TestLoader(unittest.TestLoader):
+        """Test loader that returns a suite containing testsuite."""
+
+        def __init__(self, testcase):
+            self.testcase = testcase
+
         def loadTestsFromModule(self, module):
             return self.suiteClass(
-                [self.loadTestsFromTestCase(Test_TestProgram.FooBar)])
+                [self.loadTestsFromTestCase(self.testcase)])
 
         def loadTestsFromNames(self, names, module):
             return self.suiteClass(
-                [self.loadTestsFromTestCase(Test_TestProgram.FooBar)])
+                [self.loadTestsFromTestCase(self.testcase)])
 
     def test_defaultTest_with_string(self):
         class FakeRunner(object):
@@ -92,7 +96,7 @@ class Test_TestProgram(unittest.TestCase):
         runner = FakeRunner()
         program = unittest.TestProgram(testRunner=runner, exit=False,
                                        defaultTest='test.test_unittest',
-                                       testLoader=self.FooBarLoader())
+                                       testLoader=self.TestLoader(self.FooBar))
         sys.argv = old_argv
         self.assertEqual(('test.test_unittest',), program.testNames)
 
@@ -108,7 +112,7 @@ class Test_TestProgram(unittest.TestCase):
         program = unittest.TestProgram(
             testRunner=runner, exit=False,
             defaultTest=['test.test_unittest', 'test.test_unittest2'],
-            testLoader=self.FooBarLoader())
+            testLoader=self.TestLoader(self.FooBar))
         sys.argv = old_argv
         self.assertEqual(['test.test_unittest', 'test.test_unittest2'],
                           program.testNames)
@@ -118,7 +122,7 @@ class Test_TestProgram(unittest.TestCase):
         program = unittest.main(exit=False,
                                 argv=["foobar"],
                                 testRunner=unittest.TextTestRunner(stream=stream),
-                                testLoader=self.FooBarLoader())
+                                testLoader=self.TestLoader(self.FooBar))
         self.assertTrue(hasattr(program, 'result'))
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
@@ -136,7 +140,7 @@ class Test_TestProgram(unittest.TestCase):
             argv=["foobar"],
             testRunner=unittest.TextTestRunner(stream=stream),
             exit=True,
-            testLoader=self.FooBarLoader())
+            testLoader=self.TestLoader(self.FooBar))
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
         self.assertIn('\nERROR: testError ', out)
@@ -152,7 +156,7 @@ class Test_TestProgram(unittest.TestCase):
             unittest.main,
             argv=["foobar"],
             testRunner=unittest.TextTestRunner(stream=stream),
-            testLoader=self.FooBarLoader())
+            testLoader=self.TestLoader(self.FooBar))
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
         self.assertIn('\nERROR: testError ', out)
