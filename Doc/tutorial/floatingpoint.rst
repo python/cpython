@@ -1,6 +1,7 @@
 .. testsetup::
 
     import math
+    from fractions import Fraction
 
 .. _tut-fp-issues:
 
@@ -57,9 +58,7 @@ Many users are not aware of the approximation because of the way values are
 displayed.  Python only prints a decimal approximation to the true decimal
 value of the binary approximation stored by the machine.  On most machines, if
 Python were to print the true decimal value of the binary approximation stored
-for 0.1, it would have to display:
-
-.. doctest::
+for 0.1, it would have to display::
 
    >>> 0.1
    0.1000000000000000055511151231257827021181583404541015625
