@@ -19,7 +19,7 @@ the function is then applied to the result of the conversion.
    define those functions on the cut itself. Following Kahan's "Branch cuts for
    complex elementary functions" paper, as well as Annex G of C99 and later C
    standards, we use the sign of zero to distinguish one side of the branch cut
-   from the other: for a branch cut along (a portion of) the real axis, we look
+   from the other: for a branch cut along (a portion of) the real axis we look
    at the sign of the imaginary part, while for a branch cut along the
    imaginary axis, we look at the sign of the real part.
 
