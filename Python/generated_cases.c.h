@@ -538,7 +538,7 @@
                 }
                 Py_DECREF(dict);
                 Py_DECREF(sub);
-                if (true) goto pop_2_error;
+                goto pop_2_error;
             }
             Py_INCREF(res);  // Do this before DECREF'ing dict, sub
             Py_DECREF(dict);
@@ -721,7 +721,8 @@
                                  "bad RAISE_VARARGS oparg");
                 break;
             }
-            if (true) { STACK_SHRINK(oparg); goto error; }
+            STACK_SHRINK(oparg);
+            goto error;
         }
 
         TARGET(INTERPRETER_EXIT) {
@@ -789,7 +790,7 @@
                               "__aiter__ method, got %.100s",
                               type->tp_name);
                 Py_DECREF(obj);
-                if (true) goto pop_1_error;
+                goto pop_1_error;
             }
 
             iter = (*getter)(obj);
@@ -804,7 +805,7 @@
                               "that does not implement __anext__: %.100s",
                               Py_TYPE(iter)->tp_name);
                 Py_DECREF(iter);
-                if (true) goto pop_1_error;
+                goto pop_1_error;
             }
             POKE(1, iter);
             DISPATCH();
@@ -1076,7 +1077,7 @@
                         _PyErr_SetString(tstate, PyExc_NameError,
                                          "__build_class__ not found");
                     }
-                    if (true) goto error;
+                    goto error;
                 }
                 Py_INCREF(bc);
             }
@@ -1086,7 +1087,7 @@
                     if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                         _PyErr_SetString(tstate, PyExc_NameError,
                                          "__build_class__ not found");
-                    if (true) goto error;
+                    goto error;
                 }
             }
             STACK_GROW(1);
@@ -1103,7 +1104,7 @@
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when storing %R", name);
                 Py_DECREF(v);
-                if (true) goto pop_1_error;
+                goto pop_1_error;
             }
             if (PyDict_CheckExact(ns))
                 err = PyDict_SetItem(ns, name, v);
@@ -1382,7 +1383,7 @@
                         format_exc_check_arg(tstate, PyExc_NameError,
                                              NAME_ERROR_MSG, name);
                     }
-                    if (true) goto error;
+                    goto error;
                 }
                 Py_INCREF(v);
             }
@@ -1403,7 +1404,7 @@
                                         tstate, PyExc_NameError,
                                         NAME_ERROR_MSG, name);
                         }
-                        if (true) goto error;
+                        goto error;
                     }
                 }
             }
@@ -1545,7 +1546,7 @@
             value = PyCell_GET(cell);
             if (value == NULL) {
                 format_exc_unbound(tstate, frame->f_code, oparg);
-                if (true) goto error;
+                goto error;
             }
             Py_INCREF(value);
             STACK_GROW(1);
@@ -1627,7 +1628,7 @@
                           Py_TYPE(iterable)->tp_name);
                 }
                 Py_DECREF(iterable);
-                if (true) goto pop_1_error;
+                goto pop_1_error;
             }
             Py_DECREF(none_val);
             Py_DECREF(iterable);
@@ -1660,7 +1661,8 @@
             }
             if (err != 0) {
                 Py_DECREF(set);
-                if (true) { STACK_SHRINK(oparg); goto error; }
+                STACK_SHRINK(oparg);
+                goto error;
             }
             STACK_SHRINK(oparg);
             STACK_GROW(1);
@@ -1695,7 +1697,7 @@
             if (LOCALS() == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when setting up annotations");
-                if (true) goto error;
+                goto error;
             }
             /* check if __annotations__ in locals()... */
             if (PyDict_CheckExact(LOCALS())) {
@@ -1765,7 +1767,7 @@
                                     Py_TYPE(update)->tp_name);
                 }
                 Py_DECREF(update);
-                if (true) goto pop_1_error;
+                goto pop_1_error;
             }
             Py_DECREF(update);
             STACK_SHRINK(1);
@@ -1779,7 +1781,7 @@
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
                 format_kwargs_error(tstate, PEEK(3 + oparg), update);
                 Py_DECREF(update);
-                if (true) goto pop_1_error;
+                goto pop_1_error;
             }
             Py_DECREF(update);
             STACK_SHRINK(1);
@@ -2321,7 +2323,7 @@
             if (check_except_star_type_valid(tstate, match_type) < 0) {
                 Py_DECREF(exc_value);
                 Py_DECREF(match_type);
-                if (true) goto pop_2_error;
+                goto pop_2_error;
             }
 
             match = NULL;
@@ -2350,7 +2352,7 @@
             assert(PyExceptionInstance_Check(left));
             if (check_except_type_valid(tstate, right) < 0) {
                  Py_DECREF(right);
-                 if (true) goto pop_1_error;
+                 goto pop_1_error;
             }
 
             int res = PyErr_GivenExceptionMatches(left, right);
@@ -2830,7 +2832,7 @@
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
-                if (true) goto pop_1_error;
+                goto pop_1_error;
             }
             STACK_GROW(1);
             POKE(1, res);
@@ -2873,7 +2875,7 @@
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
-                if (true) goto pop_1_error;
+                goto pop_1_error;
             }
             STACK_GROW(1);
             POKE(1, res);
@@ -3826,7 +3828,8 @@
                 Py_DECREF(value);
                 if (result == NULL) {
                     Py_XDECREF(fmt_spec);
-                    if (true) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
+                    STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0));
+                    goto pop_1_error;
                 }
                 value = result;
             }

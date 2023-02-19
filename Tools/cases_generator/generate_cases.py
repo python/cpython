@@ -99,6 +99,24 @@ def string_effect_size(arg: tuple[int, str]) -> str:
         return str(numeric)
 
 
+def format_condition(cond: str, label: str, space: str, symbolic: str) -> str:
+    if symbolic:
+        action = f"STACK_SHRINK({symbolic});"
+        if cond == "true":
+            action += f"\n{space}goto {label};"
+            string = f"{space}{action}\n"
+        else:
+            action += f" goto {label};"
+            string = f"{space}if ({cond}) {{ {action} }}\n"
+    else:
+        action = f"goto {label};\n"
+        if cond == "true":
+            string = f"{space}{action}"
+        else:
+            string = f"{space}if ({cond}) goto {label};\n"
+    return string
+
+
 class Formatter:
     """Wraps an output stream with the ability to indent etc."""
 
@@ -409,12 +427,8 @@ class Instruction:
                         label = f"pop_{ninputs}_{label}"
                 else:
                     symbolic = ""
-                if symbolic:
-                    out.write_raw(
-                        f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
-                    )
-                else:
-                    out.write_raw(f"{space}if ({cond}) goto {label};\n")
+                string = format_condition(cond, label, space, symbolic)
+                out.write_raw(string)
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 if not self.register:
                     space = extra + m.group(1)
