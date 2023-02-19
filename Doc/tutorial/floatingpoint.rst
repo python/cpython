@@ -136,6 +136,14 @@ the :func:`math.isclose` function can be useful for comparing inexact values:
    >>> math.isclose(0.1 + 0.1 + 0.1, 0.3)
    True
 
+Alternatively, the :func:`round` function can be used to compare rough
+approximations::
+
+.. doctest::
+
+   >>> round(math.pi, ndigits=2) == round(22 / 7, ndigits=2)
+   True
+
 Binary floating-point arithmetic holds many surprises like this.  The problem
 with "0.1" is explained in precise detail below, in the "Representation Error"
 section.  See `Examples of Floating Point Problems
