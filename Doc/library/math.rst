@@ -364,9 +364,8 @@ Power and logarithmic functions
 
 .. function:: exp(x)
 
-   Return *e* raised to the power *x*, where *e* = 2.718281... is the base
-   of natural logarithms.  This is usually more accurate than ``math.e ** x``
-   or ``pow(math.e, x)``.
+   Return the exponential function at *x*.  This is usually more accurate
+   than ``math.e ** x``.
 
 
 .. function:: exp2(x)
@@ -378,9 +377,8 @@ Power and logarithmic functions
 
 .. function:: expm1(x)
 
-   Return *e* raised to the power *x*, minus 1.  Here *e* is the base of natural
-   logarithms.  For small floats *x*, the subtraction in ``exp(x) - 1``
-   can result in a `significant loss of precision
+   Return ``exp(x) - 1``.  For small floats *x*, the direct subtraction
+   in ``exp(x) - 1`` can result in a `significant loss of precision
    <https://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
    function provides a way to compute this quantity to full precision:
 
@@ -395,7 +393,7 @@ Power and logarithmic functions
 
 .. function:: log(x[, base])
 
-   With one argument, return the natural logarithm of *x* (to base *e*).
+   With one argument, return the natural logarithm of *x*.
 
    With two arguments, return the logarithm of *x* to the given *base*,
    calculated as ``log(x)/log(base)``.
@@ -403,7 +401,7 @@ Power and logarithmic functions
 
 .. function:: log1p(x)
 
-   Return the natural logarithm of *1+x* (base *e*). The
+   Return the natural logarithm of *1+x*. The
    result is calculated in a way which is accurate for *x* near zero.
 
 

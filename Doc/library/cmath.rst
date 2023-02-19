@@ -85,8 +85,7 @@ Power and logarithmic functions
 
 .. function:: exp(x)
 
-   Return *e* raised to the power *x*, where *e* is the base of natural
-   logarithms.
+   Return the exponential function at *x*.
 
 
 .. function:: log(x[, base])

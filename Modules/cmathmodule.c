@@ -546,12 +546,12 @@ static Py_complex exp_special_values[7][7];
 /*[clinic input]
 cmath.exp = cmath.acos
 
-Return the exponential value e**z.
+Return the exponential function at z.
 [clinic start generated code]*/
 
 static Py_complex
 cmath_exp_impl(PyObject *module, Py_complex z)
-/*[clinic end generated code: output=edcec61fb9dfda6c input=8b9e6cf8a92174c3]*/
+/*[clinic end generated code: output=edcec61fb9dfda6c input=87f2c74ee9a8ad46]*/
 {
     Py_complex r;
     double l;
@@ -957,12 +957,12 @@ cmath.log
 
 log(z[, base]) -> the logarithm of z to the given base.
 
-If the base not specified, returns the natural logarithm (base e) of z.
+If the base not specified, returns the natural logarithm of z.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=230ed3a71ecd000a]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=55c7d74ab7072229]*/
 {
     Py_complex y;
 

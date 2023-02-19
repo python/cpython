@@ -188,9 +188,7 @@ exit:
 
 PyDoc_STRVAR(math_log__doc__,
 "log(x, [base=math.e])\n"
-"Return the logarithm of x to the given base.\n"
-"\n"
-"If the base not specified, returns the natural logarithm (base e) of x.");
+"Return the logarithm of x to the given base or the natural logarithm of x.");
 
 #define MATH_LOG_METHODDEF    \
     {"log", (PyCFunction)math_log, METH_VARARGS, math_log__doc__},
@@ -954,4 +952,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=899211ec70e4506c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4d52841fd827676 input=a9049054013a1b77]*/

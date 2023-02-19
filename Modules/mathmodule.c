@@ -1084,7 +1084,7 @@ FUNC1A(erfc, erfc,
        "Complementary error function at x.")
 FUNC1(exp, exp, 1,
       "exp($module, x, /)\n--\n\n"
-      "Return e raised to the power of x.")
+      "Return the exponential function at x.")
 FUNC1(exp2, exp2, 1,
       "exp2($module, x, /)\n--\n\n"
       "Return 2 raised to the power of x.")
@@ -1143,7 +1143,7 @@ FUNC1A(lgamma, m_lgamma,
       "Natural logarithm of absolute value of Gamma function at x.")
 FUNC1(log1p, m_log1p, 0,
       "log1p($module, x, /)\n--\n\n"
-      "Return the natural logarithm of 1+x (base e).\n\n"
+      "Return the natural logarithm of 1+x.\n\n"
       "The result is computed in a way which is accurate for x near zero.")
 FUNC2(remainder, m_remainder,
       "remainder($module, x, y, /)\n--\n\n"
@@ -2186,15 +2186,13 @@ math.log
     ]
     /
 
-Return the logarithm of x to the given base.
-
-If the base not specified, returns the natural logarithm (base e) of x.
+Return the logarithm of x to the given base or the natural logarithm of x.
 [clinic start generated code]*/
 
 static PyObject *
 math_log_impl(PyObject *module, PyObject *x, int group_right_1,
               PyObject *base)
-/*[clinic end generated code: output=7b5a39e526b73fc9 input=0f62d5726cbfebbd]*/
+/*[clinic end generated code: output=7b5a39e526b73fc9 input=e74bd6b80f8d66fd]*/
 {
     PyObject *num, *den;
     PyObject *ans;

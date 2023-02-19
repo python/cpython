@@ -348,7 +348,7 @@ PyDoc_STRVAR(cmath_exp__doc__,
 "exp($module, z, /)\n"
 "--\n"
 "\n"
-"Return the exponential value e**z.");
+"Return the exponential function at z.");
 
 #define CMATH_EXP_METHODDEF    \
     {"exp", (PyCFunction)cmath_exp, METH_O, cmath_exp__doc__},
@@ -644,7 +644,7 @@ PyDoc_STRVAR(cmath_log__doc__,
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
-"If the base not specified, returns the natural logarithm (base e) of z.");
+"If the base not specified, returns the natural logarithm of z.");
 
 #define CMATH_LOG_METHODDEF    \
     {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL, cmath_log__doc__},
@@ -982,4 +982,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0146c656e67f5d5f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c860b8fb26c5aff2 input=a9049054013a1b77]*/
