@@ -238,15 +238,14 @@ each other out leaving a final sum near zero:
 
 .. doctest::
 
-    >>> arr = [-125546.2071591587, 0.04336622547760194, 18741774.60535662,
-    ...        57.207123035704896, 454267277684011.1, -0.04815896904694777,
-    ...        -18741774.600527752, -454267277558522.1]
-    >>> float(sum(map(Fraction, arr)))   # Exact summation with single rounding
-    5.777552047891987e-12
-    >>> math.fsum(arr)                   # Single rounding
-    5.777552047891987e-12
-    >>> sum(arr)                         # Multiple roundings in extended precision
-    5.777545108998083e-12
+   >>> arr = [-0.10430216751806065, -266310978.67179024, 143401161448607.16,
+   ...        -143401161400469.7, 266262841.31058735, -0.003244936839808227]
+   >>> float(sum(map(Fraction, arr)))   # Exact summation with single rounding
+   8.042173697819788e-13
+   >>> math.fsum(arr)                   # Single rounding
+   8.042173697819788e-13
+   >>> sum(arr)                         # Multiple roundings in extended precision
+   8.042178034628478e-13
 
 
 .. _tut-fp-error:
