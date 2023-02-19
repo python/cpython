@@ -134,13 +134,12 @@ class Test_TestProgram(unittest.TestCase):
 
     def test_Exit(self):
         stream = BufferedWriter()
-        self.assertRaises(
-            SystemExit,
-            unittest.main,
-            argv=["foobar"],
-            testRunner=unittest.TextTestRunner(stream=stream),
-            exit=True,
-            testLoader=self.TestLoader(self.FooBar))
+        with self.assertRaises(SystemExit):
+            unittest.main(
+                argv=["foobar"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                exit=True,
+                testLoader=self.TestLoader(self.FooBar))
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
         self.assertIn('\nERROR: testError ', out)
@@ -151,12 +150,11 @@ class Test_TestProgram(unittest.TestCase):
 
     def test_ExitAsDefault(self):
         stream = BufferedWriter()
-        self.assertRaises(
-            SystemExit,
-            unittest.main,
-            argv=["foobar"],
-            testRunner=unittest.TextTestRunner(stream=stream),
-            testLoader=self.TestLoader(self.FooBar))
+        with self.assertRaises(SystemExit):
+            unittest.main(
+                argv=["foobar"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                testLoader=self.TestLoader(self.FooBar))
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
         self.assertIn('\nERROR: testError ', out)
