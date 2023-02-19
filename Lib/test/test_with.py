@@ -860,5 +860,54 @@ class TestSingleArgExit(unittest.TestCase):
             self.assertIsInstance(cm.exit_called_with[2], types.TracebackType)
 
 
+class TestExoticCallable(unittest.TestCase):
+
+   def test_3_arg_exiter(self):
+        class Exiter:
+            def __call__(self, *args):
+                self.called_with = args
+
+        class CM:
+           __enter__ = lambda self: self
+           __exit__ = Exiter()
+
+        with CM() as cm:
+            pass
+        args = getattr(cm.__exit__, "called_with", "Not called")
+        self.assertEqual(args, (None, None, None))
+
+        try:
+            with CM() as cm:
+                1/0
+        except Exception as e:
+            exc = e
+        args = getattr(cm.__exit__, "called_with", "Not called")
+        self.assertEqual(args, (type(exc), exc, exc.__traceback__))
+
+
+   def test_single_arg_exiter(self):
+        class Exiter:
+            def __call__(self, exc):
+                self.called_with = exc
+
+        class CM:
+            __enter__ = lambda self: self
+            _exit = Exiter()
+            __exit__ = lambda self, exc : CM._exit(exc)
+
+        with CM() as cm:
+            pass
+        args = getattr(cm._exit, "called_with", "Not called")
+        self.assertEqual(args, None)
+
+        try:
+            with CM() as cm:
+                1/0
+        except Exception as e:
+            exc = e
+        args = getattr(cm._exit, "called_with", "Not called")
+        self.assertEqual(args, exc)
+
+
 if __name__ == '__main__':
     unittest.main()
