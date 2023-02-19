@@ -21,7 +21,7 @@ the function is then applied to the result of the conversion.
    standards, we use the sign of zero to distinguish one side of the branch cut
    from the other: for a branch cut along (a portion of) the real axis we look
    at the sign of the imaginary part, while for a branch cut along the
-   imaginary axis, we look at the sign of the real part.
+   imaginary axis we look at the sign of the real part.
 
    For example, the :func:`cmath.sqrt` function has a branch cut along the
    negative real axis. An argument of ``complex(-2.0, -0.0)`` is treated as
