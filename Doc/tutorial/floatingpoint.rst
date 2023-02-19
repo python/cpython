@@ -245,6 +245,12 @@ each other out leaving a final sum near zero:
    8.042173697819788e-13
    >>> sum(arr)                         # Multiple roundings in extended precision
    8.042178034628478e-13
+   >>> total = 0.0
+   >>> for x in arr:
+   ...     total += x                   # Multiple roundings in standard precision
+   ...
+   >>> total                            # Straight addition has no correct digits!
+   -0.0051575902860057365
 
 
 .. _tut-fp-error:
