@@ -15,11 +15,17 @@ the function is then applied to the result of the conversion.
 
 .. note::
 
-   On platforms with hardware and system-level support for signed
-   zeros, functions involving branch cuts are continuous on *both*
-   sides of the branch cut: the sign of the zero distinguishes one
-   side of the branch cut from the other.  On platforms that do not
-   support signed zeros the continuity is as specified below.
+   The functions of this module are continuous onto both sides of their
+   branch cuts, taking into account the sign of zero.  For example::
+
+      >>> sqrt(complex(-1, +0.0))
+      1j
+      >>> sqrt(complex(-1, -0.0))
+      -1j
+      >>> atan(complex(+0.0, 2))
+      (1.5707963267948966+0.5493061443340549j)
+      >>> atan(complex(-0.0, 2))
+      (-1.5707963267948966+0.5493061443340549j)
 
 
 Conversions to and from polar coordinates
@@ -47,11 +53,9 @@ rectangular coordinates to polar coordinates and back.
    Return the phase of *x* (also known as the *argument* of *x*), as a
    float.  ``phase(x)`` is equivalent to ``math.atan2(x.imag,
    x.real)``.  The result lies in the range [-\ *π*, *π*], and the branch
-   cut for this operation lies along the negative real axis,
-   continuous from above.  On systems with support for signed zeros
-   (which includes most systems in current use), this means that the
-   sign of the result is the same as the sign of ``x.imag``, even when
-   ``x.imag`` is zero::
+   cut for this operation lies along the negative real axis.
+   continuous from above.  This means that the sign of the result is
+   the same as the sign of ``x.imag``, even when ``x.imag`` is zero::
 
       >>> phase(complex(-1.0, 0.0))
       3.141592653589793
@@ -93,7 +97,7 @@ Power and logarithmic functions
 
    Returns the logarithm of *x* to the given *base*. If the *base* is not
    specified, returns the natural logarithm of *x*. There is one branch cut, from 0
-   along the negative real axis to -∞, continuous from above.
+   along the negative real axis to -∞.
 
 
 .. function:: log10(x)
@@ -113,8 +117,7 @@ Trigonometric functions
 .. function:: acos(x)
 
    Return the arc cosine of *x*. There are two branch cuts: One extends right from
-   1 along the real axis to ∞, continuous from below. The other extends left from
-   -1 along the real axis to -∞, continuous from above.
+   1 along the real axis to ∞. The other extends left from -1 along the real axis to -∞.
 
 
 .. function:: asin(x)
@@ -125,9 +128,8 @@ Trigonometric functions
 .. function:: atan(x)
 
    Return the arc tangent of *x*. There are two branch cuts: One extends from
-   ``1j`` along the imaginary axis to ``∞j``, continuous from the right. The
-   other extends from ``-1j`` along the imaginary axis to ``-∞j``, continuous
-   from the left.
+   ``1j`` along the imaginary axis to ``∞j``. The other extends from
+   ``-1j`` along the imaginary axis to ``-∞j``.
 
 
 .. function:: cos(x)
@@ -151,23 +153,21 @@ Hyperbolic functions
 .. function:: acosh(x)
 
    Return the inverse hyperbolic cosine of *x*. There is one branch cut,
-   extending left from 1 along the real axis to -∞, continuous from above.
+   extending left from 1 along the real axis to -∞.
 
 
 .. function:: asinh(x)
 
    Return the inverse hyperbolic sine of *x*. There are two branch cuts:
-   One extends from ``1j`` along the imaginary axis to ``∞j``,
-   continuous from the right.  The other extends from ``-1j`` along
-   the imaginary axis to ``-∞j``, continuous from the left.
+   One extends from ``1j`` along the imaginary axis to ``∞j``.
+   The other extends from ``-1j`` along the imaginary axis to ``-∞j``.
 
 
 .. function:: atanh(x)
 
    Return the inverse hyperbolic tangent of *x*. There are two branch cuts: One
-   extends from ``1`` along the real axis to ``∞``, continuous from below. The
-   other extends from ``-1`` along the real axis to ``-∞``, continuous from
-   above.
+   extends from ``1`` along the real axis to ``∞``. The
+   other extends from ``-1`` along the real axis to ``-∞``.
 
 
 .. function:: cosh(x)
