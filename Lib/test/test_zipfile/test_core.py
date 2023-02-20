@@ -3015,7 +3015,7 @@ class StripExtraTests(unittest.TestCase):
     # encode a valid extra.
     def test_no_data(self):
         s = struct.Struct("<HH")
-        a = s.pack(1, 0)  # 1=zip64 exta signature
+        a = s.pack(1, 0)  # 1=zip64 extra signature
         b = s.pack(2, 0)
         c = s.pack(3, 0)
 
@@ -3029,7 +3029,7 @@ class StripExtraTests(unittest.TestCase):
 
     def test_with_data(self):
         s = struct.Struct("<HH")
-        a = s.pack(1, 1) + b"a"  # 1=zip64 exta signature
+        a = s.pack(1, 1) + b"a"  # 1=zip64 extra signature
         b = s.pack(2, 2) + b"bb"
         c = s.pack(3, 3) + b"ccc"
 
@@ -3043,7 +3043,7 @@ class StripExtraTests(unittest.TestCase):
 
     def test_multiples(self):
         s = struct.Struct("<HH")
-        a = s.pack(1, 1) + b"a"  # 1=zip64 exta signature
+        a = s.pack(1, 1) + b"a"  # 1=zip64 extra signature
         b = s.pack(2, 2) + b"bb"
         c = s.pack(3, 3) + b"ccc"
 
