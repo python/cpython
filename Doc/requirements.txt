@@ -1,3 +1,17 @@
+##########################################################################
+# Added by this RTD fork repo:
+#    https://github.com/python-docs-101/Python-Documentation-Theme-Fork
+##########################################################################
+
+sphinx_rtd_theme
+
+
+
+##########################################################################
+# Original requirements.txt below this comment
+##########################################################################
+
+
 # Requirements to build the Python documentation
 
 # Sphinx version is pinned so that new versions that introduce new warnings
