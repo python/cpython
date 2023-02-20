@@ -111,13 +111,13 @@ static unsigned int
 get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
 {
     _Py_CODEUNIT word;
-    unsigned int oparg = _Py_OPARG(codestr[i]);
-    if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG) {
-        oparg |= _Py_OPARG(word) << 8;
-        if (i >= 2 && _Py_OPCODE(word = codestr[i-2]) == EXTENDED_ARG) {
-            oparg |= _Py_OPARG(word) << 16;
-            if (i >= 3 && _Py_OPCODE(word = codestr[i-3]) == EXTENDED_ARG) {
-                oparg |= _Py_OPARG(word) << 24;
+    unsigned int oparg = codestr[i].op.arg;
+    if (i >= 1 && (word = codestr[i-1]).op.code == EXTENDED_ARG) {
+        oparg |= word.op.arg << 8;
+        if (i >= 2 && (word = codestr[i-2]).op.code == EXTENDED_ARG) {
+            oparg |= word.op.arg << 16;
+            if (i >= 3 && (word = codestr[i-3]).op.code == EXTENDED_ARG) {
+                oparg |= word.op.arg << 24;
             }
         }
     }
@@ -304,7 +304,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
             if (next_stack == UNINITIALIZED) {
                 continue;
             }
-            opcode = _Py_OPCODE(code[i]);
+            opcode = code[i].op.code;
             switch (opcode) {
                 case JUMP_IF_FALSE_OR_POP:
                 case JUMP_IF_TRUE_OR_POP:
@@ -610,7 +610,7 @@ _PyFrame_GetState(PyFrameObject *frame)
             if (_PyInterpreterFrame_LASTI(frame->f_frame) < 0) {
                 return FRAME_CREATED;
             }
-            switch (_Py_OPCODE(*frame->f_frame->prev_instr))
+            switch (frame->f_frame->prev_instr->op.code)
             {
                 case COPY_FREE_VARS:
                 case MAKE_CELL:
@@ -1092,8 +1092,8 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     for (_Py_CODEUNIT *instruction = _PyCode_CODE(frame->f_code);
          instruction < frame->prev_instr; instruction++)
     {
-        int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(*instruction)];
-        check_oparg |= _Py_OPARG(*instruction);
+        int check_opcode = _PyOpcode_Deopt[instruction->op.code];
+        check_oparg |= instruction->op.arg;
         if (check_opcode == opcode && check_oparg == oparg) {
             return 1;
         }
@@ -1117,7 +1117,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     // here:
     PyCodeObject *co = frame->f_code;
     int lasti = _PyInterpreterFrame_LASTI(frame);
-    if (!(lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS
+    if (!(lasti < 0 && _PyCode_CODE(co)->op.code == COPY_FREE_VARS
           && PyFunction_Check(frame->f_funcobj)))
     {
         /* Free vars are initialized */
