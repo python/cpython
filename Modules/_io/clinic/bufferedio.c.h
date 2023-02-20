@@ -601,7 +601,7 @@ static int
 _io_BufferedRWPair___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    PyTypeObject *base_tp = &PyBufferedRWPair_Type;
+    PyTypeObject *base_tp = clinic_state()->PyBufferedRWPair_Type;
     PyObject *reader;
     PyObject *writer;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
@@ -714,4 +714,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=953f1577e96e8d86 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8412b10c04259bb8 input=a9049054013a1b77]*/
