@@ -1,0 +1,1 @@
+:func:`asyncio.wait_for` now uses :func:`asyncio.timeout` as its underlying implementation. Patch by Kumar Aditya.

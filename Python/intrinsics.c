@@ -9,6 +9,7 @@
 #include "pycore_pyerrors.h"
 
 
+/******** Unary functions ********/
 
 static PyObject *
 no_intrinsic(PyThreadState* tstate, PyObject *unused)
@@ -208,3 +209,20 @@ _PyIntrinsics_UnaryFunctions[] = {
     [INTRINSIC_UNARY_POSITIVE] = unary_pos,
     [INTRINSIC_LIST_TO_TUPLE] = list_to_tuple,
 };
+
+
+/******** Binary functions ********/
+
+
+static PyObject *
+prep_reraise_star(PyThreadState* unused, PyObject *orig, PyObject *excs)
+{
+    assert(PyList_Check(excs));
+    return _PyExc_PrepReraiseStar(orig, excs);
+}
+
+instrinsic_func2
+_PyIntrinsics_BinaryFunctions[] = {
+    [INTRINSIC_PREP_RERAISE_STAR] = prep_reraise_star,
+};
+

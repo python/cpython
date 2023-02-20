@@ -408,8 +408,7 @@
     <ClCompile Include="..\Modules\rotatingtree.c" />
     <ClCompile Include="..\Modules\sha1module.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c" />
-    <ClCompile Include="..\Modules\sha256module.c" />
-    <ClCompile Include="..\Modules\sha512module.c" />
+    <ClCompile Include="..\Modules\sha2module.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
     <ClCompile Include="..\Modules\_statisticsmodule.c" />
     <ClCompile Include="..\Modules\symtablemodule.c" />

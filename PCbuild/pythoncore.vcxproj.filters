@@ -869,10 +869,7 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\sha256module.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\sha512module.c">
+    <ClCompile Include="..\Modules\sha2module.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\signalmodule.c">

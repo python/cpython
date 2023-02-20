@@ -458,7 +458,7 @@ Reader objects have the following public attributes:
 
 DictReader objects have the following public attribute:
 
-.. attribute:: csvreader.fieldnames
+.. attribute:: DictReader.fieldnames
 
    If not passed as a parameter when creating the object, this attribute is
    initialized upon first access or when the first record is read from the
