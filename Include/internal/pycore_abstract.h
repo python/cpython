@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-// Return 1 if 0 <= index < limit
+// Return 1 if 0 <= index < limit and 0 otherwise
+// The argument limit should be non-negative
 static inline int _Py_is_valid_index(Py_ssize_t index, Py_ssize_t limit)
 {
     /* The cast to size_t lets us use just a single comparison
@@ -20,6 +21,7 @@ static inline int _Py_is_valid_index(Py_ssize_t index, Py_ssize_t limit)
         The function is not affected by -fwrapv, -fno-wrapv and -ftrapv
         compiler options of GCC and clang
     */
+    assert(limit >= 0);
     return (size_t)index < (size_t)limit;
 }
 
