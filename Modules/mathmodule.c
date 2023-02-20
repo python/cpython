@@ -101,10 +101,6 @@ get_math_module_state(PyObject *module)
 
 static const double pi = 3.141592653589793238462643383279502884197;
 static const double logpi = 1.144729885849400174143427351353058711647;
-#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
-static const double sqrtpi = 1.772453850905516027298167483341145182798;
-#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
-
 
 /* Version of PyFloat_AsDouble() with in-line fast paths
    for exact floats and integers.  Gives a substantial
@@ -162,7 +158,9 @@ m_sinpi(double x)
     return copysign(1.0, x)*r;
 }
 
-/* Implementation of the real gamma function.  In extensive but non-exhaustive
+/* Implementation of the real gamma function.  Kept here to work around
+   issues (see e.g. gh-70309) with quality of libm's tgamma/lgamma implementations
+   on various platforms (Windows, MacOS).  In extensive but non-exhaustive
    random tests, this function proved accurate to within <= 10 ulps across the
    entire float domain.  Note that accuracy may depend on the quality of the
    system math functions, the pow function in particular.  Special cases
@@ -458,163 +456,6 @@ m_lgamma(double x)
     return r;
 }
 
-#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
-
-/*
-   Implementations of the error function erf(x) and the complementary error
-   function erfc(x).
-
-   Method: we use a series approximation for erf for small x, and a continued
-   fraction approximation for erfc(x) for larger x;
-   combined with the relations erf(-x) = -erf(x) and erfc(x) = 1.0 - erf(x),
-   this gives us erf(x) and erfc(x) for all x.
-
-   The series expansion used is:
-
-      erf(x) = x*exp(-x*x)/sqrt(pi) * [
-                     2/1 + 4/3 x**2 + 8/15 x**4 + 16/105 x**6 + ...]
-
-   The coefficient of x**(2k-2) here is 4**k*factorial(k)/factorial(2*k).
-   This series converges well for smallish x, but slowly for larger x.
-
-   The continued fraction expansion used is:
-
-      erfc(x) = x*exp(-x*x)/sqrt(pi) * [1/(0.5 + x**2 -) 0.5/(2.5 + x**2 - )
-                              3.0/(4.5 + x**2 - ) 7.5/(6.5 + x**2 - ) ...]
-
-   after the first term, the general term has the form:
-
-      k*(k-0.5)/(2*k+0.5 + x**2 - ...).
-
-   This expansion converges fast for larger x, but convergence becomes
-   infinitely slow as x approaches 0.0.  The (somewhat naive) continued
-   fraction evaluation algorithm used below also risks overflow for large x;
-   but for large x, erfc(x) == 0.0 to within machine precision.  (For
-   example, erfc(30.0) is approximately 2.56e-393).
-
-   Parameters: use series expansion for abs(x) < ERF_SERIES_CUTOFF and
-   continued fraction expansion for ERF_SERIES_CUTOFF <= abs(x) <
-   ERFC_CONTFRAC_CUTOFF.  ERFC_SERIES_TERMS and ERFC_CONTFRAC_TERMS are the
-   numbers of terms to use for the relevant expansions.  */
-
-#define ERF_SERIES_CUTOFF 1.5
-#define ERF_SERIES_TERMS 25
-#define ERFC_CONTFRAC_CUTOFF 30.0
-#define ERFC_CONTFRAC_TERMS 50
-
-/*
-   Error function, via power series.
-
-   Given a finite float x, return an approximation to erf(x).
-   Converges reasonably fast for small x.
-*/
-
-static double
-m_erf_series(double x)
-{
-    double x2, acc, fk, result;
-    int i, saved_errno;
-
-    x2 = x * x;
-    acc = 0.0;
-    fk = (double)ERF_SERIES_TERMS + 0.5;
-    for (i = 0; i < ERF_SERIES_TERMS; i++) {
-        acc = 2.0 + x2 * acc / fk;
-        fk -= 1.0;
-    }
-    /* Make sure the exp call doesn't affect errno;
-       see m_erfc_contfrac for more. */
-    saved_errno = errno;
-    result = acc * x * exp(-x2) / sqrtpi;
-    errno = saved_errno;
-    return result;
-}
-
-/*
-   Complementary error function, via continued fraction expansion.
-
-   Given a positive float x, return an approximation to erfc(x).  Converges
-   reasonably fast for x large (say, x > 2.0), and should be safe from
-   overflow if x and nterms are not too large.  On an IEEE 754 machine, with x
-   <= 30.0, we're safe up to nterms = 100.  For x >= 30.0, erfc(x) is smaller
-   than the smallest representable nonzero float.  */
-
-static double
-m_erfc_contfrac(double x)
-{
-    double x2, a, da, p, p_last, q, q_last, b, result;
-    int i, saved_errno;
-
-    if (x >= ERFC_CONTFRAC_CUTOFF)
-        return 0.0;
-
-    x2 = x*x;
-    a = 0.0;
-    da = 0.5;
-    p = 1.0; p_last = 0.0;
-    q = da + x2; q_last = 1.0;
-    for (i = 0; i < ERFC_CONTFRAC_TERMS; i++) {
-        double temp;
-        a += da;
-        da += 2.0;
-        b = da + x2;
-        temp = p; p = b*p - a*p_last; p_last = temp;
-        temp = q; q = b*q - a*q_last; q_last = temp;
-    }
-    /* Issue #8986: On some platforms, exp sets errno on underflow to zero;
-       save the current errno value so that we can restore it later. */
-    saved_errno = errno;
-    result = p / q * x * exp(-x2) / sqrtpi;
-    errno = saved_errno;
-    return result;
-}
-
-#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
-
-/* Error function erf(x), for general x */
-
-static double
-m_erf(double x)
-{
-#ifdef HAVE_ERF
-    return erf(x);
-#else
-    double absx, cf;
-
-    if (Py_IS_NAN(x))
-        return x;
-    absx = fabs(x);
-    if (absx < ERF_SERIES_CUTOFF)
-        return m_erf_series(x);
-    else {
-        cf = m_erfc_contfrac(absx);
-        return x > 0.0 ? 1.0 - cf : cf - 1.0;
-    }
-#endif
-}
-
-/* Complementary error function erfc(x), for general x. */
-
-static double
-m_erfc(double x)
-{
-#ifdef HAVE_ERFC
-    return erfc(x);
-#else
-    double absx, cf;
-
-    if (Py_IS_NAN(x))
-        return x;
-    absx = fabs(x);
-    if (absx < ERF_SERIES_CUTOFF)
-        return 1.0 - m_erf_series(x);
-    else {
-        cf = m_erfc_contfrac(absx);
-        return x > 0.0 ? cf : 2.0 - cf;
-    }
-#endif
-}
-
 /*
    wrapper for atan2 that deals directly with special cases before
    delegating to the platform libm for the remaining cases.  This
@@ -801,25 +642,7 @@ m_log2(double x)
     }
 
     if (x > 0.0) {
-#ifdef HAVE_LOG2
         return log2(x);
-#else
-        double m;
-        int e;
-        m = frexp(x, &e);
-        /* We want log2(m * 2**e) == log(m) / log(2) + e.  Care is needed when
-         * x is just greater than 1.0: in that case e is 1, log(m) is negative,
-         * and we get significant cancellation error from the addition of
-         * log(m) / log(2) to e.  The slight rewrite of the expression below
-         * avoids this problem.
-         */
-        if (x >= 1.0) {
-            return log(2.0 * m) / log(2.0) + (e - 1);
-        }
-        else {
-            return log(m) / log(2.0) + e;
-        }
-#endif
     }
     else if (x == 0.0) {
         errno = EDOM;
@@ -1052,9 +875,7 @@ is_error(double x)
 */
 
 static PyObject *
-math_1_to_whatever(PyObject *arg, double (*func) (double),
-                   PyObject *(*from_double_func) (double),
-                   int can_overflow)
+math_1(PyObject *arg, double (*func) (double), int can_overflow)
 {
     double x, r;
     x = PyFloat_AsDouble(arg);
@@ -1080,7 +901,7 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
         /* this branch unnecessary on most platforms */
         return NULL;
 
-    return (*from_double_func)(r);
+    return PyFloat_FromDouble(r);
 }
 
 /* variant of math_1, to be used when the function being wrapped is known to
@@ -1127,12 +948,6 @@ math_1a(PyObject *arg, double (*func) (double))
    ValueError and the 'overflow' floating-point exception mapping to
    OverflowError.
 */
-
-static PyObject *
-math_1(PyObject *arg, double (*func) (double), int can_overflow)
-{
-    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow);
-}
 
 static PyObject *
 math_2(PyObject *const *args, Py_ssize_t nargs,
@@ -1261,10 +1076,10 @@ FUNC1(cos, cos, 0,
 FUNC1(cosh, cosh, 1,
       "cosh($module, x, /)\n--\n\n"
       "Return the hyperbolic cosine of x.")
-FUNC1A(erf, m_erf,
+FUNC1A(erf, erf,
        "erf($module, x, /)\n--\n\n"
        "Error function at x.")
-FUNC1A(erfc, m_erfc,
+FUNC1A(erfc, erfc,
        "erfc($module, x, /)\n--\n\n"
        "Complementary error function at x.")
 FUNC1(exp, exp, 1,
@@ -2366,24 +2181,26 @@ loghelper(PyObject* arg, double (*func)(double))
 math.log
 
     x:    object
-    base: object = None
+    [
+    base: object(c_default="NULL") = math.e
+    ]
     /
 
 Return the logarithm of x to the given base.
 
-If the base is not specified or is None, returns the natural
-logarithm (base e) of x.
+If the base not specified, returns the natural logarithm (base e) of x.
 [clinic start generated code]*/
 
 static PyObject *
-math_log_impl(PyObject *module, PyObject *x, PyObject *base)
-/*[clinic end generated code: output=1dead263cbb1e854 input=ef032cc9837943e1]*/
+math_log_impl(PyObject *module, PyObject *x, int group_right_1,
+              PyObject *base)
+/*[clinic end generated code: output=7b5a39e526b73fc9 input=0f62d5726cbfebbd]*/
 {
     PyObject *num, *den;
     PyObject *ans;
 
     num = loghelper(x, m_log);
-    if (num == NULL || base == Py_None)
+    if (num == NULL || base == NULL)
         return num;
 
     den = loghelper(base, m_log);
