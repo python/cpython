@@ -245,7 +245,7 @@ jobs:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
-      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib:${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib64
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
     - uses: actions/checkout@v3
     - name: Register gcc problem matcher
@@ -256,7 +256,7 @@ jobs:
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
         echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib:${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib64" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
       uses: actions/cache@v3.0.2
@@ -272,7 +272,7 @@ jobs:
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1
     - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
+      run: ldconfig && ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
       run: make -j4
     - name: Display build info
