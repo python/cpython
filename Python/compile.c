@@ -274,31 +274,31 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
-            codestr->opcode = EXTENDED_ARG;
-            codestr->oparg = (oparg >> 24) & 0xFF;
+            codestr->op.code = EXTENDED_ARG;
+            codestr->op.arg = (oparg >> 24) & 0xFF;
             codestr++;
             /* fall through */
         case 3:
-            codestr->opcode = EXTENDED_ARG;
-            codestr->oparg = (oparg >> 16) & 0xFF;
+            codestr->op.code = EXTENDED_ARG;
+            codestr->op.arg = (oparg >> 16) & 0xFF;
             codestr++;
             /* fall through */
         case 2:
-            codestr->opcode = EXTENDED_ARG;
-            codestr->oparg = (oparg >> 8) & 0xFF;
+            codestr->op.code = EXTENDED_ARG;
+            codestr->op.arg = (oparg >> 8) & 0xFF;
             codestr++;
             /* fall through */
         case 1:
-            codestr->opcode = opcode;
-            codestr->oparg = oparg & 0xFF;
+            codestr->op.code = opcode;
+            codestr->op.arg = oparg & 0xFF;
             codestr++;
             break;
         default:
             Py_UNREACHABLE();
     }
     while (caches--) {
-        codestr->opcode = CACHE;
-        codestr->oparg = 0;
+        codestr->op.code = CACHE;
+        codestr->op.arg = 0;
         codestr++;
     }
 }
@@ -9085,8 +9085,8 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         Py_DECREF(cnt);
                         break;
                     case RETURN_VALUE:
-                        INSTR_SET_OP1(inst, RETURN_CONST, oparg);
-                        INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
+                        INSTR_SET_OP0(inst, NOP);
+                        INSTR_SET_OP1(&bb->b_instr[++i], RETURN_CONST, oparg);
                         break;
                 }
                 break;

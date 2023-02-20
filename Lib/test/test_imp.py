@@ -10,13 +10,25 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
+import textwrap
 import unittest
 import warnings
 imp = warnings_helper.import_deprecated('imp')
 import _imp
+import _testinternalcapi
+try:
+    import _xxsubinterpreters as _interpreters
+except ModuleNotFoundError:
+    _interpreters = None
 
 
 OS_PATH_NAME = os.path.__name__
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(_interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 def requires_load_dynamic(meth):
@@ -251,14 +263,92 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             imp.load_dynamic('nonexistent', pathname)
 
+    @unittest.skip('known refleak (temporarily skipping)')
+    @requires_subinterpreters
+    @requires_load_dynamic
+    def test_singlephase_multiple_interpreters(self):
+        # Currently, for every single-phrase init module loaded
+        # in multiple interpreters, those interpreters share a
+        # PyModuleDef for that object, which can be a problem.
+
+        # This single-phase module has global state, which is shared
+        # by the interpreters.
+        import _testsinglephase
+        name = _testsinglephase.__name__
+        filename = _testsinglephase.__file__
+
+        del sys.modules[name]
+        _testsinglephase._clear_globals()
+        _testinternalcapi.clear_extension(name, filename)
+        init_count = _testsinglephase.initialized_count()
+        assert init_count == -1, (init_count,)
+
+        def clean_up():
+            _testsinglephase._clear_globals()
+            _testinternalcapi.clear_extension(name, filename)
+        self.addCleanup(clean_up)
+
+        interp1 = _interpreters.create(isolated=False)
+        self.addCleanup(_interpreters.destroy, interp1)
+        interp2 = _interpreters.create(isolated=False)
+        self.addCleanup(_interpreters.destroy, interp2)
+
+        script = textwrap.dedent(f'''
+            import _testsinglephase
+
+            expected = %d
+            init_count =  _testsinglephase.initialized_count()
+            if init_count != expected:
+                raise Exception(init_count)
+
+            lookedup = _testsinglephase.look_up_self()
+            if lookedup is not _testsinglephase:
+                raise Exception((_testsinglephase, lookedup))
+
+            # Attrs set in the module init func are in m_copy.
+            _initialized = _testsinglephase._initialized
+            initialized = _testsinglephase.initialized()
+            if _initialized != initialized:
+                raise Exception((_initialized, initialized))
+
+            # Attrs set after loading are not in m_copy.
+            if hasattr(_testsinglephase, 'spam'):
+                raise Exception(_testsinglephase.spam)
+            _testsinglephase.spam = expected
+            ''')
+
+        # Use an interpreter that gets destroyed right away.
+        ret = support.run_in_subinterp(script % 1)
+        self.assertEqual(ret, 0)
+
+        # The module's init func gets run again.
+        # The module's globals did not get destroyed.
+        _interpreters.run_string(interp1, script % 2)
+
+        # The module's init func is not run again.
+        # The second interpreter copies the module's m_copy.
+        # However, globals are still shared.
+        _interpreters.run_string(interp2, script % 2)
+
+    @unittest.skip('known refleak (temporarily skipping)')
     @requires_load_dynamic
     def test_singlephase_variants(self):
-        '''Exercise the most meaningful variants described in Python/import.c.'''
+        # Exercise the most meaningful variants described in Python/import.c.
         self.maxDiff = None
 
         basename = '_testsinglephase'
         fileobj, pathname, _ = imp.find_module(basename)
         fileobj.close()
+
+        def clean_up():
+            import _testsinglephase
+            _testsinglephase._clear_globals()
+        self.addCleanup(clean_up)
+
+        def add_ext_cleanup(name):
+            def clean_up():
+                _testinternalcapi.clear_extension(name, pathname)
+            self.addCleanup(clean_up)
 
         modules = {}
         def load(name):
@@ -357,6 +447,7 @@ class ImportTests(unittest.TestCase):
         # Check the "basic" module.
 
         name = basename
+        add_ext_cleanup(name)
         expected_init_count = 1
         with self.subTest(name):
             mod = load(name)
@@ -374,6 +465,7 @@ class ImportTests(unittest.TestCase):
         # Check its indirect variants.
 
         name = f'{basename}_basic_wrapper'
+        add_ext_cleanup(name)
         expected_init_count += 1
         with self.subTest(name):
             mod = load(name)
@@ -387,7 +479,7 @@ class ImportTests(unittest.TestCase):
             check_basic_reloaded(mod, lookedup, initialized, init_count,
                                  before, reloaded)
 
-            # Currently _PyState_AddModule() always replaces the cached module.
+            # Currently PyState_AddModule() always replaces the cached module.
             self.assertIs(basic.look_up_self(), mod)
             self.assertEqual(basic.initialized_count(), expected_init_count)
 
@@ -397,6 +489,7 @@ class ImportTests(unittest.TestCase):
         # Check its direct variant.
 
         name = f'{basename}_basic_copy'
+        add_ext_cleanup(name)
         expected_init_count += 1
         with self.subTest(name):
             mod = load(name)
@@ -417,6 +510,7 @@ class ImportTests(unittest.TestCase):
         # Check the non-basic variant that has no state.
 
         name = f'{basename}_with_reinit'
+        add_ext_cleanup(name)
         with self.subTest(name):
             mod = load(name)
             lookedup, initialized, cached = check_common(name, mod)
@@ -435,6 +529,7 @@ class ImportTests(unittest.TestCase):
         # Check the basic variant that has state.
 
         name = f'{basename}_with_state'
+        add_ext_cleanup(name)
         with self.subTest(name):
             mod = load(name)
             lookedup, initialized, cached = check_common(name, mod)

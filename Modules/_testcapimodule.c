@@ -1618,6 +1618,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     int allow_exec = -1;
     int allow_threads = -1;
     int allow_daemon_threads = -1;
+    int check_multi_interp_extensions = -1;
     int r;
     PyThreadState *substate, *mainstate;
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
@@ -1628,11 +1629,13 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "allow_exec",
                              "allow_threads",
                              "allow_daemon_threads",
+                             "check_multi_interp_extensions",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$pppp:run_in_subinterp_with_config", kwlist,
+                    "s$ppppp:run_in_subinterp_with_config", kwlist,
                     &code, &allow_fork, &allow_exec,
-                    &allow_threads, &allow_daemon_threads)) {
+                    &allow_threads, &allow_daemon_threads,
+                    &check_multi_interp_extensions)) {
         return NULL;
     }
     if (allow_fork < 0) {
@@ -1651,6 +1654,10 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
         return NULL;
     }
+    if (check_multi_interp_extensions < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing check_multi_interp_extensions");
+        return NULL;
+    }
 
     mainstate = PyThreadState_Get();
 
@@ -1661,6 +1668,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_exec = allow_exec,
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
+        .check_multi_interp_extensions = check_multi_interp_extensions,
     };
     substate = _Py_NewInterpreterFromConfig(&config);
     if (substate == NULL) {
