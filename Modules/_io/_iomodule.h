@@ -140,7 +140,6 @@ extern Py_off_t PyNumber_AsOff_t(PyObject *item, PyObject *err);
 /* IO module structure */
 
 extern PyModuleDef _PyIO_Module;
-extern void iobase_finalize(PyObject *);
 
 typedef struct {
     PyObject *locale_module;

@@ -1022,7 +1022,6 @@ static PyType_Slot stringio_slots[] = {
     {Py_tp_getset, stringio_getset},
     {Py_tp_init, _io_StringIO___init__},
     {Py_tp_new, stringio_new},
-    {Py_tp_finalize, iobase_finalize},
     {0, NULL},
 };
 

@@ -373,6 +373,8 @@ buffered_dealloc(buffered *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
+    if (_PyIOBase_finalize((PyObject *) self) < 0)
+        return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
     if (self->weakreflist != NULL)
@@ -2367,7 +2369,6 @@ static PyType_Slot bufferediobase_slots[] = {
     {Py_tp_doc, (void *)bufferediobase_doc},
     {Py_tp_methods, bufferediobase_methods},
     {Py_tp_traverse, bufferediobase_traverse},
-    {Py_tp_finalize, iobase_finalize},
     {0, NULL},
 };
 
@@ -2429,7 +2430,6 @@ static PyType_Slot bufferedreader_slots[] = {
     {Py_tp_members, bufferedreader_members},
     {Py_tp_getset, bufferedreader_getset},
     {Py_tp_init, _io_BufferedReader___init__},
-    {Py_tp_finalize, iobase_finalize},
     {0, NULL},
 };
 
@@ -2486,7 +2486,6 @@ static PyType_Slot bufferedwriter_slots[] = {
     {Py_tp_members, bufferedwriter_members},
     {Py_tp_getset, bufferedwriter_getset},
     {Py_tp_init, _io_BufferedWriter___init__},
-    {Py_tp_finalize, iobase_finalize},
     {0, NULL},
 };
 
@@ -2537,7 +2536,6 @@ static PyType_Slot bufferedrwpair_slots[] = {
     {Py_tp_members, bufferedrwpair_members},
     {Py_tp_getset, bufferedrwpair_getset},
     {Py_tp_init, _io_BufferedRWPair___init__},
-    {Py_tp_finalize, iobase_finalize},
     {0, NULL},
 };
 
@@ -2604,7 +2602,6 @@ static PyType_Slot bufferedrandom_slots[] = {
     {Py_tp_members, bufferedrandom_members},
     {Py_tp_getset, bufferedrandom_getset},
     {Py_tp_init, _io_BufferedRandom___init__},
-    {Py_tp_finalize, iobase_finalize},
     {0, NULL},
 };
 

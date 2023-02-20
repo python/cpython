@@ -1043,7 +1043,6 @@ static PyType_Slot bytesio_slots[] = {
     {Py_tp_getset, bytesio_getsetlist},
     {Py_tp_init, _io_BytesIO___init__},
     {Py_tp_new, bytesio_new},
-    {Py_tp_finalize, iobase_finalize},
     {0, NULL},
 };
 
@@ -1113,7 +1112,6 @@ bytesiobuf_dealloc(bytesiobuf *self)
 static PyType_Slot bytesiobuf_slots[] = {
     {Py_tp_dealloc, bytesiobuf_dealloc},
     {Py_tp_traverse, bytesiobuf_traverse},
-    {Py_tp_finalize, iobase_finalize},
 
     // Buffer protocol
     {Py_bf_getbuffer, bytesiobuf_getbuffer},

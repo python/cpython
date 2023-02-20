@@ -434,6 +434,8 @@ winconsoleio_dealloc(winconsoleio *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
+    if (_PyIOBase_finalize((PyObject *) self) < 0)
+        return;
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -1151,7 +1153,6 @@ static PyType_Slot winconsoleio_slots[] = {
     {Py_tp_getset, winconsoleio_getsetlist},
     {Py_tp_init, _io__WindowsConsoleIO___init__},
     {Py_tp_new, winconsoleio_new},
-    {Py_tp_finalize, iobase_finalize},
     {0, NULL},
 };
 
