@@ -92,7 +92,7 @@
     An object with a subset of :class:`pathlib.Path` methods suitable for
     traversing directories and opening files.
 
-    If you need a representation of the object on the file-system, you can use
+    For a representation of the object on the file-system, use
     :meth:`importlib.resources.as_file`.
 
     .. versionadded:: 3.9
