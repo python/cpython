@@ -2075,6 +2075,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/data01/subdirectory \
 		test/test_importlib/resources/data02 \
 		test/test_importlib/resources/data02/one \
+		test/test_importlib/resources/data02/subdirectory \
+		test/test_importlib/resources/data02/subdirectory/subsubdir \
 		test/test_importlib/resources/data02/two \
 		test/test_importlib/resources/data03 \
 		test/test_importlib/resources/data03/namespace \

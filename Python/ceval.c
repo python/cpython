@@ -132,8 +132,8 @@ lltrace_instruction(_PyInterpreterFrame *frame,
        objects enters the interpreter recursively. It is also slow.
        So you might want to comment it out. */
     dump_stack(frame, stack_pointer);
-    int oparg = _Py_OPARG(*next_instr);
-    int opcode = _Py_OPCODE(*next_instr);
+    int oparg = next_instr->op.arg;
+    int opcode = next_instr->op.code;
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
     int offset = (int)(next_instr - _PyCode_CODE(frame->f_code));
@@ -920,8 +920,8 @@ handle_eval_breaker:
             // CPython hasn't ever traced the instruction after an EXTENDED_ARG.
             // Inline the EXTENDED_ARG here, so we can avoid branching there:
             INSTRUCTION_START(EXTENDED_ARG);
-            opcode = _Py_OPCODE(*next_instr);
-            oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            opcode = next_instr->op.code;
+            oparg = oparg << 8 | next_instr->op.arg;
             // Make sure the next instruction isn't a RESUME, since that needs
             // to trace properly (and shouldn't have an EXTENDED_ARG, anyways):
             assert(opcode != RESUME);
@@ -946,7 +946,7 @@ handle_eval_breaker:
 #endif
             /* Tell C compilers not to hold the opcode variable in the loop.
                next_instr points the current instruction without TARGET(). */
-            opcode = _Py_OPCODE(*next_instr);
+            opcode = next_instr->op.code;
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",
                           frame->f_code->co_filename,
@@ -2196,7 +2196,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
             (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
              // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
              // here:
-             _Py_OPCODE(*frame->prev_instr) != SEND);
+             frame->prev_instr->op.code != SEND);
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
