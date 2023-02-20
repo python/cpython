@@ -200,6 +200,10 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("//x")', ("//x", "", ""))  # non-empty server & missing share
         tester('ntpath.splitroot("//x/")', ("//x/", "", ""))  # non-empty server & empty share
 
+        # gh-101363: match GetFullPathNameW() drive letter parsing behaviour
+        tester('ntpath.splitroot(" :/foo")', (" :", "/", "foo"))
+        tester('ntpath.splitroot("/:/foo")', ("", "/", ":/foo"))
+
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
         tester('ntpath.split("\\\\conky\\mountpoint\\foo\\bar")',
