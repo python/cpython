@@ -764,7 +764,7 @@ Exception Objects
 
 .. c:function:: void PyException_SetArgs(PyObject *ex, PyObject *args)
 
-   Set :attr:`~BaseException.args` of exception *ex* to *args*:
+   Set :attr:`~BaseException.args` of exception *ex* to *args*.
 
 
 .. _unicodeexceptions:
