@@ -861,6 +861,21 @@ class CursorTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             self.cu.execute("select name from test where name=?", L())
 
+    def test_execute_named_param_and_sequence(self):
+        dataset = (
+            ("select :a", (1,)),
+            ("select :a, ?, ?", (1, 2, 3)),
+            ("select ?, :b, ?", (1, 2, 3)),
+            ("select ?, ?, :c", (1, 2, 3)),
+            ("select :a, :b, ?", (1, 2, 3)),
+        )
+        msg = "Binding.*is a named parameter"
+        for query, params in dataset:
+            with self.subTest(query=query, params=params):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    self.cu.execute(query, params)
+                self.assertEqual(cm.filename,  __file__)
+
     def test_execute_too_many_params(self):
         category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
         msg = "too many SQL variables"
