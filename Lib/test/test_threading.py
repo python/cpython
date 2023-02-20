@@ -1722,7 +1722,7 @@ class CRLockTests(lock_tests.RLockTests):
 class EventTests(lock_tests.EventTests):
     eventtype = staticmethod(threading.Event)
 
-class ConditionAsRLockTests(lock_tests.RLockTests):
+class ConditionAsRLockTests(lock_tests.RLockAPITests):
     # Condition uses an RLock by default and exports its API.
     locktype = staticmethod(threading.Condition)
 

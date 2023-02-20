@@ -293,7 +293,7 @@ class LockTests(BaseLockTests):
         use_lock(lock2)
 
 
-class RLockTests(BaseLockTests):
+class RLockAPITests(BaseLockTests):
     """
     Tests for recursive locks.
     """
@@ -358,6 +358,31 @@ class RLockTests(BaseLockTests):
         self.assertTrue(lock._is_owned())
         lock.release()
         self.assertFalse(lock._is_owned())
+
+
+class RLockTests(RLockAPITests):
+    def test_signature(self):  # gh-102029
+        # 0 args are fine:
+        self.locktype()
+        self.locktype(*(), **{})
+
+        # no other args are allowed:
+        arg_types = [
+            ((1,), {}),
+            ((), {'a': 1}),
+            ((1, 2), {'a': 1}),
+        ]
+        for args, kwargs in arg_types:
+            with self.subTest(args=args, kwargs=kwargs):
+                with self.assertRaises(TypeError):
+                    self.locktype(*args, **kwargs)
+
+        # Subtypes with custom `__init__` are allowed (but, not recommended):
+        class CustomRLock(self.locktype):
+            def __init__(self, a, *, b) -> None:
+                super().__init__()
+
+        CustomRLock(1, b=2)
 
 
 class EventTests(BaseTestCase):

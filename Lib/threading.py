@@ -107,7 +107,7 @@ def gettrace():
 
 Lock = _allocate_lock
 
-def RLock(*args, **kwargs):
+def RLock():
     """Factory function that returns a new reentrant lock.
 
     A reentrant lock must be released by the thread that acquired it. Once a
@@ -117,8 +117,8 @@ def RLock(*args, **kwargs):
 
     """
     if _CRLock is None:
-        return _PyRLock(*args, **kwargs)
-    return _CRLock(*args, **kwargs)
+        return _PyRLock()
+    return _CRLock()
 
 class _RLock:
     """This class implements reentrant lock objects.

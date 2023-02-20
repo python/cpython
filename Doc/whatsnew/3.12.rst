@@ -332,6 +332,12 @@ threading
   profiling functions in all running threads in addition to the calling one.
   (Contributed by Pablo Galindo in :gh:`93503`.)
 
+* Passing any arguments to :func:`threading.RLock` is now restricted.
+  Previously C version allowed any numbers of args and kwargs,
+  but they were just ignored. Python version never allowed any arguments.
+  Now, these two implementation match.
+  (Contributed by Nikita Sobolev in :gh:`102029`.)
+
 unicodedata
 -----------
 
