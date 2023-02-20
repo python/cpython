@@ -1935,13 +1935,21 @@ Error:
     return 0;
 }
 
+
 static void
 monitor_raise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr, int event)
 {
-    if (tstate->interp->monitoring_matrix.tools[event] == 0) {
-        return;
+    if (event < PY_MONITORING_INSTRUMENTED_EVENTS) {
+        if (frame->f_code->_co_instrumentation.monitoring_data->current_instrumentation.tools[event] == 0) {
+            return;
+        }
+    }
+    else {
+        if (_PyInterpreterState_GetTools(tstate->interp, event) == 0) {
+            return;
+        }
     }
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
@@ -1961,7 +1969,7 @@ monitor_unwind(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr)
 {
-    if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_PY_UNWIND] == 0) {
+    if (_PyInterpreterState_GetTools(tstate->interp, PY_MONITORING_EVENT_PY_UNWIND) == 0) {
         return;
     }
     _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_UNWIND, frame, instr);
@@ -1973,7 +1981,7 @@ monitor_handled(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr, PyObject *exc)
 {
-    if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_EXCEPTION_HANDLED] == 0) {
+    if (_PyInterpreterState_GetTools(tstate->interp, PY_MONITORING_EVENT_EXCEPTION_HANDLED) == 0) {
         return;
     }
     _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
@@ -1984,7 +1992,7 @@ monitor_throw(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr)
 {
-    if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_PY_THROW] == 0) {
+    if (_PyInterpreterState_GetTools(tstate->interp, PY_MONITORING_EVENT_PY_THROW) == 0) {
         return;
     }
     _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_THROW, frame, instr);

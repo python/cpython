@@ -641,8 +641,13 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
+    for(int i = 0; i < PY_MONITORING_INSTRUMENTED_EVENTS; i++) {
+        interp->instrumented_events.tools[i] = 0;
+    }
+    for(int i = 0; i < PY_MONITORING_EVENTS-PY_MONITORING_INSTRUMENTED_EVENTS; i++) {
+        interp->other_events[i] = 0;
+    }
     for(int i = 0; i < PY_MONITORING_EVENTS; i++) {
-        interp->monitoring_matrix.tools[i] = 0;
         for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
             interp->tools[t].instrument_callables[i] = NULL;
         }
@@ -773,8 +778,13 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
+    for(int i = 0; i < PY_MONITORING_INSTRUMENTED_EVENTS; i++) {
+        interp->instrumented_events.tools[i] = 0;
+    }
+    for(int i = 0; i < PY_MONITORING_EVENTS-PY_MONITORING_INSTRUMENTED_EVENTS; i++) {
+        interp->other_events[i] = 0;
+    }
     for(int i = 0; i < PY_MONITORING_EVENTS; i++) {
-        interp->monitoring_matrix.tools[i] = 0;
         for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
             Py_CLEAR(interp->tools[t].instrument_callables[i]);
         }

@@ -190,14 +190,14 @@ struct _is {
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
 
-    _Py_MonitoringMatrix monitoring_matrix;
-    uint8_t required_monitoring_bytes;
-    /* Tools numbered 1-8. 0 is the dispatcher/sole tool */
-    struct _instrumentation_tool tools[PY_MONITORING_TOOL_IDS];
-    PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
+    _Py_InstrumentationMatrix instrumented_events;
+    uint8_t other_events[PY_MONITORING_EVENTS - PY_MONITORING_INSTRUMENTED_EVENTS];
     bool f_opcode_trace_set;
     bool sys_profile_initialized;
     bool sys_trace_initialized;
+    /* Tools numbered 0-7 */
+    struct _instrumentation_tool tools[PY_MONITORING_TOOL_IDS];
+    PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
     Py_ssize_t sys_profiling_threads;
     Py_ssize_t sys_tracing_threads;
 
@@ -247,6 +247,14 @@ PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
+static inline uint8_t
+_PyInterpreterState_GetTools(PyInterpreterState * is, int event)
+{
+    assert(event >= PY_MONITORING_INSTRUMENTED_EVENTS && event < PY_MONITORING_EVENTS);
+    return is->other_events[event-PY_MONITORING_INSTRUMENTED_EVENTS];
+}
+
 
 #ifdef __cplusplus
 }

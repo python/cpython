@@ -9,10 +9,11 @@ extern "C" {
 #endif
 
 #define PY_MONITORING_EVENTS 16
+#define PY_MONITORING_INSTRUMENTED_EVENTS 10
 
-typedef struct _Py_MonitoringMatrix {
-    uint8_t tools[PY_MONITORING_EVENTS];
-} _Py_MonitoringMatrix;
+typedef struct _Py_InstrumentationMatrix {
+    uint8_t tools[PY_MONITORING_INSTRUMENTED_EVENTS];
+} _Py_InstrumentationMatrix;
 
 /* Each instruction in a code object is a fixed-width value,
  * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
@@ -55,7 +56,8 @@ typedef struct {
 } _PyCoLineInstrumentationData;
 
 typedef struct {
-    _Py_MonitoringMatrix matrix;
+    _Py_InstrumentationMatrix local_instrumentation;
+    _Py_InstrumentationMatrix current_instrumentation;
     uint8_t *tools;
     _PyCoLineInstrumentationData *lines;
     uint8_t *line_tools;
