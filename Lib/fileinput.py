@@ -409,6 +409,8 @@ def hook_compressed(filename, mode, *, encoding=None, errors=None):
         import bz2
         stream = bz2.BZ2File(filename, mode)
     else:
+        if "b" in mode:
+            return open(filename, mode, errors=errors)
         return open(filename, mode, encoding=encoding, errors=errors)
 
     # gzip and bz2 are binary mode by default.
