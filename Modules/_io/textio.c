@@ -1169,6 +1169,8 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     self->buffer = Py_NewRef(buffer);
 
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    self->state = state;
     /* Build the decoder object */
     if (_textiowrapper_set_decoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
         goto error;
@@ -1180,7 +1182,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Finished sorting out the codec details */
     Py_CLEAR(codec_info);
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     if (Py_IS_TYPE(buffer, state->PyBufferedReader_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedWriter_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedRandom_Type))
@@ -1216,8 +1217,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     if (_textiowrapper_fix_encoder_state(self) < 0) {
         goto error;
     }
-
-    self->state = state;
+    
     self->ok = 1;
     return 0;
 
