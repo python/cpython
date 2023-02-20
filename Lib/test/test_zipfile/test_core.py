@@ -3011,9 +3011,9 @@ class EncodedMetadataTests(unittest.TestCase):
 
 
 class StripExtraTests(unittest.TestCase):
-    # Note: all of the "z" characters are technically invalid, but up to 3 bytes
-    # at the end of the extra will be passed through as they are too short to
-    # encode a valid extra.
+    # Note: all of the "z" characters are technically invalid, but up
+    # to 3 bytes at the end of the extra will be passed through as they
+    # are too short to encode a valid extra.
     def test_no_data(self):
         s = struct.Struct("<HH")
         a = s.pack(1, 0)  # 1=zip64 extra signature
