@@ -100,7 +100,7 @@
 
 #define DISPATCH_SAME_OPARG() \
     { \
-        opcode = _Py_OPCODE(*next_instr); \
+        opcode = next_instr->op.code; \
         PRE_DISPATCH_GOTO(); \
         opcode |= cframe.use_tracing OR_DTRACE_LINE; \
         DISPATCH_GOTO(); \
@@ -143,8 +143,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
-        opcode = _Py_OPCODE(word); \
-        oparg = _Py_OPARG(word); \
+        opcode = word.op.code; \
+        oparg = word.op.arg; \
     } while (0)
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
 #define JUMPBY(x)       (next_instr += (x))
@@ -180,14 +180,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #if USE_COMPUTED_GOTOS
 #define PREDICT(op)             if (0) goto PREDICT_ID(op)
 #else
-#define PREDICT(op) \
+#define PREDICT(next_op) \
     do { \
         _Py_CODEUNIT word = *next_instr; \
-        opcode = _Py_OPCODE(word) | cframe.use_tracing OR_DTRACE_LINE; \
-        if (opcode == op) { \
-            oparg = _Py_OPARG(word); \
-            INSTRUCTION_START(op); \
-            goto PREDICT_ID(op); \
+        opcode = word.op.code | cframe.use_tracing OR_DTRACE_LINE; \
+        if (opcode == next_op) { \
+            oparg = word.op.arg; \
+            INSTRUCTION_START(next_op); \
+            goto PREDICT_ID(next_op); \
         } \
     } while(0)
 #endif

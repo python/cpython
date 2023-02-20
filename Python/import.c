@@ -487,6 +487,26 @@ PyState_FindModule(PyModuleDef* module)
     return _modules_by_index_get(interp, module);
 }
 
+/* _PyState_AddModule() has been completely removed from the C-API
+   (and was removed from the limited API in 3.6).  However, we're
+   playing it safe and keeping it around for any stable ABI extensions
+   built against 3.2-3.5. */
+int
+_PyState_AddModule(PyThreadState *tstate, PyObject* module, PyModuleDef* def)
+{
+    if (!def) {
+        assert(_PyErr_Occurred(tstate));
+        return -1;
+    }
+    if (def->m_slots) {
+        _PyErr_SetString(tstate,
+                         PyExc_SystemError,
+                         "PyState_AddModule called on module with slots");
+        return -1;
+    }
+    return _modules_by_index_set(tstate->interp, def, module);
+}
+
 int
 PyState_AddModule(PyObject* module, PyModuleDef* def)
 {
