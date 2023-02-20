@@ -582,7 +582,7 @@ class TestClassCleanup(unittest.TestCase):
         runner = getRunner()
         runner.run(suite)
 
-        self.assertIn("\nNO TESTS RUN\n", runner.stream.getvalue())
+        self.assertIn("\nNO TESTS RAN\n", runner.stream.getvalue())
 
 
 class TestModuleCleanUp(unittest.TestCase):

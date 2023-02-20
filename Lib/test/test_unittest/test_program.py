@@ -176,7 +176,7 @@ class Test_TestProgram(unittest.TestCase):
                 testLoader=self.TestLoader(self.Empty))
         self.assertEqual(cm.exception.code, 5)
         out = stream.getvalue()
-        self.assertIn('\nNO TESTS RUN\n', out)
+        self.assertIn('\nNO TESTS RAN\n', out)
 
 
 class InitialisableProgram(unittest.TestProgram):

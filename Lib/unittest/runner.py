@@ -239,7 +239,7 @@ class TextTestRunner(object):
             if errored:
                 infos.append("errors=%d" % errored)
         elif run == 0:
-            self.stream.write("NO TESTS RUN")
+            self.stream.write("NO TESTS RAN")
         else:
             self.stream.write("OK")
         if skipped:
