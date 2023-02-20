@@ -1227,7 +1227,7 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
 
     CHECK_CLOSED(self, "seek of closed file")
 
-    if (_PyIOBase_check_seekable(self->raw, Py_True) == NULL)
+    if (CHECK_SEEKABLE(self->raw) == NULL)
         return NULL;
 
     target = PyNumber_AsOff_t(targetobj, PyExc_ValueError);
@@ -1426,8 +1426,9 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_readable(raw, Py_True) == NULL)
+    if (CHECK_READABLE(raw) == NULL) {
         return -1;
+    }
 
     Py_XSETREF(self->raw, Py_NewRef(raw));
     self->buffer_size = buffer_size;
@@ -1782,8 +1783,9 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    if (CHECK_WRITABLE(raw) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);
@@ -2101,10 +2103,12 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
                                  PyObject *writer, Py_ssize_t buffer_size)
 /*[clinic end generated code: output=327e73d1aee8f984 input=620d42d71f33a031]*/
 {
-    if (_PyIOBase_check_readable(reader, Py_True) == NULL)
+    if (CHECK_READABLE(reader) == NULL) {
         return -1;
-    if (_PyIOBase_check_writable(writer, Py_True) == NULL)
+    }
+    if (CHECK_WRITABLE(writer) == NULL) {
         return -1;
+    }
 
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->reader = (buffered *) PyObject_CallFunction(
@@ -2298,12 +2302,15 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_seekable(raw, Py_True) == NULL)
+    if (CHECK_SEEKABLE(raw) == NULL) {
         return -1;
-    if (_PyIOBase_check_readable(raw, Py_True) == NULL)
+    }
+    if (CHECK_READABLE(raw) == NULL) {
         return -1;
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    }
+    if (CHECK_WRITABLE(raw) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);

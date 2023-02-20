@@ -362,6 +362,12 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_bootstrap);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_checkReadable);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_checkSeekable);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_checkWritable);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_check_retval_);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_dealloc_warn);
