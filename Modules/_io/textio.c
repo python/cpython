@@ -887,11 +887,11 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
 }
 
 static PyObject*
-_textiowrapper_decode(PyObject *decoder, PyObject *bytes, int eof)
+_textiowrapper_decode(_PyIO_State *state, PyObject *decoder, PyObject *bytes,
+                      int eof)
 {
     PyObject *chars;
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(decoder));
     if (Py_IS_TYPE(decoder, state->PyIncrementalNewlineDecoder_Type))
         chars = _PyIncrementalNewlineDecoder_decode(decoder, bytes, eof);
     else
@@ -1846,7 +1846,8 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     nbytes = input_chunk_buf.len;
     eof = (nbytes == 0);
 
-    decoded_chars = _textiowrapper_decode(self->decoder, input_chunk, eof);
+    decoded_chars = _textiowrapper_decode(self->state, self->decoder,
+                                          input_chunk, eof);
     PyBuffer_Release(&input_chunk_buf);
     if (decoded_chars == NULL)
         goto fail;
