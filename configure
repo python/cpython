@@ -686,10 +686,8 @@ MODULE__BLAKE2_FALSE
 MODULE__BLAKE2_TRUE
 MODULE__SHA3_FALSE
 MODULE__SHA3_TRUE
-MODULE__SHA512_FALSE
-MODULE__SHA512_TRUE
-MODULE__SHA256_FALSE
-MODULE__SHA256_TRUE
+MODULE__SHA2_FALSE
+MODULE__SHA2_TRUE
 MODULE__SHA1_FALSE
 MODULE__SHA1_TRUE
 MODULE__MD5_FALSE
@@ -1891,9 +1889,9 @@ Optional Packages:
                           leave OpenSSL's defaults untouched, STRING: use a
                           custom string, python and STRING also set TLS 1.2 as
                           minimum TLS version
-  --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
-                          builtin hash modules, md5, sha1, sha256, sha512,
-                          sha3 (with shake), blake2
+  --with-builtin-hashlib-hashes=md5,sha1,sha2,sha3,blake2
+                          builtin hash modules, md5, sha1, sha2, sha3 (with
+                          shake), blake2
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -21498,7 +21496,7 @@ $as_echo "$LDVERSION" >&6; }
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 
-if test -n "$ANDROID_API_LEVEL" -o "$MACHDEP" = "cygwin"; then
+if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 else
   LIBPYTHON=''
@@ -25346,7 +25344,7 @@ fi
 
 
 # builtin hash modules
-default_hashlib_hashes="md5,sha1,sha256,sha512,sha3,blake2"
+default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
 
 $as_echo "#define PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
 
@@ -25386,10 +25384,8 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
     with_builtin_md5=yes ;; #(
   sha1) :
     with_builtin_sha1=yes ;; #(
-  sha256) :
-    with_builtin_sha256=yes ;; #(
-  sha512) :
-    with_builtin_sha512=yes ;; #(
+  sha2) :
+    with_builtin_sha2=yes ;; #(
   sha3) :
     with_builtin_sha3=yes ;; #(
   blake2) :
@@ -26898,72 +26894,38 @@ fi
 $as_echo "$py_cv_module__sha1" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha256" >&5
-$as_echo_n "checking for stdlib extension module _sha256... " >&6; }
-        if test "$py_cv_module__sha256" != "n/a"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha2" >&5
+$as_echo_n "checking for stdlib extension module _sha2... " >&6; }
+        if test "$py_cv_module__sha2" != "n/a"; then :
 
-    if test "$with_builtin_sha256" = yes; then :
+    if test "$with_builtin_sha2" = yes; then :
   if true; then :
-  py_cv_module__sha256=yes
+  py_cv_module__sha2=yes
 else
-  py_cv_module__sha256=missing
-fi
-else
-  py_cv_module__sha256=disabled
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA256_STATE=$py_cv_module__sha256$as_nl"
-  if test "x$py_cv_module__sha256" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__SHA256_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
-
-
-fi
-   if test "$py_cv_module__sha256" = yes; then
-  MODULE__SHA256_TRUE=
-  MODULE__SHA256_FALSE='#'
-else
-  MODULE__SHA256_TRUE='#'
-  MODULE__SHA256_FALSE=
-fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha256" >&5
-$as_echo "$py_cv_module__sha256" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha512" >&5
-$as_echo_n "checking for stdlib extension module _sha512... " >&6; }
-        if test "$py_cv_module__sha512" != "n/a"; then :
-
-    if test "$with_builtin_sha512" = yes; then :
-  if true; then :
-  py_cv_module__sha512=yes
-else
-  py_cv_module__sha512=missing
+  py_cv_module__sha2=missing
 fi
 else
-  py_cv_module__sha512=disabled
+  py_cv_module__sha2=disabled
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA512_STATE=$py_cv_module__sha512$as_nl"
-  if test "x$py_cv_module__sha512" = xyes; then :
+  as_fn_append MODULE_BLOCK "MODULE__SHA2_STATE=$py_cv_module__sha2$as_nl"
+  if test "x$py_cv_module__sha2" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA512_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
 
 
 fi
-   if test "$py_cv_module__sha512" = yes; then
-  MODULE__SHA512_TRUE=
-  MODULE__SHA512_FALSE='#'
+   if test "$py_cv_module__sha2" = yes; then
+  MODULE__SHA2_TRUE=
+  MODULE__SHA2_FALSE='#'
 else
-  MODULE__SHA512_TRUE='#'
-  MODULE__SHA512_FALSE=
+  MODULE__SHA2_TRUE='#'
+  MODULE__SHA2_FALSE=
 fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha512" >&5
-$as_echo "$py_cv_module__sha512" >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha2" >&5
+$as_echo "$py_cv_module__sha2" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha3" >&5
@@ -28337,12 +28299,8 @@ if test -z "${MODULE__SHA1_TRUE}" && test -z "${MODULE__SHA1_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SHA1\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__SHA256_TRUE}" && test -z "${MODULE__SHA256_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__SHA256\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__SHA512_TRUE}" && test -z "${MODULE__SHA512_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__SHA512\" was never defined.
+if test -z "${MODULE__SHA2_TRUE}" && test -z "${MODULE__SHA2_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SHA2\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__SHA3_TRUE}" && test -z "${MODULE__SHA3_FALSE}"; then

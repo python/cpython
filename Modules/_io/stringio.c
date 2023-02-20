@@ -43,6 +43,7 @@ typedef struct {
 
     PyObject *dict;
     PyObject *weakreflist;
+    _PyIO_State *module_state;
 } stringio;
 
 static int _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs);
@@ -401,8 +402,7 @@ stringio_iternext(stringio *self)
     CHECK_CLOSED(self);
     ENSURE_REALIZED(self);
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
-    if (Py_IS_TYPE(self, state->PyStringIO_Type)) {
+    if (Py_IS_TYPE(self, self->module_state->PyStringIO_Type)) {
         /* Skip method call overhead for speed */
         line = _stringio_readline(self, -1);
     }
@@ -751,7 +751,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
         self->state = STATE_ACCUMULATING;
     }
     self->pos = 0;
-
+    self->module_state = find_io_state_by_def(Py_TYPE(self));
     self->closed = 0;
     self->ok = 1;
     return 0;

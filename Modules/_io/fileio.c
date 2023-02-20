@@ -245,8 +245,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     int fstat_result;
     int async_err = 0;
 
+#ifdef Py_DEBUG
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     assert(PyFileIO_Check(state, self));
+#endif
     if (self->fd >= 0) {
         if (self->closefd) {
             /* Have to close the existing file first. */

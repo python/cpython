@@ -5759,7 +5759,7 @@ AC_MSG_RESULT($LDVERSION)
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 AC_SUBST(LIBPYTHON)
-if test -n "$ANDROID_API_LEVEL" -o "$MACHDEP" = "cygwin"; then
+if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 else
   LIBPYTHON=''
@@ -6928,14 +6928,14 @@ AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
 ])
 
 # builtin hash modules
-default_hashlib_hashes="md5,sha1,sha256,sha512,sha3,blake2"
+default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
 AC_DEFINE([PY_BUILTIN_HASHLIB_HASHES], [], [enabled builtin hash modules]
 )
 AC_MSG_CHECKING(for --with-builtin-hashlib-hashes)
 AC_ARG_WITH(builtin-hashlib-hashes,
-            AS_HELP_STRING([--with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2],
+            AS_HELP_STRING([--with-builtin-hashlib-hashes=md5,sha1,sha2,sha3,blake2],
                            [builtin hash modules,
-                            md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
+                            md5, sha1, sha2, sha3 (with shake), blake2]),
 [
   AS_CASE([$with_builtin_hashlib_hashes],
     [yes], [with_builtin_hashlib_hashes=$default_hashlib_hashes],
@@ -6952,8 +6952,7 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
     AS_CASE($builtin_hash,
       [md5], [with_builtin_md5=yes],
       [sha1], [with_builtin_sha1=yes],
-      [sha256], [with_builtin_sha256=yes],
-      [sha512], [with_builtin_sha512=yes],
+      [sha2], [with_builtin_sha2=yes],
       [sha3], [with_builtin_sha3=yes],
       [blake2], [with_builtin_blake2=yes]
     )
@@ -7197,11 +7196,8 @@ dnl By default we always compile these even when OpenSSL is available
 dnl (issue #14693). The modules are small.
 PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
 PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
-PY_STDLIB_MOD([_sha256],
-  [test "$with_builtin_sha256" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
-PY_STDLIB_MOD([_sha512],
-  [test "$with_builtin_sha512" = yes], [],
+PY_STDLIB_MOD([_sha2],
+  [test "$with_builtin_sha2" = yes], [],
   [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2],

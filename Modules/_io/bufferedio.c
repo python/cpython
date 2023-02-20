@@ -2129,6 +2129,7 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
 static int
 bufferedrwpair_traverse(rwpair *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }

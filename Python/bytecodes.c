@@ -1302,6 +1302,8 @@ dummy_func(
 
         inst(BUILD_SET, (values[oparg] -- set)) {
             set = PySet_New(NULL);
+            if (set == NULL)
+                goto error;
             int err = 0;
             for (int i = 0; i < oparg; i++) {
                 PyObject *item = values[i];

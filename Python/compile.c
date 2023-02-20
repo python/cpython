@@ -9085,8 +9085,8 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         Py_DECREF(cnt);
                         break;
                     case RETURN_VALUE:
-                        INSTR_SET_OP1(inst, RETURN_CONST, oparg);
-                        INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
+                        INSTR_SET_OP0(inst, NOP);
+                        INSTR_SET_OP1(&bb->b_instr[++i], RETURN_CONST, oparg);
                         break;
                 }
                 break;

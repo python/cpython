@@ -314,8 +314,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     }
 
     /* Create the Raw file stream */
+    _PyIO_State *state = get_io_state(module);
     {
-        _PyIO_State *state = get_io_state(module);
         PyObject *RawIO_class = (PyObject *)state->PyFileIO_Type;
 #ifdef MS_WINDOWS
         const PyConfig *config = _Py_GetConfig();
@@ -386,7 +386,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         return result;
     }
 
-    _PyIO_State *state = get_io_state(module);
     /* wraps into a buffered file */
     {
         PyObject *Buffered_class;
@@ -705,6 +704,7 @@ do {                                                                     \
     base = state->PyRawIOBase_Type;
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, base);
     ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);  // XXX: should be subclass of PyRawIOBase_Type?
+
 #ifdef MS_WINDOWS
     ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec, base);
 #endif
@@ -715,16 +715,13 @@ do {                                                                     \
     ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec, base);
 
 #undef ADD_TYPE
-
     return 0;
 }
 
 static struct PyModuleDef_Slot iomodule_slots[] = {
     {Py_mod_exec, iomodule_exec},
     {0, NULL},
-};
-
-struct PyModuleDef _PyIO_Module = {
+}; struct PyModuleDef _PyIO_Module = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "io",
     .m_doc = module_doc,
