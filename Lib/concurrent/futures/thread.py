@@ -90,7 +90,7 @@ def _worker(executor_reference, work_queue, initializer, initargs):
 
             if work_item is not None:
                 work_item.run()
-                # Delete references to object. See issue16284
+                # Delete references to object. See GH-60488
                 del work_item
                 continue
 
