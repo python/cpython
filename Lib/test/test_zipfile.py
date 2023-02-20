@@ -3209,6 +3209,17 @@ with zipfile.ZipFile(io.BytesIO(), "w") as zf:
             file = cls(alpharep).joinpath('some dir').parent
             assert isinstance(file, cls)
 
+    @pass_alpharep
+    def test_extract_orig_with_implied_dirs(self, alpharep):
+        """
+        A zip file wrapped in a Path should extract even with implied dirs.
+        """
+        source_path = self.zipfile_ondisk(alpharep)
+        zf = zipfile.ZipFile(source_path)
+        # wrap the zipfile for its side effect
+        zipfile.Path(zf)
+        zf.extractall(source_path.parent)
+
 
 if __name__ == "__main__":
     unittest.main()
