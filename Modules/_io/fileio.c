@@ -51,9 +51,9 @@
 
 /*[clinic input]
 module _io
-class _io.FileIO "fileio *" "&PyFileIO_Type"
+class _io.FileIO "fileio *" "clinic_state()->PyFileIO_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1c77708b41fda70c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ac25ec278f4d6703]*/
 
 typedef struct {
     PyObject_HEAD
@@ -70,9 +70,7 @@ typedef struct {
     PyObject *dict;
 } fileio;
 
-PyTypeObject PyFileIO_Type;
-
-#define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
+#define PyFileIO_Check(state, op) (PyObject_TypeCheck((op), state->PyFileIO_Type))
 
 /* Forward declarations */
 static PyObject* portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_error);
@@ -242,7 +240,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     int fstat_result;
     int async_err = 0;
 
-    assert(PyFileIO_Check(self));
+#ifdef Py_DEBUG
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    assert(PyFileIO_Check(state, self));
+#endif
     if (self->fd >= 0) {
         if (self->closefd) {
             /* Have to close the existing file first. */
@@ -503,6 +504,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 static int
 fileio_traverse(fileio *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
@@ -517,6 +519,7 @@ fileio_clear(fileio *self)
 static void
 fileio_dealloc(fileio *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
@@ -524,7 +527,8 @@ fileio_dealloc(fileio *self)
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1177,57 +1181,29 @@ static PyGetSetDef fileio_getsetlist[] = {
 static PyMemberDef fileio_members[] = {
     {"_blksize", T_UINT, offsetof(fileio, blksize), 0},
     {"_finalizing", T_BOOL, offsetof(fileio, finalizing), 0},
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(fileio, weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(fileio, dict), READONLY},
     {NULL}
 };
 
-PyTypeObject PyFileIO_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.FileIO",
-    sizeof(fileio),
-    0,
-    (destructor)fileio_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)fileio_repr,                      /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC,                   /* tp_flags */
-    _io_FileIO___init____doc__,                 /* tp_doc */
-    (traverseproc)fileio_traverse,              /* tp_traverse */
-    (inquiry)fileio_clear,                      /* tp_clear */
-    0,                                          /* tp_richcompare */
-    offsetof(fileio, weakreflist),              /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    fileio_methods,                             /* tp_methods */
-    fileio_members,                             /* tp_members */
-    fileio_getsetlist,                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    offsetof(fileio, dict),                     /* tp_dictoffset */
-    _io_FileIO___init__,                        /* tp_init */
-    PyType_GenericAlloc,                        /* tp_alloc */
-    fileio_new,                                 /* tp_new */
-    PyObject_GC_Del,                            /* tp_free */
-    0,                                          /* tp_is_gc */
-    0,                                          /* tp_bases */
-    0,                                          /* tp_mro */
-    0,                                          /* tp_cache */
-    0,                                          /* tp_subclasses */
-    0,                                          /* tp_weaklist */
-    0,                                          /* tp_del */
-    0,                                          /* tp_version_tag */
-    0,                                          /* tp_finalize */
+static PyType_Slot fileio_slots[] = {
+    {Py_tp_dealloc, fileio_dealloc},
+    {Py_tp_repr, fileio_repr},
+    {Py_tp_doc, (void *)_io_FileIO___init____doc__},
+    {Py_tp_traverse, fileio_traverse},
+    {Py_tp_clear, fileio_clear},
+    {Py_tp_methods, fileio_methods},
+    {Py_tp_members, fileio_members},
+    {Py_tp_getset, fileio_getsetlist},
+    {Py_tp_init, _io_FileIO___init__},
+    {Py_tp_new, fileio_new},
+    {0, NULL},
+};
+
+PyType_Spec fileio_spec = {
+    .name = "_io.FileIO",
+    .basicsize = sizeof(fileio),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = fileio_slots,
 };
