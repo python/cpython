@@ -645,7 +645,6 @@ def render_summary(items, *,
         if outer in bygroup:
             for inner, count in bygroup[outer].items():
                 yield f'   {inner + ":":9} {count}'
-
     total = f'*{summary["totals"]["all"]}*'
     label = '*total*:'
     if bygroup:

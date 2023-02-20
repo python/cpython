@@ -3197,7 +3197,7 @@ eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
         globals,
         locals,
         c_args,
-        c_args_len,
+        (int)c_args_len,
         c_kwargs,
         (int)c_kwargs_len,
         c_defaults,
