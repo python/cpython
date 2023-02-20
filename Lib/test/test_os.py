@@ -4099,6 +4099,7 @@ class PathTConverterTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'get_blocking'),
                      'needs os.get_blocking() and os.set_blocking()')
 @unittest.skipIf(support.is_emscripten, "Cannot unset blocking flag")
+@unittest.skipIf(sys.platform == 'win32', 'Windows only supports blocking on pipes')
 class BlockingTests(unittest.TestCase):
     def test_blocking(self):
         fd = os.open(__file__, os.O_RDONLY)
