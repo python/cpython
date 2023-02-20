@@ -75,7 +75,7 @@ class Test_TestProgram(unittest.TestCase):
         pass
 
     class TestLoader(unittest.TestLoader):
-        """Test loader that returns a suite containing testsuite."""
+        """Test loader that returns a suite containing the supplied testcase."""
 
         def __init__(self, testcase):
             self.testcase = testcase
