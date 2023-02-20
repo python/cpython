@@ -31,13 +31,6 @@ extern PyType_Spec winconsoleio_spec;
 #define CHECK_SEEKABLE(op) (_CHECK(op, &_Py_ID(_checkSeekable)))
 #define CHECK_WRITABLE(op) (_CHECK(op, &_Py_ID(_checkWritable)))
 
-/* These functions are used as METH_NOARGS methods, are normally called
- * with args=NULL, and return a new reference.
- * BUT when args=Py_True is passed, they return a borrowed reference.
- */
-extern PyObject *_PyIOBase_check_readable(PyObject *self, PyObject *args);
-extern PyObject *_PyIOBase_check_writable(PyObject *self, PyObject *args);
-extern PyObject *_PyIOBase_check_seekable(PyObject *self, PyObject *args);
 extern PyObject *_PyIOBase_check_closed(PyObject *self, PyObject *args);
 
 /* Helper for finalization.
