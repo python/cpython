@@ -150,8 +150,19 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v3
+    - name: Install Homebrew dependencies
+      run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
     - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev --with-tcltk-includes=-I$(brew --prefix tcl-tk)/include --with-tcltk-libs="-L$(brew --prefix tcl-tk)/lib -ltcl8.6 -ltk8.6"
+      run: |
+        CFLAGS="-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" \
+        LDFLAGS="-L$(brew --prefix gdbm)/lib -L$(brew --prefix xz)/lib" \
+        PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig" \
+        ./configure \
+          --with-pydebug \
+          --prefix=/opt/python-dev \
+          --with-openssl="$(brew --prefix openssl@1.1)" \
+          --with-tcltk-libs="$(pkg-config --libs tcl tk)" \
+          --with-tcltk-includes="$(pkg-config --cflags tcl tk)"
     - name: Build CPython
       run: make -j4
     - name: Display build info
