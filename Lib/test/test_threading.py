@@ -1712,17 +1712,17 @@ class TimerTests(BaseTestCase):
 class LockTests(lock_tests.LockTests):
     locktype = staticmethod(threading.Lock)
 
-class PyRLockTests(lock_tests.RLockTests):
+class PyRLockTests(lock_tests.RLockTypeTests):
     locktype = staticmethod(threading._PyRLock)
 
 @unittest.skipIf(threading._CRLock is None, 'RLock not implemented in C')
-class CRLockTests(lock_tests.RLockTests):
+class CRLockTests(lock_tests.RLockTypeTests):
     locktype = staticmethod(threading._CRLock)
 
 class EventTests(lock_tests.EventTests):
     eventtype = staticmethod(threading.Event)
 
-class ConditionAsRLockTests(lock_tests.RLockAPITests):
+class ConditionAsRLockTests(lock_tests.RLockTests):
     # Condition uses an RLock by default and exports its API.
     locktype = staticmethod(threading.Condition)
 

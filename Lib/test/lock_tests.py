@@ -293,7 +293,7 @@ class LockTests(BaseLockTests):
         use_lock(lock2)
 
 
-class RLockAPITests(BaseLockTests):
+class RLockTests(BaseLockTests):
     """
     Tests for recursive locks.
     """
@@ -360,7 +360,7 @@ class RLockAPITests(BaseLockTests):
         self.assertFalse(lock._is_owned())
 
 
-class RLockTests(RLockAPITests):
+class RLockTypeTests(RLockTests):
     def test_signature(self):  # gh-102029
         # 0 args are fine:
         self.locktype()
