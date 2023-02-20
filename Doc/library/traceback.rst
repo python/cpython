@@ -16,8 +16,8 @@ interpreter.
 
 .. index:: object: traceback
 
-The module uses traceback objects --- this is the object type that is stored in
-the :data:`sys.last_traceback` variable and returned by :func:`sys.exception`.
+The module uses traceback objects --- these are objects of type :class:`types.TracebackType`,
+which are assigned to the ``__traceback__`` field of :class:`BaseException` instances.
 
 .. seealso::
 
