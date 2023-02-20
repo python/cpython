@@ -165,8 +165,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
 #_md5 md5module.c
 #_sha1 sha1module.c
-#_sha256 sha256module.c
-#_sha512 sha512module.c
+#_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Streaming_SHA2.a
 #_sha3 _sha3/sha3module.c
 
 # text encodings and unicode

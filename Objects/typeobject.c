@@ -4469,6 +4469,8 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_READY;
+    type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
+    type->tp_version_tag = 0;
 
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         _PyStaticType_ClearWeakRefs(type);
@@ -8562,7 +8564,7 @@ an all-zero entry.
            #NAME "($self, /)\n--\n\n" DOC)
 #define IBSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           #NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
+           #NAME "($self, value, /)\n--\n\nCompute self " DOC " value.")
 #define BINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
            #NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")

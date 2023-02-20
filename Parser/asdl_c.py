@@ -73,7 +73,7 @@ def reflow_c_string(s, depth):
 def is_simple(sum_type):
     """Return True if a sum is a simple.
 
-    A sum is simple if it's types have no fields and itself
+    A sum is simple if its types have no fields and itself
     doesn't have any attributes. Instances of these types are
     cached at C level, and they act like singletons when propagating
     parser generated nodes into Python level, e.g.
@@ -352,7 +352,7 @@ class PrototypeVisitor(EmitVisitor):
                 self.visit(t, name, sum.attributes)
 
     def get_args(self, fields):
-        """Return list of C argument into, one for each field.
+        """Return list of C argument info, one for each field.
 
         Argument info is 3-tuple of a C type, variable name, and flag
         that is true if type can be NULL.
