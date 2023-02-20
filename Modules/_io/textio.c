@@ -19,9 +19,9 @@
 /*[clinic input]
 module _io
 class _io.IncrementalNewlineDecoder "nldecoder_object *" "&PyIncrementalNewlineDecoder_Type"
-class _io.TextIOWrapper "textio *" "&TextIOWrapper_Type"
+class _io.TextIOWrapper "textio *" "clinic_state()->TextIOWrapper_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ed072384f8aada2c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d3f032e90f74c8f2]*/
 
 /* TextIOBase */
 
@@ -682,6 +682,8 @@ typedef struct
 
     PyObject *weakreflist;
     PyObject *dict;
+
+    _PyIO_State *state;
 } textio;
 
 static void
@@ -1175,15 +1177,16 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Finished sorting out the codec details */
     Py_CLEAR(codec_info);
 
-    if (Py_IS_TYPE(buffer, &PyBufferedReader_Type) ||
-        Py_IS_TYPE(buffer, &PyBufferedWriter_Type) ||
-        Py_IS_TYPE(buffer, &PyBufferedRandom_Type))
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (Py_IS_TYPE(buffer, state->PyBufferedReader_Type) ||
+        Py_IS_TYPE(buffer, state->PyBufferedWriter_Type) ||
+        Py_IS_TYPE(buffer, state->PyBufferedRandom_Type))
     {
         if (_PyObject_LookupAttr(buffer, &_Py_ID(raw), &raw) < 0)
             goto error;
         /* Cache the raw FileIO object to speed up 'closed' checks */
         if (raw != NULL) {
-            if (Py_IS_TYPE(raw, &PyFileIO_Type))
+            if (Py_IS_TYPE(raw, state->PyFileIO_Type))
                 self->raw = raw;
             else
                 Py_DECREF(raw);
@@ -1211,6 +1214,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         goto error;
     }
 
+    self->state = state;
     self->ok = 1;
     return 0;
 
@@ -1387,6 +1391,7 @@ textiowrapper_clear(textio *self)
 static void
 textiowrapper_dealloc(textio *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
@@ -1395,12 +1400,14 @@ textiowrapper_dealloc(textio *self)
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     textiowrapper_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static int
 textiowrapper_traverse(textio *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->buffer);
     Py_VISIT(self->encoding);
     Py_VISIT(self->encoder);
@@ -1424,7 +1431,7 @@ textiowrapper_closed_get(textio *self, void *context);
     do { \
         int r; \
         PyObject *_res; \
-        if (Py_IS_TYPE(self, &PyTextIOWrapper_Type)) { \
+        if (Py_IS_TYPE(self, self->state->PyTextIOWrapper_Type)) { \
             if (self->raw != NULL) \
                 r = _PyFileIO_closed(self->raw); \
             else { \
@@ -3053,7 +3060,7 @@ textiowrapper_iternext(textio *self)
     CHECK_ATTACHED(self);
 
     self->telling = 0;
-    if (Py_IS_TYPE(self, &PyTextIOWrapper_Type)) {
+    if (Py_IS_TYPE(self, self->state->PyTextIOWrapper_Type)) {
         /* Skip method call overhead for speed */
         line = _textiowrapper_readline(self, -1);
     }
@@ -3145,7 +3152,9 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
     return 0;
 }
 
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/textio.c.h"
+#undef clinic_state
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
     _IO_INCREMENTALNEWLINEDECODER_DECODE_METHODDEF
@@ -3229,6 +3238,8 @@ static PyMemberDef textiowrapper_members[] = {
     {"line_buffering", T_BOOL, offsetof(textio, line_buffering), READONLY},
     {"write_through", T_BOOL, offsetof(textio, write_through), READONLY},
     {"_finalizing", T_BOOL, offsetof(textio, finalizing), 0},
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(textio, weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(textio, dict), READONLY},
     {NULL}
 };
 
@@ -3244,54 +3255,24 @@ static PyGetSetDef textiowrapper_getset[] = {
     {NULL}
 };
 
-PyTypeObject PyTextIOWrapper_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.TextIOWrapper",        /*tp_name*/
-    sizeof(textio), /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    (destructor)textiowrapper_dealloc, /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tps_etattr*/
-    0,                          /*tp_as_async*/
-    (reprfunc)textiowrapper_repr,/*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
-    _io_TextIOWrapper___init____doc__, /* tp_doc */
-    (traverseproc)textiowrapper_traverse, /* tp_traverse */
-    (inquiry)textiowrapper_clear, /* tp_clear */
-    0,                          /* tp_richcompare */
-    offsetof(textio, weakreflist), /*tp_weaklistoffset*/
-    0,                          /* tp_iter */
-    (iternextfunc)textiowrapper_iternext, /* tp_iternext */
-    textiowrapper_methods,      /* tp_methods */
-    textiowrapper_members,      /* tp_members */
-    textiowrapper_getset,       /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    offsetof(textio, dict), /*tp_dictoffset*/
-    _io_TextIOWrapper___init__, /* tp_init */
-    0,                          /* tp_alloc */
-    PyType_GenericNew,          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+PyType_Slot textiowrapper_slots[] = {
+    {Py_tp_dealloc, textiowrapper_dealloc},
+    {Py_tp_repr, textiowrapper_repr},
+    {Py_tp_doc, (void *)_io_TextIOWrapper___init____doc__},
+    {Py_tp_traverse, textiowrapper_traverse},
+    {Py_tp_clear, textiowrapper_clear},
+    {Py_tp_iternext, textiowrapper_iternext},
+    {Py_tp_methods, textiowrapper_methods},
+    {Py_tp_members, textiowrapper_members},
+    {Py_tp_getset, textiowrapper_getset},
+    {Py_tp_init, _io_TextIOWrapper___init__},
+    {0, NULL},
+};
+
+PyType_Spec textiowrapper_spec = {
+    .name = "_io.TextIOWrapper",
+    .basicsize = sizeof(textio),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = textiowrapper_slots,
 };
