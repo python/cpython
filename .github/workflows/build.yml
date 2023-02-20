@@ -154,15 +154,25 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
+      HOMEBREW_NO_ANALYTICS: 1
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v3
-    - name: Prepare homebrew environment variables
+    - name: Install Homebrew dependencies
+      run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
+    - name: Prepare Homebrew environment variables
       run: |
-        echo "LDFLAGS=-L$(brew --prefix tcl-tk)/lib" >> $GITHUB_ENV
+        echo "CFLAGS=-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix gdbm)/lib -I$(brew --prefix xz)/lib" >> $GITHUB_ENV
         echo "PKG_CONFIG_PATH=$(brew --prefix openssl@1.1)/lib/pkgconfig:$(brew --prefix tcl-tk)/lib/pkgconfig" >> $GITHUB_ENV
     - name: Configure CPython
-      run: ./configure --with-pydebug --prefix=/opt/python-dev
+      run: |
+        ./configure \
+          --with-pydebug \
+          --prefix=/opt/python-dev \
+          --with-openssl="$(brew --prefix openssl@1.1)"
     - name: Build CPython
       run: make -j4
     - name: Display build info
