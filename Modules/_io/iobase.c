@@ -248,7 +248,7 @@ _io__IOBase_close_impl(PyObject *self)
 
 /* Finalization and garbage collection support */
 
-static void
+void
 iobase_finalize(PyObject *self)
 {
     PyObject *res;
@@ -300,22 +300,6 @@ iobase_finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-int
-_PyIOBase_finalize(PyObject *self)
-{
-    int is_zombie;
-
-    /* If _PyIOBase_finalize() is called from a destructor, we need to
-       resurrect the object as calling close() can invoke arbitrary code. */
-    is_zombie = (Py_REFCNT(self) == 0);
-    if (is_zombie)
-        return PyObject_CallFinalizerFromDealloc(self);
-    else {
-        PyObject_CallFinalizer(self);
-        return 0;
-    }
-}
-
 static int
 iobase_traverse(iobase *self, visitproc visit, void *arg)
 {
@@ -336,19 +320,6 @@ iobase_clear(iobase *self)
 static void
 iobase_dealloc(iobase *self)
 {
-    /* NOTE: since IOBaseObject has its own dict, Python-defined attributes
-       are still available here for close() to use.
-       However, if the derived class declares a __slots__, those slots are
-       already gone.
-    */
-    if (_PyIOBase_finalize((PyObject *) self) < 0) {
-        /* When called from a heap type's dealloc, the type will be
-           decref'ed on return (see e.g. subtype_dealloc in typeobject.c). */
-        if (_PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE)) {
-            Py_INCREF(Py_TYPE(self));
-        }
-        return;
-    }
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
