@@ -17,11 +17,11 @@ def parse(text, anon_name):
             yield result
 
 
-DELIMITER = textwrap.dedent(rf'''
+DELIMITER = textwrap.dedent(r'''
     (
         (?:
             [^'"()\[\]{};]*
-            {_ind(STRING_LITERAL, 3)}
+            %s
         }*
         [^'"()\[\]{};]+
      )?  # <before>
@@ -34,7 +34,7 @@ DELIMITER = textwrap.dedent(rf'''
             [)\]};]
          )  # <close>
      )?
-    ''')
+    ''' % _ind(STRING_LITERAL, 3))
 DELIMITER_RE = re.compile(DELIMITER, re.VERBOSE)
 
 _HANDLERS = {
