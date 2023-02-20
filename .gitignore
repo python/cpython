@@ -1,3 +1,9 @@
+##########################################################################
+# Added by this fork repo:
+#    https://github.com/python-docs-101/Python-Documentation-Theme-Fork
+##########################################################################
+.config/*
+
 #####
 # First, rules intended to apply in all subdirectories.
 # These contain no slash, or only a trailing slash.
