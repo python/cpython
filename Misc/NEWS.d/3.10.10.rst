@@ -1,0 +1,400 @@
+.. date: 2023-01-30-08-59-47
+.. gh-issue: 101400
+.. nonce: Di_ZFm
+.. release date: 2023-02-07
+.. section: Core and Builtins
+
+Fix wrong lineno in exception message on :keyword:`continue` or
+:keyword:`break` which are not in a loop. Patch by Dong-hee Na.
+
+..
+
+.. date: 2023-01-28-20-31-42
+.. gh-issue: 101372
+.. nonce: 8BcpCC
+.. section: Core and Builtins
+
+Fix :func:`~unicodedata.is_normalized` to properly handle the UCD 3.2.0
+cases. Patch by Dong-hee Na.
+
+..
+
+.. date: 2023-01-15-03-26-04
+.. gh-issue: 101046
+.. nonce: g2CM4S
+.. section: Core and Builtins
+
+Fix a possible memory leak in the parser when raising :exc:`MemoryError`.
+Patch by Pablo Galindo
+
+..
+
+.. date: 2023-01-11-22-52-19
+.. gh-issue: 100942
+.. nonce: ontOy_
+.. section: Core and Builtins
+
+Fixed segfault in property.getter/setter/deleter that occurred when a
+property subclass overrode the ``__new__`` method to return a non-property
+instance.
+
+..
+
+.. date: 2023-01-10-14-11-17
+.. gh-issue: 100892
+.. nonce: qfBVYI
+.. section: Core and Builtins
+
+Fix race while iterating over thread states in clearing
+:class:`threading.local`. Patch by Kumar Aditya.
+
+..
+
+.. date: 2023-01-06-02-02-11
+.. gh-issue: 100776
+.. nonce: pP8xux
+.. section: Core and Builtins
+
+Fix misleading default value in :func:`input`'s ``__text_signature__``.
+
+..
+
+.. date: 2022-12-20-16-14-19
+.. gh-issue: 100374
+.. nonce: YRrVHT
+.. section: Core and Builtins
+
+Fix incorrect result and delay in :func:`socket.getfqdn`. Patch by Dominic
+Socular.
+
+..
+
+.. date: 2022-12-06-22-24-01
+.. gh-issue: 100050
+.. nonce: lcrPqQ
+.. section: Core and Builtins
+
+Honor existing errors obtained when searching for mismatching parentheses in
+the tokenizer. Patch by Pablo Galindo
+
+..
+
+.. bpo: 32782
+.. date: 2018-02-06-23-21-13
+.. nonce: EJVSfR
+.. section: Core and Builtins
+
+``ctypes`` arrays of length 0 now report a correct itemsize when a
+``memoryview`` is constructed from them, rather than always giving a value
+of 0.
+
+..
+
+.. date: 2023-01-21-16-50-22
+.. gh-issue: 100795
+.. nonce: NPMZf7
+.. section: Library
+
+Avoid potential unexpected ``freeaddrinfo`` call (double free) in
+:mod:`socket` when when a libc ``getaddrinfo()`` implementation leaves
+garbage in an output pointer when returning an error. Original patch by
+Sergey G. Brester.
+
+..
+
+.. date: 2023-01-20-10-46-59
+.. gh-issue: 101143
+.. nonce: hJo8hu
+.. section: Library
+
+Remove unused references to :class:`~asyncio.TimerHandle` in
+``asyncio.base_events.BaseEventLoop._add_callback``.
+
+..
+
+.. date: 2023-01-18-17-58-50
+.. gh-issue: 101144
+.. nonce: FHd8Un
+.. section: Library
+
+Make :func:`zipfile.Path.open` and :func:`zipfile.Path.read_text` also
+accept ``encoding`` as a positional argument. This was the behavior in
+Python 3.9 and earlier. Earlier 3.10 versions had a regression where
+supplying it as a positional argument would lead to a :exc:`TypeError`.
+
+..
+
+.. date: 2023-01-12-01-18-13
+.. gh-issue: 100573
+.. nonce: KDskqo
+.. section: Library
+
+Fix a Windows :mod:`asyncio` bug with named pipes where a client doing
+``os.stat()`` on the pipe would cause an error in the server that disabled
+serving future requests.
+
+..
+
+.. date: 2023-01-04-22-10-31
+.. gh-issue: 90104
+.. nonce: yZk5EX
+.. section: Library
+
+Avoid RecursionError on ``repr`` if a dataclass field definition has a
+cyclic reference.
+
+..
+
+.. date: 2023-01-04-12-58-59
+.. gh-issue: 100689
+.. nonce: Ce0ITG
+.. section: Library
+
+Fix crash in :mod:`pyexpat` by statically allocating ``PyExpat_CAPI``
+capsule.
+
+..
+
+.. date: 2023-01-04-09-53-38
+.. gh-issue: 100740
+.. nonce: -j5UjI
+.. section: Library
+
+Fix ``unittest.mock.Mock`` not respecting the spec for attribute names
+prefixed with ``assert``.
+
+..
+
+.. date: 2022-12-30-07-49-08
+.. gh-issue: 86508
+.. nonce: nGZDzC
+.. section: Library
+
+Fix :func:`asyncio.open_connection` to skip binding to local addresses of
+different family. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-12-24-08-42-05
+.. gh-issue: 100287
+.. nonce: n0oEuG
+.. section: Library
+
+Fix the interaction of :func:`unittest.mock.seal` with
+:class:`unittest.mock.AsyncMock`.
+
+..
+
+.. date: 2022-12-23-21-02-43
+.. gh-issue: 100474
+.. nonce: gppA4U
+.. section: Library
+
+:mod:`http.server` now checks that an index page is actually a regular file
+before trying to serve it.  This avoids issues with directories named
+``index.html``.
+
+..
+
+.. date: 2022-12-21-18-29-24
+.. gh-issue: 100160
+.. nonce: isBmL5
+.. section: Library
+
+Remove any deprecation warnings in :func:`asyncio.get_event_loop`. They are
+deferred to Python 3.12.
+
+..
+
+.. date: 2022-12-11-14-38-59
+.. gh-issue: 99952
+.. nonce: IYGLzr
+.. section: Library
+
+Fix a reference undercounting issue in :class:`ctypes.Structure` with
+``from_param()`` results larger than a C pointer.
+
+..
+
+.. date: 2022-12-03-20-06-16
+.. gh-issue: 98778
+.. nonce: t5U9uc
+.. section: Library
+
+Update :exc:`~urllib.error.HTTPError` to be initialized properly, even if
+the ``fp`` is ``None``. Patch by Dong-hee Na.
+
+..
+
+.. date: 2022-11-21-16-24-01
+.. gh-issue: 83035
+.. nonce: qZIujU
+.. section: Library
+
+Fix :func:`inspect.getsource` handling of decorator calls with nested
+parentheses.
+
+..
+
+.. date: 2022-11-08-15-54-43
+.. gh-issue: 99240
+.. nonce: MhYwcz
+.. section: Library
+
+Fix double-free bug in Argument Clinic ``str_converter`` by extracting
+memory clean up to a new ``post_parsing`` section.
+
+..
+
+.. date: 2022-10-28-07-24-34
+.. gh-issue: 85267
+.. nonce: xUy_Wm
+.. section: Library
+
+Several improvements to :func:`inspect.signature`'s handling of
+``__text_signature``. - Fixes a case where :func:`inspect.signature` dropped
+parameters - Fixes a case where :func:`inspect.signature` raised
+:exc:`tokenize.TokenError` - Allows :func:`inspect.signature` to understand
+defaults involving binary operations of constants -
+:func:`inspect.signature` is documented as only raising :exc:`TypeError` or
+:exc:`ValueError`, but sometimes raised :exc:`RuntimeError`. These cases now
+raise :exc:`ValueError` - Removed a dead code path
+
+..
+
+.. date: 2022-08-23-03-13-18
+.. gh-issue: 96192
+.. nonce: TJywOF
+.. section: Library
+
+Fix handling of ``bytes`` :term:`path-like objects <path-like object>` in
+:func:`os.ismount()`.
+
+..
+
+.. bpo: 44817
+.. date: 2021-08-03-05-31-00
+.. nonce: wOW_Qn
+.. section: Library
+
+Ignore WinError 53 (ERROR_BAD_NETPATH), 65 (ERROR_NETWORK_ACCESS_DENIED) and
+161 (ERROR_BAD_PATHNAME) when using ntpath.realpath().
+
+..
+
+.. bpo: 40447
+.. date: 2020-05-03-12-55-55
+.. nonce: oKR0Lj
+.. section: Library
+
+Accept :class:`os.PathLike` (such as :class:`pathlib.Path`) in the
+``stripdir`` arguments of :meth:`compileall.compile_file` and
+:meth:`compileall.compile_dir`.
+
+..
+
+.. bpo: 36880
+.. date: 2019-05-13-11-37-30
+.. nonce: ZgBgH0
+.. section: Library
+
+Fix a reference counting issue when a :mod:`ctypes` callback with return
+type :class:`~ctypes.py_object` returns ``None``, which could cause crashes.
+
+..
+
+.. date: 2022-12-30-00-42-23
+.. gh-issue: 100616
+.. nonce: eu80ij
+.. section: Documentation
+
+Document existing ``attr`` parameter to :func:`curses.window.vline` function
+in :mod:`curses`.
+
+..
+
+.. date: 2022-12-23-21-42-26
+.. gh-issue: 100472
+.. nonce: NNixfO
+.. section: Documentation
+
+Remove claim in documentation that the ``stripdir``, ``prependdir`` and
+``limit_sl_dest`` parameters of :func:`compileall.compile_dir` and
+:func:`compileall.compile_file` could be :class:`bytes`.
+
+..
+
+.. date: 2023-02-04-17-24-33
+.. gh-issue: 101334
+.. nonce: _yOqwg
+.. section: Tests
+
+``test_tarfile`` has been updated to pass when run as a high UID.
+
+..
+
+.. date: 2022-08-22-15-49-14
+.. gh-issue: 96002
+.. nonce: 4UE9UE
+.. section: Tests
+
+Add functional test for Argument Clinic.
+
+..
+
+.. date: 2023-02-02-23-43-46
+.. gh-issue: 101522
+.. nonce: lnUDta
+.. section: Build
+
+Allow overriding Windows dependencies versions and paths using MSBuild
+properties.
+
+..
+
+.. date: 2023-01-17-18-17-58
+.. gh-issue: 82052
+.. nonce: mWyysT
+.. section: Windows
+
+Fixed an issue where writing more than 32K of Unicode output to the console
+screen in one go can result in mojibake.
+
+..
+
+.. date: 2023-01-09-23-03-57
+.. gh-issue: 100180
+.. nonce: b5phrg
+.. section: Windows
+
+Update Windows installer to OpenSSL 1.1.1s
+
+..
+
+.. bpo: 43984
+.. date: 2021-05-02-15-29-33
+.. nonce: U92jiv
+.. section: Windows
+
+:meth:`winreg.SetValueEx` now leaves the target value untouched in the case
+of conversion errors. Previously, ``-1`` would be written in case of such
+errors.
+
+..
+
+.. date: 2023-01-09-22-04-21
+.. gh-issue: 100180
+.. nonce: WVhCny
+.. section: macOS
+
+Update macOS installer to OpenSSL 1.1.1s
+
+..
+
+.. date: 2022-11-30-16-39-22
+.. gh-issue: 99240
+.. nonce: 67nAX-
+.. section: C API
+
+In argument parsing, after deallocating newly allocated memory, reset its
+pointer to NULL.

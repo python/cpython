@@ -1,1 +1,0 @@
-Fix misleading default value in :func:`input`'s ``__text_signature__``.
