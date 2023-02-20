@@ -3119,6 +3119,8 @@ class TestSlots(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     "cannot create weak reference"):
             weakref.ref(a)
+        with self.assertRaises(AttributeError):
+            a.__weakref__
 
     def test_slots_weakref(self):
         @dataclass(slots=True, weakref_slot=True)
@@ -3127,7 +3129,9 @@ class TestSlots(unittest.TestCase):
 
         self.assertIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+
+        self.assertIs(a.__weakref__, a_ref)
 
     def test_slots_weakref_base_str(self):
         class Base:
@@ -3193,7 +3197,8 @@ class TestSlots(unittest.TestCase):
         self.assertIn("__weakref__", Base.__slots__)
         self.assertNotIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+        self.assertIs(a.__weakref__, a_ref)
 
     def test_weakref_slot_subclass_no_weakref_slot(self):
         @dataclass(slots=True, weakref_slot=True)
@@ -3209,7 +3214,8 @@ class TestSlots(unittest.TestCase):
         self.assertIn("__weakref__", Base.__slots__)
         self.assertNotIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+        self.assertIs(a.__weakref__, a_ref)
 
     def test_weakref_slot_normal_base_weakref_slot(self):
         class Base:
@@ -3224,7 +3230,8 @@ class TestSlots(unittest.TestCase):
         self.assertIn("__weakref__", Base.__slots__)
         self.assertNotIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+        self.assertIs(a.__weakref__, a_ref)
 
 
 class TestDescriptors(unittest.TestCase):
