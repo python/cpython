@@ -245,7 +245,7 @@ jobs:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
-      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib:${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib64
     steps:
     - uses: actions/checkout@v3
     - name: Register gcc problem matcher
