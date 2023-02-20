@@ -3009,6 +3009,7 @@ class EncodedMetadataTests(unittest.TestCase):
         for name in self.file_names:
             self.assertIn(name, listing)
 
+
 class StripExtraTests(unittest.TestCase):
     # Note: all of the "z" characters are technically invalid, but up to 3 bytes
     # at the end of the extra will be passed through as they are too short to
@@ -3045,7 +3046,6 @@ class StripExtraTests(unittest.TestCase):
         s = struct.Struct("<HH")
         a = s.pack(1, 1) + b"a"  # 1=zip64 extra signature
         b = s.pack(2, 2) + b"bb"
-        c = s.pack(3, 3) + b"ccc"
 
         self.assertEqual(b"", zipfile._strip_extra(a+a, (1,)))
         self.assertEqual(b"", zipfile._strip_extra(a+a+a, (1,)))
@@ -3061,6 +3061,7 @@ class StripExtraTests(unittest.TestCase):
         self.assertEqual(b"z", zipfile._strip_extra(b"z", (1,)))
         self.assertEqual(b"zz", zipfile._strip_extra(b"zz", (1,)))
         self.assertEqual(b"zzz", zipfile._strip_extra(b"zzz", (1,)))
+
 
 if __name__ == "__main__":
     unittest.main()
