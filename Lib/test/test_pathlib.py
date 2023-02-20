@@ -116,8 +116,14 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['//?/c:/a'],             ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'a']))
         check(['//?/c:/a', '/b'],       ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'b']))
         # Extended UNC paths (format is "\\?\UNC\server\share").
+        check(['//?'],                  ('\\\\?', '', ['\\\\?']))
+        check(['//?/'],                 ('\\\\?\\', '', ['\\\\?\\']))
+        check(['//?/UNC'],              ('\\\\?\\UNC', '', ['\\\\?\\UNC']))
         check(['//?/UNC/'],             ('\\\\?\\UNC\\', '', ['\\\\?\\UNC\\']))
+        check(['//?/UNC/b'],            ('\\\\?\\UNC\\b', '', ['\\\\?\\UNC\\b']))
+        check(['//?/UNC/b/'],           ('\\\\?\\UNC\\b\\', '', ['\\\\?\\UNC\\b\\']))
         check(['//?/UNC/b/c'],          ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\']))
+        check(['//?/UNC/b/c/'],         ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\']))
         check(['//?/UNC/b/c/d'],        ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\', 'd']))
         # UNC device paths
         check(['//./BootPartition/'],   ('\\\\.\\BootPartition', '\\', ['\\\\.\\BootPartition\\']))
