@@ -1,2 +1,0 @@
-`fileinput.hook_compressed` doesn't set the given `None` `encoding` to
-`locale` if the given `mode` contains `b`.
