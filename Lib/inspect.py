@@ -410,12 +410,19 @@ def markcoroutinefunction(func):
     func._is_coroutine_marker = _is_coroutine_marker
     return func
 
+_agen_methods = ("__anext__", "aclose", "asend", "athrow")
+
 def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
     Coroutine functions are normally defined with "async def" syntax, but may
     be marked via markcoroutinefunction.
     """
+    #check if obj is async gen method and returns awaitable
+    is_valid = isbuiltin(obj) or ismethodwrapper(obj)
+    if is_valid and isasyncgen(obj.__self__) and obj.__name__ in _agen_methods:
+        return True
+    #now regular case
     return _has_code_flag(obj, CO_COROUTINE) or _has_coroutine_mark(obj)
 
 def isasyncgenfunction(obj):
