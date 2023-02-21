@@ -700,10 +700,6 @@ Removed
   *context* parameter instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
-* Remove ``co_lnotab`` attribute from code objects per :pep:`626`:
-  use ``co_lines`` method instead.
-  (Contributed by Nikita Sobolev in :gh:`101865`.)
-
 
 Porting to Python 3.12
 ======================
