@@ -674,7 +674,7 @@ input, output, and error streams.
       This method is a WSGI application to generate an error page for the user.  It is
       only invoked if an error occurs before headers are sent to the client.
 
-      This method can access the current error information using ``sys.exc_info()``,
+      This method can access the current error using ``sys.exception()``,
       and should pass that information to *start_response* when calling it (as
       described in the "Error Handling" section of :pep:`3333`).
 
