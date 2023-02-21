@@ -57,8 +57,8 @@ The :mod:`queue` module defines the following classes and exceptions:
    *maxsize* is less than or equal to zero, the queue size is infinite.
 
    The lowest valued entries are retrieved first (the lowest valued entry is the
-   one returned by ``sorted(list(entries))[0]``).  A typical pattern for entries
-   is a tuple in the form: ``(priority_number, data)``.
+   one that would be returned by ``min(entries)``). A typical pattern for
+   entries is a tuple in the form: ``(priority_number, data)``.
 
    If the *data* elements are not comparable, the data can be wrapped in a class
    that ignores the data item and only compares the priority number::
