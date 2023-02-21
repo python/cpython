@@ -585,6 +585,7 @@ LIBHACL_HEADERS= \
                 Modules/_hacl/include/krml/internal/target.h \
                 Modules/_hacl/include/krml/lowstar_endianness.h \
                 Modules/_hacl/include/krml/types.h \
+		Modules/_hacl/Hacl_Streaming_Types.h \
                 Modules/_hacl/python_hacl_namespaces.h
 
 LIBHACL_SHA2_HEADERS= \
