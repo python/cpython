@@ -3272,7 +3272,7 @@ dummy_func(
         }
 
         inst(EXTENDED_ARG, (--)) {
-            assert(oparg);
+            // assert(oparg);
             assert(cframe.use_tracing == 0);
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);
@@ -3284,6 +3284,107 @@ dummy_func(
             Py_UNREACHABLE();
         }
 
+        // Tier 2 instructions
+        inst(BB_BRANCH, (--)) {
+            _Py_CODEUNIT *t2_nextinstr = NULL;
+            _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
+            _Py_CODEUNIT *tier1_fallback = NULL;
+            if (bb_test) {
+                // Rewrite self
+                _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_UNSET);
+                // Generate consequent.
+                t2_nextinstr = _PyTier2_GenerateNextBB(
+                    frame, cache->bb_id, 0, &tier1_fallback);
+                if (t2_nextinstr == NULL) {
+                    // Fall back to tier 1.
+                    next_instr = tier1_fallback;
+                }
+            }
+            else {
+                // Rewrite self
+                _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_SET);
+                // Generate predicate.
+                t2_nextinstr = _PyTier2_GenerateNextBB(
+                    frame, cache->bb_id, oparg, &tier1_fallback);
+                if (t2_nextinstr == NULL) {
+                    // Fall back to tier 1.
+                    next_instr = tier1_fallback + oparg;
+                }
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_BB_BRANCH);
+            // Their addresses should be the same. Because
+            // The first BB should be generated right after the previous one.
+            if (next_instr != t2_nextinstr) {
+                fprintf(stderr, "next: %p, t2 next: %p\n", next_instr, t2_nextinstr);
+            }
+            assert(next_instr == t2_nextinstr);
+            next_instr = t2_nextinstr;
+        }
+
+        inst(BB_BRANCH_IF_FLAG_UNSET, (--)) {
+            if (!bb_test) {
+                _Py_CODEUNIT *t2_nextinstr = NULL;
+                _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
+                _Py_CODEUNIT *tier1_fallback = NULL;
+
+                // @TODO: Rewrite TEST Instruction to a JUMP above.
+
+                t2_nextinstr = _PyTier2_GenerateNextBB(
+                    frame, cache->bb_id, oparg, &tier1_fallback);
+                if (t2_nextinstr == NULL) {
+                    // Fall back to tier 1.
+                    next_instr = tier1_fallback;
+                }
+                next_instr = t2_nextinstr;
+            }
+            else {
+                JUMPBY(INLINE_CACHE_ENTRIES_BB_BRANCH);
+            }
+        }
+
+        inst(BB_BRANCH_IF_FLAG_SET, (--)) {
+            if (bb_test) {
+                _Py_CODEUNIT *t2_nextinstr = NULL;
+                _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
+                _Py_CODEUNIT *tier1_fallback = NULL;
+
+                // @TODO: Rewrite TEST Instruction to a JUMP above.
+
+                t2_nextinstr = _PyTier2_GenerateNextBB(
+                    frame, cache->bb_id, oparg, &tier1_fallback);
+                if (t2_nextinstr == NULL) {
+                    // Fall back to tier 1.
+                    next_instr = tier1_fallback;
+                }
+                next_instr = t2_nextinstr;
+            }
+            else {
+                JUMPBY(INLINE_CACHE_ENTRIES_BB_BRANCH);
+            }
+        }
+
+        inst(BB_JUMP_BACKWARD_LAZY, (--)) {
+            _Py_CODEUNIT *t2_nextinstr = NULL;
+            _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
+            _Py_CODEUNIT *tier1_fallback = NULL;
+
+            t2_nextinstr = _PyTier2_LocateJumpBackwardsBB(
+                frame, cache->bb_id, oparg, &tier1_fallback);
+            if (t2_nextinstr == NULL) {
+                // Fall back to tier 1.
+                next_instr = tier1_fallback;
+            }
+            // Rewrite self
+            _Py_CODEUNIT *curr = next_instr - 1;
+            _Py_CODEUNIT *prev = curr - 1;
+            assert(_Py_OPCODE(*prev) == EXTENDED_ARG);
+            int op_arg = (int)(t2_nextinstr - next_instr);
+            assert(op_arg <= INT16_MAX);
+            _py_set_opcode(curr, JUMP_BACKWARD);
+            prev->oparg = (op_arg >> 8) & 0xFF;
+            curr->oparg = op_arg & 0xFF;
+            next_instr = t2_nextinstr;
+        }
 
 
 // END BYTECODES //

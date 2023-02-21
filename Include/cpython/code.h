@@ -65,6 +65,7 @@ typedef struct _PyTier2BBMetadata {
     int type_context_len;
     PyTypeObject **type_context;
     _Py_CODEUNIT *tier2_start;
+    // Note, this is the first tier 1 instruction to execute AFTER the BB ends.
     _Py_CODEUNIT *tier1_end;
     // Type stack state
     PyTypeObject **types_stack;
@@ -85,7 +86,7 @@ typedef struct _PyTier2BBSpace  {
 // Tier 2 info stored in the code object. Lazily allocated.
 typedef struct _PyTier2Info {
     /* the tier 2 basic block to execute (if any) */
-    _Py_CODEUNIT *_entry_bb;
+    _PyTier2BBMetadata *_entry_bb;
     _PyTier2BBSpace *_bb_space;
     // Keeps track of offset of jump targets (in number of codeunits)
     // from co_code_adaptive.

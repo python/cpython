@@ -188,6 +188,10 @@ extern const int _Py_MacroOpUOpCount[] = {
 [SWAP] = 1,
 [EXTENDED_ARG] = 1,
 [CACHE] = 1,
+[BB_BRANCH] = 1,
+[BB_BRANCH_IF_FLAG_UNSET] = 1,
+[BB_BRANCH_IF_FLAG_SET] = 1,
+[BB_JUMP_BACKWARD_LAZY] = 1,
 };
 
 extern const int _Py_MacroOpToUOp[][2] = {

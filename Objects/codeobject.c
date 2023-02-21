@@ -843,7 +843,7 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-    assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
+    // assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     if (co->_co_linearray) {
         return _PyCode_LineNumberFromArray(co, addrq / sizeof(_Py_CODEUNIT));
     }
@@ -1676,11 +1676,12 @@ code_tier2_fini(PyCodeObject *co)
     t2_info->_entry_bb = NULL;
     if (t2_info->_bb_space != NULL) {
         // Traverse the linked list
-        for (_PyTier2BBSpace *curr = t2_info->_bb_space; curr != NULL;) {
-            _PyTier2BBSpace *prev = curr;
-            curr = curr->next;
-            PyMem_Free(prev);
-        }
+        //for (_PyTier2BBSpace *curr = t2_info->_bb_space; curr != NULL;) {
+        //    _PyTier2BBSpace *prev = curr;
+        //    curr = curr->next;
+        //    PyMem_Free(prev);
+        //}
+        PyMem_Free(t2_info->_bb_space);
         t2_info->_bb_space = NULL;
     }
     

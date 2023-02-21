@@ -368,6 +368,14 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case CACHE:
             return 0;
+        case BB_BRANCH:
+            return 0;
+        case BB_BRANCH_IF_FLAG_UNSET:
+            return 0;
+        case BB_BRANCH_IF_FLAG_SET:
+            return 0;
+        case BB_JUMP_BACKWARD_LAZY:
+            return 0;
         default:
             return -1;
     }
@@ -740,6 +748,14 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case CACHE:
             return 0;
+        case BB_BRANCH:
+            return 0;
+        case BB_BRANCH_IF_FLAG_UNSET:
+            return 0;
+        case BB_BRANCH_IF_FLAG_SET:
+            return 0;
+        case BB_JUMP_BACKWARD_LAZY:
+            return 0;
         default:
             return -1;
     }
@@ -940,5 +956,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [SWAP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [EXTENDED_ARG] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [CACHE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [BB_BRANCH] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BB_BRANCH_IF_FLAG_UNSET] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BB_BRANCH_IF_FLAG_SET] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BB_JUMP_BACKWARD_LAZY] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
 };
 #endif

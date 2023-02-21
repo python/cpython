@@ -120,7 +120,12 @@ _PyFrame_Initialize(
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     // @TODO CHANGE ME
-    frame->prev_instr = _PyCode_CODE(code) - 1;
+    if (code->_tier2_info != NULL) {
+        frame->prev_instr = code->_tier2_info->_entry_bb->tier2_start - 1;
+    }
+    else {
+        frame->prev_instr = _PyCode_CODE(code) - 1;
+    }
     frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 

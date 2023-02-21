@@ -255,7 +255,15 @@ extern void _PyStaticCode_Fini(PyCodeObject *co);
 extern int _PyStaticCode_Init(PyCodeObject *co);
 
 /* Tier 2 interpreter */
-extern _Py_CODEUNIT *_PyCode_Tier2Warmup(struct _PyInterpreterFrame *, _Py_CODEUNIT *);
+extern _Py_CODEUNIT *_PyCode_Tier2Warmup(struct _PyInterpreterFrame *,
+    _Py_CODEUNIT *);
+extern _Py_CODEUNIT *_PyTier2_GenerateNextBB(
+    struct _PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
+    _Py_CODEUNIT **tier1_fallback);
+extern _Py_CODEUNIT *_PyTier2_LocateJumpBackwardsBB(
+    struct _PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
+    _Py_CODEUNIT **tier1_fallback);
+
 
 #ifdef Py_STATS
 
