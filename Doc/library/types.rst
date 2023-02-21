@@ -320,7 +320,7 @@ Standard names are defined for the following types:
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
-   The type of traceback objects such as found in ``sys.exc_info()[2]``.
+   The type of traceback objects such as found in ``sys.exception().__traceback__``.
 
    See :ref:`the language reference <traceback-objects>` for details of the
    available attributes and operations, and guidance on creating tracebacks
