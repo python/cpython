@@ -56,6 +56,7 @@ typedef struct {
     PyTypeObject *PyDateTime_DateTimeType;
     PyTypeObject *PyDateTime_DateType;
     PyTypeObject *PyDateTime_DeltaType;
+    PyTypeObject *PyDateTime_IsoCalendarDateType;
 } datetime_state;
 
 static datetime_state global_state;
@@ -66,7 +67,7 @@ static datetime_state global_state;
 module datetime
 class datetime.datetime "PyDateTime_DateTime *" "clinic_state()->PyDateTime_DateTimeType"
 class datetime.date "PyDateTime_Date *" "clinic_state()->PyDateTime_DateType"
-class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCalendarDateType"
+class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "clinic_state()->PyDateTime_IsoCalendarDateType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=36a187caa1dda205]*/
 
@@ -154,7 +155,6 @@ class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCa
 #define MONTH_IS_SANE(M) ((unsigned int)(M) - 1 < 12)
 
 /* Forward declarations. */
-static PyTypeObject PyDateTime_IsoCalendarDateType;
 static PyTypeObject PyDateTime_TimeType;
 static PyTypeObject PyDateTime_TZInfoType;
 static PyTypeObject PyDateTime_TimeZoneType;
@@ -3366,6 +3366,23 @@ iso_calendar_date_weekday(PyDateTime_IsoCalendarDate *self, void *unused)
     return Py_NewRef(weekday);
 }
 
+static int
+iso_calendar_date_traverse(PyDateTime_IsoCalendarDate *self, visitproc visit,
+                           void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static void
+iso_calendar_date_dealloc(PyDateTime_IsoCalendarDate *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
+}
+
 static PyGetSetDef iso_calendar_date_getset[] = {
     {"year",        (getter)iso_calendar_date_year},
     {"week",      (getter)iso_calendar_date_week},
@@ -3379,17 +3396,24 @@ static PyMethodDef iso_calendar_date_methods[] = {
     {NULL, NULL},
 };
 
-static PyTypeObject PyDateTime_IsoCalendarDateType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "datetime.IsoCalendarDate",
-    .tp_basicsize = sizeof(PyDateTime_IsoCalendarDate),
-    .tp_repr = (reprfunc) iso_calendar_date_repr,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = iso_calendar_date__doc__,
-    .tp_methods = iso_calendar_date_methods,
-    .tp_getset = iso_calendar_date_getset,
-    // .tp_base = &PyTuple_Type,  // filled in PyInit__datetime
-    .tp_new = iso_calendar_date_new,
+static PyType_Slot isocal_slots[] = {
+    {Py_tp_repr, iso_calendar_date_repr},
+    {Py_tp_doc, (void *)iso_calendar_date__doc__},
+    {Py_tp_methods, iso_calendar_date_methods},
+    {Py_tp_getset, iso_calendar_date_getset},
+    {Py_tp_new, iso_calendar_date_new},
+    {Py_tp_dealloc, iso_calendar_date_dealloc},
+    {Py_tp_traverse, iso_calendar_date_traverse},
+    {0, NULL},
+};
+
+static PyType_Spec isocal_spec = {
+    .name = "datetime.IsoCalendarDate",
+    .basicsize = sizeof(PyDateTime_IsoCalendarDate),
+    .flags = (Py_TPFLAGS_DEFAULT |
+              Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = isocal_slots,
 };
 
 /*[clinic input]
@@ -3439,7 +3463,8 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
         week = 0;
     }
 
-    PyObject* v = iso_calendar_date_new_impl(&PyDateTime_IsoCalendarDateType,
+    datetime_state *st = GLOBAL_STATE();
+    PyObject* v = iso_calendar_date_new_impl(st->PyDateTime_IsoCalendarDateType,
                     year, week + 1, day + 1);
     if (v == NULL) {
         return NULL;
@@ -6713,7 +6738,6 @@ _datetime_exec(PyObject *module)
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
-    PyDateTime_IsoCalendarDateType.tp_base = &PyTuple_Type;
     PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
 
     PyTypeObject *types[] = {
@@ -6728,10 +6752,8 @@ _datetime_exec(PyObject *module)
         }
     }
 
-    if (PyType_Ready(&PyDateTime_IsoCalendarDateType) < 0) {
-        return -1;
-    }
-
+    ADD_TYPE(module, st->PyDateTime_IsoCalendarDateType, &isocal_spec,
+             &PyTuple_Type);
     ADD_TYPE(module, st->PyDateTime_DeltaType, &delta_spec, NULL);
     ADD_TYPE(module, st->PyDateTime_DateType, &date_spec, NULL);
     ADD_TYPE(module, st->PyDateTime_DateTimeType, &datetime_spec,

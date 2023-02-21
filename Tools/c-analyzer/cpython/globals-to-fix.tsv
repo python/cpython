@@ -379,7 +379,6 @@ Modules/_ctypes/ctypes.h	-	_ctypes_ptrtype_cache	-
 Modules/_ctypes/ctypes.h	-	basespec_string	-
 Modules/_ctypes/stgdict.c	-	PyCStgDict_Type	-
 Modules/_cursesmodule.c	-	PyCursesWindow_Type	-
-Modules/_datetimemodule.c	-	PyDateTime_IsoCalendarDateType	-
 Modules/_datetimemodule.c	-	PyDateTime_TZInfoType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeZoneType	-
