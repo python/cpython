@@ -3717,7 +3717,7 @@ copying.
    is the nested list representation of the view. If ``view.ndim = 1``,
    this is equal to the number of elements in the view.
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.12
       If ``view.ndim == 0``, ``len(view)`` now raises :exc:`TypeError` instead of returning 1.
 
    The :class:`~memoryview.itemsize` attribute will give you the number of
