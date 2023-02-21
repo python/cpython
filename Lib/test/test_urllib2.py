@@ -1827,7 +1827,7 @@ class MiscTests(unittest.TestCase):
     def test_gh_98778(self):
         x = urllib.error.HTTPError("url", 405, "METHOD NOT ALLOWED", None, None)
         self.assertEqual(getattr(x, "__notes__", ()), ())
-        self.assertEqual(isinstance(x.fp.read(), bytes), True)
+        self.assertIsInstance(x.fp.read(), bytes)
 
     def test_parse_proxy(self):
         parse_proxy_test_cases = [
