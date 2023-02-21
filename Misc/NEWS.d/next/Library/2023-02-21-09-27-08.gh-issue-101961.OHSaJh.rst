@@ -1,2 +1,0 @@
-`fileinput.hook_compressed`  doesn't pass `encoding` if the given `mode`
-contains `b`.
