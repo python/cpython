@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_tkinter_tkapp_eval__doc__,
 "eval($self, script, /)\n"
 "--\n"
@@ -741,29 +747,29 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    interactive = _PyLong_AsInt(args[3]);
-    if (interactive == -1 && PyErr_Occurred()) {
+    interactive = PyObject_IsTrue(args[3]);
+    if (interactive < 0) {
         goto exit;
     }
     if (nargs < 5) {
         goto skip_optional;
     }
-    wantobjects = _PyLong_AsInt(args[4]);
-    if (wantobjects == -1 && PyErr_Occurred()) {
+    wantobjects = PyObject_IsTrue(args[4]);
+    if (wantobjects < 0) {
         goto exit;
     }
     if (nargs < 6) {
         goto skip_optional;
     }
-    wantTk = _PyLong_AsInt(args[5]);
-    if (wantTk == -1 && PyErr_Occurred()) {
+    wantTk = PyObject_IsTrue(args[5]);
+    if (wantTk < 0) {
         goto exit;
     }
     if (nargs < 7) {
         goto skip_optional;
     }
-    sync = _PyLong_AsInt(args[6]);
-    if (sync == -1 && PyErr_Occurred()) {
+    sync = PyObject_IsTrue(args[6]);
+    if (sync < 0) {
         goto exit;
     }
     if (nargs < 8) {
@@ -859,4 +865,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=b0667ac928eb0c28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a4e3bf8448604b5 input=a9049054013a1b77]*/

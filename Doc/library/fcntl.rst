@@ -18,6 +18,8 @@ interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.  For a
 complete description of these calls, see :manpage:`fcntl(2)` and
 :manpage:`ioctl(2)` Unix manual pages.
 
+.. include:: ../includes/wasm-notavail.rst
+
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
 ``sys.stdin.fileno()``, or an :class:`io.IOBase` object, such as ``sys.stdin``

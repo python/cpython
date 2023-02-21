@@ -27,6 +27,15 @@ The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
 extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
 
+.. seealso::
+
+   Module :mod:`faulthandler`
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout,
+      or on a user signal.
+
+   Module :mod:`traceback`
+      Standard interface to extract, format and print stack traces of Python programs.
+
 The debugger's prompt is ``(Pdb)``. Typical usage to run a program under control
 of the debugger is::
 

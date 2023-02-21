@@ -238,6 +238,12 @@ class ProcessTestCase(BaseTestCase):
                 input=None, universal_newlines=True)
         self.assertNotIn('XX', output)
 
+    def test_check_output_input_none_encoding_errors(self):
+        output = subprocess.check_output(
+                [sys.executable, "-c", "print('foo')"],
+                input=None, encoding='utf-8', errors='ignore')
+        self.assertIn('foo', output)
+
     def test_check_output_stdout_arg(self):
         # check_output() refuses to accept 'stdout' argument
         with self.assertRaises(ValueError) as c:
@@ -2826,7 +2832,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipIf(sys.platform.startswith("freebsd") and
                      os.stat("/dev").st_dev == os.stat("/dev/fd").st_dev,
-                     "Requires fdescfs mounted on /dev/fd on FreeBSD.")
+                     "Requires fdescfs mounted on /dev/fd on FreeBSD")
     def test_close_fds_when_max_fd_is_lowered(self):
         """Confirm that issue21618 is fixed (may fail under valgrind)."""
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
@@ -3203,7 +3209,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True, 0,
                         None, None, None, -1,
-                        None, "no vfork")
+                        None, True)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:

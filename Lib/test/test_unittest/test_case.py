@@ -307,23 +307,34 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         Foo('test').run()
 
     def test_deprecation_of_return_val_from_test(self):
-        # Issue 41322 - deprecate return of value!=None from a test
+        # Issue 41322 - deprecate return of value that is not None from a test
+        class Nothing:
+            def __eq__(self, o):
+                return o is None
         class Foo(unittest.TestCase):
             def test1(self):
                 return 1
             def test2(self):
                 yield 1
+            def test3(self):
+                return Nothing()
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test1').run()
-        self.assertIn('It is deprecated to return a value!=None', str(w.warning))
+        self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test2').run()
-        self.assertIn('It is deprecated to return a value!=None', str(w.warning))
+        self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test2', str(w.warning))
+        self.assertEqual(w.filename, __file__)
+
+        with self.assertWarns(DeprecationWarning) as w:
+            Foo('test3').run()
+        self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
+        self.assertIn('test3', str(w.warning))
         self.assertEqual(w.filename, __file__)
 
     def _check_call_order__subtests(self, result, events, expected_events):

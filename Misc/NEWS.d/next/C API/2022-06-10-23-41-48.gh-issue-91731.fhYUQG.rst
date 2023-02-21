@@ -1,3 +1,0 @@
-Avoid defining the ``static_assert`` when compiling with C++ 11, where this
-is a keyword and redefining it can lead to undefined behavior. Patch by
-Pablo Galindo
