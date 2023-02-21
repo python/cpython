@@ -1,2 +1,0 @@
-Fix the typos ("SkitTest") in test_fcntl_f_pipesize and test_pipesizes.
-Patch by HyunKyun Moon.
