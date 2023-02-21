@@ -1,1 +1,0 @@
-ChainMap.__iter__ no longer calls __getitem__ on underlying maps

@@ -8,6 +8,7 @@ import concurrent.futures
 import contextvars
 import logging
 import sys
+from types import GenericAlias
 
 from . import base_futures
 from . import events
@@ -84,11 +85,8 @@ class Future:
             self._source_traceback = format_helpers.extract_stack(
                 sys._getframe(1))
 
-    _repr_info = base_futures._future_repr_info
-
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__,
-                                ' '.join(self._repr_info()))
+        return base_futures._future_repr(self)
 
     def __del__(self):
         if not self.__log_traceback:
@@ -106,8 +104,7 @@ class Future:
             context['source_traceback'] = self._source_traceback
         self._loop.call_exception_handler(context)
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
     @property
     def _log_traceback(self):
@@ -132,6 +129,11 @@ class Future:
         This should only be called once when handling a cancellation since
         it erases the saved context exception value.
         """
+        if self._cancelled_exc is not None:
+            exc = self._cancelled_exc
+            self._cancelled_exc = None
+            return exc
+
         if self._cancel_message is None:
             exc = exceptions.CancelledError()
         else:
@@ -198,7 +200,7 @@ class Future:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
         if self._exception is not None:
-            raise self._exception
+            raise self._exception.with_traceback(self._exception_tb)
         return self._result
 
     def exception(self):
@@ -274,6 +276,7 @@ class Future:
             raise TypeError("StopIteration interacts badly with generators "
                             "and cannot be raised into a Future")
         self._exception = exception
+        self._exception_tb = exception.__traceback__
         self._state = _FINISHED
         self.__schedule_callbacks()
         self.__log_traceback = True
@@ -395,6 +398,8 @@ def _chain_future(source, destination):
         if dest_loop is None or dest_loop is source_loop:
             _set_state(destination, source)
         else:
+            if dest_loop.is_closed():
+                return
             dest_loop.call_soon_threadsafe(_set_state, destination, source)
 
     destination.add_done_callback(_call_check_cancel)

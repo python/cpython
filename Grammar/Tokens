@@ -59,6 +59,7 @@ AWAIT
 ASYNC
 TYPE_IGNORE
 TYPE_COMMENT
+SOFT_KEYWORD
 ERRORTOKEN
 
 # These aren't used by the C tokenizer but are needed for tokenize.py
