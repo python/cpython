@@ -2477,6 +2477,68 @@ class TarFile(object):
             index += 1
             yield tarinfo
 
+    def iter_no_cache(self):
+        """Provide an iterator object that does not cache files
+           for systems low on memory.
+        """
+        self._check("ra")
+        if self.firstmember is not None:
+            m = self.firstmember
+            self.firstmember = None
+            yield m
+
+        # Advance the file pointer.
+        if self.offset != self.fileobj.tell():
+            if self.offset == 0:
+                return None
+            self.fileobj.seek(self.offset - 1)
+            if not self.fileobj.read(1):
+                raise ReadError("unexpected end of data")
+
+        # Read the next block.
+        while True:
+            tarinfo = None
+            # Advance the file pointer.
+            if self.offset != self.fileobj.tell():
+                self.fileobj.seek(self.offset - 1)
+                if not self.fileobj.read(1):
+                    break
+            try:
+                tarinfo = self.tarinfo.fromtarfile(self)
+            except EOFHeaderError as e:
+                if self.ignore_zeros:
+                    self._dbg(2, "0x%X: %s" % (self.offset, e))
+                    self.offset += BLOCKSIZE
+                    continue
+            except InvalidHeaderError as e:
+                if self.ignore_zeros:
+                    self._dbg(2, "0x%X: %s" % (self.offset, e))
+                    self.offset += BLOCKSIZE
+                    continue
+                elif self.offset == 0:
+                    raise ReadError(str(e)) from None
+            except EmptyHeaderError:
+                if self.offset == 0:
+                    raise ReadError("empty file") from None
+            except TruncatedHeaderError as e:
+                if self.offset == 0:
+                    raise ReadError(str(e)) from None
+            except SubsequentHeaderError as e:
+                raise ReadError(str(e)) from None
+            except Exception as e:
+                try:
+                    import zlib
+                    if isinstance(e, zlib.error):
+                        raise ReadError(f'zlib error: {e}') from None
+                    else:
+                        raise e
+                except ImportError:
+                    raise e
+            if tarinfo is not None:
+                yield tarinfo
+            else:
+                break
+
     def _dbg(self, level, msg):
         """Write debugging output to sys.stderr.
         """
