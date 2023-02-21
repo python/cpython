@@ -54,10 +54,6 @@ extern void _PyIO_Fini(void);
 
 #ifdef MS_WINDOWS
 #  undef BYTE
-
-   extern PyTypeObject PyWindowsConsoleIO_Type;
-#  define PyWindowsConsoleIO_Check(op) \
-       (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
@@ -159,79 +155,6 @@ Py_IsInitialized(void)
     return _PyRuntime.initialized;
 }
 
-
-/* Global initializations.  Can be undone by Py_FinalizeEx().  Don't
-   call this twice without an intervening Py_FinalizeEx() call.  When
-   initializations fail, a fatal error is issued and the function does
-   not return.  On return, the first thread and interpreter state have
-   been created.
-
-   Locking: you must hold the interpreter lock while calling this.
-   (If the lock has not yet been initialized, that's equivalent to
-   having the lock, but you cannot use multiple threads.)
-
-*/
-static int
-init_importlib(PyThreadState *tstate, PyObject *sysmod)
-{
-    assert(!_PyErr_Occurred(tstate));
-
-    PyInterpreterState *interp = tstate->interp;
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
-
-    // Import _importlib through its frozen version, _frozen_importlib.
-    if (verbose) {
-        PySys_FormatStderr("import _frozen_importlib # frozen\n");
-    }
-    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
-        return -1;
-    }
-    PyObject *importlib = PyImport_AddModule("_frozen_importlib"); // borrowed
-    if (importlib == NULL) {
-        return -1;
-    }
-    interp->importlib = Py_NewRef(importlib);
-
-    // Import the _imp module
-    if (verbose) {
-        PySys_FormatStderr("import _imp # builtin\n");
-    }
-    PyObject *imp_mod = _PyImport_BootstrapImp(tstate);
-    if (imp_mod == NULL) {
-        return -1;
-    }
-    if (_PyImport_SetModuleString("_imp", imp_mod) < 0) {
-        Py_DECREF(imp_mod);
-        return -1;
-    }
-
-    // Install importlib as the implementation of import
-    PyObject *value = PyObject_CallMethod(importlib, "_install",
-                                          "OO", sysmod, imp_mod);
-    Py_DECREF(imp_mod);
-    if (value == NULL) {
-        return -1;
-    }
-    Py_DECREF(value);
-
-    assert(!_PyErr_Occurred(tstate));
-    return 0;
-}
-
-
-static PyStatus
-init_importlib_external(PyThreadState *tstate)
-{
-    PyObject *value;
-    value = PyObject_CallMethod(tstate->interp->importlib,
-                                "_install_external_importers", "");
-    if (value == NULL) {
-        _PyErr_Print(tstate);
-        return _PyStatus_ERR("external importer setup failed");
-    }
-    Py_DECREF(value);
-    return _PyImportZip_Init(tstate);
-}
 
 /* Helper functions to better handle the legacy C locale
  *
@@ -642,6 +565,10 @@ init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *con
     if (config->allow_daemon_threads) {
         interp->feature_flags |= Py_RTFLAGS_DAEMON_THREADS;
     }
+
+    if (config->check_multi_interp_extensions) {
+        interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
+    }
 }
 
 
@@ -818,7 +745,8 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
 
-    if (_PyImport_FixupBuiltin(bimod, "builtins", interp->modules) < 0) {
+    PyObject *modules = _PyImport_GetModules(interp);
+    if (_PyImport_FixupBuiltin(bimod, "builtins", modules) < 0) {
         goto error;
     }
 
@@ -854,13 +782,9 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     Py_DECREF(bimod);
 
-    // Get the __import__ function
-    PyObject *import_func = _PyDict_GetItemStringWithError(interp->builtins,
-                                                           "__import__");
-    if (import_func == NULL) {
+    if (_PyImport_InitDefaultImportFunc(interp) < 0) {
         goto error;
     }
-    interp->import_func = Py_NewRef(import_func);
 
     assert(!_PyErr_Occurred(tstate));
     return _PyStatus_OK();
@@ -922,11 +846,10 @@ pycore_interp_init(PyThreadState *tstate)
     }
 
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    if (config->_install_importlib) {
-        /* This call sets up builtin and frozen import support */
-        if (init_importlib(tstate, sysmod) < 0) {
-            return _PyStatus_ERR("failed to initialize importlib");
-        }
+
+    status = _PyImport_InitCore(tstate, sysmod, config->_install_importlib);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
     }
 
 done:
@@ -1176,7 +1099,7 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_ERR("failed to update the Python config");
     }
 
-    status = init_importlib_external(tstate);
+    status = _PyImport_InitExternal(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1383,8 +1306,11 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
     static const char * const sys_deletes[] = {
         "path", "argv", "ps1", "ps2",
         "last_type", "last_value", "last_traceback",
-        "path_hooks", "path_importer_cache", "meta_path",
         "__interactivehook__",
+        // path_hooks and path_importer_cache are cleared
+        // by _PyImport_FiniExternal().
+        // XXX Clear meta_path in _PyImport_FiniCore().
+        "meta_path",
         NULL
     };
 
@@ -1405,10 +1331,7 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
 
     const char * const *p;
     for (p = sys_deletes; *p != NULL; p++) {
-        if (verbose) {
-            PySys_WriteStderr("# clear sys.%s\n", *p);
-        }
-        if (PyDict_SetItemString(interp->sysdict, *p, Py_None) < 0) {
+        if (_PySys_ClearAttrString(interp, *p, verbose) < 0) {
             PyErr_WriteUnraisable(NULL);
         }
     }
@@ -1580,11 +1503,12 @@ finalize_clear_sys_builtins_dict(PyInterpreterState *interp, int verbose)
 
 
 /* Clear modules, as good as we can */
+// XXX Move most of this to import.c.
 static void
 finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    PyObject *modules = interp->modules;
+    PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
         // Already done
         return;
@@ -1649,12 +1573,12 @@ finalize_modules(PyThreadState *tstate)
     // clear PyInterpreterState.modules_by_index and
     // clear PyModuleDef.m_base.m_copy (of extensions not using the multi-phase
     // initialization API)
-    _PyInterpreterState_ClearModules(interp);
+    _PyImport_ClearModulesByIndex(interp);
 
     // Clear and delete the modules directory.  Actual modules will
     // still be there only if imported during the execution of some
     // destructor.
-    Py_SETREF(interp->modules, NULL);
+    _PyImport_ClearModules(interp);
 
     // Collect garbage once more
     _PyGC_CollectNoFail(tstate);
@@ -1865,6 +1789,8 @@ Py_FinalizeEx(void)
     runtime->initialized = 0;
     runtime->core_initialized = 0;
 
+    // XXX Call something like _PyImport_Disable() here?
+
     /* Destroy the state of all threads of the interpreter, except of the
        current thread. In practice, only daemon threads should still be alive,
        except if wait_for_thread_shutdown() has been cancelled by CTRL+C.
@@ -1914,6 +1840,7 @@ Py_FinalizeEx(void)
     PyGC_Collect();
 
     /* Destroy all modules */
+    _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
 
     /* Print debug stats if any */
@@ -1947,7 +1874,9 @@ Py_FinalizeEx(void)
        so it is possible to use tracemalloc in objects destructor. */
     _PyTraceMalloc_Fini();
 
-    /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
+    /* Finalize any remaining import state */
+    // XXX Move these up to where finalize_modules() is currently.
+    _PyImport_FiniCore(tstate->interp);
     _PyImport_Fini();
 
     /* unload faulthandler module */
@@ -2187,7 +2116,11 @@ Py_EndInterpreter(PyThreadState *tstate)
         Py_FatalError("not the last thread");
     }
 
+    // XXX Call something like _PyImport_Disable() here?
+
+    _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
+    _PyImport_FiniCore(tstate->interp);
 
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate->interp);
@@ -2236,8 +2169,8 @@ add_main_module(PyInterpreterState *interp)
         if (PyErr_Occurred()) {
             return _PyStatus_ERR("Failed to test __main__.__loader__");
         }
-        PyObject *loader = PyObject_GetAttrString(interp->importlib,
-                                                  "BuiltinImporter");
+        PyObject *loader = _PyImport_GetImportlibLoader(interp,
+                                                        "BuiltinImporter");
         if (loader == NULL) {
             return _PyStatus_ERR("Failed to retrieve BuiltinImporter");
         }
@@ -2358,8 +2291,16 @@ create_stdio(const PyConfig *config, PyObject* io,
 
 #ifdef MS_WINDOWS
     /* Windows console IO is always UTF-8 encoded */
-    if (PyWindowsConsoleIO_Check(raw))
+    PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
+            &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
+    if (winconsoleio_type == NULL) {
+        goto error;
+    }
+    int is_subclass = PyObject_TypeCheck(raw, winconsoleio_type);
+    Py_DECREF(winconsoleio_type);
+    if (is_subclass) {
         encoding = L"utf-8";
+    }
 #endif
 
     text = PyUnicode_FromString(name);
@@ -2735,7 +2676,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     if (interp == NULL) {
         return;
     }
-    PyObject *modules = interp->modules;
+    PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL || !PyDict_Check(modules)) {
         return;
     }

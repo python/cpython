@@ -147,7 +147,7 @@ The :mod:`functools` module defines the following functions:
    threads.
 
    Since a dictionary is used to cache results, the positional and keyword
-   arguments to the function must be hashable.
+   arguments to the function must be :term:`hashable`.
 
    Distinct argument patterns may be considered to be distinct calls with
    separate cache entries.  For example, ``f(a=1, b=2)`` and ``f(b=2, a=1)``

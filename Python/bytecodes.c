@@ -246,9 +246,9 @@ dummy_func(
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
-            assert(_Py_OPCODE(true_next) == STORE_FAST ||
-                   _Py_OPCODE(true_next) == STORE_FAST__LOAD_FAST);
-            PyObject **target_local = &GETLOCAL(_Py_OPARG(true_next));
+            assert(true_next.op.code == STORE_FAST ||
+                   true_next.op.code == STORE_FAST__LOAD_FAST);
+            PyObject **target_local = &GETLOCAL(true_next.op.arg);
             DEOPT_IF(*target_local != left, BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             /* Handle `left = left + right` or `left += right` for str.
@@ -501,7 +501,14 @@ dummy_func(
         inst(CALL_INTRINSIC_1, (value -- res)) {
             assert(oparg <= MAX_INTRINSIC_1);
             res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
-            Py_DECREF(value);
+            DECREF_INPUTS();
+            ERROR_IF(res == NULL, error);
+        }
+
+        inst(CALL_INTRINSIC_2, (value2, value1 -- res)) {
+            assert(oparg <= MAX_INTRINSIC_2);
+            res = _PyIntrinsics_BinaryFunctions[oparg](tstate, value2, value1);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
@@ -720,6 +727,7 @@ dummy_func(
             else {
                 assert(retval != NULL);
             }
+            Py_DECREF(v);
         }
 
         inst(SEND_GEN, (unused/1, receiver, v -- receiver)) {
@@ -786,15 +794,6 @@ dummy_func(
             PyObject *tb = PyException_GetTraceback(exc);
             _PyErr_Restore(tstate, typ, exc, tb);
             goto exception_unwind;
-        }
-
-        inst(PREP_RERAISE_STAR, (orig, excs -- val)) {
-            assert(PyList_Check(excs));
-
-            val = _PyExc_PrepReraiseStar(orig, excs);
-            DECREF_INPUTS();
-
-            ERROR_IF(val == NULL, error);
         }
 
         inst(END_ASYNC_FOR, (awaitable, exc -- )) {
@@ -1303,6 +1302,8 @@ dummy_func(
 
         inst(BUILD_SET, (values[oparg] -- set)) {
             set = PySet_New(NULL);
+            if (set == NULL)
+                goto error;
             int err = 0;
             for (int i = 0; i < oparg; i++) {
                 PyObject *item = values[i];
@@ -1747,10 +1748,10 @@ dummy_func(
             Py_DECREF(left);
             Py_DECREF(right);
             ERROR_IF(cond == NULL, error);
-            assert(_Py_OPCODE(next_instr[1]) == POP_JUMP_IF_FALSE ||
-                   _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE);
-            bool jump_on_true = _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE;
-            int offset = _Py_OPARG(next_instr[1]);
+            assert(next_instr[1].op.code == POP_JUMP_IF_FALSE ||
+                   next_instr[1].op.code == POP_JUMP_IF_TRUE);
+            bool jump_on_true = next_instr[1].op.code == POP_JUMP_IF_TRUE;
+            int offset = next_instr[1].op.arg;
             int err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
             if (err < 0) {
@@ -1773,7 +1774,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             if (sign_ish & oparg) {
-                int offset = _Py_OPARG(next_instr[1]);
+                int offset = next_instr[1].op.arg;
                 JUMPBY(offset);
             }
         }
@@ -1794,7 +1795,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             if (sign_ish & oparg) {
-                int offset = _Py_OPARG(next_instr[1]);
+                int offset = next_instr[1].op.arg;
                 JUMPBY(offset);
             }
         }
@@ -1813,7 +1814,7 @@ dummy_func(
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
             if ((res + COMPARISON_NOT_EQUALS) & oparg) {
-                int offset = _Py_OPARG(next_instr[1]);
+                int offset = next_instr[1].op.arg;
                 JUMPBY(offset);
             }
         }
@@ -2121,7 +2122,7 @@ dummy_func(
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
+                assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == END_FOR);
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
@@ -2185,7 +2186,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
-            assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == STORE_FAST);
+            assert(_PyOpcode_Deopt[next.op.code] == STORE_FAST);
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
@@ -2196,7 +2197,7 @@ dummy_func(
                 long value = r->start;
                 r->start = value + r->step;
                 r->len--;
-                if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
+                if (_PyLong_AssignValue(&GETLOCAL(next.op.arg), value) < 0) {
                     goto error;
                 }
                 // The STORE_FAST is already done.
@@ -2219,7 +2220,7 @@ dummy_func(
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            assert(_Py_OPCODE(*next_instr) == END_FOR);
+            assert(next_instr->op.code == END_FOR);
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -2383,7 +2384,7 @@ dummy_func(
         }
 
         // Cache layout: counter/1, func_version/2, min_args/1
-        // Neither CALL_INTRINSIC_1 nor CALL_FUNCTION_EX are members!
+        // Neither CALL_INTRINSIC_1/2 nor CALL_FUNCTION_EX are members!
         family(call, INLINE_CACHE_ENTRIES_CALL) = {
             CALL,
             CALL_BOUND_METHOD_EXACT_ARGS,
@@ -2808,7 +2809,7 @@ dummy_func(
             STACK_SHRINK(3);
             // CALL + POP_TOP
             JUMPBY(INLINE_CACHE_ENTRIES_CALL + 1);
-            assert(_Py_OPCODE(next_instr[-1]) == POP_TOP);
+            assert(next_instr[-1].op.code == POP_TOP);
             DISPATCH();
         }
 
@@ -3117,8 +3118,8 @@ dummy_func(
         inst(EXTENDED_ARG, (--)) {
             assert(oparg);
             assert(cframe.use_tracing == 0);
-            opcode = _Py_OPCODE(*next_instr);
-            oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            opcode = next_instr->op.code;
+            oparg = oparg << 8 | next_instr->op.arg;
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
         }

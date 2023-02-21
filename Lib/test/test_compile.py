@@ -115,24 +115,24 @@ class TestSpecifics(unittest.TestCase):
         repeat = 2000
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
-        code = '''
-def f(x):
-    %s
-    %s
-    %s
-    %s
-    %s
-    %s
-    %s
-    %s
-    %s
-    %s
-    # the expressions above have no effect, x == argument
-    while x:
-        x -= 1
-        # EXTENDED_ARG/JUMP_ABSOLUTE here
-    return x
-''' % ((longexpr,)*10)
+        code = textwrap.dedent('''
+            def f(x):
+                %s
+                %s
+                %s
+                %s
+                %s
+                %s
+                %s
+                %s
+                %s
+                %s
+                # the expressions above have no effect, x == argument
+                while x:
+                    x -= 1
+                    # EXTENDED_ARG/JUMP_ABSOLUTE here
+                return x
+            ''' % ((longexpr,)*10))
         exec(code, g)
         self.assertEqual(g['f'](5), 0)
 
@@ -148,10 +148,11 @@ def f(x):
 
     def test_indentation(self):
         # testing compile() of indented block w/o trailing newline"
-        s = """
-if 1:
-    if 2:
-        pass"""
+        s = textwrap.dedent("""
+            if 1:
+                if 2:
+                    pass
+            """)
         compile(s, "<string>", "exec")
 
     # This test is probably specific to CPython and may not generalize
@@ -1155,6 +1156,18 @@ if 1:
             with self.subTest(expr=expr):
                 compile(expr, "<single>", "exec")
 
+    def test_multi_line_lambda_as_argument(self):
+        # See gh-101928
+        code = textwrap.dedent("""
+            def foo(param, lambda_exp):
+                pass
+
+            foo(param=0,
+                lambda_exp=lambda:
+                1)
+        """)
+        compile(code, "<test>", "exec")
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1241,24 +1254,24 @@ class TestSourcePositions(unittest.TestCase):
             column=2, end_column=9, occurrence=2)
 
     def test_multiline_expression(self):
-        snippet = """\
-f(
-    1, 2, 3, 4
-)
-"""
+        snippet = textwrap.dedent("""\
+            f(
+                1, 2, 3, 4
+            )
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=1)
 
     @requires_specialization
     def test_multiline_boolean_expression(self):
-        snippet = """\
-if (a or
-    (b and not c) or
-    not (
-        d > 0)):
-    x = 42
-"""
+        snippet = textwrap.dedent("""\
+            if (a or
+                (b and not c) or
+                not (
+                    d > 0)):
+                x = 42
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         # jump if a is true:
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
@@ -1277,11 +1290,11 @@ if (a or
             line=4, end_line=4, column=8, end_column=13, occurrence=2)
 
     def test_multiline_assert(self):
-        snippet = """\
-assert (a > 0 and
-        bb > 0 and
-        ccc == 4), "error msg"
-"""
+        snippet = textwrap.dedent("""\
+            assert (a > 0 and
+                    bb > 0 and
+                    ccc == 4), "error msg"
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
             line=1, end_line=3, column=0, end_column=30, occurrence=1)
@@ -1294,14 +1307,14 @@ assert (a > 0 and
             line=1, end_line=3, column=0, end_column=30, occurrence=1)
 
     def test_multiline_generator_expression(self):
-        snippet = """\
-((x,
-    2*x)
-    for x
-    in [1,2,3] if (x > 0
-                   and x < 100
-                   and x != 50))
-"""
+        snippet = textwrap.dedent("""\
+            ((x,
+                2*x)
+                for x
+                in [1,2,3] if (x > 0
+                               and x < 100
+                               and x != 50))
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         compiled_code = compiled_code.co_consts[0]
         self.assertIsInstance(compiled_code, types.CodeType)
@@ -1313,14 +1326,14 @@ assert (a > 0 and
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
-        snippet = """\
-((x,
-    2*x)
-    async for x
-    in [1,2,3] if (x > 0
-                   and x < 100
-                   and x != 50))
-"""
+        snippet = textwrap.dedent("""\
+            ((x,
+                2*x)
+                async for x
+                in [1,2,3] if (x > 0
+                               and x < 100
+                               and x != 50))
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         compiled_code = compiled_code.co_consts[0]
         self.assertIsInstance(compiled_code, types.CodeType)
@@ -1330,14 +1343,14 @@ assert (a > 0 and
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_list_comprehension(self):
-        snippet = """\
-[(x,
-    2*x)
-    for x
-    in [1,2,3] if (x > 0
-                   and x < 100
-                   and x != 50)]
-"""
+        snippet = textwrap.dedent("""\
+            [(x,
+                2*x)
+                for x
+                in [1,2,3] if (x > 0
+                               and x < 100
+                               and x != 50)]
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         compiled_code = compiled_code.co_consts[0]
         self.assertIsInstance(compiled_code, types.CodeType)
@@ -1349,15 +1362,15 @@ assert (a > 0 and
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_list_comprehension(self):
-        snippet = """\
-async def f():
-    [(x,
-        2*x)
-        async for x
-        in [1,2,3] if (x > 0
-                       and x < 100
-                       and x != 50)]
-"""
+        snippet = textwrap.dedent("""\
+            async def f():
+                [(x,
+                    2*x)
+                    async for x
+                    in [1,2,3] if (x > 0
+                                   and x < 100
+                                   and x != 50)]
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         g = {}
         eval(compiled_code, g)
@@ -1371,14 +1384,14 @@ async def f():
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_multiline_set_comprehension(self):
-        snippet = """\
-{(x,
-    2*x)
-    for x
-    in [1,2,3] if (x > 0
-                   and x < 100
-                   and x != 50)}
-"""
+        snippet = textwrap.dedent("""\
+            {(x,
+                2*x)
+                for x
+                in [1,2,3] if (x > 0
+                               and x < 100
+                               and x != 50)}
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         compiled_code = compiled_code.co_consts[0]
         self.assertIsInstance(compiled_code, types.CodeType)
@@ -1390,15 +1403,15 @@ async def f():
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_set_comprehension(self):
-        snippet = """\
-async def f():
-    {(x,
-        2*x)
-        async for x
-        in [1,2,3] if (x > 0
-                       and x < 100
-                       and x != 50)}
-"""
+        snippet = textwrap.dedent("""\
+            async def f():
+                {(x,
+                    2*x)
+                    async for x
+                    in [1,2,3] if (x > 0
+                                   and x < 100
+                                   and x != 50)}
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         g = {}
         eval(compiled_code, g)
@@ -1412,14 +1425,14 @@ async def f():
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_multiline_dict_comprehension(self):
-        snippet = """\
-{x:
-    2*x
-    for x
-    in [1,2,3] if (x > 0
-                   and x < 100
-                   and x != 50)}
-"""
+        snippet = textwrap.dedent("""\
+            {x:
+                2*x
+                for x
+                in [1,2,3] if (x > 0
+                               and x < 100
+                               and x != 50)}
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         compiled_code = compiled_code.co_consts[0]
         self.assertIsInstance(compiled_code, types.CodeType)
@@ -1431,15 +1444,15 @@ async def f():
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_dict_comprehension(self):
-        snippet = """\
-async def f():
-    {x:
-        2*x
-        async for x
-        in [1,2,3] if (x > 0
-                       and x < 100
-                       and x != 50)}
-"""
+        snippet = textwrap.dedent("""\
+            async def f():
+                {x:
+                    2*x
+                    async for x
+                    in [1,2,3] if (x > 0
+                                   and x < 100
+                                   and x != 50)}
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         g = {}
         eval(compiled_code, g)
@@ -1453,11 +1466,11 @@ async def f():
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_matchcase_sequence(self):
-        snippet = """\
-match x:
-    case a, b:
-        pass
-"""
+        snippet = textwrap.dedent("""\
+            match x:
+                case a, b:
+                    pass
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_SEQUENCE',
             line=2, end_line=2, column=9, end_column=13, occurrence=1)
@@ -1469,11 +1482,11 @@ match x:
             line=2, end_line=2, column=9, end_column=13, occurrence=2)
 
     def test_matchcase_sequence_wildcard(self):
-        snippet = """\
-match x:
-    case a, *b, c:
-        pass
-"""
+        snippet = textwrap.dedent("""\
+            match x:
+                case a, *b, c:
+                    pass
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_SEQUENCE',
             line=2, end_line=2, column=9, end_column=17, occurrence=1)
@@ -1487,11 +1500,11 @@ match x:
             line=2, end_line=2, column=9, end_column=17, occurrence=3)
 
     def test_matchcase_mapping(self):
-        snippet = """\
-match x:
-    case {"a" : a, "b": b}:
-        pass
-"""
+        snippet = textwrap.dedent("""\
+            match x:
+                case {"a" : a, "b": b}:
+                    pass
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_MAPPING',
             line=2, end_line=2, column=9, end_column=26, occurrence=1)
@@ -1503,11 +1516,11 @@ match x:
             line=2, end_line=2, column=9, end_column=26, occurrence=2)
 
     def test_matchcase_mapping_wildcard(self):
-        snippet = """\
-match x:
-    case {"a" : a, "b": b, **c}:
-        pass
-"""
+        snippet = textwrap.dedent("""\
+            match x:
+                case {"a" : a, "b": b, **c}:
+                    pass
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_MAPPING',
             line=2, end_line=2, column=9, end_column=31, occurrence=1)
@@ -1519,11 +1532,11 @@ match x:
             line=2, end_line=2, column=9, end_column=31, occurrence=2)
 
     def test_matchcase_class(self):
-        snippet = """\
-match x:
-    case C(a, b):
-        pass
-"""
+        snippet = textwrap.dedent("""\
+            match x:
+                case C(a, b):
+                    pass
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_CLASS',
             line=2, end_line=2, column=9, end_column=16, occurrence=1)
@@ -1535,11 +1548,11 @@ match x:
             line=2, end_line=2, column=9, end_column=16, occurrence=2)
 
     def test_matchcase_or(self):
-        snippet = """\
-match x:
-    case C(1) | C(2):
-        pass
-"""
+        snippet = textwrap.dedent("""\
+            match x:
+                case C(1) | C(2):
+                    pass
+            """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'MATCH_CLASS',
             line=2, end_line=2, column=9, end_column=13, occurrence=1)
