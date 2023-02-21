@@ -1,0 +1,1 @@
+HTTPError fp.read returns string instead of bytes
