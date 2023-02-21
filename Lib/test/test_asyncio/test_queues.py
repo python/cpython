@@ -555,7 +555,98 @@ class _QueueShutdownTestMixin:
             asyncio.QueueShutDown, msg="Didn't appear to shut-down queue"
         ):
             await q.get()
+    async def test_repr_shutdown(self):
+        q = self.q_class()
+        q.shutdown()
+        self.assertIn("shutdown", repr(q))
 
+        q = self.q_class()
+        q.shutdown(immediate=True)
+        self.assertIn("shutdown-immediate", repr(q))
+
+    async def test_get_shutdown_immediate(self):
+        results = []
+        maxsize = 2
+        delay = 1e-3
+
+        async def get_q(q):
+            try:
+                msg = await q.get()
+                results.append(False)
+            except asyncio.QueueShutDown:
+                results.append(True)
+                return True
+
+        async def shutdown(q, delay, immediate):
+            await asyncio.sleep(delay)
+            q.shutdown(immediate)
+            return True
+
+        q = self.q_class(maxsize)
+        t = [asyncio.create_task(get_q(q)) for _ in range(maxsize)]
+        t += [asyncio.create_task(shutdown(q, delay, True))]
+        res = await asyncio.gather(*t)
+
+        self.assertEqual(results, [True]*maxsize)
+
+    async def test_put_shutdown(self):
+        maxsize = 2
+        results = []
+        delay = 1e-3
+
+        async def put_twice(q, delay, msg):
+            await q.put(msg)
+            await asyncio.sleep(delay)
+            try:
+                await q.put(msg+maxsize)
+                results.append(False)
+            except asyncio.QueueShutDown:
+                results.append(True)
+                return msg
+
+        async def shutdown(q, delay, immediate):
+            await asyncio.sleep(delay)
+            q.shutdown(immediate)
+
+        q = self.q_class(maxsize)
+        t = [asyncio.create_task(put_twice(q, delay, i+1)) for i in range(maxsize)]
+        t += [asyncio.create_task(shutdown(q, delay*2, False))]
+        res = await asyncio.gather(*t)
+
+        self.assertEqual(results, [True]*maxsize)
+
+    async def test_put_and_join_shutdown(self):
+        maxsize = 2
+        results = []
+        delay = 1e-3
+
+        async def put_twice(q, delay, msg):
+            await q.put(msg)
+            await asyncio.sleep(delay)
+            try:
+                await q.put(msg+maxsize)
+                results.append(False)
+            except asyncio.QueueShutDown:
+                results.append(True)
+                return msg
+
+        async def shutdown(q, delay, immediate):
+            await asyncio.sleep(delay)
+            q.shutdown(immediate)
+
+        async def join(q, delay):
+            await asyncio.sleep(delay)
+            await q.join()
+            results.append(True)
+            return True
+
+        q = self.q_class(maxsize)
+        t = [asyncio.create_task(put_twice(q, delay, i+1)) for i in range(maxsize)]
+        t += [asyncio.create_task(shutdown(q, delay*2, True)),
+                asyncio.create_task(join(q, delay))]
+        res = await asyncio.gather(*t)
+
+        self.assertEqual(results, [True]*(maxsize+1))
 
 class QueueShutdownTests(
     _QueueShutdownTestMixin, unittest.IsolatedAsyncioTestCase
