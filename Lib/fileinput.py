@@ -419,7 +419,7 @@ class FileInput:
 
 
 def hook_compressed(filename, mode, *, encoding=None, errors=None):
-    if encoding is None:  # EncodingWarning is emitted in FileInput() already.
+    if encoding is None and "b" not in mode:  # EncodingWarning is emitted in FileInput() already.
         encoding = "locale"
     ext = os.path.splitext(filename)[1]
     if ext == '.gz':
