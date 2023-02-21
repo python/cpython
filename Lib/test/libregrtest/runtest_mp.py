@@ -22,6 +22,9 @@ from test.libregrtest.runtest import (
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration, print_warning
 
+if sys.platform == 'win32':
+    import locale
+
 
 # Display the running tests if nothing happened last N seconds
 PROGRESS_UPDATE = 30.0   # seconds
@@ -267,11 +270,16 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
+        if sys.platform == 'win32':
+            # gh-95027: When stdout is not a TTY, Python uses the ANSI code
+            # page for the sys.stdout encoding. If the main process runs in a
+            # terminal, sys.stdout uses WindowsConsoleIO with UTF-8 encoding.
+            encoding = locale.getencoding()
+        else:
+            encoding = sys.stdout.encoding
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
-        with tempfile.TemporaryFile(
-            'w+', encoding=sys.stdout.encoding
-        ) as stdout_fh:
+        with tempfile.TemporaryFile('w+', encoding=encoding) as stdout_fh:
             # gh-93353: Check for leaked temporary files in the parent process,
             # since the deletion of temporary files can happen late during
             # Python finalization: too late for libregrtest.

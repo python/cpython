@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -327,6 +333,43 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_sumprod__doc__,
+"sumprod($module, p, q, /)\n"
+"--\n"
+"\n"
+"Return the sum of products of values from two iterables p and q.\n"
+"\n"
+"Roughly equivalent to:\n"
+"\n"
+"    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))\n"
+"\n"
+"For float and mixed int/float inputs, the intermediate products\n"
+"and sums are computed with extended precision.");
+
+#define MATH_SUMPROD_METHODDEF    \
+    {"sumprod", _PyCFunction_CAST(math_sumprod), METH_FASTCALL, math_sumprod__doc__},
+
+static PyObject *
+math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q);
+
+static PyObject *
+math_sumprod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *p;
+    PyObject *q;
+
+    if (!_PyArg_CheckPositional("sumprod", nargs, 2, 2)) {
+        goto exit;
+    }
+    p = args[0];
+    q = args[1];
+    return_value = math_sumprod_impl(module, p, q);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_pow__doc__,
 "pow($module, x, y, /)\n"
 "--\n"
@@ -578,8 +621,31 @@ static PyObject *
 math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "isclose", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "isclose",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     double a;
@@ -673,8 +739,31 @@ static PyObject *
 math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(start), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "start", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "prod", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "prod",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *iterable;
@@ -865,4 +954,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=965f99dabaa72165 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=899211ec70e4506c input=a9049054013a1b77]*/

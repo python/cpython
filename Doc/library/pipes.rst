@@ -23,7 +23,7 @@ The :mod:`pipes` module defines a class to abstract the concept of a *pipeline*
 Because the module uses :program:`/bin/sh` command lines, a POSIX or compatible
 shell for :func:`os.system` and :func:`os.popen` is required.
 
-.. availability:: Unix. Not available on VxWorks.
+.. availability:: Unix, not VxWorks.
 
 The :mod:`pipes` module defines the following class:
 

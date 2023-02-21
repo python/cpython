@@ -56,11 +56,6 @@ class Error(Exception):
     pass
 error = Error   # backward compatibility
 
-try:
-    from org.python.core import PyStringMap
-except ImportError:
-    PyStringMap = None
-
 __all__ = ["Error", "copy", "deepcopy"]
 
 def copy(x):
@@ -106,22 +101,17 @@ _copy_dispatch = d = {}
 
 def _copy_immutable(x):
     return x
-for t in (type(None), int, float, bool, complex, str, tuple,
+for t in (types.NoneType, int, float, bool, complex, str, tuple,
           bytes, frozenset, type, range, slice, property,
-          types.BuiltinFunctionType, type(Ellipsis), type(NotImplemented),
-          types.FunctionType, weakref.ref):
-    d[t] = _copy_immutable
-t = getattr(types, "CodeType", None)
-if t is not None:
+          types.BuiltinFunctionType, types.EllipsisType,
+          types.NotImplementedType, types.FunctionType, types.CodeType,
+          weakref.ref):
     d[t] = _copy_immutable
 
 d[list] = list.copy
 d[dict] = dict.copy
 d[set] = set.copy
 d[bytearray] = bytearray.copy
-
-if PyStringMap is not None:
-    d[PyStringMap] = PyStringMap.copy
 
 del d, t
 
@@ -181,9 +171,9 @@ _deepcopy_dispatch = d = {}
 
 def _deepcopy_atomic(x, memo):
     return x
-d[type(None)] = _deepcopy_atomic
-d[type(Ellipsis)] = _deepcopy_atomic
-d[type(NotImplemented)] = _deepcopy_atomic
+d[types.NoneType] = _deepcopy_atomic
+d[types.EllipsisType] = _deepcopy_atomic
+d[types.NotImplementedType] = _deepcopy_atomic
 d[int] = _deepcopy_atomic
 d[float] = _deepcopy_atomic
 d[bool] = _deepcopy_atomic
@@ -231,8 +221,6 @@ def _deepcopy_dict(x, memo, deepcopy=deepcopy):
         y[deepcopy(key, memo)] = deepcopy(value, memo)
     return y
 d[dict] = _deepcopy_dict
-if PyStringMap is not None:
-    d[PyStringMap] = _deepcopy_dict
 
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
@@ -301,4 +289,4 @@ def _reconstruct(x, memo, func, args,
                 y[key] = value
     return y
 
-del types, weakref, PyStringMap
+del types, weakref

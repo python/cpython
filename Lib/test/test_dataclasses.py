@@ -12,9 +12,9 @@ import types
 import weakref
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
+from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
-from collections import deque, OrderedDict, namedtuple
+from collections import deque, OrderedDict, namedtuple, defaultdict
 from functools import total_ordering
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
@@ -67,6 +67,50 @@ class TestCase(unittest.TestCase):
                            "_field_type=None)"
 
         self.assertEqual(repr_output, expected_output)
+
+    def test_field_recursive_repr(self):
+        rec_field = field()
+        rec_field.type = rec_field
+        rec_field.name = "id"
+        repr_output = repr(rec_field)
+
+        self.assertIn(",type=...,", repr_output)
+
+    def test_recursive_annotation(self):
+        class C:
+            pass
+
+        @dataclass
+        class D:
+            C: C = field()
+
+        self.assertIn(",type=...,", repr(D.__dataclass_fields__["C"]))
+
+    def test_dataclass_params_repr(self):
+        # Even though this is testing an internal implementation detail,
+        # it's testing a feature we want to make sure is correctly implemented
+        # for the sake of dataclasses itself
+        @dataclass(slots=True, frozen=True)
+        class Some: pass
+
+        repr_output = repr(Some.__dataclass_params__)
+        expected_output = "_DataclassParams(init=True,repr=True," \
+                          "eq=True,order=False,unsafe_hash=False,frozen=True," \
+                          "match_args=True,kw_only=False," \
+                          "slots=True,weakref_slot=False)"
+        self.assertEqual(repr_output, expected_output)
+
+    def test_dataclass_params_signature(self):
+        # Even though this is testing an internal implementation detail,
+        # it's testing a feature we want to make sure is correctly implemented
+        # for the sake of dataclasses itself
+        @dataclass
+        class Some: pass
+
+        for param in inspect.signature(dataclass).parameters:
+            if param == 'cls':
+                continue
+            self.assertTrue(hasattr(Some.__dataclass_params__, param), msg=param)
 
     def test_named_init_params(self):
         @dataclass
@@ -230,6 +274,14 @@ class TestCase(unittest.TestCase):
             object: str
         c = C('foo')
         self.assertEqual(c.object, 'foo')
+
+    def test_field_named_BUILTINS_frozen(self):
+        # gh-96151
+        @dataclass(frozen=True)
+        class C:
+            BUILTINS: int
+        c = C(5)
+        self.assertEqual(c.BUILTINS, 5)
 
     def test_field_named_like_builtin(self):
         # Attribute names can shadow built-in names
@@ -1651,6 +1703,23 @@ class TestCase(unittest.TestCase):
         self.assertIsNot(d['f'], t)
         self.assertEqual(d['f'].my_a(), 6)
 
+    def test_helper_asdict_defaultdict(self):
+        # Ensure asdict() does not throw exceptions when a
+        # defaultdict is a member of a dataclass
+
+        @dataclass
+        class C:
+            mp: DefaultDict[str, List]
+
+
+        dd = defaultdict(list)
+        dd["x"].append(12)
+        c = C(mp=dd)
+        d = asdict(c)
+
+        assert d == {"mp": {"x": [12]}}
+        assert d["mp"] is not c.mp  # make sure defaultdict is copied
+
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
         @dataclass
@@ -2215,12 +2284,12 @@ class TestInit(unittest.TestCase):
         self.assertEqual(c.z, 100)
 
     def test_no_init(self):
-        dataclass(init=False)
+        @dataclass(init=False)
         class C:
             i: int = 0
         self.assertEqual(C().i, 0)
 
-        dataclass(init=False)
+        @dataclass(init=False)
         class C:
             i: int = 2
             def __init__(self):
@@ -3919,7 +3988,7 @@ class TestAbstract(unittest.TestCase):
             day: 'int'
 
         self.assertTrue(inspect.isabstract(Date))
-        msg = 'class Date without an implementation for abstract method foo'
+        msg = "class Date without an implementation for abstract method 'foo'"
         self.assertRaisesRegex(TypeError, msg, Date)
 
 

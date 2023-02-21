@@ -114,7 +114,7 @@ class BasicTestCase(CfgParserTestCaseClass):
 
         # The use of spaces in the section names serves as a
         # regression test for SourceForge bug #583248:
-        # http://www.python.org/sf/583248
+        # https://bugs.python.org/issue583248
 
         # API access
         eq(cf.get('Foo Bar', 'foo'), 'bar1')
@@ -932,7 +932,7 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
                                  ('name', 'value')])
 
     def test_safe_interpolation(self):
-        # See http://www.python.org/sf/511737
+        # See https://bugs.python.org/issue511737
         cf = self.fromstring("[section]\n"
                              "option1{eq}xxx\n"
                              "option2{eq}%(option1)s/xxx\n"

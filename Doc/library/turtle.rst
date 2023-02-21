@@ -1279,7 +1279,7 @@ Appearance
    (direction of movement).
 
    .. doctest::
-      :skipif: _tkinter is None
+      :skipif: _tkinter is None or 'always; deprecated method'
 
       >>> turtle.reset()
       >>> turtle.shape("circle")

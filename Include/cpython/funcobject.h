@@ -48,7 +48,8 @@ typedef struct {
      *     defaults
      *     kwdefaults (only if the object changes, not the contents of the dict)
      *     code
-     *     annotations */
+     *     annotations
+     *     vectorcall function pointer */
     uint32_t func_version;
 
     /* Invariant:
@@ -69,6 +70,7 @@ PyAPI_FUNC(PyObject *) PyFunction_GetGlobals(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetModule(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetDefaults(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetDefaults(PyObject *, PyObject *);
+PyAPI_FUNC(void) PyFunction_SetVectorcall(PyFunctionObject *, vectorcallfunc);
 PyAPI_FUNC(PyObject *) PyFunction_GetKwDefaults(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetKwDefaults(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetClosure(PyObject *);
@@ -128,6 +130,55 @@ PyAPI_DATA(PyTypeObject) PyStaticMethod_Type;
 
 PyAPI_FUNC(PyObject *) PyClassMethod_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
+
+#define FOREACH_FUNC_EVENT(V) \
+    V(CREATE)                 \
+    V(DESTROY)                \
+    V(MODIFY_CODE)            \
+    V(MODIFY_DEFAULTS)        \
+    V(MODIFY_KWDEFAULTS)
+
+typedef enum {
+    #define DEF_EVENT(EVENT) PyFunction_EVENT_##EVENT,
+    FOREACH_FUNC_EVENT(DEF_EVENT)
+    #undef DEF_EVENT
+} PyFunction_WatchEvent;
+
+/*
+ * A callback that is invoked for different events in a function's lifecycle.
+ *
+ * The callback is invoked with a borrowed reference to func, after it is
+ * created and before it is modified or destroyed. The callback should not
+ * modify func.
+ *
+ * When a function's code object, defaults, or kwdefaults are modified the
+ * callback will be invoked with the respective event and new_value will
+ * contain a borrowed reference to the new value that is about to be stored in
+ * the function. Otherwise the third argument is NULL.
+ *
+ * If the callback returns with an exception set, it must return -1. Otherwise
+ * it should return 0.
+ */
+typedef int (*PyFunction_WatchCallback)(
+  PyFunction_WatchEvent event,
+  PyFunctionObject *func,
+  PyObject *new_value);
+
+/*
+ * Register a per-interpreter callback that will be invoked for function lifecycle
+ * events.
+ *
+ * Returns a handle that may be passed to PyFunction_ClearWatcher on success,
+ * or -1 and sets an error if no more handles are available.
+ */
+PyAPI_FUNC(int) PyFunction_AddWatcher(PyFunction_WatchCallback callback);
+
+/*
+ * Clear the watcher associated with the watcher_id handle.
+ *
+ * Returns 0 on success or -1 if no watcher exists for the supplied id.
+ */
+PyAPI_FUNC(int) PyFunction_ClearWatcher(int watcher_id);
 
 #ifdef __cplusplus
 }
