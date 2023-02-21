@@ -87,50 +87,6 @@ _io__IOBase_seekable(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _io__IOBase_seekable_impl(self);
 }
 
-PyDoc_STRVAR(_io__IOBase__checkSeekable__doc__,
-"_checkSeekable($self, /, *args)\n"
-"--\n"
-"\n");
-
-#define _IO__IOBASE__CHECKSEEKABLE_METHODDEF    \
-    {"_checkSeekable", _PyCFunction_CAST(_io__IOBase__checkSeekable), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase__checkSeekable__doc__},
-
-static PyObject *
-_io__IOBase__checkSeekable_impl(PyObject *self, PyTypeObject *cls,
-                                PyObject *args);
-
-static PyObject *
-_io__IOBase__checkSeekable(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_checkSeekable",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
-
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    __clinic_args = args[0];
-    return_value = _io__IOBase__checkSeekable_impl(self, cls, __clinic_args);
-
-exit:
-    Py_XDECREF(__clinic_args);
-    return return_value;
-}
-
 PyDoc_STRVAR(_io__IOBase_readable__doc__,
 "readable($self, /)\n"
 "--\n"
@@ -151,50 +107,6 @@ _io__IOBase_readable(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _io__IOBase_readable_impl(self);
 }
 
-PyDoc_STRVAR(_io__IOBase__checkReadable__doc__,
-"_checkReadable($self, /, *args)\n"
-"--\n"
-"\n");
-
-#define _IO__IOBASE__CHECKREADABLE_METHODDEF    \
-    {"_checkReadable", _PyCFunction_CAST(_io__IOBase__checkReadable), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase__checkReadable__doc__},
-
-static PyObject *
-_io__IOBase__checkReadable_impl(PyObject *self, PyTypeObject *cls,
-                                PyObject *args);
-
-static PyObject *
-_io__IOBase__checkReadable(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_checkReadable",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
-
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    __clinic_args = args[0];
-    return_value = _io__IOBase__checkReadable_impl(self, cls, __clinic_args);
-
-exit:
-    Py_XDECREF(__clinic_args);
-    return return_value;
-}
-
 PyDoc_STRVAR(_io__IOBase_writable__doc__,
 "writable($self, /)\n"
 "--\n"
@@ -213,50 +125,6 @@ static PyObject *
 _io__IOBase_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__IOBase_writable_impl(self);
-}
-
-PyDoc_STRVAR(_io__IOBase__checkWritable__doc__,
-"_checkWritable($self, /, *args)\n"
-"--\n"
-"\n");
-
-#define _IO__IOBASE__CHECKWRITABLE_METHODDEF    \
-    {"_checkWritable", _PyCFunction_CAST(_io__IOBase__checkWritable), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase__checkWritable__doc__},
-
-static PyObject *
-_io__IOBase__checkWritable_impl(PyObject *self, PyTypeObject *cls,
-                                PyObject *args);
-
-static PyObject *
-_io__IOBase__checkWritable(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_checkWritable",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
-
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    __clinic_args = args[0];
-    return_value = _io__IOBase__checkWritable_impl(self, cls, __clinic_args);
-
-exit:
-    Py_XDECREF(__clinic_args);
-    return return_value;
 }
 
 PyDoc_STRVAR(_io__IOBase_fileno__doc__,
@@ -452,4 +320,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=cc302d8dc238cf37 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=98f212f95ac26d74 input=a9049054013a1b77]*/

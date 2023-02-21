@@ -376,26 +376,15 @@ _io__IOBase_seekable_impl(PyObject *self)
     Py_RETURN_FALSE;
 }
 
-/*[clinic input]
-_io._IOBase._checkSeekable
-
-    cls: defining_class
-    /
-    *args: object
-
-[clinic start generated code]*/
-
-static PyObject *
-_io__IOBase__checkSeekable_impl(PyObject *self, PyTypeObject *cls,
-                                PyObject *args)
-/*[clinic end generated code: output=f9449595c526a9ed input=6cf1584801d4b564]*/
+PyObject *
+_PyIOBase_check_seekable(PyObject *self, PyObject *args)
 {
     PyObject *res  = PyObject_CallMethodNoArgs(self, &_Py_ID(seekable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        _PyIO_State *state = get_io_state_by_cls(cls);
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
         iobase_unsupported(state, "File or stream is not seekable.");
         return NULL;
     }
@@ -420,26 +409,16 @@ _io__IOBase_readable_impl(PyObject *self)
     Py_RETURN_FALSE;
 }
 
-/*[clinic input]
-_io._IOBase._checkReadable
-
-    cls: defining_class
-    /
-    *args: object
-
-[clinic start generated code]*/
-
-static PyObject *
-_io__IOBase__checkReadable_impl(PyObject *self, PyTypeObject *cls,
-                                PyObject *args)
-/*[clinic end generated code: output=2eefd0c6015d18d3 input=cb9e598f66479243]*/
+/* May be called with any object */
+PyObject *
+_PyIOBase_check_readable(PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(readable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        _PyIO_State *state = get_io_state_by_cls(cls);
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
         iobase_unsupported(state, "File or stream is not readable.");
         return NULL;
     }
@@ -464,26 +443,16 @@ _io__IOBase_writable_impl(PyObject *self)
     Py_RETURN_FALSE;
 }
 
-/*[clinic input]
-_io._IOBase._checkWritable
-
-    cls: defining_class
-    /
-    *args: object
-
-[clinic start generated code]*/
-
-static PyObject *
-_io__IOBase__checkWritable_impl(PyObject *self, PyTypeObject *cls,
-                                PyObject *args)
-/*[clinic end generated code: output=db0ec8af34f05a01 input=a385662e0b185943]*/
+/* May be called with any object */
+PyObject *
+_PyIOBase_check_writable(PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(writable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        _PyIO_State *state = get_io_state_by_cls(cls);
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
         iobase_unsupported(state, "File or stream is not writable.");
         return NULL;
     }
@@ -843,9 +812,9 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_WRITABLE_METHODDEF
 
     {"_checkClosed",   _PyIOBase_check_closed, METH_NOARGS},
-    _IO__IOBASE__CHECKSEEKABLE_METHODDEF
-    _IO__IOBASE__CHECKREADABLE_METHODDEF
-    _IO__IOBASE__CHECKWRITABLE_METHODDEF
+    {"_checkSeekable", _PyIOBase_check_seekable, METH_NOARGS},
+    {"_checkReadable", _PyIOBase_check_readable, METH_NOARGS},
+    {"_checkWritable", _PyIOBase_check_writable, METH_NOARGS},
 
     _IO__IOBASE_FILENO_METHODDEF
     _IO__IOBASE_ISATTY_METHODDEF

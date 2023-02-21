@@ -734,9 +734,6 @@ extern "C" {
     INIT_ID(_asyncio_future_blocking), \
     INIT_ID(_blksize), \
     INIT_ID(_bootstrap), \
-    INIT_ID(_checkReadable), \
-    INIT_ID(_checkSeekable), \
-    INIT_ID(_checkWritable), \
     INIT_ID(_check_retval_), \
     INIT_ID(_dealloc_warn), \
     INIT_ID(_feature_version), \
