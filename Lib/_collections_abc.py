@@ -1095,6 +1095,7 @@ class ByteString(Sequence, metaclass=_DeprecateByteStringMeta):
 ByteString.register(bytes)
 ByteString.register(bytearray)
 
+
 class MutableSequence(Sequence):
     """All the operations on a read-write sequence.
 
