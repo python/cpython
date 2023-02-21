@@ -6915,6 +6915,12 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->PyDateTime_TimeZone_UTC);
     Py_VISIT(state->PyDateTime_Epoch);
     Py_VISIT(state->PyDateTime_DateTimeType);
+    Py_VISIT(state->PyDateTime_DateType);
+    Py_VISIT(state->PyDateTime_DeltaType);
+    Py_VISIT(state->PyDateTime_IsoCalendarDateType);
+    Py_VISIT(state->PyDateTime_TZInfoType);
+    Py_VISIT(state->PyDateTime_TimeType);
+    Py_VISIT(state->PyDateTime_TimeZoneType);
     return 0;
 }
 
@@ -6932,6 +6938,12 @@ module_clear(PyObject *module)
     Py_CLEAR(state->PyDateTime_TimeZone_UTC);
     Py_CLEAR(state->PyDateTime_Epoch);
     Py_CLEAR(state->PyDateTime_DateTimeType);
+    Py_CLEAR(state->PyDateTime_DateType);
+    Py_CLEAR(state->PyDateTime_DeltaType);
+    Py_CLEAR(state->PyDateTime_IsoCalendarDateType);
+    Py_CLEAR(state->PyDateTime_TZInfoType);
+    Py_CLEAR(state->PyDateTime_TimeType);
+    Py_CLEAR(state->PyDateTime_TimeZoneType);
     return 0;
 }
 
