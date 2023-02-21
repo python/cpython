@@ -1,0 +1,1 @@
+Functions from :mod:`dis` module that accept source code string as argument now print shorter traceback if given string contains syntax/indentation error
