@@ -1122,6 +1122,7 @@ Internal types
          single: exc_info (in module sys)
          single: last_traceback (in module sys)
          single: sys.exc_info
+         single: sys.exception
          single: sys.last_traceback
 
       Traceback objects represent a stack trace of an exception.  A traceback object
