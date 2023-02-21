@@ -3568,7 +3568,8 @@ ManualModuleMakeDataClass = make_dataclass('ManualModuleMakeDataClass',
                                            [('x', int)],
                                            module='test.test_dataclasses')
 WrongNameMakeDataclass = make_dataclass('Wrong', [('x', int)])
-WrongModuleMakeDataclass = make_dataclass('Wrong', [('x', int)],
+WrongModuleMakeDataclass = make_dataclass('WrongModuleMakeDataclass',
+                                          [('x', int)],
                                           module='custom')
 
 class TestMakeDataclass(unittest.TestCase):
