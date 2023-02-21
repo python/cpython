@@ -180,6 +180,14 @@ class Queue(object):
         except AttributeError:
             pass
 
+    def shutdown(self, immediate=False):
+        with self._rlock:
+            if immediate:
+                self._shutdown_state = _queue_shutdown_immediate
+                self._notempty.notify_all()
+            else:
+                self._shutdown_state = _queue_shutdown
+
     def _start_thread(self):
         debug('Queue._start_thread()')
 
