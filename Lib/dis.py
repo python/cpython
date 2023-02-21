@@ -66,6 +66,8 @@ def _try_compile(source, name):
     try:
         c = compile(source, name, 'eval')
     except SyntaxError:
+        c = None
+    if not c:
         c = compile(source, name, 'exec')
     return c
 
