@@ -453,13 +453,15 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
             _Py_OPCODE(branch));
 #endif
         // The oparg of FOR_ITER is a little special, the actual jump has to jump over
-        // its own cache entries, the oparg, AND the END_FOR (+1).
-        oparg = INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
+        // its own cache entries, the oparg, -1 to tell it to start generating from the
+        // END_FOR. However, at runtime, we will skip this END_FOR.
+        oparg = INLINE_CACHE_ENTRIES_FOR_ITER + oparg - 1;
         //_Py_CODEUNIT *start = write_curr;
         _py_set_opcode(write_curr, BB_TEST_ITER);
         write_curr->oparg = oparg;
         write_curr++;
-        write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_FOR_ITER);
+        // We don't need to emit inline cache entries, because when this converts,
+        // we can just make use of the EXTENDED_ARG and BB_BRANCH below.
         _py_set_opcode(write_curr, EXTENDED_ARG);
         write_curr->oparg = (oparg >> 8) & 0xFF;
         write_curr++;
@@ -683,6 +685,13 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
         // We need to rewrite the pseudo-branch instruction.
         case COMPARE_AND_BRANCH:
             opcode = COMPARE_OP;
+            DISPATCH();
+        case END_FOR:
+            // Assert that we are the start of a BB
+            assert(t2_start == write_i);
+            // Though we want to emit this, we don't want to start execution from END_FOR.
+            // So we tell the BB to skip over it.
+            t2_start++;
             DISPATCH();
         // FOR_ITER must be handled separately from other opcodes as it has
         // CACHE entries following it.

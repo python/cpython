@@ -2267,7 +2267,7 @@ dummy_func(
         }
 
         // FOR_ITER
-        inst(BB_TEST_ITER, (unused / 1, iter -- iter, next)) {
+        inst(BB_TEST_ITER, (iter -- iter, next)) {
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
@@ -2283,7 +2283,6 @@ dummy_func(
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 bb_test = false;
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
                 DISPATCH();
             }
             bb_test = true;

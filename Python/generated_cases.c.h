@@ -2893,13 +2893,11 @@
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 bb_test = false;
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
                 DISPATCH();
             }
             bb_test = true;
             STACK_GROW(1);
             POKE(1, next);
-            JUMPBY(1);
             DISPATCH();
         }
 
@@ -4165,7 +4163,7 @@
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
                 _Py_CODEUNIT *tier1_fallback = NULL;
 
-                // @TODO: Rewrite TEST Instruction to a JUMP above.
+                // @TODO: Rewrite TEST intruction above to a JUMP above.
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id, oparg, &tier1_fallback);
@@ -4187,7 +4185,7 @@
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
                 _Py_CODEUNIT *tier1_fallback = NULL;
 
-                // @TODO: Rewrite TEST Instruction to a JUMP above.
+                // @TODO: Rewrite TEST intruction above to a JUMP above..
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id, oparg, &tier1_fallback);
