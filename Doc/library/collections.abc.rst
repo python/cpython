@@ -272,6 +272,11 @@ Collections Abstract Base Classes -- Detailed Descriptions
       The index() method added support for *stop* and *start*
       arguments.
 
+   .. deprecated:: 3.12
+      The :class:`ByteString` ABC has been deprecated.
+      For use in typing, prefer a union, like ``bytes | bytearray``.
+      For use as an ABC, prefer :class:`Sequence`.
+
 .. class:: Set
            MutableSet
 
