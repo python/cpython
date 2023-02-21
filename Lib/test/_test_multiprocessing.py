@@ -1281,37 +1281,33 @@ class _TestQueue(BaseTestCase):
     def test_shutdown_empty(self):
         q = multiprocessing.Queue()
         q.shutdown()
-        try:
+        with self.assertRaises(
+            pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
+        ):
             q.put("data")
-            self.fail("Didn't appear to shut-down queue")
-        except pyqueue.ShutDown:
-            pass
-        try:
+        with self.assertRaises(
+            pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
+        ):
             q.get()
-            self.fail("Didn't appear to shut-down queue")
-        except pyqueue.ShutDown:
-            pass
 
     def test_shutdown_nonempty(self):
         q = multiprocessing.Queue()
         q.put("data")
         q.shutdown()
         q.get()
-        try:
+        with self.assertRaises(
+            pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
+        ):
             q.get()
-            self.fail("Didn't appear to shut-down queue")
-        except pyqueue.ShutDown:
-            pass
 
     def test_shutdown_immediate(self):
         q = multiprocessing.Queue()
         q.put("data")
         q.shutdown(immediate=True)
-        try:
+        with self.assertRaises(
+            pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
+        ):
             q.get()
-            self.fail("Didn't appear to shut-down queue")
-        except pyqueue.ShutDown:
-            pass
 #
 #
 #
