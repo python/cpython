@@ -1507,32 +1507,6 @@ error:
 }
 #endif /* HAVE_SIGSET_T */
 
-#ifdef MS_WINDOWS
-
-static int
-win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
-{
-    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
-    _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    DWORD n_bytes_returned;
-
-    if (0 == DeviceIoControl(
-        reparse_point_handle,
-        FSCTL_GET_REPARSE_POINT,
-        NULL, 0, /* in buffer */
-        target_buffer, sizeof(target_buffer),
-        &n_bytes_returned,
-        NULL)) /* we're not using OVERLAPPED_IO */
-        return FALSE;
-
-    if (reparse_tag)
-        *reparse_tag = rdb->ReparseTag;
-
-    return TRUE;
-}
-
-#endif /* MS_WINDOWS */
-
 /* Return a dictionary corresponding to the POSIX environment table */
 #if defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
 /* On Darwin/MacOSX a shared library or framework has no access to
