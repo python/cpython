@@ -91,7 +91,7 @@ sys_profile_call_or_return(
          * convert to builtin method */
 
         /* If no arg, skip */
-        if (self_arg == Py_None) {
+        if (self_arg == &_PyInstrumentation_MISSING) {
             Py_RETURN_NONE;
         }
         PyObject *meth = Py_TYPE(callable)->tp_descr_get(

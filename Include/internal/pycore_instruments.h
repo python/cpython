@@ -43,10 +43,6 @@ extern "C" {
 
 /* #define INSTRUMENT_EVENT_BRANCH_NOT_TAKEN xxx  -- If we can afford this */
 
-/* Temporary and internal events */
-
-// #define PY_INSTRUMENT_PEP_523 50
-/* #define PY_INSTRUMENT_JIT_API 17  -- Reserved */
 
 typedef uint32_t _PyMonitoringEventSet;
 
@@ -98,6 +94,8 @@ _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,
 
 extern int
 _Py_Instrumentation_GetLine(PyCodeObject *code, int index);
+
+extern PyObject _PyInstrumentation_MISSING;
 
 #ifdef __cplusplus
 }

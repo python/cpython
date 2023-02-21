@@ -46,10 +46,9 @@ class MonitoringBaseTest(unittest.TestCase):
         # m.get_local_events
         # m.set_local_events
         m.register_callback
-        # m.insert_marker
-        # m.remove_marker
         m.restart_events
         m.DISABLE
+        m.MISSING
 
     def test_tool(self):
         sys.monitoring.use_tool(TEST_TOOL, "MonitoringTest.Tool")

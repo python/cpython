@@ -4,6 +4,7 @@
 #include "pycore_frame.h"
 #include "pycore_interp.h"
 #include "pycore_namespace.h"
+#include "pycore_object.h"
 #include "pycore_opcode.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
@@ -13,7 +14,13 @@
 
 static PyObject DISABLE =
 {
-    1 << 30,
+    _PyObject_IMMORTAL_REFCNT,
+    &PyBaseObject_Type
+};
+
+PyObject _PyInstrumentation_MISSING =
+{
+    _PyObject_IMMORTAL_REFCNT,
     &PyBaseObject_Type
 };
 
@@ -2011,6 +2018,9 @@ PyObject *_Py_CreateMonitoringObject(void)
         return NULL;
     }
     if (PyObject_SetAttrString(mod, "DISABLE", &DISABLE)) {
+        goto error;
+    }
+    if (PyObject_SetAttrString(mod, "MISSING", &_PyInstrumentation_MISSING)) {
         goto error;
     }
     PyObject *events = _PyNamespace_New(NULL);
