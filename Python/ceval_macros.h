@@ -141,7 +141,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* The integer overflow is checked by an assertion below. */
 // TODO change this calculation when interpreter is bb aware.
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
+#define INSTR_OFFSET() ((int)(next_instr - \
+    (frame->f_code->_tier2_info == NULL ? _PyCode_CODE(frame->f_code) : frame->f_code->_tier2_info->_bb_space->u_code)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \

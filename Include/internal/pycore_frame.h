@@ -66,8 +66,15 @@ typedef struct _PyInterpreterFrame {
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
 
-#define _PyInterpreterFrame_LASTI(IF) \
-    ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
+static inline int
+_PyInterpreterFrame_LASTI(_PyInterpreterFrame *f) {
+    if (f->f_code->_tier2_info != NULL) {
+        return ((int)((f)->prev_instr - f->f_code->_tier2_info->_bb_space->u_code));
+    }
+    return ((int)((f)->prev_instr - _PyCode_CODE((f)->f_code)));
+}
+//#define _PyInterpreterFrame_LASTI(IF) \
+//    ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return f->localsplus + f->f_code->co_nlocalsplus;

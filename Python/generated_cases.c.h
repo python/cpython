@@ -2890,10 +2890,11 @@
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 bb_test = false;
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                DISPATCH();
             }
             bb_test = true;
             STACK_GROW(1);
@@ -4132,6 +4133,7 @@
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback;
+                    DISPATCH();
                 }
             }
             else {
@@ -4143,6 +4145,7 @@
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback + oparg;
+                    DISPATCH();
                 }
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -4205,8 +4208,8 @@
             _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
             _Py_CODEUNIT *tier1_fallback = NULL;
 
-            t2_nextinstr = _PyTier2_GenerateNextBB(
-                frame, cache->bb_id, oparg, &tier1_fallback);
+            t2_nextinstr = _PyTier2_LocateJumpBackwardsBB(
+                frame, cache->bb_id, -oparg, &tier1_fallback);
             if (t2_nextinstr == NULL) {
                 // Fall back to tier 1.
                 next_instr = tier1_fallback;
@@ -4215,11 +4218,13 @@
             _Py_CODEUNIT *curr = next_instr - 1;
             _Py_CODEUNIT *prev = curr - 1;
             assert(_Py_OPCODE(*prev) == EXTENDED_ARG);
-            int op_arg = (int)(t2_nextinstr - next_instr);
+            int op_arg = -(int)(t2_nextinstr - next_instr);
+            // fprintf(stderr, "JUMP_BACKWARD oparg is %d\n", op_arg);
             assert(op_arg <= INT16_MAX);
             _py_set_opcode(curr, JUMP_BACKWARD);
             prev->oparg = (op_arg >> 8) & 0xFF;
             curr->oparg = op_arg & 0xFF;
+            _py_set_opcode(next_instr, END_FOR);
             next_instr = t2_nextinstr;
             DISPATCH();
         }

@@ -97,7 +97,7 @@ typedef struct _PyTier2Info {
     // So backward jump offset [1, 2, 3 ,4]
     // will have [[BB_ID1, BB_ID2], [BB_ID3,], [], []]
     // etc.
-    int *backward_jump_target_bb_ids;
+    int **backward_jump_target_bb_ids;
     PyTypeObject **types_stack;
     // Max len of bb_data
     int bb_data_len;
