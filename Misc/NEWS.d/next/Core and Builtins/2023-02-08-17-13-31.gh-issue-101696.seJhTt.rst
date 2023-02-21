@@ -1,0 +1,1 @@
+Invalidate type version tag in ``_PyStaticType_Dealloc`` for static types, avoiding bug where a false cache hit could crash the interpreter. Patch by Kumar Aditya.

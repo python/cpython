@@ -2082,11 +2082,10 @@ PyGC_Collect(void)
         n = 0;
     }
     else {
-        PyObject *exc, *value, *tb;
         gcstate->collecting = 1;
-        _PyErr_Fetch(tstate, &exc, &value, &tb);
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
         n = gc_collect_with_callback(tstate, NUM_GENERATIONS - 1);
-        _PyErr_Restore(tstate, exc, value, tb);
+        _PyErr_SetRaisedException(tstate, exc);
         gcstate->collecting = 0;
     }
 
