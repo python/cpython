@@ -1,2 +1,2 @@
-``fileinput.hook_compressed`` doesn't set the given ``None`` ``encoding`` to
-``locale`` if the given ``mode`` contains ``b``.
+For the binary mode,  :func:`file input.hookcompressed` doesn't set the ``encoding`` value
+even if the value is ``None``. Patch by Gihwan Kim.
