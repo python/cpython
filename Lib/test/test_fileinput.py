@@ -918,7 +918,7 @@ class Test_hook_compressed(unittest.TestCase):
 
         self.assertEqual(self.fake_open.invocation_count, 1)
         self.assertEqual(self.fake_open.last_invocation,
-                         ((filename, mode), {'errors': None}))
+                         ((filename, mode), {'encoding': None, 'errors': None}))
 
     def do_test_use_builtin_open_text(self, filename, mode):
         original_open = self.replace_builtin_open(self.fake_open)

@@ -399,7 +399,7 @@ class FileInput:
 
 
 def hook_compressed(filename, mode, *, encoding=None, errors=None):
-    if encoding is None:  # EncodingWarning is emitted in FileInput() already.
+    if encoding is None and "b" not in mode:  # EncodingWarning is emitted in FileInput() already.
         encoding = "locale"
     ext = os.path.splitext(filename)[1]
     if ext == '.gz':
@@ -409,8 +409,6 @@ def hook_compressed(filename, mode, *, encoding=None, errors=None):
         import bz2
         stream = bz2.BZ2File(filename, mode)
     else:
-        if "b" in mode:
-            return open(filename, mode, errors=errors)
         return open(filename, mode, encoding=encoding, errors=errors)
 
     # gzip and bz2 are binary mode by default.
