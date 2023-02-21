@@ -3068,14 +3068,10 @@ maybe_dtrace_line(_PyInterpreterFrame *frame,
 /* Implement Py_EnterRecursiveCall() and Py_LeaveRecursiveCall() as functions
    for the limited API. */
 
-#undef Py_EnterRecursiveCall
-
 int Py_EnterRecursiveCall(const char *where)
 {
     return _Py_EnterRecursiveCall(where);
 }
-
-#undef Py_LeaveRecursiveCall
 
 void Py_LeaveRecursiveCall(void)
 {
