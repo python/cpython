@@ -245,6 +245,10 @@ class Queue:
             if immediate:
                 self.shutdown_state = _queue_shutdown_immediate
                 self.not_empty.notify_all()
+                # set self.unfinished_tasks to 0
+                # to break the loop in 'self.join()'
+                # when quits from `wait()`
+                self.unfinished_tasks = 0
                 self.all_tasks_done.notify_all()
             else:
                 self.shutdown_state = _queue_shutdown
