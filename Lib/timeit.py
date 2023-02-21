@@ -72,6 +72,7 @@ def inner(_it, _timer{init}):
     _t0 = _timer()
     for _i in _it:
         {stmt}
+        pass
     _t1 = _timer()
     return _t1 - _t0
 """
@@ -258,10 +259,9 @@ def main(args=None, *, _wrap_timer=None):
         args = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:tcpvh",
+        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock", "process",
-                                    "verbose", "unit=", "help"])
+                                    "process", "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
         print("use -h/--help for command line help")

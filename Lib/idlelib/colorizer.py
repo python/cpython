@@ -8,15 +8,43 @@ from idlelib.delegator import Delegator
 
 DEBUG = False
 
+
 def any(name, alternates):
     "Return a named group pattern matching list of alternates."
     return "(?P<%s>" % name + "|".join(alternates) + ")"
 
+
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
+    match_softkw = (
+        r"^[ \t]*" +  # at beginning of line + possible indentation
+        r"(?P<MATCH_SOFTKW>match)\b" +
+        r"(?![ \t]*(?:" + "|".join([  # not followed by ...
+            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
+                                 # pattern-matching statement
+            r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
+        ]) +
+        r"))"
+    )
+    case_default = (
+        r"^[ \t]*" +  # at beginning of line + possible indentation
+        r"(?P<CASE_SOFTKW>case)" +
+        r"[ \t]+(?P<CASE_DEFAULT_UNDERSCORE>_\b)"
+    )
+    case_softkw_and_pattern = (
+        r"^[ \t]*" +  # at beginning of line + possible indentation
+        r"(?P<CASE_SOFTKW2>case)\b" +
+        r"(?![ \t]*(?:" + "|".join([  # not followed by ...
+            r"_\b",  # a lone underscore
+            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
+                                 # pattern-matching case
+            r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
+        ]) +
+        r"))"
+    )
     builtinlist = [str(name) for name in dir(builtins)
-                                        if not name.startswith('_') and \
-                                        name not in keyword.kwlist]
+                   if not name.startswith('_') and
+                   name not in keyword.kwlist]
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
     stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb)?"
@@ -25,11 +53,30 @@ def make_pat():
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
-    return kw + "|" + builtin + "|" + comment + "|" + string +\
-           "|" + any("SYNC", [r"\n"])
+    prog = re.compile("|".join([
+                                builtin, comment, string, kw,
+                                match_softkw, case_default,
+                                case_softkw_and_pattern,
+                                any("SYNC", [r"\n"]),
+                               ]),
+                      re.DOTALL | re.MULTILINE)
+    return prog
 
-prog = re.compile(make_pat(), re.S)
-idprog = re.compile(r"\s+(\w+)", re.S)
+
+prog = make_pat()
+idprog = re.compile(r"\s+(\w+)")
+prog_group_name_to_tag = {
+    "MATCH_SOFTKW": "KEYWORD",
+    "CASE_SOFTKW": "KEYWORD",
+    "CASE_DEFAULT_UNDERSCORE": "KEYWORD",
+    "CASE_SOFTKW2": "KEYWORD",
+}
+
+
+def matched_named_groups(re_match):
+    "Get only the non-empty named groups from an re.Match object."
+    return ((k, v) for (k, v) in re_match.groupdict().items() if v)
+
 
 def color_config(text):
     """Set color options of Text widget.
@@ -49,7 +96,7 @@ def color_config(text):
         selectforeground=select_colors['foreground'],
         selectbackground=select_colors['background'],
         inactiveselectbackground=select_colors['background'],  # new in 8.5
-    )
+        )
 
 
 class ColorDelegator(Delegator):
@@ -120,14 +167,16 @@ class ColorDelegator(Delegator):
             "BUILTIN": idleConf.GetHighlight(theme, "builtin"),
             "STRING": idleConf.GetHighlight(theme, "string"),
             "DEFINITION": idleConf.GetHighlight(theme, "definition"),
-            "SYNC": {'background':None,'foreground':None},
-            "TODO": {'background':None,'foreground':None},
+            "SYNC": {'background': None, 'foreground': None},
+            "TODO": {'background': None, 'foreground': None},
             "ERROR": idleConf.GetHighlight(theme, "error"),
-            # The following is used by ReplaceDialog:
+            # "hit" is used by ReplaceDialog to mark matches. It shouldn't be changed by Colorizer, but
+            # that currently isn't technically possible. This should be moved elsewhere in the future
+            # when fixing the "hit" tag's visibility, or when the replace dialog is replaced with a
+            # non-modal alternative.
             "hit": idleConf.GetHighlight(theme, "hit"),
             }
-
-        if DEBUG: print('tagdefs',self.tagdefs)
+        if DEBUG: print('tagdefs', self.tagdefs)
 
     def insert(self, index, chars, tags=None):
         "Insert chars into widget at index and mark for colorizing."
@@ -184,8 +233,8 @@ class ColorDelegator(Delegator):
         if self.allow_colorizing and not self.colorizing:
             self.after_id = self.after(1, self.recolorize)
         if DEBUG:
-            print("auto colorizing turned",\
-                  self.allow_colorizing and "on" or "off")
+            print("auto colorizing turned",
+                  "on" if self.allow_colorizing else "off")
         return "break"
 
     def recolorize(self):
@@ -225,17 +274,10 @@ class ColorDelegator(Delegator):
     def recolorize_main(self):
         "Evaluate text and apply colorizing tags."
         next = "1.0"
-        while True:
-            item = self.tag_nextrange("TODO", next)
-            if not item:
-                break
-            head, tail = item
-            self.tag_remove("SYNC", head, tail)
-            item = self.tag_prevrange("SYNC", head)
-            if item:
-                head = item[1]
-            else:
-                head = "1.0"
+        while todo_tag_range := self.tag_nextrange("TODO", next):
+            self.tag_remove("SYNC", todo_tag_range[0], todo_tag_range[1])
+            sync_tag_range = self.tag_prevrange("SYNC", todo_tag_range[0])
+            head = sync_tag_range[1] if sync_tag_range else "1.0"
 
             chars = ""
             next = head
@@ -253,23 +295,8 @@ class ColorDelegator(Delegator):
                     return
                 for tag in self.tagdefs:
                     self.tag_remove(tag, mark, next)
-                chars = chars + line
-                m = self.prog.search(chars)
-                while m:
-                    for key, value in m.groupdict().items():
-                        if value:
-                            a, b = m.span(key)
-                            self.tag_add(key,
-                                         head + "+%dc" % a,
-                                         head + "+%dc" % b)
-                            if value in ("def", "class"):
-                                m1 = self.idprog.match(chars, b)
-                                if m1:
-                                    a, b = m1.span(1)
-                                    self.tag_add("DEFINITION",
-                                                 head + "+%dc" % a,
-                                                 head + "+%dc" % b)
-                    m = self.prog.search(chars, m.end())
+                chars += line
+                self._add_tags_in_section(chars, head)
                 if "SYNC" in self.tag_names(next + "-1c"):
                     head = next
                     chars = ""
@@ -288,6 +315,40 @@ class ColorDelegator(Delegator):
                     if DEBUG: print("colorizing stopped")
                     return
 
+    def _add_tag(self, start, end, head, matched_group_name):
+        """Add a tag to a given range in the text widget.
+
+        This is a utility function, receiving the range as `start` and
+        `end` positions, each of which is a number of characters
+        relative to the given `head` index in the text widget.
+
+        The tag to add is determined by `matched_group_name`, which is
+        the name of a regular expression "named group" as matched by
+        by the relevant highlighting regexps.
+        """
+        tag = prog_group_name_to_tag.get(matched_group_name,
+                                         matched_group_name)
+        self.tag_add(tag,
+                     f"{head}+{start:d}c",
+                     f"{head}+{end:d}c")
+
+    def _add_tags_in_section(self, chars, head):
+        """Parse and add highlighting tags to a given part of the text.
+
+        `chars` is a string with the text to parse and to which
+        highlighting is to be applied.
+
+            `head` is the index in the text widget where the text is found.
+        """
+        for m in self.prog.finditer(chars):
+            for name, matched_text in matched_named_groups(m):
+                a, b = m.span(name)
+                self._add_tag(a, b, head, name)
+                if matched_text in ("def", "class"):
+                    if m1 := self.idprog.match(chars, b):
+                        a, b = m1.span(1)
+                        self._add_tag(a, b, head, "DEFINITION")
+
     def removecolors(self):
         "Remove all colorizing tags."
         for tag in self.tagdefs:
@@ -296,27 +357,14 @@ class ColorDelegator(Delegator):
 
 def _color_delegator(parent):  # htest #
     from tkinter import Toplevel, Text
+    from idlelib.idle_test.test_colorizer import source
     from idlelib.percolator import Percolator
 
     top = Toplevel(parent)
     top.title("Test ColorDelegator")
     x, y = map(int, parent.geometry().split('+')[1:])
-    top.geometry("700x250+%d+%d" % (x + 20, y + 175))
-    source = (
-        "if True: int ('1') # keyword, builtin, string, comment\n"
-        "elif False: print(0)\n"
-        "else: float(None)\n"
-        "if iF + If + IF: 'keyword matching must respect case'\n"
-        "if'': x or''  # valid string-keyword no-space combinations\n"
-        "async def f(): await g()\n"
-        "# All valid prefixes for unicode and byte strings should be colored.\n"
-        "'x', '''x''', \"x\", \"\"\"x\"\"\"\n"
-        "r'x', u'x', R'x', U'x', f'x', F'x'\n"
-        "fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'\n"
-        "b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'\n"
-        "# Invalid combinations of legal characters should be half colored.\n"
-        "ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'\n"
-        )
+    top.geometry("700x550+%d+%d" % (x + 20, y + 175))
+
     text = Text(top, background="white")
     text.pack(expand=1, fill="both")
     text.insert("insert", source)

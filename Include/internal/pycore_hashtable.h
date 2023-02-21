@@ -18,9 +18,9 @@ typedef struct {
     _Py_slist_item_t *head;
 } _Py_slist_t;
 
-#define _Py_SLIST_ITEM_NEXT(ITEM) (((_Py_slist_item_t *)ITEM)->next)
+#define _Py_SLIST_ITEM_NEXT(ITEM) _Py_RVALUE(((_Py_slist_item_t *)(ITEM))->next)
 
-#define _Py_SLIST_HEAD(SLIST) (((_Py_slist_t *)SLIST)->head)
+#define _Py_SLIST_HEAD(SLIST) _Py_RVALUE(((_Py_slist_t *)(SLIST))->head)
 
 
 /* _Py_hashtable: table entry */

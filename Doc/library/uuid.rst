@@ -118,7 +118,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.hex
 
-   The UUID as a 32-character hexadecimal string.
+   The UUID as a 32-character lowercase hexadecimal string.
 
 
 .. attribute:: UUID.int
@@ -211,7 +211,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
 
 .. data:: NAMESPACE_DNS
 
-   When this namespace is specified, the *name* string is a fully-qualified domain
+   When this namespace is specified, the *name* string is a fully qualified domain
    name.
 
 
@@ -261,6 +261,47 @@ of the :attr:`variant` attribute:
       internal format of UUIDs, and methods of generating UUIDs.
 
 
+.. _uuid-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.12
+
+The :mod:`uuid` module can be executed as a script from the command line.
+
+.. code-block:: sh
+
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5}] [-n NAMESPACE] [-N NAME]
+
+The following options are accepted:
+
+.. program:: uuid
+
+.. cmdoption:: -h, --help
+
+   Show the help message and exit.
+
+.. cmdoption:: -u <uuid>
+               --uuid <uuid>
+
+   Specify the function name to use to generate the uuid. By default :func:`uuid4`
+   is used.
+
+.. cmdoption:: -n <namespace>
+               --namespace <namespace>
+
+   The namespace is a ``UUID``, or ``@ns`` where ``ns`` is a well-known predefined UUID
+   addressed by namespace name. Such as ``@dns``, ``@url``, ``@oid``, and ``@x500``.
+   Only required for :func:`uuid3` / :func:`uuid5` functions.
+
+.. cmdoption:: -N <name>
+               --name <name>
+
+   The name used as part of generating the uuid. Only required for
+   :func:`uuid3` / :func:`uuid5` functions.
+
+
 .. _uuid-example:
 
 Example
@@ -300,4 +341,23 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> # make a UUID from a 16-byte string
    >>> uuid.UUID(bytes=x.bytes)
    UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+
+.. _uuid-cli-example:
+
+Command-Line Example
+--------------------
+
+Here are some examples of typical usage of the :mod:`uuid` command line interface:
+
+.. code-block:: shell
+
+   # generate a random uuid - by default uuid4() is used
+   $ python -m uuid
+
+   # generate a uuid using uuid1()
+   $ python -m uuid -u uuid1
+
+   # generate a uuid using uuid5
+   $ python -m uuid -u uuid5 -n @url -N example.com
 

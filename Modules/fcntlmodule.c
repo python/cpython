@@ -8,6 +8,9 @@
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
+#ifdef HAVE_LINUX_FS_H
+#include <linux/fs.h>
+#endif
 
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -20,24 +23,12 @@ module fcntl
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=124b58387c158179]*/
 
-static int
-conv_descriptor(PyObject *object, int *target)
-{
-    int fd = PyObject_AsFileDescriptor(object);
-
-    if (fd < 0)
-        return 0;
-    *target = fd;
-    return 1;
-}
-
-/* Must come after conv_descriptor definition. */
 #include "clinic/fcntlmodule.c.h"
 
 /*[clinic input]
 fcntl.fcntl
 
-    fd: object(type='int', converter='conv_descriptor')
+    fd: fildes
     cmd as code: int
     arg: object(c_default='NULL') = 0
     /
@@ -57,7 +48,7 @@ corresponding to the return value of the fcntl call in the C code.
 
 static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
-/*[clinic end generated code: output=888fc93b51c295bd input=8cefbe59b29efbe2]*/
+/*[clinic end generated code: output=888fc93b51c295bd input=7955340198e5f334]*/
 {
     unsigned int int_arg = 0;
     int ret;
@@ -116,7 +107,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 /*[clinic input]
 fcntl.ioctl
 
-    fd: object(type='int', converter='conv_descriptor')
+    fd: fildes
     request as code: unsigned_int(bitwise=True)
     arg as ob_arg: object(c_default='NULL') = 0
     mutate_flag as mutate_arg: bool = True
@@ -155,7 +146,7 @@ code.
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                  PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=7f7f5840c65991be input=ede70c433cccbbb2]*/
+/*[clinic end generated code: output=7f7f5840c65991be input=967b4a4cbeceb0a8]*/
 {
 #define IOCTL_BUFSZ 1024
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
@@ -280,7 +271,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
 /*[clinic input]
 fcntl.flock
 
-    fd: object(type='int', converter='conv_descriptor')
+    fd: fildes
     operation as code: int
     /
 
@@ -292,7 +283,7 @@ function is emulated using fcntl()).
 
 static PyObject *
 fcntl_flock_impl(PyObject *module, int fd, int code)
-/*[clinic end generated code: output=84059e2b37d2fc64 input=b70a0a41ca22a8a0]*/
+/*[clinic end generated code: output=84059e2b37d2fc64 input=0bfc00f795953452]*/
 {
     int ret;
     int async_err = 0;
@@ -346,7 +337,7 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
 /*[clinic input]
 fcntl.lockf
 
-    fd: object(type='int', converter='conv_descriptor')
+    fd: fildes
     cmd as code: int
     len as lenobj: object(c_default='NULL') = 0
     start as startobj: object(c_default='NULL') = 0
@@ -380,7 +371,7 @@ starts.  `whence` is as with fileobj.seek(), specifically:
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence)
-/*[clinic end generated code: output=4985e7a172e7461a input=3a5dc01b04371f1a]*/
+/*[clinic end generated code: output=4985e7a172e7461a input=5480479fc63a04b8]*/
 {
     int ret;
     int async_err = 0;
@@ -577,12 +568,34 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, F_SHLCK)) return -1;
 #endif
 
+/* Linux specifics */
+#ifdef F_SETPIPE_SZ
+    if (PyModule_AddIntMacro(m, F_SETPIPE_SZ)) return -1;
+#endif
+#ifdef F_GETPIPE_SZ
+    if (PyModule_AddIntMacro(m, F_GETPIPE_SZ)) return -1;
+#endif
+#ifdef FICLONE
+    if (PyModule_AddIntMacro(m, FICLONE)) return -1;
+#endif
+#ifdef FICLONERANGE
+    if (PyModule_AddIntMacro(m, FICLONERANGE)) return -1;
+#endif
+
 /* OS X specifics */
 #ifdef F_FULLFSYNC
     if (PyModule_AddIntMacro(m, F_FULLFSYNC)) return -1;
 #endif
 #ifdef F_NOCACHE
     if (PyModule_AddIntMacro(m, F_NOCACHE)) return -1;
+#endif
+
+/* FreeBSD specifics */
+#ifdef F_DUP2FD
+    if (PyModule_AddIntMacro(m, F_DUP2FD)) return -1;
+#endif
+#ifdef F_DUP2FD_CLOEXEC
+    if (PyModule_AddIntMacro(m, F_DUP2FD_CLOEXEC)) return -1;
 #endif
 
 /* For F_{GET|SET}FL */

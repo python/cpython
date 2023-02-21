@@ -50,7 +50,7 @@ module :mod:`xml.sax.handler`, so that all methods get default implementations.
 
 .. class:: LexicalHandler
 
-   Interface used by the parser to represent low freqency events which may not
+   Interface used by the parser to represent low frequency events which may not
    be of interest to many applications.
 
 In addition to these classes, :mod:`xml.sax.handler` provides symbolic constants
@@ -147,7 +147,7 @@ for the feature and property names.
 .. data:: property_xml_string
 
    | value: ``"http://xml.org/sax/properties/xml-string"``
-   | data type: String
+   | data type: Bytes
    | description: The literal string of characters that was the source for the
      current event.
    | access: read-only

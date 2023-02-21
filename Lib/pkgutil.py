@@ -204,7 +204,8 @@ class ImpImporter:
 
     def __init__(self, path=None):
         global imp
-        warnings.warn("This emulation is deprecated, use 'importlib' instead",
+        warnings.warn("This emulation is deprecated and slated for removal "
+                      "in Python 3.12; use 'importlib' instead",
              DeprecationWarning)
         _import_imp()
         self.path = path
@@ -271,7 +272,8 @@ class ImpLoader:
     code = source = None
 
     def __init__(self, fullname, file, filename, etc):
-        warnings.warn("This emulation is deprecated, use 'importlib' instead",
+        warnings.warn("This emulation is deprecated and slated for removal in "
+                      "Python 3.12; use 'importlib' instead",
                       DeprecationWarning)
         _import_imp()
         self.file = file
@@ -411,6 +413,7 @@ def get_importer(path_item):
     The cache (or part of it) can be cleared manually if a
     rescan of sys.path_hooks is necessary.
     """
+    path_item = os.fsdecode(path_item)
     try:
         importer = sys.path_importer_cache[path_item]
     except KeyError:
@@ -669,7 +672,7 @@ def resolve_name(name):
     ValueError - if `name` isn't in a recognised format
     ImportError - if an import failed when it shouldn't have
     AttributeError - if a failure occurred when traversing the object hierarchy
-                     within the imported package to get to the desired object)
+                     within the imported package to get to the desired object.
     """
     global _NAME_PATTERN
     if _NAME_PATTERN is None:
