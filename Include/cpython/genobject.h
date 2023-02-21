@@ -26,10 +26,7 @@ extern "C" {
     char prefix##_running_async;                                            \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
-    union {                                                                 \
-        Py_DEPRECATED(3.12) PyCodeObject *prefix##_code;                    \
-        PyObject *prefix##_iframe[1];                                       \
-    };
+    PyObject *prefix##_iframe[1];                                           \
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
