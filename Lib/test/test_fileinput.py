@@ -997,6 +997,7 @@ class Test_hook_encoded(unittest.TestCase):
         with self.assertRaises(ValueError):
             check('rb', ['A\n', 'B\r\n', 'C\r', 'D\u20ac'])
 
+
 class MiscTest(unittest.TestCase):
 
     def test_all(self):
