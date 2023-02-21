@@ -69,7 +69,7 @@ class datetime.datetime "PyDateTime_DateTime *" "clinic_state()->PyDateTime_Date
 class datetime.date "PyDateTime_Date *" "clinic_state()->PyDateTime_DateType"
 class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "clinic_state()->PyDateTime_IsoCalendarDateType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=36a187caa1dda205]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8a333fc5cbf6a146]*/
 
 #define clinic_state() (GLOBAL_STATE())
 #include "clinic/_datetimemodule.c.h"
