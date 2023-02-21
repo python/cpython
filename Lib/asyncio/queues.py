@@ -271,6 +271,8 @@ class Queue(mixins._LoopBoundMixin):
             putter = self._putters.popleft()
             if not putter.done():
                 putter.set_result(None)
+        # Release 'joined' tasks/coros
+        self._finished.set()   
 
 class PriorityQueue(Queue):
     """A subclass of Queue; retrieves entries in priority order (lowest first).
