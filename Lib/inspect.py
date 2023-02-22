@@ -419,6 +419,7 @@ def iscoroutinefunction(obj):
     be marked via markcoroutinefunction.
     """
     #check if obj is async gen method and returns awaitable
+    obj = functools._unwrap_partial(obj)
     is_valid = isbuiltin(obj) or ismethodwrapper(obj)
     if is_valid and isasyncgen(obj.__self__) and obj.__name__ in _agen_methods:
         return True
