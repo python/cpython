@@ -3684,7 +3684,7 @@ class TestMakeDataclass(unittest.TestCase):
     def test_module_attr(self):
         self.assertEqual(ByMakeDataClass.__module__, __name__)
         self.assertEqual(ByMakeDataClass(1).__module__, __name__)
-
+self.assertEqual(WrongModuleMakeDataclass.__module__, "custom")
         Nested = make_dataclass('Nested', [])
         self.assertEqual(Nested.__module__, __name__)
         self.assertEqual(Nested().__module__, __name__)
