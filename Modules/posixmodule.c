@@ -331,8 +331,8 @@ corresponding Unix manual entries for more information on calls.");
 #  define HAVE_SYSTEM     1
 #  include <process.h>
 #else
-  #ifdef _MSC_VER
-    /* Microsoft compiler */
+#  ifdef _MSC_VER
+     /* Microsoft compiler */
 #    define HAVE_GETPPID    1
 #    define HAVE_GETLOGIN   1
 #    define HAVE_SPAWNV     1
