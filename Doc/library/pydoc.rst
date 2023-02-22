@@ -18,7 +18,7 @@
 
 The :mod:`pydoc` module automatically generates documentation from Python
 modules.  The documentation can be presented as pages of text on the console,
-served to a Web browser, or saved to HTML files.
+served to a web browser, or saved to HTML files.
 
 For modules, classes, functions and methods, the displayed documentation is
 derived from the docstring (i.e. the :attr:`__doc__` attribute) of the object,
@@ -33,7 +33,7 @@ as text on the console.  The same text documentation can also be viewed from
 outside the Python interpreter by running :program:`pydoc` as a script at the
 operating system's command prompt. For example, running ::
 
-   pydoc sys
+   python -m pydoc sys
 
 at a shell prompt will display documentation on the :mod:`sys` module, in a
 style similar to the manual pages shown by the Unix :program:`man` command.  The
@@ -65,18 +65,18 @@ manner similar to the Unix :program:`man` command.  The synopsis line of a
 module is the first line of its documentation string.
 
 You can also use :program:`pydoc` to start an HTTP server on the local machine
-that will serve documentation to visiting Web browsers.  :program:`pydoc -p 1234`
+that will serve documentation to visiting web browsers.  :program:`python -m pydoc -p 1234`
 will start a HTTP server on port 1234, allowing you to browse the
-documentation at ``http://localhost:1234/`` in your preferred Web browser.
+documentation at ``http://localhost:1234/`` in your preferred web browser.
 Specifying ``0`` as the port number will select an arbitrary unused port.
 
-:program:`pydoc -n <hostname>` will start the server listening at the given
+:program:`python -m pydoc -n <hostname>` will start the server listening at the given
 hostname.  By default the hostname is 'localhost' but if you want the server to
 be reached from other machines, you may want to change the host name that the
 server responds to.  During development this is especially useful if you want
 to run pydoc from within a container.
 
-:program:`pydoc -b` will start the server and additionally open a web
+:program:`python -m pydoc -b` will start the server and additionally open a web
 browser to a module index page.  Each served page has a navigation bar at the
 top where you can *Get* help on an individual item, *Search* all modules with a
 keyword in their synopsis line, and go to the *Module index*, *Topics* and

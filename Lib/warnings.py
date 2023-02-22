@@ -211,7 +211,6 @@ def _processoptions(args):
 
 # Helper for _processoptions()
 def _setoption(arg):
-    import re
     parts = arg.split(':')
     if len(parts) > 5:
         raise _OptionError("too many fields (max 5): %r" % (arg,))
@@ -220,11 +219,13 @@ def _setoption(arg):
     action, message, category, module, lineno = [s.strip()
                                                  for s in parts]
     action = _getaction(action)
-    message = re.escape(message)
     category = _getcategory(category)
-    module = re.escape(module)
+    if message or module:
+        import re
+    if message:
+        message = re.escape(message)
     if module:
-        module = module + '$'
+        module = re.escape(module) + r'\Z'
     if lineno:
         try:
             lineno = int(lineno)
@@ -248,47 +249,52 @@ def _getaction(action):
 
 # Helper for _setoption()
 def _getcategory(category):
-    import re
     if not category:
         return Warning
-    if re.match("^[a-zA-Z0-9_]+$", category):
-        try:
-            cat = eval(category)
-        except NameError:
-            raise _OptionError("unknown warning category: %r" % (category,)) from None
+    if '.' not in category:
+        import builtins as m
+        klass = category
     else:
-        i = category.rfind(".")
-        module = category[:i]
-        klass = category[i+1:]
+        module, _, klass = category.rpartition('.')
         try:
             m = __import__(module, None, None, [klass])
         except ImportError:
             raise _OptionError("invalid module name: %r" % (module,)) from None
-        try:
-            cat = getattr(m, klass)
-        except AttributeError:
-            raise _OptionError("unknown warning category: %r" % (category,)) from None
+    try:
+        cat = getattr(m, klass)
+    except AttributeError:
+        raise _OptionError("unknown warning category: %r" % (category,)) from None
     if not issubclass(cat, Warning):
         raise _OptionError("invalid warning category: %r" % (category,))
     return cat
 
 
-def _is_internal_frame(frame):
-    """Signal whether the frame is an internal CPython implementation detail."""
-    filename = frame.f_code.co_filename
+def _is_internal_filename(filename):
     return 'importlib' in filename and '_bootstrap' in filename
 
 
-def _next_external_frame(frame):
-    """Find the next frame that doesn't involve CPython internals."""
+def _is_filename_to_skip(filename, skip_file_prefixes):
+    return any(filename.startswith(prefix) for prefix in skip_file_prefixes)
+
+
+def _is_internal_frame(frame):
+    """Signal whether the frame is an internal CPython implementation detail."""
+    return _is_internal_filename(frame.f_code.co_filename)
+
+
+def _next_external_frame(frame, skip_file_prefixes):
+    """Find the next frame that doesn't involve Python or user internals."""
     frame = frame.f_back
-    while frame is not None and _is_internal_frame(frame):
+    while frame is not None and (
+            _is_internal_filename(filename := frame.f_code.co_filename) or
+            _is_filename_to_skip(filename, skip_file_prefixes)):
         frame = frame.f_back
     return frame
 
 
 # Code typically replaced by _warnings
-def warn(message, category=None, stacklevel=1, source=None):
+def warn(message, category=None, stacklevel=1, source=None,
+         *, skip_file_prefixes=()):
     """Issue a warning, or maybe ignore it or raise an exception."""
     # Check if message is already a Warning object
     if isinstance(message, Warning):
@@ -299,6 +305,11 @@ def warn(message, category=None, stacklevel=1, source=None):
     if not (isinstance(category, type) and issubclass(category, Warning)):
         raise TypeError("category must be a Warning subclass, "
                         "not '{:s}'".format(type(category).__name__))
+    if not isinstance(skip_file_prefixes, tuple):
+        # The C version demands a tuple for implementation performance.
+        raise TypeError('skip_file_prefixes must be a tuple of strs.')
+    if skip_file_prefixes:
+        stacklevel = max(2, stacklevel)
     # Get context information
     try:
         if stacklevel <= 1 or _is_internal_frame(sys._getframe(1)):
@@ -309,7 +320,7 @@ def warn(message, category=None, stacklevel=1, source=None):
             frame = sys._getframe(1)
             # Look for one frame less since the above line starts us off.
             for x in range(stacklevel-1):
-                frame = _next_external_frame(frame)
+                frame = _next_external_frame(frame, skip_file_prefixes)
                 if frame is None:
                     raise ValueError
     except ValueError:
@@ -436,9 +447,13 @@ class catch_warnings(object):
     named 'warnings' and imported under that name. This argument is only useful
     when testing the warnings module itself.
 
+    If the 'action' argument is not None, the remaining arguments are passed
+    to warnings.simplefilter() as if it were called immediately on entering the
+    context.
     """
 
-    def __init__(self, *, record=False, module=None):
+    def __init__(self, *, record=False, module=None,
+                 action=None, category=Warning, lineno=0, append=False):
         """Specify whether to record warnings and if an alternative module
         should be used other than sys.modules['warnings'].
 
@@ -449,6 +464,10 @@ class catch_warnings(object):
         self._record = record
         self._module = sys.modules['warnings'] if module is None else module
         self._entered = False
+        if action is None:
+            self._filter = None
+        else:
+            self._filter = (action, category, lineno, append)
 
     def __repr__(self):
         args = []
@@ -468,6 +487,8 @@ class catch_warnings(object):
         self._module._filters_mutated()
         self._showwarning = self._module.showwarning
         self._showwarnmsg_impl = self._module._showwarnmsg_impl
+        if self._filter is not None:
+            simplefilter(*self._filter)
         if self._record:
             log = []
             self._module._showwarnmsg_impl = log.append
@@ -485,6 +506,27 @@ class catch_warnings(object):
         self._module._filters_mutated()
         self._module.showwarning = self._showwarning
         self._module._showwarnmsg_impl = self._showwarnmsg_impl
+
+
+_DEPRECATED_MSG = "{name!r} is deprecated and slated for removal in Python {remove}"
+
+def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_info):
+    """Warn that *name* is deprecated or should be removed.
+
+    RuntimeError is raised if *remove* specifies a major/minor tuple older than
+    the current Python version or the same version but past the alpha.
+
+    The *message* argument is formatted with *name* and *remove* as a Python
+    version (e.g. "3.11").
+
+    """
+    remove_formatted = f"{remove[0]}.{remove[1]}"
+    if (_version[:2] > remove) or (_version[:2] == remove and _version[3] != "alpha"):
+        msg = f"{name!r} was slated for removal after Python {remove_formatted} alpha"
+        raise RuntimeError(msg)
+    else:
+        msg = message.format(name=name, remove=remove_formatted)
+        warn(msg, DeprecationWarning, stacklevel=3)
 
 
 # Private utility function called by _PyErr_WarnUnawaitedCoroutine

@@ -1,0 +1,5 @@
+:mod:`socket.getaddrinfo` no longer raises :class:`OverflowError` for
+:class:`int` **port** values outside of the C long range. Out of range values
+are left up to the underlying string based C library API to report. A
+:class:`socket.gaierror` ``SAI_SERVICE`` may occur instead, or no error at all
+as not all platform C libraries generate an error.

@@ -1,22 +1,26 @@
-
 /* Testing module for multi-phase initialization of extension modules (PEP 489)
  */
+
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 
 #ifdef MS_WINDOWS
 
-#include "..\modules\_io\_iomodule.h"
+#include "pycore_fileutils.h"     // _Py_get_osfhandle()
+#include "pycore_runtime.h"       // _Py_ID()
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <fcntl.h>
 
  /* The full definition is in iomodule. We reproduce
- enough here to get the handle, which is all we want. */
+ enough here to get the fd, which is all we want. */
 typedef struct {
     PyObject_HEAD
-    HANDLE handle;
+    int fd;
 } winconsoleio;
 
 
@@ -47,7 +51,14 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
 {
     INPUT_RECORD *rec = NULL;
 
-    if (!PyWindowsConsoleIO_Check(file)) {
+    PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
+            &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
+    if (winconsoleio_type == NULL) {
+        return NULL;
+    }
+    int is_subclass = PyObject_TypeCheck(file, winconsoleio_type);
+    Py_DECREF(winconsoleio_type);
+    if (!is_subclass) {
         PyErr_SetString(PyExc_TypeError, "expected raw console object");
         return NULL;
     }
@@ -55,20 +66,22 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
     const wchar_t *p = (const wchar_t *)PyBytes_AS_STRING(s);
     DWORD size = (DWORD)PyBytes_GET_SIZE(s) / sizeof(wchar_t);
 
-    rec = (INPUT_RECORD*)PyMem_Malloc(sizeof(INPUT_RECORD) * size);
+    rec = (INPUT_RECORD*)PyMem_Calloc(size, sizeof(INPUT_RECORD));
     if (!rec)
         goto error;
-    memset(rec, 0, sizeof(INPUT_RECORD) * size);
 
     INPUT_RECORD *prec = rec;
     for (DWORD i = 0; i < size; ++i, ++p, ++prec) {
         prec->EventType = KEY_EVENT;
         prec->Event.KeyEvent.bKeyDown = TRUE;
-        prec->Event.KeyEvent.wRepeatCount = 10;
+        prec->Event.KeyEvent.wRepeatCount = 1;
         prec->Event.KeyEvent.uChar.UnicodeChar = *p;
     }
 
-    HANDLE hInput = ((winconsoleio*)file)->handle;
+    HANDLE hInput = _Py_get_osfhandle(((winconsoleio*)file)->fd);
+    if (hInput == INVALID_HANDLE_VALUE)
+        goto error;
+
     DWORD total = 0;
     while (total < size) {
         DWORD wrote;
