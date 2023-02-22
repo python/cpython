@@ -297,7 +297,7 @@ os
   of the file, and ``st_ctime`` now returns the last metadata change,
   for consistency with other platforms. ``st_ino`` may now be up to 128
   bits, depending on your file system, and ``st_rdev`` is always set to
-  zero rather than to incorrect values. 
+  zero rather than to incorrect values.
   Both functions may be significantly faster on newer releases of
   Windows. (Contributed by Steve Dower in :gh:`99726`.)
 
