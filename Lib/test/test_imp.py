@@ -288,12 +288,14 @@ class ImportTests(unittest.TestCase):
         self.addCleanup(_forget_extension, name, filename)
 
         _testsinglephase = imp.load_dynamic(name, filename)
-        initialized = _testsinglephase.state_initialized()
+        init_before = _testsinglephase.state_initialized()
 
         _testsinglephase._clear_globals()
+        init_after = _testsinglephase.state_initialized()
         init_count = _testsinglephase.initialized_count()
 
-        self.assertGreater(initialized, 0)
+        self.assertGreater(init_before, 0)
+        self.assertEqual(init_after, 0)
         self.assertEqual(init_count, -1)
 
     @requires_subinterpreters
