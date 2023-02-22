@@ -507,7 +507,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef HAVE_GETPGRP */
 
 /* Define if you have getpid.  */
-#define HAVE_GETPID
+/* #undef HAVE_GETPID */
 
 /* Define if you have gettimeofday.  */
 /* #undef HAVE_GETTIMEOFDAY */

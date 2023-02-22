@@ -4402,7 +4402,7 @@ os_getgid(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_GETGID) */
 
-#if defined(HAVE_GETPID)
+#if defined(HAVE_GETPID) || defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_getpid__doc__,
 "getpid($module, /)\n"
@@ -4422,7 +4422,7 @@ os_getpid(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_getpid_impl(module);
 }
 
-#endif /* defined(HAVE_GETPID) */
+#endif /* defined(HAVE_GETPID) || defined(MS_WINDOWS) */
 
 #if defined(HAVE_GETGROUPLIST) && defined(__APPLE__)
 

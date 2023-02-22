@@ -7946,7 +7946,7 @@ os_getgid_impl(PyObject *module)
 #endif /* HAVE_GETGID */
 
 
-#ifdef HAVE_GETPID
+#if defined(HAVE_GETPID) || defined(MS_WINDOWS)
 /*[clinic input]
 os.getpid
 
@@ -7963,7 +7963,7 @@ os_getpid_impl(PyObject *module)
     return PyLong_FromPid(getpid());
 #endif
 }
-#endif /* HAVE_GETPID */
+#endif /* defined(HAVE_GETPID) || defined(MS_WINDOWS) */
 
 #ifdef NGROUPS_MAX
 #define MAX_GROUPS NGROUPS_MAX
