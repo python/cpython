@@ -427,7 +427,7 @@ class ImportTests(unittest.TestCase):
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)
 
-        script = textwrap.dedent(f'''
+        snapshot_script = textwrap.dedent(f'''
             import json
             import os
 
@@ -455,19 +455,19 @@ class ImportTests(unittest.TestCase):
             _testsinglephase.spam = 'spam, spam, spam, spam, eggs, and spam'
 
             # Use an interpreter that gets destroyed right away.
-            ret = support.run_in_subinterp(script)
+            ret = support.run_in_subinterp(snapshot_script)
             self.assertEqual(ret, 0)
             snap = read_data()
             check_common(snap)
             check_copied(snap, main_snap)
 
             # Use several interpreters that overlap.
-            _interpreters.run_string(interp1, script)
+            _interpreters.run_string(interp1, snapshot_script)
             snap = read_data()
             check_common(snap)
             check_copied(snap, main_snap)
 
-            _interpreters.run_string(interp2, script)
+            _interpreters.run_string(interp2, snapshot_script)
             snap = read_data()
             check_common(snap)
             check_copied(snap, main_snap)
@@ -481,7 +481,7 @@ class ImportTests(unittest.TestCase):
                           'already loaded in deleted interpreter'):
             # Use an interpreter that gets destroyed right away.
             ret = support.run_in_subinterp(os.linesep.join([
-                script,
+                snapshot_script,
                 textwrap.dedent('''
                     # Attrs set after loading are not in m_copy.
                     _testsinglephase.spam = 'spam, spam, mash, spam, eggs, and spam'
@@ -492,12 +492,12 @@ class ImportTests(unittest.TestCase):
             check_fresh(base)
 
             # Use several interpreters that overlap.
-            _interpreters.run_string(interp1, script)
+            _interpreters.run_string(interp1, snapshot_script)
             interp1_snap = read_data()
             check_common(interp1_snap)
             check_semi_fresh(interp1_snap, main_snap, base)
 
-            _interpreters.run_string(interp2, script)
+            _interpreters.run_string(interp2, snapshot_script)
             snap = read_data()
             check_common(snap)
             check_copied(snap, interp1_snap)
@@ -506,14 +506,15 @@ class ImportTests(unittest.TestCase):
             _testsinglephase._clear_globals()
 
             # Use an interpreter that gets destroyed right away.
-            ret = support.run_in_subinterp(os.linesep.join([
+            script = os.linesep.join([
                 setup_script,
                 cleanup_script,
-                script,
+                snapshot_script,
                 textwrap.dedent('''
                     # Attrs set after loading are not in m_copy.
                     _testsinglephase.spam = 'spam, spam, mash, spam, eggs, and spam'
-                ''')]))
+                ''')])
+            ret = support.run_in_subinterp(script)
             self.assertEqual(ret, 0)
             base = read_data()
             check_common(base)
@@ -522,14 +523,14 @@ class ImportTests(unittest.TestCase):
             # Use several interpreters that overlap.
             clear_subinterp(interp1)
             #_interpreters.run_string(interpid, cleanup_script)
-            _interpreters.run_string(interp1, script)
+            _interpreters.run_string(interp1, snapshot_script)
             snap = read_data()
             check_common(snap)
             check_fresh(snap)
 
             clear_subinterp(interp2)
             #_interpreters.run_string(interpid, cleanup_script)
-            _interpreters.run_string(interp2, script)
+            _interpreters.run_string(interp2, snapshot_script)
             snap = read_data()
             check_common(snap)
             check_fresh(snap)
