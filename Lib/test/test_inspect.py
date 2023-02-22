@@ -223,6 +223,10 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.iscoroutinefunction(Cl))
         # instances with async def __call__ are NOT recognised.
         self.assertFalse(inspect.iscoroutinefunction(Cl()))
+        # unless explicitly marked.
+        self.assertTrue(inspect.iscoroutinefunction(
+            inspect.markcoroutinefunction(Cl())
+        ))
 
         class Cl2:
             @inspect.markcoroutinefunction
@@ -232,6 +236,10 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.iscoroutinefunction(Cl2))
         # instances with marked __call__ are NOT recognised.
         self.assertFalse(inspect.iscoroutinefunction(Cl2()))
+        # unless explicitly marked.
+        self.assertTrue(inspect.iscoroutinefunction(
+            inspect.markcoroutinefunction(Cl2())
+        ))
 
         class Cl3:
             @inspect.markcoroutinefunction
@@ -2525,7 +2533,7 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(p('f'), False)
         self.assertEqual(p('local'), 3)
         self.assertEqual(p('sys'), sys.maxsize)
-        self.assertNotIn('exp', signature.parameters)
+        self.assertEqual(p('exp'), sys.maxsize - 1)
 
         test_callable(object)
 
@@ -3282,6 +3290,25 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature((lambda a=10: a)),
                          ((('a', 10, ..., "positional_or_keyword"),),
                           ...))
+
+    def test_signature_on_mocks(self):
+        # https://github.com/python/cpython/issues/96127
+        for mock in (
+            unittest.mock.Mock(),
+            unittest.mock.AsyncMock(),
+            unittest.mock.MagicMock(),
+        ):
+            with self.subTest(mock=mock):
+                self.assertEqual(str(inspect.signature(mock)), '(*args, **kwargs)')
+
+    def test_signature_on_noncallable_mocks(self):
+        for mock in (
+            unittest.mock.NonCallableMock(),
+            unittest.mock.NonCallableMagicMock(),
+        ):
+            with self.subTest(mock=mock):
+                with self.assertRaises(TypeError):
+                    inspect.signature(mock)
 
     def test_signature_equality(self):
         def foo(a, *, b:int) -> float: pass
@@ -4323,9 +4350,28 @@ class TestSignatureDefinitions(unittest.TestCase):
         sig = inspect.signature(func)
         self.assertIsNotNone(sig)
         self.assertEqual(str(sig), '(self, /, a, b=1, *args, c, d=2, **kwargs)')
+
         func.__text_signature__ = '($self, a, b=1, /, *args, c, d=2, **kwargs)'
         sig = inspect.signature(func)
         self.assertEqual(str(sig), '(self, a, b=1, /, *args, c, d=2, **kwargs)')
+
+        func.__text_signature__ = '(self, a=1+2, b=4-3, c=1 | 3 | 16)'
+        sig = inspect.signature(func)
+        self.assertEqual(str(sig), '(self, a=3, b=1, c=19)')
+
+        func.__text_signature__ = '(self, a=1,\nb=2,\n\n\n   c=3)'
+        sig = inspect.signature(func)
+        self.assertEqual(str(sig), '(self, a=1, b=2, c=3)')
+
+        func.__text_signature__ = '(self, x=does_not_exist)'
+        with self.assertRaises(ValueError):
+            inspect.signature(func)
+        func.__text_signature__ = '(self, x=sys, y=inspect)'
+        with self.assertRaises(ValueError):
+            inspect.signature(func)
+        func.__text_signature__ = '(self, 123)'
+        with self.assertRaises(ValueError):
+            inspect.signature(func)
 
     def test_base_class_have_text_signature(self):
         # see issue 43118

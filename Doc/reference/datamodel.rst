@@ -1122,6 +1122,7 @@ Internal types
          single: exc_info (in module sys)
          single: last_traceback (in module sys)
          single: sys.exc_info
+         single: sys.exception
          single: sys.last_traceback
 
       Traceback objects represent a stack trace of an exception.  A traceback object
@@ -1525,7 +1526,7 @@ Basic customization
    :meth:`__hash__`, its instances will not be usable as items in hashable
    collections.  If a class defines mutable objects and implements an
    :meth:`__eq__` method, it should not implement :meth:`__hash__`, since the
-   implementation of hashable collections requires that a key's hash value is
+   implementation of :term:`hashable` collections requires that a key's hash value is
    immutable (if the object's hash value changes, it will be in the wrong hash
    bucket).
 
@@ -2949,6 +2950,14 @@ are awaitable.
    Must return an :term:`iterator`.  Should be used to implement
    :term:`awaitable` objects.  For instance, :class:`asyncio.Future` implements
    this method to be compatible with the :keyword:`await` expression.
+
+   .. note::
+
+      The language doesn't place any restriction on the type or value of the
+      objects yielded by the iterator returned by ``__await__``, as this is
+      specific to the implementation of the asynchronous execution framework
+      (e.g. :mod:`asyncio`) that will be managing the :term:`awaitable` object.
+
 
 .. versionadded:: 3.5
 

@@ -462,7 +462,7 @@ In such cases, the ``@`` format character should be used to specify
 native byte ordering and data sizes.  Internal pad bytes are normally inserted
 automatically.  It is possible that a zero-repeat format code will be
 needed at the end of a format string to round up to the correct
-byte boundary for proper alignment of consective chunks of data.
+byte boundary for proper alignment of consecutive chunks of data.
 
 Consider these two simple examples (on a 64-bit, little-endian
 machine)::
@@ -548,9 +548,9 @@ The :mod:`struct` module also defines the following type:
    .. note::
 
       The compiled versions of the most recent format strings passed to
-      :class:`Struct` and the module-level functions are cached, so programs
-      that use only a few format strings needn't worry about reusing a single
-      :class:`Struct` instance.
+      the module-level functions are cached, so programs that use only a few
+      format strings needn't worry about reusing a single :class:`Struct`
+      instance.
 
    Compiled Struct objects support the following methods and attributes:
 

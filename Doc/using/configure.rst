@@ -471,11 +471,6 @@ Libraries options
    Build the :mod:`pyexpat` module using an installed ``expat`` library
    (default is no).
 
-.. cmdoption:: --with-system-ffi
-
-   Build the :mod:`_ctypes` extension module using an installed ``ffi``
-   library, see the :mod:`ctypes` module (default is system-dependent).
-
 .. cmdoption:: --with-system-libmpdec
 
    Build the ``_decimal`` extension module using an installed ``mpdec``
