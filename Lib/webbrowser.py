@@ -725,7 +725,7 @@ def main():
         elif o == '-t': new_win = 2
         elif o == '-h' or o == '--help': 
             print(usage, file=sys.stderr)
-            sys.exit(1)
+            sys.exit()
     if len(args) != 1:
         print(usage, file=sys.stderr)
         sys.exit(1)
