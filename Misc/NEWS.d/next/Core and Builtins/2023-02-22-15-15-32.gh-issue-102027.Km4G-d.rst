@@ -1,2 +1,2 @@
-Use ``GetCurrentProcessId`` instead of ``getpid`` when building for the Universal
-Windows Platform. Patch by Max Bachmann.
+Use ``GetCurrentProcessId`` on Windows when ``getpid`` is unavailable. Patch by
+Max Bachmann.

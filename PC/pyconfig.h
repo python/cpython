@@ -73,7 +73,7 @@ WIN32 is still required for the locale module.
 #endif
 
 #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
-#define MS_WINDOWS_UWP
+#define MS_WINDOWS_NON_DESKTOP
 #endif
 
 /* Compiler specific defines */
@@ -510,7 +510,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef HAVE_GETPGRP */
 
 /* Define if you have getpid.  */
-#ifndef MS_WINDOWS_UWP
+#ifndef MS_WINDOWS_NON_DESKTOP
 #define HAVE_GETPID
 #endif
 
