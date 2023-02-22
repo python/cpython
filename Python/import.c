@@ -1116,7 +1116,11 @@ clear_singlephase_extension(PyInterpreterState *interp,
     }
 
     /* Clear the cached module def. */
-    return _extensions_cache_delete(filename, name);
+    if (_extensions_cache_delete(filename, name) < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 
