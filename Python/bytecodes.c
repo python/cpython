@@ -2267,7 +2267,7 @@ dummy_func(
         }
 
         // FOR_ITER
-        inst(BB_TEST_ITER, (iter -- iter, next)) {
+        inst(BB_TEST_ITER, (unused/1, iter -- iter, next)) {
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
@@ -2283,6 +2283,7 @@ dummy_func(
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 bb_test = false;
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
                 DISPATCH();
             }
             bb_test = true;
@@ -3285,7 +3286,7 @@ dummy_func(
         }
 
         // Tier 2 instructions
-        inst(BB_BRANCH, (--)) {
+        inst(BB_BRANCH, (unused/1 --)) {
             _Py_CODEUNIT *t2_nextinstr = NULL;
             _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
             _Py_CODEUNIT *tier1_fallback = NULL;
@@ -3313,23 +3314,19 @@ dummy_func(
                     DISPATCH();
                 }
             }
-            JUMPBY(INLINE_CACHE_ENTRIES_BB_BRANCH);
             // Their addresses should be the same. Because
             // The first BB should be generated right after the previous one.
-            if (next_instr != t2_nextinstr) {
-                fprintf(stderr, "next: %p, t2 next: %p\n", next_instr, t2_nextinstr);
-            }
-            assert(next_instr == t2_nextinstr);
+            assert(next_instr + INLINE_CACHE_ENTRIES_BB_BRANCH == t2_nextinstr);
             next_instr = t2_nextinstr;
+            DISPATCH();
         }
 
-        inst(BB_BRANCH_IF_FLAG_UNSET, (--)) {
+        inst(BB_BRANCH_IF_FLAG_UNSET, (unused/1 --)) {
             if (!bb_test) {
+                _Py_CODEUNIT *curr = next_instr - 1;
                 _Py_CODEUNIT *t2_nextinstr = NULL;
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
                 _Py_CODEUNIT *tier1_fallback = NULL;
-
-                // @TODO: Rewrite TEST intruction above to a JUMP above.
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id, oparg, &tier1_fallback);
@@ -3338,14 +3335,24 @@ dummy_func(
                     next_instr = tier1_fallback;
                 }
                 next_instr = t2_nextinstr;
-            }
-            else {
-                JUMPBY(INLINE_CACHE_ENTRIES_BB_BRANCH);
+
+                // Rewrite self
+                _PyTier2_RewriteForwardJump(curr, next_instr);
+                DISPATCH();
             }
         }
 
-        inst(BB_BRANCH_IF_FLAG_SET, (--)) {
+        inst(BB_JUMP_IF_FLAG_UNSET, (unused/1 --)) {
+            if (!bb_test) {
+                JUMPBY(oparg);
+                DISPATCH();
+            }
+            // Fall through to next instruction.
+        }
+
+        inst(BB_BRANCH_IF_FLAG_SET, (unused/1 --)) {
             if (bb_test) {
+                _Py_CODEUNIT *curr = next_instr - 1;
                 _Py_CODEUNIT *t2_nextinstr = NULL;
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
                 _Py_CODEUNIT *tier1_fallback = NULL;
@@ -3359,13 +3366,23 @@ dummy_func(
                     next_instr = tier1_fallback;
                 }
                 next_instr = t2_nextinstr;
-            }
-            else {
-                JUMPBY(INLINE_CACHE_ENTRIES_BB_BRANCH);
+
+                // Rewrite self
+                _PyTier2_RewriteForwardJump(curr, next_instr);
+                DISPATCH();
             }
         }
 
+        inst(BB_JUMP_IF_FLAG_SET, (unused/1 --)) {
+            if (bb_test) {
+                JUMPBY(oparg);
+                DISPATCH();
+            }
+            // Fall through to next instruction.
+        }
+
         inst(BB_JUMP_BACKWARD_LAZY, (--)) {
+            _Py_CODEUNIT *curr = next_instr - 1;
             _Py_CODEUNIT *t2_nextinstr = NULL;
             _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
             _Py_CODEUNIT *tier1_fallback = NULL;
@@ -3376,18 +3393,10 @@ dummy_func(
                 // Fall back to tier 1.
                 next_instr = tier1_fallback;
             }
-            // Rewrite self
-            _Py_CODEUNIT *curr = next_instr - 1;
-            _Py_CODEUNIT *prev = curr - 1;
-            assert(_Py_OPCODE(*prev) == EXTENDED_ARG);
-            int op_arg = -(int)(t2_nextinstr - next_instr);
-            // fprintf(stderr, "JUMP_BACKWARD oparg is %d\n", op_arg);
-            assert(op_arg <= INT16_MAX);
-            _py_set_opcode(curr, JUMP_BACKWARD);
-            prev->oparg = (op_arg >> 8) & 0xFF;
-            curr->oparg = op_arg & 0xFF;
-            _py_set_opcode(next_instr, END_FOR);
             next_instr = t2_nextinstr;
+
+            // Rewrite self
+            _PyTier2_RewriteBackwardJump(curr, next_instr);
         }
 
 

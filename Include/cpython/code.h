@@ -42,21 +42,6 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
-
-//// Used to store intermediate code information for the tier 2 "translator".
-//// This is eventually finally converted to _PyTier2BB s.
-//// Code Object -> _PyTier2IntermediateCode -> _PyTier2BB s.
-//typedef struct _PyTier2IntermediateCode {
-//    /* Number of entries in _jump_targets */
-//    int _jump_target_count;
-//    /* sorted ascending offsets (from start of field code) for jump targets */
-//    // The offsets are in number of _Py_CODEUNITs
-//    int *_jump_targets;
-//    int n_instrs;
-//    _Py_CODEUNIT code[1];
-//} _PyTier2IntermediateCode;
-
-
 // Tier 2 interpreter information
 typedef struct _PyTier2BBMetadata {
     // Index into _PyTier2Info->bb_data

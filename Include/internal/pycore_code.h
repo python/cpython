@@ -263,8 +263,8 @@ extern _Py_CODEUNIT *_PyTier2_GenerateNextBB(
 extern _Py_CODEUNIT *_PyTier2_LocateJumpBackwardsBB(
     struct _PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
     _Py_CODEUNIT **tier1_fallback);
-
-
+extern void _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target);
+extern void _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *target);
 #ifdef Py_STATS
 
 

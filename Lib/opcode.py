@@ -330,6 +330,12 @@ _specializations = {
         "FOR_ITER_RANGE",
         "FOR_ITER_GEN",
     ],
+    "BB_TEST_ITER": [
+        "BB_TEST_ITER_LIST",
+        "BB_TEST_ITER_TUPLE",
+        "BB_TEST_ITER_RANGE",
+        "BB_TEST_ITER_GEN",
+    ],
     "LOAD_ATTR": [
         # These potentially push [NULL, bound method] onto the stack.
         "LOAD_ATTR_CLASS",
@@ -416,6 +422,9 @@ _cache_format = {
     "FOR_ITER": {
         "counter": 1,
     },
+    "BB_TEST_ITER": {
+        "counter": 1,
+    },
     "LOAD_ATTR": {
         "counter": 1,
         "version": 2,
@@ -458,6 +467,9 @@ _uops = [
     # This happens when the fall through is generated, but not the other branch.
     'BB_BRANCH_IF_FLAG_UNSET',  # When alternate exit is not yet generated.
     'BB_BRANCH_IF_FLAG_SET',    # When successor exit is not yet generated.
+    # When both edges are generated
+    'BB_JUMP_IF_FLAG_UNSET',
+    'BB_JUMP_IF_FLAG_SET',
     # The final form is that once both branches are generated, we can just
     # override these instructions with a generic JUMP.
 
