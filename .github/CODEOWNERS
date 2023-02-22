@@ -151,6 +151,8 @@ Lib/ast.py                    @isidentical
 
 **/*sysconfig*                @FFY00
 
+**/*cjkcodecs*                @corona10
+
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team

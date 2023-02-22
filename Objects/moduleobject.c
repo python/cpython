@@ -42,10 +42,9 @@ PyModuleDef_Init(PyModuleDef* def)
 {
     assert(PyModuleDef_Type.tp_flags & Py_TPFLAGS_READY);
     if (def->m_base.m_index == 0) {
-        _PyRuntime.imports.last_module_index++;
         Py_SET_REFCNT(def, 1);
         Py_SET_TYPE(def, &PyModuleDef_Type);
-        def->m_base.m_index = _PyRuntime.imports.last_module_index;
+        def->m_base.m_index = _PyImport_GetNextModuleIndex();
     }
     return (PyObject*)def;
 }
@@ -209,24 +208,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
             "module %s: PyModule_Create is incompatible with m_slots", name);
         return NULL;
     }
-    /* Make sure name is fully qualified.
-
-       This is a bit of a hack: when the shared library is loaded,
-       the module name is "package.module", but the module calls
-       PyModule_Create*() with just "module" for the name.  The shared
-       library loader squirrels away the true name of the module in
-       _Py_PackageContext, and PyModule_Create*() will substitute this
-       (if the name actually matches).
-    */
-#define _Py_PackageContext (_PyRuntime.imports.pkgcontext)
-    if (_Py_PackageContext != NULL) {
-        const char *p = strrchr(_Py_PackageContext, '.');
-        if (p != NULL && strcmp(module->m_name, p+1) == 0) {
-            name = _Py_PackageContext;
-            _Py_PackageContext = NULL;
-        }
-    }
-#undef _Py_PackageContext
+    name = _PyImport_ResolveNameWithPackageContext(name);
     if ((m = (PyModuleObject*)PyModule_New(name)) == NULL)
         return NULL;
 
@@ -710,8 +692,7 @@ static PyObject *
 module_repr(PyModuleObject *m)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-
-    return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
+    return _PyImport_ImportlibModuleRepr(interp, (PyObject *)m);
 }
 
 /* Check if the "_initializing" attribute of the module spec is set to true.

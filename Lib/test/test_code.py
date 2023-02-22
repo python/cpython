@@ -723,6 +723,7 @@ class CodeLocationTest(unittest.TestCase):
             pass
         PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
         f.__code__ = f.__code__.replace(
+            co_stacksize=1,
             co_firstlineno=42,
             co_code=bytes(
                 [

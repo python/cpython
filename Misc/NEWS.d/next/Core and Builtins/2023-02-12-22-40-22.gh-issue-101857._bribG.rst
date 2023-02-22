@@ -1,0 +1,1 @@
+Fix xattr support detection on Linux systems by widening the check to linux, not just glibc. This fixes support for musl.
