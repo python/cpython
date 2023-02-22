@@ -40,23 +40,23 @@ decimal floating point arithmetic. It offers several advantages over the
   people learn at school." -- excerpt from the decimal arithmetic specification.
 
 * Decimal numbers can be represented exactly.  In contrast, numbers like
-  :const:`!1.1` and :const:`!2.2` do not have exact representations in binary
+  ``1.1`` and ``2.2`` do not have exact representations in binary
   floating point. End users typically would not expect ``1.1 + 2.2`` to display
-  as :const:`!3.3000000000000003` as it does with binary floating point.
+  as ``3.3000000000000003`` as it does with binary floating point.
 
 * The exactness carries over into arithmetic.  In decimal floating point, ``0.1
   + 0.1 + 0.1 - 0.3`` is exactly equal to zero.  In binary floating point, the result
-  is :const:`!5.5511151231257827e-017`.  While near to zero, the differences
+  is ``5.5511151231257827e-017``.  While near to zero, the differences
   prevent reliable equality testing and differences can accumulate. For this
   reason, decimal is preferred in accounting applications which have strict
   equality invariants.
 
 * The decimal module incorporates a notion of significant places so that ``1.30
-  + 1.20`` is :const:`!2.50`.  The trailing zero is kept to indicate significance.
+  + 1.20`` is ``2.50``.  The trailing zero is kept to indicate significance.
   This is the customary presentation for monetary applications. For
   multiplication, the "schoolbook" approach uses all the figures in the
-  multiplicands.  For instance, ``1.3 * 1.2`` gives :const:`!1.56` while ``1.30 *
-  1.20`` gives :const:`!1.5600`.
+  multiplicands.  For instance, ``1.3 * 1.2`` gives ``1.56`` while ``1.30 *
+  1.20`` gives ``1.5600``.
 
 * Unlike hardware based binary floating point, the decimal module has a user
   alterable precision (defaulting to 28 places) which can be as large as needed for
@@ -88,8 +88,8 @@ context for arithmetic, and signals.
 A decimal number is immutable.  It has a sign, coefficient digits, and an
 exponent.  To preserve significance, the coefficient digits do not truncate
 trailing zeros.  Decimals also include special values such as
-:const:`!Infinity`, :const:`!-Infinity`, and :const:`!NaN`.  The standard also
-differentiates :const:`!-0` from :const:`!+0`.
+``Infinity``, ``-Infinity``, and ``NaN``.  The standard also
+differentiates ``-0`` from ``+0``.
 
 The context for arithmetic is an environment specifying precision, rounding
 rules, limits on exponents, flags indicating the results of operations, and trap
@@ -139,8 +139,8 @@ precision, rounding, or enabled traps::
 Decimal instances can be constructed from integers, strings, floats, or tuples.
 Construction from an integer or a float performs an exact conversion of the
 value of that integer or float.  Decimal numbers include special values such as
-:const:`!NaN` which stands for "Not a number", positive and negative
-:const:`!Infinity`, and :const:`!-0`::
+``NaN`` which stands for "Not a number", positive and negative
+``Infinity``, and ``-0``::
 
    >>> getcontext().prec = 28
    >>> Decimal(10)
@@ -309,7 +309,7 @@ using the :meth:`~Context.clear_flags` method. ::
    Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999, Emax=999999,
            capitals=1, clamp=0, flags=[Inexact, Rounded], traps=[])
 
-The *flags* entry shows that the rational approximation to :const:`!Pi` was
+The *flags* entry shows that the rational approximation to ``Pi`` was
 rounded (digits beyond the context precision were thrown away) and that the
 result is inexact (some of the discarded digits were non-zero).
 
@@ -369,7 +369,7 @@ Decimal objects
    with the fullwidth digits ``'\uff10'`` through ``'\uff19'``.
 
    If *value* is a :class:`tuple`, it should have three components, a sign
-   (:const:`!0` for positive or :const:`!1` for negative), a :class:`tuple` of
+   (``0`` for positive or ``1`` for negative), a :class:`tuple` of
    digits, and an integer exponent. For example, ``Decimal((0, (1, 4, 1, 4), -3))``
    returns ``Decimal('1.414')``.
 
@@ -387,7 +387,7 @@ Decimal objects
    The purpose of the *context* argument is determining what to do if *value* is a
    malformed string.  If the context traps :const:`InvalidOperation`, an exception
    is raised; otherwise, the constructor returns a new Decimal with the value of
-   :const:`!NaN`.
+   ``NaN``.
 
    Once constructed, :class:`Decimal` objects are immutable.
 
@@ -701,7 +701,7 @@ Decimal objects
    .. method:: max(other, context=None)
 
       Like ``max(self, other)`` except that the context rounding rule is applied
-      before returning and that :const:`!NaN` values are either signaled or
+      before returning and that ``NaN`` values are either signaled or
       ignored (depending on the context and whether they are signaling or
       quiet).
 
@@ -713,7 +713,7 @@ Decimal objects
    .. method:: min(other, context=None)
 
       Like ``min(self, other)`` except that the context rounding rule is applied
-      before returning and that :const:`!NaN` values are either signaled or
+      before returning and that ``NaN`` values are either signaled or
       ignored (depending on the context and whether they are signaling or
       quiet).
 
@@ -830,7 +830,7 @@ Decimal objects
    .. method:: same_quantum(other, context=None)
 
       Test whether self and other have the same exponent or whether both are
-      :const:`!NaN`.
+      ``NaN``.
 
       This operation is unaffected by context and is quiet: no flags are changed
       and no rounding is performed.  As an exception, the C version may raise
@@ -896,7 +896,7 @@ The :meth:`~Decimal.logical_and`, :meth:`~Decimal.logical_invert`, :meth:`~Decim
 and :meth:`~Decimal.logical_xor` methods expect their arguments to be *logical
 operands*.  A *logical operand* is a :class:`Decimal` instance whose
 exponent and sign are both zero, and whose digits are all either
-:const:`!0` or :const:`!1`.
+``0`` or ``1``.
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -982,7 +982,7 @@ described below. In addition, the module provides three pre-made contexts:
    exceptions are not raised during computations).
 
    Because the traps are disabled, this context is useful for applications that
-   prefer to have result value of :const:`!NaN` or :const:`!Infinity` instead of
+   prefer to have result value of ``NaN`` or ``Infinity`` instead of
    raising exceptions.  This allows an application to complete a run in the
    presence of conditions that would otherwise halt the program.
 
@@ -1016,7 +1016,7 @@ In addition to the three supplied contexts, new contexts can be created with the
    default values are copied from the :const:`DefaultContext`.  If the *flags*
    field is not specified or is :const:`None`, all flags are cleared.
 
-   *prec* is an integer in the range [:const:`!1`, :const:`MAX_PREC`] that sets
+   *prec* is an integer in the range [``1``, :const:`MAX_PREC`] that sets
    the precision for arithmetic operations in the context.
 
    The *rounding* option is one of the constants listed in the section
@@ -1026,20 +1026,20 @@ In addition to the three supplied contexts, new contexts can be created with the
    contexts should only set traps and leave the flags clear.
 
    The *Emin* and *Emax* fields are integers specifying the outer limits allowable
-   for exponents. *Emin* must be in the range [:const:`MIN_EMIN`, :const:`!0`],
-   *Emax* in the range [:const:`!0`, :const:`MAX_EMAX`].
+   for exponents. *Emin* must be in the range [:const:`MIN_EMIN`, ``0``],
+   *Emax* in the range [``0``, :const:`MAX_EMAX`].
 
-   The *capitals* field is either :const:`!0` or :const:`!1` (the default). If set to
-   :const:`!1`, exponents are printed with a capital :const:`!E`; otherwise, a
-   lowercase :const:`!e` is used: :const:`!Decimal('6.02e+23')`.
+   The *capitals* field is either ``0`` or ``1`` (the default). If set to
+   ``1``, exponents are printed with a capital ``E``; otherwise, a
+   lowercase ``e`` is used: ``Decimal('6.02e+23')``.
 
-   The *clamp* field is either :const:`!0` (the default) or :const:`!1`.
-   If set to :const:`!1`, the exponent ``e`` of a :class:`Decimal`
+   The *clamp* field is either ``0`` (the default) or ``1``.
+   If set to ``1``, the exponent ``e`` of a :class:`Decimal`
    instance representable in this context is strictly limited to the
    range ``Emin - prec + 1 <= e <= Emax - prec + 1``.  If *clamp* is
-   :const:`!0` then a weaker condition holds: the adjusted exponent of
+   ``0`` then a weaker condition holds: the adjusted exponent of
    the :class:`Decimal` instance is at most ``Emax``.  When *clamp* is
-   :const:`!1`, a large normal number will, where possible, have its
+   ``1``, a large normal number will, where possible, have its
    exponent reduced and a corresponding number of zeros added to its
    coefficient, in order to fit the exponent constraints; this
    preserves the value of the number but loses information about
@@ -1048,7 +1048,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
       Decimal('1.23000E+999')
 
-   A *clamp* value of :const:`!1` allows compatibility with the
+   A *clamp* value of ``1`` allows compatibility with the
    fixed-width decimal interchange formats specified in IEEE 754.
 
    The :class:`Context` class defines several general purpose methods as well as
@@ -1064,11 +1064,11 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: clear_flags()
 
-      Resets all of the flags to :const:`!0`.
+      Resets all of the flags to ``0``.
 
    .. method:: clear_traps()
 
-      Resets all of the traps to :const:`!0`.
+      Resets all of the traps to ``0``.
 
       .. versionadded:: 3.3
 
@@ -1480,17 +1480,17 @@ Constants
 The constants in this section are only relevant for the C module. They
 are also included in the pure Python version for compatibility.
 
-+---------------------+----------------------+--------------------------------+
-|                     |        32-bit        |             64-bit             |
-+=====================+======================+================================+
-| .. data:: MAX_PREC  | :const:`!425000000`  | :const:`!999999999999999999`   |
-+---------------------+----------------------+--------------------------------+
-| .. data:: MAX_EMAX  | :const:`!425000000`  | :const:`!999999999999999999`   |
-+---------------------+----------------------+--------------------------------+
-| .. data:: MIN_EMIN  | :const:`!-425000000` | :const:`!-999999999999999999`  |
-+---------------------+----------------------+--------------------------------+
-| .. data:: MIN_ETINY | :const:`!-849999999` | :const:`!-1999999999999999997` |
-+---------------------+----------------------+--------------------------------+
++---------------------+---------------------+-------------------------------+
+|                     |       32-bit        |            64-bit             |
++=====================+=====================+===============================+
+| .. data:: MAX_PREC  |    ``425000000``    |    ``999999999999999999``     |
++---------------------+---------------------+-------------------------------+
+| .. data:: MAX_EMAX  |    ``425000000``    |    ``999999999999999999``     |
++---------------------+---------------------+-------------------------------+
+| .. data:: MIN_EMIN  |    ``-425000000``   |    ``-999999999999999999``    |
++---------------------+---------------------+-------------------------------+
+| .. data:: MIN_ETINY |    ``-849999999``   |    ``-1999999999999999997``   |
++---------------------+---------------------+-------------------------------+
 
 
 .. data:: HAVE_THREADS
@@ -1514,7 +1514,7 @@ Rounding modes
 
 .. data:: ROUND_CEILING
 
-   Round towards :const:`!Infinity`.
+   Round towards ``Infinity``.
 
 .. data:: ROUND_DOWN
 
@@ -1522,7 +1522,7 @@ Rounding modes
 
 .. data:: ROUND_FLOOR
 
-   Round towards :const:`!-Infinity`.
+   Round towards ``-Infinity``.
 
 .. data:: ROUND_HALF_DOWN
 
@@ -1584,8 +1584,8 @@ condition.
    Signals the division of a non-infinite number by zero.
 
    Can occur with division, modulo division, or when raising a number to a negative
-   power.  If this signal is not trapped, returns :const:`!Infinity` or
-   :const:`!-Infinity` with the sign determined by the inputs to the calculation.
+   power.  If this signal is not trapped, returns ``Infinity`` or
+   ``-Infinity`` with the sign determined by the inputs to the calculation.
 
 
 .. class:: Inexact
@@ -1602,7 +1602,7 @@ condition.
    An invalid operation was performed.
 
    Indicates that an operation was requested that does not make sense. If not
-   trapped, returns :const:`!NaN`.  Possible causes include::
+   trapped, returns ``NaN``.  Possible causes include::
 
       Infinity - Infinity
       0 * Infinity
@@ -1622,7 +1622,7 @@ condition.
    Indicates the exponent is larger than :attr:`!Emax` after rounding has
    occurred.  If not trapped, the result depends on the rounding mode, either
    pulling inward to the largest representable finite number or rounding outward
-   to :const:`!Infinity`.  In either case, :class:`Inexact` and :class:`Rounded`
+   to ``Infinity``.  In either case, :class:`Inexact` and :class:`Rounded`
    are also signaled.
 
 
@@ -1631,7 +1631,7 @@ condition.
    Rounding occurred though possibly no information was lost.
 
    Signaled whenever rounding discards digits; even if those digits are zero
-   (such as rounding :const:`!5.00` to :const:`!5.0`).  If not trapped, returns
+   (such as rounding ``5.00`` to ``5.0``).  If not trapped, returns
    the result unchanged.  This signal is used to detect loss of significant
    digits.
 
@@ -1696,7 +1696,7 @@ Mitigating round-off error with increased precision
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The use of decimal floating point eliminates decimal representation error
-(making it possible to represent :const:`!0.1` exactly); however, some operations
+(making it possible to represent ``0.1`` exactly); however, some operations
 can still incur round-off error when non-zero digits exceed the fixed precision.
 
 The effects of round-off error can be amplified by the addition or subtraction
@@ -1746,8 +1746,8 @@ Special values
 ^^^^^^^^^^^^^^
 
 The number system for the :mod:`decimal` module provides special values
-including :const:`!NaN`, :const:`!sNaN`, :const:`!-Infinity`, :const:`!Infinity`,
-and two zeros, :const:`!+0` and :const:`!-0`.
+including ``NaN``, ``sNaN``, ``-Infinity``, ``Infinity``,
+and two zeros, ``+0`` and ``-0``.
 
 Infinities can be constructed directly with:  ``Decimal('Infinity')``. Also,
 they can arise from dividing by zero when the :exc:`DivisionByZero` signal is
@@ -1758,28 +1758,28 @@ The infinities are signed (affine) and can be used in arithmetic operations
 where they get treated as very large, indeterminate numbers.  For instance,
 adding a constant to infinity gives another infinite result.
 
-Some operations are indeterminate and return :const:`!NaN`, or if the
+Some operations are indeterminate and return ``NaN``, or if the
 :exc:`InvalidOperation` signal is trapped, raise an exception.  For example,
-``0/0`` returns :const:`!NaN` which means "not a number".  This variety of
-:const:`!NaN` is quiet and, once created, will flow through other computations
-always resulting in another :const:`!NaN`.  This behavior can be useful for a
+``0/0`` returns ``NaN`` which means "not a number".  This variety of
+``NaN`` is quiet and, once created, will flow through other computations
+always resulting in another ``NaN``.  This behavior can be useful for a
 series of computations that occasionally have missing inputs --- it allows the
 calculation to proceed while flagging specific results as invalid.
 
-A variant is :const:`!sNaN` which signals rather than remaining quiet after every
+A variant is ``sNaN`` which signals rather than remaining quiet after every
 operation.  This is a useful return value when an invalid result needs to
 interrupt a calculation for special handling.
 
 The behavior of Python's comparison operators can be a little surprising where a
-:const:`!NaN` is involved.  A test for equality where one of the operands is a
-quiet or signaling :const:`!NaN` always returns :const:`False` (even when doing
+``NaN`` is involved.  A test for equality where one of the operands is a
+quiet or signaling ``NaN`` always returns :const:`False` (even when doing
 ``Decimal('NaN')==Decimal('NaN')``), while a test for inequality always returns
 :const:`True`.  An attempt to compare two Decimals using any of the ``<``,
 ``<=``, ``>`` or ``>=`` operators will raise the :exc:`InvalidOperation` signal
-if either operand is a :const:`!NaN`, and return :const:`False` if this signal is
+if either operand is a ``NaN``, and return :const:`False` if this signal is
 not trapped.  Note that the General Decimal Arithmetic specification does not
 specify the behavior of direct comparisons; these rules for comparisons
-involving a :const:`!NaN` were taken from the IEEE 854 standard (see Table 3 in
+involving a ``NaN`` were taken from the IEEE 854 standard (see Table 3 in
 section 5.7).  To ensure strict standards-compliance, use the :meth:`~Decimal.compare`
 and :meth:`~Decimal.compare_signal` methods instead.
 
@@ -2066,8 +2066,8 @@ to handle the :meth:`~Decimal.quantize` step:
     >>> div(b, a)
     Decimal('0.03')
 
-Q. There are many ways to express the same value.  The numbers :const:`!200`,
-:const:`!200.000`, :const:`!2E2`, and :const:`!.02E+4` all have the same value at
+Q. There are many ways to express the same value.  The numbers ``200``,
+``200.000``, ``2E2``, and ``.02E+4`` all have the same value at
 various precisions. Is there a way to transform them to a single recognizable
 canonical value?
 
@@ -2083,7 +2083,7 @@ to get a non-exponential representation?
 
 A. For some values, exponential notation is the only way to express the number
 of significant places in the coefficient.  For example, expressing
-:const:`!5.0E+3` as :const:`!5000` keeps the value constant but cannot show the
+``5.0E+3`` as ``5000`` keeps the value constant but cannot show the
 original's two-place significance.
 
 If an application does not care about tracking significance, it is easy to
