@@ -261,7 +261,7 @@ random_seed_time_pid(RandomObject *self)
 
 #ifdef HAVE_GETPID
     key[2] = (uint32_t)getpid();
-#elif defined(MS_WINDOWS)
+#elif defined(MS_WINDOWS_UWP)
     key[2] = (uint32_t)GetCurrentProcessId();
 #else
     key[2] = 0;

@@ -7946,7 +7946,7 @@ os_getgid_impl(PyObject *module)
 #endif /* HAVE_GETGID */
 
 
-#if defined(HAVE_GETPID) || defined(MS_WINDOWS)
+#if defined(HAVE_GETPID) || defined(MS_WINDOWS_UWP)
 /*[clinic input]
 os.getpid
 
@@ -7957,13 +7957,13 @@ static PyObject *
 os_getpid_impl(PyObject *module)
 /*[clinic end generated code: output=9ea6fdac01ed2b3c input=5a9a00f0ab68aa00]*/
 {
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_UWP
     return PyLong_FromPid((pid_t)GetCurrentProcessId());
 #else
     return PyLong_FromPid(getpid());
 #endif
 }
-#endif /* defined(HAVE_GETPID) || defined(MS_WINDOWS) */
+#endif /* defined(HAVE_GETPID) || defined(MS_WINDOW_UWPS) */
 
 #ifdef NGROUPS_MAX
 #define MAX_GROUPS NGROUPS_MAX

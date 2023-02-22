@@ -4402,7 +4402,7 @@ os_getgid(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_GETGID) */
 
-#if (defined(HAVE_GETPID) || defined(MS_WINDOWS))
+#if (defined(HAVE_GETPID) || defined(MS_WINDOWS_UWP))
 
 PyDoc_STRVAR(os_getpid__doc__,
 "getpid($module, /)\n"
@@ -4422,7 +4422,7 @@ os_getpid(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_getpid_impl(module);
 }
 
-#endif /* (defined(HAVE_GETPID) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_GETPID) || defined(MS_WINDOWS_UWP)) */
 
 #if defined(HAVE_GETGROUPLIST) && defined(__APPLE__)
 
@@ -11796,4 +11796,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=046a548235de9370 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17a2e065ff14f5e8 input=a9049054013a1b77]*/
