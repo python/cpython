@@ -47,7 +47,8 @@ enum _frameowner {
 };
 
 typedef struct _PyInterpreterFrame {
-    /* "Specials" section */
+    PyCodeObject *f_code; /* Strong reference */
+    struct _PyInterpreterFrame *previous;
     PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
@@ -55,10 +56,7 @@ typedef struct _PyInterpreterFrame {
     // For comprehensions, f_closure and f_code may not match func_closure and
     // func_code from f_funcobj above; f_funcobj will be the calling function.
     PyObject *f_closure; /* Strong reference, may be NULL. Only valid if not on C stack */
-    PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
-    /* Linkage section */
-    struct _PyInterpreterFrame *previous;
     // NOTE: This is not necessarily the last instruction started in the given
     // frame. Rather, it is the code unit *prior to* the *next* instruction. For
     // example, it may be an inline CACHE entry, an instruction we just jumped

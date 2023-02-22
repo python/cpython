@@ -606,6 +606,9 @@ PyErr_GetExcInfo:PyObject**:ptype:+1:
 PyErr_GetExcInfo:PyObject**:pvalue:+1:
 PyErr_GetExcInfo:PyObject**:ptraceback:+1:
 
+PyErr_GetRaisedException:PyObject*::+1:
+PyErr_SetRaisedException::::
+
 PyErr_GivenExceptionMatches:int:::
 PyErr_GivenExceptionMatches:PyObject*:given:0:
 PyErr_GivenExceptionMatches:PyObject*:exc:0:

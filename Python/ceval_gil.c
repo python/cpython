@@ -624,7 +624,7 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
     }
 
     /* Destroy all threads except the current one */
-    _PyThreadState_DeleteExcept(runtime, tstate);
+    _PyThreadState_DeleteExcept(tstate);
     return _PyStatus_OK();
 }
 #endif

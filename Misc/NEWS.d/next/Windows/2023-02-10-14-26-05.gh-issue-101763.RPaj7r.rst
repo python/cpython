@@ -1,0 +1,1 @@
+Updates copy of libffi bundled with Windows installs to 3.4.4.

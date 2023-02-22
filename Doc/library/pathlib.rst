@@ -186,7 +186,7 @@ these classes, since they don't provide any operation that does system calls.
 General properties
 ^^^^^^^^^^^^^^^^^^
 
-Paths are immutable and hashable.  Paths of a same flavour are comparable
+Paths are immutable and :term:`hashable`.  Paths of a same flavour are comparable
 and orderable.  These properties respect the flavour's case-folding
 semantics::
 

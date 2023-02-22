@@ -1,10 +1,5 @@
 /* Execute compiled code */
 
-/* XXX TO DO:
-   XXX speed up searching for keywords by using a dictionary
-   XXX document it!
-   */
-
 #define _PY_INTERPRETER
 
 #include "Python.h"
@@ -133,9 +128,12 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
                     _Py_CODEUNIT *next_instr)
 {
+    /* This dump_stack() operation is risky, since the repr() of some
+       objects enters the interpreter recursively. It is also slow.
+       So you might want to comment it out. */
     dump_stack(frame, stack_pointer);
-    int oparg = _Py_OPARG(*next_instr);
-    int opcode = _Py_OPCODE(*next_instr);
+    int oparg = next_instr->op.arg;
+    int opcode = next_instr->op.code;
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
     int offset = (int)(next_instr - _PyCode_CODE(frame->f_code));
@@ -155,7 +153,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
         fobj == NULL ||
         !PyFunction_Check(fobj)
     ) {
-        printf("\nResuming frame.");
+        printf("\nResuming frame.\n");
         return;
     }
     PyFunctionObject *f = (PyFunctionObject *)fobj;
@@ -690,12 +688,6 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 }
 
 
-// GH-89279: Must be a macro to be sure it's inlined by MSVC.
-#define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
-
-#define KWNAMES_LEN() \
-    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
-
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
 
@@ -929,8 +921,8 @@ handle_eval_breaker:
             // CPython hasn't ever traced the instruction after an EXTENDED_ARG.
             // Inline the EXTENDED_ARG here, so we can avoid branching there:
             INSTRUCTION_START(EXTENDED_ARG);
-            opcode = _Py_OPCODE(*next_instr);
-            oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            opcode = next_instr->op.code;
+            oparg = oparg << 8 | next_instr->op.arg;
             // Make sure the next instruction isn't a RESUME, since that needs
             // to trace properly (and shouldn't have an EXTENDED_ARG, anyways):
             assert(opcode != RESUME);
@@ -955,7 +947,7 @@ handle_eval_breaker:
 #endif
             /* Tell C compilers not to hold the opcode variable in the loop.
                next_instr points the current instruction without TARGET(). */
-            opcode = _Py_OPCODE(*next_instr);
+            opcode = next_instr->op.code;
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",
                           frame->f_code->co_filename,
@@ -1264,7 +1256,9 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
 {
     int posonly_conflicts = 0;
     PyObject* posonly_names = PyList_New(0);
-
+    if (posonly_names == NULL) {
+        goto fail;
+    }
     for(int k=0; k < co->co_posonlyargcount; k++){
         PyObject* posonly_name = PyTuple_GET_ITEM(co->co_localsplusnames, k);
 
@@ -1765,9 +1759,6 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         }
         allargs = newargs;
     }
-    for (int i = 0; i < kwcount; i++) {
-        PyTuple_SET_ITEM(kwnames, i, Py_NewRef(kws[2*i]));
-    }
     PyFrameConstructor constr = {
         .fc_globals = globals,
         .fc_builtins = builtins,
@@ -2207,7 +2198,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
             (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
              // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
              // here:
-             _Py_OPCODE(*frame->prev_instr) != SEND);
+             frame->prev_instr->op.code != SEND);
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
@@ -2701,7 +2692,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     }
     PyObject *locals = frame->f_locals;
     /* Fast path for not overloaded __import__. */
-    if (import_func == tstate->interp->import_func) {
+    if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
@@ -2909,13 +2900,13 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
         }
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-        PyObject *exc, *val, *tb;
-        _PyErr_Fetch(tstate, &exc, &val, &tb);
-        if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+        PyObject *args = ((PyBaseExceptionObject *)exc)->args;
+        if (exc && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
             _PyErr_Clear(tstate);
             PyObject *funcstr = _PyObject_FunctionStr(func);
             if (funcstr != NULL) {
-                PyObject *key = PyTuple_GET_ITEM(val, 0);
+                PyObject *key = PyTuple_GET_ITEM(args, 0);
                 _PyErr_Format(
                     tstate, PyExc_TypeError,
                     "%U got multiple values for keyword argument '%S'",
@@ -2923,11 +2914,9 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
                 Py_DECREF(funcstr);
             }
             Py_XDECREF(exc);
-            Py_XDECREF(val);
-            Py_XDECREF(tb);
         }
         else {
-            _PyErr_Restore(tstate, exc, val, tb);
+            _PyErr_SetRaisedException(tstate, exc);
         }
     }
 }
