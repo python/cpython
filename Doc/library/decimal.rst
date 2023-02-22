@@ -1619,7 +1619,7 @@ condition.
 
    Numerical overflow.
 
-   Indicates the exponent is larger than :attr:`!Emax` after rounding has
+   Indicates the exponent is larger than :attr:`Emax` after rounding has
    occurred.  If not trapped, the result depends on the rounding mode, either
    pulling inward to the largest representable finite number or rounding outward
    to ``Infinity``.  In either case, :class:`Inexact` and :class:`Rounded`
