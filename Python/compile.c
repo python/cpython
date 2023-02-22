@@ -9732,7 +9732,7 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
         }
     }
 
-    for (Py_ssize_t i = 0; i < num_insts; i++) {
+    for (int i = 0; i < num_insts; i++) {
         if (is_target[i]) {
             jump_target_label lbl = {i};
             RETURN_IF_ERROR(cfg_builder_use_label(g, lbl));
