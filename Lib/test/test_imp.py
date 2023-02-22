@@ -40,36 +40,17 @@ def requires_load_dynamic(meth):
                            'imp.load_dynamic() required')(meth)
 
 
-def _forget_extension(mod):
+def _forget_extension(name, filename):
     """Clear all internally cached data for the extension.
 
     This mostly applies only to single-phase init modules.
     """
-    if isinstance(mod, str):
-        name = mod
-        mod = None
-    else:
-        name = mod.__name__
-
-    try:
+    if name in sys.modules:
+        if hasattr(sys.modules[name], '_clear_globals'):
+            assert sys.modules[name].__file__ == filename
+            sys.modules[name]._clear_globals()
         del sys.modules[name]
-    except KeyError:
-        pass
-    sys.modules[name] = None
-
-    try:
-        if mod is None:
-            fileobj, filename, _ = imp.find_module(name)
-            fileobj.close()
-            mod = imp.load_dynamic(name, filename)
-        else:
-            filename = mod.__file__
-        if hasattr(mod, '_clear_globals'):
-            mod._clear_globals()
-        del mod
-        _testinternalcapi.clear_extension(name, filename)
-    finally:
-        del sys.modules[name]
+    _testinternalcapi.clear_extension(name, filename)
 
 
 class LockTests(unittest.TestCase):
@@ -298,12 +279,21 @@ class ImportTests(unittest.TestCase):
 
     @requires_load_dynamic
     def test_singlephase_clears_globals(self):
-        import _testsinglephase
-        self.addCleanup(_forget_extension, _testsinglephase)
+        name = '_testsinglephase'
+        fileobj, filename, _ = imp.find_module(name)
+        fileobj.close()
+
+        # Start and end fresh.
+        _forget_extension(name, filename)
+        self.addCleanup(_forget_extension, name, filename)
+
+        _testsinglephase = imp.load_dynamic(name, filename)
+        initialized = _testsinglephase.state_initialized()
 
         _testsinglephase._clear_globals()
         init_count = _testsinglephase.initialized_count()
 
+        self.assertGreater(initialized, 0)
         self.assertEqual(init_count, -1)
 
     @requires_subinterpreters
@@ -385,16 +375,18 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(snapshot.state_initialized,
                              base.state_initialized)
 
+        # Find the module's file.
+        name = '_testsinglephase'
+        fileobj, filename, _ = imp.find_module(name)
+        fileobj.close()
+
+        # Start and end fresh.
+        _forget_extension(name, filename)
+        self.addCleanup(_forget_extension, name, filename)
+
         # This single-phase module has global state, which is shared
         # by all interpreters.
-        import _testsinglephase
-        name = _testsinglephase.__name__
-        filename = _testsinglephase.__file__
-
-        # Start and end clean.
-        _forget_extension(_testsinglephase)
-        import _testsinglephase
-        self.addCleanup(_forget_extension, _testsinglephase)
+        _testsinglephase = imp.load_dynamic(name, filename)
 
         # Check the main interpreter.
         main_snap = parse_snapshot(dict(
@@ -478,9 +470,10 @@ class ImportTests(unittest.TestCase):
             check_common(snap)
             check_copied(snap, main_snap)
 
-        _forget_extension(_testsinglephase)
         for interpid in [interp1, interp2]:
             clear_subinterp(interpid)
+        _testsinglephase._clear_globals()
+        _forget_extension(name, filename)
 
         with self.subTest('without resetting; '
                           'already loaded in deleted interpreter'):
@@ -545,22 +538,22 @@ class ImportTests(unittest.TestCase):
         self.maxDiff = None
 
         basename = '_testsinglephase'
-        fileobj, pathname, _ = imp.find_module(basename)
+        fileobj, filename, _ = imp.find_module(basename)
         fileobj.close()
 
-        # Start and end clean.
-        _forget_extension(basename)
-        self.addCleanup(_forget_extension, basename)
+        # Start and end fresh.
+        _forget_extension(name, filename)
+        self.addCleanup(_forget_extension, name, filename)
 
         def add_ext_cleanup(name):
             def clean_up():
-                _testinternalcapi.clear_extension(name, pathname)
+                _testinternalcapi.clear_extension(name, filename)
             self.addCleanup(clean_up)
 
         modules = {}
         def load(name):
             assert name not in modules
-            module = imp.load_dynamic(name, pathname)
+            module = imp.load_dynamic(name, filename)
             self.assertNotIn(module, modules.values())
             modules[name] = module
             return module
@@ -570,7 +563,7 @@ class ImportTests(unittest.TestCase):
             before = type(module)(module.__name__)
             before.__dict__.update(vars(module))
 
-            reloaded = imp.load_dynamic(name, pathname)
+            reloaded = imp.load_dynamic(name, filename)
 
             return before, reloaded
 
