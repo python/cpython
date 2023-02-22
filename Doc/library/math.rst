@@ -393,12 +393,13 @@ Power and logarithmic functions
    .. versionadded:: 3.2
 
 
-.. function:: log(x, base=None)
+.. function:: log(x[, base])
 
-   Return the logarithm of *x* to the given *base*.
+   With one argument, return the natural logarithm of *x* (to base *e*).
 
-   If the *base* is not specified, returns the natural
-   logarithm (base *e*) of *x*.
+   With two arguments, return the logarithm of *x* to the given *base*,
+   calculated as ``log(x)/log(base)``.
+
 
 .. function:: log1p(x)
 
