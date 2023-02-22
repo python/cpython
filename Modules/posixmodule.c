@@ -330,21 +330,20 @@ corresponding Unix manual entries for more information on calls.");
 #  define HAVE_OPENDIR    1
 #  define HAVE_SYSTEM     1
 #  include <process.h>
-#else
-#  ifdef _MSC_VER
-     /* Microsoft compiler */
-#    define HAVE_GETPPID    1
-#    define HAVE_GETLOGIN   1
-#    define HAVE_SPAWNV     1
-#    define HAVE_EXECV      1
-#    define HAVE_WSPAWNV    1
-#    define HAVE_WEXECV     1
-#    define HAVE_PIPE       1
-#    define HAVE_SYSTEM     1
-#    define HAVE_CWAIT      1
-#    define HAVE_FSYNC      1
-#    define fsync _commit
-#  endif  /* _MSC_VER */
+#elif defined(_MSC_VER)
+  /* Microsoft compiler */
+#  define HAVE_GETPPID    1
+#  define HAVE_GETLOGIN   1
+#  define HAVE_SPAWNV     1
+#  define HAVE_EXECV      1
+#  define HAVE_WSPAWNV    1
+#  define HAVE_WEXECV     1
+#  define HAVE_PIPE       1
+#  define HAVE_SYSTEM     1
+#  define HAVE_CWAIT      1
+#  define HAVE_FSYNC      1
+#  define fsync _commit
+#  define getpid GetCurrentProcessId
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 /*[clinic input]
