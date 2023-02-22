@@ -330,20 +330,21 @@ corresponding Unix manual entries for more information on calls.");
 #  define HAVE_OPENDIR    1
 #  define HAVE_SYSTEM     1
 #  include <process.h>
-#elif defined(_MSC_VER)
-  /* Microsoft compiler */
-#  define HAVE_GETPPID    1
-#  define HAVE_GETLOGIN   1
-#  define HAVE_SPAWNV     1
-#  define HAVE_EXECV      1
-#  define HAVE_WSPAWNV    1
-#  define HAVE_WEXECV     1
-#  define HAVE_PIPE       1
-#  define HAVE_SYSTEM     1
-#  define HAVE_CWAIT      1
-#  define HAVE_FSYNC      1
-#  define fsync _commit
-#  define getpid GetCurrentProcessId
+#else
+  #ifdef _MSC_VER
+    /* Microsoft compiler */
+#    define HAVE_GETPPID    1
+#    define HAVE_GETLOGIN   1
+#    define HAVE_SPAWNV     1
+#    define HAVE_EXECV      1
+#    define HAVE_WSPAWNV    1
+#    define HAVE_WEXECV     1
+#    define HAVE_PIPE       1
+#    define HAVE_SYSTEM     1
+#    define HAVE_CWAIT      1
+#    define HAVE_FSYNC      1
+#    define fsync _commit
+#  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 /*[clinic input]
@@ -7956,7 +7957,11 @@ static PyObject *
 os_getpid_impl(PyObject *module)
 /*[clinic end generated code: output=9ea6fdac01ed2b3c input=5a9a00f0ab68aa00]*/
 {
+#if MS_WINDOWS
+    return PyLong_FromPid((pid_t)GetCurrentProcessId());
+#else
     return PyLong_FromPid(getpid());
+#endif
 }
 #endif /* HAVE_GETPID */
 
@@ -8264,12 +8269,11 @@ static PyObject*
 win32_getppid()
 {
     HANDLE snapshot;
-    pid_t mypid;
     PyObject* result = NULL;
     BOOL have_record;
     PROCESSENTRY32 pe;
 
-    mypid = getpid(); /* This function never fails */
+    DWORD mypid = GetCurrentProcessId(); /* This function never fails */
 
     snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE)
@@ -8278,7 +8282,7 @@ win32_getppid()
     pe.dwSize = sizeof(pe);
     have_record = Process32First(snapshot, &pe);
     while (have_record) {
-        if (mypid == (pid_t)pe.th32ProcessID) {
+        if (mypid == pe.th32ProcessID) {
             /* We could cache the ulong value in a static variable. */
             result = PyLong_FromPid((pid_t)pe.th32ParentProcessID);
             break;
