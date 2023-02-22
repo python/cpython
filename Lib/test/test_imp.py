@@ -544,8 +544,8 @@ class ImportTests(unittest.TestCase):
         fileobj.close()
 
         # Start and end fresh.
-        _forget_extension(name, filename)
-        self.addCleanup(_forget_extension, name, filename)
+        _forget_extension(basename, filename)
+        self.addCleanup(_forget_extension, basename, filename)
 
         def add_ext_cleanup(name):
             def clean_up():
