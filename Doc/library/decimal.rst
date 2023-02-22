@@ -94,7 +94,7 @@ differentiates :const:`!-0` from :const:`!+0`.
 The context for arithmetic is an environment specifying precision, rounding
 rules, limits on exponents, flags indicating the results of operations, and trap
 enablers which determine whether signals are treated as exceptions.  Rounding
-options include :const:`~decimal.ROUND_CEILING`, :const:`ROUND_DOWN`,
+options include :const:`ROUND_CEILING`, :const:`ROUND_DOWN`,
 :const:`ROUND_FLOOR`, :const:`ROUND_HALF_DOWN`, :const:`ROUND_HALF_EVEN`,
 :const:`ROUND_HALF_UP`, :const:`ROUND_UP`, and :const:`ROUND_05UP`.
 
@@ -250,7 +250,7 @@ And some mathematical functions are also available to Decimal:
    >>> Decimal('10').log10()
    Decimal('1')
 
-The :meth:`~decimal.Decimal.quantize` method rounds a number to a fixed exponent.  This method is
+The :meth:`~Decimal.quantize` method rounds a number to a fixed exponent.  This method is
 useful for monetary applications that often round results to a fixed number of
 places:
 
@@ -299,7 +299,7 @@ enabled:
 Contexts also have signal flags for monitoring exceptional conditions
 encountered during computations.  The flags remain set until explicitly cleared,
 so it is best to clear the flags before each set of monitored computations by
-using the :meth:`~decimal.Context.clear_flags` method. ::
+using the :meth:`~Context.clear_flags` method. ::
 
    >>> setcontext(ExtendedContext)
    >>> getcontext().clear_flags()
@@ -313,8 +313,8 @@ The *flags* entry shows that the rational approximation to :const:`!Pi` was
 rounded (digits beyond the context precision were thrown away) and that the
 result is inexact (some of the discarded digits were non-zero).
 
-Individual traps are set using the dictionary in the :attr:`!traps` field of a
-context:
+Individual traps are set using the dictionary in the :attr:`~Context.traps`
+attribute of a context:
 
 .. doctest:: newcontext
 
@@ -790,7 +790,7 @@ Decimal objects
       the current thread's context is used.
 
       An error is returned whenever the resulting exponent is greater than
-      :attr:`!Emax` or less than :attr:`!Etiny`.
+      :attr:`Emax` or less than :meth:`Etiny`.
 
    .. method:: radix()
 
@@ -892,8 +892,8 @@ Decimal objects
 Logical operands
 ^^^^^^^^^^^^^^^^
 
-The :meth:`~decimal.Decimal.logical_and`, :meth:`~decimal.Decimal.logical_invert`, :meth:`~decimal.Decimal.logical_or`,
-and :meth:`~decimal.Decimal.logical_xor` methods expect their arguments to be *logical
+The :meth:`~Decimal.logical_and`, :meth:`~Decimal.logical_invert`, :meth:`~Decimal.logical_or`,
+and :meth:`~Decimal.logical_xor` methods expect their arguments to be *logical
 operands*.  A *logical operand* is a :class:`Decimal` instance whose
 exponent and sign are both zero, and whose digits are all either
 :const:`!0` or :const:`!1`.
@@ -1001,8 +1001,8 @@ described below. In addition, the module provides three pre-made contexts:
    In single threaded environments, it is preferable to not use this context at
    all.  Instead, simply create contexts explicitly as described below.
 
-   The default values are :attr:`!prec`\ =\ :const:`!28`,
-   :attr:`!rounding`\ =\ :const:`ROUND_HALF_EVEN`,
+   The default values are :attr:`Context.prec`\ =\ ``28``,
+   :attr:`Context.rounding`\ =\ :const:`ROUND_HALF_EVEN`,
    and enabled traps for :class:`Overflow`, :class:`InvalidOperation`, and
    :class:`DivisionByZero`.
 
@@ -1054,7 +1054,7 @@ In addition to the three supplied contexts, new contexts can be created with the
    The :class:`Context` class defines several general purpose methods as well as
    a large number of methods for doing arithmetic directly in a given context.
    In addition, for each of the :class:`Decimal` methods described above (with
-   the exception of the :meth:`~decimal.Decimal.adjusted` and :meth:`~decimal.Decimal.as_tuple` methods) there is
+   the exception of the :meth:`~Decimal.adjusted` and :meth:`~Decimal.as_tuple` methods) there is
    a corresponding :class:`Context` method.  For example, for a :class:`Context`
    instance ``C`` and :class:`Decimal` instance ``x``, ``C.exp(x)`` is
    equivalent to ``x.exp(context=C)``.  Each :class:`Context` method accepts a
@@ -1570,7 +1570,7 @@ condition.
    Altered an exponent to fit representation constraints.
 
    Typically, clamping occurs when an exponent falls outside the context's
-   :attr:`!Emin` and :attr:`!Emax` limits.  If possible, the exponent is reduced to
+   :attr:`~Context.Emin` and :attr:`~Context.Emax` limits.  If possible, the exponent is reduced to
    fit by adding zeros to the coefficient.
 
 
@@ -1638,7 +1638,7 @@ condition.
 
 .. class:: Subnormal
 
-   Exponent was lower than :attr:`!Emin` prior to rounding.
+   Exponent was lower than :attr:`~Context.Emin` prior to rounding.
 
    Occurs when an operation result is subnormal (the exponent is too small). If
    not trapped, returns the result unchanged.
@@ -1780,8 +1780,8 @@ if either operand is a :const:`!NaN`, and return :const:`False` if this signal i
 not trapped.  Note that the General Decimal Arithmetic specification does not
 specify the behavior of direct comparisons; these rules for comparisons
 involving a :const:`!NaN` were taken from the IEEE 854 standard (see Table 3 in
-section 5.7).  To ensure strict standards-compliance, use the :meth:`~decimal.Decimal.compare`
-and :meth:`~decimal.Decimal.compare_signal` methods instead.
+section 5.7).  To ensure strict standards-compliance, use the :meth:`~Decimal.compare`
+and :meth:`~Decimal.compare_signal` methods instead.
 
 The signed zeros can result from calculations that underflow. They keep the sign
 that would have resulted if the calculation had been carried out to greater
@@ -2013,7 +2013,7 @@ Q. In a fixed-point application with two decimal places, some inputs have many
 places and need to be rounded.  Others are not supposed to have excess digits
 and need to be validated.  What methods should be used?
 
-A. The :meth:`~decimal.Decimal.quantize` method rounds to a fixed number of decimal places. If
+A. The :meth:`~Decimal.quantize` method rounds to a fixed number of decimal places. If
 the :const:`Inexact` trap is set, it is also useful for validation:
 
    >>> TWOPLACES = Decimal(10) ** -2       # same as Decimal('0.01')
@@ -2037,7 +2037,7 @@ throughout an application?
 A. Some operations like addition, subtraction, and multiplication by an integer
 will automatically preserve fixed point.  Others operations, like division and
 non-integer multiplication, will change the number of decimal places and need to
-be followed-up with a :meth:`~decimal.Decimal.quantize` step:
+be followed-up with a :meth:`~Decimal.quantize` step:
 
     >>> a = Decimal('102.72')           # Initial fixed-point values
     >>> b = Decimal('3.17')
@@ -2053,7 +2053,7 @@ be followed-up with a :meth:`~decimal.Decimal.quantize` step:
     Decimal('0.03')
 
 In developing fixed-point applications, it is convenient to define functions
-to handle the :meth:`~decimal.Decimal.quantize` step:
+to handle the :meth:`~Decimal.quantize` step:
 
     >>> def mul(x, y, fp=TWOPLACES):
     ...     return (x * y).quantize(fp)
@@ -2071,7 +2071,7 @@ Q. There are many ways to express the same value.  The numbers :const:`!200`,
 various precisions. Is there a way to transform them to a single recognizable
 canonical value?
 
-A. The :meth:`~decimal.Decimal.normalize` method maps all equivalent values to a single
+A. The :meth:`~Decimal.normalize` method maps all equivalent values to a single
 representative:
 
    >>> values = map(Decimal, '200 200.000 2E2 .02E+4'.split())
@@ -2159,12 +2159,12 @@ for medium-sized numbers and the `Number Theoretic Transform
 <https://en.wikipedia.org/wiki/Discrete_Fourier_transform_(general)#Number-theoretic_transform>`_
 for very large numbers.
 
-The context must be adapted for exact arbitrary precision arithmetic. :attr:`!Emin`
-and :attr:`!Emax` should always be set to the maximum values, :attr:`!clamp`
-should always be 0 (the default).  Setting :attr:`!prec` requires some care.
+The context must be adapted for exact arbitrary precision arithmetic. :attr:`~Context.Emin`
+and :attr:`~Context.Emax` should always be set to the maximum values, :attr:`~Context.clamp`
+should always be 0 (the default).  Setting :attr:`~Context.prec` requires some care.
 
 The easiest approach for trying out bignum arithmetic is to use the maximum
-value for :attr:`!prec` as well [#]_::
+value for :attr:`~Context.prec` as well [#]_::
 
     >>> setcontext(Context(prec=MAX_PREC, Emax=MAX_EMAX, Emin=MIN_EMIN))
     >>> x = Decimal(2) ** 256
@@ -2181,7 +2181,7 @@ the available memory will be insufficient::
    MemoryError
 
 On systems with overallocation (e.g. Linux), a more sophisticated approach is to
-adjust :attr:`!prec` to the amount of available RAM.  Suppose that you have 8GB of
+adjust :attr:`~Context.prec` to the amount of available RAM.  Suppose that you have 8GB of
 RAM and expect 10 simultaneous operands using a maximum of 500MB each::
 
    >>> import sys
