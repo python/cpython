@@ -7957,7 +7957,7 @@ static PyObject *
 os_getpid_impl(PyObject *module)
 /*[clinic end generated code: output=9ea6fdac01ed2b3c input=5a9a00f0ab68aa00]*/
 {
-#if MS_WINDOWS
+#ifdef MS_WINDOWS
     return PyLong_FromPid((pid_t)GetCurrentProcessId());
 #else
     return PyLong_FromPid(getpid());
