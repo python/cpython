@@ -3063,7 +3063,7 @@ features:
       it would contain the same as :attr:`st_dev`, which was incorrect.
 
    .. versionadded:: 3.12
-      Added the :attr:`st_birthtime` on Windows
+      Added the :attr:`st_birthtime` member on Windows.
 
 
 .. function:: statvfs(path)
