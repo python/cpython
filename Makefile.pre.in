@@ -578,16 +578,20 @@ LIBEXPAT_HEADERS= \
 LIBHACL_SHA2_OBJS= \
                 Modules/_hacl/Hacl_Streaming_SHA2.o
 
-LIBHACL_SHA2_HEADERS= \
-                Modules/_hacl/Hacl_Streaming_SHA2.h \
+LIBHACL_HEADERS= \
                 Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
                 Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h \
                 Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h \
                 Modules/_hacl/include/krml/internal/target.h \
                 Modules/_hacl/include/krml/lowstar_endianness.h \
                 Modules/_hacl/include/krml/types.h \
-                Modules/_hacl/internal/Hacl_SHA2_Generic.h \
+		Modules/_hacl/Hacl_Streaming_Types.h \
                 Modules/_hacl/python_hacl_namespaces.h
+
+LIBHACL_SHA2_HEADERS= \
+                Modules/_hacl/Hacl_Streaming_SHA2.h \
+                Modules/_hacl/internal/Hacl_SHA2_Generic.h \
+		$(LIBHACL_HEADERS)
 
 #########################################################################
 # Rules
@@ -2635,8 +2639,8 @@ MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
-MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h
-MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_MD5.h Modules/_hacl/Hacl_Hash_MD5.c
+MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA1.h Modules/_hacl/Hacl_Hash_SHA1.c
 MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_A)
 MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/sha3.c $(srcdir)/Modules/_sha3/sha3.h $(srcdir)/Modules/hashlib.h
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
