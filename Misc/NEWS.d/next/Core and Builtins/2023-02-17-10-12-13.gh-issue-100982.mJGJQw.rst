@@ -1,0 +1,2 @@
+Restrict the scope of the :opcode:`FOR_ITER_RANGE` instruction to the scope of the
+original :opcode:`FOR_ITER` instruction, to allow instrumentation.
