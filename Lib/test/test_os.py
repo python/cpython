@@ -4164,7 +4164,8 @@ class TestScandir(unittest.TestCase):
             for attr in dir(stat1):
                 if not attr.startswith("st_"):
                     continue
-                if attr in ("st_dev", "st_ino", "st_nlink"):
+                if attr in ("st_dev", "st_ino", "st_nlink", "st_ctime",
+                            "st_ctime_ns"):
                     continue
                 self.assertEqual(getattr(stat1, attr),
                                  getattr(stat2, attr),

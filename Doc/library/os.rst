@@ -2790,6 +2790,10 @@ features:
       Added support for the :class:`~os.PathLike` interface.  Added support
       for :class:`bytes` paths on Windows.
 
+   .. versionchanged:: 3.12
+      The ``st_ctime`` attributes of a stat result are now set to zero, rather
+      than being incorrectly set to the creation time of the file.
+
 
 .. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
 
@@ -2905,10 +2909,7 @@ features:
 
    .. attribute:: st_ctime
 
-      Platform dependent:
-
-      * the time of most recent metadata change on Unix,
-      * the time of creation on Windows, expressed in seconds.
+      Time of most recent metadata change expressed in seconds.
 
    .. attribute:: st_atime_ns
 
@@ -2921,11 +2922,8 @@ features:
 
    .. attribute:: st_ctime_ns
 
-      Platform dependent:
-
-      * the time of most recent metadata change on Unix,
-      * the time of creation on Windows, expressed in nanoseconds as an
-        integer.
+      Time of most recent metadata change expressed in nanoseconds as an
+      integer.
 
    .. note::
 
@@ -2975,7 +2973,7 @@ features:
 
    .. attribute:: st_birthtime
 
-      Time of file creation.
+      Time of file creation. This is also available on Windows.
 
    On Solaris and derivatives, the following attributes may also be
    available:
@@ -2999,7 +2997,8 @@ features:
 
       File type.
 
-   On Windows systems, the following attributes are also available:
+   On Windows systems, as well as ``st_birthtime`` above, the following
+   attributes are also available:
 
    .. attribute:: st_file_attributes
 
@@ -3048,6 +3047,24 @@ features:
       On Windows, the :attr:`st_mode` member now identifies special
       files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
       as appropriate.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_ctime` now also contains the last metadata
+      change time, for consistency with other platforms.
+      Use :attr:`st_birthtime` for the creation time when available.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_ino` may now be up to 128 bits, depending
+      on the file system. Previously it would not be above 64 bits, and
+      larger file identifiers would be arbitrarily packed.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_rdev` no longer returns a value. Previously
+      it would contain the same as :attr:`st_dev`, which was incorrect.
+
+   .. versionadded:: 3.12
+      Added the :attr:`st_birthtime` on Windows
+
 
 .. function:: statvfs(path)
 

@@ -292,6 +292,15 @@ os
   method to check if the entry is a junction.
   (Contributed by Charles Machalow in :gh:`99547`.)
 
+* :func:`os.stat` and :func:`os.lstat` are now more accurate on Windows.
+  The ``st_birthtime`` field will now be filled with the creation time
+  of the file, and ``st_ctime`` now returns the last metadata change,
+  for consistency with other platforms. ``st_ino`` may now be up to 128
+  bits, depending on your file system, and ``st_rdev`` is always set to
+  zero rather than to incorrect values. 
+  Both functions may be significantly faster on newer releases of
+  Windows. (Contributed by Steve Dower in :gh:`99726`.)
+
 os.path
 -------
 
