@@ -124,7 +124,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         if coro_result is _NOT_SET:
             self._loop.call_soon(self.__step, context=self._context)
         else:
-            self.__step2(coro_result)
+            self.__step_handle_result(coro_result)
         _register_task(self)
 
     def __del__(self):
@@ -294,12 +294,12 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         except BaseException as exc:
             super().set_exception(exc)
         else:
-            self.__step2(result)
+            self.__step_handle_result(result)
         finally:
             _leave_task(self._loop, self)
             self = None  # Needed to break cycles when an exception occurs.
 
-    def __step2(self, result):
+    def __step_handle_result(self, result):
             blocking = getattr(result, '_asyncio_future_blocking', None)
             if blocking is not None:
                 # Yielded Future must come from Future.__iter__().

@@ -157,7 +157,7 @@ class _asyncio.Future "FutureObj *" "&Future_Type"
 static PyObject * future_new_iter(PyObject *);
 
 static PyObject *
-task_step2_impl(asyncio_state *state, TaskObj *task, PyObject *result);
+task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *result);
 
 
 static int
@@ -2099,8 +2099,11 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         }
     }
     else {
+        // TODO this is a sketchy incref...
         Py_INCREF(coro_result);
-        task_step2_impl(state, self, coro_result);
+        // TODO: check return value, error on NULL
+        // (but first let's add a test case that hits this)
+        task_step_handle_result_impl(state, self, coro_result);
     }
     return register_task(state, (PyObject*)self);
 }
@@ -2854,7 +2857,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
         Py_RETURN_NONE;
     }
 
-    return task_step2_impl(state, task, result);
+    return task_step_handle_result_impl(state, task, result);
 
 fail:
     Py_XDECREF(result);
@@ -2863,7 +2866,7 @@ fail:
 
 
 static PyObject *
-task_step2_impl(asyncio_state *state, TaskObj *task, PyObject *result)
+task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *result)
 {
     int res;
     PyObject *o;
