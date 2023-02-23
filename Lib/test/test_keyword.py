@@ -43,11 +43,12 @@ class Test_iskeyword(unittest.TestCase):
         self.assertIn("match", keyword.softkwlist)
         self.assertIn("case", keyword.softkwlist)
         self.assertIn("_", keyword.softkwlist)
+
     def test_keywords_are_sorted(self):
-        self.assertSequenceEqual(sorted(keyword.kwlist), keyword.kwlist)
+        self.assertListEqual(sorted(keyword.kwlist), keyword.kwlist)
 
     def test_softkeywords_are_sorted(self):
-        self.assertSequenceEqual(sorted(keyword.softkwlist), keyword.softkwlist)
+        self.assertListEqual(sorted(keyword.softkwlist), keyword.softkwlist)
 
 
 if __name__ == "__main__":
