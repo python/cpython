@@ -2418,7 +2418,7 @@ PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
             int res = callback(op, arg);
             Py_DECREF(op);
             if (!res) {
-              goto done;
+                goto done;
             }
         }
     }
