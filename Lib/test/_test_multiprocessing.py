@@ -4098,10 +4098,9 @@ class _TestSharedMemory(BaseTestCase):
     def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
         # bpo-36867: test that a SharedMemoryManager uses the
         # same resource_tracker process as its parent.
-        cmd = f'''if 1:
+        cmd = '''if 1:
             from multiprocessing.managers import SharedMemoryManager
-            from multiprocessing import set_start_method
-            set_start_method({multiprocessing.get_start_method()!r})
+
 
             smm = SharedMemoryManager()
             smm.start()
