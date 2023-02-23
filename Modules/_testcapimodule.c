@@ -3541,27 +3541,18 @@ test_gc_visit_objects_basic(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignor
 
     obj = PyList_New(0);
     if (obj == NULL) {
-        goto error;
+        return NULL;
     }
     state.target = obj;
     state.found = 0;
-
+    
     PyUnstable_GC_VisitObjects(gc_visit_callback_basic, &state);
+    Py_DECREF(obj);
     if (!state.found) {
         PyErr_SetString(
-            PyExc_AssertionError,
-            "test_gc_visit_objects_basic: Didn't find live list");
-        goto error;
-    }
-
-    int error = 0;
-    goto done;
-error:
-    error = 1;
-done:
-    Py_XDECREF(obj);
-    if (error) {
-        return NULL;
+             PyExc_AssertionError,
+             "test_gc_visit_objects_basic: Didn't find live list");
+         return NULL;
     }
     Py_RETURN_NONE;
 }
