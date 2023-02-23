@@ -22,15 +22,6 @@ Bigint {
     ULong x[1];
 };
 
-#ifdef Py_USING_MEMORY_DEBUGGER
-
-struct _dtoa_runtime_state {
-    int _not_used;
-};
-#define _dtoa_runtime_state_INIT {0}
-
-#else  // !Py_USING_MEMORY_DEBUGGER
-
 /* The size of the Bigint freelist */
 #define Bigint_Kmax 7
 
@@ -52,8 +43,6 @@ struct _dtoa_runtime_state {
     { \
         .preallocated_next = runtime.dtoa.preallocated, \
     }
-
-#endif  // !Py_USING_MEMORY_DEBUGGER
 
 
 /* These functions are used by modules compiled as C extension like math:

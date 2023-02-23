@@ -1,0 +1,2 @@
+Remove the last place where the previously removed macro
+``Py_USING_MEMORY_DEBUGGER`` is checked. Patch by Felipe Rodrigues.
