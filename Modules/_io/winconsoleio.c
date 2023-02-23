@@ -154,8 +154,6 @@ typedef struct {
     wchar_t wbuf;
 } winconsoleio;
 
-PyTypeObject PyWindowsConsoleIO_Type;
-
 int
 _PyWindowsConsoleIO_closed(PyObject *self)
 {
@@ -265,7 +263,8 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     int fd_is_own = 0;
     HANDLE handle = NULL;
 
-    assert(PyObject_TypeCheck(self, (PyTypeObject *)&PyWindowsConsoleIO_Type));
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    assert(PyObject_TypeCheck(self, state->PyWindowsConsoleIO_Type));
     if (self->fd >= 0) {
         if (self->closefd) {
             /* Have to close the existing file first. */
