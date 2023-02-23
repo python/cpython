@@ -2422,6 +2422,6 @@ PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
             }
         }
     }
-done:;
+done:
     gcstate->enabled = origenstate;
 }
