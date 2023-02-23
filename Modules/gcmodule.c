@@ -2403,7 +2403,8 @@ PyObject_GC_IsFinalized(PyObject *obj)
 }
 
 void
-PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg) {
+PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+{
     size_t i;
     GCState* gcstate = get_gc_state();
     int origenstate = gcstate->enabled;
