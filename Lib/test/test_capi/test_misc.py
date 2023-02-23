@@ -1128,9 +1128,9 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_wait(l, n)
 
     def test_gen_get_code(self):
-       def genf(): yield
-       gen = genf()
-       self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
+        def genf(): yield
+        gen = genf()
+        self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
 
 
 class SubinterpreterTest(unittest.TestCase):
