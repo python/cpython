@@ -169,8 +169,8 @@ struct _is {
     /* Tools numbered 0-7 */
     struct _instrumentation_tool tools[PY_MONITORING_TOOL_IDS];
     PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
-    Py_ssize_t sys_profiling_threads;
-    Py_ssize_t sys_tracing_threads;
+    Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
+    Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
