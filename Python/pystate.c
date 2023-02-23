@@ -644,11 +644,11 @@ init_interpreter(PyInterpreterState *interp,
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
     for(int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
-        interp->instrumented_events.tools[i] = 0;
+        interp->monitors.tools[i] = 0;
     }
-    for(int i = 0; i < PY_MONITORING_EVENTS; i++) {
-        for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-            interp->tools[t].instrument_callables[i] = NULL;
+    for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
+        for(int e = 0; e < PY_MONITORING_EVENTS; e++) {
+            interp->monitoring_callables[t][e] = NULL;
         }
     }
     interp->f_opcode_trace_set = false;
@@ -778,11 +778,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->audit_hooks);
 
     for(int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
-        interp->instrumented_events.tools[i] = 0;
+        interp->monitors.tools[i] = 0;
     }
-    for(int i = 0; i < PY_MONITORING_EVENTS; i++) {
-        for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-            Py_CLEAR(interp->tools[t].instrument_callables[i]);
+    for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
+        for(int e = 0; e < PY_MONITORING_EVENTS; e++) {
+            Py_CLEAR(interp->monitoring_callables[t][e]);
         }
     }
 

@@ -1961,14 +1961,14 @@ do_monitor_exc(
 static inline int
 no_tools_for_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
 {
-    _PyCoInstrumentationData *data = frame->f_code->_co_instrumentation.monitoring_data;
+    _PyCoMonitoringData *data = frame->f_code->_co_monitoring;
     if (data) {
-        if (data->current_instrumentation.tools[event] == 0) {
+        if (data->active_monitors.tools[event] == 0) {
             return 1;
         }
     }
     else {
-        if (tstate->interp->instrumented_events.tools[event] == 0) {
+        if (tstate->interp->monitors.tools[event] == 0) {
             return 1;
         }
     }

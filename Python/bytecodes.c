@@ -91,7 +91,7 @@ dummy_func(
         inst(INSTRUMENTED_RESUME, (--)) {
             /* Check monitoring *before* calling instrument */
             /* Possibly combine this with eval breaker */
-            if (frame->f_code->_co_instrumentation.monitoring_version != tstate->interp->monitoring_version) {
+            if (frame->f_code->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 if (_Py_Instrument(frame->f_code, tstate->interp)) {
                     goto error;
                 }
@@ -118,7 +118,7 @@ dummy_func(
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             /* Possibly combine this with eval breaker */
-            if (frame->f_code->_co_instrumentation.monitoring_version != tstate->interp->monitoring_version) {
+            if (frame->f_code->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(frame->f_code, tstate->interp);
                 ERROR_IF(err, error);
                 next_instr--;

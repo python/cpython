@@ -49,10 +49,6 @@ struct _Py_long_state {
     int max_str_digits;
 };
 
-struct _instrumentation_tool {
-    PyObject *instrument_callables[PY_MONITORING_EVENTS];
-};
-
 /* interpreter state */
 
 /* PyInterpreterState holds the global state for one of the runtime's
@@ -162,15 +158,14 @@ struct _is {
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
 
-    _Py_Monitors instrumented_events;
+    _Py_Monitors monitors;
     bool f_opcode_trace_set;
     bool sys_profile_initialized;
     bool sys_trace_initialized;
-    /* Tools numbered 0-7 */
-    struct _instrumentation_tool tools[PY_MONITORING_TOOL_IDS];
-    PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
+    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][PY_MONITORING_EVENTS];
+    PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;

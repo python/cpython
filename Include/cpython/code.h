@@ -70,19 +70,14 @@ typedef struct {
 } _PyCoLineInstrumentationData;
 
 typedef struct {
-    _Py_Monitors local_instrumentation;
-    _Py_Monitors current_instrumentation;
+    _Py_Monitors local_monitors;
+    _Py_Monitors active_monitors;
     uint8_t *tools;
     _PyCoLineInstrumentationData *lines;
     uint8_t *line_tools;
     uint8_t *per_instruction_opcodes;
     uint8_t *per_instruction_tools;
-} _PyCoInstrumentationData;
-
-typedef struct {
-    uint64_t monitoring_version; /* current instrumentation version */
-    _PyCoInstrumentationData *monitoring_data; /* data for monitoring */
-} _PyCoInstrumentation;
+} _PyCoMonitoringData;
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
@@ -141,7 +136,8 @@ typedef struct {
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
-    _PyCoInstrumentation _co_instrumentation; /* Instrumentation */            \
+    uint64_t _co_instrumentation_version; /* current instrumentation version */  \
+    _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \

@@ -402,8 +402,8 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     if (_Py_next_func_version != 0) {
         _Py_next_func_version++;
     }
-    co->_co_instrumentation.monitoring_data = NULL;
-    co->_co_instrumentation.monitoring_version = 0;
+    co->_co_monitoring = NULL;
+    co->_co_instrumentation_version = 0;
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
@@ -1651,7 +1651,7 @@ code_dealloc(PyCodeObject *co)
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
-    _PyCoInstrumentationData *data = co->_co_instrumentation.monitoring_data;
+    _PyCoMonitoringData *data = co->_co_monitoring;
     if (data) {
         if (data->tools) {
             PyMem_Free(data->tools);
