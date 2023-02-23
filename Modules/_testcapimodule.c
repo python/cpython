@@ -3567,7 +3567,8 @@ done:
 }
 
 static int
-gc_visit_callback_exit_early(PyObject *obj, void* arg) {
+gc_visit_callback_exit_early(PyObject *obj, void *arg)
+ {
     int *visited_i = (int *)arg;
     (*visited_i)++;
     if (*visited_i == 2) {
