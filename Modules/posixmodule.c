@@ -14756,10 +14756,9 @@ ScandirIterator_exit(ScandirIterator *self, PyObject *args)
 static void
 ScandirIterator_finalize(ScandirIterator *iterator)
 {
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (!ScandirIterator_is_closed(iterator)) {
         ScandirIterator_closedir(iterator);
@@ -14776,7 +14775,7 @@ ScandirIterator_finalize(ScandirIterator *iterator)
     path_cleanup(&iterator->path);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static void
