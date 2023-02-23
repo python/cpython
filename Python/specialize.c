@@ -2155,8 +2155,6 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
     PyTypeObject *tp = Py_TYPE(iter);
-    _Py_CODEUNIT next = instr[1+INLINE_CACHE_ENTRIES_FOR_ITER];
-    int next_op = _PyOpcode_Deopt[next.op.code];
     if (tp == &PyListIter_Type) {
         instr->op.code = FOR_ITER_LIST;
         goto success;
@@ -2165,7 +2163,7 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
         instr->op.code = FOR_ITER_TUPLE;
         goto success;
     }
-    else if (tp == &PyRangeIter_Type && next_op == STORE_FAST) {
+    else if (tp == &PyRangeIter_Type) {
         instr->op.code = FOR_ITER_RANGE;
         goto success;
     }
