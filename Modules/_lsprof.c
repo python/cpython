@@ -607,7 +607,7 @@ _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=1806ef720019ee03 input=445e193ef4522902]*/
 {
     statscollector_t collect;
-    collect.state = PyType_GetModuleState(cls);
+    collect.state = _PyType_GetModuleState(cls);
     if (pending_exception(self)) {
         return NULL;
     }

@@ -22,6 +22,7 @@
 #include "Python.h"
 #include "hashlib.h"
 #include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 /*[clinic input]
 module _sha1
@@ -108,7 +109,7 @@ static PyObject *
 SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=b32d4461ce8bc7a7 input=6c22e66fcc34c58e]*/
 {
-    SHA1State *st = PyType_GetModuleState(cls);
+    SHA1State *st = _PyType_GetModuleState(cls);
 
     SHA1object *newobj;
     if ((newobj = newSHA1object(st)) == NULL)
