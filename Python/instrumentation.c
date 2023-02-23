@@ -282,7 +282,7 @@ compute_line(PyCodeObject *code, int offset, int8_t line_delta)
     }
     else {
         assert(line_delta == -127);
-        /* Compute from table */
+        /* Look it up */
         return PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
     }
 }

@@ -115,7 +115,6 @@ typedef struct {
     PyObject *co_exceptiontable;   /* Byte string encoding exception handling  \
                                       table */                                 \
     int co_flags;                  /* CO_..., see below */                     \
-    short _co_linearray_entry_size;  /* Size of each entry in _co_linearray */ \
                                                                                \
     /* The rest are not so impactful on performance. */                        \
     int co_argcount;              /* #arguments, except *args */               \
@@ -144,7 +143,6 @@ typedef struct {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     _PyCoInstrumentation _co_instrumentation; /* Instrumentation */            \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
-    char *_co_linearray;          /* array of line offsets */                  \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
