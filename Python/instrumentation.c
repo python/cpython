@@ -680,7 +680,6 @@ de_instrument(PyCodeObject *code, int offset, int event)
 static void
 de_instrument_line(PyCodeObject *code, int i)
 {
-    /* TO DO -- handle INSTRUMENTED_INSTRUCTION */
     _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
     int opcode = _Py_OPCODE(*instr);
     if (opcode == INSTRUMENTED_INSTRUCTION) {
@@ -718,7 +717,6 @@ de_instrument_line(PyCodeObject *code, int i)
 static void
 de_instrument_per_instruction(PyCodeObject *code, int offset)
 {
-    /* TO DO -- handle INSTRUMENTED_INSTRUCTION */
     _Py_CODEUNIT *instr = &_PyCode_CODE(code)[offset];
     int opcode = _Py_OPCODE(*instr);
     if (opcode != INSTRUMENTED_INSTRUCTION) {
