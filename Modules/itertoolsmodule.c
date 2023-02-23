@@ -3,7 +3,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_typeobject.h"    // _PyType_GET_MODULE_STATE()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
@@ -49,7 +49,7 @@ get_module_state(PyObject *mod)
 static inline itertools_state *
 get_module_state_by_cls(PyTypeObject *cls)
 {
-    void *state = _PyType_GET_MODULE_STATE(cls);
+    void *state = _PyType_GetModuleState(cls);
     assert(state != NULL);
     return (itertools_state *)state;
 }
