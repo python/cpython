@@ -2406,7 +2406,7 @@ void
 PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
 {
     size_t i;
-    GCState* gcstate = get_gc_state();
+    GCState *gcstate = get_gc_state();
     int origenstate = gcstate->enabled;
     gcstate->enabled = 0;
     for (i = 0; i < NUM_GENERATIONS; i++) {
