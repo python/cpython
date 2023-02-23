@@ -2403,15 +2403,24 @@ PyObject_GC_IsFinalized(PyObject *obj)
 }
 
 void
-PyGC_VisitObjects(gcvisitobjects_t callback, void *arg) {
+PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg) {
     size_t i;
     GCState* gcstate = get_gc_state();
+    int origenstate = gcstate->enabled;
+    gcstate->enabled = 0;
     for (i = 0; i < NUM_GENERATIONS; i++) {
         PyGC_Head *gc_list, *gc;
         gc_list = GEN_HEAD(gcstate, i);
         for (gc = GC_NEXT(gc_list); gc != gc_list; gc = GC_NEXT(gc)) {
             PyObject *op = FROM_GC(gc);
-            callback(op, arg);
+            Py_INCREF(op);
+            int res = callback(op, arg);
+            Py_DECREF(op);
+            if (!res) {
+              goto done;
+            }
         }
     }
+done:;
+    gcstate->enabled = origenstate;
 }

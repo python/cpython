@@ -159,12 +159,21 @@ PyAPI_FUNC(int) PyGC_IsEnabled(void);
 
 
 #if !defined(Py_LIMITED_API)
-/* Visit all live GC-capable objects, similar to gc.get_objects(None).
+/* Visit all live GC-capable objects, similar to gc.get_objects(None). The
+ * supplied callback is called on every such object with the void* arg set
+ * to the supplied arg. Returning 0 from the callback ends iteration, returning
+ * 1 allows iteration to continue. Returning any other value may result in
+ * undefined behaviour.
  *
- * Users should avoid allocating or deallocating objects on the Python heap in
- * the callback. */
-typedef void (*gcvisitobjects_t)(PyObject*, void*);
-PyAPI_FUNC(void) PyGC_VisitObjects(gcvisitobjects_t callback, void* arg);
+ * If new objects are (de)allocated by the callback it is undefined if they
+ * will be visited.
+
+ * Garbage collection is disabled during operation. Explicitly running a
+ * collection in the callback may lead to undefined behaviour e.g. visiting the
+ * same objects multiple times or not at all.
+ */
+typedef int (*gcvisitobjects_t)(PyObject*, void*);
+PyAPI_FUNC(void) PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void* arg);
 #endif
 
 /* Test if a type has a GC head */

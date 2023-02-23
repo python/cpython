@@ -3517,24 +3517,25 @@ err_restore(PyObject *self, PyObject *args) {
     return NULL;
 }
 
-struct gc_visit_state {
+struct gc_visit_state_basic {
     PyObject *target;
     int found;
 };
 
-static void
-gc_visit_callback(PyObject *obj, void* arg) {
-    struct gc_visit_state *state = (struct gc_visit_state *)arg;
+static int
+gc_visit_callback_basic(PyObject *obj, void* arg) {
+    struct gc_visit_state_basic *state = (struct gc_visit_state_basic *)arg;
     if (obj == state->target) {
         state->found = 1;
+        return 0;
     }
+    return 1;
 }
 
 static PyObject *
-test_gc_visit_objects(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored)) {
-    /* Basic sanity test: does it find objects as appropriate? */
+test_gc_visit_objects_basic(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored)) {
     PyObject *obj;
-    struct gc_visit_state state;
+    struct gc_visit_state_basic state;
 
     obj = PyList_New(0);
     if (obj == NULL) {
@@ -3543,11 +3544,11 @@ test_gc_visit_objects(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored)) {
     state.target = obj;
     state.found = 0;
 
-    PyGC_VisitObjects(gc_visit_callback, &state);
+    PyUnstable_GC_VisitObjects(gc_visit_callback_basic, &state);
     if (!state.found) {
         PyErr_SetString(
             PyExc_AssertionError,
-            "test_gc_visit_objects: Didn't find live list");
+            "test_gc_visit_objects_basic: Didn't find live list");
         goto error;
     }
 
@@ -3559,6 +3560,28 @@ done:
     Py_XDECREF(obj);
     if (error) {
         return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static int
+gc_visit_callback_exit_early(PyObject *obj, void* arg) {
+    int *visited_i = (int *)arg;
+    (*visited_i)++;
+    if (*visited_i == 2) {
+        return 0;
+    }
+    return 1;
+}
+
+static PyObject *
+test_gc_visit_objects_exit_early(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored)) {
+    int visited_i = 0;
+    PyUnstable_GC_VisitObjects(gc_visit_callback_exit_early, &visited_i);
+    if (visited_i != 2) {
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_gc_visit_objects_exit_early: did not exit when expected");
     }
     Py_RETURN_NONE;
 }
@@ -3718,7 +3741,8 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"err_set_raised", err_set_raised, METH_O, NULL},
     {"err_restore", err_restore, METH_VARARGS, NULL},
-    {"test_gc_visit_objects", test_gc_visit_objects, METH_NOARGS, NULL},
+    {"test_gc_visit_objects_basic", test_gc_visit_objects_basic, METH_NOARGS, NULL},
+    {"test_gc_visit_objects_exit_early", test_gc_visit_objects_exit_early, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
