@@ -43,8 +43,8 @@ class MonitoringBaseTest(unittest.TestCase):
         m.get_tool
         m.get_events
         m.set_events
-        # m.get_local_events
-        # m.set_local_events
+        m.get_local_events
+        m.set_local_events
         m.register_callback
         m.restart_events
         m.DISABLE
@@ -719,7 +719,7 @@ class TestManyEvents(CheckEvents):
 
         self.check_events(func1, recorders = MANY_RECORDERS, expected = [
             ('line', 'check_events', 10),
-            ('call', 'func1', None),
+            ('call', 'func1', sys.monitoring.MISSING),
             ('line', 'func1', 1),
             ('line', 'func1', 2),
             ('line', 'func1', 3),
@@ -735,7 +735,7 @@ class TestManyEvents(CheckEvents):
 
         self.check_events(func2, recorders = MANY_RECORDERS, expected = [
             ('line', 'check_events', 10),
-            ('call', 'func2', None),
+            ('call', 'func2', sys.monitoring.MISSING),
             ('line', 'func2', 1),
             ('line', 'func2', 2),
             ('call', 'append', [2]),
@@ -756,7 +756,7 @@ class TestManyEvents(CheckEvents):
 
         self.check_events(func3, recorders = MANY_RECORDERS, expected = [
             ('line', 'check_events', 10),
-            ('call', 'func3', None),
+            ('call', 'func3', sys.monitoring.MISSING),
             ('line', 'func3', 1),
             ('line', 'func3', 2),
             ('line', 'func3', 3),
@@ -766,3 +766,71 @@ class TestManyEvents(CheckEvents):
             ('line', 'func3', 6),
             ('line', 'check_events', 11),
             ('call', 'set_events', 2)])
+
+class TestLocalEvents(unittest.TestCase):
+
+    def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            event_list = []
+            all_events = 0
+            for recorder in recorders:
+                ev = recorder.event_type
+                sys.monitoring.register_callback(tool, ev, recorder(event_list))
+                all_events |= ev
+            sys.monitoring.set_local_events(func.__code__, tool, all_events)
+            func()
+            sys.monitoring.set_local_events(func.__code__, tool, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+            self.assertEqual(event_list, expected)
+        finally:
+            sys.monitoring.set_local_events(func.__code__, tool, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+
+
+    def test_simple(self):
+
+        def func1():
+            line1 = 1
+            line2 = 2
+            line3 = 3
+
+        self.check_events(func1, recorders = MANY_RECORDERS, expected = [
+            ('line', 'func1', 1),
+            ('line', 'func1', 2),
+            ('line', 'func1', 3)])
+
+    def test_c_call(self):
+
+        def func2():
+            line1 = 1
+            [].append(2)
+            line3 = 3
+
+        self.check_events(func2, recorders = MANY_RECORDERS, expected = [
+            ('line', 'func2', 1),
+            ('line', 'func2', 2),
+            ('call', 'append', [2]),
+            ('C return', 'append', [2]),
+            ('line', 'func2', 3)])
+
+    def test_try_except(self):
+
+        def func3():
+            try:
+                line = 2
+                raise KeyError
+            except:
+                line = 5
+            line = 6
+
+        self.check_events(func3, recorders = MANY_RECORDERS, expected = [
+            ('line', 'func3', 1),
+            ('line', 'func3', 2),
+            ('line', 'func3', 3),
+            ('raise', KeyError),
+            ('line', 'func3', 4),
+            ('line', 'func3', 5),
+            ('line', 'func3', 6)])

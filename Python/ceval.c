@@ -178,7 +178,10 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 
 static void monitor_raise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr, int event);
+                 _Py_CODEUNIT *instr);
+static int monitor_stop_iteration(PyThreadState *tstate,
+                 _PyInterpreterFrame *frame,
+                 _Py_CODEUNIT *instr);
 static void monitor_unwind(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
@@ -899,7 +902,7 @@ error:
                 PyTraceBack_Here(f);
             }
         }
-        monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_RAISE);
+        monitor_raise(tstate, frame, next_instr-1);
 
 exception_unwind:
         {
@@ -1935,22 +1938,12 @@ Error:
     return 0;
 }
 
-
-static void
-monitor_raise(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr, int event)
-{
-    if (event < PY_MONITORING_INSTRUMENTED_EVENTS) {
-        if (frame->f_code->_co_instrumentation.monitoring_data->current_instrumentation.tools[event] == 0) {
-            return;
-        }
-    }
-    else {
-        if (_PyInterpreterState_GetTools(tstate->interp, event) == 0) {
-            return;
-        }
-    }
+static int
+do_monitor_exc(
+    PyThreadState *tstate, _PyInterpreterFrame *frame,
+    _Py_CODEUNIT *instr, int event
+) {
+    assert(event < PY_MONITORING_UNGROUPED_EVENTS);
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
     int err;
@@ -1961,15 +1954,53 @@ monitor_raise(PyThreadState *tstate,
     else {
         Py_DECREF(exc);
     }
+    return err;
 }
 
+static inline int
+no_tools_for_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
+{
+    _PyCoInstrumentationData *data = frame->f_code->_co_instrumentation.monitoring_data;
+    if (data) {
+        if (data->current_instrumentation.tools[event] == 0) {
+            return 1;
+        }
+    }
+    else {
+        if (tstate->interp->instrumented_events.tools[event] == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static void
+monitor_raise(
+    PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
+{
+    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_RAISE)) {
+        return;
+    }
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
+}
+
+static int
+monitor_stop_iteration(
+    PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
+{
+    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_STOP_ITERATION)) {
+        return 0;
+    }
+    return do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_STOP_ITERATION);
+}
 
 static void
 monitor_unwind(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr)
 {
-    if (_PyInterpreterState_GetTools(tstate->interp, PY_MONITORING_EVENT_PY_UNWIND) == 0) {
+
+    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
         return;
     }
     _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_UNWIND, frame, instr);
@@ -1981,7 +2012,7 @@ monitor_handled(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr, PyObject *exc)
 {
-    if (_PyInterpreterState_GetTools(tstate->interp, PY_MONITORING_EVENT_EXCEPTION_HANDLED) == 0) {
+    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
         return;
     }
     _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
@@ -1992,7 +2023,7 @@ monitor_throw(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr)
 {
-    if (_PyInterpreterState_GetTools(tstate->interp, PY_MONITORING_EVENT_PY_THROW) == 0) {
+    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_THROW)) {
         return;
     }
     _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_THROW, frame, instr);

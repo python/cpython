@@ -242,7 +242,9 @@
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
+                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
+                    goto error;
+                }
                 PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(receiver);
@@ -265,7 +267,9 @@
             PyObject *receiver = PEEK(2);
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
+                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
+                    goto error;
+                }
                 PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(receiver);
@@ -1010,7 +1014,7 @@
             if (retval == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
                 ) {
-                    monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_RAISE);
+                    monitor_raise(tstate, frame, next_instr-1);
                 }
                 if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                     assert(retval != NULL);
@@ -2793,7 +2797,7 @@
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_RAISE);
+                    monitor_raise(tstate, frame, next_instr-1);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -2826,7 +2830,7 @@
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, here, PY_MONITORING_EVENT_RAISE);
+                    monitor_raise(tstate, frame, here);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -3160,7 +3164,8 @@
             int is_meth = PEEK(oparg+2) != NULL;
             int total_args = oparg + is_meth;
             PyObject *function = PEEK(total_args + 1);
-            PyObject *arg = total_args == 0 ? Py_None : PEEK(total_args);
+            PyObject *arg = total_args == 0 ?
+                &_PyInstrumentation_MISSING : PEEK(total_args);
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, next_instr-1, function, arg);
@@ -3234,7 +3239,8 @@
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 kwnames);
             if (opcode == INSTRUMENTED_CALL) {
-                PyObject *arg = total_args == 0 ? Py_None : PEEK(total_args);
+                PyObject *arg = total_args == 0 ?
+                    &_PyInstrumentation_MISSING : PEEK(total_args);
                 if (res == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,

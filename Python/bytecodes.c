@@ -177,7 +177,9 @@ dummy_func(
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
+                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
+                    goto error;
+                }
                 PyErr_SetRaisedException(NULL);
             }
             DECREF_INPUTS();
@@ -190,7 +192,9 @@ dummy_func(
         inst(INSTRUMENTED_END_SEND, (receiver, value -- value)) {
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_STOP_ITERATION);
+                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
+                    goto error;
+                }
                 PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(receiver);
@@ -794,7 +798,7 @@ dummy_func(
             if (retval == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
                 ) {
-                    monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_RAISE);
+                    monitor_raise(tstate, frame, next_instr-1);
                 }
                 if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                     assert(retval != NULL);
@@ -2215,7 +2219,7 @@ dummy_func(
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, next_instr-1, PY_MONITORING_EVENT_RAISE);
+                    monitor_raise(tstate, frame, next_instr-1);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -2244,7 +2248,7 @@ dummy_func(
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, here, PY_MONITORING_EVENT_RAISE);
+                    monitor_raise(tstate, frame, here);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
