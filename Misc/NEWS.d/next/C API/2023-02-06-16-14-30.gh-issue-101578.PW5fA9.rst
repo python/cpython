@@ -5,6 +5,6 @@ rather than the triple arguments of the now-deprecated
 :c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore`.
 This is less error prone and a bit more efficient.
 
-Also add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
+Add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
 as convenience functions for retrieving and modifying
 the :attr:`~BaseException.args` passed to the exception's constructor.

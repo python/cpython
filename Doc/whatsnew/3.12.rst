@@ -876,10 +876,12 @@ New Features
   rather than the triple arguments of the now-deprecated
   :c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore`.
   This is less error prone and a bit more efficient.
+  (Contributed by Mark Shannon in :gh:`101578`.)
 
-  Also add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
+* Add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
   as convenience functions for retrieving and modifying
   the :attr:`~BaseException.args` passed to the exception's constructor.
+  (Contributed by Mark Shannon in :gh:`101578`.)
 
 Porting to Python 3.12
 ----------------------
@@ -1007,6 +1009,7 @@ Deprecated
 * :c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore` are deprecated.
   Use :c:func:`PyErr_GetRaisedException` and
   :c:func:`PyErr_SetRaisedException` instead.
+  (Contributed by Mark Shannon in :gh:`101578`.)
 
 
 Removed
