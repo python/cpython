@@ -44,7 +44,6 @@ extern "C" {
 #define RETURN_GENERATOR                        75
 #define RETURN_VALUE                            83
 #define SETUP_ANNOTATIONS                       85
-#define PREP_RERAISE_STAR                       88
 #define POP_EXCEPT                              89
 #define HAVE_ARGUMENT                           90
 #define STORE_NAME                              90
@@ -118,6 +117,7 @@ extern "C" {
 #define CALL                                   171
 #define KW_NAMES                               172
 #define CALL_INTRINSIC_1                       173
+#define CALL_INTRINSIC_2                       174
 #define INSTRUMENTED_POP_JUMP_IF_NONE          235
 #define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      236
 #define INSTRUMENTED_RETURN_CONST              237
@@ -199,16 +199,16 @@ extern "C" {
 #define LOAD_GLOBAL_BUILTIN                     84
 #define LOAD_GLOBAL_MODULE                      86
 #define STORE_ATTR_INSTANCE_VALUE               87
-#define STORE_ATTR_SLOT                        113
-#define STORE_ATTR_WITH_HINT                   143
-#define STORE_FAST__LOAD_FAST                  153
-#define STORE_FAST__STORE_FAST                 154
-#define STORE_SUBSCR_DICT                      158
-#define STORE_SUBSCR_LIST_INT                  159
-#define UNPACK_SEQUENCE_LIST                   160
-#define UNPACK_SEQUENCE_TUPLE                  161
-#define UNPACK_SEQUENCE_TWO_TUPLE              166
-#define SEND_GEN                               167
+#define STORE_ATTR_SLOT                         88
+#define STORE_ATTR_WITH_HINT                   113
+#define STORE_FAST__LOAD_FAST                  143
+#define STORE_FAST__STORE_FAST                 153
+#define STORE_SUBSCR_DICT                      154
+#define STORE_SUBSCR_LIST_INT                  158
+#define UNPACK_SEQUENCE_LIST                   159
+#define UNPACK_SEQUENCE_TUPLE                  160
+#define UNPACK_SEQUENCE_TWO_TUPLE              161
+#define SEND_GEN                               166
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\

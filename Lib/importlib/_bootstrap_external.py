@@ -433,6 +433,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a5 3517 (Change YIELD_VALUE oparg to exception block depth)
 #     Python 3.12a5 3518 (Add RETURN_CONST instruction)
 #     Python 3.12a5 3519 (Modify SEND instruction)
+#     Python 3.12a5 3520 (Remove PREP_RERAISE_STAR, add CALL_INTRINSIC_2)
 
 #     Python 3.12a? 35xx (Add instrumentation support)
 

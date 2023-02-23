@@ -415,6 +415,13 @@ Deprecated
   and tailor them to your needs.
   (Contributed by Erlend E. Aasland in :gh:`90016`.)
 
+* In :meth:`~sqlite3.Cursor.execute`, :exc:`DeprecationWarning` is now emitted
+  when :ref:`named placeholders <sqlite3-placeholders>` are used together with
+  parameters supplied as a :term:`sequence` instead of as a :class:`dict`.
+  Starting from Python 3.14, using named placeholders with parameters supplied
+  as a sequence will raise a :exc:`~sqlite3.ProgrammingError`.
+  (Contributed by Erlend E. Aasland in :gh:`101698`.)
+
 * The 3-arg signatures (type, value, traceback) of :meth:`~coroutine.throw`,
   :meth:`~generator.throw` and :meth:`~agen.athrow` are deprecated and
   may be removed in a future version of Python. Use the single-arg versions
@@ -753,6 +760,15 @@ Changes in the Python API
   This change helps with interpreter isolation.  Furthermore, :mod:`syslog` is a wrapper
   around process-global resources, which are best managed from the main interpreter.
   (Contributed by Dong-hee Na in :gh:`99127`.)
+
+* The undocumented locking behavior of :func:`~functools.cached_property`
+  is removed, because it locked across all instances of the class, leading to high
+  lock contention. This means that a cached property getter function could now run
+  more than once for a single instance, if two threads race. For most simple
+  cached properties (e.g. those that are idempotent and simply calculate a value
+  based on other attributes of the instance) this will be fine.  If
+  synchronization is needed, implement locking within the cached property getter
+  function or around multi-threaded access points.
 
 
 Build Changes
