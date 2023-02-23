@@ -1,0 +1,2 @@
+Correctly preserve "extra" fields in ``zipfile`` regardless of their
+ordering relative to a zip64 "extra."

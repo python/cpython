@@ -415,6 +415,13 @@ Deprecated
   and tailor them to your needs.
   (Contributed by Erlend E. Aasland in :gh:`90016`.)
 
+* In :meth:`~sqlite3.Cursor.execute`, :exc:`DeprecationWarning` is now emitted
+  when :ref:`named placeholders <sqlite3-placeholders>` are used together with
+  parameters supplied as a :term:`sequence` instead of as a :class:`dict`.
+  Starting from Python 3.14, using named placeholders with parameters supplied
+  as a sequence will raise a :exc:`~sqlite3.ProgrammingError`.
+  (Contributed by Erlend E. Aasland in :gh:`101698`.)
+
 * The 3-arg signatures (type, value, traceback) of :meth:`~coroutine.throw`,
   :meth:`~generator.throw` and :meth:`~agen.athrow` are deprecated and
   may be removed in a future version of Python. Use the single-arg versions
