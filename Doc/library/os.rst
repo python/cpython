@@ -1091,13 +1091,17 @@ as internal buffering of data.
 
    See also :func:`set_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 .. function:: isatty(fd, /)
 
@@ -1565,13 +1569,17 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 .. data:: SF_NODISKIO
           SF_MNOWAIT
