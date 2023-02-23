@@ -1,0 +1,2 @@
+Add MAP_ALIGNED_SUPER FreeBSD and MAP_CONCEAL OpenBSD constants to mmap module
+
