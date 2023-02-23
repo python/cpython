@@ -1633,8 +1633,7 @@ static void
 compiler_exit_scope(struct compiler *c)
 {
     // Don't call PySequence_DelItem() with an exception raised
-    PyObject *exc_type, *exc_val, *exc_tb;
-    PyErr_Fetch(&exc_type, &exc_val, &exc_tb);
+    PyObject *exc = PyErr_GetRaisedException();
 
     c->c_nestlevel--;
     compiler_unit_free(c->u);
@@ -1655,7 +1654,7 @@ compiler_exit_scope(struct compiler *c)
         c->u = NULL;
     }
 
-    PyErr_Restore(exc_type, exc_val, exc_tb);
+    PyErr_SetRaisedException(exc);
 }
 
 /* Search if variable annotations are present statically in a block. */
