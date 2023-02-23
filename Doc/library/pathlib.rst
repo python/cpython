@@ -186,7 +186,7 @@ these classes, since they don't provide any operation that does system calls.
 General properties
 ^^^^^^^^^^^^^^^^^^
 
-Paths are immutable and hashable.  Paths of a same flavour are comparable
+Paths are immutable and :term:`hashable`.  Paths of a same flavour are comparable
 and orderable.  These properties respect the flavour's case-folding
 semantics::
 
@@ -1070,6 +1070,8 @@ call fails (for example because the path doesn't exist).
    The target path may be absolute or relative. Relative paths are interpreted
    relative to the current working directory, *not* the directory of the Path
    object.
+
+   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
 
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.

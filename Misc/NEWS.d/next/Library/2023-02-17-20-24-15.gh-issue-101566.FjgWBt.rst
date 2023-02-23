@@ -1,0 +1,3 @@
+In zipfile, apply
+fix for extractall on the underlying zipfile after being wrapped in
+``Path``.

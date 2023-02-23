@@ -692,10 +692,9 @@ Data Types
 
    .. attribute:: STRICT
 
-      Out-of-range values cause a :exc:`ValueError` to be raised.  This is the
-      default for :class:`Flag`::
+      Out-of-range values cause a :exc:`ValueError` to be raised::
 
-         >>> from enum import Flag, STRICT
+         >>> from enum import Flag, STRICT, auto
          >>> class StrictFlag(Flag, boundary=STRICT):
          ...     RED = auto()
          ...     GREEN = auto()
@@ -710,9 +709,9 @@ Data Types
    .. attribute:: CONFORM
 
       Out-of-range values have invalid values removed, leaving a valid *Flag*
-      value::
+      value. This is the default for :class:`Flag`::
 
-         >>> from enum import Flag, CONFORM
+         >>> from enum import Flag, CONFORM, auto
          >>> class ConformFlag(Flag, boundary=CONFORM):
          ...     RED = auto()
          ...     GREEN = auto()
@@ -725,7 +724,7 @@ Data Types
       Out-of-range values lose their *Flag* membership and revert to :class:`int`.
       This is the default for :class:`IntFlag`::
 
-         >>> from enum import Flag, EJECT
+         >>> from enum import Flag, EJECT, auto
          >>> class EjectFlag(Flag, boundary=EJECT):
          ...     RED = auto()
          ...     GREEN = auto()
@@ -735,10 +734,10 @@ Data Types
 
    .. attribute:: KEEP
 
-      Out-of-range values are kept, and the *Flag* membership is kept.  This is
-      used for some stdlib flags:
+      Out-of-range values are kept, and the *Flag* membership is kept. This is
+      used for some stdlib flags::
 
-         >>> from enum import Flag, KEEP
+         >>> from enum import Flag, KEEP, auto
          >>> class KeepFlag(Flag, boundary=KEEP):
          ...     RED = auto()
          ...     GREEN = auto()
@@ -914,6 +913,6 @@ Notes
 
    or you can reassign the appropriate :meth:`str`, etc., in your enum::
 
-       >>> from enum import IntEnum
+       >>> from enum import Enum, IntEnum
        >>> class MyIntEnum(IntEnum):
-       ...     __str__ = IntEnum.__str__
+       ...     __str__ = Enum.__str__
