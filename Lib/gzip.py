@@ -22,12 +22,11 @@ _COMPRESS_LEVEL_TRADEOFF = 6
 _COMPRESS_LEVEL_BEST = 9
 
 READ_BUFFER_SIZE = 128 * 1024
-DEFAULT_WRITE_BUFFER_SIZE = 4 * io.DEFAULT_BUFFER_SIZE
+_WRITE_BUFFER_SIZE = 4 * io.DEFAULT_BUFFER_SIZE
 
 
 def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
-         encoding=None, errors=None, newline=None,
-         buffer_size=DEFAULT_WRITE_BUFFER_SIZE):
+         encoding=None, errors=None, newline=None):
     """Open a gzip-compressed file in binary or text mode.
 
     The filename argument can be an actual filename (a str or bytes object), or
@@ -59,9 +58,9 @@ def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
 
     gz_mode = mode.replace("t", "")
     if isinstance(filename, (str, bytes, os.PathLike)):
-        binary_file = GzipFile(filename, gz_mode, compresslevel, buffer_size=buffer_size)
+        binary_file = GzipFile(filename, gz_mode, compresslevel)
     elif hasattr(filename, "read") or hasattr(filename, "write"):
-        binary_file = GzipFile(None, gz_mode, compresslevel, filename, buffer_size=buffer_size)
+        binary_file = GzipFile(None, gz_mode, compresslevel, filename)
     else:
         raise TypeError("filename must be a str or bytes object, or a file")
 
@@ -151,8 +150,7 @@ class GzipFile(_compression.BaseStream):
     myfileobj = None
 
     def __init__(self, filename=None, mode=None,
-                 compresslevel=_COMPRESS_LEVEL_BEST, fileobj=None, mtime=None,
-                 buffer_size=DEFAULT_WRITE_BUFFER_SIZE):
+                 compresslevel=_COMPRESS_LEVEL_BEST, fileobj=None, mtime=None):
         """Constructor for the GzipFile class.
 
         At least one of fileobj and filename must be given a
@@ -202,7 +200,6 @@ class GzipFile(_compression.BaseStream):
         if mode is None:
             mode = getattr(fileobj, 'mode', 'rb')
 
-        self.buffer_size = buffer_size
 
         if mode.startswith('r'):
             self.mode = READ
@@ -226,8 +223,9 @@ class GzipFile(_compression.BaseStream):
                                              zlib.DEF_MEM_LEVEL,
                                              0)
             self._write_mtime = mtime
+            self._buffer_size = _WRITE_BUFFER_SIZE
             self._buffer = io.BufferedWriter(_WriteBufferStream(self),
-                                             buffer_size=buffer_size)
+                                             buffer_size=self._buffer_size)
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
 
@@ -410,10 +408,10 @@ class GzipFile(_compression.BaseStream):
             if offset < self.offset:
                 raise OSError('Negative seek in write mode')
             count = offset - self.offset
-            chunk = b'\0' * self.buffer_size
-            for i in range(count // self.buffer_size):
+            chunk = b'\0' * self._buffer_size
+            for i in range(count // self._buffer_size):
                 self.write(chunk)
-            self.write(b'\0' * (count % self.buffer_size))
+            self.write(b'\0' * (count % self._buffer_size))
         elif self.mode == READ:
             self._check_not_closed()
             return self._buffer.seek(offset, whence)
