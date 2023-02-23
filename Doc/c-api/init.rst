@@ -662,7 +662,7 @@ Process-wide parameters
    :c:expr:`wchar_*` string.
 
 
-.. c:function:: w_char* Py_GetPythonHome()
+.. c:function:: wchar_t* Py_GetPythonHome()
 
    Return the default "home", that is, the value set by a previous call to
    :c:func:`Py_SetPythonHome`, or the value of the :envvar:`PYTHONHOME`
