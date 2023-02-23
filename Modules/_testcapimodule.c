@@ -3523,7 +3523,8 @@ struct gc_visit_state_basic {
 };
 
 static int
-gc_visit_callback_basic(PyObject *obj, void* arg) {
+gc_visit_callback_basic(PyObject *obj, void *arg)
+{
     struct gc_visit_state_basic *state = (struct gc_visit_state_basic *)arg;
     if (obj == state->target) {
         state->found = 1;
