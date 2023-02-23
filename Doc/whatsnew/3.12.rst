@@ -870,6 +870,19 @@ New Features
   get a frame variable by its name.
   (Contributed by Victor Stinner in :gh:`91248`.)
 
+* Add :c:func:`PyErr_GetRaisedException` and :c:func:`PyErr_SetRaisedException`
+  for saving and restoring the current exception.
+  These functions return and accept a single exception object,
+  rather than the triple arguments of the now-deprecated
+  :c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore`.
+  This is less error prone and a bit more efficient.
+  (Contributed by Mark Shannon in :gh:`101578`.)
+
+* Add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
+  as convenience functions for retrieving and modifying
+  the :attr:`~BaseException.args` passed to the exception's constructor.
+  (Contributed by Mark Shannon in :gh:`101578`.)
+
 Porting to Python 3.12
 ----------------------
 
@@ -992,6 +1005,11 @@ Deprecated
 
   (Contributed in :gh:`47146` by Petr Viktorin, based on
   earlier work by Alexander Belopolsky and Matthias Braun.)
+
+* :c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore` are deprecated.
+  Use :c:func:`PyErr_GetRaisedException` and
+  :c:func:`PyErr_SetRaisedException` instead.
+  (Contributed by Mark Shannon in :gh:`101578`.)
 
 
 Removed
