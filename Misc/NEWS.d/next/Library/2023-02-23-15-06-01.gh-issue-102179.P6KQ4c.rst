@@ -1,0 +1,1 @@
+Fix ``os.dup2()`` error reporting for negative fds.
