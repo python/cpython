@@ -3534,7 +3534,8 @@ gc_visit_callback_basic(PyObject *obj, void *arg)
 }
 
 static PyObject *
-test_gc_visit_objects_basic(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored)) {
+test_gc_visit_objects_basic(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
+{
     PyObject *obj;
     struct gc_visit_state_basic state;
 
