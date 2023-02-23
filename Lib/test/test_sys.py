@@ -444,27 +444,27 @@ class SysModuleTest(unittest.TestCase):
         t = threading.Thread(target=f123)
         t.start()
         entered_g.wait()
-        
+
         try:
             # At this point, t has finished its entered_g.set(), although it's
             # impossible to guess whether it's still on that line or has moved on
             # to its leave_g.wait().
             self.assertEqual(len(thread_info), 1)
             thread_id = thread_info[0]
-         
+
             d = sys._current_frames()
             for tid in d:
                 self.assertIsInstance(tid, int)
                 self.assertGreater(tid, 0)
-         
+
             main_id = threading.get_ident()
             self.assertIn(main_id, d)
             self.assertIn(thread_id, d)
-         
+
             # Verify that the captured main-thread frame is _this_ frame.
             frame = d.pop(main_id)
             self.assertTrue(frame is sys._getframe())
-         
+
             # Verify that the captured thread frame is blocked in g456, called
             # from f123.  This is a little tricky, since various bits of
             # threading.py are also in the thread's call stack.
@@ -475,9 +475,9 @@ class SysModuleTest(unittest.TestCase):
                     break
             else:
                 self.fail("didn't find f123() on thread's call stack")
-         
+
             self.assertEqual(sourceline, "g456()")
-         
+
             # And the next record must be for g456().
             filename, lineno, funcname, sourceline = stack[i+1]
             self.assertEqual(funcname, "g456")
@@ -523,17 +523,17 @@ class SysModuleTest(unittest.TestCase):
             # to its leave_g.wait().
             self.assertEqual(len(thread_info), 1)
             thread_id = thread_info[0]
-         
+
             d = sys._current_exceptions()
             for tid in d:
                 self.assertIsInstance(tid, int)
                 self.assertGreater(tid, 0)
-         
+
             main_id = threading.get_ident()
             self.assertIn(main_id, d)
             self.assertIn(thread_id, d)
             self.assertEqual((None, None, None), d.pop(main_id))
-         
+
             # Verify that the captured thread frame is blocked in g456, called
             # from f123.  This is a little tricky, since various bits of
             # threading.py are also in the thread's call stack.
@@ -544,9 +544,9 @@ class SysModuleTest(unittest.TestCase):
                     break
             else:
                 self.fail("didn't find f123() on thread's call stack")
-         
+
             self.assertEqual(sourceline, "g456()")
-         
+
             # And the next record must be for g456().
             filename, lineno, funcname, sourceline = stack[i+1]
             self.assertEqual(funcname, "g456")
