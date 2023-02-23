@@ -309,7 +309,7 @@ using the :meth:`~Context.clear_flags` method. ::
    Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999, Emax=999999,
            capitals=1, clamp=0, flags=[Inexact, Rounded], traps=[])
 
-The *flags* entry shows that the rational approximation to ``Pi`` was
+The *flags* entry shows that the rational approximation to pi was
 rounded (digits beyond the context precision were thrown away) and that the
 result is inexact (some of the discarded digits were non-zero).
 
@@ -790,7 +790,7 @@ Decimal objects
       the current thread's context is used.
 
       An error is returned whenever the resulting exponent is greater than
-      :attr:`Emax` or less than :meth:`Etiny`.
+      :attr:`~Context.Emax` or less than :meth:`~Context.Etiny`.
 
    .. method:: radix()
 
@@ -1038,7 +1038,7 @@ In addition to the three supplied contexts, new contexts can be created with the
    instance representable in this context is strictly limited to the
    range ``Emin - prec + 1 <= e <= Emax - prec + 1``.  If *clamp* is
    ``0`` then a weaker condition holds: the adjusted exponent of
-   the :class:`Decimal` instance is at most ``Emax``.  When *clamp* is
+   the :class:`Decimal` instance is at most :attr:`~Context.Emax`.  When *clamp* is
    ``1``, a large normal number will, where possible, have its
    exponent reduced and a corresponding number of zeros added to its
    coefficient, in order to fit the exponent constraints; this
@@ -1619,7 +1619,7 @@ condition.
 
    Numerical overflow.
 
-   Indicates the exponent is larger than :attr:`Emax` after rounding has
+   Indicates the exponent is larger than :attr:`Context.Emax` after rounding has
    occurred.  If not trapped, the result depends on the rounding mode, either
    pulling inward to the largest representable finite number or rounding outward
    to ``Infinity``.  In either case, :class:`Inexact` and :class:`Rounded`
