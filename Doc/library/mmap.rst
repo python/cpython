@@ -370,6 +370,8 @@ MAP_* Constants
           MAP_ANONYMOUS
           MAP_POPULATE
           MAP_STACK
+          MAP_ALIGNED_SUPER
+          MAP_CONCEAL
 
     These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
 
@@ -378,3 +380,7 @@ MAP_* Constants
 
     .. versionadded:: 3.11
        Added MAP_STACK constant.
+
+    .. versionadded:: 3.12
+       Added MAP_ALIGNED_SUPER constant.
+       Added MAP_CONCEAL constant.
