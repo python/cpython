@@ -377,14 +377,13 @@ _io__IOBase_seekable_impl(PyObject *self)
 }
 
 PyObject *
-_PyIOBase_check_seekable(PyObject *self, PyObject *args)
+_PyIOBase_check_seekable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res  = PyObject_CallMethodNoArgs(self, &_Py_ID(seekable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
         iobase_unsupported(state, "File or stream is not seekable.");
         return NULL;
     }
@@ -411,14 +410,13 @@ _io__IOBase_readable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_readable(PyObject *self, PyObject *args)
+_PyIOBase_check_readable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(readable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
         iobase_unsupported(state, "File or stream is not readable.");
         return NULL;
     }
@@ -445,14 +443,13 @@ _io__IOBase_writable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_writable(PyObject *self, PyObject *args)
+_PyIOBase_check_writable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(writable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
         iobase_unsupported(state, "File or stream is not writable.");
         return NULL;
     }
@@ -810,11 +807,6 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_SEEKABLE_METHODDEF
     _IO__IOBASE_READABLE_METHODDEF
     _IO__IOBASE_WRITABLE_METHODDEF
-
-    {"_checkClosed",   _PyIOBase_check_closed, METH_NOARGS},
-    {"_checkSeekable", _PyIOBase_check_seekable, METH_NOARGS},
-    {"_checkReadable", _PyIOBase_check_readable, METH_NOARGS},
-    {"_checkWritable", _PyIOBase_check_writable, METH_NOARGS},
 
     _IO__IOBASE_FILENO_METHODDEF
     _IO__IOBASE_ISATTY_METHODDEF

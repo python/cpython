@@ -4242,6 +4242,7 @@ class MiscIOTest(unittest.TestCase):
 
     def test_pickling(self):
         # Pickling file objects is forbidden
+        msg = "cannot pickle"
         for kwargs in [
                 {"mode": "w"},
                 {"mode": "wb"},
@@ -4256,8 +4257,10 @@ class MiscIOTest(unittest.TestCase):
             if "b" not in kwargs["mode"]:
                 kwargs["encoding"] = "utf-8"
             for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.open(os_helper.TESTFN, **kwargs) as f:
-                    self.assertRaises(TypeError, pickle.dumps, f, protocol)
+                with self.subTest(protocol=protocol, kwargs=kwargs):
+                    with self.open(os_helper.TESTFN, **kwargs) as f:
+                        with self.assertRaisesRegex(TypeError, msg):
+                            pickle.dumps(f, protocol)
 
     @unittest.skipIf(
         support.is_emscripten, "fstat() of a pipe fd is not supported"
