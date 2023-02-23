@@ -3578,7 +3578,8 @@ gc_visit_callback_exit_early(PyObject *obj, void *arg)
 }
 
 static PyObject *
-test_gc_visit_objects_exit_early(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored)) {
+test_gc_visit_objects_exit_early(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
+{
     int visited_i = 0;
     PyUnstable_GC_VisitObjects(gc_visit_callback_exit_early, &visited_i);
     if (visited_i != 2) {
