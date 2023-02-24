@@ -461,7 +461,9 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
         // The oparg of FOR_ITER is a little special, the actual jump has to jump over
         // its own cache entries, the oparg, -1 to tell it to start generating from the
         // END_FOR. However, at runtime, we will skip this END_FOR.
-        oparg = INLINE_CACHE_ENTRIES_FOR_ITER + oparg - 1;
+        // NOTE: IF YOU CHANGE ANY OF THE INSTRUCTIONS BELOW, MAKE SURE
+        // TO UPDATE THE CALCULATION OF OPARG. THIS IS EXTREMELY IMPORTANT.
+        oparg = INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
         _py_set_opcode(write_curr, BB_TEST_ITER);
         write_curr->oparg = oparg;
         write_curr++;
