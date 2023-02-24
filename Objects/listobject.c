@@ -3444,9 +3444,8 @@ listiter_reduce_general(void *_it, int forward)
 {
     PyObject *list;
 
-    /* _PyEval_GetBuiltin can invoke arbitrary code.
-     * calls must be *before* access of `_it` pointers,
-     * since C parameter eval order is undefined.
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
      * see issue #101765 */
 
     /* the objects are not the same, index is of different types! */

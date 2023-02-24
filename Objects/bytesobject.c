@@ -3171,9 +3171,8 @@ striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
-    /* _PyEval_GetBuiltin can invoke arbitrary code.
-     * calls must be *before* access of `it` pointers,
-     * since C parameter eval order is undefined.
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
      * see issue #101765 */
 
     if (it->it_seq != NULL) {
