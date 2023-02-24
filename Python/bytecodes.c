@@ -292,14 +292,15 @@ dummy_func(
         }
 
         macro_inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum)) {
-            U_INST(BINARY_CHECK_INT);
-            U_INST(BINARY_OP_ADD_INT_REST);
-        }
-
-        u_inst(BINARY_CHECK_INT, (left, right -- left : PyLong_Type, right: PyLong_Type)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            U_INST(BINARY_OP_ADD_INT_REST);
+        }
+
+        inst(BINARY_CHECK_INT, (left, right -- left : PyLong_Type, right : PyLong_Type)) {
+            assert(cframe.use_tracing == 0);
+            bb_test = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
         }
 
         u_inst(BINARY_OP_ADD_INT_REST, (left, right -- sum)) {
