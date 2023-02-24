@@ -8284,7 +8284,7 @@ win32_getppid()
     while (have_record) {
         if (mypid == pe.th32ProcessID) {
             /* We could cache the ulong value in a static variable. */
-            result = PyLong_FromPid((pid_t)pe.th32ParentProcessID);
+            result = PyLong_FromUnsignedLong(pe.th32ParentProcessID);
             break;
         }
 
