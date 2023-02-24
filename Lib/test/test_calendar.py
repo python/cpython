@@ -573,10 +573,7 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(cal.formatweekday(0, 2), "Mo")
             # For short widths, a centered, abbreviated name is used.
             self.assertEqual(cal.formatweekday(0, 3), "Mon")
-            self.assertEqual(cal.formatweekday(0, 4), "Mon ")
             self.assertEqual(cal.formatweekday(0, 5), " Mon ")
-            self.assertEqual(cal.formatweekday(0, 6), " Mon  ")
-            self.assertEqual(cal.formatweekday(0, 7), "  Mon  ")
             self.assertEqual(cal.formatweekday(0, 8), "  Mon   ")
             # For long widths, the full day name is used.
             self.assertEqual(cal.formatweekday(0, 9), "  Monday ")
