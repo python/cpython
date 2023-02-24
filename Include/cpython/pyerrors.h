@@ -134,6 +134,7 @@ PyAPI_FUNC(PyObject *) _PyErr_TrySetFromCause(
 
 int PySignal_SetWakeupFd(int fd);
 PyAPI_FUNC(int) _PyErr_CheckSignals(void);
+PyAPI_FUNC(int) _PyErr_CheckSignalsTrippedNoGil(void);
 
 /* Support for adding program text to SyntaxErrors */
 

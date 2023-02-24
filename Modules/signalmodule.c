@@ -1778,6 +1778,14 @@ PyErr_CheckSignals(void)
 }
 
 
+int
+_PyErr_CheckSignalsTrippedNoGil()
+{
+    _Py_CHECK_EMSCRIPTEN_SIGNALS();
+    return _Py_atomic_load(&is_tripped) ? 1 : 0;
+}
+
+
 /* Declared in cpython/pyerrors.h */
 int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)

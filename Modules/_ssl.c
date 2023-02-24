@@ -356,7 +356,7 @@ class _ssl.SSLSession "PySSLSession *" "get_state_type(type)->PySSLSession_Type"
 
 #include "clinic/_ssl.c.h"
 
-static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
+static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout, int gil_held);
 
 static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
 static int PySSL_set_session(PySSLSocket *, PyObject *, void *);
@@ -957,9 +957,9 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
             timeout = _PyDeadline_Get(deadline);
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
-            sockstate = PySSL_select(sock, 0, timeout);
+            sockstate = PySSL_select(sock, 0, timeout, 1);
         } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
-            sockstate = PySSL_select(sock, 1, timeout);
+            sockstate = PySSL_select(sock, 1, timeout, 1);
         } else {
             sockstate = SOCKET_OPERATION_OK;
         }
@@ -2213,7 +2213,7 @@ PySSL_dealloc(PySSLSocket *self)
  */
 
 static int
-PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
+PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout, int gil_held)
 {
     int rc;
 #ifdef HAVE_POLL
@@ -2222,6 +2222,8 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
 #else
     int nfds;
     fd_set fds;
+    fd_set *rfds = NULL;
+    fd_set *wfds = NULL;
     struct timeval tv;
 #endif
 
@@ -2249,9 +2251,13 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
     ms = (int)_PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
     assert(ms <= INT_MAX);
 
-    PySSL_BEGIN_ALLOW_THREADS
-    rc = poll(&pollfd, 1, (int)ms);
-    PySSL_END_ALLOW_THREADS
+    if (gil_held) {
+        PySSL_BEGIN_ALLOW_THREADS
+        rc = poll(&pollfd, 1, (int)ms);
+        PySSL_END_ALLOW_THREADS
+    } else {
+        rc = poll(&pollfd, 1, (int)ms);
+    }
 #else
     /* Guard against socket too large for select*/
     if (!_PyIsSelectable_fd(s->sock_fd))
@@ -2262,14 +2268,17 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
 
-    /* Wait until the socket becomes ready */
-    PySSL_BEGIN_ALLOW_THREADS
     nfds = Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int);
-    if (writing)
-        rc = select(nfds, NULL, &fds, NULL, &tv);
-    else
-        rc = select(nfds, &fds, NULL, NULL, &tv);
-    PySSL_END_ALLOW_THREADS
+    rfds = writing ? NULL : &fds;
+    wfds = writing ? &fds : NULL;
+    /* Wait until the socket becomes ready */
+    if (gil_held) {
+        PySSL_BEGIN_ALLOW_THREADS
+        rc = select(nfds, rfds, wfds, NULL, &tv);
+        PySSL_END_ALLOW_THREADS
+    } else {
+        rc = select(nfds, rfds, wfds, NULL, &tv);
+    }
 #endif
 
     /* Return SOCKET_TIMED_OUT on timeout, SOCKET_OPERATION_OK otherwise
@@ -2295,10 +2304,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     int retval;
     int sockstate;
     _PySSLError err;
-    int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
-    int has_timeout;
+    unsigned int signalled = 0;
 
     if (sock != NULL) {
         if (((PyObject*)sock) == Py_None) {
@@ -2310,20 +2318,57 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         Py_INCREF(sock);
     }
 
-    if (sock != NULL) {
-        /* just in case the blocking state of the socket has been changed */
-        nonblocking = (sock->sock_timeout >= 0);
-        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
-        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
-    }
+    PySSL_BEGIN_ALLOW_THREADS
 
     timeout = GET_SOCKET_TIMEOUT(sock);
-    has_timeout = (timeout > 0);
-    if (has_timeout) {
+    if (timeout > 0) {
         deadline = _PyDeadline_Init(timeout);
     }
 
-    sockstate = PySSL_select(sock, 1, timeout);
+    if (sock != NULL) {
+        /* just in case the blocking state of the socket has been changed */
+        BIO_set_nbio(SSL_get_rbio(self->ssl), deadline > 0);
+        BIO_set_nbio(SSL_get_wbio(self->ssl), deadline > 0);
+    }
+
+    sockstate = SOCKET_OPERATION_OK;
+    while (sockstate == SOCKET_OPERATION_OK) {
+        retval = SSL_write_ex(self->ssl, b->buf, (size_t)b->len, &count);
+        err = _PySSL_errno(retval == 0, self->ssl, retval);
+        self->err = err;
+
+        if (retval > 0) {
+            /* write complete */
+            break;
+        }
+
+        if (_PyErr_CheckSignalsTrippedNoGil()) {
+            Py_BLOCK_THREADS;
+            signalled = PyErr_CheckSignals();
+            Py_UNBLOCK_THREADS;
+            if (signalled) {
+                break;
+            }
+        }
+
+        if (deadline > 0) {
+            timeout = _PyDeadline_Get(deadline);
+        }
+
+        if (err.ssl == SSL_ERROR_WANT_READ) {
+            sockstate = PySSL_select(sock, 0, timeout, 0);
+        } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
+            sockstate = PySSL_select(sock, 1, timeout, 0);
+        } else {
+            break;
+        }
+    }
+    PySSL_END_ALLOW_THREADS
+
+    if (signalled) {
+        goto error;
+    }
+
     if (sockstate == SOCKET_HAS_TIMED_OUT) {
         PyErr_SetString(PyExc_TimeoutError,
                         "The write operation timed out");
@@ -2338,43 +2383,8 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         goto error;
     }
 
-    do {
-        PySSL_BEGIN_ALLOW_THREADS
-        retval = SSL_write_ex(self->ssl, b->buf, (size_t)b->len, &count);
-        err = _PySSL_errno(retval == 0, self->ssl, retval);
-        PySSL_END_ALLOW_THREADS
-        self->err = err;
-
-        if (PyErr_CheckSignals())
-            goto error;
-
-        if (has_timeout) {
-            timeout = _PyDeadline_Get(deadline);
-        }
-
-        if (err.ssl == SSL_ERROR_WANT_READ) {
-            sockstate = PySSL_select(sock, 0, timeout);
-        } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
-            sockstate = PySSL_select(sock, 1, timeout);
-        } else {
-            sockstate = SOCKET_OPERATION_OK;
-        }
-
-        if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PyExc_TimeoutError,
-                            "The write operation timed out");
-            goto error;
-        } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-            PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
-                            "Underlying socket has been closed.");
-            goto error;
-        } else if (sockstate == SOCKET_IS_NONBLOCKING) {
-            break;
-        }
-    } while (err.ssl == SSL_ERROR_WANT_READ ||
-             err.ssl == SSL_ERROR_WANT_WRITE);
-
     Py_XDECREF(sock);
+
     if (retval == 0)
         return PySSL_SetError(self, retval, __FILE__, __LINE__);
     if (PySSL_ChainExceptions(self) < 0)
@@ -2433,10 +2443,9 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     int retval;
     int sockstate;
     _PySSLError err;
-    int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
-    int has_timeout;
+    unsigned int signalled = 0;
 
     if (!group_right_1 && len < 0) {
         PyErr_SetString(PyExc_ValueError, "size should not be negative");
@@ -2479,61 +2488,92 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
         }
     }
 
-    if (sock != NULL) {
-        /* just in case the blocking state of the socket has been changed */
-        nonblocking = (sock->sock_timeout >= 0);
-        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
-        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
-    }
+    PySSL_BEGIN_ALLOW_THREADS
 
     timeout = GET_SOCKET_TIMEOUT(sock);
-    has_timeout = (timeout > 0);
-    if (has_timeout)
+    if (timeout > 0) {
         deadline = _PyDeadline_Init(timeout);
+    }
 
-    do {
-        PySSL_BEGIN_ALLOW_THREADS
-        retval = SSL_read_ex(self->ssl, mem, (size_t)len, &count);
+    if (sock) {
+        /* just in case the blocking state of the socket has been changed */
+        BIO_set_nbio(SSL_get_rbio(self->ssl), deadline > 0);
+        BIO_set_nbio(SSL_get_wbio(self->ssl), deadline > 0);
+    }
+
+    sockstate = SOCKET_OPERATION_OK;
+    while (sockstate == SOCKET_OPERATION_OK) {
+        size_t bytes_read = 0;
+        retval = SSL_read_ex(self->ssl, mem + count, (size_t)len - count, &bytes_read);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
-        PySSL_END_ALLOW_THREADS
         self->err = err;
 
-        if (PyErr_CheckSignals())
-            goto error;
+        if (_PyErr_CheckSignalsTrippedNoGil()) {
+            Py_BLOCK_THREADS
+            signalled = PyErr_CheckSignals();
+            Py_UNBLOCK_THREADS
+            if (signalled) {
+                break;
+            }
+        }
 
-        if (has_timeout) {
+        if (retval > 0) {
+            count += bytes_read;
+            if (bytes_read && count < (size_t)len) {
+                sockstate = PySSL_select(sock, 0, 0, 0);
+                /* possibly more data waiting, or a socket error */
+                continue;
+            }
+            /* read complete */
+            break;
+        }
+
+        if (err.ssl == SSL_ERROR_ZERO_RETURN) {
+            if (SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN) {
+                retval = 1;
+            }
+            break;
+        }
+
+        if (deadline > 0) {
             timeout = _PyDeadline_Get(deadline);
         }
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
-            sockstate = PySSL_select(sock, 0, timeout);
+            sockstate = PySSL_select(sock, 0, timeout, 0);
         } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
-            sockstate = PySSL_select(sock, 1, timeout);
-        } else if (err.ssl == SSL_ERROR_ZERO_RETURN &&
-                   SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN)
-        {
-            count = 0;
-            goto done;
-        }
-        else
-            sockstate = SOCKET_OPERATION_OK;
-
-        if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PyExc_TimeoutError,
-                            "The read operation timed out");
-            goto error;
-        } else if (sockstate == SOCKET_IS_NONBLOCKING) {
+            sockstate = PySSL_select(sock, 0, timeout, 0);
+        } else {
             break;
         }
-    } while (err.ssl == SSL_ERROR_WANT_READ ||
-             err.ssl == SSL_ERROR_WANT_WRITE);
+    }
+    PySSL_END_ALLOW_THREADS
+
+    if (signalled) {
+        goto error;
+    }
+
+    if (sockstate == SOCKET_HAS_TIMED_OUT) {
+        PyErr_SetString(PyExc_TimeoutError,
+                        "The read operation timed out");
+        goto error;
+    } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
+        PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
+                        "Underlying socket has been closed.");
+        goto error;
+    } else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
+        PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
+                        "Underlying socket too large for select().");
+        goto error;
+    }
 
     if (retval == 0) {
         PySSL_SetError(self, retval, __FILE__, __LINE__);
         goto error;
     }
-    if (self->exc_type != NULL)
+    if (self->exc_type != NULL) {
         goto error;
+    }
 
 done:
     Py_XDECREF(sock);
@@ -2551,6 +2591,7 @@ error:
     if (!group_right_1)
         Py_XDECREF(dest);
     return NULL;
+
 }
 
 /*[clinic input]
@@ -2629,9 +2670,9 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 
         /* Possibly retry shutdown until timeout or failure */
         if (err.ssl == SSL_ERROR_WANT_READ)
-            sockstate = PySSL_select(sock, 0, timeout);
+            sockstate = PySSL_select(sock, 0, timeout, 1);
         else if (err.ssl == SSL_ERROR_WANT_WRITE)
-            sockstate = PySSL_select(sock, 1, timeout);
+            sockstate = PySSL_select(sock, 1, timeout, 1);
         else
             break;
 
