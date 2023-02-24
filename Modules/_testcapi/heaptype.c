@@ -623,16 +623,15 @@ heapctypesubclasswithfinalizer_init(PyObject *self, PyObject *args, PyObject *kw
 static void
 heapctypesubclasswithfinalizer_finalize(PyObject *self)
 {
-    PyObject *error_type, *error_value, *error_traceback, *m;
     PyObject *oldtype = NULL, *newtype = NULL, *refcnt = NULL;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (_testcapimodule == NULL) {
         goto cleanup_finalize;
     }
-    m = PyState_FindModule(_testcapimodule);
+    PyObject *m = PyState_FindModule(_testcapimodule);
     if (m == NULL) {
         goto cleanup_finalize;
     }
@@ -667,7 +666,7 @@ cleanup_finalize:
     Py_XDECREF(refcnt);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static PyType_Slot HeapCTypeSubclassWithFinalizer_slots[] = {
