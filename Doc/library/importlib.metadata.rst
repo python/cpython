@@ -1,11 +1,11 @@
 .. _using:
 
-=================================
- Using :mod:`!importlib.metadata`
-=================================
+========================================================
+:mod:`!importlib.metadata` -- Accessing package metadata
+========================================================
 
 .. module:: importlib.metadata
-   :synopsis: The implementation of the importlib metadata.
+   :synopsis: Accessing package metadata
 
 .. versionadded:: 3.8
 .. versionchanged:: 3.10
