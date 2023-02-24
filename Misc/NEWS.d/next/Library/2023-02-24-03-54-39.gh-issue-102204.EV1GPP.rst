@@ -1,0 +1,3 @@
+AIX doesn't have ``__BYTE_ORDER__`` defined when XLC compiler is used which
+breaks ``_hacl`` module build. So define _AIX in the generic big-endian
+fallback code.
