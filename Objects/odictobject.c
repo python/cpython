@@ -1367,7 +1367,7 @@ static PyObject *
 odict_repr(PyODictObject *self)
 {
     int i;
-    PyObject *pieces = NULL, *result = NULL;
+    PyObject *result = NULL, *dcopy = NULL;
 
     if (PyODict_SIZE(self) == 0)
         return PyUnicode_FromFormat("%s()", _PyType_Name(Py_TYPE(self)));
@@ -1377,57 +1377,17 @@ odict_repr(PyODictObject *self)
         return i > 0 ? PyUnicode_FromString("...") : NULL;
     }
 
-    if (PyODict_CheckExact(self)) {
-        Py_ssize_t count = 0;
-        _ODictNode *node;
-        pieces = PyList_New(PyODict_SIZE(self));
-        if (pieces == NULL)
-            goto Done;
-
-        _odict_FOREACH(self, node) {
-            PyObject *pair;
-            PyObject *key = _odictnode_KEY(node);
-            PyObject *value = _odictnode_VALUE(node, self);
-            if (value == NULL) {
-                if (!PyErr_Occurred())
-                    PyErr_SetObject(PyExc_KeyError, key);
-                goto Done;
-            }
-            pair = PyTuple_Pack(2, key, value);
-            if (pair == NULL)
-                goto Done;
-
-            if (count < PyList_GET_SIZE(pieces))
-                PyList_SET_ITEM(pieces, count, pair);  /* steals reference */
-            else {
-                if (PyList_Append(pieces, pair) < 0) {
-                    Py_DECREF(pair);
-                    goto Done;
-                }
-                Py_DECREF(pair);
-            }
-            count++;
-        }
-        if (count < PyList_GET_SIZE(pieces)) {
-            Py_SET_SIZE(pieces, count);
-        }
-    }
-    else {
-        PyObject *items = PyObject_CallMethodNoArgs(
-                (PyObject *)self, &_Py_ID(items));
-        if (items == NULL)
-            goto Done;
-        pieces = PySequence_List(items);
-        Py_DECREF(items);
-        if (pieces == NULL)
-            goto Done;
+    dcopy = PyDict_Copy((PyObject *)self);
+    if (dcopy == NULL) {
+        goto Done;
     }
 
     result = PyUnicode_FromFormat("%s(%R)",
-                                  _PyType_Name(Py_TYPE(self)), pieces);
+                                  _PyType_Name(Py_TYPE(self)),
+                                  dcopy);
+    Py_DECREF(dcopy);
 
 Done:
-    Py_XDECREF(pieces);
     Py_ReprLeave((PyObject *)self);
     return result;
 }

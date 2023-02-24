@@ -301,31 +301,28 @@ keeping all locals in that frame alive until the next garbage collection occurs.
    object: traceback
 
 Before an :keyword:`!except` clause's suite is executed,
-details about the exception are
-stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
-:func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
-exception instance and a traceback object (see section :ref:`types`) identifying
-the point in the program where the exception occurred.  The details about the
-exception accessed via :func:`sys.exc_info` are restored to their previous values
-when leaving an exception handler::
+the exception is stored in the :mod:`sys` module, where it can be accessed
+from within the body of the :keyword:`!except` clause by calling
+:func:`sys.exception`. When leaving an exception handler, the exception
+stored in the :mod:`sys` module is reset to its previous value::
 
-   >>> print(sys.exc_info())
-   (None, None, None)
+   >>> print(sys.exception())
+   None
    >>> try:
    ...     raise TypeError
    ... except:
-   ...     print(sys.exc_info())
+   ...     print(repr(sys.exception()))
    ...     try:
    ...          raise ValueError
    ...     except:
-   ...         print(sys.exc_info())
-   ...     print(sys.exc_info())
+   ...         print(repr(sys.exception()))
+   ...     print(repr(sys.exception()))
    ...
-   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
-   (<class 'ValueError'>, ValueError(), <traceback object at 0x10efad040>)
-   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
-   >>> print(sys.exc_info())
-   (None, None, None)
+   TypeError()
+   ValueError()
+   TypeError()
+   >>> print(sys.exception())
+   None
 
 
 .. index::

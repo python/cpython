@@ -132,8 +132,8 @@ lltrace_instruction(_PyInterpreterFrame *frame,
        objects enters the interpreter recursively. It is also slow.
        So you might want to comment it out. */
     dump_stack(frame, stack_pointer);
-    int oparg = _Py_OPARG(*next_instr);
-    int opcode = _Py_OPCODE(*next_instr);
+    int oparg = next_instr->op.arg;
+    int opcode = next_instr->op.code;
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
     int offset = (int)(next_instr - _PyCode_CODE(frame->f_code));
@@ -688,12 +688,6 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 }
 
 
-// GH-89279: Must be a macro to be sure it's inlined by MSVC.
-#define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
-
-#define KWNAMES_LEN() \
-    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
-
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
 
@@ -926,8 +920,8 @@ handle_eval_breaker:
             // CPython hasn't ever traced the instruction after an EXTENDED_ARG.
             // Inline the EXTENDED_ARG here, so we can avoid branching there:
             INSTRUCTION_START(EXTENDED_ARG);
-            opcode = _Py_OPCODE(*next_instr);
-            oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            opcode = next_instr->op.code;
+            oparg = oparg << 8 | next_instr->op.arg;
             // Make sure the next instruction isn't a RESUME, since that needs
             // to trace properly (and shouldn't have an EXTENDED_ARG, anyways):
             assert(opcode != RESUME);
@@ -952,7 +946,7 @@ handle_eval_breaker:
 #endif
             /* Tell C compilers not to hold the opcode variable in the loop.
                next_instr points the current instruction without TARGET(). */
-            opcode = _Py_OPCODE(*next_instr);
+            opcode = next_instr->op.code;
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",
                           frame->f_code->co_filename,
@@ -1261,7 +1255,9 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
 {
     int posonly_conflicts = 0;
     PyObject* posonly_names = PyList_New(0);
-
+    if (posonly_names == NULL) {
+        goto fail;
+    }
     for(int k=0; k < co->co_posonlyargcount; k++){
         PyObject* posonly_name = PyTuple_GET_ITEM(co->co_localsplusnames, k);
 
@@ -1608,6 +1604,49 @@ fail_post_args:
     return -1;
 }
 
+static void
+clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_THREAD);
+    // Make sure that this is, indeed, the top frame. We can't check this in
+    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
+    assert((PyObject **)frame + frame->f_code->co_framesize ==
+        tstate->datastack_top);
+    tstate->c_recursion_remaining--;
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    _PyFrame_ClearExceptCode(frame);
+    Py_DECREF(frame->f_code);
+    tstate->c_recursion_remaining++;
+    _PyThreadState_PopFrame(tstate, frame);
+}
+
+static void
+clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    PyGenObject *gen = _PyFrame_GetGenerator(frame);
+    gen->gi_frame_state = FRAME_CLEARED;
+    assert(tstate->exc_info == &gen->gi_exc_state);
+    tstate->exc_info = gen->gi_exc_state.previous_item;
+    gen->gi_exc_state.previous_item = NULL;
+    tstate->c_recursion_remaining--;
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    _PyFrame_ClearExceptCode(frame);
+    tstate->c_recursion_remaining++;
+    frame->previous = NULL;
+}
+
+static void
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    if (frame->owner == FRAME_OWNED_BY_THREAD) {
+        clear_thread_frame(tstate, frame);
+    }
+    else {
+        clear_gen_frame(tstate, frame);
+    }
+}
+
 /* Consumes references to func, locals and all the args */
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
@@ -1621,10 +1660,9 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
         goto fail;
     }
     _PyFrame_Initialize(frame, func, locals, code, 0);
-    PyObject **localsarray = &frame->localsplus[0];
-    if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
-        assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
-        _PyEvalFrameClearAndPop(tstate, frame);
+    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
+        assert(frame->owner == FRAME_OWNED_BY_THREAD);
+        clear_thread_frame(tstate, frame);
         return NULL;
     }
     return frame;
@@ -1642,49 +1680,6 @@ fail:
     PyErr_NoMemory();
     return NULL;
 }
-
-static void
-clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
-{
-    assert(frame->owner == FRAME_OWNED_BY_THREAD);
-    // Make sure that this is, indeed, the top frame. We can't check this in
-    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
-    assert((PyObject **)frame + frame->f_code->co_framesize ==
-        tstate->datastack_top);
-    tstate->c_recursion_remaining--;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
-    _PyFrame_Clear(frame);
-    tstate->c_recursion_remaining++;
-    _PyThreadState_PopFrame(tstate, frame);
-}
-
-static void
-clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
-{
-    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
-    PyGenObject *gen = _PyFrame_GetGenerator(frame);
-    gen->gi_frame_state = FRAME_CLEARED;
-    assert(tstate->exc_info == &gen->gi_exc_state);
-    tstate->exc_info = gen->gi_exc_state.previous_item;
-    gen->gi_exc_state.previous_item = NULL;
-    tstate->c_recursion_remaining--;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
-    _PyFrame_Clear(frame);
-    tstate->c_recursion_remaining++;
-    frame->previous = NULL;
-}
-
-static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
-{
-    if (frame->owner == FRAME_OWNED_BY_THREAD) {
-        clear_thread_frame(tstate, frame);
-    }
-    else {
-        clear_gen_frame(tstate, frame);
-    }
-}
-
 
 PyObject *
 _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
@@ -1760,9 +1755,6 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
             newargs[argcount+i] = kws[2*i+1];
         }
         allargs = newargs;
-    }
-    for (int i = 0; i < kwcount; i++) {
-        PyTuple_SET_ITEM(kwnames, i, Py_NewRef(kws[2*i]));
     }
     PyFrameConstructor constr = {
         .fc_globals = globals,
@@ -2203,7 +2195,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
             (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
              // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
              // here:
-             _Py_OPCODE(*frame->prev_instr) != SEND);
+             frame->prev_instr->op.code != SEND);
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
@@ -2697,7 +2689,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     }
     PyObject *locals = frame->f_locals;
     /* Fast path for not overloaded __import__. */
-    if (import_func == tstate->interp->import_func) {
+    if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
@@ -2905,13 +2897,13 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
         }
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-        PyObject *exc, *val, *tb;
-        _PyErr_Fetch(tstate, &exc, &val, &tb);
-        if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+        PyObject *args = ((PyBaseExceptionObject *)exc)->args;
+        if (exc && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
             _PyErr_Clear(tstate);
             PyObject *funcstr = _PyObject_FunctionStr(func);
             if (funcstr != NULL) {
-                PyObject *key = PyTuple_GET_ITEM(val, 0);
+                PyObject *key = PyTuple_GET_ITEM(args, 0);
                 _PyErr_Format(
                     tstate, PyExc_TypeError,
                     "%U got multiple values for keyword argument '%S'",
@@ -2919,11 +2911,9 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
                 Py_DECREF(funcstr);
             }
             Py_XDECREF(exc);
-            Py_XDECREF(val);
-            Py_XDECREF(tb);
         }
         else {
-            _PyErr_Restore(tstate, exc, val, tb);
+            _PyErr_SetRaisedException(tstate, exc);
         }
     }
 }
@@ -3077,14 +3067,10 @@ maybe_dtrace_line(_PyInterpreterFrame *frame,
 /* Implement Py_EnterRecursiveCall() and Py_LeaveRecursiveCall() as functions
    for the limited API. */
 
-#undef Py_EnterRecursiveCall
-
 int Py_EnterRecursiveCall(const char *where)
 {
     return _Py_EnterRecursiveCall(where);
 }
-
-#undef Py_LeaveRecursiveCall
 
 void Py_LeaveRecursiveCall(void)
 {
