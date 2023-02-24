@@ -1465,7 +1465,7 @@ class TarFile(object):
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
             tarinfo=None, dereference=None, ignore_zeros=None, encoding=None,
             errors="surrogateescape", pax_headers=None, debug=None,
-            errorlevel=None, copybufsize=None):
+            errorlevel=None, copybufsize=None, stream=False):
         """Open an (uncompressed) tar archive `name'. `mode' is either 'r' to
            read from an existing archive, 'a' to append data to an existing
            file or 'w' to create a new file overwriting an existing one. `mode'
@@ -1496,6 +1496,8 @@ class TarFile(object):
             self._extfileobj = True
         self.name = os.path.abspath(name) if name else None
         self.fileobj = fileobj
+
+        self.stream = stream
 
         # Init attributes.
         if format is not None:
@@ -2378,7 +2380,9 @@ class TarFile(object):
             break
 
         if tarinfo is not None:
-            self.members.append(tarinfo)
+            # if streaming the file we do not want to cache the tarinfo
+            if not self.stream:
+                self.members.append(tarinfo)
         else:
             self._loaded = True
 
@@ -2412,11 +2416,12 @@ class TarFile(object):
 
     def _load(self):
         """Read through the entire archive file and look for readable
-           members.
+           members. This should not run if the file is set to stream.
         """
-        while self.next() is not None:
-            pass
-        self._loaded = True
+        if not self.stream:
+            while self.next() is not None:
+                pass
+            self._loaded = True
 
     def _check(self, mode=None):
         """Check if TarFile is still open, and if the operation's mode
@@ -2476,68 +2481,6 @@ class TarFile(object):
                 return
             index += 1
             yield tarinfo
-
-    def iter_no_cache(self):
-        """Provide an iterator object that does not cache files
-           for systems low on memory.
-        """
-        self._check("ra")
-        if self.firstmember is not None:
-            m = self.firstmember
-            self.firstmember = None
-            yield m
-
-        # Advance the file pointer.
-        if self.offset != self.fileobj.tell():
-            if self.offset == 0:
-                return None
-            self.fileobj.seek(self.offset - 1)
-            if not self.fileobj.read(1):
-                raise ReadError("unexpected end of data")
-
-        # Read the next block.
-        while True:
-            tarinfo = None
-            # Advance the file pointer.
-            if self.offset != self.fileobj.tell():
-                self.fileobj.seek(self.offset - 1)
-                if not self.fileobj.read(1):
-                    break
-            try:
-                tarinfo = self.tarinfo.fromtarfile(self)
-            except EOFHeaderError as e:
-                if self.ignore_zeros:
-                    self._dbg(2, "0x%X: %s" % (self.offset, e))
-                    self.offset += BLOCKSIZE
-                    continue
-            except InvalidHeaderError as e:
-                if self.ignore_zeros:
-                    self._dbg(2, "0x%X: %s" % (self.offset, e))
-                    self.offset += BLOCKSIZE
-                    continue
-                elif self.offset == 0:
-                    raise ReadError(str(e)) from None
-            except EmptyHeaderError:
-                if self.offset == 0:
-                    raise ReadError("empty file") from None
-            except TruncatedHeaderError as e:
-                if self.offset == 0:
-                    raise ReadError(str(e)) from None
-            except SubsequentHeaderError as e:
-                raise ReadError(str(e)) from None
-            except Exception as e:
-                try:
-                    import zlib
-                    if isinstance(e, zlib.error):
-                        raise ReadError(f'zlib error: {e}') from None
-                    else:
-                        raise e
-                except ImportError:
-                    raise e
-            if tarinfo is not None:
-                yield tarinfo
-            else:
-                break
 
     def _dbg(self, level, msg):
         """Write debugging output to sys.stderr.
