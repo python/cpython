@@ -339,7 +339,7 @@ BINARY_OP_RESULT_TYPE(PyCodeObject *co, _Py_CODEUNIT *instr, int n_typecontext,
             if (lhs_type == &PyLong_Type) {
                 if (rhs_type == &PyLong_Type) {
                     *how_many_guards = 0;
-                    action->opcode = BINARY_OP_ADD_INT_REST;
+                    action->op.code = BINARY_OP_ADD_INT_REST;
                     return &PyLong_Type;
                 }
                 //// Right side unknown. Emit single check.
@@ -376,7 +376,7 @@ emit_type_guard(_Py_CODEUNIT *write_curr, _Py_CODEUNIT guard, int bb_id)
     //write_curr->oparg = 0;
     //write_curr++;
     _py_set_opcode(write_curr, BB_BRANCH);
-    write_curr->oparg = 0;
+    write_curr->op.arg = 0;
     write_curr++;
     _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
     write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -439,12 +439,12 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
 #endif
         // Just in case
         _py_set_opcode(write_curr, EXTENDED_ARG);
-        write_curr->oparg = 0;
+        write_curr->op.arg = 0;
         write_curr++;
         // We don't need to recalculate the backward jump, because that only needs to be done
         // when it locates the next BB in JUMP_BACKWARD_LAZY.
         _py_set_opcode(write_curr, BB_JUMP_BACKWARD_LAZY);
-        write_curr->oparg = oparg;
+        write_curr->op.arg = oparg;
         write_curr++;
         _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -465,11 +465,11 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
         // TO UPDATE THE CALCULATION OF OPARG. THIS IS EXTREMELY IMPORTANT.
         oparg = INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
         _py_set_opcode(write_curr, BB_TEST_ITER);
-        write_curr->oparg = oparg;
+        write_curr->op.arg = oparg;
         write_curr++;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_FOR_ITER);
         _py_set_opcode(write_curr, BB_BRANCH);
-        write_curr->oparg = oparg;
+        write_curr->op.arg = oparg;
         write_curr++;
         _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -484,10 +484,10 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
 #endif
         //_Py_CODEUNIT *start = write_curr;
         _py_set_opcode(write_curr, opcode);
-        write_curr->oparg = oparg;
+        write_curr->op.arg = oparg;
         write_curr++;
         _py_set_opcode(write_curr, BB_BRANCH);
-        write_curr->oparg = oparg & 0xFF;
+        write_curr->op.arg = oparg & 0xFF;
         write_curr++;
         _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -526,7 +526,7 @@ static inline _Py_CODEUNIT *
 emit_i(_Py_CODEUNIT *write_curr, int opcode, int oparg)
 {
     _py_set_opcode(write_curr, opcode);
-    write_curr->oparg = oparg;
+    write_curr->op.arg = oparg;
     write_curr++;
     return write_curr;
 }
@@ -1221,14 +1221,14 @@ _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target)
     assert(oparg <= 0xFFFF);
     if (requires_extended) {
         _py_set_opcode(write_curr, EXTENDED_ARG);
-        write_curr->oparg = (oparg >> 8) & 0xFF;
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
         write_curr++;
         // -1 to oparg because now the jump instruction moves one unit forward.
         oparg--;
     }
     _py_set_opcode(write_curr,
         branch == BB_BRANCH_IF_FLAG_SET ? BB_JUMP_IF_FLAG_SET : BB_JUMP_IF_FLAG_UNSET);
-    write_curr->oparg = oparg & 0xFF;
+    write_curr->op.arg = oparg & 0xFF;
     write_curr++;
     if (!requires_extended) {
         _py_set_opcode(write_curr, NOP);
@@ -1271,7 +1271,7 @@ _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *tar
     bool requires_extended = oparg > 0xFF;
     if (requires_extended) {
         _py_set_opcode(write_curr, EXTENDED_ARG);
-        write_curr->oparg = (oparg >> 8) & 0xFF;
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
         write_curr++;
     }
     else {
@@ -1279,7 +1279,7 @@ _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *tar
         write_curr++;
     }
     _py_set_opcode(write_curr, JUMP_BACKWARD_QUICK);
-    write_curr->oparg = oparg & 0xFF;
+    write_curr->op.arg = oparg & 0xFF;
     write_curr++;
     _py_set_opcode(write_curr, END_FOR);
     write_curr++;
