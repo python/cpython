@@ -225,6 +225,8 @@ class UstarReadTest(ReadTest, unittest.TestCase):
         self.add_dir_and_getmember('bar')
         self.add_dir_and_getmember('a'*101)
 
+    @unittest.skipUnless(hasattr(os, "getuid") and hasattr(os, "getgid"),
+                         "Missing getuid or getgid implementation")
     def add_dir_and_getmember(self, name):
         def filter(tarinfo):
             tarinfo.uid = tarinfo.gid = 100
