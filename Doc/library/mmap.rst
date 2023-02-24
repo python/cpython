@@ -373,14 +373,16 @@ MAP_* Constants
           MAP_ALIGNED_SUPER
           MAP_CONCEAL
 
-    These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
+    These are the various flags that can be passed to :meth:`mmap.mmap`.  :data:`MAP_ALIGNED_SUPER`
+    is only available at FreeBSD and :data:`MAP_CONCEAL` is only available at OpenBSD.  Note
+    that some options might not be present on some systems.
 
     .. versionchanged:: 3.10
-       Added MAP_POPULATE constant.
+       Added :data:`MAP_POPULATE` constant.
 
     .. versionadded:: 3.11
-       Added MAP_STACK constant.
+       Added :data:`MAP_STACK` constant.
 
     .. versionadded:: 3.12
-       Added MAP_ALIGNED_SUPER constant.
-       Added MAP_CONCEAL constant.
+       Added :data:`MAP_ALIGNED_SUPER` constant.
+       Added :data:`MAP_CONCEAL` constant.
