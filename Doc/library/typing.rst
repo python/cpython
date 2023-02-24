@@ -2028,7 +2028,7 @@ Other concrete types
       These types should be directly imported from ``typing`` instead.
 
    .. deprecated:: 3.9
-      Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
+      Classes :class:`re.Pattern` and `re.Match` now support ``[]``.
       See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Text
