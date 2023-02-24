@@ -668,19 +668,24 @@ class SinglephaseInitTests(unittest.TestCase):
         fileobj.close()
         cls.FILE = filename
 
-    def setUp(self):
-        # Start and end fresh.
-        def clean_up():
-            name = self.NAME
-            if name in sys.modules:
-                if hasattr(sys.modules[name], '_clear_globals'):
-                    assert sys.modules[name].__file__ == self.FILE
-                    sys.modules[name]._clear_globals()
-                del sys.modules[name]
-            # Clear all internally cached data for the extension.
-            _testinternalcapi.clear_extension(name, self.FILE)
-        clean_up()
-        self.addCleanup(clean_up)
+        # Start fresh.
+        cls.clean_up()
+
+    def tearDown(self):
+        # Clean up the module.
+        self.clean_up()
+
+    @classmethod
+    def clean_up(cls):
+        name = cls.NAME
+        filename = cls.FILE
+        if name in sys.modules:
+            if hasattr(sys.modules[name], '_clear_globals'):
+                assert sys.modules[name].__file__ == filename
+                sys.modules[name]._clear_globals()
+            del sys.modules[name]
+        # Clear all internally cached data for the extension.
+        _testinternalcapi.clear_extension(name, filename)
 
     #########################
     # helpers
