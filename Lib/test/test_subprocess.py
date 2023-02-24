@@ -709,6 +709,7 @@ class ProcessTestCase(BaseTestCase):
     @unittest.skipUnless(fcntl and hasattr(fcntl, 'F_GETPIPE_SZ'),
                          'fcntl.F_GETPIPE_SZ required for test.')
     def test_pipesizes(self):
+        resource = import_helper.import_module('resource')
         test_pipe_r, test_pipe_w = os.pipe()
         try:
             # Get the default pipesize with F_GETPIPE_SZ
@@ -717,8 +718,8 @@ class ProcessTestCase(BaseTestCase):
             os.close(test_pipe_r)
             os.close(test_pipe_w)
         pipesize = pipesize_default // 2
-        minimum_pipe_size = os.sysconf('SC_PAGESIZE')   # There's a check that attempts to skip the tests if the pipe capacity is 512 bytes, but that's less than the smallest page size on x86.
-        if pipesize < minimum_pipe_size:  # the POSIX minimum
+        pagesize_default = resource.getpagesize()
+        if pipesize < pagesize_default:  # the POSIX minimum
             raise unittest.SkipTest(
                 'default pipesize too small to perform test.')
         p = subprocess.Popen(

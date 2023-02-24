@@ -196,13 +196,14 @@ class TestFcntl(unittest.TestCase):
         hasattr(fcntl, "F_SETPIPE_SZ") and hasattr(fcntl, "F_GETPIPE_SZ"),
         "F_SETPIPE_SZ and F_GETPIPE_SZ are not available on all platforms.")
     def test_fcntl_f_pipesize(self):
+        resource = import_module('resource')
         test_pipe_r, test_pipe_w = os.pipe()
         try:
             # Get the default pipesize with F_GETPIPE_SZ
             pipesize_default = fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ)
             pipesize = pipesize_default // 2  # A new value to detect change.
-            minimum_pipe_size = os.sysconf('SC_PAGESIZE')   # There's a check that attempts to skip the tests if the pipe capacity is 512 bytes, but that's less than the smallest page size on x86.
-            if pipesize < minimum_pipe_size:  # the POSIX minimum
+            pagesize_default = resource.getpagesize()
+            if pipesize < pagesize_default:  # the POSIX minimum
                 raise unittest.SkipTest(
                     'default pipesize too small to perform test.')
             fcntl.fcntl(test_pipe_w, fcntl.F_SETPIPE_SZ, pipesize)
