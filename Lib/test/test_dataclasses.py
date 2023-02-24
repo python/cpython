@@ -68,6 +68,24 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(repr_output, expected_output)
 
+    def test_field_recursive_repr(self):
+        rec_field = field()
+        rec_field.type = rec_field
+        rec_field.name = "id"
+        repr_output = repr(rec_field)
+
+        self.assertIn(",type=...,", repr_output)
+
+    def test_recursive_annotation(self):
+        class C:
+            pass
+
+        @dataclass
+        class D:
+            C: C = field()
+
+        self.assertIn(",type=...,", repr(D.__dataclass_fields__["C"]))
+
     def test_dataclass_params_repr(self):
         # Even though this is testing an internal implementation detail,
         # it's testing a feature we want to make sure is correctly implemented
@@ -256,6 +274,14 @@ class TestCase(unittest.TestCase):
             object: str
         c = C('foo')
         self.assertEqual(c.object, 'foo')
+
+    def test_field_named_BUILTINS_frozen(self):
+        # gh-96151
+        @dataclass(frozen=True)
+        class C:
+            BUILTINS: int
+        c = C(5)
+        self.assertEqual(c.BUILTINS, 5)
 
     def test_field_named_like_builtin(self):
         # Attribute names can shadow built-in names
@@ -3962,7 +3988,7 @@ class TestAbstract(unittest.TestCase):
             day: 'int'
 
         self.assertTrue(inspect.isabstract(Date))
-        msg = 'class Date without an implementation for abstract method foo'
+        msg = "class Date without an implementation for abstract method 'foo'"
         self.assertRaisesRegex(TypeError, msg, Date)
 
 

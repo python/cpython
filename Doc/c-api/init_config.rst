@@ -254,7 +254,7 @@ PyPreConfig
 
    .. c:member:: int configure_locale
 
-      Set the LC_CTYPE locale to the user preferred locale?
+      Set the LC_CTYPE locale to the user preferred locale.
 
       If equals to ``0``, set :c:member:`~PyPreConfig.coerce_c_locale` and
       :c:member:`~PyPreConfig.coerce_c_locale_warn` members to ``0``.
@@ -839,7 +839,7 @@ PyConfig
       will produce an error.
 
       Configured by the :option:`-X int_max_str_digits <-X>` command line
-      flag or the :envvar:`PYTHONINTMAXSTRDIGITS` environment varable.
+      flag or the :envvar:`PYTHONINTMAXSTRDIGITS` environment variable.
 
       Default: ``-1`` in Python mode.  4300
       (:data:`sys.int_info.default_max_str_digits`) in isolated mode.
@@ -1571,8 +1571,6 @@ Private provisional API:
 
 * :c:member:`PyConfig._init_main`: if set to ``0``,
   :c:func:`Py_InitializeFromConfig` stops at the "Core" initialization phase.
-* :c:member:`PyConfig._isolated_interpreter`: if non-zero,
-  disallow threads, subprocesses and fork.
 
 .. c:function:: PyStatus _Py_InitializeMain(void)
 
@@ -1584,7 +1582,7 @@ applied during the "Main" phase. It may allow to customize Python in Python to
 override or tune the :ref:`Path Configuration <init-path-config>`, maybe
 install a custom :data:`sys.meta_path` importer or an import hook, etc.
 
-It may become possible to calculatin the :ref:`Path Configuration
+It may become possible to calculate the :ref:`Path Configuration
 <init-path-config>` in Python, after the Core phase and before the Main phase,
 which is one of the :pep:`432` motivation.
 

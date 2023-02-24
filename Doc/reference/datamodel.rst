@@ -1122,6 +1122,7 @@ Internal types
          single: exc_info (in module sys)
          single: last_traceback (in module sys)
          single: sys.exc_info
+         single: sys.exception
          single: sys.last_traceback
 
       Traceback objects represent a stack trace of an exception.  A traceback object
@@ -1525,7 +1526,7 @@ Basic customization
    :meth:`__hash__`, its instances will not be usable as items in hashable
    collections.  If a class defines mutable objects and implements an
    :meth:`__eq__` method, it should not implement :meth:`__hash__`, since the
-   implementation of hashable collections requires that a key's hash value is
+   implementation of :term:`hashable` collections requires that a key's hash value is
    immutable (if the object's hash value changes, it will be in the wrong hash
    bucket).
 
@@ -1903,6 +1904,8 @@ Attribute lookup speed can be significantly improved as well.
    :attr:`~object.__dict__`
    and *__weakref__* for each instance.
 
+
+.. _datamodel-note-slots:
 
 Notes on using *__slots__*
 """"""""""""""""""""""""""
@@ -2821,7 +2824,7 @@ Customizing positional arguments in class pattern matching
 
 When using a class name in a pattern, positional arguments in the pattern are not
 allowed by default, i.e. ``case MyClass(x, y)`` is typically invalid without special
-support in ``MyClass``. To be able to use that kind of patterns, the class needs to
+support in ``MyClass``. To be able to use that kind of pattern, the class needs to
 define a *__match_args__* attribute.
 
 .. data:: object.__match_args__
@@ -2947,6 +2950,14 @@ are awaitable.
    Must return an :term:`iterator`.  Should be used to implement
    :term:`awaitable` objects.  For instance, :class:`asyncio.Future` implements
    this method to be compatible with the :keyword:`await` expression.
+
+   .. note::
+
+      The language doesn't place any restriction on the type or value of the
+      objects yielded by the iterator returned by ``__await__``, as this is
+      specific to the implementation of the asynchronous execution framework
+      (e.g. :mod:`asyncio`) that will be managing the :term:`awaitable` object.
+
 
 .. versionadded:: 3.5
 

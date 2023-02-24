@@ -239,13 +239,6 @@ adds these capabilities:
 
 This version of the module has a number of changes.
 
-We've added an extra include::
-
-   #include <structmember.h>
-
-This include provides declarations that we use to handle attributes, as
-described a bit later.
-
 The  :class:`Custom` type now has three data attributes in its C struct,
 *first*, *last*, and *number*.  The *first* and *last* variables are Python
 strings containing first and last names.  The *number* attribute is a C integer.
@@ -436,11 +429,11 @@ We want to expose our instance variables as attributes. There are a
 number of ways to do that. The simplest way is to define member definitions::
 
    static PyMemberDef Custom_members[] = {
-       {"first", T_OBJECT_EX, offsetof(CustomObject, first), 0,
+       {"first", Py_T_OBJECT_EX, offsetof(CustomObject, first), 0,
         "first name"},
-       {"last", T_OBJECT_EX, offsetof(CustomObject, last), 0,
+       {"last", Py_T_OBJECT_EX, offsetof(CustomObject, last), 0,
         "last name"},
-       {"number", T_INT, offsetof(CustomObject, number), 0,
+       {"number", Py_T_INT, offsetof(CustomObject, number), 0,
         "custom number"},
        {NULL}  /* Sentinel */
    };
@@ -609,7 +602,7 @@ above.  In this case, we aren't using a closure, so we just pass ``NULL``.
 We also remove the member definitions for these attributes::
 
    static PyMemberDef Custom_members[] = {
-       {"number", T_INT, offsetof(CustomObject, number), 0,
+       {"number", Py_T_INT, offsetof(CustomObject, number), 0,
         "custom number"},
        {NULL}  /* Sentinel */
    };

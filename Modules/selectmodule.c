@@ -1652,8 +1652,7 @@ select_epoll___enter___impl(pyEpoll_Object *self)
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 /*[clinic input]

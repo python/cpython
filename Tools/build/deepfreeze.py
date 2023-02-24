@@ -44,6 +44,7 @@ CO_FAST_LOCAL = 0x20
 CO_FAST_CELL = 0x40
 CO_FAST_FREE = 0x80
 
+next_code_version = 1
 
 def get_localsplus(code: types.CodeType):
     a = collections.defaultdict(int)
@@ -60,7 +61,6 @@ def get_localsplus_counts(code: types.CodeType,
                           names: Tuple[str, ...],
                           kinds: bytes) -> Tuple[int, int, int, int]:
     nlocals = 0
-    nplaincellvars = 0
     ncellvars = 0
     nfreevars = 0
     assert len(names) == len(kinds)
@@ -71,15 +71,13 @@ def get_localsplus_counts(code: types.CodeType,
                 ncellvars += 1
         elif kind & CO_FAST_CELL:
             ncellvars += 1
-            nplaincellvars += 1
         elif kind & CO_FAST_FREE:
             nfreevars += 1
     assert nlocals == len(code.co_varnames) == code.co_nlocals, \
         (nlocals, len(code.co_varnames), code.co_nlocals)
     assert ncellvars == len(code.co_cellvars)
     assert nfreevars == len(code.co_freevars)
-    assert len(names) == nlocals + nplaincellvars + nfreevars
-    return nlocals, nplaincellvars, ncellvars, nfreevars
+    return nlocals, ncellvars, nfreevars
 
 
 PyUnicode_1BYTE_KIND = 1
@@ -114,9 +112,8 @@ class Printer:
         self.file = file
         self.cache: Dict[tuple[type, object, str], str] = {}
         self.hits, self.misses = 0, 0
-        self.patchups: list[str] = []
-        self.deallocs: list[str] = []
-        self.interns: list[str] = []
+        self.finis: list[str] = []
+        self.inits: list[str] = []
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
@@ -228,6 +225,7 @@ class Printer:
 
 
     def generate_code(self, name: str, code: types.CodeType) -> str:
+        global next_code_version
         # The ordering here matches PyCode_NewWithPosOnlyArgs()
         # (but see below).
         co_consts = self.generate(name + "_consts", code.co_consts)
@@ -242,7 +240,7 @@ class Printer:
         co_localsplusnames = self.generate(name + "_localsplusnames", localsplusnames)
         co_localspluskinds = self.generate(name + "_localspluskinds", localspluskinds)
         # Derived values
-        nlocals, nplaincellvars, ncellvars, nfreevars = \
+        nlocals, ncellvars, nfreevars = \
             get_localsplus_counts(code, localsplusnames, localspluskinds)
         co_code_adaptive = make_string_literal(code.co_code)
         self.write("static")
@@ -257,19 +255,20 @@ class Printer:
             self.write(f".co_names = {co_names},")
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
-            self.write(".co_warmup = QUICKENING_INITIAL_WARMUP_VALUE,")
             self.write("._co_linearray_entry_size = 0,")
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
+            # The following should remain in sync with _PyFrame_NumSlotsForCodeObject
             self.write(f".co_framesize = {code.co_stacksize + len(localsplusnames)} + FRAME_SPECIALS_SIZE,")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
             self.write(f".co_nlocalsplus = {len(localsplusnames)},")
             self.field(code, "co_nlocals")
-            self.write(f".co_nplaincellvars = {nplaincellvars},")
             self.write(f".co_ncellvars = {ncellvars},")
             self.write(f".co_nfreevars = {nfreevars},")
+            self.write(f".co_version = {next_code_version},")
+            next_code_version += 1
             self.write(f".co_localsplusnames = {co_localsplusnames},")
             self.write(f".co_localspluskinds = {co_localspluskinds},")
             self.write(f".co_filename = {co_filename},")
@@ -284,8 +283,8 @@ class Printer:
                     self.write(f"._co_firsttraceable = {i},")
                     break
         name_as_code = f"(PyCodeObject *)&{name}"
-        self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")
-        self.interns.append(f"_PyStaticCode_InternStrings({name_as_code})")
+        self.finis.append(f"_PyStaticCode_Fini({name_as_code});")
+        self.inits.append(f"_PyStaticCode_Init({name_as_code})")
         return f"& {name}.ob_base.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
@@ -373,11 +372,7 @@ class Printer:
     def generate_file(self, module: str, code: object)-> None:
         module = module.replace(".", "_")
         self.generate(f"{module}_toplevel", code)
-        with self.block(f"static void {module}_do_patchups(void)"):
-            for p in self.patchups:
-                self.write(p)
-        self.patchups.clear()
-        self.write(EPILOGUE.replace("%%NAME%%", module))
+        self.write(EPILOGUE.format(name=module))
 
     def generate(self, name: str, obj: object) -> str:
         # Use repr() in the key to distinguish -0.0 from +0.0
@@ -421,11 +416,10 @@ class Printer:
 
 EPILOGUE = """
 PyObject *
-_Py_get_%%NAME%%_toplevel(void)
-{
-    %%NAME%%_do_patchups();
-    return Py_NewRef((PyObject *) &%%NAME%%_toplevel);
-}
+_Py_get_{name}_toplevel(void)
+{{
+    return Py_NewRef((PyObject *) &{name}_toplevel);
+}}
 """
 
 FROZEN_COMMENT_C = "/* Auto-generated by Programs/_freeze_module.c */"
@@ -461,13 +455,14 @@ def generate(args: list[str], output: TextIO) -> None:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
     with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
-        for p in printer.deallocs:
+        for p in printer.finis:
             printer.write(p)
     with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
-        for p in printer.interns:
+        for p in printer.inits:
             with printer.block(f"if ({p} < 0)"):
                 printer.write("return -1;")
         printer.write("return 0;")
+    printer.write(f"\nuint32_t _Py_next_func_version = {next_code_version};\n")
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 

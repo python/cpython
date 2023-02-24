@@ -2,8 +2,6 @@
   What's New In Python 3.9
 ****************************
 
-:Release: |release|
-:Date: |today|
 :Editor: Łukasz Langa
 
 .. Rules for maintenance:

@@ -189,6 +189,11 @@ the first quote::
    >>> print(r'C:\some\name')  # note the r before the quote
    C:\some\name
 
+There is one subtle aspect to raw strings: a raw string may not end in
+an odd number of ``\`` characters; see
+:ref:`the FAQ entry <faq-programming-raw-string-backslash>` for more information
+and workarounds.
+
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically
 included in the string, but it's possible to prevent this by adding a ``\`` at
@@ -269,7 +274,7 @@ Indices may also be negative numbers, to start counting from the right::
 Note that since -0 is the same as 0, negative indices start from -1.
 
 In addition to indexing, *slicing* is also supported.  While indexing is used
-to obtain individual characters, *slicing* allows you to obtain substring::
+to obtain individual characters, *slicing* allows you to obtain a substring::
 
    >>> word[0:2]  # characters from position 0 (included) to 2 (excluded)
    'Py'

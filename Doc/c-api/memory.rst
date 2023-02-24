@@ -95,6 +95,8 @@ for the I/O buffer escapes completely the Python memory manager.
 Allocator Domains
 =================
 
+.. _allocator-domains:
+
 All allocating functions belong to one of three different "domains" (see also
 :c:type:`PyMemAllocatorDomain`). These domains represent different allocation
 strategies and are optimized for different purposes. The specific details on
@@ -478,6 +480,25 @@ Customize Memory Allocators
 
    See also :c:member:`PyPreConfig.allocator` and :ref:`Preinitialize Python
    with PyPreConfig <c-preinit>`.
+
+   .. warning::
+
+       :c:func:`PyMem_SetAllocator` does have the following contract:
+
+        * It can be called after :c:func:`Py_PreInitialize` and before
+          :c:func:`Py_InitializeFromConfig` to install a custom memory
+          allocator. There are no restrictions over the installed allocator
+          other than the ones imposed by the domain (for instance, the Raw
+          Domain allows the allocator to be called without the GIL held). See
+          :ref:`the section on allocator domains <allocator-domains>` for more
+          information.
+
+        * If called after Python has finish initializing (after
+          :c:func:`Py_InitializeFromConfig` has been called) the allocator
+          **must** wrap the existing allocator. Substituting the current
+          allocator for some other arbitrary one is **not supported**.
+
+
 
 .. c:function:: void PyMem_SetupDebugHooks(void)
 

@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _howto-clinic:
+
 **********************
 Argument Clinic How-To
 **********************
@@ -84,7 +86,7 @@ If you run that script, specifying a C file as an argument:
 
 .. code-block:: shell-session
 
-    $ python3 Tools/clinic/clinic.py foo.c
+    $ python Tools/clinic/clinic.py foo.c
 
 Argument Clinic will scan over the file looking for lines that
 look exactly like this:
