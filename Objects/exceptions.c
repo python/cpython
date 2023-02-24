@@ -3852,6 +3852,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
     msg_prefix = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (msg_prefix == NULL) {
+        Py_DECREF(exc);
         return NULL;
     }
 
