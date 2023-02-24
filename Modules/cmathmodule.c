@@ -829,7 +829,7 @@ cmath_sqrt_impl(PyObject *module, Py_complex z)
     ax = fabs(z.real);
     ay = fabs(z.imag);
 
-    if (ax < DBL_MIN && ay < DBL_MIN && (ax > 0. || ay > 0.)) {
+    if (ax < DBL_MIN && ay < DBL_MIN) {
         /* here we catch cases where hypot(ax, ay) is subnormal */
         ax = ldexp(ax, CM_SCALE_UP);
         s = ldexp(sqrt(ax + hypot(ax, ldexp(ay, CM_SCALE_UP))),
@@ -1013,7 +1013,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     errno = 0;
-    phi = c_atan2(z);
+    phi = c_atan2(z); /* should not cause any exception */
     if (errno != 0)
         return math_error();
     else

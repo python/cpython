@@ -7,13 +7,12 @@
 #ifndef __FStar_UInt128_Verified_H
 #define __FStar_UInt128_Verified_H
 
-
-
 #include "FStar_UInt_8_16_32_64.h"
 #include <inttypes.h>
 #include <stdbool.h>
 #include "krml/types.h"
 #include "krml/internal/target.h"
+
 static inline uint64_t FStar_UInt128_constant_time_carry(uint64_t a, uint64_t b)
 {
   return (a ^ ((a ^ b) | ((a - b) ^ b))) >> (uint32_t)63U;
