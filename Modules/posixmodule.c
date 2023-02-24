@@ -18,7 +18,9 @@
 #  include <pathcch.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP
-#  define HAVE_SYMLINK
+#  ifndef MS_WINDOWS_NON_DESKTOP
+#    define HAVE_SYMLINK
+#  endif
 #endif
 
 #ifdef __VXWORKS__
@@ -312,7 +314,7 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/syscall.h>
 #endif
 
-#if defined(MS_WINDOWS)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
 #  define TERMSIZE_USE_CONIO
 #elif defined(HAVE_SYS_IOCTL_H)
 #  include <sys/ioctl.h>
@@ -330,21 +332,21 @@ corresponding Unix manual entries for more information on calls.");
 #  define HAVE_OPENDIR    1
 #  define HAVE_SYSTEM     1
 #  include <process.h>
-#else
-#  ifdef _MSC_VER
-     /* Microsoft compiler */
+#elif defined( _MSC_VER)
+  /* Microsoft compiler */
+#  ifndef MS_WINDOWS_NON_DESKTOP
 #    define HAVE_GETPPID    1
 #    define HAVE_GETLOGIN   1
 #    define HAVE_SPAWNV     1
 #    define HAVE_EXECV      1
 #    define HAVE_WSPAWNV    1
 #    define HAVE_WEXECV     1
-#    define HAVE_PIPE       1
 #    define HAVE_SYSTEM     1
 #    define HAVE_CWAIT      1
-#    define HAVE_FSYNC      1
-#    define fsync _commit
-#  endif  /* _MSC_VER */
+#  endif /* !MS_WINDOWS_NON_DESKTOP */
+#  define HAVE_PIPE       1
+#  define HAVE_FSYNC      1
+#  define fsync _commit
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 /*[clinic input]
@@ -8385,9 +8387,9 @@ os_getuid_impl(PyObject *module)
 #endif /* HAVE_GETUID */
 
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
 #define HAVE_KILL
-#endif /* MS_WINDOWS */
+#endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
 
 #ifdef HAVE_KILL
 /*[clinic input]

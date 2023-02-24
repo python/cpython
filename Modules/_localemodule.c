@@ -35,7 +35,9 @@ This software comes with no warranty. Use at your own risk.
 #endif
 
 #if defined(MS_WINDOWS)
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #endif
 
