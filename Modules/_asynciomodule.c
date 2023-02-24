@@ -76,7 +76,7 @@ get_asyncio_state(PyObject *mod)
 static inline asyncio_state *
 get_asyncio_state_by_cls(PyTypeObject *cls)
 {
-    asyncio_state *state = (asyncio_state *)PyType_GetModuleState(cls);
+    asyncio_state *state = (asyncio_state *)_PyType_GetModuleState(cls);
     assert(state != NULL);
     return state;
 }

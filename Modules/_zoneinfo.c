@@ -204,7 +204,7 @@ zoneinfo_get_state(PyObject *mod)
 static inline zoneinfo_state *
 zoneinfo_get_state_by_cls(PyTypeObject *cls)
 {
-    zoneinfo_state *state = (zoneinfo_state *)PyType_GetModuleState(cls);
+    zoneinfo_state *state = (zoneinfo_state *)_PyType_GetModuleState(cls);
     assert(state != NULL);
     return state;
 }
