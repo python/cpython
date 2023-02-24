@@ -95,8 +95,9 @@
 #  define be64toh(x) __builtin_bswap64(x)
 #  define le64toh(x) (x)
 
-/* ... generic big-endian fallback code */
-#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* ... generic big-endian fallback code
+   ... AIX doesn't have __BYTE_ORDER__ (with XLC compiler) & is always big-endian */
+#elif (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(_AIX)
 
 /* byte swapping code inspired by:
  * https://github.com/rweather/arduinolibs/blob/master/libraries/Crypto/utility/EndianUtil.h
