@@ -7,7 +7,6 @@
 
 #include "Python.h"
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 /* State for testing module state access from methods */
 
@@ -193,7 +192,7 @@ _testmultiphase_StateAccessType_increment_count_clinic_impl(StateAccessTypeObjec
                                                             int n, int twice)
 /*[clinic end generated code: output=3b34f86bc5473204 input=551d482e1fe0b8f5]*/
 {
-    meth_state *m_state = _PyType_GetModuleState(cls);
+    meth_state *m_state = PyType_GetModuleState(cls);
     if (twice) {
         n *= 2;
     }
@@ -242,7 +241,7 @@ _StateAccessType_increment_count_noclinic(StateAccessTypeObject *self,
         }
         n *= 2;
     }
-    meth_state *m_state = _PyType_GetModuleState(defining_class);
+    meth_state *m_state = PyType_GetModuleState(defining_class);
     m_state->counter += n;
 
     Py_RETURN_NONE;
@@ -261,7 +260,7 @@ _testmultiphase_StateAccessType_get_count_impl(StateAccessTypeObject *self,
                                                PyTypeObject *cls)
 /*[clinic end generated code: output=64600f95b499a319 input=d5d181f12384849f]*/
 {
-    meth_state *m_state = _PyType_GetModuleState(cls);
+    meth_state *m_state = PyType_GetModuleState(cls);
     return PyLong_FromLong(m_state->counter);
 }
 
