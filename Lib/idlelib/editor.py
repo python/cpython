@@ -1053,7 +1053,8 @@ class EditorWindow:
 
     def getlineno(self, mark="insert"):
         text = self.text
-        return int(float(text.index(mark)))
+        text_widget_index = text.index(mark)
+        return int(text_widget_index.partition('.')[0])
 
     def get_geometry(self):
         "Return (width, height, x, y)"
