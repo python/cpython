@@ -1899,6 +1899,11 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (--)) {
+            frame->f_code->_tier2_warmup++;
+            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+        }
+
+        inst(JUMP_BACKWARD_QUICK, (--)) {
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();

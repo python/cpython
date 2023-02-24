@@ -284,6 +284,9 @@ _specializations = {
     "RESUME": [
         "RESUME_QUICK",
     ],
+    "JUMP_BACKWARD": [
+        "JUMP_BACKWARD_QUICK",
+    ],
     "BINARY_OP": [
         "BINARY_OP_ADD_FLOAT",
         "BINARY_OP_ADD_INT",

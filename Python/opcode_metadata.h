@@ -244,6 +244,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case JUMP_BACKWARD_QUICK:
+            return 0;
         case POP_JUMP_IF_FALSE:
             return 1;
         case BB_TEST_POP_IF_FALSE:
@@ -628,6 +630,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case JUMP_BACKWARD_QUICK:
+            return 0;
         case POP_JUMP_IF_FALSE:
             return 0;
         case BB_TEST_POP_IF_FALSE:
@@ -901,7 +905,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [IMPORT_NAME] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [IMPORT_FROM] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [JUMP_FORWARD] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
-    [JUMP_BACKWARD] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [JUMP_BACKWARD] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [JUMP_BACKWARD_QUICK] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [POP_JUMP_IF_FALSE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [BB_TEST_POP_IF_FALSE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [POP_JUMP_IF_TRUE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },

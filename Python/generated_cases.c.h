@@ -2427,6 +2427,12 @@
 
         TARGET(JUMP_BACKWARD) {
             PREDICTED(JUMP_BACKWARD);
+            frame->f_code->_tier2_warmup++;
+            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+        }
+
+        TARGET(JUMP_BACKWARD_QUICK) {
+            PREDICTED(JUMP_BACKWARD_QUICK);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
