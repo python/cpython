@@ -759,6 +759,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyThreadState *p = interp->threads.head;
     HEAD_UNLOCK(runtime);
     while (p != NULL) {
+        // See https://github.com/python/cpython/issues/102126
         // Must be called without HEAD_LOCK held as it can deadlock
         // if any finalizer tries to acquire that lock.
         PyThreadState_Clear(p);
