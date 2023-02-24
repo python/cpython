@@ -274,8 +274,8 @@ class TestCase(unittest.TestCase):
                     return other == self.name
 
             # del is required here
-            # since only setting will result in
-            # both keys existing with a hash collision
+            # to not prematurely call __eq__ from
+            # the hash collision with the old key
             del builtins_dict[builtin_name]
             builtins_dict[CustomStr(builtin_name, it)] = orig[builtin_name]
 
@@ -309,10 +309,13 @@ class TestCase(unittest.TestCase):
                 self.assertEqual(run_iter(*case), (orig["iter"], ((),)))
         finally:
             # Restore original builtins
-            # need to suppress KeyErrors in case
-            # a failed test deletes the key without setting anything
             for key, func in orig.items():
+                # need to suppress KeyErrors in case
+                # a failed test deletes the key without setting anything
                 with contextlib.suppress(KeyError):
+                    # del is required here
+                    # to not invoke our custom __eq__ from
+                    # the hash collision with the old key
                     del builtins_dict[key]
                 builtins_dict[key] = func
 
