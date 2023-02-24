@@ -270,10 +270,9 @@ error:
     Py_CLEAR(self);
 cleanup:
     if (file_obj != NULL) {
-        PyObject *exc, *val, *tb;
-        PyErr_Fetch(&exc, &val, &tb);
+        PyObject *exc = PyErr_GetRaisedException();
         PyObject *tmp = PyObject_CallMethod(file_obj, "close", NULL);
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         if (tmp == NULL) {
             Py_CLEAR(self);
         }
