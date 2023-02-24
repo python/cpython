@@ -1113,6 +1113,8 @@ Regular Expression Objects
 Compiled regular expression objects support the following methods and
 attributes:
 
+.. class: Pattern
+
 .. method:: Pattern.search(string[, pos[, endpos]])
 
    Scan through *string* looking for the first location where this regular
@@ -1251,6 +1253,7 @@ when there is no match, you can test whether there was a match with a simple
 
 Match objects support the following methods and attributes:
 
+.. class: Match
 
 .. method:: Match.expand(template)
 
