@@ -2,13 +2,6 @@
 // from Python\bytecodes.c
 // Do not edit!
 
-        #define UOP_BINARY_CHECK_INT() \
-        do { \
-            assert(cframe.use_tracing == 0);\
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);\
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);\
-        } while (0)
-
         #define UOP_BINARY_OP_ADD_INT_REST() \
         do { \
             STAT_INC(BINARY_OP, hit);\
@@ -414,7 +407,9 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             PyObject *sum;
-            UOP_BINARY_CHECK_INT();
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             UOP_BINARY_OP_ADD_INT_REST();
             STACK_SHRINK(1);
             POKE(1, sum);
@@ -426,8 +421,7 @@
             PyObject *right = PEEK(1);
             PyObject *left = PEEK(2);
             assert(cframe.use_tracing == 0);
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            bb_test = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
             DISPATCH();
         }
 

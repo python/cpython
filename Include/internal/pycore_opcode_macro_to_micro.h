@@ -34,7 +34,7 @@ extern const int _Py_MacroOpUOpCount[] = {
 [BINARY_OP_ADD_UNICODE] = 1,
 [BINARY_OP_INPLACE_ADD_UNICODE] = 1,
 [BINARY_OP_ADD_FLOAT] = 1,
-[BINARY_OP_ADD_INT] = 2,
+[BINARY_OP_ADD_INT] = 1,
 [BINARY_CHECK_INT] = 1,
 [BINARY_OP_ADD_INT_REST] = 1,
 [BINARY_SUBSCR] = 1,
@@ -196,11 +196,10 @@ extern const int _Py_MacroOpUOpCount[] = {
 [BB_JUMP_BACKWARD_LAZY] = 1,
 };
 
-extern const int _Py_MacroOpToUOp[][2] = {
-[BINARY_OP_ADD_INT] = {BINARY_CHECK_INT, BINARY_OP_ADD_INT_REST},
+extern const int _Py_MacroOpToUOp[][1] = {
+[BINARY_OP_ADD_INT] = {BINARY_OP_ADD_INT_REST},
 };
-extern const PyTypeObject *_Py_UOpGuardTypes[][2] = {
-[BINARY_CHECK_INT] = {&PyLong_Type, &PyLong_Type},
+extern const PyTypeObject *_Py_UOpGuardTypes[][0] = {
 };
 #ifdef __cplusplus
 }
