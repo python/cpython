@@ -1,0 +1,6 @@
+The Unix user (:func:`pwd.getpwuid`, :func:`pwd.getpwnam`) and group
+(:func:`grp.getgrgid`, :func:`grp.getgrnam`) database functions now
+differentiate between a lack of record (:exc:`KeyError` is risen, the current behaviour)
+and a database access error (:exc:`OSError` is risen).
+
+Based on a patch by Oleg Iarygin.
