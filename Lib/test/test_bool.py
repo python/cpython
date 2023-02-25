@@ -40,6 +40,12 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(float(True), 1.0)
         self.assertIsNot(float(True), True)
 
+    def test_complex(self):
+        self.assertEqual(complex(False), 0j)
+        self.assertEqual(complex(False), False)
+        self.assertEqual(complex(True), 1+0j)
+        self.assertEqual(complex(True), True)
+
     def test_math(self):
         self.assertEqual(+False, 0)
         self.assertIsNot(+False, False)
