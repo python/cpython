@@ -1012,11 +1012,11 @@ class Analyzer:
             if types:
                 max_types = max(max_types, len(types))
                 uop_to_type_output[instr_def.name] = types
-
-        self.out.emit(f"extern const PyTypeObject *_Py_UOpGuardTypes[][{max_types}] = {{")
-        for name, types in uop_to_type_output.items():
-            self.out.emit(f"[{name}] = {{{', '.join(['&' + type_ for type_ in types])}}},")
-        self.out.emit("};")
+        if max_types > 0:
+            self.out.emit(f"extern const PyTypeObject *_Py_UOpGuardTypes[][{max_types}] = {{")
+            for name, types in uop_to_type_output.items():
+                self.out.emit(f"[{name}] = {{{', '.join(['&' + type_ for type_ in types])}}},")
+            self.out.emit("};")
 
 
     def write_metadata(self) -> None:

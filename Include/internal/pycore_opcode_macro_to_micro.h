@@ -199,8 +199,6 @@ extern const int _Py_MacroOpUOpCount[] = {
 extern const int _Py_MacroOpToUOp[][1] = {
 [BINARY_OP_ADD_INT] = {BINARY_OP_ADD_INT_REST},
 };
-extern const PyTypeObject *_Py_UOpGuardTypes[][0] = {
-};
 #ifdef __cplusplus
 }
 #endif
