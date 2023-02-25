@@ -72,7 +72,7 @@ static const struct dbcs_map *mapping_list;
 #define ENCODER(encoding)                                               \
     static Py_ssize_t encoding##_encode(                                \
         MultibyteCodec_State *state, const void *config,                \
-        int kind, void *data,                          \
+        int kind, const void *data,                                     \
         Py_ssize_t *inpos, Py_ssize_t inlen,                            \
         unsigned char **outbuf, Py_ssize_t outleft, int flags)
 #define ENCODER_RESET(encoding)                                         \
@@ -245,16 +245,7 @@ static const struct dbcs_map *mapping_list;
 static PyObject *
 getmultibytecodec(void)
 {
-    static PyObject *cofunc = NULL;
-
-    if (cofunc == NULL) {
-        PyObject *mod = PyImport_ImportModuleNoBlock("_multibytecodec");
-        if (mod == NULL)
-            return NULL;
-        cofunc = PyObject_GetAttrString(mod, "__create_codec");
-        Py_DECREF(mod);
-    }
-    return cofunc;
+    return _PyImport_GetModuleAttrString("_multibytecodec", "__create_codec");
 }
 
 static PyObject *
@@ -291,16 +282,13 @@ getcodec(PyObject *self, PyObject *encoding)
     if (codecobj == NULL)
         return NULL;
 
-    r = PyObject_CallFunctionObjArgs(cofunc, codecobj, NULL);
+    r = PyObject_CallOneArg(cofunc, codecobj);
     Py_DECREF(codecobj);
+    Py_DECREF(cofunc);
 
     return r;
 }
 
-static struct PyMethodDef __methods[] = {
-    {"getcodec", (PyCFunction)getcodec, METH_O, ""},
-    {NULL, NULL},
-};
 
 static int
 register_maps(PyObject *module)
@@ -309,12 +297,17 @@ register_maps(PyObject *module)
 
     for (h = mapping_list; h->charset[0] != '\0'; h++) {
         char mhname[256] = "__map_";
-        int r;
         strcpy(mhname + sizeof("__map_") - 1, h->charset);
-        r = PyModule_AddObject(module, mhname,
-                        PyCapsule_New((void *)h, PyMultibyteCodec_CAPSULE_NAME, NULL));
-        if (r == -1)
+
+        PyObject *capsule = PyCapsule_New((void *)h,
+                                          PyMultibyteCodec_CAPSULE_NAME, NULL);
+        if (capsule == NULL) {
             return -1;
+        }
+        if (PyModule_AddObject(module, mhname, capsule) < 0) {
+            Py_DECREF(capsule);
+            return -1;
+        }
     }
     return 0;
 }
@@ -395,25 +388,36 @@ errorexit:
 }
 #endif
 
+static int
+_cjk_exec(PyObject *module)
+{
+    return register_maps(module);
+}
+
+
+static struct PyMethodDef _cjk_methods[] = {
+    {"getcodec", (PyCFunction)getcodec, METH_O, ""},
+    {NULL, NULL},
+};
+
+static PyModuleDef_Slot _cjk_slots[] = {
+    {Py_mod_exec, _cjk_exec},
+    {0, NULL}
+};
+
 #define I_AM_A_MODULE_FOR(loc)                                          \
-    static struct PyModuleDef __module = {                              \
+    static struct PyModuleDef _cjk_module = {                           \
         PyModuleDef_HEAD_INIT,                                          \
-        "_codecs_"#loc,                                                 \
-        NULL,                                                           \
-        0,                                                              \
-        __methods,                                                      \
-        NULL,                                                           \
-        NULL,                                                           \
-        NULL,                                                           \
-        NULL                                                            \
+        .m_name = "_codecs_"#loc,                                       \
+        .m_size = 0,                                                    \
+        .m_methods = _cjk_methods,                                      \
+        .m_slots = _cjk_slots,                                          \
     };                                                                  \
+                                                                        \
     PyMODINIT_FUNC                                                      \
     PyInit__codecs_##loc(void)                                          \
     {                                                                   \
-        PyObject *m = PyModule_Create(&__module);                       \
-        if (m != NULL)                                                  \
-            (void)register_maps(m);                                     \
-        return m;                                                       \
+        return PyModuleDef_Init(&_cjk_module);                          \
     }
 
 #endif
