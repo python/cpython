@@ -17,7 +17,7 @@
 #  define WIN32_LEAN_AND_MEAN
 #  endif
 #  include "windows.h"
-#  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
+#  ifdef MS_XBOX
 #    define isatty _isatty
 #    define fileno _fileno
 #  endif

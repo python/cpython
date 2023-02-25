@@ -23,7 +23,7 @@
 #endif
 
 /* the deprecated posix apis are not available on xbox */
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
+#ifdef MS_XBOX
 #  define fileno _fileno
 #endif
 

@@ -12,8 +12,7 @@
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #  include <pathcch.h>
-
-#  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
+#  ifdef MS_XBOX
 #    define wcsicmp _wcsicmp
 #  endif
 #endif
@@ -221,6 +220,10 @@ getpath_isfile(PyObject *Py_UNUSED(self), PyObject *args)
 static PyObject *
 getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
 {
+#ifdef MS_XBOX
+    /* having other executables on */
+    Py_RETURN_FALSE;
+
     PyObject *r = NULL;
     PyObject *pathobj;
     const wchar_t *path;
@@ -232,13 +235,13 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
     if (path) {
 #ifdef MS_WINDOWS
         const wchar_t *ext;
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
+#ifdef MS_XBOX
         ext = (cchPath >= 4) ? path + cchPath - 4 : NULL;
 #endif
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
+#ifdef MS_XBOX
             (ext != NULL) &&
 #else
             SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&

@@ -60,7 +60,7 @@
 #endif
 
 /* the deprecated posix apis are not available on xbox */
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
+#ifdef MS_XBOX
 #  define dup _dup
 #  define dup2 _dup2
 #endif

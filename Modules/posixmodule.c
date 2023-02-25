@@ -347,7 +347,7 @@ corresponding Unix manual entries for more information on calls.");
 #  define HAVE_PIPE       1
 #  define HAVE_FSYNC      1
 #  define fsync _commit
-#  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
+#  ifdef MS_XBOX
 #    define dup2 _dup2
 #    define umask _umask
 #    define close _close
@@ -4479,7 +4479,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
         *p = L'\\';
     }
 
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
+#ifdef MS_XBOX
     /* this does not handle persistent local storage */
     ret = E_FAIL;
     if ((wcsncmp(buffer, L"G:\\", 3) == 0) || (wcsncmp(buffer, L"D:\\", 3) == 0) || (wcsncmp(buffer, L"T:\\", 3) == 0)) {
