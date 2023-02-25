@@ -72,6 +72,9 @@ WIN32 is still required for the locale module.
 #define USE_SOCKET
 #endif
 
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
+#define MS_WINDOWS_NON_DESKTOP
+#endif
 
 /* Compiler specific defines */
 
