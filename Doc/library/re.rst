@@ -1118,7 +1118,7 @@ Regular Expression Objects
 Compiled regular expression objects support the following methods and
 attributes:
 
-.. class: Pattern
+.. class:: Pattern
 
 .. method:: Pattern.search(string[, pos[, endpos]])
 
@@ -1258,7 +1258,7 @@ when there is no match, you can test whether there was a match with a simple
 
 Match objects support the following methods and attributes:
 
-.. class: Match
+.. class:: Match
 
 .. method:: Match.expand(template)
 
