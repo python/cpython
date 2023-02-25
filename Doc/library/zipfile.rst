@@ -55,8 +55,9 @@ The module defines the following items:
 .. class:: Path
    :noindex:
 
-   A pathlib-compatible wrapper for zip files. See section
-   :ref:`path-objects` for details.
+   Class that implements a subset of the interface provided by
+   :class:`pathlib.Path`, including the full
+   :class:`importlib.resources.abc.Traversable` interface.
 
    .. versionadded:: 3.8
 
