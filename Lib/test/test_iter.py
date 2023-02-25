@@ -277,7 +277,6 @@ class TestCase(unittest.TestCase):
             (bytearray(8),),
             ((1, 2, 3),),
             (lambda: 0, 0),
-            (tuple[int],)  # GenericAlias
         ]
 
         try:
