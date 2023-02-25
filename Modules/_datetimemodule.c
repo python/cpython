@@ -82,6 +82,18 @@ find_module_state_by_def(PyTypeObject *type)
     return get_module_state(mod);
 }
 
+static inline datetime_state *
+find_state_left_or_right(PyObject *left, PyObject *right)
+{
+    PyObject *mod = PyType_GetModuleByDef(Py_TYPE(left), &datetimemodule);
+    if (mod == NULL) {
+        PyErr_Clear();
+        mod = PyType_GetModuleByDef(Py_TYPE(right), &datetimemodule);
+    }
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
 #define find_module_state_by_def(obj) find_module_state_by_def((PyTypeObject *)(obj))
 
 /*[clinic input]
@@ -1323,9 +1335,8 @@ call_tzinfo_method(datetime_state *st, PyObject *tzinfo, const char *name,
  * set to 0 and the offset is returned (as timedelta, positive east of UTC).
  */
 static PyObject *
-call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
+call_utcoffset(datetime_state *st, PyObject *tzinfo, PyObject *tzinfoarg)
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(tzinfo));
     return call_tzinfo_method(st, tzinfo, "utcoffset", tzinfoarg);
 }
 
@@ -1338,9 +1349,8 @@ call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
  * the offset is returned (as timedelta, positive east of UTC).
  */
 static PyObject *
-call_dst(PyObject *tzinfo, PyObject *tzinfoarg)
+call_dst(datetime_state *st, PyObject *tzinfo, PyObject *tzinfoarg)
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(tzinfo));
     return call_tzinfo_method(st, tzinfo, "dst", tzinfoarg);
 }
 
@@ -1351,9 +1361,8 @@ call_dst(PyObject *tzinfo, PyObject *tzinfoarg)
  * string.
  */
 static PyObject *
-call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
+call_tzname(datetime_state *st, PyObject *tzinfo, PyObject *tzinfoarg)
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(tzinfo));
     PyObject *result;
     assert(tzinfo != NULL);
     assert(check_tzinfo_subclass(st, tzinfo) >= 0);
@@ -1487,7 +1496,7 @@ static PyObject *delta_negative(PyDateTime_Delta *self);
  * bogus, an appropriate exception is set and -1 is returned.
  */
 static int
-format_utcoffset(char *buf, size_t buflen, const char *sep,
+format_utcoffset(datetime_state *st, char *buf, size_t buflen, const char *sep,
                 PyObject *tzinfo, PyObject *tzinfoarg)
 {
     PyObject *offset;
@@ -1496,7 +1505,7 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 
     assert(buflen >= 1);
 
-    offset = call_utcoffset(tzinfo, tzinfoarg);
+    offset = call_utcoffset(st, tzinfo, tzinfoarg);
     if (offset == NULL)
         return -1;
     if (offset == Py_None) {
@@ -1535,7 +1544,8 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 }
 
 static PyObject *
-make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
+make_somezreplacement(datetime_state *st, PyObject *object, char *sep,
+                      PyObject *tzinfoarg)
 {
     char buf[100];
     PyObject *tzinfo = get_tzinfo_member(object);
@@ -1545,7 +1555,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
     }
 
     assert(tzinfoarg != NULL);
-    if (format_utcoffset(buf,
+    if (format_utcoffset(st, buf,
                          sizeof(buf),
                          sep,
                          tzinfo,
@@ -1556,7 +1566,8 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
 }
 
 static PyObject *
-make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
+make_Zreplacement(datetime_state *st, PyObject *object,
+                  PyObject *tzinfoarg)
 {
     PyObject *temp;
     PyObject *tzinfo = get_tzinfo_member(object);
@@ -1568,7 +1579,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
         return Zreplacement;
 
     assert(tzinfoarg != NULL);
-    temp = call_tzname(tzinfo, tzinfoarg);
+    temp = call_tzname(st, tzinfo, tzinfoarg);
     if (temp == NULL)
         goto Error;
     if (temp == Py_None) {
@@ -1687,7 +1698,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         else if (ch == 'z') {
             /* %z -> +HHMM */
             if (zreplacement == NULL) {
-                zreplacement = make_somezreplacement(object, "", tzinfoarg);
+                datetime_state *st = find_module_state_by_def(Py_TYPE(object));
+                zreplacement = make_somezreplacement(st, object, "", tzinfoarg);
                 if (zreplacement == NULL)
                     goto Done;
             }
@@ -1699,7 +1711,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         else if (ch == ':' && *pin == 'z' && pin++) {
             /* %:z -> +HH:MM */
             if (colonzreplacement == NULL) {
-                colonzreplacement = make_somezreplacement(object, ":", tzinfoarg);
+                datetime_state *st = find_module_state_by_def(Py_TYPE(object));
+                colonzreplacement = make_somezreplacement(st, object, ":", tzinfoarg);
                 if (colonzreplacement == NULL)
                     goto Done;
             }
@@ -1711,7 +1724,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         else if (ch == 'Z') {
             /* format tzname */
             if (Zreplacement == NULL) {
-                Zreplacement = make_Zreplacement(object,
+                datetime_state *st = find_module_state_by_def(Py_TYPE(object));
+                Zreplacement = make_Zreplacement(st, object,
                                                  tzinfoarg);
                 if (Zreplacement == NULL)
                     goto Done;
@@ -1870,7 +1884,7 @@ cmperror(PyObject *a, PyObject *b)
  * due to ubiquitous overflow possibilities.
  */
 static PyObject *
-delta_to_microseconds(PyDateTime_Delta *self)
+delta_to_microseconds(datetime_state *st, PyDateTime_Delta *self)
 {
     PyObject *x1 = NULL;
     PyObject *x2 = NULL;
@@ -1880,7 +1894,6 @@ delta_to_microseconds(PyDateTime_Delta *self)
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
         goto Done;
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
     x2 = PyNumber_Multiply(x1, st->seconds_per_day);        /* days in seconds */
     if (x2 == NULL)
         goto Done;
@@ -2009,13 +2022,14 @@ BadDivmod:
     microseconds_to_delta_ex(st, pymicros, (st)->PyDateTime_DeltaType)
 
 static PyObject *
-multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
+multiply_int_timedelta(datetime_state *st, PyObject *intobj,
+                       PyDateTime_Delta *delta)
 {
     PyObject *pyus_in;
     PyObject *pyus_out;
     PyObject *result;
 
-    pyus_in = delta_to_microseconds(delta);
+    pyus_in = delta_to_microseconds(st, delta);
     if (pyus_in == NULL)
         return NULL;
 
@@ -2024,7 +2038,6 @@ multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
     if (pyus_out == NULL)
         return NULL;
 
-    datetime_state *st = find_module_state_by_def(Py_TYPE(delta));
     result = microseconds_to_delta(st, pyus_out);
     Py_DECREF(pyus_out);
     return result;
@@ -2059,13 +2072,15 @@ get_float_as_integer_ratio(PyObject *floatobj)
 
 /* op is 0 for multiplication, 1 for division */
 static PyObject *
-multiply_truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *floatobj, int op)
+multiply_truedivide_timedelta_float(datetime_state *st,
+                                    PyDateTime_Delta *delta,
+                                    PyObject *floatobj, int op)
 {
     PyObject *result = NULL;
     PyObject *pyus_in = NULL, *temp, *pyus_out;
     PyObject *ratio = NULL;
 
-    pyus_in = delta_to_microseconds(delta);
+    pyus_in = delta_to_microseconds(st, delta);
     if (pyus_in == NULL)
         return NULL;
     ratio = get_float_as_integer_ratio(floatobj);
@@ -2081,7 +2096,6 @@ multiply_truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *floatobj,
     if (pyus_out == NULL)
         goto error;
 
-    datetime_state *st = find_module_state_by_def(Py_TYPE(delta));
     result = microseconds_to_delta(st, pyus_out);
     Py_DECREF(pyus_out);
  error:
@@ -2092,13 +2106,14 @@ multiply_truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *floatobj,
 }
 
 static PyObject *
-divide_timedelta_int(PyDateTime_Delta *delta, PyObject *intobj)
+divide_timedelta_int(datetime_state *st, PyDateTime_Delta *delta,
+                     PyObject *intobj)
 {
     PyObject *pyus_in;
     PyObject *pyus_out;
     PyObject *result;
 
-    pyus_in = delta_to_microseconds(delta);
+    pyus_in = delta_to_microseconds(st, delta);
     if (pyus_in == NULL)
         return NULL;
 
@@ -2107,24 +2122,24 @@ divide_timedelta_int(PyDateTime_Delta *delta, PyObject *intobj)
     if (pyus_out == NULL)
         return NULL;
 
-    datetime_state *st = find_module_state_by_def(Py_TYPE(delta));
     result = microseconds_to_delta(st, pyus_out);
     Py_DECREF(pyus_out);
     return result;
 }
 
 static PyObject *
-divide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
+divide_timedelta_timedelta(datetime_state *st, PyDateTime_Delta *left,
+                           PyDateTime_Delta *right)
 {
     PyObject *pyus_left;
     PyObject *pyus_right;
     PyObject *result;
 
-    pyus_left = delta_to_microseconds(left);
+    pyus_left = delta_to_microseconds(st, left);
     if (pyus_left == NULL)
         return NULL;
 
-    pyus_right = delta_to_microseconds(right);
+    pyus_right = delta_to_microseconds(st, right);
     if (pyus_right == NULL)     {
         Py_DECREF(pyus_left);
         return NULL;
@@ -2137,17 +2152,18 @@ divide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
 }
 
 static PyObject *
-truedivide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
+truedivide_timedelta_timedelta(datetime_state *st, PyDateTime_Delta *left,
+                               PyDateTime_Delta *right)
 {
     PyObject *pyus_left;
     PyObject *pyus_right;
     PyObject *result;
 
-    pyus_left = delta_to_microseconds(left);
+    pyus_left = delta_to_microseconds(st, left);
     if (pyus_left == NULL)
         return NULL;
 
-    pyus_right = delta_to_microseconds(right);
+    pyus_right = delta_to_microseconds(st, right);
     if (pyus_right == NULL)     {
         Py_DECREF(pyus_left);
         return NULL;
@@ -2160,11 +2176,12 @@ truedivide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
 }
 
 static PyObject *
-truedivide_timedelta_int(PyDateTime_Delta *delta, PyObject *i)
+truedivide_timedelta_int(datetime_state *st, PyDateTime_Delta *delta,
+                         PyObject *i)
 {
     PyObject *result;
     PyObject *pyus_in, *pyus_out;
-    pyus_in = delta_to_microseconds(delta);
+    pyus_in = delta_to_microseconds(st, delta);
     if (pyus_in == NULL)
         return NULL;
     pyus_out = divide_nearest(pyus_in, i);
@@ -2172,7 +2189,6 @@ truedivide_timedelta_int(PyDateTime_Delta *delta, PyObject *i)
     if (pyus_out == NULL)
         return NULL;
 
-    datetime_state *st = find_module_state_by_def(Py_TYPE(delta));
     result = microseconds_to_delta(st, pyus_out);
     Py_DECREF(pyus_out);
 
@@ -2183,7 +2199,7 @@ static PyObject *
 delta_add(PyObject *left, PyObject *right)
 {
     PyObject *result = Py_NotImplemented;
-    datetime_state *st = find_module_state_by_def(Py_TYPE(left));
+    datetime_state *st = find_state_left_or_right(left, right);
 
     if (PyDelta_Check(st, left) && PyDelta_Check(st, right)) {
         /* delta + delta */
@@ -2247,7 +2263,7 @@ static PyObject *
 delta_subtract(PyObject *left, PyObject *right)
 {
     PyObject *result = Py_NotImplemented;
-    datetime_state *st = find_module_state_by_def(Py_TYPE(left));
+    datetime_state *st = find_state_left_or_right(left, right);
 
     if (PyDelta_Check(st, left) && PyDelta_Check(st, right)) {
         /* delta - delta */
@@ -2311,23 +2327,23 @@ static PyObject *
 delta_multiply(PyObject *left, PyObject *right)
 {
     PyObject *result = Py_NotImplemented;
-    datetime_state *st = find_module_state_by_def(Py_TYPE(left));
+    datetime_state *st = find_state_left_or_right(left, right);
 
     if (PyDelta_Check(st, left)) {
         /* delta * ??? */
         if (PyLong_Check(right))
-            result = multiply_int_timedelta(right,
+            result = multiply_int_timedelta(st, right,
                             (PyDateTime_Delta *) left);
         else if (PyFloat_Check(right))
             result = multiply_truedivide_timedelta_float(
-                            (PyDateTime_Delta *) left, right, 0);
+                            st, (PyDateTime_Delta *) left, right, 0);
     }
     else if (PyLong_Check(left))
-        result = multiply_int_timedelta(left,
+        result = multiply_int_timedelta(st, left,
                         (PyDateTime_Delta *) right);
     else if (PyFloat_Check(left))
         result = multiply_truedivide_timedelta_float(
-                        (PyDateTime_Delta *) right, left, 0);
+                        st, (PyDateTime_Delta *) right, left, 0);
 
     if (result == Py_NotImplemented)
         Py_INCREF(result);
@@ -2338,16 +2354,16 @@ static PyObject *
 delta_divide(PyObject *left, PyObject *right)
 {
     PyObject *result = Py_NotImplemented;
-    datetime_state *st = find_module_state_by_def(Py_TYPE(left));
+    datetime_state *st = find_state_left_or_right(left, right);
 
     if (PyDelta_Check(st, left)) {
         /* delta * ??? */
         if (PyLong_Check(right))
-            result = divide_timedelta_int(
+            result = divide_timedelta_int(st,
                             (PyDateTime_Delta *)left,
                             right);
         else if (PyDelta_Check(st, right))
-            result = divide_timedelta_timedelta(
+            result = divide_timedelta_timedelta(st,
                             (PyDateTime_Delta *)left,
                             (PyDateTime_Delta *)right);
     }
@@ -2361,18 +2377,18 @@ static PyObject *
 delta_truedivide(PyObject *left, PyObject *right)
 {
     PyObject *result = Py_NotImplemented;
-    datetime_state *st = find_module_state_by_def(Py_TYPE(left));
+    datetime_state *st = find_state_left_or_right(left, right);
 
     if (PyDelta_Check(st, left)) {
         if (PyDelta_Check(st, right))
-            result = truedivide_timedelta_timedelta(
+            result = truedivide_timedelta_timedelta(st,
                             (PyDateTime_Delta *)left,
                             (PyDateTime_Delta *)right);
         else if (PyFloat_Check(right))
             result = multiply_truedivide_timedelta_float(
-                            (PyDateTime_Delta *)left, right, 1);
+                            st, (PyDateTime_Delta *)left, right, 1);
         else if (PyLong_Check(right))
-            result = truedivide_timedelta_int(
+            result = truedivide_timedelta_int(st,
                             (PyDateTime_Delta *)left, right);
     }
 
@@ -2393,11 +2409,11 @@ delta_remainder(PyObject *left, PyObject *right)
     if (!PyDelta_Check(st, left) || !PyDelta_Check(st, right))
         Py_RETURN_NOTIMPLEMENTED;
 
-    pyus_left = delta_to_microseconds((PyDateTime_Delta *)left);
+    pyus_left = delta_to_microseconds(st, (PyDateTime_Delta *)left);
     if (pyus_left == NULL)
         return NULL;
 
-    pyus_right = delta_to_microseconds((PyDateTime_Delta *)right);
+    pyus_right = delta_to_microseconds(st, (PyDateTime_Delta *)right);
     if (pyus_right == NULL) {
         Py_DECREF(pyus_left);
         return NULL;
@@ -2430,11 +2446,11 @@ delta_divmod(PyObject *left, PyObject *right)
     if (!PyDelta_Check(st, left) || !PyDelta_Check(st, right))
         Py_RETURN_NOTIMPLEMENTED;
 
-    pyus_left = delta_to_microseconds((PyDateTime_Delta *)left);
+    pyus_left = delta_to_microseconds(st, (PyDateTime_Delta *)left);
     if (pyus_left == NULL)
         return NULL;
 
-    pyus_right = delta_to_microseconds((PyDateTime_Delta *)right);
+    pyus_right = delta_to_microseconds(st, (PyDateTime_Delta *)right);
     if (pyus_right == NULL) {
         Py_DECREF(pyus_left);
         return NULL;
@@ -2763,11 +2779,11 @@ delta_total_seconds(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *total_seconds;
     PyObject *total_microseconds;
 
-    total_microseconds = delta_to_microseconds((PyDateTime_Delta *)self);
+    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    total_microseconds = delta_to_microseconds(st, (PyDateTime_Delta *)self);
     if (total_microseconds == NULL)
         return NULL;
 
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
     total_seconds = PyNumber_TrueDivide(total_microseconds, st->us_per_second);
 
     Py_DECREF(total_microseconds);
@@ -3180,7 +3196,7 @@ add_date_timedelta(PyDateTime_Date *date, PyDateTime_Delta *delta, int negate)
 static PyObject *
 date_add(PyObject *left, PyObject *right)
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(left));
+    datetime_state *st = find_state_left_or_right(left, right);
     if (PyDateTime_Check(st, left) || PyDateTime_Check(st, right))
         Py_RETURN_NOTIMPLEMENTED;
 
@@ -3208,7 +3224,7 @@ date_add(PyObject *left, PyObject *right)
 static PyObject *
 date_subtract(PyObject *left, PyObject *right)
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(left));
+    datetime_state *st = find_state_left_or_right(left, right);
     if (PyDateTime_Check(st, left) || PyDateTime_Check(st, right))
         Py_RETURN_NOTIMPLEMENTED;
 
@@ -3804,7 +3820,7 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
         goto Fail;
 
     Py_DECREF(dst);
-    dst = call_dst(GET_DT_TZINFO(dt), result);
+    dst = call_dst(st, GET_DT_TZINFO(dt), result);
     if (dst == NULL)
         goto Fail;
     if (dst == Py_None)
@@ -4358,18 +4374,24 @@ time_dealloc(PyDateTime_Time *self)
 
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
-time_utcoffset(PyObject *self, PyObject *unused) {
-    return call_utcoffset(GET_TIME_TZINFO(self), Py_None);
+time_utcoffset(PyObject *self, PyObject *unused)
+{
+    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    return call_utcoffset(st, GET_TIME_TZINFO(self), Py_None);
 }
 
 static PyObject *
-time_dst(PyObject *self, PyObject *unused) {
-    return call_dst(GET_TIME_TZINFO(self), Py_None);
+time_dst(PyObject *self, PyObject *unused)
+{
+    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    return call_dst(st, GET_TIME_TZINFO(self), Py_None);
 }
 
 static PyObject *
-time_tzname(PyDateTime_Time *self, PyObject *unused) {
-    return call_tzname(GET_TIME_TZINFO(self), Py_None);
+time_tzname(PyDateTime_Time *self, PyObject *unused)
+{
+    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    return call_tzname(st, GET_TIME_TZINFO(self), Py_None);
 }
 
 /*
@@ -4464,7 +4486,8 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
         return result;
 
     /* We need to append the UTC offset. */
-    if (format_utcoffset(buf, sizeof(buf), ":", self->tzinfo,
+    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    if (format_utcoffset(st, buf, sizeof(buf), ":", self->tzinfo,
                          Py_None) < 0) {
         Py_DECREF(result);
         return NULL;
@@ -4830,7 +4853,7 @@ static PyType_Slot time_slots[] = {
     {Py_tp_richcompare, time_richcompare},
     {Py_tp_methods, time_methods},
     {Py_tp_getset, time_getset},
-    {Py_tp_alloc, time_alloc},
+    // {Py_tp_alloc, time_alloc}, FIXME
     {Py_tp_new, time_new},
     {0, NULL},
 };
@@ -5591,18 +5614,24 @@ datetime_dealloc(PyDateTime_DateTime *self)
 
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
-datetime_utcoffset(PyObject *self, PyObject *unused) {
-    return call_utcoffset(GET_DT_TZINFO(self), self);
+datetime_utcoffset(PyObject *self, PyObject *unused)
+{
+    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    return call_utcoffset(st, GET_DT_TZINFO(self), self);
 }
 
 static PyObject *
-datetime_dst(PyObject *self, PyObject *unused) {
-    return call_dst(GET_DT_TZINFO(self), self);
+datetime_dst(PyObject *self, PyObject *unused)
+{
+    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    return call_dst(st, GET_DT_TZINFO(self), self);
 }
 
 static PyObject *
-datetime_tzname(PyObject *self, PyObject *unused) {
-    return call_tzname(GET_DT_TZINFO(self), self);
+datetime_tzname(PyObject *self, PyObject *unused)
+{
+    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    return call_tzname(st, GET_DT_TZINFO(self), self);
 }
 
 /*
@@ -5643,7 +5672,7 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
 static PyObject *
 datetime_add(PyObject *left, PyObject *right)
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(left));
+    datetime_state *st = find_state_left_or_right(left, right);
     if (PyDateTime_Check(st, left)) {
         /* datetime + ??? */
         if (PyDelta_Check(st, right))
@@ -5666,7 +5695,7 @@ static PyObject *
 datetime_subtract(PyObject *left, PyObject *right)
 {
     PyObject *result = Py_NotImplemented;
-    datetime_state *st = find_module_state_by_def(Py_TYPE(left));
+    datetime_state *st = find_state_left_or_right(left, right);
     if (PyDateTime_Check(st, left)) {
         /* datetime - ??? */
         if (PyDateTime_Check(st, right)) {
@@ -5858,7 +5887,8 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         return result;
 
     /* We need to append the UTC offset. */
-    if (format_utcoffset(buffer, sizeof(buffer), ":", self->tzinfo,
+    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    if (format_utcoffset(st, buffer, sizeof(buffer), ":", self->tzinfo,
                          (PyObject *)self) < 0) {
         Py_DECREF(result);
         return NULL;
@@ -6220,7 +6250,7 @@ local_timezone(PyDateTime_DateTime *utc_time)
         Py_DECREF(delta);
         return NULL;
     }
-    seconds = divide_timedelta_timedelta((PyDateTime_Delta *)delta,
+    seconds = divide_timedelta_timedelta(st, (PyDateTime_Delta *)delta,
                                          (PyDateTime_Delta *)one_second);
     Py_DECREF(one_second);
     Py_DECREF(delta);
@@ -6292,7 +6322,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
 
     /* Convert self to UTC. */
-    offset = call_utcoffset(self_tzinfo, (PyObject *)self);
+    offset = call_utcoffset(st, self_tzinfo, (PyObject *)self);
     Py_DECREF(self_tzinfo);
     if (offset == NULL)
         return NULL;
@@ -6364,7 +6394,8 @@ datetime_timetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
         PyObject * dst;
 
-        dst = call_dst(self->tzinfo, (PyObject *)self);
+        datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+        dst = call_dst(st, self->tzinfo, (PyObject *)self);
         if (dst == NULL)
             return NULL;
 
@@ -6511,7 +6542,8 @@ datetime_utctimetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
     }
     else {
         PyObject *offset;
-        offset = call_utcoffset(tzinfo, (PyObject *)self);
+        datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+        offset = call_utcoffset(st, tzinfo, (PyObject *)self);
         if (offset == NULL)
             return NULL;
         if (offset == Py_None) {
@@ -6686,7 +6718,7 @@ static PyType_Slot datetime_slots[] = {
     {Py_tp_richcompare, datetime_richcompare},
     {Py_tp_methods, datetime_methods},
     {Py_tp_getset, datetime_getset},
-    {Py_tp_alloc, datetime_alloc},
+    //{Py_tp_alloc, datetime_alloc}, FIXME
     {Py_tp_new, datetime_new},
 
     // Number protocol
