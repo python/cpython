@@ -24,6 +24,7 @@ import gc
 import textwrap
 import json
 import pathlib
+import resource
 from test.support.os_helper import FakePath
 
 try:
@@ -709,7 +710,6 @@ class ProcessTestCase(BaseTestCase):
     @unittest.skipUnless(fcntl and hasattr(fcntl, 'F_GETPIPE_SZ'),
                          'fcntl.F_GETPIPE_SZ required for test.')
     def test_pipesizes(self):
-        resource = import_helper.import_module('resource')
         test_pipe_r, test_pipe_w = os.pipe()
         try:
             # Get the default pipesize with F_GETPIPE_SZ

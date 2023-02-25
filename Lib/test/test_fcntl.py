@@ -6,6 +6,7 @@ import os
 import struct
 import sys
 import unittest
+import resource
 from test.support import verbose, cpython_only
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -196,7 +197,6 @@ class TestFcntl(unittest.TestCase):
         hasattr(fcntl, "F_SETPIPE_SZ") and hasattr(fcntl, "F_GETPIPE_SZ"),
         "F_SETPIPE_SZ and F_GETPIPE_SZ are not available on all platforms.")
     def test_fcntl_f_pipesize(self):
-        resource = import_module('resource')
         test_pipe_r, test_pipe_w = os.pipe()
         try:
             # Get the default pipesize with F_GETPIPE_SZ
