@@ -6789,30 +6789,42 @@ _datetime_exec(PyObject *module)
 {
     datetime_state *st = get_module_state(module);
 
-#define ADD_TYPE(mod, var, spec, base)                                  \
+#define CREATE_TYPE(mod, var, spec, base)                               \
     do {                                                                \
         var = (PyTypeObject *)PyType_FromMetaclass(NULL, mod, spec,     \
                                                    (PyObject *)base);   \
         if (var == NULL) {                                              \
             return -1;                                                  \
         }                                                               \
-        if (PyModule_AddType(mod, var) < 0) {                           \
-            return -1;                                                  \
-        }                                                               \
     } while (0)
 
-    ADD_TYPE(module, st->PyDateTime_TimeType, &time_spec, NULL);
-    ADD_TYPE(module, st->PyDateTime_TZInfoType, &tzinfo_spec, NULL);
-    ADD_TYPE(module, st->PyDateTime_TimeZoneType, &timezone_spec,
-             st->PyDateTime_TZInfoType);
-    ADD_TYPE(module, st->PyDateTime_IsoCalendarDateType, &isocal_spec,
-             &PyTuple_Type);
-    ADD_TYPE(module, st->PyDateTime_DeltaType, &delta_spec, NULL);
-    ADD_TYPE(module, st->PyDateTime_DateType, &date_spec, NULL);
-    ADD_TYPE(module, st->PyDateTime_DateTimeType, &datetime_spec,
-             st->PyDateTime_DateType);
+    CREATE_TYPE(module, st->PyDateTime_TimeType, &time_spec, NULL);
+    CREATE_TYPE(module, st->PyDateTime_TZInfoType, &tzinfo_spec, NULL);
+    CREATE_TYPE(module, st->PyDateTime_TimeZoneType, &timezone_spec,
+                st->PyDateTime_TZInfoType);
+    CREATE_TYPE(module, st->PyDateTime_IsoCalendarDateType, &isocal_spec,
+                &PyTuple_Type);
+    CREATE_TYPE(module, st->PyDateTime_DeltaType, &delta_spec, NULL);
+    CREATE_TYPE(module, st->PyDateTime_DateType, &date_spec, NULL);
+    CREATE_TYPE(module, st->PyDateTime_DateTimeType, &datetime_spec,
+                st->PyDateTime_DateType);
 
-#undef ADD_TYPE
+#undef CREATE_TYPE
+
+    PyTypeObject *types[] = {
+        st->PyDateTime_DateType,
+        st->PyDateTime_DateTimeType,
+        st->PyDateTime_TimeType,
+        st->PyDateTime_DeltaType,
+        st->PyDateTime_TZInfoType,
+        st->PyDateTime_TimeZoneType,
+    };
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
+        if (PyModule_AddType(module, types[i]) < 0) {
+            return -1;
+        }
+    }
 
 #define DATETIME_ADD_MACRO(dict, c, value_expr)         \
     do {                                                \
