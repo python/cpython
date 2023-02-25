@@ -2804,26 +2804,6 @@ Introspection helpers
 
    .. versionadded:: 3.8
 
-.. function:: get_orig_bases(tp, /)
-
-    Returns the objects in the bases list in the class's definition before
-    they were modified by ``__mro_entries__``. This is useful for
-    introspecting ``Generic``\s.
-
-    Examples::
-
-        T = TypeVar("T")
-
-        class Foo(Generic[T]): ...
-
-        class Bar(Foo[int], float): ...
-
-        get_orig_bases(Foo) == (Generic[T],)
-        get_orig_bases(Bar) == (Foo[int], float)
-        get_orig_bases(int) == None
-
-    .. versionadded:: 3.12
-
 .. function:: get_orig_class(tp, /)
 
     Returns the ``GenericAlias`` object that was instantiated to create ``tp``.
@@ -2840,8 +2820,8 @@ Introspection helpers
 
     .. warning::
 
-        This function will always return ``None`` inside of the class initalisation
-        process.
+        This function will always return ``None`` inside of the class's
+        instancation process.
 
     .. versionadded:: 3.12
 

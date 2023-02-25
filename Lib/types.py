@@ -143,6 +143,28 @@ def _calculate_meta(meta, bases):
                         "of the metaclasses of all its bases")
     return winner
 
+
+def get_orig_bases(tp, /) -> tuple[type, ...] | None:
+    """Get the __orig_bases__ (see PEP 560) of a class.
+
+    Examples::
+
+        class Foo(Generic[T]): ...
+
+        class Bar(Foo[int]): ...
+
+        get_orig_bases(Foo) == Generic[T]
+        get_orig_bases(Bar) == Foo[int]
+        get_orig_bases(int) == None
+    """
+    if isinstance(tp, type):
+        try:
+            return tp.__orig_bases__
+        except AttributeError:
+            pass
+    return None
+
+
 class DynamicClassAttribute:
     """Route attribute access on a class to __getattr__.
 

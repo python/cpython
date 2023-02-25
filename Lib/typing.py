@@ -127,7 +127,6 @@ __all__ = [
     'final',
     'get_args',
     'get_origin',
-    'get_orig_bases',
     'get_orig_class',
     'get_overloads',
     'get_type_hints',
@@ -2446,27 +2445,6 @@ def get_args(tp):
     if isinstance(tp, types.UnionType):
         return tp.__args__
     return ()
-
-
-def get_orig_bases(tp: "Any", /) -> tuple[type["Any"], ...] | None:
-    """Get the __orig_bases__ (see PEP 560) of a class.
-
-    Examples::
-
-        class Foo(Generic[T]): ...
-
-        class Bar(Foo[int]): ...
-
-        get_orig_bases(Foo) == Generic[T]
-        get_orig_bases(Bar) == Foo[int]
-        get_orig_bases(int) == None
-    """
-    if isinstance(tp, type):
-        try:
-            return tp.__orig_bases__
-        except AttributeError:
-            pass
-    return None
 
 
 def get_orig_class(tp: "Any", /) -> GenericAlias | None:

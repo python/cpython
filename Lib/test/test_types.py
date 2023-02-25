@@ -1360,6 +1360,20 @@ class ClassCreationTests(unittest.TestCase):
         D = types.new_class('D', (A(), C, B()), {})
         self.assertEqual(D.__bases__, (A1, A2, A3, C, B1, B2))
 
+    def test_get_orig_bases(self):
+        T = typing.TypeVar('T')
+        class A: pass
+        class B(object): pass
+        class C(typing.Generic[T]): pass
+        class D(C[int]): pass
+        class E(C[str], float): pass
+        self.assertIsNone(types.get_orig_bases(A))
+        self.assertIsNone(types.get_orig_bases(B))
+        self.assertEqual(types.get_orig_bases(C), (typing.Generic[T],))
+        self.assertEqual(types.get_orig_bases(D), (C[int],))
+        self.assertIsNone(types.get_orig_bases(int))
+        self.assertEqual(types.get_orig_bases(E), (C[str], float))
+
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
         # Basic test of metaclass derivation

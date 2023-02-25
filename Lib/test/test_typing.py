@@ -22,7 +22,7 @@ from typing import Callable
 from typing import Generic, ClassVar, Final, final, Protocol
 from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
-from typing import get_origin, get_args, get_orig_bases, get_orig_class
+from typing import get_origin, get_args, get_orig_class
 from typing import is_typeddict
 from typing import reveal_type
 from typing import dataclass_transform
@@ -5366,20 +5366,6 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIsNone(get_orig_class(E()))
         self.assertIsNone(get_orig_class(list[int]()))
         self.assertIsNone(get_orig_class(int))
-
-    def test_get_orig_bases(self):
-        T = TypeVar('T')
-        class A: pass
-        class B(object): pass
-        class C(Generic[T]): pass
-        class D(C[int]): pass
-        class E(C[str], float): pass
-        self.assertIsNone(get_orig_bases(A))
-        self.assertIsNone(get_orig_bases(B))
-        self.assertEqual(get_orig_bases(C), (Generic[T],))
-        self.assertEqual(get_orig_bases(D), (C[int],))
-        self.assertIsNone(get_orig_bases(int))
-        self.assertEqual(get_orig_bases(E), (C[str], float))
 
 
 class CollectionsAbcTests(BaseTestCase):

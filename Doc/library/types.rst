@@ -86,6 +86,28 @@ Dynamic Type Creation
 
    :pep:`560` - Core support for typing module and generic types
 
+.. function:: get_orig_bases(tp, /)
+
+    Returns the objects in the bases list in the class's definition before
+    they were modified by ``__mro_entries__``. This is useful for
+    introspecting ``Generic``\s.
+
+    Examples::
+
+        from typing import TypeVar, Generic
+
+        T = TypeVar("T")
+
+        class Foo(Generic[T]): ...
+
+        class Bar(Foo[int], float): ...
+
+        get_orig_bases(Foo) == (Generic[T],)
+        get_orig_bases(Bar) == (Foo[int], float)
+        get_orig_bases(int) == None
+
+    .. versionadded:: 3.12
+
 
 Standard Interpreter Types
 --------------------------
