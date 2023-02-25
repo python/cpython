@@ -2821,7 +2821,7 @@ Introspection helpers
     .. warning::
 
         This function will always return ``None`` inside of the class's
-        instancation process.
+        instantiation process.
 
     .. versionadded:: 3.12
 
