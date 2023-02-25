@@ -77,6 +77,10 @@
 #  include <process.h>            // getpid()
 #endif
 
+#ifdef MS_WINDOWS_NON_DESKTOP
+#  include <windows.h>
+#endif
+
 /* Period parameters -- These are all magic.  Don't change. */
 #define N 624
 #define M 397

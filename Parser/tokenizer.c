@@ -16,6 +16,13 @@
 #include "fileobject.h"
 #include "abstract.h"
 
+/* the deprecated posix apis are not available on xbox */
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#  define fdopen _fdopen
+#  define lseek _lseek
+#  define fileno _fileno
+#endif
+
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
 

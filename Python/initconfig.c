@@ -21,6 +21,9 @@
 #  ifdef HAVE_FCNTL_H
 #    include <fcntl.h>            // O_BINARY
 #  endif
+#  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#    define fileno _fileno
+#  endif
 #endif
 
 /* --- Command line options --------------------------------------- */

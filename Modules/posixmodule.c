@@ -324,7 +324,7 @@ corresponding Unix manual entries for more information on calls.");
 #  if defined(TIOCGWINSZ)
 #    define TERMSIZE_USE_IOCTL
 #  endif
-#endif /* MS_WINDOWS */
+#endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
 
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
@@ -347,6 +347,12 @@ corresponding Unix manual entries for more information on calls.");
 #  define HAVE_PIPE       1
 #  define HAVE_FSYNC      1
 #  define fsync _commit
+#  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#    define dup2 _dup2
+#    define umask _umask
+#    define close _close
+#    define isatty _isatty
+#  endif
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 /*[clinic input]

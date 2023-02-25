@@ -12,6 +12,10 @@
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #  include <pathcch.h>
+
+#  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#    define wcsicmp _wcsicmp
+#  endif
 #endif
 
 #ifdef __APPLE__

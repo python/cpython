@@ -40,6 +40,17 @@ extern int winerror_to_errno(int);
 int _Py_open_cloexec_works = -1;
 #endif
 
+/* the deprecated posix apis are not available on xbox */
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#  define dup _dup
+#  define open _open
+#  define read _read
+#  define write _write
+#  define isatty _isatty
+#  define close _close
+#  define fileno _fileno
+#endif
+
 // The value must be the same in unicodeobject.c.
 #define MAX_UNICODE 0x10ffff
 

@@ -13,8 +13,14 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_pystate.h"   // _PyThreadState_GET()
 #ifdef MS_WINDOWS
+#  ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN
+#  endif
 #  include "windows.h"
+#  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#    define isatty _isatty
+#    define fileno _fileno
+#  endif
 #endif /* MS_WINDOWS */
 
 

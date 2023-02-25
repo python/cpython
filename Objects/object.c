@@ -22,6 +22,11 @@
 #  error "Py_LIMITED_API macro must not be defined"
 #endif
 
+/* the deprecated posix apis are not available on xbox */
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#  define fileno _fileno
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

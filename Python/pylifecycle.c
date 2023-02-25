@@ -56,6 +56,12 @@ extern void _PyIO_Fini(void);
 #  undef BYTE
 #endif
 
+/* the deprecated posix apis are not available on xbox */
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#  define isatty _isatty
+#  define fileno _fileno
+#endif
+
 #define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
 
 
