@@ -665,6 +665,9 @@ class SinglephaseInitTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if '-R' in sys.argv or '--huntrleaks' in sys.argv:
+            # https://github.com/python/cpython/issues/102251
+            raise unittest.SkipTest('unresolved refleaks (see gh-102251)')
         fileobj, filename, _ = imp.find_module(cls.NAME)
         fileobj.close()
         cls.FILE = filename
