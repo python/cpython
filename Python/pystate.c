@@ -396,11 +396,19 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         _PyErr_Clear(tstate);
     }
 
+    // Clear the current/main thread state last.
     HEAD_LOCK(runtime);
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
-        PyThreadState_Clear(p);
-    }
+    PyThreadState *p = interp->threads.head;
     HEAD_UNLOCK(runtime);
+    while (p != NULL) {
+        // See https://github.com/python/cpython/issues/102126
+        // Must be called without HEAD_LOCK held as it can deadlock
+        // if any finalizer tries to acquire that lock.
+        PyThreadState_Clear(p);
+        HEAD_LOCK(runtime);
+        p = p->next;
+        HEAD_UNLOCK(runtime);
+    }
 
     Py_CLEAR(interp->audit_hooks);
 
