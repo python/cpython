@@ -41,7 +41,7 @@ Data members:
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 /* the deprecated posix apis are not available on xbox */
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
 #  define fileno _fileno
 #endif
 #endif /* MS_WINDOWS */

@@ -13,7 +13,7 @@
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #  include <pathcch.h>
 
-#  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
 #    define wcsicmp _wcsicmp
 #  endif
 #endif
@@ -232,13 +232,13 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
     if (path) {
 #ifdef MS_WINDOWS
         const wchar_t *ext;
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
         ext = (cchPath >= 4) ? path + cchPath - 4 : NULL;
 #endif
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
             (ext != NULL) &&
 #else
             SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&

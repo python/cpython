@@ -6,7 +6,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 
 /* the deprecated posix apis are not available on xbox */
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
 #  define isatty _isatty
 #  define fileno _fileno
 #endif
