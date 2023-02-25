@@ -19,19 +19,76 @@ static inline int IS_SCOPE_EXIT_OPCODE(int opcode);
 
 ////////// TYPE CONTEXT FUNCTIONS
 
-static PyTypeObject **
-initialize_type_context(PyCodeObject *co, int *type_context_len) {
+static _PyTier2TypeContext *
+initialize_type_context(const PyCodeObject *co) {
+
     int nlocals = co->co_nlocals;
-    PyTypeObject **type_context = PyMem_Malloc(nlocals * sizeof(PyTypeObject *));
-    if (type_context == NULL) {
+    int nstack = co->co_stacksize;
+
+    PyTypeObject **type_locals = PyMem_Malloc(nlocals * sizeof(PyTypeObject *));
+    if (type_locals == NULL) {
         return NULL;
     }
-    // Initialize to uknown type.
-    for (int i = 0; i < nlocals; i++) {
-        type_context[i] = NULL;
+    PyTypeObject **type_stack = PyMem_Malloc(nstack * sizeof(PyTypeObject *));
+    if (type_stack == NULL) {
+        PyMem_Free(type_locals);
+        return NULL;
     }
-    *type_context_len = nlocals;
+
+    // Initialize to unknown type.
+    for (int i = 0; i < nlocals; i++) type_locals[i] = NULL;
+    for (int i = 0; i < nstack; i++) type_stack[i] = NULL;
+
+    _PyTier2TypeContext *type_context = PyMem_Malloc(sizeof(_PyTier2TypeContext));
+    if (type_context == NULL) {
+        PyMem_Free(type_locals);
+        PyMem_Free(type_stack);
+        return NULL;
+    }
+    type_context->type_locals_len = nlocals;
+    type_context->type_stack_len = nstack;
+    type_context->type_locals = type_locals;
+    type_context->type_stack = type_stack;
     return type_context;
+}
+
+static _PyTier2TypeContext *
+_PyTier2TypeContext_copy(const _PyTier2TypeContext* type_context) {
+
+    int nlocals = type_context->type_locals_len;
+    int nstack = type_context->type_stack_len;
+
+    PyTypeObject** type_locals = PyMem_Malloc(nlocals * sizeof(PyTypeObject*));
+    if (type_locals == NULL) {
+        return NULL;
+    }
+    PyTypeObject** type_stack = PyMem_Malloc(nstack * sizeof(PyTypeObject*));
+    if (type_stack == NULL) {
+        PyMem_Free(type_locals);
+        return NULL;
+    }
+
+    memcpy(type_locals, type_context->type_locals, nlocals * sizeof(PyTypeObject*));
+    memcpy(type_stack, type_context->type_stack, nstack * sizeof(PyTypeObject*));
+
+    _PyTier2TypeContext* new_type_context = PyMem_Malloc(sizeof(_PyTier2TypeContext));
+    if (new_type_context == NULL) {
+        PyMem_Free(type_locals);
+        PyMem_Free(type_stack);
+        return NULL;
+    }
+    new_type_context->type_locals_len = nlocals;
+    new_type_context->type_stack_len = nstack;
+    new_type_context->type_locals = type_locals;
+    new_type_context->type_stack = type_stack;
+    return new_type_context;
+}
+
+static void
+_PyTier2TypeContext_free(_PyTier2TypeContext* type_context) {
+    PyMem_Free(type_context->type_locals);
+    PyMem_Free(type_context->type_stack);
+    PyMem_Free(type_context);
 }
 
 ////////// Utility functions
@@ -108,18 +165,18 @@ _PyTier2_BBSpaceCheckAndReallocIfNeeded(PyCodeObject *co, Py_ssize_t space_reque
 
 static _PyTier2BBMetadata *
 allocate_bb_metadata(PyCodeObject *co, _Py_CODEUNIT *tier2_start,
-    _Py_CODEUNIT *tier1_end, int type_context_len,
-    PyTypeObject **type_context)
+    _Py_CODEUNIT *tier1_end,
+    _PyTier2TypeContext *type_context)
 {
     _PyTier2BBMetadata *metadata = PyMem_Malloc(sizeof(_PyTier2BBMetadata));
     if (metadata == NULL) {
         return NULL;
+
     }
 
     metadata->tier2_start = tier2_start;
     metadata->tier1_end = tier1_end;
     metadata->type_context = type_context;
-    metadata->type_context_len = type_context_len;
     return metadata;
 }
 
@@ -161,11 +218,11 @@ write_bb_metadata(PyCodeObject *co, _PyTier2BBMetadata *metadata)
 
 static _PyTier2BBMetadata *
 _PyTier2_AllocateBBMetaData(PyCodeObject *co, _Py_CODEUNIT *tier2_start,
-    _Py_CODEUNIT *tier1_end, int type_context_len,
-    PyTypeObject **type_context)
+    _Py_CODEUNIT *tier1_end,
+    _PyTier2TypeContext *type_context)
 {
     _PyTier2BBMetadata *meta = allocate_bb_metadata(co,
-        tier2_start, tier1_end, type_context_len, type_context);
+        tier2_start, tier1_end, type_context);
     if (meta == NULL) {
         return NULL;
     }
@@ -605,7 +662,8 @@ add_metadata_to_jump_2d_array(_PyTier2Info *t2_info, _PyTier2BBMetadata *meta,
 _PyTier2BBMetadata *
 _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     _Py_CODEUNIT *tier1_start,
-    int n_typecontext, PyTypeObject **type_context)
+    // Const qualifier as this function makes a copy of the type_context
+    const _PyTier2TypeContext *type_context)
 {
 #define END() goto end;
 #define JUMPBY(x) i += x + 1; continue;
@@ -624,11 +682,10 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     // 2. If there's a type guard.
 
     // Make a copy of the type context
-    PyTypeObject **type_context_copy = PyMem_Malloc(n_typecontext * sizeof(PyTypeObject *));
+    _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_copy(type_context);
     if (type_context_copy == NULL) {
         return NULL;
     }
-    memcpy(type_context_copy, type_context, n_typecontext * sizeof(PyTypeObject *));
 
     _PyTier2BBMetadata *meta = NULL;
     _PyTier2BBMetadata *temp_meta = NULL;
@@ -636,7 +693,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     _PyTier2Info *t2_info = co->_tier2_info;
     _Py_CODEUNIT *t2_start = (_Py_CODEUNIT *)(((char *)bb_space->u_code) + bb_space->water_level);
     _Py_CODEUNIT *write_i = t2_start;
-    PyTypeObject **stack_pointer = co->_tier2_info->types_stack;
+    PyTypeObject **stack_pointer = type_context_copy->type_stack;
     int tos = -1;
 
     // For handling of backwards jumps
@@ -655,9 +712,9 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
 
         // Just because an instruction requires a guard doesn't mean it's the end of a BB.
         // We need to check whether we can eliminate the guard based on the current type context.
-        int how_many_guards = 0;
-        _Py_CODEUNIT guard_instr;
-        _Py_CODEUNIT action;
+        // int how_many_guards = 0;
+        // _Py_CODEUNIT guard_instr;
+        // _Py_CODEUNIT action;
         
     dispatch_opcode:
         switch (opcode) {
@@ -744,7 +801,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
                 // But generate the block after that so it can fall through.
                 i--;
                 meta = _PyTier2_AllocateBBMetaData(co,
-                    t2_start, _PyCode_CODE(co) + i, n_typecontext, type_context_copy);
+                    t2_start, _PyCode_CODE(co) + i, type_context_copy);
                 if (meta == NULL) {
                     PyMem_Free(type_context_copy);
                     return NULL;
@@ -787,7 +844,7 @@ end:
     // Create the tier 2 BB
     temp_meta = _PyTier2_AllocateBBMetaData(co, t2_start,
          // + 1 because we want to start with the NEXT instruction for the scan
-         _PyCode_CODE(co) + i + 1, n_typecontext, type_context_copy);
+         _PyCode_CODE(co) + i + 1, type_context_copy);
     // We need to return the first block to enter into. If there is already a block generated
     // before us, then we use that instead of the most recent block.
     if (meta == NULL) {
@@ -943,13 +1000,6 @@ _PyTier2Info_Initialize(PyCodeObject *co)
         return NULL;
     }
 
-    // Next is to intitialize stack space for the tier 2 types meta-interpretr.
-    PyTypeObject **types_stack = PyMem_Malloc(co->co_stacksize * sizeof(PyObject *));
-    if (types_stack == NULL) {
-        PyMem_Free(t2_info);
-        return NULL;
-    }
-    t2_info->types_stack = types_stack;
     t2_info->backward_jump_count = 0;
     t2_info->backward_jump_offsets = NULL;
 
@@ -962,7 +1012,6 @@ _PyTier2Info_Initialize(PyCodeObject *co)
     _PyTier2BBMetadata **bb_data = PyMem_Malloc(bb_data_len * sizeof(_PyTier2Info *));
     if (bb_data == NULL) {
         PyMem_Free(t2_info);
-        PyMem_Free(types_stack);
         return NULL;
     }
     t2_info->bb_data_len = (int)bb_data_len;
@@ -1054,14 +1103,13 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 
     t2_info->_bb_space = bb_space;
 
-    int type_context_len = 0;
-    PyTypeObject **type_context = initialize_type_context(co, &type_context_len);
+    _PyTier2TypeContext *type_context = initialize_type_context(co);
     if (type_context == NULL) {
         goto cleanup;
     }
     _PyTier2BBMetadata *meta = _PyTier2_Code_DetectAndEmitBB(
         co, bb_space,
-        _PyCode_CODE(co), type_context_len, type_context);
+        _PyCode_CODE(co), type_context);
     if (meta == NULL) {
         PyMem_Free(type_context);
         goto cleanup;
@@ -1128,13 +1176,10 @@ _PyTier2_GenerateNextBB(_PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
         // DEOPTIMIZE TO TIER 1?
         return NULL;
     }
-    int type_context_len = 0;
-    PyTypeObject **type_context = initialize_type_context(frame->f_code, &type_context_len);
-    if (type_context == NULL) {
-        return NULL;
-    }
+    // Get type_context of previous BB
+    _PyTier2TypeContext *type_context = meta->type_context;
     _PyTier2BBMetadata *metadata = _PyTier2_Code_DetectAndEmitBB(
-        frame->f_code, space, tier1_end, type_context_len,
+        frame->f_code, space, tier1_end,
         type_context);
     if (metadata == NULL) {
         PyMem_Free(type_context);
@@ -1163,11 +1208,9 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id, int j
         // DEOPTIMIZE TO TIER 1?
         return NULL;
     }
-    int type_context_len = 0;
-    PyTypeObject **type_context = initialize_type_context(frame->f_code, &type_context_len);
-    if (type_context == NULL) {
-        return NULL;
-    }
+
+    // Get type_context of previous BB
+    _PyTier2TypeContext* type_context = meta->type_context;
     // Now, find the matching BB
     _PyTier2Info *t2_info = co->_tier2_info;
     int jump_offset = (int)(tier1_jump_target - _PyCode_CODE(co));

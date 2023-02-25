@@ -1690,10 +1690,7 @@ code_tier2_fini(PyCodeObject *co)
         PyMem_Free(t2_info->backward_jump_offsets);
         t2_info->backward_jump_offsets = NULL;
     }
-    if (t2_info->types_stack != NULL) {
-        PyMem_Free(t2_info->types_stack);
-        t2_info->types_stack = NULL;
-    }
+
     t2_info->backward_jump_count = 0;
     if (t2_info->bb_data != NULL && t2_info->bb_data_len > 0) {
         PyMem_Free(t2_info->bb_data);
