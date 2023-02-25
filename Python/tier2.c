@@ -259,6 +259,7 @@ IS_JREL_OPCODE(int opcode)
     case SEND:
     case POP_JUMP_IF_NOT_NONE:
     case POP_JUMP_IF_NONE:
+    case JUMP_BACKWARD_QUICK:
     case JUMP_BACKWARD_NO_INTERRUPT:
     case JUMP_BACKWARD:
         return 1;
@@ -271,7 +272,9 @@ IS_JREL_OPCODE(int opcode)
 static inline int
 IS_JUMP_BACKWARDS_OPCODE(int opcode)
 {
-    return opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD;
+    return opcode == JUMP_BACKWARD_NO_INTERRUPT ||
+        opcode == JUMP_BACKWARD ||
+        opcode == JUMP_BACKWARD_QUICK;
 }
 
 
@@ -393,7 +396,7 @@ BINARY_OP_RESULT_TYPE(PyCodeObject *co, _Py_CODEUNIT *instr, int n_typecontext,
             if (lhs_type == &PyLong_Type) {
                 if (rhs_type == &PyLong_Type) {
                     *how_many_guards = 0;
-                    action->opcode = BINARY_OP_ADD_INT_REST;
+                    action->op.code = BINARY_OP_ADD_INT_REST;
                     return &PyLong_Type;
                 }
                 //// Right side unknown. Emit single check.
@@ -430,7 +433,7 @@ emit_type_guard(_Py_CODEUNIT *write_curr, _Py_CODEUNIT guard, int bb_id)
     //write_curr->oparg = 0;
     //write_curr++;
     _py_set_opcode(write_curr, BB_BRANCH);
-    write_curr->oparg = 0;
+    write_curr->op.arg = 0;
     write_curr++;
     _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
     write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -447,6 +450,7 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
     int oparg = _Py_OPARG(branch);
     // @TODO handle JUMP_BACKWARDS and JUMP_BACKWARDS_NO_INTERRUPT
     switch (_PyOpcode_Deopt[_Py_OPCODE(branch)]) {
+    case JUMP_BACKWARD_QUICK:
     case JUMP_BACKWARD:
         // The initial backwards jump needs to find the right basic block.
         // Subsequent jumps don't need to check this anymore. They can just
@@ -492,12 +496,12 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
 #endif
         // Just in case
         _py_set_opcode(write_curr, EXTENDED_ARG);
-        write_curr->oparg = 0;
+        write_curr->op.arg = 0;
         write_curr++;
         // We don't need to recalculate the backward jump, because that only needs to be done
         // when it locates the next BB in JUMP_BACKWARD_LAZY.
         _py_set_opcode(write_curr, BB_JUMP_BACKWARD_LAZY);
-        write_curr->oparg = oparg;
+        write_curr->op.arg = oparg;
         write_curr++;
         _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -514,13 +518,15 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
         // The oparg of FOR_ITER is a little special, the actual jump has to jump over
         // its own cache entries, the oparg, -1 to tell it to start generating from the
         // END_FOR. However, at runtime, we will skip this END_FOR.
-        oparg = INLINE_CACHE_ENTRIES_FOR_ITER + oparg - 1;
+        // NOTE: IF YOU CHANGE ANY OF THE INSTRUCTIONS BELOW, MAKE SURE
+        // TO UPDATE THE CALCULATION OF OPARG. THIS IS EXTREMELY IMPORTANT.
+        oparg = INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
         _py_set_opcode(write_curr, BB_TEST_ITER);
-        write_curr->oparg = oparg;
+        write_curr->op.arg = oparg;
         write_curr++;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_FOR_ITER);
         _py_set_opcode(write_curr, BB_BRANCH);
-        write_curr->oparg = oparg;
+        write_curr->op.arg = oparg;
         write_curr++;
         _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -535,10 +541,10 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
 #endif
         //_Py_CODEUNIT *start = write_curr;
         _py_set_opcode(write_curr, opcode);
-        write_curr->oparg = oparg;
+        write_curr->op.arg = oparg;
         write_curr++;
         _py_set_opcode(write_curr, BB_BRANCH);
-        write_curr->oparg = oparg & 0xFF;
+        write_curr->op.arg = oparg & 0xFF;
         write_curr++;
         _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -577,7 +583,7 @@ static inline _Py_CODEUNIT *
 emit_i(_Py_CODEUNIT *write_curr, int opcode, int oparg)
 {
     _py_set_opcode(write_curr, opcode);
-    write_curr->oparg = oparg;
+    write_curr->op.arg = oparg;
     write_curr++;
     return write_curr;
 }
@@ -666,7 +672,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     const _PyTier2TypeContext *type_context)
 {
 #define END() goto end;
-#define JUMPBY(x) i += x + 1; continue;
+#define JUMPBY(x) i += x + 1;
 #define BASIC_PUSH(v)     (*stack_pointer++ = (v))
 #define BASIC_POP()       (*--stack_pointer)
 #define DISPATCH()        write_i = emit_i(write_i, opcode, oparg); \
@@ -721,15 +727,15 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
         case RESUME:
             opcode = RESUME_QUICK;
             DISPATCH();
-        case EXTENDED_ARG:
-            write_i = emit_i(write_i, EXTENDED_ARG, _Py_OPARG(*curr));
-            curr++;
-            next_instr++;
-            i++;
-            oparg = oparg << 8 | _Py_OPARG(*curr);
-            opcode = _Py_OPCODE(*curr);
-            caches = _PyOpcode_Caches[opcode];
-            DISPATCH_GOTO();
+        //case EXTENDED_ARG:
+        //    write_i = emit_i(write_i, EXTENDED_ARG, _Py_OPARG(*curr));
+        //    curr++;
+        //    next_instr++;
+        //    i++;
+        //    oparg = oparg << 8 | _Py_OPARG(*curr);
+        //    opcode = _Py_OPCODE(*curr);
+        //    caches = _PyOpcode_Caches[opcode];
+        //    DISPATCH_GOTO();
         // We need to rewrite the pseudo-branch instruction.
         case COMPARE_AND_BRANCH:
             opcode = COMPARE_OP;
@@ -741,57 +747,18 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
             // So we tell the BB to skip over it.
             t2_start++;
             DISPATCH();
-        // FOR_ITER must be handled separately from other opcodes as it has
-        // CACHE entries following it.
-        //case LOAD_FAST:
-        //    BASIC_PUSH(type_context[oparg]);
-        //    DISPATCH();
-        //case LOAD_NAME:
-        //    BASIC_PUSH(NULL);
-        //    DISPATCH();
-        //case LOAD_CONST: {
-        //    PyTypeObject *cont = Py_TYPE(PyTuple_GET_ITEM(co->co_consts, oparg));
-        //    BASIC_PUSH(cont);
-        //    DISPATCH();
-        //}
-        //case STORE_FAST: {
-        //    type_context[oparg] = BASIC_POP();
-        //    DISPATCH();
-        //}
-        //case STORE_NAME:
-        //    BASIC_POP();
-        //    DISPATCH();
-        //case BINARY_OP: {
-        //    PyTypeObject *res = BINARY_OP_RESULT_TYPE(co, curr, n_typecontext, type_context,
-        //        &how_many_guards, &guard_instr, &action);
-        //    // We need a guard. So this is the end of the basic block.
-        //    // @TODO in the future, support multiple guards.
-        //    if (how_many_guards > 0) {
-        //        // Emit the guard
-        //        emit_type_guard(&write_i, guard_instr);
-        //        END();
-        //    }
-        //    else {
-        //        BASIC_PUSH(res);
-        //        // Don't need a guard, either is a micro op, or is a generic instruction
-        //        // No type information known. Use a generic instruction.
-        //        if (res == NULL) {
-        //            DISPATCH();
-        //        }
-        //        else {
-        //            emit_i(&write_i, _Py_OPCODE(action), 0);
-        //            break;
-        //        }
-        //    }
-        //}
         default:
             fprintf(stderr, "offset: %Id\n", curr - _PyCode_CODE(co));
             if (IS_BACKWARDS_JUMP_TARGET(co, curr)) {
+#if BB_DEBUG
                 fprintf(stderr, "Encountered a backward jump target\n");
+#endif
                 // This should be the end of another basic block, or the start of a new.
                 // Start of a new basic block, just ignore and continue.
                 if (virtual_start) {
+#if BB_DEBUG
                     fprintf(stderr, "Emitted virtual start of basic block\n");
+#endif
                     starts_with_backwards_jump_target = true;
                     backwards_jump_target_offset = curr - _PyCode_CODE(co);
                     virtual_start = false;
@@ -828,6 +795,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
                 if (opcode == JUMP_FORWARD) {
                     // JUMP offset (oparg) + current instruction + cache entries
                     JUMPBY(oparg);
+                    continue;
                 }
                 // Get the BB ID without incrementing it.
                 // AllocateBBMetaData will increment.
@@ -908,23 +876,13 @@ static int
 _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
 {
     assert(co->_tier2_info != NULL);
-    // Remove all the RESUME instructions.
-    // Count all the jump targets.
+    // Count all the backwards jump targets.
     Py_ssize_t backwards_jump_count = 0;
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT *instr_ptr = _PyCode_CODE(co) + i;
         _Py_CODEUNIT instr = *instr_ptr;
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instr)];
-        int oparg = _Py_OPARG(instr);
-        switch (opcode) {
-        case RESUME:
-            _py_set_opcode(instr_ptr, RESUME_QUICK);
-            break;
-        default:
-            // We want to track all guard instructions as
-            // jumps too.
-            backwards_jump_count += IS_JUMP_BACKWARDS_OPCODE(opcode); // + INSTR_HAS_GUARD(instr);
-        }
+        backwards_jump_count += IS_JUMP_BACKWARDS_OPCODE(opcode);
         i += _PyOpcode_Caches[opcode];
     }
 
@@ -965,7 +923,9 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
         if (IS_JUMP_BACKWARDS_OPCODE(opcode)) {
             // + 1 because it's calculated from nextinstr (see JUMPBY in ceval.c)
             _Py_CODEUNIT *target = curr + 1 - oparg;
+#if BB_DEBUG
             fprintf(stderr, "jump target opcode is %d\n", _Py_OPCODE(*target));
+#endif
             // (in terms of offset from start of co_code_adaptive)
             backward_jump_offsets[curr_i] = (int)(target - start);
             curr_i++;
@@ -1048,6 +1008,26 @@ IS_OPTIMIZABLE_OPCODE(int opcode, int oparg)
     }
 }
 
+static inline void
+replace_resume_and_jump_backwards(PyCodeObject *co)
+{
+    for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
+        _Py_CODEUNIT *instr_ptr = _PyCode_CODE(co) + i;
+        _Py_CODEUNIT instr = *instr_ptr;
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instr)];
+        int oparg = _Py_OPARG(instr);
+        switch (opcode) {
+        case RESUME:
+            _py_set_opcode(instr_ptr, RESUME_QUICK);
+            break;
+        case JUMP_BACKWARD:
+            _py_set_opcode(instr_ptr, JUMP_BACKWARD_QUICK);
+            break;
+        }
+        i += _PyOpcode_Caches[opcode];
+    }
+}
+
 // 1. Initialize whatever we need.
 // 2. Create the entry BB.
 // 3. Jump into that BB.
@@ -1055,13 +1035,14 @@ static _Py_CODEUNIT *
 _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 {
     assert(_Py_OPCODE(*(next_instr - 1)) == RESUME);
-
-    // First check for forbidden opcodes that we currently can't handle.
     PyCodeObject *co = frame->f_code;
+    // Replace all the RESUME and JUMP_BACKWARDS so that it doesn't waste time again.
+    replace_resume_and_jump_backwards(co);
     // Impossibly big.
     if ((int)Py_SIZE(co) != Py_SIZE(co)) {
         return NULL;
     }
+    // First check for forbidden opcodes that we currently can't handle.
     int optimizable = 0;
     for (Py_ssize_t curr = 0; curr < Py_SIZE(co); curr++) {
         _Py_CODEUNIT *curr_instr = _PyCode_CODE(co) + curr;
@@ -1142,7 +1123,8 @@ _PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     PyCodeObject *code = frame->f_code;
     if (code->_tier2_warmup != 0) {
         code->_tier2_warmup++;
-        if (code->_tier2_warmup == 0) {
+        if (code->_tier2_warmup >= 0) {
+            assert(code->_tier2_info == NULL);
             // If it fails, due to lack of memory or whatever,
             // just fall back to the tier 1 interpreter.
             _Py_CODEUNIT *next = _PyCode_Tier2Initialize(frame, next_instr);
@@ -1216,12 +1198,18 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id, int j
     int jump_offset = (int)(tier1_jump_target - _PyCode_CODE(co));
     int matching_bb_id = -1;
 
+#if BB_DEBUG
     fprintf(stderr, "finding jump target: %d\n", jump_offset);
+#endif
     for (int i = 0; i < t2_info->backward_jump_count; i++) {
+#if BB_DEBUG
         fprintf(stderr, "jump offset checked: %d\n", t2_info->backward_jump_offsets[i]);
+#endif
         if (t2_info->backward_jump_offsets[i] == jump_offset) {
             for (int x = 0; x < MAX_BB_VERSIONS; x++) {
+#if BB_DEBUG
                 fprintf(stderr, "jump target BB ID: %d\n",
+#endif
                     t2_info->backward_jump_target_bb_ids[i][x]);
                 // @TODO, this is where the diff function is supposed to be
                 // it will calculate the closest type context BB
@@ -1276,14 +1264,14 @@ _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target)
     assert(oparg <= 0xFFFF);
     if (requires_extended) {
         _py_set_opcode(write_curr, EXTENDED_ARG);
-        write_curr->oparg = (oparg >> 8) & 0xFF;
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
         write_curr++;
         // -1 to oparg because now the jump instruction moves one unit forward.
         oparg--;
     }
     _py_set_opcode(write_curr,
         branch == BB_BRANCH_IF_FLAG_SET ? BB_JUMP_IF_FLAG_SET : BB_JUMP_IF_FLAG_UNSET);
-    write_curr->oparg = oparg & 0xFF;
+    write_curr->op.arg = oparg & 0xFF;
     write_curr++;
     if (!requires_extended) {
         _py_set_opcode(write_curr, NOP);
@@ -1326,15 +1314,15 @@ _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *tar
     bool requires_extended = oparg > 0xFF;
     if (requires_extended) {
         _py_set_opcode(write_curr, EXTENDED_ARG);
-        write_curr->oparg = (oparg >> 8) & 0xFF;
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
         write_curr++;
     }
     else {
         _py_set_opcode(write_curr, NOP);
         write_curr++;
     }
-    _py_set_opcode(write_curr, JUMP_BACKWARD);
-    write_curr->oparg = oparg & 0xFF;
+    _py_set_opcode(write_curr, JUMP_BACKWARD_QUICK);
+    write_curr->op.arg = oparg & 0xFF;
     write_curr++;
     _py_set_opcode(write_curr, END_FOR);
     write_curr++;
