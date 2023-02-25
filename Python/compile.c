@@ -404,6 +404,22 @@ enum {
     COMPILER_SCOPE_COMPREHENSION,
 };
 
+typedef struct codegen_instr_ {
+    int ci_opcode;
+    int ci_oparg;
+    location ci_loc;
+} codegen_instr;
+
+/* A write-only stream of instructions */
+typedef struct instr_stream_ {
+    codegen_instr *s_instrs;
+    int s_allocated;
+    int s_used;
+
+    int *s_labelmap;
+    int s_labelmap_size;
+} instr_stream;
+
 typedef struct cfg_builder_ {
     /* The entryblock, at which control flow begins. All blocks of the
        CFG are reachable through the b_next links */
@@ -417,7 +433,119 @@ typedef struct cfg_builder_ {
     jump_target_label g_current_label;
     /* next free label id */
     int g_next_free_label;
+    /* instruction stream */
+    instr_stream g_instr_stream;
+    bool g_build_instr_stream;
 } cfg_builder;
+
+
+#define INITIAL_INSTR_STREAM_SIZE 100
+#define INITIAL_INSTR_STREAM_LABELS_MAP_SIZE 10
+
+static int
+instr_stream_next_inst(instr_stream *is) {
+    if (is->s_instrs == NULL) {
+        assert(is->s_allocated == 0);
+        assert(is->s_used == 0);
+        is->s_instrs = (codegen_instr *)PyObject_Calloc(
+                         INITIAL_INSTR_STREAM_SIZE, sizeof(codegen_instr));
+        if (is->s_instrs == NULL) {
+            return ERROR;
+        }
+        is->s_allocated = INITIAL_INSTR_STREAM_SIZE;
+    }
+    if (is->s_used == is->s_allocated) {
+        codegen_instr *tmp = (codegen_instr *)PyObject_Realloc(
+                         is->s_instrs, 2 * is->s_allocated * sizeof(codegen_instr));
+        if (tmp == NULL) {
+            return ERROR;
+        }
+        is->s_instrs = tmp;
+        is->s_allocated *= 2;
+    }
+    assert(is->s_used < is->s_allocated);
+    return is->s_used++;
+}
+
+static int
+instr_stream_add_label(instr_stream *is, int lbl) {
+    if (is->s_labelmap_size <= lbl) {
+        int old_size, new_size;
+        int *tmp = NULL;
+        if (is->s_labelmap == NULL) {
+            old_size = 0;
+            new_size = INITIAL_INSTR_STREAM_LABELS_MAP_SIZE;
+            if (new_size < 2 * lbl) {
+                new_size = 2 * lbl;
+            }
+            tmp = (int*)PyObject_Calloc(new_size, sizeof(int));
+        }
+        else {
+            old_size = is->s_labelmap_size;
+            new_size = 2 * lbl;
+            tmp = (int*)PyObject_Realloc(is->s_labelmap,
+                                         new_size * sizeof(int));
+        }
+        if (tmp == NULL) {
+            return ERROR;
+        }
+        for(int i = old_size; i < new_size; i++) {
+            tmp[i] = -111;  /* something weird, for debugging */
+        }
+        is->s_labelmap = tmp;
+        is->s_labelmap_size = new_size;
+    }
+    is->s_labelmap[lbl] = is->s_used; /* label refers to the next instruction */
+    return SUCCESS;
+}
+
+/* Replace jump target labels by the offset of the target instruction */
+static int
+instr_stream_normalize_labels(instr_stream *is) {
+    /* replace jump target labels by offsets */
+    for (int i=0; i < is->s_used; i++) {
+        if (HAS_TARGET(is->s_instrs[i].ci_opcode)) {
+            int lbl = is->s_instrs[i].ci_oparg;
+            assert(lbl >= 0 && lbl <= is->s_labelmap_size);
+            int offset = is->s_labelmap[lbl];
+            assert(offset >= 0 && offset < is->s_used);
+            is->s_instrs[i].ci_oparg = offset;
+        }
+    }
+    return SUCCESS;
+}
+
+
+static int cfg_builder_use_label(cfg_builder *g, jump_target_label lbl);
+static int cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc);
+
+static int
+instr_stream_to_cfg(instr_stream *is, cfg_builder *g) {
+    /* Note: there can be more than one label for the same offset */
+bool interesting = false;
+for (int i=0; i < is->s_used; i++) {
+    codegen_instr *instr = &is->s_instrs[i];
+    if (instr->ci_opcode == 257) {
+        //interesting = true;
+        //fprintf(stderr, "-----------------------\n");
+    }
+}
+    for (int i = 0; i < is->s_used; i++) {
+        for (int j=0; j < is->s_labelmap_size; j++) {
+            if (is->s_labelmap[j] == i) {
+                jump_target_label lbl = {j};
+                RETURN_IF_ERROR(cfg_builder_use_label(g, lbl));
+            }
+        }
+        codegen_instr *instr = &is->s_instrs[i];
+if (interesting) {
+    fprintf(stderr, "[%d] %d %d \n", i, instr->ci_opcode, instr->ci_oparg);
+}   
+        RETURN_IF_ERROR(cfg_builder_addop(g, instr->ci_opcode, instr->ci_oparg, instr->ci_loc));
+    }
+
+    return SUCCESS;
+}
 
 /* The following items change on entry and exit of code blocks.
    They must be saved and restored when returning to a block.
@@ -446,6 +574,7 @@ struct compiler_unit {
     Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
 
     cfg_builder u_cfg_builder;  /* The control flow graph */
+    instr_stream u_inst_stream;
 
     int u_nfblocks;
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
@@ -981,6 +1110,9 @@ cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
 static int
 cfg_builder_use_label(cfg_builder *g, jump_target_label lbl)
 {
+    if (g->g_build_instr_stream) {
+        RETURN_IF_ERROR(instr_stream_add_label(&g->g_instr_stream, lbl.id));
+    }
     g->g_current_label = lbl;
     return cfg_builder_maybe_start_new_block(g);
 }
@@ -1201,10 +1333,55 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
 }
 
 static int
+instr_stream_addop(instr_stream *is, int opcode, int oparg, location loc)
+{
+    assert(IS_WITHIN_OPCODE_RANGE(opcode));
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
+    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
+    assert(0 <= oparg && oparg < (1 << 30));
+
+    int idx = instr_stream_next_inst(is);
+    RETURN_IF_ERROR(idx);
+    codegen_instr *ci = &is->s_instrs[idx];
+    ci->ci_opcode = opcode;
+    ci->ci_oparg = oparg;
+    ci->ci_loc = loc;
+    return SUCCESS;
+}
+
+static int
+instr_stream_insert_instruction(instr_stream *is, int pos,
+                                int opcode, int oparg, location loc)
+{
+    assert(pos >= 0 && pos <= is->s_used);
+    int last_idx = instr_stream_next_inst(is);
+    RETURN_IF_ERROR(last_idx);
+    for (int i=last_idx-1; i >= pos; i--) {
+        is->s_instrs[i+1] = is->s_instrs[i];
+    }
+    codegen_instr *ci = &is->s_instrs[pos];
+    ci->ci_opcode = opcode;
+    ci->ci_oparg = oparg;
+    ci->ci_loc = loc;
+
+    /* fix the labels map */
+    for(int lbl=0; lbl < is->s_labelmap_size; lbl++) {
+        if (is->s_labelmap[lbl] >= pos) {
+            is->s_labelmap[lbl]++;
+        }
+    }
+    return SUCCESS;
+}
+
+static int
 cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
 {
+    if (g->g_build_instr_stream ) {
+        RETURN_IF_ERROR(instr_stream_addop(&g->g_instr_stream, opcode, oparg, loc));
+    }
     RETURN_IF_ERROR(cfg_builder_maybe_start_new_block(g));
-    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
+    int res =  basicblock_addop(g->g_curblock, opcode, oparg, loc);
+    return res;
 }
 
 static int
@@ -1614,6 +1791,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     cfg_builder *g = CFG_BUILDER(c);
     RETURN_IF_ERROR(cfg_builder_init(g));
+    g->g_build_instr_stream = true;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = 0;
@@ -2411,6 +2589,11 @@ wrap_in_stopiteration_handler(struct compiler *c)
     };
     RETURN_IF_ERROR(
         insert_instruction(c->u->u_cfg_builder.g_entryblock, 0, &setup));
+
+    RETURN_IF_ERROR(
+        instr_stream_insert_instruction(
+            &c->u->u_cfg_builder.g_instr_stream, 0,
+            SETUP_CLEANUP, handler.id, NO_LOCATION));
 
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
     ADDOP(c, NO_LOCATION, RETURN_VALUE);
@@ -8102,7 +8285,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyObject *consts = NULL;
     PyObject *localsplusnames = NULL;
     PyObject *localspluskinds = NULL;
-
     names = dict_keys_inorder(c->u->u_names, 0);
     if (!names) {
         goto error;
@@ -8186,7 +8368,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
 
 /* For debugging purposes only */
-#if 0
+#if 1
 static void
 dump_instr(struct instr *i)
 {
@@ -8292,6 +8474,17 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(insert_instruction(entryblock, 1, &pop_top));
+
+        RETURN_IF_ERROR(
+          instr_stream_insert_instruction(
+             &c->u->u_cfg_builder.g_instr_stream, 0,
+             RETURN_GENERATOR, 0,
+             LOCATION(c->u->u_firstlineno, c->u->u_firstlineno, -1, -1)));
+
+        RETURN_IF_ERROR(
+            instr_stream_insert_instruction(
+                &c->u->u_cfg_builder.g_instr_stream, 1,
+                POP_TOP, 0, NO_LOCATION));
     }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
@@ -8322,6 +8515,11 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
                 .i_target = NULL,
             };
             RETURN_IF_ERROR(insert_instruction(entryblock, ncellsused, &make_cell));
+            RETURN_IF_ERROR(
+                instr_stream_insert_instruction(
+                    &c->u->u_cfg_builder.g_instr_stream, ncellsused,
+                    MAKE_CELL, oldindex, NO_LOCATION));
+
             ncellsused += 1;
         }
         PyMem_RawFree(sorted);
@@ -8335,6 +8533,10 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(insert_instruction(entryblock, 0, &copy_frees));
+        RETURN_IF_ERROR(
+            instr_stream_insert_instruction(
+                &c->u->u_cfg_builder.g_instr_stream, 0,
+                COPY_FREE_VARS, nfreevars, NO_LOCATION));
     }
 
     return SUCCESS;
@@ -8511,7 +8713,7 @@ remove_redundant_jumps(cfg_builder *g) {
 }
 
 static int
-prepare_localsplus(struct compiler* c, int code_flags)
+prepare_localsplus(struct compiler* c, int code_flags, cfg_builder *newg)
 {
     assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
@@ -8526,12 +8728,20 @@ prepare_localsplus(struct compiler* c, int code_flags)
     if (cellfixedoffsets == NULL) {
         return ERROR;
     }
+    int* newcellfixedoffsets = build_cellfixedoffsets(c);
+    if (newcellfixedoffsets == NULL) {
+        return ERROR;
+    }   
 
     cfg_builder* g = CFG_BUILDER(c);
 
     // This must be called before fix_cell_offsets().
     if (insert_prefix_instructions(c, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
         PyMem_Free(cellfixedoffsets);
+        return ERROR;
+    }
+    if (insert_prefix_instructions(c, newg->g_entryblock, newcellfixedoffsets, nfreevars, code_flags)) {
+        PyMem_Free(newcellfixedoffsets);
         return ERROR;
     }
 
@@ -8541,6 +8751,11 @@ prepare_localsplus(struct compiler* c, int code_flags)
     if (numdropped < 0) {
         return ERROR;
     }
+    int newnumdropped = fix_cell_offsets(c, newg->g_entryblock, newcellfixedoffsets);
+    PyMem_Free(newcellfixedoffsets);  // At this point we're done with it.
+    newcellfixedoffsets = NULL;
+    assert(newnumdropped == numdropped);
+
     nlocalsplus -= numdropped;
     return nlocalsplus;
 }
@@ -8563,6 +8778,8 @@ assemble(struct compiler *c, int addNone)
 {
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+    PyObject *newconsts = NULL;
+    cfg_builder newg;
     struct assembler a;
     memset(&a, 0, sizeof(struct assembler));
 
@@ -8598,14 +8815,61 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Preprocessing **/
+//    if (instr_stream_normalize_labels(&g->g_instr_stream) < 0) {
+//        goto error;
+//    }
+    memset(&newg, 0, sizeof(cfg_builder));
+    if (cfg_builder_init(&newg) < 0) {
+        goto error;
+    }
+    newg.g_build_instr_stream = false;
+    if (instr_stream_to_cfg(&g->g_instr_stream, &newg) < 0) {
+        goto error;
+    }
+#if 0
+//fprintf(stderr, "--------------- OLD ---------------\n");
+int is=0, bs = 0;
+for(basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+//    dump_basicblock(b);
+    is += b->b_iused;
+    bs += 1;
+}
+//fprintf(stderr, "total: %d @ %d \n", is, bs);
+//fprintf(stderr, "--------------- NEW ---------------\n");
+int newis=0, newbs = 0;
+for(basicblock *b = newg.g_entryblock; b != NULL; b = b->b_next) {
+//    dump_basicblock(b);
+    newis += b->b_iused;
+    newbs += 1;
+}
+if (newbs != bs || newis != is) {
+    fprintf(stderr, "total: %d @ %d   (%d @ %d) \n", newis, newbs, is, bs);
+fprintf(stderr, "--------------- OLD ---------------\n");
+for(basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) dump_basicblock(b);
+fprintf(stderr, "--------------- NEW ---------------\n");
+for(basicblock *b = newg.g_entryblock; b != NULL; b = b->b_next) dump_basicblock(b);
+    assert(newbs == bs);
+    assert(newis == is);
+}
+#endif
     /* Map labels to targets and mark exception handlers */
-    if (translate_jump_labels_to_targets(g->g_entryblock)) {
+    if (translate_jump_labels_to_targets(g->g_entryblock) < 0) {
+        goto error;
+    }
+    if (translate_jump_labels_to_targets(newg.g_entryblock) < 0) {
         goto error;
     }
     if (mark_except_handlers(g->g_entryblock) < 0) {
         goto error;
     }
+    if (mark_except_handlers(newg.g_entryblock) < 0) {
+        goto error;
+    }
+
     if (label_exception_targets(g->g_entryblock)) {
+        goto error;
+    }
+    if (label_exception_targets(newg.g_entryblock)) {
         goto error;
     }
 
@@ -8614,13 +8878,27 @@ assemble(struct compiler *c, int addNone)
     if (consts == NULL) {
         goto error;
     }
+    newconsts = consts_dict_keys_inorder(c->u->u_consts);
+    if (consts == NULL) {
+        goto error;
+    }
     if (optimize_cfg(g, consts, c->c_const_cache)) {
+        goto error;
+    }
+    if (optimize_cfg(&newg, newconsts, c->c_const_cache)) {
+        goto error;
+    }
+
+    if (remove_unused_consts(g->g_entryblock, consts) < 0) {
+        goto error;
+    }
+    if (remove_unused_consts(newg.g_entryblock, newconsts) < 0) {
         goto error;
     }
     if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, c) < 0) {
         goto error;
     }
-    if (remove_unused_consts(g->g_entryblock, consts) < 0) {
+    if (add_checks_for_loads_of_uninitialized_variables(newg.g_entryblock, c) < 0) {
         goto error;
     }
 
@@ -8628,16 +8906,27 @@ assemble(struct compiler *c, int addNone)
     if (duplicate_exits_without_lineno(g) < 0) {
         goto error;
     }
+
+    /** line numbers (TODO: move this before optimization stage) */
+    if (duplicate_exits_without_lineno(&newg) < 0) {
+        goto error;
+    }
+
     propagate_line_numbers(g->g_entryblock);
+    propagate_line_numbers(newg.g_entryblock);
+
     guarantee_lineno_for_exits(g->g_entryblock, c->u->u_firstlineno);
+    guarantee_lineno_for_exits(newg.g_entryblock, c->u->u_firstlineno);
 
     if (push_cold_blocks_to_end(g, code_flags) < 0) {
         goto error;
     }
+    if (push_cold_blocks_to_end(&newg, code_flags) < 0) {
+        goto error;
+    }
 
     /** Assembly **/
-
-    int nlocalsplus = prepare_localsplus(c, code_flags);
+    int nlocalsplus = prepare_localsplus(c, code_flags, &newg);
     if (nlocalsplus < 0) {
         goto error;
     }
@@ -8646,20 +8935,30 @@ assemble(struct compiler *c, int addNone)
     if (maxdepth < 0) {
         goto error;
     }
+    int newmaxdepth = stackdepth(newg.g_entryblock, code_flags);
+    assert(maxdepth == newmaxdepth);
+
     /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
     convert_exception_handlers_to_nops(g->g_entryblock);
+    convert_exception_handlers_to_nops(newg.g_entryblock);
 
     /* Order of basic blocks must have been determined by now */
     if (normalize_jumps(g) < 0) {
         goto error;
     }
 
+    if (normalize_jumps(&newg) < 0) {
+        goto error;
+    }
     assert(no_redundant_jumps(g));
     assert(opcode_metadata_is_sane(g));
+    assert(no_redundant_jumps(&newg));
+    assert(opcode_metadata_is_sane(&newg));
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
+    assemble_jump_offsets(newg.g_entryblock);
 
     /* Create assembler */
     if (assemble_init(&a, c->u->u_firstlineno) < 0) {
@@ -8667,7 +8966,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Emit code. */
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = newg.g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++) {
             if (assemble_emit(&a, &b->b_instr[j]) < 0) {
                 goto error;
@@ -8722,6 +9021,8 @@ assemble(struct compiler *c, int addNone)
     co = makecode(c, &a, consts, maxdepth, nlocalsplus, code_flags);
  error:
     Py_XDECREF(consts);
+    Py_XDECREF(newconsts);
+    cfg_builder_fini(&newg);
     assemble_free(&a);
     return co;
 }
@@ -9882,7 +10183,7 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
     if (const_cache == NULL) {
         goto error;
     }
-    if (translate_jump_labels_to_targets(g.g_entryblock)) {
+    if (translate_jump_labels_to_targets(g.g_entryblock) < 0) {
         goto error;
     }
     if (optimize_cfg(&g, consts, const_cache) < 0) {
