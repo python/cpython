@@ -658,6 +658,7 @@ class TestSinglePhaseSnapshot(ModuleSnapshot):
         return self
 
 
+@requires_load_dynamic
 class SinglephaseInitTests(unittest.TestCase):
 
     NAME = '_testsinglephase'
@@ -898,7 +899,6 @@ class SinglephaseInitTests(unittest.TestCase):
     #########################
     # the tests
 
-    @requires_load_dynamic
     def test_cleared_globals(self):
         loaded = self.load(self.NAME)
         _testsinglephase = loaded.module
@@ -912,7 +912,6 @@ class SinglephaseInitTests(unittest.TestCase):
         self.assertEqual(init_after, 0)
         self.assertEqual(init_count, -1)
 
-    @requires_load_dynamic
     def test_variants(self):
         # Exercise the most meaningful variants described in Python/import.c.
         self.maxDiff = None
@@ -996,7 +995,6 @@ class SinglephaseInitTests(unittest.TestCase):
             self.assertIs(basic.look_up_self(), basic_lookedup)
             self.assertEqual(basic.initialized_count(), expected_init_count)
 
-    @requires_load_dynamic
     def test_basic_reloaded(self):
         # m_copy is copied into the existing module object.
         # Global state is not changed.
@@ -1039,7 +1037,6 @@ class SinglephaseInitTests(unittest.TestCase):
 
                 self.assertIs(reloaded.snapshot.cached, reloaded.module)
 
-    @requires_load_dynamic
     def test_with_reinit_reloaded(self):
         # The module's m_init func is run again.
         self.maxDiff = None
@@ -1088,7 +1085,6 @@ class SinglephaseInitTests(unittest.TestCase):
     # which is shared by all interpreters.
 
     @requires_subinterpreters
-    @requires_load_dynamic
     def test_basic_multiple_interpreters_main_no_reset(self):
         # without resetting; already loaded in main interpreter
 
@@ -1157,7 +1153,6 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * module's global state was updated, not reset
 
     @requires_subinterpreters
-    @requires_load_dynamic
     def test_basic_multiple_interpreters_deleted_no_reset(self):
         # without resetting; already loaded in a deleted interpreter
 
