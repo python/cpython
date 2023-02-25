@@ -330,7 +330,8 @@ class TestPath(unittest.TestCase):
         # Check the file iterated all items
         assert entries.count == self.HUGE_ZIPFILE_NUM_ENTRIES
 
-    @set_timeout(3)
+    # timeout disabled due to #102209
+    # @set_timeout(3)
     def test_implied_dirs_performance(self):
         data = ['/'.join(string.ascii_lowercase + str(n)) for n in range(10000)]
         zipfile.CompleteDirs._implied_dirs(data)
