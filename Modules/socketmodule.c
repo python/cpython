@@ -5175,10 +5175,9 @@ static void
 sock_finalize(PySocketSockObject *s)
 {
     SOCKET_T fd;
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (s->sock_fd != INVALID_SOCKET) {
         if (PyErr_ResourceWarning((PyObject *)s, 1, "unclosed %R", s)) {
@@ -5202,7 +5201,7 @@ sock_finalize(PySocketSockObject *s)
     }
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static void

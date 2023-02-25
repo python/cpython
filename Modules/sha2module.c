@@ -23,6 +23,7 @@
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
@@ -217,7 +218,7 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=fabd515577805cd3 input=3137146fcb88e212]*/
 {
     SHA256object *newobj;
-    sha2_state *state = PyType_GetModuleState(cls);
+    sha2_state *state = _PyType_GetModuleState(cls);
     if (Py_IS_TYPE(self, state->sha256_type)) {
         if ((newobj = newSHA256object(state)) == NULL) {
             return NULL;
@@ -245,7 +246,7 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=66d2a8ef20de8302 input=f673a18f66527c90]*/
 {
     SHA512object *newobj;
-    sha2_state *state = PyType_GetModuleState(cls);
+    sha2_state *state = _PyType_GetModuleState(cls);
 
     if (Py_IS_TYPE((PyObject*)self, state->sha512_type)) {
         if ((newobj = newSHA512object(state)) == NULL) {
@@ -482,7 +483,7 @@ static PyType_Slot sha512_type_slots[] = {
     {0,0}
 };
 
-// Using PyType_GetModuleState() on these types is safe since they
+// Using _PyType_GetModuleState() on these types is safe since they
 // cannot be subclassed: they don't have the Py_TPFLAGS_BASETYPE flag.
 static PyType_Spec sha224_type_spec = {
     .name = "_sha2.SHA224Type",
