@@ -1254,7 +1254,7 @@ class PosixPath(Path, PurePosixPath):
     """
     __slots__ = ()
 
-    if posixpath is not os.path:
+    if os.name == 'nt':
         def __new__(cls, *args, **kwargs):
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
@@ -1266,7 +1266,7 @@ class WindowsPath(Path, PureWindowsPath):
     """
     __slots__ = ()
 
-    if ntpath is not os.path:
+    if os.name != 'nt':
         def __new__(cls, *args, **kwargs):
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
