@@ -1672,6 +1672,11 @@ code_tier2_fini(PyCodeObject *co)
     if (co->_tier2_info == NULL) {
         return;
     }
+    // @TODO:
+    //  Write a proper destructor for _PyTier2Info
+    //  and it's children structures.
+    //  Current implementation e.g., doesn't clear
+    //  bb_data
     _PyTier2Info *t2_info = co->_tier2_info;
     t2_info->_entry_bb = NULL;
     if (t2_info->_bb_space != NULL) {

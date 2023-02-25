@@ -770,7 +770,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
                 meta = _PyTier2_AllocateBBMetaData(co,
                     t2_start, _PyCode_CODE(co) + i, type_context_copy);
                 if (meta == NULL) {
-                    PyMem_Free(type_context_copy);
+                    _PyTier2TypeContext_free(type_context_copy);
                     return NULL;
                 }
                 bb_space->water_level += (write_i - t2_start) * sizeof(_Py_CODEUNIT);
@@ -823,7 +823,7 @@ end:
         if (add_metadata_to_jump_2d_array(t2_info, temp_meta, backwards_jump_target_offset) < 0) {
             PyMem_Free(meta);
             PyMem_Free(temp_meta);
-            PyMem_Free(type_context_copy);
+            _PyTier2TypeContext_free(type_context_copy);
             return NULL;
         }
     }
@@ -969,7 +969,7 @@ _PyTier2Info_Initialize(PyCodeObject *co)
     t2_info->bb_data_curr = 0;
     Py_ssize_t bb_data_len = (Py_SIZE(co) / 5 + 1);
     assert((int)bb_data_len == bb_data_len);
-    _PyTier2BBMetadata **bb_data = PyMem_Malloc(bb_data_len * sizeof(_PyTier2Info *));
+    _PyTier2BBMetadata **bb_data = PyMem_Calloc(bb_data_len, sizeof(_PyTier2BBMetadata*));
     if (bb_data == NULL) {
         PyMem_Free(t2_info);
         return NULL;
@@ -980,7 +980,6 @@ _PyTier2Info_Initialize(PyCodeObject *co)
 
     return t2_info;
 }
-
 
 ////////// OVERALL TIER2 FUNCTIONS
 
@@ -1092,7 +1091,7 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
         co, bb_space,
         _PyCode_CODE(co), type_context);
     if (meta == NULL) {
-        PyMem_Free(type_context);
+        _PyTier2TypeContext_free(type_context);
         goto cleanup;
     }
 #if BB_DEBUG
@@ -1164,7 +1163,6 @@ _PyTier2_GenerateNextBB(_PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
         frame->f_code, space, tier1_end,
         type_context);
     if (metadata == NULL) {
-        PyMem_Free(type_context);
         return NULL;
     }
     return metadata->tier2_start;
