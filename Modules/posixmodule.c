@@ -4479,9 +4479,18 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
         *p = L'\\';
     }
 
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+    /* this does not handle persistent local storage */
+    ret = E_FAIL;
+    if ((wcsncmp(buffer, L"G:\\", 3) != 0) && (wcsncmp(buffer, L"D:\\", 3) != 0) && (wcsncmp(buffer, L"T:\\", 3) != 0)) {
+        end = buffer + 3;
+        ret = S_OK;
+    }
+#else
     Py_BEGIN_ALLOW_THREADS
     ret = PathCchSkipRoot(buffer, &end);
     Py_END_ALLOW_THREADS
+#endif
     if (FAILED(ret)) {
         result = Py_BuildValue("sO", "", path->object);
     } else if (end != buffer) {

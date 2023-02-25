@@ -2030,7 +2030,12 @@ _Py_wrealpath(const wchar_t *path,
 int
 _Py_isabs(const wchar_t *path)
 {
-#ifdef MS_WINDOWS
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_GAMES)
+    /* this does not handle persistent local storage */
+    return (wcsncmp(path, L"G:\\", 3) == 0)
+        || (wcsncmp(path, L"D:\\", 3) == 0)
+        || (wcsncmp(path, L"T:\\", 3) == 0);
+#elif defined(MS_WINDOWS)
     const wchar_t *tail;
     HRESULT hr = PathCchSkipRoot(path, &tail);
     if (FAILED(hr) || path == tail) {
