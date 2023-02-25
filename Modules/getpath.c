@@ -220,10 +220,6 @@ getpath_isfile(PyObject *Py_UNUSED(self), PyObject *args)
 static PyObject *
 getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
 {
-#ifdef MS_XBOX
-    /* having other executables on */
-    Py_RETURN_FALSE;
-
     PyObject *r = NULL;
     PyObject *pathobj;
     const wchar_t *path;
