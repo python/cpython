@@ -413,7 +413,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
            PyBytes_GET_SIZE(con->code));
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
-        _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
+        _PyCode_CODE(co)[entry_point].op.code != RESUME) {
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
@@ -1505,12 +1505,12 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 {
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT instruction = instructions[i];
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
+        int opcode = _PyOpcode_Deopt[instruction.op.code];
         int caches = _PyOpcode_Caches[opcode];
-        instructions[i].opcode = opcode;
+        instructions[i].op.code = opcode;
         while (caches--) {
-            instructions[++i].opcode = CACHE;
-            instructions[i].oparg = 0;
+            instructions[++i].op.code = CACHE;
+            instructions[i].op.arg = 0;
         }
     }
 }
@@ -1763,13 +1763,13 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        co_instr.opcode = _PyOpcode_Deopt[_Py_OPCODE(co_instr)];
-        cp_instr.opcode =_PyOpcode_Deopt[_Py_OPCODE(cp_instr)];
+        co_instr.op.code = _PyOpcode_Deopt[co_instr.op.code];
+        cp_instr.op.code = _PyOpcode_Deopt[cp_instr.op.code];
         eq = co_instr.cache == cp_instr.cache;
         if (!eq) {
             goto unequal;
         }
-        i += _PyOpcode_Caches[_Py_OPCODE(co_instr)];
+        i += _PyOpcode_Caches[co_instr.op.code];
     }
 
     /* compare constants */
@@ -1848,9 +1848,9 @@ code_hash(PyCodeObject *co)
     SCRAMBLE_IN(co->co_firstlineno);
     SCRAMBLE_IN(Py_SIZE(co));
     for (int i = 0; i < Py_SIZE(co); i++) {
-        int deop = _PyOpcode_Deopt[_Py_OPCODE(_PyCode_CODE(co)[i])];
+        int deop = _PyOpcode_Deopt[_PyCode_CODE(co)[i].op.code];
         SCRAMBLE_IN(deop);
-        SCRAMBLE_IN(_Py_OPARG(_PyCode_CODE(co)[i]));
+        SCRAMBLE_IN(_PyCode_CODE(co)[i].op.arg);
         i += _PyOpcode_Caches[deop];
     }
     if ((Py_hash_t)uhash == -1) {

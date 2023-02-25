@@ -647,15 +647,10 @@ class PurePath(object):
         drv, root, pat_parts = self._parse_parts((path_pattern,))
         if not pat_parts:
             raise ValueError("empty pattern")
-        elif drv and drv != self._flavour.normcase(self._drv):
-            return False
-        elif root and root != self._root:
-            return False
         parts = self._parts_normcase
         if drv or root:
             if len(pat_parts) != len(parts):
                 return False
-            pat_parts = pat_parts[1:]
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
@@ -821,7 +816,12 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        return self._from_parts([os.getcwd()] + self._parts)
+        elif self._drv:
+            # There is a CWD on each drive-letter drive.
+            cwd = self._flavour.abspath(self._drv)
+        else:
+            cwd = os.getcwd()
+        return self._from_parts([cwd] + self._parts)
 
     def resolve(self, strict=False):
         """

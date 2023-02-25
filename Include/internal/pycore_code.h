@@ -92,6 +92,12 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
+typedef struct {
+    uint16_t counter;
+} _PySendCache;
+
+#define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
+
 // Borrowed references to common callables:
 struct callable_cache {
     PyObject *isinstance;
@@ -233,6 +239,7 @@ extern void _Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs,
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);
