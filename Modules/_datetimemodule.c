@@ -67,7 +67,7 @@ get_module_state(PyObject *mod)
 static inline datetime_state *
 get_module_state_by_cls(PyTypeObject *defining_class)
 {
-    void *state = PyType_GetModuleState(defining_class);
+    void *state = _PyType_GetModuleState(defining_class);
     assert(state != NULL);
     return (datetime_state *)state;
 }
