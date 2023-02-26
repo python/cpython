@@ -1,5 +1,0 @@
-:pep:`553` - Add a new built-in called ``breakpoint()`` which calls
-``sys.breakpointhook()``.  By default this imports ``pdb`` and calls
-``pdb.set_trace()``, but users may override ``sys.breakpointhook()`` to call
-whatever debugger they want.  The original value of the hook is saved in
-``sys.__breakpointhook__``.

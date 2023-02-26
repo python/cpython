@@ -1,2 +1,0 @@
-The operator functions without double underscores are preferred for clarity.
-The one with underscores are only kept for back-compatibility.

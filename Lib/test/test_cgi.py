@@ -1,13 +1,14 @@
-from test.support import check_warnings
-import cgi
 import os
 import sys
 import tempfile
 import unittest
-import warnings
 from collections import namedtuple
 from io import StringIO, BytesIO
 from test import support
+from test.support import warnings_helper
+
+cgi = warnings_helper.import_deprecated("cgi")
+
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -52,15 +53,12 @@ def do_test(buf, method):
         return ComparableException(err)
 
 parse_strict_test_cases = [
-    ("", ValueError("bad query field: ''")),
+    ("", {}),
     ("&", ValueError("bad query field: ''")),
     ("&&", ValueError("bad query field: ''")),
-    (";", ValueError("bad query field: ''")),
-    (";&;", ValueError("bad query field: ''")),
     # Should the next few really be valid?
     ("=", {}),
     ("=&=", {}),
-    ("=;=", {}),
     # This rest seem to make sense
     ("=a", {'': ['a']}),
     ("&=a", ValueError("bad query field: ''")),
@@ -75,8 +73,6 @@ parse_strict_test_cases = [
     ("a=a+b&b=b+c", {'a': ['a b'], 'b': ['b c']}),
     ("a=a+b&a=b+a", {'a': ['a b', 'b a']}),
     ("x=1&y=2.0&z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
-    ("x=1;y=2.0&z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
-    ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
     ("Hbc5161168c542333633315dee1182227:key_store_seqid=400006&cuyer=r&view=bustomer&order_id=0bb2e248638833d48cb7fed300000f1b&expire=964546263&lobale=en-US&kid=130003.300038&ss=env",
      {'Hbc5161168c542333633315dee1182227:key_store_seqid': ['400006'],
       'cuyer': ['r'],
@@ -130,6 +126,38 @@ class CgiTests(unittest.TestCase):
                     'file': [b'Testing 123.\n'], 'title': ['']}
         self.assertEqual(result, expected)
 
+    def test_parse_multipart_without_content_length(self):
+        POSTDATA = '''--JfISa01
+Content-Disposition: form-data; name="submit-name"
+
+just a string
+
+--JfISa01--
+'''
+        fp = BytesIO(POSTDATA.encode('latin1'))
+        env = {'boundary': 'JfISa01'.encode('latin1')}
+        result = cgi.parse_multipart(fp, env)
+        expected = {'submit-name': ['just a string\n']}
+        self.assertEqual(result, expected)
+
+    def test_parse_multipart_invalid_encoding(self):
+        BOUNDARY = "JfISa01"
+        POSTDATA = """--JfISa01
+Content-Disposition: form-data; name="submit-name"
+Content-Length: 3
+
+\u2603
+--JfISa01"""
+        fp = BytesIO(POSTDATA.encode('utf8'))
+        env = {'boundary': BOUNDARY.encode('latin1'),
+               'CONTENT-LENGTH': str(len(POSTDATA.encode('utf8')))}
+        result = cgi.parse_multipart(fp, env, encoding="ascii",
+                                     errors="surrogateescape")
+        expected = {'submit-name': ["\udce2\udc98\udc83"]}
+        self.assertEqual(result, expected)
+        self.assertEqual("\u2603".encode('utf8'),
+                         result["submit-name"][0].encode('utf8', 'surrogateescape'))
+
     def test_fieldstorage_properties(self):
         fs = cgi.FieldStorage()
         self.assertFalse(fs)
@@ -144,15 +172,6 @@ class CgiTests(unittest.TestCase):
         self.assertRaises(TypeError, cgi.FieldStorage, "foo", "bar")
         fs = cgi.FieldStorage(headers={'content-type':'text/plain'})
         self.assertRaises(TypeError, bool, fs)
-
-    def test_escape(self):
-        # cgi.escape() is deprecated.
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'cgi\.escape',
-                                     DeprecationWarning)
-            self.assertEqual("test &amp; string", cgi.escape("test & string"))
-            self.assertEqual("&lt;test string&gt;", cgi.escape("<test string>"))
-            self.assertEqual("&quot;test string&quot;", cgi.escape('"test string"', True))
 
     def test_strict(self):
         for orig, expect in parse_strict_test_cases:
@@ -180,6 +199,31 @@ class CgiTests(unittest.TestCase):
                     else:
                         self.assertEqual(fs.getvalue(key), expect_val[0])
 
+    def test_separator(self):
+        parse_semicolon = [
+            ("x=1;y=2.0", {'x': ['1'], 'y': ['2.0']}),
+            ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
+            (";", ValueError("bad query field: ''")),
+            (";;", ValueError("bad query field: ''")),
+            ("=;a", ValueError("bad query field: 'a'")),
+            (";b=a", ValueError("bad query field: ''")),
+            ("b;=a", ValueError("bad query field: 'b'")),
+            ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
+            ("a=a+b;a=b+a", {'a': ['a b', 'b a']}),
+        ]
+        for orig, expect in parse_semicolon:
+            env = {'QUERY_STRING': orig}
+            fs = cgi.FieldStorage(separator=';', environ=env)
+            if isinstance(expect, dict):
+                for key in expect.keys():
+                    expect_val = expect[key]
+                    self.assertIn(key, fs)
+                    if len(expect_val) > 1:
+                        self.assertEqual(fs.getvalue(key), expect_val)
+                    else:
+                        self.assertEqual(fs.getvalue(key), expect_val[0])
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_log(self):
         cgi.log("Testing")
 
@@ -345,6 +389,23 @@ Larry
         self.assertEqual(fs.list[0].name, 'submit-name')
         self.assertEqual(fs.list[0].value, 'Larry')
 
+    def test_field_storage_multipart_no_content_length(self):
+        fp = BytesIO(b"""--MyBoundary
+Content-Disposition: form-data; name="my-arg"; filename="foo"
+
+Test
+
+--MyBoundary--
+""")
+        env = {
+            "REQUEST_METHOD": "POST",
+            "CONTENT_TYPE": "multipart/form-data; boundary=MyBoundary",
+            "wsgi.input": fp,
+        }
+        fields = cgi.FieldStorage(fp, environ=env)
+
+        self.assertEqual(len(fields["my-arg"].file.read()), 5)
+
     def test_fieldstorage_as_context_manager(self):
         fp = BytesIO(b'x' * 10)
         env = {'REQUEST_METHOD': 'PUT'}
@@ -372,6 +433,60 @@ Larry
         }
         v = gen_result(data, environ)
         self.assertEqual(self._qs_result, v)
+
+    def test_max_num_fields(self):
+        # For application/x-www-form-urlencoded
+        data = '&'.join(['a=a']*11)
+        environ = {
+            'CONTENT_LENGTH': str(len(data)),
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'REQUEST_METHOD': 'POST',
+        }
+
+        with self.assertRaises(ValueError):
+            cgi.FieldStorage(
+                fp=BytesIO(data.encode()),
+                environ=environ,
+                max_num_fields=10,
+            )
+
+        # For multipart/form-data
+        data = """---123
+Content-Disposition: form-data; name="a"
+
+3
+---123
+Content-Type: application/x-www-form-urlencoded
+
+a=4
+---123
+Content-Type: application/x-www-form-urlencoded
+
+a=5
+---123--
+"""
+        environ = {
+            'CONTENT_LENGTH':   str(len(data)),
+            'CONTENT_TYPE':     'multipart/form-data; boundary=-123',
+            'QUERY_STRING':     'a=1&a=2',
+            'REQUEST_METHOD':   'POST',
+        }
+
+        # 2 GET entities
+        # 1 top level POST entities
+        # 1 entity within the second POST entity
+        # 1 entity within the third POST entity
+        with self.assertRaises(ValueError):
+            cgi.FieldStorage(
+                fp=BytesIO(data.encode()),
+                environ=environ,
+                max_num_fields=4,
+            )
+        cgi.FieldStorage(
+            fp=BytesIO(data.encode()),
+            environ=environ,
+            max_num_fields=5,
+        )
 
     def testQSAndFormData(self):
         data = """---123
@@ -431,20 +546,6 @@ this is the content of the fake file
         v = gen_result(data, environ)
         self.assertEqual(result, v)
 
-    def test_deprecated_parse_qs(self):
-        # this func is moved to urllib.parse, this is just a sanity check
-        with check_warnings(('cgi.parse_qs is deprecated, use urllib.parse.'
-                             'parse_qs instead', DeprecationWarning)):
-            self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
-                             cgi.parse_qs('a=A1&b=B2&B=B3'))
-
-    def test_deprecated_parse_qsl(self):
-        # this func is moved to urllib.parse, this is just a sanity check
-        with check_warnings(('cgi.parse_qsl is deprecated, use urllib.parse.'
-                             'parse_qsl instead', DeprecationWarning)):
-            self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
-                             cgi.parse_qsl('a=A1&b=B2&B=B3'))
-
     def test_parse_header(self):
         self.assertEqual(
             cgi.parse_header("text/plain"),
@@ -475,9 +576,10 @@ this is the content of the fake file
             ("form-data", {"name": "files", "filename": 'fo"o;bar'}))
 
     def test_all(self):
-        blacklist = {"logfile", "logfp", "initlog", "dolog", "nolog",
-                     "closelog", "log", "maxlen", "valid_boundary"}
-        support.check__all__(self, cgi, blacklist=blacklist)
+        not_exported = {
+            "logfile", "logfp", "initlog", "dolog", "nolog", "closelog", "log",
+            "maxlen", "valid_boundary"}
+        support.check__all__(self, cgi, not_exported=not_exported)
 
 
 BOUNDARY = "---------------------------721837373350705526688164684"

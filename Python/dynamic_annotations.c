@@ -120,7 +120,7 @@ static int GetRunningOnValgrind(void) {
 #endif
 
 #ifndef _MSC_VER
-  char *running_on_valgrind_str = getenv("RUNNING_ON_VALGRIND");
+  const char *running_on_valgrind_str = getenv("RUNNING_ON_VALGRIND");
   if (running_on_valgrind_str) {
     return strcmp(running_on_valgrind_str, "0") != 0;
   }

@@ -3,6 +3,7 @@
 import sys
 import argparse
 import os
+import warnings
 
 from . import loader, runner
 from .signals import installHandler
@@ -39,11 +40,17 @@ def _convert_name(name):
             name = rel_path
         # on Windows both '\' and '/' are used as path
         # separators. Better to replace both than rely on os.path.sep
-        return name[:-3].replace('\\', '.').replace('/', '.')
+        return os.path.normpath(name)[:-3].replace('\\', '.').replace('/', '.')
     return name
 
 def _convert_names(names):
     return [_convert_name(name) for name in names]
+
+
+def _convert_select_pattern(pattern):
+    if not '*' in pattern:
+        pattern = '*%s*' % pattern
+    return pattern
 
 
 class TestProgram(object):
@@ -53,7 +60,7 @@ class TestProgram(object):
     # defaults for testing
     module=None
     verbosity = 1
-    failfast = catchbreak = buffer = progName = warnings = None
+    failfast = catchbreak = buffer = progName = warnings = testNamePatterns = None
     _discovery_parser = None
 
     def __init__(self, module='__main__', defaultTest=None, argv=None,
@@ -95,6 +102,8 @@ class TestProgram(object):
         self.runTests()
 
     def usageExit(self, msg=None):
+        warnings.warn("TestProgram.usageExit() is deprecated and will be"
+                      " removed in Python 3.13", DeprecationWarning)
         if msg:
             print(msg)
         if self._discovery_parser is None:
@@ -140,8 +149,13 @@ class TestProgram(object):
             self.testNames = list(self.defaultTest)
         self.createTests()
 
-    def createTests(self):
-        if self.testNames is None:
+    def createTests(self, from_discovery=False, Loader=None):
+        if self.testNamePatterns:
+            self.testLoader.testNamePatterns = self.testNamePatterns
+        if from_discovery:
+            loader = self.testLoader if Loader is None else Loader()
+            self.test = loader.discover(self.start, self.pattern, self.top)
+        elif self.testNames is None:
             self.test = self.testLoader.loadTestsFromModule(self.module)
         else:
             self.test = self.testLoader.loadTestsFromNames(self.testNames,
@@ -179,6 +193,11 @@ class TestProgram(object):
                                 action='store_true',
                                 help='Buffer stdout and stderr during tests')
             self.buffer = False
+        if self.testNamePatterns is None:
+            parser.add_argument('-k', dest='testNamePatterns',
+                                action='append', type=_convert_select_pattern,
+                                help='Only run tests which match the given substring')
+            self.testNamePatterns = []
 
         return parser
 
@@ -225,8 +244,7 @@ class TestProgram(object):
                 self._initArgParsers()
             self._discovery_parser.parse_args(argv, self)
 
-        loader = self.testLoader if Loader is None else Loader()
-        self.test = loader.discover(self.start, self.pattern, self.top)
+        self.createTests(from_discovery=True, Loader=Loader)
 
     def runTests(self):
         if self.catchbreak:

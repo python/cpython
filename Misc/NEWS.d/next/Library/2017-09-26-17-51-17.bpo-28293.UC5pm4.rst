@@ -1,1 +1,0 @@
-The regular expression cache is no longer completely dumped when it is full.

@@ -1,1 +1,0 @@
-Stop crashes when concurrently iterate over itertools.groupby() iterators.

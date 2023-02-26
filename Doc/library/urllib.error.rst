@@ -31,7 +31,7 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
       of :exc:`IOError`.
 
 
-.. exception:: HTTPError
+.. exception:: HTTPError(url, code, msg, hdrs, fp)
 
    Though being an exception (a subclass of :exc:`URLError`), an
    :exc:`HTTPError` can also function as a non-exceptional file-like return
@@ -39,23 +39,33 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
    is useful when handling exotic HTTP errors, such as requests for
    authentication.
 
+   .. attribute:: url
+
+      Contains the request URL.
+      An alias for *filename* attribute.
+
    .. attribute:: code
 
-      An HTTP status code as defined in `RFC 2616
-      <http://www.faqs.org/rfcs/rfc2616.html>`_.  This numeric value corresponds
+      An HTTP status code as defined in :rfc:`2616`.  This numeric value corresponds
       to a value found in the dictionary of codes as found in
       :attr:`http.server.BaseHTTPRequestHandler.responses`.
 
    .. attribute:: reason
 
       This is usually a string explaining the reason for this error.
+      An alias for *msg* attribute.
 
    .. attribute:: headers
 
       The HTTP response headers for the HTTP request that caused the
       :exc:`HTTPError`.
+      An alias for *hdrs* attribute.
 
       .. versionadded:: 3.4
+
+   .. attribute:: fp
+
+      A file-like object where the HTTP error body can be read from.
 
 .. exception:: ContentTooShortError(msg, content)
 

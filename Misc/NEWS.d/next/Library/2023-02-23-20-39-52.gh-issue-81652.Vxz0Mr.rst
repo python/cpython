@@ -1,0 +1,2 @@
+Add :data:`mmap.MAP_ALIGNED_SUPER` FreeBSD and :data:`mmap.MAP_CONCEAL`
+OpenBSD constants to :mod:`mmap`. Patch by Yeojin Kim.

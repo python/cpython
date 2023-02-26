@@ -15,11 +15,17 @@ import re
 import io
 import contextlib
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
+from test.support import threading_helper
+from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 try:
     import gzip
 except ImportError:
     gzip = None
+
+support.requires_working_socket(module=True)
 
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
@@ -283,6 +289,16 @@ class XMLRPCTestCase(unittest.TestCase):
         check('<bigdecimal>9876543210.0123456789</bigdecimal>',
               decimal.Decimal('9876543210.0123456789'))
 
+    def test_limit_int(self):
+        check = self.check_loads
+        maxdigits = 5000
+        with support.adjust_int_max_str_digits(maxdigits):
+            s = '1' * (maxdigits + 1)
+            with self.assertRaises(ValueError):
+                check(f'<int>{s}</int>', None)
+            with self.assertRaises(ValueError):
+                check(f'<biginteger>{s}</biginteger>', None)
+
     def test_get_host_info(self):
         # see bug #3613, this raised a TypeError
         transp = xmlrpc.client.Transport()
@@ -333,7 +349,7 @@ class XMLRPCTestCase(unittest.TestCase):
             server.handle_request()  # First request and attempt at second
             server.handle_request()  # Retried second request
 
-        server = http.server.HTTPServer((support.HOST, 0), RequestHandler)
+        server = http.server.HTTPServer((socket_helper.HOST, 0), RequestHandler)
         self.addCleanup(server.server_close)
         thread = threading.Thread(target=run_server)
         thread.start()
@@ -530,14 +546,10 @@ class DateTimeTestCase(unittest.TestCase):
         # some other types
         dbytes = dstr.encode('ascii')
         dtuple = now.timetuple()
-        with self.assertRaises(TypeError):
-            dtime == 1970
-        with self.assertRaises(TypeError):
-            dtime != dbytes
-        with self.assertRaises(TypeError):
-            dtime == bytearray(dbytes)
-        with self.assertRaises(TypeError):
-            dtime != dtuple
+        self.assertFalse(dtime == 1970)
+        self.assertTrue(dtime != dbytes)
+        self.assertFalse(dtime == bytearray(dbytes))
+        self.assertTrue(dtime != dtuple)
         with self.assertRaises(TypeError):
             dtime < float(1970)
         with self.assertRaises(TypeError):
@@ -547,9 +559,21 @@ class DateTimeTestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             dtime >= dtuple
 
+        self.assertTrue(dtime == ALWAYS_EQ)
+        self.assertFalse(dtime != ALWAYS_EQ)
+        self.assertTrue(dtime < LARGEST)
+        self.assertFalse(dtime > LARGEST)
+        self.assertTrue(dtime <= LARGEST)
+        self.assertFalse(dtime >= LARGEST)
+        self.assertFalse(dtime < SMALLEST)
+        self.assertTrue(dtime > SMALLEST)
+        self.assertFalse(dtime <= SMALLEST)
+        self.assertTrue(dtime >= SMALLEST)
+
+
 class BinaryTestCase(unittest.TestCase):
 
-    # XXX What should str(Binary(b"\xff")) return?  I'm chosing "\xff"
+    # XXX What should str(Binary(b"\xff")) return?  I'm choosing "\xff"
     # for now (i.e. interpreting the binary data as Latin-1-encoded
     # text).  But this feels very unsatisfactory.  Perhaps we should
     # only define repr(), and return r"Binary(b'\xff')" instead?
@@ -636,7 +660,7 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
             serv.handle_request()
             numrequests -= 1
 
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         serv.socket.close()
@@ -686,11 +710,16 @@ def http_multi_server(evt, numrequests, requestHandler=None):
         #on AF_INET only.
         URL = "http://%s:%d"%(ADDR, PORT)
         serv.server_activate()
-        paths = ["/foo", "/foo/bar"]
+        paths = [
+            "/foo", "/foo/bar",
+            "/foo?k=v", "/foo#frag", "/foo?k=v#frag",
+            "", "/", "/RPC2", "?k=v", "#frag",
+        ]
         for path in paths:
             d = serv.add_dispatcher(path, xmlrpc.server.SimpleXMLRPCDispatcher())
             d.register_introspection_functions()
             d.register_multicall_functions()
+            d.register_function(lambda p=path: p, 'test')
         serv.get_dispatcher(paths[0]).register_function(pow)
         serv.get_dispatcher(paths[1]).register_function(lambda x,y: x+y, 'add')
         serv.add_dispatcher("/is/broken", BrokenDispatcher())
@@ -701,7 +730,7 @@ def http_multi_server(evt, numrequests, requestHandler=None):
             serv.handle_request()
             numrequests -= 1
 
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         serv.socket.close()
@@ -818,14 +847,12 @@ class SimpleServerTestCase(BaseServerTestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
-    # [ch] The test 404 is causing lots of false alarms.
-    def XXXtest_404(self):
+    def test_404(self):
         # send POST with http.client, it should return 404 header and
         # 'Not Found' message.
-        conn = httplib.client.HTTPConnection(ADDR, PORT)
-        conn.request('POST', '/this-is-not-valid')
-        response = conn.getresponse()
-        conn.close()
+        with contextlib.closing(http.client.HTTPConnection(ADDR, PORT)) as conn:
+            conn.request('POST', '/this-is-not-valid')
+            response = conn.getresponse()
 
         self.assertEqual(response.status, 404)
         self.assertEqual(response.reason, 'Not Found')
@@ -945,9 +972,13 @@ class SimpleServerTestCase(BaseServerTestCase):
 
     def test_partial_post(self):
         # Check that a partial POST doesn't make the server loop: issue #14001.
-        conn = http.client.HTTPConnection(ADDR, PORT)
-        conn.request('POST', '/RPC2 HTTP/1.0\r\nContent-Length: 100\r\n\r\nbye')
-        conn.close()
+        with contextlib.closing(socket.create_connection((ADDR, PORT))) as conn:
+            conn.send('POST /RPC2 HTTP/1.0\r\n'
+                      'Content-Length: 100\r\n\r\n'
+                      'bye HTTP/1.1\r\n'
+                      f'Host: {ADDR}:{PORT}\r\n'
+                      'Accept-Encoding: identity\r\n'
+                      'Content-Length: 0\r\n\r\n'.encode('ascii'))
 
     def test_context_manager(self):
         with xmlrpclib.ServerProxy(URL) as server:
@@ -1003,6 +1034,39 @@ class MultiPathServerTestCase(BaseServerTestCase):
     def test_path3(self):
         p = xmlrpclib.ServerProxy(URL+"/is/broken")
         self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
+
+    def test_invalid_path(self):
+        p = xmlrpclib.ServerProxy(URL+"/invalid")
+        self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
+
+    def test_path_query_fragment(self):
+        p = xmlrpclib.ServerProxy(URL+"/foo?k=v#frag")
+        self.assertEqual(p.test(), "/foo?k=v#frag")
+
+    def test_path_fragment(self):
+        p = xmlrpclib.ServerProxy(URL+"/foo#frag")
+        self.assertEqual(p.test(), "/foo#frag")
+
+    def test_path_query(self):
+        p = xmlrpclib.ServerProxy(URL+"/foo?k=v")
+        self.assertEqual(p.test(), "/foo?k=v")
+
+    def test_empty_path(self):
+        p = xmlrpclib.ServerProxy(URL)
+        self.assertEqual(p.test(), "/RPC2")
+
+    def test_root_path(self):
+        p = xmlrpclib.ServerProxy(URL + "/")
+        self.assertEqual(p.test(), "/")
+
+    def test_empty_path_query(self):
+        p = xmlrpclib.ServerProxy(URL + "?k=v")
+        self.assertEqual(p.test(), "?k=v")
+
+    def test_empty_path_fragment(self):
+        p = xmlrpclib.ServerProxy(URL + "#frag")
+        self.assertEqual(p.test(), "#frag")
+
 
 #A test case that verifies that a server using the HTTP/1.1 keep-alive mechanism
 #does indeed serve subsequent requests on the same connection
@@ -1171,11 +1235,74 @@ class GzipUtilTestCase(unittest.TestCase):
         xmlrpclib.gzip_decode(encoded, max_decode=-1)
 
 
+class HeadersServerTestCase(BaseServerTestCase):
+    class RequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
+        test_headers = None
+
+        def do_POST(self):
+            self.__class__.test_headers = self.headers
+            return super().do_POST()
+    requestHandler = RequestHandler
+    standard_headers = [
+        'Host', 'Accept-Encoding', 'Content-Type', 'User-Agent',
+        'Content-Length']
+
+    def setUp(self):
+        self.RequestHandler.test_headers = None
+        return super().setUp()
+
+    def assertContainsAdditionalHeaders(self, headers, additional):
+        expected_keys = sorted(self.standard_headers + list(additional.keys()))
+        self.assertListEqual(sorted(headers.keys()), expected_keys)
+
+        for key, value in additional.items():
+            self.assertEqual(headers.get(key), value)
+
+    def test_header(self):
+        p = xmlrpclib.ServerProxy(URL, headers=[('X-Test', 'foo')])
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {'X-Test': 'foo'})
+
+    def test_header_many(self):
+        p = xmlrpclib.ServerProxy(
+            URL, headers=[('X-Test', 'foo'), ('X-Test-Second', 'bar')])
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(
+            headers, {'X-Test': 'foo', 'X-Test-Second': 'bar'})
+
+    def test_header_empty(self):
+        p = xmlrpclib.ServerProxy(URL, headers=[])
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {})
+
+    def test_header_tuple(self):
+        p = xmlrpclib.ServerProxy(URL, headers=(('X-Test', 'foo'),))
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {'X-Test': 'foo'})
+
+    def test_header_items(self):
+        p = xmlrpclib.ServerProxy(URL, headers={'X-Test': 'foo'}.items())
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {'X-Test': 'foo'})
+
+
 #Test special attributes of the ServerProxy object
 class ServerProxyTestCase(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
-        self.url = URL
+        # Actual value of the URL doesn't matter if it is a string in
+        # the correct format.
+        self.url = 'http://fake.localhost'
 
     def test_close(self):
         p = xmlrpclib.ServerProxy(self.url)
@@ -1296,7 +1423,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         self.cgi = None
 
     def test_cgi_get(self):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env['REQUEST_METHOD'] = 'GET'
             # if the method is GET and no request_text is given, it runs handle_get
             # get sysout output
@@ -1328,7 +1455,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         </methodCall>
         """
 
-        with support.EnvironmentVarGuard() as env, \
+        with os_helper.EnvironmentVarGuard() as env, \
              captured_stdout(encoding=self.cgi.encoding) as data_out, \
              support.captured_stdin() as data_in:
             data_in.write(data)
@@ -1389,16 +1516,10 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
         self.assertTrue(server.use_builtin_types)
 
 
-@support.reap_threads
-def test_main():
-    support.run_unittest(XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
-            BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
-            SimpleServerTestCase, SimpleServerEncodingTestCase,
-            KeepaliveServerTestCase1, KeepaliveServerTestCase2,
-            GzipServerTestCase, GzipUtilTestCase,
-            MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
-            CGIHandlerTestCase, SimpleXMLRPCDispatcherTestCase)
+def setUpModule():
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

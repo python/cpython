@@ -1,12 +1,13 @@
 import unittest
-import re
 import subprocess
 import sys
 import os
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 
 # Skip this test if the _tkinter module wasn't built.
-_tkinter = support.import_module('_tkinter')
+_tkinter = import_helper.import_module('_tkinter')
 
 import tkinter
 from tkinter import Tcl
@@ -24,23 +25,21 @@ def get_tk_patchlevel():
     global _tk_patchlevel
     if _tk_patchlevel is None:
         tcl = Tcl()
-        patchlevel = tcl.call('info', 'patchlevel')
-        m = re.fullmatch(r'(\d+)\.(\d+)([ab.])(\d+)', patchlevel)
-        major, minor, releaselevel, serial = m.groups()
-        major, minor, serial = int(major), int(minor), int(serial)
-        releaselevel = {'a': 'alpha', 'b': 'beta', '.': 'final'}[releaselevel]
-        if releaselevel == 'final':
-            _tk_patchlevel = major, minor, serial, releaselevel, 0
-        else:
-            _tk_patchlevel = major, minor, 0, releaselevel, serial
+        _tk_patchlevel = tcl.info_patchlevel()
     return _tk_patchlevel
 
 
 class TkinterTest(unittest.TestCase):
 
     def testFlattenLen(self):
-        # flatten(<object with no length>)
+        # Object without length.
         self.assertRaises(TypeError, _tkinter._flatten, True)
+        # Object with length, but not sequence.
+        self.assertRaises(TypeError, _tkinter._flatten, {})
+        # Sequence or set, but not tuple or list.
+        # (issue44608: there were leaks in the following cases)
+        self.assertRaises(TypeError, _tkinter._flatten, 'string')
+        self.assertRaises(TypeError, _tkinter._flatten, {'set'})
 
 
 class TclTest(unittest.TestCase):
@@ -57,6 +56,10 @@ class TclTest(unittest.TestCase):
     def test_eval_null_in_result(self):
         tcl = self.interp
         self.assertEqual(tcl.eval('set a "a\\0b"'), 'a\x00b')
+
+    def test_eval_surrogates_in_result(self):
+        tcl = self.interp
+        self.assertIn(tcl.eval(r'set a "<\ud83d\udcbb>"'), '<\U0001f4bb>')
 
     def testEvalException(self):
         tcl = self.interp
@@ -129,23 +132,18 @@ class TclTest(unittest.TestCase):
         self.assertRaises(TclError,tcl.unsetvar,'a')
 
     def get_integers(self):
-        integers = (0, 1, -1, 2**31-1, -2**31, 2**31, -2**31-1, 2**63-1, -2**63)
-        # bignum was added in Tcl 8.5, but its support is able only since 8.5.8
-        if (get_tk_patchlevel() >= (8, 6, 0, 'final') or
-            (8, 5, 8) <= get_tk_patchlevel() < (8, 6)):
-            integers += (2**63, -2**63-1, 2**1000, -2**1000)
-        return integers
+        return (0, 1, -1,
+                2**31-1, -2**31, 2**31, -2**31-1,
+                2**63-1, -2**63, 2**63, -2**63-1,
+                2**1000, -2**1000)
 
     def test_getint(self):
         tcl = self.interp.tk
         for i in self.get_integers():
             self.assertEqual(tcl.getint(' %d ' % i), i)
-            if tcl_version >= (8, 5):
-                self.assertEqual(tcl.getint(' %#o ' % i), i)
+            self.assertEqual(tcl.getint(' %#o ' % i), i)
             self.assertEqual(tcl.getint((' %#o ' % i).replace('o', '')), i)
             self.assertEqual(tcl.getint(' %#x ' % i), i)
-        if tcl_version < (8, 5):  # bignum was added in Tcl 8.5
-            self.assertRaises(TclError, tcl.getint, str(2**1000))
         self.assertEqual(tcl.getint(42), 42)
         self.assertRaises(TypeError, tcl.getint)
         self.assertRaises(TypeError, tcl.getint, '42', '10')
@@ -190,28 +188,47 @@ class TclTest(unittest.TestCase):
 
     def testEvalFile(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        filename = os_helper.TESTFN_ASCII
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'w') as f:
             f.write("""set a 1
             set b 2
             set c [ expr $a + $b ]
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(filename)
         self.assertEqual(tcl.eval('set a'),'1')
         self.assertEqual(tcl.eval('set b'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
 
     def test_evalfile_null_in_result(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        filename = os_helper.TESTFN_ASCII
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'w') as f:
             f.write("""
             set a "a\0b"
             set b "a\\0b"
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(filename)
         self.assertEqual(tcl.eval('set a'), 'a\x00b')
         self.assertEqual(tcl.eval('set b'), 'a\x00b')
+
+    def test_evalfile_surrogates_in_result(self):
+        tcl = self.interp
+        encoding = tcl.call('encoding', 'system')
+        self.addCleanup(tcl.call, 'encoding', 'system', encoding)
+        tcl.call('encoding', 'system', 'utf-8')
+
+        filename = os_helper.TESTFN_ASCII
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'wb') as f:
+            f.write(b"""
+            set a "<\xed\xa0\xbd\xed\xb2\xbb>"
+            set b "<\\ud83d\\udcbb>"
+            """)
+        tcl.evalfile(filename)
+        self.assertEqual(tcl.eval('set a'), '<\U0001f4bb>')
+        self.assertEqual(tcl.eval('set b'), '<\U0001f4bb>')
 
     def testEvalFileException(self):
         tcl = self.interp
@@ -241,7 +258,7 @@ class TclTest(unittest.TestCase):
         if not os.path.exists(unc_name):
             raise unittest.SkipTest('Cannot connect to UNC Path')
 
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.unset("TCL_LIBRARY")
             stdout = subprocess.check_output(
                     [unc_name, '-c', 'import tkinter; print(tkinter)'])
@@ -280,8 +297,7 @@ class TclTest(unittest.TestCase):
         check('"a\xbd\u20ac"', 'a\xbd\u20ac')
         check(r'"a\xbd\u20ac"', 'a\xbd\u20ac')
         check(r'"a\0b"', 'a\x00b')
-        if tcl_version >= (8, 5):  # bignum was added in Tcl 8.5
-            check('2**64', str(2**64))
+        check('2**64', str(2**64))
 
     def test_exprdouble(self):
         tcl = self.interp
@@ -312,8 +328,7 @@ class TclTest(unittest.TestCase):
         check('[string length "a\xbd\u20ac"]', 3.0)
         check(r'[string length "a\xbd\u20ac"]', 3.0)
         self.assertRaises(TclError, tcl.exprdouble, '"abc"')
-        if tcl_version >= (8, 5):  # bignum was added in Tcl 8.5
-            check('2**64', float(2**64))
+        check('2**64', float(2**64))
 
     def test_exprlong(self):
         tcl = self.interp
@@ -344,8 +359,7 @@ class TclTest(unittest.TestCase):
         check('[string length "a\xbd\u20ac"]', 3)
         check(r'[string length "a\xbd\u20ac"]', 3)
         self.assertRaises(TclError, tcl.exprlong, '"abc"')
-        if tcl_version >= (8, 5):  # bignum was added in Tcl 8.5
-            self.assertRaises(TclError, tcl.exprlong, '2**64')
+        self.assertRaises(TclError, tcl.exprlong, '2**64')
 
     def test_exprboolean(self):
         tcl = self.interp
@@ -385,10 +399,8 @@ class TclTest(unittest.TestCase):
         check('[string length "a\xbd\u20ac"]', True)
         check(r'[string length "a\xbd\u20ac"]', True)
         self.assertRaises(TclError, tcl.exprboolean, '"abc"')
-        if tcl_version >= (8, 5):  # bignum was added in Tcl 8.5
-            check('2**64', True)
+        check('2**64', True)
 
-    @unittest.skipUnless(tcl_version >= (8, 5), 'requires Tcl version >= 8.5')
     def test_booleans(self):
         tcl = self.interp
         def check(expr, expected):
@@ -418,8 +430,6 @@ class TclTest(unittest.TestCase):
             else:
                 self.assertEqual(result, str(i))
                 self.assertIsInstance(result, str)
-        if tcl_version < (8, 5):  # bignum was added in Tcl 8.5
-            self.assertRaises(TclError, tcl.call, 'expr', str(2**1000))
 
     def test_passing_values(self):
         def passValue(value):
@@ -429,9 +439,17 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue(False), False if self.wantobjects else '0')
         self.assertEqual(passValue('string'), 'string')
         self.assertEqual(passValue('string\u20ac'), 'string\u20ac')
+        self.assertEqual(passValue('string\U0001f4bb'), 'string\U0001f4bb')
         self.assertEqual(passValue('str\x00ing'), 'str\x00ing')
         self.assertEqual(passValue('str\x00ing\xbd'), 'str\x00ing\xbd')
         self.assertEqual(passValue('str\x00ing\u20ac'), 'str\x00ing\u20ac')
+        self.assertEqual(passValue('str\x00ing\U0001f4bb'),
+                         'str\x00ing\U0001f4bb')
+        if sys.platform != 'win32':
+            self.assertEqual(passValue('<\udce2\udc82\udcac>'),
+                             '<\u20ac>')
+            self.assertEqual(passValue('<\udced\udca0\udcbd\udced\udcb2\udcbb>'),
+                             '<\U0001f4bb>')
         self.assertEqual(passValue(b'str\x00ing'),
                          b'str\x00ing' if self.wantobjects else 'str\x00ing')
         self.assertEqual(passValue(b'str\xc0\x80ing'),
@@ -440,8 +458,6 @@ class TclTest(unittest.TestCase):
                          b'str\xbding' if self.wantobjects else 'str\xbding')
         for i in self.get_integers():
             self.assertEqual(passValue(i), i if self.wantobjects else str(i))
-        if tcl_version < (8, 5):  # bignum was added in Tcl 8.5
-            self.assertEqual(passValue(2**1000), str(2**1000))
         for f in (0.0, 1.0, -1.0, 1/3,
                   sys.float_info.min, sys.float_info.max,
                   -sys.float_info.min, -sys.float_info.max):
@@ -490,6 +506,10 @@ class TclTest(unittest.TestCase):
         check('string')
         check('string\xbd')
         check('string\u20ac')
+        check('string\U0001f4bb')
+        if sys.platform != 'win32':
+            check('<\udce2\udc82\udcac>', '<\u20ac>')
+            check('<\udced\udca0\udcbd\udced\udcb2\udcbb>', '<\U0001f4bb>')
         check('')
         check(b'string', 'string')
         check(b'string\xe2\x82\xac', 'string\xe2\x82\xac')
@@ -503,8 +523,6 @@ class TclTest(unittest.TestCase):
         check(b'str\xc0\x80ing\xe2\x82\xac', 'str\xc0\x80ing\xe2\x82\xac')
         for i in self.get_integers():
             check(i, str(i))
-        if tcl_version < (8, 5):  # bignum was added in Tcl 8.5
-            check(2**1000, str(2**1000))
         for f in (0.0, 1.0, -1.0):
             check(f, repr(f))
         for f in (1/3.0, sys.float_info.min, sys.float_info.max,
@@ -531,7 +549,10 @@ class TclTest(unittest.TestCase):
             ('a\n b\t\r c\n ', ('a', 'b', 'c')),
             (b'a\n b\t\r c\n ', ('a', 'b', 'c')),
             ('a \u20ac', ('a', '\u20ac')),
+            ('a \U0001f4bb', ('a', '\U0001f4bb')),
             (b'a \xe2\x82\xac', ('a', '\u20ac')),
+            (b'a \xf0\x9f\x92\xbb', ('a', '\U0001f4bb')),
+            (b'a \xed\xa0\xbd\xed\xb2\xbb', ('a', '\U0001f4bb')),
             (b'a\xc0\x80b c\xc0\x80d', ('a\x00b', 'c\x00d')),
             ('a {b c}', ('a', 'b c')),
             (r'a b\ c', ('a', 'b c')),
@@ -548,71 +569,20 @@ class TclTest(unittest.TestCase):
                 ('1', '2', '3.4')),
         ]
         tk_patchlevel = get_tk_patchlevel()
-        if tcl_version >= (8, 5):
-            if not self.wantobjects or tk_patchlevel < (8, 5, 5):
-                # Before 8.5.5 dicts were converted to lists through string
-                expected = ('12', '\u20ac', '\xe2\x82\xac', '3.4')
-            else:
-                expected = (12, '\u20ac', b'\xe2\x82\xac', (3.4,))
-            testcases += [
-                (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
-                    expected),
-            ]
+        if not self.wantobjects:
+            expected = ('12', '\u20ac', '\xe2\x82\xac', '3.4')
+        else:
+            expected = (12, '\u20ac', b'\xe2\x82\xac', (3.4,))
+        testcases += [
+            (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
+                expected),
+        ]
         dbg_info = ('want objects? %s, Tcl version: %s, Tk patchlevel: %s'
                     % (self.wantobjects, tcl_version, tk_patchlevel))
         for arg, res in testcases:
             self.assertEqual(splitlist(arg), res,
                              'arg=%a, %s' % (arg, dbg_info))
         self.assertRaises(TclError, splitlist, '{')
-
-    def test_split(self):
-        split = self.interp.tk.split
-        call = self.interp.tk.call
-        self.assertRaises(TypeError, split)
-        self.assertRaises(TypeError, split, 'a', 'b')
-        self.assertRaises(TypeError, split, 2)
-        testcases = [
-            ('2', '2'),
-            ('', ''),
-            ('{}', ''),
-            ('""', ''),
-            ('{', '{'),
-            ('a\n b\t\r c\n ', ('a', 'b', 'c')),
-            (b'a\n b\t\r c\n ', ('a', 'b', 'c')),
-            ('a \u20ac', ('a', '\u20ac')),
-            (b'a \xe2\x82\xac', ('a', '\u20ac')),
-            (b'a\xc0\x80b', 'a\x00b'),
-            (b'a\xc0\x80b c\xc0\x80d', ('a\x00b', 'c\x00d')),
-            (b'{a\xc0\x80b c\xc0\x80d', '{a\x00b c\x00d'),
-            ('a {b c}', ('a', ('b', 'c'))),
-            (r'a b\ c', ('a', ('b', 'c'))),
-            (('a', b'b c'), ('a', ('b', 'c'))),
-            (('a', 'b c'), ('a', ('b', 'c'))),
-            ('a 2', ('a', '2')),
-            (('a', 2), ('a', 2)),
-            ('a 3.4', ('a', '3.4')),
-            (('a', 3.4), ('a', 3.4)),
-            (('a', (2, 3.4)), ('a', (2, 3.4))),
-            ((), ()),
-            ([], ()),
-            (['a', 'b c'], ('a', ('b', 'c'))),
-            (['a', ['b', 'c']], ('a', ('b', 'c'))),
-            (call('list', 1, '2', (3.4,)),
-                (1, '2', (3.4,)) if self.wantobjects else
-                ('1', '2', '3.4')),
-        ]
-        if tcl_version >= (8, 5):
-            if not self.wantobjects or get_tk_patchlevel() < (8, 5, 5):
-                # Before 8.5.5 dicts were converted to lists through string
-                expected = ('12', '\u20ac', '\xe2\x82\xac', '3.4')
-            else:
-                expected = (12, '\u20ac', b'\xe2\x82\xac', (3.4,))
-            testcases += [
-                (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
-                    expected),
-            ]
-        for arg, res in testcases:
-            self.assertEqual(split(arg), res, msg=arg)
 
     def test_splitdict(self):
         splitdict = tkinter._splitdict
@@ -639,18 +609,56 @@ class TclTest(unittest.TestCase):
             {'a': (1, 2, 3) if self.wantobjects else '1 2 3',
              'something': 'foo', 'status': ''})
 
-        if tcl_version >= (8, 5):
-            arg = tcl.call('dict', 'create',
-                           '-a', (1, 2, 3), '-something', 'foo', 'status', ())
-            if not self.wantobjects or get_tk_patchlevel() < (8, 5, 5):
-                # Before 8.5.5 dicts were converted to lists through string
-                expected = {'a': '1 2 3', 'something': 'foo', 'status': ''}
-            else:
-                expected = {'a': (1, 2, 3), 'something': 'foo', 'status': ''}
-            self.assertEqual(splitdict(tcl, arg), expected)
+        arg = tcl.call('dict', 'create',
+                       '-a', (1, 2, 3), '-something', 'foo', 'status', ())
+        if not self.wantobjects:
+            expected = {'a': '1 2 3', 'something': 'foo', 'status': ''}
+        else:
+            expected = {'a': (1, 2, 3), 'something': 'foo', 'status': ''}
+        self.assertEqual(splitdict(tcl, arg), expected)
 
+    def test_join(self):
+        join = tkinter._join
+        tcl = self.interp.tk
+        def unpack(s):
+            return tcl.call('lindex', s, 0)
+        def check(value):
+            self.assertEqual(unpack(join([value])), value)
+            self.assertEqual(unpack(join([value, 0])), value)
+            self.assertEqual(unpack(unpack(join([[value]]))), value)
+            self.assertEqual(unpack(unpack(join([[value, 0]]))), value)
+            self.assertEqual(unpack(unpack(join([[value], 0]))), value)
+            self.assertEqual(unpack(unpack(join([[value, 0], 0]))), value)
+        check('')
+        check('spam')
+        check('sp am')
+        check('sp\tam')
+        check('sp\nam')
+        check(' \t\n')
+        check('{spam}')
+        check('{sp am}')
+        check('"spam"')
+        check('"sp am"')
+        check('{"spam"}')
+        check('"{spam}"')
+        check('sp\\am')
+        check('"sp\\am"')
+        check('"{}" "{}"')
+        check('"\\')
+        check('"{')
+        check('"}')
+        check('\n\\')
+        check('\n{')
+        check('\n}')
+        check('\\\n')
+        check('{\n')
+        check('}\n')
+
+    @support.cpython_only
     def test_new_tcl_obj(self):
-        self.assertRaises(TypeError, _tkinter.Tcl_Obj)
+        support.check_disallow_instantiation(self, _tkinter.Tcl_Obj)
+        support.check_disallow_instantiation(self, _tkinter.TkttType)
+        support.check_disallow_instantiation(self, _tkinter.TkappType)
 
 class BigmemTclTest(unittest.TestCase):
 
@@ -686,7 +694,6 @@ class BigmemTclTest(unittest.TestCase):
         self.assertRaises(OverflowError, tk.exprlong, value)
         self.assertRaises(OverflowError, tk.exprboolean, value)
         self.assertRaises(OverflowError, tk.splitlist, value)
-        self.assertRaises(OverflowError, tk.split, value)
         self.assertRaises(OverflowError, tk.createcommand, value, max)
         self.assertRaises(OverflowError, tk.deletecommand, value)
 
@@ -705,11 +712,8 @@ class BigmemTclTest(unittest.TestCase):
 def setUpModule():
     if support.verbose:
         tcl = Tcl()
-        print('patchlevel =', tcl.call('info', 'patchlevel'))
+        print('patchlevel =', tcl.call('info', 'patchlevel'), flush=True)
 
-
-def test_main():
-    support.run_unittest(TclTest, TkinterTest, BigmemTclTest)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
