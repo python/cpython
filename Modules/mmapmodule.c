@@ -29,6 +29,8 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
+#if !defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)
+
 #ifndef MS_WINDOWS
 #define UNIX
 # ifdef HAVE_FCNTL_H
@@ -1724,3 +1726,5 @@ PyInit_mmap(void)
 {
     return PyModuleDef_Init(&mmapmodule);
 }
+
+#endif /* !MS_WINDOWS_NON_DESKTOP || MS_WINDOWS_GAMES */
