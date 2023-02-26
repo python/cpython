@@ -383,7 +383,9 @@ remove_unusable_flags(PyObject *m)
             VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
             dwlConditionMask);
 #else
-        BOOL isSupported = (info.dwMajorVersion >= 10) && (info.dwMinorVersion >= 0) && (info.dwBuildNumber >= win_runtime_flags[i].build_number);
+        BOOL isSupported = info.dwMajorVersion >= 10 &&
+            info.dwMinorVersion >= 0 &&
+            info.dwBuildNumber >= win_runtime_flags[i].build_number;
 #endif
         if (isSupported) {
             break;
