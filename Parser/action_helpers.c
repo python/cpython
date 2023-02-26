@@ -2,28 +2,12 @@
 
 #include "pegen.h"
 #include "string_parser.h"
-
-static PyObject *
-_create_dummy_identifier(Parser *p)
-{
-    return _PyPegen_new_identifier(p, "");
-}
+#include "pycore_runtime.h"         // _PyRuntime
 
 void *
 _PyPegen_dummy_name(Parser *p, ...)
 {
-    static void *cache = NULL;
-
-    if (cache != NULL) {
-        return cache;
-    }
-
-    PyObject *id = _create_dummy_identifier(p);
-    if (!id) {
-        return NULL;
-    }
-    cache = _PyAST_Name(id, Load, 1, 0, 1, 0, p->arena);
-    return cache;
+    return &_PyRuntime.parser.dummy_name;
 }
 
 /* Creates a single-element asdl_seq* that contains a */
@@ -1145,7 +1129,7 @@ _PyPegen_get_expr_name(expr_ty e)
     }
 }
 
-static inline expr_ty
+expr_ty
 _PyPegen_get_last_comprehension_item(comprehension_ty comprehension) {
     if (comprehension->ifs == NULL || asdl_seq_LEN(comprehension->ifs) == 0) {
         return comprehension->iter;

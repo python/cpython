@@ -8,13 +8,19 @@
 #include "pycore_hamt.h"   /* PyHamtObject */
 
 
+extern PyTypeObject _PyContextTokenMissing_Type;
+
 /* runtime lifecycle */
 
-PyStatus _PyContext_InitTypes(PyInterpreterState *);
+PyStatus _PyContext_Init(PyInterpreterState *);
 void _PyContext_Fini(PyInterpreterState *);
 
 
 /* other API */
+
+typedef struct {
+    PyObject_HEAD
+} _PyContextTokenMissing;
 
 #ifndef WITH_FREELISTS
 // without freelists

@@ -11,18 +11,40 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern PyStatus _PyBytes_InitGlobalObjects(PyInterpreterState *);
 extern PyStatus _PyBytes_InitTypes(PyInterpreterState *);
-extern void _PyBytes_Fini(PyInterpreterState *);
 
 
-/* other API */
+/* Substring Search.
 
-struct _Py_bytes_state {
-    PyObject *empty_string;
-    PyBytesObject *characters[256];
-};
+   Returns the index of the first occurrence of
+   a substring ("needle") in a larger text ("haystack").
+   If the needle is not found, return -1.
+   If the needle is found, add offset to the index.
+*/
 
+PyAPI_FUNC(Py_ssize_t)
+_PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
+              const char *needle, Py_ssize_t len_needle,
+              Py_ssize_t offset);
+
+/* Same as above, but search right-to-left */
+PyAPI_FUNC(Py_ssize_t)
+_PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
+                     const char *needle, Py_ssize_t len_needle,
+                     Py_ssize_t offset);
+
+
+/** Helper function to implement the repeat and inplace repeat methods on a buffer
+ *
+ * len_dest is assumed to be an integer multiple of len_src.
+ * If src equals dest, then assume the operation is inplace.
+ *
+ * This method repeately doubles the number of bytes copied to reduce
+ * the number of invocations of memcpy.
+ */
+PyAPI_FUNC(void)
+_PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
+    const char* src, Py_ssize_t len_src);
 
 #ifdef __cplusplus
 }

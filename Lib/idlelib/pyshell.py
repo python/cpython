@@ -22,15 +22,6 @@ if sys.platform == 'win32':
         pass
 
 from tkinter import messagebox
-if TkVersion < 8.5:
-    root = Tk()  # otherwise create root in main
-    root.withdraw()
-    from idlelib.run import fix_scaling
-    fix_scaling(root)
-    messagebox.showerror("Idle Cannot Start",
-            "Idle requires tcl/tk 8.5+, not %s." % TkVersion,
-            parent=root)
-    raise SystemExit(1)
 
 from code import InteractiveInterpreter
 import itertools
@@ -995,6 +986,23 @@ class PyShell(OutputWindow):
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
 
+    def get_prompt_text(self, first, last):
+        """Return text between first and last with prompts added."""
+        text = self.text.get(first, last)
+        lineno_range = range(
+            int(float(first)),
+            int(float(last))
+         )
+        prompts = [
+            self.shell_sidebar.line_prompts.get(lineno)
+            for lineno in lineno_range
+        ]
+        return "\n".join(
+            line if prompt is None else f"{prompt} {line}"
+            for prompt, line in zip(prompts, text.splitlines())
+        ) + "\n"
+
+
     def copy_with_prompts_callback(self, event=None):
         """Copy selected lines to the clipboard, with prompts.
 
@@ -1005,31 +1013,15 @@ class PyShell(OutputWindow):
         and/or last lines is selected.
         """
         text = self.text
-
-        selection_indexes = (
-            self.text.index("sel.first linestart"),
-            self.text.index("sel.last +1line linestart"),
-        )
-        if selection_indexes[0] is None:
-            # There is no selection, so do nothing.
-            return
-
-        selected_text = self.text.get(*selection_indexes)
-        selection_lineno_range = range(
-            int(float(selection_indexes[0])),
-            int(float(selection_indexes[1]))
-        )
-        prompts = [
-            self.shell_sidebar.line_prompts.get(lineno)
-            for lineno in selection_lineno_range
-        ]
-        selected_text_with_prompts = "\n".join(
-            line if prompt is None else f"{prompt} {line}"
-            for prompt, line in zip(prompts, selected_text.splitlines())
-        ) + "\n"
-
+        selfirst = text.index('sel.first linestart')
+        if selfirst is None:  # Should not be possible.
+            return  # No selection, do nothing.
+        sellast = text.index('sel.last')
+        if sellast[-1] != '0':
+            sellast = text.index("sel.last+1line linestart")
         text.clipboard_clear()
-        text.clipboard_append(selected_text_with_prompts)
+        prompt_text = self.get_prompt_text(selfirst, sellast)
+        text.clipboard_append(prompt_text)
 
     reading = False
     executing = False
@@ -1689,11 +1681,6 @@ def main():
         # check for problematic issues and print warning message(s) in
         # the IDLE shell window; this is less intrusive than always
         # opening a separate window.
-
-        # Warn if using a problematic OS X Tk version.
-        tkversionwarning = macosx.tkVersionWarning(root)
-        if tkversionwarning:
-            shell.show_warning(tkversionwarning)
 
         # Warn if the "Prefer tabs when opening documents" system
         # preference is set to "Always".

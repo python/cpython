@@ -10,10 +10,9 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
-from test.support.os_helper import TESTFN, EnvironmentVarGuard, change_cwd
+from test.support.os_helper import TESTFN, EnvironmentVarGuard
 import ast
 import builtins
-import encodings
 import glob
 import io
 import os
@@ -206,14 +205,15 @@ class HelperFunctionsTests(unittest.TestCase):
             scheme = 'osx_framework_user'
         else:
             scheme = os.name + '_user'
-        self.assertEqual(site._get_path(site._getuserbase()),
+        self.assertEqual(os.path.normpath(site._get_path(site._getuserbase())),
                          sysconfig.get_path('purelib', scheme))
 
     @unittest.skipUnless(site.ENABLE_USER_SITE, "requires access to PEP 370 "
                           "user-site (site.ENABLE_USER_SITE)")
+    @support.requires_subprocess()
     def test_s_option(self):
         # (ncoghlan) Change this to use script_helper...
-        usersite = site.USER_SITE
+        usersite = os.path.normpath(site.USER_SITE)
         self.assertIn(usersite, sys.path)
 
         env = os.environ.copy()
@@ -455,16 +455,6 @@ class ImportSideEffectTests(unittest.TestCase):
         # 'help' should be set in builtins
         self.assertTrue(hasattr(builtins, "help"))
 
-    def test_aliasing_mbcs(self):
-        if sys.platform == "win32":
-            import locale
-            if locale.getdefaultlocale()[1].startswith('cp'):
-                for value in encodings.aliases.aliases.values():
-                    if value == "mbcs":
-                        break
-                else:
-                    self.fail("did not alias mbcs")
-
     def test_sitecustomize_executed(self):
         # If sitecustomize is available, it should have been imported.
         if "sitecustomize" not in sys.modules:
@@ -497,6 +487,7 @@ class ImportSideEffectTests(unittest.TestCase):
 
 class StartupImportTests(unittest.TestCase):
 
+    @support.requires_subprocess()
     def test_startup_imports(self):
         # Get sys.path in isolated mode (python3 -I)
         popen = subprocess.Popen([sys.executable, '-X', 'utf8', '-I',
@@ -531,7 +522,7 @@ class StartupImportTests(unittest.TestCase):
         self.assertIn('site', modules)
 
         # http://bugs.python.org/issue19205
-        re_mods = {'re', '_sre', 'sre_compile', 'sre_constants', 'sre_parse'}
+        re_mods = {'re', '_sre', 're._compiler', 're._constants', 're._parser'}
         self.assertFalse(modules.intersection(re_mods), stderr)
 
         # http://bugs.python.org/issue9548
@@ -547,17 +538,20 @@ class StartupImportTests(unittest.TestCase):
                           }.difference(sys.builtin_module_names)
         self.assertFalse(modules.intersection(collection_mods), stderr)
 
+    @support.requires_subprocess()
     def test_startup_interactivehook(self):
         r = subprocess.Popen([sys.executable, '-c',
             'import sys; sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by site")
 
+    @support.requires_subprocess()
     def test_startup_interactivehook_isolated(self):
         # issue28192 readline is not automatically enabled in isolated mode
         r = subprocess.Popen([sys.executable, '-I', '-c',
             'import sys; sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertFalse(r, "'__interactivehook__' added in isolated mode")
 
+    @support.requires_subprocess()
     def test_startup_interactivehook_isolated_explicit(self):
         # issue28192 readline can be explicitly enabled in isolated mode
         r = subprocess.Popen([sys.executable, '-I', '-c',
@@ -576,6 +570,8 @@ class _pthFileTests(unittest.TestCase):
             dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
             shutil.copy(sys.executable, exe_file)
             shutil.copy(dll_src_file, dll_file)
+            for fn in glob.glob(os.path.join(os.path.split(dll_src_file)[0], "vcruntime*.dll")):
+                shutil.copy(fn, os.path.join(temp_dir, os.path.split(fn)[1]))
             if exe_pth:
                 _pth_file = os.path.splitext(exe_file)[0] + '._pth'
             else:
@@ -607,6 +603,7 @@ class _pthFileTests(unittest.TestCase):
             sys_path.append(abs_path)
         return sys_path
 
+    @support.requires_subprocess()
     def test_underpth_basic(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
@@ -627,6 +624,7 @@ class _pthFileTests(unittest.TestCase):
             "sys.path is incorrect"
         )
 
+    @support.requires_subprocess()
     def test_underpth_nosite_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
@@ -655,6 +653,7 @@ class _pthFileTests(unittest.TestCase):
             "sys.path is incorrect"
         )
 
+    @support.requires_subprocess()
     def test_underpth_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
@@ -679,6 +678,7 @@ class _pthFileTests(unittest.TestCase):
             )], env=env)
         self.assertTrue(rc, "sys.path is incorrect")
 
+    @support.requires_subprocess()
     def test_underpth_dll_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)

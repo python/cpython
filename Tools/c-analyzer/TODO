@@ -156,8 +156,6 @@ Objects/codeobject.c:PyCode_NewEmpty():emptystring               static PyObject
 Objects/exceptions.c:_check_for_legacy_statements():exec_prefix  static PyObject *exec_prefix
 Objects/exceptions.c:_check_for_legacy_statements():print_prefix static PyObject *print_prefix
 Objects/funcobject.c:PyFunction_NewWithQualName():__name__       static PyObject *__name__
-Objects/typeobject.c:object___reduce_ex___impl():objreduce       static PyObject *objreduce
-Objects/typeobject.c:resolve_slotdups():pname                    static PyObject *pname
 Objects/unicodeobject.c:unicode_empty                            static PyObject *unicode_empty
 Objects/unicodeobject.c:unicode_latin1                           static PyObject *unicode_latin1[256]
 Python/_warnings.c:is_internal_frame():bootstrap_string          static PyObject *bootstrap_string
@@ -253,7 +251,6 @@ Modules/_io/textio.c:PyId_close                                  _Py_IDENTIFIER(
 Modules/_io/textio.c:PyId_decode                                 _Py_IDENTIFIER(decode)
 Modules/_io/textio.c:PyId_fileno                                 _Py_IDENTIFIER(fileno)
 Modules/_io/textio.c:PyId_flush                                  _Py_IDENTIFIER(flush)
-Modules/_io/textio.c:PyId_getpreferredencoding                   _Py_IDENTIFIER(getpreferredencoding)
 Modules/_io/textio.c:PyId_isatty                                 _Py_IDENTIFIER(isatty)
 Modules/_io/textio.c:PyId_mode                                   _Py_IDENTIFIER(mode)
 Modules/_io/textio.c:PyId_name                                   _Py_IDENTIFIER(name)
@@ -471,7 +468,6 @@ Python/ceval.c:_PyEval_EvalFrameDefault():PyId___annotations__   _Py_IDENTIFIER(
 Python/ceval.c:_PyEval_EvalFrameDefault():PyId___build_class__   _Py_IDENTIFIER(__build_class__)
 Python/ceval.c:_PyEval_EvalFrameDefault():PyId___enter__         _Py_IDENTIFIER(__enter__)
 Python/ceval.c:_PyEval_EvalFrameDefault():PyId___exit__          _Py_IDENTIFIER(__exit__)
-Python/ceval.c:_PyEval_EvalFrameDefault():PyId___ltrace__        _Py_IDENTIFIER(__ltrace__)
 Python/ceval.c:_PyEval_EvalFrameDefault():PyId_displayhook       _Py_IDENTIFIER(displayhook)
 Python/ceval.c:_PyEval_EvalFrameDefault():PyId_send              _Py_IDENTIFIER(send)
 Python/ceval.c:import_all_from():PyId___all__                    _Py_IDENTIFIER(__all__)

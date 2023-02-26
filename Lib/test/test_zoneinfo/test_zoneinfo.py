@@ -17,8 +17,8 @@ import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
-from . import _support as test_support
-from ._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
+from test.test_zoneinfo import _support as test_support
+from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module
 
 lzma = import_module('lzma')
@@ -403,6 +403,19 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
 
 class CZoneInfoTest(ZoneInfoTest):
     module = c_zoneinfo
+
+    def test_signatures(self):
+        """Ensure that C module has valid method signatures."""
+        import inspect
+
+        must_have_signatures = (
+            self.klass.clear_cache,
+            self.klass.no_cache,
+            self.klass.from_file,
+        )
+        for method in must_have_signatures:
+            with self.subTest(method=method):
+                inspect.Signature.from_callable(method)
 
     def test_fold_mutate(self):
         """Test that fold isn't mutated when no change is necessary.
@@ -1784,12 +1797,10 @@ class ExtensionBuiltTest(unittest.TestCase):
         self.assertTrue(hasattr(py_zoneinfo.ZoneInfo, "_weak_cache"))
 
     def test_gc_tracked(self):
-        # The pure Python version is tracked by the GC but (for now) the C
-        # version is not.
         import gc
 
         self.assertTrue(gc.is_tracked(py_zoneinfo.ZoneInfo))
-        self.assertFalse(gc.is_tracked(c_zoneinfo.ZoneInfo))
+        self.assertTrue(gc.is_tracked(c_zoneinfo.ZoneInfo))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -2107,3 +2118,7 @@ class ZoneDumpData:
 
     _ZONEDUMP_DATA = None
     _FIXED_OFFSET_ZONES = None
+
+
+if __name__ == '__main__':
+    unittest.main()

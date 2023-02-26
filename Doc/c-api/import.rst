@@ -150,6 +150,11 @@ Importing Modules
    See also :c:func:`PyImport_ExecCodeModuleEx` and
    :c:func:`PyImport_ExecCodeModuleWithPathnames`.
 
+   .. versionchanged:: 3.12
+      The setting of :attr:`__cached__` and :attr:`__loader__` is
+      deprecated. See :class:`~importlib.machinery.ModuleSpec` for
+      alternatives.
+
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
 
@@ -166,6 +171,10 @@ Importing Modules
    non-``NULL``.  Of the three functions, this is the preferred one to use.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.12
+      Setting :attr:`__cached__` is deprecated. See
+      :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
@@ -243,7 +252,7 @@ Importing Modules
    UTF-8 encoded string instead of a Unicode object.
 
 
-.. c:type:: struct _frozen
+.. c:struct:: _frozen
 
    .. index:: single: freeze utility
 
@@ -256,12 +265,16 @@ Importing Modules
           const char *name;
           const unsigned char *code;
           int size;
+          bool is_package;
       };
 
+   .. versionchanged:: 3.11
+      The new ``is_package`` field indicates whether the module is a package or not.
+      This replaces setting the ``size`` field to a negative value.
 
 .. c:var:: const struct _frozen* PyImport_FrozenModules
 
-   This pointer is initialized to point to an array of :c:type:`struct _frozen`
+   This pointer is initialized to point to an array of :c:struct:`_frozen`
    records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
    module is imported, it is searched in this table.  Third-party code could play
    tricks with this to provide a dynamically created collection of frozen modules.
@@ -277,7 +290,7 @@ Importing Modules
    :c:func:`Py_Initialize`.
 
 
-.. c:type:: struct _inittab
+.. c:struct:: _inittab
 
    Structure describing a single entry in the list of built-in modules.  Each of
    these structures gives the name and initialization function for a module built

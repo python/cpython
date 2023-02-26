@@ -21,8 +21,6 @@ extern "C" {
    PyLong_SHIFT.  The majority of the code doesn't care about the precise
    value of PyLong_SHIFT, but there are some notable exceptions:
 
-   - long_pow() requires that PyLong_SHIFT be divisible by 5
-
    - PyLong_{As,From}ByteArray require that PyLong_SHIFT be at least 8
 
    - long_hash() requires that PyLong_SHIFT is *strictly* less than the number
@@ -63,10 +61,6 @@ typedef long stwodigits; /* signed variant of twodigits */
 #define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
 #define PyLong_MASK     ((digit)(PyLong_BASE - 1))
 
-#if PyLong_SHIFT % 5 != 0
-#error "longobject.c requires that PyLong_SHIFT be divisible by 5"
-#endif
-
 /* Long integer representation.
    The absolute value of a number is equal to
         SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
@@ -77,14 +71,22 @@ typedef long stwodigits; /* signed variant of twodigits */
         0 <= ob_digit[i] <= MASK.
    The allocation function takes care of allocating extra memory
    so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
+   We always allocate memory for at least one digit, so accessing ob_digit[0]
+   is always safe. However, in the case ob_size == 0, the contents of
+   ob_digit[0] may be undefined.
 
    CAUTION:  Generic code manipulating subtypes of PyVarObject has to
    aware that ints abuse  ob_size's sign bit.
 */
 
-struct _longobject {
-    PyObject_VAR_HEAD
+typedef struct _PyLongValue {
+    Py_ssize_t ob_size; /* Number of items in variable part */
     digit ob_digit[1];
+} _PyLongValue;
+
+struct _longobject {
+    PyObject_HEAD
+    _PyLongValue long_value;
 };
 
 PyAPI_FUNC(PyLongObject *) _PyLong_New(Py_ssize_t);

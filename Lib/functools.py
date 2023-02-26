@@ -86,84 +86,84 @@ def wraps(wrapped,
 # infinite recursion that could occur when the operator dispatch logic
 # detects a NotImplemented result and then calls a reflected method.
 
-def _gt_from_lt(self, other, NotImplemented=NotImplemented):
+def _gt_from_lt(self, other):
     'Return a > b.  Computed by @total_ordering from (not a < b) and (a != b).'
     op_result = type(self).__lt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result and self != other
 
-def _le_from_lt(self, other, NotImplemented=NotImplemented):
+def _le_from_lt(self, other):
     'Return a <= b.  Computed by @total_ordering from (a < b) or (a == b).'
     op_result = type(self).__lt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result or self == other
 
-def _ge_from_lt(self, other, NotImplemented=NotImplemented):
+def _ge_from_lt(self, other):
     'Return a >= b.  Computed by @total_ordering from (not a < b).'
     op_result = type(self).__lt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
 
-def _ge_from_le(self, other, NotImplemented=NotImplemented):
+def _ge_from_le(self, other):
     'Return a >= b.  Computed by @total_ordering from (not a <= b) or (a == b).'
     op_result = type(self).__le__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result or self == other
 
-def _lt_from_le(self, other, NotImplemented=NotImplemented):
+def _lt_from_le(self, other):
     'Return a < b.  Computed by @total_ordering from (a <= b) and (a != b).'
     op_result = type(self).__le__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result and self != other
 
-def _gt_from_le(self, other, NotImplemented=NotImplemented):
+def _gt_from_le(self, other):
     'Return a > b.  Computed by @total_ordering from (not a <= b).'
     op_result = type(self).__le__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
 
-def _lt_from_gt(self, other, NotImplemented=NotImplemented):
+def _lt_from_gt(self, other):
     'Return a < b.  Computed by @total_ordering from (not a > b) and (a != b).'
     op_result = type(self).__gt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result and self != other
 
-def _ge_from_gt(self, other, NotImplemented=NotImplemented):
+def _ge_from_gt(self, other):
     'Return a >= b.  Computed by @total_ordering from (a > b) or (a == b).'
     op_result = type(self).__gt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result or self == other
 
-def _le_from_gt(self, other, NotImplemented=NotImplemented):
+def _le_from_gt(self, other):
     'Return a <= b.  Computed by @total_ordering from (not a > b).'
     op_result = type(self).__gt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
 
-def _le_from_ge(self, other, NotImplemented=NotImplemented):
+def _le_from_ge(self, other):
     'Return a <= b.  Computed by @total_ordering from (not a >= b) or (a == b).'
     op_result = type(self).__ge__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result or self == other
 
-def _gt_from_ge(self, other, NotImplemented=NotImplemented):
+def _gt_from_ge(self, other):
     'Return a > b.  Computed by @total_ordering from (a >= b) and (a != b).'
     op_result = type(self).__ge__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result and self != other
 
-def _lt_from_ge(self, other, NotImplemented=NotImplemented):
+def _lt_from_ge(self, other):
     'Return a < b.  Computed by @total_ordering from (not a >= b).'
     op_result = type(self).__ge__(self, other)
     if op_result is NotImplemented:
@@ -843,12 +843,11 @@ def singledispatch(func):
         return get_origin(cls) in {Union, types.UnionType}
 
     def _is_valid_dispatch_type(cls):
-        if isinstance(cls, type) and not isinstance(cls, GenericAlias):
+        if isinstance(cls, type):
             return True
         from typing import get_args
         return (_is_union_type(cls) and
-                all(isinstance(arg, type) and not isinstance(arg, GenericAlias)
-                    for arg in get_args(cls)))
+                all(isinstance(arg, type) for arg in get_args(cls)))
 
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
@@ -960,15 +959,12 @@ class singledispatchmethod:
 ### cached_property() - computed once per instance, cached as attribute
 ################################################################################
 
-_NOT_FOUND = object()
-
 
 class cached_property:
     def __init__(self, func):
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
-        self.lock = RLock()
 
     def __set_name__(self, owner, name):
         if self.attrname is None:
@@ -993,21 +989,15 @@ class cached_property:
                 f"instance to cache {self.attrname!r} property."
             )
             raise TypeError(msg) from None
-        val = cache.get(self.attrname, _NOT_FOUND)
-        if val is _NOT_FOUND:
-            with self.lock:
-                # check if another thread filled cache while we awaited lock
-                val = cache.get(self.attrname, _NOT_FOUND)
-                if val is _NOT_FOUND:
-                    val = self.func(instance)
-                    try:
-                        cache[self.attrname] = val
-                    except TypeError:
-                        msg = (
-                            f"The '__dict__' attribute on {type(instance).__name__!r} instance "
-                            f"does not support item assignment for caching {self.attrname!r} property."
-                        )
-                        raise TypeError(msg) from None
+        val = self.func(instance)
+        try:
+            cache[self.attrname] = val
+        except TypeError:
+            msg = (
+                f"The '__dict__' attribute on {type(instance).__name__!r} instance "
+                f"does not support item assignment for caching {self.attrname!r} property."
+            )
+            raise TypeError(msg) from None
         return val
 
     __class_getitem__ = classmethod(GenericAlias)

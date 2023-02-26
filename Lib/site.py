@@ -266,8 +266,8 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # VxWorks has no home directories
-    if sys.platform == "vxworks":
+    # Emscripten, VxWorks, and WASI have no home directories
+    if sys.platform in {"emscripten", "vxworks", "wasi"}:
         return None
 
     def joinuser(*args):
@@ -404,12 +404,7 @@ def setquit():
 def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
     builtins.copyright = _sitebuiltins._Printer("copyright", sys.copyright)
-    if sys.platform[:4] == 'java':
-        builtins.credits = _sitebuiltins._Printer(
-            "credits",
-            "Jython is maintained by the Jython developers (www.jython.org).")
-    else:
-        builtins.credits = _sitebuiltins._Printer("credits", """\
+    builtins.credits = _sitebuiltins._Printer("credits", """\
     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
     for supporting Python development.  See www.python.org for more information.""")
     files, dirs = [], []

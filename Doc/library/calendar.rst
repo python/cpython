@@ -31,7 +31,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 .. class:: Calendar(firstweekday=0)
 
    Creates a :class:`Calendar` object. *firstweekday* is an integer specifying the
-   first day of the week. ``0`` is Monday (the default), ``6`` is Sunday.
+   first day of the week. :const:`MONDAY` is ``0`` (the default), :const:`SUNDAY` is ``6``.
 
    A :class:`Calendar` object provides several methods that can be used for
    preparing the calendar data for formatting. This class doesn't do any formatting
@@ -289,9 +289,10 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 .. note::
 
-   The :meth:`formatweekday` and :meth:`formatmonthname` methods of these two
-   classes temporarily change the current locale to the given *locale*.  Because
-   the current locale is a process-wide setting, they are not thread-safe.
+   The constructor, :meth:`formatweekday` and :meth:`formatmonthname` methods
+   of these two classes temporarily change the ``LC_TIME`` locale to the given
+   *locale*. Because the current locale is a process-wide setting, they are
+   not thread-safe.
 
 
 For simple text calendars this module provides the following functions.
@@ -406,6 +407,15 @@ The :mod:`calendar` module exports the following data attributes:
    locale.  This follows normal convention of January being month number 1, so it
    has a length of 13 and  ``month_abbr[0]`` is the empty string.
 
+.. data:: MONDAY
+          TUESDAY
+          WEDNESDAY
+          THURSDAY
+          FRIDAY
+          SATURDAY
+          SUNDAY
+
+   Aliases for day numbers, where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
 
 .. seealso::
 
