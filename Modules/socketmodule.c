@@ -5459,6 +5459,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             return -1;
         }
 
+#ifndef MS_WINDOWS_NON_DESKTOP
         if (!support_wsa_no_inherit) {
             if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
                 closesocket(fd);
@@ -5466,6 +5467,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
                 return -1;
             }
         }
+#endif
 #else
         /* UNIX */
         Py_BEGIN_ALLOW_THREADS
@@ -7343,7 +7345,11 @@ PyInit__socket(void)
 
 #ifdef MS_WINDOWS
     if (support_wsa_no_inherit == -1) {
+#ifdef MS_WINDOWS_NON_DESKTOP
+        support_wsa_no_inherit = 1;
+#else
         support_wsa_no_inherit = IsWindows7SP1OrGreater();
+#endif
     }
 #endif
 
