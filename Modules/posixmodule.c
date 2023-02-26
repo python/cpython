@@ -8402,7 +8402,7 @@ os_getuid_impl(PyObject *module)
 #endif /* HAVE_GETUID */
 
 
-#if defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
 #define HAVE_KILL
 #endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
 
