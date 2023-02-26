@@ -8259,7 +8259,7 @@ win32_getppid()
     PSS_PROCESS_INFORMATION info;
     error = PssQuerySnapshot(snapshot, PSS_QUERY_PROCESS_INFORMATION, &info,
                              sizeof(info));
-    if (error != ERROR_SUCCESS) {
+    if (error == ERROR_SUCCESS) {
         result = PyLong_FromUnsignedLong(info.ParentProcessId);
     }
     else {
