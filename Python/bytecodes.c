@@ -1754,9 +1754,7 @@ dummy_func(
             int offset = next_instr[1].op.arg;
             int err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
-            if (err < 0) {
-                goto error;
-            }
+            ERROR_IF(err < 0, error);
             if (jump_on_true == (err != 0)) {
                 JUMPBY(offset);
             }
