@@ -1137,7 +1137,9 @@ time_tzset(PyObject *self, PyObject *unused)
         return NULL;
     }
 
+#ifndef MS_WINDOWS_NON_DESKTOP
     tzset();
+#endif
 
     /* Reset timezone, altzone, daylight and tzname */
     if (init_timezone(m) < 0) {
@@ -1755,7 +1757,9 @@ init_timezone(PyObject *m)
      */
 #ifdef HAVE_DECL_TZNAME
     PyObject *otz0, *otz1;
+#ifndef MS_WINDOWS_NON_DESKTOP
     tzset();
+#endif
     PyModule_AddIntConstant(m, "timezone", _Py_timezone);
 #ifdef HAVE_ALTZONE
     PyModule_AddIntConstant(m, "altzone", altzone);

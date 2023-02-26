@@ -2295,7 +2295,7 @@ create_stdio(const PyConfig *config, PyObject* io,
         raw = Py_NewRef(buf);
     }
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
     /* Windows console IO is always UTF-8 encoded */
     PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
             &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
