@@ -953,7 +953,7 @@ faulthandler_unregister_py(PyObject *self, PyObject *args)
 static void
 faulthandler_suppress_crash_report(void)
 {
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
     UINT mode;
 
     /* Configure Windows to not display the Windows Error Reporting dialog */
