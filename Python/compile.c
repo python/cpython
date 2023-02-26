@@ -8696,37 +8696,37 @@ prepare_localsplus(struct compiler* c, int code_flags, cfg_builder *newg)
     assert(INT_MAX - nlocals - ncellvars > 0);
     assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
     int nlocalsplus = nlocals + ncellvars + nfreevars;
-    int* cellfixedoffsets = build_cellfixedoffsets(c);
-    if (cellfixedoffsets == NULL) {
-        return ERROR;
-    }
+//    int* cellfixedoffsets = build_cellfixedoffsets(c);
+//    if (cellfixedoffsets == NULL) {
+//        return ERROR;
+//    }
     int* newcellfixedoffsets = build_cellfixedoffsets(c);
     if (newcellfixedoffsets == NULL) {
         return ERROR;
     }   
 
-    cfg_builder* g = CFG_BUILDER(c);
+//    cfg_builder* g = CFG_BUILDER(c);
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
-        PyMem_Free(cellfixedoffsets);
-        return ERROR;
-    }
+//    if (insert_prefix_instructions(c, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
+//        PyMem_Free(cellfixedoffsets);
+//        return ERROR;
+//    }
     if (insert_prefix_instructions(c, newg->g_entryblock, newcellfixedoffsets, nfreevars, code_flags)) {
         PyMem_Free(newcellfixedoffsets);
         return ERROR;
     }
 
-    int numdropped = fix_cell_offsets(c, g->g_entryblock, cellfixedoffsets);
-    PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
-    cellfixedoffsets = NULL;
-    if (numdropped < 0) {
-        return ERROR;
-    }
+//    int numdropped = fix_cell_offsets(c, g->g_entryblock, cellfixedoffsets);
+//    PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
+//    cellfixedoffsets = NULL;
+//    if (numdropped < 0) {
+//        return ERROR;
+//    }
     int newnumdropped = fix_cell_offsets(c, newg->g_entryblock, newcellfixedoffsets);
     PyMem_Free(newcellfixedoffsets);  // At this point we're done with it.
     newcellfixedoffsets = NULL;
-    assert(newnumdropped == numdropped);
+    int numdropped = newnumdropped;
 
     nlocalsplus -= numdropped;
     return nlocalsplus;
@@ -8764,17 +8764,26 @@ assemble(struct compiler *c, int addNone)
         return NULL;
     }
 
+    /** Preprocessing **/
+    memset(&newg, 0, sizeof(cfg_builder));
+    if (cfg_builder_init(&newg) < 0) {
+        goto error;
+    }
+    newg.g_build_instr_stream = false;
+    if (instr_stream_to_cfg(&CFG_BUILDER(c)->g_instr_stream, &newg) < 0) {
+        goto error;
+    }
+
+    cfg_builder *g = &newg;
     int nblocks = 0;
-    for (basicblock *b = CFG_BUILDER(c)->g_block_list; b != NULL; b = b->b_list) {
+
+    for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
         nblocks++;
     }
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
         PyErr_NoMemory();
         goto error;
     }
-
-    cfg_builder *g = CFG_BUILDER(c);
-    assert(g->g_entryblock != NULL);
 
     /* Set firstlineno if it wasn't explicitly set. */
     if (!c->u->u_firstlineno) {
@@ -8786,33 +8795,15 @@ assemble(struct compiler *c, int addNone)
         }
     }
 
-    /** Preprocessing **/
-    memset(&newg, 0, sizeof(cfg_builder));
-    if (cfg_builder_init(&newg) < 0) {
-        goto error;
-    }
-    newg.g_build_instr_stream = false;
-    if (instr_stream_to_cfg(&g->g_instr_stream, &newg) < 0) {
-        goto error;
-    }
     /* Map labels to targets and mark exception handlers */
     if (translate_jump_labels_to_targets(g->g_entryblock) < 0) {
-        goto error;
-    }
-    if (translate_jump_labels_to_targets(newg.g_entryblock) < 0) {
         goto error;
     }
     if (mark_except_handlers(g->g_entryblock) < 0) {
         goto error;
     }
-    if (mark_except_handlers(newg.g_entryblock) < 0) {
-        goto error;
-    }
 
     if (label_exception_targets(g->g_entryblock)) {
-        goto error;
-    }
-    if (label_exception_targets(newg.g_entryblock)) {
         goto error;
     }
 
@@ -8821,27 +8812,14 @@ assemble(struct compiler *c, int addNone)
     if (consts == NULL) {
         goto error;
     }
-    newconsts = consts_dict_keys_inorder(c->u->u_consts);
-    if (consts == NULL) {
-        goto error;
-    }
     if (optimize_cfg(g, consts, c->c_const_cache)) {
-        goto error;
-    }
-    if (optimize_cfg(&newg, newconsts, c->c_const_cache)) {
         goto error;
     }
 
     if (remove_unused_consts(g->g_entryblock, consts) < 0) {
         goto error;
     }
-    if (remove_unused_consts(newg.g_entryblock, newconsts) < 0) {
-        goto error;
-    }
     if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, c) < 0) {
-        goto error;
-    }
-    if (add_checks_for_loads_of_uninitialized_variables(newg.g_entryblock, c) < 0) {
         goto error;
     }
 
@@ -8850,21 +8828,11 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    /** line numbers (TODO: move this before optimization stage) */
-    if (duplicate_exits_without_lineno(&newg) < 0) {
-        goto error;
-    }
-
     propagate_line_numbers(g->g_entryblock);
-    propagate_line_numbers(newg.g_entryblock);
 
     guarantee_lineno_for_exits(g->g_entryblock, c->u->u_firstlineno);
-    guarantee_lineno_for_exits(newg.g_entryblock, c->u->u_firstlineno);
 
     if (push_cold_blocks_to_end(g, code_flags) < 0) {
-        goto error;
-    }
-    if (push_cold_blocks_to_end(&newg, code_flags) < 0) {
         goto error;
     }
 
@@ -8878,30 +8846,20 @@ assemble(struct compiler *c, int addNone)
     if (maxdepth < 0) {
         goto error;
     }
-    int newmaxdepth = stackdepth(newg.g_entryblock, code_flags);
-    assert(maxdepth == newmaxdepth);
 
     /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
     convert_exception_handlers_to_nops(g->g_entryblock);
-    convert_exception_handlers_to_nops(newg.g_entryblock);
 
     /* Order of basic blocks must have been determined by now */
     if (normalize_jumps(g) < 0) {
         goto error;
     }
-
-    if (normalize_jumps(&newg) < 0) {
-        goto error;
-    }
     assert(no_redundant_jumps(g));
     assert(opcode_metadata_is_sane(g));
-    assert(no_redundant_jumps(&newg));
-    assert(opcode_metadata_is_sane(&newg));
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
-    assemble_jump_offsets(newg.g_entryblock);
 
     /* Create assembler */
     if (assemble_init(&a, c->u->u_firstlineno) < 0) {
@@ -8909,7 +8867,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Emit code. */
-    for (basicblock *b = newg.g_entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++) {
             if (assemble_emit(&a, &b->b_instr[j]) < 0) {
                 goto error;
@@ -8921,7 +8879,7 @@ assemble(struct compiler *c, int addNone)
     a.a_lineno = c->u->u_firstlineno;
     location loc = NO_LOCATION;
     int size = 0;
-    for (basicblock *b = newg.g_entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++) {
             if (!same_location(loc, b->b_instr[j].i_loc)) {
                 if (assemble_emit_location(&a, loc, size)) {
@@ -8937,7 +8895,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    if (assemble_exception_table(&a, newg.g_entryblock) < 0) {
+    if (assemble_exception_table(&a, g->g_entryblock) < 0) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
