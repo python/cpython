@@ -410,7 +410,7 @@ PyHKEY_Close(PyObject *ob_handle)
         ((PyHKEYObject*)ob_handle)->hkey = 0;
     }
 #ifdef MS_WINDOWS_NON_DESKTOP
-    rc = ERROR_SUCCESS
+    rc = ERROR_SUCCESS;
 #else
     rc = key ? RegCloseKey(key) : ERROR_SUCCESS;
 #endif
