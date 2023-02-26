@@ -333,11 +333,8 @@ corresponding Unix manual entries for more information on calls.");
 #  include <process.h>
 #elif defined( _MSC_VER)
   /* Microsoft compiler */
-#  ifndef MS_WINDOWS_GAMING
-#    define HAVE_GETPPID    1
-#  endif /* MS_WINDOWS_GAMING */
-
 #  ifndef MS_WINDOWS_NON_DESKTOP
+#    define HAVE_GETPPID    1
 #    define HAVE_GETLOGIN   1
 #    define HAVE_SPAWNV     1
 #    define HAVE_EXECV      1
@@ -8249,49 +8246,20 @@ os_setpgrp_impl(PyObject *module)
 static PyObject*
 win32_getppid()
 {
-    PSS_THREAD_ENTRY thread;
     PyObject* result = NULL;
-    HPSS snapshot = NULL;
-    HPSSWALK walk = NULL;
-    DWORD mypid = GetCurrentProcessId(); /* This function never fails */
     HANDLE myhandle = GetCurrentProcess();
 
-    if (PssCaptureSnapshot(myhandle, PSS_CAPTURE_THREADS, 0, &snapshot) != ERROR_SUCCESS)
-    {
-        result = PyErr_SetFromWindowsErr(GetLastError());
-        goto exit;
-    }
+    HPSS snapshot = NULL;
+    if (PssCaptureSnapshot(myhandle, PSS_CAPTURE_NONE, 0, &snapshot) != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErr(GetLastError());
 
-    if (PssWalkMarkerCreate(NULL, &walk) != ERROR_SUCCESS)
-    {
-        result = PyErr_SetFromWindowsErr(GetLastError());
-        goto exit;
-    }
-
-    while (PssWalkSnapshot(snapshot, PSS_WALK_THREADS, walk, &thread, sizeof(thread)) == ERROR_SUCCESS)
-    {
-        if (mypid == thread.ProcessId) {
-            /* We could cache the ulong value in a static variable. */
-            if (PssWalkSnapshot(snapshot, PSS_WALK_THREADS, walk, &thread, sizeof(thread)) == ERROR_SUCCESS)
-                result = PyLong_FromUnsignedLong(thread.ProcessId);
-
-            break;
-        }
-    }
-
-    /* If our loop exits and our pid was not found (result will be NULL)
-     * then GetLastError will return ERROR_NO_MORE_FILES. This is an
-     * error anyway, so let's raise it. */
-    if (!result)
+    PSS_PROCESS_INFORMATION info;
+    if (PssQuerySnapshot(snapshot, PSS_QUERY_PROCESS_INFORMATION, &info, sizeof(info)) != ERROR_SUCCESS)
+        result = PyLong_FromUnsignedLong(info.ParentProcessId);
+    else
         result = PyErr_SetFromWindowsErr(GetLastError());
 
-exit:
-    if (walk)
-        PssWalkMarkerFree(walk);
-
-    if (snapshot)
-        PssFreeSnapshot(myhandle, snapshot);
-
+    PssFreeSnapshot(myhandle, snapshot);
     return result;
 }
 #endif /*MS_WINDOWS*/
