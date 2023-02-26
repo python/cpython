@@ -15767,8 +15767,10 @@ unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
         PyObject *u = (PyObject *)_PyUnicode_New(0);
-        if (u == NULL)
+        if (u == NULL) {
+            Py_DECREF(iter);
             return NULL;
+        }
         return Py_BuildValue("N(N)", iter, u);
     }
 }
