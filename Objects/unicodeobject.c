@@ -15768,7 +15768,7 @@ unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
     } else {
         PyObject *u = (PyObject *)_PyUnicode_New(0);
         if (u == NULL) {
-            Py_DECREF(iter);
+            Py_XDECREF(iter);
             return NULL;
         }
         return Py_BuildValue("N(N)", iter, u);
