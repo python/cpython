@@ -66,32 +66,6 @@
 
 #define T_HANDLE T_POINTER
 
-/* Grab CancelIoEx dynamically from kernel32 */
-static int has_CancelIoEx = -1;
-static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED);
-
-static int
-check_CancelIoEx()
-{
-#ifdef MS_WINDOWS_GAMES
-    Py_CancelIoEx = &CancelIoEx;
-    has_CancelIoEx = TRUE;
-#else
-    if (has_CancelIoEx == -1)
-    {
-        HINSTANCE hKernel32 = GetModuleHandleA("KERNEL32");
-        if (hKernel32) {
-            * (FARPROC *) &Py_CancelIoEx = GetProcAddress(hKernel32,
-                                                        "CancelIoEx");
-            has_CancelIoEx = (Py_CancelIoEx != NULL);
-        } else {
-            has_CancelIoEx = 0;
-        }
-    }
-#endif
-    return has_CancelIoEx;
-}
-
 typedef struct {
     PyTypeObject *overlapped_type;
 } WinApiState;
@@ -146,8 +120,7 @@ overlapped_dealloc(OverlappedObject *self)
 
     PyObject_GC_UnTrack(self);
     if (self->pending) {
-        if (check_CancelIoEx() &&
-            Py_CancelIoEx(self->handle, &self->overlapped) &&
+        if (CancelIoEx(self->handle, &self->overlapped) &&
             GetOverlappedResult(self->handle, &self->overlapped, &bytes, TRUE))
         {
             /* The operation is no longer pending -- nothing to do. */
@@ -318,10 +291,7 @@ _winapi_Overlapped_cancel_impl(OverlappedObject *self)
 
     if (self->pending) {
         Py_BEGIN_ALLOW_THREADS
-        if (check_CancelIoEx())
-            res = Py_CancelIoEx(self->handle, &self->overlapped);
-        else
-            res = CancelIo(self->handle);
+        res = CancelIoEx(self->handle, &self->overlapped);
         Py_END_ALLOW_THREADS
     }
 

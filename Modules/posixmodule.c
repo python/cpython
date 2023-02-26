@@ -8438,7 +8438,7 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
 
     /* Console processes which share a common console can be sent CTRL+C or
        CTRL+BREAK events, provided they handle said events. */
-#if !defined(MS_WINDOWS_NON_DESKTOP)
+#if !defined(MS_WINDOWS_GAMES)
     /* Console processes which share a common console can be sent CTRL+C or
        CTRL+BREAK events, provided they handle said events. */
     if (sig == CTRL_C_EVENT || sig == CTRL_BREAK_EVENT) {
@@ -15078,7 +15078,7 @@ error:
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
 /* bpo-36085: Helper functions for managing DLL search directories
  * on win32
  */
