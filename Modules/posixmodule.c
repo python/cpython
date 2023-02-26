@@ -333,8 +333,11 @@ corresponding Unix manual entries for more information on calls.");
 #  include <process.h>
 #elif defined( _MSC_VER)
   /* Microsoft compiler */
-#  ifndef MS_WINDOWS_NON_DESKTOP
+#  ifndef MS_WINDOWS_GAMING
 #    define HAVE_GETPPID    1
+#  endif /* MS_WINDOWS_GAMING */
+
+#  ifndef MS_WINDOWS_NON_DESKTOP
 #    define HAVE_GETLOGIN   1
 #    define HAVE_SPAWNV     1
 #    define HAVE_EXECV      1
@@ -8241,32 +8244,39 @@ os_setpgrp_impl(PyObject *module)
 #ifdef HAVE_GETPPID
 
 #ifdef MS_WINDOWS
-#include <tlhelp32.h>
+#include <processsnapshot.h>
 
 static PyObject*
 win32_getppid()
 {
-    HANDLE snapshot;
+    PSS_THREAD_ENTRY thread;
     PyObject* result = NULL;
-    BOOL have_record;
-    PROCESSENTRY32 pe;
-
+    HPSS snapshot = NULL;
+    HPSSWALK walk = NULL;
     DWORD mypid = GetCurrentProcessId(); /* This function never fails */
+    HANDLE myhandle = GetCurrentProcess();
 
-    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (snapshot == INVALID_HANDLE_VALUE)
-        return PyErr_SetFromWindowsErr(GetLastError());
+    if (PssCaptureSnapshot(myhandle, PSS_CAPTURE_THREADS, 0, &snapshot) != ERROR_SUCCESS)
+    {
+        result = PyErr_SetFromWindowsErr(GetLastError());
+        goto exit;
+    }
 
-    pe.dwSize = sizeof(pe);
-    have_record = Process32First(snapshot, &pe);
-    while (have_record) {
-        if (mypid == pe.th32ProcessID) {
+    if (PssWalkMarkerCreate(NULL, &walk) != ERROR_SUCCESS)
+    {
+        result = PyErr_SetFromWindowsErr(GetLastError());
+        goto exit;
+    }
+
+    while (PssWalkSnapshot(snapshot, PSS_WALK_THREADS, walk, &thread, sizeof(thread)) == ERROR_SUCCESS)
+    {
+        if (mypid == thread.ProcessId) {
             /* We could cache the ulong value in a static variable. */
-            result = PyLong_FromUnsignedLong(pe.th32ParentProcessID);
+            if (PssWalkSnapshot(snapshot, PSS_WALK_THREADS, walk, &thread, sizeof(thread)) == ERROR_SUCCESS)
+                result = PyLong_FromUnsignedLong(thread.ProcessId);
+
             break;
         }
-
-        have_record = Process32Next(snapshot, &pe);
     }
 
     /* If our loop exits and our pid was not found (result will be NULL)
@@ -8275,7 +8285,12 @@ win32_getppid()
     if (!result)
         result = PyErr_SetFromWindowsErr(GetLastError());
 
-    CloseHandle(snapshot);
+exit:
+    if (walk)
+        PssWalkMarkerFree(walk);
+
+    if (snapshot)
+        PssFreeSnapshot(myhandle, snapshot);
 
     return result;
 }
