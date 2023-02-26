@@ -757,6 +757,8 @@ py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         info->monotonic = 0;
         info->adjustable = 1;
         if (clock_getres(CLOCK_REALTIME, &res) == 0) {
+            /* the explicit (double) casts silence loss-of-precision warnings
+               on some platforms */
             info->resolution = (double)res.tv_sec + (double)res.tv_nsec * 1e-9;
         }
         else {
