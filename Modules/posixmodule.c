@@ -4452,6 +4452,7 @@ exit:
     return result;
 }
 
+#ifndef MS_WINDOWS_GAMES
 
 /*[clinic input]
 os._path_splitroot
@@ -4479,18 +4480,9 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
         *p = L'\\';
     }
 
-#ifdef MS_WINDOWS_GAMES
-    /* this does not handle persistent local storage */
-    ret = E_FAIL;
-    if ((wcsncmp(buffer, L"G:\\", 3) == 0) || (wcsncmp(buffer, L"D:\\", 3) == 0) || (wcsncmp(buffer, L"T:\\", 3) == 0)) {
-        end = buffer + 3;
-        ret = S_OK;
-    }
-#else
     Py_BEGIN_ALLOW_THREADS
     ret = PathCchSkipRoot(buffer, &end);
     Py_END_ALLOW_THREADS
-#endif
     if (FAILED(ret)) {
         result = Py_BuildValue("sO", "", path->object);
     } else if (end != buffer) {
@@ -4506,6 +4498,8 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 
     return result;
 }
+
+#endif /* MS_WINDOWS_GAMES */
 
 
 /*[clinic input]

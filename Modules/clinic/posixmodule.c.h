@@ -1730,7 +1730,7 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-#if defined(MS_WINDOWS)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
 
 PyDoc_STRVAR(os__path_splitroot__doc__,
 "_path_splitroot($module, /, path)\n"
@@ -1792,7 +1792,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES) */
 
 #if defined(MS_WINDOWS)
 
@@ -10332,7 +10332,7 @@ exit:
     return return_value;
 }
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP))
 
 PyDoc_STRVAR(os_get_handle_inheritable__doc__,
 "get_handle_inheritable($module, handle, /)\n"
@@ -10366,9 +10366,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)) */
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP))
 
 PyDoc_STRVAR(os_set_handle_inheritable__doc__,
 "set_handle_inheritable($module, handle, inheritable, /)\n"
@@ -10400,7 +10400,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)) */
 
 PyDoc_STRVAR(os_get_blocking__doc__,
 "get_blocking($module, fd, /)\n"
@@ -11796,4 +11796,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=1b0eb6a76b1a0e28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=39a9280dd816bbac input=a9049054013a1b77]*/
