@@ -40,7 +40,7 @@ class OpcodeTests(unittest.TestCase):
         self.assertEqual(stack_effect(JUMP_IF_TRUE_OR_POP, 0, jump=False), -1)
         FOR_ITER = dis.opmap['FOR_ITER']
         self.assertEqual(stack_effect(FOR_ITER, 0), 1)
-        self.assertEqual(stack_effect(FOR_ITER, 0, jump=True), -1)
+        self.assertEqual(stack_effect(FOR_ITER, 0, jump=True), 1)
         self.assertEqual(stack_effect(FOR_ITER, 0, jump=False), 1)
         JUMP_FORWARD = dis.opmap['JUMP_FORWARD']
         self.assertEqual(stack_effect(JUMP_FORWARD, 0), 0)
@@ -72,9 +72,10 @@ class SpecializationStatsTests(unittest.TestCase):
         stat_names = opcode._specialization_stats
 
         specialized_opcodes = [
-            op[:-len("_ADAPTIVE")].lower() for
-            op in opcode._specialized_instructions
-            if op.endswith("_ADAPTIVE")]
+            op.lower()
+            for op in opcode._specializations
+            if opcode._inline_cache_entries[opcode.opmap[op]]
+        ]
         self.assertIn('load_attr', specialized_opcodes)
         self.assertIn('binary_subscr', specialized_opcodes)
 

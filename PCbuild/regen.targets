@@ -13,7 +13,7 @@
     <_ASTOutputs Include="$(PySourcePath)Python\Python-ast.c">
       <Argument>-C</Argument>
     </_ASTOutputs>
-    <_OpcodeSources Include="$(PySourcePath)Tools\scripts\generate_opcode_h.py;$(PySourcePath)Lib\opcode.py" />
+    <_OpcodeSources Include="$(PySourcePath)Tools\build\generate_opcode_h.py;$(PySourcePath)Lib\opcode.py" />
     <_OpcodeOutputs Include="$(PySourcePath)Include\opcode.h;$(PySourcePath)Include\internal\pycore_opcode.h;$(PySourcePath)Python\opcode_targets.h" />
     <_TokenSources Include="$(PySourcePath)Grammar\Tokens" />
     <_TokenOutputs Include="$(PySourcePath)Doc\library\token-list.inc">
@@ -59,7 +59,7 @@
           Inputs="@(_OpcodeSources)" Outputs="@(_OpcodeOutputs)"
           DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_OpcodeOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
-    <Exec Command="$(PythonForBuild) Tools\scripts\generate_opcode_h.py Lib\opcode.py Include\opcode.h Include\internal\pycore_opcode.h"
+    <Exec Command="$(PythonForBuild) Tools\build\generate_opcode_h.py Lib\opcode.py Include\opcode.h Include\internal\pycore_opcode.h"
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) Python\makeopcodetargets.py Python\opcode_targets.h"
           WorkingDirectory="$(PySourcePath)" />
@@ -69,7 +69,7 @@
           Inputs="@(_TokenSources)" Outputs="@(_TokenOutputs)"
           DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_TokenOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
-    <Exec Command="$(PythonForBuild) Tools\scripts\generate_token.py %(_TokenOutputs.Format) Grammar\Tokens &quot;%(_TokenOutputs.Identity)&quot;"
+    <Exec Command="$(PythonForBuild) Tools\build\generate_token.py %(_TokenOutputs.Format) Grammar\Tokens &quot;%(_TokenOutputs.Identity)&quot;"
           WorkingDirectory="$(PySourcePath)" />
     <Touch Files="@(_TokenOutputs)" />
   </Target>
@@ -85,7 +85,7 @@
   <Target Name="_RegenGlobalObjects"
           DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate Global Objects" Importance="high" />
-    <Exec Command="$(PythonForBuild) Tools\scripts\generate_global_objects.py"
+    <Exec Command="$(PythonForBuild) Tools\build\generate_global_objects.py"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 

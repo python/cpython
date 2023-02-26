@@ -11,8 +11,6 @@ backwards compatibility. They have been superseded by other modules.
 .. toctree::
 
    aifc.rst
-   asynchat.rst
-   asyncore.rst
    audioop.rst
    cgi.rst
    cgitb.rst

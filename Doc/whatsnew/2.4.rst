@@ -472,7 +472,7 @@ PEP 327: Decimal Data Type
 ==========================
 
 Python has always supported floating-point (FP) numbers, based on the underlying
-C :c:type:`double` type, as a data type.  However, while most programming
+C :c:expr:`double` type, as a data type.  However, while most programming
 languages provide a floating-point type, many people (even programmers) are
 unaware that floating-point numbers don't represent certain decimal fractions
 accurately.  The new :class:`Decimal` type can represent these fractions
@@ -501,7 +501,7 @@ mantissa is multiplied by 4 (2 to the power of the exponent 2); 1.25 \* 4 equals
 5.
 
 Modern systems usually provide floating-point support that conforms to a
-standard called IEEE 754.  C's :c:type:`double` type is usually implemented as a
+standard called IEEE 754.  C's :c:expr:`double` type is usually implemented as a
 64-bit IEEE 754 number, which uses 52 bits of space for the mantissa.  This
 means that numbers can only be specified to 52 bits of precision.  If you're
 trying to represent numbers whose expansion repeats endlessly, the expansion is
@@ -750,10 +750,10 @@ The solution described in the PEP is to add three new functions to the Python
 API that perform ASCII-only conversions, ignoring the locale setting:
 
 * ``PyOS_ascii_strtod(str, ptr)``  and ``PyOS_ascii_atof(str, ptr)``
-  both convert a string to a C :c:type:`double`.
+  both convert a string to a C :c:expr:`double`.
 
 * ``PyOS_ascii_formatd(buffer, buf_len, format, d)`` converts a
-  :c:type:`double` to an ASCII string.
+  :c:expr:`double` to an ASCII string.
 
 The code for these functions came from the GLib library
 (https://developer.gnome.org/glib/stable/), whose developers kindly
@@ -1453,7 +1453,7 @@ Some of the changes to Python's build process and to the C API are:
   extension functions: :c:macro:`Py_RETURN_NONE`, :c:macro:`Py_RETURN_TRUE`, and
   :c:macro:`Py_RETURN_FALSE`. (Contributed by Brett Cannon.)
 
-* Another new macro, :c:macro:`Py_CLEAR(obj)`,  decreases the reference count of
+* Another new macro, :c:macro:`Py_CLEAR`,  decreases the reference count of
   *obj* and sets *obj* to the null pointer.  (Contributed by Jim Fulton.)
 
 * A new function, ``PyTuple_Pack(N, obj1, obj2, ..., objN)``, constructs
@@ -1464,7 +1464,7 @@ Some of the changes to Python's build process and to the C API are:
   lookups without masking exceptions raised during the look-up process.
   (Contributed by Raymond Hettinger.)
 
-* The :c:macro:`Py_IS_NAN(X)` macro returns 1 if  its float or double argument
+* The :c:expr:`Py_IS_NAN(X)` macro returns 1 if  its float or double argument
   *X* is a NaN.   (Contributed by Tim Peters.)
 
 * C code can avoid unnecessary locking by using the new

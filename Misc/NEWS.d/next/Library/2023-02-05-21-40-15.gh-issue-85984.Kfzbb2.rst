@@ -1,0 +1,4 @@
+Refactored the implementation of :func:`pty.fork` to use :func:`os.login_tty`.
+
+A :exc:`DeprecationWarning` is now raised by ``pty.master_open()`` and ``pty.slave_open()``. They were
+undocumented and deprecated long long ago in the docstring in favor of :func:`pty.openpty`.

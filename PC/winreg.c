@@ -308,8 +308,7 @@ static PyHKEYObject *
 winreg_HKEYType___enter___impl(PyHKEYObject *self)
 /*[clinic end generated code: output=52c34986dab28990 input=c40fab1f0690a8e2]*/
 {
-    Py_XINCREF(self);
-    return self;
+    return (PyHKEYObject*)Py_XNewRef(self);
 }
 
 
@@ -562,42 +561,54 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 {
     Py_ssize_t i,j;
     switch (typ) {
-        case REG_DWORD:
-            if (value != Py_None && !PyLong_Check(value))
-                return FALSE;
-            *retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
-            if (*retDataBuf == NULL){
-                PyErr_NoMemory();
-                return FALSE;
-            }
-            *retDataSize = sizeof(DWORD);
-            if (value == Py_None) {
-                DWORD zero = 0;
-                memcpy(*retDataBuf, &zero, sizeof(DWORD));
-            }
-            else {
-                DWORD d = PyLong_AsUnsignedLong(value);
+        case REG_DWORD: 
+            {
+                if (value != Py_None && !PyLong_Check(value)) {
+                    return FALSE;
+                }
+                DWORD d;
+                if (value == Py_None) {
+                    d = 0;
+                }
+                else if (PyLong_Check(value)) {
+                    d = PyLong_AsUnsignedLong(value);
+                    if (d == (DWORD)(-1) && PyErr_Occurred()) {
+                        return FALSE;
+                    }
+                }
+                *retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
+                if (*retDataBuf == NULL) {
+                    PyErr_NoMemory();
+                    return FALSE;
+                }
                 memcpy(*retDataBuf, &d, sizeof(DWORD));
+                *retDataSize = sizeof(DWORD);
+                break;
             }
-            break;
-        case REG_QWORD:
-          if (value != Py_None && !PyLong_Check(value))
-                return FALSE;
-            *retDataBuf = (BYTE *)PyMem_NEW(DWORD64, 1);
-            if (*retDataBuf == NULL){
-                PyErr_NoMemory();
-                return FALSE;
-            }
-            *retDataSize = sizeof(DWORD64);
-            if (value == Py_None) {
-                DWORD64 zero = 0;
-                memcpy(*retDataBuf, &zero, sizeof(DWORD64));
-            }
-            else {
-                DWORD64 d = PyLong_AsUnsignedLongLong(value);
+        case REG_QWORD: 
+            {
+                if (value != Py_None && !PyLong_Check(value)) {
+                    return FALSE;
+                }
+                DWORD64 d;
+                if (value == Py_None) {
+                    d = 0;
+                }
+                else if (PyLong_Check(value)) {
+                    d = PyLong_AsUnsignedLongLong(value);
+                    if (d == (DWORD64)(-1) && PyErr_Occurred()) {
+                        return FALSE;
+                    }
+                }
+                *retDataBuf = (BYTE *)PyMem_NEW(DWORD64, 1);
+                if (*retDataBuf == NULL) {
+                    PyErr_NoMemory();
+                    return FALSE;
+                }
                 memcpy(*retDataBuf, &d, sizeof(DWORD64));
+                *retDataSize = sizeof(DWORD64);
+                break;
             }
-            break;
         case REG_SZ:
         case REG_EXPAND_SZ:
             {
@@ -784,8 +795,7 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
            support it natively, we should handle the bits. */
         default:
             if (retDataSize == 0) {
-                Py_INCREF(Py_None);
-                obData = Py_None;
+                obData = Py_NewRef(Py_None);
             }
             else
                 obData = PyBytes_FromStringAndSize(
