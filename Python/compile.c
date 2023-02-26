@@ -499,37 +499,12 @@ instr_stream_add_label(instr_stream *is, int lbl) {
     return SUCCESS;
 }
 
-/* Replace jump target labels by the offset of the target instruction */
-static int
-instr_stream_normalize_labels(instr_stream *is) {
-    /* replace jump target labels by offsets */
-    for (int i=0; i < is->s_used; i++) {
-        if (HAS_TARGET(is->s_instrs[i].ci_opcode)) {
-            int lbl = is->s_instrs[i].ci_oparg;
-            assert(lbl >= 0 && lbl <= is->s_labelmap_size);
-            int offset = is->s_labelmap[lbl];
-            assert(offset >= 0 && offset < is->s_used);
-            is->s_instrs[i].ci_oparg = offset;
-        }
-    }
-    return SUCCESS;
-}
-
-
 static int cfg_builder_use_label(cfg_builder *g, jump_target_label lbl);
 static int cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc);
 
 static int
 instr_stream_to_cfg(instr_stream *is, cfg_builder *g) {
     /* Note: there can be more than one label for the same offset */
-bool interesting = false;
-for (int i=0; i < is->s_used; i++) {
-    codegen_instr *instr = &is->s_instrs[i];
-    if (instr->ci_opcode == 257) {
-        //interesting = true;
-        //fprintf(stderr, "-----------------------\n");
-    }
-}
     for (int i = 0; i < is->s_used; i++) {
         for (int j=0; j < is->s_labelmap_size; j++) {
             if (is->s_labelmap[j] == i) {
@@ -538,9 +513,6 @@ for (int i=0; i < is->s_used; i++) {
             }
         }
         codegen_instr *instr = &is->s_instrs[i];
-if (interesting) {
-    fprintf(stderr, "[%d] %d %d \n", i, instr->ci_opcode, instr->ci_oparg);
-}   
         RETURN_IF_ERROR(cfg_builder_addop(g, instr->ci_opcode, instr->ci_oparg, instr->ci_loc));
     }
 
@@ -8815,9 +8787,6 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Preprocessing **/
-//    if (instr_stream_normalize_labels(&g->g_instr_stream) < 0) {
-//        goto error;
-//    }
     memset(&newg, 0, sizeof(cfg_builder));
     if (cfg_builder_init(&newg) < 0) {
         goto error;
@@ -8826,32 +8795,6 @@ assemble(struct compiler *c, int addNone)
     if (instr_stream_to_cfg(&g->g_instr_stream, &newg) < 0) {
         goto error;
     }
-#if 0
-//fprintf(stderr, "--------------- OLD ---------------\n");
-int is=0, bs = 0;
-for(basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-//    dump_basicblock(b);
-    is += b->b_iused;
-    bs += 1;
-}
-//fprintf(stderr, "total: %d @ %d \n", is, bs);
-//fprintf(stderr, "--------------- NEW ---------------\n");
-int newis=0, newbs = 0;
-for(basicblock *b = newg.g_entryblock; b != NULL; b = b->b_next) {
-//    dump_basicblock(b);
-    newis += b->b_iused;
-    newbs += 1;
-}
-if (newbs != bs || newis != is) {
-    fprintf(stderr, "total: %d @ %d   (%d @ %d) \n", newis, newbs, is, bs);
-fprintf(stderr, "--------------- OLD ---------------\n");
-for(basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) dump_basicblock(b);
-fprintf(stderr, "--------------- NEW ---------------\n");
-for(basicblock *b = newg.g_entryblock; b != NULL; b = b->b_next) dump_basicblock(b);
-    assert(newbs == bs);
-    assert(newis == is);
-}
-#endif
     /* Map labels to targets and mark exception handlers */
     if (translate_jump_labels_to_targets(g->g_entryblock) < 0) {
         goto error;
