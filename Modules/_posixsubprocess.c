@@ -59,12 +59,6 @@
 # endif
 #endif
 
-/* the deprecated posix apis are not available on xbox */
-#ifdef MS_WINDOWS_GAMES
-#  define dup _dup
-#  define dup2 _dup2
-#endif
-
 #if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DragonFly__)
 # define FD_DIR "/dev/fd"
 #else
