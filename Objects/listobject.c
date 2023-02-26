@@ -3412,16 +3412,24 @@ listiter_reduce_general(void *_it, int forward)
     /* the objects are not the same, index is of different types! */
     if (forward) {
         PyObject *iter = _PyEval_GetBuiltinId(&PyId_iter);
+        if (!iter) {
+            return NULL;
+        }
         listiterobject *it = (listiterobject *)_it;
         if (it->it_seq) {
             return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
         }
+        Py_DECREF(iter);
     } else {
         PyObject *reversed = _PyEval_GetBuiltinId(&PyId_reversed);
+        if (!reversed) {
+            return NULL;
+        }
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq) {
             return Py_BuildValue("N(O)n", reversed, it->it_seq, it->it_index);
         }
+        Py_DECREF(reversed);
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
