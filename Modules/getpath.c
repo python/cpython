@@ -227,19 +227,11 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
     path = PyUnicode_AsWideCharString(pathobj, &cchPath);
     if (path) {
 #ifdef MS_WINDOWS
-        const wchar_t *ext;
-#ifdef MS_WINDOWS_GAMES
-        ext = (cchPath >= 4) ? path + cchPath - 4 : NULL;
-#endif
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-#ifdef MS_WINDOWS_GAMES
-            (ext != NULL) &&
-#else
-            SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&
-#endif
-            (CompareStringOrdinal(ext, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
+            (cchPath >= 4) &&
+            (CompareStringOrdinal(path + cchPath - 4, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
             ? Py_True : Py_False;
 #else
         struct stat st;
