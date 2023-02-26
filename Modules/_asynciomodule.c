@@ -2103,7 +2103,8 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         Py_INCREF(coro_result);
         // TODO: check return value, error on NULL
         // (but first let's add a test case that hits this)
-        task_step_handle_result_impl(state, self, coro_result);
+        PyObject * res = task_step_handle_result_impl(state, self, coro_result);
+        assert(res != NULL);
     }
     return register_task(state, (PyObject*)self);
 }
