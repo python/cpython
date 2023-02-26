@@ -8394,8 +8394,6 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
     DWORD err;
     HANDLE handle;
 
-    /* Console processes which share a common console can be sent CTRL+C or
-       CTRL+BREAK events, provided they handle said events. */
 #if !defined(MS_WINDOWS_GAMES)
     /* Console processes which share a common console can be sent CTRL+C or
        CTRL+BREAK events, provided they handle said events. */
@@ -8404,8 +8402,9 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
             err = GetLastError();
             PyErr_SetFromWindowsErr(err);
         }
-        else
+        else {
             Py_RETURN_NONE;
+        }
     }
 #endif
 
