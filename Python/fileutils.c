@@ -93,6 +93,10 @@ _Py_device_encoding(int fd)
 
     return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
 #else
+    if (_PyRuntime.preconfig.utf8_mode) {
+        _Py_DECLARE_STR(utf_8, "utf-8");
+        return Py_NewRef(&_Py_STR(utf_8));
+    }
     return _Py_GetLocaleEncodingObject();
 #endif
 }
@@ -187,7 +191,7 @@ extern int _Py_normalize_encoding(const char *, char *, size_t);
           Py_DecodeLocale() uses mbstowcs()
       -1: unknown, need to call check_force_ascii() to get the value
 */
-static int force_ascii = -1;
+#define force_ascii (_PyRuntime.fileutils.force_ascii)
 
 static int
 check_force_ascii(void)
@@ -599,9 +603,9 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                             errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
@@ -791,9 +795,9 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
     return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                             raw_malloc, errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
@@ -873,10 +877,10 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 
 // Get the current locale encoding name:
 //
-// - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
-// - Return "UTF-8" if the UTF-8 Mode is enabled
+// - Return "utf-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
+// - Return "utf-8" if the UTF-8 Mode is enabled
 // - On Windows, return the ANSI code page (ex: "cp1250")
-// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
+// - Return "utf-8" if nl_langinfo(CODESET) returns an empty string.
 // - Otherwise, return nl_langinfo(CODESET).
 //
 // Return NULL on memory allocation failure.
@@ -888,12 +892,8 @@ _Py_GetLocaleEncoding(void)
 #ifdef _Py_FORCE_UTF8_LOCALE
     // On Android langinfo.h and CODESET are missing,
     // and UTF-8 is always used in mbstowcs() and wcstombs().
-    return _PyMem_RawWcsdup(L"UTF-8");
+    return _PyMem_RawWcsdup(L"utf-8");
 #else
-    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
-    if (preconfig->utf8_mode) {
-        return _PyMem_RawWcsdup(L"UTF-8");
-    }
 
 #ifdef MS_WINDOWS
     wchar_t encoding[23];
@@ -906,7 +906,7 @@ _Py_GetLocaleEncoding(void)
     if (!encoding || encoding[0] == '\0') {
         // Use UTF-8 if nl_langinfo() returns an empty string. It can happen on
         // macOS if the LC_CTYPE locale is not supported.
-        return _PyMem_RawWcsdup(L"UTF-8");
+        return _PyMem_RawWcsdup(L"utf-8");
     }
 
     wchar_t *wstr;
@@ -956,7 +956,7 @@ static wchar_t *
 _Py_ConvertWCharForm(const wchar_t *source, Py_ssize_t size,
                      const char *tocode, const char *fromcode)
 {
-    Py_BUILD_ASSERT(sizeof(wchar_t) == 4);
+    static_assert(sizeof(wchar_t) == 4, "wchar_t must be 32-bit");
 
     /* Ensure we won't overflow the size. */
     if (size > (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t))) {
@@ -1162,8 +1162,6 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     }
 
     _Py_attribute_data_to_stat(&info, 0, status);
-    /* specific to fstat() */
-    status->st_ino = (((uint64_t)info.nFileIndexHigh) << 32) + info.nFileIndexLow;
     return 0;
 #else
     return fstat(fd, status);
@@ -1244,18 +1242,12 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
 
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return -2;
 
     err = _Py_wstat(wpath, statbuf);
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     return err;
 #else
     int ret;
@@ -1663,11 +1655,8 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
+
     wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return NULL;
 
@@ -1675,9 +1664,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                                 wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
@@ -1687,9 +1674,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #else
     PyObject *bytes;
     const char *path_bytes;
@@ -1765,7 +1750,15 @@ _Py_read(int fd, void *buf, size_t count)
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
 #ifdef MS_WINDOWS
+        _doserrno = 0;
         n = read(fd, buf, (int)count);
+        // read() on a non-blocking empty pipe fails with EINVAL, which is
+        // mapped from the Windows error code ERROR_NO_DATA.
+        if (n < 0 && errno == EINVAL) {
+            if (_doserrno == ERROR_NO_DATA) {
+                errno = EAGAIN;
+            }
+        }
 #else
         n = read(fd, buf, count);
 #endif
@@ -1819,6 +1812,7 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
             }
         }
     }
+
 #endif
     if (count > _PY_WRITE_MAX) {
         count = _PY_WRITE_MAX;
@@ -1829,7 +1823,18 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
             Py_BEGIN_ALLOW_THREADS
             errno = 0;
 #ifdef MS_WINDOWS
-            n = write(fd, buf, (int)count);
+            // write() on a non-blocking pipe fails with ENOSPC on Windows if
+            // the pipe lacks available space for the entire buffer.
+            int c = (int)count;
+            do {
+                _doserrno = 0;
+                n = write(fd, buf, c);
+                if (n >= 0 || errno != ENOSPC || _doserrno != 0) {
+                    break;
+                }
+                errno = EAGAIN;
+                c /= 2;
+            } while (c > 0);
 #else
             n = write(fd, buf, count);
 #endif
@@ -1844,7 +1849,18 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
         do {
             errno = 0;
 #ifdef MS_WINDOWS
-            n = write(fd, buf, (int)count);
+            // write() on a non-blocking pipe fails with ENOSPC on Windows if
+            // the pipe lacks available space for the entire buffer.
+            int c = (int)count;
+            do {
+                _doserrno = 0;
+                n = write(fd, buf, c);
+                if (n >= 0 || errno != ENOSPC || _doserrno != 0) {
+                    break;
+                }
+                errno = EAGAIN;
+                c /= 2;
+            } while (c > 0);
 #else
             n = write(fd, buf, count);
 #endif
@@ -2379,7 +2395,7 @@ _Py_dup(int fd)
         return -1;
     }
 
-#else
+#elif HAVE_DUP
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     fd = dup(fd);
@@ -2396,6 +2412,10 @@ _Py_dup(int fd)
         _Py_END_SUPPRESS_IPH
         return -1;
     }
+#else
+    errno = ENOTSUP;
+    PyErr_SetFromErrno(PyExc_OSError);
+    return -1;
 #endif
     return fd;
 }
@@ -2461,6 +2481,64 @@ error:
     return -1;
 }
 #else   /* MS_WINDOWS */
+int
+_Py_get_blocking(int fd)
+{
+    HANDLE handle;
+    DWORD mode;
+    BOOL success;
+
+    handle = _Py_get_osfhandle(fd);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    success = GetNamedPipeHandleStateW(handle, &mode,
+                                       NULL, NULL, NULL, NULL, 0);
+    Py_END_ALLOW_THREADS
+    
+    if (!success) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+    
+    return !(mode & PIPE_NOWAIT);
+}
+
+int
+_Py_set_blocking(int fd, int blocking)
+{
+    HANDLE handle;
+    DWORD mode;
+    BOOL success;
+
+    handle = _Py_get_osfhandle(fd);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    success = GetNamedPipeHandleStateW(handle, &mode,
+                                       NULL, NULL, NULL, NULL, 0);
+    if (success) {
+        if (blocking) {
+            mode &= ~PIPE_NOWAIT;
+        }
+        else {
+            mode |= PIPE_NOWAIT;
+        }
+        success = SetNamedPipeHandleState(handle, &mode, NULL, NULL);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+    return 0;
+}
+
 void*
 _Py_get_osfhandle_noraise(int fd)
 {
@@ -2624,10 +2702,11 @@ _Py_closerange(int first, int last)
     first = Py_MAX(first, 0);
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_CLOSE_RANGE
-    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
-        /* Any errors encountered while closing file descriptors are ignored;
-         * ENOSYS means no kernel support, though,
-         * so we'll fallback to the other methods. */
+    if (close_range(first, last, 0) == 0) {
+        /* close_range() ignores errors when it closes file descriptors.
+         * Possible reasons of an error return are lack of kernel support
+         * or denial of the underlying syscall by a seccomp sandbox on Linux.
+         * Fallback to other methods in case of any error. */
     }
     else
 #endif /* HAVE_CLOSE_RANGE */

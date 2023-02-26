@@ -20,7 +20,7 @@ import c_parser.__main__ as c_parser
 import c_analyzer.__main__ as c_analyzer
 import c_analyzer as _c_analyzer
 from c_analyzer.info import UNKNOWN
-from . import _analyzer, _capi, _files, _parser, REPO_ROOT
+from . import _analyzer, _builtin_types, _capi, _files, _parser, REPO_ROOT
 
 
 logger = logging.getLogger(__name__)
@@ -325,6 +325,47 @@ def cmd_capi(filenames=None, *,
         print(line)
 
 
+def _cli_builtin_types(parser):
+    parser.add_argument('--format', dest='fmt', default='table')
+#    parser.add_argument('--summary', dest='format',
+#                        action='store_const', const='summary')
+    def process_format(args, *, argv=None):
+        orig = args.fmt
+        args.fmt = _builtin_types.resolve_format(args.fmt)
+        if isinstance(args.fmt, str):
+            if args.fmt not in _builtin_types._FORMATS:
+                parser.error(f'unsupported format {orig!r}')
+
+    parser.add_argument('--include-modules', dest='showmodules',
+                        action='store_true')
+    def process_modules(args, *, argv=None):
+        pass
+
+    return [
+        process_format,
+        process_modules,
+    ]
+
+
+def cmd_builtin_types(fmt, *,
+                      showmodules=False,
+                      verbosity=VERBOSITY,
+                      ):
+    render = _builtin_types.get_renderer(fmt)
+    types = _builtin_types.iter_builtin_types()
+    match = _builtin_types.resolve_matcher(showmodules)
+    if match:
+        types = (t for t in types if match(t, log=lambda msg: logger.log(1, msg)))
+
+    lines = render(
+        types,
+#        verbose=verbosity > VERBOSITY,
+    )
+    print()
+    for line in lines:
+        print(line)
+
+
 # We do not define any other cmd_*() handlers here,
 # favoring those defined elsewhere.
 
@@ -353,6 +394,11 @@ COMMANDS = {
         'inspect the C-API',
         [_cli_capi],
         cmd_capi,
+    ),
+    'builtin-types': (
+        'show the builtin types',
+        [_cli_builtin_types],
+        cmd_builtin_types,
     ),
 }
 

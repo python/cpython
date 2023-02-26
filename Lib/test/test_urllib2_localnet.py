@@ -8,6 +8,7 @@ import threading
 import unittest
 import hashlib
 
+from test import support
 from test.support import hashlib_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -16,6 +17,8 @@ try:
     import ssl
 except ImportError:
     ssl = None
+
+support.requires_working_socket(module=True)
 
 here = os.path.dirname(__file__)
 # Self-signed cert file for 'localhost'
@@ -613,6 +616,15 @@ class TestUrlopen(unittest.TestCase):
         with urllib.request.urlopen(req):
             pass
         self.assertEqual(handler.headers_received["Range"], "bytes=20-39")
+
+    def test_sending_headers_camel(self):
+        handler = self.start_server()
+        req = urllib.request.Request("http://localhost:%s/" % handler.port,
+                                     headers={"X-SoMe-hEader": "foobar"})
+        with urllib.request.urlopen(req):
+            pass
+        self.assertIn("X-Some-Header", handler.headers_received.keys())
+        self.assertNotIn("X-SoMe-hEader", handler.headers_received.keys())
 
     def test_basic(self):
         handler = self.start_server()

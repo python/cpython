@@ -156,7 +156,8 @@ Base Transport
    will be received.  After all buffered data is flushed, the
    protocol's :meth:`protocol.connection_lost()
    <BaseProtocol.connection_lost>` method will be called with
-   :const:`None` as its argument.
+   :const:`None` as its argument. The transport should not be
+   used once it is closed.
 
 .. method:: BaseTransport.is_closing()
 
@@ -553,7 +554,7 @@ accept factories that return streaming protocols.
    a connection is open.
 
    However, :meth:`protocol.eof_received() <Protocol.eof_received>`
-   is called at most once.  Once `eof_received()` is called,
+   is called at most once.  Once ``eof_received()`` is called,
    ``data_received()`` is not called anymore.
 
 .. method:: Protocol.eof_received()

@@ -63,6 +63,11 @@ extern void bzero(void *, int);
 #  define SOCKET int
 #endif
 
+// WASI SDK 16 does not have POLLPRIO, define as no-op
+#if defined(__wasi__) && !defined(POLLPRI)
+#  define POLLPRI 0
+#endif
+
 typedef struct {
     PyObject *close;
     PyTypeObject *poll_Type;
@@ -330,7 +335,12 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        n = select(max, &ifdset, &ofdset, &efdset, tvp);
+        n = select(
+            max,
+            imax ? &ifdset : NULL,
+            omax ? &ofdset : NULL,
+            emax ? &efdset : NULL,
+            tvp);
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)
@@ -1642,8 +1652,7 @@ select_epoll___enter___impl(pyEpoll_Object *self)
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 /*[clinic input]

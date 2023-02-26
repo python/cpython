@@ -10,6 +10,11 @@ extern "C" {
 
 #include <locale.h>   /* struct lconv */
 
+
+struct _fileutils_state {
+    int force_ascii;
+};
+
 typedef enum {
     _Py_ERROR_UNKNOWN=0,
     _Py_ERROR_STRICT,
@@ -155,11 +160,11 @@ PyAPI_FUNC(int) _Py_set_inheritable_async_safe(int fd, int inheritable,
 
 PyAPI_FUNC(int) _Py_dup(int fd);
 
-#ifndef MS_WINDOWS
 PyAPI_FUNC(int) _Py_get_blocking(int fd);
 
 PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
-#else   /* MS_WINDOWS */
+
+#ifdef MS_WINDOWS
 PyAPI_FUNC(void*) _Py_get_osfhandle_noraise(int fd);
 
 PyAPI_FUNC(void*) _Py_get_osfhandle(int fd);
