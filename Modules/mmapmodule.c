@@ -1604,6 +1604,12 @@ mmap_exec(PyObject *module)
     // for stack usage (even on x86 arch)
     ADD_INT_MACRO(module, MAP_STACK);
 #endif
+#ifdef MAP_ALIGNED_SUPER
+    ADD_INT_MACRO(module, MAP_ALIGNED_SUPER);
+#endif
+#ifdef MAP_CONCEAL
+    ADD_INT_MACRO(module, MAP_CONCEAL);
+#endif
     if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
         return -1;
     }

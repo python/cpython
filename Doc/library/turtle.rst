@@ -2444,6 +2444,9 @@ The demo scripts are:
 | planet_and_moon| simulation of                | compound shapes,      |
 |                | gravitational system         | :class:`Vec2D`        |
 +----------------+------------------------------+-----------------------+
+| rosette        | a pattern from the wikipedia | :func:`clone`,        |
+|                | article on turtle graphics   | :func:`undo`          |
++----------------+------------------------------+-----------------------+
 | round_dance    | dancing turtles rotating     | compound shapes, clone|
 |                | pairwise in opposite         | shapesize, tilt,      |
 |                | direction                    | get_shapepoly, update |
@@ -2456,9 +2459,6 @@ The demo scripts are:
 +----------------+------------------------------+-----------------------+
 | two_canvases   | simple design                | turtles on two        |
 |                |                              | canvases              |
-+----------------+------------------------------+-----------------------+
-| wikipedia      | a pattern from the wikipedia | :func:`clone`,        |
-|                | article on turtle graphics   | :func:`undo`          |
 +----------------+------------------------------+-----------------------+
 | yinyang        | another elementary example   | :func:`circle`        |
 +----------------+------------------------------+-----------------------+

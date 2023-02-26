@@ -1,0 +1,4 @@
+Replace the builtin :mod:`hashlib` implementations of SHA2-384 and SHA2-512
+originally from LibTomCrypt with formally verified, side-channel resistant
+code from the `HACL* <https://github.com/hacl-star/hacl-star/>`_ project.
+The builtins remain a fallback only used when OpenSSL does not provide them.
