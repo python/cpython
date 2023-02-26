@@ -88,7 +88,9 @@ _Py_device_encoding(int fd)
     if (!valid)
         Py_RETURN_NONE;
 
-#if defined(MS_WINDOWS)
+#ifdef MS_WINDOWS_NON_DESKTOP
+    Py_RETURN_NONE;
+#elif defined(MS_WINDOWS)
     UINT cp;
     if (fd == 0)
         cp = GetConsoleCP();
@@ -1286,7 +1288,9 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 static int
 get_inheritable(int fd, int raise)
 {
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_NON_DESKTOP
+    return 0;
+#elif defined(MS_WINDOWS)
     HANDLE handle;
     DWORD flags;
 
@@ -1331,6 +1335,16 @@ _Py_get_inheritable(int fd)
 static int
 set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 {
+#ifdef MS_WINDOWS_NON_DESKTOP
+    if(!inheritable)
+        return 0;
+
+    if (raise)
+        PyErr_Format(PyExc_OSError,
+            "Setting handle as inheritable is unsupported on this platform");
+
+    return -1;
+#else
 #ifdef MS_WINDOWS
     HANDLE handle;
     DWORD flags;
@@ -1460,6 +1474,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     }
     return 0;
 #endif
+#endif /* MS_WINDOWS_NON_DESKTOP */
 }
 
 /* Make the file descriptor non-inheritable.
