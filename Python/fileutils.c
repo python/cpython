@@ -2139,7 +2139,7 @@ static int
 join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
     if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
         PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
@@ -2528,12 +2528,12 @@ _Py_get_blocking(int fd)
     success = GetNamedPipeHandleStateW(handle, &mode,
                                        NULL, NULL, NULL, NULL, 0);
     Py_END_ALLOW_THREADS
-    
+
     if (!success) {
         PyErr_SetFromWindowsErr(0);
         return -1;
     }
-    
+
     return !(mode & PIPE_NOWAIT);
 }
 
