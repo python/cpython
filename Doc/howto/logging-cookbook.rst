@@ -2538,7 +2538,7 @@ should be logged, or the ``extra`` keyword parameter to indicate additional
 contextual information to be added to the log). So you cannot directly make
 logging calls using :meth:`str.format` or :class:`string.Template` syntax,
 because internally the logging package uses %-formatting to merge the format
-string and the variable arguments. There would no changing this while preserving
+string and the variable arguments. There would be no changing this while preserving
 backward compatibility, since all logging calls which are out there in existing
 code will be using %-format strings.
 
