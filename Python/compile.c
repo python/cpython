@@ -8921,7 +8921,7 @@ assemble(struct compiler *c, int addNone)
     a.a_lineno = c->u->u_firstlineno;
     location loc = NO_LOCATION;
     int size = 0;
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = newg.g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++) {
             if (!same_location(loc, b->b_instr[j].i_loc)) {
                 if (assemble_emit_location(&a, loc, size)) {
@@ -8937,7 +8937,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    if (assemble_exception_table(&a, g->g_entryblock) < 0) {
+    if (assemble_exception_table(&a, newg.g_entryblock) < 0) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
