@@ -15077,7 +15077,7 @@ error:
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
 /* bpo-36085: Helper functions for managing DLL search directories
  * on win32
  */
@@ -15187,7 +15187,7 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
     Py_RETURN_NONE;
 }
 
-#endif
+#endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
 
 
 /* Only check if WIFEXITED is available: expect that it comes
