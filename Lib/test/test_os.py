@@ -3064,7 +3064,7 @@ class DeviceEncodingTests(unittest.TestCase):
 class PidTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
     def test_getppid(self):
-        p = subprocess.Popen([sys.executable, '-c',
+        p = subprocess.Popen([sys._base_executable, '-c',
                               'import os; print(os.getppid())'],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
