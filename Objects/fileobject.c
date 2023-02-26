@@ -5,12 +5,6 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _PyRuntime
 
-/* the deprecated posix apis are not available on xbox */
-#ifdef MS_WINDOWS_GAMES
-#  define isatty _isatty
-#  define fileno _fileno
-#endif
-
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
 /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
 #define GETC(f) getc_unlocked(f)

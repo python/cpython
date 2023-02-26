@@ -8,11 +8,6 @@
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>
 
-/* the deprecated posix apis are not available on xbox */
-#ifdef MS_WINDOWS_GAMES
-#  define fileno _fileno
-#endif
-
 #undef  uint
 #define uint pymem_uint
 

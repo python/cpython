@@ -23,11 +23,6 @@
 #  include <fcntl.h>
 #endif
 
-/* the deprecated posix apis are not available on xbox */
-#ifdef MS_WINDOWS_GAMES
-#  define lseek _lseek
-#endif
-
 #define OFF(x) offsetof(PyTracebackObject, x)
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))

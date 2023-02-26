@@ -346,12 +346,6 @@ corresponding Unix manual entries for more information on calls.");
 #  define HAVE_PIPE       1
 #  define HAVE_FSYNC      1
 #  define fsync _commit
-#  ifdef MS_WINDOWS_GAMES
-#    define dup2 _dup2
-#    define umask _umask
-#    define close _close
-#    define isatty _isatty
-#  endif
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 /*[clinic input]

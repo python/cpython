@@ -12,9 +12,6 @@
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #  include <pathcch.h>
-#  ifdef MS_WINDOWS_GAMES
-#    define wcsicmp _wcsicmp
-#  endif
 #endif
 
 #ifdef __APPLE__

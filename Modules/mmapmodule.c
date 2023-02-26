@@ -36,11 +36,6 @@
 # endif /* HAVE_FCNTL_H */
 #endif
 
-/* the deprecated posix apis are not available on xbox */
-#ifdef MS_WINDOWS_GAMES
-#  define lseek _lseek
-#endif
-
 #ifdef MS_WINDOWS
 #include <windows.h>
 static int

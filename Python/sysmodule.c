@@ -40,10 +40,6 @@ Data members:
 #ifdef MS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-/* the deprecated posix apis are not available on xbox */
-#ifdef MS_WINDOWS_GAMES
-#  define fileno _fileno
-#endif
 #endif /* MS_WINDOWS */
 
 #ifdef MS_COREDLL

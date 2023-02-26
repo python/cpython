@@ -17,10 +17,6 @@
 #  define WIN32_LEAN_AND_MEAN
 #  endif
 #  include "windows.h"
-#  ifdef MS_WINDOWS_GAMES
-#    define isatty _isatty
-#    define fileno _fileno
-#  endif
 #endif /* MS_WINDOWS */
 
 

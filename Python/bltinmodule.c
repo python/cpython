@@ -13,12 +13,6 @@
 
 #include "clinic/bltinmodule.c.h"
 
-/* the deprecated posix apis are not available on xbox */
-#ifdef MS_WINDOWS_GAMES
-#  define isatty _isatty
-#  define fileno _fileno
-#endif
-
 static PyObject*
 update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
 {
