@@ -60,7 +60,11 @@ extern void bzero(void *, int);
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
 #  endif
-#  include <winsock.h>
+#  ifdef MS_XBOX
+#    include <winsock2.h>
+#  else
+#    include <winsock.h>
+#  endif
 #else
 #  define SOCKET int
 #endif
