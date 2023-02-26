@@ -348,13 +348,18 @@ remove_unusable_flags(PyObject *m)
 {
     PyObject *dict;
     OSVERSIONINFOEX info;
-    DWORDLONG dwlConditionMask;
 
     dict = PyModule_GetDict(m);
     if (dict == NULL) {
         return -1;
     }
-
+#ifdef MS_WINDOWS_NON_DESKTOP
+    info.dwOSVersionInfoSize = sizeof(info);
+    if (!GetVersionExW((OSVERSIONINFOW*) &info)) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+#else
     /* set to Windows 10, except BuildNumber. */
     memset(&info, 0, sizeof(info));
     info.dwOSVersionInfoSize = sizeof(info);
@@ -362,19 +367,25 @@ remove_unusable_flags(PyObject *m)
     info.dwMinorVersion = 0;
 
     /* set Condition Mask */
-    dwlConditionMask = 0;
+    DWORDLONG dwlConditionMask = 0;
     VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+#endif
 
     for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
+#ifndef MS_WINDOWS_NON_DESKTOP
         info.dwBuildNumber = win_runtime_flags[i].build_number;
         /* greater than or equal to the specified version?
            Compatibility Mode will not cheat VerifyVersionInfo(...) */
-        if (VerifyVersionInfo(
-                &info,
-                VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
-                dwlConditionMask)) {
+        BOOL isSupported = VerifyVersionInfo(
+            &info,
+            VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
+            dwlConditionMask);
+#else
+        BOOL isSupported = (info.dwMajorVersion >= 10) && (info.dwMinorVersion >= 0) && (info.dwBuildNumber >= win_runtime_flags[i].build_number);
+#endif
+        if (isSupported) {
             break;
         }
         else {
@@ -497,7 +508,7 @@ remove_unusable_flags(PyObject *m)
 #endif
 #endif
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
 #define sockaddr_rc SOCKADDR_BTH_REDEF
 
 #define USE_BLUETOOTH 1
@@ -2874,11 +2885,13 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
     newfd = ctx.result;
 
 #ifdef MS_WINDOWS
+#ifndef MS_WINDOWS_NON_DESKTOP
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         PyErr_SetFromWindowsErr(0);
         SOCKETCLOSE(newfd);
         goto finally;
     }
+#endif
 #else
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
@@ -6182,11 +6195,13 @@ socket_dup(PyObject *self, PyObject *fdobj)
     if (newfd == INVALID_SOCKET)
         return set_error();
 
+#ifndef MS_WINDOWS_NON_DESKTOP
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         closesocket(newfd);
         PyErr_SetFromWindowsErr(0);
         return NULL;
     }
+#endif
 #else
     /* On UNIX, dup can be used to duplicate the file descriptor of a socket */
     newfd = _Py_dup(fd);
