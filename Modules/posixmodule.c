@@ -313,7 +313,7 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/syscall.h>
 #endif
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
 #  define TERMSIZE_USE_CONIO
 #elif defined(HAVE_SYS_IOCTL_H)
 #  include <sys/ioctl.h>
@@ -323,7 +323,7 @@ corresponding Unix manual entries for more information on calls.");
 #  if defined(TIOCGWINSZ)
 #    define TERMSIZE_USE_IOCTL
 #  endif
-#endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS && !MS_WINDOWS_GAMES */
 
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
@@ -8397,7 +8397,7 @@ os_getuid_impl(PyObject *module)
 
 #ifdef MS_WINDOWS
 #define HAVE_KILL
-#endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS */
 
 #ifdef HAVE_KILL
 /*[clinic input]
@@ -15188,7 +15188,7 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
     Py_RETURN_NONE;
 }
 
-#endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS && !MS_WINDOWS_GAMES */
 
 
 /* Only check if WIFEXITED is available: expect that it comes
