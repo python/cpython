@@ -8246,20 +8246,27 @@ os_setpgrp_impl(PyObject *module)
 static PyObject*
 win32_getppid()
 {
+    DWORD error;
     PyObject* result = NULL;
-    HANDLE myhandle = GetCurrentProcess();
+    HANDLE process = GetCurrentProcess();
 
     HPSS snapshot = NULL;
-    if (PssCaptureSnapshot(myhandle, PSS_CAPTURE_NONE, 0, &snapshot) != ERROR_SUCCESS)
-        return PyErr_SetFromWindowsErr(GetLastError());
+    error = PssCaptureSnapshot(process, PSS_CAPTURE_NONE, 0, &snapshot);
+    if (error != ERROR_SUCCESS) {
+        return PyErr_SetFromWindowsErr(error);
+    }
 
     PSS_PROCESS_INFORMATION info;
-    if (PssQuerySnapshot(snapshot, PSS_QUERY_PROCESS_INFORMATION, &info, sizeof(info)) != ERROR_SUCCESS)
+    error = PssQuerySnapshot(
+        snapshot, PSS_QUERY_PROCESS_INFORMATION, &info, sizeof(info)
+    );
+    if (error != ERROR_SUCCESS) {
         result = PyLong_FromUnsignedLong(info.ParentProcessId);
-    else
-        result = PyErr_SetFromWindowsErr(GetLastError());
+    } else {
+        result = PyErr_SetFromWindowsErr(error);
+    }
 
-    PssFreeSnapshot(myhandle, snapshot);
+    PssFreeSnapshot(process, snapshot);
     return result;
 }
 #endif /*MS_WINDOWS*/

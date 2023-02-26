@@ -1325,12 +1325,14 @@ static int
 set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 {
 #ifdef MS_WINDOWS_NON_DESKTOP
-    if(!inheritable)
+    if(!inheritable) {
         return 0;
+    }
 
-    if (raise)
+    if (raise) {
         PyErr_Format(PyExc_OSError,
             "Setting handle as inheritable is unsupported on this platform");
+    }
 
     return -1;
 #else
