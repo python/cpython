@@ -41,7 +41,7 @@ int _Py_open_cloexec_works = -1;
 #endif
 
 /* the deprecated posix apis are not available on xbox */
-#ifdef MS_XBOX
+#ifdef MS_WINDOWS_GAMES
 #  define dup _dup
 #  define open _open
 #  define read _read
@@ -2045,7 +2045,7 @@ _Py_wrealpath(const wchar_t *path,
 int
 _Py_isabs(const wchar_t *path)
 {
-#ifdef MS_XBOX
+#ifdef MS_WINDOWS_GAMES
     /* this does not handle persistent local storage */
     return (wcsncmp(path, L"G:\\", 3) == 0)
         || (wcsncmp(path, L"D:\\", 3) == 0)

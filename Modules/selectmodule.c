@@ -60,7 +60,7 @@ extern void bzero(void *, int);
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
 #  endif
-#  ifdef MS_XBOX
+#  ifdef MS_WINDOWS_GAMES
 #    include <winsock2.h>
 #  else
 #    include <winsock.h>

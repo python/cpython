@@ -60,7 +60,7 @@
 #endif
 
 /* the deprecated posix apis are not available on xbox */
-#ifdef MS_XBOX
+#ifdef MS_WINDOWS_GAMES
 #  define dup _dup
 #  define dup2 _dup2
 #endif

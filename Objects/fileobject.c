@@ -6,7 +6,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 
 /* the deprecated posix apis are not available on xbox */
-#ifdef MS_XBOX
+#ifdef MS_WINDOWS_GAMES
 #  define isatty _isatty
 #  define fileno _fileno
 #endif

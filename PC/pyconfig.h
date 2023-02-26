@@ -77,7 +77,7 @@ WIN32 is still required for the locale module.
 #endif
 
 #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
-#define MS_XBOX
+#define MS_WINDOWS_GAMES
 #endif
 
 /* Compiler specific defines */
@@ -304,7 +304,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       endif /* Py_BUILD_CORE */
 #endif /* MS_COREDLL */
 
-#if defined(MS_XBOX)
+#if defined(MS_WINDOWS_GAMES)
 #       define PLATFORM "xbox"
 #       define SIZEOF_VOID_P 8
 #       define SIZEOF_TIME_T 8
@@ -512,7 +512,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #define HAVE_CLOCK */
 
 /* Define when any dynamic module loading is enabled */
-#ifndef MS_XBOX
+#ifndef MS_WINDOWS_GAMES
 #  define HAVE_DYNAMIC_LOADING
 #endif
 

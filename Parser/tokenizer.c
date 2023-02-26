@@ -17,7 +17,7 @@
 #include "abstract.h"
 
 /* the deprecated posix apis are not available on xbox */
-#ifdef MS_XBOX
+#ifdef MS_WINDOWS_GAMES
 #  define fdopen _fdopen
 #  define lseek _lseek
 #  define fileno _fileno

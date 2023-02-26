@@ -37,7 +37,7 @@
 #endif
 
 /* the deprecated posix apis are not available on xbox */
-#ifdef MS_XBOX
+#ifdef MS_WINDOWS_GAMES
 #  define lseek _lseek
 #endif
 

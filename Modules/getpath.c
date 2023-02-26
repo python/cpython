@@ -12,7 +12,7 @@
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #  include <pathcch.h>
-#  ifdef MS_XBOX
+#  ifdef MS_WINDOWS_GAMES
 #    define wcsicmp _wcsicmp
 #  endif
 #endif
@@ -231,13 +231,13 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
     if (path) {
 #ifdef MS_WINDOWS
         const wchar_t *ext;
-#ifdef MS_XBOX
+#ifdef MS_WINDOWS_GAMES
         ext = (cchPath >= 4) ? path + cchPath - 4 : NULL;
 #endif
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-#ifdef MS_XBOX
+#ifdef MS_WINDOWS_GAMES
             (ext != NULL) &&
 #else
             SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&

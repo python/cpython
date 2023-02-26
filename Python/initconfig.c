@@ -21,7 +21,7 @@
 #  ifdef HAVE_FCNTL_H
 #    include <fcntl.h>            // O_BINARY
 #  endif
-#  ifdef MS_XBOX
+#  ifdef MS_WINDOWS_GAMES
 #    define fileno _fileno
 #  endif
 #endif
