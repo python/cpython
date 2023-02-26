@@ -10,18 +10,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-// Include <windows.h> before pycore internal headers. FSCTL_GET_REPARSE_POINT
-// is not exported by <windows.h> if the WIN32_LEAN_AND_MEAN macro is defined,
-// whereas pycore_condvar.h defines the WIN32_LEAN_AND_MEAN macro.
-#ifdef MS_WINDOWS
-#  include <windows.h>
-#  include <pathcch.h>
-#  include <lmcons.h>             // UNLEN
-#  include "osdefs.h"             // SEP
-#  ifndef MS_WINDOWS_NON_DESKTOP
-#    define HAVE_SYMLINK
-#  endif
-#endif
 
 #ifdef __VXWORKS__
 #  include "pycore_bitutils.h"    // _Py_popcount32()
@@ -35,6 +23,17 @@
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+
+#ifdef MS_WINDOWS
+#  include <windows.h>
+#  include <pathcch.h>
+#  include <winioctl.h>
+#  include <lmcons.h>             // UNLEN
+#  include "osdefs.h"             // SEP
+#  ifndef MS_WINDOWS_NON_DESKTOP
+#    define HAVE_SYMLINK
+#  endif
+#endif
 
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
