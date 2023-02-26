@@ -26,9 +26,9 @@ extern PyType_Spec fileio_spec;
 extern PyType_Spec stringio_spec;
 extern PyType_Spec textiowrapper_spec;
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
 extern PyTypeObject PyWindowsConsoleIO_Type;
-#endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS && !MS_WINDOWS_GAMES */
 
 /* These functions are used as METH_NOARGS methods, are normally called
  * with args=NULL, and return a new reference.
@@ -178,7 +178,7 @@ find_io_state_by_def(PyTypeObject *type)
 
 extern _PyIO_State *_PyIO_get_module_state(void);
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
 extern char _PyIO_get_console_type(PyObject *);
 #endif
 

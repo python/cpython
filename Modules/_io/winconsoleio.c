@@ -11,7 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
 
 #include "structmember.h"         // PyMemberDef
 #ifdef HAVE_SYS_TYPES_H
@@ -1176,4 +1176,4 @@ PyTypeObject PyWindowsConsoleIO_Type = {
     0,                                          /* tp_finalize */
 };
 
-#endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS && !MS_WINDOWS_GAMES */

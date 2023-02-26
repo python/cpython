@@ -8402,7 +8402,7 @@ os_getuid_impl(PyObject *module)
 #endif /* HAVE_GETUID */
 
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS)
 #define HAVE_KILL
 #endif /* MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
 
@@ -8445,6 +8445,9 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
 
     /* Console processes which share a common console can be sent CTRL+C or
        CTRL+BREAK events, provided they handle said events. */
+#if !defined(MS_WINDOWS_NON_DESKTOP)
+    /* Console processes which share a common console can be sent CTRL+C or
+       CTRL+BREAK events, provided they handle said events. */
     if (sig == CTRL_C_EVENT || sig == CTRL_BREAK_EVENT) {
         if (GenerateConsoleCtrlEvent(sig, (DWORD)pid) == 0) {
             err = GetLastError();
@@ -8453,6 +8456,7 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
         else
             Py_RETURN_NONE;
     }
+#endif
 
     /* If the signal is outside of what GenerateConsoleCtrlEvent can use,
        attempt to open and terminate the process. */
