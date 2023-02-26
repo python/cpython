@@ -1,4 +1,4 @@
-/* a30d2613dcfdef81475a9d1a349134d2d42722172fdaa7d5bb12ed2aa74b9596 (2.4.6+)
+/* 5ab094ffadd6edfc94c3eee53af44a86951f9f1f0933ada3114bbce2bfb02c99 (2.5.0+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -19,7 +19,7 @@
    Copyright (c) 2016      Gustavo Grieco <gustavo.grieco@imag.fr>
    Copyright (c) 2016      Pascal Cuoq <cuoq@trust-in-soft.com>
    Copyright (c) 2016      Ed Schouten <ed@nuxi.nl>
-   Copyright (c) 2017-2018 Rhodri James <rhodri@wildebeest.org.uk>
+   Copyright (c) 2017-2022 Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2017      Václav Slavík <vaclav@slavik.io>
    Copyright (c) 2017      Viktor Szakats <commit@vsz.me>
    Copyright (c) 2017      Chanho Park <chanho61.park@samsung.com>
@@ -34,6 +34,8 @@
    Copyright (c) 2019      Vadim Zeitlin <vadim@zeitlins.org>
    Copyright (c) 2021      Dong-hee Na <donghee.na@python.org>
    Copyright (c) 2022      Samanta Navarro <ferivoz@riseup.net>
+   Copyright (c) 2022      Jeffrey Walton <noloader@gmail.com>
+   Copyright (c) 2022      Jann Horn <jannh@google.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -133,7 +135,7 @@
       * BSD / macOS (including <10.7) (arc4random): HAVE_ARC4RANDOM, \
       * libbsd (arc4random_buf): HAVE_ARC4RANDOM_BUF + HAVE_LIBBSD, \
       * libbsd (arc4random): HAVE_ARC4RANDOM + HAVE_LIBBSD, \
-      * Linux (including <3.17) / BSD / macOS (including <10.7) (/dev/urandom): XML_DEV_URANDOM, \
+      * Linux (including <3.17) / BSD / macOS (including <10.7) / Solaris >=8 (/dev/urandom): XML_DEV_URANDOM, \
       * Windows >=Vista (rand_s): _WIN32. \
     \
     If insist on not using any of these, bypass this error by defining \
@@ -722,6 +724,7 @@ XML_ParserCreateNS(const XML_Char *encodingName, XML_Char nsSep) {
   return XML_ParserCreate_MM(encodingName, NULL, tmp);
 }
 
+// "xml=http://www.w3.org/XML/1998/namespace"
 static const XML_Char implicitContext[]
     = {ASCII_x,     ASCII_m,     ASCII_l,      ASCII_EQUALS, ASCII_h,
        ASCII_t,     ASCII_t,     ASCII_p,      ASCII_COLON,  ASCII_SLASH,
@@ -1066,6 +1069,14 @@ parserCreate(const XML_Char *encodingName,
   parserInit(parser, encodingName);
 
   if (encodingName && ! parser->m_protocolEncodingName) {
+    if (dtd) {
+      // We need to stop the upcoming call to XML_ParserFree from happily
+      // destroying parser->m_dtd because the DTD is shared with the parent
+      // parser and the only guard that keeps XML_ParserFree from destroying
+      // parser->m_dtd is parser->m_isParamEntity but it will be set to
+      // XML_TRUE only later in XML_ExternalEntityParserCreate (or not at all).
+      parser->m_dtd = NULL;
+    }
     XML_ParserFree(parser);
     return NULL;
   }
@@ -3009,9 +3020,6 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
         int len;
         const char *rawName;
         TAG *tag = parser->m_tagStack;
-        parser->m_tagStack = tag->parent;
-        tag->parent = parser->m_freeTagList;
-        parser->m_freeTagList = tag;
         rawName = s + enc->minBytesPerChar * 2;
         len = XmlNameLength(enc, rawName);
         if (len != tag->rawNameLength
@@ -3019,6 +3027,9 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
           *eventPP = rawName;
           return XML_ERROR_TAG_MISMATCH;
         }
+        parser->m_tagStack = tag->parent;
+        tag->parent = parser->m_freeTagList;
+        parser->m_freeTagList = tag;
         --parser->m_tagLevel;
         if (parser->m_endElementHandler) {
           const XML_Char *localPart;
@@ -3704,12 +3715,124 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
   return XML_ERROR_NONE;
 }
 
+static XML_Bool
+is_rfc3986_uri_char(XML_Char candidate) {
+  // For the RFC 3986 ANBF grammar see
+  // https://datatracker.ietf.org/doc/html/rfc3986#appendix-A
+
+  switch (candidate) {
+  // From rule "ALPHA" (uppercase half)
+  case 'A':
+  case 'B':
+  case 'C':
+  case 'D':
+  case 'E':
+  case 'F':
+  case 'G':
+  case 'H':
+  case 'I':
+  case 'J':
+  case 'K':
+  case 'L':
+  case 'M':
+  case 'N':
+  case 'O':
+  case 'P':
+  case 'Q':
+  case 'R':
+  case 'S':
+  case 'T':
+  case 'U':
+  case 'V':
+  case 'W':
+  case 'X':
+  case 'Y':
+  case 'Z':
+
+  // From rule "ALPHA" (lowercase half)
+  case 'a':
+  case 'b':
+  case 'c':
+  case 'd':
+  case 'e':
+  case 'f':
+  case 'g':
+  case 'h':
+  case 'i':
+  case 'j':
+  case 'k':
+  case 'l':
+  case 'm':
+  case 'n':
+  case 'o':
+  case 'p':
+  case 'q':
+  case 'r':
+  case 's':
+  case 't':
+  case 'u':
+  case 'v':
+  case 'w':
+  case 'x':
+  case 'y':
+  case 'z':
+
+  // From rule "DIGIT"
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9':
+
+  // From rule "pct-encoded"
+  case '%':
+
+  // From rule "unreserved"
+  case '-':
+  case '.':
+  case '_':
+  case '~':
+
+  // From rule "gen-delims"
+  case ':':
+  case '/':
+  case '?':
+  case '#':
+  case '[':
+  case ']':
+  case '@':
+
+  // From rule "sub-delims"
+  case '!':
+  case '$':
+  case '&':
+  case '\'':
+  case '(':
+  case ')':
+  case '*':
+  case '+':
+  case ',':
+  case ';':
+  case '=':
+    return XML_TRUE;
+
+  default:
+    return XML_FALSE;
+  }
+}
+
 /* addBinding() overwrites the value of prefix->binding without checking.
    Therefore one must keep track of the old value outside of addBinding().
 */
 static enum XML_Error
 addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
            const XML_Char *uri, BINDING **bindingsPtr) {
+  // "http://www.w3.org/XML/1998/namespace"
   static const XML_Char xmlNamespace[]
       = {ASCII_h,      ASCII_t,     ASCII_t,     ASCII_p,      ASCII_COLON,
          ASCII_SLASH,  ASCII_SLASH, ASCII_w,     ASCII_w,      ASCII_w,
@@ -3720,6 +3843,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
          ASCII_e,      ASCII_s,     ASCII_p,     ASCII_a,      ASCII_c,
          ASCII_e,      '\0'};
   static const int xmlLen = (int)sizeof(xmlNamespace) / sizeof(XML_Char) - 1;
+  // "http://www.w3.org/2000/xmlns/"
   static const XML_Char xmlnsNamespace[]
       = {ASCII_h,     ASCII_t,      ASCII_t, ASCII_p, ASCII_COLON,  ASCII_SLASH,
          ASCII_SLASH, ASCII_w,      ASCII_w, ASCII_w, ASCII_PERIOD, ASCII_w,
@@ -3760,14 +3884,26 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
         && (len > xmlnsLen || uri[len] != xmlnsNamespace[len]))
       isXMLNS = XML_FALSE;
 
-    // NOTE: While Expat does not validate namespace URIs against RFC 3986,
-    //       we have to at least make sure that the XML processor on top of
-    //       Expat (that is splitting tag names by namespace separator into
-    //       2- or 3-tuples (uri-local or uri-local-prefix)) cannot be confused
-    //       by an attacker putting additional namespace separator characters
-    //       into namespace declarations.  That would be ambiguous and not to
-    //       be expected.
-    if (parser->m_ns && (uri[len] == parser->m_namespaceSeparator)) {
+    // NOTE: While Expat does not validate namespace URIs against RFC 3986
+    //       today (and is not REQUIRED to do so with regard to the XML 1.0
+    //       namespaces specification) we have to at least make sure, that
+    //       the application on top of Expat (that is likely splitting expanded
+    //       element names ("qualified names") of form
+    //       "[uri sep] local [sep prefix] '\0'" back into 1, 2 or 3 pieces
+    //       in its element handler code) cannot be confused by an attacker
+    //       putting additional namespace separator characters into namespace
+    //       declarations.  That would be ambiguous and not to be expected.
+    //
+    //       While the HTML API docs of function XML_ParserCreateNS have been
+    //       advising against use of a namespace separator character that can
+    //       appear in a URI for >20 years now, some widespread applications
+    //       are using URI characters (':' (colon) in particular) for a
+    //       namespace separator, in practice.  To keep these applications
+    //       functional, we only reject namespaces URIs containing the
+    //       application-chosen namespace separator if the chosen separator
+    //       is a non-URI character with regard to RFC 3986.
+    if (parser->m_ns && (uri[len] == parser->m_namespaceSeparator)
+        && ! is_rfc3986_uri_char(uri[len])) {
       return XML_ERROR_SYNTAX;
     }
   }
@@ -4144,7 +4280,7 @@ processXmlDecl(XML_Parser parser, int isGeneralTextEntity, const char *s,
   const XML_Char *storedEncName = NULL;
   const ENCODING *newEncoding = NULL;
   const char *version = NULL;
-  const char *versionend;
+  const char *versionend = NULL;
   const XML_Char *storedversion = NULL;
   int standalone = -1;
 
@@ -4848,10 +4984,10 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
               parser->m_handlerArg, parser->m_declElementType->name,
               parser->m_declAttributeId->name, parser->m_declAttributeType, 0,
               role == XML_ROLE_REQUIRED_ATTRIBUTE_VALUE);
-          poolClear(&parser->m_tempPool);
           handleDefault = XML_FALSE;
         }
       }
+      poolClear(&parser->m_tempPool);
       break;
     case XML_ROLE_DEFAULT_ATTRIBUTE_VALUE:
     case XML_ROLE_FIXED_ATTRIBUTE_VALUE:
@@ -5259,7 +5395,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
              *
              * If 'standalone' is false, the DTD must have no
              * parameter entities or we wouldn't have passed the outer
-             * 'if' statement.  That measn the only entity in the hash
+             * 'if' statement.  That means the only entity in the hash
              * table is the external subset name "#" which cannot be
              * given as a parameter entity name in XML syntax, so the
              * lookup must have returned NULL and we don't even reach
@@ -5671,19 +5807,27 @@ internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
 
   if (result != XML_ERROR_NONE)
     return result;
-  else if (textEnd != next
-           && parser->m_parsingStatus.parsing == XML_SUSPENDED) {
+
+  if (textEnd != next && parser->m_parsingStatus.parsing == XML_SUSPENDED) {
     entity->processed = (int)(next - (const char *)entity->textPtr);
     return result;
-  } else {
+  }
+
 #ifdef XML_DTD
-    entityTrackingOnClose(parser, entity, __LINE__);
+  entityTrackingOnClose(parser, entity, __LINE__);
 #endif
-    entity->open = XML_FALSE;
-    parser->m_openInternalEntities = openEntity->next;
-    /* put openEntity back in list of free instances */
-    openEntity->next = parser->m_freeInternalEntities;
-    parser->m_freeInternalEntities = openEntity;
+  entity->open = XML_FALSE;
+  parser->m_openInternalEntities = openEntity->next;
+  /* put openEntity back in list of free instances */
+  openEntity->next = parser->m_freeInternalEntities;
+  parser->m_freeInternalEntities = openEntity;
+
+  // If there are more open entities we want to stop right here and have the
+  // upcoming call to XML_ResumeParser continue with entity content, or it would
+  // be ignored altogether.
+  if (parser->m_openInternalEntities != NULL
+      && parser->m_parsingStatus.parsing == XML_SUSPENDED) {
+    return XML_ERROR_NONE;
   }
 
 #ifdef XML_DTD
@@ -5699,10 +5843,15 @@ internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
   {
     parser->m_processor = contentProcessor;
     /* see externalEntityContentProcessor vs contentProcessor */
-    return doContent(parser, parser->m_parentParser ? 1 : 0, parser->m_encoding,
-                     s, end, nextPtr,
-                     (XML_Bool)! parser->m_parsingStatus.finalBuffer,
-                     XML_ACCOUNT_DIRECT);
+    result = doContent(parser, parser->m_parentParser ? 1 : 0,
+                       parser->m_encoding, s, end, nextPtr,
+                       (XML_Bool)! parser->m_parsingStatus.finalBuffer,
+                       XML_ACCOUNT_DIRECT);
+    if (result == XML_ERROR_NONE) {
+      if (! storeRawNames(parser))
+        return XML_ERROR_NO_MEMORY;
+    }
+    return result;
   }
 }
 

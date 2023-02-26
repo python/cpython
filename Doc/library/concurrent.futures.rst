@@ -19,6 +19,7 @@ The asynchronous execution can be performed with threads, using
 :class:`ProcessPoolExecutor`.  Both implement the same interface, which is
 defined by the abstract :class:`Executor` class.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Executor Objects
 ----------------
@@ -149,6 +150,13 @@ And::
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
 
+   All threads enqueued to ``ThreadPoolExecutor`` will be joined before the
+   interpreter can exit. Note that the exit handler which does this is
+   executed *before* any exit handlers added using ``atexit``. This means
+   exceptions in the main thread must be caught and handled in order to
+   signal threads to exit gracefully. For this reason, it is recommended
+   that ``ThreadPoolExecutor`` not be used for long-running tasks.
+
    *initializer* is an optional callable that is called at the start of
    each worker thread; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
@@ -242,9 +250,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
    the default chosen will be at most ``61``, even if more processors are
    available.
-   *mp_context* can be a multiprocessing context or None. It will be used to
-   launch the workers. If *mp_context* is ``None`` or not given, the default
-   multiprocessing context is used.
+   *mp_context* can be a :mod:`multiprocessing` context or ``None``. It will be
+   used to launch the workers. If *mp_context* is ``None`` or not given, the
+   default :mod:`multiprocessing` context is used.
+   See :ref:`multiprocessing-start-methods`.
 
    *initializer* is an optional callable that is called at the start of
    each worker process; *initargs* is a tuple of arguments passed to the
@@ -254,8 +263,11 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
    *max_tasks_per_child* is an optional argument that specifies the maximum
    number of tasks a single process can execute before it will exit and be
-   replaced with a fresh worker process. The default *max_tasks_per_child* is
-   ``None`` which means worker processes will live as long as the pool.
+   replaced with a fresh worker process. By default *max_tasks_per_child* is
+   ``None`` which means worker processes will live as long as the pool. When
+   a max is specified, the "spawn" multiprocessing start method will be used by
+   default in absence of a *mp_context* parameter. This feature is incompatible
+   with the "fork" start method.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
@@ -269,10 +281,17 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
       Added the *initializer* and *initargs* arguments.
 
+      .. note::
+         The default :mod:`multiprocessing` start method
+         (see :ref:`multiprocessing-start-methods`) will change away from
+         *fork* in Python 3.14.  Code that requires *fork* be used for their
+         :class:`ProcessPoolExecutor` should explicitly specify that by
+         passing a ``mp_context=multiprocessing.get_context("fork")``
+         parameter.
+
    .. versionchanged:: 3.11
       The *max_tasks_per_child* argument was added to allow users to
       control the lifetime of workers in the pool.
-
 
 .. _processpoolexecutor-example:
 
@@ -400,13 +419,13 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        tests.
 
        If the method returns ``False`` then the :class:`Future` was cancelled,
-       i.e. :meth:`Future.cancel` was called and returned `True`.  Any threads
+       i.e. :meth:`Future.cancel` was called and returned ``True``.  Any threads
        waiting on the :class:`Future` completing (i.e. through
        :func:`as_completed` or :func:`wait`) will be woken up.
 
        If the method returns ``True`` then the :class:`Future` was not cancelled
        and has been put in the running state, i.e. calls to
-       :meth:`Future.running` will return `True`.
+       :meth:`Future.running` will return ``True``.
 
        This method can only be called once and cannot be called after
        :meth:`Future.set_result` or :meth:`Future.set_exception` have been

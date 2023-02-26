@@ -1,1 +1,0 @@
-Remove the ``NEXT_BLOCK`` macro from compile.c, and make the compiler automatically generate implicit blocks when they are needed.

@@ -1,2 +1,0 @@
-Skip test_pair() and test_speech128() of test_zlib on s390x since they fail
-if zlib uses the s390x hardware accelerator. Patch by Victor Stinner.

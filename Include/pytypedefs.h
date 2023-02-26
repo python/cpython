@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 typedef struct PyModuleDef PyModuleDef;
+typedef struct PyModuleDef_Slot PyModuleDef_Slot;
 typedef struct PyMethodDef PyMethodDef;
 typedef struct PyGetSetDef PyGetSetDef;
 typedef struct PyMemberDef PyMemberDef;

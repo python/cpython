@@ -1,3 +1,4 @@
+import gc
 import importlib
 import importlib.util
 import os
@@ -8,15 +9,26 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
+from test.support import warnings_helper
+import textwrap
 import unittest
 import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import imp
+imp = warnings_helper.import_deprecated('imp')
 import _imp
+import _testinternalcapi
+try:
+    import _xxsubinterpreters as _interpreters
+except ModuleNotFoundError:
+    _interpreters = None
 
 
 OS_PATH_NAME = os.path.__name__
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(_interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 def requires_load_dynamic(meth):
@@ -67,11 +79,7 @@ class ImportTests(unittest.TestCase):
         self.test_strings = mod.test_strings
         self.test_path = mod.__path__
 
-    def test_import_encoded_module(self):
-        for modname, encoding, teststr in self.test_strings:
-            mod = importlib.import_module('test.encoded_modules.'
-                                          'module_' + modname)
-            self.assertEqual(teststr, mod.test)
+    # test_import_encoded_module moved to test_source_encoding.py
 
     def test_find_module_encoding(self):
         for mod, encoding, _ in self.test_strings:
@@ -255,6 +263,288 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             imp.load_dynamic('nonexistent', pathname)
 
+    @unittest.skip('known refleak (temporarily skipping)')
+    @requires_subinterpreters
+    @requires_load_dynamic
+    def test_singlephase_multiple_interpreters(self):
+        # Currently, for every single-phrase init module loaded
+        # in multiple interpreters, those interpreters share a
+        # PyModuleDef for that object, which can be a problem.
+
+        # This single-phase module has global state, which is shared
+        # by the interpreters.
+        import _testsinglephase
+        name = _testsinglephase.__name__
+        filename = _testsinglephase.__file__
+
+        del sys.modules[name]
+        _testsinglephase._clear_globals()
+        _testinternalcapi.clear_extension(name, filename)
+        init_count = _testsinglephase.initialized_count()
+        assert init_count == -1, (init_count,)
+
+        def clean_up():
+            _testsinglephase._clear_globals()
+            _testinternalcapi.clear_extension(name, filename)
+        self.addCleanup(clean_up)
+
+        interp1 = _interpreters.create(isolated=False)
+        self.addCleanup(_interpreters.destroy, interp1)
+        interp2 = _interpreters.create(isolated=False)
+        self.addCleanup(_interpreters.destroy, interp2)
+
+        script = textwrap.dedent(f'''
+            import _testsinglephase
+
+            expected = %d
+            init_count =  _testsinglephase.initialized_count()
+            if init_count != expected:
+                raise Exception(init_count)
+
+            lookedup = _testsinglephase.look_up_self()
+            if lookedup is not _testsinglephase:
+                raise Exception((_testsinglephase, lookedup))
+
+            # Attrs set in the module init func are in m_copy.
+            _initialized = _testsinglephase._initialized
+            initialized = _testsinglephase.initialized()
+            if _initialized != initialized:
+                raise Exception((_initialized, initialized))
+
+            # Attrs set after loading are not in m_copy.
+            if hasattr(_testsinglephase, 'spam'):
+                raise Exception(_testsinglephase.spam)
+            _testsinglephase.spam = expected
+            ''')
+
+        # Use an interpreter that gets destroyed right away.
+        ret = support.run_in_subinterp(script % 1)
+        self.assertEqual(ret, 0)
+
+        # The module's init func gets run again.
+        # The module's globals did not get destroyed.
+        _interpreters.run_string(interp1, script % 2)
+
+        # The module's init func is not run again.
+        # The second interpreter copies the module's m_copy.
+        # However, globals are still shared.
+        _interpreters.run_string(interp2, script % 2)
+
+    @unittest.skip('known refleak (temporarily skipping)')
+    @requires_load_dynamic
+    def test_singlephase_variants(self):
+        # Exercise the most meaningful variants described in Python/import.c.
+        self.maxDiff = None
+
+        basename = '_testsinglephase'
+        fileobj, pathname, _ = imp.find_module(basename)
+        fileobj.close()
+
+        def clean_up():
+            import _testsinglephase
+            _testsinglephase._clear_globals()
+        self.addCleanup(clean_up)
+
+        def add_ext_cleanup(name):
+            def clean_up():
+                _testinternalcapi.clear_extension(name, pathname)
+            self.addCleanup(clean_up)
+
+        modules = {}
+        def load(name):
+            assert name not in modules
+            module = imp.load_dynamic(name, pathname)
+            self.assertNotIn(module, modules.values())
+            modules[name] = module
+            return module
+
+        def re_load(name, module):
+            assert sys.modules[name] is module
+            before = type(module)(module.__name__)
+            before.__dict__.update(vars(module))
+
+            reloaded = imp.load_dynamic(name, pathname)
+
+            return before, reloaded
+
+        def check_common(name, module):
+            summed = module.sum(1, 2)
+            lookedup = module.look_up_self()
+            initialized = module.initialized()
+            cached = sys.modules[name]
+
+            # module.__name__  might not match, but the spec will.
+            self.assertEqual(module.__spec__.name, name)
+            if initialized is not None:
+                self.assertIsInstance(initialized, float)
+                self.assertGreater(initialized, 0)
+            self.assertEqual(summed, 3)
+            self.assertTrue(issubclass(module.error, Exception))
+            self.assertEqual(module.int_const, 1969)
+            self.assertEqual(module.str_const, 'something different')
+            self.assertIs(cached, module)
+
+            return lookedup, initialized, cached
+
+        def check_direct(name, module, lookedup):
+            # The module has its own PyModuleDef, with a matching name.
+            self.assertEqual(module.__name__, name)
+            self.assertIs(lookedup, module)
+
+        def check_indirect(name, module, lookedup, orig):
+            # The module re-uses another's PyModuleDef, with a different name.
+            assert orig is not module
+            assert orig.__name__ != name
+            self.assertNotEqual(module.__name__, name)
+            self.assertIs(lookedup, module)
+
+        def check_basic(module, initialized):
+            init_count = module.initialized_count()
+
+            self.assertIsNot(initialized, None)
+            self.assertIsInstance(init_count, int)
+            self.assertGreater(init_count, 0)
+
+            return init_count
+
+        def check_common_reloaded(name, module, cached, before, reloaded):
+            recached = sys.modules[name]
+
+            self.assertEqual(reloaded.__spec__.name, name)
+            self.assertEqual(reloaded.__name__, before.__name__)
+            self.assertEqual(before.__dict__, module.__dict__)
+            self.assertIs(recached, reloaded)
+
+        def check_basic_reloaded(module, lookedup, initialized, init_count,
+                                 before, reloaded):
+            relookedup = reloaded.look_up_self()
+            reinitialized = reloaded.initialized()
+            reinit_count = reloaded.initialized_count()
+
+            self.assertIs(reloaded, module)
+            self.assertIs(reloaded.__dict__, module.__dict__)
+            # It only happens to be the same but that's good enough here.
+            # We really just want to verify that the re-loaded attrs
+            # didn't change.
+            self.assertIs(relookedup, lookedup)
+            self.assertEqual(reinitialized, initialized)
+            self.assertEqual(reinit_count, init_count)
+
+        def check_with_reinit_reloaded(module, lookedup, initialized,
+                                       before, reloaded):
+            relookedup = reloaded.look_up_self()
+            reinitialized = reloaded.initialized()
+
+            self.assertIsNot(reloaded, module)
+            self.assertIsNot(reloaded, module)
+            self.assertNotEqual(reloaded.__dict__, module.__dict__)
+            self.assertIs(relookedup, reloaded)
+            if initialized is None:
+                self.assertIs(reinitialized, None)
+            else:
+                self.assertGreater(reinitialized, initialized)
+
+        # Check the "basic" module.
+
+        name = basename
+        add_ext_cleanup(name)
+        expected_init_count = 1
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            check_direct(name, mod, lookedup)
+            init_count = check_basic(mod, initialized)
+            self.assertEqual(init_count, expected_init_count)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_basic_reloaded(mod, lookedup, initialized, init_count,
+                                 before, reloaded)
+        basic = mod
+
+        # Check its indirect variants.
+
+        name = f'{basename}_basic_wrapper'
+        add_ext_cleanup(name)
+        expected_init_count += 1
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            check_indirect(name, mod, lookedup, basic)
+            init_count = check_basic(mod, initialized)
+            self.assertEqual(init_count, expected_init_count)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_basic_reloaded(mod, lookedup, initialized, init_count,
+                                 before, reloaded)
+
+            # Currently PyState_AddModule() always replaces the cached module.
+            self.assertIs(basic.look_up_self(), mod)
+            self.assertEqual(basic.initialized_count(), expected_init_count)
+
+        # The cached module shouldn't be changed after this point.
+        basic_lookedup = mod
+
+        # Check its direct variant.
+
+        name = f'{basename}_basic_copy'
+        add_ext_cleanup(name)
+        expected_init_count += 1
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            check_direct(name, mod, lookedup)
+            init_count = check_basic(mod, initialized)
+            self.assertEqual(init_count, expected_init_count)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_basic_reloaded(mod, lookedup, initialized, init_count,
+                                 before, reloaded)
+
+            # This should change the cached module for _testsinglephase.
+            self.assertIs(basic.look_up_self(), basic_lookedup)
+            self.assertEqual(basic.initialized_count(), expected_init_count)
+
+        # Check the non-basic variant that has no state.
+
+        name = f'{basename}_with_reinit'
+        add_ext_cleanup(name)
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            self.assertIs(initialized, None)
+            check_direct(name, mod, lookedup)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_with_reinit_reloaded(mod, lookedup, initialized,
+                                       before, reloaded)
+
+            # This should change the cached module for _testsinglephase.
+            self.assertIs(basic.look_up_self(), basic_lookedup)
+            self.assertEqual(basic.initialized_count(), expected_init_count)
+
+        # Check the basic variant that has state.
+
+        name = f'{basename}_with_state'
+        add_ext_cleanup(name)
+        with self.subTest(name):
+            mod = load(name)
+            lookedup, initialized, cached = check_common(name, mod)
+            self.assertIsNot(initialized, None)
+            check_direct(name, mod, lookedup)
+
+            before, reloaded = re_load(name, mod)
+            check_common_reloaded(name, mod, cached, before, reloaded)
+            check_with_reinit_reloaded(mod, lookedup, initialized,
+                                       before, reloaded)
+
+            # This should change the cached module for _testsinglephase.
+            self.assertIs(basic.look_up_self(), basic_lookedup)
+            self.assertEqual(basic.initialized_count(), expected_init_count)
+
     @requires_load_dynamic
     def test_load_dynamic_ImportError_path(self):
         # Issue #1559549 added `name` and `path` attributes to ImportError
@@ -382,6 +672,69 @@ class ImportTests(unittest.TestCase):
             file, path, description = imp.find_module('mymod', path=['.'])
             mod = imp.load_module('mymod', file, path, description)
         self.assertEqual(mod.x, 42)
+
+    def test_issue98354(self):
+        # _imp.create_builtin should raise TypeError
+        # if 'name' attribute of 'spec' argument is not a 'str' instance
+
+        create_builtin = support.get_attribute(_imp, "create_builtin")
+
+        class FakeSpec:
+            def __init__(self, name):
+                self.name = self
+        spec = FakeSpec("time")
+        with self.assertRaises(TypeError):
+            create_builtin(spec)
+
+        class FakeSpec2:
+            name = [1, 2, 3, 4]
+        spec = FakeSpec2()
+        with self.assertRaises(TypeError):
+            create_builtin(spec)
+
+        import builtins
+        class UnicodeSubclass(str):
+            pass
+        class GoodSpec:
+            name = UnicodeSubclass("builtins")
+        spec = GoodSpec()
+        bltin = create_builtin(spec)
+        self.assertEqual(bltin, builtins)
+
+        class UnicodeSubclassFakeSpec(str):
+            def __init__(self, name):
+                self.name = self
+        spec = UnicodeSubclassFakeSpec("builtins")
+        bltin = create_builtin(spec)
+        self.assertEqual(bltin, builtins)
+
+    @support.cpython_only
+    def test_create_builtin_subinterp(self):
+        # gh-99578: create_builtin() behavior changes after the creation of the
+        # first sub-interpreter. Test both code paths, before and after the
+        # creation of a sub-interpreter. Previously, create_builtin() had
+        # a reference leak after the creation of the first sub-interpreter.
+
+        import builtins
+        create_builtin = support.get_attribute(_imp, "create_builtin")
+        class Spec:
+            name = "builtins"
+        spec = Spec()
+
+        def check_get_builtins():
+            refcnt = sys.getrefcount(builtins)
+            mod = _imp.create_builtin(spec)
+            self.assertIs(mod, builtins)
+            self.assertEqual(sys.getrefcount(builtins), refcnt + 1)
+            # Check that a GC collection doesn't crash
+            gc.collect()
+
+        check_get_builtins()
+
+        ret = support.run_in_subinterp("import builtins")
+        self.assertEqual(ret, 0)
+
+        check_get_builtins()
 
 
 class ReloadTests(unittest.TestCase):
