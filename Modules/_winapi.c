@@ -39,8 +39,11 @@
 #include "structmember.h"         // PyMemberDef
 
 
+#ifndef WINDOWS_LEAN_AND_MEAN
 #define WINDOWS_LEAN_AND_MEAN
+#endif
 #include "windows.h"
+#include <winioctl.h>
 #include <crtdbg.h>
 #include "winreparse.h"
 
@@ -70,13 +73,22 @@ static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED);
 static int
 check_CancelIoEx()
 {
+#ifdef MS_WINDOWS_GAMES
+    Py_CancelIoEx = &CancelIoEx;
+    has_CancelIoEx = TRUE;
+#else
     if (has_CancelIoEx == -1)
     {
-        HINSTANCE hKernel32 = GetModuleHandle("KERNEL32");
-        * (FARPROC *) &Py_CancelIoEx = GetProcAddress(hKernel32,
-                                                      "CancelIoEx");
-        has_CancelIoEx = (Py_CancelIoEx != NULL);
+        HINSTANCE hKernel32 = GetModuleHandleA("KERNEL32");
+        if (hKernel32) {
+            * (FARPROC *) &Py_CancelIoEx = GetProcAddress(hKernel32,
+                                                        "CancelIoEx");
+            has_CancelIoEx = (Py_CancelIoEx != NULL);
+        } else {
+            has_CancelIoEx = 0;
+        }
     }
+#endif
     return has_CancelIoEx;
 }
 
@@ -655,8 +667,10 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 cleanup:
     ret = GetLastError();
 
-    CloseHandle(token);
-    CloseHandle(junction);
+    if (token != NULL)
+        CloseHandle(token);
+    if (junction != NULL)
+        CloseHandle(junction);
     PyMem_RawFree(rdb);
 
     if (ret != 0)
@@ -2192,8 +2206,10 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, SEC_NOCACHE);
     WINAPI_CONSTANT(F_DWORD, SEC_RESERVE);
     WINAPI_CONSTANT(F_DWORD, SEC_WRITECOMBINE);
+#ifndef MS_WINDOWS_NON_DESKTOP
     WINAPI_CONSTANT(F_DWORD, STARTF_USESHOWWINDOW);
     WINAPI_CONSTANT(F_DWORD, STARTF_USESTDHANDLES);
+#endif
     WINAPI_CONSTANT(F_DWORD, STD_INPUT_HANDLE);
     WINAPI_CONSTANT(F_DWORD, STD_OUTPUT_HANDLE);
     WINAPI_CONSTANT(F_DWORD, STD_ERROR_HANDLE);
