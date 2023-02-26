@@ -58,6 +58,8 @@ typedef struct {
 
 // Tier 2 types meta interpreter
 typedef struct _PyTier2TypeContext {
+    // points into type_stack, points to one element after the stack
+    PyTypeObject** type_stack_ptr;
     int type_locals_len;
     int type_stack_len;
     PyTypeObject** type_stack;
