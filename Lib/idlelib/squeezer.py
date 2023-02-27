@@ -160,8 +160,10 @@ class ExpandingButton(tk.Button):
             if not confirm:
                 return "break"
 
-        self.base_text.insert(self.text.index(self), self.s, self.tags)
+        index = self.text.index(self)
+        self.base_text.insert(index, self.s, self.tags)
         self.base_text.delete(self)
+        self.editwin.on_squeezed_expand(index, self.s, self.tags)
         self.squeezer.expandingbuttons.remove(self)
 
     def copy(self, event=None):
@@ -285,12 +287,10 @@ class Squeezer:
         """
         return count_lines_with_wrapping(s, self.editwin.width)
 
-    def squeeze_current_text_event(self, event):
-        """squeeze-current-text event handler
+    def squeeze_current_text(self):
+        """Squeeze the text block where the insertion cursor is.
 
-        Squeeze the block of text inside which contains the "insert" cursor.
-
-        If the insert cursor is not in a squeezable block of text, give the
+        If the cursor is not in a squeezable block of text, give the
         user a small warning and do nothing.
         """
         # Set tag_name to the first valid tag found on the "insert" cursor.

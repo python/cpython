@@ -170,7 +170,9 @@ def addpackage(sitedir, name, known_paths):
     fullname = os.path.join(sitedir, name)
     _trace(f"Processing .pth file: {fullname!r}")
     try:
-        f = io.TextIOWrapper(io.open_code(fullname))
+        # locale encoding is not ideal especially on Windows. But we have used
+        # it for a long time. setuptools uses the locale encoding too.
+        f = io.TextIOWrapper(io.open_code(fullname), encoding="locale")
     except OSError:
         return
     with f:
@@ -264,8 +266,8 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # VxWorks has no home directories
-    if sys.platform == "vxworks":
+    # Emscripten, VxWorks, and WASI have no home directories
+    if sys.platform in {"emscripten", "vxworks", "wasi"}:
         return None
 
     def joinuser(*args):
@@ -359,11 +361,11 @@ def getsitepackages(prefixes=None):
             continue
         seen.add(prefix)
 
-        libdirs = [sys.platlibdir]
-        if sys.platlibdir != "lib":
-            libdirs.append("lib")
-
         if os.sep == '/':
+            libdirs = [sys.platlibdir]
+            if sys.platlibdir != "lib":
+                libdirs.append("lib")
+
             for libdir in libdirs:
                 path = os.path.join(prefix, libdir,
                                     "python%d.%d" % sys.version_info[:2],
@@ -371,10 +373,7 @@ def getsitepackages(prefixes=None):
                 sitepackages.append(path)
         else:
             sitepackages.append(prefix)
-
-            for libdir in libdirs:
-                path = os.path.join(prefix, libdir, "site-packages")
-                sitepackages.append(path)
+            sitepackages.append(os.path.join(prefix, "Lib", "site-packages"))
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):
@@ -405,19 +404,16 @@ def setquit():
 def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
     builtins.copyright = _sitebuiltins._Printer("copyright", sys.copyright)
-    if sys.platform[:4] == 'java':
-        builtins.credits = _sitebuiltins._Printer(
-            "credits",
-            "Jython is maintained by the Jython developers (www.jython.org).")
-    else:
-        builtins.credits = _sitebuiltins._Printer("credits", """\
+    builtins.credits = _sitebuiltins._Printer("credits", """\
     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
     for supporting Python development.  See www.python.org for more information.""")
     files, dirs = [], []
     # Not all modules are required to have a __file__ attribute.  See
     # PEP 420 for more details.
-    if hasattr(os, '__file__'):
+    here = getattr(sys, '_stdlib_dir', None)
+    if not here and hasattr(os, '__file__'):
         here = os.path.dirname(os.__file__)
+    if here:
         files.extend(["LICENSE.txt", "LICENSE"])
         dirs.extend([os.path.join(here, os.pardir), here, os.curdir])
     builtins.license = _sitebuiltins._Printer(

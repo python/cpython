@@ -1,4 +1,4 @@
-from . import util as test_util
+from test.test_importlib import util as test_util
 
 init = test_util.import_importlib('importlib')
 util = test_util.import_importlib('importlib.util')
@@ -6,7 +6,6 @@ machinery = test_util.import_importlib('importlib.machinery')
 
 import os.path
 import sys
-from test import support
 from test.support import import_helper
 from test.support import os_helper
 import types
@@ -151,6 +150,7 @@ class FindLoaderTests:
             with test_util.import_state(meta_path=[self.FakeMetaFinder]):
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', DeprecationWarning)
+                    warnings.simplefilter('ignore', ImportWarning)
                     self.assertEqual((name, None), self.init.find_loader(name))
 
     def test_success_path(self):
@@ -161,6 +161,7 @@ class FindLoaderTests:
             with test_util.import_state(meta_path=[self.FakeMetaFinder]):
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', DeprecationWarning)
+                    warnings.simplefilter('ignore', ImportWarning)
                     self.assertEqual((name, path),
                                      self.init.find_loader(name, path))
 
@@ -299,7 +300,8 @@ class ReloadTests:
         name = 'spam'
         with os_helper.temp_cwd(None) as cwd:
             with test_util.uncache('spam'):
-                with import_helper.DirsOnSysPath(cwd):
+                with test_util.import_state(path=[cwd]):
+                    self.init._bootstrap_external._install(self.init._bootstrap)
                     # Start as a namespace package.
                     self.init.invalidate_caches()
                     bad_path = os.path.join(cwd, name, '__init.py')
@@ -310,7 +312,7 @@ class ReloadTests:
                                 '__file__': None,
                                 }
                     os.mkdir(name)
-                    with open(bad_path, 'w') as init_file:
+                    with open(bad_path, 'w', encoding='utf-8') as init_file:
                         init_file.write('eggs = None')
                     module = self.init.import_module(name)
                     ns = vars(module).copy()
@@ -393,7 +395,7 @@ class InvalidateCacheTests:
             def invalidate_caches(self):
                 self.called = True
 
-        key = 'gobledeegook'
+        key = os.path.abspath('gobledeegook')
         meta_ins = InvalidatingNullFinder()
         path_ins = InvalidatingNullFinder()
         sys.meta_path.insert(0, meta_ins)
@@ -438,9 +440,9 @@ class StartupTests:
                 with self.subTest(name=name):
                     self.assertTrue(hasattr(module, '__loader__'),
                                     '{!r} lacks a __loader__ attribute'.format(name))
-                    if self.machinery.BuiltinImporter.find_module(name):
+                    if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__loader__, None)
-                    elif self.machinery.FrozenImporter.find_module(name):
+                    elif self.machinery.FrozenImporter.find_spec(name):
                         self.assertIsNot(module.__loader__, None)
 
     def test_everyone_has___spec__(self):
@@ -448,9 +450,9 @@ class StartupTests:
             if isinstance(module, types.ModuleType):
                 with self.subTest(name=name):
                     self.assertTrue(hasattr(module, '__spec__'))
-                    if self.machinery.BuiltinImporter.find_module(name):
+                    if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
-                    elif self.machinery.FrozenImporter.find_module(name):
+                    elif self.machinery.FrozenImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
 
 

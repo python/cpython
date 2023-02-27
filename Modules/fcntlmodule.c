@@ -8,6 +8,9 @@
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
+#ifdef HAVE_LINUX_FS_H
+#include <linux/fs.h>
+#endif
 
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -572,6 +575,12 @@ all_ins(PyObject* m)
 #ifdef F_GETPIPE_SZ
     if (PyModule_AddIntMacro(m, F_GETPIPE_SZ)) return -1;
 #endif
+#ifdef FICLONE
+    if (PyModule_AddIntMacro(m, FICLONE)) return -1;
+#endif
+#ifdef FICLONERANGE
+    if (PyModule_AddIntMacro(m, FICLONERANGE)) return -1;
+#endif
 
 /* OS X specifics */
 #ifdef F_FULLFSYNC
@@ -579,6 +588,14 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_NOCACHE
     if (PyModule_AddIntMacro(m, F_NOCACHE)) return -1;
+#endif
+
+/* FreeBSD specifics */
+#ifdef F_DUP2FD
+    if (PyModule_AddIntMacro(m, F_DUP2FD)) return -1;
+#endif
+#ifdef F_DUP2FD_CLOEXEC
+    if (PyModule_AddIntMacro(m, F_DUP2FD_CLOEXEC)) return -1;
 #endif
 
 /* For F_{GET|SET}FL */

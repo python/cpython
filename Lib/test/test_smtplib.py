@@ -1,4 +1,3 @@
-import asyncore
 import base64
 import email.mime.text
 from email.message import EmailMessage
@@ -7,7 +6,6 @@ import email.utils
 import hashlib
 import hmac
 import socket
-import smtpd
 import smtplib
 import io
 import re
@@ -23,7 +21,13 @@ from test import support, mock_socket
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import asyncore
 from unittest.mock import Mock
+
+from . import smtpd
+
+
+support.requires_working_socket(module=True)
 
 HOST = socket_helper.HOST
 
@@ -332,6 +336,16 @@ class DebuggingServerTests(unittest.TestCase):
         self.assertEqual(smtp.getreply(), expected)
         smtp.quit()
 
+    def test_issue43124_putcmd_escapes_newline(self):
+        # see: https://bugs.python.org/issue43124
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+        with self.assertRaises(ValueError) as exc:
+            smtp.putcmd('helo\nX-INJECTED')
+        self.assertIn("prohibited newline characters", str(exc.exception))
+        smtp.quit()
+
     def testVRFY(self):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
                             timeout=support.LOOPBACK_TIMEOUT)
@@ -412,6 +426,51 @@ class DebuggingServerTests(unittest.TestCase):
         self.output.flush()
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m, MSG_END)
         self.assertEqual(self.output.getvalue(), mexpect)
+
+    def test_issue43124_escape_localhostname(self):
+        # see: https://bugs.python.org/issue43124
+        # connect and send mail
+        m = 'wazzuuup\nlinetwo'
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='hi\nX-INJECTED',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+        with self.assertRaises(ValueError) as exc:
+            smtp.sendmail("hi@me.com", "you@me.com", m)
+        self.assertIn(
+            "prohibited newline characters: ehlo hi\\nX-INJECTED",
+            str(exc.exception),
+        )
+        # XXX (see comment in testSend)
+        time.sleep(0.01)
+        smtp.quit()
+
+        debugout = smtpd.DEBUGSTREAM.getvalue()
+        self.assertNotIn("X-INJECTED", debugout)
+
+    def test_issue43124_escape_options(self):
+        # see: https://bugs.python.org/issue43124
+        # connect and send mail
+        m = 'wazzuuup\nlinetwo'
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+
+        self.addCleanup(smtp.close)
+        smtp.sendmail("hi@me.com", "you@me.com", m)
+        with self.assertRaises(ValueError) as exc:
+            smtp.mail("hi@me.com", ["X-OPTION\nX-INJECTED-1", "X-OPTION2\nX-INJECTED-2"])
+        msg = str(exc.exception)
+        self.assertIn("prohibited newline characters", msg)
+        self.assertIn("X-OPTION\\nX-INJECTED-1 X-OPTION2\\nX-INJECTED-2", msg)
+        # XXX (see comment in testSend)
+        time.sleep(0.01)
+        smtp.quit()
+
+        debugout = smtpd.DEBUGSTREAM.getvalue()
+        self.assertNotIn("X-OPTION", debugout)
+        self.assertNotIn("X-OPTION2", debugout)
+        self.assertNotIn("X-INJECTED-1", debugout)
+        self.assertNotIn("X-INJECTED-2", debugout)
 
     def testSendNullSender(self):
         m = 'A test message'
@@ -785,7 +844,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             except ResponseException as e:
                 self.smtp_state = self.COMMAND
                 self.push('%s %s' % (e.smtp_code, e.smtp_error))
-                return
+            return
         super().found_terminator()
 
 
@@ -850,6 +909,11 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             password = self._decode_base64(arg)
             self._authenticated(self._auth_login_user, password == sim_auth[1])
             del self._auth_login_user
+
+    def _auth_buggy(self, arg=None):
+        # This AUTH mechanism will 'trap' client in a neverending 334
+        # base64 encoded 'BuGgYbUgGy'
+        self.push('334 QnVHZ1liVWdHeQ==')
 
     def _auth_cram_md5(self, arg=None):
         if arg is None:
@@ -1069,7 +1133,45 @@ class SMTPSimTests(unittest.TestCase):
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
 
-    @hashlib_helper.requires_hashdigest('md5')
+    def testAUTH_LOGIN_initial_response_ok(self):
+        self.serv.add_feature("AUTH LOGIN")
+        with smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                          timeout=support.LOOPBACK_TIMEOUT) as smtp:
+            smtp.user, smtp.password = sim_auth
+            smtp.ehlo("test_auth_login")
+            resp = smtp.auth("LOGIN", smtp.auth_login, initial_response_ok=True)
+            self.assertEqual(resp, (235, b'Authentication Succeeded'))
+
+    def testAUTH_LOGIN_initial_response_notok(self):
+        self.serv.add_feature("AUTH LOGIN")
+        with smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                          timeout=support.LOOPBACK_TIMEOUT) as smtp:
+            smtp.user, smtp.password = sim_auth
+            smtp.ehlo("test_auth_login")
+            resp = smtp.auth("LOGIN", smtp.auth_login, initial_response_ok=False)
+            self.assertEqual(resp, (235, b'Authentication Succeeded'))
+
+    def testAUTH_BUGGY(self):
+        self.serv.add_feature("AUTH BUGGY")
+
+        def auth_buggy(challenge=None):
+            self.assertEqual(b"BuGgYbUgGy", challenge)
+            return "\0"
+
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT
+        )
+        try:
+            smtp.user, smtp.password = sim_auth
+            smtp.ehlo("test_auth_buggy")
+            expect = r"^Server AUTH mechanism infinite loop.*"
+            with self.assertRaisesRegex(smtplib.SMTPException, expect) as cm:
+                smtp.auth("BUGGY", auth_buggy, initial_response_ok=False)
+        finally:
+            smtp.close()
+
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_CRAM_MD5(self):
         self.serv.add_feature("AUTH CRAM-MD5")
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
@@ -1078,7 +1180,7 @@ class SMTPSimTests(unittest.TestCase):
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_multiple(self):
         # Test that multiple authentication methods are tried.
         self.serv.add_feature("AUTH BOGUS PLAIN LOGIN CRAM-MD5")
