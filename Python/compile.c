@@ -181,7 +181,7 @@ static struct jump_target_label_ NO_LABEL = {-1};
     }
 
 #define USE_LABEL(C, LBL) \
-    RETURN_IF_ERROR(codegen_use_label(INSTR_STREAM(C), LBL))
+    RETURN_IF_ERROR(instr_stream_add_label(INSTR_STREAM(C), (LBL).id))
 
 struct instr {
     int i_opcode;
@@ -404,22 +404,6 @@ enum {
     COMPILER_SCOPE_COMPREHENSION,
 };
 
-typedef struct codegen_instr_ {
-    int ci_opcode;
-    int ci_oparg;
-    location ci_loc;
-} codegen_instr;
-
-/* A write-only stream of instructions */
-typedef struct instr_stream_ {
-    codegen_instr *s_instrs;
-    int s_allocated;
-    int s_used;
-
-    int *s_labelmap;
-    int s_labelmap_size;
-} instr_stream;
-
 typedef struct cfg_builder_ {
     /* The entryblock, at which control flow begins. All blocks of the
        CFG are reachable through the b_next links */
@@ -435,6 +419,21 @@ typedef struct cfg_builder_ {
     int g_next_free_label;
 } cfg_builder;
 
+typedef struct codegen_instr_ {
+    int ci_opcode;
+    int ci_oparg;
+    location ci_loc;
+} codegen_instr;
+
+/* A write-only stream of instructions */
+typedef struct instr_stream_ {
+    codegen_instr *s_instrs;
+    int s_allocated;
+    int s_used;
+
+    int *s_labelmap;
+    int s_labelmap_size;
+} instr_stream;
 
 #define INITIAL_INSTR_STREAM_SIZE 100
 #define INITIAL_INSTR_STREAM_LABELS_MAP_SIZE 10
@@ -496,9 +495,58 @@ instr_stream_add_label(instr_stream *is, int lbl) {
     return SUCCESS;
 }
 
-static int cfg_builder_maybe_start_new_block(cfg_builder *g);
-static int instr_stream_addop(instr_stream *is, int opcode, int oparg, location loc);
+static int
+instr_stream_addop(instr_stream *is, int opcode, int oparg, location loc)
+{
+    assert(IS_WITHIN_OPCODE_RANGE(opcode));
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
+    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
+    assert(0 <= oparg && oparg < (1 << 30));
+
+    int idx = instr_stream_next_inst(is);
+    RETURN_IF_ERROR(idx);
+    codegen_instr *ci = &is->s_instrs[idx];
+    ci->ci_opcode = opcode;
+    ci->ci_oparg = oparg;
+    ci->ci_loc = loc;
+    return SUCCESS;
+}
+
+static int
+instr_stream_insert_instruction(instr_stream *is, int pos,
+                                int opcode, int oparg, location loc)
+{
+    assert(pos >= 0 && pos <= is->s_used);
+    int last_idx = instr_stream_next_inst(is);
+    RETURN_IF_ERROR(last_idx);
+    for (int i=last_idx-1; i >= pos; i--) {
+        is->s_instrs[i+1] = is->s_instrs[i];
+    }
+    codegen_instr *ci = &is->s_instrs[pos];
+    ci->ci_opcode = opcode;
+    ci->ci_oparg = oparg;
+    ci->ci_loc = loc;
+
+    /* fix the labels map */
+    for(int lbl=0; lbl < is->s_labelmap_size; lbl++) {
+        if (is->s_labelmap[lbl] >= pos) {
+            is->s_labelmap[lbl]++;
+        }
+    }
+    return SUCCESS;
+}
+
+static void
+instr_stream_fini(instr_stream *is) {
+    PyObject_Free(is->s_labelmap);
+    is->s_labelmap = NULL;
+
+    PyObject_Free(is->s_instrs);
+    is->s_instrs = NULL;
+}
+
 static int basicblock_addop(basicblock *b, int opcode, int oparg, location loc);
+static int cfg_builder_maybe_start_new_block(cfg_builder *g);
 
 static int
 cfg_builder_use_label(cfg_builder *g, jump_target_label lbl)
@@ -511,17 +559,7 @@ static int
 cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
 {
     RETURN_IF_ERROR(cfg_builder_maybe_start_new_block(g));
-    int res =  basicblock_addop(g->g_curblock, opcode, oparg, loc);
-    return res;
-}
-
-static void
-instr_stream_fini(instr_stream *is) {
-    PyObject_Free(is->s_labelmap);
-    is->s_labelmap = NULL;
-
-    PyObject_Free(is->s_instrs);
-    is->s_instrs = NULL;
+    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
 }
 
 static int
@@ -537,9 +575,9 @@ instr_stream_to_cfg(instr_stream *is, cfg_builder *g) {
         codegen_instr *instr = &is->s_instrs[i];
         RETURN_IF_ERROR(cfg_builder_addop(g, instr->ci_opcode, instr->ci_oparg, instr->ci_loc));
     }
-
     return SUCCESS;
 }
+
 
 /* The following items change on entry and exit of code blocks.
    They must be saved and restored when returning to a block.
@@ -635,7 +673,6 @@ typedef struct {
 
 static int basicblock_next_instr(basicblock *);
 
-static basicblock *cfg_builder_new_block(cfg_builder *g);
 static int codegen_addop_i(instr_stream *is, int opcode, Py_ssize_t oparg, location loc);
 
 static void compiler_free(struct compiler *);
@@ -950,6 +987,8 @@ cfg_builder_check(cfg_builder *g)
     }
 }
 
+static basicblock *cfg_builder_new_block(cfg_builder *g);
+
 static int
 cfg_builder_init(cfg_builder *g)
 {
@@ -1100,13 +1139,6 @@ cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
     g->g_curblock->b_next = block;
     g->g_curblock = block;
     return block;
-}
-
-static int
-codegen_use_label(instr_stream *is, jump_target_label lbl)
-{
-    RETURN_IF_ERROR(instr_stream_add_label(is, lbl.id));
-    return SUCCESS;
 }
 
 static inline int
@@ -1325,58 +1357,10 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
 }
 
 static int
-instr_stream_addop(instr_stream *is, int opcode, int oparg, location loc)
-{
-    assert(IS_WITHIN_OPCODE_RANGE(opcode));
-    assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
-    assert(0 <= oparg && oparg < (1 << 30));
-
-    int idx = instr_stream_next_inst(is);
-    RETURN_IF_ERROR(idx);
-    codegen_instr *ci = &is->s_instrs[idx];
-    ci->ci_opcode = opcode;
-    ci->ci_oparg = oparg;
-    ci->ci_loc = loc;
-    return SUCCESS;
-}
-
-static int
-instr_stream_insert_instruction(instr_stream *is, int pos,
-                                int opcode, int oparg, location loc)
-{
-    assert(pos >= 0 && pos <= is->s_used);
-    int last_idx = instr_stream_next_inst(is);
-    RETURN_IF_ERROR(last_idx);
-    for (int i=last_idx-1; i >= pos; i--) {
-        is->s_instrs[i+1] = is->s_instrs[i];
-    }
-    codegen_instr *ci = &is->s_instrs[pos];
-    ci->ci_opcode = opcode;
-    ci->ci_oparg = oparg;
-    ci->ci_loc = loc;
-
-    /* fix the labels map */
-    for(int lbl=0; lbl < is->s_labelmap_size; lbl++) {
-        if (is->s_labelmap[lbl] >= pos) {
-            is->s_labelmap[lbl]++;
-        }
-    }
-    return SUCCESS;
-}
-
-static int
-codegen_addop(instr_stream *is, int opcode, int oparg, location loc)
-{
-    RETURN_IF_ERROR(instr_stream_addop(is, opcode, oparg, loc));
-    return SUCCESS;
-}
-
-static int
 codegen_addop_noarg(instr_stream *is, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
-    return codegen_addop(is, opcode, 0, loc);
+    return instr_stream_addop(is, opcode, 0, loc);
 }
 
 static Py_ssize_t
@@ -1587,7 +1571,7 @@ codegen_addop_i(instr_stream *is, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return codegen_addop(is, opcode, oparg_, loc);
+    return instr_stream_addop(is, opcode, oparg_, loc);
 }
 
 static int
@@ -1596,7 +1580,7 @@ codegen_addop_j(instr_stream *is, location loc,
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return codegen_addop(is, opcode, target.id, loc);
+    return instr_stream_addop(is, opcode, target.id, loc);
 }
 
 #define ADDOP(C, LOC, OP) \
@@ -8355,7 +8339,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
 
 /* For debugging purposes only */
-#if 1
+#if 0
 static void
 dump_instr(struct instr *i)
 {
@@ -8749,7 +8733,6 @@ assemble(struct compiler *c, int addNone)
 {
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
-    PyObject *newconsts = NULL;
     cfg_builder newg;
     struct assembler a;
     memset(&a, 0, sizeof(struct assembler));
@@ -8920,7 +8903,6 @@ assemble(struct compiler *c, int addNone)
     co = makecode(c, &a, consts, maxdepth, nlocalsplus, code_flags);
  error:
     Py_XDECREF(consts);
-    Py_XDECREF(newconsts);
     cfg_builder_fini(&newg);
     assemble_free(&a);
     return co;
