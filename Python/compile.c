@@ -433,8 +433,6 @@ typedef struct cfg_builder_ {
     jump_target_label g_current_label;
     /* next free label id */
     int g_next_free_label;
-    /* instruction stream */
-    instr_stream g_instr_stream;
 } cfg_builder;
 
 
@@ -517,6 +515,15 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
     return res;
 }
 
+static void
+instr_stream_fini(instr_stream *is) {
+    PyObject_Free(is->s_labelmap);
+    is->s_labelmap = NULL;
+
+    PyObject_Free(is->s_instrs);
+    is->s_instrs = NULL;
+}
+
 static int
 instr_stream_to_cfg(instr_stream *is, cfg_builder *g) {
     /* Note: there can be more than one label for the same offset */
@@ -560,8 +567,8 @@ struct compiler_unit {
     Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
     Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
 
+    instr_stream u_instr_stream; /* codegen output */
     cfg_builder u_cfg_builder;  /* The control flow graph */
-    instr_stream u_inst_stream;
 
     int u_nfblocks;
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
@@ -598,7 +605,7 @@ struct compiler {
 };
 
 #define CFG_BUILDER(C) (&((C)->u->u_cfg_builder))
-#define INSTR_STREAM(C) (&((C)->u->u_cfg_builder.g_instr_stream))
+#define INSTR_STREAM(C) (&((C)->u->u_instr_stream))
 
 
 typedef struct {
@@ -974,6 +981,7 @@ cfg_builder_fini(cfg_builder* g)
 static void
 compiler_unit_free(struct compiler_unit *u)
 {
+    instr_stream_fini(&u->u_instr_stream);
     cfg_builder_fini(&u->u_cfg_builder);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
