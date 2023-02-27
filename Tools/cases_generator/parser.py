@@ -69,9 +69,24 @@ class Block(Node):
 
 
 @dataclass
+class StackVarTypeLiteral(Node):
+    literal: str
+
+
+@dataclass
+class StackVarTypeIndex(Node):
+    array: Literal["locals"] | Literal["consts"]
+    index: str
+
+
+StackVarType = StackVarTypeLiteral | StackVarTypeIndex
+
+
+@dataclass
 class StackEffect(Node):
     name: str
     type: str = ""  # Optional `:type`
+    type_annotation: StackVarType | None = None # Default is None
     cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
@@ -86,6 +101,25 @@ class Expression(Node):
 class CacheEffect(Node):
     name: str
     size: int
+
+
+@dataclass
+class LocalEffectVarLiteral(Node):
+    name: str
+
+
+@dataclass
+class LocalEffectVarStack(Node):
+    name: str
+
+
+LocalEffectVar = LocalEffectVarLiteral | LocalEffectVarStack
+
+
+@dataclass
+class LocalEffect(Node):
+    index: str
+    value: LocalEffectVar
 
 
 @dataclass
@@ -125,6 +159,7 @@ class InstHeader(Node):
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
+    localeffect: LocalEffect | None = None
 
 
 @dataclass
@@ -136,6 +171,7 @@ class InstDef(Node):
     outputs: list[OutputEffect]
     block: Block
     u_insts: list[str]
+    localeffect: LocalEffect | None = None
 
 
 @dataclass
@@ -179,7 +215,7 @@ class Parser(PLexer):
                             space, label = m.groups()
                             u_insts.append(label)
                 return InstDef(
-                    hdr.register, hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block, u_insts
+                    hdr.register, hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block, u_insts, hdr.localeffect
                 )
             raise self.make_syntax_error("Expected block")
         return None
@@ -199,6 +235,11 @@ class Parser(PLexer):
                     if self.expect(lx.RPAREN):
                         if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
                             return InstHeader(register, kind, name, inp, outp)
+                    elif self.expect(lx.COMMA):
+                        leffect = self.local_effect()
+                        if self.expect(lx.RPAREN):
+                            if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
+                                return InstHeader(register, kind, name, inp, outp, leffect)
                 elif self.expect(lx.RPAREN) and kind == "inst":
                     # No legacy stack effect if kind is "op".
                     return InstHeader(register, "legacy", name, [], [])
@@ -266,9 +307,12 @@ class Parser(PLexer):
         #   IDENTIFIER [':' IDENTIFIER] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
-            type_text = ""
+            type = ""
+            has_type_annotation = False
+            type_annotation = None
             if self.expect(lx.COLON):
-                type_text = self.require(lx.IDENTIFIER).text.strip()
+                has_type_annotation = True
+                type_annotation = self.stackvar_type()
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)
@@ -278,14 +322,48 @@ class Parser(PLexer):
                 cond_text = cond.text.strip()
             size_text = ""
             if self.expect(lx.LBRACKET):
-                if type_text or cond_text:
+                if has_type_annotation or cond_text:
                     raise self.make_syntax_error("Unexpected [")
                 if not (size := self.expression()):
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
-                type_text = "PyObject **"
+                type = "PyObject **"
                 size_text = size.text.strip()
-            return StackEffect(tkn.text, type_text, cond_text, size_text)
+            return StackEffect(tkn.text, type, type_annotation, cond_text, size_text)
+
+    @contextual
+    def stackvar_type(self) -> StackVarType | None: 
+        if id := self.expect(lx.IDENTIFIER):
+            idstr = id.text.strip()
+            if not self.expect(lx.LBRACKET):
+                return StackVarTypeLiteral(idstr + " *")
+            if idstr not in ["locals", "consts"]: return
+            if id := self.expect(lx.IDENTIFIER):
+                index = id.text.strip()
+                self.require(lx.RBRACKET)
+                return StackVarTypeIndex(
+                    "locals" if idstr == "locals" else "consts", 
+                    index)
+
+    @contextual
+    def local_effect(self) -> LocalEffect | None:
+        if self.expect(lx.IDENTIFIER).text.strip() == "locals":
+            self.require(lx.LBRACKET)
+            if id := self.expect(lx.IDENTIFIER):
+                index = id.text.strip()
+                self.require(lx.RBRACKET)
+                self.require(lx.EQUALS)
+                if self.expect(lx.TIMES): # stackvar
+                    value = self.require(lx.IDENTIFIER).text.strip()
+                    return LocalEffect(
+                        index, 
+                        LocalEffectVarStack(value)
+                    )
+                value = self.require(lx.IDENTIFIER).text.strip()
+                return LocalEffect(
+                    index,
+                    LocalEffectVarLiteral(value)
+                )
 
     @contextual
     def expression(self) -> Expression | None:

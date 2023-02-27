@@ -102,31 +102,31 @@ dummy_func(
             }
         }
 
-        inst(LOAD_CLOSURE, (-- value)) {
+        inst(LOAD_CLOSURE, (-- value : locals[oparg])) {
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
             value = GETLOCAL(oparg);
             ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
         }
 
-        inst(LOAD_FAST_CHECK, (-- value)) {
+        inst(LOAD_FAST_CHECK, (-- value : locals[oparg])) {
             value = GETLOCAL(oparg);
             ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
         }
 
-        inst(LOAD_FAST, (-- value)) {
+        inst(LOAD_FAST, (-- value : locals[oparg])) {
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
         }
 
-        inst(LOAD_CONST, (-- value)) {
+        inst(LOAD_CONST, (-- value : consts[oparg])) {
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
         }
 
-        inst(STORE_FAST, (value --)) {
+        inst(STORE_FAST, (value --), locals[oparg] = *value) {
             SETLOCAL(oparg, value);
         }
 
@@ -303,7 +303,7 @@ dummy_func(
             bb_test = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
         }
 
-        u_inst(BINARY_OP_ADD_INT_REST, (left, right -- sum)) {
+        u_inst(BINARY_OP_ADD_INT_REST, (left : PyLong_Type, right : PyLong_Type -- sum : PyLong_Type)) {
             STAT_INC(BINARY_OP, hit);
             sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -1180,13 +1180,13 @@ dummy_func(
             null = NULL;
         }
 
-        inst(DELETE_FAST, (--)) {
+        inst(DELETE_FAST, (--), locals[oparg] = NULL) {
             PyObject *v = GETLOCAL(oparg);
             ERROR_IF(v == NULL, unbound_local_error);
             SETLOCAL(oparg, NULL);
         }
 
-        inst(MAKE_CELL, (--)) {
+        inst(MAKE_CELL, (--), locals[oparg] = NULL) {
             // "initial" is probably NULL but not if it's an arg (or set
             // via PyFrame_LocalsToFast() before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
