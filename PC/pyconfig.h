@@ -304,17 +304,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       endif /* Py_BUILD_CORE */
 #endif /* MS_COREDLL */
 
-#if defined(MS_WINDOWS_GAMES)
-#       define PLATFORM "xbox"
-#       define SIZEOF_VOID_P 8
-#       define SIZEOF_TIME_T 8
-#       define SIZEOF_OFF_T 4
-#       define SIZEOF_FPOS_T 8
-#       define SIZEOF_HKEY 8
-#       define SIZEOF_SIZE_T 8
-#       define ALIGNOF_SIZE_T 8
-#       define HAVE_LARGEFILE_SUPPORT
-#elif defined(MS_WIN64)
+#ifdef MS_WIN64
 /* maintain "win32" sys.platform for backward compatibility of Python code,
    the Win64 API should be close enough to the Win32 API to make this
    preferable */
