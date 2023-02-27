@@ -322,7 +322,7 @@ class Fraction(numbers.Rational):
     def as_integer_ratio(self):
         """Return a pair of integers, whose ratio is equal to the original Fraction.
 
-        The ratio is in lowest terms and with a positive denominator.
+        The ratio is in lowest terms and has a positive denominator.
         """
         return (self._numerator, self._denominator)
 
