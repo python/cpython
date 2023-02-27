@@ -56,7 +56,7 @@ class CompilationStepTestCase(unittest.TestCase):
     def assertInstructionsMatch(self, actual_, expected_):
         # get two lists where each entry is a label or
         # an instruction tuple. Normalize the labels to the
-        # instruction count of the target, adn compare the lists.
+        # instruction count of the target, and compare the lists.
 
         self.assertIsInstance(actual_, list)
         self.assertIsInstance(expected_, list)
