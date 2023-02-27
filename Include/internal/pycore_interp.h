@@ -21,6 +21,7 @@ extern "C" {
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
+#include "pycore_import.h"        // struct _import_state
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_global_objects.h"  // struct _Py_interp_static_objects
 #include "pycore_tuple.h"         // struct _Py_tuple_state
@@ -92,37 +93,12 @@ struct _is {
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
-    // sys.modules dictionary
-    PyObject *modules;
-    /* This is the list of module objects for all legacy (single-phase init)
-       extension modules ever loaded in this process (i.e. imported
-       in this interpreter or in any other).  Py_None stands in for
-       modules that haven't actually been imported in this interpreter.
+    struct _import_state imports;
 
-       A module's index (PyModuleDef.m_base.m_index) is used to look up
-       the corresponding module object for this interpreter, if any.
-       (See PyState_FindModule().)  When any extension module
-       is initialized during import, its moduledef gets initialized by
-       PyModuleDef_Init(), and the first time that happens for each
-       PyModuleDef, its index gets set to the current value of
-       a global counter (see _PyRuntimeState.imports.last_module_index).
-       The entry for that index in this interpreter remains unset until
-       the module is actually imported here.  (Py_None is used as
-       a placeholder.)  Note that multi-phase init modules always get
-       an index for which there will never be a module set.
-
-       This is initialized lazily in _PyState_AddModule(), which is also
-       where modules get added. */
-    PyObject *modules_by_index;
     // Dictionary of the sys module
     PyObject *sysdict;
     // Dictionary of the builtins module
     PyObject *builtins;
-    // importlib module
-    PyObject *importlib;
-    // override for config->use_frozen_modules (for tests)
-    // (-1: "off", 1: "on", 0: no override)
-    int override_frozen_modules;
 
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
@@ -130,15 +106,11 @@ struct _is {
     int codecs_initialized;
 
     PyConfig config;
-#ifdef HAVE_DLOPEN
-    int dlopenflags;
-#endif
     unsigned long feature_flags;
 
     PyObject *dict;  /* Stores per-interpreter state */
 
     PyObject *builtins_copy;
-    PyObject *import_func;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
 
@@ -205,7 +177,6 @@ struct _is {
 
 /* other API */
 
-extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
 

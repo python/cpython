@@ -1,0 +1,1 @@
+Fix SystemError / segmentation fault in iter ``__reduce__`` when internal access of ``builtins.__dict__`` keys mutates the iter object.

@@ -944,13 +944,18 @@ LAERTES
 """
 
 
-class ZlibDecompressorTest():
+class ZlibDecompressorTest(unittest.TestCase):
     # Test adopted from test_bz2.py
     TEXT = HAMLET_SCENE
     DATA = zlib.compress(HAMLET_SCENE)
     BAD_DATA = b"Not a valid deflate block"
+    BIG_TEXT = DATA * ((128 * 1024 // len(DATA)) + 1)
+    BIG_DATA = zlib.compress(BIG_TEXT)
+
     def test_Constructor(self):
-        self.assertRaises(TypeError, zlib._ZlibDecompressor, 42)
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, "ASDA")
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, -15, "notbytes")
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, -15, b"bytes", 5)
 
     def testDecompress(self):
         zlibd = zlib._ZlibDecompressor()

@@ -123,7 +123,7 @@ The following exceptions are used mostly as base classes for other exceptions.
          try:
              ...
          except SomeException:
-             tb = sys.exc_info()[2]
+             tb = sys.exception().__traceback__
              raise OtherException(...).with_traceback(tb)
 
    .. method:: add_note(note)

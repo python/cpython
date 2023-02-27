@@ -1663,15 +1663,15 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 #endif
 
     /* Preserve the existing exception */
-    PyObject *exc_type, *exc_value, *exc_tb;
     PyObject *value;
     Py_ssize_t ix; (void)ix;
 
-    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     ix = _Py_dict_lookup(mp, key, hash, &value);
 
     /* Ignore any exception raised by the lookup */
-    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    _PyErr_SetRaisedException(tstate, exc);
 
 
     assert(ix >= 0 || value == NULL);
