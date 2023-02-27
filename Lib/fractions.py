@@ -318,8 +318,8 @@ class Fraction(numbers.Rational):
     def _from_coprime_ints(cls, numerator, denominator, /):
         """Convert a pair of ints to a rational number, for internal use.
 
-        The ratio of integers should be in lowest terms and
-        the denominator is positive.
+        The ratio of integers should be in lowest terms and the denominator
+        should be positive.
         """
         obj = super(Fraction, cls).__new__(cls)
         obj._numerator = numerator
