@@ -13859,7 +13859,11 @@ os_set_inheritable_impl(PyObject *module, int fd, int inheritable)
 }
 
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
+#ifdef MS_WINDOWS
+#ifndef HANDLE_FLAG_INHERIT
+#define HANDLE_FLAG_INHERIT 0x00000001
+#endif
+
 /*[clinic input]
 os.get_handle_inheritable -> bool
     handle: intptr_t
@@ -13904,7 +13908,7 @@ os_set_handle_inheritable_impl(PyObject *module, intptr_t handle,
     }
     Py_RETURN_NONE;
 }
-#endif /* !MS_WINDOWS && !MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS */
 
 /*[clinic input]
 os.get_blocking -> bool
