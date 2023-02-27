@@ -426,7 +426,6 @@ typedef struct instr_stream_ {
     int *s_labelmap;       /* label id --> instr offset */
     int s_labelmap_size;
     int s_next_free_label; /* next free label id */
-
 } instr_stream;
 
 #define INITIAL_INSTR_STREAM_SIZE 100
@@ -563,8 +562,12 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
     return basicblock_addop(g->g_curblock, opcode, oparg, loc);
 }
 
+static int cfg_builder_init(cfg_builder *g);
+
 static int
 instr_stream_to_cfg(instr_stream *is, cfg_builder *g) {
+    memset(g, 0, sizeof(cfg_builder));
+    RETURN_IF_ERROR(cfg_builder_init(g));
     /* Note: there can be more than one label for the same offset */
     for (int i = 0; i < is->s_used; i++) {
         for (int j=0; j < is->s_labelmap_size; j++) {
@@ -8675,6 +8678,9 @@ prepare_localsplus(struct compiler* c, cfg_builder *g, int code_flags)
     int numdropped = fix_cell_offsets(c, g->g_entryblock, cellfixedoffsets);
     PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
     cellfixedoffsets = NULL;
+    if (numdropped < 0) {
+        return ERROR;
+    }
 
     nlocalsplus -= numdropped;
     return nlocalsplus;
@@ -8719,10 +8725,6 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Preprocessing **/
-    memset(g, 0, sizeof(cfg_builder));
-    if (cfg_builder_init(g) < 0) {
-        goto error;
-    }
     if (instr_stream_to_cfg(INSTR_STREAM(c), g) < 0) {
         goto error;
     }
@@ -8754,7 +8756,6 @@ assemble(struct compiler *c, int addNone)
     if (mark_except_handlers(g->g_entryblock) < 0) {
         goto error;
     }
-
     if (label_exception_targets(g->g_entryblock)) {
         goto error;
     }
@@ -8767,7 +8768,6 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
-
     if (remove_unused_consts(g->g_entryblock, consts) < 0) {
         goto error;
     }
@@ -8779,9 +8779,7 @@ assemble(struct compiler *c, int addNone)
     if (duplicate_exits_without_lineno(g) < 0) {
         goto error;
     }
-
     propagate_line_numbers(g->g_entryblock);
-
     guarantee_lineno_for_exits(g->g_entryblock, c->u->u_firstlineno);
 
     if (push_cold_blocks_to_end(g, code_flags) < 0) {
@@ -8789,6 +8787,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Assembly **/
+
     int nlocalsplus = prepare_localsplus(c, g, code_flags);
     if (nlocalsplus < 0) {
         goto error;
@@ -8798,7 +8797,6 @@ assemble(struct compiler *c, int addNone)
     if (maxdepth < 0) {
         goto error;
     }
-
     /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
     convert_exception_handlers_to_nops(g->g_entryblock);
@@ -10004,10 +10002,6 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     }
 
     cfg_builder g;
-    memset(&g, 0, sizeof(cfg_builder));
-    if (cfg_builder_init(&g) < 0) {
-        goto finally;
-    }
     if (instr_stream_to_cfg(INSTR_STREAM(c), &g) < 0) {
         goto finally;
     }
