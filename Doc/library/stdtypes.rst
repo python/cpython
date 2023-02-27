@@ -602,7 +602,10 @@ class`. In addition, it provides a few more methods:
 
 .. method:: int.as_integer_ratio()
 
-   Given an integer ``x``, return the tuple ``(int(x), 1)``.
+   Return a pair of integers whose ratio is equal to the original
+   integer and has a positive denominator.  The integer ratio of integers
+   (whole numbers) is always the integer as the numerator and ``1`` as the
+   denominator.
 
    .. versionadded:: 3.8
 

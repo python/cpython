@@ -711,7 +711,7 @@ plain ol' Python and is guaranteed to be available.
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
-    13
+    14
     >>> for t in real_tests:
     ...     print('{}  {}'.format(len(t.examples), t.name))
     ...
@@ -723,6 +723,7 @@ plain ol' Python and is guaranteed to be available.
     2  builtins.float.hex
     1  builtins.hex
     1  builtins.int
+    3  builtins.int.as_integer_ratio
     2  builtins.int.bit_count
     2  builtins.int.bit_length
     5  builtins.memoryview.hex
