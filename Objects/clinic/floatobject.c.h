@@ -175,7 +175,7 @@ PyDoc_STRVAR(float_as_integer_ratio__doc__,
 "\n"
 "Return a pair of integers, whose ratio is exactly equal to the original float.\n"
 "\n"
-"The ratio is in lowest terms and with a positive denominator.  Raise\n"
+"The ratio is in lowest terms and has a positive denominator.  Raise\n"
 "OverflowError on infinities and a ValueError on NaNs.\n"
 "\n"
 ">>> (10.0).as_integer_ratio()\n"
@@ -325,4 +325,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1a8a0ef8e3989944 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea329577074911b9 input=a9049054013a1b77]*/

@@ -1548,7 +1548,7 @@ float.as_integer_ratio
 
 Return a pair of integers, whose ratio is exactly equal to the original float.
 
-The ratio is in lowest terms and with a positive denominator.  Raise
+The ratio is in lowest terms and has a positive denominator.  Raise
 OverflowError on infinities and a ValueError on NaNs.
 
 >>> (10.0).as_integer_ratio()
@@ -1561,7 +1561,7 @@ OverflowError on infinities and a ValueError on NaNs.
 
 static PyObject *
 float_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=65f25f0d8d30a712 input=75db3b49d292f077]*/
+/*[clinic end generated code: output=65f25f0d8d30a712 input=d5ba7765655d75bd]*/
 {
     double self_double;
     double float_part;
