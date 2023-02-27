@@ -39,6 +39,7 @@ LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
 JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 FOR_ITER = opmap['FOR_ITER']
+SEND = opmap['SEND']
 LOAD_ATTR = opmap['LOAD_ATTR']
 
 CACHE = opmap["CACHE"]
@@ -453,6 +454,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         argrepr = ''
         positions = Positions(*next(co_positions, ()))
         deop = _deoptop(op)
+        caches = _inline_cache_entries[deop]
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
             #  available, and argrepr to the string representation of argval.
@@ -478,8 +480,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif deop in hasjrel:
                 signed_arg = -arg if _is_backward_jump(deop) else arg
                 argval = offset + 2 + signed_arg*2
-                if deop == FOR_ITER:
-                    argval += 2
+                argval += 2 * caches
                 argrepr = "to " + repr(argval)
             elif deop in haslocal or deop in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
@@ -633,12 +634,12 @@ def findlabels(code):
     for offset, op, arg in _unpack_opargs(code):
         if arg is not None:
             deop = _deoptop(op)
+            caches = _inline_cache_entries[deop]
             if deop in hasjrel:
                 if _is_backward_jump(deop):
                     arg = -arg
                 label = offset + 2 + arg*2
-                if deop == FOR_ITER:
-                    label += 2
+                label += 2 * caches
             elif deop in hasjabs:
                 label = arg*2
             else:
