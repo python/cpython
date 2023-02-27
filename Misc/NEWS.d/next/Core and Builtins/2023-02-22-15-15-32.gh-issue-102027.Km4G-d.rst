@@ -1,0 +1,2 @@
+Use ``GetCurrentProcessId`` on Windows when ``getpid`` is unavailable. Patch by
+Max Bachmann.

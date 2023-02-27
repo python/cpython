@@ -569,6 +569,7 @@ extern "C" {
     INIT_ID(True), \
     INIT_ID(WarningMessage), \
     INIT_ID(_), \
+    INIT_ID(_WindowsConsoleIO), \
     INIT_ID(__IOBase_closed), \
     INIT_ID(__abc_tpflags__), \
     INIT_ID(__abs__), \
@@ -744,6 +745,7 @@ extern "C" {
     INIT_ID(_get_sourcefile), \
     INIT_ID(_handle_fromlist), \
     INIT_ID(_initializing), \
+    INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
     INIT_ID(_length_), \
     INIT_ID(_limbo), \

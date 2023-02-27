@@ -142,6 +142,20 @@ PySys_SetObject(const char *name, PyObject *v)
     return sys_set_object_str(interp, name, v);
 }
 
+int
+_PySys_ClearAttrString(PyInterpreterState *interp,
+                       const char *name, int verbose)
+{
+    if (verbose) {
+        PySys_WriteStderr("# clear sys.%s\n", name);
+    }
+    /* To play it safe, we set the attr to None instead of deleting it. */
+    if (PyDict_SetItemString(interp->sysdict, name, Py_None) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
 
 static int
 should_audit(PyInterpreterState *interp)
@@ -1650,7 +1664,7 @@ sys_setdlopenflags_impl(PyObject *module, int new_val)
 /*[clinic end generated code: output=ec918b7fe0a37281 input=4c838211e857a77f]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    interp->dlopenflags = new_val;
+    _PyImport_SetDLOpenFlags(interp, new_val);
     Py_RETURN_NONE;
 }
 
@@ -1668,7 +1682,8 @@ sys_getdlopenflags_impl(PyObject *module)
 /*[clinic end generated code: output=e92cd1bc5005da6e input=dc4ea0899c53b4b6]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->dlopenflags);
+    return PyLong_FromLong(
+            _PyImport_GetDLOpenFlags(interp));
 }
 
 #endif  /* HAVE_DLOPEN */
@@ -2279,21 +2294,9 @@ static PyMethodDef sys_methods[] = {
 static PyObject *
 list_builtin_module_names(void)
 {
-    PyObject *list = PyList_New(0);
+    PyObject *list = _PyImport_GetBuiltinModuleNames();
     if (list == NULL) {
         return NULL;
-    }
-    struct _inittab *inittab = _PyRuntime.imports.inittab;
-    for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
-        PyObject *name = PyUnicode_FromString(inittab[i].name);
-        if (name == NULL) {
-            goto error;
-        }
-        if (PyList_Append(list, name) < 0) {
-            Py_DECREF(name);
-            goto error;
-        }
-        Py_DECREF(name);
     }
     if (PyList_Sort(list) != 0) {
         goto error;
@@ -3411,11 +3414,10 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 
     PyInterpreterState *interp = tstate->interp;
 
-    PyObject *modules = PyDict_New();
+    PyObject *modules = _PyImport_InitModules(interp);
     if (modules == NULL) {
         goto error;
     }
-    interp->modules = modules;
 
     PyObject *sysmod = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
     if (sysmod == NULL) {
@@ -3428,7 +3430,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
     interp->sysdict = Py_NewRef(sysdict);
 
-    if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
+    if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
         goto error;
     }
 
@@ -3442,7 +3444,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return status;
     }
 
-    if (_PyImport_FixupBuiltin(sysmod, "sys", interp->modules) < 0) {
+    if (_PyImport_FixupBuiltin(sysmod, "sys", modules) < 0) {
         goto error;
     }
 
