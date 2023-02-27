@@ -353,12 +353,6 @@ basicblock_last_instr(const basicblock *b) {
 }
 
 static inline int
-basicblock_returns(const basicblock *b) {
-    struct instr *last = basicblock_last_instr(b);
-    return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_CONST);
-}
-
-static inline int
 basicblock_exits_scope(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return last && IS_SCOPE_EXIT_OPCODE(last->i_opcode);
@@ -977,7 +971,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
     return dest;
 }
 
-static int
+static bool
 cfg_builder_check(cfg_builder *g)
 {
     for (basicblock *block = g->g_block_list; block != NULL; block = block->b_list) {
@@ -992,7 +986,7 @@ cfg_builder_check(cfg_builder *g)
             assert (block->b_ialloc == 0);
         }
     }
-    return SUCCESS;
+    return true;
 }
 
 static basicblock *cfg_builder_new_block(cfg_builder *g);
@@ -2553,15 +2547,6 @@ wrap_in_stopiteration_handler(struct compiler *c)
     NEW_JUMP_TARGET_LABEL(c, handler);
 
     /* Insert SETUP_CLEANUP at start */
-    struct instr setup = {
-        .i_opcode = SETUP_CLEANUP,
-        .i_oparg = handler.id,
-        .i_loc = NO_LOCATION,
-        .i_target = NULL,
-    };
-    RETURN_IF_ERROR(
-        insert_instruction(c->u->u_cfg_builder.g_entryblock, 0, &setup));
-
     RETURN_IF_ERROR(
         instr_stream_insert_instruction(
             INSTR_STREAM(c), 0,
@@ -8360,6 +8345,12 @@ dump_instr(struct instr *i)
                     i->i_loc.lineno, i->i_opcode, arg, jabs, jrel);
 }
 
+static inline int
+basicblock_returns(const basicblock *b) {
+    struct instr *last = basicblock_last_instr(b);
+    return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_CONST);
+}
+
 static void
 dump_basicblock(const basicblock *b)
 {
@@ -8446,17 +8437,6 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(insert_instruction(entryblock, 1, &pop_top));
-
-        RETURN_IF_ERROR(
-          instr_stream_insert_instruction(
-             INSTR_STREAM(c), 0,
-             RETURN_GENERATOR, 0,
-             LOCATION(c->u->u_firstlineno, c->u->u_firstlineno, -1, -1)));
-
-        RETURN_IF_ERROR(
-            instr_stream_insert_instruction(
-                INSTR_STREAM(c), 1,
-                POP_TOP, 0, NO_LOCATION));
     }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
@@ -8487,11 +8467,6 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
                 .i_target = NULL,
             };
             RETURN_IF_ERROR(insert_instruction(entryblock, ncellsused, &make_cell));
-            RETURN_IF_ERROR(
-                instr_stream_insert_instruction(
-                    INSTR_STREAM(c), ncellsused,
-                    MAKE_CELL, oldindex, NO_LOCATION));
-
             ncellsused += 1;
         }
         PyMem_RawFree(sorted);
@@ -8505,10 +8480,6 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(insert_instruction(entryblock, 0, &copy_frees));
-        RETURN_IF_ERROR(
-            instr_stream_insert_instruction(
-                INSTR_STREAM(c), 0,
-                COPY_FREE_VARS, nfreevars, NO_LOCATION));
     }
 
     return SUCCESS;
@@ -8717,15 +8688,21 @@ prepare_localsplus(struct compiler* c, int code_flags, cfg_builder *newg)
 }
 
 static int
-add_return_at_end_of_block(struct compiler *c, int addNone)
+add_return_at_end(struct compiler *c, int addNone)
 {
-    /* Make sure every block that falls off the end returns None. */
-    if (!basicblock_returns(CFG_BUILDER(c)->g_curblock)) {
-        if (addNone) {
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+    /* Make sure every instruction stream that falls off the end returns None. */
+    instr_stream *is = INSTR_STREAM(c);
+    if (is->s_used > 0) {
+        codegen_instr *instr = &is->s_instrs[is->s_used];
+        int opcode = instr->ci_opcode;
+        if (opcode == RETURN_VALUE || opcode == RETURN_CONST) {
+            return SUCCESS;
         }
-        ADDOP(c, NO_LOCATION, RETURN_VALUE);
     }
+    if (addNone) {
+        ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+    }
+    ADDOP(c, NO_LOCATION, RETURN_VALUE);
     return SUCCESS;
 }
 
@@ -8743,7 +8720,7 @@ assemble(struct compiler *c, int addNone)
         return NULL;
     }
 
-    if (add_return_at_end_of_block(c, addNone) < 0) {
+    if (add_return_at_end(c, addNone) < 0) {
         return NULL;
     }
 
@@ -8759,7 +8736,7 @@ assemble(struct compiler *c, int addNone)
     cfg_builder *g = &newg;
     int nblocks = 0;
 
-    //assert(cfg_builder_check(g));
+    assert(cfg_builder_check(g));
 
     for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
         nblocks++;
