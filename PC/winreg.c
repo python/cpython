@@ -831,6 +831,8 @@ winreg_CloseKey(PyObject *module, PyObject *hkey)
     Py_RETURN_NONE;
 }
 
+#ifndef MS_WINDOWS_GAMES
+
 /*[clinic input]
 winreg.ConnectRegistry -> HKEY
 
@@ -852,13 +854,6 @@ winreg_ConnectRegistry_impl(PyObject *module,
                             const Py_UNICODE *computer_name, HKEY key)
 /*[clinic end generated code: output=cd4f70fb9ec901fb input=5f98a891a347e68e]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)computer_name;
-    PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-    return NULL;
-#else
     HKEY retKey;
     long rc;
     if (PySys_Audit("winreg.ConnectRegistry", "un",
@@ -873,8 +868,9 @@ winreg_ConnectRegistry_impl(PyObject *module,
         return NULL;
     }
     return retKey;
-#endif
 }
+
+#endif /* MS_WINDOWS_GAMES */
 
 /*[clinic input]
 winreg.CreateKey -> HKEY
@@ -1282,6 +1278,8 @@ winreg_ExpandEnvironmentStrings_impl(PyObject *module,
     return o;
 }
 
+#ifndef MS_WINDOWS_GAMES
+
 /*[clinic input]
 winreg.FlushKey
 
@@ -1306,11 +1304,6 @@ static PyObject *
 winreg_FlushKey_impl(PyObject *module, HKEY key)
 /*[clinic end generated code: output=e6fc230d4c5dc049 input=f57457c12297d82f]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
     Py_BEGIN_ALLOW_THREADS
     rc = RegFlushKey(key);
@@ -1318,9 +1311,11 @@ winreg_FlushKey_impl(PyObject *module, HKEY key)
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegFlushKey");
     Py_RETURN_NONE;
-#endif
 }
 
+#endif /* MS_WINDOWS_GAMES */
+
+#ifndef MS_WINDOWS_GAMES
 
 /*[clinic input]
 winreg.LoadKey
@@ -1356,13 +1351,6 @@ winreg_LoadKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
                     const Py_UNICODE *file_name)
 /*[clinic end generated code: output=65f89f2548cb27c7 input=e3b5b45ade311582]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)sub_key;
-    (void)file_name;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
 
     if (PySys_Audit("winreg.LoadKey", "nuu",
@@ -1375,8 +1363,9 @@ winreg_LoadKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegLoadKey");
     Py_RETURN_NONE;
-#endif
 }
+
+#endif /* MS_WINDOWS_GAMES */
 
 /*[clinic input]
 winreg.OpenKey -> HKEY
@@ -1487,6 +1476,8 @@ winreg_QueryInfoKey_impl(PyObject *module, HKEY key)
     return ret;
 }
 
+#ifndef MS_WINDOWS_GAMES
+
 /*[clinic input]
 winreg.QueryValue
 
@@ -1512,12 +1503,6 @@ static PyObject *
 winreg_QueryValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
 /*[clinic end generated code: output=c655810ae50c63a9 input=41cafbbf423b21d6]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)sub_key;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
     PyObject *retStr;
     wchar_t *retBuf;
@@ -1565,8 +1550,9 @@ winreg_QueryValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
     retStr = PyUnicode_FromWideChar(retBuf, wcslen(retBuf));
     PyMem_Free(retBuf);
     return retStr;
-#endif
 }
+
+#endif /* MS_WINDOWS_GAMES */
 
 
 /*[clinic input]
@@ -1641,6 +1627,8 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
     return result;
 }
 
+#ifndef MS_WINDOWS_GAMES
+
 /*[clinic input]
 winreg.SaveKey
 
@@ -1667,12 +1655,6 @@ static PyObject *
 winreg_SaveKey_impl(PyObject *module, HKEY key, const Py_UNICODE *file_name)
 /*[clinic end generated code: output=ca94b835c88f112b input=da735241f91ac7a2]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)file_name;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     LPSECURITY_ATTRIBUTES pSA = NULL;
 
     long rc;
@@ -1690,8 +1672,11 @@ winreg_SaveKey_impl(PyObject *module, HKEY key, const Py_UNICODE *file_name)
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSaveKey");
     Py_RETURN_NONE;
-#endif
 }
+
+#endif /* MS_WINDOWS_GAMES */
+
+#ifndef MS_WINDOWS_GAMES
 
 /*[clinic input]
 winreg.SetValue
@@ -1725,14 +1710,6 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
                      DWORD type, PyObject *value_obj)
 /*[clinic end generated code: output=d4773dc9c372311a input=bf088494ae2d24fd]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)sub_key;
-    (void)type;
-    (void)value_obj;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     Py_ssize_t value_length;
     long rc;
 
@@ -1765,8 +1742,9 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");
     Py_RETURN_NONE;
-#endif
 }
+
+#endif /* MS_WINDOWS_GAMES */
 
 /*[clinic input]
 winreg.SetValueEx
@@ -1845,6 +1823,8 @@ winreg_SetValueEx_impl(PyObject *module, HKEY key,
                                                    "RegSetValueEx");
     Py_RETURN_NONE;
 }
+
+#ifndef MS_WINDOWS_GAMES
 
 /*[clinic input]
 winreg.DisableReflectionKey
@@ -1993,6 +1973,8 @@ winreg_QueryReflectionKey_impl(PyObject *module, HKEY key)
                                                    "RegQueryReflectionKey");
     return PyBool_FromLong(result);
 }
+
+#endif /* MS_WINDOWS_GAMES */
 
 static struct PyMethodDef winreg_methods[] = {
     WINREG_CLOSEKEY_METHODDEF
