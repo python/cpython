@@ -300,7 +300,7 @@ class Fraction(numbers.Rational):
         elif not isinstance(f, float):
             raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
                             (cls.__name__, f, type(f).__name__))
-        return cls._from_pair(*f.as_integer_ratio())
+        return cls._from_coprime_ints(*f.as_integer_ratio())
 
     @classmethod
     def from_decimal(cls, dec):
@@ -312,10 +312,10 @@ class Fraction(numbers.Rational):
             raise TypeError(
                 "%s.from_decimal() only takes Decimals, not %r (%s)" %
                 (cls.__name__, dec, type(dec).__name__))
-        return cls._from_pair(*dec.as_integer_ratio())
+        return cls._from_coprime_ints(*dec.as_integer_ratio())
 
     @classmethod
-    def _from_pair(cls, numerator, denominator, /):
+    def _from_coprime_ints(cls, numerator, denominator, /):
         """Convert a pair of ints to a rational number, for internal use.
 
         The ratio of integers should be in lowest terms and
@@ -391,9 +391,9 @@ class Fraction(numbers.Rational):
         # the distance from p1/q1 to self is d/(q1*self._denominator). So we
         # need to compare 2*(q0+k*q1) with self._denominator/d.
         if 2*d*(q0+k*q1) <= self._denominator:
-            return Fraction._from_pair(p1, q1)
+            return Fraction._from_coprime_ints(p1, q1)
         else:
-            return Fraction._from_pair(p0+k*p1, q0+k*q1)
+            return Fraction._from_coprime_ints(p0+k*p1, q0+k*q1)
 
     @property
     def numerator(a):
@@ -714,13 +714,13 @@ class Fraction(numbers.Rational):
         nb, db = b._numerator, b._denominator
         g = math.gcd(da, db)
         if g == 1:
-            return Fraction._from_pair(na * db + da * nb, da * db)
+            return Fraction._from_coprime_ints(na * db + da * nb, da * db)
         s = da // g
         t = na * (db // g) + nb * s
         g2 = math.gcd(t, g)
         if g2 == 1:
-            return Fraction._from_pair(t, s * db)
-        return Fraction._from_pair(t // g2, s * (db // g2))
+            return Fraction._from_coprime_ints(t, s * db)
+        return Fraction._from_coprime_ints(t // g2, s * (db // g2))
 
     __add__, __radd__ = _operator_fallbacks(_add, operator.add)
 
@@ -730,13 +730,13 @@ class Fraction(numbers.Rational):
         nb, db = b._numerator, b._denominator
         g = math.gcd(da, db)
         if g == 1:
-            return Fraction._from_pair(na * db - da * nb, da * db)
+            return Fraction._from_coprime_ints(na * db - da * nb, da * db)
         s = da // g
         t = na * (db // g) - nb * s
         g2 = math.gcd(t, g)
         if g2 == 1:
-            return Fraction._from_pair(t, s * db)
-        return Fraction._from_pair(t // g2, s * (db // g2))
+            return Fraction._from_coprime_ints(t, s * db)
+        return Fraction._from_coprime_ints(t // g2, s * (db // g2))
 
     __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub)
 
@@ -752,7 +752,7 @@ class Fraction(numbers.Rational):
         if g2 > 1:
             nb //= g2
             da //= g2
-        return Fraction._from_pair(na * nb, db * da)
+        return Fraction._from_coprime_ints(na * nb, db * da)
 
     __mul__, __rmul__ = _operator_fallbacks(_mul, operator.mul)
 
@@ -774,7 +774,7 @@ class Fraction(numbers.Rational):
         n, d = na * db, nb * da
         if d < 0:
             n, d = -n, -d
-        return Fraction._from_pair(n, d)
+        return Fraction._from_coprime_ints(n, d)
 
     __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
 
@@ -811,17 +811,17 @@ class Fraction(numbers.Rational):
             if b.denominator == 1:
                 power = b.numerator
                 if power >= 0:
-                    return Fraction._from_pair(a._numerator ** power,
-                                               a._denominator ** power)
+                    return Fraction._from_coprime_ints(a._numerator ** power,
+                                                       a._denominator ** power)
                 elif a._numerator > 0:
-                    return Fraction._from_pair(a._denominator ** -power,
-                                               a._numerator ** -power)
+                    return Fraction._from_coprime_ints(a._denominator ** -power,
+                                                       a._numerator ** -power)
                 elif a._numerator == 0:
                     raise ZeroDivisionError('Fraction(%s, 0)' %
                                             a._denominator ** -power)
                 else:
-                    return Fraction._from_pair((-a._denominator) ** -power,
-                                               (-a._numerator) ** -power)
+                    return Fraction._from_coprime_ints((-a._denominator) ** -power,
+                                                       (-a._numerator) ** -power)
             else:
                 # A fractional power will generally produce an
                 # irrational number.
@@ -845,15 +845,15 @@ class Fraction(numbers.Rational):
 
     def __pos__(a):
         """+a: Coerces a subclass instance to Fraction"""
-        return Fraction._from_pair(a._numerator, a._denominator)
+        return Fraction._from_coprime_ints(a._numerator, a._denominator)
 
     def __neg__(a):
         """-a"""
-        return Fraction._from_pair(-a._numerator, a._denominator)
+        return Fraction._from_coprime_ints(-a._numerator, a._denominator)
 
     def __abs__(a):
         """abs(a)"""
-        return Fraction._from_pair(abs(a._numerator), a._denominator)
+        return Fraction._from_coprime_ints(abs(a._numerator), a._denominator)
 
     def __int__(a, _index=operator.index):
         """int(a)"""
