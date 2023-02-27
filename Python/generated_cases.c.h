@@ -2205,9 +2205,7 @@
             int offset = next_instr[1].op.arg;
             int err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
-            if (err < 0) {
-                goto error;
-            }
+            if (err < 0) goto pop_2_error;
             if (jump_on_true == (err != 0)) {
                 JUMPBY(offset);
             }
