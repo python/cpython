@@ -285,6 +285,7 @@ def _syscmd_ver(system='', release='', version='',
                                            stdin=subprocess.DEVNULL,
                                            stderr=subprocess.DEVNULL,
                                            text=True,
+                                           encoding="locale",
                                            shell=True)
         except (OSError, subprocess.CalledProcessError) as why:
             #print('Command %s failed: %s' % (cmd, why))
@@ -824,6 +825,7 @@ class _Processor:
                 ['uname', '-p'],
                 stderr=subprocess.DEVNULL,
                 text=True,
+                encoding="utf8",
             ).strip()
         except (OSError, subprocess.CalledProcessError):
             pass
@@ -1244,7 +1246,7 @@ def python_compiler():
 
 _platform_cache = {}
 
-def platform(aliased=0, terse=0):
+def platform(aliased=False, terse=False):
 
     """ Returns a single string identifying the underlying platform
         with as much useful information as possible (but no more :).

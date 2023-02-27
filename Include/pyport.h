@@ -247,6 +247,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #define S_ISCHR(x) (((x) & S_IFMT) == S_IFCHR)
 #endif
 
+#ifndef S_ISLNK
+#define S_ISLNK(x) (((x) & S_IFMT) == S_IFLNK)
+#endif
+
 #ifdef __cplusplus
 /* Move this down here since some C++ #include's don't like to be included
    inside an extern "C" */
@@ -733,6 +737,12 @@ extern char * _getpty(int *, int, mode_t, int);
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
 #  endif
+#endif
+
+
+/* AIX has __bool__ redefined in it's system header file. */
+#if defined(_AIX) && defined(__bool__)
+#undef __bool__
 #endif
 
 #endif /* Py_PYPORT_H */

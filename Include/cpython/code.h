@@ -19,21 +19,35 @@ extern "C" {
 typedef union {
     uint16_t cache;
     struct {
-        uint8_t opcode;
-        uint8_t oparg;
-    };
+        uint8_t code;
+        uint8_t arg;
+    } op;
 } _Py_CODEUNIT;
 
-#define _Py_OPCODE(word) ((word).opcode)
-#define _Py_OPARG(word) ((word).oparg)
+
+/* These macros only remain defined for compatibility. */
+#define _Py_OPCODE(word) ((word).op.code)
+#define _Py_OPARG(word) ((word).op.arg)
+
+static inline _Py_CODEUNIT
+_py_make_codeunit(uint8_t opcode, uint8_t oparg)
+{
+    // No designated initialisers because of C++ compat
+    _Py_CODEUNIT word;
+    word.op.code = opcode;
+    word.op.arg = oparg;
+    return word;
+}
 
 static inline void
 _py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
 {
-    word->opcode = opcode;
+    word->op.code = opcode;
 }
 
-#define _Py_SET_OPCODE(word, opcode) _py_set_opocde(&(word), opcode)
+#define _Py_MAKE_CODEUNIT(opcode, oparg) _py_make_codeunit((opcode), (oparg))
+#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), (opcode))
+
 
 typedef struct {
     PyObject *_co_code;

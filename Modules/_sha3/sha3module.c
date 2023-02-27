@@ -21,6 +21,7 @@
 
 #include "Python.h"
 #include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "../hashlib.h"
 
 #include "sha3.c"
@@ -106,7 +107,7 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
 {
     HashReturn res;
     Py_buffer buf = {NULL, NULL};
-    SHA3State *state = PyType_GetModuleState(type);
+    SHA3State *state = _PyType_GetModuleState(type);
     SHA3object *self = newSHA3object(type);
     if (self == NULL) {
         goto error;
@@ -337,7 +338,7 @@ SHA3_get_name(SHA3object *self, void *closure)
 {
     PyTypeObject *type = Py_TYPE(self);
 
-    SHA3State *state = PyType_GetModuleState(type);
+    SHA3State *state = _PyType_GetModuleState(type);
     assert(state != NULL);
 
     if (type == state->sha3_224_type) {
@@ -408,7 +409,7 @@ static PyGetSetDef SHA3_getseters[] = {
         {0,0} \
     }
 
-// Using PyType_GetModuleState() on these types is safe since they
+// Using _PyType_GetModuleState() on these types is safe since they
 // cannot be subclassed: it does not have the Py_TPFLAGS_BASETYPE flag.
 #define SHA3_TYPE_SPEC(type_spec_obj, type_name, type_slots) \
     static PyType_Spec type_spec_obj = { \

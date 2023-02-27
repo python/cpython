@@ -302,10 +302,13 @@ Module functions
    :type isolation_level: str | None
 
    :param bool check_same_thread:
-       If ``True`` (default), only the creating thread may use the connection.
-       If ``False``, the connection may be shared across multiple threads;
-       if so, write operations should be serialized by the user to avoid data
-       corruption.
+       If ``True`` (default), :exc:`ProgrammingError` will be raised
+       if the database connection is used by a thread
+       other than the one that created it.
+       If ``False``, the connection may be accessed in multiple threads;
+       write operations may need to be serialized by the user
+       to avoid data corruption.
+       See :attr:`threadsafety` for more information.
 
    :param Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
@@ -1415,15 +1418,22 @@ Cursor objects
 
    .. method:: execute(sql, parameters=(), /)
 
-      Execute SQL statement *sql*.
-      Bind values to the statement using :ref:`placeholders
-      <sqlite3-placeholders>` that map to the :term:`sequence` or :class:`dict`
-      *parameters*.
+      Execute SQL a single SQL statement,
+      optionally binding Python values using
+      :ref:`placeholders <sqlite3-placeholders>`.
 
-      :meth:`execute` will only execute a single SQL statement. If you try to execute
-      more than one statement with it, it will raise a :exc:`ProgrammingError`. Use
-      :meth:`executescript` if you want to execute multiple SQL statements with one
-      call.
+      :param str sql:
+         A single SQL statement.
+
+      :param parameters:
+         Python values to bind to placeholders in *sql*.
+         A :class:`!dict` if named placeholders are used.
+         A :term:`!sequence` if unnamed placeholders are used.
+         See :ref:`sqlite3-placeholders`.
+      :type parameters: :class:`dict` | :term:`sequence`
+
+      :raises ProgrammingError:
+         If *sql* contains more than one SQL statement.
 
       If :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`,
@@ -1432,14 +1442,36 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
+      .. deprecated-removed:: 3.12 3.14
+
+         :exc:`DeprecationWarning` is emitted if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and *parameters* is a sequence instead of a :class:`dict`.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
+
+      Use :meth:`executescript` to execute multiple SQL statements.
 
    .. method:: executemany(sql, parameters, /)
 
-      Execute :ref:`parameterized <sqlite3-placeholders>` SQL statement *sql*
-      against all parameter sequences or mappings found in the sequence
-      *parameters*.  It is also possible to use an
-      :term:`iterator` yielding parameters instead of a sequence.
+      For every item in *parameters*,
+      repeatedly execute the :ref:`parameterized <sqlite3-placeholders>`
+      SQL statement *sql*.
+
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
+
+      :param str sql:
+         A single SQL :abbr:`DML (Data Manipulation Language)` statement.
+
+      :param parameters:
+         An :term:`!iterable` of parameters to bind with
+         the placeholders in *sql*.
+         See :ref:`sqlite3-placeholders`.
+      :type parameters: :term:`iterable`
+
+      :raises ProgrammingError:
+         If *sql* contains more than one SQL statement,
+         or is not a DML statment.
 
       Example:
 
@@ -1451,6 +1483,15 @@ Cursor objects
          ]
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
+
+      .. deprecated-removed:: 3.12 3.14
+
+         :exc:`DeprecationWarning` is emitted if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and the items in *parameters* are sequences
+         instead of :class:`dict`\s.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
 
    .. method:: executescript(sql_script, /)
 
@@ -1947,7 +1988,7 @@ question marks (qmark style) or named placeholders (named style).
 For the qmark style, *parameters* must be a
 :term:`sequence` whose length must match the number of placeholders,
 or a :exc:`ProgrammingError` is raised.
-For the named style, *parameters* should be
+For the named style, *parameters* must be
 an instance of a :class:`dict` (or a subclass),
 which must contain keys for all named parameters;
 any extra items are ignored.
@@ -1958,19 +1999,18 @@ Here's an example of both styles:
    con = sqlite3.connect(":memory:")
    cur = con.execute("CREATE TABLE lang(name, first_appeared)")
 
-   # This is the qmark style:
-   cur.execute("INSERT INTO lang VALUES(?, ?)", ("C", 1972))
+   # This is the named style used with executemany():
+   data = (
+       {"name": "C", "year": 1972},
+       {"name": "Fortran", "year": 1957},
+       {"name": "Python", "year": 1991},
+       {"name": "Go", "year": 2009},
+   )
+   cur.executemany("INSERT INTO lang VALUES(:name, :year)", data)
 
-   # The qmark style used with executemany():
-   lang_list = [
-       ("Fortran", 1957),
-       ("Python", 1991),
-       ("Go", 2009),
-   ]
-   cur.executemany("INSERT INTO lang VALUES(?, ?)", lang_list)
-
-   # And this is the named style:
-   cur.execute("SELECT * FROM lang WHERE first_appeared = :year", {"year": 1972})
+   # This is the qmark style used in a SELECT query:
+   params = (1972,)
+   cur.execute("SELECT * FROM lang WHERE first_appeared = ?", params)
    print(cur.fetchall())
 
 .. testoutput::
@@ -2208,7 +2248,7 @@ This section shows recipes for common adapters and converters.
    assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
 
    # Using current time as fromtimestamp() returns local date/time.
-   # Droping microseconds as adapt_datetime_epoch truncates fractional second part.
+   # Dropping microseconds as adapt_datetime_epoch truncates fractional second part.
    now = datetime.datetime.now().replace(microsecond=0)
    current_timestamp = int(now.timestamp())
 

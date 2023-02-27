@@ -295,6 +295,30 @@ _startsWithArgument(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 }
 
 
+// Unlike regular startsWith, this function requires that the following
+// character is either NULL (that is, the entire string matches) or is one of
+// the characters in 'separators'.
+bool
+_startsWithSeparated(const wchar_t *x, int xLen, const wchar_t *y, int yLen, const wchar_t *separators)
+{
+    if (!x || !y) {
+        return false;
+    }
+    yLen = yLen < 0 ? (int)wcsnlen_s(y, MAXLEN) : yLen;
+    xLen = xLen < 0 ? (int)wcsnlen_s(x, MAXLEN) : xLen;
+    if (xLen < yLen) {
+        return false;
+    }
+    if (xLen == yLen) {
+        return 0 == _compare(x, xLen, y, yLen);
+    }
+    return separators &&
+        0 == _compare(x, yLen, y, yLen) &&
+        wcschr(separators, x[yLen]) != NULL;
+}
+
+
+
 /******************************************************************************\
  ***                               HELP TEXT                                ***
 \******************************************************************************/
@@ -409,6 +433,9 @@ typedef struct {
     bool listPaths;
     // if true, display help message before contiuning
     bool help;
+    // if set, limits search to registry keys with the specified Company
+    // This is intended for debugging and testing only
+    const wchar_t *limitToCompany;
     // dynamically allocated buffers to free later
     struct _SearchInfoBuffer *_buffer;
 } SearchInfo;
@@ -465,10 +492,14 @@ dumpSearchInfo(SearchInfo *search)
         return;
     }
 
-#define DEBUGNAME(s) L"SearchInfo." ## s
-#define DEBUG(s) debug(DEBUGNAME(#s) L": %s\n", (search->s) ? (search->s) : L"(null)")
-#define DEBUG_2(s, sl) _debugStringAndLength((search->s), (search->sl), DEBUGNAME(#s))
-#define DEBUG_BOOL(s) debug(DEBUGNAME(#s) L": %s\n", (search->s) ? L"True" : L"False")
+#ifdef __clang__
+#define DEBUGNAME(s) L # s
+#else
+#define DEBUGNAME(s) # s
+#endif
+#define DEBUG(s) debug(L"SearchInfo." DEBUGNAME(s) L": %s\n", (search->s) ? (search->s) : L"(null)")
+#define DEBUG_2(s, sl) _debugStringAndLength((search->s), (search->sl), L"SearchInfo." DEBUGNAME(s))
+#define DEBUG_BOOL(s) debug(L"SearchInfo." DEBUGNAME(s) L": %s\n", (search->s) ? L"True" : L"False")
     DEBUG(originalCmdLine);
     DEBUG(restOfCmdLine);
     DEBUG(executablePath);
@@ -485,6 +516,7 @@ dumpSearchInfo(SearchInfo *search)
     DEBUG_BOOL(list);
     DEBUG_BOOL(listPaths);
     DEBUG_BOOL(help);
+    DEBUG(limitToCompany);
 #undef DEBUG_BOOL
 #undef DEBUG_2
 #undef DEBUG
@@ -1294,34 +1326,34 @@ _compareTag(const wchar_t *x, const wchar_t *y)
 
 
 int
-addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo *node)
+addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo* parent, EnvironmentInfo *node)
 {
     EnvironmentInfo *r = *root;
     if (!r) {
         *root = node;
-        node->parent = NULL;
+        node->parent = parent;
         return 0;
     }
     // Sort by company name
     switch (_compareCompany(node->company, r->company)) {
     case -1:
-        return addEnvironmentInfo(&r->prev, node);
+        return addEnvironmentInfo(&r->prev, r, node);
     case 1:
-        return addEnvironmentInfo(&r->next, node);
+        return addEnvironmentInfo(&r->next, r, node);
     case 0:
         break;
     }
     // Then by tag (descending)
     switch (_compareTag(node->tag, r->tag)) {
     case -1:
-        return addEnvironmentInfo(&r->next, node);
+        return addEnvironmentInfo(&r->next, r, node);
     case 1:
-        return addEnvironmentInfo(&r->prev, node);
+        return addEnvironmentInfo(&r->prev, r, node);
     case 0:
         break;
     }
     // Then keep the one with the lowest internal sort key
-    if (r->internalSortKey < node->internalSortKey) {
+    if (node->internalSortKey < r->internalSortKey) {
         // Replace the current node
         node->parent = r->parent;
         if (node->parent) {
@@ -1334,9 +1366,16 @@ addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo *node)
                 freeEnvironmentInfo(node);
                 return RC_INTERNAL_ERROR;
             }
+        } else {
+            // If node has no parent, then it is the root.
+            *root = node;
         }
+
         node->next = r->next;
         node->prev = r->prev;
+
+        debug(L"# replaced %s/%s/%i in tree\n", node->company, node->tag, node->internalSortKey);
+        freeEnvironmentInfo(r);
     } else {
         debug(L"# not adding %s/%s/%i to tree\n", node->company, node->tag, node->internalSortKey);
         return RC_DUPLICATE_ITEM;
@@ -1392,6 +1431,100 @@ _combineWithInstallDir(const wchar_t **dest, const wchar_t *installDir, const wc
 }
 
 
+bool
+_isLegacyVersion(EnvironmentInfo *env)
+{
+    // Check if backwards-compatibility is required.
+    // Specifically PythonCore versions 2.X and 3.0 - 3.5 do not implement PEP 514.
+    if (0 != _compare(env->company, -1, L"PythonCore", -1)) {
+        return false;
+    }
+
+    int versionMajor, versionMinor;
+    int n = swscanf_s(env->tag, L"%d.%d", &versionMajor, &versionMinor);
+    if (n != 2) {
+        debug(L"# %s/%s has an invalid version tag\n", env->company, env->tag);
+        return false;
+    }
+
+    return versionMajor == 2
+        || (versionMajor == 3 && versionMinor >= 0 && versionMinor <= 5);
+}
+
+int
+_registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *env, const wchar_t *fallbackArch)
+{
+    // Backwards-compatibility for PythonCore versions which do not implement PEP 514.
+    int exitCode = _combineWithInstallDir(
+        &env->executablePath,
+        env->installDir,
+        search->executable,
+        search->executableLength
+    );
+    if (exitCode) {
+        return exitCode;
+    }
+
+    if (search->windowed) {
+        exitCode = _registryReadString(&env->executableArgs, root, L"InstallPath", L"WindowedExecutableArguments");
+    }
+    else {
+        exitCode = _registryReadString(&env->executableArgs, root, L"InstallPath", L"ExecutableArguments");
+    }
+    if (exitCode) {
+        return exitCode;
+    }
+
+    if (fallbackArch) {
+        copyWstr(&env->architecture, fallbackArch);
+    } else {
+        DWORD binaryType;
+        BOOL success = GetBinaryTypeW(env->executablePath, &binaryType);
+        if (!success) {
+            return RC_NO_PYTHON;
+        }
+
+        switch (binaryType) {
+        case SCS_32BIT_BINARY:
+            copyWstr(&env->architecture, L"32bit");
+            break;
+        case SCS_64BIT_BINARY:
+            copyWstr(&env->architecture, L"64bit");
+            break;
+        default:
+            return RC_NO_PYTHON;
+        }
+    }
+
+    if (0 == _compare(env->architecture, -1, L"32bit", -1)) {
+        size_t tagLength = wcslen(env->tag);
+        if (tagLength <= 3 || 0 != _compare(&env->tag[tagLength - 3], 3, L"-32", 3)) {
+            const wchar_t *rawTag = env->tag;
+            wchar_t *realTag = (wchar_t*) malloc(sizeof(wchar_t) * (tagLength + 4));
+            if (!realTag) {
+                return RC_NO_MEMORY;
+            }
+
+            int count = swprintf_s(realTag, tagLength + 4, L"%s-32", env->tag);
+            if (count == -1) {
+                free(realTag);
+                return RC_INTERNAL_ERROR;
+            }
+
+            env->tag = realTag;
+            free((void*)rawTag);
+        }
+    }
+
+    wchar_t buffer[MAXLEN];
+    if (swprintf_s(buffer, MAXLEN, L"Python %s", env->tag)) {
+        copyWstr(&env->displayName, buffer);
+    }
+
+    return 0;
+}
+
+
 int
 _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *env, const wchar_t *fallbackArch)
 {
@@ -1401,6 +1534,10 @@ _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *e
     }
     if (!env->installDir) {
         return RC_NO_PYTHON;
+    }
+
+    if (_isLegacyVersion(env)) {
+        return _registryReadLegacyEnvironment(search, root, env, fallbackArch);
     }
 
     // If pythonw.exe requested, check specific value
@@ -1425,6 +1562,11 @@ _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *e
         return exitCode;
     }
 
+    if (!env->executablePath) {
+        debug(L"# %s/%s has no executable path\n", env->company, env->tag);
+        return RC_NO_PYTHON;
+    }
+
     exitCode = _registryReadString(&env->architecture, root, NULL, L"SysArchitecture");
     if (exitCode) {
         return exitCode;
@@ -1433,29 +1575,6 @@ _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *e
     exitCode = _registryReadString(&env->displayName, root, NULL, L"DisplayName");
     if (exitCode) {
         return exitCode;
-    }
-
-    // Only PythonCore entries will infer executablePath from installDir and architecture from the binary
-    if (0 == _compare(env->company, -1, L"PythonCore", -1)) {
-        if (!env->executablePath) {
-            exitCode = _combineWithInstallDir(
-                &env->executablePath,
-                env->installDir,
-                search->executable,
-                search->executableLength
-            );
-            if (exitCode) {
-                return exitCode;
-            }
-        }
-        if (!env->architecture && env->executablePath && fallbackArch) {
-            copyWstr(&env->architecture, fallbackArch);
-        }
-    }
-
-    if (!env->executablePath) {
-        debug(L"# %s/%s has no executable path\n", env->company, env->tag);
-        return RC_NO_PYTHON;
     }
 
     return 0;
@@ -1486,7 +1605,7 @@ _registrySearchTags(const SearchInfo *search, EnvironmentInfo **result, HKEY roo
                 freeEnvironmentInfo(env);
                 exitCode = 0;
             } else if (!exitCode) {
-                exitCode = addEnvironmentInfo(result, env);
+                exitCode = addEnvironmentInfo(result, NULL, env);
                 if (exitCode) {
                     freeEnvironmentInfo(env);
                     if (exitCode == RC_DUPLICATE_ITEM) {
@@ -1514,6 +1633,10 @@ registrySearch(const SearchInfo *search, EnvironmentInfo **result, HKEY root, in
                 winerror(0, L"Failed to read distributors (company) from the registry");
             }
             break;
+        }
+        if (search->limitToCompany && 0 != _compare(search->limitToCompany, -1, buffer, cchBuffer)) {
+            debug(L"# Skipping %s due to PYLAUNCHER_LIMIT_TO_COMPANY\n", buffer);
+            continue;
         }
         HKEY subkey;
         if (ERROR_SUCCESS == RegOpenKeyExW(root, buffer, 0, KEY_READ, &subkey)) {
@@ -1574,7 +1697,7 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
         copyWstr(&env->displayName, buffer);
     }
 
-    int exitCode = addEnvironmentInfo(result, env);
+    int exitCode = addEnvironmentInfo(result, NULL, env);
     if (exitCode) {
         freeEnvironmentInfo(env);
         if (exitCode == RC_DUPLICATE_ITEM) {
@@ -1612,7 +1735,7 @@ explicitOverrideSearch(const SearchInfo *search, EnvironmentInfo **result)
     if (exitCode) {
         goto abort;
     }
-    exitCode = addEnvironmentInfo(result, env);
+    exitCode = addEnvironmentInfo(result, NULL, env);
     if (exitCode) {
         goto abort;
     }
@@ -1661,7 +1784,7 @@ virtualenvSearch(const SearchInfo *search, EnvironmentInfo **result)
     if (exitCode) {
         goto abort;
     }
-    exitCode = addEnvironmentInfo(result, env);
+    exitCode = addEnvironmentInfo(result, NULL, env);
     if (exitCode) {
         goto abort;
     }
@@ -1791,6 +1914,11 @@ collectEnvironments(const SearchInfo *search, EnvironmentInfo **result)
         if (exitCode) {
             return exitCode;
         }
+    }
+
+    if (search->limitToCompany) {
+        debug(L"# Skipping APPX search due to PYLAUNCHER_LIMIT_TO_COMPANY\n");
+        return 0;
     }
 
     for (struct AppxSearchInfo *info = APPX_SEARCH; info->familyName; ++info) {
@@ -1962,12 +2090,15 @@ _companyMatches(const SearchInfo *search, const EnvironmentInfo *env)
 
 
 bool
-_tagMatches(const SearchInfo *search, const EnvironmentInfo *env)
+_tagMatches(const SearchInfo *search, const EnvironmentInfo *env, int searchTagLength)
 {
-    if (!search->tag || !search->tagLength) {
+    if (searchTagLength < 0) {
+        searchTagLength = search->tagLength;
+    }
+    if (!search->tag || !searchTagLength) {
         return true;
     }
-    return _startsWith(env->tag, -1, search->tag, search->tagLength);
+    return _startsWithSeparated(env->tag, -1, search->tag, searchTagLength, L".-");
 }
 
 
@@ -2004,7 +2135,7 @@ _selectEnvironment(const SearchInfo *search, EnvironmentInfo *env, EnvironmentIn
         }
 
         if (!search->oldStyleTag) {
-            if (_companyMatches(search, env) && _tagMatches(search, env)) {
+            if (_companyMatches(search, env) && _tagMatches(search, env, -1)) {
                 // Because of how our sort tree is set up, we will walk up the
                 // "prev" side and implicitly select the "best" best. By
                 // returning straight after a match, we skip the entire "next"
@@ -2029,7 +2160,7 @@ _selectEnvironment(const SearchInfo *search, EnvironmentInfo *env, EnvironmentIn
                 }
             }
 
-            if (_startsWith(env->tag, -1, search->tag, tagLength)) {
+            if (_tagMatches(search, env, tagLength)) {
                 if (exclude32Bit && _is32Bit(env)) {
                     debug(L"# Excluding %s/%s because it looks like 32bit\n", env->company, env->tag);
                 } else if (only32Bit && !_is32Bit(env)) {
@@ -2055,10 +2186,6 @@ selectEnvironment(const SearchInfo *search, EnvironmentInfo *root, EnvironmentIn
     if (!root) {
         *best = NULL;
         return RC_NO_PYTHON_AT_ALL;
-    }
-    if (!root->next && !root->prev) {
-        *best = root;
-        return 0;
     }
 
     EnvironmentInfo *result = NULL;
@@ -2467,6 +2594,17 @@ process(int argc, wchar_t ** argv)
         setvbuf(stderr, (char *)NULL, _IONBF, 0);
         log_fp = stderr;
         debug(L"argv0: %s\nversion: %S\n", argv[0], PY_VERSION);
+    }
+
+    DWORD len = GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", NULL, 0);
+    if (len > 1) {
+        wchar_t *limitToCompany = allocSearchInfoBuffer(&search, len);
+        search.limitToCompany = limitToCompany;
+        if (0 == GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", limitToCompany, len)) {
+            exitCode = RC_INTERNAL_ERROR;
+            winerror(0, L"Failed to read PYLAUNCHER_LIMIT_TO_COMPANY variable");
+            goto abort;
+        }
     }
 
     search.originalCmdLine = GetCommandLineW();

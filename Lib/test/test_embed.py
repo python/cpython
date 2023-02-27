@@ -2,6 +2,7 @@
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import requires_specialization
 import unittest
 
 from collections import namedtuple
@@ -346,6 +347,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_simple_init")
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
+    @requires_specialization
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
@@ -1654,13 +1656,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                        api=API_PYTHON, env=env)
 
     def test_init_main_interpreter_settings(self):
+        EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
         expected = {
             # All optional features should be enabled.
-            'feature_flags': FORK | EXEC | THREADS | DAEMON_THREADS,
+            'feature_flags':
+                FORK | EXEC | THREADS | DAEMON_THREADS,
         }
         out, err = self.run_embedded_interpreter(
             'test_init_main_interpreter_settings',

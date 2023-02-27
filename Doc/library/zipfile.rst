@@ -55,8 +55,9 @@ The module defines the following items:
 .. class:: Path
    :noindex:
 
-   A pathlib-compatible wrapper for zip files. See section
-   :ref:`path-objects` for details.
+   Class that implements a subset of the interface provided by
+   :class:`pathlib.Path`, including the full
+   :class:`importlib.resources.abc.Traversable` interface.
 
    .. versionadded:: 3.8
 
@@ -551,6 +552,12 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Added support for text and binary modes for open. Default
       mode is now text.
 
+   .. versionchanged:: 3.11.2
+      The ``encoding`` parameter can be supplied as a positional argument
+      without causing a :exc:`TypeError`. As it could in 3.9. Code needing to
+      be compatible with unpatched 3.10 and 3.11 versions must pass all
+      :class:`io.TextIOWrapper` arguments, ``encoding`` included, as keywords.
+
 .. method:: Path.iterdir()
 
    Enumerate the children of the current directory.
@@ -595,6 +602,12 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
    keyword arguments are passed through to
    :class:`io.TextIOWrapper` (except ``buffer``, which is
    implied by the context).
+
+   .. versionchanged:: 3.11.2
+      The ``encoding`` parameter can be supplied as a positional argument
+      without causing a :exc:`TypeError`. As it could in 3.9. Code needing to
+      be compatible with unpatched 3.10 and 3.11 versions must pass all
+      :class:`io.TextIOWrapper` arguments, ``encoding`` included, as keywords.
 
 .. method:: Path.read_bytes()
 
