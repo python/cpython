@@ -804,7 +804,7 @@ function.
 
       Describes how argument values are bound to the parameter.  The possible
       values are accessible via :class:`Parameter` (like ``Parameter.KEYWORD_ONLY``),
-      and are guaranteed to support comparison and ordering, in the following order:
+      and support comparison and ordering, in the following order:
 
       .. tabularcolumns:: |l|L|
 
