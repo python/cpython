@@ -1,1 +1,1 @@
-Optimize :class:`fractions.Fraction` for small components.
+Optimize :class:`fractions.Fraction` for small components. The private argument `_normalize` of the `Fraction` constructor has been removed.
