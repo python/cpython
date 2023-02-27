@@ -175,13 +175,13 @@ static struct jump_target_label_ NO_LABEL = {-1};
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = cfg_new_label(CFG_BUILDER(C)); \
+    jump_target_label NAME = instr_stream_new_label(INSTR_STREAM(C)); \
     if (!IS_LABEL(NAME)) { \
         return ERROR; \
     }
 
 #define USE_LABEL(C, LBL) \
-    RETURN_IF_ERROR(instr_stream_add_label(INSTR_STREAM(C), (LBL).id))
+    RETURN_IF_ERROR(instr_stream_use_label(INSTR_STREAM(C), (LBL).id))
 
 struct instr {
     int i_opcode;
@@ -415,8 +415,6 @@ typedef struct cfg_builder_ {
     basicblock *g_curblock;
     /* label for the next instruction to be placed */
     jump_target_label g_current_label;
-    /* next free label id */
-    int g_next_free_label;
 } cfg_builder;
 
 typedef struct codegen_instr_ {
@@ -431,8 +429,10 @@ typedef struct instr_stream_ {
     int s_allocated;
     int s_used;
 
-    int *s_labelmap;
+    int *s_labelmap;       /* label id --> instr offset */
     int s_labelmap_size;
+    int s_next_free_label; /* next free label id */
+
 } instr_stream;
 
 #define INITIAL_INSTR_STREAM_SIZE 100
@@ -463,8 +463,15 @@ instr_stream_next_inst(instr_stream *is) {
     return is->s_used++;
 }
 
+static jump_target_label
+instr_stream_new_label(instr_stream *is)
+{
+    jump_target_label lbl = {is->s_next_free_label++};
+    return lbl;
+}
+
 static int
-instr_stream_add_label(instr_stream *is, int lbl) {
+instr_stream_use_label(instr_stream *is, int lbl) {
     if (is->s_labelmap_size <= lbl) {
         int old_size, new_size;
         int *tmp = NULL;
@@ -970,7 +977,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
     return dest;
 }
 
-static void
+static int
 cfg_builder_check(cfg_builder *g)
 {
     for (basicblock *block = g->g_block_list; block != NULL; block = block->b_list) {
@@ -985,6 +992,7 @@ cfg_builder_check(cfg_builder *g)
             assert (block->b_ialloc == 0);
         }
     }
+    return SUCCESS;
 }
 
 static basicblock *cfg_builder_new_block(cfg_builder *g);
@@ -1105,13 +1113,6 @@ compiler_set_qualname(struct compiler *c)
     u->u_qualname = name;
 
     return SUCCESS;
-}
-
-static jump_target_label
-cfg_new_label(cfg_builder *g)
-{
-    jump_target_label lbl = {g->g_next_free_label++};
-    return lbl;
 }
 
 /* Allocate a new block and return a pointer to it.
@@ -8757,6 +8758,8 @@ assemble(struct compiler *c, int addNone)
 
     cfg_builder *g = &newg;
     int nblocks = 0;
+
+    //assert(cfg_builder_check(g));
 
     for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
         nblocks++;
