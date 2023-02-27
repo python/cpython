@@ -77,7 +77,7 @@ _Py_device_encoding(int fd)
     if (!valid)
         Py_RETURN_NONE;
 
-#ifdef MS_WINDOWS_NON_DESKTOP
+#ifdef MS_WINDOWS_GAMES
     Py_RETURN_NONE;
 #elif defined(MS_WINDOWS)
     UINT cp;
