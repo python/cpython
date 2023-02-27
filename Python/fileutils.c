@@ -2028,9 +2028,16 @@ _Py_isabs(const wchar_t *path)
 {
 #ifdef MS_WINDOWS_GAMES
     /* this does not handle persistent local storage */
-    return (wcsncmp(path, L"G:\\", 3) == 0)
-        || (wcsncmp(path, L"D:\\", 3) == 0)
-        || (wcsncmp(path, L"T:\\", 3) == 0);
+    if (path[0] == SEP || path[0] == ALTSEP) {
+        // Check for an absolute UNC path.
+        return path[1] == SEP || path[1] == ALTSEP;
+    }
+    else {
+        // Check for an absolute drive path.
+        return ((path[0]) &&
+                (path[1] == L':') &&
+                (path[2] == SEP || path[2] == ALTSEP));
+    }
 #elif defined(MS_WINDOWS)
     const wchar_t *tail;
     HRESULT hr = PathCchSkipRoot(path, &tail);
