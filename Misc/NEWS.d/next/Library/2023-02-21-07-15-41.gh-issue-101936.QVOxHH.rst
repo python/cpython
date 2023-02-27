@@ -1,0 +1,2 @@
+The default value of ``fp`` becomes :class:`io.BytesIO` if :exc:`~urllib.error.HTTPError`
+is initialized without a designated ``fp`` parameter. Patch by Long Vo.

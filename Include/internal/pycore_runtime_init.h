@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_object.h"
+#include "pycore_parser.h"
 #include "pycore_pymem_init.h"
 #include "pycore_obmalloc_init.h"
 
@@ -32,6 +33,10 @@ extern "C" {
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
+           in accordance with the specification. */ \
+        .autoTSSkey = Py_tss_NEEDS_INIT, \
+        .parser = _parser_runtime_state_INIT, \
         .imports = { \
             .lock = { \
                 .mutex = NULL, \
@@ -47,9 +52,6 @@ extern "C" {
         }, \
         .gilstate = { \
             .check_enabled = 1, \
-            /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
-               in accordance with the specification. */ \
-            .autoTSSkey = Py_tss_NEEDS_INIT, \
         }, \
         .dtoa = _dtoa_runtime_state_INIT(runtime), \
         .fileutils = { \
@@ -70,7 +72,7 @@ extern "C" {
         .types = { \
             .next_version_tag = 1, \
         }, \
-        .global_objects = { \
+        .static_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
                 .bytes_empty = _PyBytes_SIMPLE_INIT(0, 0), \
@@ -95,23 +97,10 @@ extern "C" {
         ._main_interpreter = _PyInterpreterState_INIT, \
     }
 
-#ifdef HAVE_DLOPEN
-#  include <dlfcn.h>
-#  if HAVE_DECL_RTLD_NOW
-#    define _Py_DLOPEN_FLAGS RTLD_NOW
-#  else
-#    define _Py_DLOPEN_FLAGS RTLD_LAZY
-#  endif
-#  define DLOPENFLAGS_INIT .dlopenflags = _Py_DLOPEN_FLAGS,
-#else
-#  define _Py_DLOPEN_FLAGS 0
-#  define DLOPENFLAGS_INIT
-#endif
-
 #define _PyInterpreterState_INIT \
     { \
         .id_refcount = -1, \
-        DLOPENFLAGS_INIT \
+        .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
@@ -147,9 +136,11 @@ extern "C" {
 
 #define _PyLong_DIGIT_INIT(val) \
     { \
-        _PyVarObject_IMMORTAL_INIT(&PyLong_Type, \
-                                   ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1))), \
-        .ob_digit = { ((val) >= 0 ? (val) : -(val)) }, \
+        .ob_base = _PyObject_IMMORTAL_INIT(&PyLong_Type), \
+        .long_value  = { \
+            ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1)), \
+            { ((val) >= 0 ? (val) : -(val)) }, \
+        } \
     }
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \

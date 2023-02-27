@@ -79,7 +79,7 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    state = PyType_GetModuleState(type);
+    state = _PyType_GetModuleState(type);
     if (state == NULL) {
         Py_DECREF(self);
         return NULL;

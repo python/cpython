@@ -68,6 +68,24 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(repr_output, expected_output)
 
+    def test_field_recursive_repr(self):
+        rec_field = field()
+        rec_field.type = rec_field
+        rec_field.name = "id"
+        repr_output = repr(rec_field)
+
+        self.assertIn(",type=...,", repr_output)
+
+    def test_recursive_annotation(self):
+        class C:
+            pass
+
+        @dataclass
+        class D:
+            C: C = field()
+
+        self.assertIn(",type=...,", repr(D.__dataclass_fields__["C"]))
+
     def test_dataclass_params_repr(self):
         # Even though this is testing an internal implementation detail,
         # it's testing a feature we want to make sure is correctly implemented

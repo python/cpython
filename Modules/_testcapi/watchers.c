@@ -389,16 +389,15 @@ allocate_too_many_code_watchers(PyObject *self, PyObject *args)
         watcher_ids[i] = watcher_id;
         num_watchers++;
     }
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyCode_ClearWatcher(watcher_ids[i]) < 0) {
             PyErr_WriteUnraisable(Py_None);
             break;
         }
     }
-    if (type) {
-        PyErr_Restore(type, value, traceback);
+    if (exc) {
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
     else if (PyErr_Occurred()) {
@@ -578,16 +577,15 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
         watcher_ids[i] = watcher_id;
         num_watchers++;
     }
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyFunction_ClearWatcher(watcher_ids[i]) < 0) {
             PyErr_WriteUnraisable(Py_None);
             break;
         }
     }
-    if (type) {
-        PyErr_Restore(type, value, traceback);
+    if (exc) {
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
     else if (PyErr_Occurred()) {
@@ -630,14 +628,16 @@ static PyMethodDef test_methods[] = {
     {"clear_dict_watcher",       clear_dict_watcher,      METH_O,       NULL},
     {"watch_dict",               watch_dict,              METH_VARARGS, NULL},
     {"unwatch_dict",             unwatch_dict,            METH_VARARGS, NULL},
-    {"get_dict_watcher_events",  get_dict_watcher_events, METH_NOARGS,  NULL},
+    {"get_dict_watcher_events",
+     (PyCFunction) get_dict_watcher_events,               METH_NOARGS,  NULL},
 
     // Type watchers.
     {"add_type_watcher",         add_type_watcher,        METH_O,       NULL},
     {"clear_type_watcher",       clear_type_watcher,      METH_O,       NULL},
     {"watch_type",               watch_type,              METH_VARARGS, NULL},
     {"unwatch_type",             unwatch_type,            METH_VARARGS, NULL},
-    {"get_type_modified_events", get_type_modified_events, METH_NOARGS, NULL},
+    {"get_type_modified_events",
+     (PyCFunction) get_type_modified_events,              METH_NOARGS, NULL},
 
     // Code object watchers.
     {"add_code_watcher",         add_code_watcher,        METH_O,       NULL},

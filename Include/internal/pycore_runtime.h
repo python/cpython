@@ -41,15 +41,11 @@ struct _gilstate_runtime_state {
     /* bpo-26558: Flag to disable PyGILState_Check().
        If set to non-zero, PyGILState_Check() always return 1. */
     int check_enabled;
-    /* Assuming the current thread holds the GIL, this is the
-       PyThreadState for the current thread. */
-    _Py_atomic_address tstate_current;
     /* The single PyInterpreterState used by this process'
        GILState implementation
     */
     /* TODO: Given interp_main, it may be possible to kill this ref */
     PyInterpreterState *autoInterpreterState;
-    Py_tss_t autoTSSkey;
 };
 
 /* Runtime audit hook state */
@@ -124,6 +120,15 @@ typedef struct pyruntimestate {
 
     unsigned long main_thread;
 
+    /* Assuming the current thread holds the GIL, this is the
+       PyThreadState for the current thread. */
+    _Py_atomic_address tstate_current;
+    /* Used for the thread state bound to the current thread. */
+    Py_tss_t autoTSSkey;
+
+    /* Used instead of PyThreadState.trash when there is not current tstate. */
+    Py_tss_t trashTSSkey;
+
     PyWideStringList orig_argv;
 
     struct _parser_runtime_state parser;
@@ -163,7 +168,7 @@ typedef struct pyruntimestate {
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_cached_objects cached_objects;
-    struct _Py_global_objects global_objects;
+    struct _Py_static_objects static_objects;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through _PyRuntimeState pointer fields.

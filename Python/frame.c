@@ -84,6 +84,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     assert(frame->owner != FRAME_CLEARED);
     Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
+    Py_INCREF(frame->f_code);
     memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
     frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame = frame;
@@ -96,10 +97,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     }
     assert(!_PyFrame_IsIncomplete(frame));
     assert(f->f_back == NULL);
-    _PyInterpreterFrame *prev = frame->previous;
-    while (prev && _PyFrame_IsIncomplete(prev)) {
-        prev = prev->previous;
-    }
+    _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
     frame->previous = NULL;
     if (prev) {
         assert(prev->owner != FRAME_OWNED_BY_CSTACK);
@@ -121,7 +119,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 }
 
 void
-_PyFrame_Clear(_PyInterpreterFrame *frame)
+_PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
@@ -147,7 +145,6 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_funcobj);
-    Py_DECREF(frame->f_code);
 }
 
 int
