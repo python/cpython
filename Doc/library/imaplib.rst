@@ -350,7 +350,8 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.myrights(mailbox)
 
-   Show my ACLs for a mailbox (i.e. the rights that I have on mailbox).
+   Show ACLs for a mailbox (i.e. the rights which the authenticated user has
+   on the mailbox).
 
 
 .. method:: IMAP4.namespace()

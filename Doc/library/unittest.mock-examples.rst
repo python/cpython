@@ -835,13 +835,12 @@ One possibility would be for mock to copy the arguments you pass in. This
 could then cause problems if you do assertions that rely on object identity
 for equality.
 
-Here's one solution that uses the :attr:`side_effect`
+Here's one solution using the :attr:`side_effect`
 functionality. If you provide a ``side_effect`` function for a mock then
-``side_effect`` will be called with the same args as the mock. This gives us an
-opportunity to copy the arguments and store them for later assertions. In this
-example I'm using *another* mock to store the arguments so that I can use the
-mock methods for doing the assertion. Again a helper function sets this up for
-me. ::
+``side_effect`` will be called with the same args as the mock. This gives an
+opportunity to copy the arguments and store them for later assertions.
+The following example uses *another* Mock, ``new_mock``, to store the
+arguments so that they can later be compared with ``assert_called_with``. ::
 
     >>> from copy import deepcopy
     >>> from unittest.mock import Mock, patch, DEFAULT

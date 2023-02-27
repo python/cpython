@@ -1131,12 +1131,11 @@ usual way::
     def print_assign(name, value):
         return name + '=' + str(value)
 
-Which alternative is preferable?  That's a style question; my usual course is to
-avoid using ``lambda``.
+Which alternative is preferable?  As a rule of thumb, ``lambda`` should be
+avoided for complex expressions.
 
-One reason for my preference is that ``lambda`` is quite limited in the
-functions it can define.  The result has to be computable as a single
-expression, which means you can't have multiway ``if... elif... else``
+The reason is that ``lambda`` can only evaluate and return a single expression.
+This means you can't have multiway ``if... elif... else``
 comparisons or ``try... except`` statements.  If you try to do too much in a
 ``lambda`` statement, you'll end up with an overly complicated expression that's
 hard to read.  Quick, what's the following code doing? ::

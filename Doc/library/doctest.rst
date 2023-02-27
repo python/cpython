@@ -1808,8 +1808,8 @@ this that needs to be learned---it may not be natural at first.  Examples should
 add genuine value to the documentation.  A good example can often be worth many
 words. If done with care, the examples will be invaluable for your users, and
 will pay back the time it takes to collect them many times over as the years go
-by and things change.  I'm still amazed at how often one of my :mod:`doctest`
-examples stops working after a "harmless" change.
+by and code changes.  Well-written :mod:`doctest` examples can be especially
+helpful to detect unintended changes to an API.
 
 Doctest also makes an excellent tool for regression testing, especially if you
 don't skimp on explanatory text.  By interleaving prose and examples, it becomes

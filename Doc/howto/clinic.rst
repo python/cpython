@@ -161,7 +161,7 @@ Let's dive in!
 1. Find a Python builtin that calls either :c:func:`PyArg_ParseTuple`
    or :c:func:`PyArg_ParseTupleAndKeywords`, and hasn't been converted
    to work with Argument Clinic yet.
-   For my example I'm using ``_pickle.Pickler.dump()``.
+   This example refers to ``_pickle.Pickler.dump()``.
 
 2. If the call to the ``PyArg_Parse`` function uses any of the
    following format units:

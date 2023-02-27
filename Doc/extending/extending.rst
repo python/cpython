@@ -883,10 +883,8 @@ is stored somewhere, and which is decremented when a reference to it is deleted.
 When the counter reaches zero, the last reference to the object has been deleted
 and the object is freed.
 
-An alternative strategy is called :dfn:`automatic garbage collection`.
-(Sometimes, reference counting is also referred to as a garbage collection
-strategy, hence my use of "automatic" to distinguish the two.)  The big
-advantage of automatic garbage collection is that the user doesn't need to call
+An alternative strategy to refernce counting is :dfn:`garbage collection`.
+The main advantage of garbage collection is that the programmer need not call
 :c:func:`free` explicitly.  (Another claimed advantage is an improvement in speed
 or memory usage --- this is no hard fact however.)  The disadvantage is that for
 C, there is no truly portable automatic garbage collector, while reference

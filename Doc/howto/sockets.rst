@@ -243,10 +243,6 @@ This is also when you'll discover that ``send`` does not always manage to get
 rid of everything in one pass. And despite having read this, you will eventually
 get bit by it!
 
-In the interests of space, building your character, (and preserving my
-competitive position), these enhancements are left as an exercise for the
-reader. Lets move on to cleaning up.
-
 
 Binary Data
 -----------
