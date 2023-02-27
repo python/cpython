@@ -7362,11 +7362,7 @@ PyInit__socket(void)
 
 #ifdef MS_WINDOWS
     if (support_wsa_no_inherit == -1) {
-#ifdef MS_WINDOWS_NON_DESKTOP
         support_wsa_no_inherit = 1;
-#else
-        support_wsa_no_inherit = IsWindows7SP1OrGreater();
-#endif
     }
 #endif
 
