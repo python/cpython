@@ -1611,19 +1611,18 @@ static void
 slot_tp_del(PyObject *self)
 {
     PyObject *del, *res;
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Temporarily resurrect the object. */
     assert(Py_REFCNT(self) == 0);
     Py_SET_REFCNT(self, 1);
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     PyObject *tp_del = PyUnicode_InternFromString("__tp_del__");
     if (tp_del == NULL) {
         PyErr_WriteUnraisable(NULL);
-        PyErr_Restore(error_type, error_value, error_traceback);
+        PyErr_SetRaisedException(exc);
         return;
     }
     /* Execute __del__ method, if any. */
@@ -1638,7 +1637,7 @@ slot_tp_del(PyObject *self)
     }
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call.
