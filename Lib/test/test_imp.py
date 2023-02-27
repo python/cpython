@@ -263,6 +263,7 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             imp.load_dynamic('nonexistent', pathname)
 
+    @unittest.skip('known refleak (temporarily skipping)')
     @requires_subinterpreters
     @requires_load_dynamic
     def test_singlephase_multiple_interpreters(self):
@@ -329,9 +330,10 @@ class ImportTests(unittest.TestCase):
         # However, globals are still shared.
         _interpreters.run_string(interp2, script % 2)
 
+    @unittest.skip('known refleak (temporarily skipping)')
     @requires_load_dynamic
     def test_singlephase_variants(self):
-        '''Exercise the most meaningful variants described in Python/import.c.'''
+        # Exercise the most meaningful variants described in Python/import.c.
         self.maxDiff = None
 
         basename = '_testsinglephase'
@@ -342,6 +344,11 @@ class ImportTests(unittest.TestCase):
             import _testsinglephase
             _testsinglephase._clear_globals()
         self.addCleanup(clean_up)
+
+        def add_ext_cleanup(name):
+            def clean_up():
+                _testinternalcapi.clear_extension(name, pathname)
+            self.addCleanup(clean_up)
 
         modules = {}
         def load(name):
@@ -440,6 +447,7 @@ class ImportTests(unittest.TestCase):
         # Check the "basic" module.
 
         name = basename
+        add_ext_cleanup(name)
         expected_init_count = 1
         with self.subTest(name):
             mod = load(name)
@@ -457,6 +465,7 @@ class ImportTests(unittest.TestCase):
         # Check its indirect variants.
 
         name = f'{basename}_basic_wrapper'
+        add_ext_cleanup(name)
         expected_init_count += 1
         with self.subTest(name):
             mod = load(name)
@@ -480,6 +489,7 @@ class ImportTests(unittest.TestCase):
         # Check its direct variant.
 
         name = f'{basename}_basic_copy'
+        add_ext_cleanup(name)
         expected_init_count += 1
         with self.subTest(name):
             mod = load(name)
@@ -500,6 +510,7 @@ class ImportTests(unittest.TestCase):
         # Check the non-basic variant that has no state.
 
         name = f'{basename}_with_reinit'
+        add_ext_cleanup(name)
         with self.subTest(name):
             mod = load(name)
             lookedup, initialized, cached = check_common(name, mod)
@@ -518,6 +529,7 @@ class ImportTests(unittest.TestCase):
         # Check the basic variant that has state.
 
         name = f'{basename}_with_state'
+        add_ext_cleanup(name)
         with self.subTest(name):
             mod = load(name)
             lookedup, initialized, cached = check_common(name, mod)

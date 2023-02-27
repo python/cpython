@@ -1,13 +1,10 @@
-Add new C-API functions for saving and restoring the current exception:
-``PyErr_GetRaisedException`` and ``PyErr_SetRaisedException``.
-These functions take and return a single exception rather than
-the triple of  ``PyErr_Fetch`` and ``PyErr_Restore``.
+Add :c:func:`PyErr_GetRaisedException` and :c:func:`PyErr_SetRaisedException`
+for saving and restoring the current exception.
+These functions return and accept a single exception object,
+rather than the triple arguments of the now-deprecated
+:c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore`.
 This is less error prone and a bit more efficient.
 
-The three arguments forms of saving and restoring the
-current exception: ``PyErr_Fetch`` and ``PyErr_Restore``
-are deprecated.
-
-Also add ``PyException_GetArgs`` and ``PyException_SetArgs``
-as convenience functions to help dealing with
-exceptions in the C API.
+Add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
+as convenience functions for retrieving and modifying
+the :attr:`~BaseException.args` passed to the exception's constructor.
