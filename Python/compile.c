@@ -181,7 +181,7 @@ static struct jump_target_label_ NO_LABEL = {-1};
     }
 
 #define USE_LABEL(C, LBL) \
-    RETURN_IF_ERROR(codegen_use_label(CFG_BUILDER(C), LBL))
+    RETURN_IF_ERROR(codegen_use_label(INSTR_STREAM(C), LBL))
 
 struct instr {
     int i_opcode;
@@ -598,6 +598,7 @@ struct compiler {
 };
 
 #define CFG_BUILDER(C) (&((C)->u->u_cfg_builder))
+#define INSTR_STREAM(C) (&((C)->u->u_cfg_builder.g_instr_stream))
 
 
 typedef struct {
@@ -628,7 +629,7 @@ typedef struct {
 static int basicblock_next_instr(basicblock *);
 
 static basicblock *cfg_builder_new_block(cfg_builder *g);
-static int codegen_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc);
+static int codegen_addop_i(instr_stream *is, int opcode, Py_ssize_t oparg, location loc);
 
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, location loc, const char *, ...);
@@ -1094,9 +1095,9 @@ cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
 }
 
 static int
-codegen_use_label(cfg_builder *g, jump_target_label lbl)
+codegen_use_label(instr_stream *is, jump_target_label lbl)
 {
-    RETURN_IF_ERROR(instr_stream_add_label(&g->g_instr_stream, lbl.id));
+    RETURN_IF_ERROR(instr_stream_add_label(is, lbl.id));
     return SUCCESS;
 }
 
@@ -1357,17 +1358,17 @@ instr_stream_insert_instruction(instr_stream *is, int pos,
 }
 
 static int
-codegen_addop(cfg_builder *g, int opcode, int oparg, location loc)
+codegen_addop(instr_stream *is, int opcode, int oparg, location loc)
 {
-    RETURN_IF_ERROR(instr_stream_addop(&g->g_instr_stream, opcode, oparg, loc));
+    RETURN_IF_ERROR(instr_stream_addop(is, opcode, oparg, loc));
     return SUCCESS;
 }
 
 static int
-codegen_addop_noarg(cfg_builder *g, int opcode, location loc)
+codegen_addop_noarg(instr_stream *is, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
-    return codegen_addop(g, opcode, 0, loc);
+    return codegen_addop(is, opcode, 0, loc);
 }
 
 static Py_ssize_t
@@ -1525,7 +1526,7 @@ compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, loc);
+    return codegen_addop_i(INSTR_STREAM(c), LOAD_CONST, arg, loc);
 }
 
 static int
@@ -1536,7 +1537,7 @@ compiler_addop_o(struct compiler *c, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(CFG_BUILDER(c), opcode, arg, loc);
+    return codegen_addop_i(INSTR_STREAM(c), opcode, arg, loc);
 }
 
 static int
@@ -1562,12 +1563,12 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 1;
         arg |= 1;
     }
-    return codegen_addop_i(CFG_BUILDER(c), opcode, arg, loc);
+    return codegen_addop_i(INSTR_STREAM(c), opcode, arg, loc);
 }
 
 /* Add an opcode with an integer argument */
 static int
-codegen_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
+codegen_addop_i(instr_stream *is, int opcode, Py_ssize_t oparg, location loc)
 {
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1578,23 +1579,23 @@ codegen_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return codegen_addop(g, opcode, oparg_, loc);
+    return codegen_addop(is, opcode, oparg_, loc);
 }
 
 static int
-codegen_addop_j(cfg_builder *g, location loc,
+codegen_addop_j(instr_stream *is, location loc,
                     int opcode, jump_target_label target)
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return codegen_addop(g, opcode, target.id, loc);
+    return codegen_addop(is, opcode, target.id, loc);
 }
 
 #define ADDOP(C, LOC, OP) \
-    RETURN_IF_ERROR(codegen_addop_noarg(CFG_BUILDER(C), (OP), (LOC)))
+    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_STREAM(C), (OP), (LOC)))
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
-    if (codegen_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
+    if (codegen_addop_noarg(INSTR_STREAM(C), (OP), (LOC)) < 0) { \
         compiler_exit_scope(C); \
         return ERROR; \
     } \
@@ -1629,10 +1630,10 @@ codegen_addop_j(cfg_builder *g, location loc,
     RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)))
 
 #define ADDOP_I(C, LOC, OP, O) \
-    RETURN_IF_ERROR(codegen_addop_i(CFG_BUILDER(C), (OP), (O), (LOC)))
+    RETURN_IF_ERROR(codegen_addop_i(INSTR_STREAM(C), (OP), (O), (LOC)))
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
-    RETURN_IF_ERROR(codegen_addop_j(CFG_BUILDER(C), (LOC), (OP), (O)))
+    RETURN_IF_ERROR(codegen_addop_j(INSTR_STREAM(C), (LOC), (OP), (O)))
 
 #define ADDOP_COMPARE(C, LOC, CMP) \
     RETURN_IF_ERROR(compiler_addcompare((C), (LOC), (cmpop_ty)(CMP)))
@@ -2570,7 +2571,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
 
     RETURN_IF_ERROR(
         instr_stream_insert_instruction(
-            &c->u->u_cfg_builder.g_instr_stream, 0,
+            INSTR_STREAM(c), 0,
             SETUP_CLEANUP, handler.id, NO_LOCATION));
 
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
@@ -4260,7 +4261,7 @@ compiler_nameop(struct compiler *c, location loc,
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return codegen_addop_i(CFG_BUILDER(c), op, arg, loc);
+    return codegen_addop_i(INSTR_STREAM(c), op, arg, loc);
 }
 
 static int
@@ -6279,7 +6280,7 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
     }
     while (--pc->fail_pop_size) {
         USE_LABEL(c, pc->fail_pop[pc->fail_pop_size]);
-        if (codegen_addop_noarg(CFG_BUILDER(c), POP_TOP, loc) < 0) {
+        if (codegen_addop_noarg(INSTR_STREAM(c), POP_TOP, loc) < 0) {
             pc->fail_pop_size = 0;
             PyObject_Free(pc->fail_pop);
             pc->fail_pop = NULL;
@@ -6719,7 +6720,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (codegen_addop_i(CFG_BUILDER(c), COPY, 1, LOC(alt)) < 0 ||
+        if (codegen_addop_i(INSTR_STREAM(c), COPY, 1, LOC(alt)) < 0 ||
             compiler_pattern(c, alt, pc) < 0) {
             goto error;
         }
@@ -6782,7 +6783,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
         assert(control);
-        if (codegen_addop_j(CFG_BUILDER(c), LOC(alt), JUMP, end) < 0 ||
+        if (codegen_addop_j(INSTR_STREAM(c), LOC(alt), JUMP, end) < 0 ||
             emit_and_reset_fail_pop(c, LOC(alt), pc) < 0)
         {
             goto error;
@@ -6794,7 +6795,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
-    if (codegen_addop_noarg(CFG_BUILDER(c), POP_TOP, LOC(p)) < 0 ||
+    if (codegen_addop_noarg(INSTR_STREAM(c), POP_TOP, LOC(p)) < 0 ||
         jump_to_fail_pop(c, LOC(p), pc, JUMP) < 0) {
         goto error;
     }
@@ -8455,13 +8456,13 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
 
         RETURN_IF_ERROR(
           instr_stream_insert_instruction(
-             &c->u->u_cfg_builder.g_instr_stream, 0,
+             INSTR_STREAM(c), 0,
              RETURN_GENERATOR, 0,
              LOCATION(c->u->u_firstlineno, c->u->u_firstlineno, -1, -1)));
 
         RETURN_IF_ERROR(
             instr_stream_insert_instruction(
-                &c->u->u_cfg_builder.g_instr_stream, 1,
+                INSTR_STREAM(c), 1,
                 POP_TOP, 0, NO_LOCATION));
     }
 
@@ -8495,7 +8496,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             RETURN_IF_ERROR(insert_instruction(entryblock, ncellsused, &make_cell));
             RETURN_IF_ERROR(
                 instr_stream_insert_instruction(
-                    &c->u->u_cfg_builder.g_instr_stream, ncellsused,
+                    INSTR_STREAM(c), ncellsused,
                     MAKE_CELL, oldindex, NO_LOCATION));
 
             ncellsused += 1;
@@ -8513,7 +8514,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         RETURN_IF_ERROR(insert_instruction(entryblock, 0, &copy_frees));
         RETURN_IF_ERROR(
             instr_stream_insert_instruction(
-                &c->u->u_cfg_builder.g_instr_stream, 0,
+                INSTR_STREAM(c), 0,
                 COPY_FREE_VARS, nfreevars, NO_LOCATION));
     }
 
@@ -8759,7 +8760,7 @@ assemble(struct compiler *c, int addNone)
     if (cfg_builder_init(&newg) < 0) {
         goto error;
     }
-    if (instr_stream_to_cfg(&CFG_BUILDER(c)->g_instr_stream, &newg) < 0) {
+    if (instr_stream_to_cfg(INSTR_STREAM(c), &newg) < 0) {
         goto error;
     }
 
@@ -10046,7 +10047,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     if (cfg_builder_init(&g) < 0) {
         goto finally;
     }
-    if (instr_stream_to_cfg(&CFG_BUILDER(c)->g_instr_stream, &g) < 0) {
+    if (instr_stream_to_cfg(INSTR_STREAM(c), &g) < 0) {
         goto finally;
     }
     if (translate_jump_labels_to_targets(g.g_entryblock) < 0) {
