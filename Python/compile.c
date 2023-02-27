@@ -9705,9 +9705,9 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
     assert(PyList_Check(instructions));
 
     Py_ssize_t num_insts = PyList_GET_SIZE(instructions);
-    bool *is_target = PyMem_Malloc(num_insts * sizeof(bool));
-    for (Py_ssize_t i = 0; i < num_insts; i++) {
-        is_target[i] = false;
+    bool *is_target = PyMem_Calloc(num_insts, sizeof(bool));
+    if (is_target == NULL) {
+        return ERROR;
     }
     for (Py_ssize_t i = 0; i < num_insts; i++) {
         PyObject *item = PyList_GET_ITEM(instructions, i);
