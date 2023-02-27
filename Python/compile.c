@@ -607,7 +607,6 @@ struct compiler_unit {
     Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
 
     instr_stream u_instr_stream; /* codegen output */
-    cfg_builder u_cfg_builder;  /* The control flow graph */
 
     int u_nfblocks;
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
@@ -643,7 +642,6 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-#define CFG_BUILDER(C) (&((C)->u->u_cfg_builder))
 #define INSTR_STREAM(C) (&((C)->u->u_instr_stream))
 
 
@@ -1007,7 +1005,7 @@ cfg_builder_init(cfg_builder *g)
 static void
 cfg_builder_fini(cfg_builder* g)
 {
-    cfg_builder_check(g);
+    assert(cfg_builder_check(g));
     basicblock *b = g->g_block_list;
     while (b != NULL) {
         if (b->b_instr) {
@@ -1023,7 +1021,6 @@ static void
 compiler_unit_free(struct compiler_unit *u)
 {
     instr_stream_fini(&u->u_instr_stream);
-    cfg_builder_fini(&u->u_cfg_builder);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
     Py_CLEAR(u->u_qualname);
@@ -1756,9 +1753,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     c->c_nestlevel++;
 
-    cfg_builder *g = CFG_BUILDER(c);
-    RETURN_IF_ERROR(cfg_builder_init(g));
-
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = 0;
     }
@@ -1793,7 +1787,6 @@ compiler_exit_scope(struct compiler *c)
             _PyErr_WriteUnraisableMsg("on removing the last compiler "
                                       "stack item", NULL);
         }
-        cfg_builder_check(CFG_BUILDER(c));
     }
     else {
         c->u = NULL;
@@ -8656,7 +8649,7 @@ remove_redundant_jumps(cfg_builder *g) {
 }
 
 static int
-prepare_localsplus(struct compiler* c, int code_flags, cfg_builder *newg)
+prepare_localsplus(struct compiler* c, cfg_builder *g, int code_flags)
 {
     assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
@@ -8674,12 +8667,12 @@ prepare_localsplus(struct compiler* c, int code_flags, cfg_builder *newg)
 
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, newg->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
+    if (insert_prefix_instructions(c, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
         PyMem_Free(cellfixedoffsets);
         return ERROR;
     }
 
-    int numdropped = fix_cell_offsets(c, newg->g_entryblock, cellfixedoffsets);
+    int numdropped = fix_cell_offsets(c, g->g_entryblock, cellfixedoffsets);
     PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
     cellfixedoffsets = NULL;
 
@@ -8711,7 +8704,8 @@ assemble(struct compiler *c, int addNone)
 {
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
-    cfg_builder newg;
+    cfg_builder g_;
+    cfg_builder *g = &g_;
     struct assembler a;
     memset(&a, 0, sizeof(struct assembler));
 
@@ -8725,19 +8719,16 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Preprocessing **/
-    memset(&newg, 0, sizeof(cfg_builder));
-    if (cfg_builder_init(&newg) < 0) {
+    memset(g, 0, sizeof(cfg_builder));
+    if (cfg_builder_init(g) < 0) {
         goto error;
     }
-    if (instr_stream_to_cfg(INSTR_STREAM(c), &newg) < 0) {
+    if (instr_stream_to_cfg(INSTR_STREAM(c), g) < 0) {
         goto error;
     }
-
-    cfg_builder *g = &newg;
-    int nblocks = 0;
-
     assert(cfg_builder_check(g));
 
+    int nblocks = 0;
     for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
         nblocks++;
     }
@@ -8798,7 +8789,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Assembly **/
-    int nlocalsplus = prepare_localsplus(c, code_flags, &newg);
+    int nlocalsplus = prepare_localsplus(c, g, code_flags);
     if (nlocalsplus < 0) {
         goto error;
     }
@@ -8883,7 +8874,7 @@ assemble(struct compiler *c, int addNone)
     co = makecode(c, &a, consts, maxdepth, nlocalsplus, code_flags);
  error:
     Py_XDECREF(consts);
-    cfg_builder_fini(&newg);
+    cfg_builder_fini(g);
     assemble_free(&a);
     return co;
 }
