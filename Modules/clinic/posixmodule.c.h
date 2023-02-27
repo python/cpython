@@ -1730,7 +1730,7 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_splitroot__doc__,
 "_path_splitroot($module, /, path)\n"
@@ -1792,7 +1792,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES) */
+#endif /* defined(MS_WINDOWS) */
 
 #if defined(MS_WINDOWS)
 
@@ -11796,4 +11796,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=b0f2b074f9ddc243 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c65f0b8b54f5ef41 input=a9049054013a1b77]*/

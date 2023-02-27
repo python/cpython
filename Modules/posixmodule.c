@@ -4419,7 +4419,6 @@ exit:
     return result;
 }
 
-#ifndef MS_WINDOWS_GAMES
 
 /*[clinic input]
 os._path_splitroot
@@ -4447,9 +4446,32 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
         *p = L'\\';
     }
 
+#if MS_WINDOWS_GAMES
+    /* network share */
+    if (buffer[0] == L'\\' && buffer[1] == L'\\') {
+        end = buffer + 2;
+        for (int i = 0; i < 2; ++i) {
+            end = wcschr(end, '\\');
+            if (end == NULL) {
+                break;
+            }
+            end++;
+        }
+        ret = (end != NULL) ? S_OK : E_INVALIDARG;
+    }
+    /* Check for absolute drive path */
+    else if (buffer[0] && buffer[1] == L':' && buffer[2] == L'\\') {
+        end = buffer + 3;
+        ret = S_OK;
+    }
+    else {
+        ret = E_INVALIDARG;
+    }
+#else
     Py_BEGIN_ALLOW_THREADS
     ret = PathCchSkipRoot(buffer, &end);
     Py_END_ALLOW_THREADS
+#endif
     if (FAILED(ret)) {
         result = Py_BuildValue("sO", "", path->object);
     } else if (end != buffer) {
@@ -4465,8 +4487,6 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 
     return result;
 }
-
-#endif /* MS_WINDOWS_GAMES */
 
 
 /*[clinic input]
