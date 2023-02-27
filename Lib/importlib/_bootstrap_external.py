@@ -93,35 +93,75 @@ def _unpack_uint16(data):
 
 
 if _MS_WINDOWS:
-    def _path_join(*path_parts):
-        """Replacement for os.path.join()."""
-        if not path_parts:
-            return ""
-        if len(path_parts) == 1:
-            return path_parts[0]
-        root = ""
-        path = []
-        for new_root, tail in map(_os._path_splitroot, path_parts):
-            if new_root.startswith(path_sep_tuple) or new_root.endswith(path_sep_tuple):
-                root = new_root.rstrip(path_separators) or root
-                path = [path_sep + tail]
-            elif new_root.endswith(':'):
-                if root.casefold() != new_root.casefold():
-                    # Drive relative paths have to be resolved by the OS, so we reset the
-                    # tail but do not add a path_sep prefix.
-                    root = new_root
-                    path = [tail]
-                else:
-                    path.append(tail)
+    def _path_splitroot(p):
+        """Replacement for os.path.splitroot()."""
+        sep = '\\'
+        altsep = '/'
+        colon = ':'
+        unc_prefix = '\\\\?\\UNC\\'
+        empty = ''
+        normp = p.replace(altsep, sep)
+        if normp[:1] == sep:
+            if normp[1:2] == sep:
+                # UNC drives, e.g. \\server\share or \\?\UNC\server\share
+                # Device drives, e.g. \\.\device or \\?\device
+                start = 8 if normp[:8].upper() == unc_prefix else 2
+                index = normp.find(sep, start)
+                if index == -1:
+                    return p, empty, empty
+                index2 = normp.find(sep, index + 1)
+                if index2 == -1:
+                    return p, empty, empty
+                return p[:index2], p[index2:index2 + 1], p[index2 + 1:]
             else:
-                root = new_root or root
-                path.append(tail)
-        path = [p.rstrip(path_separators) for p in path if p]
-        if len(path) == 1 and not path[0]:
-            # Avoid losing the root's trailing separator when joining with nothing
-            return root + path_sep
-        return root + path_sep.join(path)
+                # Relative path with root, e.g. \Windows
+                return empty, p[:1], p[1:]
+        elif normp[1:2] == colon:
+            if normp[2:3] == sep:
+                # Absolute drive-letter path, e.g. X:\Windows
+                return p[:2], p[2:3], p[3:]
+            else:
+                # Relative path with drive, e.g. X:Windows
+                return p[:2], empty, p[2:]
+        else:
+            # Relative path, e.g. Windows
+            return empty, empty, p
 
+    def _path_join(path, *paths):
+        """Replacement for os.path.join()."""
+        sep = '\\'
+        seps = '\\/'
+        colon = ':'
+        if not paths:
+            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
+        result_drive, result_root, result_path = _path_splitroot(path)
+        for p in paths:
+            p_drive, p_root, p_path = _path_splitroot(p)
+            if p_root:
+                # Second path is absolute
+                if p_drive or not result_drive:
+                    result_drive = p_drive
+                result_root = p_root
+                result_path = p_path
+                continue
+            elif p_drive and p_drive != result_drive:
+                if p_drive.lower() != result_drive.lower():
+                    # Different drives => ignore the first path entirely
+                    result_drive = p_drive
+                    result_root = p_root
+                    result_path = p_path
+                    continue
+                # Same drive in different case
+                result_drive = p_drive
+            # Second path is relative to the first
+            if result_path and result_path[-1] not in seps:
+                result_path = result_path + sep
+            result_path = result_path + p_path
+        ## add separator between UNC and non-absolute path
+        if (result_path and not result_root and
+            result_drive and result_drive[-1:] != colon):
+            return result_drive + sep + result_path
+        return result_drive + result_root + result_path
 else:
     def _path_join(*path_parts):
         """Replacement for os.path.join()."""
@@ -173,8 +213,8 @@ if _MS_WINDOWS:
         """Replacement for os.path.isabs."""
         if not path:
             return False
-        root = _os._path_splitroot(path)[0].replace('/', '\\')
-        return len(root) > 1 and (root.startswith('\\\\') or root.endswith('\\'))
+        root = path[:3].replace('/', '\\')
+        return root.startswith('\\\\') or root.startswith(':\\', 1)
 
 else:
     def _path_isabs(path):
