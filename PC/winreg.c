@@ -18,6 +18,8 @@
 #include "structmember.h"         // PyMemberDef
 #include <windows.h>
 
+#if !defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)
+
 static BOOL PyHKEY_AsHKEY(PyObject *ob, HKEY *pRes, BOOL bNoneOK);
 static BOOL clinic_HKEY_converter(PyObject *ob, void *p);
 static PyObject *PyHKEY_FromHKEY(HKEY h);
@@ -143,10 +145,8 @@ PyHKEY_deallocFunc(PyObject *ob)
        check to fail!
     */
     PyHKEYObject *obkey = (PyHKEYObject *)ob;
-#ifndef MS_WINDOWS_NON_DESKTOP
     if (obkey->hkey)
         RegCloseKey((HKEY)obkey->hkey);
-#endif
     PyObject_Free(ob);
 }
 
@@ -390,7 +390,6 @@ PyTypeObject PyHKEY_Type =
 PyObject *
 PyHKEY_New(HKEY hInit)
 {
-
     PyHKEYObject *key = PyObject_New(PyHKEYObject, &PyHKEY_Type);
     if (key)
         key->hkey = hInit;
@@ -409,11 +408,7 @@ PyHKEY_Close(PyObject *ob_handle)
     if (PyHKEY_Check(ob_handle)) {
         ((PyHKEYObject*)ob_handle)->hkey = 0;
     }
-#ifdef MS_WINDOWS_NON_DESKTOP
-    rc = ERROR_SUCCESS;
-#else
     rc = key ? RegCloseKey(key) : ERROR_SUCCESS;
-#endif
     if (rc != ERROR_SUCCESS)
         PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
     return rc == ERROR_SUCCESS;
@@ -485,25 +480,17 @@ PyWinObject_CloseHKEY(PyObject *obHandle)
     }
 #if SIZEOF_LONG >= SIZEOF_HKEY
     else if (PyLong_Check(obHandle)) {
-#ifdef MS_WINDOWS_NON_DESKTOP
-        ok = TRUE;
-#else
         long rc = RegCloseKey((HKEY)PyLong_AsLong(obHandle));
         ok = (rc == ERROR_SUCCESS);
         if (!ok)
             PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
-#endif
     }
 #else
     else if (PyLong_Check(obHandle)) {
-#ifdef MS_WINDOWS_NON_DESKTOP
-        ok = TRUE;
-#else
         long rc = RegCloseKey((HKEY)PyLong_AsVoidPtr(obHandle));
         ok = (rc == ERROR_SUCCESS);
         if (!ok)
             PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
-#endif
     }
 #endif
     else {
@@ -576,7 +563,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 {
     Py_ssize_t i,j;
     switch (typ) {
-        case REG_DWORD: 
+        case REG_DWORD:
             {
                 if (value != Py_None && !PyLong_Check(value)) {
                     return FALSE;
@@ -600,7 +587,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 *retDataSize = sizeof(DWORD);
                 break;
             }
-        case REG_QWORD: 
+        case REG_QWORD:
             {
                 if (value != Py_None && !PyLong_Check(value)) {
                     return FALSE;
@@ -913,13 +900,6 @@ static HKEY
 winreg_CreateKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
 /*[clinic end generated code: output=2af13910d56eae26 input=3cdd1622488acea2]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)sub_key;
-    PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-    return NULL;
-#else
     HKEY retKey;
     long rc;
 
@@ -938,7 +918,6 @@ winreg_CreateKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
         return NULL;
     }
     return retKey;
-#endif
 }
 
 /*[clinic input]
@@ -971,15 +950,6 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key,
                         REGSAM access)
 /*[clinic end generated code: output=643a70ad6a361a97 input=42c2b03f98406b66]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)sub_key;
-    (void)reserved;
-    (void)access;
-    PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-    return NULL;
-#else
     HKEY retKey;
     long rc;
 
@@ -999,7 +969,6 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key,
         return NULL;
     }
     return retKey;
-#endif
 }
 
 /*[clinic input]
@@ -1024,12 +993,6 @@ static PyObject *
 winreg_DeleteKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
 /*[clinic end generated code: output=d2652a84f70e0862 input=b31d225b935e4211]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)sub_key;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
     if (PySys_Audit("winreg.DeleteKey", "nun",
                     (Py_ssize_t)key, sub_key,
@@ -1042,7 +1005,6 @@ winreg_DeleteKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKey");
     Py_RETURN_NONE;
-#endif
 }
 
 /*[clinic input]
@@ -1078,14 +1040,6 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
                         int reserved)
 /*[clinic end generated code: output=52a1c8b374ebc003 input=a3186db079b3bf85]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)sub_key;
-    (void)access;
-    (void)reserved;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
     if (PySys_Audit("winreg.DeleteKey", "nun",
                     (Py_ssize_t)key, sub_key,
@@ -1098,7 +1052,6 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKeyEx");
     Py_RETURN_NONE;
-#endif
 }
 
 /*[clinic input]
@@ -1117,12 +1070,6 @@ static PyObject *
 winreg_DeleteValue_impl(PyObject *module, HKEY key, const Py_UNICODE *value)
 /*[clinic end generated code: output=56fa9d21f3a54371 input=a78d3407a4197b21]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)value;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
     if (PySys_Audit("winreg.DeleteValue", "nu",
                     (Py_ssize_t)key, value) < 0) {
@@ -1135,7 +1082,6 @@ winreg_DeleteValue_impl(PyObject *module, HKEY key, const Py_UNICODE *value)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegDeleteValue");
     Py_RETURN_NONE;
-#endif
 }
 
 /*[clinic input]
@@ -1158,12 +1104,6 @@ static PyObject *
 winreg_EnumKey_impl(PyObject *module, HKEY key, int index)
 /*[clinic end generated code: output=25a6ec52cd147bc4 input=fad9a7c00ab0e04b]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)index;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
     PyObject *retStr;
 
@@ -1188,7 +1128,6 @@ winreg_EnumKey_impl(PyObject *module, HKEY key, int index)
 
     retStr = PyUnicode_FromWideChar(tmpbuf, len);
     return retStr;  /* can be NULL */
-#endif
 }
 
 /*[clinic input]
@@ -1220,12 +1159,6 @@ static PyObject *
 winreg_EnumValue_impl(PyObject *module, HKEY key, int index)
 /*[clinic end generated code: output=d363b5a06f8789ac input=4414f47a6fb238b5]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)index;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
     wchar_t *retValueBuf;
     BYTE *tmpBuf;
@@ -1302,7 +1235,6 @@ winreg_EnumValue_impl(PyObject *module, HKEY key, int index)
     PyMem_Free(retValueBuf);
     PyMem_Free(retDataBuf);
     return retVal;
-#endif
 }
 
 /*[clinic input]
@@ -1470,15 +1402,6 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
                     int reserved, REGSAM access)
 /*[clinic end generated code: output=8849bff2c30104ad input=098505ac36a9ae28]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)sub_key;
-    (void)reserved;
-    (void)access;
-    PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-    return NULL;
-#else
     HKEY retKey;
     long rc;
 
@@ -1499,7 +1422,6 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
         return NULL;
     }
     return retKey;
-#endif
 }
 
 /*[clinic input]
@@ -1539,11 +1461,6 @@ static PyObject *
 winreg_QueryInfoKey_impl(PyObject *module, HKEY key)
 /*[clinic end generated code: output=dc657b8356a4f438 input=c3593802390cde1f]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
     DWORD nSubKeys, nValues;
     FILETIME ft;
@@ -1568,7 +1485,6 @@ winreg_QueryInfoKey_impl(PyObject *module, HKEY key)
     ret = Py_BuildValue("iiO", nSubKeys, nValues, l);
     Py_DECREF(l);
     return ret;
-#endif
 }
 
 /*[clinic input]
@@ -1674,12 +1590,6 @@ static PyObject *
 winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
 /*[clinic end generated code: output=f1b85b1c3d887ec7 input=cf366cada4836891]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)name;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     long rc;
     BYTE *retBuf, *tmp;
     DWORD bufSize = 0, retSize;
@@ -1729,7 +1639,6 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
     result = Py_BuildValue("Oi", obData, typ);
     Py_DECREF(obData);
     return result;
-#endif
 }
 
 /*[clinic input]
@@ -1909,15 +1818,6 @@ winreg_SetValueEx_impl(PyObject *module, HKEY key,
                        DWORD type, PyObject *value)
 /*[clinic end generated code: output=811b769a66ae11b7 input=900a9e3990bfb196]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    (void)module;
-    (void)key;
-    (void)value_name;
-    (void)reserved;
-    (void)type;
-    (void)value;
-    return PyErr_Format(PyExc_NotImplementedError, "not implemented on this platform");
-#else
     BYTE *data;
     DWORD len;
 
@@ -1944,7 +1844,6 @@ winreg_SetValueEx_impl(PyObject *module, HKEY key,
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegSetValueEx");
     Py_RETURN_NONE;
-#endif
 }
 
 /*[clinic input]
@@ -2235,3 +2134,5 @@ PyMODINIT_FUNC PyInit_winreg(void)
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
     return m;
 }
+
+#endif /* !MS_WINDOWS_NON_DESKTOP || MS_WINDOWS_GAMES */

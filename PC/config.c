@@ -45,10 +45,10 @@ extern PyObject* PyInit__bisect(void);
 extern PyObject* PyInit__symtable(void);
 #if !defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)
 extern PyObject* PyInit_mmap(void);
+extern PyObject* PyInit_winreg(void);
 #endif
 extern PyObject* PyInit__csv(void);
 extern PyObject* PyInit__sre(void);
-extern PyObject* PyInit_winreg(void);
 extern PyObject* PyInit__struct(void);
 extern PyObject* PyInit__datetime(void);
 extern PyObject* PyInit__functools(void);
@@ -126,10 +126,10 @@ struct _inittab _PyImport_Inittab[] = {
     {"_symtable", PyInit__symtable},
 #if !defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)
     {"mmap", PyInit_mmap},
+    {"winreg", PyInit_winreg},
 #endif
     {"_csv", PyInit__csv},
     {"_sre", PyInit__sre},
-    {"winreg", PyInit_winreg},
     {"_struct", PyInit__struct},
     {"_datetime", PyInit__datetime},
     {"_functools", PyInit__functools},

@@ -14,7 +14,9 @@ extern PyObject* PyInit__tracemalloc(void);
 extern PyObject* PyInit_gc(void);
 extern PyObject* PyInit_nt(void);
 extern PyObject* PyInit__signal(void);
+#if !defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)
 extern PyObject* PyInit_winreg(void);
+#endif
 
 extern PyObject* PyInit__ast(void);
 extern PyObject* PyInit__io(void);
@@ -35,7 +37,9 @@ struct _inittab _PyImport_Inittab[] = {
     {"_tokenize", PyInit__tokenize},
     {"_tracemalloc", PyInit__tracemalloc},
 
+#if !defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)
     {"winreg", PyInit_winreg},
+#endif
 
     /* This module "lives in" with marshal.c */
     {"marshal", PyMarshal_Init},
