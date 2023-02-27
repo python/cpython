@@ -14794,8 +14794,10 @@ unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
         PyObject *u = unicode_new_empty();
-        if (u == NULL)
+        if (u == NULL) {
+            Py_XDECREF(iter);
             return NULL;
+        }
         return Py_BuildValue("N(N)", iter, u);
     }
 }
