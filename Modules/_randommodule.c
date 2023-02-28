@@ -78,7 +78,7 @@
 #endif
 
 #ifdef MS_WINDOWS
-#  include <processthreadsapi.h>
+#  include <windows.h>
 #endif
 
 /* Period parameters -- These are all magic.  Don't change. */
