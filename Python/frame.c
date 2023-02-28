@@ -29,17 +29,14 @@ PyFrameObject *
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 {
     assert(frame->frame_obj == NULL);
-    PyObject *error_type, *error_value, *error_traceback;
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     PyFrameObject *f = _PyFrame_New_NoTrack(frame->f_code);
     if (f == NULL) {
-        Py_XDECREF(error_type);
-        Py_XDECREF(error_value);
-        Py_XDECREF(error_traceback);
+        Py_XDECREF(exc);
         return NULL;
     }
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
     if (frame->frame_obj) {
         // GH-97002: How did we get into this horrible situation? Most likely,
         // allocating f triggered a GC collection, which ran some code that
