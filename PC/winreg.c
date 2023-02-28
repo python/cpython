@@ -1584,7 +1584,7 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
 /*[clinic end generated code: output=f1b85b1c3d887ec7 input=cf366cada4836891]*/
 {
     LONG rc;
-    WCHAR buf[256], *pbuf = buf;
+    BYTE buf[256], *pbuf = buf;
     DWORD size = sizeof(buf);
     DWORD bufSize = 0, retSize;
     DWORD typ;
@@ -1599,7 +1599,7 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
 
     while (1) {
         Py_BEGIN_ALLOW_THREADS
-        rc = RegQueryValueExW(key, name, NULL, &typ, (LPBYTE)pbuf,
+        rc = RegQueryValueExW(key, name, NULL, &typ, pbuf,
                               &size);
         Py_END_ALLOW_THREADS
         if (rc != ERROR_MORE_DATA) {
@@ -1617,7 +1617,7 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
         PyErr_SetFromWindowsErrWithFunction(rc, "RegQueryValueEx");
         goto exit;
     }
-    obData = Reg2Py(pbuf, length, typ);
+    obData = Reg2Py(pbuf, size, typ);
     if (obData == NULL) {
         goto exit;
     }
