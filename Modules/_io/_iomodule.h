@@ -28,7 +28,7 @@ extern PyType_Spec textiowrapper_spec;
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 extern PyTypeObject PyWindowsConsoleIO_Type;
-#endif /* MS_WINDOWS && !MS_WINDOWS_GAMES */
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 
 /* These functions are used as METH_NOARGS methods, are normally called
  * with args=NULL, and return a new reference.

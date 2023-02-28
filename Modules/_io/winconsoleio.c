@@ -1179,4 +1179,4 @@ PyTypeObject PyWindowsConsoleIO_Type = {
     0,                                          /* tp_finalize */
 };
 
-#endif /* MS_WINDOWS && !MS_WINDOWS_GAMES */
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
