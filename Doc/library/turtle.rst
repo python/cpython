@@ -72,7 +72,7 @@ The object-oriented interface uses essentially two+two classes:
    on a :class:`TurtleScreen`.  Its constructor needs a Canvas, ScrolledCanvas
    or TurtleScreen as argument, so the RawTurtle objects know where to draw.
 
-   Derived from RawTurtle is the subclass :class:`Turtle` (alias: :class:`Pen`),
+   Derived from RawTurtle is the subclass :class:`Turtle` (alias: :class:`~turtle.Pen`),
    which draws on "the" :class:`Screen` instance which is automatically
    created, if not already present.
 
@@ -1214,7 +1214,7 @@ Appearance
    will be displayed stretched according to its stretchfactors: *stretch_wid* is
    stretchfactor perpendicular to its orientation, *stretch_len* is
    stretchfactor in direction of its orientation, *outline* determines the width
-   of the shapes's outline.
+   of the shape's outline.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1545,7 +1545,7 @@ below:
 
 1. Create an empty Shape object of type "compound".
 2. Add as many components to this object as desired, using the
-   :meth:`addcomponent` method.
+   :meth:`~Shape.addcomponent` method.
 
    For example:
 
@@ -2125,7 +2125,7 @@ Public classes
 
    :param cv: a :class:`tkinter.Canvas`
 
-   Provides screen oriented methods like :func:`setbg` etc. that are described
+   Provides screen oriented methods like :func:`bgcolor` etc. that are described
    above.
 
 .. class:: Screen()
@@ -2315,7 +2315,9 @@ of this module or which better fits to your needs, e.g. for use in a classroom,
 you can prepare a configuration file ``turtle.cfg`` which will be read at import
 time and modify the configuration according to its settings.
 
-The built in configuration would correspond to the following turtle.cfg::
+The built in configuration would correspond to the following ``turtle.cfg``:
+
+.. code-block:: ini
 
    width = 0.5
    height = 0.75
@@ -2340,15 +2342,15 @@ The built in configuration would correspond to the following turtle.cfg::
 
 Short explanation of selected entries:
 
-- The first four lines correspond to the arguments of the :meth:`Screen.setup`
+- The first four lines correspond to the arguments of the :meth:`turtle.setup`
   method.
 - Line 5 and 6 correspond to the arguments of the method
-  :meth:`Screen.screensize`.
+  :meth:`turtle.screensize`.
 - *shape* can be any of the built-in shapes, e.g: arrow, turtle, etc.  For more
   info try ``help(shape)``.
-- If you want to use no fillcolor (i.e. make the turtle transparent), you have
+- If you want to use no fill color (i.e. make the turtle transparent), you have
   to write ``fillcolor = ""`` (but all nonempty strings must not have quotes in
-  the cfg-file).
+  the cfg file).
 - If you want to reflect the turtle its state, you have to use ``resizemode =
   auto``.
 - If you set e.g. ``language = italian`` the docstringdict
@@ -2400,68 +2402,72 @@ The demo scripts are:
 
 .. tabularcolumns:: |l|L|L|
 
-+----------------+------------------------------+-----------------------+
-| Name           | Description                  | Features              |
-+================+==============================+=======================+
-| bytedesign     | complex classical            | :func:`tracer`, delay,|
-|                | turtle graphics pattern      | :func:`update`        |
-+----------------+------------------------------+-----------------------+
-| chaos          | graphs Verhulst dynamics,    | world coordinates     |
-|                | shows that computer's        |                       |
-|                | computations can generate    |                       |
-|                | results sometimes against the|                       |
-|                | common sense expectations    |                       |
-+----------------+------------------------------+-----------------------+
-| clock          | analog clock showing time    | turtles as clock's    |
-|                | of your computer             | hands, ontimer        |
-+----------------+------------------------------+-----------------------+
-| colormixer     | experiment with r, g, b      | :func:`ondrag`        |
-+----------------+------------------------------+-----------------------+
-| forest         | 3 breadth-first trees        | randomization         |
-+----------------+------------------------------+-----------------------+
-| fractalcurves  | Hilbert & Koch curves        | recursion             |
-+----------------+------------------------------+-----------------------+
-| lindenmayer    | ethnomathematics             | L-System              |
-|                | (indian kolams)              |                       |
-+----------------+------------------------------+-----------------------+
-| minimal_hanoi  | Towers of Hanoi              | Rectangular Turtles   |
-|                |                              | as Hanoi discs        |
-|                |                              | (shape, shapesize)    |
-+----------------+------------------------------+-----------------------+
-| nim            | play the classical nim game  | turtles as nimsticks, |
-|                | with three heaps of sticks   | event driven (mouse,  |
-|                | against the computer.        | keyboard)             |
-+----------------+------------------------------+-----------------------+
-| paint          | super minimalistic           | :func:`onclick`       |
-|                | drawing program              |                       |
-+----------------+------------------------------+-----------------------+
-| peace          | elementary                   | turtle: appearance    |
-|                |                              | and animation         |
-+----------------+------------------------------+-----------------------+
-| penrose        | aperiodic tiling with        | :func:`stamp`         |
-|                | kites and darts              |                       |
-+----------------+------------------------------+-----------------------+
-| planet_and_moon| simulation of                | compound shapes,      |
-|                | gravitational system         | :class:`Vec2D`        |
-+----------------+------------------------------+-----------------------+
-| rosette        | a pattern from the wikipedia | :func:`clone`,        |
-|                | article on turtle graphics   | :func:`undo`          |
-+----------------+------------------------------+-----------------------+
-| round_dance    | dancing turtles rotating     | compound shapes, clone|
-|                | pairwise in opposite         | shapesize, tilt,      |
-|                | direction                    | get_shapepoly, update |
-+----------------+------------------------------+-----------------------+
-| sorting_animate| visual demonstration of      | simple alignment,     |
-|                | different sorting methods    | randomization         |
-+----------------+------------------------------+-----------------------+
-| tree           | a (graphical) breadth        | :func:`clone`         |
-|                | first tree (using generators)|                       |
-+----------------+------------------------------+-----------------------+
-| two_canvases   | simple design                | turtles on two        |
-|                |                              | canvases              |
-+----------------+------------------------------+-----------------------+
-| yinyang        | another elementary example   | :func:`circle`        |
-+----------------+------------------------------+-----------------------+
++----------------+------------------------------+-------------------------------+
+| Name           | Description                  | Features                      |
++================+==============================+===============================+
+| bytedesign     | complex classical            | :func:`~turtle.tracer`,       |
+|                | turtle graphics pattern      | :func:`~turtle.delay`         |
+|                |                              | :func:`~turtle.update`        |
++----------------+------------------------------+-------------------------------+
+| chaos          | graphs Verhulst dynamics,    | world coordinates             |
+|                | shows that computer's        |                               |
+|                | computations can generate    |                               |
+|                | results sometimes against the|                               |
+|                | common sense expectations    |                               |
++----------------+------------------------------+-------------------------------+
+| clock          | analog clock showing time    | turtles as clock's            |
+|                | of your computer             | hands, :func:`~turtle.ontimer`|
++----------------+------------------------------+-------------------------------+
+| colormixer     | experiment with r, g, b      | :func:`~turtle.ondrag`        |
++----------------+------------------------------+-------------------------------+
+| forest         | 3 breadth-first trees        | randomization                 |
++----------------+------------------------------+-------------------------------+
+| fractalcurves  | Hilbert & Koch curves        | recursion                     |
++----------------+------------------------------+-------------------------------+
+| lindenmayer    | ethnomathematics             | L-System                      |
+|                | (Indian kolams)              |                               |
++----------------+------------------------------+-------------------------------+
+| minimal_hanoi  | Towers of Hanoi              | Rectangular turtles           |
+|                |                              | as Hanoi discs (shape,        |
+|                |                              | :func:`~turtle.shapesize`)    |
++----------------+------------------------------+-------------------------------+
+| nim            | play the classical nim game  | turtles as nimsticks,         |
+|                | with three heaps of sticks   | event driven (mouse,          |
+|                | against the computer.        | keyboard)                     |
++----------------+------------------------------+-------------------------------+
+| paint          | super minimalistic           | :func:`~turtle.onclick`       |
+|                | drawing program              |                               |
++----------------+------------------------------+-------------------------------+
+| peace          | elementary                   | turtle: appearance            |
+|                |                              | and animation                 |
++----------------+------------------------------+-------------------------------+
+| penrose        | aperiodic tiling with        | :func:`~turtle.stamp`         |
+|                | kites and darts              |                               |
++----------------+------------------------------+-------------------------------+
+| planet_and_moon| simulation of                | compound shapes,              |
+|                | gravitational system         | :class:`~turtle.Vec2D`        |
++----------------+------------------------------+-------------------------------+
+| rosette        | a pattern from the wikipedia | :func:`~turtle.clone`,        |
+|                | article on turtle graphics   | :func:`~turtle.undo`          |
++----------------+------------------------------+-------------------------------+
+| round_dance    | dancing turtles rotating     | compound shapes,              |
+|                | pairwise in opposite         | :func:`~turtle.clone`,        |
+|                | direction                    | :func:`~turtle.shapesize`,    |
+|                |                              | :func:`~turtle.tilt`,         |
+|                |                              | :func:`~turtle.get_shapepoly`,|
+|                |                              | :func:`~turtle.update`        |
++----------------+------------------------------+-------------------------------+
+| sorting_animate| visual demonstration of      | simple alignment,             |
+|                | different sorting methods    | randomization                 |
++----------------+------------------------------+-------------------------------+
+| tree           | a (graphical) breadth        | :func:`~turtle.clone`         |
+|                | first tree (using generators)|                               |
++----------------+------------------------------+-------------------------------+
+| two_canvases   | simple design                | turtles on two                |
+|                |                              | canvases                      |
++----------------+------------------------------+-------------------------------+
+| yinyang        | another elementary example   | :func:`~turtle.circle`        |
++----------------+------------------------------+-------------------------------+
 
 Have fun!
 
@@ -2469,20 +2475,20 @@ Have fun!
 Changes since Python 2.6
 ========================
 
-- The methods :meth:`Turtle.tracer`, :meth:`Turtle.window_width` and
-  :meth:`Turtle.window_height` have been eliminated.
+- The methods :meth:`turtle.tracer`, :meth:`turtle.window_width` and
+  :meth:`turtle.window_height` have been eliminated.
   Methods with these names and functionality are now available only
-  as methods of :class:`Screen`. The functions derived from these remain
+  as methods of :class:`~turtle.Screen`. The functions derived from these remain
   available. (In fact already in Python 2.6 these methods were merely
   duplications of the corresponding
-  :class:`TurtleScreen`/:class:`Screen`-methods.)
+  :class:`~turtle.TurtleScreen`/:class:`~turtle.Screen` methods.)
 
-- The method :meth:`Turtle.fill` has been eliminated.
-  The behaviour of :meth:`begin_fill` and :meth:`end_fill`
-  have changed slightly: now  every filling-process must be completed with an
+- The method ``Turtle.fill`` has been eliminated.
+  The behaviour of :meth:`~turtle.begin_fill` and :meth:`~turtle.end_fill`
+  have changed slightly: now every filling process must be completed with an
   ``end_fill()`` call.
 
-- A method :meth:`Turtle.filling` has been added. It returns a boolean
+- A method :meth:`turtle.filling` has been added. It returns a boolean
   value: ``True`` if a filling process is under way, ``False`` otherwise.
   This behaviour corresponds to a ``fill()`` call without arguments in
   Python 2.6.
@@ -2490,23 +2496,23 @@ Changes since Python 2.6
 Changes since Python 3.0
 ========================
 
-- The methods :meth:`Turtle.shearfactor`, :meth:`Turtle.shapetransform` and
-  :meth:`Turtle.get_shapepoly` have been added. Thus the full range of
+- The methods :meth:`turtle.shearfactor`, :meth:`turtle.shapetransform` and
+  :meth:`turtle.get_shapepoly` have been added. Thus the full range of
   regular linear transforms is now available for transforming turtle shapes.
-  :meth:`Turtle.tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tiltangle. :meth:`Turtle.settiltangle` has been
+  :meth:`turtle.tiltangle` has been enhanced in functionality: it now can
+  be used to get or set the tilt angle. :meth:`turtle.settiltangle` has been
   deprecated.
 
-- The method :meth:`Screen.onkeypress` has been added as a complement to
-  :meth:`Screen.onkey` which in fact binds actions to the keyrelease event.
-  Accordingly the latter has got an alias: :meth:`Screen.onkeyrelease`.
+- The method :meth:`turtle.onkeypress` has been added as a complement to
+  :meth:`turtle.onkey` which in fact binds actions to the key release event.
+  Accordingly the latter has got an alias: :meth:`turtle.onkeyrelease`.
 
-- The method  :meth:`Screen.mainloop` has been added. So when working only
-  with Screen and Turtle objects one must not additionally import
-  :func:`mainloop` anymore.
+- The method  :meth:`turtle.mainloop` has been added. So when working only
+  with ``Screen`` and ``Turtle`` objects one must not additionally import
+  ``mainloop`` anymore.
 
-- Two input methods has been added :meth:`Screen.textinput` and
-  :meth:`Screen.numinput`. These popup input dialogs and return
+- Two input methods have been added: :meth:`turtle.textinput` and
+  :meth:`turtle.numinput`. These pop up input dialogs and return
   strings and numbers respectively.
 
 - Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`
