@@ -2121,7 +2121,7 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 #endif
 }
 
-#if !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
 static wchar_t*
 win32_games_skip_root(wchar_t* path)
 {
@@ -2205,7 +2205,7 @@ win32_games_join_relfile(wchar_t *buffer, size_t bufsize,
     }
     return 0;
 }
-#endif /* !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
+#endif /* MS_WINDOWS && !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
 
 // The caller must ensure "buffer" is big enough.
 static int

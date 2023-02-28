@@ -4419,7 +4419,7 @@ exit:
     return result;
 }
 
-#if !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
 // The Windows Games API partition does not provide PathCchSkipRoot
 // so we need our own implementation
 static wchar_t*
@@ -4452,7 +4452,7 @@ win32_games_skip_root(wchar_t* path)
     /* relative path */
     return NULL;
 }
-#endif /* MS_WINDOWS_GAMES && !MS_WINDOWS_DESKTOP */
+#endif /* MS_WINDOWS && !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 os._path_splitroot
