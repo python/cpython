@@ -1,0 +1,1 @@
+Handle read and write operations on non-blocking pipes properly on Windows.

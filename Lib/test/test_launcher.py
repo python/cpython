@@ -56,7 +56,17 @@ TEST_DATA = {
                 None: sys.prefix,
             }
         },
-    }
+    },
+    "PythonTestSuite1": {
+        "DisplayName": "Python Test Suite Single",
+        "3.100": {
+            "DisplayName": "Single Interpreter",
+            "InstallPath": {
+                None: sys.prefix,
+                "ExecutablePath": sys.executable,
+            }
+        }
+    },
 }
 
 
@@ -206,6 +216,7 @@ class RunPyMixin:
             **{k.upper(): v for k, v in os.environ.items() if k.upper() not in ignore},
             "PYLAUNCHER_DEBUG": "1",
             "PYLAUNCHER_DRYRUN": "1",
+            "PYLAUNCHER_LIMIT_TO_COMPANY": "",
             **{k.upper(): v for k, v in (env or {}).items()},
         }
         if not argv:
@@ -388,22 +399,32 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual(company, data["env.company"])
         self.assertEqual("3.100", data["env.tag"])
 
-        data = self.run_py([f"-V:3.100-3"])
+        data = self.run_py([f"-V:3.100-32"])
         self.assertEqual("X.Y-32.exe", data["LaunchCommand"])
         self.assertEqual(company, data["env.company"])
         self.assertEqual("3.100-32", data["env.tag"])
 
-        data = self.run_py([f"-V:3.100-a"])
+        data = self.run_py([f"-V:3.100-arm64"])
         self.assertEqual("X.Y-arm64.exe -X fake_arg_for_test", data["LaunchCommand"])
         self.assertEqual(company, data["env.company"])
         self.assertEqual("3.100-arm64", data["env.tag"])
 
     def test_filter_to_company_and_tag(self):
         company = "PythonTestSuite"
-        data = self.run_py([f"-V:{company}/3.1"])
+        data = self.run_py([f"-V:{company}/3.1"], expect_returncode=103)
+
+        data = self.run_py([f"-V:{company}/3.100"])
         self.assertEqual("X.Y.exe", data["LaunchCommand"])
         self.assertEqual(company, data["env.company"])
         self.assertEqual("3.100", data["env.tag"])
+
+    def test_filter_with_single_install(self):
+        company = "PythonTestSuite1"
+        data = self.run_py(
+            [f"-V:Nonexistent"],
+            env={"PYLAUNCHER_LIMIT_TO_COMPANY": company},
+            expect_returncode=103,
+        )
 
     def test_search_major_3(self):
         try:

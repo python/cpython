@@ -272,19 +272,6 @@ class PurePath(object):
         return (self.__class__, tuple(self._parts))
 
     @classmethod
-    def _split_root(cls, part):
-        sep = cls._flavour.sep
-        rel = cls._flavour.splitdrive(part)[1].lstrip(sep)
-        anchor = part.removesuffix(rel)
-        if anchor:
-            anchor = cls._flavour.normpath(anchor)
-        drv, root = cls._flavour.splitdrive(anchor)
-        if drv.startswith(sep):
-            # UNC paths always have a root.
-            root = sep
-        return drv, root, rel
-
-    @classmethod
     def _parse_parts(cls, parts):
         if not parts:
             return '', '', []
@@ -293,7 +280,10 @@ class PurePath(object):
         path = cls._flavour.join(*parts)
         if altsep:
             path = path.replace(altsep, sep)
-        drv, root, rel = cls._split_root(path)
+        drv, root, rel = cls._flavour.splitroot(path)
+        if drv.startswith(sep):
+            # pathlib assumes that UNC paths always have a root.
+            root = sep
         unfiltered_parsed = [drv + root] + rel.split(sep)
         parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
@@ -493,9 +483,9 @@ class PurePath(object):
         """Return a new path with the file name changed."""
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
-        drv, root, parts = self._parse_parts((name,))
-        if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
-            or drv or root or len(parts) != 1):
+        f = self._flavour
+        drv, root, tail = f.splitroot(name)
+        if drv or root or not tail or f.sep in tail or (f.altsep and f.altsep in tail):
             raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
@@ -657,15 +647,10 @@ class PurePath(object):
         drv, root, pat_parts = self._parse_parts((path_pattern,))
         if not pat_parts:
             raise ValueError("empty pattern")
-        elif drv and drv != self._flavour.normcase(self._drv):
-            return False
-        elif root and root != self._root:
-            return False
         parts = self._parts_normcase
         if drv or root:
             if len(pat_parts) != len(parts):
                 return False
-            pat_parts = pat_parts[1:]
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
@@ -831,7 +816,12 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        return self._from_parts([os.getcwd()] + self._parts)
+        elif self._drv:
+            # There is a CWD on each drive-letter drive.
+            cwd = self._flavour.abspath(self._drv)
+        else:
+            cwd = os.getcwd()
+        return self._from_parts([cwd] + self._parts)
 
     def resolve(self, strict=False):
         """
