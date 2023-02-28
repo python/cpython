@@ -4419,6 +4419,40 @@ exit:
     return result;
 }
 
+#if MS_WINDOWS_GAMES
+// The Windows Games API partition does not provide PathCchSkipRoot
+// so we need our own implementation
+static wchar_t*
+win32_games_skip_root(wchar_t* path)
+{
+    if (path[0] == L'\\') {
+        /* relative path with root e.g. \Windows */
+        if (path[1] != L'\\') {
+            return path + 1;
+        }
+
+        /* UNC drives e.g. \\server\share or \\?\UNC\server\share */
+        wchar_t *end = path + 2;
+        if (!wcsnicmp(end, L"?\\UNC\\", 6)) {
+            end += 6;
+        }
+
+        end = wcschr(end, '\\');
+        if (!end) {
+            return path + wcslen(path);
+        }
+        end = wcschr(end + 1, '\\');
+        return (!end) ? wcslen(path) : end + 1;
+    }
+    /* absolute / relative path with drive, e.g. C: or C:\ */
+    else if (isalpha(path[0]) && path[1] == L':') {
+        return (path[2] == L'\\') ? path + 3 : path + 2;
+    }
+
+    /* relative path */
+    return NULL;
+}
+#endif
 
 /*[clinic input]
 os._path_splitroot
@@ -4447,26 +4481,8 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
     }
 
 #if MS_WINDOWS_GAMES
-    /* network share */
-    if (buffer[0] == L'\\' && buffer[1] == L'\\') {
-        end = buffer + 2;
-        for (int i = 0; i < 2; ++i) {
-            end = wcschr(end, '\\');
-            if (end == NULL) {
-                break;
-            }
-            end++;
-        }
-        ret = (end != NULL) ? S_OK : E_INVALIDARG;
-    }
-    /* Check for absolute drive path */
-    else if (buffer[0] && buffer[1] == L':' && buffer[2] == L'\\') {
-        end = buffer + 3;
-        ret = S_OK;
-    }
-    else {
-        ret = E_INVALIDARG;
-    }
+    end = win32_games_skip_root(buffer);
+    ret = (end != NULL) ? S_OK : E_INVALIDARG;
 #else
     Py_BEGIN_ALLOW_THREADS
     ret = PathCchSkipRoot(buffer, &end);
