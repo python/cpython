@@ -614,7 +614,7 @@ always available.
    |                     |                     | ``2`` toward positive infinity,                  |
    |                     |                     | ``3`` toward negative infinity                   |
    |                     |                     |                                                  |
-   |                     |                     | All other values for FLT_ROUNDS characterize     |
+   |                     |                     | All other values for ``FLT_ROUNDS`` characterize |
    |                     |                     | implementation-defined rounding behavior.        |
    +---------------------+---------------------+--------------------------------------------------+
 
