@@ -4419,7 +4419,7 @@ exit:
     return result;
 }
 
-#if MS_WINDOWS_GAMES
+#ifdef MS_WINDOWS_GAMES
 // The Windows Games API partition does not provide PathCchSkipRoot
 // so we need our own implementation
 static wchar_t*
@@ -4480,7 +4480,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
         *p = L'\\';
     }
 
-#if MS_WINDOWS_GAMES
+#ifdef MS_WINDOWS_GAMES
     end = win32_games_skip_root(buffer);
     ret = (end != NULL) ? S_OK : E_INVALIDARG;
 #else
