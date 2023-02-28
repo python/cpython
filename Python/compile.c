@@ -5237,7 +5237,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
             assert(PyLong_Check(outv));
             long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
             int outer_global = (outsc == GLOBAL_IMPLICIT || outsc == GLOBAL_EXPLICIT);
-            if (outer_global || (outsc == CELL && scope == LOCAL)) {
+            if (outer_global || ((outsc == CELL || outsc == FREE) && scope == LOCAL)) {
                 // If a name is global in the outer scope but local in the
                 // comprehension scope, we need to keep it global in outer scope
                 // but ensure the comprehension writes to the local, not the

@@ -191,6 +191,16 @@ Some more tests for scoping edge cases:
     >>> test_func([1])
     [1]
 
+    >>> def test_func():
+    ...     x = 1
+    ...     def g():
+    ...         [x for x in range(3)]
+    ...         return x
+    ...     g()
+    ...     return x
+    >>> test_func()
+    1
+
 """
 
 
