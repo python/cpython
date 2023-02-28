@@ -11,7 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 
 #include "structmember.h"         // PyMemberDef
 #ifdef HAVE_SYS_TYPES_H

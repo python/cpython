@@ -392,6 +392,11 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define to 1 if you have the <conio.h> header file. */
 #define HAVE_CONIO_H 1
 
+/* Define to 1 if you support windows console io */
+#if defined(Py_BUILD_CORE) && !defined(MS_WINDOWS_GAMES)
+#define HAVE_WINDOWS_CONSOLE_IO 1
+#endif
+
 /* Define to 1 if you have the <direct.h> header file. */
 #define HAVE_DIRECT_H 1
 

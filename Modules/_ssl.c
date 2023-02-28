@@ -28,7 +28,7 @@
 /* Include symbols from _socket module */
 #include "socketmodule.h"
 
-#ifdef MS_WINDOWS_GAMES
+#ifdef MS_WINDOWS
 #  include <wincrypt.h>
 #endif
 

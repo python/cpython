@@ -313,7 +313,7 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/syscall.h>
 #endif
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 #  define TERMSIZE_USE_CONIO
 #elif defined(HAVE_SYS_IOCTL_H)
 #  include <sys/ioctl.h>

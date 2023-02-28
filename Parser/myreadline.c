@@ -110,7 +110,7 @@ my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
     /* NOTREACHED */
 }
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 /* Readline implementation using ReadConsoleW */
 
 extern char _get_console_type(HANDLE handle);
@@ -235,7 +235,7 @@ exit:
     return buf;
 }
 
-#endif
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 
 
 /* Readline implementation using fgets() */
@@ -248,7 +248,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     PyThreadState *tstate = _PyOS_ReadlineTState;
     assert(tstate != NULL);
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     if (!config->legacy_windows_stdio && sys_stdin == stdin) {
         HANDLE hStdIn, hStdErr;

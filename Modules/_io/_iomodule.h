@@ -26,7 +26,7 @@ extern PyType_Spec fileio_spec;
 extern PyType_Spec stringio_spec;
 extern PyType_Spec textiowrapper_spec;
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 extern PyTypeObject PyWindowsConsoleIO_Type;
 #endif /* MS_WINDOWS && !MS_WINDOWS_GAMES */
 
@@ -178,7 +178,7 @@ find_io_state_by_def(PyTypeObject *type)
 
 extern _PyIO_State *_PyIO_get_module_state(void);
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);
 #endif
 
