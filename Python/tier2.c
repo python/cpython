@@ -590,6 +590,40 @@ add_metadata_to_jump_2d_array(_PyTier2Info *t2_info, _PyTier2BBMetadata *meta,
     return 0;
 }
 
+static void
+type_propagate(
+    int opcode, int oparg,
+    PyTypeObject** type_stackptr, PyTypeObject** type_locals,
+    const PyObject* consts)
+{
+#define TARGET(op) case op: 
+#define TYPESTACK_PEEK(idx)         (type_stackptr[-(idx)])
+#define TYPESTACK_POKE(idx, v)      type_stackptr[-(idx)] = (v)
+#define TYPELOCALS_SET(idx, v)      type_locals[idx] = v;
+#define TYPELOCALS_GET(idx)         (type_locals[idx])
+#define TYPECONST_GET(idx)          Py_TYPE(_PyTuple_CAST(consts)->ob_item[(idx)])
+#define STACK_ADJUST(idx)           type_stackptr += (idx)
+#define STACK_GROW(idx)             STACK_ADJUST((idx))
+#define STACK_SHRINK(idx)           STACK_ADJUST(-(idx))
+
+    switch (opcode) {
+#include "tier2_typepropagator.c.h"
+    default:
+        fprintf(stderr, "Unsupported opcode in type propagator: %d\n", opcode);
+        assert(opcode);
+    }
+
+#undef TARGET
+#undef TYPESTACK_PEEK
+#undef TYPESTACK_POKE
+#undef TYPELOCALS_SET
+#undef TYPELOCALS_GET
+#undef TYPECONST_GET
+#undef STACK_ADJUST
+#undef STACK_GROW
+#undef STACK_SHRINK
+}
+
 // Detects a BB from the current instruction start to the end of the first basic block it sees.
 // Then emits the instructions into the bb space.
 //
@@ -609,14 +643,10 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
 {
 #define END() goto end;
 #define JUMPBY(x) i += x + 1;
-#define TYPESTACK_PUSH(v)       (*type_stackptr++ = v)
-#define TYPESTACK_POP()         (*--type_stackptr)
-#define TYPESTACK_PEEK(i)       (*(type_stackptr - 1 - i))
-#define TYPELOCALS_SET(idx, v)  type_locals[idx] = v;
-#define TYPELOCALS_UNSET(idx)   type_locals[idx] = NULL;
 #define DISPATCH()        write_i = emit_i(write_i, opcode, oparg); \
                           write_i = copy_cache_entries(write_i, curr+1, caches); \
                           i += caches; \
+                          type_propagate(opcode, oparg, type_stackptr, type_locals, consts); \
                           continue;
 #define DISPATCH_GOTO() goto dispatch_opcode;
 
@@ -636,11 +666,12 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     _PyTier2BBMetadata *temp_meta = NULL;
 
     _PyTier2Info *t2_info = co->_tier2_info;
+    PyObject *consts = co->co_consts;
     _Py_CODEUNIT *t2_start = (_Py_CODEUNIT *)(((char *)bb_space->u_code) + bb_space->water_level);
     _Py_CODEUNIT *write_i = t2_start;
     PyTypeObject **type_stack = type_context_copy->type_stack;
     PyTypeObject **type_locals = type_context_copy->type_locals;
-    PyTypeObject** type_stackptr = &type_context_copy->type_stack_ptr;
+    PyTypeObject **type_stackptr = type_context_copy->type_stack_ptr;
     int tos = -1;
 
     // For handling of backwards jumps
@@ -668,17 +699,6 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
         case RESUME:
             opcode = RESUME_QUICK;
             DISPATCH();
-        //case EXTENDED_ARG:
-        //    write_i = emit_i(write_i, EXTENDED_ARG, _Py_OPARG(*curr));
-        //    curr++;
-        //    next_instr++;
-        //    i++;
-        //    oparg = oparg << 8 | _Py_OPARG(*curr);
-        //    opcode = _Py_OPCODE(*curr);
-        //    caches = _PyOpcode_Caches[opcode];
-        //    DISPATCH_GOTO();
-        // We need to rewrite the pseudo-branch instruction.
-#include "tier2_metainterpreter.c.h"
         case COMPARE_AND_BRANCH:
             opcode = COMPARE_OP;
             DISPATCH();

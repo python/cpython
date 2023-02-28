@@ -336,7 +336,7 @@ class Parser(PLexer):
         if id := self.expect(lx.IDENTIFIER):
             idstr = id.text.strip()
             if not self.expect(lx.LBRACKET):
-                return StackVarTypeLiteral(idstr + " *")
+                return StackVarTypeLiteral(idstr)
             if idstr not in ["locals", "consts"]: return
             if id := self.expect(lx.IDENTIFIER):
                 index = id.text.strip()
