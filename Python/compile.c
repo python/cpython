@@ -8689,15 +8689,9 @@ prepare_localsplus(struct compiler* c, cfg_builder *g, int code_flags)
 static int
 add_return_at_end(struct compiler *c, int addNone)
 {
-    /* Make sure every instruction stream that falls off the end returns None. */
-    instr_sequence *is = INSTR_STREAM(c);
-    if (is->s_used > 0) {
-        instruction *instr = &is->s_instrs[is->s_used];
-        int opcode = instr->i_opcode;
-        if (opcode == RETURN_VALUE || opcode == RETURN_CONST) {
-            return SUCCESS;
-        }
-    }
+    /* Make sure every instruction stream that falls off the end returns None.
+     * This also ensures that no jump target offsets are out of bounds.
+     */
     if (addNone) {
         ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
     }
