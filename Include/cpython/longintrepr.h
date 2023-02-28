@@ -95,7 +95,7 @@ PyAPI_FUNC(PyLongObject *) _PyLong_New(Py_ssize_t);
 PyAPI_FUNC(PyObject *) _PyLong_Copy(PyLongObject *src);
 
 PyAPI_FUNC(PyLongObject *)
-_PyLong_FromDigits(int sign, Py_ssize_t digit_count, digit *digits);
+_PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits);
 
 
 #ifdef __cplusplus

@@ -2507,7 +2507,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 long b;
                 overflow = 0;
                 /* Single digits are common, fast, and cannot overflow on unpacking. */
-                if (_PyLong_IsSingleDigit(item)) {
+                if (_PyLong_IsSingleDigit((PyLongObject *)item)) {
                     b = _PyLong_SingleDigitValue((PyLongObject *)item);
                 }
                 else {

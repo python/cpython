@@ -184,7 +184,7 @@ _PyLong_New(Py_ssize_t size)
 }
 
 PyLongObject *
-_PyLong_FromDigits(int sign, Py_ssize_t digit_count, digit *digits)
+_PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits)
 {
     assert(digit_count >= 0);
     PyLongObject *result = _PyLong_New(digit_count);
@@ -192,7 +192,7 @@ _PyLong_FromDigits(int sign, Py_ssize_t digit_count, digit *digits)
         PyErr_NoMemory();
         return NULL;
     }
-    assert(sign >= -1 && sign <= 1);
+    int sign = negative ? -1 : 1;
     result->long_value.ob_size = sign * digit_count;
     memcpy(result->long_value.ob_digit, digits, digit_count * sizeof(digit));
     return result;
@@ -201,22 +201,16 @@ _PyLong_FromDigits(int sign, Py_ssize_t digit_count, digit *digits)
 PyObject *
 _PyLong_Copy(PyLongObject *src)
 {
-    Py_ssize_t i;
-
     assert(src != NULL);
-    i = Py_SIZE(src);
-    int sign = 1;
-    if (i < 0) {
-        i = -i;
-        sign = -1;
-    }
-    if (i < 2) {
+
+    if (_PyLong_IsSingleDigit(src)) {
         stwodigits ival = medium_value(src);
         if (IS_SMALL_INT(ival)) {
             return get_small_int((sdigit)ival);
         }
     }
-    return (PyObject *)_PyLong_FromDigits(sign, i, src->long_value.ob_digit);
+    int size = _PyLong_DigitCount(src);
+    return (PyObject *)_PyLong_FromDigits(_PyLong_IsNegative(src), size, src->long_value.ob_digit);
 }
 
 static PyObject *
@@ -300,7 +294,7 @@ _PyLong_AssignValue(PyObject **target, Py_ssize_t value)
         return 0;
     }
     else if (old != NULL && PyLong_CheckExact(old) &&
-             Py_REFCNT(old) == 1 && _PyLong_IsPositiveSingleDigit(old) &&
+             Py_REFCNT(old) == 1 && _PyLong_IsPositiveSingleDigit((PyLongObject *)old) &&
              (size_t)value <= PyLong_MASK)
     {
         // Mutate in place if there are no other references the old
@@ -533,27 +527,14 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
             return -1;
         do_decref = 1;
     }
-
-    res = -1;
-    i = Py_SIZE(v);
-
-    switch (i) {
-    case -1:
-        res = -(sdigit)v->long_value.ob_digit[0];
-        break;
-    case 0:
-        res = 0;
-        break;
-    case 1:
-        res = v->long_value.ob_digit[0];
-        break;
-    default:
-        sign = 1;
+    if (_PyLong_IsSingleDigit(v)) {
+        res = _PyLong_SingleDigitValue(v);
+    }
+    else {
+        res = -1;
+        i = _PyLong_DigitCount(v);
+        sign = _PyLong_NonZeroSign(v);
         x = 0;
-        if (i < 0) {
-            sign = -1;
-            i = -(i);
-        }
         while (--i >= 0) {
             prev = x;
             x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
@@ -563,8 +544,8 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
             }
         }
         /* Haven't lost any bits, but casting to long requires extra
-         * care (see comment above).
-         */
+            * care (see comment above).
+            */
         if (x <= (unsigned long)LONG_MAX) {
             res = (long)x * sign;
         }
@@ -638,18 +619,12 @@ PyLong_AsSsize_t(PyObject *vv) {
     }
 
     v = (PyLongObject *)vv;
-    i = Py_SIZE(v);
-    switch (i) {
-    case -1: return -(sdigit)v->long_value.ob_digit[0];
-    case 0: return 0;
-    case 1: return v->long_value.ob_digit[0];
+    if (_PyLong_IsSingleDigit(v)) {
+        return _PyLong_SingleDigitValue(v);
     }
-    sign = 1;
+    i = _PyLong_DigitCount(v);
+    sign = _PyLong_NonZeroSign(v);
     x = 0;
-    if (i < 0) {
-        sign = -1;
-        i = -(i);
-    }
     while (--i >= 0) {
         prev = x;
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
@@ -737,17 +712,16 @@ PyLong_AsSize_t(PyObject *vv)
     }
 
     v = (PyLongObject *)vv;
-    i = Py_SIZE(v);
-    x = 0;
-    if (i < 0) {
+    if (_PyLong_IsPositiveSingleDigit(v)) {
+        return _PyLong_SingleDigitValue(v);
+    }
+    if (_PyLong_IsNegative(v)) {
         PyErr_SetString(PyExc_OverflowError,
                    "can't convert negative value to size_t");
         return (size_t) -1;
     }
-    switch (i) {
-    case 0: return 0;
-    case 1: return v->long_value.ob_digit[0];
-    }
+    i = _PyLong_DigitCount(v);
+    x = 0;
     while (--i >= 0) {
         prev = x;
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
@@ -769,24 +743,18 @@ _PyLong_AsUnsignedLongMask(PyObject *vv)
     PyLongObject *v;
     unsigned long x;
     Py_ssize_t i;
-    int sign;
 
     if (vv == NULL || !PyLong_Check(vv)) {
         PyErr_BadInternalCall();
         return (unsigned long) -1;
     }
     v = (PyLongObject *)vv;
-    i = Py_SIZE(v);
-    switch (i) {
-    case 0: return 0;
-    case 1: return v->long_value.ob_digit[0];
+    if (_PyLong_IsPositiveSingleDigit(v)) {
+        return _PyLong_SingleDigitValue(v);
     }
-    sign = 1;
+    i = _PyLong_DigitCount(v);
+    int sign = _PyLong_NonZeroSign(v);
     x = 0;
-    if (i < 0) {
-        sign = -1;
-        i = -i;
-    }
     while (--i >= 0) {
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
     }
@@ -4696,7 +4664,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 
         /* if modulus == 1:
                return 0 */
-        if (_PyLong_IsPositiveSingleDigit((PyObject *)c) && (c->long_value.ob_digit[0] == 1)) {
+        if (_PyLong_IsPositiveSingleDigit(c) && (c->long_value.ob_digit[0] == 1)) {
             z = (PyLongObject *)PyLong_FromLong(0L);
             goto Done;
         }

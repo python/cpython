@@ -112,7 +112,7 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 
 /* Return 1 if the argument is positive single digit int */
 static inline int
-_PyLong_IsPositiveSingleDigit(const PyObject* op) {
+_PyLong_IsPositiveSingleDigit(const PyLongObject* op) {
     /*  For a positive single digit int, the value of Py_SIZE(sub) is 0 or 1.
 
         We perform a fast check using a single comparison by casting from int
@@ -131,7 +131,7 @@ _PyLong_IsPositiveSingleDigit(const PyObject* op) {
 
 
 static inline int
-_PyLong_IsSingleDigit(const PyObject* op) {
+_PyLong_IsSingleDigit(const PyLongObject* op) {
     assert(PyLong_Check(op));
     Py_ssize_t signed_size = Py_SIZE(op);
     return ((size_t)(signed_size+1)) <= 2;
@@ -152,7 +152,6 @@ _PyLong_DigitCount(const PyLongObject *op)
     return Py_ABS(Py_SIZE(op));
 }
 
-
 static inline bool
 _PyLong_IsNegative(const PyLongObject *op)
 {
@@ -164,6 +163,14 @@ static inline bool
 _PyLong_IsZero(const PyLongObject *op)
 {
     return Py_SIZE(op) == 0;
+}
+
+static inline int
+_PyLong_NonZeroSign(const PyLongObject *op)
+{
+    assert(PyLong_Check(op));
+    assert(!_PyLong_IsZero(op));
+    return ((Py_SIZE(op) > 0) << 1) - 1;
 }
 
 static inline bool

@@ -2150,8 +2150,8 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
     /* Modified from Objects/longobject.c:long_compare, assuming: */
     assert(Py_IS_TYPE(v, &PyLong_Type));
     assert(Py_IS_TYPE(w, &PyLong_Type));
-    assert(_PyLong_IsSingleDigit(v));
-    assert(_PyLong_IsSingleDigit(w));
+    assert(_PyLong_IsSingleDigit((PyLongObject *)v));
+    assert(_PyLong_IsSingleDigit((PyLongObject *)w));
 
     vl = (PyLongObject*)v;
     wl = (PyLongObject*)w;
@@ -2355,7 +2355,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             if (keys_are_all_same_type) {
                 if (key_type == &PyLong_Type &&
                     ints_are_bounded &&
-                    !_PyLong_IsSingleDigit(key)) {
+                    !_PyLong_IsSingleDigit((PyLongObject *)key)) {
 
                     ints_are_bounded = 0;
                 }

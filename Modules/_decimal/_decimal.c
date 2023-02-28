@@ -2160,7 +2160,7 @@ dec_from_long(PyTypeObject *type, PyObject *v,
 
     uint8_t sign = _PyLong_IsNegative(l) ? MPD_NEG :  MPD_POS;
 
-    if (_PyLong_IsSingleDigit((PyObject *)l)) {
+    if (_PyLong_IsSingleDigit(l)) {
         _dec_settriple(dec, sign, l->long_value.ob_digit[0], 0);
         mpd_qfinalize(MPD(dec), ctx, status);
         return dec;
@@ -3527,7 +3527,7 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
 
     assert(n > 0);
     assert(!mpd_iszero(x));
-    pylong = _PyLong_FromDigits(mpd_isnegative(x) ? -1 : 1, n, ob_digit);
+    pylong = _PyLong_FromDigits(mpd_isnegative(x), n, ob_digit);
     mpd_free(ob_digit);
     mpd_del(x);
     return (PyObject *) pylong;
