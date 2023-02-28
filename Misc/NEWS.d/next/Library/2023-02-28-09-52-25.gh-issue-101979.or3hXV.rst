@@ -1,2 +1,2 @@
-Fix a bug that parentheses in metavar param of :func:`add_argument()` were
+Fix a bug that parentheses in metavar argument of :func:`add_argument()` were
 dropped. Patch by Yeojin Kim.

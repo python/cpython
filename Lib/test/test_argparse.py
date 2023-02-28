@@ -3764,7 +3764,7 @@ class TestHelpUsage(HelpTestCase):
     version = ''
 
 
-class TestHelpUsageWithParenthesis(HelpTestCase):
+class TestHelpUsageWithParentheses(HelpTestCase):
     parser_signature = Sig(prog='PROG')
     argument_signatures = [
         Sig('positional', metavar='(example) positional'),
