@@ -143,6 +143,22 @@ class Annotations:
                         ' (Only some members are part of the stable ABI.)')
                 node.insert(0, emph_node)
 
+            # Unstable API annotation.
+            if name.startswith('PyUnstable'):
+                warn_node = nodes.admonition(
+                    classes=['unstable-c-api', 'warning'])
+                message = 'This is '
+                emph_node = nodes.emphasis(message, message)
+                ref_node = addnodes.pending_xref(
+                    'Unstable API', refdomain="std",
+                    reftarget='unstable-c-api',
+                    reftype='ref', refexplicit="False")
+                ref_node += nodes.Text('Unstable API')
+                emph_node += ref_node
+                emph_node += nodes.Text('. It may change without warning in minor releases.')
+                warn_node += emph_node
+                node.insert(0, warn_node)
+
             # Return value annotation
             if objtype != 'function':
                 continue

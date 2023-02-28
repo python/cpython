@@ -350,6 +350,14 @@ tempfile
 The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
 *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
+typing
+------
+
+* Add :func:`typing.override`, an override decorator telling to static type
+  checkers to verify that a method overrides some method or attribute of the
+  same name on a base class, as per :pep:`698`. (Contributed by Steven Troxler in
+  :gh:`101564`.)
+
 sys
 ---
 
@@ -761,6 +769,15 @@ Changes in the Python API
   around process-global resources, which are best managed from the main interpreter.
   (Contributed by Dong-hee Na in :gh:`99127`.)
 
+* The undocumented locking behavior of :func:`~functools.cached_property`
+  is removed, because it locked across all instances of the class, leading to high
+  lock contention. This means that a cached property getter function could now run
+  more than once for a single instance, if two threads race. For most simple
+  cached properties (e.g. those that are idempotent and simply calculate a value
+  based on other attributes of the instance) this will be fine.  If
+  synchronization is needed, implement locking within the cached property getter
+  function or around multi-threaded access points.
+
 
 Build Changes
 =============
@@ -792,6 +809,29 @@ C API Changes
 
 New Features
 ------------
+
+
+* :pep:`697`: Introduced the :ref:`Unstable C API tier <unstable-c-api>`,
+  intended for low-level tools like debuggers and JIT compilers.
+  This API may change in each minor release of CPython without deprecation
+  warnings.
+  Its contents are marked by the ``PyUnstable_`` prefix in names.
+
+  Code object constructors:
+
+  - ``PyUnstable_Code_New()`` (renamed from ``PyCode_New``)
+  - ``PyUnstable_Code_NewWithPosOnlyArgs()`` (renamed from ``PyCode_NewWithPosOnlyArgs``)
+
+  Extra storage for code objects (:pep:`523`):
+
+  - ``PyUnstable_Eval_RequestCodeExtraIndex()`` (renamed from ``_PyEval_RequestCodeExtraIndex``)
+  - ``PyUnstable_Code_GetExtra()`` (renamed from ``_PyCode_GetExtra``)
+  - ``PyUnstable_Code_SetExtra()`` (renamed from ``_PyCode_SetExtra``)
+
+  The original names will continue to be available until the respective
+  API changes.
+
+  (Contributed by Petr Viktorin in :gh:`101101`.)
 
 * Added the new limited C API function :c:func:`PyType_FromMetaclass`,
   which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
@@ -860,6 +900,19 @@ New Features
 * Add :c:func:`PyFrame_GetVar` and :c:func:`PyFrame_GetVarString` functions to
   get a frame variable by its name.
   (Contributed by Victor Stinner in :gh:`91248`.)
+
+* Add :c:func:`PyErr_GetRaisedException` and :c:func:`PyErr_SetRaisedException`
+  for saving and restoring the current exception.
+  These functions return and accept a single exception object,
+  rather than the triple arguments of the now-deprecated
+  :c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore`.
+  This is less error prone and a bit more efficient.
+  (Contributed by Mark Shannon in :gh:`101578`.)
+
+* Add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
+  as convenience functions for retrieving and modifying
+  the :attr:`~BaseException.args` passed to the exception's constructor.
+  (Contributed by Mark Shannon in :gh:`101578`.)
 
 Porting to Python 3.12
 ----------------------
@@ -983,6 +1036,11 @@ Deprecated
 
   (Contributed in :gh:`47146` by Petr Viktorin, based on
   earlier work by Alexander Belopolsky and Matthias Braun.)
+
+* :c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore` are deprecated.
+  Use :c:func:`PyErr_GetRaisedException` and
+  :c:func:`PyErr_SetRaisedException` instead.
+  (Contributed by Mark Shannon in :gh:`101578`.)
 
 
 Removed

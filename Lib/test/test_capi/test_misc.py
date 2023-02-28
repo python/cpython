@@ -8,7 +8,6 @@ import importlib.util
 import os
 import pickle
 import random
-import re
 import subprocess
 import sys
 import textwrap
@@ -90,51 +89,6 @@ class CAPITest(unittest.TestCase):
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
-
-    def test_exception(self):
-        raised_exception = ValueError("5")
-        new_exc = TypeError("TEST")
-        try:
-            raise raised_exception
-        except ValueError as e:
-            orig_sys_exception = sys.exception()
-            orig_exception = _testcapi.set_exception(new_exc)
-            new_sys_exception = sys.exception()
-            new_exception = _testcapi.set_exception(orig_exception)
-            reset_sys_exception = sys.exception()
-
-            self.assertEqual(orig_exception, e)
-
-            self.assertEqual(orig_exception, raised_exception)
-            self.assertEqual(orig_sys_exception, orig_exception)
-            self.assertEqual(reset_sys_exception, orig_exception)
-            self.assertEqual(new_exception, new_exc)
-            self.assertEqual(new_sys_exception, new_exception)
-        else:
-            self.fail("Exception not raised")
-
-    def test_exc_info(self):
-        raised_exception = ValueError("5")
-        new_exc = TypeError("TEST")
-        try:
-            raise raised_exception
-        except ValueError as e:
-            tb = e.__traceback__
-            orig_sys_exc_info = sys.exc_info()
-            orig_exc_info = _testcapi.set_exc_info(new_exc.__class__, new_exc, None)
-            new_sys_exc_info = sys.exc_info()
-            new_exc_info = _testcapi.set_exc_info(*orig_exc_info)
-            reset_sys_exc_info = sys.exc_info()
-
-            self.assertEqual(orig_exc_info[1], e)
-
-            self.assertSequenceEqual(orig_exc_info, (raised_exception.__class__, raised_exception, tb))
-            self.assertSequenceEqual(orig_sys_exc_info, orig_exc_info)
-            self.assertSequenceEqual(reset_sys_exc_info, orig_exc_info)
-            self.assertSequenceEqual(new_exc_info, (new_exc.__class__, new_exc, None))
-            self.assertSequenceEqual(new_sys_exc_info, new_exc_info)
-        else:
-            self.assertTrue(False)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_seq_bytes_to_charp_array(self):
@@ -837,46 +791,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
 
-    def check_fatal_error(self, code, expected, not_expected=()):
-        with support.SuppressCrashReport():
-            rc, out, err = assert_python_failure('-sSI', '-c', code)
-
-        err = decode_stderr(err)
-        self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
-                      err)
-
-        match = re.search(r'^Extension modules:(.*) \(total: ([0-9]+)\)$',
-                          err, re.MULTILINE)
-        if not match:
-            self.fail(f"Cannot find 'Extension modules:' in {err!r}")
-        modules = set(match.group(1).strip().split(', '))
-        total = int(match.group(2))
-
-        for name in expected:
-            self.assertIn(name, modules)
-        for name in not_expected:
-            self.assertNotIn(name, modules)
-        self.assertEqual(len(modules), total)
-
-    @support.requires_subprocess()
-    def test_fatal_error(self):
-        # By default, stdlib extension modules are ignored,
-        # but not test modules.
-        expected = ('_testcapi',)
-        not_expected = ('sys',)
-        code = 'import _testcapi, sys; _testcapi.fatal_error(b"MESSAGE")'
-        self.check_fatal_error(code, expected, not_expected)
-
-        # Mark _testcapi as stdlib module, but not sys
-        expected = ('sys',)
-        not_expected = ('_testcapi',)
-        code = textwrap.dedent('''
-            import _testcapi, sys
-            sys.stdlib_module_names = frozenset({"_testcapi"})
-            _testcapi.fatal_error(b"MESSAGE")
-        ''')
-        self.check_fatal_error(code, expected)
-
     def test_pyobject_repr_from_null(self):
         s = _testcapi.pyobject_repr_from_null()
         self.assertEqual(s, '<NULL>')
@@ -1212,6 +1126,11 @@ class TestPendingCalls(unittest.TestCase):
         n = 64
         self.pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
+
+    def test_gen_get_code(self):
+        def genf(): yield
+        gen = genf()
+        self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
 
 
 class SubinterpreterTest(unittest.TestCase):
@@ -1634,45 +1553,6 @@ class Test_Pep523API(unittest.TestCase):
         def func2(x=None):
             pass
         self.do_test(func2)
-
-
-class Test_ErrSetAndRestore(unittest.TestCase):
-
-    def test_err_set_raised(self):
-        with self.assertRaises(ValueError):
-            _testcapi.err_set_raised(ValueError())
-        v = ValueError()
-        try:
-            _testcapi.err_set_raised(v)
-        except ValueError as ex:
-            self.assertIs(v, ex)
-
-    def test_err_restore(self):
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError)
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError, 1)
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError, 1, None)
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError, ValueError())
-        try:
-            _testcapi.err_restore(KeyError, "hi")
-        except KeyError as k:
-            self.assertEqual("hi", k.args[0])
-        try:
-            1/0
-        except Exception as e:
-            tb = e.__traceback__
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError, 1, tb)
-        with self.assertRaises(TypeError):
-            _testcapi.err_restore(ValueError, 1, 0)
-        try:
-            _testcapi.err_restore(ValueError, 1, tb)
-        except ValueError as v:
-            self.assertEqual(1, v.args[0])
-            self.assertIs(tb, v.__traceback__.tb_next)
 
 
 if __name__ == "__main__":

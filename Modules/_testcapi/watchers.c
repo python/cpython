@@ -389,16 +389,15 @@ allocate_too_many_code_watchers(PyObject *self, PyObject *args)
         watcher_ids[i] = watcher_id;
         num_watchers++;
     }
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyCode_ClearWatcher(watcher_ids[i]) < 0) {
             PyErr_WriteUnraisable(Py_None);
             break;
         }
     }
-    if (type) {
-        PyErr_Restore(type, value, traceback);
+    if (exc) {
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
     else if (PyErr_Occurred()) {
@@ -578,16 +577,15 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
         watcher_ids[i] = watcher_id;
         num_watchers++;
     }
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyFunction_ClearWatcher(watcher_ids[i]) < 0) {
             PyErr_WriteUnraisable(Py_None);
             break;
         }
     }
-    if (type) {
-        PyErr_Restore(type, value, traceback);
+    if (exc) {
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
     else if (PyErr_Occurred()) {

@@ -91,6 +91,8 @@ annotations. These include:
     *Introducing* :data:`LiteralString`
 * :pep:`681`: Data Class Transforms
     *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
+* :pep:`698`: Adding an override decorator to typing
+    *Introducing* the :func:`@override<override>` decorator
 
 .. _type-aliases:
 
@@ -1588,7 +1590,7 @@ These are not used in annotations. They are building blocks for creating generic
         methods, not their type signatures. For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
         check against :data:`Callable`.  However, the
-        :meth:`ssl.SSLObject.__init__` method exists only to raise a
+        ``ssl.SSLObject.__init__`` method exists only to raise a
         :exc:`TypeError` with a more informative message, therefore making
         it impossible to call (instantiate) :class:`ssl.SSLObject`.
 
@@ -2721,6 +2723,42 @@ Functions and decorators
 
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
+
+
+.. decorator:: override
+
+   A decorator for methods that indicates to type checkers that this method
+   should override a method or attribute with the same name on a base class.
+   This helps prevent bugs that may occur when a base class is changed without
+   an equivalent change to a child class.
+
+   For example::
+
+      class Base:
+           def log_status(self)
+
+      class Sub(Base):
+          @override
+          def log_status(self) -> None:  # Okay: overrides Base.log_status
+              ...
+
+          @override
+          def done(self) -> None:  # Error reported by type checker
+              ...
+
+   There is no runtime checking of this property.
+
+   The decorator will set the ``__override__`` attribute to ``True`` on
+   the decorated object. Thus, a check like
+   ``if getattr(obj, "__override__", False)`` can be used at runtime to determine
+   whether an object ``obj`` has been marked as an override.  If the decorated object
+   does not support setting attributes, the decorator returns the object unchanged
+   without raising an exception.
+
+   See :pep:`698` for more details.
+
+   .. versionadded:: 3.12
+
 
 .. decorator:: type_check_only
 
