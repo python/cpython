@@ -56,7 +56,7 @@ class Queue(object):
         self._ignore_epipe = False
         self._reset()
         self._shutdown_state = context._default_context.Value(
-            ctypes.c_uint8, lock=self._rlock
+            ctypes.c_uint8, _queue_alive, lock=True
         )
 
         if sys.platform != 'win32':
@@ -102,18 +102,16 @@ class Queue(object):
             raise Full
 
         with self._notempty:
-            if self._shutdown_state.value != _queue_alive:
-                raise ShutDown
             if self._thread is None:
                 self._start_thread()
             self._buffer.append(obj)
             self._notempty.notify()
 
     def get(self, block=True, timeout=None):
-        if self._shutdown_state.value == _queue_shutdown_immediate:
-            raise ShutDown
         if self._closed:
             raise ValueError(f"Queue {self!r} is closed")
+        if self._shutdown_state.value != _queue_alive:
+            raise ShutDown
         if block and timeout is None:
             with self._rlock:
                 if self._shutdown_state.value != _queue_alive:
@@ -132,7 +130,7 @@ class Queue(object):
                         if self._shutdown_state.value != _queue_alive:
                             raise ShutDown
                         raise Empty
-                    if self._shutdown_state.value != _queue_alive       :
+                    if self._shutdown_state.value != _queue_alive:
                         raise ShutDown
                 elif not self._poll():
                     raise Empty
@@ -162,7 +160,15 @@ class Queue(object):
         return self.put(obj, False)
 
     def shutdown(self, immediate=True):
-        pass
+        with self._shutdown_state.get_lock():
+            if self._shutdown_state.value == _queue_shutdown_immediate:
+                return
+            if immediate:
+                self._shutdown_state.value = _queue_shutdown_immediate
+                with self._notempty:
+                    self._notempty.notify_all() # cf from @EpicWink
+            else:
+                self._shutdown_state.value = _queue_shutdown
 
     def close(self):
         self._closed = True
@@ -335,6 +341,8 @@ class JoinableQueue(Queue):
     def put(self, obj, block=True, timeout=None):
         if self._closed:
             raise ValueError(f"Queue {self!r} is closed")
+        if self._shutdown_state.value != _queue_alive:
+            return
         if not self._sem.acquire(block, timeout):
             raise Full
 
@@ -347,6 +355,8 @@ class JoinableQueue(Queue):
 
     def task_done(self):
         with self._cond:
+            if self._shutdown_state.value != _queue_alive:
+                raise ShutDown
             if not self._unfinished_tasks.acquire(False):
                 raise ValueError('task_done() called too many times')
             if self._unfinished_tasks._semlock._is_zero():
@@ -354,10 +364,19 @@ class JoinableQueue(Queue):
 
     def join(self):
         with self._cond:
-            if self._shutdown_state.value == _queue_shutdown_immediate:
-                return
+            if self._shutdown_state.value != _queue_alive:
+                raise ShutDown
             if not self._unfinished_tasks._semlock._is_zero():
                 self._cond.wait()
+                if self._shutdown_state.value == _queue_shutdown_immediate:
+                    raise ShutDown
+
+    def shutdown(self, immediate=True):
+        initial_shutdown = self._shutdown_state.value
+        super().shutdown(immediate)
+        if initial_shutdown == _queue_alive:
+            with self._cond:
+                self._cond.notify_all() # here to check YD
 
 #
 # Simplified Queue type -- really just a locked pipe
