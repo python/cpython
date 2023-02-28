@@ -27,8 +27,6 @@ extern "C" {
     _PyRuntime.cached_objects.NAME
 
 struct _Py_cached_objects {
-    PyObject *str_replace_inf;
-
     PyObject *interned_strings;
 };
 
@@ -67,11 +65,14 @@ struct _Py_static_objects {
     (interp)->cached_objects.NAME
 
 struct _Py_interp_cached_objects {
-    int _not_set;
+    /* AST */
+    PyObject *str_replace_inf;
+
     /* object.__reduce__ */
     PyObject *objreduce;
     PyObject *type_slots_pname;
     pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
+
 };
 
 #define _Py_INTERP_STATIC_OBJECT(interp, NAME) \
