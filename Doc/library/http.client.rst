@@ -264,7 +264,7 @@ HTTPConnection Objects
             encode_chunked=False)
 
    This will send a request to the server using the HTTP request
-   method *method* and the selector *url*.
+   method *method* and the request URI *url*.
 
    If *body* is specified, the specified data is sent after the headers are
    finished.  It may be a :class:`str`, a :term:`bytes-like object`, an
@@ -292,6 +292,22 @@ HTTPConnection Objects
    and iterables in general) will be chunk-encoded, and the
    Transfer-Encoding header will automatically be set instead of
    Content-Length.
+
+   .. note::
+      When using most HTTP methods (like ``GET`` or ``POST``)
+      the provided ``url`` must be an absolute path and
+      a ``Host`` header must be provided to conform with
+      :rfc:`2616#section-5.1.2`.
+
+      For example, to perform a ``GET`` request to ``https://xkcd.com/353/``::
+
+         >>> import http.client
+         >>> host = "xkcd.com"
+         >>> conn = http.client.HTTPSConnection(host)
+         >>> conn.request("GET", "/353/", headers={"Host": host})
+         >>> response = conn.getresponse()
+         >>> print(response.status, response.reason)
+         200 OK
 
    The *encode_chunked* argument is only relevant if Transfer-Encoding is
    specified in *headers*.  If *encode_chunked* is ``False``, the
