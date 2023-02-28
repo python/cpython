@@ -5347,7 +5347,8 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
             Py_BEGIN_ALLOW_THREADS
             fd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
-                     FROM_PROTOCOL_INFO, &info, 0, WSA_FLAG_OVERLAPPED);
+                     FROM_PROTOCOL_INFO, &info, 0,
+                     WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
             Py_END_ALLOW_THREADS
             if (fd == INVALID_SOCKET) {
                 set_error();
