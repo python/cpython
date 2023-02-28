@@ -175,13 +175,13 @@ static struct jump_target_label_ NO_LABEL = {-1};
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = instr_sequence_new_label(INSTR_STREAM(C)); \
+    jump_target_label NAME = instr_sequence_new_label(INSTR_SEQUENCE(C)); \
     if (!IS_LABEL(NAME)) { \
         return ERROR; \
     }
 
 #define USE_LABEL(C, LBL) \
-    RETURN_IF_ERROR(instr_sequence_use_label(INSTR_STREAM(C), (LBL).id))
+    RETURN_IF_ERROR(instr_sequence_use_label(INSTR_SEQUENCE(C), (LBL).id))
 
 struct cfg_instr {
     int i_opcode;
@@ -428,8 +428,8 @@ typedef struct instr_sequence_ {
     int s_next_free_label; /* next free label id */
 } instr_sequence;
 
-#define INITIAL_INSTR_STREAM_SIZE 100
-#define INITIAL_INSTR_STREAM_LABELS_MAP_SIZE 10
+#define INITIAL_INSTR_SEQUENCE_SIZE 100
+#define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
 
 static int
 instr_sequence_next_inst(instr_sequence *seq) {
@@ -437,11 +437,11 @@ instr_sequence_next_inst(instr_sequence *seq) {
         assert(seq->s_allocated == 0);
         assert(seq->s_used == 0);
         seq->s_instrs = (instruction *)PyObject_Calloc(
-                         INITIAL_INSTR_STREAM_SIZE, sizeof(instruction));
+                         INITIAL_INSTR_SEQUENCE_SIZE, sizeof(instruction));
         if (seq->s_instrs == NULL) {
             return ERROR;
         }
-        seq->s_allocated = INITIAL_INSTR_STREAM_SIZE;
+        seq->s_allocated = INITIAL_INSTR_SEQUENCE_SIZE;
     }
     if (seq->s_used == seq->s_allocated) {
         instruction *tmp = (instruction *)PyObject_Realloc(
@@ -470,7 +470,7 @@ instr_sequence_use_label(instr_sequence *seq, int lbl) {
         int *tmp = NULL;
         if (seq->s_labelmap == NULL) {
             old_size = 0;
-            new_size = INITIAL_INSTR_STREAM_LABELS_MAP_SIZE;
+            new_size = INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE;
             if (new_size < 2 * lbl) {
                 new_size = 2 * lbl;
             }
@@ -645,7 +645,7 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-#define INSTR_STREAM(C) (&((C)->u->u_instr_sequence))
+#define INSTR_SEQUENCE(C) (&((C)->u->u_instr_sequence))
 
 
 typedef struct {
@@ -1513,7 +1513,7 @@ compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(INSTR_STREAM(c), LOAD_CONST, arg, loc);
+    return codegen_addop_i(INSTR_SEQUENCE(c), LOAD_CONST, arg, loc);
 }
 
 static int
@@ -1524,7 +1524,7 @@ compiler_addop_o(struct compiler *c, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(INSTR_STREAM(c), opcode, arg, loc);
+    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
 }
 
 static int
@@ -1550,7 +1550,7 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 1;
         arg |= 1;
     }
-    return codegen_addop_i(INSTR_STREAM(c), opcode, arg, loc);
+    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
 }
 
 /* Add an opcode with an integer argument */
@@ -1579,10 +1579,10 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 #define ADDOP(C, LOC, OP) \
-    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_STREAM(C), (OP), (LOC)))
+    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
-    if (codegen_addop_noarg(INSTR_STREAM(C), (OP), (LOC)) < 0) { \
+    if (codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)) < 0) { \
         compiler_exit_scope(C); \
         return ERROR; \
     } \
@@ -1617,10 +1617,10 @@ codegen_addop_j(instr_sequence *seq, location loc,
     RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)))
 
 #define ADDOP_I(C, LOC, OP, O) \
-    RETURN_IF_ERROR(codegen_addop_i(INSTR_STREAM(C), (OP), (O), (LOC)))
+    RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
-    RETURN_IF_ERROR(codegen_addop_j(INSTR_STREAM(C), (LOC), (OP), (O)))
+    RETURN_IF_ERROR(codegen_addop_j(INSTR_SEQUENCE(C), (LOC), (OP), (O)))
 
 #define ADDOP_COMPARE(C, LOC, CMP) \
     RETURN_IF_ERROR(compiler_addcompare((C), (LOC), (cmpop_ty)(CMP)))
@@ -2545,7 +2545,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
     /* Insert SETUP_CLEANUP at start */
     RETURN_IF_ERROR(
         instr_sequence_insert_instruction(
-            INSTR_STREAM(c), 0,
+            INSTR_SEQUENCE(c), 0,
             SETUP_CLEANUP, handler.id, NO_LOCATION));
 
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
@@ -4235,7 +4235,7 @@ compiler_nameop(struct compiler *c, location loc,
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return codegen_addop_i(INSTR_STREAM(c), op, arg, loc);
+    return codegen_addop_i(INSTR_SEQUENCE(c), op, arg, loc);
 }
 
 static int
@@ -6254,7 +6254,7 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
     }
     while (--pc->fail_pop_size) {
         USE_LABEL(c, pc->fail_pop[pc->fail_pop_size]);
-        if (codegen_addop_noarg(INSTR_STREAM(c), POP_TOP, loc) < 0) {
+        if (codegen_addop_noarg(INSTR_SEQUENCE(c), POP_TOP, loc) < 0) {
             pc->fail_pop_size = 0;
             PyObject_Free(pc->fail_pop);
             pc->fail_pop = NULL;
@@ -6694,7 +6694,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (codegen_addop_i(INSTR_STREAM(c), COPY, 1, LOC(alt)) < 0 ||
+        if (codegen_addop_i(INSTR_SEQUENCE(c), COPY, 1, LOC(alt)) < 0 ||
             compiler_pattern(c, alt, pc) < 0) {
             goto error;
         }
@@ -6757,7 +6757,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
         assert(control);
-        if (codegen_addop_j(INSTR_STREAM(c), LOC(alt), JUMP, end) < 0 ||
+        if (codegen_addop_j(INSTR_SEQUENCE(c), LOC(alt), JUMP, end) < 0 ||
             emit_and_reset_fail_pop(c, LOC(alt), pc) < 0)
         {
             goto error;
@@ -6769,7 +6769,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
-    if (codegen_addop_noarg(INSTR_STREAM(c), POP_TOP, LOC(p)) < 0 ||
+    if (codegen_addop_noarg(INSTR_SEQUENCE(c), POP_TOP, LOC(p)) < 0 ||
         jump_to_fail_pop(c, LOC(p), pc, JUMP) < 0) {
         goto error;
     }
@@ -8719,7 +8719,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Preprocessing **/
-    if (instr_sequence_to_cfg(INSTR_STREAM(c), g) < 0) {
+    if (instr_sequence_to_cfg(INSTR_SEQUENCE(c), g) < 0) {
         goto error;
     }
     assert(cfg_builder_check(g));
@@ -9996,7 +9996,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     }
 
     cfg_builder g;
-    if (instr_sequence_to_cfg(INSTR_STREAM(c), &g) < 0) {
+    if (instr_sequence_to_cfg(INSTR_SEQUENCE(c), &g) < 0) {
         goto finally;
     }
     if (translate_jump_labels_to_targets(g.g_entryblock) < 0) {
