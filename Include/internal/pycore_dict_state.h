@@ -14,7 +14,6 @@ struct _Py_dict_runtime_state {
      * It is incremented each time that a dictionary is created and each
      * time that a dictionary is modified. */
     uint64_t global_version;
-    uint32_t next_keys_version;
 };
 
 
@@ -30,6 +29,8 @@ struct _Py_dict_runtime_state {
 #define DICT_MAX_WATCHERS 8
 
 struct _Py_dict_state {
+    uint32_t next_keys_version;
+
 #if PyDict_MAXFREELIST > 0
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
@@ -37,6 +38,7 @@ struct _Py_dict_state {
     int numfree;
     int keys_numfree;
 #endif
+
     PyDict_WatchCallback watchers[DICT_MAX_WATCHERS];
 };
 

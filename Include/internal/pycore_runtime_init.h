@@ -62,9 +62,6 @@ extern "C" {
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
         }, \
-        .dict_state = { \
-            .next_keys_version = 2, \
-        }, \
         .func_state = { \
             .next_version = 1, \
         }, \
@@ -113,6 +110,9 @@ extern "C" {
             }, \
         }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
+        .dict_state = { \
+            .next_keys_version = 2, \
+        }, \
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
