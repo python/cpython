@@ -5337,6 +5337,13 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
                 set_error();
                 return -1;
             }
+
+            if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
+                closesocket(fd);
+                PyErr_SetFromWindowsErr(0);
+                return -1;
+            }
+
             family = info.iAddressFamily;
             type = info.iSocketType;
             proto = info.iProtocol;
