@@ -1273,6 +1273,8 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 }
 
 #ifdef MS_WINDOWS
+// For some Windows API partitions, SetHandleInformation() is declared
+// but none of the handle flags are defined.
 #ifndef HANDLE_FLAG_INHERIT
 #define HANDLE_FLAG_INHERIT 0x00000001
 #endif
