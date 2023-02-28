@@ -2117,6 +2117,91 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 #endif
 }
 
+#ifdef MS_WINDOWS_GAMES
+static wchar_t*
+win32_games_skip_root(wchar_t* path)
+{
+    if (path[0] == '\\') {
+        /* relative path with root e.g. \Windows */
+        if (path[1] != '\\') {
+            return path + 1;
+        }
+
+        /* UNC drives e.g. \\server\share or \\?\UNC\server\share */
+        wchar_t *end = path + 2;
+        if (!wcsnicmp(end, L"?\\UNC\\", 6)) {
+            end += 6;
+        }
+
+        end = wcschr(end, '\\');
+        if (!end) {
+            return path + wcslen(path);
+        }
+        end = wcschr(end + 1, '\\');
+        return (!end) ? path + wcslen(path) : end + 1;
+    }
+    /* absolute / relative path with drive, e.g. C: or C:\ */
+    else if (isalpha(path[0]) && path[1] == ':') {
+        return (path[2] == '\\') ? path + 3 : path + 2;
+    }
+
+    /* relative path */
+    return NULL;
+}
+
+// The Windows Games API partition does not provide PathCchCombineEx
+// so we need our own implementation
+static int
+win32_games_join_relfile(wchar_t *buffer, size_t bufsize,
+                         const wchar_t *dirname, const wchar_t *relfile)
+{
+    if ((isalpha(relfile[0]) && relfile[1] == ':') ||
+       (relfile[0] == '\\' && relfile[1] == '\\'))
+    {
+        dirname = relfile;
+        relfile = NULL;
+    }
+
+    size_t dir_len = wcslen(dirname);
+    size_t file_len = relfile ? wcslen(relfile) : 0;
+    /* path is at max dirname + filename + backslash + \0 */
+    size_t new_len = dir_len + file_len + 2;
+    if (bufsize >= MAXPATHLEN || new_len > bufsize) {
+        return -1;
+    }
+
+    size_t combined_length = dir_len;
+    wcscpy(buffer, dirname);
+    if (!relfile || !relfile[0]) {
+        if(wcsncmp(buffer, L"\\\\?\\", 4)) {
+            buffer += 4;
+        }
+        if (isalpha(buffer[0]) && buffer[1] == ':') {
+            if (!buffer[2]) {
+                buffer[2] = '\\';
+                buffer[3] = '\0';
+            }
+        }
+    }
+    else {
+        if (relfile[0] == '\\' && relfile[1] != '\\')
+        {
+            wchar_t* root_end = win32_games_skip_root(buffer);
+            if (root_end) {
+                *root_end = '\0';
+            }
+            combined_length = root_end - buffer;
+            relfile++;
+        }
+        if (combined_length && buffer[combined_length - 1] != '\\') {
+            buffer[combined_length++] = '\\';
+            buffer[combined_length] = '\0';
+        }
+        wcscat(buffer, relfile);
+    }
+    return 0;
+}
+#endif /* MS_WINDOWS_GAMES */
 
 // The caller must ensure "buffer" is big enough.
 static int
@@ -2124,10 +2209,15 @@ join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
 #if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#ifdef MS_WINDOWS_GAMES
+    return win32_games_join_relfile(buffer, bufsize, dirname, relfile)
+#else
     if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
         PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }
+    return 0;
+#endif
 #else
     assert(!_Py_isabs(relfile));
     size_t dirlen = wcslen(dirname);
@@ -2151,8 +2241,8 @@ join_relfile(wchar_t *buffer, size_t bufsize,
         }
         wcscpy(&buffer[relstart], relfile);
     }
-#endif
     return 0;
+#endif
 }
 
 /* Join the two paths together, like os.path.join().  Return NULL

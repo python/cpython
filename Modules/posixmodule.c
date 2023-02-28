@@ -4442,7 +4442,7 @@ win32_games_skip_root(wchar_t* path)
             return path + wcslen(path);
         }
         end = wcschr(end + 1, '\\');
-        return (!end) ? wcslen(path) : end + 1;
+        return (!end) ? path + wcslen(path) : end + 1;
     }
     /* absolute / relative path with drive, e.g. C: or C:\ */
     else if (isalpha(path[0]) && path[1] == L':') {
