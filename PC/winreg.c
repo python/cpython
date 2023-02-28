@@ -1586,7 +1586,6 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
     LONG rc;
     BYTE buf[256], *pbuf = buf;
     DWORD size = sizeof(buf);
-    DWORD bufSize = 0, retSize;
     DWORD typ;
     PyObject *obData = NULL;
     PyObject *result = NULL;
