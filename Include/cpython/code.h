@@ -178,19 +178,40 @@ static inline int PyCode_GetFirstFree(PyCodeObject *op) {
 #define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
-/* Public interface */
-PyAPI_FUNC(PyCodeObject *) PyCode_New(
+/* Unstable public interface */
+PyAPI_FUNC(PyCodeObject *) PyUnstable_Code_New(
         int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
         PyObject *);
 
-PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
+PyAPI_FUNC(PyCodeObject *) PyUnstable_Code_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
         PyObject *);
         /* same as struct above */
+// Old names -- remove when this API changes:
+_Py_DEPRECATED_EXTERNALLY(3.12) static inline PyCodeObject *
+PyCode_New(
+        int a, int b, int c, int d, int e, PyObject *f, PyObject *g,
+        PyObject *h, PyObject *i, PyObject *j, PyObject *k,
+        PyObject *l, PyObject *m, PyObject *n, int o, PyObject *p,
+        PyObject *q)
+{
+    return PyUnstable_Code_New(
+        a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q);
+}
+_Py_DEPRECATED_EXTERNALLY(3.12) static inline PyCodeObject *
+PyCode_NewWithPosOnlyArgs(
+        int a, int poac, int b, int c, int d, int e, PyObject *f, PyObject *g,
+        PyObject *h, PyObject *i, PyObject *j, PyObject *k,
+        PyObject *l, PyObject *m, PyObject *n, int o, PyObject *p,
+        PyObject *q)
+{
+    return PyUnstable_Code_NewWithPosOnlyArgs(
+        a, poac, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q);
+}
 
 /* Creates a new empty code object with the specified source location. */
 PyAPI_FUNC(PyCodeObject *)
@@ -269,11 +290,21 @@ PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);
 
-
-PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
-                                 void **extra);
-PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
-                                 void *extra);
+PyAPI_FUNC(int) PyUnstable_Code_GetExtra(
+    PyObject *code, Py_ssize_t index, void **extra);
+PyAPI_FUNC(int) PyUnstable_Code_SetExtra(
+    PyObject *code, Py_ssize_t index, void *extra);
+// Old names -- remove when this API changes:
+_Py_DEPRECATED_EXTERNALLY(3.12) static inline int
+_PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+{
+    return PyUnstable_Code_GetExtra(code, index, extra);
+}
+_Py_DEPRECATED_EXTERNALLY(3.12) static inline int
+_PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+{
+    return PyUnstable_Code_SetExtra(code, index, extra);
+}
 
 /* Equivalent to getattr(code, 'co_code') in Python.
    Returns a strong reference to a bytes object. */
