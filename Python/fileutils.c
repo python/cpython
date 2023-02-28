@@ -1096,6 +1096,7 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
     result->st_size = (((__int64)info->nFileSizeHigh)<<32) + info->nFileSizeLow;
     result->st_dev = id_info ? id_info->VolumeSerialNumber : info->dwVolumeSerialNumber;
     result->st_rdev = 0;
+    /* st_ctime is deprecated, but we preserve the legacy value in our caller, not here */
     if (basic_info) {
         LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
         LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
@@ -1103,8 +1104,6 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
         LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
     } else {
         FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
-        /* We leave ctime as zero because we do not have it without FILE_BASIC_INFO.
-           Our callers will replace it with birthtime if they want legacy behaviour */
         FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
         FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
     }

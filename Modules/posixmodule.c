@@ -2071,6 +2071,10 @@ win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
        setting it to a POSIX error. Callers should use GetLastError. */
     int code = win32_xstat_impl(path, result, traverse);
     errno = 0;
+
+    /* ctime is only deprecated from 3.12, so we copy birthtime across */
+    result->st_ctime = result->st_birthtime;
+    result->st_ctime_nsec = result->st_birthtime_nsec;
     return code;
 }
 /* About the following functions: win32_lstat_w, win32_stat, win32_stat_w
@@ -2144,6 +2148,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(MS_WINDOWS)
     {"st_birthtime",   "time of creation"},
 #endif
+#ifdef MS_WINDOWS
+    {"st_birthtime_ns", "time of creation in nanoseconds"},
+#endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
     {"st_file_attributes", "Windows file attribute bits"},
 #endif
@@ -2192,10 +2199,16 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_BIRTHTIME_IDX ST_GEN_IDX
 #endif
 
-#if defined(HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES) || defined(MS_WINDOWS)
-#define ST_FILE_ATTRIBUTES_IDX (ST_BIRTHTIME_IDX+1)
+#ifdef MS_WINDOWS
+#define ST_BIRTHTIME_NS_IDX (ST_BIRTHTIME_IDX+1)
 #else
-#define ST_FILE_ATTRIBUTES_IDX ST_BIRTHTIME_IDX
+#define ST_BIRTHTIME_NS_IDX ST_BIRTHTIME_IDX
+#endif
+
+#if defined(HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES) || defined(MS_WINDOWS)
+#define ST_FILE_ATTRIBUTES_IDX (ST_BIRTHTIME_NS_IDX+1)
+#else
+#define ST_FILE_ATTRIBUTES_IDX ST_BIRTHTIME_NS_IDX
 #endif
 
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
@@ -2364,7 +2377,7 @@ _posix_free(void *module)
 }
 
 static void
-fill_time(PyObject *module, PyObject *v, int index, time_t sec, unsigned long nsec)
+fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index, time_t sec, unsigned long nsec)
 {
     PyObject *s = _PyLong_FromTime_t(sec);
     PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
@@ -2388,12 +2401,18 @@ fill_time(PyObject *module, PyObject *v, int index, time_t sec, unsigned long ns
         goto exit;
     }
 
-    PyStructSequence_SET_ITEM(v, index, s);
-    PyStructSequence_SET_ITEM(v, index+3, float_s);
-    PyStructSequence_SET_ITEM(v, index+6, ns_total);
-    s = NULL;
-    float_s = NULL;
-    ns_total = NULL;
+    if (s_index >= 0) {
+        PyStructSequence_SET_ITEM(v, s_index, s);
+        s = NULL;
+    }
+    if (f_index >= 0) {
+        PyStructSequence_SET_ITEM(v, f_index, float_s);
+        float_s = NULL;
+    }
+    if (ns_index >= 0) {
+        PyStructSequence_SET_ITEM(v, ns_index, ns_total);
+        ns_total = NULL;
+    }
 exit:
     Py_XDECREF(s);
     Py_XDECREF(ns_fractional);
@@ -2477,9 +2496,9 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #else
     ansec = mnsec = cnsec = 0;
 #endif
-    fill_time(module, v, 7, st->st_atime, ansec);
-    fill_time(module, v, 8, st->st_mtime, mnsec);
-    fill_time(module, v, 9, st->st_ctime, cnsec);
+    fill_time(module, v, 7, 10, 13, st->st_atime, ansec);
+    fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec);
+    fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec);
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
@@ -2497,14 +2516,12 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     PyStructSequence_SET_ITEM(v, ST_GEN_IDX,
                               PyLong_FromLong((long)st->st_gen));
 #endif
-#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(MS_WINDOWS)
+#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME)
     {
       PyObject *val;
       unsigned long bsec,bnsec;
       bsec = (long)st->st_birthtime;
-#ifdef MS_WINDOWS
-      bnsec = st->st_birthtime_nsec;
-#elif defined(HAVE_STAT_TV_NSEC2)
+#ifdef HAVE_STAT_TV_NSEC2
       bnsec = st->st_birthtimespec.tv_nsec;
 #else
       bnsec = 0;
@@ -2513,6 +2530,9 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
       PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
                                 val);
     }
+#elif defined(MS_WINDOWS)
+    fill_time(module, v, ST_BIRTHTIME_IDX, -1, ST_BIRTHTIME_NS_IDX,
+              st->st_birthtime, st->st_birthtime_nsec);
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
     PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
