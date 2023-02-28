@@ -405,8 +405,15 @@ class HelpFormatter(object):
             else:
                 end = start + len(group._group_actions)
                 if actions[start:end] == group._group_actions:
+
+                    suppressed_actions_count = 0
                     for action in group._group_actions:
                         group_actions.add(action)
+                        if action.help is SUPPRESS:
+                            suppressed_actions_count += 1
+
+                    exposed_actions_count = len(group._group_actions) - suppressed_actions_count
+
                     if not group.required:
                         if start in inserts:
                             inserts[start] += ' ['
@@ -416,7 +423,7 @@ class HelpFormatter(object):
                             inserts[end] += ']'
                         else:
                             inserts[end] = ']'
-                    elif len(group._group_actions) > 1:
+                    elif exposed_actions_count > 1:
                         if start in inserts:
                             inserts[start] += ' ('
                         else:
