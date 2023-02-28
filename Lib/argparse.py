@@ -416,7 +416,7 @@ class HelpFormatter(object):
                             inserts[end] += ']'
                         else:
                             inserts[end] = ']'
-                    else:
+                    elif len(group._group_actions) > 1:
                         if start in inserts:
                             inserts[start] += ' ('
                         else:
