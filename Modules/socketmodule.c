@@ -5445,11 +5445,6 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             proto = 0;
         }
 #ifdef MS_WINDOWS
-        /* Windows implementation */
-#ifndef WSA_FLAG_NO_HANDLE_INHERIT
-#define WSA_FLAG_NO_HANDLE_INHERIT 0x80
-#endif
-
         Py_BEGIN_ALLOW_THREADS
         fd = WSASocketW(family, type, proto,
                         NULL, 0,
@@ -6161,8 +6156,9 @@ socket_dup(PyObject *self, PyObject *fdobj)
 #endif
 
     fd = PyLong_AsSocket_t(fdobj);
-    if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+    if (fd == (SOCKET_T)(-1) && PyErr_Occurred()) {
         return NULL;
+    }
 
 #ifdef MS_WINDOWS
     if (WSADuplicateSocketW(fd, GetCurrentProcessId(), &info))
@@ -6170,27 +6166,23 @@ socket_dup(PyObject *self, PyObject *fdobj)
 
     newfd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                       FROM_PROTOCOL_INFO,
-                      &info, 0, WSA_FLAG_OVERLAPPED);
-    if (newfd == INVALID_SOCKET)
+                      &info, 0,
+                      WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
+    if (newfd == INVALID_SOCKET) {
         return set_error();
-
-#ifndef MS_WINDOWS_NON_DESKTOP
-    if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
-        closesocket(newfd);
-        PyErr_SetFromWindowsErr(0);
-        return NULL;
     }
-#endif
 #else
     /* On UNIX, dup can be used to duplicate the file descriptor of a socket */
     newfd = _Py_dup(fd);
-    if (newfd == INVALID_SOCKET)
+    if (newfd == INVALID_SOCKET) {
         return NULL;
+    }
 #endif
 
     newfdobj = PyLong_FromSocket_t(newfd);
-    if (newfdobj == NULL)
+    if (newfdobj == NULL) {
         SOCKETCLOSE(newfd);
+    }
     return newfdobj;
 }
 
