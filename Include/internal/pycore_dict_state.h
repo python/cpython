@@ -10,10 +10,6 @@ extern "C" {
 
 
 struct _Py_dict_runtime_state {
-    /*Global counter used to set ma_version_tag field of dictionary.
-     * It is incremented each time that a dictionary is created and each
-     * time that a dictionary is modified. */
-    uint64_t global_version;
     uint32_t next_keys_version;
 };
 
@@ -30,6 +26,11 @@ struct _Py_dict_runtime_state {
 #define DICT_MAX_WATCHERS 8
 
 struct _Py_dict_state {
+    /*Global counter used to set ma_version_tag field of dictionary.
+     * It is incremented each time that a dictionary is created and each
+     * time that a dictionary is modified. */
+    uint64_t global_version;
+
 #if PyDict_MAXFREELIST > 0
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
