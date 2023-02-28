@@ -205,6 +205,18 @@ class ListComprehensionTest(unittest.TestCase):
         with self.assertRaises(UnboundLocalError):
             f()
 
+    def test_nameerror(self):
+        def f():
+            [x for x in [1]]
+            return x
+
+        with self.assertRaises(NameError) as ctx:
+            f()
+
+        # UnboundLocalError is a subtype of NameError; in this case we want to
+        # check that it is actually NameError
+        self.assertIs(type(ctx.exception), NameError)
+
     def test_unbound_local_inside_comprehension(self):
         def f():
             l = [None]
