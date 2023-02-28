@@ -171,19 +171,17 @@ class Formatter:
     def assign(self, dst: StackEffect, src: StackEffect):
         if src.name == UNUSED:
             return
+        if src.size:
+            # Don't write sized arrays -- it's up to the user code.
+            return
         cast = self.cast(dst, src)
-        if m := re.match(r"^PEEK\((.*)\)$", dst.name):
-            stmt = f"POKE({m.group(1)}, {cast}{src.name});"
+        if re.match(r"^REG\(oparg(\d+)\)$", dst.name):
+            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
+        else:
+            stmt = f"{dst.name} = {cast}{src.name};"
             if src.cond:
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
-        elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
-            # The user code is responsible for writing to the output array.
-            pass
-        elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
-            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
-        else:
-            self.emit(f"{dst.name} = {cast}{src.name};")
 
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
@@ -292,11 +290,11 @@ class Instruction:
                     list_effect_size([ieff for ieff in ieffects[: i + 1]])
                 )
                 if ieffect.size:
-                    src = StackEffect(f"&PEEK({isize})", "PyObject **")
+                    src = StackEffect(f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **")
                 elif ieffect.cond:
-                    src = StackEffect(f"({ieffect.cond}) ? PEEK({isize}) : NULL", "")
+                    src = StackEffect(f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL", "")
                 else:
-                    src = StackEffect(f"PEEK({isize})", "")
+                    src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
                 out.declare(ieffect, src)
         else:
             # Write input register variable declarations and initializations
@@ -349,9 +347,9 @@ class Instruction:
                     list_effect_size([oeff for oeff in oeffects[: i + 1]])
                 )
                 if oeffect.size:
-                    dst = StackEffect(f"&PEEK({osize})", "PyObject **")
+                    dst = StackEffect(f"stack_pointer - {maybe_parenthesize(osize)}", "PyObject **")
                 else:
-                    dst = StackEffect(f"PEEK({osize})", "")
+                    dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "")
                 out.assign(dst, oeffect)
         else:
             # Write output register assignments
@@ -1113,7 +1111,7 @@ class Analyzer:
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:
-                    src = StackEffect(f"PEEK({up.initial_sp - i})", "")
+                    src = StackEffect(f"stack_pointer[-{up.initial_sp - i}]", "")
                 self.out.declare(var, src)
 
             yield
@@ -1122,7 +1120,7 @@ class Analyzer:
             self.out.stack_adjust(up.final_sp - up.initial_sp, [], [])
 
             for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
-                dst = StackEffect(f"PEEK({i})", "")
+                dst = StackEffect(f"stack_pointer[-{i}]", "")
                 self.out.assign(dst, var)
 
             self.out.emit(f"DISPATCH();")
