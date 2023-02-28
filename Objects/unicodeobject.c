@@ -204,7 +204,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
                     _Py_error_handler error_handler, const char *errors,
                     Py_ssize_t *consumed);
 #ifdef Py_DEBUG
-static inline int unicode_is_finalizing(void);
+static inline int unicode_is_finalizing(PyInterpreterState *);
 static int unicode_is_singleton(PyObject *unicode);
 #endif
 
@@ -231,33 +231,33 @@ static inline PyObject* unicode_new_empty(void)
    Another way to look at this is that to say that the actual reference
    count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
 */
-static inline PyObject *get_interned_dict(void)
+static inline PyObject *get_interned_dict(PyInterpreterState *interp)
 {
-    return _Py_CACHED_OBJECT(interned_strings);
+    return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
 }
 
 static PyObject *
-ensure_interned_dict()
+ensure_interned_dict(PyInterpreterState *interp)
 {
-    PyObject *interned = get_interned_dict();
+    PyObject *interned = get_interned_dict(interp);
     if (interned == NULL) {
         interned = PyDict_New();
         if (interned == NULL) {
             return NULL;
         }
-        _Py_CACHED_OBJECT(interned_strings) = interned;
+        _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = interned;
     }
     return interned;
 }
 
 static void
-clear_interned_dict(void)
+clear_interned_dict(PyInterpreterState *interp)
 {
-    PyObject *interned = get_interned_dict();
+    PyObject *interned = get_interned_dict(interp);
     if (interned != NULL) {
         PyDict_Clear(interned);
         Py_DECREF(interned);
-        _Py_CACHED_OBJECT(interned_strings) = NULL;
+        _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
     }
 }
 
@@ -1543,8 +1543,9 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
 static void
 unicode_dealloc(PyObject *unicode)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_DEBUG
-    if (!unicode_is_finalizing() && unicode_is_singleton(unicode)) {
+    if (!unicode_is_finalizing(interp) && unicode_is_singleton(unicode)) {
         _Py_FatalRefcountError("deallocating an Unicode singleton");
     }
 #endif
@@ -1556,7 +1557,7 @@ unicode_dealloc(PyObject *unicode)
            PyDict_DelItem(). */
         assert(Py_REFCNT(unicode) == 0);
         Py_SET_REFCNT(unicode, 3);
-        PyObject *interned = get_interned_dict();
+        PyObject *interned = get_interned_dict(interp);
         assert(interned != NULL);
         if (PyDict_DelItem(interned, unicode) != 0) {
             _PyErr_WriteUnraisableMsg("deletion of interned string failed",
@@ -14623,7 +14624,8 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    PyObject *interned = ensure_interned_dict();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *interned = ensure_interned_dict(interp);
     if (interned == NULL) {
         PyErr_Clear(); /* Don't leave an exception */
         return;
@@ -14671,12 +14673,7 @@ PyUnicode_InternFromString(const char *cp)
 void
 _PyUnicode_ClearInterned(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        // interned dict is shared by all interpreters
-        return;
-    }
-
-    PyObject *interned = get_interned_dict();
+    PyObject *interned = get_interned_dict(interp);
     if (interned == NULL) {
         return;
     }
@@ -14711,7 +14708,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             total_length);
 #endif
 
-    clear_interned_dict();
+    clear_interned_dict(interp);
 }
 
 
@@ -15122,9 +15119,9 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 
 #ifdef Py_DEBUG
 static inline int
-unicode_is_finalizing(void)
+unicode_is_finalizing(PyInterpreterState *interp)
 {
-    return (get_interned_dict() == NULL);
+    return (get_interned_dict(interp) == NULL);
 }
 #endif
 
@@ -15147,14 +15144,13 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 {
     struct _Py_unicode_state *state = &interp->unicode;
 
-    if (_Py_IsMainInterpreter(interp)) {
-        // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
-        assert(get_interned_dict() == NULL);
-        // bpo-47182: force a unicodedata CAPI capsule re-import on
-        // subsequent initialization of main interpreter.
-    }
+    // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
+    assert(get_interned_dict(interp) == NULL);
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
+
+    // bpo-47182: force a unicodedata CAPI capsule re-import on
+    // subsequent initialization of interpreter.
     interp->unicode.ucnhash_capi = NULL;
 
     unicode_clear_identifiers(state);
