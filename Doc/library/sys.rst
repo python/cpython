@@ -606,7 +606,7 @@ always available.
    +---------------------+---------------------+--------------------------------------------------+
    | ``rounds``          | ``FLT_ROUNDS``      | integer representing the rounding mode for       |
    |                     |                     | floating-point arithmetic. This reflects the     |
-   |                     |                     | value of the system FLT_ROUNDS macro at          |
+   |                     |                     | value of the system ``FLT_ROUNDS`` macro at      |
    |                     |                     | interpreter startup time:                        |
    |                     |                     | ``-1`` indeterminable,                           |
    |                     |                     | ``0`` toward zero,                               |
