@@ -383,6 +383,8 @@ remove_unusable_flags(PyObject *m)
             VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
             dwlConditionMask);
 #else
+        /* note in this case 'info' is the actual OS version, whereas above
+           it is the version to compare against. */
         BOOL isSupported = info.dwMajorVersion > 10 ||
             (info.dwMajorVersion == 10 && info.dwMinorVersion > 0) ||
             (info.dwMajorVersion == 10 && info.dwMinorVersion == 0 &&
