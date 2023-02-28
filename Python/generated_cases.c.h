@@ -73,8 +73,7 @@
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
-            NEXTOPARG();
-            JUMPBY(1);
+            oparg = (next_instr++)->op.arg;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -98,8 +97,7 @@
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
-            NEXTOPARG();
-            JUMPBY(1);
+            oparg = (next_instr++)->op.arg;
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
@@ -118,8 +116,7 @@
                 PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
             }
-            NEXTOPARG();
-            JUMPBY(1);
+            oparg = (next_instr++)->op.arg;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -138,8 +135,7 @@
                 PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
             }
-            NEXTOPARG();
-            JUMPBY(1);
+            oparg = (next_instr++)->op.arg;
             {
                 PyObject *value = _tmp_2;
                 SETLOCAL(oparg, value);
@@ -157,8 +153,7 @@
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
-            NEXTOPARG();
-            JUMPBY(1);
+            oparg = (next_instr++)->op.arg;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -253,7 +248,7 @@
             if (prod == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = prod;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -273,7 +268,7 @@
             if (prod == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = prod;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -291,7 +286,7 @@
             if (sub == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = sub;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -310,7 +305,7 @@
             if (sub == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = sub;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -328,7 +323,7 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -382,7 +377,7 @@
             if (sum == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = sum;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -400,7 +395,7 @@
             if (sum == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = sum;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -427,7 +422,7 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -495,7 +490,7 @@
             Py_DECREF(list);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -520,7 +515,7 @@
             Py_DECREF(tuple);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -545,7 +540,7 @@
             Py_DECREF(sub);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -621,7 +616,7 @@
             Py_DECREF(sub);
             if (err) goto pop_3_error;
             STACK_SHRINK(3);
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -647,7 +642,7 @@
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
             STACK_SHRINK(3);
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -662,7 +657,7 @@
             Py_DECREF(dict);
             if (err) goto pop_3_error;
             STACK_SHRINK(3);
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -936,7 +931,7 @@
             }
             Py_DECREF(v);
             stack_pointer[-1] = retval;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -1156,7 +1151,7 @@
             if (res == 0) goto pop_1_error;
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -1172,7 +1167,7 @@
             Py_DECREF(seq);
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -1189,7 +1184,7 @@
             Py_DECREF(seq);
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -1206,7 +1201,7 @@
             Py_DECREF(seq);
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -1247,7 +1242,7 @@
             Py_DECREF(owner);
             if (err) goto pop_2_error;
             STACK_SHRINK(2);
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -1412,7 +1407,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = v;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
-            JUMPBY(5);
+            next_instr += 5;
             DISPATCH();
         }
 
@@ -1436,7 +1431,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
-            JUMPBY(5);
+            next_instr += 5;
             DISPATCH();
         }
 
@@ -1464,7 +1459,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
-            JUMPBY(5);
+            next_instr += 5;
             DISPATCH();
         }
 
@@ -1855,7 +1850,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
-            JUMPBY(9);
+            next_instr += 9;
             DISPATCH();
         }
 
@@ -1882,7 +1877,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
-            JUMPBY(9);
+            next_instr += 9;
             DISPATCH();
         }
 
@@ -1909,7 +1904,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
-            JUMPBY(9);
+            next_instr += 9;
             DISPATCH();
         }
 
@@ -1950,7 +1945,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
-            JUMPBY(9);
+            next_instr += 9;
             DISPATCH();
         }
 
@@ -1974,7 +1969,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
-            JUMPBY(9);
+            next_instr += 9;
             DISPATCH();
         }
 
@@ -2000,7 +1995,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
-            JUMPBY(9);
+            next_instr += 9;
             DISPATCH();
         }
 
@@ -2090,7 +2085,7 @@
             }
             Py_DECREF(owner);
             STACK_SHRINK(2);
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -2139,7 +2134,7 @@
             dict->ma_version_tag = new_version;
             Py_DECREF(owner);
             STACK_SHRINK(2);
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -2159,7 +2154,7 @@
             Py_XDECREF(old_value);
             Py_DECREF(owner);
             STACK_SHRINK(2);
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -2175,7 +2170,7 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -2210,7 +2205,7 @@
                 JUMPBY(offset);
             }
             STACK_SHRINK(2);
-            JUMPBY(2);
+            next_instr += 2;
             DISPATCH();
         }
 
@@ -2232,7 +2227,7 @@
                 JUMPBY(offset);
             }
             STACK_SHRINK(2);
-            JUMPBY(2);
+            next_instr += 2;
             DISPATCH();
         }
 
@@ -2257,7 +2252,7 @@
                 JUMPBY(offset);
             }
             STACK_SHRINK(2);
-            JUMPBY(2);
+            next_instr += 2;
             DISPATCH();
         }
 
@@ -2280,7 +2275,7 @@
                 JUMPBY(offset);
             }
             STACK_SHRINK(2);
-            JUMPBY(2);
+            next_instr += 2;
             DISPATCH();
         }
 
@@ -2690,7 +2685,7 @@
             // Common case: no jump, leave it to the code generator
             STACK_GROW(1);
             stack_pointer[-1] = next;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -2719,7 +2714,7 @@
             // Common case: no jump, leave it to the code generator
             STACK_GROW(1);
             stack_pointer[-1] = next;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -2748,7 +2743,7 @@
             // Common case: no jump, leave it to the code generator
             STACK_GROW(1);
             stack_pointer[-1] = next;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -2775,7 +2770,7 @@
             }
             STACK_GROW(1);
             stack_pointer[-1] = next;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -2954,7 +2949,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
-            JUMPBY(9);
+            next_instr += 9;
             DISPATCH();
         }
 
@@ -2977,7 +2972,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
-            JUMPBY(9);
+            next_instr += 9;
             DISPATCH();
         }
 
@@ -3004,7 +2999,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
-            JUMPBY(9);
+            next_instr += 9;
             DISPATCH();
         }
 
@@ -3096,7 +3091,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3202,7 +3197,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -3225,7 +3220,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3248,7 +3243,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3282,7 +3277,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3323,7 +3318,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3368,7 +3363,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3413,7 +3408,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3451,7 +3446,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -3490,7 +3485,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -3555,7 +3550,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3595,7 +3590,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3635,7 +3630,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3674,7 +3669,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(4);
+            next_instr += 4;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3885,7 +3880,7 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 

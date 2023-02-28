@@ -322,7 +322,7 @@ class Instruction:
                 else:
                     out.declare(oeffect, None)
 
-        # out.emit(f"JUMPBY(OPSIZE({self.inst.name}) - 1);")
+        # out.emit(f"next_instr += OPSIZE({self.inst.name}) - 1;")
 
         self.write_body(out, 0)
 
@@ -359,7 +359,7 @@ class Instruction:
 
         # Write cache effect
         if self.cache_offset:
-            out.emit(f"JUMPBY({self.cache_offset});")
+            out.emit(f"next_instr += {self.cache_offset};")
 
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
         """Write the instruction body."""
@@ -1058,17 +1058,13 @@ class Analyzer:
         with self.wrap_super_or_macro(sup):
             first = True
             for comp in sup.parts:
-                if first:
-                    pass
-                    # self.out.emit("JUMPBY(OPSIZE(opcode) - 1);")
-                else:
-                    self.out.emit("NEXTOPARG();")
-                    self.out.emit("JUMPBY(1);")
-                    # self.out.emit("JUMPBY(OPSIZE(opcode));")
+                if not first:
+                    self.out.emit("oparg = (next_instr++)->op.arg;")
+                # self.out.emit("next_instr += OPSIZE(opcode) - 1;")
                 first = False
                 comp.write_body(self.out, 0)
                 if comp.instr.cache_offset:
-                    self.out.emit(f"JUMPBY({comp.instr.cache_offset});")
+                    self.out.emit(f"next_instr += {comp.instr.cache_offset};")
 
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
@@ -1085,7 +1081,7 @@ class Analyzer:
                         cache_adjust += comp.instr.cache_offset
 
             if cache_adjust:
-                self.out.emit(f"JUMPBY({cache_adjust});")
+                self.out.emit(f"next_instr += {cache_adjust};")
 
             if (
                 last_instr
