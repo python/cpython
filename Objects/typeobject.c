@@ -44,7 +44,8 @@ class object "PyObject *" "&PyBaseObject_Type"
         PyUnicode_IS_READY(name) &&                             \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
-#define next_version_tag (_PyRuntime.types.next_version_tag)
+#define next_version_tag(interp) \
+    (interp)->types.next_version_tag
 
 typedef struct PySlot_Offset {
     short subslot_offset;
@@ -331,7 +332,7 @@ _PyType_ClearCache(PyInterpreterState *interp)
     // use Py_SETREF() rather than using slower Py_XSETREF().
     type_cache_clear(cache, Py_None);
 
-    return next_version_tag - 1;
+    return next_version_tag(interp) - 1;
 }
 
 
@@ -400,7 +401,7 @@ PyType_ClearWatcher(int watcher_id)
     return 0;
 }
 
-static int assign_version_tag(PyTypeObject *type);
+static int assign_version_tag(PyInterpreterState *interp, PyTypeObject *type);
 
 int
 PyType_Watch(int watcher_id, PyObject* obj)
@@ -415,7 +416,7 @@ PyType_Watch(int watcher_id, PyObject* obj)
         return -1;
     }
     // ensure we will get a callback on the next modification
-    assign_version_tag(type);
+    assign_version_tag(interp, type);
     type->tp_watched |= (1 << watcher_id);
     return 0;
 }
@@ -549,7 +550,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 }
 
 static int
-assign_version_tag(PyTypeObject *type)
+assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
 {
     /* Ensure that the tp_version_tag is valid and set
        Py_TPFLAGS_VALID_VERSION_TAG.  To respect the invariant, this
@@ -563,18 +564,18 @@ assign_version_tag(PyTypeObject *type)
         return 0;
     }
 
-    if (next_version_tag == 0) {
+    if (next_version_tag(interp) == 0) {
         /* We have run out of version numbers */
         return 0;
     }
-    type->tp_version_tag = next_version_tag++;
+    type->tp_version_tag = next_version_tag(interp)++;
     assert (type->tp_version_tag != 0);
 
     PyObject *bases = type->tp_bases;
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
-        if (!assign_version_tag(_PyType_CAST(b)))
+        if (!assign_version_tag(interp, _PyType_CAST(b)))
             return 0;
     }
     type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
@@ -4165,6 +4166,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
     PyObject *res;
     int error;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     unsigned int h = MCACHE_HASH_METHOD(type, name);
     struct type_cache *cache = get_type_cache();
@@ -4199,7 +4201,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         return NULL;
     }
 
-    if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
+    if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(interp, type)) {
         h = MCACHE_HASH_METHOD(type, name);
         struct type_cache_entry *entry = &cache->hashtable[h];
         entry->version = type->tp_version_tag;
@@ -6985,7 +6987,11 @@ PyType_Ready(PyTypeObject *type)
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
-    self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
+    self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
+
+    assert(_PyRuntime.types.next_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
+    self->tp_version_tag = _PyRuntime.types.next_version_tag++;
+    self->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
 
     static_builtin_state_init(self);
 
