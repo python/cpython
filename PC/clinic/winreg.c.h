@@ -1204,7 +1204,7 @@ exit:
 
 #endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
+#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_QueryValue__doc__,
 "QueryValue($module, key, sub_key, /)\n"
@@ -1267,7 +1267,7 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
+#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
 
 #if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
 
@@ -1391,7 +1391,7 @@ exit:
 
 #endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
+#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_SetValue__doc__,
 "SetValue($module, key, sub_key, type, value, /)\n"
@@ -1474,7 +1474,7 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
+#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
 
 #if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
 
@@ -1795,4 +1795,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=be95e7a8d3498fc6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d3befb1f9c9d05c input=a9049054013a1b77]*/
