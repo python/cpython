@@ -202,7 +202,7 @@ class Queue(mixins._LoopBoundMixin):
                     # the call.  Wake up the next in line.
                     self._wakeup_next(self._getters)
                 raise
-            if self._shutdown_state is not _QueueState.ALIVE:
+            if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
                 raise QueueShutDown
         return self.get_nowait()
 
@@ -235,6 +235,8 @@ class Queue(mixins._LoopBoundMixin):
         Raises ValueError if called more times than there were items placed in
         the queue.
         """
+        if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
+            raise QueueShutDown
         if self._unfinished_tasks <= 0:
             raise ValueError('task_done() called too many times')
         self._unfinished_tasks -= 1
@@ -249,8 +251,12 @@ class Queue(mixins._LoopBoundMixin):
         indicate that the item was retrieved and all work on it is complete.
         When the count of unfinished tasks drops to zero, join() unblocks.
         """
+        if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
+            raise QueueShutDown
         if self._unfinished_tasks > 0:
             await self._finished.wait()
+            if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
+                raise QueueShutDown
 
     def shutdown(self, immediate=False):
         """Shut-down the queue, making queue gets and puts raise.
@@ -263,21 +269,21 @@ class Queue(mixins._LoopBoundMixin):
         """
         if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
             return
-
+        # here _shutdown_state is ALIVE or SHUTDOWN
         if immediate:
             self._shutdown_state = _QueueState.SHUTDOWN_IMMEDIATE
             while self._getters:
                 getter = self._getters.popleft()
                 if not getter.done():
                     getter.set_result(None)
-        else:
+            # Release 'blocked' tasks/coros via `.join()`
+            self._finished.set()
+        elif self._shutdown_state is _QueueState.ALIVE: # here
             self._shutdown_state = _QueueState.SHUTDOWN
         while self._putters:
             putter = self._putters.popleft()
             if not putter.done():
                 putter.set_result(None)
-        # Release 'blocked' tasks/coros via `.join()`
-        self._finished.set()
 
 
 class PriorityQueue(Queue):

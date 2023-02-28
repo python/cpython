@@ -525,12 +525,114 @@ class PriorityQueueJoinTests(_QueueJoinTestMixin, unittest.IsolatedAsyncioTestCa
 class _QueueShutdownTestMixin:
     q_class = None
 
+    async def _get(self, q, go, results):
+        await go.wait()
+        try:
+            msg = await q.get()
+            results.append(True)
+            return msg
+        except asyncio.QueueShutDown:
+            results.append(False)
+            return False
+
+    async def _get_shutdown(self, q, go, results):
+        await go.wait()
+        try:
+            msg = await q.get()
+            results.append(False)
+            return msg
+        except asyncio.QueueShutDown:
+            results.append(True)
+            return False
+
+    async def _get_nowait(self, q, go, results):
+        await go.wait()
+        try:
+            msg = q.get_nowait()
+            results.append(True)
+            return msg
+        except asyncio.QueueShutDown:
+            results.append(False)
+            return False
+
+    async def _get_task_done(self, q, go, results):
+        await go.wait()
+        try:
+            msg = await q.get()
+            q.task_done()
+            results.append(True)
+            return msg
+        except asyncio.QueueShutDown:
+            results.append(False)
+            return False
+
+    async def _get_nowait_shutdown(self, q, go, results):
+        await go.wait()
+        try:
+            msg = q.get_nowait()
+            results.append(False)
+        except asyncio.QueueShutDown:
+            results.append(True)
+            return True
+
+    async def _put_shutdown(self, q, go, msg, results):
+        await go.wait()
+        try:
+            await q.put(msg)
+            results.append(False)
+        except asyncio.QueueShutDown:
+            results.append(True)
+            return msg
+
+    async def _put_nowait_shutdown(self, q, go, msg, results):
+        await go.wait()
+        try:
+            q.put_nowait(msg)
+            results.append(False)
+        except asyncio.QueueShutDown:
+            results.append(True)
+            return msg
+
+    async def _shutdown(self, q, go, immediate):
+        await asyncio.sleep(0.001)
+        q.shutdown(immediate)
+        await asyncio.sleep(0.001)
+        go.set()
+        await asyncio.sleep(0.001)
+
+    async def _join(self, q, go, results):
+        await go.wait()
+        try:
+            await q.join()
+            results.append(True)
+            return True
+        except asyncio.QueueShutDown:
+            results.append(False)
+            return False
+
+    async def _join_shutdown(self, q, go, results):
+        await go.wait()
+        try:
+            await q.join()
+            results.append(False)
+            return False
+        except asyncio.QueueShutDown:
+            results.append(True)
+            return True
+        except asyncio.CancelledError:
+            results.append(True)
+            raise
+
     async def test_empty(self):
         q = self.q_class()
         q.shutdown()
-        with self.assertRaises(asyncio.QueueShutDown):
+        with self.assertRaises(
+            asyncio.QueueShutDown, msg="Didn't appear to shut-down queue"
+        ):
             await q.put("data")
-        with self.assertRaises(asyncio.QueueShutDown):
+        with self.assertRaises(
+            asyncio.QueueShutDown, msg="Didn't appear to shut-down queue"
+        ):
             await q.get()
 
     async def test_nonempty(self):
@@ -538,18 +640,24 @@ class _QueueShutdownTestMixin:
         q.put_nowait("data")
         q.shutdown()
         await q.get()
-        with self.assertRaises(asyncio.QueueShutDown):
+        with self.assertRaises(
+            asyncio.QueueShutDown, msg="Didn't appear to shut-down queue"
+        ):
             await q.get()
 
     async def test_immediate(self):
         q = self.q_class()
         q.put_nowait("data")
         q.shutdown(immediate=True)
-        with self.assertRaises(asyncio.QueueShutDown):
+        with self.assertRaises(
+            asyncio.QueueShutDown, msg="Didn't appear to shut-down queue"
+        ):
             await q.get()
 
     async def test_shutdown_repr(self):
         q = self.q_class()
+        self.assertNotIn("alive", repr(q))
+
         q.shutdown()
         self.assertIn("shutdown", repr(q))
 
@@ -557,7 +665,7 @@ class _QueueShutdownTestMixin:
         q.shutdown(immediate=True)
         self.assertIn("shutdown-immediate", repr(q))
 
-    async def test_shutdown_transition(self):
+    async def test_shutdown_allowed_transitions(self):
         # allowed transitions would be from alive via shutdown to immediate
         q = self.q_class()
         self.assertEqual("alive", q._shutdown_state.value)
@@ -568,73 +676,142 @@ class _QueueShutdownTestMixin:
         q.shutdown(immediate=True)
         self.assertEqual("shutdown-immediate", q._shutdown_state.value)
 
-        q.shutdown()
-        self.assertEqual("shutdown-immediate", q._shutdown_state.value)
+        q.shutdown(immediate=False)
+        self.assertNotEqual("shutdown", q._shutdown_state.value)
 
-    async def test_shutdown_immediate_get(self):
-        q = self.q_class()
+    async def _shutdown_putters(self, immediate):
+        delay = 0.001
+        q = self.q_class(2)
         results = []
-        go = asyncio.Event()
-
-        async def get_once(q, go):
-            await go.wait()
-            try:
-                msg = await q.get()
-                results.append(False)
-            except asyncio.QueueShutDown:
-                results.append(True)
-                return True
-
-        async def shutdown(q, go, immediate):
+        await q.put("E")
+        await q.put("W")
+        # queue full
+        t = asyncio.create_task(q.put("Y"))
+        await asyncio.sleep(delay)
+        self.assertTrue(len(q._putters) == 1)
+        with self.assertRaises(asyncio.QueueShutDown):
+            # here `t` raises a QueueShuDown
             q.shutdown(immediate)
-            go.set()
-            return True
+            await t
+        self.assertTrue(not q._putters)
 
-        tasks = (
-            (get_once, (q, go)),
-            (get_once, (q, go)),
-        )
-        t = []
-        for coro, params in tasks:
-            t.append(asyncio.create_task(coro(*params)))
-        t.append(asyncio.create_task(shutdown(q, go, True)))
-        res = await asyncio.gather(*t)
+    async def test_shutdown_putters_deque(self):
+        return await self._shutdown_putters(False)
 
-        self.assertEqual(results, [True]*len(tasks))
+    async def test_shutdown_immediate_putters_deque(self):
+        return await self._shutdown_putters(True)
 
+    async def _shutdown_getters(self, immediate):
+        delay = 0.001
+        q = self.q_class(1)
+        results = []
+        await q.put("Y")
+        # queue full
+        asyncio.create_task(q.get())
+        await asyncio.sleep(delay)
+        t = asyncio.create_task(q.get())
+        await asyncio.sleep(delay)
+        self.assertTrue(len(q._getters) == 1)
+        if immediate:
+            # here `t` raises a QueueShuDown
+            with self.assertRaises(asyncio.QueueShutDown):
+                q.shutdown(immediate)
+                await t
+            self.assertTrue(not q._getters)
+        else:
+            # here `t` is always pending
+            q.shutdown(immediate)
+            await asyncio.sleep(delay)
+            self.assertTrue(q._getters)
 
-    async def _shutdown_put(self, immediate):
+    async def test_shutdown_getters_deque(self):
+        return await self._shutdown_getters(False)
+
+    async def test_shutdown_immediate_getters_deque(self):
+        return await self._shutdown_getters(True)
+
+    async def _shutdown_get_nowait(self, immediate):
         q = self.q_class(2)
         results = []
         go = asyncio.Event()
         await q.put("Y")
         await q.put("D")
-        # queue fulled
+        nb = q.qsize()
+        # queue full
 
-        async def put_once(q, go, msg):
-            await go.wait()
-            try:
-                await q.put(msg)
-                results.append(False)
-            except asyncio.QueueShutDown:
-                results.append(True)
-                return msg
-
-        async def shutdown(q, go, immediate):
-            q.shutdown(immediate)
-            go.set()
-
-        tasks = (
-            (put_once, (q, go, 100)),
-            (put_once, (q, go, 200)),
-        )
+        if immediate:
+            coros = (
+                (self._get_nowait_shutdown(q, go, results)),
+                (self._get_nowait_shutdown(q, go, results)),
+            )
+        else:
+            coros = (
+                (self._get_nowait(q, go, results)),
+                (self._get_nowait(q, go, results)),
+            )
         t = []
-        for coro, params in tasks:
-            t.append(asyncio.create_task(coro(*params)))
-        t.append(asyncio.create_task(shutdown(q, go, immediate)))
+        for coro in coros:
+            t.append(asyncio.create_task(coro))
+        t.append(asyncio.create_task(self._shutdown(q, go, immediate)))
         res = await asyncio.gather(*t)
 
-        self.assertEqual(results, [True]*len(tasks))
+        self.assertEqual(results, [True]*len(coros))
+        self.assertEqual(len(q._putters), 0)
+        if immediate:
+            self.assertEqual(len(q._getters), 0)
+        self.assertEqual(q._unfinished_tasks, nb)
+
+    async def test_shutdown_get_nowait(self):
+        return await self._shutdown_get_nowait(False)
+
+    async def test_shutdown_immediate_get_nowait(self):
+        return await self._shutdown_get_nowait(True)
+
+    async def test_shutdown_get_task_done_join(self, immediate=False):
+        q = self.q_class(2)
+        results = []
+        go = asyncio.Event()
+        await q.put("Y")
+        await q.put("D")
+        self.assertEqual(q._unfinished_tasks, q.qsize())
+
+        # queue full
+
+        coros = (
+            (self._get_task_done(q, go, results)),
+            (self._get_task_done(q, go, results)),
+            (self._join(q, go, results)),
+            (self._join(q, go, results)),
+        )
+        t = []
+        for coro in coros:
+            t.append(asyncio.create_task(coro))
+        t.append(asyncio.create_task(self._shutdown(q, go, False)))
+        res = await asyncio.gather(*t)
+
+        self.assertEqual(results, [True]*len(coros))
+        self.assertIn(t[0].result(), "YD")
+        self.assertIn(t[1].result(), "YD")
+        self.assertNotEqual(t[0].result(), t[1].result())
+        self.assertEqual(q._unfinished_tasks, 0)
+
+    async def _shutdown_put(self, immediate):
+        q = self.q_class()
+        results = []
+        go = asyncio.Event()
+        # queue not empty
+
+        coros = (
+            (self._put_shutdown(q, go, "Y", results)),
+            (self._put_nowait_shutdown(q, go, "D", results)),
+        )
+        t = []
+        for coro in coros:
+            t.append(asyncio.create_task(coro))
+        t.append(asyncio.create_task(self._shutdown(q, go, immediate)))
+        res = await asyncio.gather(*t)
+
+        self.assertEqual(results, [True]*len(coros))
 
     async def test_shutdown_put(self):
         return await self._shutdown_put(False)
@@ -642,53 +819,47 @@ class _QueueShutdownTestMixin:
     async def test_shutdown_immediate_put(self):
         return await self._shutdown_put(True)
 
-
-    async def _shutdown_put_and_join(self, immediate):
+    async def _shutdown_put_join(self, immediate):
         q = self.q_class(2)
         results = []
         go = asyncio.Event()
         await q.put("Y")
         await q.put("D")
+        nb = q.qsize()
         # queue fulled
 
-        async def put_once(q, go, msg):
-            await go.wait()
-            try:
-                await q.put(msg)
-                results.append(False)
-            except asyncio.QueueShutDown:
-                results.append(True)
-                return msg
+        async def _cancel_join_task(q, delay, t):
+            await asyncio.sleep(delay)
+            t.cancel()
+            await asyncio.sleep(0)
+            q._finished.set()
 
-        async def shutdown(q, go, immediate):
-            q.shutdown(immediate)
-            go.set()
-
-        async def join(q, go):
-            await go.wait()
-            await q.join()
-            results.append(True)
-            return True
-
-        tasks = (
-            (put_once, (q, go, 'E')),
-            (put_once, (q, go, 'W')),
-            (join, (q, go)),
-            (join, (q, go)),
+        coros = (
+            (self._put_shutdown(q, go, "E", results)),
+            (self._put_nowait_shutdown(q, go, "W", results)),
+            (self._join_shutdown(q, go, results)),
         )
         t = []
-        for coro, params in tasks:
-            t.append(asyncio.create_task(coro(*params)))
-        t.append(asyncio.create_task(shutdown(q, go, immediate)))
-        res = await asyncio.gather(*t)
+        for coro in coros:
+            t.append(asyncio.create_task(coro))
+        t.append(asyncio.create_task(self._shutdown(q, go, immediate)))
+        if not immediate:
+            # Here calls `join` is a blocking operation
+            # so wait for a delay and cancel this blocked task
+            t.append(asyncio.create_task(_cancel_join_task(q, 0.01, t[2])))
+            with self.assertRaises(asyncio.CancelledError) as e:
+                await asyncio.gather(*t)
+        else:
+            res = await asyncio.gather(*t)
 
-        self.assertEqual(results, [True]*len(tasks))
+        self.assertEqual(results, [True]*len(coros))
+        self.assertTrue(q._finished.is_set())
 
     async def test_shutdown_put_and_join(self):
-        return await self._shutdown_put_and_join(False)
+        return await self._shutdown_put_join(False)
 
     async def test_shutdown_immediate_put_and_join(self):
-        return await self._shutdown_put_and_join(True)
+        return await self._shutdown_put_join(True)
 
 
 class QueueShutdownTests(
