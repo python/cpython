@@ -175,13 +175,13 @@ static struct jump_target_label_ NO_LABEL = {-1};
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = instr_stream_new_label(INSTR_STREAM(C)); \
+    jump_target_label NAME = instr_sequence_new_label(INSTR_STREAM(C)); \
     if (!IS_LABEL(NAME)) { \
         return ERROR; \
     }
 
 #define USE_LABEL(C, LBL) \
-    RETURN_IF_ERROR(instr_stream_use_label(INSTR_STREAM(C), (LBL).id))
+    RETURN_IF_ERROR(instr_sequence_use_label(INSTR_STREAM(C), (LBL).id))
 
 struct instr {
     int i_opcode;
@@ -418,7 +418,7 @@ typedef struct codegen_instr_ {
 } codegen_instr;
 
 /* A write-only stream of instructions */
-typedef struct instr_stream_ {
+typedef struct instr_sequence_ {
     codegen_instr *s_instrs;
     int s_allocated;
     int s_used;
@@ -426,49 +426,49 @@ typedef struct instr_stream_ {
     int *s_labelmap;       /* label id --> instr offset */
     int s_labelmap_size;
     int s_next_free_label; /* next free label id */
-} instr_stream;
+} instr_sequence;
 
 #define INITIAL_INSTR_STREAM_SIZE 100
 #define INITIAL_INSTR_STREAM_LABELS_MAP_SIZE 10
 
 static int
-instr_stream_next_inst(instr_stream *is) {
-    if (is->s_instrs == NULL) {
-        assert(is->s_allocated == 0);
-        assert(is->s_used == 0);
-        is->s_instrs = (codegen_instr *)PyObject_Calloc(
+instr_sequence_next_inst(instr_sequence *seq) {
+    if (seq->s_instrs == NULL) {
+        assert(seq->s_allocated == 0);
+        assert(seq->s_used == 0);
+        seq->s_instrs = (codegen_instr *)PyObject_Calloc(
                          INITIAL_INSTR_STREAM_SIZE, sizeof(codegen_instr));
-        if (is->s_instrs == NULL) {
+        if (seq->s_instrs == NULL) {
             return ERROR;
         }
-        is->s_allocated = INITIAL_INSTR_STREAM_SIZE;
+        seq->s_allocated = INITIAL_INSTR_STREAM_SIZE;
     }
-    if (is->s_used == is->s_allocated) {
+    if (seq->s_used == seq->s_allocated) {
         codegen_instr *tmp = (codegen_instr *)PyObject_Realloc(
-                         is->s_instrs, 2 * is->s_allocated * sizeof(codegen_instr));
+                         seq->s_instrs, 2 * seq->s_allocated * sizeof(codegen_instr));
         if (tmp == NULL) {
             return ERROR;
         }
-        is->s_instrs = tmp;
-        is->s_allocated *= 2;
+        seq->s_instrs = tmp;
+        seq->s_allocated *= 2;
     }
-    assert(is->s_used < is->s_allocated);
-    return is->s_used++;
+    assert(seq->s_used < seq->s_allocated);
+    return seq->s_used++;
 }
 
 static jump_target_label
-instr_stream_new_label(instr_stream *is)
+instr_sequence_new_label(instr_sequence *seq)
 {
-    jump_target_label lbl = {is->s_next_free_label++};
+    jump_target_label lbl = {seq->s_next_free_label++};
     return lbl;
 }
 
 static int
-instr_stream_use_label(instr_stream *is, int lbl) {
-    if (is->s_labelmap_size <= lbl) {
+instr_sequence_use_label(instr_sequence *seq, int lbl) {
+    if (seq->s_labelmap_size <= lbl) {
         int old_size, new_size;
         int *tmp = NULL;
-        if (is->s_labelmap == NULL) {
+        if (seq->s_labelmap == NULL) {
             old_size = 0;
             new_size = INITIAL_INSTR_STREAM_LABELS_MAP_SIZE;
             if (new_size < 2 * lbl) {
@@ -477,9 +477,9 @@ instr_stream_use_label(instr_stream *is, int lbl) {
             tmp = (int*)PyObject_Calloc(new_size, sizeof(int));
         }
         else {
-            old_size = is->s_labelmap_size;
+            old_size = seq->s_labelmap_size;
             new_size = 2 * lbl;
-            tmp = (int*)PyObject_Realloc(is->s_labelmap,
+            tmp = (int*)PyObject_Realloc(seq->s_labelmap,
                                          new_size * sizeof(int));
         }
         if (tmp == NULL) {
@@ -488,24 +488,24 @@ instr_stream_use_label(instr_stream *is, int lbl) {
         for(int i = old_size; i < new_size; i++) {
             tmp[i] = -111;  /* something weird, for debugging */
         }
-        is->s_labelmap = tmp;
-        is->s_labelmap_size = new_size;
+        seq->s_labelmap = tmp;
+        seq->s_labelmap_size = new_size;
     }
-    is->s_labelmap[lbl] = is->s_used; /* label refers to the next instruction */
+    seq->s_labelmap[lbl] = seq->s_used; /* label refers to the next instruction */
     return SUCCESS;
 }
 
 static int
-instr_stream_addop(instr_stream *is, int opcode, int oparg, location loc)
+instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
 
-    int idx = instr_stream_next_inst(is);
+    int idx = instr_sequence_next_inst(seq);
     RETURN_IF_ERROR(idx);
-    codegen_instr *ci = &is->s_instrs[idx];
+    codegen_instr *ci = &seq->s_instrs[idx];
     ci->ci_opcode = opcode;
     ci->ci_oparg = oparg;
     ci->ci_loc = loc;
@@ -513,36 +513,36 @@ instr_stream_addop(instr_stream *is, int opcode, int oparg, location loc)
 }
 
 static int
-instr_stream_insert_instruction(instr_stream *is, int pos,
-                                int opcode, int oparg, location loc)
+instr_sequence_insert_instruction(instr_sequence *seq, int pos,
+                                  int opcode, int oparg, location loc)
 {
-    assert(pos >= 0 && pos <= is->s_used);
-    int last_idx = instr_stream_next_inst(is);
+    assert(pos >= 0 && pos <= seq->s_used);
+    int last_idx = instr_sequence_next_inst(seq);
     RETURN_IF_ERROR(last_idx);
     for (int i=last_idx-1; i >= pos; i--) {
-        is->s_instrs[i+1] = is->s_instrs[i];
+        seq->s_instrs[i+1] = seq->s_instrs[i];
     }
-    codegen_instr *ci = &is->s_instrs[pos];
+    codegen_instr *ci = &seq->s_instrs[pos];
     ci->ci_opcode = opcode;
     ci->ci_oparg = oparg;
     ci->ci_loc = loc;
 
     /* fix the labels map */
-    for(int lbl=0; lbl < is->s_labelmap_size; lbl++) {
-        if (is->s_labelmap[lbl] >= pos) {
-            is->s_labelmap[lbl]++;
+    for(int lbl=0; lbl < seq->s_labelmap_size; lbl++) {
+        if (seq->s_labelmap[lbl] >= pos) {
+            seq->s_labelmap[lbl]++;
         }
     }
     return SUCCESS;
 }
 
 static void
-instr_stream_fini(instr_stream *is) {
-    PyObject_Free(is->s_labelmap);
-    is->s_labelmap = NULL;
+instr_sequence_fini(instr_sequence *seq) {
+    PyObject_Free(seq->s_labelmap);
+    seq->s_labelmap = NULL;
 
-    PyObject_Free(is->s_instrs);
-    is->s_instrs = NULL;
+    PyObject_Free(seq->s_instrs);
+    seq->s_instrs = NULL;
 }
 
 static int basicblock_addop(basicblock *b, int opcode, int oparg, location loc);
@@ -565,18 +565,18 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
 static int cfg_builder_init(cfg_builder *g);
 
 static int
-instr_stream_to_cfg(instr_stream *is, cfg_builder *g) {
+instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
     memset(g, 0, sizeof(cfg_builder));
     RETURN_IF_ERROR(cfg_builder_init(g));
     /* Note: there can be more than one label for the same offset */
-    for (int i = 0; i < is->s_used; i++) {
-        for (int j=0; j < is->s_labelmap_size; j++) {
-            if (is->s_labelmap[j] == i) {
+    for (int i = 0; i < seq->s_used; i++) {
+        for (int j=0; j < seq->s_labelmap_size; j++) {
+            if (seq->s_labelmap[j] == i) {
                 jump_target_label lbl = {j};
                 RETURN_IF_ERROR(cfg_builder_use_label(g, lbl));
             }
         }
-        codegen_instr *instr = &is->s_instrs[i];
+        codegen_instr *instr = &seq->s_instrs[i];
         RETURN_IF_ERROR(cfg_builder_addop(g, instr->ci_opcode, instr->ci_oparg, instr->ci_loc));
     }
     return SUCCESS;
@@ -609,7 +609,7 @@ struct compiler_unit {
     Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
     Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
 
-    instr_stream u_instr_stream; /* codegen output */
+    instr_sequence u_instr_sequence; /* codegen output */
 
     int u_nfblocks;
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
@@ -645,7 +645,7 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-#define INSTR_STREAM(C) (&((C)->u->u_instr_stream))
+#define INSTR_STREAM(C) (&((C)->u->u_instr_sequence))
 
 
 typedef struct {
@@ -675,7 +675,7 @@ typedef struct {
 
 static int basicblock_next_instr(basicblock *);
 
-static int codegen_addop_i(instr_stream *is, int opcode, Py_ssize_t oparg, location loc);
+static int codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc);
 
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, location loc, const char *, ...);
@@ -1023,7 +1023,7 @@ cfg_builder_fini(cfg_builder* g)
 static void
 compiler_unit_free(struct compiler_unit *u)
 {
-    instr_stream_fini(&u->u_instr_stream);
+    instr_sequence_fini(&u->u_instr_sequence);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
     Py_CLEAR(u->u_qualname);
@@ -1352,10 +1352,10 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
 }
 
 static int
-codegen_addop_noarg(instr_stream *is, int opcode, location loc)
+codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
-    return instr_stream_addop(is, opcode, 0, loc);
+    return instr_sequence_addop(seq, opcode, 0, loc);
 }
 
 static Py_ssize_t
@@ -1555,7 +1555,7 @@ compiler_addop_name(struct compiler *c, location loc,
 
 /* Add an opcode with an integer argument */
 static int
-codegen_addop_i(instr_stream *is, int opcode, Py_ssize_t oparg, location loc)
+codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
 {
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1566,16 +1566,16 @@ codegen_addop_i(instr_stream *is, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return instr_stream_addop(is, opcode, oparg_, loc);
+    return instr_sequence_addop(seq, opcode, oparg_, loc);
 }
 
 static int
-codegen_addop_j(instr_stream *is, location loc,
+codegen_addop_j(instr_sequence *seq, location loc,
                     int opcode, jump_target_label target)
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return instr_stream_addop(is, opcode, target.id, loc);
+    return instr_sequence_addop(seq, opcode, target.id, loc);
 }
 
 #define ADDOP(C, LOC, OP) \
@@ -2544,7 +2544,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
 
     /* Insert SETUP_CLEANUP at start */
     RETURN_IF_ERROR(
-        instr_stream_insert_instruction(
+        instr_sequence_insert_instruction(
             INSTR_STREAM(c), 0,
             SETUP_CLEANUP, handler.id, NO_LOCATION));
 
@@ -8690,7 +8690,7 @@ static int
 add_return_at_end(struct compiler *c, int addNone)
 {
     /* Make sure every instruction stream that falls off the end returns None. */
-    instr_stream *is = INSTR_STREAM(c);
+    instr_sequence *is = INSTR_STREAM(c);
     if (is->s_used > 0) {
         codegen_instr *instr = &is->s_instrs[is->s_used];
         int opcode = instr->ci_opcode;
@@ -8725,7 +8725,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Preprocessing **/
-    if (instr_stream_to_cfg(INSTR_STREAM(c), g) < 0) {
+    if (instr_sequence_to_cfg(INSTR_STREAM(c), g) < 0) {
         goto error;
     }
     assert(cfg_builder_check(g));
@@ -10002,7 +10002,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     }
 
     cfg_builder g;
-    if (instr_stream_to_cfg(INSTR_STREAM(c), &g) < 0) {
+    if (instr_sequence_to_cfg(INSTR_STREAM(c), &g) < 0) {
         goto finally;
     }
     if (translate_jump_labels_to_targets(g.g_entryblock) < 0) {
