@@ -1137,7 +1137,7 @@ time_tzset(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-#ifdef MS_WINDOWS_DESKTOP_APP
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP_APP)
     tzset();
 #endif
 
@@ -1757,7 +1757,7 @@ init_timezone(PyObject *m)
      */
 #ifdef HAVE_DECL_TZNAME
     PyObject *otz0, *otz1;
-#ifdef MS_WINDOWS_DESKTOP_APP
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP_APP)
     tzset();
 #endif
     PyModule_AddIntConstant(m, "timezone", _Py_timezone);
