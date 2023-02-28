@@ -159,6 +159,8 @@ By convention cache effects (`stream`) must precede the input effects.
 
 The name `oparg` is pre-defined as a 32 bit value fetched from the instruction stream.
 
+## Special functions/macros
+
 The C code may include special functions that are understood by the tools as
 part of the DSL.
 
@@ -167,6 +169,10 @@ Those functions include:
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
 * `ERROR_IF(cond, label)`. Jump to error handler if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
+
+Note that the use of `DECREF_INPUTS()` is optional -- manual calls
+to `Py_DECREF()` or other approaches are also acceptable
+(e.g. calling an API that "steals" a reference).
 
 Variables can either be defined in the input, output, or in the C code.
 Variables defined in the input may not be assigned in the C code.
@@ -186,6 +192,22 @@ These requirements result in the following constraints on the use of
    `ERROR_IF(result == NULL, label)`. (TODO: Unclear what to do with
    intermediate results.)
 3. No `DEOPT_IF` may follow an `ERROR_IF` in the same block.
+
+If an error condition is detected before the first `DECREF` of an input,
+two idioms are valid:
+
+- Just use `goto error`.
+- Use a block containing the appropriate `DECREF` calls ending in
+  `ERROR_IF(true, error)`.
+
+An example of the latter would be:
+```cc
+    res = PyObject_Add(left, right);
+    if (res == NULL) {
+        DECREF_INPUTS();
+        ERROR_IF(true, error);
+    }
+```
 
 Semantics
 ---------
