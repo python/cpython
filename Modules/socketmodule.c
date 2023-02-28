@@ -606,11 +606,6 @@ select_error(void)
 #  define SUPPRESS_DEPRECATED_CALL
 #endif
 
-#ifdef MS_WINDOWS
-/* Does WSASocket() support the WSA_FLAG_NO_HANDLE_INHERIT flag? */
-static int support_wsa_no_inherit = -1;
-#endif
-
 /* Convenience function to raise an error according to errno
    and return a NULL pointer from a function. */
 
@@ -5336,7 +5331,8 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
             Py_BEGIN_ALLOW_THREADS
             fd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
-                     FROM_PROTOCOL_INFO, &info, 0, WSA_FLAG_OVERLAPPED);
+                     FROM_PROTOCOL_INFO, &info, 0,
+                     WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
             Py_END_ALLOW_THREADS
             if (fd == INVALID_SOCKET) {
                 set_error();
@@ -5438,32 +5434,14 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 #endif
 
         Py_BEGIN_ALLOW_THREADS
-        if (support_wsa_no_inherit) {
-            fd = WSASocketW(family, type, proto,
-                           NULL, 0,
-                           WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
-            if (fd == INVALID_SOCKET) {
-                /* Windows 7 or Windows 2008 R2 without SP1 or the hotfix */
-                support_wsa_no_inherit = 0;
-                fd = socket(family, type, proto);
-            }
-        }
-        else {
-            fd = socket(family, type, proto);
-        }
+        fd = WSASocketW(family, type, proto,
+                        NULL, 0,
+                        WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
         Py_END_ALLOW_THREADS
 
         if (fd == INVALID_SOCKET) {
             set_error();
             return -1;
-        }
-
-        if (!support_wsa_no_inherit) {
-            if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
-                closesocket(fd);
-                PyErr_SetFromWindowsErr(0);
-                return -1;
-            }
         }
 #else
         /* UNIX */
@@ -6175,15 +6153,10 @@ socket_dup(PyObject *self, PyObject *fdobj)
 
     newfd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                       FROM_PROTOCOL_INFO,
-                      &info, 0, WSA_FLAG_OVERLAPPED);
+                      &info, 0,
+                      WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
     if (newfd == INVALID_SOCKET)
         return set_error();
-
-    if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
-        closesocket(newfd);
-        PyErr_SetFromWindowsErr(0);
-        return NULL;
-    }
 #else
     /* On UNIX, dup can be used to duplicate the file descriptor of a socket */
     newfd = _Py_dup(fd);
@@ -7339,12 +7312,6 @@ PyInit__socket(void)
 
     if (!os_init())
         return NULL;
-
-#ifdef MS_WINDOWS
-    if (support_wsa_no_inherit == -1) {
-        support_wsa_no_inherit = IsWindows7SP1OrGreater();
-    }
-#endif
 
     Py_SET_TYPE(&sock_type, &PyType_Type);
     m = PyModule_Create(&socketmodule);
