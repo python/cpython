@@ -14554,17 +14554,13 @@ _PyUnicode_InitState(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     /* Intern statically allocated string identifiers and deepfreeze strings.
      * This must be done before any module initialization so that statically
      * allocated string identifiers are used instead of heap allocated strings.
      * Deepfreeze uses the interned identifiers if present to save space
      * else generates them and they are interned to speed up dict lookups.
     */
-    _PyUnicode_InitStaticStrings();
+    _PyUnicode_InitStaticStrings(interp);
 
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
@@ -14602,7 +14598,7 @@ error:
 
 
 void
-PyUnicode_InternInPlace(PyObject **p)
+_PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
 {
     PyObject *s = *p;
 #ifdef Py_DEBUG
@@ -14624,7 +14620,6 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *interned = ensure_interned_dict(interp);
     if (interned == NULL) {
         PyErr_Clear(); /* Don't leave an exception */
@@ -14647,6 +14642,13 @@ PyUnicode_InternInPlace(PyObject **p)
        this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = 1;
+}
+
+void
+PyUnicode_InternInPlace(PyObject **p)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternInPlace(interp, p);
 }
 
 // Function kept for the stable ABI.
