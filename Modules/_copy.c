@@ -11,7 +11,11 @@ module _copy
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b34c1b75f49dbfff]*/
 
-#define object_id PyLong_FromVoidPtr
+static inline PyObject *
+object_id(PyObject* obj)
+{
+    return PyLong_FromVoidPtr(obj);
+}
 
 typedef struct {
     PyObject *python_copy_module;
@@ -314,8 +318,9 @@ do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
 
     /* Have we already done a deepcopy of x? */
     id_x = object_id(x);
-    if (id_x == NULL)
+    if (id_x == NULL) {
         return NULL;
+    }
     hash_id_x = PyObject_Hash(id_x);
 
     y = _PyDict_GetItem_KnownHash(memo, id_x, hash_id_x);
