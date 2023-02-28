@@ -1,0 +1,3 @@
+Introduced the *Unstable C API tier*, marking APi that is allowed to change
+in minor releases without a deprecation period.
+See :pep:`689` for details.

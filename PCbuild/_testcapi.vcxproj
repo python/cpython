@@ -108,6 +108,7 @@
     <ClCompile Include="..\Modules\_testcapi\long.c" />
     <ClCompile Include="..\Modules\_testcapi\structmember.c" />
     <ClCompile Include="..\Modules\_testcapi\exceptions.c" />
+    <ClCompile Include="..\Modules\_testcapi\code.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
