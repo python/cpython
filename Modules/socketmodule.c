@@ -5331,8 +5331,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
             Py_BEGIN_ALLOW_THREADS
             fd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
-                     FROM_PROTOCOL_INFO, &info, 0,
-                     WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
+                     FROM_PROTOCOL_INFO, &info, 0, WSA_FLAG_OVERLAPPED);
             Py_END_ALLOW_THREADS
             if (fd == INVALID_SOCKET) {
                 set_error();
@@ -6153,10 +6152,15 @@ socket_dup(PyObject *self, PyObject *fdobj)
 
     newfd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                       FROM_PROTOCOL_INFO,
-                      &info, 0,
-                      WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
+                      &info, 0, WSA_FLAG_OVERLAPPED);
     if (newfd == INVALID_SOCKET)
         return set_error();
+
+    if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
+        closesocket(newfd);
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
 #else
     /* On UNIX, dup can be used to duplicate the file descriptor of a socket */
     newfd = _Py_dup(fd);
