@@ -30,7 +30,7 @@
 #  include <winioctl.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP
-#  ifdef MS_WINDOWS_DESKTOP_APP
+#  ifdef MS_WINDOWS_DESKTOP
 #    define HAVE_SYMLINK
 #  endif
 #endif
@@ -333,7 +333,7 @@ corresponding Unix manual entries for more information on calls.");
 #  include <process.h>
 #elif defined( _MSC_VER)
   /* Microsoft compiler */
-#  ifdef MS_WINDOWS_DESKTOP_APP
+#  ifdef MS_WINDOWS_DESKTOP
 #    define HAVE_GETPPID    1
 #    define HAVE_GETLOGIN   1
 #    define HAVE_SPAWNV     1
@@ -342,7 +342,7 @@ corresponding Unix manual entries for more information on calls.");
 #    define HAVE_WEXECV     1
 #    define HAVE_SYSTEM     1
 #    define HAVE_CWAIT      1
-#  endif /* MS_WINDOWS_DESKTOP_APP */
+#  endif /* MS_WINDOWS_DESKTOP */
 #  define HAVE_PIPE       1
 #  define HAVE_FSYNC      1
 #  define fsync _commit
@@ -4419,7 +4419,7 @@ exit:
     return result;
 }
 
-#ifdef MS_WINDOWS_GAMES
+#if !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
 // The Windows Games API partition does not provide PathCchSkipRoot
 // so we need our own implementation
 static wchar_t*
@@ -4452,7 +4452,7 @@ win32_games_skip_root(wchar_t* path)
     /* relative path */
     return NULL;
 }
-#endif
+#endif /* MS_WINDOWS_GAMES && !MS_WINDOWS_DESKTOP */
 
 /*[clinic input]
 os._path_splitroot
@@ -4480,13 +4480,13 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
         *p = L'\\';
     }
 
-#ifdef MS_WINDOWS_GAMES
-    end = win32_games_skip_root(buffer);
-    ret = (end != NULL) ? S_OK : E_INVALIDARG;
-#else
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     Py_BEGIN_ALLOW_THREADS
     ret = PathCchSkipRoot(buffer, &end);
     Py_END_ALLOW_THREADS
+#else
+    end = win32_games_skip_root(buffer);
+    ret = (end != NULL) ? S_OK : E_INVALIDARG;
 #endif
     if (FAILED(ret)) {
         result = Py_BuildValue("sO", "", path->object);
@@ -7971,7 +7971,7 @@ static PyObject *
 os_getpid_impl(PyObject *module)
 /*[clinic end generated code: output=9ea6fdac01ed2b3c input=5a9a00f0ab68aa00]*/
 {
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_DESKTOP_APP)
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_DESKTOP)
     return PyLong_FromUnsignedLong(GetCurrentProcessId());
 #else
     return PyLong_FromPid(getpid());
@@ -8430,7 +8430,7 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
     DWORD err;
     HANDLE handle;
 
-#if !defined(MS_WINDOWS_GAMES)
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     /* Console processes which share a common console can be sent CTRL+C or
        CTRL+BREAK events, provided they handle said events. */
     if (sig == CTRL_C_EVENT || sig == CTRL_BREAK_EVENT) {
@@ -8442,7 +8442,7 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
             Py_RETURN_NONE;
         }
     }
-#endif
+#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
 
     /* If the signal is outside of what GenerateConsoleCtrlEvent can use,
        attempt to open and terminate the process. */
@@ -13822,7 +13822,7 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
-#ifdef MS_WINDOWS_DESKTOP_APP
+#ifdef MS_WINDOWS_DESKTOP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 #endif
 #elif defined(__hpux)
@@ -15075,7 +15075,8 @@ error:
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+
 /* bpo-36085: Helper functions for managing DLL search directories
  * on win32
  */
@@ -15166,7 +15167,7 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
     Py_RETURN_NONE;
 }
 
-#endif /* MS_WINDOWS && !MS_WINDOWS_GAMES */
+#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
 
 
 /* Only check if WIFEXITED is available: expect that it comes

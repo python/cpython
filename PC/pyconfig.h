@@ -72,18 +72,17 @@ WIN32 is still required for the locale module.
 #define USE_SOCKET
 #endif
 
-#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)
-#  define MS_WINDOWS_DESKTOP_APP
-#elif defined(WINAPI_FAMILY_PC_APP)
-#  define MS_WINDOWS_PC_APP
-#elif defined(WINAPI_FAMILY_PHONE_APP)
-#  define MS_WINDOWS_PHONE_APP
-#elif defined(WINAPI_FAMILY_SYSTEM)
-#  define MS_WINDOWS_SYSTEM
-#elif defined(WINAPI_FAMILY_SERVER )
-#  define MS_WINDOWS_SERVER
-#elif defined(WINAPI_FAMILY_GAMES)
-#  define MS_WINDOWS_GAMES
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#define MS_WINDOWS_DESKTOP
+#endif
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
+#define MS_WINDOWS_APP
+#endif
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_SYSTEM)
+#define MS_WINDOWS_SYSTEM
+#endif
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_GAMES)
+#define MS_WINDOWS_GAMES
 #endif
 
 /* Compiler specific defines */
@@ -399,7 +398,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define HAVE_CONIO_H 1
 
 /* Define to 1 if you support windows console io */
-#if defined(Py_BUILD_CORE) && !defined(MS_WINDOWS_GAMES)
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
 #define HAVE_WINDOWS_CONSOLE_IO 1
 #endif
 

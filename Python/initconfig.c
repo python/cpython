@@ -822,11 +822,7 @@ config_init_defaults(PyConfig *config)
     config->buffered_stdio = 1;
     config->pathconfig_warnings = 1;
 #ifdef MS_WINDOWS
-#ifdef MS_WINDOWS_GAMES
-    config->legacy_windows_stdio = 1;
-#else
     config->legacy_windows_stdio = 0;
-#endif
 #endif
 }
 
@@ -861,11 +857,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
-#ifdef MS_WINDOWS_GAMES
-    config->legacy_windows_stdio = 1;
-#else
     config->legacy_windows_stdio = 0;
-#endif
 #endif
 }
 

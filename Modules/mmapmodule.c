@@ -29,7 +29,7 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
-#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
 
 #ifndef MS_WINDOWS
 #define UNIX
@@ -649,7 +649,7 @@ mmap_flush_method(mmap_object *self, PyObject *args)
     if (self->access == ACCESS_READ || self->access == ACCESS_COPY)
         Py_RETURN_NONE;
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     if (!FlushViewOfFile(self->data+offset, size)) {
         PyErr_SetFromWindowsErr(GetLastError());
         return NULL;
@@ -1727,4 +1727,4 @@ PyInit_mmap(void)
     return PyModuleDef_Init(&mmapmodule);
 }
 
-#endif /* !MS_WINDOWS || MS_WINDOWS_DESKTOP_APP || MS_WINDOWS_GAMES */
+#endif /* !MS_WINDOWS || MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM || MS_WINDOWS_GAMES */

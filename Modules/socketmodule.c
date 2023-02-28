@@ -351,7 +351,7 @@ remove_unusable_flags(PyObject *m)
     if (dict == NULL) {
         return -1;
     }
-#ifndef MS_WINDOWS_DESKTOP_APP
+#ifndef MS_WINDOWS_DESKTOP
     info.dwOSVersionInfoSize = sizeof(info);
     if (!GetVersionExW((OSVERSIONINFOW*) &info)) {
         PyErr_SetFromWindowsErr(0);
@@ -372,7 +372,7 @@ remove_unusable_flags(PyObject *m)
 #endif
 
     for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
-#ifdef MS_WINDOWS_DESKTOP_APP
+#ifdef MS_WINDOWS_DESKTOP
         info.dwBuildNumber = win_runtime_flags[i].build_number;
         /* greater than or equal to the specified version?
            Compatibility Mode will not cheat VerifyVersionInfo(...) */
@@ -511,14 +511,14 @@ remove_unusable_flags(PyObject *m)
 #endif
 #endif
 
-#ifdef MS_WINDOWS_DESKTOP_APP
+#ifdef MS_WINDOWS_DESKTOP
 #define sockaddr_rc SOCKADDR_BTH_REDEF
 
 #define USE_BLUETOOTH 1
 #define AF_BLUETOOTH AF_BTH
 #define BTPROTO_RFCOMM BTHPROTO_RFCOMM
 #define _BT_RC_MEMB(sa, memb) ((sa)->memb)
-#endif /* MS_WINDOWS_DESKTOP_APP */
+#endif /* MS_WINDOWS_DESKTOP */
 
 /* Convert "sock_addr_t *" to "struct sockaddr *". */
 #define SAS2SA(x)       (&((x)->sa))
@@ -2883,7 +2883,7 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
     newfd = ctx.result;
 
 #ifdef MS_WINDOWS
-#ifdef MS_WINDOWS_DESKTOP_APP
+#ifdef MS_WINDOWS_DESKTOP
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         PyErr_SetFromWindowsErr(0);
         SOCKETCLOSE(newfd);

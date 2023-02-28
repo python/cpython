@@ -77,9 +77,8 @@ _Py_device_encoding(int fd)
     if (!valid)
         Py_RETURN_NONE;
 
-#ifdef MS_WINDOWS_GAMES
-    Py_RETURN_NONE;
-#elif defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     UINT cp;
     if (fd == 0)
         cp = GetConsoleCP();
@@ -94,6 +93,9 @@ _Py_device_encoding(int fd)
     }
 
     return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
+#else
+    Py_RETURN_NONE;
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 #else
     if (_PyRuntime.preconfig.utf8_mode) {
         _Py_DECLARE_STR(utf_8, "utf-8");
@@ -2022,19 +2024,8 @@ _Py_wrealpath(const wchar_t *path,
 int
 _Py_isabs(const wchar_t *path)
 {
-#ifdef MS_WINDOWS_GAMES
-    /* this does not handle persistent local storage */
-    if (path[0] == SEP || path[0] == ALTSEP) {
-        // Check for an absolute UNC path.
-        return path[1] == SEP || path[1] == ALTSEP;
-    }
-    else {
-        // Check for an absolute drive path.
-        return ((path[0]) &&
-                (path[1] == L':') &&
-                (path[2] == SEP || path[2] == ALTSEP));
-    }
-#elif defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     const wchar_t *tail;
     HRESULT hr = PathCchSkipRoot(path, &tail);
     if (FAILED(hr) || path == tail) {
@@ -2049,6 +2040,19 @@ _Py_isabs(const wchar_t *path)
         return 0;
     }
     return 1;
+#else
+    /* this does not handle persistent local storage */
+    if (path[0] == SEP || path[0] == ALTSEP) {
+        // Check for an absolute UNC path.
+        return path[1] == SEP || path[1] == ALTSEP;
+    }
+    else {
+        // Check for an absolute drive path.
+        return ((path[0]) &&
+                (path[1] == L':') &&
+                (path[2] == SEP || path[2] == ALTSEP));
+    }
+#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
 #else
     return (path[0] == SEP);
 #endif
@@ -2117,7 +2121,7 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 #endif
 }
 
-#ifdef MS_WINDOWS_GAMES
+#if !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
 static wchar_t*
 win32_games_skip_root(wchar_t* path)
 {
@@ -2201,23 +2205,23 @@ win32_games_join_relfile(wchar_t *buffer, size_t bufsize,
     }
     return 0;
 }
-#endif /* MS_WINDOWS_GAMES */
+#endif /* !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
 
 // The caller must ensure "buffer" is big enough.
 static int
 join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_GAMES)
-#ifdef MS_WINDOWS_GAMES
-    return win32_games_join_relfile(buffer, bufsize, dirname, relfile)
-#else
+#if defined(MS_WINDOWS)
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
         PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }
     return 0;
-#endif
+#else
+    return win32_games_join_relfile(buffer, bufsize, dirname, relfile)
+#endif /* MS_WINDOWS_APP && MS_WINDOWS_SYSTEM */
 #else
     assert(!_Py_isabs(relfile));
     size_t dirlen = wcslen(dirname);

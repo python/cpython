@@ -18,7 +18,7 @@
 #include "structmember.h"         // PyMemberDef
 #include <windows.h>
 
-#if defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
 
 static BOOL PyHKEY_AsHKEY(PyObject *ob, HKEY *pRes, BOOL bNoneOK);
 static BOOL clinic_HKEY_converter(PyObject *ob, void *p);
@@ -831,7 +831,7 @@ winreg_CloseKey(PyObject *module, PyObject *hkey)
     Py_RETURN_NONE;
 }
 
-#ifndef MS_WINDOWS_GAMES
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 winreg.ConnectRegistry -> HKEY
@@ -870,7 +870,7 @@ winreg_ConnectRegistry_impl(PyObject *module,
     return retKey;
 }
 
-#endif /* MS_WINDOWS_GAMES */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 winreg.CreateKey -> HKEY
@@ -1278,7 +1278,7 @@ winreg_ExpandEnvironmentStrings_impl(PyObject *module,
     return o;
 }
 
-#ifndef MS_WINDOWS_GAMES
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 winreg.FlushKey
@@ -1313,9 +1313,9 @@ winreg_FlushKey_impl(PyObject *module, HKEY key)
     Py_RETURN_NONE;
 }
 
-#endif /* MS_WINDOWS_GAMES */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
-#ifndef MS_WINDOWS_GAMES
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 winreg.LoadKey
@@ -1365,7 +1365,7 @@ winreg_LoadKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     Py_RETURN_NONE;
 }
 
-#endif /* MS_WINDOWS_GAMES */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 winreg.OpenKey -> HKEY
@@ -1647,7 +1647,7 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
     return result;
 }
 
-#ifndef MS_WINDOWS_GAMES
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 winreg.SaveKey
@@ -1694,7 +1694,7 @@ winreg_SaveKey_impl(PyObject *module, HKEY key, const Py_UNICODE *file_name)
     Py_RETURN_NONE;
 }
 
-#endif /* MS_WINDOWS_GAMES */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 winreg.SetValue
@@ -1872,7 +1872,7 @@ winreg_SetValueEx_impl(PyObject *module, HKEY key,
     Py_RETURN_NONE;
 }
 
-#ifndef MS_WINDOWS_GAMES
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 winreg.DisableReflectionKey
@@ -2022,7 +2022,7 @@ winreg_QueryReflectionKey_impl(PyObject *module, HKEY key)
     return PyBool_FromLong(result);
 }
 
-#endif /* MS_WINDOWS_GAMES */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 static struct PyMethodDef winreg_methods[] = {
     WINREG_CLOSEKEY_METHODDEF
@@ -2165,4 +2165,4 @@ PyMODINIT_FUNC PyInit_winreg(void)
     return m;
 }
 
-#endif /* MS_WINDOWS_DESKTOP_APP || MS_WINDOWS_GAMES */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM || MS_WINDOWS_GAMES */
