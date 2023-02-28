@@ -851,6 +851,9 @@
     <ClCompile Include="..\Modules\mathmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_MD5.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\md5module.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -864,6 +867,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\rotatingtree.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\sha1module.c">

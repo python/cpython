@@ -8038,7 +8038,7 @@ os_getgid_impl(PyObject *module)
 #endif /* HAVE_GETGID */
 
 
-#ifdef HAVE_GETPID
+#if defined(HAVE_GETPID)
 /*[clinic input]
 os.getpid
 
@@ -8049,9 +8049,13 @@ static PyObject *
 os_getpid_impl(PyObject *module)
 /*[clinic end generated code: output=9ea6fdac01ed2b3c input=5a9a00f0ab68aa00]*/
 {
+#ifdef MS_WINDOWS_NON_DESKTOP
+    return PyLong_FromUnsignedLong(GetCurrentProcessId());
+#else
     return PyLong_FromPid(getpid());
+#endif
 }
-#endif /* HAVE_GETPID */
+#endif /* defined(HAVE_GETPID) */
 
 #ifdef NGROUPS_MAX
 #define MAX_GROUPS NGROUPS_MAX
@@ -8357,12 +8361,11 @@ static PyObject*
 win32_getppid()
 {
     HANDLE snapshot;
-    pid_t mypid;
     PyObject* result = NULL;
     BOOL have_record;
     PROCESSENTRY32 pe;
 
-    mypid = getpid(); /* This function never fails */
+    DWORD mypid = GetCurrentProcessId(); /* This function never fails */
 
     snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE)
@@ -8371,9 +8374,9 @@ win32_getppid()
     pe.dwSize = sizeof(pe);
     have_record = Process32First(snapshot, &pe);
     while (have_record) {
-        if (mypid == (pid_t)pe.th32ProcessID) {
+        if (mypid == pe.th32ProcessID) {
             /* We could cache the ulong value in a static variable. */
-            result = PyLong_FromPid((pid_t)pe.th32ParentProcessID);
+            result = PyLong_FromUnsignedLong(pe.th32ParentProcessID);
             break;
         }
 
@@ -14848,10 +14851,9 @@ ScandirIterator_exit(ScandirIterator *self, PyObject *args)
 static void
 ScandirIterator_finalize(ScandirIterator *iterator)
 {
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (!ScandirIterator_is_closed(iterator)) {
         ScandirIterator_closedir(iterator);
@@ -14868,7 +14870,7 @@ ScandirIterator_finalize(ScandirIterator *iterator)
     path_cleanup(&iterator->path);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static void

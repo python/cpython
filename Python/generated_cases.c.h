@@ -2205,9 +2205,7 @@
             int offset = next_instr[1].op.arg;
             int err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
-            if (err < 0) {
-                goto error;
-            }
+            if (err < 0) goto pop_2_error;
             if (jump_on_true == (err != 0)) {
                 JUMPBY(offset);
             }
@@ -2756,28 +2754,28 @@
 
         TARGET(FOR_ITER_RANGE) {
             PyObject *iter = PEEK(1);
+            PyObject *next;
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
-            _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
-            assert(_PyOpcode_Deopt[next.op.code] == STORE_FAST);
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
                 // Jump over END_FOR instruction.
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+                DISPATCH();
             }
-            else {
-                long value = r->start;
-                r->start = value + r->step;
-                r->len--;
-                if (_PyLong_AssignValue(&GETLOCAL(next.op.arg), value) < 0) {
-                    goto error;
-                }
-                // The STORE_FAST is already done.
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
+            long value = r->start;
+            r->start = value + r->step;
+            r->len--;
+            next = PyLong_FromLong(value);
+            if (next == NULL) {
+                goto error;
             }
+            STACK_GROW(1);
+            POKE(1, next);
+            JUMPBY(1);
             DISPATCH();
         }
 
