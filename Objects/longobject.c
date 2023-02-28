@@ -300,7 +300,7 @@ _PyLong_AssignValue(PyObject **target, Py_ssize_t value)
         return 0;
     }
     else if (old != NULL && PyLong_CheckExact(old) &&
-             Py_REFCNT(old) == 1 && Py_SIZE(old) == 1 &&
+             Py_REFCNT(old) == 1 && _PyLong_IsPositiveSingleDigit(old) &&
              (size_t)value <= PyLong_MASK)
     {
         // Mutate in place if there are no other references the old
@@ -824,8 +824,7 @@ _PyLong_Sign(PyObject *vv)
 
     assert(v != NULL);
     assert(PyLong_Check(v));
-
-    return Py_SIZE(v) == 0 ? 0 : (Py_SIZE(v) < 0 ? -1 : 1);
+    return _PyLong_IsPositive(v) - _PyLong_IsNegative(v);
 }
 
 static int
@@ -996,7 +995,7 @@ _PyLong_AsByteArray(PyLongObject* v,
 
     assert(v != NULL && PyLong_Check(v));
 
-    if (Py_SIZE(v) < 0) {
+    if (_PyLong_IsNegative(v)) {
         ndigits = -(Py_SIZE(v));
         if (!is_signed) {
             PyErr_SetString(PyExc_OverflowError,
@@ -1848,7 +1847,7 @@ long_to_decimal_string_internal(PyObject *aa,
         return -1;
     }
     size_a = Py_ABS(Py_SIZE(a));
-    negative = Py_SIZE(a) < 0;
+    negative = _PyLong_IsNegative(a);
 
     /* quick and dirty pre-check for overflowing the decimal digit limit,
        based on the inequality 10/3 >= log2(10)
@@ -2079,7 +2078,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
         return -1;
     }
     size_a = Py_ABS(Py_SIZE(a));
-    negative = Py_SIZE(a) < 0;
+    negative = _PyLong_IsNegative(a);
 
     /* Compute a rough upper bound for the length of the string */
     switch (base) {
@@ -2956,14 +2955,14 @@ long_divrem(PyLongObject *a, PyLongObject *b,
        The quotient z has the sign of a*b;
        the remainder r has the sign of a,
        so a = b*z + r. */
-    if ((Py_SIZE(a) < 0) != (Py_SIZE(b) < 0)) {
+    if ((_PyLong_IsNegative(a)) != (_PyLong_IsNegative(b))) {
         _PyLong_Negate(&z);
         if (z == NULL) {
             Py_CLEAR(*prem);
             return -1;
         }
     }
-    if (Py_SIZE(a) < 0 && Py_SIZE(*prem) != 0) {
+    if (_PyLong_IsNegative(a) && Py_SIZE(*prem) != 0) {
         _PyLong_Negate(prem);
         if (*prem == NULL) {
             Py_DECREF(z);
@@ -3007,7 +3006,7 @@ long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
             return -1;
     }
     /* Set the sign. */
-    if (Py_SIZE(a) < 0 && Py_SIZE(*prem) != 0) {
+    if (_PyLong_IsNegative(a) && Py_SIZE(*prem) != 0) {
         _PyLong_Negate(prem);
         if (*prem == NULL) {
             Py_CLEAR(*prem);
@@ -3264,7 +3263,7 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
     }
 
     *e = a_bits;
-    return Py_SIZE(a) < 0 ? -dx : dx;
+    return _PyLong_IsNegative(a) ? -dx : dx;
 
   overflow:
     /* exponent > PY_SSIZE_T_MAX */
@@ -3326,7 +3325,7 @@ long_compare(PyLongObject *a, PyLongObject *b)
                 break;
             }
         }
-        sign = Py_SIZE(a) < 0 ? -diff : diff;
+        sign = _PyLong_IsNegative(a) ? -diff : diff;
     }
     return sign;
 }
@@ -3499,8 +3498,8 @@ _PyLong_Add(PyLongObject *a, PyLongObject *b)
     }
 
     PyLongObject *z;
-    if (Py_SIZE(a) < 0) {
-        if (Py_SIZE(b) < 0) {
+    if (_PyLong_IsNegative(a)) {
+        if (_PyLong_IsNegative(b)) {
             z = x_add(a, b);
             if (z != NULL) {
                 /* x_add received at least one multiple-digit int,
@@ -3515,7 +3514,7 @@ _PyLong_Add(PyLongObject *a, PyLongObject *b)
             z = x_sub(b, a);
     }
     else {
-        if (Py_SIZE(b) < 0)
+        if (_PyLong_IsNegative(b))
             z = x_sub(a, b);
         else
             z = x_add(a, b);
@@ -3538,8 +3537,8 @@ _PyLong_Subtract(PyLongObject *a, PyLongObject *b)
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
     }
-    if (Py_SIZE(a) < 0) {
-        if (Py_SIZE(b) < 0) {
+    if (_PyLong_IsNegative(a)) {
+        if (_PyLong_IsNegative(b)) {
             z = x_sub(b, a);
         }
         else {
@@ -3551,7 +3550,7 @@ _PyLong_Subtract(PyLongObject *a, PyLongObject *b)
         }
     }
     else {
-        if (Py_SIZE(b) < 0)
+        if (_PyLong_IsNegative(b))
             z = x_add(a, b);
         else
             z = x_sub(a, b);
@@ -4160,8 +4159,8 @@ l_divmod(PyLongObject *v, PyLongObject *w,
 #endif
     if (long_divrem(v, w, &div, &mod) < 0)
         return -1;
-    if ((Py_SIZE(mod) < 0 && Py_SIZE(w) > 0) ||
-        (Py_SIZE(mod) > 0 && Py_SIZE(w) < 0)) {
+    if ((_PyLong_IsNegative(mod) && Py_SIZE(w) > 0) ||
+        (Py_SIZE(mod) > 0 && _PyLong_IsNegative(w))) {
         PyLongObject *temp;
         temp = (PyLongObject *) long_add(mod, w);
         Py_SETREF(mod, temp);
@@ -4207,8 +4206,8 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
     }
     if (long_rem(v, w, &mod) < 0)
         return -1;
-    if ((Py_SIZE(mod) < 0 && Py_SIZE(w) > 0) ||
-        (Py_SIZE(mod) > 0 && Py_SIZE(w) < 0)) {
+    if ((_PyLong_IsNegative(mod) && Py_SIZE(w) > 0) ||
+        (Py_SIZE(mod) > 0 && _PyLong_IsNegative(w))) {
         PyLongObject *temp;
         temp = (PyLongObject *) long_add(mod, w);
         Py_SETREF(mod, temp);
@@ -4344,7 +4343,7 @@ long_true_divide(PyObject *v, PyObject *w)
     /* Reduce to case where a and b are both positive. */
     a_size = Py_ABS(Py_SIZE(a));
     b_size = Py_ABS(Py_SIZE(b));
-    negate = (Py_SIZE(a) < 0) ^ (Py_SIZE(b) < 0);
+    negate = (_PyLong_IsNegative(a)) ^ (_PyLong_IsNegative(b));
     if (b_size == 0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "division by zero");
@@ -4661,7 +4660,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (Py_SIZE(b) < 0 && c == NULL) {
+    if (_PyLong_IsNegative(b) && c == NULL) {
         /* if exponent is negative and there's no modulus:
                return a float.  This works because we know
                that this calls float_pow() which converts its
@@ -4683,7 +4682,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         /* if modulus < 0:
                negativeOutput = True
                modulus = -modulus */
-        if (Py_SIZE(c) < 0) {
+        if (_PyLong_IsNegative(c)) {
             negativeOutput = 1;
             temp = (PyLongObject *)_PyLong_Copy(c);
             if (temp == NULL)
@@ -4697,14 +4696,14 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 
         /* if modulus == 1:
                return 0 */
-        if ((Py_SIZE(c) == 1) && (c->long_value.ob_digit[0] == 1)) {
+        if ((_PyLong_IsPositiveSingleDigit(c) && (c->long_value.ob_digit[0] == 1)) {
             z = (PyLongObject *)PyLong_FromLong(0L);
             goto Done;
         }
 
         /* if exponent is negative, negate the exponent and
            replace the base with a modular inverse */
-        if (Py_SIZE(b) < 0) {
+        if (_PyLong_IsNegative(b)) {
             temp = (PyLongObject *)_PyLong_Copy(b);
             if (temp == NULL)
                 goto Error;
@@ -4730,7 +4729,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
               base % modulus instead.
            We could _always_ do this reduction, but l_mod() isn't cheap,
            so we only do it when it buys something. */
-        if (Py_SIZE(a) < 0 || Py_SIZE(a) > Py_SIZE(c)) {
+        if (_PyLong_IsNegative(a) || Py_SIZE(a) > Py_SIZE(c)) {
             if (l_mod(a, c, &temp) < 0)
                 goto Error;
             Py_SETREF(a, temp);
@@ -4936,7 +4935,7 @@ long_neg(PyLongObject *v)
 static PyObject *
 long_abs(PyLongObject *v)
 {
-    if (Py_SIZE(v) < 0)
+    if (_PyLong_IsNegative(v))
         return long_neg(v);
     else
         return long_long((PyObject *)v);
@@ -5007,7 +5006,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         return _PyLong_FromSTwoDigits(x);
     }
 
-    a_negative = Py_SIZE(a) < 0;
+    a_negative = _PyLong_IsNegative(a);
     size_a = Py_ABS(Py_SIZE(a));
 
     if (a_negative) {
@@ -5079,7 +5078,7 @@ long_rshift(PyObject *a, PyObject *b)
 
     CHECK_BINOP(a, b);
 
-    if (Py_SIZE(b) < 0) {
+    if (_PyLong_IsNegative(b)) {
         PyErr_SetString(PyExc_ValueError, "negative shift count");
         return NULL;
     }
@@ -5128,7 +5127,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     z = _PyLong_New(newsize);
     if (z == NULL)
         return NULL;
-    if (Py_SIZE(a) < 0) {
+    if (_PyLong_IsNegative(a)) {
         assert(Py_REFCNT(z) == 1);
         _PyLong_FlipSign(z);
     }
@@ -5156,7 +5155,7 @@ long_lshift(PyObject *a, PyObject *b)
 
     CHECK_BINOP(a, b);
 
-    if (Py_SIZE(b) < 0) {
+    if (_PyLong_IsNegative(b)) {
         PyErr_SetString(PyExc_ValueError, "negative shift count");
         return NULL;
     }
@@ -5219,7 +5218,7 @@ long_bitwise(PyLongObject *a,
 
     /* If a is negative, replace it by its two's complement. */
     size_a = Py_ABS(Py_SIZE(a));
-    nega = Py_SIZE(a) < 0;
+    nega = _PyLong_IsNegative(a);
     if (nega) {
         z = _PyLong_New(size_a);
         if (z == NULL)
@@ -5233,7 +5232,7 @@ long_bitwise(PyLongObject *a,
 
     /* Same for b. */
     size_b = Py_ABS(Py_SIZE(b));
-    negb = Py_SIZE(b) < 0;
+    negb = _PyLong_IsNegative(b);
     if (negb) {
         z = _PyLong_New(size_b);
         if (z == NULL) {
@@ -5771,7 +5770,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     }
 
     /* Do a and b have different signs?  If so, quotient is negative. */
-    quo_is_neg = (Py_SIZE(a) < 0) != (Py_SIZE(b) < 0);
+    quo_is_neg = (_PyLong_IsNegative(a)) != (_PyLong_IsNegative(b));
 
     if (long_divrem((PyLongObject*)a, (PyLongObject*)b, &quo, &rem) < 0)
         goto error;
@@ -5792,7 +5791,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     Py_DECREF(twice_rem);
 
     quo_is_odd = Py_SIZE(quo) != 0 && ((quo->long_value.ob_digit[0] & 1) != 0);
-    if ((Py_SIZE(b) < 0 ? cmp < 0 : cmp > 0) || (cmp == 0 && quo_is_odd)) {
+    if ((_PyLong_IsNegative(b) ? cmp < 0 : cmp > 0) || (cmp == 0 && quo_is_odd)) {
         /* fix up quotient */
         if (quo_is_neg)
             temp = long_sub(quo, (PyLongObject *)one);
