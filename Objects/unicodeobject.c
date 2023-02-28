@@ -236,9 +236,29 @@ static inline PyObject *get_interned_dict(void)
     return _Py_CACHED_OBJECT(interned_strings);
 }
 
-static inline void set_interned_dict(PyObject *dict)
+static PyObject *
+ensure_interned_dict()
 {
-    _Py_CACHED_OBJECT(interned_strings) = dict;
+    PyObject *interned = get_interned_dict();
+    if (interned == NULL) {
+        interned = PyDict_New();
+        if (interned == NULL) {
+            return NULL;
+        }
+        _Py_CACHED_OBJECT(interned_strings) = interned;
+    }
+    return interned;
+}
+
+static void
+clear_interned_dict(void)
+{
+    PyObject *interned = get_interned_dict();
+    if (interned != NULL) {
+        PyDict_Clear(interned);
+        Py_DECREF(interned);
+        _Py_CACHED_OBJECT(interned_strings) = NULL;
+    }
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
@@ -1528,7 +1548,6 @@ unicode_dealloc(PyObject *unicode)
         _Py_FatalRefcountError("deallocating an Unicode singleton");
     }
 #endif
-    PyObject *interned = get_interned_dict();
     if (PyUnicode_CHECK_INTERNED(unicode)) {
         /* Revive the dead object temporarily. PyDict_DelItem() removes two
            references (key and value) which were ignored by
@@ -1537,6 +1556,8 @@ unicode_dealloc(PyObject *unicode)
            PyDict_DelItem(). */
         assert(Py_REFCNT(unicode) == 0);
         Py_SET_REFCNT(unicode, 3);
+        PyObject *interned = get_interned_dict();
+        assert(interned != NULL);
         if (PyDict_DelItem(interned, unicode) != 0) {
             _PyErr_WriteUnraisableMsg("deletion of interned string failed",
                                       NULL);
@@ -14602,14 +14623,10 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    PyObject *interned = get_interned_dict();
+    PyObject *interned = ensure_interned_dict();
     if (interned == NULL) {
-        interned = PyDict_New();
-        if (interned == NULL) {
-            PyErr_Clear(); /* Don't leave an exception */
-            return;
-        }
-        set_interned_dict(interned);
+        PyErr_Clear(); /* Don't leave an exception */
+        return;
     }
 
     PyObject *t = PyDict_SetDefault(interned, s, s);
@@ -14694,9 +14711,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             total_length);
 #endif
 
-    PyDict_Clear(interned);
-    Py_DECREF(interned);
-    set_interned_dict(NULL);
+    clear_interned_dict();
 }
 
 
