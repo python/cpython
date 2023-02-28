@@ -65,9 +65,6 @@ extern "C" {
         .dict_state = { \
             .next_keys_version = 2, \
         }, \
-        .func_state = { \
-            .next_version = 1, \
-        }, \
         .types = { \
             .next_version_tag = 1, \
         }, \
@@ -113,6 +110,9 @@ extern "C" {
             }, \
         }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
+        .func_state = { \
+            .next_version = 1, \
+        }, \
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
