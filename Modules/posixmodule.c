@@ -30,7 +30,7 @@
 #  include <winioctl.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP
-#  ifndef MS_WINDOWS_NON_DESKTOP
+#  ifdef MS_WINDOWS_DESKTOP_APP
 #    define HAVE_SYMLINK
 #  endif
 #endif
@@ -333,7 +333,7 @@ corresponding Unix manual entries for more information on calls.");
 #  include <process.h>
 #elif defined( _MSC_VER)
   /* Microsoft compiler */
-#  ifndef MS_WINDOWS_NON_DESKTOP
+#  ifdef MS_WINDOWS_DESKTOP_APP
 #    define HAVE_GETPPID    1
 #    define HAVE_GETLOGIN   1
 #    define HAVE_SPAWNV     1
@@ -342,7 +342,7 @@ corresponding Unix manual entries for more information on calls.");
 #    define HAVE_WEXECV     1
 #    define HAVE_SYSTEM     1
 #    define HAVE_CWAIT      1
-#  endif /* !MS_WINDOWS_NON_DESKTOP */
+#  endif /* MS_WINDOWS_DESKTOP_APP */
 #  define HAVE_PIPE       1
 #  define HAVE_FSYNC      1
 #  define fsync _commit
@@ -7971,7 +7971,7 @@ static PyObject *
 os_getpid_impl(PyObject *module)
 /*[clinic end generated code: output=9ea6fdac01ed2b3c input=5a9a00f0ab68aa00]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_DESKTOP_APP)
     return PyLong_FromUnsignedLong(GetCurrentProcessId());
 #else
     return PyLong_FromPid(getpid());
@@ -13822,7 +13822,7 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
-#ifndef MS_WINDOWS_NON_DESKTOP
+#ifdef MS_WINDOWS_DESKTOP_APP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 #endif
 #elif defined(__hpux)

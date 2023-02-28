@@ -270,7 +270,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 
 #  include <fcntl.h>
 
-#else
+#else /* MS_WINDOWS */
 
 /* MS_WINDOWS includes */
 # ifdef HAVE_FCNTL_H
@@ -281,7 +281,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # include <Rpc.h>
 
 /* Macros based on the IPPROTO enum, see: https://bugs.python.org/issue29515 */
-#ifdef MS_WINDOWS
 #define IPPROTO_ICMP IPPROTO_ICMP
 #define IPPROTO_IGMP IPPROTO_IGMP
 #define IPPROTO_GGP IPPROTO_GGP
@@ -312,7 +311,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #define IPPROTO_PGM IPPROTO_PGM  // WinSock2 only
 #define IPPROTO_L2TP IPPROTO_L2TP  // WinSock2 only
 #define IPPROTO_SCTP IPPROTO_SCTP  // WinSock2 only
-#endif /* MS_WINDOWS */
 
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <versionhelpers.h>
@@ -353,7 +351,7 @@ remove_unusable_flags(PyObject *m)
     if (dict == NULL) {
         return -1;
     }
-#ifdef MS_WINDOWS_NON_DESKTOP
+#ifndef MS_WINDOWS_DESKTOP_APP
     info.dwOSVersionInfoSize = sizeof(info);
     if (!GetVersionExW((OSVERSIONINFOW*) &info)) {
         PyErr_SetFromWindowsErr(0);
@@ -374,7 +372,7 @@ remove_unusable_flags(PyObject *m)
 #endif
 
     for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
-#ifndef MS_WINDOWS_NON_DESKTOP
+#ifdef MS_WINDOWS_DESKTOP_APP
         info.dwBuildNumber = win_runtime_flags[i].build_number;
         /* greater than or equal to the specified version?
            Compatibility Mode will not cheat VerifyVersionInfo(...) */
@@ -513,14 +511,14 @@ remove_unusable_flags(PyObject *m)
 #endif
 #endif
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_NON_DESKTOP)
+#ifdef MS_WINDOWS_DESKTOP_APP
 #define sockaddr_rc SOCKADDR_BTH_REDEF
 
 #define USE_BLUETOOTH 1
 #define AF_BLUETOOTH AF_BTH
 #define BTPROTO_RFCOMM BTHPROTO_RFCOMM
 #define _BT_RC_MEMB(sa, memb) ((sa)->memb)
-#endif
+#endif /* MS_WINDOWS_DESKTOP_APP */
 
 /* Convert "sock_addr_t *" to "struct sockaddr *". */
 #define SAS2SA(x)       (&((x)->sa))
@@ -2885,7 +2883,7 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
     newfd = ctx.result;
 
 #ifdef MS_WINDOWS
-#ifndef MS_WINDOWS_NON_DESKTOP
+#ifdef MS_WINDOWS_DESKTOP_APP
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         PyErr_SetFromWindowsErr(0);
         SOCKETCLOSE(newfd);

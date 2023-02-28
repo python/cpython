@@ -29,7 +29,7 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
-#if !defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)
 
 #ifndef MS_WINDOWS
 #define UNIX
@@ -1727,4 +1727,4 @@ PyInit_mmap(void)
     return PyModuleDef_Init(&mmapmodule);
 }
 
-#endif /* !MS_WINDOWS_NON_DESKTOP || MS_WINDOWS_GAMES */
+#endif /* !MS_WINDOWS || MS_WINDOWS_DESKTOP_APP || MS_WINDOWS_GAMES */

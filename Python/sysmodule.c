@@ -1493,7 +1493,7 @@ static PyStructSequence_Desc windows_version_desc = {
 static PyObject *
 _sys_getwindowsversion_from_kernel32()
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
+#ifndef MS_WINDOWS_DESKTOP_APP
     return NULL;
 #else
     HANDLE hKernel32;
@@ -1529,7 +1529,7 @@ _sys_getwindowsversion_from_kernel32()
     realBuild = HIWORD(ffi->dwProductVersionLS);
     PyMem_RawFree(verblock);
     return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
-#endif /* MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS_DESKTOP_APP */
 }
 
 /* Disable deprecation warnings about GetVersionEx as the result is

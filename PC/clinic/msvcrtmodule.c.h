@@ -261,7 +261,7 @@ msvcrt_getch(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS_DESKTOP_APP)
 
 PyDoc_STRVAR(msvcrt_getwch__doc__,
 "getwch($module, /)\n"
@@ -287,7 +287,7 @@ msvcrt_getwch(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#endif /* !defined(MS_WINDOWS_NON_DESKTOP) */
+#endif /* defined(MS_WINDOWS_DESKTOP_APP) */
 
 PyDoc_STRVAR(msvcrt_getche__doc__,
 "getche($module, /)\n"
@@ -313,7 +313,7 @@ msvcrt_getche(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS_DESKTOP_APP)
 
 PyDoc_STRVAR(msvcrt_getwche__doc__,
 "getwche($module, /)\n"
@@ -339,7 +339,7 @@ msvcrt_getwche(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#endif /* !defined(MS_WINDOWS_NON_DESKTOP) */
+#endif /* defined(MS_WINDOWS_DESKTOP_APP) */
 
 PyDoc_STRVAR(msvcrt_putch__doc__,
 "putch($module, char, /)\n"
@@ -375,7 +375,7 @@ exit:
     return return_value;
 }
 
-#if !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS_DESKTOP_APP)
 
 PyDoc_STRVAR(msvcrt_putwch__doc__,
 "putwch($module, unicode_char, /)\n"
@@ -413,7 +413,7 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(MS_WINDOWS_NON_DESKTOP) */
+#endif /* defined(MS_WINDOWS_DESKTOP_APP) */
 
 PyDoc_STRVAR(msvcrt_ungetch__doc__,
 "ungetch($module, char, /)\n"
@@ -453,7 +453,7 @@ exit:
     return return_value;
 }
 
-#if !defined(MS_WINDOWS_NON_DESKTOP)
+#if defined(MS_WINDOWS_DESKTOP_APP)
 
 PyDoc_STRVAR(msvcrt_ungetwch__doc__,
 "ungetwch($module, unicode_char, /)\n"
@@ -491,7 +491,7 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(MS_WINDOWS_NON_DESKTOP) */
+#endif /* defined(MS_WINDOWS_DESKTOP_APP) */
 
 #if defined(_DEBUG)
 
@@ -707,4 +707,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=50255b8b9a685dcf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7eeaa49a1fa0a0b8 input=a9049054013a1b77]*/

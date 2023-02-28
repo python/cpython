@@ -253,7 +253,7 @@ msvcrt_getch_impl(PyObject *module)
     return ch;
 }
 
-#ifndef MS_WINDOWS_NON_DESKTOP
+#ifdef MS_WINDOWS_DESKTOP_APP
 
 /*[clinic input]
 msvcrt.getwch -> wchar_t
@@ -273,7 +273,7 @@ msvcrt_getwch_impl(PyObject *module)
     return ch;
 }
 
-#endif /* MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS_DESKTOP_APP */
 
 /*[clinic input]
 msvcrt.getche -> byte_char
@@ -293,7 +293,7 @@ msvcrt_getche_impl(PyObject *module)
     return ch;
 }
 
-#ifndef MS_WINDOWS_NON_DESKTOP
+#ifdef MS_WINDOWS_DESKTOP_APP
 
 /*[clinic input]
 msvcrt.getwche -> wchar_t
@@ -313,7 +313,7 @@ msvcrt_getwche_impl(PyObject *module)
     return ch;
 }
 
-#endif /* MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS_DESKTOP_APP */
 
 /*[clinic input]
 msvcrt.putch
@@ -334,7 +334,7 @@ msvcrt_putch_impl(PyObject *module, char char_value)
     Py_RETURN_NONE;
 }
 
-#ifndef MS_WINDOWS_NON_DESKTOP
+#ifdef MS_WINDOWS_DESKTOP_APP
 
 /*[clinic input]
 msvcrt.putwch
@@ -356,7 +356,7 @@ msvcrt_putwch_impl(PyObject *module, int unicode_char)
 
 }
 
-#endif /* MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS_DESKTOP_APP */
 
 /*[clinic input]
 msvcrt.ungetch
@@ -386,7 +386,7 @@ msvcrt_ungetch_impl(PyObject *module, char char_value)
     Py_RETURN_NONE;
 }
 
-#ifndef MS_WINDOWS_NON_DESKTOP
+#ifdef MS_WINDOWS_DESKTOP_APP
 
 /*[clinic input]
 msvcrt.ungetwch
@@ -412,7 +412,7 @@ msvcrt_ungetwch_impl(PyObject *module, int unicode_char)
     Py_RETURN_NONE;
 }
 
-#endif /* MS_WINDOWS_NON_DESKTOP */
+#endif /* MS_WINDOWS_DESKTOP_APP */
 
 #ifdef _DEBUG
 /*[clinic input]

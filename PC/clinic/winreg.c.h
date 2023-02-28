@@ -8,7 +8,7 @@ preserve
 #endif
 
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_HKEYType_Close__doc__,
 "Close($self, /)\n"
@@ -30,9 +30,9 @@ winreg_HKEYType_Close(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
     return winreg_HKEYType_Close_impl(self);
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_HKEYType_Detach__doc__,
 "Detach($self, /)\n"
@@ -60,9 +60,9 @@ winreg_HKEYType_Detach(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
     return winreg_HKEYType_Detach_impl(self);
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_HKEYType___enter____doc__,
 "__enter__($self, /)\n"
@@ -87,9 +87,9 @@ winreg_HKEYType___enter__(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_HKEYType___exit____doc__,
 "__exit__($self, /, exc_type, exc_value, traceback)\n"
@@ -150,9 +150,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_CloseKey__doc__,
 "CloseKey($module, hkey, /)\n"
@@ -169,9 +169,9 @@ PyDoc_STRVAR(winreg_CloseKey__doc__,
 #define WINREG_CLOSEKEY_METHODDEF    \
     {"CloseKey", (PyCFunction)winreg_CloseKey, METH_O, winreg_CloseKey__doc__},
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
 
 PyDoc_STRVAR(winreg_ConnectRegistry__doc__,
 "ConnectRegistry($module, computer_name, key, /)\n"
@@ -235,9 +235,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_CreateKey__doc__,
 "CreateKey($module, key, sub_key, /)\n"
@@ -304,9 +304,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
 "CreateKeyEx($module, /, key, sub_key, reserved=0,\n"
@@ -428,9 +428,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_DeleteKey__doc__,
 "DeleteKey($module, key, sub_key, /)\n"
@@ -486,9 +486,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
 "DeleteKeyEx($module, /, key, sub_key, access=winreg.KEY_WOW64_64KEY,\n"
@@ -603,9 +603,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_DeleteValue__doc__,
 "DeleteValue($module, key, value, /)\n"
@@ -659,9 +659,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_EnumKey__doc__,
 "EnumKey($module, key, index, /)\n"
@@ -707,9 +707,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_EnumValue__doc__,
 "EnumValue($module, key, index, /)\n"
@@ -764,9 +764,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_ExpandEnvironmentStrings__doc__,
 "ExpandEnvironmentStrings($module, string, /)\n"
@@ -804,9 +804,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
 
 PyDoc_STRVAR(winreg_FlushKey__doc__,
 "FlushKey($module, key, /)\n"
@@ -848,9 +848,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
 
 PyDoc_STRVAR(winreg_LoadKey__doc__,
 "LoadKey($module, key, sub_key, file_name, /)\n"
@@ -928,9 +928,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_OpenKey__doc__,
 "OpenKey($module, /, key, sub_key, reserved=0, access=winreg.KEY_READ)\n"
@@ -1045,9 +1045,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
 "OpenKeyEx($module, /, key, sub_key, reserved=0, access=winreg.KEY_READ)\n"
@@ -1162,9 +1162,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_QueryInfoKey__doc__,
 "QueryInfoKey($module, key, /)\n"
@@ -1202,9 +1202,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_QueryValue__doc__,
 "QueryValue($module, key, sub_key, /)\n"
@@ -1267,9 +1267,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_QueryValueEx__doc__,
 "QueryValueEx($module, key, name, /)\n"
@@ -1328,9 +1328,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
 
 PyDoc_STRVAR(winreg_SaveKey__doc__,
 "SaveKey($module, key, file_name, /)\n"
@@ -1389,9 +1389,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_SetValue__doc__,
 "SetValue($module, key, sub_key, type, value, /)\n"
@@ -1474,9 +1474,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES))
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_SetValueEx__doc__,
 "SetValueEx($module, key, value_name, reserved, type, value, /)\n"
@@ -1572,9 +1572,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
 
 PyDoc_STRVAR(winreg_DisableReflectionKey__doc__,
 "DisableReflectionKey($module, key, /)\n"
@@ -1612,9 +1612,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
 
 PyDoc_STRVAR(winreg_EnableReflectionKey__doc__,
 "EnableReflectionKey($module, key, /)\n"
@@ -1650,9 +1650,9 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
 
-#if (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
+#if (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES)
 
 PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "QueryReflectionKey($module, key, /)\n"
@@ -1686,7 +1686,7 @@ exit:
     return return_value;
 }
 
-#endif /* (!defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
+#endif /* (defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)) && !defined(MS_WINDOWS_GAMES) */
 
 #ifndef WINREG_HKEYTYPE_CLOSE_METHODDEF
     #define WINREG_HKEYTYPE_CLOSE_METHODDEF
@@ -1795,4 +1795,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=4d3befb1f9c9d05c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6de23fc941e7b62 input=a9049054013a1b77]*/

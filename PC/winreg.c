@@ -18,7 +18,7 @@
 #include "structmember.h"         // PyMemberDef
 #include <windows.h>
 
-#if !defined(MS_WINDOWS_NON_DESKTOP) || defined(MS_WINDOWS_GAMES)
+#if defined(MS_WINDOWS_DESKTOP_APP) || defined(MS_WINDOWS_GAMES)
 
 static BOOL PyHKEY_AsHKEY(PyObject *ob, HKEY *pRes, BOOL bNoneOK);
 static BOOL clinic_HKEY_converter(PyObject *ob, void *p);
@@ -2165,4 +2165,4 @@ PyMODINIT_FUNC PyInit_winreg(void)
     return m;
 }
 
-#endif /* !MS_WINDOWS_NON_DESKTOP || MS_WINDOWS_GAMES */
+#endif /* MS_WINDOWS_DESKTOP_APP || MS_WINDOWS_GAMES */

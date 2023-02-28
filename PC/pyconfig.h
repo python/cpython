@@ -72,12 +72,18 @@ WIN32 is still required for the locale module.
 #define USE_SOCKET
 #endif
 
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
-#define MS_WINDOWS_NON_DESKTOP
-#endif
-
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)
-#define MS_WINDOWS_GAMES
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)
+#  define MS_WINDOWS_DESKTOP_APP
+#elif defined(WINAPI_FAMILY_PC_APP)
+#  define MS_WINDOWS_PC_APP
+#elif defined(WINAPI_FAMILY_PHONE_APP)
+#  define MS_WINDOWS_PHONE_APP
+#elif defined(WINAPI_FAMILY_SYSTEM)
+#  define MS_WINDOWS_SYSTEM
+#elif defined(WINAPI_FAMILY_SERVER )
+#  define MS_WINDOWS_SERVER
+#elif defined(WINAPI_FAMILY_GAMES)
+#  define MS_WINDOWS_GAMES
 #endif
 
 /* Compiler specific defines */
