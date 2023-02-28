@@ -636,17 +636,16 @@ PyLong_AsUnsignedLong(PyObject *vv)
     }
 
     v = (PyLongObject *)vv;
-    i = Py_SIZE(v);
-    x = 0;
-    if (i < 0) {
+    if (_PyLong_IsPositiveSingleDigit(v)) {
+        return _PyLong_SingleDigitValue(v);
+    }
+    if (_PyLong_IsNegative(v)) {
         PyErr_SetString(PyExc_OverflowError,
                         "can't convert negative value to unsigned int");
         return (unsigned long) -1;
     }
-    switch (i) {
-    case 0: return 0;
-    case 1: return v->long_value.ob_digit[0];
-    }
+    i = _PyLong_DigitCount(v);
+    x = 0;
     while (--i >= 0) {
         prev = x;
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
@@ -931,8 +930,8 @@ _PyLong_AsByteArray(PyLongObject* v,
 
     assert(v != NULL && PyLong_Check(v));
 
+    ndigits = _PyLong_DigitCount(v);
     if (_PyLong_IsNegative(v)) {
-        ndigits = -(Py_SIZE(v));
         if (!is_signed) {
             PyErr_SetString(PyExc_OverflowError,
                             "can't convert negative int to unsigned");
@@ -941,7 +940,6 @@ _PyLong_AsByteArray(PyLongObject* v,
         do_twos_comp = 1;
     }
     else {
-        ndigits = Py_SIZE(v);
         do_twos_comp = 0;
     }
 
@@ -1211,18 +1209,11 @@ PyLong_AsLongLong(PyObject *vv)
         do_decref = 1;
     }
 
-    res = 0;
-    switch(Py_SIZE(v)) {
-    case -1:
-        bytes = -(sdigit)v->long_value.ob_digit[0];
-        break;
-    case 0:
-        bytes = 0;
-        break;
-    case 1:
-        bytes = v->long_value.ob_digit[0];
-        break;
-    default:
+    if (_PyLong_IsSingleDigit(v)) {
+        res = 0;
+        bytes = _PyLong_SingleDigitValue(v);
+    }
+    else {
         res = _PyLong_AsByteArray((PyLongObject *)v, (unsigned char *)&bytes,
                                   SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 1);
     }
@@ -1257,13 +1248,14 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
     }
 
     v = (PyLongObject*)vv;
-    switch(Py_SIZE(v)) {
-    case 0: return 0;
-    case 1: return v->long_value.ob_digit[0];
+    if (_PyLong_IsPositiveSingleDigit(v)) {
+        res = 0;
+        bytes = _PyLong_SingleDigitValue(v);
     }
-
-    res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
+    else {
+        res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
                               SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 0);
+    }
 
     /* Plan 9 can't handle long long in ? : expressions */
     if (res < 0)
@@ -1288,17 +1280,12 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
         return (unsigned long long) -1;
     }
     v = (PyLongObject *)vv;
-    switch(Py_SIZE(v)) {
-    case 0: return 0;
-    case 1: return v->long_value.ob_digit[0];
+    if (_PyLong_IsPositiveSingleDigit(v)) {
+        return _PyLong_SingleDigitValue(v);
     }
-    i = Py_SIZE(v);
-    sign = 1;
+    i = _PyLong_DigitCount(v);
+    sign = _PyLong_NonZeroSign(v);
     x = 0;
-    if (i < 0) {
-        sign = -1;
-        i = -i;
-    }
     while (--i >= 0) {
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
     }
@@ -1365,32 +1352,19 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
             return -1;
         do_decref = 1;
     }
-
-    res = -1;
-    i = Py_SIZE(v);
-
-    switch (i) {
-    case -1:
-        res = -(sdigit)v->long_value.ob_digit[0];
-        break;
-    case 0:
-        res = 0;
-        break;
-    case 1:
-        res = v->long_value.ob_digit[0];
-        break;
-    default:
-        sign = 1;
+    if (_PyLong_IsSingleDigit(v)) {
+        res = _PyLong_SingleDigitValue(v);
+    }
+    else {
+        i = _PyLong_DigitCount(v);
+        sign = _PyLong_NonZeroSign(v);
         x = 0;
-        if (i < 0) {
-            sign = -1;
-            i = -(i);
-        }
         while (--i >= 0) {
             prev = x;
             x = (x << PyLong_SHIFT) + v->long_value.ob_digit[i];
             if ((x >> PyLong_SHIFT) != prev) {
                 *overflow = sign;
+                res = -1;
                 goto exit;
             }
         }
@@ -1405,7 +1379,7 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         }
         else {
             *overflow = sign;
-            /* res is already set to -1 */
+            res = -1;
         }
     }
   exit:
@@ -2530,7 +2504,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
 
         /* Multiply z by convmult, and add c. */
         pz = z->long_value.ob_digit;
-        pzstop = pz + Py_SIZE(z);
+        pzstop = pz + _PyLong_DigitCount(z);
         for (; pz < pzstop; ++pz) {
             c += (twodigits)*pz * convmult;
             *pz = (digit)(c & PyLong_MASK);
@@ -2539,15 +2513,15 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
         /* carry off the current end? */
         if (c) {
             assert(c < PyLong_BASE);
-            if (Py_SIZE(z) < size_z) {
+            if (_PyLong_DigitCount(z) < size_z) {
                 *pz = (digit)c;
                 assert(!_PyLong_IsNegative(z));
-                _PyLong_SetSignAndSize(z, false, Py_SIZE(z) + 1);
+                _PyLong_SetSignAndSize(z, false, _PyLong_DigitCount(z) + 1);
             }
             else {
                 PyLongObject *tmp;
                 /* Extremely rare.  Get more space. */
-                assert(Py_SIZE(z) == size_z);
+                assert(_PyLong_DigitCount(z) == size_z);
                 tmp = _PyLong_New(size_z + 1);
                 if (tmp == NULL) {
                     Py_DECREF(z);
@@ -2749,7 +2723,7 @@ PyLong_FromString(const char *str, char **pend, int base)
         /* reset the base to 0, else the exception message
            doesn't make too much sense */
         base = 0;
-        if (Py_SIZE(z) != 0) {
+        if (!_PyLong_IsZero(z)) {
             goto onError;
         }
         /* there might still be other problems, therefore base
