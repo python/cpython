@@ -19,7 +19,9 @@ So, code compiled for Python 3.10.0 will work on 3.10.8 and vice versa,
 but will need to be compiled separately for 3.9.x and 3.10.x.
 
 Names prefixed by an underscore, such as ``_Py_InternalState``,
-are private API that can change without notice even in patch releases.
+are private API that can change without notice even in patch releases. ABI
+resulting from it, however, should stay stable across patch versions, unless
+there's critical reason to break compatibility (eg. security issue).
 
 
 Stable Application Binary Interface
