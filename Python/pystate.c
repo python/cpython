@@ -3,7 +3,8 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
-#include "pycore_code.h"           // stats
+#include "pycore_code.h"          // stats
+#include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"        // _PyType_InitCache()
@@ -618,6 +619,18 @@ free_interpreter(PyInterpreterState *interp)
    e.g. by PyMem_RawCalloc() or memset(), or otherwise pre-initialized.
    The runtime state is not manipulated.  Instead it is assumed that
    the interpreter is getting added to the runtime.
+
+   Note that the main interpreter was statically initialized as part
+   of the runtime and most state is already set properly.  That leaves
+   a small number of fields to initialize dynamically, as well as some
+   that are initialized lazily.
+
+   For subinterpreters we memcpy() the main interpreter in
+   PyInterpreterState_New(), leaving it in the same mostly-initialized
+   state.  The only difference is that the interpreter has some
+   self-referential state that is statically initializexd to the
+   main interpreter.  We fix those fields here, in addition
+   to the other dynamically initialized fields.
   */
 
 static void
@@ -644,6 +657,11 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
+
+    if (interp != &runtime->_main_interpreter) {
+        /* Fix the self-referential, statically initialized fields. */
+        interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
+    }
 
     interp->_initialized = 1;
 }
