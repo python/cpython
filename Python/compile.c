@@ -10007,6 +10007,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 
 finally:
     compiler_exit_scope(c);
+    cfg_builder_fini(&g);
     compiler_free(c);
     _PyArena_Free(arena);
     return res;
