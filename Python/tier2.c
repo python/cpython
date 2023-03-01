@@ -92,6 +92,41 @@ _PyTier2TypeContext_free(_PyTier2TypeContext* type_context) {
     PyMem_Free(type_context);
 }
 
+// Type propagates across a single function. 
+static void
+type_propagate(
+    int opcode, int oparg,
+    PyTypeObject** type_stackptr, PyTypeObject** type_locals,
+    const PyObject* consts)
+{
+#define TARGET(op) case op: 
+#define TYPESTACK_PEEK(idx)         (type_stackptr[-(idx)])
+#define TYPESTACK_POKE(idx, v)      type_stackptr[-(idx)] = (v)
+#define TYPELOCALS_SET(idx, v)      type_locals[idx] = v;
+#define TYPELOCALS_GET(idx)         (type_locals[idx])
+#define TYPECONST_GET(idx)          Py_TYPE(_PyTuple_CAST(consts)->ob_item[(idx)])
+#define STACK_ADJUST(idx)           type_stackptr += (idx)
+#define STACK_GROW(idx)             STACK_ADJUST((idx))
+#define STACK_SHRINK(idx)           STACK_ADJUST(-(idx))
+
+    switch (opcode) {
+#include "tier2_typepropagator.c.h"
+    default:
+        fprintf(stderr, "Unsupported opcode in type propagator: %d\n", opcode);
+        assert(opcode);
+    }
+
+#undef TARGET
+#undef TYPESTACK_PEEK
+#undef TYPESTACK_POKE
+#undef TYPELOCALS_SET
+#undef TYPELOCALS_GET
+#undef TYPECONST_GET
+#undef STACK_ADJUST
+#undef STACK_GROW
+#undef STACK_SHRINK
+}
+
 ////////// Utility functions
 
 // Gets end of the bytecode for a code object.
@@ -588,40 +623,6 @@ add_metadata_to_jump_2d_array(_PyTier2Info *t2_info, _PyTier2BBMetadata *meta,
     }
     assert(found);
     return 0;
-}
-
-static void
-type_propagate(
-    int opcode, int oparg,
-    PyTypeObject** type_stackptr, PyTypeObject** type_locals,
-    const PyObject* consts)
-{
-#define TARGET(op) case op: 
-#define TYPESTACK_PEEK(idx)         (type_stackptr[-(idx)])
-#define TYPESTACK_POKE(idx, v)      type_stackptr[-(idx)] = (v)
-#define TYPELOCALS_SET(idx, v)      type_locals[idx] = v;
-#define TYPELOCALS_GET(idx)         (type_locals[idx])
-#define TYPECONST_GET(idx)          Py_TYPE(_PyTuple_CAST(consts)->ob_item[(idx)])
-#define STACK_ADJUST(idx)           type_stackptr += (idx)
-#define STACK_GROW(idx)             STACK_ADJUST((idx))
-#define STACK_SHRINK(idx)           STACK_ADJUST(-(idx))
-
-    switch (opcode) {
-#include "tier2_typepropagator.c.h"
-    default:
-        fprintf(stderr, "Unsupported opcode in type propagator: %d\n", opcode);
-        assert(opcode);
-    }
-
-#undef TARGET
-#undef TYPESTACK_PEEK
-#undef TYPESTACK_POKE
-#undef TYPELOCALS_SET
-#undef TYPELOCALS_GET
-#undef TYPECONST_GET
-#undef STACK_ADJUST
-#undef STACK_GROW
-#undef STACK_SHRINK
 }
 
 // Detects a BB from the current instruction start to the end of the first basic block it sees.
