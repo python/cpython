@@ -72,7 +72,7 @@ WIN32 is still required for the locale module.
 #define USE_SOCKET
 #endif
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN) || defined(Py_BUILD_CORE_MODULE)
 #include <winapifamily.h>
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
@@ -92,7 +92,7 @@ WIN32 is still required for the locale module.
 #if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
 #define HAVE_WINDOWS_CONSOLE_IO 1
 #endif
-#endif /* Py_BUILD_CORE */
+#endif /* Py_BUILD_CORE || Py_BUILD_CORE_BUILTIN || Py_BUILD_CORE_MODULE */
 
 /* Compiler specific defines */
 
