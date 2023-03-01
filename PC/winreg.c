@@ -1583,49 +1583,54 @@ static PyObject *
 winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
 /*[clinic end generated code: output=f1b85b1c3d887ec7 input=cf366cada4836891]*/
 {
-    LONG rc;
-    BYTE buf[256], *pbuf = buf;
-    DWORD size = sizeof(buf);
+    long rc;
+    BYTE *retBuf, *tmp;
+    DWORD bufSize = 0, retSize;
     DWORD typ;
-    PyObject *obData = NULL;
-    PyObject *result = NULL;
+    PyObject *obData;
+    PyObject *result;
 
     if (PySys_Audit("winreg.QueryValue", "nuu",
-                    (Py_ssize_t)key, NULL, name) < 0)
-    {
+                    (Py_ssize_t)key, NULL, name) < 0) {
         return NULL;
     }
+    rc = RegQueryValueExW(key, name, NULL, NULL, NULL, &bufSize);
+    if (rc == ERROR_MORE_DATA)
+        bufSize = 256;
+    else if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegQueryValueEx");
+    retBuf = (BYTE *)PyMem_Malloc(bufSize);
+    if (retBuf == NULL)
+        return PyErr_NoMemory();
 
     while (1) {
-        Py_BEGIN_ALLOW_THREADS
-        rc = RegQueryValueExW(key, name, NULL, &typ, pbuf, &size);
-        Py_END_ALLOW_THREADS
-        if (rc != ERROR_MORE_DATA) {
+        retSize = bufSize;
+        rc = RegQueryValueExW(key, name, NULL, &typ,
+                             (BYTE *)retBuf, &retSize);
+        if (rc != ERROR_MORE_DATA)
             break;
-        }
-        void *tmp = PyMem_Realloc(pbuf != buf ? pbuf : NULL, size);
+
+        bufSize *= 2;
+        tmp = (char *) PyMem_Realloc(retBuf, bufSize);
         if (tmp == NULL) {
-            PyErr_NoMemory();
-            goto exit;
+            PyMem_Free(retBuf);
+            return PyErr_NoMemory();
         }
-        pbuf = tmp;
+       retBuf = tmp;
     }
 
     if (rc != ERROR_SUCCESS) {
-        PyErr_SetFromWindowsErrWithFunction(rc, "RegQueryValueEx");
-        goto exit;
+        PyMem_Free(retBuf);
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegQueryValueEx");
     }
-    obData = Reg2Py(pbuf, size, typ);
-    if (obData == NULL) {
-        goto exit;
-    }
+    obData = Reg2Py(retBuf, bufSize, typ);
+    PyMem_Free(retBuf);
+    if (obData == NULL)
+        return NULL;
     result = Py_BuildValue("Oi", obData, typ);
     Py_DECREF(obData);
-
-exit:
-    if (pbuf != buf) {
-        PyMem_Free(pbuf);
-    }
     return result;
 }
 
