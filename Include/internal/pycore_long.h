@@ -200,6 +200,20 @@ _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
     return (Py_SIZE(a) ^ Py_SIZE(b)) >= 0;
 }
 
+static inline void
+_PyLong_SetSignAndSize(PyLongObject *op, bool negative, Py_ssize_t size)
+{
+    int sign = 1-negative*2;
+    assert(sign == -1 || sign == 1);
+    op->long_value.ob_size = sign * size;
+}
+
+static inline void
+_PyLong_FlipSign(PyLongObject *op) {
+    op->long_value.ob_size = -op->long_value.ob_size;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

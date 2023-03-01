@@ -34,19 +34,6 @@ class int "PyObject *" "&PyLong_Type"
 #define WITH_PYLONG_MODULE 1
 
 static inline void
-_PyLong_SetSignAndSize(PyLongObject *op, bool negative, Py_ssize_t size)
-{
-    int sign = 1-negative*2;
-    assert(sign == -1 || sign == 1);
-    op->long_value.ob_size = sign * size;
-}
-
-static inline void
-_PyLong_FlipSign(PyLongObject *op) {
-    op->long_value.ob_size = -op->long_value.ob_size;
-}
-
-static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
@@ -150,6 +137,7 @@ long_normalize(PyLongObject *v)
 PyLongObject *
 _PyLong_New(Py_ssize_t size)
 {
+    assert(size >= 0);
     PyLongObject *result;
     if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
         PyErr_SetString(PyExc_OverflowError,
@@ -170,7 +158,8 @@ _PyLong_New(Py_ssize_t size)
         PyErr_NoMemory();
         return NULL;
     }
-    _PyObject_InitVar((PyVarObject*)result, &PyLong_Type, size);
+    _PyLong_SetSignAndSize(result, false, size);
+    _PyObject_Init((PyObject*)result, &PyLong_Type);
     return result;
 }
 
