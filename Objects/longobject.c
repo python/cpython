@@ -2872,7 +2872,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
             return -1;
         }
     }
-    if (_PyLong_IsNegative(a) && Py_SIZE(*prem) != 0) {
+    if (_PyLong_IsNegative(a) && !_PyLong_IsZero(*prem)) {
         _PyLong_Negate(prem);
         if (*prem == NULL) {
             Py_DECREF(z);
@@ -2916,7 +2916,7 @@ long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
             return -1;
     }
     /* Set the sign. */
-    if (_PyLong_IsNegative(a) && Py_SIZE(*prem) != 0) {
+    if (_PyLong_IsNegative(a) && !_PyLong_IsZero(*prem)) {
         _PyLong_Negate(prem);
         if (*prem == NULL) {
             Py_CLEAR(*prem);
@@ -3259,18 +3259,16 @@ long_hash(PyLongObject *v)
     Py_ssize_t i;
     int sign;
 
-    i = Py_SIZE(v);
-    switch(i) {
-    case -1: return v->long_value.ob_digit[0]==1 ? -2 : -(sdigit)v->long_value.ob_digit[0];
-    case 0: return 0;
-    case 1: return v->long_value.ob_digit[0];
+    if (_PyLong_IsSingleDigit(v)) {
+        x = _PyLong_SingleDigitValue(v);
+        if (x == (Py_uhash_t)-1) {
+            x = (Py_uhash_t)-2;
+        }
+        return x;
     }
-    sign = 1;
+    i = _PyLong_DigitCount(v);
+    sign = _PyLong_NonZeroSign(v);
     x = 0;
-    if (i < 0) {
-        sign = -1;
-        i = -(i);
-    }
     while (--i >= 0) {
         /* Here x is a quantity in the range [0, _PyHASH_MODULUS); we
            want to compute x * 2**PyLong_SHIFT + v->long_value.ob_digit[i] modulo
@@ -3454,7 +3452,7 @@ _PyLong_Subtract(PyLongObject *a, PyLongObject *b)
         else {
             z = x_add(a, b);
             if (z != NULL) {
-                assert(Py_SIZE(z) == 0 || Py_REFCNT(z) == 1);
+                assert(_PyLong_IsZero(z) || Py_REFCNT(z) == 1);
                 _PyLong_FlipSign(z);
             }
         }
@@ -4583,7 +4581,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     if (c) {
         /* if modulus == 0:
                raise ValueError() */
-        if (Py_SIZE(c) == 0) {
+        if (_PyLong_IsZero(c)) {
             PyErr_SetString(PyExc_ValueError,
                             "pow() 3rd argument cannot be 0");
             goto Error;
@@ -4992,7 +4990,7 @@ long_rshift(PyObject *a, PyObject *b)
         PyErr_SetString(PyExc_ValueError, "negative shift count");
         return NULL;
     }
-    if (Py_SIZE(a) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)a)) {
         return PyLong_FromLong(0);
     }
     if (divmod_shift(b, &wordshift, &remshift) < 0)
@@ -5008,7 +5006,7 @@ _PyLong_Rshift(PyObject *a, size_t shiftby)
     digit remshift;
 
     assert(PyLong_Check(a));
-    if (Py_SIZE(a) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)a)) {
         return PyLong_FromLong(0);
     }
     wordshift = shiftby / PyLong_SHIFT;
@@ -5069,7 +5067,7 @@ long_lshift(PyObject *a, PyObject *b)
         PyErr_SetString(PyExc_ValueError, "negative shift count");
         return NULL;
     }
-    if (Py_SIZE(a) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)a)) {
         return PyLong_FromLong(0);
     }
     if (divmod_shift(b, &wordshift, &remshift) < 0)
@@ -5085,7 +5083,7 @@ _PyLong_Lshift(PyObject *a, size_t shiftby)
     digit remshift;
 
     assert(PyLong_Check(a));
-    if (Py_SIZE(a) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)a)) {
         return PyLong_FromLong(0);
     }
     wordshift = shiftby / PyLong_SHIFT;
