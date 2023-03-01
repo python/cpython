@@ -1894,6 +1894,7 @@ def setswitchinterval(interval):
             interval = minimum_interval
     return sys.setswitchinterval(interval)
 
+
 def get_pagesize():
     """Get size of a page in bytes."""
     try:
