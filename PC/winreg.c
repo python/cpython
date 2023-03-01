@@ -1511,7 +1511,8 @@ winreg_QueryValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
     PyObject *result = NULL;
 
     if (PySys_Audit("winreg.QueryValue", "nuu",
-                    (Py_ssize_t)key, sub_key, NULL) < 0) {
+                    (Py_ssize_t)key, sub_key, NULL) < 0)
+    {
         return NULL;
     }
 
@@ -1844,32 +1845,39 @@ winreg_SetValueEx_impl(PyObject *module, HKEY key,
                        DWORD type, PyObject *value)
 /*[clinic end generated code: output=811b769a66ae11b7 input=900a9e3990bfb196]*/
 {
-    BYTE *data;
-    DWORD len;
-
     LONG rc;
+    BYTE *data = NULL;
+    DWORD size;
+    PyObject *result = NULL;
 
-    if (!Py2Reg(value, type, &data, &len))
+    if (!Py2Reg(value, type, &data, &size))
     {
-        if (!PyErr_Occurred())
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
                      "Could not convert the data to the specified type.");
+        }
         return NULL;
     }
     if (PySys_Audit("winreg.SetValue", "nunO",
                     (Py_ssize_t)key, value_name, (Py_ssize_t)type,
-                    value) < 0) {
-        PyMem_Free(data);
-        return NULL;
+                    value) < 0)
+    {
+        goto exit;
     }
+
     Py_BEGIN_ALLOW_THREADS
-    rc = RegSetValueExW(key, value_name, 0, type, data, len);
+    rc = RegSetValueExW(key, value_name, 0, type, data, size);
     Py_END_ALLOW_THREADS
+    if (rc == ERROR_SUCCESS) {
+        result = Py_NewRef(Py_None);
+    }
+    else {
+        PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValueEx");
+    }
+
+exit:
     PyMem_Free(data);
-    if (rc != ERROR_SUCCESS)
-        return PyErr_SetFromWindowsErrWithFunction(rc,
-                                                   "RegSetValueEx");
-    Py_RETURN_NONE;
+    return result;
 }
 
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
