@@ -4419,40 +4419,6 @@ exit:
     return result;
 }
 
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
-// The Windows Games API family does not provide PathCchSkipRoot
-// so we need our own implementation
-static wchar_t*
-win32_games_skip_root(wchar_t* path)
-{
-    if (path[0] == L'\\') {
-        /* relative path with root e.g. \Windows */
-        if (path[1] != L'\\') {
-            return path + 1;
-        }
-
-        /* UNC drives e.g. \\server\share or \\?\UNC\server\share */
-        wchar_t *end = path + 2;
-        if (!wcsnicmp(end, L"?\\UNC\\", 6)) {
-            end += 6;
-        }
-
-        end = wcschr(end, '\\');
-        if (!end) {
-            return path + wcslen(path);
-        }
-        end = wcschr(end + 1, '\\');
-        return (!end) ? path + wcslen(path) : end + 1;
-    }
-    /* absolute / relative path with drive, e.g. C: or C:\ */
-    else if (isalpha(path[0]) && path[1] == L':') {
-        return (path[2] == L'\\') ? path + 3 : path + 2;
-    }
-
-    /* relative path */
-    return NULL;
-}
-#endif /* MS_WINDOWS && !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 os._path_splitroot
@@ -4480,14 +4446,9 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
         *p = L'\\';
     }
 
-#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     Py_BEGIN_ALLOW_THREADS
     ret = PathCchSkipRoot(buffer, &end);
     Py_END_ALLOW_THREADS
-#else
-    end = win32_games_skip_root(buffer);
-    ret = (end != NULL) ? S_OK : E_INVALIDARG;
-#endif
     if (FAILED(ret)) {
         result = Py_BuildValue("sO", "", path->object);
     } else if (end != buffer) {

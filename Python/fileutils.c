@@ -2025,7 +2025,6 @@ int
 _Py_isabs(const wchar_t *path)
 {
 #ifdef MS_WINDOWS
-#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     const wchar_t *tail;
     HRESULT hr = PathCchSkipRoot(path, &tail);
     if (FAILED(hr) || path == tail) {
@@ -2040,19 +2039,6 @@ _Py_isabs(const wchar_t *path)
         return 0;
     }
     return 1;
-#else
-    /* this does not handle persistent local storage */
-    if (path[0] == SEP || path[0] == ALTSEP) {
-        // Check for an absolute UNC path.
-        return path[1] == SEP || path[1] == ALTSEP;
-    }
-    else {
-        // Check for an absolute drive path.
-        return ((path[0]) &&
-                (path[1] == L':') &&
-                (path[2] == SEP || path[2] == ALTSEP));
-    }
-#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
 #else
     return (path[0] == SEP);
 #endif
@@ -2121,40 +2107,74 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 #endif
 }
 
+// The Windows Games API family does not provide these functions
+// so provide our own implementations. Remove them in case they get added
+// to the Games API family
 #if defined(MS_WINDOWS) && !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
-static wchar_t*
-win32_games_skip_root(wchar_t* path)
+HRESULT
+PathCchSkipRoot(const wchar_t *path, const wchar_t **rootEnd)
 {
     if (path[0] == '\\') {
         /* relative path with root e.g. \Windows */
         if (path[1] != '\\') {
-            return path + 1;
+            *rootEnd = path + 1;
+            return S_OK;
         }
 
         /* UNC drives e.g. \\server\share or \\?\UNC\server\share */
-        wchar_t *end = path + 2;
+        const wchar_t *end = path + 2;
         if (!wcsnicmp(end, L"?\\UNC\\", 6)) {
             end += 6;
         }
 
         end = wcschr(end, '\\');
         if (!end) {
-            return path + wcslen(path);
+            *rootEnd = path + wcslen(path);
+            return S_OK;
         }
         end = wcschr(end + 1, '\\');
-        return (!end) ? path + wcslen(path) : end + 1;
+        *rootEnd = (!end) ? path + wcslen(path) : end + 1;
+        return S_OK;
     }
     /* absolute / relative path with drive, e.g. C: or C:\ */
     else if (isalpha(path[0]) && path[1] == ':') {
-        return (path[2] == '\\') ? path + 3 : path + 2;
+        *rootEnd = (path[2] == '\\') ? path + 3 : path + 2;
+        return S_OK;
     }
 
     /* relative path */
-    return NULL;
+    return E_INVALIDARG;
 }
 
-// The Windows Games API family does not provide PathCchCombineEx
-// so we need our own implementation
+static HRESULT
+PathCchStripToRoot(wchar_t *path, size_t size)
+{
+    wchar_t *end;
+    if (PathCchSkipRoot(path, &end) == S_OK) {
+        if (*end == '\0') {
+            return S_FALSE;
+        }
+        *end = '\0';
+    }
+
+    return E_INVALIDARG;
+}
+
+static wchar_t*
+PathAddBackslashW(wchar_t *path)
+{
+    size_t len;
+    if (!path) {
+        return NULL;
+    }
+    len = wcslen(path);
+    if (len && path[len - 1] != '\\') {
+        path[len++] = '\\';
+        path[len] = '\0';
+    }
+    return path + len;
+}
+
 static int
 win32_games_join_relfile(wchar_t *buffer, size_t bufsize,
                          const wchar_t *dirname, const wchar_t *relfile)
@@ -2180,27 +2200,17 @@ win32_games_join_relfile(wchar_t *buffer, size_t bufsize,
         if(wcsncmp(buffer, L"\\\\?\\", 4)) {
             buffer += 4;
         }
-        if (isalpha(buffer[0]) && buffer[1] == ':') {
-            if (!buffer[2]) {
-                buffer[2] = '\\';
-                buffer[3] = '\0';
-            }
+        if (isalpha(buffer[0]) && buffer[1] == ':' && !buffer[2]) {
+            PathAddBackslashW(buffer);
         }
     }
     else {
         if (relfile[0] == '\\' && relfile[1] != '\\')
         {
-            wchar_t* root_end = win32_games_skip_root(buffer);
-            if (root_end) {
-                *root_end = '\0';
-            }
-            combined_length = root_end - buffer;
+            PathCchStripToRoot(buffer, combined_length);
             relfile++;
         }
-        if (combined_length && buffer[combined_length - 1] != '\\') {
-            buffer[combined_length++] = '\\';
-            buffer[combined_length] = '\0';
-        }
+        PathAddBackslashW(buffer);
         wcscat(buffer, relfile);
     }
     return 0;
