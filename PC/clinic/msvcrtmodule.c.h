@@ -626,7 +626,7 @@ exit:
 
 #endif /* defined(_DEBUG) */
 
-#if (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(msvcrt_GetErrorMode__doc__,
 "GetErrorMode($module, /)\n"
@@ -646,7 +646,7 @@ msvcrt_GetErrorMode(PyObject *module, PyObject *Py_UNUSED(ignored))
     return msvcrt_GetErrorMode_impl(module);
 }
 
-#endif /* (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
 PyDoc_STRVAR(msvcrt_SetErrorMode__doc__,
 "SetErrorMode($module, mode, /)\n"
@@ -707,4 +707,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=66607ffeda8a5f8b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2db6197608a6aab3 input=a9049054013a1b77]*/

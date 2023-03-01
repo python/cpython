@@ -491,7 +491,7 @@ msvcrt_set_error_mode_impl(PyObject *module, int mode)
 }
 #endif /* _DEBUG */
 
-#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 msvcrt.GetErrorMode
