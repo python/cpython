@@ -108,9 +108,10 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
     int base,
     int alternate);
 
+
 /* Return 1 if the argument is positive single digit int */
 static inline int
-_PyLong_IsPositiveSingleDigit(const PyLongObject* op) {
+_PyLong_IsNonNegativeSingleDigit(const PyLongObject* op) {
     /*  For a positive single digit int, the value of Py_SIZE(sub) is 0 or 1.
 
         We perform a fast check using a single comparison by casting from int

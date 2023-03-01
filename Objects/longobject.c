@@ -616,7 +616,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
     }
 
     v = (PyLongObject *)vv;
-    if (_PyLong_IsPositiveSingleDigit(v)) {
+    if (_PyLong_IsNonNegativeSingleDigit(v)) {
         return _PyLong_SingleDigitValue(v);
     }
     if (_PyLong_IsNegative(v)) {
@@ -659,7 +659,7 @@ PyLong_AsSize_t(PyObject *vv)
     }
 
     v = (PyLongObject *)vv;
-    if (_PyLong_IsPositiveSingleDigit(v)) {
+    if (_PyLong_IsNonNegativeSingleDigit(v)) {
         return _PyLong_SingleDigitValue(v);
     }
     if (_PyLong_IsNegative(v)) {
@@ -696,7 +696,7 @@ _PyLong_AsUnsignedLongMask(PyObject *vv)
         return (unsigned long) -1;
     }
     v = (PyLongObject *)vv;
-    if (_PyLong_IsPositiveSingleDigit(v)) {
+    if (_PyLong_IsNonNegativeSingleDigit(v)) {
         return _PyLong_SingleDigitValue(v);
     }
     i = _PyLong_DigitCount(v);
@@ -1228,7 +1228,7 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
     }
 
     v = (PyLongObject*)vv;
-    if (_PyLong_IsPositiveSingleDigit(v)) {
+    if (_PyLong_IsNonNegativeSingleDigit(v)) {
         res = 0;
         bytes = _PyLong_SingleDigitValue(v);
     }
@@ -1260,7 +1260,7 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
         return (unsigned long long) -1;
     }
     v = (PyLongObject *)vv;
-    if (_PyLong_IsPositiveSingleDigit(v)) {
+    if (_PyLong_IsNonNegativeSingleDigit(v)) {
         return _PyLong_SingleDigitValue(v);
     }
     i = _PyLong_DigitCount(v);
@@ -4582,7 +4582,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 
         /* if modulus == 1:
                return 0 */
-        if (_PyLong_IsPositiveSingleDigit(c) && (c->long_value.ob_digit[0] == 1)) {
+        if (_PyLong_IsNonNegativeSingleDigit(c) && (c->long_value.ob_digit[0] == 1)) {
             z = (PyLongObject *)PyLong_FromLong(0L);
             goto Done;
         }
