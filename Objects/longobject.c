@@ -22,14 +22,12 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
-/* Is this PyLong of size 1, 0 or -1? */
-#define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
 
 /* convert a PyLong of size 1, 0 or -1 to a C integer */
 static inline stwodigits
 medium_value(PyLongObject *x)
 {
-    assert(IS_MEDIUM_VALUE(x));
+    assert(_PyLong_IsSingleDigit(x));
     return ((stwodigits)Py_SIZE(x)) * x->long_value.ob_digit[0];
 }
 
@@ -81,7 +79,7 @@ get_small_int(sdigit ival)
 static PyLongObject *
 maybe_small_long(PyLongObject *v)
 {
-    if (v && IS_MEDIUM_VALUE(v)) {
+    if (v && _PyLong_IsSingleDigit(v)) {
         stwodigits ival = medium_value(v);
         if (IS_SMALL_INT(ival)) {
             _Py_DECREF_INT(v);
@@ -3200,7 +3198,7 @@ PyLong_AsDouble(PyObject *v)
         PyErr_SetString(PyExc_TypeError, "an integer is required");
         return -1.0;
     }
-    if (IS_MEDIUM_VALUE(v)) {
+    if (_PyLong_IsSingleDigit((PyLongObject *)v)) {
         /* Fast path; single digit long (31 bits) will cast safely
            to double.  This improves performance of FP/long operations
            by 20%.
@@ -3401,7 +3399,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
 PyObject *
 _PyLong_Add(PyLongObject *a, PyLongObject *b)
 {
-    if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
+    if (_PyLong_IsSingleDigit(a) && _PyLong_IsSingleDigit(b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) + medium_value(b));
     }
 
@@ -3442,7 +3440,7 @@ _PyLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
 
-    if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
+    if (_PyLong_IsSingleDigit(a) && _PyLong_IsSingleDigit(b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
     }
     if (_PyLong_IsNegative(a)) {
@@ -3894,7 +3892,7 @@ _PyLong_Multiply(PyLongObject *a, PyLongObject *b)
     PyLongObject *z;
 
     /* fast path for single-digit multiplication */
-    if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
+    if (_PyLong_IsSingleDigit(a) && _PyLong_IsSingleDigit(b)) {
         stwodigits v = medium_value(a) * medium_value(b);
         return _PyLong_FromSTwoDigits(v);
     }
@@ -4815,7 +4813,7 @@ long_invert(PyLongObject *v)
 {
     /* Implement ~x as -(x+1) */
     PyLongObject *x;
-    if (IS_MEDIUM_VALUE(v))
+    if (_PyLong_IsSingleDigit(v))
         return _PyLong_FromSTwoDigits(~medium_value(v));
     x = (PyLongObject *) long_add(v, (PyLongObject *)_PyLong_GetOne());
     if (x == NULL)
@@ -4830,7 +4828,7 @@ static PyObject *
 long_neg(PyLongObject *v)
 {
     PyLongObject *z;
-    if (IS_MEDIUM_VALUE(v))
+    if (_PyLong_IsSingleDigit(v))
         return _PyLong_FromSTwoDigits(-medium_value(v));
     z = (PyLongObject *)_PyLong_Copy(v);
     if (z != NULL)
@@ -4903,7 +4901,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     assert(remshift < PyLong_SHIFT);
 
     /* Fast path for small a. */
-    if (IS_MEDIUM_VALUE(a)) {
+    if (_PyLong_IsSingleDigit(a)) {
         stwodigits m, x;
         digit shift;
         m = medium_value(a);
@@ -5019,7 +5017,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     Py_ssize_t oldsize, newsize, i, j;
     twodigits accum;
 
-    if (wordshift == 0 && IS_MEDIUM_VALUE(a)) {
+    if (wordshift == 0 && _PyLong_IsSingleDigit(a)) {
         stwodigits m = medium_value(a);
         // bypass undefined shift operator behavior
         stwodigits x = m < 0 ? -(-m << remshift) : m << remshift;
@@ -5235,7 +5233,7 @@ long_and(PyObject *a, PyObject *b)
     CHECK_BINOP(a, b);
     PyLongObject *x = (PyLongObject*)a;
     PyLongObject *y = (PyLongObject*)b;
-    if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
+    if (_PyLong_IsSingleDigit(x) && _PyLong_IsSingleDigit(y)) {
         return _PyLong_FromSTwoDigits(medium_value(x) & medium_value(y));
     }
     return long_bitwise(x, '&', y);
@@ -5247,7 +5245,7 @@ long_xor(PyObject *a, PyObject *b)
     CHECK_BINOP(a, b);
     PyLongObject *x = (PyLongObject*)a;
     PyLongObject *y = (PyLongObject*)b;
-    if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
+    if (_PyLong_IsSingleDigit(x) && _PyLong_IsSingleDigit(y)) {
         return _PyLong_FromSTwoDigits(medium_value(x) ^ medium_value(y));
     }
     return long_bitwise(x, '^', y);
@@ -5259,7 +5257,7 @@ long_or(PyObject *a, PyObject *b)
     CHECK_BINOP(a, b);
     PyLongObject *x = (PyLongObject*)a;
     PyLongObject *y = (PyLongObject*)b;
-    if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
+    if (_PyLong_IsSingleDigit(x) && _PyLong_IsSingleDigit(y)) {
         return _PyLong_FromSTwoDigits(medium_value(x) | medium_value(y));
     }
     return long_bitwise(x, '|', y);
