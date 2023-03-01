@@ -1598,8 +1598,7 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
 
     while (1) {
         Py_BEGIN_ALLOW_THREADS
-        rc = RegQueryValueExW(key, name, NULL, &typ, pbuf,
-                              &size);
+        rc = RegQueryValueExW(key, name, NULL, &typ, pbuf, &size);
         Py_END_ALLOW_THREADS
         if (rc != ERROR_MORE_DATA) {
             break;
