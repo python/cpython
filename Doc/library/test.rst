@@ -536,6 +536,11 @@ The :mod:`test.support` module defines the following functions:
    :func:`doctest.testmod`.
 
 
+.. function:: get_pagesize()
+
+   Get size of a page in bytes.
+
+
 .. function:: setswitchinterval(interval)
 
    Set the :func:`sys.setswitchinterval` to the given *interval*.  Defines

@@ -51,6 +51,8 @@ __all__ = [
     # sys
     "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
+    # os
+    "get_pagesize",
     # network
     "open_urlresource",
     # processes
@@ -1892,6 +1894,16 @@ def setswitchinterval(interval):
             interval = minimum_interval
     return sys.setswitchinterval(interval)
 
+def get_pagesize():
+    """Get size of a page in bytes."""
+    try:
+        page_size = os.sysconf('SC_PAGESIZE')
+    except (ValueError, AttributeError):
+        try:
+            page_size = os.sysconf('SC_PAGE_SIZE')
+        except (ValueError, AttributeError):
+            page_size = 4096
+    return page_size
 
 @contextlib.contextmanager
 def disable_faulthandler():
