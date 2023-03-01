@@ -840,7 +840,7 @@ r_PyLong(RFILE *p)
     if (ob == NULL)
         return NULL;
 
-    Py_SET_SIZE(ob, n > 0 ? size : -size);
+    _PyLong_SetSignAndSize(ob, n < 0, size);
 
     for (i = 0; i < size-1; i++) {
         d = 0;

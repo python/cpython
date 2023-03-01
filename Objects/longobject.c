@@ -172,8 +172,7 @@ _PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits)
         PyErr_NoMemory();
         return NULL;
     }
-    int sign = negative ? -1 : 1;
-    result->long_value.ob_size = sign * digit_count;
+    _PyLong_SetSignAndSize(result, negative, digit_count);
     memcpy(result->long_value.ob_digit, digits, digit_count * sizeof(digit));
     return result;
 }
@@ -204,9 +203,9 @@ _PyLong_FromMedium(sdigit x)
         PyErr_NoMemory();
         return NULL;
     }
-    Py_ssize_t sign = x < 0 ? -1: 1;
     digit abs_x = x < 0 ? -x : x;
-    _PyObject_InitVar((PyVarObject*)v, &PyLong_Type, sign);
+    _PyLong_SetSignAndSize(v, x < 0, 1);
+    _PyObject_Init((PyObject*)v, &PyLong_Type);
     v->long_value.ob_digit[0] = abs_x;
     return (PyObject*)v;
 }

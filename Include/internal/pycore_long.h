@@ -112,9 +112,7 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 /* Return 1 if the argument is positive single digit int */
 static inline int
 _PyLong_IsNonNegativeSingleDigit(const PyLongObject* op) {
-    /*  For a positive single digit int, the value of Py_SIZE(sub) is 0 or 1.
-
-        We perform a fast check using a single comparison by casting from int
+    /*  We perform a fast check using a single comparison by casting from int
         to uint which casts negative numbers to large positive numbers.
         For details see Section 14.2 "Bounds Checking" in the Agner Fog
         optimization manual found at:
@@ -124,7 +122,7 @@ _PyLong_IsNonNegativeSingleDigit(const PyLongObject* op) {
         compiler options of GCC and clang
     */
     assert(PyLong_Check(op));
-    Py_ssize_t signed_size = Py_SIZE(op);
+    Py_ssize_t signed_size = op->long_value.ob_size;
     return ((size_t)signed_size) <= 1;
 }
 
@@ -132,7 +130,7 @@ _PyLong_IsNonNegativeSingleDigit(const PyLongObject* op) {
 static inline int
 _PyLong_IsSingleDigit(const PyLongObject* op) {
     assert(PyLong_Check(op));
-    Py_ssize_t signed_size = Py_SIZE(op);
+    Py_ssize_t signed_size = op->long_value.ob_size;
     return ((size_t)(signed_size+1)) <= 2;
 }
 
@@ -140,27 +138,27 @@ static inline Py_ssize_t
 _PyLong_SingleDigitValue(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(Py_SIZE(op) >= -1 && Py_SIZE(op) <= 1);
-    return Py_SIZE(op) * op->long_value.ob_digit[0];
+    assert(op->long_value.ob_size >= -1 && op->long_value.ob_size <= 1);
+    return op->long_value.ob_size * op->long_value.ob_digit[0];
 }
 
 static inline bool
 _PyLong_IsPositive(const PyLongObject *op)
 {
-    return Py_SIZE(op) > 0;
+    return op->long_value.ob_size > 0;
 }
 
 static inline bool
 _PyLong_IsNegative(const PyLongObject *op)
 {
-    return Py_SIZE(op) < 0;
+    return op->long_value.ob_size < 0;
 }
 
 static inline Py_ssize_t
 _PyLong_DigitCount(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    return Py_ABS(Py_SIZE(op));
+    return Py_ABS(op->long_value.ob_size);
 }
 
 /* Equivalent to _PyLong_DigitCount(op) * _PyLong_NonZeroSign(op) */
@@ -168,7 +166,7 @@ static inline Py_ssize_t
 _PyLong_SignedDigitCount(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    return Py_SIZE(op);
+    return op->long_value.ob_size;
 }
 
 /* Like _PyLong_DigitCount but asserts that op is non-negative */
@@ -177,13 +175,13 @@ _PyLong_UnsignedDigitCount(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
     assert(!_PyLong_IsNegative(op));
-    return Py_SIZE(op);
+    return op->long_value.ob_size;
 }
 
 static inline bool
 _PyLong_IsZero(const PyLongObject *op)
 {
-    return Py_SIZE(op) == 0;
+    return op->long_value.ob_size == 0;
 }
 
 static inline int
@@ -191,14 +189,14 @@ _PyLong_NonZeroSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
     assert(!_PyLong_IsZero(op));
-    return ((Py_SIZE(op) > 0) << 1) - 1;
+    return ((op->long_value.ob_size > 0) << 1) - 1;
 }
 
 /* Do a and b have the same sign? Zero counts as positive. */
 static inline int
 _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
 {
-    return (Py_SIZE(a) ^ Py_SIZE(b)) >= 0;
+    return (a->long_value.ob_size ^ b->long_value.ob_size) >= 0;
 }
 
 static inline void
@@ -213,6 +211,20 @@ static inline void
 _PyLong_FlipSign(PyLongObject *op) {
     op->long_value.ob_size = -op->long_value.ob_size;
 }
+
+#define _PyLong_DIGIT_INIT(val) \
+    { \
+        .ob_base = _PyObject_IMMORTAL_INIT(&PyLong_Type), \
+        .long_value  = { \
+            .ob_size = (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \
+            { ((val) >= 0 ? (val) : -(val)) }, \
+        } \
+    }
+
+#define TAG_FROM_SIGN_AND_SIZE(neg, size) (neg ? -(size) : (size))
+
+#define _PyLong_FALSE_TAG 0
+#define _PyLong_TRUE_TAG 1
 
 
 #ifdef __cplusplus

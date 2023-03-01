@@ -80,7 +80,7 @@ typedef long stwodigits; /* signed variant of twodigits */
 */
 
 typedef struct _PyLongValue {
-    Py_ssize_t ob_size; /* Number of items in variable part */
+    intptr_t ob_size; /* Number of digits, sign and flags */
     digit ob_digit[1];
 } _PyLongValue;
 
