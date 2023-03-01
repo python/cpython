@@ -23,10 +23,58 @@ struct _frame {
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     char f_fast_as_locals;      /* Have the fast locals of this frame been converted to a dict? */
     /* The frame data, if this frame object owns the frame */
-    PyObject *_f_frame_data[1];
+    char *_f_frame_data[1];
 };
 
 extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
+
+
+/* Tagged pointers on the stack */
+
+typedef union {
+    uintptr_t val;
+    PyObject *obj;
+} _tagged_ptr;
+
+static_assert(sizeof(_tagged_ptr) == sizeof(PyObject *),
+              "tagged pointer must be the same size as object pointer");
+
+static inline bool is_tagged(_tagged_ptr tp) {
+    return tp.val & 1;
+}
+
+static inline PyObject *detag(_tagged_ptr tp) {
+    return (PyObject *) (tp.val & ~1);
+}
+
+static inline _tagged_ptr untagged(PyObject *p) {
+    return (_tagged_ptr) { .val = (uintptr_t) p };
+}
+
+static inline _tagged_ptr tagged(PyObject *p) {
+    return (_tagged_ptr) { .val = (uintptr_t) p | 1 };
+}
+
+static inline void decref_unless_tagged(_tagged_ptr tp) {
+    if (!is_tagged(tp)) {
+        Py_DECREF(detag(tp));
+    }
+}
+
+static inline void incref_if_tagged(_tagged_ptr tp) {
+    if (is_tagged(tp)) {
+        Py_INCREF(detag(tp));
+    }
+}
+
+#define CLEAR_TAGGED(tp) do { \
+    if (!is_tagged(tp)) { \
+        Py_CLEAR(tp.obj); \
+    } \
+    else { \
+        tp.obj = NULL; \
+    } \
+} while (0)
 
 
 /* other API */
@@ -62,31 +110,42 @@ typedef struct _PyInterpreterFrame {
     int stacktop;  /* Offset of TOS from localsplus  */
     uint16_t yield_offset;
     char owner;
-    /* Locals and stack */
+    /* Locals and stack (locals are object ptrs, stack are tagged ptrs) */
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
+
+static inline _tagged_ptr *localsplus_as_tagged_ptr(_PyInterpreterFrame *f) {
+    return (_tagged_ptr *) f->localsplus;
+}
+
+static inline PyObject **localsplus_as_object_ptr(_PyInterpreterFrame *f) {
+    return (PyObject **) f->localsplus;
+}
 
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
 
-static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
-    return f->localsplus + f->f_code->co_nlocalsplus;
+static inline _tagged_ptr *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
+    return localsplus_as_tagged_ptr(f) + f->f_code->co_nlocalsplus;
 }
 
 static inline PyObject *_PyFrame_StackPeek(_PyInterpreterFrame *f) {
     assert(f->stacktop > f->f_code->co_nlocalsplus);
-    assert(f->localsplus[f->stacktop-1] != NULL);
-    return f->localsplus[f->stacktop-1];
+    _tagged_ptr tp = localsplus_as_tagged_ptr(f)[f->stacktop - 1];
+    assert(detag(tp) != NULL);
+    return detag(tp);
 }
 
 static inline PyObject *_PyFrame_StackPop(_PyInterpreterFrame *f) {
     assert(f->stacktop > f->f_code->co_nlocalsplus);
     f->stacktop--;
-    return f->localsplus[f->stacktop];
+    _tagged_ptr tp = localsplus_as_tagged_ptr(f)[f->stacktop];
+    incref_if_tagged(tp);
+    return detag(tp);
 }
 
 static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
-    f->localsplus[f->stacktop] = value;
+    localsplus_as_tagged_ptr(f)[f->stacktop] = untagged(value);
     f->stacktop++;
 }
 
@@ -124,29 +183,35 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
+        localsplus_as_object_ptr(frame)[i] = NULL;
     }
 }
 
 /* Gets the pointer to the locals array
  * that precedes this frame.
  */
-static inline PyObject**
-_PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
+static inline PyObject **
+_PyFrame_GetLocalsArray_ObjectPtr(_PyInterpreterFrame *frame)
 {
-    return frame->localsplus;
+    return (PyObject **) frame->localsplus;
 }
 
-static inline PyObject**
+static inline _tagged_ptr *
+_PyFrame_GetLocalsArray_TaggedPtr(_PyInterpreterFrame *frame)
+{
+    return (_tagged_ptr *) frame->localsplus;
+}
+
+static inline _tagged_ptr *
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    return frame->localsplus+frame->stacktop;
+    return (_tagged_ptr *) (frame->localsplus + frame->stacktop);
 }
 
 static inline void
-_PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
+_PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _tagged_ptr *stack_pointer)
 {
-    frame->stacktop = (int)(stack_pointer - frame->localsplus);
+    frame->stacktop = (int)(stack_pointer - (_tagged_ptr *) frame->localsplus);
 }
 
 /* Determine whether a frame is incomplete.

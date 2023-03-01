@@ -238,7 +238,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* Local variable macros */
 
-#define GETLOCAL(i)     (frame->localsplus[i])
+#define GETLOCAL(i)     (localsplus_as_object_ptr(frame)[i])
 
 /* The SETLOCAL() macro must not DECREF the local variable in-place and
    then store the new value; it must copy the old value to a temporary

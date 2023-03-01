@@ -778,10 +778,11 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     // in the new location. Rather than crashing or changing co_code, just bind
     // None instead:
     int unbound = 0;
+    PyObject **localsplus = localsplus_as_object_ptr(f->f_frame);
     for (int i = 0; i < f->f_frame->f_code->co_nlocalsplus; i++) {
         // Counting every unbound local is overly-cautious, but a full flow
         // analysis (like we do in the compiler) is probably too expensive:
-        unbound += f->f_frame->localsplus[i] == NULL;
+        unbound += localsplus[i] == NULL;
     }
     if (unbound) {
         const char *e = "assigning None to %d unbound local%s";
@@ -792,8 +793,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         // Do this in a second pass to avoid writing a bunch of Nones when
         // warnings are being treated as errors and the previous bit raises:
         for (int i = 0; i < f->f_frame->f_code->co_nlocalsplus; i++) {
-            if (f->f_frame->localsplus[i] == NULL) {
-                f->f_frame->localsplus[i] = Py_NewRef(Py_None);
+            if (localsplus[i] == NULL) {
+                localsplus[i] = Py_NewRef(Py_None);
                 unbound--;
             }
         }
@@ -884,9 +885,9 @@ frame_dealloc(PyFrameObject *f)
         frame->f_code = NULL;
         Py_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
-        PyObject **locals = _PyFrame_GetLocalsArray(frame);
+        _tagged_ptr *locals = _PyFrame_GetLocalsArray_TaggedPtr(frame);
         for (int i = 0; i < frame->stacktop; i++) {
-            Py_CLEAR(locals[i]);
+            CLEAR_TAGGED(locals[i]);
         }
     }
     Py_CLEAR(f->f_back);
@@ -914,10 +915,10 @@ frame_tp_clear(PyFrameObject *f)
     Py_CLEAR(f->f_trace);
 
     /* locals and stack */
-    PyObject **locals = _PyFrame_GetLocalsArray(f->f_frame);
+    _tagged_ptr *locals = _PyFrame_GetLocalsArray_TaggedPtr(f->f_frame);
     assert(f->f_frame->stacktop >= 0);
     for (int i = 0; i < f->f_frame->stacktop; i++) {
-        Py_CLEAR(locals[i]);
+        CLEAR_TAGGED(locals[i]);
     }
     f->f_frame->stacktop = 0;
     return 0;
@@ -1129,7 +1130,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     int offset = PyCode_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);
-        frame->localsplus[offset + i] = Py_NewRef(o);
+        localsplus_as_object_ptr(frame)[offset + i] = Py_NewRef(o);
     }
     // COPY_FREE_VARS doesn't have inline CACHEs, either:
     frame->prev_instr = _PyCode_CODE(frame->f_code);
@@ -1154,7 +1155,7 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
         return 0;
     }
 
-    PyObject *value = frame->localsplus[i];
+    PyObject *value = localsplus_as_object_ptr(frame)[i];
     if (frame->stacktop) {
         if (kind & CO_FAST_FREE) {
             // The cell was set by COPY_FREE_VARS.
@@ -1314,7 +1315,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     if (locals == NULL) {
         return;
     }
-    fast = _PyFrame_GetLocalsArray(frame);
+    fast = _PyFrame_GetLocalsArray_ObjectPtr(frame);
     co = frame->f_code;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
