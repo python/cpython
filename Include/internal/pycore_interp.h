@@ -16,6 +16,7 @@ extern "C" {
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_dict_state.h"    // struct _Py_dict_state
+#include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
@@ -139,6 +140,7 @@ struct _is {
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
     struct _Py_long_state long_state;
+    struct _dtoa_state dtoa;
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
