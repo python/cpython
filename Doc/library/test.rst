@@ -540,6 +540,8 @@ The :mod:`test.support` module defines the following functions:
 
    Get size of a page in bytes.
 
+    .. versionadded:: 3.12
+
 
 .. function:: setswitchinterval(interval)
 
