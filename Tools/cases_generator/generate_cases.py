@@ -290,11 +290,11 @@ class Instruction:
                     list_effect_size([ieff for ieff in ieffects[: i + 1]])
                 )
                 if ieffect.size:
-                    src = StackEffect(f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **")
+                    src = StackEffect(f"((PyObject **)stack_pointer - {maybe_parenthesize(isize)})", "PyObject **")
                 elif ieffect.cond:
-                    src = StackEffect(f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL", "")
+                    src = StackEffect(f"({ieffect.cond}) ? detag(stack_pointer[-{maybe_parenthesize(isize)}]) : NULL", "")
                 else:
-                    src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
+                    src = StackEffect(f"detag(stack_pointer[-{maybe_parenthesize(isize)}])", "")
                 out.declare(ieffect, src)
         else:
             # Write input register variable declarations and initializations
@@ -311,7 +311,7 @@ class Instruction:
                     osize = string_effect_size(
                         list_effect_size([oeff for oeff in self.output_effects[:i]])
                     )
-                    offset = "stack_pointer"
+                    offset = "(PyObject **)stack_pointer"
                     if isize != osize:
                         if isize != "0":
                             offset += f" - ({isize})"
@@ -347,9 +347,9 @@ class Instruction:
                     list_effect_size([oeff for oeff in oeffects[: i + 1]])
                 )
                 if oeffect.size:
-                    dst = StackEffect(f"stack_pointer - {maybe_parenthesize(osize)}", "PyObject **")
+                    dst = StackEffect(f"(PyObject **)stack_pointer - {maybe_parenthesize(osize)}", "PyObject **")
                 else:
-                    dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "")
+                    dst = StackEffect(f"((PyObject **)stack_pointer)[-{maybe_parenthesize(osize)}]", "")
                 out.assign(dst, oeffect)
         else:
             # Write output register assignments
@@ -1107,7 +1107,7 @@ class Analyzer:
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:
-                    src = StackEffect(f"stack_pointer[-{up.initial_sp - i}]", "")
+                    src = StackEffect(f"detag(stack_pointer[-{up.initial_sp - i}])", "")
                 self.out.declare(var, src)
 
             yield
@@ -1117,7 +1117,8 @@ class Analyzer:
 
             for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
                 dst = StackEffect(f"stack_pointer[-{i}]", "")
-                self.out.assign(dst, var)
+                src = StackEffect(f"untagged({var.name})", "")
+                self.out.assign(dst, src)
 
             self.out.emit(f"DISPATCH();")
 

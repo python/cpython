@@ -776,7 +776,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     PyObject *names;
     PyObject *consts;
     _Py_CODEUNIT *next_instr;
-    PyObject **stack_pointer;
+    _tagged_ptr *stack_pointer;
 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
