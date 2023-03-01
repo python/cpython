@@ -185,8 +185,7 @@ _PyLong_NonZeroSign(const PyLongObject *op)
     return ((Py_SIZE(op) > 0) << 1) - 1;
 }
 
-/* Do a and b have the same sign?
- */
+/* Do a and b have the same sign? Zero counts as positive. */
 static inline int
 _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
 {

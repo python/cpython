@@ -3926,7 +3926,7 @@ fast_mod(PyLongObject *a, PyLongObject *b)
 
     assert(_PyLong_DigitCount(a) == 1);
     assert(_PyLong_DigitCount(b) == 1);
-
+    sdigit sign = _PyLong_NonZeroSign(b);
     if (_PyLong_SameSign(a, b)) {
         mod = left % right;
     }
@@ -3935,7 +3935,7 @@ fast_mod(PyLongObject *a, PyLongObject *b)
         mod = right - 1 - (left - 1) % right;
     }
 
-    return PyLong_FromLong(mod * (sdigit)Py_SIZE(b));
+    return PyLong_FromLong(mod * sign);
 }
 
 /* Fast floor division for single-digit longs. */
@@ -4065,8 +4065,8 @@ l_divmod(PyLongObject *v, PyLongObject *w,
 #endif
     if (long_divrem(v, w, &div, &mod) < 0)
         return -1;
-    if ((_PyLong_IsNegative(mod) && Py_SIZE(w) > 0) ||
-        (Py_SIZE(mod) > 0 && _PyLong_IsNegative(w))) {
+    if ((_PyLong_IsNegative(mod) && _PyLong_IsPositive(w)) ||
+        (_PyLong_IsPositive(mod) && _PyLong_IsNegative(w))) {
         PyLongObject *temp;
         temp = (PyLongObject *) long_add(mod, w);
         Py_SETREF(mod, temp);
@@ -4112,8 +4112,8 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
     }
     if (long_rem(v, w, &mod) < 0)
         return -1;
-    if ((_PyLong_IsNegative(mod) && Py_SIZE(w) > 0) ||
-        (Py_SIZE(mod) > 0 && _PyLong_IsNegative(w))) {
+    if ((_PyLong_IsNegative(mod) && _PyLong_IsPositive(w)) ||
+        (_PyLong_IsPositive(mod) && _PyLong_IsNegative(w))) {
         PyLongObject *temp;
         temp = (PyLongObject *) long_add(mod, w);
         Py_SETREF(mod, temp);
@@ -4359,7 +4359,7 @@ long_true_divide(PyObject *v, PyObject *w)
         Py_SETREF(x, div);
         if (x == NULL)
             goto error;
-        if (Py_SIZE(rem))
+        if (!_PyLong_IsZero(rem))
             inexact = 1;
         Py_DECREF(rem);
     }
@@ -4465,7 +4465,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
     PyLongObject *b, *c;
 
     /* Should only ever be called for positive n */
-    assert(Py_SIZE(n) > 0);
+    assert(_PyLong_IsPositive(n));
 
     b = (PyLongObject *)PyLong_FromLong(1L);
     if (b == NULL) {
@@ -4480,7 +4480,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
     Py_INCREF(n);
 
     /* references now owned: a, b, c, n */
-    while (Py_SIZE(n) != 0) {
+    while (!_PyLong_IsZero(n)) {
         PyLongObject *q, *r, *s, *t;
 
         if (l_divmod(a, n, &q, &r) == -1) {
@@ -4635,7 +4635,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
               base % modulus instead.
            We could _always_ do this reduction, but l_mod() isn't cheap,
            so we only do it when it buys something. */
-        if (_PyLong_IsNegative(a) || Py_SIZE(a) > Py_SIZE(c)) {
+        if (_PyLong_IsNegative(a) || _PyLong_UnsignedDigitCount(a) > _PyLong_UnsignedDigitCount(c)) {
             if (l_mod(a, c, &temp) < 0)
                 goto Error;
             Py_SETREF(a, temp);
@@ -4850,7 +4850,7 @@ long_abs(PyLongObject *v)
 static int
 long_bool(PyLongObject *v)
 {
-    return Py_SIZE(v) != 0;
+    return !_PyLong_IsZero(v);
 }
 
 /* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
@@ -4858,7 +4858,7 @@ static int
 divmod_shift(PyObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
 {
     assert(PyLong_Check(shiftby));
-    assert(Py_SIZE(shiftby) >= 0);
+    assert(!_PyLong_IsNegative((PyLongObject *)shiftby));
     Py_ssize_t lshiftby = PyLong_AsSsize_t((PyObject *)shiftby);
     if (lshiftby >= 0) {
         *wordshift = lshiftby / PyLong_SHIFT;
@@ -5568,9 +5568,7 @@ long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
     if (tmp == NULL)
         return NULL;
     assert(PyLong_Check(tmp));
-    n = Py_SIZE(tmp);
-    if (n < 0)
-        n = -n;
+    n = _PyLong_DigitCount(tmp);
     /* Fast operations for single digit integers (including zero)
      * assume that there is always at least one digit present. */
     if (n == 0) {
@@ -5696,7 +5694,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     cmp = long_compare((PyLongObject *)twice_rem, (PyLongObject *)b);
     Py_DECREF(twice_rem);
 
-    quo_is_odd = Py_SIZE(quo) != 0 && ((quo->long_value.ob_digit[0] & 1) != 0);
+    quo_is_odd = (quo->long_value.ob_digit[0] & 1) != 0;
     if ((_PyLong_IsNegative((PyLongObject *)b) ? cmp < 0 : cmp > 0) || (cmp == 0 && quo_is_odd)) {
         /* fix up quotient */
         if (quo_is_neg)
@@ -5770,7 +5768,7 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
         return NULL;
 
     /* if ndigits >= 0 then no rounding is necessary; return self unchanged */
-    if (Py_SIZE(ndigits) >= 0) {
+    if (!_PyLong_IsNegative((PyLongObject *)ndigits)) {
         Py_DECREF(ndigits);
         return long_long(self);
     }
