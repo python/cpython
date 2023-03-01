@@ -288,7 +288,7 @@ _winapi_Overlapped_cancel_impl(OverlappedObject *self)
 
     if (self->pending) {
         Py_BEGIN_ALLOW_THREADS
-        CancelIoEx(self->handle, &self->overlapped);
+        res = CancelIoEx(self->handle, &self->overlapped);
         Py_END_ALLOW_THREADS
     }
 
