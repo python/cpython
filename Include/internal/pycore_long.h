@@ -143,11 +143,10 @@ _PyLong_SingleDigitValue(const PyLongObject *op)
     return Py_SIZE(op) * op->long_value.ob_digit[0];
 }
 
-static inline Py_ssize_t
-_PyLong_DigitCount(const PyLongObject *op)
+static inline bool
+_PyLong_IsPositive(const PyLongObject *op)
 {
-    assert(PyLong_Check(op));
-    return Py_ABS(Py_SIZE(op));
+    return Py_SIZE(op) > 0;
 }
 
 static inline bool
@@ -156,6 +155,21 @@ _PyLong_IsNegative(const PyLongObject *op)
     return Py_SIZE(op) < 0;
 }
 
+static inline Py_ssize_t
+_PyLong_DigitCount(const PyLongObject *op)
+{
+    assert(PyLong_Check(op));
+    return Py_ABS(Py_SIZE(op));
+}
+
+/* Like _PyLong_DigitCount but asserts that op is non-negative */
+static inline Py_ssize_t
+_PyLong_UnsignedDigitCount(const PyLongObject *op)
+{
+    assert(PyLong_Check(op));
+    assert(!_PyLong_IsNegative(op));
+    return Py_ABS(Py_SIZE(op));
+}
 
 static inline bool
 _PyLong_IsZero(const PyLongObject *op)
@@ -169,12 +183,6 @@ _PyLong_NonZeroSign(const PyLongObject *op)
     assert(PyLong_Check(op));
     assert(!_PyLong_IsZero(op));
     return ((Py_SIZE(op) > 0) << 1) - 1;
-}
-
-static inline bool
-_PyLong_IsPositive(const PyLongObject *op)
-{
-    return Py_SIZE(op) > 0;
 }
 
 
