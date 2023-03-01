@@ -6,8 +6,7 @@ import os
 import struct
 import sys
 import unittest
-from test import support
-from test.support import verbose, cpython_only
+from test.support import verbose, cpython_only, get_pagesize
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 
@@ -202,7 +201,7 @@ class TestFcntl(unittest.TestCase):
             # Get the default pipesize with F_GETPIPE_SZ
             pipesize_default = fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ)
             pipesize = pipesize_default // 2  # A new value to detect change.
-            pagesize_default = support.get_pagesize()
+            pagesize_default = get_pagesize()
             if pipesize < pagesize_default:  # the POSIX minimum
                 raise unittest.SkipTest(
                     'default pipesize too small to perform test.')
