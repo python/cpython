@@ -4420,7 +4420,7 @@ exit:
 }
 
 #if defined(MS_WINDOWS) && !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
-// The Windows Games API partition does not provide PathCchSkipRoot
+// The Windows Games API family does not provide PathCchSkipRoot
 // so we need our own implementation
 static wchar_t*
 win32_games_skip_root(wchar_t* path)
@@ -7971,10 +7971,10 @@ static PyObject *
 os_getpid_impl(PyObject *module)
 /*[clinic end generated code: output=9ea6fdac01ed2b3c input=5a9a00f0ab68aa00]*/
 {
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_DESKTOP)
-    return PyLong_FromUnsignedLong(GetCurrentProcessId());
-#else
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     return PyLong_FromPid(getpid());
+#else
+    return PyLong_FromUnsignedLong(GetCurrentProcessId());
 #endif
 }
 #endif /* defined(HAVE_GETPID) */

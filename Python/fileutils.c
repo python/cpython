@@ -2153,7 +2153,7 @@ win32_games_skip_root(wchar_t* path)
     return NULL;
 }
 
-// The Windows Games API partition does not provide PathCchCombineEx
+// The Windows Games API family does not provide PathCchCombineEx
 // so we need our own implementation
 static int
 win32_games_join_relfile(wchar_t *buffer, size_t bufsize,

@@ -29,7 +29,7 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
-#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
 
 #ifndef MS_WINDOWS
 #define UNIX
