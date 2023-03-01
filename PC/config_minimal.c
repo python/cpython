@@ -5,8 +5,10 @@
 
 #include "Python.h"
 
+#ifdef Py_ENABLE_SHARED
 /* Define extern variables omitted from minimal builds */
 void *PyWin_DLLhModule = NULL;
+#endif
 
 
 extern PyObject* PyInit_faulthandler(void);
