@@ -4785,7 +4785,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             ABSORB_PENDING;
     }
 
-    if (negativeOutput && (Py_SIZE(z) != 0)) {
+    if (negativeOutput && !_PyLong_IsZero(z)) {
         temp = (PyLongObject *)long_sub(z, c);
         if (temp == NULL)
             goto Error;
@@ -4819,8 +4819,8 @@ long_invert(PyLongObject *v)
     if (x == NULL)
         return NULL;
     _PyLong_Negate(&x);
-    /* No need for maybe_small_long here, since any small
-       longs will have been caught in the Py_SIZE <= 1 fast path. */
+    /* No need for maybe_small_long here, since any small longs
+       will have been caught in the _PyLong_IsSingleDigit() fast path. */
     return (PyObject *)x;
 }
 
@@ -5281,14 +5281,11 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
     stwodigits x, y, q, s, t, c_carry, d_carry;
     stwodigits A, B, C, D, T;
     int nbits, k;
-    Py_ssize_t size_a, size_b, alloc_a, alloc_b;
     digit *a_digit, *b_digit, *c_digit, *d_digit, *a_end, *b_end;
 
     a = (PyLongObject *)aarg;
     b = (PyLongObject *)barg;
-    size_a = Py_SIZE(a);
-    size_b = Py_SIZE(b);
-    if (-2 <= size_a && size_a <= 2 && -2 <= size_b && size_b <= 2) {
+    if (_PyLong_DigitCount(a) <= 2 && _PyLong_DigitCount(b) <= 2) {
         Py_INCREF(a);
         Py_INCREF(b);
         goto simple;
@@ -5310,14 +5307,15 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
     }
     /* We now own references to a and b */
 
-    alloc_a = Py_SIZE(a);
-    alloc_b = Py_SIZE(b);
+    Py_ssize_t size_a, size_b, alloc_a, alloc_b;
+    alloc_a = _PyLong_UnsignedDigitCount(a);
+    alloc_b = _PyLong_UnsignedDigitCount(b);
     /* reduce until a fits into 2 digits */
-    while ((size_a = Py_SIZE(a)) > 2) {
+    while ((size_a = _PyLong_UnsignedDigitCount(a)) > 2) {
         nbits = bit_length_digit(a->long_value.ob_digit[size_a-1]);
         /* extract top 2*PyLong_SHIFT bits of a into x, along with
            corresponding bits of b into y */
-        size_b = Py_SIZE(b);
+        size_b = _PyLong_UnsignedDigitCount(b);
         assert(size_b <= size_a);
         if (size_b == 0) {
             if (size_a < alloc_a) {
@@ -5361,7 +5359,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             Py_SETREF(a, b);
             b = r;
             alloc_a = alloc_b;
-            alloc_b = Py_SIZE(b);
+            alloc_b = _PyLong_UnsignedDigitCount(b);
             continue;
         }
 

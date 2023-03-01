@@ -168,7 +168,7 @@ _PyLong_UnsignedDigitCount(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
     assert(!_PyLong_IsNegative(op));
-    return Py_ABS(Py_SIZE(op));
+    return Py_SIZE(op);
 }
 
 static inline bool
