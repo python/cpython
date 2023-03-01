@@ -829,30 +829,26 @@
         }
 
         TARGET(JUMP_IF_FALSE_OR_POP) {
-            PyTypeObject *cond = TYPESTACK_PEEK(1);
-            STACK_SHRINK(1);
-            STACK_GROW((jump ? 1 : 0));
+            fprintf(stderr, "Type propagation across `{self.name}` shouldn't be handled statically!\n");
+            Py_UNREACHABLE();
             break;
         }
 
         TARGET(BB_TEST_IF_FALSE_OR_POP) {
-            PyTypeObject *cond = TYPESTACK_PEEK(1);
-            STACK_SHRINK(1);
-            STACK_GROW((jump ? 1 : 0));
+            fprintf(stderr, "Type propagation across `{self.name}` shouldn't be handled statically!\n");
+            Py_UNREACHABLE();
             break;
         }
 
         TARGET(JUMP_IF_TRUE_OR_POP) {
-            PyTypeObject *cond = TYPESTACK_PEEK(1);
-            STACK_SHRINK(1);
-            STACK_GROW((jump ? 1 : 0));
+            fprintf(stderr, "Type propagation across `{self.name}` shouldn't be handled statically!\n");
+            Py_UNREACHABLE();
             break;
         }
 
         TARGET(BB_TEST_IF_TRUE_OR_POP) {
-            PyTypeObject *cond = TYPESTACK_PEEK(1);
-            STACK_SHRINK(1);
-            STACK_GROW((jump ? 1 : 0));
+            fprintf(stderr, "Type propagation across `{self.name}` shouldn't be handled statically!\n");
+            Py_UNREACHABLE();
             break;
         }
 

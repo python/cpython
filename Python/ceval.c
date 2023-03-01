@@ -729,6 +729,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     // true = successor
     // false = alternate
     bool bb_test = true;
+    // For tier2 type propagation, handling of jump instructions with
+    // runtime-dependent stack effect.
+    // This flag is used to determine if the type context of a new bb
+    // requires a stack element to be popped.
+    bool gen_bb_requires_pop = false;
 
     /* WARNING: Because the _PyCFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)

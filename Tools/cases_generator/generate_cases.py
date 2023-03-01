@@ -49,6 +49,17 @@ RE_PREDICTED = (
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
+# Type propagation across these instructions are forbidden
+# due to conditional effects that can't be determined statically
+# The handling of type propagation across these opcodes are handled elsewhere
+# within tier2.
+TYPE_PROPAGATOR_FORBIDDEN = [
+    "JUMP_IF_FALSE_OR_POP",
+    "JUMP_IF_TRUE_OR_POP", # Type propagator shouldn't see these
+    "BB_TEST_IF_FALSE_OR_POP",
+    "BB_TEST_IF_TRUE_OR_POP" # Type propagator handles this in BB_BRANCH
+]
+
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -304,6 +315,11 @@ class Instruction:
 
     def write_typeprop(self, out: Formatter) -> None:
         """Write one instruction's type propagation rules"""
+
+        if self.name in TYPE_PROPAGATOR_FORBIDDEN:
+            out.emit('fprintf(stderr, "Type propagation across `{self.name}` shouldn\'t be handled statically!\\n");')
+            out.emit("Py_UNREACHABLE();")
+            return
 
         # Write input stack effect variable declarations and initializations
         ieffects = list(reversed(self.input_effects))

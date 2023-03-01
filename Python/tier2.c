@@ -9,10 +9,12 @@
 #include "opcode.h"
 
 #define BB_DEBUG 1
+#define TYPEPROP_DEBUG 1
 // Max typed version basic blocks per basic block
 #define MAX_BB_VERSIONS 5
 // Number of potential extra instructions at end of a BB, for branch or cleanup purposes.
 #define BB_EPILOG 0
+
 
 static inline int IS_SCOPE_EXIT_OPCODE(int opcode);
 
@@ -21,6 +23,10 @@ static inline int IS_SCOPE_EXIT_OPCODE(int opcode);
 
 static _PyTier2TypeContext *
 initialize_type_context(const PyCodeObject *co) {
+
+#if TYPEPROP_DEBUG
+    fprintf(stderr, "  [*] Initialize type context\n");
+#endif
 
     int nlocals = co->co_nlocals;
     int nstack = co->co_stacksize;
@@ -56,6 +62,10 @@ initialize_type_context(const PyCodeObject *co) {
 static _PyTier2TypeContext *
 _PyTier2TypeContext_copy(const _PyTier2TypeContext* type_context) {
 
+#if TYPEPROP_DEBUG
+    fprintf(stderr, "  [*] Copying type context\n");
+#endif
+
     int nlocals = type_context->type_locals_len;
     int nstack = type_context->type_stack_len;
 
@@ -82,11 +92,17 @@ _PyTier2TypeContext_copy(const _PyTier2TypeContext* type_context) {
     new_type_context->type_stack_len = nstack;
     new_type_context->type_locals = type_locals;
     new_type_context->type_stack = type_stack;
+    new_type_context->type_stack_ptr = type_stack - type_context->type_stack + type_context->type_stack_ptr;
     return new_type_context;
 }
 
 static void
 _PyTier2TypeContext_free(_PyTier2TypeContext* type_context) {
+
+#if TYPEPROP_DEBUG
+    fprintf(stderr, "  [*] Freeing type context\n");
+#endif
+
     PyMem_Free(type_context->type_locals);
     PyMem_Free(type_context->type_stack);
     PyMem_Free(type_context);
@@ -96,9 +112,13 @@ _PyTier2TypeContext_free(_PyTier2TypeContext* type_context) {
 static void
 type_propagate(
     int opcode, int oparg,
-    PyTypeObject** type_stackptr, PyTypeObject** type_locals,
+    _PyTier2TypeContext* type_context,
     const PyObject* consts)
 {
+    PyTypeObject** type_stack = type_context->type_stack;
+    PyTypeObject** type_locals = type_context->type_locals;
+    PyTypeObject** type_stackptr = type_context->type_stack_ptr;
+
 #define TARGET(op) case op: 
 #define TYPESTACK_PEEK(idx)         (type_stackptr[-(idx)])
 #define TYPESTACK_POKE(idx, v)      type_stackptr[-(idx)] = (v)
@@ -109,12 +129,25 @@ type_propagate(
 #define STACK_GROW(idx)             STACK_ADJUST((idx))
 #define STACK_SHRINK(idx)           STACK_ADJUST(-(idx))
 
+#ifdef TYPEPROP_DEBUG
+    fprintf(stderr, "  [-] Type stack bef: %llu\n", ((uint64_t)type_stackptr - (uint64_t)type_stack)/sizeof(PyTypeObject*));
+#ifdef Py_DEBUG
+    fprintf(stderr, "  [-] Type propagating across: %s : %d\n", _PyOpcode_OpName[opcode], oparg);
+#endif
+#endif
+
     switch (opcode) {
 #include "tier2_typepropagator.c.h"
     default:
         fprintf(stderr, "Unsupported opcode in type propagator: %d\n", opcode);
-        assert(opcode);
+        Py_UNREACHABLE();
     }
+
+#ifdef TYPEPROP_DEBUG
+    fprintf(stderr, "  [-] Type stack aft: %llu\n", ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject*));
+#endif
+
+    type_context->type_stack_ptr = type_stackptr;
 
 #undef TARGET
 #undef TYPESTACK_PEEK
@@ -415,7 +448,7 @@ emit_type_guard(_Py_CODEUNIT *write_curr, _Py_CODEUNIT guard, int bb_id)
 
 // Converts the tier 1 branch bytecode to tier 2 branch bytecode.
 static inline _Py_CODEUNIT *
-emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
+emit_logical_branch(_PyTier2TypeContext* type_context, _Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
 {
     int opcode;
     int oparg = _Py_OPARG(branch);
@@ -427,27 +460,38 @@ emit_logical_branch(_Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
         // Subsequent jumps don't need to check this anymore. They can just
         // jump directly with JUMP_BACKWARD.
         opcode = BB_JUMP_BACKWARD_LAZY;
+        // v BB_JUMP_BACKWARD_LAZY has nothing to propagate
+        // type_propagate(opcode, oparg, type_context, NULL);
         break;
     case FOR_ITER:
         opcode = BB_TEST_ITER;
+        type_propagate(opcode, oparg, type_context, NULL);
         break;
     case JUMP_IF_FALSE_OR_POP:
         opcode = BB_TEST_IF_FALSE_OR_POP;
+        // This inst has conditional stack effect according to whether the branch is taken.
+        // This inst sets the `gen_bb_requires_pop` flag to handle stack effect of this opcode in BB_BRANCH
         break;
     case JUMP_IF_TRUE_OR_POP:
         opcode = BB_TEST_IF_TRUE_OR_POP;
+        // This inst has conditional stack effect according to whether the branch is taken.
+        // This inst sets the `gen_bb_requires_pop` flag to handle stack effect of this opcode in BB_BRANCH
         break;
     case POP_JUMP_IF_FALSE:
         opcode = BB_TEST_POP_IF_FALSE;
+        type_propagate(opcode, oparg, type_context, NULL);
         break;
     case POP_JUMP_IF_TRUE:
         opcode = BB_TEST_POP_IF_TRUE;
+        type_propagate(opcode, oparg, type_context, NULL);
         break;
     case POP_JUMP_IF_NOT_NONE:
         opcode = BB_TEST_POP_IF_NOT_NONE;
+        type_propagate(opcode, oparg, type_context, NULL);
         break;
     case POP_JUMP_IF_NONE:
         opcode = BB_TEST_POP_IF_NONE;
+        type_propagate(opcode, oparg, type_context, NULL);
         break;
     default:
         // Honestly shouldn't happen because branches that
@@ -639,15 +683,16 @@ add_metadata_to_jump_2d_array(_PyTier2Info *t2_info, _PyTier2BBMetadata *meta,
 _PyTier2BBMetadata *
 _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     _Py_CODEUNIT *tier1_start,
-    // Const qualifier as this function makes a copy of the type_context
-    const _PyTier2TypeContext *type_context)
+    // starting_type_context will be modified in this function,
+    // do make a copy if needed before calling this function
+    _PyTier2TypeContext *starting_type_context)
 {
 #define END() goto end;
 #define JUMPBY(x) i += x + 1;
 #define DISPATCH()        write_i = emit_i(write_i, opcode, oparg); \
                           write_i = copy_cache_entries(write_i, curr+1, caches); \
                           i += caches; \
-                          type_propagate(opcode, oparg, type_stackptr, type_locals, consts); \
+                          type_propagate(opcode, oparg, starting_type_context, consts); \
                           continue;
 #define DISPATCH_GOTO() goto dispatch_opcode;
 
@@ -657,12 +702,6 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     // 1. If there's a branch instruction / scope exit.
     // 2. If there's a type guard.
 
-    // Make a copy of the type context
-    _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_copy(type_context);
-    if (type_context_copy == NULL) {
-        return NULL;
-    }
-
     _PyTier2BBMetadata *meta = NULL;
     _PyTier2BBMetadata *temp_meta = NULL;
 
@@ -670,9 +709,6 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     PyObject *consts = co->co_consts;
     _Py_CODEUNIT *t2_start = (_Py_CODEUNIT *)(((char *)bb_space->u_code) + bb_space->water_level);
     _Py_CODEUNIT *write_i = t2_start;
-    PyTypeObject **type_stack = type_context_copy->type_stack;
-    PyTypeObject **type_locals = type_context_copy->type_locals;
-    PyTypeObject **type_stackptr = type_context_copy->type_stack_ptr;
     int tos = -1;
 
     // For handling of backwards jumps
@@ -711,7 +747,9 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
             t2_start++;
             DISPATCH();
         default:
+#if BB_DEBUG || TYPEPROP_DEBUG
             fprintf(stderr, "offset: %Id\n", curr - _PyCode_CODE(co));
+#endif
             if (IS_BACKWARDS_JUMP_TARGET(co, curr)) {
 #if BB_DEBUG
                 fprintf(stderr, "Encountered a backward jump target\n");
@@ -730,6 +768,11 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
                 // Else, create a virtual end to the basic block.
                 // But generate the block after that so it can fall through.
                 i--;
+                // Make a copy of the type context
+                _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_copy(starting_type_context);
+                if (type_context_copy == NULL) {
+                    return NULL;
+                }
                 meta = _PyTier2_AllocateBBMetaData(co,
                     t2_start, _PyCode_CODE(co) + i, type_context_copy);
                 if (meta == NULL) {
@@ -762,7 +805,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
                 }
                 // Get the BB ID without incrementing it.
                 // AllocateBBMetaData will increment.
-                write_i = emit_logical_branch(write_i, *curr,
+                write_i = emit_logical_branch(starting_type_context, write_i, *curr,
                     co->_tier2_info->bb_data_curr);
                 i += caches;
                 END();
@@ -773,9 +816,19 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
     }
 end:
     // Create the tier 2 BB
+
+    // Make a copy of the type context
+    _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_copy(starting_type_context);
+    if (type_context_copy == NULL) {
+        return NULL;
+    }
     temp_meta = _PyTier2_AllocateBBMetaData(co, t2_start,
          // + 1 because we want to start with the NEXT instruction for the scan
          _PyCode_CODE(co) + i + 1, type_context_copy);
+    if (temp_meta == NULL) {
+        _PyTier2TypeContext_free(type_context_copy);
+        return NULL;
+    }
     // We need to return the first block to enter into. If there is already a block generated
     // before us, then we use that instead of the most recent block.
     if (meta == NULL) {
@@ -785,7 +838,7 @@ end:
         // Add the basic block to the jump ids
         if (add_metadata_to_jump_2d_array(t2_info, temp_meta, backwards_jump_target_offset) < 0) {
             PyMem_Free(meta);
-            PyMem_Free(temp_meta);
+            if (meta != temp_meta) PyMem_Free(temp_meta);
             _PyTier2TypeContext_free(type_context_copy);
             return NULL;
         }
@@ -1103,7 +1156,7 @@ _PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 // The second basic block created will always require a jump.
 _Py_CODEUNIT *
 _PyTier2_GenerateNextBB(_PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
-    _Py_CODEUNIT **tier1_fallback)
+    _Py_CODEUNIT **tier1_fallback, char gen_bb_requires_pop)
 {
     PyCodeObject *co = frame->f_code;
     assert(co->_tier2_info != NULL);
@@ -1122,10 +1175,22 @@ _PyTier2_GenerateNextBB(_PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
     }
     // Get type_context of previous BB
     _PyTier2TypeContext *type_context = meta->type_context;
+    // Make a copy of the type context
+    _PyTier2TypeContext* type_context_copy = _PyTier2TypeContext_copy(type_context);
+    if (type_context_copy == NULL) {
+        return NULL;
+    }
+    // If this flag is set, it means that either BB_TEST_IF_FALSE_OR_POP or
+    // BB_TEST_IF_TRUE_OR_POP was ran and the conditional stack effect was performed
+    // This means we have to pop an element from the type stack.
+    if (gen_bb_requires_pop) {
+        type_context_copy->type_stack_ptr--;
+    }
     _PyTier2BBMetadata *metadata = _PyTier2_Code_DetectAndEmitBB(
         frame->f_code, space, tier1_end,
-        type_context);
+        type_context_copy);
     if (metadata == NULL) {
+        _PyTier2TypeContext_free(type_context_copy);
         return NULL;
     }
     return metadata->tier2_start;
@@ -1170,8 +1235,8 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id, int j
             for (int x = 0; x < MAX_BB_VERSIONS; x++) {
 #if BB_DEBUG
                 fprintf(stderr, "jump target BB ID: %d\n",
-#endif
                     t2_info->backward_jump_target_bb_ids[i][x]);
+#endif
                 // @TODO, this is where the diff function is supposed to be
                 // it will calculate the closest type context BB
                 // For now just any valid BB (>= 0) is used.
@@ -1185,7 +1250,9 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id, int j
     }
     assert(matching_bb_id >= 0);
     assert(matching_bb_id <= t2_info->bb_data_curr);
+#if BB_DEBUG
     fprintf(stderr, "Found jump target BB ID: %d\n", matching_bb_id);
+#endif
     _PyTier2BBMetadata *target_metadata = t2_info->bb_data[matching_bb_id];
     return target_metadata->tier2_start;
 }
