@@ -42,11 +42,11 @@ Data members:
 #include <windows.h>
 #endif /* MS_WINDOWS */
 
-#ifdef Py_ENABLE_SHARED
+#ifdef MS_COREDLL
 extern void *PyWin_DLLhModule;
 /* A string loaded from the DLL at startup: */
 extern const char *PyWin_DLLVersionString;
-#endif /* Py_ENABLE_SHARED */
+#endif
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -3162,10 +3162,10 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS_FROM_STRING("byteorder", "little");
 #endif
 
-#ifdef Py_ENABLE_SHARED
+#ifdef MS_COREDLL
     SET_SYS("dllhandle", PyLong_FromVoidPtr(PyWin_DLLhModule));
     SET_SYS_FROM_STRING("winver", PyWin_DLLVersionString);
-#endif /* Py_ENABLE_SHARED */
+#endif
 #ifdef ABIFLAGS
     SET_SYS_FROM_STRING("abiflags", ABIFLAGS);
 #endif
