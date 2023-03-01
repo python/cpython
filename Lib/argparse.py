@@ -403,7 +403,8 @@ class HelpFormatter(object):
             except ValueError:
                 continue
             else:
-                end = start + len(group._group_actions)
+                group_action_count = len(group._group_actions)
+                end = start + group_action_count
                 if actions[start:end] == group._group_actions:
 
                     suppressed_actions_count = 0
@@ -412,7 +413,7 @@ class HelpFormatter(object):
                         if action.help is SUPPRESS:
                             suppressed_actions_count += 1
 
-                    exposed_actions_count = len(group._group_actions) - suppressed_actions_count
+                    exposed_actions_count = group_action_count - suppressed_actions_count
 
                     if not group.required:
                         if start in inserts:
