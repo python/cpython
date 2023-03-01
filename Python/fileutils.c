@@ -2178,10 +2178,16 @@ PathAddBackslashW(wchar_t *path)
     return path + len;
 }
 
-static int
-win32_games_join_relfile(wchar_t *buffer, size_t bufsize,
-                         const wchar_t *dirname, const wchar_t *relfile)
+#ifndef PATHCCH_ALLOW_LONG_PATHS
+#define PATHCCH_ALLOW_LONG_PATHS 0x01
+#endif
+
+static HRESULT
+PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
+                 const wchar_t *relfile, unsigned long flags)
 {
+    (void)flags;
+
     if ((isalpha(relfile[0]) && relfile[1] == ':') ||
        (relfile[0] == '\\' && relfile[1] == '\\'))
     {
@@ -2194,7 +2200,7 @@ win32_games_join_relfile(wchar_t *buffer, size_t bufsize,
     /* path is at max dirname + filename + backslash + \0 */
     size_t new_len = dir_len + file_len + 2;
     if (bufsize >= MAXPATHLEN || new_len > bufsize) {
-        return -1;
+        return E_INVALIDARG;
     }
 
     size_t combined_length = dir_len;
@@ -2216,7 +2222,7 @@ win32_games_join_relfile(wchar_t *buffer, size_t bufsize,
         PathAddBackslashW(buffer);
         wcscat(buffer, relfile);
     }
-    return 0;
+    return S_OK;
 }
 #endif /* MS_WINDOWS && !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
 
@@ -2225,16 +2231,11 @@ static int
 join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
-#if defined(MS_WINDOWS)
-#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+#ifdef MS_WINDOWS
     if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
         PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }
-    return 0;
-#else
-    return win32_games_join_relfile(buffer, bufsize, dirname, relfile)
-#endif /* MS_WINDOWS_APP && MS_WINDOWS_SYSTEM */
 #else
     assert(!_Py_isabs(relfile));
     size_t dirlen = wcslen(dirname);
@@ -2258,8 +2259,8 @@ join_relfile(wchar_t *buffer, size_t bufsize,
         }
         wcscpy(&buffer[relstart], relfile);
     }
-    return 0;
 #endif
+    return 0;
 }
 
 /* Join the two paths together, like os.path.join().  Return NULL
