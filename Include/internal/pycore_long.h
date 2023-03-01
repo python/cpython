@@ -185,6 +185,13 @@ _PyLong_NonZeroSign(const PyLongObject *op)
     return ((Py_SIZE(op) > 0) << 1) - 1;
 }
 
+/* Do a and b have the same sign?
+ */
+static inline int
+_PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
+{
+    return (Py_SIZE(a) ^ Py_SIZE(b)) >= 0;
+}
 
 #ifdef __cplusplus
 }

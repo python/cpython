@@ -3901,7 +3901,7 @@ _PyLong_Multiply(PyLongObject *a, PyLongObject *b)
 
     z = k_mul(a, b);
     /* Negate if exactly one of the inputs is negative. */
-    if (((Py_SIZE(a) ^ Py_SIZE(b)) < 0) && z) {
+    if (!_PyLong_SameSign(a, b) && z) {
         _PyLong_Negate(&z);
         if (z == NULL)
             return NULL;
@@ -3927,8 +3927,7 @@ fast_mod(PyLongObject *a, PyLongObject *b)
     assert(_PyLong_DigitCount(a) == 1);
     assert(_PyLong_DigitCount(b) == 1);
 
-    if (Py_SIZE(a) == Py_SIZE(b)) {
-        /* 'a' and 'b' have the same sign. */
+    if (_PyLong_SameSign(a, b)) {
         mod = left % right;
     }
     else {
@@ -3950,8 +3949,7 @@ fast_floor_div(PyLongObject *a, PyLongObject *b)
     assert(_PyLong_DigitCount(a) == 1);
     assert(_PyLong_DigitCount(b) == 1);
 
-    if (Py_SIZE(a) == Py_SIZE(b)) {
-        /* 'a' and 'b' have the same sign. */
+    if (_PyLong_SameSign(a, b)) {
         div = left / right;
     }
     else {
