@@ -162,6 +162,14 @@ _PyLong_DigitCount(const PyLongObject *op)
     return Py_ABS(Py_SIZE(op));
 }
 
+/* Equivalent to _PyLong_DigitCount(op) * _PyLong_NonZeroSign(op) */
+static inline Py_ssize_t
+_PyLong_SignedDigitCount(const PyLongObject *op)
+{
+    assert(PyLong_Check(op));
+    return Py_SIZE(op);
+}
+
 /* Like _PyLong_DigitCount but asserts that op is non-negative */
 static inline Py_ssize_t
 _PyLong_UnsignedDigitCount(const PyLongObject *op)

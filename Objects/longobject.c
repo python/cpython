@@ -22,14 +22,7 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
-
-/* convert a PyLong of size 1, 0 or -1 to a C integer */
-static inline stwodigits
-medium_value(PyLongObject *x)
-{
-    assert(_PyLong_IsSingleDigit(x));
-    return ((stwodigits)Py_SIZE(x)) * x->long_value.ob_digit[0];
-}
+#define medium_value(x) ((stwodigits)_PyLong_SingleDigitValue(x))
 
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
@@ -3223,7 +3216,7 @@ PyLong_AsDouble(PyObject *v)
 static Py_ssize_t
 long_compare(PyLongObject *a, PyLongObject *b)
 {
-    Py_ssize_t sign = Py_SIZE(a) - Py_SIZE(b);
+    Py_ssize_t sign = _PyLong_SignedDigitCount(a) - _PyLong_SignedDigitCount(b);
     if (sign == 0) {
         Py_ssize_t i = _PyLong_DigitCount(a);
         sdigit diff = 0;
@@ -4340,7 +4333,7 @@ long_true_divide(PyObject *v, PyObject *w)
                 inexact = 1;
     }
     long_normalize(x);
-    x_size = Py_SIZE(x);
+    x_size = _PyLong_SignedDigitCount(x);
 
     /* x //= b. If the remainder is nonzero, set inexact.  We own the only
        reference to x, so it's safe to modify it in-place. */
@@ -4675,7 +4668,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         REDUCE(result);                         \
     } while(0)
 
-    i = Py_SIZE(b);
+    i = _PyLong_SignedDigitCount(b);
     digit bi = i ? b->long_value.ob_digit[i-1] : 0;
     digit bit;
     if (i <= 1 && bi <= 3) {
@@ -4767,7 +4760,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             pending = 0; \
         } while(0)
 
-        for (i = Py_SIZE(b) - 1; i >= 0; --i) {
+        for (i = _PyLong_SignedDigitCount(b) - 1; i >= 0; --i) {
             const digit bi = b->long_value.ob_digit[i];
             for (j = PyLong_SHIFT - 1; j >= 0; --j) {
                 const int bit = (bi >> j) & 1;
@@ -4863,7 +4856,7 @@ divmod_shift(PyObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
         *remshift = lshiftby % PyLong_SHIFT;
         return 0;
     }
-    /* PyLong_Check(shiftby) is true and Py_SIZE(shiftby) >= 0, so it must
+    /* PyLong_Check(shiftby) is true and shiftby is not negative, so it must
        be that PyLong_AsSsize_t raised an OverflowError. */
     assert(PyErr_ExceptionMatches(PyExc_OverflowError));
     PyErr_Clear();
@@ -5810,7 +5803,7 @@ int___sizeof___impl(PyObject *self)
 /*[clinic end generated code: output=3303f008eaa6a0a5 input=9b51620c76fc4507]*/
 {
     /* using Py_MAX(..., 1) because we always allocate space for at least
-       one digit, even though the integer zero has a Py_SIZE of 0 */
+       one digit, even though the integer zero has a digit count of 0 */
     Py_ssize_t ndigits = Py_MAX(_PyLong_DigitCount((PyLongObject *)self), 1);
     return Py_TYPE(self)->tp_basicsize + Py_TYPE(self)->tp_itemsize * ndigits;
 }
