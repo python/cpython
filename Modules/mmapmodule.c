@@ -29,6 +29,8 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
+// to support MS_WINDOWS_SYSTEM OpenFileMappingA / CreateFileMappingA
+// need to be replaced with OpenFileMappingW / CreateFileMappingW
 #if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
 
 #ifndef MS_WINDOWS

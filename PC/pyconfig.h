@@ -72,6 +72,7 @@ WIN32 is still required for the locale module.
 #define USE_SOCKET
 #endif
 
+#ifdef Py_BUILD_CORE
 #include <winapifamily.h>
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
@@ -86,6 +87,12 @@ WIN32 is still required for the locale module.
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_GAMES)
 #define MS_WINDOWS_GAMES
 #endif
+
+/* Define to 1 if you support windows console io */
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+#define HAVE_WINDOWS_CONSOLE_IO 1
+#endif
+#endif /* Py_BUILD_CORE */
 
 /* Compiler specific defines */
 
@@ -398,11 +405,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define to 1 if you have the <conio.h> header file. */
 #define HAVE_CONIO_H 1
-
-/* Define to 1 if you support windows console io */
-#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
-#define HAVE_WINDOWS_CONSOLE_IO 1
-#endif
 
 /* Define to 1 if you have the <direct.h> header file. */
 #define HAVE_DIRECT_H 1
