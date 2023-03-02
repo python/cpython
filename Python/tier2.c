@@ -65,7 +65,7 @@ initialize_type_context(const PyCodeObject *co)
 }
 
 static _PyTier2TypeContext *
-_PyTier2TypeContext_copy(const _PyTier2TypeContext *type_context)
+_PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
 {
 
 #if TYPEPROP_DEBUG
@@ -103,7 +103,7 @@ _PyTier2TypeContext_copy(const _PyTier2TypeContext *type_context)
 }
 
 static void
-_PyTier2TypeContext_free(_PyTier2TypeContext *type_context)
+_PyTier2TypeContext_Free(_PyTier2TypeContext *type_context)
 {
 
 #if TYPEPROP_DEBUG
@@ -776,14 +776,14 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
                 // But generate the block after that so it can fall through.
                 i--;
                 // Make a copy of the type context
-                _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_copy(starting_type_context);
+                _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_Copy(starting_type_context);
                 if (type_context_copy == NULL) {
                     return NULL;
                 }
                 meta = _PyTier2_AllocateBBMetaData(co,
                     t2_start, _PyCode_CODE(co) + i, type_context_copy);
                 if (meta == NULL) {
-                    _PyTier2TypeContext_free(type_context_copy);
+                    _PyTier2TypeContext_Free(type_context_copy);
                     return NULL;
                 }
                 bb_space->water_level += (write_i - t2_start) * sizeof(_Py_CODEUNIT);
@@ -825,7 +825,7 @@ end:
     // Create the tier 2 BB
 
     // Make a copy of the type context
-    _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_copy(starting_type_context);
+    _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_Copy(starting_type_context);
     if (type_context_copy == NULL) {
         return NULL;
     }
@@ -833,7 +833,7 @@ end:
         // + 1 because we want to start with the NEXT instruction for the scan
         _PyCode_CODE(co) + i + 1, type_context_copy);
     if (temp_meta == NULL) {
-        _PyTier2TypeContext_free(type_context_copy);
+        _PyTier2TypeContext_Free(type_context_copy);
         return NULL;
     }
     // We need to return the first block to enter into. If there is already a block generated
@@ -848,7 +848,7 @@ end:
             if (meta != temp_meta) {
                 PyMem_Free(temp_meta);
             }
-            _PyTier2TypeContext_free(type_context_copy);
+            _PyTier2TypeContext_Free(type_context_copy);
             return NULL;
         }
     }
@@ -1116,7 +1116,7 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
         co, bb_space,
         _PyCode_CODE(co), type_context);
     if (meta == NULL) {
-        _PyTier2TypeContext_free(type_context);
+        _PyTier2TypeContext_Free(type_context);
         goto cleanup;
     }
 #if BB_DEBUG
@@ -1185,7 +1185,7 @@ _PyTier2_GenerateNextBB(_PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
     // Get type_context of previous BB
     _PyTier2TypeContext *type_context = meta->type_context;
     // Make a copy of the type context
-    _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_copy(type_context);
+    _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_Copy(type_context);
     if (type_context_copy == NULL) {
         return NULL;
     }
@@ -1199,7 +1199,7 @@ _PyTier2_GenerateNextBB(_PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
         frame->f_code, space, tier1_end,
         type_context_copy);
     if (metadata == NULL) {
-        _PyTier2TypeContext_free(type_context_copy);
+        _PyTier2TypeContext_Free(type_context_copy);
         return NULL;
     }
     return metadata->tier2_start;
