@@ -72,7 +72,7 @@ including `cursors`_ and `transactions`_.
 
 First, we need to create a new database and open
 a database connection to allow :mod:`!sqlite3` to work with it.
-Call :func:`sqlite3.connect` to to create a connection to
+Call :func:`sqlite3.connect` to create a connection to
 the database :file:`tutorial.db` in the current working directory,
 implicitly creating it if it does not exist:
 
