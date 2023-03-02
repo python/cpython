@@ -16,7 +16,7 @@ import typing
 from enum import Enum, auto
 
 import parser
-from parser import StackEffect, StackVarTypeLiteral, StackVarTypeIndex
+from parser import StackEffect, StackVarTypeLiteral, StackVarTypeIndex, StackVarInputVar
 from parser import LocalEffect, LocalEffectVarLiteral, LocalEffectVarStack
 
 HERE = os.path.dirname(__file__)
@@ -49,13 +49,29 @@ RE_PREDICTED = (
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
-# Type propagation across these instructions are forbidden
-# due to conditional effects that can't be determined statically
-# The handling of type propagation across these opcodes are handled elsewhere
-# within tier2.
 TYPE_PROPAGATOR_FORBIDDEN = [
+    # Type propagator shouldn't see these
     "JUMP_IF_FALSE_OR_POP",
-    "JUMP_IF_TRUE_OR_POP", # Type propagator shouldn't see these
+    "JUMP_IF_TRUE_OR_POP",
+    "SEND",
+    "SEND_GEN",
+    "YIELD_VALUE",
+    "RAISE_VARARGS",
+    "PUSH_EXC_INFO",
+    "RERAISE",
+    "POP_EXCEPT",
+    "LOAD_DEREF",
+    "MAKE_CELL",
+    "DELETE_FAST",
+    "MATCH_MAPPING",
+    "MATCH_SEQUENCE",
+    "MATCH_KEYS",
+    "EXTENDED_ARG",
+    "WITH_EXCEPT_START",
+    # Type propagation across these instructions are forbidden
+    # due to conditional effects that can't be determined statically
+    # The handling of type propagation across these opcodes are handled elsewhere
+    # within tier2.
     "BB_TEST_IF_FALSE_OR_POP",
     "BB_TEST_IF_TRUE_OR_POP" # Type propagator handles this in BB_BRANCH
 ]
@@ -317,7 +333,7 @@ class Instruction:
         """Write one instruction's type propagation rules"""
 
         if self.name in TYPE_PROPAGATOR_FORBIDDEN:
-            out.emit('fprintf(stderr, "Type propagation across `{self.name}` shouldn\'t be handled statically!\\n");')
+            out.emit(f'fprintf(stderr, "Type propagation across `{self.name}` shouldn\'t be handled statically!\\n");')
             out.emit("Py_UNREACHABLE();")
             return
 
@@ -379,26 +395,16 @@ class Instruction:
                         if val != "NULL": val = f"&{val}"
                     case StackVarTypeIndex(array=arr, index=idx):
                         val = f"{'TYPELOCALS_GET' if arr == 'locals' else 'TYPECONST_GET'}({idx})"
+                    case StackVarInputVar(name=val):
+                        ieffect, j = all_input_effect_names[val]
+                        if len(oeffects) - i == len(ieffects) - j: 
+                            continue
                     case _:
                         typing.assert_never(typ)
                 if oeffect.cond:
                     out.emit(f"if ({oeffect.cond}) {{ TYPESTACK_POKE({osize}, {val}); }}")
                 else:
                     out.emit(f"TYPESTACK_POKE({osize}, {val});")
-                continue
-
-            # Check if it's part of input effect
-            # TODO: Can we assume that they have the same type?
-            if oeffect.name in all_input_effect_names:
-                ieffect, j = all_input_effect_names[oeffect.name]
-                assert not ieffect.cond, \
-                    "`cond` stackvar not supported for type prop"
-                # The stack var stays at the same pos
-                if len(oeffects) - i == len(ieffects) - j: continue
-                if oeffect.cond:
-                    out.emit(f"if ({oeffect.cond}) {{ TYPESTACK_POKE({osize}, {oeffect.name}); }}")
-                else:
-                    out.emit(f"TYPESTACK_POKE({osize}, {oeffect.name});")
                 continue
             
             # Just output null
