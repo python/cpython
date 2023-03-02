@@ -1672,6 +1672,11 @@ code_tier2_fini(PyCodeObject *co)
     if (co->_tier2_info == NULL) {
         return;
     }
+    // @TODO:
+    //  Write a proper destructor for _PyTier2Info
+    //  and it's children structures.
+    //  Current implementation e.g., doesn't clear
+    //  bb_data
     _PyTier2Info *t2_info = co->_tier2_info;
     t2_info->_entry_bb = NULL;
     if (t2_info->_bb_space != NULL) {
@@ -1690,10 +1695,7 @@ code_tier2_fini(PyCodeObject *co)
         PyMem_Free(t2_info->backward_jump_offsets);
         t2_info->backward_jump_offsets = NULL;
     }
-    if (t2_info->types_stack != NULL) {
-        PyMem_Free(t2_info->types_stack);
-        t2_info->types_stack = NULL;
-    }
+
     t2_info->backward_jump_count = 0;
     if (t2_info->bb_data != NULL && t2_info->bb_data_len > 0) {
         PyMem_Free(t2_info->bb_data);

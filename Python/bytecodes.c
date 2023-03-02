@@ -102,31 +102,31 @@ dummy_func(
             }
         }
 
-        inst(LOAD_CLOSURE, (-- value)) {
+        inst(LOAD_CLOSURE, (-- value : locals[oparg])) {
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
             value = GETLOCAL(oparg);
             ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
         }
 
-        inst(LOAD_FAST_CHECK, (-- value)) {
+        inst(LOAD_FAST_CHECK, (-- value : locals[oparg])) {
             value = GETLOCAL(oparg);
             ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
         }
 
-        inst(LOAD_FAST, (-- value)) {
+        inst(LOAD_FAST, (-- value : locals[oparg])) {
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
         }
 
-        inst(LOAD_CONST, (-- value)) {
+        inst(LOAD_CONST, (-- value : consts[oparg])) {
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
         }
 
-        inst(STORE_FAST, (value --)) {
+        inst(STORE_FAST, (value --), locals[oparg] = *value) {
             SETLOCAL(oparg, value);
         }
 
@@ -303,7 +303,7 @@ dummy_func(
             bb_test = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
         }
 
-        u_inst(BINARY_OP_ADD_INT_REST, (left, right -- sum)) {
+        u_inst(BINARY_OP_ADD_INT_REST, (left : PyLong_Type, right : PyLong_Type -- sum : PyLong_Type)) {
             STAT_INC(BINARY_OP, hit);
             sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -1180,13 +1180,13 @@ dummy_func(
             null = NULL;
         }
 
-        inst(DELETE_FAST, (--)) {
+        inst(DELETE_FAST, (--), locals[oparg] = NULL) {
             PyObject *v = GETLOCAL(oparg);
             ERROR_IF(v == NULL, unbound_local_error);
             SETLOCAL(oparg, NULL);
         }
 
-        inst(MAKE_CELL, (--)) {
+        inst(MAKE_CELL, (--), locals[oparg] = NULL) {
             // "initial" is probably NULL but not if it's an arg (or set
             // via PyFrame_LocalsToFast() before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
@@ -2084,6 +2084,10 @@ dummy_func(
                     goto error;
                 }
             }
+            // This gets set so BRANCH_BB knows whether to pop
+            // the type stack (type propagation) when generating the
+            // target BB
+            gen_bb_requires_pop = !jump;
         }
 
         inst(JUMP_IF_TRUE_OR_POP, (cond -- cond if (jump))) {
@@ -2136,6 +2140,10 @@ dummy_func(
                     goto error;
                 }
             }
+            // This gets set so BRANCH_BB knows whether to pop
+            // the type stack (type propagation) when generating the
+            // target BB
+            gen_bb_requires_pop = !jump;
         }
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
@@ -3284,6 +3292,7 @@ dummy_func(
         }
 
         // Tier 2 instructions
+        // Type propagator assumes this doesn't affect type context
         inst(BB_BRANCH, (unused/1 --)) {
             _Py_CODEUNIT *t2_nextinstr = NULL;
             _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
@@ -3293,7 +3302,8 @@ dummy_func(
                 _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_UNSET);
                 // Generate consequent.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, 0, &tier1_fallback);
+                    frame, cache->bb_id, 0, &tier1_fallback, gen_bb_requires_pop);
+                gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback;
@@ -3305,7 +3315,8 @@ dummy_func(
                 _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_SET);
                 // Generate predicate.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback);
+                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback + oparg;
@@ -3327,7 +3338,8 @@ dummy_func(
                 _Py_CODEUNIT *tier1_fallback = NULL;
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback);
+                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback;
@@ -3358,7 +3370,8 @@ dummy_func(
                 // @TODO: Rewrite TEST intruction above to a JUMP above..
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback);
+                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback;
@@ -3379,6 +3392,7 @@ dummy_func(
             // Fall through to next instruction.
         }
 
+        // Type propagator assumes this doesn't affect type context
         inst(BB_JUMP_BACKWARD_LAZY, (--)) {
             _Py_CODEUNIT *curr = next_instr - 1;
             _Py_CODEUNIT *t2_nextinstr = NULL;

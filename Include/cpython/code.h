@@ -56,18 +56,24 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
+// Tier 2 types meta interpreter
+typedef struct _PyTier2TypeContext {
+    // points into type_stack, points to one element after the stack
+    PyTypeObject** type_stack_ptr;
+    int type_locals_len;
+    int type_stack_len;
+    PyTypeObject** type_stack;
+    PyTypeObject** type_locals;
+} _PyTier2TypeContext;
+
 // Tier 2 interpreter information
 typedef struct _PyTier2BBMetadata {
     // Index into _PyTier2Info->bb_data
     int id;
-    // Array of types. This corresponds to the fast locals array.
-    int type_context_len;
-    PyTypeObject **type_context;
+    _PyTier2TypeContext *type_context;
     _Py_CODEUNIT *tier2_start;
     // Note, this is the first tier 1 instruction to execute AFTER the BB ends.
     _Py_CODEUNIT *tier1_end;
-    // Type stack state
-    PyTypeObject **types_stack;
 } _PyTier2BBMetadata;
 
 // Bump allocator for basic blocks (overallocated)
@@ -97,13 +103,19 @@ typedef struct _PyTier2Info {
     // will have [[BB_ID1, BB_ID2], [BB_ID3,], [], []]
     // etc.
     int **backward_jump_target_bb_ids;
-    PyTypeObject **types_stack;
     // Max len of bb_data
     int bb_data_len;
     // Current index to write into in bb_data. Incremented after each write.
     // This also assigns the BB ID.
     int bb_data_curr;
     _PyTier2BBMetadata **bb_data;
+
+    // @TODO:
+    //   Potentially optimise _PyTier2TypeContext by allocating the stacksize
+    //   to the size needed for the snapshot, and the type propagation is performed
+    //   on type_metainterpreter_stack_scratch which is allocated only once per
+    //   code object.
+    // PyTypeObject** type_metainterpreter_stack_scratch;
 } _PyTier2Info;
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are

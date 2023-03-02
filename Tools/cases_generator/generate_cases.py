@@ -16,7 +16,8 @@ import typing
 from enum import Enum, auto
 
 import parser
-from parser import StackEffect
+from parser import StackEffect, StackVarTypeLiteral, StackVarTypeIndex
+from parser import LocalEffect, LocalEffectVarLiteral, LocalEffectVarStack
 
 HERE = os.path.dirname(__file__)
 ROOT = os.path.join(HERE, "../..")
@@ -35,6 +36,11 @@ TIER2_MACRO_TO_MICRO_MAP_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Include/internal/pycore_opcode_macro_to_micro.h")
 )
 
+# Tier 2 type propagator
+TIER2_TYPE_PROPAGATOR_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Python/tier2_typepropagator.c.h")
+)
+
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = (
@@ -42,6 +48,17 @@ RE_PREDICTED = (
 )
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
+
+# Type propagation across these instructions are forbidden
+# due to conditional effects that can't be determined statically
+# The handling of type propagation across these opcodes are handled elsewhere
+# within tier2.
+TYPE_PROPAGATOR_FORBIDDEN = [
+    "JUMP_IF_FALSE_OR_POP",
+    "JUMP_IF_TRUE_OR_POP", # Type propagator shouldn't see these
+    "BB_TEST_IF_FALSE_OR_POP",
+    "BB_TEST_IF_TRUE_OR_POP" # Type propagator handles this in BB_BRANCH
+]
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
@@ -229,6 +246,7 @@ class Instruction:
     cache_effects: list[parser.CacheEffect]
     input_effects: list[StackEffect]
     output_effects: list[StackEffect]
+    local_effects: LocalEffect | None
     unmoved_names: frozenset[str]
     instr_fmt: str
 
@@ -257,6 +275,7 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
         self.output_effects = inst.outputs  # For consistency/completeness
+        self.local_effects = inst.localeffect
         unmoved_names: set[str] = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):
             if ieffect.name == oeffect.name:
@@ -293,6 +312,100 @@ class Instruction:
             a.error(
                 f"Instruction {self.name} has too many register effects", node=self.inst
             )
+
+    def write_typeprop(self, out: Formatter) -> None:
+        """Write one instruction's type propagation rules"""
+
+        if self.name in TYPE_PROPAGATOR_FORBIDDEN:
+            out.emit('fprintf(stderr, "Type propagation across `{self.name}` shouldn\'t be handled statically!\\n");')
+            out.emit("Py_UNREACHABLE();")
+            return
+
+        # Write input stack effect variable declarations and initializations
+        ieffects = list(reversed(self.input_effects))
+        usable_for_local_effect = {}
+        all_input_effect_names = {}
+        for i, ieffect in enumerate(ieffects):
+            isize = string_effect_size(
+                list_effect_size([ieff for ieff in ieffects[: i + 1]])
+            )
+            all_input_effect_names[ieffect.name] = (ieffect, i)
+            dst = StackEffect(ieffect.name, "PyTypeObject *")
+            if ieffect.size:
+                src = StackEffect(f"&TYPESTACK_PEEK({isize})", "PyTypeObject **")
+                dst = StackEffect(ieffect.name, "PyTypeObject **")
+            elif ieffect.cond:
+                src = StackEffect(f"({ieffect.cond}) ? TYPESTACK_PEEK({isize}) : NULL", "PyTypeObject *")
+            else:
+                usable_for_local_effect[ieffect.name] = ieffect
+                src = StackEffect(f"TYPESTACK_PEEK({isize})", "PyTypeObject *")
+            out.declare(dst, src)
+
+        # Write localarr effect
+        if self.local_effects:
+            idx = self.local_effects.index
+            val = self.local_effects.value
+            match val:
+                case LocalEffectVarLiteral(name=valstr): 
+                    if valstr != "NULL": valstr = f"&{valstr}"
+                case LocalEffectVarStack(name=valstr):
+                    assert valstr in usable_for_local_effect, \
+                        "`cond` and `size` stackvar not supported for localeffect"
+                case _:
+                    typing.assert_never(val)
+            out.emit(f"TYPELOCALS_SET({idx}, {valstr})")
+
+        # Update stack size
+        out.stack_adjust(
+            0,
+            [ieff for ieff in self.input_effects],
+            [oeff for oeff in self.output_effects],
+        )
+
+        # Stack effect
+        oeffects = list(reversed(self.output_effects))
+        for i, oeffect in enumerate(oeffects):
+            osize = string_effect_size(
+                list_effect_size([oeff for oeff in oeffects[: i + 1]])
+            )
+
+            # Check if it's even used
+            if oeffect.name == UNUSED: continue
+
+            # Check if there's type info
+            if typ := oeffect.type_annotation:
+                match typ:
+                    case StackVarTypeLiteral(literal=val): 
+                        if val != "NULL": val = f"&{val}"
+                    case StackVarTypeIndex(array=arr, index=idx):
+                        val = f"{'TYPELOCALS_GET' if arr == 'locals' else 'TYPECONST_GET'}({idx})"
+                    case _:
+                        typing.assert_never(typ)
+                if oeffect.cond:
+                    out.emit(f"if ({oeffect.cond}) {{ TYPESTACK_POKE({osize}, {val}); }}")
+                else:
+                    out.emit(f"TYPESTACK_POKE({osize}, {val});")
+                continue
+
+            # Check if it's part of input effect
+            # TODO: Can we assume that they have the same type?
+            if oeffect.name in all_input_effect_names:
+                ieffect, j = all_input_effect_names[oeffect.name]
+                assert not ieffect.cond, \
+                    "`cond` stackvar not supported for type prop"
+                # The stack var stays at the same pos
+                if len(oeffects) - i == len(ieffects) - j: continue
+                if oeffect.cond:
+                    out.emit(f"if ({oeffect.cond}) {{ TYPESTACK_POKE({osize}, {oeffect.name}); }}")
+                else:
+                    out.emit(f"TYPESTACK_POKE({osize}, {oeffect.name});")
+                continue
+            
+            # Just output null
+            if oeffect.cond:
+                out.emit(f"if ({oeffect.cond}) {{ TYPESTACK_POKE({osize}, NULL); }}")
+            else:
+                out.emit(f"TYPESTACK_POKE({osize}, NULL);")
 
     def write(self, out: Formatter) -> None:
         """Write one instruction, sans prologue and epilogue."""
@@ -482,6 +595,10 @@ class Component:
 
             for var, oeffect in self.output_mapping:
                 out.assign(var, oeffect)
+
+    def write_typeprop(self, out: Formatter) -> None:
+        with out.block(""):
+            self.instr.write_typeprop(out)
 
 
 @dataclasses.dataclass
@@ -1013,11 +1130,38 @@ class Analyzer:
             if types:
                 max_types = max(max_types, len(types))
                 uop_to_type_output[instr_def.name] = types
+        if max_types > 0:
+            self.out.emit(f"extern const PyTypeObject *_Py_UOpGuardTypes[][{max_types}] = {{")
+            for name, types in uop_to_type_output.items():
+                self.out.emit(f"[{name}] = {{{', '.join(['&' + type_ for type_ in types])}}},")
+            self.out.emit("};")
 
-        self.out.emit(f"extern const PyTypeObject *_Py_UOpGuardTypes[][{max_types}] = {{")
-        for name, types in uop_to_type_output.items():
-            self.out.emit(f"[{name}] = {{{', '.join(['&' + type_ for type_ in types])}}},")
-        self.out.emit("};")
+    
+    def write_typepropagator(self) -> None:
+        """Write the type propagator"""
+
+        with open(self.output_filename, "w") as f:
+            # Write provenance header
+            f.write(f"// This file is generated by {THIS} @TODO: make this a seperate argument\n")
+            f.write(f"// from {os.path.relpath(self.filename, ROOT).replace(os.path.sep, posixpath.sep)}\n")
+            f.write(f"// Do not edit!\n")
+
+            # Create formatter
+            self.out = Formatter(f, 8)
+
+            for thing in self.everything:
+                match thing:
+                    case parser.InstDef(kind=kind, name=name):
+                        match kind:
+                            case "op": pass
+                            case _:
+                                self.write_instr_typeprop(self.instrs[name])
+                    case parser.Super(name=name):
+                        self.write_super_typeprop(self.super_instrs[name])
+                    case parser.Macro(name=name):
+                        self.write_macro_typeprop(self.macro_instrs[name])
+                    case _:
+                        typing.assert_never(thing)
 
 
     def write_metadata(self) -> None:
@@ -1237,6 +1381,31 @@ class Analyzer:
                     f'{cache_adjust}, "incorrect cache size");'
                 )
 
+    def write_instr_typeprop(self, instr: Instruction) -> None:
+        name = instr.name
+        self.out.emit("")
+        with self.out.block(f"TARGET({name})"):
+            instr.write_typeprop(self.out)
+            self.out.emit("break;")
+
+    def write_super_typeprop(self, sup: SuperInstruction) -> None:
+        # TODO: Support super instructions
+        #  Currently not support because of the need for NEXTOPARG
+        ...
+
+    def write_macro_typeprop(self, mac: MacroInstruction) -> None:
+        # TODO: Make the code emitted more efficient by 
+        #  combining stack effect
+        name = mac.name
+        self.out.emit("")
+        with self.out.block(f"TARGET({name})"):
+            for comp in mac.parts:
+                if not isinstance(comp, Component): continue
+                comp.write_typeprop(self.out)
+            self.out.emit("break;")
+
+
+
     @contextlib.contextmanager
     def wrap_super_or_macro(self, up: SuperOrMacroInstruction):
         """Shared boilerplate for super- and macro instructions."""
@@ -1341,6 +1510,10 @@ def main():
     a.write_metadata()
     # a.output_filename = TIER2_MACRO_TO_MICRO_MAP_OUTPUT
     # a.write_macromap_and_typedata()
+
+    # Quick hack. @TODO refactor
+    a.output_filename = TIER2_TYPE_PROPAGATOR_OUTPUT
+    a.write_typepropagator()
 
 
 if __name__ == "__main__":
