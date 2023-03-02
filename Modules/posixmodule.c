@@ -8403,7 +8403,7 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
             Py_RETURN_NONE;
         }
     }
-#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 
     /* If the signal is outside of what GenerateConsoleCtrlEvent can use,
        attempt to open and terminate the process. */
