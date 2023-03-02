@@ -2087,7 +2087,7 @@ dummy_func(
             // This gets set so BRANCH_BB knows whether to pop
             // the type stack (type propagation) when generating the
             // target BB
-            gen_bb_requires_pop = jump;
+            gen_bb_requires_pop = !jump;
         }
 
         inst(JUMP_IF_TRUE_OR_POP, (cond -- cond if (jump))) {
@@ -2143,7 +2143,7 @@ dummy_func(
             // This gets set so BRANCH_BB knows whether to pop
             // the type stack (type propagation) when generating the
             // target BB
-            gen_bb_requires_pop = jump;
+            gen_bb_requires_pop = !jump;
         }
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
