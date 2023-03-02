@@ -79,7 +79,7 @@ class StackVarTypeIndex(Node):
     index: str
 
 
-StackVarType = StackVarTypeLiteral | StackVarTypeIndex
+StackVarType: TypeAlias = StackVarTypeLiteral | StackVarTypeIndex
 
 
 @dataclass
