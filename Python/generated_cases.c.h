@@ -50,7 +50,13 @@
             PREDICTED(LOAD_CONST);
             PyObject *value;
             value = GETITEM(consts, oparg);
-            Py_INCREF(value);
+            if (PyLong_CheckExact(value) && PyLong_AsLongLong(value) == 424242) {
+                value = tagged(value).obj;
+                fprintf(stderr, "Tagged %p\n", value);
+            }
+            else {
+                Py_INCREF(value);
+            }
             STACK_GROW(1);
             ((PyObject **)stack_pointer)[-1] = value;
             DISPATCH();
@@ -101,7 +107,13 @@
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
-                Py_INCREF(value);
+                if (PyLong_CheckExact(value) && PyLong_AsLongLong(value) == 424242) {
+                    value = tagged(value).obj;
+                    fprintf(stderr, "Tagged %p\n", value);
+                }
+                else {
+                    Py_INCREF(value);
+                }
                 _tmp_1 = value;
             }
             STACK_GROW(2);
@@ -150,7 +162,13 @@
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
-                Py_INCREF(value);
+                if (PyLong_CheckExact(value) && PyLong_AsLongLong(value) == 424242) {
+                    value = tagged(value).obj;
+                    fprintf(stderr, "Tagged %p\n", value);
+                }
+                else {
+                    Py_INCREF(value);
+                }
                 _tmp_2 = value;
             }
             oparg = (next_instr++)->op.arg;
@@ -3868,7 +3886,7 @@
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
             res = binary_ops[oparg](lhs, rhs);
-            Py_DECREF(lhs);
+            decref_unless_tagged(stack_pointer[-2]);
             Py_DECREF(rhs);
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
