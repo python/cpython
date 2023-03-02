@@ -108,57 +108,88 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
     int base,
     int alternate);
 
+/* Long value tag bits:
+ * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
+ * 2: Reserved for immortality bit
+ * 3+ Unsigned digit count
+ */
+#define SIGN_MASK 3
+#define SIGN_ZERO 1
+#define SIGN_NEGATIVE 2
+#define NON_SIZE_BITS 3
+
+static int
+unused_bits_are_zero(const PyLongObject* op) {
+    return (op->long_value.lv_tag & 4) == 0;
+}
+
+static int
+inconsistent_zero(const PyLongObject* op) {
+    return
+    ((op->long_value.lv_tag & SIGN_MASK) == SIGN_ZERO
+    && (op->long_value.lv_tag >> NON_SIZE_BITS) != 0)
+    ||
+    ((op->long_value.lv_tag & SIGN_MASK) != SIGN_ZERO
+    && (op->long_value.lv_tag >> NON_SIZE_BITS) == 0);
+}
 
 /* Return 1 if the argument is positive single digit int */
 static inline int
 _PyLong_IsNonNegativeSingleDigit(const PyLongObject* op) {
-    /*  We perform a fast check using a single comparison by casting from int
-        to uint which casts negative numbers to large positive numbers.
-        For details see Section 14.2 "Bounds Checking" in the Agner Fog
-        optimization manual found at:
-        https://www.agner.org/optimize/optimizing_cpp.pdf
-
-        The function is not affected by -fwrapv, -fno-wrapv and -ftrapv
-        compiler options of GCC and clang
-    */
     assert(PyLong_Check(op));
-    Py_ssize_t signed_size = op->long_value.ob_size;
-    return ((size_t)signed_size) <= 1;
+    assert(unused_bits_are_zero(op));
+    assert(!inconsistent_zero(op));
+    return op->long_value.lv_tag <= (1 << NON_SIZE_BITS);
 }
-
 
 static inline int
 _PyLong_IsSingleDigit(const PyLongObject* op) {
     assert(PyLong_Check(op));
-    Py_ssize_t signed_size = op->long_value.ob_size;
-    return ((size_t)(signed_size+1)) <= 2;
+    assert(unused_bits_are_zero(op));
+    assert(!inconsistent_zero(op));
+    return op->long_value.lv_tag < (2 << NON_SIZE_BITS);
 }
 
 static inline Py_ssize_t
 _PyLong_SingleDigitValue(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(op->long_value.ob_size >= -1 && op->long_value.ob_size <= 1);
-    return op->long_value.ob_size * op->long_value.ob_digit[0];
+    assert(_PyLong_IsSingleDigit(op));
+    assert(unused_bits_are_zero(op));
+    Py_ssize_t sign = 1 - (op->long_value.lv_tag & SIGN_MASK);
+    return sign * (Py_ssize_t)op->long_value.ob_digit[0];
 }
 
 static inline bool
-_PyLong_IsPositive(const PyLongObject *op)
+_PyLong_IsZero(const PyLongObject *op)
 {
-    return op->long_value.ob_size > 0;
+    assert(unused_bits_are_zero(op));
+    assert(!inconsistent_zero(op));
+    return (op->long_value.lv_tag & SIGN_MASK) == SIGN_ZERO;
 }
 
 static inline bool
 _PyLong_IsNegative(const PyLongObject *op)
 {
-    return op->long_value.ob_size < 0;
+    assert(unused_bits_are_zero(op));
+    assert(!inconsistent_zero(op));
+    return (op->long_value.lv_tag & SIGN_MASK) == SIGN_NEGATIVE;
+}
+
+static inline bool
+_PyLong_IsPositive(const PyLongObject *op)
+{
+    assert(unused_bits_are_zero(op));
+    assert(!inconsistent_zero(op));
+    return (op->long_value.lv_tag & SIGN_MASK) == 0;
 }
 
 static inline Py_ssize_t
 _PyLong_DigitCount(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    return Py_ABS(op->long_value.ob_size);
+    assert(unused_bits_are_zero(op));
+    return op->long_value.lv_tag >> NON_SIZE_BITS;
 }
 
 /* Equivalent to _PyLong_DigitCount(op) * _PyLong_NonZeroSign(op) */
@@ -166,7 +197,10 @@ static inline Py_ssize_t
 _PyLong_SignedDigitCount(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    return op->long_value.ob_size;
+    assert(unused_bits_are_zero(op));
+    Py_ssize_t sign = 1 - (op->long_value.lv_tag & SIGN_MASK);
+    assert(!inconsistent_zero(op));
+    return sign * (Py_ssize_t)(op->long_value.lv_tag >> NON_SIZE_BITS);
 }
 
 /* Like _PyLong_DigitCount but asserts that op is non-negative */
@@ -175,57 +209,77 @@ _PyLong_UnsignedDigitCount(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
     assert(!_PyLong_IsNegative(op));
-    return op->long_value.ob_size;
-}
-
-static inline bool
-_PyLong_IsZero(const PyLongObject *op)
-{
-    return op->long_value.ob_size == 0;
+    assert(unused_bits_are_zero(op));
+    assert(!inconsistent_zero(op));
+    return op->long_value.lv_tag >> NON_SIZE_BITS;
 }
 
 static inline int
 _PyLong_NonZeroSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(!_PyLong_IsZero(op));
-    return ((op->long_value.ob_size > 0) << 1) - 1;
+    assert(unused_bits_are_zero(op));
+    assert(!inconsistent_zero(op));
+    return 1 - (op->long_value.lv_tag & SIGN_MASK);
 }
 
 /* Do a and b have the same sign? Zero counts as positive. */
 static inline int
 _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
 {
-    return (a->long_value.ob_size ^ b->long_value.ob_size) >= 0;
+    return (a->long_value.lv_tag & SIGN_MASK) == (b->long_value.lv_tag & SIGN_MASK);
+}
+
+//#define TAG_FROM_SIGN_AND_SIZE(neg, size) ((neg) ? -(size) : (size))
+#define TAG_FROM_SIGN_AND_SIZE(sign, size) ((1 - (sign)) | ((size) << NON_SIZE_BITS))
+
+static inline void
+_PyLong_SetSignAndSize(PyLongObject *op, int sign, Py_ssize_t size)
+{
+    assert(size >= 0);
+    assert(-1 <= sign && sign <= 1);
+    assert(sign != 0 || size == 0);
+    op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, size);
+    assert(!inconsistent_zero(op));
 }
 
 static inline void
-_PyLong_SetSignAndSize(PyLongObject *op, bool negative, Py_ssize_t size)
+_PyLong_SetSize(PyLongObject *op, Py_ssize_t size)
 {
-    int sign = 1-negative*2;
-    assert(sign == -1 || sign == 1);
-    op->long_value.ob_size = sign * size;
+    assert(size >= 0);
+    assert(!inconsistent_zero(op));
+    op->long_value.lv_tag = (size << NON_SIZE_BITS) | (op->long_value.lv_tag & SIGN_MASK);
+    assert(!inconsistent_zero(op));
 }
 
 static inline void
 _PyLong_FlipSign(PyLongObject *op) {
-    op->long_value.ob_size = -op->long_value.ob_size;
+    assert(unused_bits_are_zero(op));
+    assert(!inconsistent_zero(op));
+    int flipped_sign = 2 - (op->long_value.lv_tag & SIGN_MASK);
+    op->long_value.lv_tag &= ~7;
+    op->long_value.lv_tag |= flipped_sign;
+    assert(unused_bits_are_zero(op));
+    assert(!inconsistent_zero(op));
 }
 
 #define _PyLong_DIGIT_INIT(val) \
     { \
         .ob_base = _PyObject_IMMORTAL_INIT(&PyLong_Type), \
         .long_value  = { \
-            .ob_size = (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \
+            .lv_tag = TAG_FROM_SIGN_AND_SIZE( \
+                (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \
+                (val) == 0 ? 0 : 1), \
             { ((val) >= 0 ? (val) : -(val)) }, \
         } \
     }
 
-#define TAG_FROM_SIGN_AND_SIZE(neg, size) (neg ? -(size) : (size))
+#define _PyLong_FALSE_TAG TAG_FROM_SIGN_AND_SIZE(0, 0)
+#define _PyLong_TRUE_TAG TAG_FROM_SIGN_AND_SIZE(1, 1)
 
-#define _PyLong_FALSE_TAG 0
-#define _PyLong_TRUE_TAG 1
-
+static_assert(TAG_FROM_SIGN_AND_SIZE(0, 0) == 1);
+static_assert(TAG_FROM_SIGN_AND_SIZE(1, 1) == 8);
+static_assert(TAG_FROM_SIGN_AND_SIZE(-1, 1) == 10);
 
 #ifdef __cplusplus
 }

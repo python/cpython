@@ -94,6 +94,8 @@ class Reader:
         self.level: int = 0
 
     def r_string(self, n: int) -> bytes:
+        if not (0 <= n <= self.end - self.pos):
+            print(n, self.end, self.pos)
         assert 0 <= n <= self.end - self.pos
         buf = self.data[self.pos : self.pos + n]
         self.pos += n

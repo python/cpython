@@ -199,14 +199,14 @@ PyTypeObject PyBool_Type = {
 
 struct _longobject _Py_FalseStruct = {
     PyObject_HEAD_INIT(&PyBool_Type)
-    { .ob_size = _PyLong_FALSE_TAG,
+    { .lv_tag = _PyLong_FALSE_TAG,
         { 0 }
     }
 };
 
 struct _longobject _Py_TrueStruct = {
     PyObject_HEAD_INIT(&PyBool_Type)
-    { .ob_size = _PyLong_TRUE_TAG,
+    { .lv_tag = _PyLong_TRUE_TAG,
         { 1 }
     }
 };

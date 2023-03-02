@@ -6,7 +6,7 @@
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _Py_SmallInts
-#include "pycore_object.h"        // _PyObject_InitVar()
+#include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 #include "pycore_structseq.h"     // _PyStructSequence_FiniType()
@@ -123,7 +123,12 @@ long_normalize(PyLongObject *v)
     while (i > 0 && v->long_value.ob_digit[i-1] == 0)
         --i;
     if (i != j) {
-        _PyLong_SetSignAndSize(v, _PyLong_IsNegative(v), i);
+        if (i == 0) {
+            _PyLong_SetSignAndSize(v, 0, 0);
+        }
+        else {
+            _PyLong_SetSize(v, i);
+        }
     }
     return v;
 }
@@ -149,8 +154,8 @@ _PyLong_New(Py_ssize_t size)
     Py_ssize_t ndigits = size ? size : 1;
     /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
        sizeof(digit)*size.  Previous incarnations of this code used
-       sizeof(PyVarObject) instead of the offsetof, but this risks being
-       incorrect in the presence of padding between the PyVarObject header
+       sizeof() instead of the offsetof, but this risks being
+       incorrect in the presence of padding between the header
        and the digits. */
     result = PyObject_Malloc(offsetof(PyLongObject, long_value.ob_digit) +
                              ndigits*sizeof(digit));
@@ -158,7 +163,7 @@ _PyLong_New(Py_ssize_t size)
         PyErr_NoMemory();
         return NULL;
     }
-    _PyLong_SetSignAndSize(result, false, size);
+    _PyLong_SetSignAndSize(result, size != 0, size);
     _PyObject_Init((PyObject*)result, &PyLong_Type);
     return result;
 }
@@ -167,12 +172,15 @@ PyLongObject *
 _PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits)
 {
     assert(digit_count >= 0);
+    if (digit_count == 0) {
+        return (PyLongObject *)Py_NewRef(_PyLong_GetZero());
+    }
     PyLongObject *result = _PyLong_New(digit_count);
     if (result == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    _PyLong_SetSignAndSize(result, negative, digit_count);
+    _PyLong_SetSignAndSize(result, negative?-1:1, digit_count);
     memcpy(result->long_value.ob_digit, digits, digit_count * sizeof(digit));
     return result;
 }
@@ -204,7 +212,7 @@ _PyLong_FromMedium(sdigit x)
         return NULL;
     }
     digit abs_x = x < 0 ? -x : x;
-    _PyLong_SetSignAndSize(v, x < 0, 1);
+    _PyLong_SetSignAndSize(v, x<0?-1:1, 1);
     _PyObject_Init((PyObject*)v, &PyLong_Type);
     v->long_value.ob_digit[0] = abs_x;
     return (PyObject*)v;
@@ -214,18 +222,18 @@ static PyObject *
 _PyLong_FromLarge(stwodigits ival)
 {
     twodigits abs_ival;
-    bool negative;
+    int sign;
     assert(!is_medium_int(ival));
 
     if (ival < 0) {
         /* negate: can't write this as abs_ival = -ival since that
            invokes undefined behaviour when ival is LONG_MIN */
         abs_ival = 0U-(twodigits)ival;
-        negative = true;
+        sign = -1;
     }
     else {
         abs_ival = (twodigits)ival;
-        negative = false;
+        sign = 1;
     }
     /* Must be at least two digits */
     assert(abs_ival >> PyLong_SHIFT != 0);
@@ -238,7 +246,7 @@ _PyLong_FromLarge(stwodigits ival)
     PyLongObject *v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->long_value.ob_digit;
-        _PyLong_SetSignAndSize(v, negative, ndigits);
+        _PyLong_SetSignAndSize(v, sign, ndigits);
         t = abs_ival;
         while (t) {
             *p++ = Py_SAFE_DOWNCAST(
@@ -311,7 +319,7 @@ PyLong_FromLong(long ival)
     v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->long_value.ob_digit;
-        _PyLong_SetSignAndSize(v, ival < 0, ndigits);
+        _PyLong_SetSignAndSize(v, ival < 0 ? -1 : 1, ndigits);
         t = abs_ival;
         while (t) {
             *p++ = (digit)(t & PyLong_MASK);
@@ -738,7 +746,7 @@ _PyLong_Sign(PyObject *vv)
 
     assert(v != NULL);
     assert(PyLong_Check(v));
-    return _PyLong_IsPositive(v) - _PyLong_IsNegative(v);
+    return _PyLong_NonZeroSign(v);
 }
 
 static int
@@ -888,7 +896,11 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
         }
     }
 
-    _PyLong_SetSignAndSize(v, is_signed, idigit);
+    int sign = is_signed ? -1: 1;
+    if (idigit == 0) {
+        sign = 0;
+    }
+    _PyLong_SetSignAndSize(v, sign, idigit);
     return (PyObject *)maybe_small_long(long_normalize(v));
 }
 
@@ -898,7 +910,7 @@ _PyLong_AsByteArray(PyLongObject* v,
                     int little_endian, int is_signed)
 {
     Py_ssize_t i;               /* index into v->long_value.ob_digit */
-    Py_ssize_t ndigits;         /* |v->ob_size| */
+    Py_ssize_t ndigits;         /* number of digits */
     twodigits accum;            /* sliding register */
     unsigned int accumbits;     /* # bits in accum */
     int do_twos_comp;           /* store 2's-comp?  is_signed and v < 0 */
@@ -1109,7 +1121,7 @@ PyLong_FromLongLong(long long ival)
     v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->long_value.ob_digit;
-        _PyLong_SetSignAndSize(v, ival < 0, ndigits);
+        _PyLong_SetSignAndSize(v, ival < 0 ? -1 : 1, ndigits);
         t = abs_ival;
         while (t) {
             *p++ = (digit)(t & PyLong_MASK);
@@ -1152,7 +1164,7 @@ PyLong_FromSsize_t(Py_ssize_t ival)
     v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->long_value.ob_digit;
-        _PyLong_SetSignAndSize(v, negative, ndigits);
+        _PyLong_SetSignAndSize(v, negative ? -1 : 1, ndigits);
         t = abs_ival;
         while (t) {
             *p++ = (digit)(t & PyLong_MASK);
@@ -2443,7 +2455,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
         *res = NULL;
         return 0;
     }
-    _PyLong_SetSignAndSize(z, false, 0);
+    _PyLong_SetSignAndSize(z, 0, 0);
 
     /* `convwidth` consecutive input digits are treated as a single
      * digit in base `convmultmax`.
@@ -2495,7 +2507,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
             if (_PyLong_DigitCount(z) < size_z) {
                 *pz = (digit)c;
                 assert(!_PyLong_IsNegative(z));
-                _PyLong_SetSignAndSize(z, false, _PyLong_DigitCount(z) + 1);
+                _PyLong_SetSignAndSize(z, 1, _PyLong_DigitCount(z) + 1);
             }
             else {
                 PyLongObject *tmp;
@@ -3641,7 +3653,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
     /* If a is small compared to b, splitting on b gives a degenerate
      * case with ah==0, and Karatsuba may be (even much) less efficient
      * than "grade school" then.  However, we can still win, by viewing
-     * b as a string of "big digits", each of width a->ob_size.  That
+     * b as a string of "big digits", each of the same width as a. That
      * leads to a sequence of balanced calls to k_mul.
      */
     if (2 * asize <= bsize)
@@ -3806,9 +3818,9 @@ ah*bh and al*bl too.
 
 /* b has at least twice the digits of a, and a is big enough that Karatsuba
  * would pay off *if* the inputs had balanced sizes.  View b as a sequence
- * of slices, each with a->ob_size digits, and multiply the slices by a,
- * one at a time.  This gives k_mul balanced inputs to work with, and is
- * also cache-friendly (we compute one double-width slice of the result
+ * of slices, each with the same number of digits as a, and multiply the
+ * slices by a, one at a time.  This gives k_mul balanced inputs to work with,
+ * and is also cache-friendly (we compute one double-width slice of the result
  * at a time, then move on, never backtracking except for the helpful
  * single-width slice overlap between successive partial sums).
  */
@@ -3844,7 +3856,7 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
         memcpy(bslice->long_value.ob_digit, b->long_value.ob_digit + nbdone,
                nbtouse * sizeof(digit));
         assert(nbtouse >= 0);
-        _PyLong_SetSignAndSize(bslice, false, nbtouse);
+        _PyLong_SetSignAndSize(bslice, 1, nbtouse);
         product = k_mul(a, bslice);
         if (product == NULL)
             goto fail;
@@ -4933,7 +4945,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
             significant `wordshift` digits of `a` is nonzero. Digit `wordshift`
             of `2**shift - 1` has value `PyLong_MASK >> hishift`.
         */
-        _PyLong_SetSignAndSize(z, true, newsize);
+        _PyLong_SetSignAndSize(z, -1, newsize);
 
         digit sticky = 0;
         for (Py_ssize_t j = 0; j < wordshift; j++) {
@@ -5354,7 +5366,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
         }
         if (c != NULL) {
             assert(size_a >= 0);
-            _PyLong_SetSignAndSize(c, false, size_a);
+            _PyLong_SetSignAndSize(c, 1, size_a);
         }
         else if (Py_REFCNT(a) == 1) {
             c = (PyLongObject*)Py_NewRef(a);
@@ -5368,12 +5380,12 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
 
         if (d != NULL) {
             assert(size_a >= 0);
-            _PyLong_SetSignAndSize(d, false, size_a);
+            _PyLong_SetSignAndSize(d, 1, size_a);
         }
         else if (Py_REFCNT(b) == 1 && size_a <= alloc_b) {
             d = (PyLongObject*)Py_NewRef(b);
             assert(size_a >= 0);
-            _PyLong_SetSignAndSize(d, false, size_a);
+            _PyLong_SetSignAndSize(d, 1, size_a);
         }
         else {
             alloc_b = size_a;
@@ -5557,7 +5569,7 @@ long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
         return NULL;
     }
     assert(PyLong_Check(newobj));
-    newobj->long_value.ob_size = tmp->long_value.ob_size;
+    newobj->long_value.lv_tag = tmp->long_value.lv_tag;
     for (i = 0; i < n; i++) {
         newobj->long_value.ob_digit[i] = tmp->long_value.ob_digit[i];
     }

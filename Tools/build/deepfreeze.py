@@ -309,7 +309,7 @@ class Printer:
         return f"& {name}._object.ob_base.ob_base"
 
     def _generate_int_for_bits(self, name: str, i: int, digit: int) -> None:
-        negative = int(i < 0)
+        sign = (i > 0) - (i < 0)
         i = abs(i)
         digits: list[int] = []
         while i:
@@ -319,11 +319,11 @@ class Printer:
         with self.indent():
             with self.block("struct"):
                 self.write("PyObject ob_base;")
-                self.write("uintptr_t ob_size;")
+                self.write("uintptr_t lv_tag;")
                 self.write(f"digit ob_digit[{max(1, len(digits))}];")
         with self.block(f"{name} =", ";"):
             self.object_head("PyLong_Type")
-            self.write(f".ob_size = TAG_FROM_SIGN_AND_SIZE({negative}, {len(digits)}),")
+            self.write(f".lv_tag = TAG_FROM_SIGN_AND_SIZE({sign}, {len(digits)}),")
             if digits:
                 ds = ", ".join(map(str, digits))
                 self.write(f".ob_digit = {{ {ds} }},")
