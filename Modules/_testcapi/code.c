@@ -92,7 +92,7 @@ test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
         goto finally;
     }
     assert ((uintptr_t)extra == 77);
-    // Need to reset code extra value.
+    // Revert to initial code extra value.
     res = PyUnstable_Code_SetExtra(test_func_code, code_extra_index, NULL);
     if (res < 0) {
         goto finally;
