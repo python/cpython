@@ -972,6 +972,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
     return dest;
 }
 
+#ifndef NDEBUG
 static bool
 cfg_builder_check(cfg_builder *g)
 {
@@ -989,6 +990,7 @@ cfg_builder_check(cfg_builder *g)
     }
     return true;
 }
+#endif
 
 static basicblock *cfg_builder_new_block(cfg_builder *g);
 
