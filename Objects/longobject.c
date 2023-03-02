@@ -3216,6 +3216,9 @@ PyLong_AsDouble(PyObject *v)
 static Py_ssize_t
 long_compare(PyLongObject *a, PyLongObject *b)
 {
+    if (_PyLong_BothAreSingleDigit(a, b)) {
+        return _PyLong_SingleDigitValue(a) - _PyLong_SingleDigitValue(b);
+    }
     Py_ssize_t sign = _PyLong_SignedDigitCount(a) - _PyLong_SignedDigitCount(b);
     if (sign == 0) {
         Py_ssize_t i = _PyLong_DigitCount(a);
@@ -3392,7 +3395,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
 PyObject *
 _PyLong_Add(PyLongObject *a, PyLongObject *b)
 {
-    if (_PyLong_IsSingleDigit(a) && _PyLong_IsSingleDigit(b)) {
+    if (_PyLong_BothAreSingleDigit(a, b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) + medium_value(b));
     }
 
@@ -3433,7 +3436,7 @@ _PyLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
 
-    if (_PyLong_IsSingleDigit(a) && _PyLong_IsSingleDigit(b)) {
+    if (_PyLong_BothAreSingleDigit(a, b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
     }
     if (_PyLong_IsNegative(a)) {
@@ -3885,7 +3888,7 @@ _PyLong_Multiply(PyLongObject *a, PyLongObject *b)
     PyLongObject *z;
 
     /* fast path for single-digit multiplication */
-    if (_PyLong_IsSingleDigit(a) && _PyLong_IsSingleDigit(b)) {
+    if (_PyLong_BothAreSingleDigit(a, b)) {
         stwodigits v = medium_value(a) * medium_value(b);
         return _PyLong_FromSTwoDigits(v);
     }

@@ -150,6 +150,13 @@ _PyLong_IsSingleDigit(const PyLongObject* op) {
     return op->long_value.lv_tag < (2 << NON_SIZE_BITS);
 }
 
+static inline int
+_PyLong_BothAreSingleDigit(const PyLongObject* a, PyLongObject* b) {
+    assert(PyLong_Check(a));
+    assert(PyLong_Check(b));
+    return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
+}
+
 static inline Py_ssize_t
 _PyLong_SingleDigitValue(const PyLongObject *op)
 {
