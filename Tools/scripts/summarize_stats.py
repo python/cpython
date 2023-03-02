@@ -599,7 +599,8 @@ def output_stats(inputs, json_output=None):
     if len(inputs) == 1:
         stats = gather_stats(inputs[0])
         if json_output is not None:
-            json.dump(stats, json_output)
+            with json_output as json_output:
+                json.dump(stats, json_output)
         output_single_stats(stats)
     elif len(inputs) == 2:
         if json_output is not None:
