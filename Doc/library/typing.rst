@@ -1345,7 +1345,7 @@ These are not used in annotations. They are building blocks for creating generic
 
         x: Ts          # Not valid
         x: tuple[Ts]   # Not valid
-        x: tuple[*Ts]  # The correct way to to do it
+        x: tuple[*Ts]  # The correct way to do it
 
     Type variable tuples can be used in the same contexts as normal type
     variables. For example, in class definitions, arguments, and return types::
