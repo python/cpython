@@ -24,7 +24,6 @@ int _PyFuture_FromAST(
     PyObject *filename,
     PyFutureFeatures* futures);
 
-extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 typedef struct {
     int optimize;
