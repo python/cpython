@@ -1729,4 +1729,4 @@ PyInit_mmap(void)
     return PyModuleDef_Init(&mmapmodule);
 }
 
-#endif /* !MS_WINDOWS || MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM || MS_WINDOWS_GAMES */
+#endif /* !MS_WINDOWS || MS_WINDOWS_DESKTOP || MS_WINDOWS_GAMES */
