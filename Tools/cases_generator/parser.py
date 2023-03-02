@@ -75,11 +75,11 @@ class StackVarTypeLiteral(Node):
 
 @dataclass
 class StackVarTypeIndex(Node):
-    array: Literal["locals"] | Literal["consts"]
+    array: Literal["locals", "consts"]
     index: str
 
 
-StackVarType = StackVarTypeLiteral | StackVarTypeIndex
+StackVarType: TypeAlias = StackVarTypeLiteral | StackVarTypeIndex
 
 
 @dataclass
@@ -113,7 +113,7 @@ class LocalEffectVarStack(Node):
     name: str
 
 
-LocalEffectVar = LocalEffectVarLiteral | LocalEffectVarStack
+LocalEffectVar: TypeAlias = LocalEffectVarLiteral | LocalEffectVarStack
 
 
 @dataclass
