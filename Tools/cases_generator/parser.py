@@ -75,7 +75,7 @@ class StackVarTypeLiteral(Node):
 
 @dataclass
 class StackVarTypeIndex(Node):
-    array: Literal["locals"] | Literal["consts"]
+    array: Literal["locals", "consts"]
     index: str
 
 
