@@ -307,7 +307,7 @@ class Parser(PLexer):
         #   IDENTIFIER [':' IDENTIFIER] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
-            type = ""
+            _type = ""
             has_type_annotation = False
             type_annotation = None
             if self.expect(lx.COLON):
@@ -327,9 +327,9 @@ class Parser(PLexer):
                 if not (size := self.expression()):
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
-                type = "PyObject **"
+                _type = "PyObject **"
                 size_text = size.text.strip()
-            return StackEffect(tkn.text, type, type_annotation, cond_text, size_text)
+            return StackEffect(tkn.text, _type, type_annotation, cond_text, size_text)
 
     @contextual
     def stackvar_type(self) -> StackVarType | None: 
