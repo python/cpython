@@ -130,6 +130,11 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     int start,
     PyCompilerFlags *flags);
 
+int _PyFuture_FromAST(
+    struct _mod * mod,
+    PyObject *filename,
+    PyFutureFeatures* futures);
+
 #ifdef __cplusplus
 }
 #endif
