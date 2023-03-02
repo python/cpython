@@ -22,7 +22,8 @@ static inline int IS_SCOPE_EXIT_OPCODE(int opcode);
 ////////// TYPE CONTEXT FUNCTIONS
 
 static _PyTier2TypeContext *
-initialize_type_context(const PyCodeObject *co) {
+initialize_type_context(const PyCodeObject *co)
+{
 
 #if TYPEPROP_DEBUG
     fprintf(stderr, "  [*] Initialize type context\n");
@@ -42,8 +43,12 @@ initialize_type_context(const PyCodeObject *co) {
     }
 
     // Initialize to unknown type.
-    for (int i = 0; i < nlocals; i++) type_locals[i] = NULL;
-    for (int i = 0; i < nstack; i++) type_stack[i] = NULL;
+    for (int i = 0; i < nlocals; i++) {
+        type_locals[i] = NULL;
+    }
+    for (int i = 0; i < nstack; i++) {
+        type_stack[i] = NULL;
+    }
 
     _PyTier2TypeContext *type_context = PyMem_Malloc(sizeof(_PyTier2TypeContext));
     if (type_context == NULL) {
@@ -60,7 +65,8 @@ initialize_type_context(const PyCodeObject *co) {
 }
 
 static _PyTier2TypeContext *
-_PyTier2TypeContext_copy(const _PyTier2TypeContext* type_context) {
+_PyTier2TypeContext_copy(const _PyTier2TypeContext *type_context)
+{
 
 #if TYPEPROP_DEBUG
     fprintf(stderr, "  [*] Copying type context\n");
@@ -69,20 +75,20 @@ _PyTier2TypeContext_copy(const _PyTier2TypeContext* type_context) {
     int nlocals = type_context->type_locals_len;
     int nstack = type_context->type_stack_len;
 
-    PyTypeObject** type_locals = PyMem_Malloc(nlocals * sizeof(PyTypeObject*));
+    PyTypeObject **type_locals = PyMem_Malloc(nlocals * sizeof(PyTypeObject *));
     if (type_locals == NULL) {
         return NULL;
     }
-    PyTypeObject** type_stack = PyMem_Malloc(nstack * sizeof(PyTypeObject*));
+    PyTypeObject **type_stack = PyMem_Malloc(nstack * sizeof(PyTypeObject *));
     if (type_stack == NULL) {
         PyMem_Free(type_locals);
         return NULL;
     }
 
-    memcpy(type_locals, type_context->type_locals, nlocals * sizeof(PyTypeObject*));
-    memcpy(type_stack, type_context->type_stack, nstack * sizeof(PyTypeObject*));
+    memcpy(type_locals, type_context->type_locals, nlocals * sizeof(PyTypeObject *));
+    memcpy(type_stack, type_context->type_stack, nstack * sizeof(PyTypeObject *));
 
-    _PyTier2TypeContext* new_type_context = PyMem_Malloc(sizeof(_PyTier2TypeContext));
+    _PyTier2TypeContext *new_type_context = PyMem_Malloc(sizeof(_PyTier2TypeContext));
     if (new_type_context == NULL) {
         PyMem_Free(type_locals);
         PyMem_Free(type_stack);
@@ -97,7 +103,8 @@ _PyTier2TypeContext_copy(const _PyTier2TypeContext* type_context) {
 }
 
 static void
-_PyTier2TypeContext_free(_PyTier2TypeContext* type_context) {
+_PyTier2TypeContext_free(_PyTier2TypeContext *type_context)
+{
 
 #if TYPEPROP_DEBUG
     fprintf(stderr, "  [*] Freeing type context\n");
@@ -112,12 +119,12 @@ _PyTier2TypeContext_free(_PyTier2TypeContext* type_context) {
 static void
 type_propagate(
     int opcode, int oparg,
-    _PyTier2TypeContext* type_context,
-    const PyObject* consts)
+    _PyTier2TypeContext *type_context,
+    const PyObject *consts)
 {
-    PyTypeObject** type_stack = type_context->type_stack;
-    PyTypeObject** type_locals = type_context->type_locals;
-    PyTypeObject** type_stackptr = type_context->type_stack_ptr;
+    PyTypeObject **type_stack = type_context->type_stack;
+    PyTypeObject **type_locals = type_context->type_locals;
+    PyTypeObject **type_stackptr = type_context->type_stack_ptr;
 
 #define TARGET(op) case op: 
 #define TYPESTACK_PEEK(idx)         (type_stackptr[-(idx)])
@@ -130,7 +137,7 @@ type_propagate(
 #define STACK_SHRINK(idx)           STACK_ADJUST(-(idx))
 
 #ifdef TYPEPROP_DEBUG
-    fprintf(stderr, "  [-] Type stack bef: %llu\n", ((uint64_t)type_stackptr - (uint64_t)type_stack)/sizeof(PyTypeObject*));
+    fprintf(stderr, "  [-] Type stack bef: %llu\n", ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject *));
 #ifdef Py_DEBUG
     fprintf(stderr, "  [-] Type propagating across: %s : %d\n", _PyOpcode_OpName[opcode], oparg);
 #endif
@@ -144,7 +151,7 @@ type_propagate(
     }
 
 #ifdef TYPEPROP_DEBUG
-    fprintf(stderr, "  [-] Type stack aft: %llu\n", ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject*));
+    fprintf(stderr, "  [-] Type stack aft: %llu\n", ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject *));
 #endif
 
     type_context->type_stack_ptr = type_stackptr;
@@ -322,7 +329,7 @@ IS_JREL_OPCODE(int opcode)
     case JUMP_FORWARD:
     case JUMP_IF_FALSE_OR_POP:
     case JUMP_IF_TRUE_OR_POP:
-    // These two tend to be after a COMPARE_AND_BRANCH.
+        // These two tend to be after a COMPARE_AND_BRANCH.
     case POP_JUMP_IF_FALSE:
     case POP_JUMP_IF_TRUE:
     case SEND:
@@ -389,27 +396,27 @@ static inline int
 IS_FORBIDDEN_OPCODE(int opcode)
 {
     switch (opcode) {
-    // Generators and coroutines
+        // Generators and coroutines
     case SEND:
     case YIELD_VALUE:
-    // Raise keyword
+        // Raise keyword
     case RAISE_VARARGS:
-    // Exceptions, we could support these theoretically.
-    // Just too much work for now
+        // Exceptions, we could support these theoretically.
+        // Just too much work for now
     case PUSH_EXC_INFO:
     case RERAISE:
     case POP_EXCEPT:
-    // Closures
+        // Closures
     case LOAD_DEREF:
     case MAKE_CELL:
-    // DELETE_FAST
+        // DELETE_FAST
     case DELETE_FAST:
-    // Pattern matching
+        // Pattern matching
     case MATCH_MAPPING:
     case MATCH_SEQUENCE:
     case MATCH_KEYS:
-    // Too large arguments, we can handle this, just
-    // increases complexity
+        // Too large arguments, we can handle this, just
+        // increases complexity
     case EXTENDED_ARG:
         return 1;
 
@@ -448,7 +455,7 @@ emit_type_guard(_Py_CODEUNIT *write_curr, _Py_CODEUNIT guard, int bb_id)
 
 // Converts the tier 1 branch bytecode to tier 2 branch bytecode.
 static inline _Py_CODEUNIT *
-emit_logical_branch(_PyTier2TypeContext* type_context, _Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
+emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
 {
     int opcode;
     int oparg = _Py_OPARG(branch);
@@ -696,7 +703,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
                           continue;
 #define DISPATCH_GOTO() goto dispatch_opcode;
 
-                             
+
     assert(co->_tier2_info != NULL);
     // There are only two cases that a BB ends.
     // 1. If there's a branch instruction / scope exit.
@@ -730,7 +737,7 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
         // int how_many_guards = 0;
         // _Py_CODEUNIT guard_instr;
         // _Py_CODEUNIT action;
-        
+
     dispatch_opcode:
         switch (opcode) {
         case RESUME:
@@ -823,8 +830,8 @@ end:
         return NULL;
     }
     temp_meta = _PyTier2_AllocateBBMetaData(co, t2_start,
-         // + 1 because we want to start with the NEXT instruction for the scan
-         _PyCode_CODE(co) + i + 1, type_context_copy);
+        // + 1 because we want to start with the NEXT instruction for the scan
+        _PyCode_CODE(co) + i + 1, type_context_copy);
     if (temp_meta == NULL) {
         _PyTier2TypeContext_free(type_context_copy);
         return NULL;
@@ -838,7 +845,9 @@ end:
         // Add the basic block to the jump ids
         if (add_metadata_to_jump_2d_array(t2_info, temp_meta, backwards_jump_target_offset) < 0) {
             PyMem_Free(meta);
-            if (meta != temp_meta) PyMem_Free(temp_meta);
+            if (meta != temp_meta) {
+                PyMem_Free(temp_meta);
+            }
             _PyTier2TypeContext_free(type_context_copy);
             return NULL;
         }
@@ -875,7 +884,7 @@ allocate_jump_offset_2d_array(int backwards_jump_count, int **backward_jump_targ
         for (int i = 0; i < MAX_BB_VERSIONS; i++) {
             jump_offsets[i] = -1;
         }
-        done++; 
+        done++;
         backward_jump_target_bb_ids[i] = jump_offsets;
     }
     return 0;
@@ -949,8 +958,8 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
         i += _PyOpcode_Caches[opcode];
     }
     assert(curr_i == backwards_jump_count);
-    qsort(backward_jump_offsets,backwards_jump_count,
-       sizeof(int), compare_ints);
+    qsort(backward_jump_offsets, backwards_jump_count,
+        sizeof(int), compare_ints);
 #if BB_DEBUG
     fprintf(stderr, "BACKWARD JUMP COUNT : %Id\n", backwards_jump_count);
     fprintf(stderr, "BACKWARD JUMP TARGET OFFSETS (FROM START OF CODE): ");
@@ -985,7 +994,7 @@ _PyTier2Info_Initialize(PyCodeObject *co)
     t2_info->bb_data_curr = 0;
     Py_ssize_t bb_data_len = (Py_SIZE(co) / 5 + 1);
     assert((int)bb_data_len == bb_data_len);
-    _PyTier2BBMetadata **bb_data = PyMem_Calloc(bb_data_len, sizeof(_PyTier2BBMetadata*));
+    _PyTier2BBMetadata **bb_data = PyMem_Calloc(bb_data_len, sizeof(_PyTier2BBMetadata *));
     if (bb_data == NULL) {
         PyMem_Free(t2_info);
         return NULL;
@@ -1114,7 +1123,7 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     fprintf(stderr, "ENTRY BB END IS: %d\n", (int)(meta->tier1_end - _PyCode_CODE(co)));
 #endif
 
-    
+
     t2_info->_entry_bb = meta;
 
     // SET THE FRAME INFO
@@ -1176,7 +1185,7 @@ _PyTier2_GenerateNextBB(_PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
     // Get type_context of previous BB
     _PyTier2TypeContext *type_context = meta->type_context;
     // Make a copy of the type context
-    _PyTier2TypeContext* type_context_copy = _PyTier2TypeContext_copy(type_context);
+    _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_copy(type_context);
     if (type_context_copy == NULL) {
         return NULL;
     }
@@ -1218,7 +1227,7 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id, int j
     }
 
     // Get type_context of previous BB
-    _PyTier2TypeContext* type_context = meta->type_context;
+    _PyTier2TypeContext *type_context = meta->type_context;
     // Now, find the matching BB
     _PyTier2Info *t2_info = co->_tier2_info;
     int jump_offset = (int)(tier1_jump_target - _PyCode_CODE(co));
