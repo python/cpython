@@ -11,9 +11,12 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
+static PyObject* code_repr(PyCodeObject *co);
+
 static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
+    assert(Py_REFCNT(co) > 0);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
     uint8_t bits = interp->active_code_watchers;
@@ -25,7 +28,13 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, co) < 0) {
-                PyErr_WriteUnraisable((PyObject *) co);
+                // Don't risk resurrecting the object if an unraisablehook keeps
+                // a reference; pass a string as context.
+                PyObject *repr = code_repr(co);
+                PyObject *context = PyUnicode_FromFormat("watcher callback for %U", repr);
+                PyErr_WriteUnraisable(context);
+                Py_DECREF(context);
+                Py_DECREF(repr);
             }
         }
         i++;
@@ -1667,7 +1676,14 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
 static void
 code_dealloc(PyCodeObject *co)
 {
+    assert(Py_REFCNT(co) == 0);
+    Py_SET_REFCNT(co, 1);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
+    if (Py_REFCNT(co) > 1) {
+        Py_DECREF(co);
+        return;
+    }
+    Py_SET_REFCNT(co, 0);
 
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();

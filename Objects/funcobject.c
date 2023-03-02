@@ -8,6 +8,8 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
 
+static PyObject* func_repr(PyFunctionObject *op);
+
 static void
 notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
                      PyFunctionObject *func, PyObject *new_value)
@@ -21,7 +23,13 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, func, new_value) < 0) {
-                PyErr_WriteUnraisable((PyObject *) func);
+                // Don't risk resurrecting the func if an unraisablehook keeps a
+                // reference; pass a string as context.
+                PyObject *repr = func_repr(func);
+                PyObject *context = PyUnicode_FromFormat("watcher callback for %U", repr);
+                PyErr_WriteUnraisable(context);
+                Py_DECREF(context);
+                Py_DECREF(repr);
             }
         }
         i++;
@@ -33,6 +41,7 @@ static inline void
 handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
                   PyObject *new_value)
 {
+    assert(Py_REFCNT(func) > 0);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
     if (interp->active_func_watchers) {
@@ -766,7 +775,14 @@ func_clear(PyFunctionObject *op)
 static void
 func_dealloc(PyFunctionObject *op)
 {
+    assert(Py_REFCNT(op) == 0);
+    Py_SET_REFCNT(op, 1);
     handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
+    if (Py_REFCNT(op) > 1) {
+        Py_DECREF(op);
+        return;
+    }
+    Py_SET_REFCNT(op, 0);
     _PyObject_GC_UNTRACK(op);
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
