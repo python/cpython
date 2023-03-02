@@ -472,12 +472,13 @@ buffered_closed_get(buffered *self, void *context)
 static PyObject *
 buffered_close(buffered *self, PyObject *args)
 {
-    PyObject *res = NULL, *exc = NULL, *val, *tb;
+    PyObject *res = NULL;
     int r;
 
     CHECK_INITIALIZED(self)
-    if (!ENTER_BUFFERED(self))
+    if (!ENTER_BUFFERED(self)) {
         return NULL;
+    }
 
     r = buffered_closed(self);
     if (r < 0)
@@ -497,12 +498,16 @@ buffered_close(buffered *self, PyObject *args)
     /* flush() will most probably re-take the lock, so drop it first */
     LEAVE_BUFFERED(self)
     res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(flush));
-    if (!ENTER_BUFFERED(self))
+    if (!ENTER_BUFFERED(self)) {
         return NULL;
-    if (res == NULL)
-        PyErr_Fetch(&exc, &val, &tb);
-    else
+    }
+    PyObject *exc = NULL;
+    if (res == NULL) {
+        exc = PyErr_GetRaisedException();
+    }
+    else {
         Py_DECREF(res);
+    }
 
     res = PyObject_CallMethodNoArgs(self->raw, &_Py_ID(close));
 
@@ -512,7 +517,7 @@ buffered_close(buffered *self, PyObject *args)
     }
 
     if (exc != NULL) {
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         Py_CLEAR(res);
     }
 
@@ -637,17 +642,14 @@ _set_BlockingIOError(const char *msg, Py_ssize_t written)
 static Py_ssize_t *
 _buffered_check_blocking_error(void)
 {
-    PyObject *t, *v, *tb;
-    PyOSErrorObject *err;
-
-    PyErr_Fetch(&t, &v, &tb);
-    if (v == NULL || !PyErr_GivenExceptionMatches(v, PyExc_BlockingIOError)) {
-        PyErr_Restore(t, v, tb);
+    PyObject *exc = PyErr_GetRaisedException();
+    if (exc == NULL || !PyErr_GivenExceptionMatches(exc, PyExc_BlockingIOError)) {
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
-    err = (PyOSErrorObject *) v;
+    PyOSErrorObject *err = (PyOSErrorObject *)exc;
     /* TODO: sanity check (err->written >= 0) */
-    PyErr_Restore(t, v, tb);
+    PyErr_SetRaisedException(exc);
     return &err->written;
 }
 
@@ -749,13 +751,11 @@ _buffered_init(buffered *self)
 int
 _PyIO_trap_eintr(void)
 {
-    PyObject *typ, *val, *tb;
-    PyOSErrorObject *env_err;
-    if (!PyErr_ExceptionMatches(PyExc_OSError))
+    if (!PyErr_ExceptionMatches(PyExc_OSError)) {
         return 0;
-    PyErr_Fetch(&typ, &val, &tb);
-    PyErr_NormalizeException(&typ, &val, &tb);
-    env_err = (PyOSErrorObject *) val;
+    }
+    PyObject *exc = PyErr_GetRaisedException();
+    PyOSErrorObject *env_err = (PyOSErrorObject *)exc;
     assert(env_err != NULL);
     if (env_err->myerrno != NULL) {
         assert(EINTR > 0 && EINTR < INT_MAX);
@@ -764,14 +764,12 @@ _PyIO_trap_eintr(void)
         int myerrno = PyLong_AsLongAndOverflow(env_err->myerrno, &overflow);
         PyErr_Clear();
         if (myerrno == EINTR) {
-            Py_DECREF(typ);
-            Py_DECREF(val);
-            Py_XDECREF(tb);
+            Py_DECREF(exc);
             return 1;
         }
     }
     /* This silences any error set by PyObject_RichCompareBool() */
-    PyErr_Restore(typ, val, tb);
+    PyErr_SetRaisedException(exc);
     return 0;
 }
 
@@ -2228,15 +2226,17 @@ bufferedrwpair_writable(rwpair *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *exc = NULL, *val, *tb;
+    PyObject *exc = NULL;
     PyObject *ret = _forward_call(self->writer, &_Py_ID(close), NULL);
-    if (ret == NULL)
-        PyErr_Fetch(&exc, &val, &tb);
-    else
+    if (ret == NULL) {
+        exc = PyErr_GetRaisedException();
+    }
+    else {
         Py_DECREF(ret);
+    } 
     ret = _forward_call(self->reader, &_Py_ID(close), NULL);
     if (exc != NULL) {
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         Py_CLEAR(ret);
     }
     return ret;

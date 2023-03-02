@@ -570,7 +570,8 @@ _PyCode_New(struct _PyCodeConstructor *con)
  ******************/
 
 PyCodeObject *
-PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
+PyUnstable_Code_NewWithPosOnlyArgs(
+                          int argcount, int posonlyargcount, int kwonlyargcount,
                           int nlocals, int stacksize, int flags,
                           PyObject *code, PyObject *consts, PyObject *names,
                           PyObject *varnames, PyObject *freevars, PyObject *cellvars,
@@ -694,7 +695,7 @@ error:
 }
 
 PyCodeObject *
-PyCode_New(int argcount, int kwonlyargcount,
+PyUnstable_Code_New(int argcount, int kwonlyargcount,
            int nlocals, int stacksize, int flags,
            PyObject *code, PyObject *consts, PyObject *names,
            PyObject *varnames, PyObject *freevars, PyObject *cellvars,
@@ -1374,7 +1375,7 @@ typedef struct {
 
 
 int
-_PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 {
     if (!PyCode_Check(code)) {
         PyErr_BadInternalCall();
@@ -1395,7 +1396,7 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 
 
 int
-_PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+PyUnstable_Code_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 

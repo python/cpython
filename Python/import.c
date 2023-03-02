@@ -465,7 +465,7 @@ _modules_by_index_set(PyInterpreterState *interp,
 }
 
 static int
-_modules_by_index_clear(PyInterpreterState *interp, PyModuleDef *def)
+_modules_by_index_clear_one(PyInterpreterState *interp, PyModuleDef *def)
 {
     Py_ssize_t index = def->m_base.m_index;
     const char *err = _modules_by_index_check(interp, index);
@@ -546,7 +546,7 @@ PyState_RemoveModule(PyModuleDef* def)
                          "PyState_RemoveModule called on module with slots");
         return -1;
     }
-    return _modules_by_index_clear(tstate->interp, def);
+    return _modules_by_index_clear_one(tstate->interp, def);
 }
 
 
@@ -583,6 +583,109 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 /*********************/
 /* extension modules */
 /*********************/
+
+/*
+    It may help to have a big picture view of what happens
+    when an extension is loaded.  This includes when it is imported
+    for the first time or via imp.load_dynamic().
+
+    Here's a summary, using imp.load_dynamic() as the starting point:
+
+    1.  imp.load_dynamic() -> importlib._bootstrap._load()
+    2.    _load():  acquire import lock
+    3.    _load() -> importlib._bootstrap._load_unlocked()
+    4.      _load_unlocked() -> importlib._bootstrap.module_from_spec()
+    5.        module_from_spec() -> ExtensionFileLoader.create_module()
+    6.          create_module() -> _imp.create_dynamic()
+                    (see below)
+    7.        module_from_spec() -> importlib._bootstrap._init_module_attrs()
+    8.      _load_unlocked():  sys.modules[name] = module
+    9.      _load_unlocked() -> ExtensionFileLoader.exec_module()
+    10.       exec_module() -> _imp.exec_dynamic()
+                  (see below)
+    11.   _load():  release import lock
+
+
+    ...for single-phase init modules, where m_size == -1:
+
+    (6). first time  (not found in _PyRuntime.imports.extensions):
+       1.  _imp_create_dynamic_impl() -> import_find_extension()
+       2.  _imp_create_dynamic_impl() -> _PyImport_LoadDynamicModuleWithSpec()
+       3.    _PyImport_LoadDynamicModuleWithSpec():  load <module init func>
+       4.    _PyImport_LoadDynamicModuleWithSpec():  call <module init func>
+       5.      <module init func> -> PyModule_Create() -> PyModule_Create2() -> PyModule_CreateInitialized()
+       6.        PyModule_CreateInitialized() -> PyModule_New()
+       7.        PyModule_CreateInitialized():  allocate mod->md_state
+       8.        PyModule_CreateInitialized() -> PyModule_AddFunctions()
+       9.        PyModule_CreateInitialized() -> PyModule_SetDocString()
+       10.       PyModule_CreateInitialized():  set mod->md_def
+       11.     <module init func>:  initialize the module
+       12.   _PyImport_LoadDynamicModuleWithSpec() -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       13.   _PyImport_LoadDynamicModuleWithSpec():  set def->m_base.m_init
+       14.   _PyImport_LoadDynamicModuleWithSpec():  set __file__
+       15.   _PyImport_LoadDynamicModuleWithSpec() -> _PyImport_FixupExtensionObject()
+       16.     _PyImport_FixupExtensionObject():  add it to interp->imports.modules_by_index
+       17.     _PyImport_FixupExtensionObject():  copy __dict__ into def->m_base.m_copy
+       18.     _PyImport_FixupExtensionObject():  add it to _PyRuntime.imports.extensions
+
+    (6). subsequent times  (found in _PyRuntime.imports.extensions):
+       1. _imp_create_dynamic_impl() -> import_find_extension()
+       2.   import_find_extension() -> import_add_module()
+       3.     if name in sys.modules:  use that module
+       4.     else:
+                1. import_add_module() -> PyModule_NewObject()
+                2. import_add_module():  set it on sys.modules
+       5.   import_find_extension():  copy the "m_copy" dict into __dict__
+       6. _imp_create_dynamic_impl() -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+
+    (10). (every time):
+       1. noop
+
+
+    ...for single-phase init modules, where m_size >= 0:
+
+    (6). not main interpreter and never loaded there - every time  (not found in _PyRuntime.imports.extensions):
+       1-16. (same as for m_size == -1)
+
+    (6). main interpreter - first time  (not found in _PyRuntime.imports.extensions):
+       1-16. (same as for m_size == -1)
+       17.     _PyImport_FixupExtensionObject():  add it to _PyRuntime.imports.extensions
+
+    (6). previously loaded in main interpreter  (found in _PyRuntime.imports.extensions):
+       1. _imp_create_dynamic_impl() -> import_find_extension()
+       2.   import_find_extension():  call def->m_base.m_init
+       3.   import_find_extension():  add the module to sys.modules
+
+    (10). every time:
+       1. noop
+
+
+    ...for multi-phase init modules:
+
+    (6). every time:
+       1.  _imp_create_dynamic_impl() -> import_find_extension()  (not found)
+       2.  _imp_create_dynamic_impl() -> _PyImport_LoadDynamicModuleWithSpec()
+       3.    _PyImport_LoadDynamicModuleWithSpec():  load module init func
+       4.    _PyImport_LoadDynamicModuleWithSpec():  call module init func
+       5.    _PyImport_LoadDynamicModuleWithSpec() -> PyModule_FromDefAndSpec()
+       6.      PyModule_FromDefAndSpec(): gather/check moduledef slots
+       7.      if there's a Py_mod_create slot:
+                 1. PyModule_FromDefAndSpec():  call its function
+       8.      else:
+                 1. PyModule_FromDefAndSpec() -> PyModule_NewObject()
+       9:      PyModule_FromDefAndSpec():  set mod->md_def
+       10.     PyModule_FromDefAndSpec() -> _add_methods_to_object()
+       11.     PyModule_FromDefAndSpec() -> PyModule_SetDocString()
+
+    (10). every time:
+       1. _imp_exec_dynamic_impl() -> exec_builtin_or_dynamic()
+       2.   if mod->md_state == NULL (including if m_size == 0):
+            1. exec_builtin_or_dynamic() -> PyModule_ExecDef()
+            2.   PyModule_ExecDef():  allocate mod->md_state
+            3.   if there's a Py_mod_exec slot:
+                 1. PyModule_ExecDef():  call its function
+ */
+
 
 /* Make sure name is fully qualified.
 
@@ -1007,13 +1110,17 @@ clear_singlephase_extension(PyInterpreterState *interp,
 
     /* Clear the PyState_*Module() cache entry. */
     if (_modules_by_index_check(interp, def->m_base.m_index) == NULL) {
-        if (_modules_by_index_clear(interp, def) < 0) {
+        if (_modules_by_index_clear_one(interp, def) < 0) {
             return -1;
         }
     }
 
     /* Clear the cached module def. */
-    return _extensions_cache_delete(filename, name);
+    if (_extensions_cache_delete(filename, name) < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 
