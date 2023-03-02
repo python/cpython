@@ -113,7 +113,7 @@ class LocalEffectVarStack(Node):
     name: str
 
 
-LocalEffectVar = LocalEffectVarLiteral | LocalEffectVarStack
+LocalEffectVar: TypeAlias = LocalEffectVarLiteral | LocalEffectVarStack
 
 
 @dataclass
