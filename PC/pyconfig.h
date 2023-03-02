@@ -88,10 +88,6 @@ WIN32 is still required for the locale module.
 #define MS_WINDOWS_GAMES
 #endif
 
-#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
-#define MS_WINDOWS_CRT_DESKTOP
-#endif
-
 /* Define to 1 if you support windows console io */
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
 #define HAVE_WINDOWS_CONSOLE_IO 1
