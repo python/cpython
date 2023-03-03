@@ -113,29 +113,24 @@ class Queue(object):
         if self._shutdown_state.value == _queue_shutdown_immediate:
             raise ShutDown
         if block and timeout is None:
+            if self._shutdown_state.value == _queue_shutdown and self.empty():
+                raise ShutDown
             with self._rlock:
-                if self._shutdown_state.value == _queue_shutdown_immediate or\
-                    (self._shutdown_state.value == _queue_shutdown and self.empty()):
-                    raise ShutDown
                 res = self._recv_bytes()
             self._sem.release()
         else:
             if block:
                 deadline = time.monotonic() + timeout
+            if self._shutdown_state.value == _queue_shutdown and self.empty():
+                raise ShutDown
             if not self._rlock.acquire(block, timeout):
-                if self._shutdown_state.value == _queue_shutdown:
-                    raise ShutDown
                 raise Empty
             try:
                 if block:
                     timeout = deadline - time.monotonic()
                     if not self._poll(timeout):
-                        if self._shutdown_state.value == _queue_shutdown:
-                            raise ShutDown
                         raise Empty
                 elif not self._poll():
-                    if self._shutdown_state.value == _queue_shutdown:
-                        raise ShutDown
                     raise Empty
                 res = self._recv_bytes()
                 self._sem.release()
