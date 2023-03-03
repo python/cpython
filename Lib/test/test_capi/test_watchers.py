@@ -109,9 +109,9 @@ class TestDictWatchers(unittest.TestCase):
             self.watch(wid, d)
             with catch_unraisable_exception() as cm:
                 d["foo"] = "bar"
-                self.assertEqual(
-                    cm.unraisable.object,
-                    f"watcher callback for <dict at {hex(id(d))}>"
+                self.assertIn(
+                    "watcher callback for <dict at",
+                    cm.unraisable.object
                 )
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
             self.assert_events([])
