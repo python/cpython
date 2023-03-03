@@ -431,27 +431,73 @@ typedef struct instr_sequence_ {
 #define INITIAL_INSTR_SEQUENCE_SIZE 100
 #define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
 
+/*
+ * Resize the array if index is out of range.
+ *
+ * index: the index we want to access
+ * arr pointer to the array
+ * alloc: pointer to the capacity of the array
+ * default_alloc: initial number of items
+ * item_size: size of each item
+ *
+ */
+static int
+ensure_array_large_enough(int index, void **arr_, int *alloc, int default_alloc, size_t item_size)
+{
+    void *arr = *arr_;
+    if (arr == NULL) {
+        int new_alloc = default_alloc;
+        if (index >= new_alloc) {
+            new_alloc = index + default_alloc;
+        }
+        arr = PyObject_Calloc(new_alloc, item_size);
+        if (arr == NULL) {
+            PyErr_NoMemory();
+            return ERROR;
+        }
+        *alloc = new_alloc;
+    }
+    else if (index >= *alloc) {
+        size_t oldsize = *alloc * item_size;
+        int new_alloc = *alloc << 1;
+        if (index >= new_alloc) {
+            new_alloc = index + default_alloc;
+        }
+        size_t newsize = new_alloc * item_size;
+
+        if (oldsize > (SIZE_MAX >> 1)) {
+            PyErr_NoMemory();
+            return ERROR;
+        }
+
+        if (newsize == 0) {
+            PyErr_NoMemory();
+            return ERROR;
+        }
+        void *tmp = PyObject_Realloc(arr, newsize);
+        if (tmp == NULL) {
+            PyErr_NoMemory();
+            return ERROR;
+        }
+        *alloc = new_alloc;
+        arr = tmp;
+        memset((char *)arr + oldsize, 0, newsize - oldsize);
+    }
+
+    *arr_ = arr;
+    return SUCCESS;
+}
+
 static int
 instr_sequence_next_inst(instr_sequence *seq) {
-    if (seq->s_instrs == NULL) {
-        assert(seq->s_allocated == 0);
-        assert(seq->s_used == 0);
-        seq->s_instrs = (instruction *)PyObject_Calloc(
-                         INITIAL_INSTR_SEQUENCE_SIZE, sizeof(instruction));
-        if (seq->s_instrs == NULL) {
-            return ERROR;
-        }
-        seq->s_allocated = INITIAL_INSTR_SEQUENCE_SIZE;
-    }
-    if (seq->s_used == seq->s_allocated) {
-        instruction *tmp = (instruction *)PyObject_Realloc(
-                         seq->s_instrs, 2 * seq->s_allocated * sizeof(instruction));
-        if (tmp == NULL) {
-            return ERROR;
-        }
-        seq->s_instrs = tmp;
-        seq->s_allocated *= 2;
-    }
+    assert(seq->s_instrs != NULL || seq->s_used == 0);
+
+    RETURN_IF_ERROR(
+        ensure_array_large_enough(seq->s_used + 1,
+                                  (void**)&seq->s_instrs,
+                                  &seq->s_allocated,
+                                  INITIAL_INSTR_SEQUENCE_SIZE,
+                                  sizeof(instruction)));
     assert(seq->s_used < seq->s_allocated);
     return seq->s_used++;
 }
@@ -465,31 +511,16 @@ instr_sequence_new_label(instr_sequence *seq)
 
 static int
 instr_sequence_use_label(instr_sequence *seq, int lbl) {
-    if (seq->s_labelmap_size <= lbl) {
-        int old_size, new_size;
-        int *tmp = NULL;
-        if (seq->s_labelmap == NULL) {
-            old_size = 0;
-            new_size = INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE;
-            if (new_size < 2 * lbl) {
-                new_size = 2 * lbl;
-            }
-            tmp = (int*)PyObject_Calloc(new_size, sizeof(int));
-        }
-        else {
-            old_size = seq->s_labelmap_size;
-            new_size = 2 * lbl;
-            tmp = (int*)PyObject_Realloc(seq->s_labelmap,
-                                         new_size * sizeof(int));
-        }
-        if (tmp == NULL) {
-            return ERROR;
-        }
-        for(int i = old_size; i < new_size; i++) {
-            tmp[i] = -111;  /* something weird, for debugging */
-        }
-        seq->s_labelmap = tmp;
-        seq->s_labelmap_size = new_size;
+    int old_size = seq->s_labelmap_size;
+    RETURN_IF_ERROR(
+        ensure_array_large_enough(lbl,
+                                  (void**)&seq->s_labelmap,
+                                  &seq->s_labelmap_size,
+                                  INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE,
+                                  sizeof(int)));
+
+    for(int i = old_size; i < seq->s_labelmap_size; i++) {
+        seq->s_labelmap[i] = -111;  /* something weird, for debugging */
     }
     seq->s_labelmap[lbl] = seq->s_used; /* label refers to the next instruction */
     return SUCCESS;
@@ -1177,40 +1208,15 @@ static int
 basicblock_next_instr(basicblock *b)
 {
     assert(b != NULL);
-    if (b->b_instr == NULL) {
-        b->b_instr = (struct cfg_instr *)PyObject_Calloc(
-                         DEFAULT_BLOCK_SIZE, sizeof(struct cfg_instr));
-        if (b->b_instr == NULL) {
-            PyErr_NoMemory();
-            return ERROR;
-        }
-        b->b_ialloc = DEFAULT_BLOCK_SIZE;
-    }
-    else if (b->b_iused == b->b_ialloc) {
-        struct cfg_instr *tmp;
-        size_t oldsize, newsize;
-        oldsize = b->b_ialloc * sizeof(struct cfg_instr);
-        newsize = oldsize << 1;
 
-        if (oldsize > (SIZE_MAX >> 1)) {
-            PyErr_NoMemory();
-            return ERROR;
-        }
+    RETURN_IF_ERROR(
+        ensure_array_large_enough(
+            b->b_iused + 1,
+            (void**)&b->b_instr,
+            &b->b_ialloc,
+            DEFAULT_BLOCK_SIZE,
+            sizeof(struct cfg_instr)));
 
-        if (newsize == 0) {
-            PyErr_NoMemory();
-            return ERROR;
-        }
-        b->b_ialloc <<= 1;
-        tmp = (struct cfg_instr *)PyObject_Realloc(
-                                        (void *)b->b_instr, newsize);
-        if (tmp == NULL) {
-            PyErr_NoMemory();
-            return ERROR;
-        }
-        b->b_instr = tmp;
-        memset((char *)b->b_instr + oldsize, 0, newsize - oldsize);
-    }
     return b->b_iused++;
 }
 
