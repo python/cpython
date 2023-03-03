@@ -262,7 +262,7 @@ one::
    >>> word[5]  # character in position 5
    'n'
 
-Indices may also be negative numbers, to start counting from the right::
+Indexes may also be negative numbers, to start counting from the right::
 
    >>> word[-1]  # last character
    'n'
@@ -271,7 +271,7 @@ Indices may also be negative numbers, to start counting from the right::
    >>> word[-6]
    'P'
 
-Note that since -0 is the same as 0, negative indices start from -1.
+Note that since -0 is the same as 0, negative indexes start from -1.
 
 In addition to indexing, *slicing* is also supported.  While indexing is used
 to obtain individual characters, *slicing* allows you to obtain a substring::
@@ -281,7 +281,7 @@ to obtain individual characters, *slicing* allows you to obtain a substring::
    >>> word[2:5]  # characters from position 2 (included) to 5 (excluded)
    'tho'
 
-Slice indices have useful defaults; an omitted first index defaults to zero, an
+Slice indexes have useful defaults; an omitted first index defaults to zero, an
 omitted second index defaults to the size of the string being sliced. ::
 
    >>> word[:2]   # character from the beginning to position 2 (excluded)
@@ -299,7 +299,7 @@ makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
    >>> word[:4] + word[4:]
    'Python'
 
-One way to remember how slices work is to think of the indices as pointing
+One way to remember how slices work is to think of the indexes as pointing
 *between* characters, with the left edge of the first character numbered 0.
 Then the right edge of the last character of a string of *n* characters has
 index *n*, for example::
@@ -310,13 +310,13 @@ index *n*, for example::
     0   1   2   3   4   5   6
    -6  -5  -4  -3  -2  -1
 
-The first row of numbers gives the position of the indices 0...6 in the string;
-the second row gives the corresponding negative indices. The slice from *i* to
+The first row of numbers gives the position of the indexes 0...6 in the string;
+the second row gives the corresponding negative indexes. The slice from *i* to
 *j* consists of all characters between the edges labeled *i* and *j*,
 respectively.
 
-For non-negative indices, the length of a slice is the difference of the
-indices, if both are within bounds.  For example, the length of ``word[1:3]`` is
+For non-negative indexes, the length of a slice is the difference of the
+indexes, if both are within bounds.  For example, the length of ``word[1:3]`` is
 2.
 
 Attempting to use an index that is too large will result in an error::
