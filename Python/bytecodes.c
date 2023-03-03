@@ -2178,19 +2178,19 @@ dummy_func(
             }
         }
 
-        inst(MATCH_MAPPING, (subject -- subject: *subject, res: PyBool_Type)) {
+        inst(MATCH_MAPPING, (subject -- subject, res: PyBool_Type)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        inst(MATCH_SEQUENCE, (subject -- subject: *subject, res: PyBool_Type)) {
+        inst(MATCH_SEQUENCE, (subject -- subject, res: PyBool_Type)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = Py_NewRef(match ? Py_True : Py_False);
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
-        inst(MATCH_KEYS, (subject, keys -- subject: *subject, keys: *keys, values_or_none)) {
+        inst(MATCH_KEYS, (subject, keys -- subject, keys, values_or_none)) {
             // On successful match, PUSH(values). Otherwise, PUSH(None).
             values_or_none = match_keys(tstate, subject, keys);
             ERROR_IF(values_or_none == NULL, error);
