@@ -6676,8 +6676,11 @@ type_ready_mro(PyTypeObject *type)
     assert(type->tp_mro != NULL);
     assert(PyTuple_Check(type->tp_mro));
 
-    /* All bases of statically allocated type should be statically allocated */
+    /* All bases of statically allocated type should be statically allocated,
+       and static builtin types must have static builtin bases. */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        assert(type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
+        int isbuiltin = type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN;
         PyObject *mro = type->tp_mro;
         Py_ssize_t n = PyTuple_GET_SIZE(mro);
         for (Py_ssize_t i = 0; i < n; i++) {
@@ -6689,6 +6692,7 @@ type_ready_mro(PyTypeObject *type)
                              type->tp_name, base->tp_name);
                 return -1;
             }
+            assert(!isbuiltin || (base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
         }
     }
     return 0;
