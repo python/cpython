@@ -1279,39 +1279,121 @@ class _TestQueue(BaseTestCase):
                 q.get()
 
     def test_shutdown_empty(self):
-        q = multiprocessing.Queue()
-        q.shutdown()
-        try:
-            q.put("data")
-            self.fail("Didn't appear to shut-down queue")
-        except pyqueue.ShutDown:
-            pass
-        try:
-            q.get()
-            self.fail("Didn't appear to shut-down queue")
-        except pyqueue.ShutDown:
-            pass
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            q.shutdown()
+            with self.assertRaises(
+                pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
+                ):
+                q.put("data")
+            with self.assertRaises(
+                pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
+                ):
+                q.get()
 
     def test_shutdown_nonempty(self):
-        q = multiprocessing.Queue()
-        q.put("data")
-        q.shutdown()
-        q.get()
-        try:
+        for q in multiprocessing.Queue(1), multiprocessing.JoinableQueue(1):
+            q.put("data")
+            q.shutdown()
             q.get()
-            self.fail("Didn't appear to shut-down queue")
-        except pyqueue.ShutDown:
-            pass
+            with self.assertRaises(
+                pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
+                ):
+                q.get()
 
     def test_shutdown_immediate(self):
-        q = multiprocessing.Queue()
-        q.put("data")
-        q.shutdown(immediate=True)
-        try:
-            q.get()
-            self.fail("Didn't appear to shut-down queue")
-        except pyqueue.ShutDown:
-            pass
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            q.put("data")
+            q.shutdown(immediate=True)
+            with self.assertRaises(
+                pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
+                ):
+                q.get()
+
+    def test_shutdown_allowed_transitions(self):
+        # allowed transitions would be from `alive`` via `shutdown` to `shutdown_immediate``
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            self.assertEqual(0, q._shutdown_state.value)
+
+            # default -> immediate=False
+            q.shutdown()
+            self.assertEqual(1, q._shutdown_state.value)
+
+            q.shutdown(immediate=True)
+            self.assertEqual(2, q._shutdown_state.value)
+
+            q.shutdown(immediate=False)
+            self.assertNotEqual(1, q._shutdown_state.value)
+
+    def _shutdown_all_methods(self, immediate):
+        # part 1: Queue
+        q = multiprocessing.Queue(2)
+        q.put("L")
+        _wait() # Give time to simulate delay of starting internal thread
+        q.put_nowait("O")
+        q.shutdown(immediate)
+        _wait() # simulate time of synchro primitive
+
+        with self.assertRaises(pyqueue.ShutDown):
+            q.put("E")
+        with self.assertRaises(pyqueue.ShutDown):
+            q.put_nowait("W")
+        if immediate:
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get()
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get_nowait()
+        else:
+            # Neither `task_done`, neither `join`methods` to test
+            self.assertEqual(q.get(), "L")
+            self.assertEqual(q.get_nowait(), "O")
+            _wait()
+
+            # on shutdown(immediate=False)
+            # when queue is empty, should raise ShutDown Exception
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get() # p.get(True)
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get_nowait() # q.get(False)
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get(True, 1.0)
+
+        # part 2: JoinableQueue
+        q = multiprocessing.JoinableQueue(2)
+        q.put("L")
+        _wait()
+        q.put_nowait("O")
+        q.shutdown(immediate)
+        _wait()
+
+        with self.assertRaises(pyqueue.ShutDown):
+            q.put("E")
+        with self.assertRaises(pyqueue.ShutDown):
+            q.put_nowait("W")
+        if immediate:
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get()
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get_nowait()
+            with self.assertRaises(pyqueue.ShutDown):
+                q.task_done()
+            with self.assertRaises(pyqueue.ShutDown):
+                q.join()
+        else:
+            self.assertEqual(q.get(), "L")
+            q.task_done()
+            _wait()
+            self.assertEqual(q.get(), "O")
+            q.task_done()
+            _wait()
+            q.join()
+            # when `shutdown` queue is empty, should raise ShutDown Exception
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get() # p.get(True)
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get_nowait() # p.get(False)
+            with self.assertRaises(pyqueue.ShutDown):
+                q.get(True, 1.0)
+
 #
 #
 #
