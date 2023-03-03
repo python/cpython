@@ -187,7 +187,6 @@ struct cfg_instr {
     int i_opcode;
     int i_oparg;
     location i_loc;
-    /* The following fields should not be set by the front-end: */
     struct basicblock_ *i_target; /* target block (if jump instruction) */
     struct basicblock_ *i_except; /* target block when exception is raised */
 };
