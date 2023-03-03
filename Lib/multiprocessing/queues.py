@@ -114,7 +114,8 @@ class Queue(object):
             raise ShutDown
         if block and timeout is None:
             with self._rlock:
-                if self._shutdown_state.value == _queue_shutdown_immediate:
+                if self._shutdown_state.value == _queue_shutdown_immediate or\
+                    (self._shutdown_state.value == _queue_shutdown and self.empty()):
                     raise ShutDown
                 res = self._recv_bytes()
             self._sem.release()
@@ -122,17 +123,19 @@ class Queue(object):
             if block:
                 deadline = time.monotonic() + timeout
             if not self._rlock.acquire(block, timeout):
+                if self._shutdown_state.value == _queue_shutdown:
+                    raise ShutDown
                 raise Empty
             try:
                 if block:
                     timeout = deadline - time.monotonic()
                     if not self._poll(timeout):
-                        if self._shutdown_state.value == _queue_shutdown_immediate:
+                        if self._shutdown_state.value == _queue_shutdown:
                             raise ShutDown
                         raise Empty
-                    if self._shutdown_state.value == _queue_shutdown_immediate:
-                        raise ShutDown
                 elif not self._poll():
+                    if self._shutdown_state.value == _queue_shutdown:
+                        raise ShutDown
                     raise Empty
                 res = self._recv_bytes()
                 self._sem.release()
@@ -159,7 +162,7 @@ class Queue(object):
     def put_nowait(self, obj):
         return self.put(obj, False)
 
-    def shutdown(self, immediate=True):
+    def shutdown(self, immediate=False):
         with self._shutdown_state.get_lock():
             if self._shutdown_state.value == _queue_shutdown_immediate:
                 return
@@ -364,14 +367,14 @@ class JoinableQueue(Queue):
 
     def join(self):
         with self._cond:
-            if self._shutdown_state.value != _queue_alive:
+            if self._shutdown_state.value == _queue_shutdown_immediate:
                 raise ShutDown
             if not self._unfinished_tasks._semlock._is_zero():
                 self._cond.wait()
                 if self._shutdown_state.value == _queue_shutdown_immediate:
                     raise ShutDown
 
-    def shutdown(self, immediate=True):
+    def shutdown(self, immediate=False):
         initial_shutdown = self._shutdown_state.value
         super().shutdown(immediate)
         if initial_shutdown == _queue_alive:
