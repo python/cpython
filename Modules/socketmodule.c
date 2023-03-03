@@ -2883,7 +2883,10 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
     newfd = ctx.result;
 
 #ifdef MS_WINDOWS
-#ifdef MS_WINDOWS_DESKTOP
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+#ifndef HANDLE_FLAG_INHERIT
+#define HANDLE_FLAG_INHERIT 0x00000001
+#endif
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         PyErr_SetFromWindowsErr(0);
         SOCKETCLOSE(newfd);
