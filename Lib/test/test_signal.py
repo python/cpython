@@ -1,4 +1,3 @@
-import _thread
 import enum
 import errno
 import inspect
@@ -1408,6 +1407,7 @@ class RaiseSignalTest(unittest.TestCase):
         self.assertTrue(is_ok)
 
     def test__thread_interrupt_main(self):
+        # See https://github.com/python/cpython/issues/102397
         code = """if 1:
         import _thread
         class Foo():
