@@ -1,3 +1,4 @@
+import _thread
 import enum
 import errno
 import inspect
@@ -1405,6 +1406,20 @@ class RaiseSignalTest(unittest.TestCase):
 
         signal.raise_signal(signal.SIGINT)
         self.assertTrue(is_ok)
+
+    def test__thread_interrupt_main(self):
+        code = """if 1:
+        import _thread
+        class Foo():
+            def __del__(self):
+                _thread.interrupt_main()
+
+        x = Foo()
+        """
+
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'OSError: Signal 2 ignored due to race condition', err)
+
 
 
 class PidfdSignalTest(unittest.TestCase):

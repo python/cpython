@@ -148,6 +148,9 @@ get_signal_state(PyObject *module)
 static inline int
 compare_handler(PyObject *func, PyObject *dfl_ign_handler)
 {
+    if (func == NULL || dfl_ign_handler == NULL) {
+        return 0;
+    }
     assert(PyLong_CheckExact(dfl_ign_handler));
     if (!PyLong_CheckExact(func)) {
         return 0;
