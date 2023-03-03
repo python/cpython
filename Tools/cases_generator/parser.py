@@ -75,6 +75,9 @@ class StackEffect(Node):
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
 
+    def with_type(self, type: str) -> "StackEffect":
+        return StackEffect(self.name, type, self.cond, self.size)
+
 
 @dataclass
 class Expression(Node):

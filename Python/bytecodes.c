@@ -126,7 +126,8 @@ dummy_func(
         }
 
         inst(STORE_FAST, (value --)) {
-            SETLOCAL(oparg, value);
+            incref_if_tagged(value);
+            SETLOCAL(oparg, detag(value));
         }
 
         super(LOAD_FAST__LOAD_FAST) = LOAD_FAST + LOAD_FAST;
@@ -2485,7 +2486,7 @@ dummy_func(
             stack_pointer[-1 - oparg] = untagged(Py_NewRef(self));  // callable
             PyObject *meth = ((PyMethodObject *)callable)->im_func;
             stack_pointer[-2 - oparg] = untagged(Py_NewRef(meth));  // method
-            Py_DECREF(callable);
+            DECREF_INPUTS();
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 

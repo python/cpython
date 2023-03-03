@@ -231,7 +231,7 @@ class Instruction:
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
         self.input_effects = [
-            effect for effect in inst.inputs if isinstance(effect, StackEffect)
+            effect.with_type("_tagged_ptr") for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
         self.output_effects = inst.outputs  # For consistency/completeness
         unmoved_names: set[str] = set()
@@ -290,11 +290,11 @@ class Instruction:
                     list_effect_size([ieff for ieff in ieffects[: i + 1]])
                 )
                 if ieffect.size:
-                    src = StackEffect(f"((PyObject **)stack_pointer - {maybe_parenthesize(isize)})", "PyObject **")
+                    src = StackEffect(f"(stack_pointer - {maybe_parenthesize(isize)})", "_tagged_ptr *")
                 elif ieffect.cond:
-                    src = StackEffect(f"({ieffect.cond}) ? detag(stack_pointer[-{maybe_parenthesize(isize)}]) : NULL", "")
+                    src = StackEffect(f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL", "_tagged_ptr")
                 else:
-                    src = StackEffect(f"detag(stack_pointer[-{maybe_parenthesize(isize)}])", "")
+                    src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "_tagged_ptr")
                 out.declare(ieffect, src)
         else:
             # Write input register variable declarations and initializations
@@ -424,11 +424,11 @@ class Instruction:
                             out.write_raw(
                                 f"{space}for (int _i = {ieff.size}; --_i >= 0;) {{\n"
                             )
-                            out.write_raw(f"{space}    Py_DECREF({ieff.name}[_i]);\n")
+                            out.write_raw(f"{space}    decref_unless_tagged({ieff.name}[_i]);\n")
                             out.write_raw(f"{space}}}\n")
                         else:
-                            decref = "XDECREF" if ieff.cond else "DECREF"
-                            out.write_raw(f"{space}Py_{decref}({ieff.name});\n")
+                            decref = "xdecref" if ieff.cond else "decref"
+                            out.write_raw(f"{space}{decref}_unless_tagged({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
 

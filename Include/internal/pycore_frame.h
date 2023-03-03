@@ -61,6 +61,12 @@ static inline void decref_unless_tagged(_tagged_ptr tp) {
     }
 }
 
+static inline void xdecref_unless_tagged(_tagged_ptr tp) {
+    if (!is_tagged(tp)) {
+        Py_XDECREF(detag(tp));
+    }
+}
+
 static inline void incref_if_tagged(_tagged_ptr tp) {
     if (is_tagged(tp)) {
         Py_INCREF(detag(tp));
