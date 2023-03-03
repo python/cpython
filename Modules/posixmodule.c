@@ -30,9 +30,9 @@
 #  include <winioctl.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP
-#  ifdef MS_WINDOWS_DESKTOP
+#  if defined(MS_WINDOWS_DESKTOP) | defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_SYMLINK
-#  endif
+#  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
 #endif
 
 #include "structmember.h"         // PyMemberDef
@@ -333,16 +333,20 @@ corresponding Unix manual entries for more information on calls.");
 #  include <process.h>
 #elif defined( _MSC_VER)
   /* Microsoft compiler */
-#  ifdef MS_WINDOWS_DESKTOP
+#  if defined(MS_WINDOWS_DESKTOP) | defined(MS_WINDOWS_APP) | defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_GETPPID    1
+#  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_APP | MS_WINDOWS_SYSTEM */
+#  if defined(MS_WINDOWS_DESKTOP)
 #    define HAVE_GETLOGIN   1
+#  endif /* MS_WINDOWS_DESKTOP */
+#  if defined(MS_WINDOWS_DESKTOP) | defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_SPAWNV     1
 #    define HAVE_EXECV      1
 #    define HAVE_WSPAWNV    1
 #    define HAVE_WEXECV     1
 #    define HAVE_SYSTEM     1
 #    define HAVE_CWAIT      1
-#  endif /* MS_WINDOWS_DESKTOP */
+#  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
 #  define HAVE_PIPE       1
 #  define HAVE_FSYNC      1
 #  define fsync _commit
