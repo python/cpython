@@ -860,7 +860,6 @@ set_attribute_error_context(PyObject* v, PyObject* name)
     }
     // Intercept AttributeError exceptions and augment them to offer suggestions later.
     PyObject *exc = PyErr_GetRaisedException();
-    // Check if the exception is indeed an AttributeError
     if (!PyErr_GivenExceptionMatches(exc, PyExc_AttributeError)) {
         goto restore;
     }

@@ -647,11 +647,8 @@ _PyGen_FetchStopIterationValue(PyObject **pvalue)
     PyObject *value = NULL;
     if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
         PyObject *exc = PyErr_GetRaisedException();
-        if (exc) {
-            /* exception will usually be normalised already */
-            value = Py_NewRef(((PyStopIterationObject *)exc)->value);
-            Py_DECREF(exc);
-        }
+        value = Py_NewRef(((PyStopIterationObject *)exc)->value);
+        Py_DECREF(exc);
     } else if (PyErr_Occurred()) {
         return -1;
     }
