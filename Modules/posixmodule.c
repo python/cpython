@@ -1539,7 +1539,7 @@ convertenviron(void)
 #ifdef MS_WINDOWS
     /* _wenviron must be initialized in this way if the program is started
        through main() instead of wmain(). */
-    _wgetenv(L"");
+    (void)_wgetenv(L"");
     e = _wenviron;
 #elif defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
     /* environ is not accessible as an extern in a shared object on OSX; use
@@ -1788,6 +1788,9 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
     if (n && (pszFile[n - 1] == L'\\' || pszFile[n - 1] == L'/')) {
         // cannot use PyMem_Malloc here because we do not hold the GIL
         filename = (LPCWSTR)malloc((n + 1) * sizeof(filename[0]));
+        if(!filename) {
+            return FALSE;
+        }
         wcsncpy_s((LPWSTR)filename, n + 1, pszFile, n);
         while (--n > 0 && (filename[n] == L'\\' || filename[n] == L'/')) {
             ((LPWSTR)filename)[n] = L'\0';
