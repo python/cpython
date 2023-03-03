@@ -1086,6 +1086,16 @@ attributes_to_mode(DWORD attr)
     return m;
 }
 
+
+typedef union {
+    FILE_ID_128 id;
+    struct {
+        uint64_t st_ino;
+        uint64_t st_ino_high;
+    };
+} id_128_to_ino;
+
+
 void
 _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
                            FILE_BASIC_INFO *basic_info, FILE_ID_INFO *id_info,
@@ -1110,14 +1120,8 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
     result->st_nlink = info->nNumberOfLinks;
 
     if (id_info) {
-        union {
-            FILE_ID_128 id_info;
-            struct {
-                uint64_t st_ino;
-                uint64_t st_ino_high;
-            };
-        } file_id;
-        file_id.id_info = id_info->FileId;
+        id_128_to_ino file_id;
+        file_id.id = id_info->FileId;
         result->st_ino = file_id.st_ino;
         result->st_ino_high = file_id.st_ino_high;
     } else {
@@ -1150,9 +1154,15 @@ _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *info,
     LARGE_INTEGER_to_time_t_nsec(&info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
     LARGE_INTEGER_to_time_t_nsec(&info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
     result->st_nlink = info->NumberOfLinks;
-    result->st_dev = info->VolumeSerialNumber;
-    result->st_ino = info->FileId.QuadPart;
-    result->st_ino_high = info->FileIdHigh;
+    result->st_dev = info->VolumeSerialNumber.QuadPart;
+    id_128_to_ino file_id;
+    file_id.id = info->FileId128;
+    result->st_ino = file_id.st_ino;
+    result->st_ino_high = file_id.st_ino_high;
+    // TODO: Confirm whether FileId128 may be 0 but FileId is set
+    if (!result->st_ino && !result->st_ino_high) {
+        result->st_ino = info->FileId.QuadPart;
+    }
     /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
        open other name surrogate reparse points without traversing them. To
        detect/handle these, check st_file_attributes and st_reparse_tag. */
