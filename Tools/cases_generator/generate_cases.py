@@ -7,14 +7,11 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 import argparse
 import contextlib
 import dataclasses
-import itertools
 import os
 import posixpath
 import re
 import sys
 import typing
-
-from typing import Iterable
 
 import parser
 from parser import StackEffect
@@ -41,18 +38,13 @@ arg_parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 arg_parser.add_argument(
-    "-i",
-    "--input",
-    action="append",
-    type=str,
-    help="Instruction definitions (use multiple times for multiple inputs)",
-    default=[]
-)
-arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 arg_parser.add_argument(
     "-m", "--metadata", type=str, help="Generated metadata", default=DEFAULT_METADATA_OUTPUT
+)
+arg_parser.add_argument(
+    "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
 
 
@@ -493,6 +485,11 @@ class MacroInstruction(SuperOrMacroInstruction):
     parts: list[Component | parser.CacheEffect]
 
 
+@dataclasses.dataclass
+class OverriddenInstructionPlaceHolder:
+    name: str
+
+
 AnyInstruction = Instruction | SuperInstruction | MacroInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
 
@@ -524,19 +521,15 @@ class Analyzer:
         print(f"{filename}:{lineno}: {msg}", file=sys.stderr)
         self.errors += 1
 
+    everything: list[
+        parser.InstDef | parser.Super | parser.Macro | OverriddenInstructionPlaceHolder
+    ]
     instrs: dict[str, Instruction]  # Includes ops
     supers: dict[str, parser.Super]
     super_instrs: dict[str, SuperInstruction]
     macros: dict[str, parser.Macro]
     macro_instrs: dict[str, MacroInstruction]
     families: dict[str, parser.Family]
-
-    def every_thing(self) -> Iterable[parser.InstDef | parser.Super | parser.Macro]:
-        return itertools.chain(
-            map(lambda i: i.inst, self.instrs.values()),
-            self.supers.values(),
-            self.macros.values(),
-        )
 
     def parse(self) -> None:
         """Parse the source text.
@@ -545,63 +538,16 @@ class Analyzer:
         begin and end markers.
         """
 
+        self.everything = []
         self.instrs = {}
         self.supers = {}
         self.macros = {}
         self.families = {}
 
+        instrs_idx: dict[str, int] = dict()
+
         for filename in self.input_filenames:
-            with open(filename) as file:
-                src = file.read()
-
-            psr = parser.Parser(src, filename=filename)
-
-            # Skip until begin marker
-            while tkn := psr.next(raw=True):
-                if tkn.text == BEGIN_MARKER:
-                    break
-            else:
-                raise psr.make_syntax_error(
-                    f"Couldn't find {BEGIN_MARKER!r} in {psr.filename}"
-                )
-            start = psr.getpos()
-
-            # Find end marker, then delete everything after it
-            while tkn := psr.next(raw=True):
-                if tkn.text == END_MARKER:
-                    break
-            del psr.tokens[psr.getpos() - 1 :]
-
-            # Parse from start
-            psr.setpos(start)
-            thing: parser.InstDef | parser.Super | parser.Macro | parser.Family | None
-            thing_first_token = psr.peek()
-            while thing := psr.definition():
-                match thing:
-                    case parser.InstDef(name=name):
-                        if name in self.instrs and not thing.override:
-                            raise psr.make_syntax_error(
-                                f"Duplicate definition of '{name}' @ {thing.context} "
-                                f"previous definition @ {self.instrs[name].inst.context}",
-                                thing_first_token,
-                            )
-                        if name not in self.instrs and thing.override:
-                            raise psr.make_syntax_error(
-                                f"Definition of '{name}' @ {thing.context} is supposed to be "
-                                "an override but no previous definition exists.",
-                                thing_first_token,
-                            )
-                        self.instrs[name] = Instruction(thing)
-                    case parser.Super(name):
-                        self.supers[name] = thing
-                    case parser.Macro(name):
-                        self.macros[name] = thing
-                    case parser.Family(name):
-                        self.families[name] = thing
-                    case _:
-                        typing.assert_never(thing)
-            if not psr.eof():
-                raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
+            self.parse_file(filename, instrs_idx)
 
         files = " + ".join(self.input_filenames)
         print(
@@ -610,6 +556,65 @@ class Analyzer:
             f"and {len(self.families)} families from {files}",
             file=sys.stderr,
         )
+
+    def parse_file(self, filename: str, instrs_idx: dict[str, int]) -> None:
+        with open(filename) as file:
+            src = file.read()
+
+        psr = parser.Parser(src, filename=filename)
+
+        # Skip until begin marker
+        while tkn := psr.next(raw=True):
+            if tkn.text == BEGIN_MARKER:
+                break
+        else:
+            raise psr.make_syntax_error(
+                f"Couldn't find {BEGIN_MARKER!r} in {psr.filename}"
+            )
+        start = psr.getpos()
+
+        # Find end marker, then delete everything after it
+        while tkn := psr.next(raw=True):
+            if tkn.text == END_MARKER:
+                break
+        del psr.tokens[psr.getpos() - 1 :]
+
+        # Parse from start
+        psr.setpos(start)
+        thing: parser.InstDef | parser.Super | parser.Macro | parser.Family | None
+        thing_first_token = psr.peek()
+        while thing := psr.definition():
+            match thing:
+                case parser.InstDef(name=name):
+                    if name in self.instrs:
+                        if not thing.override:
+                            raise psr.make_syntax_error(
+                                f"Duplicate definition of '{name}' @ {thing.context} "
+                                f"previous definition @ {self.instrs[name].inst.context}",
+                                thing_first_token,
+                            )
+                        self.everything[instrs_idx[name]] = OverriddenInstructionPlaceHolder(name=name)
+                    if name not in self.instrs and thing.override:
+                        raise psr.make_syntax_error(
+                            f"Definition of '{name}' @ {thing.context} is supposed to be "
+                            "an override but no previous definition exists.",
+                            thing_first_token,
+                        )
+                    self.instrs[name] = Instruction(thing)
+                    instrs_idx[name] = len(self.everything)
+                    self.everything.append(thing)
+                case parser.Super(name):
+                    self.supers[name] = thing
+                    self.everything.append(thing)
+                case parser.Macro(name):
+                    self.macros[name] = thing
+                    self.everything.append(thing)
+                case parser.Family(name):
+                    self.families[name] = thing
+                case _:
+                    typing.assert_never(thing)
+        if not psr.eof():
+            raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
 
     def analyze(self) -> None:
         """Analyze the inputs.
@@ -907,7 +912,9 @@ class Analyzer:
     def write_stack_effect_functions(self) -> None:
         popped_data: list[tuple[AnyInstruction, str]] = []
         pushed_data: list[tuple[AnyInstruction, str]] = []
-        for thing in self.every_thing():
+        for thing in self.everything:
+            if isinstance(thing, OverriddenInstructionPlaceHolder):
+                continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
                 popped_data.append((instr, popped))
@@ -936,16 +943,22 @@ class Analyzer:
         write_function("pushed", pushed_data)
         self.out.emit("")
 
-    def source_files(self) -> str:
-        return "\n  ".join(os.path.relpath(filename, ROOT) for filename in self.input_filenames)
+    def from_source_files(self) -> str:
+        paths = "\n//   ".join(
+            os.path.relpath(filename, ROOT).replace(os.path.sep, posixpath.sep)
+            for filename in self.input_filenames
+        )
+        return f"// from:\n//   {paths}\n"
 
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
 
         # Compute the set of all instruction formats.
         all_formats: set[str] = set()
-        for thing in self.every_thing():
+        for thing in self.everything:
             match thing:
+                case OverriddenInstructionPlaceHolder():
+                    continue
                 case parser.InstDef():
                     format = self.instrs[thing.name].instr_fmt
                 case parser.Super():
@@ -961,7 +974,7 @@ class Analyzer:
         with open(self.metadata_filename, "w") as f:
             # Write provenance header
             f.write(f"// This file is generated by {THIS} --metadata\n")
-            f.write(f"// from {os.path.relpath(self.filename, ROOT).replace(os.path.sep, posixpath.sep)}\n")
+            f.write(self.from_source_files())
             f.write(f"// Do not edit!\n")
 
             # Create formatter; the rest of the code uses this
@@ -989,8 +1002,10 @@ class Analyzer:
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
-            for thing in self.every_thing():
+            for thing in self.everything:
                 match thing:
+                    case OverriddenInstructionPlaceHolder():
+                        continue
                     case parser.InstDef():
                         if thing.kind != "op":
                             self.write_metadata_for_inst(self.instrs[thing.name])
@@ -1040,7 +1055,7 @@ class Analyzer:
         with open(self.output_filename, "w") as f:
             # Write provenance header
             f.write(f"// This file is generated by {THIS}\n")
-            f.write(f"// from {os.path.relpath(self.filename, ROOT).replace(os.path.sep, posixpath.sep)}\n")
+            f.write(self.from_source_files())
             f.write(f"// Do not edit!\n")
 
             # Create formatter; the rest of the code uses this
@@ -1050,8 +1065,10 @@ class Analyzer:
             n_instrs = 0
             n_supers = 0
             n_macros = 0
-            for thing in self.every_thing():
+            for thing in self.everything:
                 match thing:
+                    case OverriddenInstructionPlaceHolder():
+                        self.write_overridden_instr_place_holder(thing)
                     case parser.InstDef():
                         if thing.kind != "op":
                             n_instrs += 1
@@ -1071,9 +1088,17 @@ class Analyzer:
             file=sys.stderr,
         )
 
+    def write_overridden_instr_place_holder(self,
+            place_holder: OverriddenInstructionPlaceHolder) -> None:
+        self.out.emit("")
+        self.out.emit(
+            f"// TARGET({place_holder.name}) overridden by later definition")
+
     def write_instr(self, instr: Instruction) -> None:
         name = instr.name
         self.out.emit("")
+        if instr.inst.override:
+            self.out.emit("// Override")
         with self.out.block(f"TARGET({name})"):
             if instr.predicted:
                 self.out.emit(f"PREDICTED({name});")
