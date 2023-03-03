@@ -44,7 +44,8 @@ class object "PyObject *" "&PyBaseObject_Type"
         PyUnicode_IS_READY(name) &&                             \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
-#define next_version_tag(interp) \
+#define NEXT_GLOBAL_VERSION_TAG _PyRuntime.types.next_version_tag
+#define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
 
 typedef struct PySlot_Offset {
@@ -332,7 +333,7 @@ _PyType_ClearCache(PyInterpreterState *interp)
     // use Py_SETREF() rather than using slower Py_XSETREF().
     type_cache_clear(cache, Py_None);
 
-    return next_version_tag(interp) - 1;
+    return NEXT_VERSION_TAG(interp) - 1;
 }
 
 
@@ -564,11 +565,11 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
         return 0;
     }
 
-    if (next_version_tag(interp) == 0) {
+    if (NEXT_VERSION_TAG(interp) == 0) {
         /* We have run out of version numbers */
         return 0;
     }
-    type->tp_version_tag = next_version_tag(interp)++;
+    type->tp_version_tag = NEXT_VERSION_TAG(interp)++;
     assert (type->tp_version_tag != 0);
 
     PyObject *bases = type->tp_bases;
@@ -6989,8 +6990,8 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
     self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
 
-    assert(_PyRuntime.types.next_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-    self->tp_version_tag = _PyRuntime.types.next_version_tag++;
+    assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
+    self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
     self->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
 
     static_builtin_state_init(self);
