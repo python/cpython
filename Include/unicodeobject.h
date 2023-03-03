@@ -126,14 +126,11 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 /* === Public API ========================================================= */
 
-/* Similar to PyUnicode_FromUnicode(), but u points to UTF-8 encoded bytes */
 PyAPI_FUNC(PyObject*) PyUnicode_FromStringAndSize(
     const char *u,             /* UTF-8 encoded string */
     Py_ssize_t size            /* size of buffer */
     );
 
-/* Similar to PyUnicode_FromUnicode(), but u points to null-terminated
-   UTF-8 encoded bytes.  The size is determined with strlen(). */
 PyAPI_FUNC(PyObject*) PyUnicode_FromString(
     const char *u              /* UTF-8 encoded string */
     );

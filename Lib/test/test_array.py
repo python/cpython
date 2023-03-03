@@ -1199,7 +1199,6 @@ class UnicodeTest(StringTest, unittest.TestCase):
             # U+FFFFFFFF is an invalid code point in Unicode 6.0
             invalid_str = b'\xff\xff\xff\xff'
         else:
-            # PyUnicode_FromUnicode() cannot fail with 16-bit wchar_t
             self.skipTest("specific to 32-bit wchar_t")
         a = array.array('u', invalid_str)
         self.assertRaises(ValueError, a.tounicode)

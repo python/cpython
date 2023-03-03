@@ -61,7 +61,7 @@ PyAPI_FUNC(const char*) _Py_DumpTracebackThreads(
    ASCII using the backslashreplace error handler.
 
    Do nothing if text is not a Unicode object. The function accepts Unicode
-   string which is not ready (PyUnicode_WCHAR_KIND).
+   string which is not ready.
 
    This function is signal safe. */
 PyAPI_FUNC(void) _Py_DumpASCII(int fd, PyObject *text);
