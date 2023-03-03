@@ -100,9 +100,9 @@ add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared)
 static int
 _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
 {
-    PyObject *exctype, *excval, *exctb;
+    PyObject *exc;
     if (ignoreexc) {
-        PyErr_Fetch(&exctype, &excval, &exctb);
+        exc = PyErr_GetRaisedException();
     }
     int res = _PyCrossInterpreterData_Release(data);
     if (res < 0) {
@@ -125,7 +125,7 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
         }
     }
     if (ignoreexc) {
-        PyErr_Restore(exctype, excval, exctb);
+        PyErr_SetRaisedException(exc);
     }
     return res;
 }

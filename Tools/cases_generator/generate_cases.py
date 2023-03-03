@@ -171,19 +171,17 @@ class Formatter:
     def assign(self, dst: StackEffect, src: StackEffect):
         if src.name == UNUSED:
             return
+        if src.size:
+            # Don't write sized arrays -- it's up to the user code.
+            return
         cast = self.cast(dst, src)
-        if m := re.match(r"^PEEK\((.*)\)$", dst.name):
-            stmt = f"POKE({m.group(1)}, {cast}{src.name});"
+        if re.match(r"^REG\(oparg(\d+)\)$", dst.name):
+            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
+        else:
+            stmt = f"{dst.name} = {cast}{src.name};"
             if src.cond:
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
-        elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
-            # The user code is responsible for writing to the output array.
-            pass
-        elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
-            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
-        else:
-            self.emit(f"{dst.name} = {cast}{src.name};")
 
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
@@ -292,11 +290,11 @@ class Instruction:
                     list_effect_size([ieff for ieff in ieffects[: i + 1]])
                 )
                 if ieffect.size:
-                    src = StackEffect(f"&PEEK({isize})", "PyObject **")
+                    src = StackEffect(f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **")
                 elif ieffect.cond:
-                    src = StackEffect(f"({ieffect.cond}) ? PEEK({isize}) : NULL", "")
+                    src = StackEffect(f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL", "")
                 else:
-                    src = StackEffect(f"PEEK({isize})", "")
+                    src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
                 out.declare(ieffect, src)
         else:
             # Write input register variable declarations and initializations
@@ -324,7 +322,7 @@ class Instruction:
                 else:
                     out.declare(oeffect, None)
 
-        # out.emit(f"JUMPBY(OPSIZE({self.inst.name}) - 1);")
+        # out.emit(f"next_instr += OPSIZE({self.inst.name}) - 1;")
 
         self.write_body(out, 0)
 
@@ -349,9 +347,9 @@ class Instruction:
                     list_effect_size([oeff for oeff in oeffects[: i + 1]])
                 )
                 if oeffect.size:
-                    dst = StackEffect(f"&PEEK({osize})", "PyObject **")
+                    dst = StackEffect(f"stack_pointer - {maybe_parenthesize(osize)}", "PyObject **")
                 else:
-                    dst = StackEffect(f"PEEK({osize})", "")
+                    dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "")
                 out.assign(dst, oeffect)
         else:
             # Write output register assignments
@@ -361,7 +359,7 @@ class Instruction:
 
         # Write cache effect
         if self.cache_offset:
-            out.emit(f"JUMPBY({self.cache_offset});")
+            out.emit(f"next_instr += {self.cache_offset};")
 
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
         """Write the instruction body."""
@@ -1060,17 +1058,13 @@ class Analyzer:
         with self.wrap_super_or_macro(sup):
             first = True
             for comp in sup.parts:
-                if first:
-                    pass
-                    # self.out.emit("JUMPBY(OPSIZE(opcode) - 1);")
-                else:
-                    self.out.emit("NEXTOPARG();")
-                    self.out.emit("JUMPBY(1);")
-                    # self.out.emit("JUMPBY(OPSIZE(opcode));")
+                if not first:
+                    self.out.emit("oparg = (next_instr++)->op.arg;")
+                # self.out.emit("next_instr += OPSIZE(opcode) - 1;")
                 first = False
                 comp.write_body(self.out, 0)
                 if comp.instr.cache_offset:
-                    self.out.emit(f"JUMPBY({comp.instr.cache_offset});")
+                    self.out.emit(f"next_instr += {comp.instr.cache_offset};")
 
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
@@ -1087,7 +1081,7 @@ class Analyzer:
                         cache_adjust += comp.instr.cache_offset
 
             if cache_adjust:
-                self.out.emit(f"JUMPBY({cache_adjust});")
+                self.out.emit(f"next_instr += {cache_adjust};")
 
             if (
                 last_instr
@@ -1113,7 +1107,7 @@ class Analyzer:
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:
-                    src = StackEffect(f"PEEK({up.initial_sp - i})", "")
+                    src = StackEffect(f"stack_pointer[-{up.initial_sp - i}]", "")
                 self.out.declare(var, src)
 
             yield
@@ -1122,7 +1116,7 @@ class Analyzer:
             self.out.stack_adjust(up.final_sp - up.initial_sp, [], [])
 
             for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
-                dst = StackEffect(f"PEEK({i})", "")
+                dst = StackEffect(f"stack_pointer[-{i}]", "")
                 self.out.assign(dst, var)
 
             self.out.emit(f"DISPATCH();")

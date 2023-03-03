@@ -10,16 +10,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-// Include <windows.h> before pycore internal headers. FSCTL_GET_REPARSE_POINT
-// is not exported by <windows.h> if the WIN32_LEAN_AND_MEAN macro is defined,
-// whereas pycore_condvar.h defines the WIN32_LEAN_AND_MEAN macro.
-#ifdef MS_WINDOWS
-#  include <windows.h>
-#  include <pathcch.h>
-#  include <lmcons.h>             // UNLEN
-#  include "osdefs.h"             // SEP
-#  define HAVE_SYMLINK
-#endif
 
 #ifdef __VXWORKS__
 #  include "pycore_bitutils.h"    // _Py_popcount32()
@@ -33,6 +23,15 @@
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+
+#ifdef MS_WINDOWS
+#  include <windows.h>
+#  include <pathcch.h>
+#  include <winioctl.h>
+#  include <lmcons.h>             // UNLEN
+#  include "osdefs.h"             // SEP
+#  define HAVE_SYMLINK
+#endif
 
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
@@ -1506,32 +1505,6 @@ error:
     return 0;
 }
 #endif /* HAVE_SIGSET_T */
-
-#ifdef MS_WINDOWS
-
-static int
-win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
-{
-    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
-    _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    DWORD n_bytes_returned;
-
-    if (0 == DeviceIoControl(
-        reparse_point_handle,
-        FSCTL_GET_REPARSE_POINT,
-        NULL, 0, /* in buffer */
-        target_buffer, sizeof(target_buffer),
-        &n_bytes_returned,
-        NULL)) /* we're not using OVERLAPPED_IO */
-        return FALSE;
-
-    if (reparse_tag)
-        *reparse_tag = rdb->ReparseTag;
-
-    return TRUE;
-}
-
-#endif /* MS_WINDOWS */
 
 /* Return a dictionary corresponding to the POSIX environment table */
 #if defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
@@ -7946,7 +7919,7 @@ os_getgid_impl(PyObject *module)
 #endif /* HAVE_GETGID */
 
 
-#ifdef HAVE_GETPID
+#if defined(HAVE_GETPID)
 /*[clinic input]
 os.getpid
 
@@ -7957,9 +7930,13 @@ static PyObject *
 os_getpid_impl(PyObject *module)
 /*[clinic end generated code: output=9ea6fdac01ed2b3c input=5a9a00f0ab68aa00]*/
 {
+#ifdef MS_WINDOWS_NON_DESKTOP
+    return PyLong_FromUnsignedLong(GetCurrentProcessId());
+#else
     return PyLong_FromPid(getpid());
+#endif
 }
-#endif /* HAVE_GETPID */
+#endif /* defined(HAVE_GETPID) */
 
 #ifdef NGROUPS_MAX
 #define MAX_GROUPS NGROUPS_MAX
@@ -8259,43 +8236,32 @@ os_setpgrp_impl(PyObject *module)
 #ifdef HAVE_GETPPID
 
 #ifdef MS_WINDOWS
-#include <tlhelp32.h>
+#include <processsnapshot.h>
 
 static PyObject*
 win32_getppid()
 {
-    HANDLE snapshot;
-    pid_t mypid;
+    DWORD error;
     PyObject* result = NULL;
-    BOOL have_record;
-    PROCESSENTRY32 pe;
+    HANDLE process = GetCurrentProcess();
 
-    mypid = getpid(); /* This function never fails */
-
-    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (snapshot == INVALID_HANDLE_VALUE)
-        return PyErr_SetFromWindowsErr(GetLastError());
-
-    pe.dwSize = sizeof(pe);
-    have_record = Process32First(snapshot, &pe);
-    while (have_record) {
-        if (mypid == (pid_t)pe.th32ProcessID) {
-            /* We could cache the ulong value in a static variable. */
-            result = PyLong_FromPid((pid_t)pe.th32ParentProcessID);
-            break;
-        }
-
-        have_record = Process32Next(snapshot, &pe);
+    HPSS snapshot = NULL;
+    error = PssCaptureSnapshot(process, PSS_CAPTURE_NONE, 0, &snapshot);
+    if (error != ERROR_SUCCESS) {
+        return PyErr_SetFromWindowsErr(error);
     }
 
-    /* If our loop exits and our pid was not found (result will be NULL)
-     * then GetLastError will return ERROR_NO_MORE_FILES. This is an
-     * error anyway, so let's raise it. */
-    if (!result)
-        result = PyErr_SetFromWindowsErr(GetLastError());
+    PSS_PROCESS_INFORMATION info;
+    error = PssQuerySnapshot(snapshot, PSS_QUERY_PROCESS_INFORMATION, &info,
+                             sizeof(info));
+    if (error == ERROR_SUCCESS) {
+        result = PyLong_FromUnsignedLong(info.ParentProcessId);
+    }
+    else {
+        result = PyErr_SetFromWindowsErr(error);
+    }
 
-    CloseHandle(snapshot);
-
+    PssFreeSnapshot(process, snapshot);
     return result;
 }
 #endif /*MS_WINDOWS*/
@@ -14756,10 +14722,9 @@ ScandirIterator_exit(ScandirIterator *self, PyObject *args)
 static void
 ScandirIterator_finalize(ScandirIterator *iterator)
 {
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (!ScandirIterator_is_closed(iterator)) {
         ScandirIterator_closedir(iterator);
@@ -14776,7 +14741,7 @@ ScandirIterator_finalize(ScandirIterator *iterator)
     path_cleanup(&iterator->path);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static void
@@ -15065,9 +15030,6 @@ error:
  * on win32
  */
 
-typedef DLL_DIRECTORY_COOKIE (WINAPI *PAddDllDirectory)(PCWSTR newDirectory);
-typedef BOOL (WINAPI *PRemoveDllDirectory)(DLL_DIRECTORY_COOKIE cookie);
-
 /*[clinic input]
 os._add_dll_directory
 
@@ -15087,8 +15049,6 @@ static PyObject *
 os__add_dll_directory_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=80b025daebb5d683 input=1de3e6c13a5808c8]*/
 {
-    HMODULE hKernel32;
-    PAddDllDirectory AddDllDirectory;
     DLL_DIRECTORY_COOKIE cookie = 0;
     DWORD err = 0;
 
@@ -15096,14 +15056,8 @@ os__add_dll_directory_impl(PyObject *module, path_t *path)
         return NULL;
     }
 
-    /* For Windows 7, we have to load this. As this will be a fairly
-       infrequent operation, just do it each time. Kernel32 is always
-       loaded. */
     Py_BEGIN_ALLOW_THREADS
-    if (!(hKernel32 = GetModuleHandleW(L"kernel32")) ||
-        !(AddDllDirectory = (PAddDllDirectory)GetProcAddress(
-            hKernel32, "AddDllDirectory")) ||
-        !(cookie = (*AddDllDirectory)(path->wide))) {
+    if (!(cookie = AddDllDirectory(path->wide))) {
         err = GetLastError();
     }
     Py_END_ALLOW_THREADS
@@ -15132,8 +15086,6 @@ static PyObject *
 os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
 /*[clinic end generated code: output=594350433ae535bc input=c1d16a7e7d9dc5dc]*/
 {
-    HMODULE hKernel32;
-    PRemoveDllDirectory RemoveDllDirectory;
     DLL_DIRECTORY_COOKIE cookieValue;
     DWORD err = 0;
 
@@ -15146,14 +15098,8 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
     cookieValue = (DLL_DIRECTORY_COOKIE)PyCapsule_GetPointer(
         cookie, "DLL directory cookie");
 
-    /* For Windows 7, we have to load this. As this will be a fairly
-       infrequent operation, just do it each time. Kernel32 is always
-       loaded. */
     Py_BEGIN_ALLOW_THREADS
-    if (!(hKernel32 = GetModuleHandleW(L"kernel32")) ||
-        !(RemoveDllDirectory = (PRemoveDllDirectory)GetProcAddress(
-            hKernel32, "RemoveDllDirectory")) ||
-        !(*RemoveDllDirectory)(cookieValue)) {
+    if (!RemoveDllDirectory(cookieValue)) {
         err = GetLastError();
     }
     Py_END_ALLOW_THREADS

@@ -13,7 +13,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_Fetch(), _PyErr_GetRaisedException()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -105,8 +105,7 @@ static void
 dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     PyObject **stack_base = _PyFrame_Stackbase(frame);
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *exc = PyErr_GetRaisedException();
     printf("    stack=[");
     for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
         if (ptr != stack_base) {
@@ -120,7 +119,7 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
     }
     printf("]\n");
     fflush(stdout);
-    PyErr_Restore(type, value, traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static void
@@ -157,8 +156,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
         return;
     }
     PyFunctionObject *f = (PyFunctionObject *)fobj;
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *exc = PyErr_GetRaisedException();
     PyObject *name = f->func_qualname;
     if (name == NULL) {
         name = f->func_name;
@@ -178,7 +176,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
     }
     printf("\n");
     fflush(stdout);
-    PyErr_Restore(type, value, traceback);
+    PyErr_SetRaisedException(exc);
 }
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
@@ -1032,7 +1030,6 @@ exception_unwind:
                 PyObject *v = POP();
                 Py_XDECREF(v);
             }
-            PyObject *exc, *val, *tb;
             if (lasti) {
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
                 PyObject *lasti = PyLong_FromLong(frame_lasti);
@@ -1041,19 +1038,12 @@ exception_unwind:
                 }
                 PUSH(lasti);
             }
-            _PyErr_Fetch(tstate, &exc, &val, &tb);
+
             /* Make the raw exception data
                 available to the handler,
                 so a program can emulate the
                 Python main loop. */
-            _PyErr_NormalizeException(tstate, &exc, &val, &tb);
-            if (tb != NULL)
-                PyException_SetTraceback(val, tb);
-            else
-                PyException_SetTraceback(val, Py_None);
-            Py_XDECREF(tb);
-            Py_XDECREF(exc);
-            PUSH(val);
+            PUSH(_PyErr_GetRaisedException(tstate));
             JUMPTO(handler);
             /* Resume normal execution */
             DISPATCH();
@@ -1604,6 +1594,49 @@ fail_post_args:
     return -1;
 }
 
+static void
+clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_THREAD);
+    // Make sure that this is, indeed, the top frame. We can't check this in
+    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
+    assert((PyObject **)frame + frame->f_code->co_framesize ==
+        tstate->datastack_top);
+    tstate->c_recursion_remaining--;
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    _PyFrame_ClearExceptCode(frame);
+    Py_DECREF(frame->f_code);
+    tstate->c_recursion_remaining++;
+    _PyThreadState_PopFrame(tstate, frame);
+}
+
+static void
+clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    PyGenObject *gen = _PyFrame_GetGenerator(frame);
+    gen->gi_frame_state = FRAME_CLEARED;
+    assert(tstate->exc_info == &gen->gi_exc_state);
+    tstate->exc_info = gen->gi_exc_state.previous_item;
+    gen->gi_exc_state.previous_item = NULL;
+    tstate->c_recursion_remaining--;
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    _PyFrame_ClearExceptCode(frame);
+    tstate->c_recursion_remaining++;
+    frame->previous = NULL;
+}
+
+static void
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    if (frame->owner == FRAME_OWNED_BY_THREAD) {
+        clear_thread_frame(tstate, frame);
+    }
+    else {
+        clear_gen_frame(tstate, frame);
+    }
+}
+
 /* Consumes references to func, locals and all the args */
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
@@ -1617,10 +1650,9 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
         goto fail;
     }
     _PyFrame_Initialize(frame, func, locals, code, 0);
-    PyObject **localsarray = &frame->localsplus[0];
-    if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
-        assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
-        _PyEvalFrameClearAndPop(tstate, frame);
+    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
+        assert(frame->owner == FRAME_OWNED_BY_THREAD);
+        clear_thread_frame(tstate, frame);
         return NULL;
     }
     return frame;
@@ -1638,49 +1670,6 @@ fail:
     PyErr_NoMemory();
     return NULL;
 }
-
-static void
-clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
-{
-    assert(frame->owner == FRAME_OWNED_BY_THREAD);
-    // Make sure that this is, indeed, the top frame. We can't check this in
-    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
-    assert((PyObject **)frame + frame->f_code->co_framesize ==
-        tstate->datastack_top);
-    tstate->c_recursion_remaining--;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
-    _PyFrame_Clear(frame);
-    tstate->c_recursion_remaining++;
-    _PyThreadState_PopFrame(tstate, frame);
-}
-
-static void
-clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
-{
-    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
-    PyGenObject *gen = _PyFrame_GetGenerator(frame);
-    gen->gi_frame_state = FRAME_CLEARED;
-    assert(tstate->exc_info == &gen->gi_exc_state);
-    tstate->exc_info = gen->gi_exc_state.previous_item;
-    gen->gi_exc_state.previous_item = NULL;
-    tstate->c_recursion_remaining--;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
-    _PyFrame_Clear(frame);
-    tstate->c_recursion_remaining++;
-    frame->previous = NULL;
-}
-
-static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
-{
-    if (frame->owner == FRAME_OWNED_BY_THREAD) {
-        clear_thread_frame(tstate, frame);
-    }
-    else {
-        clear_gen_frame(tstate, frame);
-    }
-}
-
 
 PyObject *
 _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
@@ -2076,19 +2065,15 @@ call_trace_protected(Py_tracefunc func, PyObject *obj,
                      PyThreadState *tstate, _PyInterpreterFrame *frame,
                      int what, PyObject *arg)
 {
-    PyObject *type, *value, *traceback;
-    int err;
-    _PyErr_Fetch(tstate, &type, &value, &traceback);
-    err = call_trace(func, obj, tstate, frame, what, arg);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    int err = call_trace(func, obj, tstate, frame, what, arg);
     if (err == 0)
     {
-        _PyErr_Restore(tstate, type, value, traceback);
+        _PyErr_SetRaisedException(tstate, exc);
         return 0;
     }
     else {
-        Py_XDECREF(type);
-        Py_XDECREF(value);
-        Py_XDECREF(traceback);
+        Py_XDECREF(exc);
         return -1;
     }
 }
@@ -2936,18 +2921,15 @@ format_exc_check_arg(PyThreadState *tstate, PyObject *exc,
 
     if (exc == PyExc_NameError) {
         // Include the name in the NameError exceptions to offer suggestions later.
-        PyObject *type, *value, *traceback;
-        PyErr_Fetch(&type, &value, &traceback);
-        PyErr_NormalizeException(&type, &value, &traceback);
-        if (PyErr_GivenExceptionMatches(value, PyExc_NameError)) {
-            PyNameErrorObject* exc = (PyNameErrorObject*) value;
-            if (exc->name == NULL) {
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyErr_GivenExceptionMatches(exc, PyExc_NameError)) {
+            if (((PyNameErrorObject*)exc)->name == NULL) {
                 // We do not care if this fails because we are going to restore the
                 // NameError anyway.
-                (void)PyObject_SetAttr(value, &_Py_ID(name), obj);
+                (void)PyObject_SetAttr(exc, &_Py_ID(name), obj);
             }
         }
-        PyErr_Restore(type, value, traceback);
+        PyErr_SetRaisedException(exc);
     }
 }
 
@@ -2989,7 +2971,7 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int oparg)
 
 
 Py_ssize_t
-_PyEval_RequestCodeExtraIndex(freefunc free)
+PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t new_index;
