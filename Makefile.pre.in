@@ -59,7 +59,7 @@ DSYMUTIL_PATH=  @DSYMUTIL_PATH@
 GNULD=		@GNULD@
 
 # Shell used by make (some versions default to the login shell, which is bad)
-SHELL=		/bin/sh
+SHELL=		/bin/sh -e
 
 # Use this to make a link between python$(VERSION) and python in $(BINDIR)
 LN=		@LN@
@@ -738,7 +738,6 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBRARY_OBJS)
 
 libpython$(LDVERSION).so: $(LIBRARY_OBJS) $(DTRACE_OBJS)
-	set -e; \
 	if test $(INSTSONAME) != $(LDLIBRARY); then \
 		$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM); \
 		$(LN) -f $(INSTSONAME) $@; \
@@ -895,8 +894,7 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # pybuilddir.txt is created too late. We cannot use it in Makefile
 # targets. ln --relative is not portable.
 sharedmods: $(SHAREDMODS) pybuilddir.txt
-	@set -e; \
-	target=`cat pybuilddir.txt`; \
+	@target=`cat pybuilddir.txt`; \
 	$(MKDIR_P) $$target; \
 	for mod in X $(SHAREDMODS); do \
 		if test $$mod != X; then \
@@ -909,8 +907,7 @@ checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py
 
 rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
-	@set -e; \
-	if [ ! -z $(DSYMUTIL) ] ; then \
+	@if [ ! -z $(DSYMUTIL) ] ; then \
 		echo $(DSYMUTIL_PATH) $(BUILDPYTHON); \
 		$(DSYMUTIL_PATH) $(BUILDPYTHON); \
 		if test -f $(LDLIBRARY); then \
@@ -1817,8 +1814,7 @@ commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
 sharedinstall: all
-		@set -e; \
-		for i in $(DESTDIRS); \
+		@for i in $(DESTDIRS); \
 		do \
 			if test ! -d $(DESTDIR)$$i; then \
 				echo "Creating directory $$i"; \
@@ -1826,8 +1822,7 @@ sharedinstall: all
 			else    true; \
 			fi; \
 		done
-		@set -e; \
-		for i in X $(SHAREDMODS); do \
+		@for i in X $(SHAREDMODS); do \
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
 		    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
@@ -1841,8 +1836,7 @@ sharedinstall: all
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
 altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
-	@set -e; \
-	for i in $(BINDIR) $(LIBDIR); \
+	@for i in $(BINDIR) $(LIBDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
@@ -1861,8 +1855,7 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 		fi; \
 		(cd $(DESTDIR)$(BINDIR); $(LN) python$(LDVERSION)$(EXE) python$(VERSION)$(EXE)); \
 	fi
-	@set -e; \
-	if test "$(PY_ENABLE_SHARED)" = 1 -o "$(STATIC_LIBPYTHON)" = 1; then \
+	@if test "$(PY_ENABLE_SHARED)" = 1 -o "$(STATIC_LIBPYTHON)" = 1; then \
 		if test -f $(LDLIBRARY) && test "$(PYTHONFRAMEWORKDIR)" = "no-framework" ; then \
 			if test -n "$(DLLLIBRARY)" ; then \
 				$(INSTALL_SHARED) $(DLLLIBRARY) $(DESTDIR)$(BINDIR); \
@@ -1949,8 +1942,7 @@ bininstall: altbininstall
 
 # Install the versioned manual page
 altmaninstall:
-	@set -e; \
-	for i in $(MANDIR) $(MANDIR)/man1; \
+	@for i in $(MANDIR) $(MANDIR)/man1; \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
@@ -2085,8 +2077,7 @@ COMPILEALL_OPTS=-j0
 
 TEST_MODULES=@TEST_MODULES@
 libinstall:	all $(srcdir)/Modules/xxmodule.c
-	@set -e; \
-	for i in $(SCRIPTDIR) $(LIBDEST); \
+	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
@@ -2094,8 +2085,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 		else	true; \
 		fi; \
 	done
-	@set -e; \
-	if test "$(TEST_MODULES)" = yes; then \
+	@if test "$(TEST_MODULES)" = yes; then \
 		subdirs="$(LIBSUBDIRS) $(TESTSUBDIRS)"; \
 	else \
 		subdirs="$(LIBSUBDIRS)"; \
@@ -2111,8 +2101,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 		else	true; \
 		fi; \
 	done
-	@set -e; \
-	for i in $(srcdir)/Lib/*.py; \
+	@for i in $(srcdir)/Lib/*.py; \
 	do \
 		if test -x $$i; then \
 			$(INSTALL_SCRIPT) $$i $(DESTDIR)$(LIBDEST); \
@@ -2122,8 +2111,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 			echo $(INSTALL_DATA) $$i $(LIBDEST); \
 		fi; \
 	done
-	@set -e; \
-	if test "$(TEST_MODULES)" = yes; then \
+	@if test "$(TEST_MODULES)" = yes; then \
 		subdirs="$(LIBSUBDIRS) $(TESTSUBDIRS)"; \
 	else \
 		subdirs="$(LIBSUBDIRS)"; \
@@ -2213,8 +2201,7 @@ scripts: $(SCRIPT_2TO3) $(SCRIPT_IDLE) $(SCRIPT_PYDOC) python-config
 # Install the include files
 INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
 inclinstall:
-	@set -e; \
-	for i in $(INCLDIRSTOMAKE); \
+	@for i in $(INCLDIRSTOMAKE); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
@@ -2232,20 +2219,17 @@ inclinstall:
 		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal; \
 	else	true; \
 	fi
-	@set -e; \
-	for i in $(srcdir)/Include/*.h; \
+	@for i in $(srcdir)/Include/*.h; \
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY); \
 	done
-	@set -e; \
-	for i in $(srcdir)/Include/cpython/*.h; \
+	@for i in $(srcdir)/Include/cpython/*.h; \
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/cpython; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/cpython; \
 	done
-	@set -e; \
-	for i in $(srcdir)/Include/internal/*.h; \
+	@for i in $(srcdir)/Include/internal/*.h; \
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal; \
@@ -2260,8 +2244,7 @@ LIBPL=		@LIBPL@
 LIBPC=		$(LIBDIR)/pkgconfig
 
 libainstall: all scripts
-	@set -e; \
-	for i in $(LIBDIR) $(LIBPL) $(LIBPC) $(BINDIR); \
+	@for i in $(LIBDIR) $(LIBPL) $(LIBPC) $(BINDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
@@ -2269,8 +2252,7 @@ libainstall: all scripts
 		else	true; \
 		fi; \
 	done
-	@set -e; \
-	if test "$(STATIC_LIBPYTHON)" = 1; then \
+	@if test "$(STATIC_LIBPYTHON)" = 1; then \
 		if test -d $(LIBRARY); then :; else \
 			if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 				if test "$(SHLIB_SUFFIX)" = .dll; then \
@@ -2300,8 +2282,7 @@ libainstall: all scripts
 	$(INSTALL_SCRIPT) $(SCRIPT_2TO3) $(DESTDIR)$(BINDIR)/2to3-$(VERSION)
 	$(INSTALL_SCRIPT) $(SCRIPT_IDLE) $(DESTDIR)$(BINDIR)/idle$(VERSION)
 	$(INSTALL_SCRIPT) $(SCRIPT_PYDOC) $(DESTDIR)$(BINDIR)/pydoc$(VERSION)
-	@set -e; \
-	if [ -s Modules/python.exp -a \
+	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
 		$(INSTALL_DATA) Modules/python.exp		\
@@ -2341,8 +2322,7 @@ frameworkinstallstructure:	$(LDLIBRARY)
 		exit 1; \
 	else true; \
 	fi
-	@set -e; \
-	for i in $(prefix)/Resources/English.lproj $(prefix)/lib; do\
+	@for i in $(prefix)/Resources/English.lproj $(prefix)/lib; do\
 		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $(DESTDIR)$$i"; \
 			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
