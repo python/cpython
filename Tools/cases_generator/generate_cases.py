@@ -337,11 +337,30 @@ class Instruction:
             out.emit("Py_UNREACHABLE();")
             return
 
+        need_to_declare = []
+        # Stack input is used in local effect
+        if self.local_effects and \
+            isinstance(val := self.local_effects.value, LocalEffectVarStack):
+            need_to_declare.append(val.name)
+        # Stack input is used in output effect
+        for oeffect in self.output_effects:
+            if not (typ := oeffect.type_annotation): continue
+            if not isinstance(typ, StackVarInputVar): continue
+            if oeffect.name in self.unmoved_names: 
+                print(
+                    f"Warn: {self.name} type annotation for {oeffect.name} will be ignored "
+                    "as it is unmoved")
+                continue
+            need_to_declare.append(typ.name)
+
         # Write input stack effect variable declarations and initializations
         ieffects = list(reversed(self.input_effects))
         usable_for_local_effect = {}
         all_input_effect_names = {}
         for i, ieffect in enumerate(ieffects):
+
+            if ieffect.name not in need_to_declare: continue
+
             isize = string_effect_size(
                 list_effect_size([ieff for ieff in ieffects[: i + 1]])
             )
@@ -396,8 +415,11 @@ class Instruction:
                     case StackVarTypeIndex(array=arr, index=idx):
                         val = f"{'TYPELOCALS_GET' if arr == 'locals' else 'TYPECONST_GET'}({idx})"
                     case StackVarInputVar(name=val):
-                        ieffect, j = all_input_effect_names[val]
-                        if len(oeffects) - i == len(ieffects) - j: 
+                        # We determined above that we don't need to write this stack effect
+                        if val not in need_to_declare:
+                            continue
+                        # Unmoved var, don't need to write
+                        if oeffect.name in self.unmoved_names:
                             continue
                     case _:
                         typing.assert_never(typ)
@@ -405,6 +427,10 @@ class Instruction:
                     out.emit(f"if ({oeffect.cond}) {{ TYPESTACK_POKE({osize}, {val}); }}")
                 else:
                     out.emit(f"TYPESTACK_POKE({osize}, {val});")
+                continue
+
+            # Don't touch unmoved stack vars
+            if oeffect.name in self.unmoved_names:
                 continue
             
             # Just output null

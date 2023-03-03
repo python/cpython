@@ -46,7 +46,6 @@
         }
 
         TARGET(POP_TOP) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
@@ -59,224 +58,164 @@
 
         TARGET(END_FOR) {
             {
-                PyTypeObject *value = TYPESTACK_PEEK(1);
                 STACK_SHRINK(1);
             }
             {
-                PyTypeObject *value = TYPESTACK_PEEK(1);
                 STACK_SHRINK(1);
             }
             break;
         }
 
         TARGET(UNARY_NEGATIVE) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(UNARY_NOT) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(UNARY_INVERT) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyLong_Type);
             break;
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyFloat_Type);
             break;
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyLong_Type);
             break;
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyFloat_Type);
             break;
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyUnicode_Type);
             break;
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyFloat_Type);
             break;
         }
 
         TARGET(BINARY_OP_ADD_INT) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyLong_Type);
             break;
         }
 
         TARGET(BINARY_CHECK_INT) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             TYPESTACK_POKE(1, &PyLong_Type);
             TYPESTACK_POKE(2, &PyLong_Type);
             break;
         }
 
         TARGET(BINARY_OP_ADD_INT_REST) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyLong_Type);
             break;
         }
 
         TARGET(BINARY_SUBSCR) {
-            PyTypeObject *sub = TYPESTACK_PEEK(1);
-            PyTypeObject *container = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(BINARY_SLICE) {
-            PyTypeObject *stop = TYPESTACK_PEEK(1);
-            PyTypeObject *start = TYPESTACK_PEEK(2);
-            PyTypeObject *container = TYPESTACK_PEEK(3);
             STACK_SHRINK(2);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(STORE_SLICE) {
-            PyTypeObject *stop = TYPESTACK_PEEK(1);
-            PyTypeObject *start = TYPESTACK_PEEK(2);
-            PyTypeObject *container = TYPESTACK_PEEK(3);
-            PyTypeObject *v = TYPESTACK_PEEK(4);
             STACK_SHRINK(4);
             break;
         }
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
-            PyTypeObject *sub = TYPESTACK_PEEK(1);
-            PyTypeObject *list = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
-            PyTypeObject *sub = TYPESTACK_PEEK(1);
-            PyTypeObject *tuple = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(BINARY_SUBSCR_DICT) {
-            PyTypeObject *sub = TYPESTACK_PEEK(1);
-            PyTypeObject *dict = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
-            PyTypeObject *sub = TYPESTACK_PEEK(1);
-            PyTypeObject *container = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(LIST_APPEND) {
-            PyTypeObject *v = TYPESTACK_PEEK(1);
-            PyTypeObject *list = TYPESTACK_PEEK(2 + (oparg-1));
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(SET_ADD) {
-            PyTypeObject *v = TYPESTACK_PEEK(1);
-            PyTypeObject *set = TYPESTACK_PEEK(2 + (oparg-1));
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(STORE_SUBSCR) {
-            PyTypeObject *sub = TYPESTACK_PEEK(1);
-            PyTypeObject *container = TYPESTACK_PEEK(2);
-            PyTypeObject *v = TYPESTACK_PEEK(3);
             STACK_SHRINK(3);
             break;
         }
 
         TARGET(STORE_SUBSCR_LIST_INT) {
-            PyTypeObject *sub = TYPESTACK_PEEK(1);
-            PyTypeObject *list = TYPESTACK_PEEK(2);
-            PyTypeObject *value = TYPESTACK_PEEK(3);
             STACK_SHRINK(3);
             break;
         }
 
         TARGET(STORE_SUBSCR_DICT) {
-            PyTypeObject *sub = TYPESTACK_PEEK(1);
-            PyTypeObject *dict = TYPESTACK_PEEK(2);
-            PyTypeObject *value = TYPESTACK_PEEK(3);
             STACK_SHRINK(3);
             break;
         }
 
         TARGET(DELETE_SUBSCR) {
-            PyTypeObject *sub = TYPESTACK_PEEK(1);
-            PyTypeObject *container = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(CALL_INTRINSIC_1) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(CALL_INTRINSIC_2) {
-            PyTypeObject *value1 = TYPESTACK_PEEK(1);
-            PyTypeObject *value2 = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
             break;
@@ -289,13 +228,11 @@
         }
 
         TARGET(INTERPRETER_EXIT) {
-            PyTypeObject *retval = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(RETURN_VALUE) {
-            PyTypeObject *retval = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
@@ -305,20 +242,17 @@
         }
 
         TARGET(GET_AITER) {
-            PyTypeObject *obj = TYPESTACK_PEEK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(GET_ANEXT) {
-            PyTypeObject *aiter = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(GET_AWAITABLE) {
-            PyTypeObject *iterable = TYPESTACK_PEEK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
@@ -354,16 +288,11 @@
         }
 
         TARGET(END_ASYNC_FOR) {
-            PyTypeObject *exc = TYPESTACK_PEEK(1);
-            PyTypeObject *awaitable = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(CLEANUP_THROW) {
-            PyTypeObject *exc_value = TYPESTACK_PEEK(1);
-            PyTypeObject *last_sent_val = TYPESTACK_PEEK(2);
-            PyTypeObject *sub_iter = TYPESTACK_PEEK(3);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
             TYPESTACK_POKE(2, NULL);
@@ -383,7 +312,6 @@
         }
 
         TARGET(STORE_NAME) {
-            PyTypeObject *v = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
@@ -393,14 +321,12 @@
         }
 
         TARGET(UNPACK_SEQUENCE) {
-            PyTypeObject *seq = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             STACK_GROW(oparg);
             break;
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
-            PyTypeObject *seq = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             STACK_GROW(oparg);
             TYPESTACK_POKE(oparg, NULL);
@@ -408,7 +334,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
-            PyTypeObject *seq = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             STACK_GROW(oparg);
             TYPESTACK_POKE(oparg, NULL);
@@ -416,7 +341,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
-            PyTypeObject *seq = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             STACK_GROW(oparg);
             TYPESTACK_POKE(oparg, NULL);
@@ -424,26 +348,21 @@
         }
 
         TARGET(UNPACK_EX) {
-            PyTypeObject *seq = TYPESTACK_PEEK(1);
             STACK_GROW((oparg & 0xFF) + (oparg >> 8));
             break;
         }
 
         TARGET(STORE_ATTR) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
-            PyTypeObject *v = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(DELETE_ATTR) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(STORE_GLOBAL) {
-            PyTypeObject *v = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
@@ -511,7 +430,6 @@
         }
 
         TARGET(STORE_DEREF) {
-            PyTypeObject *v = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
@@ -521,7 +439,6 @@
         }
 
         TARGET(BUILD_STRING) {
-            PyTypeObject **pieces = &TYPESTACK_PEEK(oparg);
             STACK_SHRINK(oparg);
             STACK_GROW(1);
             TYPESTACK_POKE(1, &PyUnicode_Type);
@@ -529,7 +446,6 @@
         }
 
         TARGET(BUILD_TUPLE) {
-            PyTypeObject **values = &TYPESTACK_PEEK(oparg);
             STACK_SHRINK(oparg);
             STACK_GROW(1);
             TYPESTACK_POKE(1, &PyTuple_Type);
@@ -537,7 +453,6 @@
         }
 
         TARGET(BUILD_LIST) {
-            PyTypeObject **values = &TYPESTACK_PEEK(oparg);
             STACK_SHRINK(oparg);
             STACK_GROW(1);
             TYPESTACK_POKE(1, &PyList_Type);
@@ -545,21 +460,16 @@
         }
 
         TARGET(LIST_EXTEND) {
-            PyTypeObject *iterable = TYPESTACK_PEEK(1);
-            PyTypeObject *list = TYPESTACK_PEEK(2 + (oparg-1));
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(SET_UPDATE) {
-            PyTypeObject *iterable = TYPESTACK_PEEK(1);
-            PyTypeObject *set = TYPESTACK_PEEK(2 + (oparg-1));
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(BUILD_SET) {
-            PyTypeObject **values = &TYPESTACK_PEEK(oparg);
             STACK_SHRINK(oparg);
             STACK_GROW(1);
             TYPESTACK_POKE(1, &PySet_Type);
@@ -567,7 +477,6 @@
         }
 
         TARGET(BUILD_MAP) {
-            PyTypeObject **values = &TYPESTACK_PEEK(oparg*2);
             STACK_SHRINK(oparg*2);
             STACK_GROW(1);
             TYPESTACK_POKE(1, &PyDict_Type);
@@ -579,34 +488,27 @@
         }
 
         TARGET(BUILD_CONST_KEY_MAP) {
-            PyTypeObject *keys = TYPESTACK_PEEK(1);
-            PyTypeObject **values = &TYPESTACK_PEEK(1 + oparg);
             STACK_SHRINK(oparg);
             TYPESTACK_POKE(1, &PyDict_Type);
             break;
         }
 
         TARGET(DICT_UPDATE) {
-            PyTypeObject *update = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(DICT_MERGE) {
-            PyTypeObject *update = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(MAP_ADD) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
-            PyTypeObject *key = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(LOAD_ATTR) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             if (oparg & 1) { TYPESTACK_POKE(1 + ((oparg & 1) ? 1 : 0), NULL); }
@@ -614,7 +516,6 @@
         }
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             if (oparg & 1) { TYPESTACK_POKE(1 + ((oparg & 1) ? 1 : 0), NULL); }
@@ -622,7 +523,6 @@
         }
 
         TARGET(LOAD_ATTR_MODULE) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             if (oparg & 1) { TYPESTACK_POKE(1 + ((oparg & 1) ? 1 : 0), NULL); }
@@ -630,7 +530,6 @@
         }
 
         TARGET(LOAD_ATTR_WITH_HINT) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             if (oparg & 1) { TYPESTACK_POKE(1 + ((oparg & 1) ? 1 : 0), NULL); }
@@ -638,7 +537,6 @@
         }
 
         TARGET(LOAD_ATTR_SLOT) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             if (oparg & 1) { TYPESTACK_POKE(1 + ((oparg & 1) ? 1 : 0), NULL); }
@@ -646,7 +544,6 @@
         }
 
         TARGET(LOAD_ATTR_CLASS) {
-            PyTypeObject *cls = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             if (oparg & 1) { TYPESTACK_POKE(1 + ((oparg & 1) ? 1 : 0), NULL); }
@@ -654,115 +551,86 @@
         }
 
         TARGET(LOAD_ATTR_PROPERTY) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             break;
         }
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             break;
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
-            PyTypeObject *value = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(STORE_ATTR_WITH_HINT) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
-            PyTypeObject *value = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(STORE_ATTR_SLOT) {
-            PyTypeObject *owner = TYPESTACK_PEEK(1);
-            PyTypeObject *value = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(COMPARE_OP) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(COMPARE_AND_BRANCH) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(COMPARE_AND_BRANCH_FLOAT) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(COMPARE_AND_BRANCH_INT) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(COMPARE_AND_BRANCH_STR) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(2);
             break;
         }
 
         TARGET(IS_OP) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyBool_Type);
             break;
         }
 
         TARGET(CONTAINS_OP) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, &PyBool_Type);
             break;
         }
 
         TARGET(CHECK_EG_MATCH) {
-            PyTypeObject *match_type = TYPESTACK_PEEK(1);
-            PyTypeObject *exc_value = TYPESTACK_PEEK(2);
             TYPESTACK_POKE(1, NULL);
             TYPESTACK_POKE(2, NULL);
             break;
         }
 
         TARGET(CHECK_EXC_MATCH) {
-            PyTypeObject *right = TYPESTACK_PEEK(1);
-            PyTypeObject *left = TYPESTACK_PEEK(2);
             TYPESTACK_POKE(1, &PyBool_Type);
             break;
         }
 
         TARGET(IMPORT_NAME) {
-            PyTypeObject *fromlist = TYPESTACK_PEEK(1);
-            PyTypeObject *level = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(IMPORT_FROM) {
-            PyTypeObject *from = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, NULL);
             break;
@@ -781,49 +649,41 @@
         }
 
         TARGET(POP_JUMP_IF_FALSE) {
-            PyTypeObject *cond = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(BB_TEST_POP_IF_FALSE) {
-            PyTypeObject *cond = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(POP_JUMP_IF_TRUE) {
-            PyTypeObject *cond = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(BB_TEST_POP_IF_TRUE) {
-            PyTypeObject *cond = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(POP_JUMP_IF_NOT_NONE) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(BB_TEST_POP_IF_NOT_NONE) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(POP_JUMP_IF_NONE) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(BB_TEST_POP_IF_NONE) {
-            PyTypeObject *value = TYPESTACK_PEEK(1);
             STACK_SHRINK(1);
             break;
         }
@@ -857,16 +717,12 @@
         }
 
         TARGET(GET_LEN) {
-            PyTypeObject *obj = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, &PyLong_Type);
             break;
         }
 
         TARGET(MATCH_CLASS) {
-            PyTypeObject *names = TYPESTACK_PEEK(1);
-            PyTypeObject *type = TYPESTACK_PEEK(2);
-            PyTypeObject *subject = TYPESTACK_PEEK(3);
             STACK_SHRINK(2);
             TYPESTACK_POKE(1, NULL);
             break;
@@ -891,60 +747,51 @@
         }
 
         TARGET(GET_ITER) {
-            PyTypeObject *iterable = TYPESTACK_PEEK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(GET_YIELD_FROM_ITER) {
-            PyTypeObject *iterable = TYPESTACK_PEEK(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(FOR_ITER) {
-            PyTypeObject *iter = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(BB_TEST_ITER) {
-            PyTypeObject *iter = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(FOR_ITER_LIST) {
-            PyTypeObject *iter = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(FOR_ITER_TUPLE) {
-            PyTypeObject *iter = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(FOR_ITER_RANGE) {
-            PyTypeObject *iter = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, NULL);
             break;
         }
 
         TARGET(FOR_ITER_GEN) {
-            PyTypeObject *iter = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             break;
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
-            PyTypeObject *mgr = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, NULL);
             TYPESTACK_POKE(2, NULL);
@@ -952,7 +799,6 @@
         }
 
         TARGET(BEFORE_WITH) {
-            PyTypeObject *mgr = TYPESTACK_PEEK(1);
             STACK_GROW(1);
             TYPESTACK_POKE(1, NULL);
             TYPESTACK_POKE(2, NULL);
@@ -972,7 +818,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
-            PyTypeObject *self = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             if (oparg & 1) { TYPESTACK_POKE(1 + ((oparg & 1) ? 1 : 0), NULL); }
@@ -980,7 +825,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
-            PyTypeObject *self = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             if (oparg & 1) { TYPESTACK_POKE(1 + ((oparg & 1) ? 1 : 0), NULL); }
@@ -988,7 +832,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
-            PyTypeObject *self = TYPESTACK_PEEK(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             if (oparg & 1) { TYPESTACK_POKE(1 + ((oparg & 1) ? 1 : 0), NULL); }
@@ -1000,9 +843,6 @@
         }
 
         TARGET(CALL) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1010,35 +850,24 @@
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(CALL_PY_EXACT_ARGS) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *null = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1046,9 +875,6 @@
         }
 
         TARGET(CALL_NO_KW_STR_1) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *null = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1056,9 +882,6 @@
         }
 
         TARGET(CALL_NO_KW_TUPLE_1) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *null = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1066,9 +889,6 @@
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1076,9 +896,6 @@
         }
 
         TARGET(CALL_NO_KW_BUILTIN_O) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1086,9 +903,6 @@
         }
 
         TARGET(CALL_NO_KW_BUILTIN_FAST) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1096,9 +910,6 @@
         }
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1106,9 +917,6 @@
         }
 
         TARGET(CALL_NO_KW_LEN) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1116,9 +924,6 @@
         }
 
         TARGET(CALL_NO_KW_ISINSTANCE) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *callable = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1126,17 +931,12 @@
         }
 
         TARGET(CALL_NO_KW_LIST_APPEND) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *self = TYPESTACK_PEEK(1 + oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             break;
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1144,8 +944,6 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1153,8 +951,6 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1162,8 +958,6 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
-            PyTypeObject **args = &TYPESTACK_PEEK(oparg);
-            PyTypeObject *method = TYPESTACK_PEEK(2 + oparg);
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1171,9 +965,6 @@
         }
 
         TARGET(CALL_FUNCTION_EX) {
-            PyTypeObject *kwargs = (oparg & 1) ? TYPESTACK_PEEK(((oparg & 1) ? 1 : 0)) : NULL;
-            PyTypeObject *callargs = TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0));
-            PyTypeObject *func = TYPESTACK_PEEK(2 + ((oparg & 1) ? 1 : 0));
             STACK_SHRINK(((oparg & 1) ? 1 : 0));
             STACK_SHRINK(2);
             TYPESTACK_POKE(1, NULL);
@@ -1181,11 +972,6 @@
         }
 
         TARGET(MAKE_FUNCTION) {
-            PyTypeObject *codeobj = TYPESTACK_PEEK(1);
-            PyTypeObject *closure = (oparg & 0x08) ? TYPESTACK_PEEK(1 + ((oparg & 0x08) ? 1 : 0)) : NULL;
-            PyTypeObject *annotations = (oparg & 0x04) ? TYPESTACK_PEEK(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0)) : NULL;
-            PyTypeObject *kwdefaults = (oparg & 0x02) ? TYPESTACK_PEEK(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0)) : NULL;
-            PyTypeObject *defaults = (oparg & 0x01) ? TYPESTACK_PEEK(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x01) ? 1 : 0)) : NULL;
             STACK_SHRINK(((oparg & 0x01) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x08) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             break;
@@ -1196,9 +982,6 @@
         }
 
         TARGET(BUILD_SLICE) {
-            PyTypeObject *step = (oparg == 3) ? TYPESTACK_PEEK(((oparg == 3) ? 1 : 0)) : NULL;
-            PyTypeObject *stop = TYPESTACK_PEEK(1 + ((oparg == 3) ? 1 : 0));
-            PyTypeObject *start = TYPESTACK_PEEK(2 + ((oparg == 3) ? 1 : 0));
             STACK_SHRINK(((oparg == 3) ? 1 : 0));
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
@@ -1206,8 +989,6 @@
         }
 
         TARGET(FORMAT_VALUE) {
-            PyTypeObject *fmt_spec = ((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? TYPESTACK_PEEK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)) : NULL;
-            PyTypeObject *value = TYPESTACK_PEEK(1 + (((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0));
             STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0));
             TYPESTACK_POKE(1, NULL);
             break;
@@ -1221,8 +1002,6 @@
         }
 
         TARGET(BINARY_OP) {
-            PyTypeObject *rhs = TYPESTACK_PEEK(1);
-            PyTypeObject *lhs = TYPESTACK_PEEK(2);
             STACK_SHRINK(1);
             TYPESTACK_POKE(1, NULL);
             break;

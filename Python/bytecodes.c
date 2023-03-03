@@ -440,12 +440,12 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(LIST_APPEND, (list, unused[oparg-1], v -- list: *list, unused[oparg-1])) {
+        inst(LIST_APPEND, (list, unused[oparg-1], v -- list, unused[oparg-1])) {
             ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
-        inst(SET_ADD, (set, unused[oparg-1], v -- set: *set, unused[oparg-1])) {
+        inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             int err = PySet_Add(set, v);
             Py_DECREF(v);
             ERROR_IF(err, error);
@@ -628,7 +628,7 @@ dummy_func(
             }
         }
 
-        inst(GET_ANEXT, (aiter -- aiter: *aiter, awaitable)) {
+        inst(GET_ANEXT, (aiter -- aiter, awaitable)) {
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
             PyTypeObject *type = Py_TYPE(aiter);
@@ -1292,7 +1292,7 @@ dummy_func(
             ERROR_IF(list == NULL, error);
         }
 
-        inst(LIST_EXTEND, (list, unused[oparg-1], iterable -- list: *list, unused[oparg-1])) {
+        inst(LIST_EXTEND, (list, unused[oparg-1], iterable -- list, unused[oparg-1])) {
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1310,7 +1310,7 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(SET_UPDATE, (set, unused[oparg-1], iterable -- set: *set, unused[oparg-1])) {
+        inst(SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1])) {
             int err = _PySet_Update(set, iterable);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
@@ -1869,7 +1869,7 @@ dummy_func(
             }
         }
 
-        inst(CHECK_EXC_MATCH, (left, right -- left: *left, b: PyBool_Type)) {
+        inst(CHECK_EXC_MATCH, (left, right -- left, b: PyBool_Type)) {
             assert(PyExceptionInstance_Check(left));
             if (check_except_type_valid(tstate, right) < 0) {
                  DECREF_INPUTS();
@@ -1888,7 +1888,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(IMPORT_FROM, (from -- from: *from, res)) {
+        inst(IMPORT_FROM, (from -- from, res)) {
             PyObject *name = GETITEM(names, oparg);
             res = import_from(tstate, from, name);
             ERROR_IF(res == NULL, error);
@@ -2155,7 +2155,7 @@ dummy_func(
             JUMPBY(-oparg);
         }
 
-        inst(GET_LEN, (obj -- obj: *obj, len_o: PyLong_Type)) {
+        inst(GET_LEN, (obj -- obj, len_o: PyLong_Type)) {
             // PUSH(len(TOS))
             Py_ssize_t len_i = PyObject_Length(obj);
             ERROR_IF(len_i < 0, error);
@@ -2245,7 +2245,7 @@ dummy_func(
             FOR_ITER_GEN,
         };
 
-        inst(FOR_ITER, (unused/1, iter -- iter: *iter, next)) {
+        inst(FOR_ITER, (unused/1, iter -- iter, next)) {
             #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -2281,7 +2281,7 @@ dummy_func(
         }
 
         // FOR_ITER
-        inst(BB_TEST_ITER, (unused/1, iter -- iter: *iter, next)) {
+        inst(BB_TEST_ITER, (unused/1, iter -- iter, next)) {
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
@@ -2303,7 +2303,7 @@ dummy_func(
             bb_test = true;
         }
 
-        inst(FOR_ITER_LIST, (unused/1, iter -- iter: *iter, next)) {
+        inst(FOR_ITER_LIST, (unused/1, iter -- iter, next)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
             _PyListIterObject *it = (_PyListIterObject *)iter;
@@ -2326,7 +2326,7 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        inst(FOR_ITER_TUPLE, (unused/1, iter -- iter: *iter, next)) {
+        inst(FOR_ITER_TUPLE, (unused/1, iter -- iter, next)) {
             assert(cframe.use_tracing == 0);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
@@ -2349,7 +2349,7 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        inst(FOR_ITER_RANGE, (unused/1, iter -- iter: *iter, next)) {
+        inst(FOR_ITER_RANGE, (unused/1, iter -- iter, next)) {
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
@@ -2370,7 +2370,7 @@ dummy_func(
             }
         }
 
-        inst(FOR_ITER_GEN, (unused/1, iter -- iter: *iter, unused)) {
+        inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             assert(cframe.use_tracing == 0);
             PyGenObject *gen = (PyGenObject *)iter;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
@@ -3247,7 +3247,7 @@ dummy_func(
             }
         }
 
-        inst(COPY, (bottom, unused[oparg-1] -- bottom: *bottom, unused[oparg-1], top: *bottom)) {
+        inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top: *bottom)) {
             assert(oparg > 0);
             top = Py_NewRef(bottom);
         }
