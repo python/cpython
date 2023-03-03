@@ -383,8 +383,8 @@ PyObject *PyCodec_StreamWriter(const char *encoding,
 }
 
 static void
-wrap_codec_error(const char *operation,
-                 const char *encoding)
+add_note_to_codec_error(const char *operation,
+                        const char *encoding)
 {
     PyObject *exc = PyErr_GetRaisedException();
     PyObject *note = PyUnicode_FromFormat("%s with '%s' codec failed",
@@ -424,7 +424,7 @@ _PyCodec_EncodeInternal(PyObject *object,
 
     result = PyObject_Call(encoder, args, NULL);
     if (result == NULL) {
-        wrap_codec_error("encoding", encoding);
+        add_note_to_codec_error("encoding", encoding);
         goto onError;
     }
 
@@ -469,7 +469,7 @@ _PyCodec_DecodeInternal(PyObject *object,
 
     result = PyObject_Call(decoder, args, NULL);
     if (result == NULL) {
-        wrap_codec_error("decoding", encoding);
+        add_note_to_codec_error("decoding", encoding);
         goto onError;
     }
     if (!PyTuple_Check(result) ||
