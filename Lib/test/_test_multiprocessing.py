@@ -1281,6 +1281,7 @@ class _TestQueue(BaseTestCase):
     def test_shutdown_empty(self):
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
             q.shutdown()
+            _wait()
             with self.assertRaises(
                 pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
                 ):
@@ -1294,6 +1295,7 @@ class _TestQueue(BaseTestCase):
         for q in multiprocessing.Queue(1), multiprocessing.JoinableQueue(1):
             q.put("data")
             q.shutdown()
+            _wait()
             q.get()
             with self.assertRaises(
                 pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
@@ -1304,6 +1306,7 @@ class _TestQueue(BaseTestCase):
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
             q.put("data")
             q.shutdown(immediate=True)
+            _wait()
             with self.assertRaises(
                 pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
                 ):
