@@ -382,20 +382,26 @@ PyObject *PyCodec_StreamWriter(const char *encoding,
     return codec_getstreamcodec(encoding, stream, errors, 3);
 }
 
-/* Helper that tries to ensure the reported exception chain indicates the
- * codec that was invoked to trigger the failure without changing the type
- * of the exception raised.
- */
 static void
 wrap_codec_error(const char *operation,
                  const char *encoding)
 {
-    /* TrySetFromCause will replace the active exception with a suitably
-     * updated clone if it can, otherwise it will leave the original
-     * exception alone.
-     */
-    _PyErr_TrySetFromCause("%s with '%s' codec failed",
-                           operation, encoding);
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *note = PyUnicode_FromFormat("%s with '%s' codec failed",
+                                          operation, encoding);
+    if (note == NULL) {
+        _PyErr_ChainExceptions1(exc);
+        return;
+    }
+    PyObject *res = _PyException_AddNote(exc, note);
+    Py_DECREF(note);
+
+    if (res == NULL) {
+        _PyErr_ChainExceptions1(exc);
+        return;
+    }
+    Py_DECREF(res);
+    PyErr_SetRaisedException(exc);
 }
 
 /* Encode an object (e.g. a Unicode object) using the given encoding
