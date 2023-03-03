@@ -78,8 +78,12 @@ class StackVarTypeIndex(Node):
     array: Literal["locals", "consts"]
     index: str
 
+@dataclass
+class StackVarInputVar(Node):
+    name: str
 
-StackVarType: TypeAlias = StackVarTypeLiteral | StackVarTypeIndex
+
+StackVarType: TypeAlias = StackVarTypeLiteral | StackVarTypeIndex | StackVarInputVar
 
 
 @dataclass
@@ -90,6 +94,9 @@ class StackEffect(Node):
     cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
+
+    def __eq__(self, other: 'StackEffect') -> bool:
+        return self.name == other.name
 
 
 @dataclass
@@ -270,7 +277,13 @@ class Parser(PLexer):
 
     @contextual
     def input(self) -> InputEffect | None:
-        return self.cache_effect() or self.stack_effect()
+        if r := self.cache_effect():
+            return r
+        r = self.stack_effect()
+        if r is None: return r
+        assert r.type_annotation is None, \
+            "Type annotations aren't allowed in input stack effect."
+        return r
 
     def outputs(self) -> list[OutputEffect] | None:
         # output (, output)*
@@ -344,10 +357,16 @@ class Parser(PLexer):
                 return StackVarTypeIndex(
                     "locals" if idstr == "locals" else "consts", 
                     index)
+        elif self.expect(lx.TIMES):
+            id = self.require(lx.IDENTIFIER)
+            return StackVarInputVar(id.text.strip())
+
 
     @contextual
     def local_effect(self) -> LocalEffect | None:
-        if self.expect(lx.IDENTIFIER).text.strip() == "locals":
+        if tok := self.expect(lx.IDENTIFIER):
+            if tok.text.strip() != "locals":
+                return
             self.require(lx.LBRACKET)
             if id := self.expect(lx.IDENTIFIER):
                 index = id.text.strip()
