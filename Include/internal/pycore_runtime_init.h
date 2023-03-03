@@ -114,7 +114,7 @@ extern "C" {
         }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .types = { \
-            .next_version_tag = _Py_MAX_GLOBAL_TYPE_VERSION_TAG + 1, \
+            .next_version_tag = _Py_TYPE_BASE_VERSION_TAG, \
         }, \
         .static_objects = { \
             .singletons = { \

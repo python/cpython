@@ -13,7 +13,8 @@ extern "C" {
 
 /* state */
 
-#define _Py_MAX_GLOBAL_TYPE_VERSION_TAG ((2<<16) - 1)
+#define _Py_TYPE_BASE_VERSION_TAG (2<<16)
+#define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 
 struct _types_runtime_state {
     /* Used to set PyTypeObject.tp_version_tag for core static types. */

@@ -565,12 +565,24 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
         return 0;
     }
 
-    if (NEXT_VERSION_TAG(interp) == 0) {
-        /* We have run out of version numbers */
-        return 0;
+    if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
+        /* static types */
+        if (NEXT_GLOBAL_VERSION_TAG > _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
+            /* We have run out of version numbers */
+            return 0;
+        }
+        type->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
+        assert (type->tp_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     }
-    type->tp_version_tag = NEXT_VERSION_TAG(interp)++;
-    assert (type->tp_version_tag != 0);
+    else {
+        /* heap types */
+        if (NEXT_VERSION_TAG(interp) == 0) {
+            /* We have run out of version numbers */
+            return 0;
+        }
+        type->tp_version_tag = NEXT_VERSION_TAG(interp)++;
+        assert (type->tp_version_tag != 0);
+    }
 
     PyObject *bases = type->tp_bases;
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
