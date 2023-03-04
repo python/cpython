@@ -1,0 +1,1 @@
+Avoid GHA CI macOS test_posix failure by using the appropriate macOS SDK.
