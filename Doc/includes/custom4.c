@@ -146,7 +146,7 @@ static PyMethodDef Custom_methods[] = {
 };
 
 static PyTypeObject CustomType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "custom4.Custom",
     .tp_doc = PyDoc_STR("Custom objects"),
     .tp_basicsize = sizeof(CustomObject),
@@ -163,7 +163,7 @@ static PyTypeObject CustomType = {
 };
 
 static PyModuleDef custommodule = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "custom4",
     .m_doc = "Example module that creates an extension type.",
     .m_size = -1,
