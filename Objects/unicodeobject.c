@@ -14784,14 +14784,21 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
         PyObject *u = unicode_new_empty();
-        if (u == NULL)
+        if (u == NULL) {
+            Py_XDECREF(iter);
             return NULL;
-        return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), u);
+        }
+        return Py_BuildValue("N(N)", iter, u);
     }
 }
 

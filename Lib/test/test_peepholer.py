@@ -984,6 +984,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         if expected_consts is None:
             expected_consts = consts
         opt_insts, opt_consts = self.get_optimized(insts, consts)
+        expected_insts = self.normalize_insts(expected_insts)
         self.assertInstructionsMatch(opt_insts, expected_insts)
         self.assertEqual(opt_consts, expected_consts)
 
@@ -996,11 +997,11 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 3, 14),
         ]
         expected = [
-            ('LOAD_NAME', '1', 11),
+            ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', '2', 13),
+            ('LOAD_CONST', 2, 13),
             lbl,
-            ('LOAD_CONST', '3', 14)
+            ('LOAD_CONST', 3, 14)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -1018,7 +1019,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         expected = [
             ('NOP', None, 11),
             ('NOP', None, 12),
-            ('LOAD_CONST', '3', 14)
+            ('LOAD_CONST', 3, 14)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -1031,9 +1032,9 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         expected = [
             lbl := self.Label(),
-            ('LOAD_NAME', '1', 11),
+            ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl, 12),
-            ('LOAD_CONST', '2', 13)
+            ('LOAD_CONST', 2, 13)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 

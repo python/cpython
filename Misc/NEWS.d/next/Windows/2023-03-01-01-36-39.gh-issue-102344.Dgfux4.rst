@@ -1,0 +1,2 @@
+Implement ``winreg.QueryValue`` using ``QueryValueEx`` and
+``winreg.SetValue`` using ``SetValueEx``. Patch by Max Bachmann.
