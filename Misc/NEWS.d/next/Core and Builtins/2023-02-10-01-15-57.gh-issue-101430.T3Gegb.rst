@@ -1,0 +1,2 @@
+Update :mod:`tracemalloc` to handle presize of object properly. Patch by
+Dong-hee Na.

@@ -667,7 +667,7 @@ x = (
                              "f'''{\t\f\r\n}'''",
                              ])
 
-        # Different error messeges are raised when a specfier ('!', ':' or '=') is used after an empty expression
+        # Different error messages are raised when a specifier ('!', ':' or '=') is used after an empty expression
         self.assertAllRaise(SyntaxError, "f-string: expression required before '!'",
                             ["f'{!r}'",
                              "f'{ !r}'",

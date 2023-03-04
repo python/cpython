@@ -502,7 +502,7 @@ mmap_resize_method(mmap_object *self,
         CloseHandle(self->map_handle);
         /* if the file mapping still exists, it cannot be resized. */
         if (self->tagname) {
-            self->map_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE,
+            self->map_handle = OpenFileMappingA(FILE_MAP_WRITE, FALSE,
                                     self->tagname);
             if (self->map_handle) {
                 PyErr_SetFromWindowsErr(ERROR_USER_MAPPED_FILE);
@@ -531,7 +531,7 @@ mmap_resize_method(mmap_object *self,
 
         /* create a new file mapping and map a new view */
         /* FIXME: call CreateFileMappingW with wchar_t tagname */
-        self->map_handle = CreateFileMapping(
+        self->map_handle = CreateFileMappingA(
             self->file_handle,
             NULL,
             PAGE_READWRITE,
@@ -1514,12 +1514,12 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     off_lo = (DWORD)(offset & 0xFFFFFFFF);
     /* For files, it would be sufficient to pass 0 as size.
        For anonymous maps, we have to pass the size explicitly. */
-    m_obj->map_handle = CreateFileMapping(m_obj->file_handle,
-                                          NULL,
-                                          flProtect,
-                                          size_hi,
-                                          size_lo,
-                                          m_obj->tagname);
+    m_obj->map_handle = CreateFileMappingA(m_obj->file_handle,
+                                           NULL,
+                                           flProtect,
+                                           size_hi,
+                                           size_lo,
+                                           m_obj->tagname);
     if (m_obj->map_handle != NULL) {
         m_obj->data = (char *) MapViewOfFile(m_obj->map_handle,
                                              dwDesiredAccess,
@@ -1603,6 +1603,12 @@ mmap_exec(PyObject *module)
     // Mostly a no-op on Linux and NetBSD, but useful on OpenBSD
     // for stack usage (even on x86 arch)
     ADD_INT_MACRO(module, MAP_STACK);
+#endif
+#ifdef MAP_ALIGNED_SUPER
+    ADD_INT_MACRO(module, MAP_ALIGNED_SUPER);
+#endif
+#ifdef MAP_CONCEAL
+    ADD_INT_MACRO(module, MAP_CONCEAL);
 #endif
     if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
         return -1;

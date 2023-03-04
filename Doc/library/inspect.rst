@@ -689,7 +689,7 @@ function.
    modified copy.
 
    .. versionchanged:: 3.5
-      Signature objects are picklable and hashable.
+      Signature objects are picklable and :term:`hashable`.
 
    .. attribute:: Signature.empty
 
@@ -768,7 +768,7 @@ function.
    you can use :meth:`Parameter.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
-      Parameter objects are picklable and hashable.
+      Parameter objects are picklable and :term:`hashable`.
 
    .. attribute:: Parameter.empty
 
@@ -802,8 +802,9 @@ function.
 
    .. attribute:: Parameter.kind
 
-      Describes how argument values are bound to the parameter.  Possible values
-      (accessible via :class:`Parameter`, like ``Parameter.KEYWORD_ONLY``):
+      Describes how argument values are bound to the parameter.  The possible
+      values are accessible via :class:`Parameter` (like ``Parameter.KEYWORD_ONLY``),
+      and support comparison and ordering, in the following order:
 
       .. tabularcolumns:: |l|L|
 

@@ -587,9 +587,12 @@ class timedelta:
     returning a timedelta, and addition or subtraction of a datetime
     and a timedelta giving a datetime.
 
-    Representation: (days, seconds, microseconds).  Why?  Because I
-    felt like it.
+    Representation: (days, seconds, microseconds).
     """
+    # The representation of (days, seconds, microseconds) was chosen
+    # arbitrarily; the exact rationale originally specified in the docstring
+    # was "Because I felt like it."
+
     __slots__ = '_days', '_seconds', '_microseconds', '_hashcode'
 
     def __new__(cls, days=0, seconds=0, microseconds=0,
