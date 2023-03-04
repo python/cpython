@@ -223,7 +223,7 @@ calliter_iternext(calliterobject *it)
     }
 
     result = _PyObject_CallNoArg(it->it_callable);
-    if (result != NULL) {
+    if (result != NULL && it->it_sentinel != NULL){
         int ok;
 
         ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
@@ -231,7 +231,6 @@ calliter_iternext(calliterobject *it)
             return result; /* Common case, fast path */
         }
 
-        Py_DECREF(result);
         if (ok > 0) {
             Py_CLEAR(it->it_callable);
             Py_CLEAR(it->it_sentinel);
@@ -242,6 +241,7 @@ calliter_iternext(calliterobject *it)
         Py_CLEAR(it->it_callable);
         Py_CLEAR(it->it_sentinel);
     }
+    Py_XDECREF(result);
     return NULL;
 }
 
