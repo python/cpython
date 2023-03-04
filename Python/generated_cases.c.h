@@ -711,14 +711,14 @@
         }
 
         TARGET(RAISE_VARARGS) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = detag(args)[1];
+                cause = args[1];
                 /* fall through */
             case 1:
-                exc = detag(args)[0];
+                exc = args[0];
                 /* fall through */
             case 0:
                 if (do_raise(tstate, exc, cause)) { STACK_SHRINK(oparg); goto exception_unwind; }
@@ -999,10 +999,10 @@
 
         TARGET(RERAISE) {
             _tagged_ptr exc = stack_pointer[-1];
-            _tagged_ptr values = (_tagged_ptr)(stack_pointer - (1 + oparg));
+            PyObject **values = (PyObject **)(stack_pointer - (1 + oparg));
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                PyObject *lasti = detag(values)[0];
+                PyObject *lasti = values[0];
                 if (PyLong_Check(lasti)) {
                     frame->prev_instr = _PyCode_CODE(frame->f_code) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
@@ -1585,9 +1585,9 @@
         }
 
         TARGET(BUILD_STRING) {
-            _tagged_ptr pieces = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **pieces = (PyObject **)(stack_pointer - oparg);
             PyObject *str;
-            str = _PyUnicode_JoinArray(&_Py_STR(empty), detag(pieces), oparg);
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 decref_unless_tagged(pieces[_i]);
             }
@@ -1599,9 +1599,9 @@
         }
 
         TARGET(BUILD_TUPLE) {
-            _tagged_ptr values = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **values = (PyObject **)(stack_pointer - oparg);
             PyObject *tup;
-            tup = _PyTuple_FromArraySteal(detag(values), oparg);
+            tup = _PyTuple_FromArraySteal(values, oparg);
             if (tup == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
             STACK_GROW(1);
@@ -1610,9 +1610,9 @@
         }
 
         TARGET(BUILD_LIST) {
-            _tagged_ptr values = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **values = (PyObject **)(stack_pointer - oparg);
             PyObject *list;
-            list = _PyList_FromArraySteal(detag(values), oparg);
+            list = _PyList_FromArraySteal(values, oparg);
             if (list == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
             STACK_GROW(1);
@@ -1653,14 +1653,14 @@
         }
 
         TARGET(BUILD_SET) {
-            _tagged_ptr values = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **values = (PyObject **)(stack_pointer - oparg);
             PyObject *set;
             set = PySet_New(NULL);
             if (set == NULL)
                 goto error;
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                PyObject *item = detag(values)[i];
+                PyObject *item = values[i];
                 if (err == 0)
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
@@ -1676,11 +1676,11 @@
         }
 
         TARGET(BUILD_MAP) {
-            _tagged_ptr values = (_tagged_ptr)(stack_pointer - oparg*2);
+            PyObject **values = (PyObject **)(stack_pointer - oparg*2);
             PyObject *map;
             map = _PyDict_FromItems(
-                    detag(values), 2,
-                    detag(values)+1, 2,
+                    values, 2,
+                    values+1, 2,
                     oparg);
             if (map == NULL)
                 goto error;
@@ -1740,7 +1740,7 @@
 
         TARGET(BUILD_CONST_KEY_MAP) {
             _tagged_ptr keys = stack_pointer[-1];
-            _tagged_ptr values = (_tagged_ptr)(stack_pointer - (1 + oparg));
+            PyObject **values = (PyObject **)(stack_pointer - (1 + oparg));
             PyObject *map;
             if (!PyTuple_CheckExact(detag(keys)) ||
                 PyTuple_GET_SIZE(detag(keys)) != (Py_ssize_t)oparg) {
@@ -1750,7 +1750,7 @@
             }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(detag(keys), 0), 1,
-                    detag(values), 1, oparg);
+                    values, 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 decref_unless_tagged(values[_i]);
             }
@@ -3024,7 +3024,7 @@
         TARGET(CALL) {
             PREDICTED(CALL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 4, "incorrect cache size");
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3032,7 +3032,7 @@
             int total_args = oparg;
             if (is_meth) {
                 detag(callable) = detag(method);
-                detag(args)--;
+                args--;
                 total_args++;
             }
             #if ENABLE_SPECIALIZATION
@@ -3048,12 +3048,12 @@
             #endif  /* ENABLE_SPECIALIZATION */
             if (!is_meth && Py_TYPE(detag(callable)) == &PyMethod_Type) {
                 is_meth = 1;  // For consistenct; it's dead, though
-                detag(args)--;
+                args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)detag(callable))->im_self;
-                detag(args)[0] = Py_NewRef(self);
+                args[0] = Py_NewRef(self);
                 detag(method) = ((PyMethodObject *)detag(callable))->im_func;
-                detag(args)[-1] = Py_NewRef(detag(method));
+                args[-1] = Py_NewRef(detag(method));
                 decref_unless_tagged(callable);
                 detag(callable) = detag(method);
             }
@@ -3067,7 +3067,7 @@
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(detag(callable)));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)detag(callable), locals,
-                    detag(args), positional_args, kwnames
+                    args, positional_args, kwnames
                 );
                 kwnames = NULL;
                 // Manipulate stack directly since we leave using DISPATCH_INLINED().
@@ -3083,12 +3083,12 @@
             /* Callable is not a normal Python function */
             if (cframe.use_tracing) {
                 res = trace_call_function(
-                    tstate, detag(callable), detag(args),
+                    tstate, detag(callable), args,
                     positional_args, kwnames);
             }
             else {
                 res = PyObject_Vectorcall(
-                    detag(callable), detag(args),
+                    detag(callable), args,
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                     kwnames);
             }
@@ -3096,7 +3096,7 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             decref_unless_tagged(callable);
             for (int i = 0; i < total_args; i++) {
-                decref_unless_tagged(args[i]);
+                Py_DECREF(args[i]);
             }
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
             STACK_SHRINK(oparg);
@@ -3124,7 +3124,7 @@
 
         TARGET(CALL_PY_EXACT_ARGS) {
             PREDICTED(CALL_PY_EXACT_ARGS);
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             uint32_t func_version = read_u32(&next_instr[1].cache);
@@ -3134,7 +3134,7 @@
             int argcount = oparg;
             if (is_meth) {
                 detag(callable) = detag(method);
-                detag(args)--;
+                args--;
                 argcount++;
             }
             DEOPT_IF(!PyFunction_Check(detag(callable)), CALL);
@@ -3146,7 +3146,7 @@
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
             for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = detag(args)[i];
+                new_frame->localsplus[i] = args[i];
             }
             // Manipulate stack directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
@@ -3155,7 +3155,7 @@
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             uint32_t func_version = read_u32(&next_instr[1].cache);
@@ -3166,7 +3166,7 @@
             int argcount = oparg;
             if (is_meth) {
                 detag(callable) = detag(method);
-                detag(args)--;
+                args--;
                 argcount++;
             }
             DEOPT_IF(!PyFunction_Check(detag(callable)), CALL);
@@ -3179,7 +3179,7 @@
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, code->co_argcount);
             for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = detag(args)[i];
+                new_frame->localsplus[i] = args[i];
             }
             for (int i = argcount; i < code->co_argcount; i++) {
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i - min_args);
@@ -3192,7 +3192,7 @@
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr null = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3200,7 +3200,7 @@
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
             DEOPT_IF(detag(null) != NULL, CALL);
-            PyObject *obj = detag(args)[0];
+            PyObject *obj = args[0];
             DEOPT_IF(detag(callable) != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
             res = Py_NewRef(Py_TYPE(obj));
@@ -3214,7 +3214,7 @@
         }
 
         TARGET(CALL_NO_KW_STR_1) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr null = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3224,7 +3224,7 @@
             DEOPT_IF(detag(null) != NULL, CALL);
             DEOPT_IF(detag(callable) != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = detag(args)[0];
+            PyObject *arg = args[0];
             res = PyObject_Str(arg);
             Py_DECREF(arg);
             Py_DECREF(&PyUnicode_Type);  // I.e., callable
@@ -3238,7 +3238,7 @@
         }
 
         TARGET(CALL_NO_KW_TUPLE_1) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr null = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3247,7 +3247,7 @@
             DEOPT_IF(detag(null) != NULL, CALL);
             DEOPT_IF(detag(callable) != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = detag(args)[0];
+            PyObject *arg = args[0];
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
             Py_DECREF(&PyTuple_Type);  // I.e., tuple
@@ -3261,7 +3261,7 @@
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3269,7 +3269,7 @@
             int total_args = oparg;
             if (is_meth) {
                 detag(callable) = detag(method);
-                detag(args)--;
+                args--;
                 total_args++;
             }
             int kwnames_len = KWNAMES_LEN();
@@ -3277,12 +3277,12 @@
             PyTypeObject *tp = (PyTypeObject *)detag(callable);
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
-            res = tp->tp_vectorcall((PyObject *)tp, detag(args),
+            res = tp->tp_vectorcall((PyObject *)tp, args,
                                     total_args - kwnames_len, kwnames);
             kwnames = NULL;
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                decref_unless_tagged(args[i]);
+                Py_DECREF(args[i]);
             }
             Py_DECREF(tp);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3295,7 +3295,7 @@
         }
 
         TARGET(CALL_NO_KW_BUILTIN_O) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3306,7 +3306,7 @@
             int total_args = oparg;
             if (is_meth) {
                 detag(callable) = detag(method);
-                detag(args)--;
+                args--;
                 total_args++;
             }
             DEOPT_IF(total_args != 1, CALL);
@@ -3319,7 +3319,7 @@
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *arg = detag(args)[0];
+            PyObject *arg = args[0];
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(detag(callable)), arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3336,7 +3336,7 @@
         }
 
         TARGET(CALL_NO_KW_BUILTIN_FAST) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3347,7 +3347,7 @@
             int total_args = oparg;
             if (is_meth) {
                 detag(callable) = detag(method);
-                detag(args)--;
+                args--;
                 total_args++;
             }
             DEOPT_IF(!PyCFunction_CheckExact(detag(callable)), CALL);
@@ -3357,13 +3357,13 @@
             /* res = func(self, args, nargs) */
             res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(detag(callable)),
-                detag(args),
+                args,
                 total_args);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                decref_unless_tagged(args[i]);
+                Py_DECREF(args[i]);
             }
             decref_unless_tagged(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3381,7 +3381,7 @@
         }
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3391,7 +3391,7 @@
             int total_args = oparg;
             if (is_meth) {
                 detag(callable) = detag(method);
-                detag(args)--;
+                args--;
                 total_args++;
             }
             DEOPT_IF(!PyCFunction_CheckExact(detag(callable)), CALL);
@@ -3404,7 +3404,7 @@
                 PyCFunction_GET_FUNCTION(detag(callable));
             res = cfunc(
                 PyCFunction_GET_SELF(detag(callable)),
-                detag(args),
+                args,
                 total_args - KWNAMES_LEN(),
                 kwnames
             );
@@ -3413,7 +3413,7 @@
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                decref_unless_tagged(args[i]);
+                Py_DECREF(args[i]);
             }
             decref_unless_tagged(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3426,7 +3426,7 @@
         }
 
         TARGET(CALL_NO_KW_LEN) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3437,14 +3437,14 @@
             int total_args = oparg;
             if (is_meth) {
                 detag(callable) = detag(method);
-                detag(args)--;
+                args--;
                 total_args++;
             }
             DEOPT_IF(total_args != 1, CALL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(detag(callable) != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = detag(args)[0];
+            PyObject *arg = args[0];
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
                 goto error;
@@ -3463,7 +3463,7 @@
         }
 
         TARGET(CALL_NO_KW_ISINSTANCE) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr callable = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
@@ -3474,15 +3474,15 @@
             int total_args = oparg;
             if (is_meth) {
                 detag(callable) = detag(method);
-                detag(args)--;
+                args--;
                 total_args++;
             }
             DEOPT_IF(total_args != 2, CALL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(detag(callable) != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
-            PyObject *cls = detag(args)[1];
-            PyObject *inst = detag(args)[0];
+            PyObject *cls = args[1];
+            PyObject *inst = args[0];
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
                 goto error;
@@ -3502,7 +3502,7 @@
         }
 
         TARGET(CALL_NO_KW_LIST_APPEND) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr self = stack_pointer[-(1 + oparg)];
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             assert(cframe.use_tracing == 0);
@@ -3513,7 +3513,7 @@
             DEOPT_IF(detag(method) != interp->callable_cache.list_append, CALL);
             DEOPT_IF(!PyList_Check(detag(self)), CALL);
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)detag(self), detag(args)[0]) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)detag(self), args[0]) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             decref_unless_tagged(self);
@@ -3526,14 +3526,14 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             assert(kwnames == NULL);
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(args)--;
+                args--;
                 total_args++;
             }
             PyMethodDescrObject *callable =
@@ -3542,8 +3542,8 @@
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != METH_O, CALL);
-            PyObject *arg = detag(args)[1];
-            PyObject *self = detag(args)[0];
+            PyObject *arg = args[1];
+            PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -3568,13 +3568,13 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(args)--;
+                args--;
                 total_args++;
             }
             PyMethodDescrObject *callable =
@@ -3583,19 +3583,19 @@
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
             PyTypeObject *d_type = callable->d_common.d_type;
-            PyObject *self = detag(args)[0];
+            PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            res = cfunc(self, detag(args) + 1, nargs - KWNAMES_LEN(), kwnames);
+            res = cfunc(self, args + 1, nargs - KWNAMES_LEN(), kwnames);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             kwnames = NULL;
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                decref_unless_tagged(args[i]);
+                Py_DECREF(args[i]);
             }
             Py_DECREF(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3608,7 +3608,7 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             assert(kwnames == NULL);
@@ -3616,14 +3616,14 @@
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(args)--;
+                args--;
                 total_args++;
             }
             DEOPT_IF(total_args != 1, CALL);
             PyMethodDescrObject *callable = (PyMethodDescrObject *)SECOND();
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;
-            PyObject *self = detag(args)[0];
+            PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             DEOPT_IF(meth->ml_flags != METH_NOARGS, CALL);
             STAT_INC(CALL, hit);
@@ -3648,14 +3648,14 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
-            _tagged_ptr args = (_tagged_ptr)(stack_pointer - oparg);
+            PyObject **args = (PyObject **)(stack_pointer - oparg);
             _tagged_ptr method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             assert(kwnames == NULL);
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(args)--;
+                args--;
                 total_args++;
             }
             PyMethodDescrObject *callable =
@@ -3664,17 +3664,17 @@
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != METH_FASTCALL, CALL);
-            PyObject *self = detag(args)[0];
+            PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
             _PyCFunctionFast cfunc =
                 (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
-            res = cfunc(self, detag(args) + 1, nargs);
+            res = cfunc(self, args + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
-                decref_unless_tagged(args[i]);
+                Py_DECREF(args[i]);
             }
             Py_DECREF(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }

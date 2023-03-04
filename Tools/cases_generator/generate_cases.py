@@ -236,9 +236,15 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
-        self.input_effects = [
-            effect.with_type("_tagged_ptr") for effect in inst.inputs if isinstance(effect, StackEffect)
-        ]
+        self.input_effects = []
+        for effect in inst.inputs:
+            if isinstance(effect, StackEffect):
+                if not effect.type:
+                    typ = "_tagged_ptr"
+                    if effect.size:
+                        typ += " *"
+                    effect = effect.with_type(typ)
+                self.input_effects.append(effect)
         self.output_effects = inst.outputs  # For consistency/completeness
         unmoved_names: set[str] = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):
