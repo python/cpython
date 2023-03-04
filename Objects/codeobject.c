@@ -30,11 +30,18 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
             if (cb(event, co) < 0) {
                 // Don't risk resurrecting the object if an unraisablehook keeps
                 // a reference; pass a string as context.
+                PyObject *context = NULL;
                 PyObject *repr = code_repr(co);
-                PyObject *context = PyUnicode_FromFormat("watcher callback for %U", repr);
+                if (repr) {
+                    context = PyUnicode_FromFormat("watcher callback for %U", repr);
+                    Py_DECREF(repr);
+                }
+                if (context == NULL) {
+                    context = Py_None;
+                    Py_INCREF(context);
+                }
                 PyErr_WriteUnraisable(context);
                 Py_DECREF(context);
-                Py_DECREF(repr);
             }
         }
         i++;

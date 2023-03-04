@@ -5756,6 +5756,10 @@ _PyDict_SendEvent(int watcher_bits,
                 // dict as context, just an informative string message.  Dict
                 // repr can call arbitrary code, so we invent a simpler version.
                 PyObject *context = PyUnicode_FromFormat("watcher callback for <dict at %p>", mp);
+                if (context == NULL) {
+                    context = Py_None;
+                    Py_INCREF(context);
+                }
                 PyErr_WriteUnraisable(context);
                 Py_DECREF(context);
             }

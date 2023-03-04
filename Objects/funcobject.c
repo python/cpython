@@ -25,11 +25,18 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             if (cb(event, func, new_value) < 0) {
                 // Don't risk resurrecting the func if an unraisablehook keeps a
                 // reference; pass a string as context.
+                PyObject *context = NULL;
                 PyObject *repr = func_repr(func);
-                PyObject *context = PyUnicode_FromFormat("watcher callback for %U", repr);
+                if (repr != NULL) {
+                    context = PyUnicode_FromFormat("watcher callback for %U", repr);
+                    Py_DECREF(repr);
+                }
+                if (context == NULL) {
+                    context = Py_None;
+                    Py_INCREF(context);
+                }
                 PyErr_WriteUnraisable(context);
                 Py_DECREF(context);
-                Py_DECREF(repr);
             }
         }
         i++;
