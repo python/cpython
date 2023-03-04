@@ -22,8 +22,7 @@ class PowTest(unittest.TestCase):
             for i in list(range(-10, 0)) + list(range(1, 10)):
                 ii = type(i)
                 inv = pow(ii, -1) # inverse of ii
-                    for j in range(1, 11):
-                        jj = -othertype(j)
+                for jj in range(-10, 0):
                         self.assertAlmostEqual(pow(ii, jj), pow(inv, -jj))
 
         for othertype in int, float:
