@@ -19,7 +19,6 @@ class PowTest(unittest.TestCase):
                 self.assertEqual(pow(2, i), pow2)
                 if i != 30 : pow2 = pow2*2
 
-            for othertype in (int,):
                 for i in list(range(-10, 0)) + list(range(1, 10)):
                     ii = type(i)
                     inv = pow(ii, -1) # inverse of ii
