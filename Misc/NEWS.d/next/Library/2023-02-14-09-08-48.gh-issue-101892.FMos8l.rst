@@ -1,0 +1,3 @@
+Callable iterators no longer raise :class:`SystemError` when the
+callable object exhausts the iterator but forgets to either return a
+sentinel value or raise :class:`StopIteration`.
