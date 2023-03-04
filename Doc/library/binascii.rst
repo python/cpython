@@ -49,7 +49,7 @@ The :mod:`binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string, strict_mode=False)
+.. function:: a2b_base64(string, /, *, strict_mode=False)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
@@ -121,8 +121,6 @@ The :mod:`binascii` module defines the following functions:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
-      To generate the same numeric value when using Python 2 or earlier,
-      use ``crc32(data) & 0xffffffff``.
 
 .. function:: b2a_hex(data[, sep[, bytes_per_sep=1]])
               hexlify(data[, sep[, bytes_per_sep=1]])

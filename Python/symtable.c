@@ -1,6 +1,5 @@
 #include "Python.h"
 #include "pycore_ast.h"           // identifier, stmt_ty
-#include "pycore_compile.h"       // _Py_Mangle(), _PyFuture_FromAST()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
@@ -74,8 +73,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_table = st;
     ste->ste_id = k; /* ste owns reference to k */
 
-    Py_INCREF(name);
-    ste->ste_name = name;
+    ste->ste_name = Py_NewRef(name);
 
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
@@ -278,7 +276,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     asdl_stmt_seq *seq;
     int i;
     PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
     int starting_recursion_depth;
 
     if (st == NULL)
@@ -287,8 +284,7 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         _PySymtable_Free(st);
         return NULL;
     }
-    Py_INCREF(filename);
-    st->st_filename = filename;
+    st->st_filename = Py_NewRef(filename);
     st->st_future = future;
 
     /* Setup recursion depth check counters */
@@ -298,12 +294,10 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
+    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
+    st->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
     /* Make the initial symbol information gathering pass */
     if (!symtable_enter_block(st, &_Py_ID(top), ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
@@ -378,17 +372,17 @@ PySymtable_Lookup(struct symtable *st, void *key)
     if (k == NULL)
         return NULL;
     v = PyDict_GetItemWithError(st->st_blocks, k);
+    Py_DECREF(k);
+
     if (v) {
         assert(PySTEntry_Check(v));
-        Py_INCREF(v);
     }
     else if (!PyErr_Occurred()) {
         PyErr_SetString(PyExc_KeyError,
                         "unknown symbol table entry");
     }
 
-    Py_DECREF(k);
-    return (PySTEntryObject *)v;
+    return (PySTEntryObject *)Py_XNewRef(v);
 }
 
 long
@@ -1493,7 +1487,8 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
          */
         if (ste->ste_comprehension) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
-            if (target_in_scope & DEF_COMP_ITER) {
+            if ((target_in_scope & DEF_COMP_ITER) &&
+                (target_in_scope & DEF_LOCAL)) {
                 PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_CONFLICT, target_name);
                 PyErr_RangedSyntaxLocationObject(st->st_filename,
                                                   e->lineno,
@@ -1544,7 +1539,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
     /* We should always find either a FunctionBlock, ModuleBlock or ClassBlock
        and should never fall to this case
     */
-    assert(0);
+    Py_UNREACHABLE();
     return 0;
 }
 
@@ -1952,8 +1947,7 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
             return 0;
     }
     else {
-        store_name = name;
-        Py_INCREF(store_name);
+        store_name = Py_NewRef(name);
     }
     if (!_PyUnicode_EqualToASCIIString(name, "*")) {
         int r = symtable_add_def(st, store_name, DEF_IMPORT, LOCATION(a));
@@ -2147,14 +2141,79 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
         _PyArena_Free(arena);
         return NULL;
     }
-    PyFutureFeatures *future = _PyFuture_FromAST(mod, filename);
-    if (future == NULL) {
+    PyFutureFeatures future;
+    if (!_PyFuture_FromAST(mod, filename, &future)) {
         _PyArena_Free(arena);
         return NULL;
     }
-    future->ff_features |= flags->cf_flags;
-    st = _PySymtable_Build(mod, filename, future);
-    PyObject_Free((void *)future);
+    future.ff_features |= flags->cf_flags;
+    st = _PySymtable_Build(mod, filename, &future);
     _PyArena_Free(arena);
     return st;
 }
+
+PyObject *
+_Py_Mangle(PyObject *privateobj, PyObject *ident)
+{
+    /* Name mangling: __private becomes _classname__private.
+       This is independent from how the name is used. */
+    if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
+        PyUnicode_READ_CHAR(ident, 0) != '_' ||
+        PyUnicode_READ_CHAR(ident, 1) != '_') {
+        return Py_NewRef(ident);
+    }
+    size_t nlen = PyUnicode_GET_LENGTH(ident);
+    size_t plen = PyUnicode_GET_LENGTH(privateobj);
+    /* Don't mangle __id__ or names with dots.
+
+       The only time a name with a dot can occur is when
+       we are compiling an import statement that has a
+       package name.
+
+       TODO(jhylton): Decide whether we want to support
+       mangling of the module name, e.g. __M.X.
+    */
+    if ((PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
+         PyUnicode_READ_CHAR(ident, nlen-2) == '_') ||
+        PyUnicode_FindChar(ident, '.', 0, nlen, 1) != -1) {
+        return Py_NewRef(ident); /* Don't mangle __whatever__ */
+    }
+    /* Strip leading underscores from class name */
+    size_t ipriv = 0;
+    while (PyUnicode_READ_CHAR(privateobj, ipriv) == '_') {
+        ipriv++;
+    }
+    if (ipriv == plen) {
+        return Py_NewRef(ident); /* Don't mangle if class is just underscores */
+    }
+    plen -= ipriv;
+
+    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "private identifier too large to be mangled");
+        return NULL;
+    }
+
+    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
+    if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar) {
+        maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
+    }
+
+    PyObject *result = PyUnicode_New(1 + nlen + plen, maxchar);
+    if (!result) {
+        return NULL;
+    }
+    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
+    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
+    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    assert(_PyUnicode_CheckConsistency(result, 1));
+    return result;
+}
+

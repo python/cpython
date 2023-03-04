@@ -1,5 +1,0 @@
-Added :c:func:`PyErr_GetHandledException` and
-:c:func:`PyErr_SetHandledException` as simpler alternatives to
-:c:func:`PyErr_GetExcInfo` and :c:func:`PyErr_SetExcInfo`.
-
-They are included in the stable ABI.

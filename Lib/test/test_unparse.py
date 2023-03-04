@@ -6,6 +6,7 @@ import pathlib
 import random
 import tokenize
 import ast
+from test.support.ast_helper import ASTTestMixin
 
 
 def read_pyfile(filename):
@@ -128,46 +129,7 @@ docstring_prefixes = (
     "async def foo():\n    ",
 )
 
-class ASTTestCase(unittest.TestCase):
-    def assertASTEqual(self, ast1, ast2):
-        # Ensure the comparisons start at an AST node
-        self.assertIsInstance(ast1, ast.AST)
-        self.assertIsInstance(ast2, ast.AST)
-
-        # An AST comparison routine modeled after ast.dump(), but
-        # instead of string building, it traverses the two trees
-        # in lock-step.
-        def traverse_compare(a, b, missing=object()):
-            if type(a) is not type(b):
-                self.fail(f"{type(a)!r} is not {type(b)!r}")
-            if isinstance(a, ast.AST):
-                for field in a._fields:
-                    value1 = getattr(a, field, missing)
-                    value2 = getattr(b, field, missing)
-                    # Singletons are equal by definition, so further
-                    # testing can be skipped.
-                    if value1 is not value2:
-                        traverse_compare(value1, value2)
-            elif isinstance(a, list):
-                try:
-                    for node1, node2 in zip(a, b, strict=True):
-                        traverse_compare(node1, node2)
-                except ValueError:
-                    # Attempt a "pretty" error ala assertSequenceEqual()
-                    len1 = len(a)
-                    len2 = len(b)
-                    if len1 > len2:
-                        what = "First"
-                        diff = len1 - len2
-                    else:
-                        what = "Second"
-                        diff = len2 - len1
-                    msg = f"{what} list contains {diff} additional elements."
-                    raise self.failureException(msg) from None
-            elif a != b:
-                self.fail(f"{a!r} != {b!r}")
-        traverse_compare(ast1, ast2)
-
+class ASTTestCase(ASTTestMixin, unittest.TestCase):
     def check_ast_roundtrip(self, code1, **kwargs):
         with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
             ast1 = ast.parse(code1, **kwargs)
@@ -422,6 +384,12 @@ class UnparseTestCase(ASTTestCase):
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
 
+    def test_import_from_level_none(self):
+        tree = ast.ImportFrom(module='mod', names=[ast.alias(name='x')])
+        self.assertEqual(ast.unparse(tree), "from mod import x")
+        tree = ast.ImportFrom(module='mod', names=[ast.alias(name='x')], level=None)
+        self.assertEqual(ast.unparse(tree), "from mod import x")
+
     def test_docstrings(self):
         docstrings = (
             'this ends with double quote"',
@@ -648,6 +616,9 @@ class CosmeticTestCase(ASTTestCase):
                     self.check_src_roundtrip(source.format(target=target))
 
     def test_star_expr_assign_target_multiple(self):
+        self.check_src_roundtrip("() = []")
+        self.check_src_roundtrip("[] = ()")
+        self.check_src_roundtrip("() = [a] = c, = [d] = e, f = () = g = h")
         self.check_src_roundtrip("a = b = c = d")
         self.check_src_roundtrip("a, b = c, d = e, f = g")
         self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")

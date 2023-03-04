@@ -320,7 +320,7 @@ Standard names are defined for the following types:
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
-   The type of traceback objects such as found in ``sys.exc_info()[2]``.
+   The type of traceback objects such as found in ``sys.exception().__traceback__``.
 
    See :ref:`the language reference <traceback-objects>` for details of the
    available attributes and operations, and guidance on creating tracebacks
@@ -417,6 +417,12 @@ Standard names are defined for the following types:
 
       .. versionadded:: 3.9
 
+   .. describe:: hash(proxy)
+
+      Return a hash of the underlying mapping.
+
+      .. versionadded:: 3.12
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
@@ -480,7 +486,7 @@ Coroutine Utility Functions
    The generator-based coroutine is still a :term:`generator iterator`,
    but is also considered to be a :term:`coroutine` object and is
    :term:`awaitable`.  However, it may not necessarily implement
-   the :meth:`__await__` method.
+   the :meth:`~object.__await__` method.
 
    If *gen_func* is a generator function, it will be modified in-place.
 

@@ -109,7 +109,8 @@ class _LocaleTests(unittest.TestCase):
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
     @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten, bpo-46390"
     )
     def test_lc_numeric_nl_langinfo(self):
         # Test nl_langinfo against known values
@@ -128,7 +129,8 @@ class _LocaleTests(unittest.TestCase):
             self.skipTest('no suitable locales')
 
     @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten, bpo-46390"
     )
     def test_lc_numeric_localeconv(self):
         # Test localeconv against known values

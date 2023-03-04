@@ -1,3 +1,0 @@
-Update the introduction to documentation for :mod:`os.path` to remove
-warnings that became irrelevant after the implementations of :pep:`383` and
-:pep:`529`.

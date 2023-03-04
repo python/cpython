@@ -31,7 +31,7 @@ Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
 
 /* Deprecated since PyEval_CallObjectWithKeywords is deprecated */
 #define PyEval_CallObject(callable, arg) \
-    PyEval_CallObjectWithKeywords(callable, arg, (PyObject *)NULL)
+    PyEval_CallObjectWithKeywords((callable), (arg), _PyObject_CAST(_Py_NULL))
 
 Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallFunction(
     PyObject *callable, const char *format, ...);
