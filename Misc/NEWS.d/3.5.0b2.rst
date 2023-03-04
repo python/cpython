@@ -1,0 +1,104 @@
+.. bpo: 24284
+.. date: 9208
+.. nonce: NvtEnc
+.. release date: 2015-05-31
+.. section: Core and Builtins
+
+The startswith and endswith methods of the str class no longer return True
+when finding the empty string and the indexes are completely out of range.
+
+..
+
+.. bpo: 24115
+.. date: 9207
+.. nonce: y9e_MO
+.. section: Core and Builtins
+
+Update uses of PyObject_IsTrue(), PyObject_Not(), PyObject_IsInstance(),
+PyObject_RichCompareBool() and _PyDict_Contains() to check for and handle
+errors correctly.
+
+..
+
+.. bpo: 24328
+.. date: 9206
+.. nonce: 5gL8or
+.. section: Core and Builtins
+
+Fix importing one character extension modules.
+
+..
+
+.. bpo: 11205
+.. date: 9205
+.. nonce: bikrRP
+.. section: Core and Builtins
+
+In dictionary displays, evaluate the key before the value.
+
+..
+
+.. bpo: 24285
+.. date: 9204
+.. nonce: wvJumr
+.. section: Core and Builtins
+
+Fixed regression that prevented importing extension modules from inside
+packages. Patch by Petr Viktorin.
+
+..
+
+.. bpo: 23247
+.. date: 9203
+.. nonce: nN-K74
+.. section: Library
+
+Fix a crash in the StreamWriter.reset() of CJK codecs.
+
+..
+
+.. bpo: 24270
+.. date: 9202
+.. nonce: M2rJNs
+.. section: Library
+
+Add math.isclose() and cmath.isclose() functions as per :pep:`485`. Contributed
+by Chris Barker and Tal Einat.
+
+..
+
+.. bpo: 5633
+.. date: 9201
+.. nonce: JNzKZq
+.. section: Library
+
+Fixed timeit when the statement is a string and the setup is not.
+
+..
+
+.. bpo: 24326
+.. date: 9200
+.. nonce: 4t_6Gy
+.. section: Library
+
+Fixed audioop.ratecv() with non-default weightB argument. Original patch by
+David Moore.
+
+..
+
+.. bpo: 16991
+.. date: 9199
+.. nonce: 19_Zmj
+.. section: Library
+
+Add a C implementation of OrderedDict.
+
+..
+
+.. bpo: 23934
+.. date: 9198
+.. nonce: esb-45
+.. section: Library
+
+Fix inspect.signature to fail correctly for builtin types lacking signature
+information.  Initial patch by James Powell.

@@ -14,7 +14,15 @@
 
 --------------
 
-This module defines classes for implementing HTTP servers (Web servers).
+This module defines classes for implementing HTTP servers.
+
+
+.. warning::
+
+    :mod:`http.server` is not recommended for production. It only implements
+    :ref:`basic security checks <http.server-security>`.
+
+.. include:: ../includes/wasm-notavail.rst
 
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
@@ -33,9 +41,19 @@ handler.  Code to create and run the server looks like this::
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
+.. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
-The :class:`HTTPServer` must be given a *RequestHandlerClass* on instantiation,
-of which this module provides three different variants:
+   This class is identical to HTTPServer but uses threads to handle
+   requests by using the :class:`~socketserver.ThreadingMixIn`. This
+   is useful to handle web browsers pre-opening sockets, on which
+   :class:`HTTPServer` would wait indefinitely.
+
+   .. versionadded:: 3.7
+
+
+The :class:`HTTPServer` and :class:`ThreadingHTTPServer` must be given
+a *RequestHandlerClass* on instantiation, of which this module
+provides three different variants:
 
 .. class:: BaseHTTPRequestHandler(request, client_address, server)
 
@@ -82,7 +100,9 @@ of which this module provides three different variants:
 
    .. attribute:: path
 
-      Contains the request path.
+      Contains the request path. If query component of the URL is present,
+      then ``path`` includes the query. Using the terminology of :rfc:`3986`,
+      ``path`` here includes ``hier-part`` and the ``query``.
 
    .. attribute:: request_version
 
@@ -105,7 +125,8 @@ of which this module provides three different variants:
 
       Contains the output stream for writing a response back to the
       client. Proper adherence to the HTTP protocol must be used when writing to
-      this stream.
+      this stream in order to achieve successful interoperation with HTTP
+      clients.
 
       .. versionchanged:: 3.6
          This is an :class:`io.BufferedIOBase` stream.
@@ -138,7 +159,9 @@ of which this module provides three different variants:
 
    .. attribute:: protocol_version
 
-      This specifies the HTTP protocol version used in responses.  If set to
+      Specifies the HTTP version to which the server is conformant. It is sent
+      in responses to let the client know the server's communication
+      capabilities for future requests. If set to
       ``'HTTP/1.1'``, the server will permit HTTP persistent connections;
       however, your server *must* then include an accurate ``Content-Length``
       header (using :meth:`send_header`) in all of its responses to clients.
@@ -174,11 +197,11 @@ of which this module provides three different variants:
 
    .. method:: handle_expect_100()
 
-      When a HTTP/1.1 compliant server receives an ``Expect: 100-continue``
+      When an HTTP/1.1 conformant server receives an ``Expect: 100-continue``
       request header it responds back with a ``100 Continue`` followed by ``200
       OK`` headers.
       This method can be overridden to raise an error if the server does not
-      want the client to continue.  For e.g. server can chose to send ``417
+      want the client to continue.  For e.g. server can choose to send ``417
       Expectation Failed`` as a response header and ``return False``.
 
       .. versionadded:: 3.2
@@ -299,10 +322,17 @@ of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
 
-   This class serves files from the current directory and below, directly
+   This class serves files from the directory *directory* and below,
+   or the current directory if *directory* is not provided, directly
    mapping the directory structure to HTTP requests.
+
+   .. versionadded:: 3.7
+      The *directory* parameter.
+
+   .. versionchanged:: 3.9
+      The *directory* parameter accepts a :term:`path-like object`.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -318,10 +348,13 @@ of which this module provides three different variants:
 
    .. attribute:: extensions_map
 
-      A dictionary mapping suffixes into MIME types. The default is
-      signified by an empty string, and is considered to be
-      ``application/octet-stream``. The mapping is used case-insensitively,
+      A dictionary mapping suffixes into MIME types, contains custom overrides
+      for the default system mappings. The mapping is used case-insensitively,
       and so should contain only lower-cased keys.
+
+      .. versionchanged:: 3.9
+         This dictionary is no longer filled with the default system mappings,
+         but only contains overrides.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -359,8 +392,8 @@ of which this module provides three different variants:
       contents of the file are output. If the file's MIME type starts with
       ``text/`` the file is opened in text mode; otherwise binary mode is used.
 
-      For example usage, see the implementation of the :func:`test` function
-      invocation in the :mod:`http.server` module.
+      For example usage, see the implementation of the ``test`` function
+      in :source:`Lib/http/server.py`.
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
@@ -380,23 +413,54 @@ the current directory::
        print("serving at port", PORT)
        httpd.serve_forever()
 
+
+:class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
+such as using different index file names by overriding the class attribute
+:attr:`index_pages`.
+
 .. _http-server-cli:
 
 :mod:`http.server` can also be invoked directly using the :option:`-m`
-switch of the interpreter with a ``port number`` argument.  Similar to
+switch of the interpreter.  Similar to
 the previous example, this serves files relative to the current directory::
 
-        python -m http.server 8000
+        python -m http.server
 
-By default, server binds itself to all interfaces.  The option ``-b/--bind``
-specifies a specific address to which it should bind.  For example, the
-following command causes the server to bind to localhost only::
+The server listens to port 8000 by default. The default can be overridden
+by passing the desired port number as an argument::
 
-        python -m http.server 8000 --bind 127.0.0.1
+        python -m http.server 9000
+
+By default, the server binds itself to all interfaces.  The option ``-b/--bind``
+specifies a specific address to which it should bind. Both IPv4 and IPv6
+addresses are supported. For example, the following command causes the server
+to bind to localhost only::
+
+        python -m http.server --bind 127.0.0.1
 
 .. versionadded:: 3.4
     ``--bind`` argument was introduced.
 
+.. versionadded:: 3.8
+    ``--bind`` argument enhanced to support IPv6
+
+By default, the server uses the current directory. The option ``-d/--directory``
+specifies a directory to which it should serve the files. For example,
+the following command uses a specific directory::
+
+        python -m http.server --directory /tmp/
+
+.. versionadded:: 3.7
+    ``--directory`` argument was introduced.
+
+By default, the server is conformant to HTTP/1.0. The option ``-p/--protocol``
+specifies the HTTP version to which the server is conformant. For example, the
+following command runs an HTTP/1.1 conformant server::
+
+        python -m http.server --protocol HTTP/1.1
+
+.. versionadded:: 3.11
+    ``--protocol`` argument was introduced.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
@@ -441,5 +505,24 @@ following command causes the server to bind to localhost only::
 :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
 the ``--cgi`` option::
 
-        python -m http.server --cgi 8000
+        python -m http.server --cgi
 
+.. _http.server-security:
+
+Security Considerations
+-----------------------
+
+.. index:: pair: http.server; security
+
+:class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
+requests, this makes it possible for files outside of the specified directory
+to be served.
+
+Earlier versions of Python did not scrub control characters from the
+log messages emitted to stderr from ``python -m http.server`` or the
+default :class:`BaseHTTPRequestHandler` ``.log_message``
+implementation. This could allow remote clients connecting to your
+server to send nefarious control codes to your terminal.
+
+.. versionadded:: 3.12
+   Control characters are scrubbed in stderr logs.

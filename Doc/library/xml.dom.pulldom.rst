@@ -25,6 +25,20 @@ events until either processing is finished or an error condition occurs.
    maliciously constructed data.  If you need to parse untrusted or
    unauthenticated data see :ref:`xml-vulnerabilities`.
 
+.. versionchanged:: 3.7.1
+
+   The SAX parser no longer processes general external entities by default to
+   increase security by default. To enable processing of external entities,
+   pass a custom parser instance in::
+
+      from xml.dom.pulldom import parse
+      from xml.sax import make_parser
+      from xml.sax.handler import feature_external_ges
+
+      parser = make_parser()
+      parser.setFeature(feature_external_ges, True)
+      parse(filename, parser=parser)
+
 
 Example::
 
@@ -100,6 +114,8 @@ DOMEventStream Objects
 
 .. class:: DOMEventStream(stream, parser, bufsize)
 
+   .. versionchanged:: 3.11
+      Support for :meth:`__getitem__` method has been removed.
 
    .. method:: getEvent()
 
@@ -108,7 +124,7 @@ DOMEventStream Objects
       :class:`xml.dom.minidom.Element` if event equals :data:`START_ELEMENT` or
       :data:`END_ELEMENT` or :class:`xml.dom.minidom.Text` if event equals
       :data:`CHARACTERS`.
-      The current node does not contain informations about its children, unless
+      The current node does not contain information about its children, unless
       :func:`expandNode` is called.
 
    .. method:: expandNode(node)
@@ -128,4 +144,3 @@ DOMEventStream Objects
                   print(node.toxml())
 
    .. method:: DOMEventStream.reset()
-

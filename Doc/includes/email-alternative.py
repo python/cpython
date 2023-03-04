@@ -32,7 +32,7 @@ msg.add_alternative("""\
   <body>
     <p>Salut!</p>
     <p>Cela ressemble à un excellent
-        <a href="http://www.yummly.com/recipe/Roasted-Asparagus-Epicurious-203718>
+        <a href="http://www.yummly.com/recipe/Roasted-Asparagus-Epicurious-203718">
             recipie
         </a> déjeuner.
     </p>

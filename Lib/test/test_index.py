@@ -60,7 +60,7 @@ class BaseTestCase(unittest.TestCase):
         # subclasses.  See issue #17576.
         class MyInt(int):
             def __index__(self):
-                return int(self) + 1
+                return int(str(self)) + 1
 
         my_int = MyInt(7)
         direct_index = my_int.__index__()
