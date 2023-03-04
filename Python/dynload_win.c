@@ -3,7 +3,6 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_add_relfile()
-#include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #ifdef HAVE_DIRECT_H
@@ -126,14 +125,15 @@ static char *GetPythonImport (HINSTANCE hModule)
                 !strncmp(import_name,"python",6)) {
                 char *pch;
 
-#ifndef _DEBUG
-                /* In a release version, don't claim that python3.dll is
-                   a Python DLL. */
+                /* Don't claim that python3.dll is a Python DLL. */
+#ifdef _DEBUG
+                if (strcmp(import_name, "python3_d.dll") == 0) {
+#else
                 if (strcmp(import_name, "python3.dll") == 0) {
+#endif
                     import_data += 20;
                     continue;
                 }
-#endif
 
                 /* Ensure python prefix is followed only
                    by numbers to the end of the basename */
@@ -226,11 +226,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 
     _Py_CheckPython3();
 
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpathname = _PyUnicode_AsUnicode(pathname);
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *wpathname = PyUnicode_AsWideCharString(pathname, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpathname == NULL)
         return NULL;
 
@@ -252,9 +248,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                               LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
                               LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
         Py_END_ALLOW_THREADS
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(wpathname);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 
         /* restore old error mode settings */
         SetErrorMode(old_mode);

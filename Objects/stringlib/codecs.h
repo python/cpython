@@ -387,8 +387,19 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
                 if (!rep)
                     goto error;
 
-                /* subtract preallocated bytes */
-                writer->min_size -= max_char_size * (newpos - startpos);
+                if (newpos < startpos) {
+                    writer->overallocate = 1;
+                    p = _PyBytesWriter_Prepare(writer, p,
+                                               max_char_size * (startpos - newpos));
+                    if (p == NULL)
+                        goto error;
+                }
+                else {
+                    /* subtract preallocated bytes */
+                    writer->min_size -= max_char_size * (newpos - startpos);
+                    /* Only overallocate the buffer if it's not the last write */
+                    writer->overallocate = (newpos < size);
+                }
 
                 if (PyBytes_Check(rep)) {
                     p = _PyBytesWriter_WriteBytes(writer, p,

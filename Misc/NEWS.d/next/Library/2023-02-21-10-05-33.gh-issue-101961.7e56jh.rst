@@ -1,0 +1,2 @@
+For the binary mode, :func:`fileinput.hookcompressed` doesn't set the ``encoding`` value
+even if the value is ``None``. Patch by Gihwan Kim.

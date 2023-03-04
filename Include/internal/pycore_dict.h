@@ -9,6 +9,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_dict_state.h"
+#include "pycore_runtime.h"         // _PyRuntime
+
 
 /* runtime lifecycle */
 
@@ -17,25 +20,6 @@ extern void _PyDict_Fini(PyInterpreterState *interp);
 
 /* other API */
 
-#ifndef WITH_FREELISTS
-// without freelists
-#  define PyDict_MAXFREELIST 0
-#endif
-
-#ifndef PyDict_MAXFREELIST
-#  define PyDict_MAXFREELIST 80
-#endif
-
-struct _Py_dict_state {
-#if PyDict_MAXFREELIST > 0
-    /* Dictionary reuse scheme to save calls to malloc and free */
-    PyDictObject *free_list[PyDict_MAXFREELIST];
-    int numfree;
-    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
-    int keys_numfree;
-#endif
-};
-
 typedef struct {
     /* Cached hash code of me_key. */
     Py_hash_t me_hash;
@@ -43,17 +27,39 @@ typedef struct {
     PyObject *me_value; /* This field is only meaningful for combined tables */
 } PyDictKeyEntry;
 
+typedef struct {
+    PyObject *me_key;   /* The key must be Unicode and have hash. */
+    PyObject *me_value; /* This field is only meaningful for combined tables */
+} PyDictUnicodeEntry;
+
+extern PyDictKeysObject *_PyDict_NewKeysForClass(void);
+extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
+
+/* Gets a version number unique to the current state of the keys of dict, if possible.
+ * Returns the version number, or zero if it was not possible to get a version number. */
+extern uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys);
+
+extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
+
 /* _Py_dict_lookup() returns index of entry which can be used like DK_ENTRIES(dk)[index].
  * -1 when no entry found, -3 when compare raises error.
  */
-Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+
+extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
+extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
+extern PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
 
 /* Consumes references to key and value */
-int _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
+extern int _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
+extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
+
+extern PyObject *_PyDict_Pop_KnownHash(PyObject *, PyObject *, Py_hash_t, PyObject *);
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
 #define DKIX_ERROR (-3)
+#define DKIX_KEY_CHANGED (-4) /* Used internally */
 
 typedef enum {
     DICT_KEYS_GENERAL = 0,
@@ -67,6 +73,9 @@ struct _dictkeysobject {
 
     /* Size of the hash table (dk_indices). It must be a power of 2. */
     uint8_t dk_log2_size;
+
+    /* Size of the hash table (dk_indices) by bytes. */
+    uint8_t dk_log2_index_bytes;
 
     /* Kind of keys */
     uint8_t dk_kind;
@@ -95,7 +104,7 @@ struct _dictkeysobject {
        Dynamically sized, SIZEOF_VOID_P is minimum. */
     char dk_indices[];  /* char is required to avoid strict aliasing. */
 
-    /* "PyDictKeyEntry dk_entries[dk_usable];" array follows:
+    /* "PyDictKeyEntry or PyDictUnicodeEntry dk_entries[USABLE_FRACTION(DK_SIZE(dk))];" array follows:
        see the DK_ENTRIES() macro */
 };
 
@@ -113,29 +122,61 @@ struct _dictvalues {
     PyObject *values[1];
 };
 
-#define DK_LOG_SIZE(dk)  ((dk)->dk_log2_size)
+#define DK_LOG_SIZE(dk)  _Py_RVALUE((dk)->dk_log2_size)
 #if SIZEOF_VOID_P > 4
 #define DK_SIZE(dk)      (((int64_t)1)<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : DK_LOG_SIZE(dk) <= 31 ?   \
-                4 : sizeof(int64_t))
 #else
 #define DK_SIZE(dk)      (1<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : sizeof(int32_t))
 #endif
-#define DK_ENTRIES(dk) \
-    ((PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[DK_SIZE(dk) * DK_IXSIZE(dk)]))
 
-extern uint64_t _pydict_global_version;
+static inline void* _DK_ENTRIES(PyDictKeysObject *dk) {
+    int8_t *indices = (int8_t*)(dk->dk_indices);
+    size_t index = (size_t)1 << dk->dk_log2_index_bytes;
+    return (&indices[index]);
+}
+static inline PyDictKeyEntry* DK_ENTRIES(PyDictKeysObject *dk) {
+    assert(dk->dk_kind == DICT_KEYS_GENERAL);
+    return (PyDictKeyEntry*)_DK_ENTRIES(dk);
+}
+static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
+    assert(dk->dk_kind != DICT_KEYS_GENERAL);
+    return (PyDictUnicodeEntry*)_DK_ENTRIES(dk);
+}
 
-#define DICT_NEXT_VERSION() (++_pydict_global_version)
+#define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
-PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
+#define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
+#define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
+
+#define DICT_NEXT_VERSION() \
+    (_PyRuntime.dict_state.global_version += DICT_VERSION_INCREMENT)
+
+void
+_PyDict_SendEvent(int watcher_bits,
+                  PyDict_WatchEvent event,
+                  PyDictObject *mp,
+                  PyObject *key,
+                  PyObject *value);
+
+static inline uint64_t
+_PyDict_NotifyEvent(PyDict_WatchEvent event,
+                    PyDictObject *mp,
+                    PyObject *key,
+                    PyObject *value)
+{
+    int watcher_bits = mp->ma_version_tag & DICT_VERSION_MASK;
+    if (watcher_bits) {
+        _PyDict_SendEvent(watcher_bits, event, mp, key, value);
+        return DICT_NEXT_VERSION() | watcher_bits;
+    }
+    return DICT_NEXT_VERSION();
+}
+
+extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
+extern PyObject *_PyDict_FromItems(
+        PyObject *const *keys, Py_ssize_t keys_offset,
+        PyObject *const *values, Py_ssize_t values_offset,
+        Py_ssize_t length);
 
 static inline void
 _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)

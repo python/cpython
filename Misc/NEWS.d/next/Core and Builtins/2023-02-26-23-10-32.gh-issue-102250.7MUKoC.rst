@@ -1,0 +1,1 @@
+Fixed a segfault occurring when the interpreter calls a ``__bool__`` method that raises.

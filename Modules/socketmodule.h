@@ -76,6 +76,15 @@ struct SOCKADDR_BTH_REDEF {
 # else
 typedef int socklen_t;
 # endif /* IPPROTO_IPV6 */
+
+/* Remove ifdef once Py_WINVER >= 0x0604
+ * socket.h only defines AF_HYPERV if _WIN32_WINNT is at that level or higher
+ * so for now it's just manually defined.
+ */
+# ifndef AF_HYPERV
+#  define AF_HYPERV 34
+# endif
+# include <hvsocket.h>
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_SYS_UN_H
@@ -192,6 +201,21 @@ typedef int socklen_t;
 
 #endif /* HAVE_SOCKADDR_ALG */
 
+#ifdef __EMSCRIPTEN__
+// wasm32-emscripten sockets only support subset of IPv4 and IPv6.
+// SCTP protocol crashes runtime.
+#ifdef IPPROTO_SCTP
+#  undef IPPROTO_SCTP
+#endif
+// setsockopt() fails with ENOPROTOOPT, getsockopt only supports SO_ERROR.
+// undef SO_REUSEADDR and SO_REUSEPORT so they cannot be used.
+#ifdef SO_REUSEADDR
+#  undef SO_REUSEADDR
+#endif
+#ifdef SO_REUSEPORT
+#  undef SO_REUSEPORT
+#endif
+#endif // __EMSCRIPTEN__
 
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
@@ -223,6 +247,11 @@ typedef int SOCKET_T;
 #else
 #define PyLong_FromSocket_t(fd) PyLong_FromLongLong((SOCKET_T)(fd))
 #define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLongLong(fd)
+#endif
+
+// AF_HYPERV is only supported on Windows
+#if defined(AF_HYPERV) && defined(MS_WINDOWS)
+#  define HAVE_AF_HYPERV
 #endif
 
 /* Socket address */
@@ -272,6 +301,9 @@ typedef union sock_addr {
 #endif
 #ifdef HAVE_LINUX_TIPC_H
     struct sockaddr_tipc tipc;
+#endif
+#ifdef HAVE_AF_HYPERV
+    SOCKADDR_HV hv;
 #endif
 } sock_addr_t;
 

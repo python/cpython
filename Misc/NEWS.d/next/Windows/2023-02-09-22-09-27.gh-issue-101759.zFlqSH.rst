@@ -1,0 +1,1 @@
+Update Windows installer to SQLite 3.40.1.

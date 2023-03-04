@@ -250,8 +250,8 @@ command line:
 
 .. code-block:: shell-session
 
-   $ python3 -m site --user-site
-   /home/user/.local/lib/python3.3/site-packages
+   $ python -m site --user-site
+   /home/user/.local/lib/python3.11/site-packages
 
 If it is called without arguments, it will print the contents of
 :data:`sys.path` on the standard output, followed by the value of
@@ -276,4 +276,6 @@ value greater than 2 if there is an error.
 
 .. seealso::
 
-   :pep:`370` -- Per user site-packages directory
+   * :pep:`370` -- Per user site-packages directory
+   * :ref:`sys-path-init` -- The initialization of :data:`sys.path`.
+
