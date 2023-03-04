@@ -1,0 +1,1 @@
+Fix :func:`os.dup2` error message for negative fds.

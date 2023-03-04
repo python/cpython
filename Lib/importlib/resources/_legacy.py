@@ -27,8 +27,7 @@ def deprecated(func):
     return wrapper
 
 
-def normalize_path(path):
-    # type: (Any) -> str
+def normalize_path(path: Any) -> str:
     """Normalize a path by ensuring it is a string.
 
     If the resulting string contains path separators, an exception is raised.

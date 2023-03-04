@@ -1,0 +1,1 @@
+Apply :pep:`687` to :mod:`zoneinfo`. Patch by Erlend E. Aasland.

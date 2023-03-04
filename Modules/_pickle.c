@@ -386,10 +386,9 @@ init_method_ref(PyObject *self, PyObject *name,
 
     if (PyMethod_Check(func) && PyMethod_GET_SELF(func) == self) {
         /* Deconstruct a bound Python method */
-        func2 = PyMethod_GET_FUNCTION(func);
-        Py_INCREF(func2);
         *method_self = self; /* borrowed */
-        Py_XSETREF(*method_func, func2);
+        func2 = PyMethod_GET_FUNCTION(func);
+        Py_XSETREF(*method_func, Py_NewRef(func2));
         Py_DECREF(func);
         return 0;
     }
@@ -408,8 +407,7 @@ reconstruct_method(PyObject *func, PyObject *self)
         return PyMethod_New(func, self);
     }
     else {
-        Py_INCREF(func);
-        return func;
+        return Py_NewRef(func);
     }
 }
 
@@ -907,8 +905,7 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
         entry->me_value = value;
         return 0;
     }
-    Py_INCREF(key);
-    entry->me_key = key;
+    entry->me_key = Py_NewRef(key);
     entry->me_value = value;
     self->mt_used++;
 
@@ -1196,8 +1193,7 @@ _Pickler_SetBufferCallback(PicklerObject *self, PyObject *buffer_callback)
         return -1;
     }
 
-    Py_XINCREF(buffer_callback);
-    self->buffer_callback = buffer_callback;
+    self->buffer_callback = Py_XNewRef(buffer_callback);
     return 0;
 }
 
@@ -1543,9 +1539,8 @@ _Unpickler_MemoPut(UnpicklerObject *self, size_t idx, PyObject *value)
             return -1;
         assert(idx < self->memo_size);
     }
-    Py_INCREF(value);
     old_item = self->memo[idx];
-    self->memo[idx] = value;
+    self->memo[idx] = Py_NewRef(value);
     if (old_item != NULL) {
         Py_DECREF(old_item);
     }
@@ -1834,8 +1829,7 @@ get_deep_attribute(PyObject *obj, PyObject *names, PyObject **pparent)
     n = PyList_GET_SIZE(names);
     for (i = 0; i < n; i++) {
         PyObject *name = PyList_GET_ITEM(names, i);
-        Py_XDECREF(parent);
-        parent = obj;
+        Py_XSETREF(parent, obj);
         (void)_PyObject_LookupAttr(parent, name, &obj);
         if (obj == NULL) {
             Py_DECREF(parent);
@@ -1928,8 +1922,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
         i = 0;
         while (PyDict_Next(modules, &i, &module_name, &module)) {
             if (_checkmodule(module_name, module, global, dotted_path) == 0) {
-                Py_INCREF(module_name);
-                return module_name;
+                return Py_NewRef(module_name);
             }
             if (PyErr_Occurred()) {
                 return NULL;
@@ -1965,8 +1958,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
 
     /* If no module is found, use __main__. */
     module_name = &_Py_ID(__main__);
-    Py_INCREF(module_name);
-    return module_name;
+    return Py_NewRef(module_name);
 }
 
 /* fast_save_enter() and fast_save_leave() are guards against recursive
@@ -3557,10 +3549,8 @@ fix_imports(PyObject **module_name, PyObject **global_name)
 
         Py_CLEAR(*module_name);
         Py_CLEAR(*global_name);
-        Py_INCREF(fixed_module_name);
-        Py_INCREF(fixed_global_name);
-        *module_name = fixed_module_name;
-        *global_name = fixed_global_name;
+        *module_name = Py_NewRef(fixed_module_name);
+        *global_name = Py_NewRef(fixed_global_name);
         return 0;
     }
     else if (PyErr_Occurred()) {
@@ -3576,8 +3566,7 @@ fix_imports(PyObject **module_name, PyObject **global_name)
                          Py_TYPE(item)->tp_name);
             return -1;
         }
-        Py_INCREF(item);
-        Py_XSETREF(*module_name, item);
+        Py_XSETREF(*module_name, Py_NewRef(item));
     }
     else if (PyErr_Occurred()) {
         return -1;
@@ -3602,8 +3591,7 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
     const char global_op = GLOBAL;
 
     if (name) {
-        Py_INCREF(name);
-        global_name = name;
+        global_name = Py_NewRef(name);
     }
     else {
         if (_PyObject_LookupAttr(obj, &_Py_ID(__qualname__), &global_name) < 0)
@@ -3637,8 +3625,8 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
                      obj, module_name);
         goto error;
     }
-    lastname = PyList_GET_ITEM(dotted_path, PyList_GET_SIZE(dotted_path)-1);
-    Py_INCREF(lastname);
+    lastname = Py_NewRef(PyList_GET_ITEM(dotted_path,
+                         PyList_GET_SIZE(dotted_path) - 1));
     cls = get_deep_attribute(module, dotted_path, &parent);
     Py_CLEAR(dotted_path);
     if (cls == NULL) {
@@ -3728,9 +3716,7 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
     else {
   gen_global:
         if (parent == module) {
-            Py_INCREF(lastname);
-            Py_DECREF(global_name);
-            global_name = lastname;
+            Py_SETREF(global_name, Py_NewRef(lastname));
         }
         if (self->proto >= 4) {
             const char stack_global_op = STACK_GLOBAL;
@@ -3932,8 +3918,7 @@ get_class(PyObject *obj)
     PyObject *cls;
 
     if (_PyObject_LookupAttr(obj, &_Py_ID(__class__), &cls) == 0) {
-        cls = (PyObject *) Py_TYPE(obj);
-        Py_INCREF(cls);
+        cls = Py_NewRef(Py_TYPE(obj));
     }
     return cls;
 }
@@ -4084,12 +4069,10 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
                 return -1;
             }
             PyTuple_SET_ITEM(newargs, 0, cls_new);
-            Py_INCREF(cls);
-            PyTuple_SET_ITEM(newargs, 1, cls);
+            PyTuple_SET_ITEM(newargs, 1, Py_NewRef(cls));
             for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
                 PyObject *item = PyTuple_GET_ITEM(args, i);
-                Py_INCREF(item);
-                PyTuple_SET_ITEM(newargs, i + 2, item);
+                PyTuple_SET_ITEM(newargs, i + 2, Py_NewRef(item));
             }
 
             callable = PyObject_Call(st->partial, newargs, kwargs);
@@ -4361,8 +4344,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         if (reduce_value != Py_NotImplemented) {
             goto reduce;
         }
-        Py_DECREF(reduce_value);
-        reduce_value = NULL;
+        Py_SETREF(reduce_value, NULL);
     }
 
     if (type == &PyType_Type) {
@@ -4405,8 +4387,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         }
     }
     if (reduce_func != NULL) {
-        Py_INCREF(obj);
-        reduce_value = _Pickle_FastCall(reduce_func, obj);
+        reduce_value = _Pickle_FastCall(reduce_func, Py_NewRef(obj));
     }
     else if (PyType_IsSubtype(type, &PyType_Type)) {
         status = save_global(self, obj, NULL);
@@ -4594,26 +4575,25 @@ _pickle_Pickler_dump(PicklerObject *self, PyObject *obj)
 
 /*[clinic input]
 
-_pickle.Pickler.__sizeof__ -> Py_ssize_t
+_pickle.Pickler.__sizeof__ -> size_t
 
 Returns size in memory, in bytes.
 [clinic start generated code]*/
 
-static Py_ssize_t
+static size_t
 _pickle_Pickler___sizeof___impl(PicklerObject *self)
-/*[clinic end generated code: output=106edb3123f332e1 input=8cbbec9bd5540d42]*/
+/*[clinic end generated code: output=23ad75658d3b59ff input=d8127c8e7012ebd7]*/
 {
-    Py_ssize_t res, s;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->memo != NULL) {
         res += sizeof(PyMemoTable);
         res += self->memo->mt_allocated * sizeof(PyMemoEntry);
     }
     if (self->output_buffer != NULL) {
-        s = _PySys_GetSizeOf(self->output_buffer);
-        if (s == -1)
+        size_t s = _PySys_GetSizeOf(self->output_buffer);
+        if (s == (size_t)-1) {
             return -1;
+        }
         res += s;
     }
     return res;
@@ -4869,8 +4849,7 @@ _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self)
         return NULL;
     }
     PyTuple_SET_ITEM(dict_args, 0, contents);
-    Py_INCREF((PyObject *)&PyDict_Type);
-    PyTuple_SET_ITEM(reduce_value, 0, (PyObject *)&PyDict_Type);
+    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef(&PyDict_Type));
     PyTuple_SET_ITEM(reduce_value, 1, dict_args);
     return reduce_value;
 }
@@ -4944,8 +4923,7 @@ PicklerMemoProxy_New(PicklerObject *pickler)
     self = PyObject_GC_New(PicklerMemoProxyObject, &PicklerMemoProxyType);
     if (self == NULL)
         return NULL;
-    Py_INCREF(pickler);
-    self->pickler = pickler;
+    self->pickler = (PicklerObject*)Py_NewRef(pickler);
     PyObject_GC_Track(self);
     return (PyObject *)self;
 }
@@ -5045,8 +5023,7 @@ Pickler_set_persid(PicklerObject *self, PyObject *value, void *Py_UNUSED(ignored
     }
 
     self->pers_func_self = NULL;
-    Py_INCREF(value);
-    Py_XSETREF(self->pers_func, value);
+    Py_XSETREF(self->pers_func, Py_NewRef(value));
 
     return 0;
 }
@@ -6073,7 +6050,7 @@ load_persid(UnpicklerObject *self)
     else {
         PickleState *st = _Pickle_GetGlobalState();
         PyErr_SetString(st->UnpicklingError,
-                        "A load persistent id instruction was encountered,\n"
+                        "A load persistent id instruction was encountered, "
                         "but no persistent_load function was specified.");
         return -1;
     }
@@ -6100,7 +6077,7 @@ load_binpersid(UnpicklerObject *self)
     else {
         PickleState *st = _Pickle_GetGlobalState();
         PyErr_SetString(st->UnpicklingError,
-                        "A load persistent id instruction was encountered,\n"
+                        "A load persistent id instruction was encountered, "
                         "but no persistent_load function was specified.");
         return -1;
     }
@@ -7101,22 +7078,20 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
 
 /*[clinic input]
 
-_pickle.Unpickler.__sizeof__ -> Py_ssize_t
+_pickle.Unpickler.__sizeof__ -> size_t
 
 Returns size in memory, in bytes.
 [clinic start generated code]*/
 
-static Py_ssize_t
+static size_t
 _pickle_Unpickler___sizeof___impl(UnpicklerObject *self)
-/*[clinic end generated code: output=119d9d03ad4c7651 input=13333471fdeedf5e]*/
+/*[clinic end generated code: output=4648d84c228196df input=27180b2b6b524012]*/
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->memo != NULL)
         res += self->memo_size * sizeof(PyObject *);
     if (self->marks != NULL)
-        res += self->marks_size * sizeof(Py_ssize_t);
+        res += (size_t)self->marks_size * sizeof(Py_ssize_t);
     if (self->input_line != NULL)
         res += strlen(self->input_line) + 1;
     if (self->encoding != NULL)
@@ -7370,8 +7345,7 @@ _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self)
         return NULL;
     }
     PyTuple_SET_ITEM(constructor_args, 0, contents);
-    Py_INCREF((PyObject *)&PyDict_Type);
-    PyTuple_SET_ITEM(reduce_value, 0, (PyObject *)&PyDict_Type);
+    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef(&PyDict_Type));
     PyTuple_SET_ITEM(reduce_value, 1, constructor_args);
     return reduce_value;
 }
@@ -7446,8 +7420,7 @@ UnpicklerMemoProxy_New(UnpicklerObject *unpickler)
                            &UnpicklerMemoProxyType);
     if (self == NULL)
         return NULL;
-    Py_INCREF(unpickler);
-    self->unpickler = unpickler;
+    self->unpickler = (UnpicklerObject*)Py_NewRef(unpickler);
     PyObject_GC_Track(self);
     return (PyObject *)self;
 }
@@ -7483,8 +7456,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored
             return -1;
 
         for (size_t i = 0; i < new_memo_size; i++) {
-            Py_XINCREF(unpickler->memo[i]);
-            new_memo[i] = unpickler->memo[i];
+            new_memo[i] = Py_XNewRef(unpickler->memo[i]);
         }
     }
     else if (PyDict_Check(obj)) {
@@ -7564,8 +7536,7 @@ Unpickler_set_persload(UnpicklerObject *self, PyObject *value, void *Py_UNUSED(i
     }
 
     self->pers_func_self = NULL;
-    Py_INCREF(value);
-    Py_XSETREF(self->pers_func, value);
+    Py_XSETREF(self->pers_func, Py_NewRef(value));
 
     return 0;
 }
@@ -7944,8 +7915,7 @@ PyInit__pickle(void)
 
     m = PyState_FindModule(&_picklemodule);
     if (m) {
-        Py_INCREF(m);
-        return m;
+        return Py_NewRef(m);
     }
 
     if (PyType_Ready(&Pdata_Type) < 0)
@@ -7986,16 +7956,15 @@ PyInit__pickle(void)
     if (st->UnpicklingError == NULL)
         return NULL;
 
-    Py_INCREF(st->PickleError);
-    if (PyModule_AddObject(m, "PickleError", st->PickleError) < 0)
+    if (PyModule_AddObjectRef(m, "PickleError", st->PickleError) < 0) {
         return NULL;
-    Py_INCREF(st->PicklingError);
-    if (PyModule_AddObject(m, "PicklingError", st->PicklingError) < 0)
+    }
+    if (PyModule_AddObjectRef(m, "PicklingError", st->PicklingError) < 0) {
         return NULL;
-    Py_INCREF(st->UnpicklingError);
-    if (PyModule_AddObject(m, "UnpicklingError", st->UnpicklingError) < 0)
+    }
+    if (PyModule_AddObjectRef(m, "UnpicklingError", st->UnpicklingError) < 0) {
         return NULL;
-
+    }
     if (_Pickle_InitState(st) < 0)
         return NULL;
 

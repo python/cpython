@@ -311,6 +311,8 @@ class Queue(object):
         import traceback
         traceback.print_exc()
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 _sentinel = object()
 

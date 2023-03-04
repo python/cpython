@@ -315,7 +315,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <https://www.unicode.org/Public/14.0.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/15.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -323,8 +323,8 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
-14.0.0 can be found at
-https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt
+15.0.0 can be found at
+https://www.unicode.org/Public/15.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -612,9 +612,13 @@ Notes:
    As in Standard C, up to three octal digits are accepted.
 
    .. versionchanged:: 3.11
-      Octal escapes with value larger than ``0o377`` produce a :exc:`DeprecationWarning`.
-      In a future Python version they will be a :exc:`SyntaxWarning` and
-      eventually a :exc:`SyntaxError`.
+      Octal escapes with value larger than ``0o377`` produce a
+      :exc:`DeprecationWarning`.
+
+   .. versionchanged:: 3.12
+      Octal escapes with value larger than ``0o377`` produce a
+      :exc:`SyntaxWarning`. In a future Python version they will be eventually
+      a :exc:`SyntaxError`.
 
 (3)
    Unlike in Standard C, exactly two hex digits are required.
@@ -646,9 +650,11 @@ escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
    .. versionchanged:: 3.6
-      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.  In
-      a future Python version they will be a :exc:`SyntaxWarning` and
-      eventually a :exc:`SyntaxError`.
+      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
+
+   .. versionchanged:: 3.12
+      Unrecognized escape sequences produce a :exc:`SyntaxWarning`. In a future
+      Python version they will be eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string
@@ -1013,4 +1019,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] https://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/15.0.0/ucd/NameAliases.txt

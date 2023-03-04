@@ -1,2 +1,0 @@
-Rename test_tk to test_tkinter, and rename test_ttk_guionly to test_ttk.
-Patch by Victor Stinner.

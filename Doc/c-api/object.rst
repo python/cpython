@@ -281,7 +281,7 @@ Object Protocol
 
 .. c:function:: Py_hash_t PyObject_HashNotImplemented(PyObject *o)
 
-   Set a :exc:`TypeError` indicating that ``type(o)`` is not hashable and return ``-1``.
+   Set a :exc:`TypeError` indicating that ``type(o)`` is not :term:`hashable` and return ``-1``.
    This function receives special treatment when stored in a ``tp_hash`` slot,
    allowing a type to explicitly indicate to the interpreter that it is not
    hashable.
@@ -310,7 +310,7 @@ Object Protocol
    is equivalent to the Python expression ``type(o)``. This function increments the
    reference count of the return value. There's really no reason to use this
    function instead of the :c:func:`Py_TYPE()` function, which returns a
-   pointer of type :c:type:`PyTypeObject*`, except when the incremented reference
+   pointer of type :c:expr:`PyTypeObject*`, except when the incremented reference
    count is needed.
 
 

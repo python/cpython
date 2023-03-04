@@ -88,7 +88,8 @@ int___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(int___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
-"\n");
+"\n"
+"Convert to a string according to format_spec.");
 
 #define INT___FORMAT___METHODDEF    \
     {"__format__", (PyCFunction)int___format__, METH_O, int___format____doc__},
@@ -230,10 +231,9 @@ PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
 "\n"
-"Return integer ratio.\n"
+"Return a pair of integers, whose ratio is equal to the original int.\n"
 "\n"
-"Return a pair of integers, whose ratio is exactly equal to the original int\n"
-"and with a positive denominator.\n"
+"The ratio is in lowest terms and has a positive denominator.\n"
 "\n"
 ">>> (10).as_integer_ratio()\n"
 "(10, 1)\n"
@@ -466,4 +466,22 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b29b4afc65e3290e input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(int_is_integer__doc__,
+"is_integer($self, /)\n"
+"--\n"
+"\n"
+"Returns True. Exists for duck type compatibility with float.is_integer.");
+
+#define INT_IS_INTEGER_METHODDEF    \
+    {"is_integer", (PyCFunction)int_is_integer, METH_NOARGS, int_is_integer__doc__},
+
+static PyObject *
+int_is_integer_impl(PyObject *self);
+
+static PyObject *
+int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return int_is_integer_impl(self);
+}
+/*[clinic end generated code: output=cfdf35d916158d4f input=a9049054013a1b77]*/
