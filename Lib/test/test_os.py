@@ -2222,6 +2222,10 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.dup2, 20)
 
     @unittest.skipUnless(hasattr(os, 'dup2'), 'test needs os.dup2()')
+    @unittest.skipIf(
+        support.is_emscripten,
+        "dup2() with negative fds is broken on Emscripten (see gh-102179)"
+    )
     def test_dup2_negative_fd(self):
         valid_fd = os.open(__file__, os.O_RDONLY)
         self.addCleanup(os.close, valid_fd)
