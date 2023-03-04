@@ -80,32 +80,44 @@ class CommonTests(metaclass=abc.ABCMeta):
         """
 
     def test_package_name(self):
-        # Passing in the package name should succeed.
+        """
+        Passing in the package name should succeed.
+        """
         self.execute(data01.__name__, 'utf-8.file')
 
     def test_package_object(self):
-        # Passing in the package itself should succeed.
+        """
+        Passing in the package itself should succeed.
+        """
         self.execute(data01, 'utf-8.file')
 
     def test_string_path(self):
-        # Passing in a string for the path should succeed.
+        """
+        Passing in a string for the path should succeed.
+        """
         path = 'utf-8.file'
         self.execute(data01, path)
 
     def test_pathlib_path(self):
-        # Passing in a pathlib.PurePath object for the path should succeed.
+        """
+        Passing in a pathlib.PurePath object for the path should succeed.
+        """
         path = pathlib.PurePath('utf-8.file')
         self.execute(data01, path)
 
     def test_importing_module_as_side_effect(self):
-        # The anchor package can already be imported.
+        """
+        The anchor package can already be imported.
+        """
         del sys.modules[data01.__name__]
         self.execute(data01.__name__, 'utf-8.file')
 
     def test_missing_path(self):
-        # Attempting to open or read or request the path for a
-        # non-existent path should succeed if open_resource
-        # can return a viable data stream.
+        """
+        Attempting to open or read or request the path for a
+        non-existent path should succeed if open_resource
+        can return a viable data stream.
+        """
         bytes_data = io.BytesIO(b'Hello, world!')
         package = create_package(file=bytes_data, path=FileNotFoundError())
         self.execute(package, 'utf-8.file')
