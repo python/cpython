@@ -4311,13 +4311,12 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             self.assertNotIn('.1000', s)
 
     def test_issue_102402_100msecs(self):
-        # quick hack for sanity check
         og_time_ns = time.time_ns
-        # (time_ns, expected msecs value)
         tests = (
+            # (time_ns, expected_msecs_value)
             (1_677_902_297_100_000_000, 100.0),  # exactly 100ms
-            (1_677_903_920_999_998_503, 999.0),  # rounding up
-            (1_677_903_920_000_998_503, 0.0),  # rounding up
+            (1_677_903_920_999_998_503, 999.0),  # check truncating doesn't round
+            (1_677_903_920_000_998_503, 0.0),  # check truncating doesn't round
 
         )
         try:
