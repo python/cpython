@@ -235,6 +235,12 @@ asyncio
 * Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
   (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
 
+http.cookies
+------------
+
+* Cookies with longer paths are now always ordered before cookies with shorter
+  paths as recommended by :rfc:`6265#section-5.4`.
+
 inspect
 -------
 

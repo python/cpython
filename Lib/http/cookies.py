@@ -586,7 +586,11 @@ class BaseCookie(dict):
 
         # The cookie string is valid, apply it.
         M = None         # current morsel
+        key_items = []   # cookies with longer paths are listed before cookies withshorter paths
         for tp, key, value in parsed_items:
+            if key in key_items:
+                continue
+
             if tp == TYPE_ATTRIBUTE:
                 assert M is not None
                 M[key] = value
@@ -595,6 +599,8 @@ class BaseCookie(dict):
                 rval, cval = value
                 self.__set(key, rval, cval)
                 M = self[key]
+
+            key_items.append(key)
 
 
 class SimpleCookie(BaseCookie):

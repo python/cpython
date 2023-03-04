@@ -1,0 +1,2 @@
+:class:`http.cookies.BaseCookie` now sorts cookies as recommended by
+:rfc:`6265#section-5.4`, section 5.4 The Cookie Header, list item 2.

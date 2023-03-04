@@ -29,6 +29,9 @@ in Cookie name (as :attr:`~Morsel.key`).
 .. versionchanged:: 3.3
    Allowed ':' as a valid Cookie name character.
 
+.. versionchanged:: 3.12
+   Cookies with longer paths are always ordered before cookies with shorter
+   paths as recommended by :rfc:`6265#section-5.4`.
 
 .. note::
 
