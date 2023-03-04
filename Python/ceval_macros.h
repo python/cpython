@@ -285,10 +285,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* Shared opcode macros */
 
-#define TRACE_FUNCTION_EXIT() \
+#define TRACE_FUNCTION_EXIT(retval) \
     if (cframe.use_tracing) { \
-        if (trace_function_exit(tstate, frame, retval)) { \
-            Py_DECREF(retval); \
+        if (trace_function_exit(tstate, frame, (retval))) { \
+            Py_DECREF(retval); /* XXX BROKEN */ \
             goto exit_unwind; \
         } \
     }
