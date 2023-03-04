@@ -14,7 +14,7 @@ c_heapq = import_helper.import_fresh_module('heapq', fresh=['_heapq'])
 # _heapq.nlargest/nsmallest are saved in heapq._nlargest/_smallest when
 # _heapq is imported, so check them there
 func_names = ['heapify', 'heappop', 'heappush', 'heappushpop', 'heapreplace',
-              '_heappop_max', '_heapreplace_max', '_heapify_max']
+              '_heappop_max', '_heappush_max', '_heapreplace_max', '_heapify_max']
 
 class TestModules(TestCase):
     def test_py_functions(self):
@@ -159,6 +159,13 @@ class TestHeap:
         h = [3, 2]
         self.assertEqual(self.module._heappop_max(h), 3)
         self.assertEqual(self.module._heappop_max(h), 2)
+
+    def test_heappush_max(self):
+        h = [3, 2]
+        self.module._heappush_max(h, 3)
+        self.assertEqual(h[0], 3)
+        self.module._heappush_max(h, 5)
+        self.assertEqual(h[0], 5)
 
     def test_heapsort(self):
         # Exercise everything with repeated heapsort checks
