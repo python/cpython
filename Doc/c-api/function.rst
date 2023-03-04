@@ -177,7 +177,8 @@ There are a few functions specific to Python functions.
    exception set on entry to the callback; in this case, the callback may not
    execute Python code or otherwise disturb the pending exception. Taking a
    reference in the callback to an about-to-be-destroyed function will resurrect
-   it and prevent it from being freed.
+   it, preventing it from being freed at this time. When the resurrected object is destroyed later,
+   any watcher callbacks active at the time will be called again.
 
    If the callback sets an exception, it must return ``-1``; this exception will
    be printed as an unraisable exception using :c:func:`PyErr_WriteUnraisable`.

@@ -37,8 +37,7 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
                     Py_DECREF(repr);
                 }
                 if (context == NULL) {
-                    context = Py_None;
-                    Py_INCREF(context);
+                    context = Py_NewRef(Py_None);
                 }
                 PyErr_WriteUnraisable(context);
                 Py_DECREF(context);

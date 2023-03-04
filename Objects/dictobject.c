@@ -2311,7 +2311,7 @@ dict_dealloc(PyDictObject *mp)
     assert(Py_REFCNT(mp) == 0);
     Py_SET_REFCNT(mp, 1);
     _PyDict_NotifyEvent(PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
-    if(Py_REFCNT(mp) > 1) {
+    if (Py_REFCNT(mp) > 1) {
         Py_DECREF(mp);
         return;
     }
@@ -5757,8 +5757,7 @@ _PyDict_SendEvent(int watcher_bits,
                 // repr can call arbitrary code, so we invent a simpler version.
                 PyObject *context = PyUnicode_FromFormat("watcher callback for <dict at %p>", mp);
                 if (context == NULL) {
-                    context = Py_None;
-                    Py_INCREF(context);
+                    context = Py_NewRef(Py_None);
                 }
                 PyErr_WriteUnraisable(context);
                 Py_DECREF(context);
