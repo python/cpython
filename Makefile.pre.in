@@ -1485,9 +1485,9 @@ regen-cases:
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
-		-i $(srcdir)/Python/bytecodes.c \
 		-o $(srcdir)/Python/generated_cases.c.h.new \
-		-m $(srcdir)/Python/opcode_metadata.h.new
+		-m $(srcdir)/Python/opcode_metadata.h.new \
+		$(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_metadata.h $(srcdir)/Python/opcode_metadata.h.new
 
