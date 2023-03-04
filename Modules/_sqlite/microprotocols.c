@@ -57,7 +57,7 @@ pysqlite_microprotocols_add(pysqlite_state *state, PyTypeObject *type,
 
     assert(type != NULL);
     assert(proto != NULL);
-    key = Py_BuildValue("(OO)", (PyObject*)type, proto);
+    key = PyTuple_Pack(2, (PyObject *)type, proto);
     if (!key) {
         return -1;
     }
@@ -81,7 +81,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
        way to get a quotable object to be its instance */
 
     /* look for an adapter in the registry */
-    key = Py_BuildValue("(OO)", (PyObject*)Py_TYPE(obj), proto);
+    key = PyTuple_Pack(2, (PyObject *)Py_TYPE(obj), proto);
     if (!key) {
         return NULL;
     }

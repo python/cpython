@@ -1,0 +1,2 @@
+Remove global state from :mod:`itertools` module (:pep:`687`). Patches by
+Erlend E. Aasland.

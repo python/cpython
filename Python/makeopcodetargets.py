@@ -34,7 +34,8 @@ def write_contents(f):
     targets = ['_unknown_opcode'] * 256
     targets[255] = "TARGET_DO_TRACING"
     for opname, op in opcode.opmap.items():
-        targets[op] = "TARGET_%s" % opname
+        if not opcode.is_pseudo(op):
+            targets[op] = "TARGET_%s" % opname
     next_op = 1
     for opname in opcode._specialized_instructions:
         while targets[next_op] != '_unknown_opcode':

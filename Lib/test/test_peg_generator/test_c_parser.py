@@ -75,7 +75,7 @@ class TestCParser(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # When running under regtest, a seperate tempdir is used
+        # When running under regtest, a separate tempdir is used
         # as the current directory and watched for left-overs.
         # Reusing that as the base for temporary directories
         # ensures everything is cleaned up properly and

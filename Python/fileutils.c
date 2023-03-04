@@ -191,7 +191,7 @@ extern int _Py_normalize_encoding(const char *, char *, size_t);
           Py_DecodeLocale() uses mbstowcs()
       -1: unknown, need to call check_force_ascii() to get the value
 */
-static int force_ascii = -1;
+#define force_ascii (_PyRuntime.fileutils.force_ascii)
 
 static int
 check_force_ascii(void)
@@ -603,9 +603,9 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                             errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
@@ -795,9 +795,9 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
     return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                             raw_malloc, errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
@@ -1162,8 +1162,6 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     }
 
     _Py_attribute_data_to_stat(&info, 0, status);
-    /* specific to fstat() */
-    status->st_ino = (((uint64_t)info.nFileIndexHigh) << 32) + info.nFileIndexLow;
     return 0;
 #else
     return fstat(fd, status);
@@ -1364,17 +1362,11 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     else
         flags = 0;
 
-    /* This check can be removed once support for Windows 7 ends. */
-#define CONSOLE_PSEUDOHANDLE(handle) (((ULONG_PTR)(handle) & 0x3) == 0x3 && \
-        GetFileType(handle) == FILE_TYPE_CHAR)
-
-    if (!CONSOLE_PSEUDOHANDLE(handle) &&
-        !SetHandleInformation(handle, HANDLE_FLAG_INHERIT, flags)) {
+    if (!SetHandleInformation(handle, HANDLE_FLAG_INHERIT, flags)) {
         if (raise)
             PyErr_SetFromWindowsErr(0);
         return -1;
     }
-#undef CONSOLE_PSEUDOHANDLE
     return 0;
 
 #else
@@ -1752,7 +1744,15 @@ _Py_read(int fd, void *buf, size_t count)
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
 #ifdef MS_WINDOWS
+        _doserrno = 0;
         n = read(fd, buf, (int)count);
+        // read() on a non-blocking empty pipe fails with EINVAL, which is
+        // mapped from the Windows error code ERROR_NO_DATA.
+        if (n < 0 && errno == EINVAL) {
+            if (_doserrno == ERROR_NO_DATA) {
+                errno = EAGAIN;
+            }
+        }
 #else
         n = read(fd, buf, count);
 #endif
@@ -1806,6 +1806,7 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
             }
         }
     }
+
 #endif
     if (count > _PY_WRITE_MAX) {
         count = _PY_WRITE_MAX;
@@ -1816,7 +1817,18 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
             Py_BEGIN_ALLOW_THREADS
             errno = 0;
 #ifdef MS_WINDOWS
-            n = write(fd, buf, (int)count);
+            // write() on a non-blocking pipe fails with ENOSPC on Windows if
+            // the pipe lacks available space for the entire buffer.
+            int c = (int)count;
+            do {
+                _doserrno = 0;
+                n = write(fd, buf, c);
+                if (n >= 0 || errno != ENOSPC || _doserrno != 0) {
+                    break;
+                }
+                errno = EAGAIN;
+                c /= 2;
+            } while (c > 0);
 #else
             n = write(fd, buf, count);
 #endif
@@ -1831,7 +1843,18 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
         do {
             errno = 0;
 #ifdef MS_WINDOWS
-            n = write(fd, buf, (int)count);
+            // write() on a non-blocking pipe fails with ENOSPC on Windows if
+            // the pipe lacks available space for the entire buffer.
+            int c = (int)count;
+            do {
+                _doserrno = 0;
+                n = write(fd, buf, c);
+                if (n >= 0 || errno != ENOSPC || _doserrno != 0) {
+                    break;
+                }
+                errno = EAGAIN;
+                c /= 2;
+            } while (c > 0);
 #else
             n = write(fd, buf, count);
 #endif
@@ -2366,7 +2389,7 @@ _Py_dup(int fd)
         return -1;
     }
 
-#else
+#elif HAVE_DUP
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     fd = dup(fd);
@@ -2383,6 +2406,10 @@ _Py_dup(int fd)
         _Py_END_SUPPRESS_IPH
         return -1;
     }
+#else
+    errno = ENOTSUP;
+    PyErr_SetFromErrno(PyExc_OSError);
+    return -1;
 #endif
     return fd;
 }
@@ -2448,6 +2475,64 @@ error:
     return -1;
 }
 #else   /* MS_WINDOWS */
+int
+_Py_get_blocking(int fd)
+{
+    HANDLE handle;
+    DWORD mode;
+    BOOL success;
+
+    handle = _Py_get_osfhandle(fd);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    success = GetNamedPipeHandleStateW(handle, &mode,
+                                       NULL, NULL, NULL, NULL, 0);
+    Py_END_ALLOW_THREADS
+    
+    if (!success) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+    
+    return !(mode & PIPE_NOWAIT);
+}
+
+int
+_Py_set_blocking(int fd, int blocking)
+{
+    HANDLE handle;
+    DWORD mode;
+    BOOL success;
+
+    handle = _Py_get_osfhandle(fd);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    success = GetNamedPipeHandleStateW(handle, &mode,
+                                       NULL, NULL, NULL, NULL, 0);
+    if (success) {
+        if (blocking) {
+            mode &= ~PIPE_NOWAIT;
+        }
+        else {
+            mode |= PIPE_NOWAIT;
+        }
+        success = SetNamedPipeHandleState(handle, &mode, NULL, NULL);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+    return 0;
+}
+
 void*
 _Py_get_osfhandle_noraise(int fd)
 {
