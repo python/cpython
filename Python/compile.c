@@ -29,12 +29,12 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_code.h"          // _PyCode_New()
-#include "pycore_compile.h"       // _PyFuture_FromAST()
+#include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
-#include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
 #include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 
@@ -568,72 +568,6 @@ static int remove_redundant_nops(basicblock *bb);
 static PyCodeObject *assemble(struct compiler *, int addNone);
 
 #define CAPSULE_NAME "compile.c compiler unit"
-
-PyObject *
-_Py_Mangle(PyObject *privateobj, PyObject *ident)
-{
-    /* Name mangling: __private becomes _classname__private.
-       This is independent from how the name is used. */
-    PyObject *result;
-    size_t nlen, plen, ipriv;
-    Py_UCS4 maxchar;
-    if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
-        PyUnicode_READ_CHAR(ident, 0) != '_' ||
-        PyUnicode_READ_CHAR(ident, 1) != '_') {
-        return Py_NewRef(ident);
-    }
-    nlen = PyUnicode_GET_LENGTH(ident);
-    plen = PyUnicode_GET_LENGTH(privateobj);
-    /* Don't mangle __id__ or names with dots.
-
-       The only time a name with a dot can occur is when
-       we are compiling an import statement that has a
-       package name.
-
-       TODO(jhylton): Decide whether we want to support
-       mangling of the module name, e.g. __M.X.
-    */
-    if ((PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
-         PyUnicode_READ_CHAR(ident, nlen-2) == '_') ||
-        PyUnicode_FindChar(ident, '.', 0, nlen, 1) != -1) {
-        return Py_NewRef(ident); /* Don't mangle __whatever__ */
-    }
-    /* Strip leading underscores from class name */
-    ipriv = 0;
-    while (PyUnicode_READ_CHAR(privateobj, ipriv) == '_')
-        ipriv++;
-    if (ipriv == plen) {
-        return Py_NewRef(ident); /* Don't mangle if class is just underscores */
-    }
-    plen -= ipriv;
-
-    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "private identifier too large to be mangled");
-        return NULL;
-    }
-
-    maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
-    if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar)
-        maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
-
-    result = PyUnicode_New(1 + nlen + plen, maxchar);
-    if (!result) {
-        return NULL;
-    }
-    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
-    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
-    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    assert(_PyUnicode_CheckConsistency(result, 1));
-    return result;
-}
 
 
 static int
