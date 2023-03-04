@@ -340,10 +340,8 @@ class LogRecord(object):
         self.lineno = lineno
         self.funcName = func
         self.created = ct / 1e9  # ns to float seconds
-        # nanoseconds for the given second. 5_234_000_000 -> 234_000_000
-        # Int math to avoid floating point errors.
-        nsecs = ct - ((ct // 1_000_000_000) * 1_000_000_000)
-        self.msecs = float(str(nsecs).zfill(9)[:3])
+        # Grab the nsecs from ct, then the msecs from that
+        self.msecs = float(str(ct)[-9:][:3])
         self.relativeCreated = (ct - _startTime) / 1e6
         if logThreads:
             self.thread = threading.get_ident()
