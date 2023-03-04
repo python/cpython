@@ -584,7 +584,7 @@
         TARGET(LIST_APPEND) {
             _tagged_ptr v = stack_pointer[-1];
             _tagged_ptr list = stack_pointer[-(2 + (oparg-1))];
-            if (_PyList_AppendTakeRef((PyListObject *)list, detag(v)) < 0) { STACK_SHRINK((oparg-1)); goto pop_2_error; }
+            if (_PyList_AppendTakeRef((PyListObject *)detag(list), detag(v)) < 0) { STACK_SHRINK((oparg-1)); goto pop_2_error; }
             STACK_SHRINK(1);
             PREDICT(JUMP_BACKWARD);
             DISPATCH();
@@ -593,7 +593,7 @@
         TARGET(SET_ADD) {
             _tagged_ptr v = stack_pointer[-1];
             _tagged_ptr set = stack_pointer[-(2 + (oparg-1))];
-            int err = PySet_Add(set, detag(v));
+            int err = PySet_Add(detag(set), detag(v));
             decref_unless_tagged(v);
             if (err) { STACK_SHRINK((oparg-1)); goto pop_2_error; }
             STACK_SHRINK(1);
@@ -822,10 +822,10 @@
             PyObject *awaitable;
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
-            PyTypeObject *type = Py_TYPE(aiter);
+            PyTypeObject *type = Py_TYPE(detag(aiter));
 
-            if (PyAsyncGen_CheckExact(aiter)) {
-                awaitable = type->tp_as_async->am_anext(aiter);
+            if (PyAsyncGen_CheckExact(detag(aiter))) {
+                awaitable = type->tp_as_async->am_anext(detag(aiter));
                 if (awaitable == NULL) {
                     goto error;
                 }
@@ -835,7 +835,7 @@
                 }
 
                 if (getter != NULL) {
-                    next_iter = (*getter)(aiter);
+                    next_iter = (*getter)(detag(aiter));
                     if (next_iter == NULL) {
                         goto error;
                     }
@@ -912,18 +912,18 @@
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
-                _Py_Specialize_Send(receiver, next_instr);
+                _Py_Specialize_Send(detag(receiver), next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(SEND, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             assert(frame != &entry_frame);
-            if (Py_IsNone(detag(v)) && PyIter_Check(receiver)) {
-                retval = Py_TYPE(receiver)->tp_iternext(receiver);
+            if (Py_IsNone(detag(v)) && PyIter_Check(detag(receiver))) {
+                retval = Py_TYPE(detag(receiver))->tp_iternext(detag(receiver));
             }
             else {
-                retval = PyObject_CallMethodOneArg(receiver, &_Py_ID(send), detag(v));
+                retval = PyObject_CallMethodOneArg(detag(receiver), &_Py_ID(send), detag(v));
             }
             if (retval == NULL) {
                 if (tstate->c_tracefunc != NULL
@@ -951,7 +951,7 @@
             _tagged_ptr v = stack_pointer[-1];
             _tagged_ptr receiver = stack_pointer[-2];
             assert(cframe.use_tracing == 0);
-            PyGenObject *gen = (PyGenObject *)receiver;
+            PyGenObject *gen = (PyGenObject *)detag(receiver);
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type &&
                      Py_TYPE(gen) != &PyCoro_Type, SEND);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, SEND);
@@ -1002,7 +1002,7 @@
             _tagged_ptr values = (_tagged_ptr)(stack_pointer - (1 + oparg));
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                PyObject *lasti = values[0];
+                PyObject *lasti = detag(values)[0];
                 if (PyLong_Check(lasti)) {
                     frame->prev_instr = _PyCode_CODE(frame->f_code) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
@@ -1623,7 +1623,7 @@
         TARGET(LIST_EXTEND) {
             _tagged_ptr iterable = stack_pointer[-1];
             _tagged_ptr list = stack_pointer[-(2 + (oparg-1))];
-            PyObject *none_val = _PyList_Extend((PyListObject *)list, detag(iterable));
+            PyObject *none_val = _PyList_Extend((PyListObject *)detag(list), detag(iterable));
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
                    (Py_TYPE(detag(iterable))->tp_iter == NULL && !PySequence_Check(detag(iterable))))
@@ -1645,7 +1645,7 @@
         TARGET(SET_UPDATE) {
             _tagged_ptr iterable = stack_pointer[-1];
             _tagged_ptr set = stack_pointer[-(2 + (oparg-1))];
-            int err = _PySet_Update(set, detag(iterable));
+            int err = _PySet_Update(detag(set), detag(iterable));
             decref_unless_tagged(iterable);
             if (err < 0) { STACK_SHRINK((oparg-1)); goto pop_2_error; }
             STACK_SHRINK(1);
@@ -2351,13 +2351,13 @@
             _tagged_ptr right = stack_pointer[-1];
             _tagged_ptr left = stack_pointer[-2];
             PyObject *b;
-            assert(PyExceptionInstance_Check(left));
+            assert(PyExceptionInstance_Check(detag(left)));
             if (check_except_type_valid(tstate, detag(right)) < 0) {
                  decref_unless_tagged(right);
                  if (true) goto pop_2_error;
             }
 
-            int res = PyErr_GivenExceptionMatches(left, detag(right));
+            int res = PyErr_GivenExceptionMatches(detag(left), detag(right));
             decref_unless_tagged(right);
             b = Py_NewRef(res ? Py_True : Py_False);
             ((PyObject **)stack_pointer)[-1] = b;
@@ -2382,7 +2382,7 @@
             _tagged_ptr from = stack_pointer[-1];
             PyObject *res;
             PyObject *name = GETITEM(names, oparg);
-            res = import_from(tstate, from, name);
+            res = import_from(tstate, detag(from), name);
             if (res == NULL) goto pop_1_error;
             STACK_GROW(1);
             ((PyObject **)stack_pointer)[-1] = res;
@@ -2479,17 +2479,17 @@
             _tagged_ptr cond = stack_pointer[-1];
             bool jump = false;
             int err;
-            if (Py_IsTrue(cond)) {
-                _Py_DECREF_NO_DEALLOC(cond);
+            if (Py_IsTrue(detag(cond))) {
+                _Py_DECREF_NO_DEALLOC(detag(cond));
             }
-            else if (Py_IsFalse(cond)) {
+            else if (Py_IsFalse(detag(cond))) {
                 JUMPBY(oparg);
                 jump = true;
             }
             else {
-                err = PyObject_IsTrue(cond);
+                err = PyObject_IsTrue(detag(cond));
                 if (err > 0) {
-                    Py_DECREF(cond);
+                    decref_unless_tagged(cond);
                 }
                 else if (err == 0) {
                     JUMPBY(oparg);
@@ -2508,21 +2508,21 @@
             _tagged_ptr cond = stack_pointer[-1];
             bool jump = false;
             int err;
-            if (Py_IsFalse(cond)) {
-                _Py_DECREF_NO_DEALLOC(cond);
+            if (Py_IsFalse(detag(cond))) {
+                _Py_DECREF_NO_DEALLOC(detag(cond));
             }
-            else if (Py_IsTrue(cond)) {
+            else if (Py_IsTrue(detag(cond))) {
                 JUMPBY(oparg);
                 jump = true;
             }
             else {
-                err = PyObject_IsTrue(cond);
+                err = PyObject_IsTrue(detag(cond));
                 if (err > 0) {
                     JUMPBY(oparg);
                     jump = true;
                 }
                 else if (err == 0) {
-                    Py_DECREF(cond);
+                    decref_unless_tagged(cond);
                 }
                 else {
                     goto error;
@@ -2547,7 +2547,7 @@
             _tagged_ptr obj = stack_pointer[-1];
             PyObject *len_o;
             // PUSH(len(TOS))
-            Py_ssize_t len_i = PyObject_Length(obj);
+            Py_ssize_t len_i = PyObject_Length(detag(obj));
             if (len_i < 0) goto pop_1_error;
             len_o = PyLong_FromSsize_t(len_i);
             if (len_o == NULL) goto pop_1_error;
@@ -2583,7 +2583,7 @@
         TARGET(MATCH_MAPPING) {
             _tagged_ptr subject = stack_pointer[-1];
             PyObject *res;
-            int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
+            int match = Py_TYPE(detag(subject))->tp_flags & Py_TPFLAGS_MAPPING;
             res = Py_NewRef(match ? Py_True : Py_False);
             STACK_GROW(1);
             ((PyObject **)stack_pointer)[-1] = res;
@@ -2594,7 +2594,7 @@
         TARGET(MATCH_SEQUENCE) {
             _tagged_ptr subject = stack_pointer[-1];
             PyObject *res;
-            int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
+            int match = Py_TYPE(detag(subject))->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = Py_NewRef(match ? Py_True : Py_False);
             STACK_GROW(1);
             ((PyObject **)stack_pointer)[-1] = res;
@@ -2607,7 +2607,7 @@
             _tagged_ptr subject = stack_pointer[-2];
             PyObject *values_or_none;
             // On successful match, PUSH(values). Otherwise, PUSH(None).
-            values_or_none = match_keys(tstate, subject, keys);
+            values_or_none = match_keys(tstate, detag(subject), detag(keys));
             if (values_or_none == NULL) goto pop_2_error;
             STACK_GROW(1);
             ((PyObject **)stack_pointer)[-1] = values_or_none;
@@ -2667,14 +2667,14 @@
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
-                _Py_Specialize_ForIter(iter, next_instr, oparg);
+                _Py_Specialize_ForIter(detag(iter), next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(FOR_ITER, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
-            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            next = (*Py_TYPE(detag(iter))->tp_iternext)(detag(iter));
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
@@ -2687,7 +2687,7 @@
                 }
                 /* iterator ended normally */
                 assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == END_FOR);
-                Py_DECREF(iter);
+                decref_unless_tagged(iter);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2704,8 +2704,8 @@
             _tagged_ptr iter = stack_pointer[-1];
             PyObject *next;
             assert(cframe.use_tracing == 0);
-            DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
-            _PyListIterObject *it = (_PyListIterObject *)iter;
+            DEOPT_IF(Py_TYPE(detag(iter)) != &PyListIter_Type, FOR_ITER);
+            _PyListIterObject *it = (_PyListIterObject *)detag(iter);
             STAT_INC(FOR_ITER, hit);
             PyListObject *seq = it->it_seq;
             if (seq) {
@@ -2716,7 +2716,7 @@
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            Py_DECREF(iter);
+            decref_unless_tagged(iter);
             STACK_SHRINK(1);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2733,7 +2733,7 @@
             _tagged_ptr iter = stack_pointer[-1];
             PyObject *next;
             assert(cframe.use_tracing == 0);
-            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+            _PyTupleIterObject *it = (_PyTupleIterObject *)detag(iter);
             DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             PyTupleObject *seq = it->it_seq;
@@ -2745,7 +2745,7 @@
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            Py_DECREF(iter);
+            decref_unless_tagged(iter);
             STACK_SHRINK(1);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2762,7 +2762,7 @@
             _tagged_ptr iter = stack_pointer[-1];
             PyObject *next;
             assert(cframe.use_tracing == 0);
-            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            _PyRangeIterObject *r = (_PyRangeIterObject *)detag(iter);
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
@@ -2788,7 +2788,7 @@
         TARGET(FOR_ITER_GEN) {
             _tagged_ptr iter = stack_pointer[-1];
             assert(cframe.use_tracing == 0);
-            PyGenObject *gen = (PyGenObject *)iter;
+            PyGenObject *gen = (PyGenObject *)detag(iter);
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
@@ -2900,14 +2900,14 @@
             */
             PyObject *exc, *tb;
 
-            assert(val && PyExceptionInstance_Check(val));
-            exc = PyExceptionInstance_Class(val);
-            tb = PyException_GetTraceback(val);
+            assert(detag(val) && PyExceptionInstance_Check(detag(val)));
+            exc = PyExceptionInstance_Class(detag(val));
+            tb = PyException_GetTraceback(detag(val));
             Py_XDECREF(tb);
-            assert(PyLong_Check(lasti));
-            (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject *stack[4] = {NULL, exc, val, tb};
-            res = PyObject_Vectorcall(exit_func, stack + 1,
+            assert(PyLong_Check(detag(lasti)));
+            (void)detag(lasti); // Shut up compiler warning if asserts are off
+            PyObject *stack[4] = {NULL, exc, detag(val), tb};
+            res = PyObject_Vectorcall(detag(exit_func), stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL) goto pop_4_error;
             STACK_GROW(1);
@@ -3199,7 +3199,7 @@
             assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
-            DEOPT_IF(null != NULL, CALL);
+            DEOPT_IF(detag(null) != NULL, CALL);
             PyObject *obj = detag(args)[0];
             DEOPT_IF(detag(callable) != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
@@ -3221,7 +3221,7 @@
             assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
-            DEOPT_IF(null != NULL, CALL);
+            DEOPT_IF(detag(null) != NULL, CALL);
             DEOPT_IF(detag(callable) != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = detag(args)[0];
@@ -3244,7 +3244,7 @@
             PyObject *res;
             assert(kwnames == NULL);
             assert(oparg == 1);
-            DEOPT_IF(null != NULL, CALL);
+            DEOPT_IF(detag(null) != NULL, CALL);
             DEOPT_IF(detag(callable) != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = detag(args)[0];
@@ -3860,7 +3860,7 @@
             _tagged_ptr bottom = stack_pointer[-(1 + (oparg-1))];
             PyObject *top;
             assert(oparg > 0);
-            top = Py_NewRef(bottom);
+            top = Py_NewRef(detag(bottom));
             STACK_GROW(1);
             ((PyObject **)stack_pointer)[-1] = top;
             DISPATCH();

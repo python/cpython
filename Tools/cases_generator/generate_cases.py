@@ -410,7 +410,7 @@ class Instruction:
         names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
         subs: dict[str, parser.Sub] = {}
         for ieffect in self.input_effects:
-            if ieffect.type == "_tagged_ptr" and ieffect.name not in names_to_skip:
+            if ieffect.type == "_tagged_ptr" and ieffect.name != UNUSED:
                 subs[ieffect.name] = self.substitute_tagged_ptr
         block_text, _, _ = extract_block_text(self.block, subs=subs)
         for line in block_text:
