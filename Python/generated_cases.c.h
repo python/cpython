@@ -184,16 +184,10 @@
         }
 
         TARGET(END_FOR) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
-            {
-                PyObject *value = _tmp_1;
-                Py_DECREF(value);
-            }
-            {
-                PyObject *value = _tmp_2;
-                Py_DECREF(value);
-            }
+            PyObject *first = stack_pointer[-1];
+            PyObject *second = stack_pointer[-2];
+            Py_DECREF(second);
+            Py_DECREF(first);
             STACK_SHRINK(2);
             DISPATCH();
         }
@@ -1568,8 +1562,8 @@
             PyObject **pieces = (stack_pointer - oparg);
             PyObject *str;
             str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
-            for (int i = 0; i < oparg; i++) {
-                Py_DECREF(pieces[i]);
+            for (int _i = oparg; --_i >= 0;) {
+                Py_DECREF(pieces[_i]);
             }
             if (str == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
@@ -1665,9 +1659,8 @@
             if (map == NULL)
                 goto error;
 
-            for (int i = 0; i < oparg; i++) {
-                Py_DECREF(values[i*2]);
-                Py_DECREF(values[i*2+1]);
+            for (int _i = oparg*2; --_i >= 0;) {
+                Py_DECREF(values[_i]);
             }
             if (map == NULL) { STACK_SHRINK(oparg*2); goto error; }
             STACK_SHRINK(oparg*2);
@@ -1732,10 +1725,10 @@
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
                     values, 1, oparg);
-            Py_DECREF(keys);
-            for (int i = 0; i < oparg; i++) {
-                Py_DECREF(values[i]);
+            for (int _i = oparg; --_i >= 0;) {
+                Py_DECREF(values[_i]);
             }
+            Py_DECREF(keys);
             if (map == NULL) { STACK_SHRINK(oparg); goto pop_1_error; }
             STACK_SHRINK(oparg);
             stack_pointer[-1] = map;
@@ -2470,7 +2463,6 @@
             else {
                 err = PyObject_IsTrue(cond);
                 if (err > 0) {
-                    Py_DECREF(cond);
                 }
                 else if (err == 0) {
                     JUMPBY(oparg);
@@ -2503,7 +2495,6 @@
                     jump = true;
                 }
                 else if (err == 0) {
-                    Py_DECREF(cond);
                 }
                 else {
                     goto error;
@@ -2668,7 +2659,6 @@
                 }
                 /* iterator ended normally */
                 assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == END_FOR);
-                Py_DECREF(iter);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2697,7 +2687,6 @@
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            Py_DECREF(iter);
             STACK_SHRINK(1);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2726,7 +2715,6 @@
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            Py_DECREF(iter);
             STACK_SHRINK(1);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
