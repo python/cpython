@@ -82,6 +82,8 @@ static inline void incref_if_tagged(_tagged_ptr tp) {
     } \
 } while (0)
 
+#define STEAL(tp) (is_tagged(tp) ? Py_NewRef(detag(tp)) : tp.obj)
+
 
 /* other API */
 

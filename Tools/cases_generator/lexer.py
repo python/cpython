@@ -4,8 +4,8 @@
 
 import re
 import sys
-import collections
 from dataclasses import dataclass
+from typing import Callable
 
 def choice(*opts):
     return "|".join("(%s)" % opt for opt in opts)
@@ -163,7 +163,7 @@ class Token:
     def width(self):
         return self.end[1] - self.begin[1]
 
-    def replaceText(self, txt):
+    def replace_text(self, txt):
         assert isinstance(txt, str)
         return Token(self.kind, txt, self.begin, self.end)
 
@@ -227,9 +227,21 @@ __all__ = []
 __all__.extend([kind for kind in globals() if kind.upper() == kind])
 
 
-def to_text(tkns: list[Token], dedent: int = 0) -> str:
+# Substitution function, takes (text, prevs) where:
+# - text is the text of an IDENTIFIER token (as a string);
+# - prevs is (at most 2) preceding tokens (as strings).
+# Returns the input text or a new string to replace it.
+Sub = Callable[[str, list[str]], str]
+
+def to_text(tkns: list[Token], dedent: int = 0, subs: dict[str, Sub] | None = None) -> str:
     res: list[str] = []
-    line, col = -1, 1+dedent
+    line, col = -1, 1 + dedent
+    if subs:
+        tkns = list(tkns)
+        for i, tkn in enumerate(tkns):
+            if tkn.kind == IDENTIFIER and tkn.text in subs:
+                prevs = [tkn.text for tkn in tkns[max(0, i - 2) : i]]
+                tkns[i] = tkns[i].replace_text(subs[tkn.text](tkn.text, prevs))
     for tkn in tkns:
         if line == -1:
             line, _ = tkn.begin
@@ -238,8 +250,8 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
         while l > line:
             line += 1
             res.append('\n')
-            col = 1+dedent
-        res.append(' '*(c-col))
+            col = 1 + dedent
+        res.append(' '*(c - col))
         text = tkn.text
         if dedent != 0 and tkn.kind == 'COMMENT' and '\n' in text:
             if dedent < 0:

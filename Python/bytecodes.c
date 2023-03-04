@@ -126,8 +126,7 @@ dummy_func(
         }
 
         inst(STORE_FAST, (value --)) {
-            incref_if_tagged(value);
-            SETLOCAL(oparg, detag(value));
+            SETLOCAL(oparg, STEAL(value));
         }
 
         super(LOAD_FAST__LOAD_FAST) = LOAD_FAST + LOAD_FAST;

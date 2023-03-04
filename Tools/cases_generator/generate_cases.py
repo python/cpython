@@ -159,8 +159,8 @@ class Formatter:
             return
         typ = f"{dst.type}" if dst.type else "PyObject *"
         if src:
-            cast = self.cast(dst, src)
-            init = f" = {cast}{src.name}"
+            cast_src_name = self.cast_src_name(dst, src)
+            init = f" = {cast_src_name}"
         elif dst.cond:
             init = " = NULL"
         else:
@@ -174,17 +174,23 @@ class Formatter:
         if src.size:
             # Don't write sized arrays -- it's up to the user code.
             return
-        cast = self.cast(dst, src)
+        cast_src_name = self.cast_src_name(dst, src)
         if re.match(r"^REG\(oparg(\d+)\)$", dst.name):
-            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
+            self.emit(f"Py_XSETREF({dst.name}, {cast_src_name});")
         else:
-            stmt = f"{dst.name} = {cast}{src.name};"
+            stmt = f"{dst.name} = {cast_src_name};"
             if src.cond:
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
 
-    def cast(self, dst: StackEffect, src: StackEffect) -> str:
-        return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
+    def cast_src_name(self, dst: StackEffect, src: StackEffect) -> str:
+        if src.type == dst.type or {src.type, dst.type} <= {"", "PyObject *"}:
+            return src.name
+        if src.type == "_tagged_ptr" and dst.type in {"", "PyObject *"}:
+            return f"detag({src.name})"
+        if src.type in {"", "PyObject *"} and dst.type == "_tagged_ptr":
+            return f"untagged({src.name})"
+        return f"({dst.type or 'PyObject *'}){src.name}"
 
 
 @dataclasses.dataclass
@@ -197,7 +203,7 @@ class Instruction:
     kind: typing.Literal["inst", "op", "legacy"]  # Legacy means no (input -- output)
     name: str
     block: parser.Block
-    block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
+    block_text: list[str]  # Block.text, less curlies, CHECK_EVAL_BREAKER(), and PREDICT()
     predictions: list[str]  # Prediction targets (instruction names)
 
     # Computed by constructor
@@ -361,6 +367,18 @@ class Instruction:
         if self.cache_offset:
             out.emit(f"next_instr += {self.cache_offset};")
 
+    def substitute_tagged_ptr(self, text: str, prevs: list[str]) -> str:
+        if prevs:
+            if prevs[-1] in (".", "->"):
+                return text
+            if prevs[-2:] == ["STEAL", "("]:
+                return text
+            if prevs[-2:] == ["Py_DECREF", "("]:
+                return f"decref_unless_tagged({text})"
+            if prevs[-2:] == ["Py_XDECREF", "("]:
+                return f"xdecref_unless_tagged({text})"
+        return f"detag({text})"
+
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
@@ -388,7 +406,12 @@ class Instruction:
         assert dedent <= 0
         extra = " " * -dedent
         names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
-        for line in self.block_text:
+        subs: dict[str, parser.Sub] = {}
+        for ieffect in self.input_effects:
+            if ieffect.type == "_tagged_ptr" and ieffect.name not in names_to_skip:
+                subs[ieffect.name] = self.substitute_tagged_ptr
+        block_text, _, _ = extract_block_text(self.block, subs=subs)
+        for line in block_text:
             if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*(?://.*)?$", line):
                 space, cond, label = m.groups()
                 space = extra + space
@@ -1123,9 +1146,9 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]:
+def extract_block_text(block: parser.Block, subs: dict[str, parser.Sub] | None = None) -> tuple[list[str], bool, list[str]]:
     # Get lines of text with proper dedent
-    blocklines = block.text.splitlines(True)
+    blocklines = block.to_text(subs=subs).splitlines(True)
 
     # Remove blank lines from both ends
     while blocklines and not blocklines[0].strip():

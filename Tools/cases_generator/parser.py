@@ -6,6 +6,7 @@ from typing import NamedTuple, Callable, TypeVar, Literal
 import lexer as lx
 from plexer import PLexer
 
+Sub = lx.Sub  # For export
 
 P = TypeVar("P", bound="Parser")
 N = TypeVar("N", bound="Node")
@@ -44,11 +45,11 @@ class Node:
     def text(self) -> str:
         return self.to_text()
 
-    def to_text(self, dedent: int = 0) -> str:
+    def to_text(self, dedent: int = 0, subs: dict[str, lx.Sub] | None = None) -> str:
         context = self.context
         if not context:
             return ""
-        return lx.to_text(self.tokens, dedent)
+        return lx.to_text(self.tokens, dedent, subs)
 
     @property
     def tokens(self) -> list[lx.Token]:
