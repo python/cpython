@@ -304,7 +304,7 @@ class Instruction:
                 if ieffect.size:
                     src = StackEffect(f"(stack_pointer - {maybe_parenthesize(isize)})", "_tagged_ptr *")
                 elif ieffect.cond:
-                    src = StackEffect(f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL", "_tagged_ptr")
+                    src = StackEffect(f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : untagged(NULL)", "_tagged_ptr")
                 else:
                     src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "_tagged_ptr")
                 out.declare(ieffect, src)

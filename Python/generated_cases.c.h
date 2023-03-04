@@ -3688,7 +3688,7 @@
 
         TARGET(CALL_FUNCTION_EX) {
             PREDICTED(CALL_FUNCTION_EX);
-            _tagged_ptr kwargs = (oparg & 1) ? stack_pointer[-(((oparg & 1) ? 1 : 0))] : NULL;
+            _tagged_ptr kwargs = (oparg & 1) ? stack_pointer[-(((oparg & 1) ? 1 : 0))] : untagged(NULL);
             _tagged_ptr callargs = stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))];
             _tagged_ptr func = stack_pointer[-(2 + ((oparg & 1) ? 1 : 0))];
             PyObject *result;
@@ -3725,10 +3725,10 @@
 
         TARGET(MAKE_FUNCTION) {
             _tagged_ptr codeobj = stack_pointer[-1];
-            _tagged_ptr closure = (oparg & 0x08) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0))] : NULL;
-            _tagged_ptr annotations = (oparg & 0x04) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0))] : NULL;
-            _tagged_ptr kwdefaults = (oparg & 0x02) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0))] : NULL;
-            _tagged_ptr defaults = (oparg & 0x01) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x01) ? 1 : 0))] : NULL;
+            _tagged_ptr closure = (oparg & 0x08) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0))] : untagged(NULL);
+            _tagged_ptr annotations = (oparg & 0x04) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0))] : untagged(NULL);
+            _tagged_ptr kwdefaults = (oparg & 0x02) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0))] : untagged(NULL);
+            _tagged_ptr defaults = (oparg & 0x01) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x01) ? 1 : 0))] : untagged(NULL);
             PyObject *func;
 
             PyFunctionObject *func_obj = (PyFunctionObject *)
@@ -3787,7 +3787,7 @@
         }
 
         TARGET(BUILD_SLICE) {
-            _tagged_ptr step = (oparg == 3) ? stack_pointer[-(((oparg == 3) ? 1 : 0))] : NULL;
+            _tagged_ptr step = (oparg == 3) ? stack_pointer[-(((oparg == 3) ? 1 : 0))] : untagged(NULL);
             _tagged_ptr stop = stack_pointer[-(1 + ((oparg == 3) ? 1 : 0))];
             _tagged_ptr start = stack_pointer[-(2 + ((oparg == 3) ? 1 : 0))];
             PyObject *slice;
@@ -3803,7 +3803,7 @@
         }
 
         TARGET(FORMAT_VALUE) {
-            _tagged_ptr fmt_spec = ((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? stack_pointer[-((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0))] : NULL;
+            _tagged_ptr fmt_spec = ((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? stack_pointer[-((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0))] : untagged(NULL);
             _tagged_ptr value = stack_pointer[-(1 + (((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0))];
             PyObject *result;
             /* Handles f-string value formatting. */
