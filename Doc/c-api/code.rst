@@ -172,11 +172,10 @@ bound into a function.
    before the destruction of *co* takes place, so the prior state of *co*
    can be inspected.
 
-   If *event* is ``PY_CODE_EVENT_DESTROY``, there may already be a pending
-   exception set on entry to the callback; in this case, the callback may not
-   execute Python code or otherwise disturb the pending exception. Taking a
-   reference in the callback to an about-to-be-destroyed code object will
-   resurrect it and prevent it from being freed.
+   If *event* is ``PY_CODE_EVENT_DESTROY``, taking a reference in the callback
+   to the about-to-be-destroyed code object will resurrect it and prevent it
+   from being freed at this time. When the resurrected object is destroyed
+   later, any watcher callbacks active at that time will be called again.
 
    Users of this API should not rely on internal runtime implementation
    details. Such details may include, but are not limited to, the exact
@@ -187,8 +186,13 @@ bound into a function.
 
    If the callback sets an exception, it must return ``-1``; this exception will
    be printed as an unraisable exception using :c:func:`PyErr_WriteUnraisable`.
-   Otherwise (including if an exception was already set on entry to the
-   callback) it should return ``0``.
+   Otherwise it should return ``0``.
+
+   There may already be a pending exception set on entry to the callback. In
+   this case, the callback should return ``0`` with the same exception still
+   set. This means the callback may not call any other API that can set an
+   exception unless it saves and clears the exception state first, and restores
+   it before returning.
 
    .. versionadded:: 3.12
 

@@ -301,18 +301,23 @@ Dictionary Objects
    unpredictable effects, including infinite recursion. Do not trigger Python
    code execution in the callback, as it could modify the dict as a side effect.
 
-   If *event* is ``PyDict_EVENT_DEALLOCATED``, there may already be a pending
-   exception set on entry to the callback; in this case, the callback may not
-   execute Python code or otherwise disturb the pending exception. Taking a new
-   reference in the callback to an about-to-be-destroyed dictionary will
-   resurrect it and prevent it from being freed.
+   If *event* is ``PyDict_EVENT_DEALLOCATED``, taking a new reference in the
+   callback to the about-to-be-destroyed dictionary will resurrect it and
+   prevent it from being freed at this time. When the resurrected object is
+   destroyed later, any watcher callbacks active at that time will be called
+   again.
 
    Callbacks occur before the notified modification to *dict* takes place, so
    the prior state of *dict* can be inspected.
 
    If the callback sets an exception, it must return ``-1``; this exception will
    be printed as an unraisable exception using :c:func:`PyErr_WriteUnraisable`.
-   Otherwise (including if a pending exception was already set on entry to the
-   callback) it should return ``0``.
+   Otherwise it should return ``0``.
+
+   There may already be a pending exception set on entry to the callback. In
+   this case, the callback should return ``0`` with the same exception still
+   set. This means the callback may not call any other API that can set an
+   exception unless it saves and clears the exception state first, and restores
+   it before returning.
 
    .. versionadded:: 3.12

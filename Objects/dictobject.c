@@ -2312,7 +2312,7 @@ dict_dealloc(PyDictObject *mp)
     Py_SET_REFCNT(mp, 1);
     _PyDict_NotifyEvent(PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
     if (Py_REFCNT(mp) > 1) {
-        Py_DECREF(mp);
+        Py_SET_REFCNT(mp, Py_REFCNT(mp) - 1);
         return;
     }
     Py_SET_REFCNT(mp, 0);
@@ -5755,7 +5755,8 @@ _PyDict_SendEvent(int watcher_bits,
                 // unraisablehook keep a reference to it, so we don't pass the
                 // dict as context, just an informative string message.  Dict
                 // repr can call arbitrary code, so we invent a simpler version.
-                PyObject *context = PyUnicode_FromFormat("watcher callback for <dict at %p>", mp);
+                PyObject *context = PyUnicode_FromFormat(
+                    "watcher callback for <dict at %p>", mp);
                 if (context == NULL) {
                     context = Py_NewRef(Py_None);
                 }

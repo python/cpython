@@ -785,7 +785,7 @@ func_dealloc(PyFunctionObject *op)
     Py_SET_REFCNT(op, 1);
     handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
     if (Py_REFCNT(op) > 1) {
-        Py_DECREF(op);
+        Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
         return;
     }
     Py_SET_REFCNT(op, 0);

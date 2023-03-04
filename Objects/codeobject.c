@@ -1686,7 +1686,7 @@ code_dealloc(PyCodeObject *co)
     Py_SET_REFCNT(co, 1);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
     if (Py_REFCNT(co) > 1) {
-        Py_DECREF(co);
+        Py_SET_REFCNT(co, Py_REFCNT(co) - 1);
         return;
     }
     Py_SET_REFCNT(co, 0);
