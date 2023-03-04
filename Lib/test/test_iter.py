@@ -94,17 +94,17 @@ class CallableIterClass:
             raise IndexError # Emergency stop
         return i
 
-
-def exhaust(iterator):
-    """Exhaust an iterator without raising StopIteration."""
-    list(iterator)
-
-
 class EmptyIterClass:
     def __len__(self):
         return 0
     def __getitem__(self, i):
         raise StopIteration
+
+
+def exhaust(iterator):
+    """Exhaust an iterator without raising StopIteration."""
+    list(iterator)
+
 
 # Main test suite
 
