@@ -106,7 +106,6 @@ class EmptyIterClass:
     def __getitem__(self, i):
         raise StopIteration
 
-
 # Main test suite
 
 class TestCase(unittest.TestCase):
