@@ -1938,7 +1938,7 @@ dummy_func(
             else {
                 err = PyObject_IsTrue(cond);
                 if (err > 0) {
-                    DECREF_INPUTS();
+                    Py_DECREF(cond);
                 }
                 else if (err == 0) {
                     JUMPBY(oparg);
@@ -1967,7 +1967,7 @@ dummy_func(
                     jump = true;
                 }
                 else if (err == 0) {
-                    DECREF_INPUTS();
+                    Py_DECREF(cond);
                 }
                 else {
                     goto error;
@@ -2100,7 +2100,7 @@ dummy_func(
                 }
                 /* iterator ended normally */
                 assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == END_FOR);
-                DECREF_INPUTS();
+                Py_DECREF(iter);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2123,7 +2123,7 @@ dummy_func(
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            DECREF_INPUTS();
+            Py_DECREF(iter);
             STACK_SHRINK(1);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2146,7 +2146,7 @@ dummy_func(
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            DECREF_INPUTS();
+            Py_DECREF(iter);
             STACK_SHRINK(1);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
