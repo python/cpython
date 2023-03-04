@@ -185,9 +185,10 @@ bound into a function.
    (including whether a callback is invoked or not), it does not change
    the semantics of the Python code being executed.
 
-   If the callback returns with an exception set, it must return ``-1``; this
-   exception will be printed as an unraisable exception using
-   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+   If the callback sets an exception, it must return ``-1``; this exception will
+   be printed as an unraisable exception using :c:func:`PyErr_WriteUnraisable`.
+   Otherwise (including if an exception was already set on entry to the
+   callback) it should return ``0``.
 
    .. versionadded:: 3.12
 
