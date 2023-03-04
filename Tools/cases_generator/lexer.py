@@ -163,7 +163,7 @@ class Token:
     def width(self):
         return self.end[1] - self.begin[1]
 
-    def replace_text(self, txt):
+    def replace_text(self, txt: str):
         assert isinstance(txt, str)
         return Token(self.kind, txt, self.begin, self.end)
 
@@ -227,11 +227,11 @@ __all__ = []
 __all__.extend([kind for kind in globals() if kind.upper() == kind])
 
 
-# Substitution function, takes (text, prevs) where:
-# - text is the text of an IDENTIFIER token (as a string);
-# - prevs is (at most 2) preceding tokens (as strings).
-# Returns the input text or a new string to replace it.
-Sub = Callable[[str, list[str]], str]
+# Substitution function, takes a list of up to 3 strings.
+# The last string is the triggering token.
+# Returns a new list of equal length with substitutions.
+# To remove a token, use an empty string.
+Sub = Callable[[list[str]], list[str]]
 
 def to_text(tkns: list[Token], dedent: int = 0, subs: dict[str, Sub] | None = None) -> str:
     res: list[str] = []
@@ -240,8 +240,15 @@ def to_text(tkns: list[Token], dedent: int = 0, subs: dict[str, Sub] | None = No
         tkns = list(tkns)
         for i, tkn in enumerate(tkns):
             if tkn.kind == IDENTIFIER and tkn.text in subs:
-                prevs = [tkn.text for tkn in tkns[max(0, i - 2) : i]]
-                tkns[i] = tkns[i].replace_text(subs[tkn.text](tkn.text, prevs))
+                start = max(i - 2, 0)
+                texts = [tkn.text for tkn in tkns[start:i+1]]
+                repls = subs[tkn.text](texts)
+                if repls != texts:
+                    # print(f"BEFORE: {texts}, AFTER: {repls}")
+                    assert len(repls) == len(texts)
+                    for j, (a, b) in enumerate(zip(texts, repls), start):
+                        if a != b:
+                            tkns[j] = tkns[j].replace_text(b)
     for tkn in tkns:
         if line == -1:
             line, _ = tkn.begin

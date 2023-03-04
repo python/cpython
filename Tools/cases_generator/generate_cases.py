@@ -367,17 +367,19 @@ class Instruction:
         if self.cache_offset:
             out.emit(f"next_instr += {self.cache_offset};")
 
-    def substitute_tagged_ptr(self, text: str, prevs: list[str]) -> str:
+    def substitute_tagged_ptr(self, texts: list[str]) -> list[str]:
+        assert len(texts) >= 1
+        prevs, text = texts[:-1], texts[-1]
         if prevs:
             if prevs[-1] in (".", "->"):
-                return text
+                return texts
             if prevs[-2:] == ["STEAL", "("]:
-                return text
+                return texts
             if prevs[-2:] == ["Py_DECREF", "("]:
-                return f"decref_unless_tagged({text})"
+                return ["decref_unless_tagged", "(", text]
             if prevs[-2:] == ["Py_XDECREF", "("]:
-                return f"xdecref_unless_tagged({text})"
-        return f"detag({text})"
+                return ["xdecref_unless_tagged", "(", text]
+        return [*prevs, f"detag({text})"]
 
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
         """Write the instruction body."""

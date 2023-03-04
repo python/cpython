@@ -453,7 +453,7 @@
                 res = PyObject_GetItem(detag(container), slice);
                 Py_DECREF(slice);
             }
-            Py_DECREF(decref_unless_tagged(container));
+            decref_unless_tagged(container);
             if (res == NULL) goto pop_3_error;
             STACK_SHRINK(2);
             ((PyObject **)stack_pointer)[-1] = res;
@@ -474,8 +474,8 @@
                 err = PyObject_SetItem(detag(container), slice, detag(v));
                 Py_DECREF(slice);
             }
-            Py_DECREF(decref_unless_tagged(v));
-            Py_DECREF(decref_unless_tagged(container));
+            decref_unless_tagged(v);
+            decref_unless_tagged(container);
             if (err) goto pop_4_error;
             STACK_SHRINK(4);
             DISPATCH();
@@ -499,7 +499,7 @@
             assert(res != NULL);
             Py_INCREF(res);
             _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);
-            Py_DECREF(decref_unless_tagged(list));
+            decref_unless_tagged(list);
             STACK_SHRINK(1);
             ((PyObject **)stack_pointer)[-1] = res;
             next_instr += 4;
@@ -524,7 +524,7 @@
             assert(res != NULL);
             Py_INCREF(res);
             _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);
-            Py_DECREF(decref_unless_tagged(tuple));
+            decref_unless_tagged(tuple);
             STACK_SHRINK(1);
             ((PyObject **)stack_pointer)[-1] = res;
             next_instr += 4;
@@ -652,7 +652,7 @@
             assert(old_value != NULL);
             Py_DECREF(old_value);
             _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);
-            Py_DECREF(decref_unless_tagged(list));
+            decref_unless_tagged(list);
             STACK_SHRINK(3);
             next_instr += 1;
             DISPATCH();
@@ -666,7 +666,7 @@
             DEOPT_IF(!PyDict_CheckExact(detag(dict)), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)detag(dict), detag(sub), detag(value));
-            Py_DECREF(decref_unless_tagged(dict));
+            decref_unless_tagged(dict);
             if (err) goto pop_3_error;
             STACK_SHRINK(3);
             next_instr += 1;
@@ -941,7 +941,7 @@
             else {
                 assert(retval != NULL);
             }
-            Py_DECREF(decref_unless_tagged(v));
+            decref_unless_tagged(v);
             ((PyObject **)stack_pointer)[-1] = retval;
             next_instr += 1;
             DISPATCH();
@@ -2094,7 +2094,7 @@
             else {
                 Py_DECREF(old_value);
             }
-            Py_DECREF(decref_unless_tagged(owner));
+            decref_unless_tagged(owner);
             STACK_SHRINK(2);
             next_instr += 4;
             DISPATCH();
@@ -2143,7 +2143,7 @@
             }
             /* PEP 509 */
             dict->ma_version_tag = new_version;
-            Py_DECREF(decref_unless_tagged(owner));
+            decref_unless_tagged(owner);
             STACK_SHRINK(2);
             next_instr += 4;
             DISPATCH();
@@ -2163,7 +2163,7 @@
             PyObject *old_value = *(PyObject **)addr;
             *(PyObject **)addr = detag(value);
             Py_XDECREF(old_value);
-            Py_DECREF(decref_unless_tagged(owner));
+            decref_unless_tagged(owner);
             STACK_SHRINK(2);
             next_instr += 4;
             DISPATCH();
@@ -3054,7 +3054,7 @@
                 detag(args)[0] = Py_NewRef(self);
                 detag(method) = ((PyMethodObject *)detag(callable))->im_func;
                 detag(args)[-1] = Py_NewRef(detag(method));
-                Py_DECREF(decref_unless_tagged(callable));
+                decref_unless_tagged(callable);
                 detag(callable) = detag(method);
             }
             int positional_args = total_args - KWNAMES_LEN();
@@ -3094,9 +3094,9 @@
             }
             kwnames = NULL;
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(decref_unless_tagged(callable));
+            decref_unless_tagged(callable);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(decref_unless_tagged(args)[i]);
+                decref_unless_tagged(args[i]);
             }
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
             STACK_SHRINK(oparg);
@@ -3282,7 +3282,7 @@
             kwnames = NULL;
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(decref_unless_tagged(args)[i]);
+                decref_unless_tagged(args[i]);
             }
             Py_DECREF(tp);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3325,7 +3325,7 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             Py_DECREF(arg);
-            Py_DECREF(decref_unless_tagged(callable));
+            decref_unless_tagged(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
@@ -3363,9 +3363,9 @@
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(decref_unless_tagged(args)[i]);
+                decref_unless_tagged(args[i]);
             }
-            Py_DECREF(decref_unless_tagged(callable));
+            decref_unless_tagged(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
                 /* Not deopting because this doesn't mean our optimization was
                    wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
@@ -3413,9 +3413,9 @@
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(decref_unless_tagged(args)[i]);
+                decref_unless_tagged(args[i]);
             }
-            Py_DECREF(decref_unless_tagged(callable));
+            decref_unless_tagged(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
@@ -3452,7 +3452,7 @@
             res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
-            Py_DECREF(decref_unless_tagged(callable));
+            decref_unless_tagged(callable);
             Py_DECREF(arg);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
             STACK_SHRINK(oparg);
@@ -3492,7 +3492,7 @@
 
             Py_DECREF(inst);
             Py_DECREF(cls);
-            Py_DECREF(decref_unless_tagged(callable));
+            decref_unless_tagged(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
@@ -3516,8 +3516,8 @@
             if (_PyList_AppendTakeRef((PyListObject *)detag(self), detag(args)[0]) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
-            Py_DECREF(decref_unless_tagged(self));
-            Py_DECREF(decref_unless_tagged(method));
+            decref_unless_tagged(self);
+            decref_unless_tagged(method);
             STACK_SHRINK(3);
             // CALL + POP_TOP
             JUMPBY(INLINE_CACHE_ENTRIES_CALL + 1);
@@ -3595,7 +3595,7 @@
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(decref_unless_tagged(args)[i]);
+                decref_unless_tagged(args[i]);
             }
             Py_DECREF(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3674,7 +3674,7 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(decref_unless_tagged(args)[i]);
+                decref_unless_tagged(args[i]);
             }
             Py_DECREF(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3734,7 +3734,7 @@
             PyFunctionObject *func_obj = (PyFunctionObject *)
                 PyFunction_New(detag(codeobj), GLOBALS());
 
-            Py_DECREF(decref_unless_tagged(codeobj));
+            decref_unless_tagged(codeobj);
             if (func_obj == NULL) {
                 goto error;
             }
@@ -3828,9 +3828,9 @@
                without conversion. */
             if (conv_fn != NULL) {
                 result = conv_fn(detag(value));
-                Py_DECREF(decref_unless_tagged(value));
+                decref_unless_tagged(value);
                 if (result == NULL) {
-                    Py_XDECREF(xdecref_unless_tagged(fmt_spec));
+                    xdecref_unless_tagged(fmt_spec);
                     if (true) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
                 }
                 detag(value) = result;
