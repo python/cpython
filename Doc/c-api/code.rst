@@ -172,6 +172,12 @@ bound into a function.
    before the destruction of *co* takes place, so the prior state of *co*
    can be inspected.
 
+   If *event* is ``PY_CODE_EVENT_DESTROY``, there may already be a pending
+   exception set on entry to the callback; in this case, the callback may not
+   execute Python code or otherwise disturb the pending exception. Taking a
+   reference in the callback to an about-to-be-destroyed code object will
+   resurrect it and prevent it from being freed.
+
    Users of this API should not rely on internal runtime implementation
    details. Such details may include, but are not limited to, the exact
    order and timing of creation and destruction of code objects. While

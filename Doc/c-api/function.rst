@@ -173,8 +173,15 @@ There are a few functions specific to Python functions.
    runtime behavior depending on optimization decisions, it does not change
    the semantics of the Python code being executed.
 
-   If the callback returns with an exception set, it must return ``-1``; this
-   exception will be printed as an unraisable exception using
-   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+   If *event* is ``PyFunction_EVENT_DESTROY``, there may already be a pending
+   exception set on entry to the callback; in this case, the callback may not
+   execute Python code or otherwise disturb the pending exception. Taking a
+   reference in the callback to an about-to-be-destroyed function will resurrect
+   it and prevent it from being freed.
+
+   If the callback sets an exception, it must return ``-1``; this exception will
+   be printed as an unraisable exception using :c:func:`PyErr_WriteUnraisable`.
+   Otherwise (including if a pending exception was already set on entry to the
+   callback) it should return ``0``.
 
    .. versionadded:: 3.12
