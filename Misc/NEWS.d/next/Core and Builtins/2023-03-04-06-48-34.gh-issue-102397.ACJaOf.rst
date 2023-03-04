@@ -1,0 +1,1 @@
+Fix segfault from race condition in signal handling. Patch by Kumar Aditya.
