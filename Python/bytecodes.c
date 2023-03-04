@@ -137,7 +137,9 @@ dummy_func(
             res = NULL;
         }
 
-        macro(END_FOR) = POP_TOP + POP_TOP;
+        inst(END_FOR, (second, first --)) {
+            DECREF_INPUTS();
+        }
 
         inst(UNARY_NEGATIVE, (value -- res)) {
             res = PyNumber_Negative(value);
@@ -395,8 +397,7 @@ dummy_func(
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_SetKeyError(sub);
                 }
-                Py_DECREF(dict);
-                Py_DECREF(sub);
+                DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
             Py_INCREF(res);  // Do this before DECREF'ing dict, sub
@@ -431,7 +432,7 @@ dummy_func(
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             int err = PySet_Add(set, v);
-            Py_DECREF(v);
+            DECREF_INPUTS();
             ERROR_IF(err, error);
             PREDICT(JUMP_BACKWARD);
         }
@@ -910,7 +911,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject **top = stack_pointer + oparg - 1;
             int res = unpack_iterable(tstate, seq, oparg, -1, top);
-            Py_DECREF(seq);
+            DECREF_INPUTS();
             ERROR_IF(res == 0, error);
         }
 
@@ -921,7 +922,7 @@ dummy_func(
             STAT_INC(UNPACK_SEQUENCE, hit);
             values[0] = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
             values[1] = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
-            Py_DECREF(seq);
+            DECREF_INPUTS();
         }
 
         inst(UNPACK_SEQUENCE_TUPLE, (unused/1, seq -- values[oparg])) {
@@ -932,7 +933,7 @@ dummy_func(
             for (int i = oparg; --i >= 0; ) {
                 *values++ = Py_NewRef(items[i]);
             }
-            Py_DECREF(seq);
+            DECREF_INPUTS();
         }
 
         inst(UNPACK_SEQUENCE_LIST, (unused/1, seq -- values[oparg])) {
@@ -943,14 +944,14 @@ dummy_func(
             for (int i = oparg; --i >= 0; ) {
                 *values++ = Py_NewRef(items[i]);
             }
-            Py_DECREF(seq);
+            DECREF_INPUTS();
         }
 
         inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             PyObject **top = stack_pointer + totalargs - 1;
             int res = unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
-            Py_DECREF(seq);
+            DECREF_INPUTS();
             ERROR_IF(res == 0, error);
         }
 
@@ -978,22 +979,21 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(names, oparg);
             int err = PyObject_SetAttr(owner, name, v);
-            Py_DECREF(v);
-            Py_DECREF(owner);
+            DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(names, oparg);
             int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
-            Py_DECREF(owner);
+            DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(names, oparg);
             int err = PyDict_SetItem(GLOBALS(), name, v);
-            Py_DECREF(v);
+            DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
@@ -1260,9 +1260,7 @@ dummy_func(
 
         inst(BUILD_STRING, (pieces[oparg] -- str)) {
             str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
-            for (int i = 0; i < oparg; i++) {
-                Py_DECREF(pieces[i]);
-            }
+            DECREF_INPUTS();
             ERROR_IF(str == NULL, error);
         }
 
@@ -1325,10 +1323,7 @@ dummy_func(
             if (map == NULL)
                 goto error;
 
-            for (int i = 0; i < oparg; i++) {
-                Py_DECREF(values[i*2]);
-                Py_DECREF(values[i*2+1]);
-            }
+            DECREF_INPUTS();
             ERROR_IF(map == NULL, error);
         }
 
@@ -1384,10 +1379,7 @@ dummy_func(
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
                     values, 1, oparg);
-            Py_DECREF(keys);
-            for (int i = 0; i < oparg; i++) {
-                Py_DECREF(values[i]);
-            }
+            DECREF_INPUTS();
             ERROR_IF(map == NULL, error);
         }
 
@@ -1475,7 +1467,7 @@ dummy_func(
 
                        NULL | meth | arg1 | ... | argN
                     */
-                    Py_DECREF(owner);
+                    DECREF_INPUTS();
                     ERROR_IF(meth == NULL, error);
                     res2 = NULL;
                     res = meth;
@@ -1484,7 +1476,7 @@ dummy_func(
             else {
                 /* Classic, pushes one value. */
                 res = PyObject_GetAttr(owner, name);
-                Py_DECREF(owner);
+                DECREF_INPUTS();
                 ERROR_IF(res == NULL, error);
             }
         }
@@ -1503,7 +1495,7 @@ dummy_func(
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
             res2 = NULL;
-            Py_DECREF(owner);
+            DECREF_INPUTS();
         }
 
         inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
@@ -1520,7 +1512,7 @@ dummy_func(
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
             res2 = NULL;
-            Py_DECREF(owner);
+            DECREF_INPUTS();
         }
 
         inst(LOAD_ATTR_WITH_HINT, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
@@ -1551,7 +1543,7 @@ dummy_func(
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
             res2 = NULL;
-            Py_DECREF(owner);
+            DECREF_INPUTS();
         }
 
         inst(LOAD_ATTR_SLOT, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
@@ -1565,7 +1557,7 @@ dummy_func(
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
             res2 = NULL;
-            Py_DECREF(owner);
+            DECREF_INPUTS();
         }
 
         inst(LOAD_ATTR_CLASS, (unused/1, type_version/2, unused/2, descr/4, cls -- res2 if (oparg & 1), res)) {
@@ -1581,7 +1573,7 @@ dummy_func(
             res = descr;
             assert(res != NULL);
             Py_INCREF(res);
-            Py_DECREF(cls);
+            DECREF_INPUTS();
         }
 
         inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, func_version/2, fget/4, owner -- unused if (oparg & 1), unused)) {
@@ -1718,8 +1710,7 @@ dummy_func(
             STAT_INC(COMPARE_OP, deferred);
             assert((oparg >> 4) <= Py_GE);
             res = PyObject_RichCompare(left, right, oparg>>4);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
@@ -1745,8 +1736,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
             assert((oparg >> 4) <= Py_GE);
             PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            DECREF_INPUTS();
             ERROR_IF(cond == NULL, error);
             assert(next_instr[1].op.code == POP_JUMP_IF_FALSE ||
                    next_instr[1].op.code == POP_JUMP_IF_TRUE);
@@ -1896,7 +1886,7 @@ dummy_func(
             }
             else {
                 int err = PyObject_IsTrue(cond);
-                Py_DECREF(cond);
+                DECREF_INPUTS();
                 if (err == 0) {
                     JUMPBY(oparg);
                 }
@@ -1916,7 +1906,7 @@ dummy_func(
             }
             else {
                 int err = PyObject_IsTrue(cond);
-                Py_DECREF(cond);
+                DECREF_INPUTS();
                 if (err > 0) {
                     JUMPBY(oparg);
                 }
@@ -1928,7 +1918,7 @@ dummy_func(
 
         inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
             if (!Py_IsNone(value)) {
-                Py_DECREF(value);
+                DECREF_INPUTS();
                 JUMPBY(oparg);
             }
             else {
@@ -1942,7 +1932,7 @@ dummy_func(
                 JUMPBY(oparg);
             }
             else {
-                Py_DECREF(value);
+                DECREF_INPUTS();
             }
         }
 
@@ -1959,7 +1949,7 @@ dummy_func(
             else {
                 err = PyObject_IsTrue(cond);
                 if (err > 0) {
-                    Py_DECREF(cond);
+                    DECREF_INPUTS();
                 }
                 else if (err == 0) {
                     JUMPBY(oparg);
@@ -1988,7 +1978,7 @@ dummy_func(
                     jump = true;
                 }
                 else if (err == 0) {
-                    Py_DECREF(cond);
+                    DECREF_INPUTS();
                 }
                 else {
                     goto error;
@@ -2076,7 +2066,7 @@ dummy_func(
                 if (iter == NULL) {
                     goto error;
                 }
-                Py_DECREF(iterable);
+                DECREF_INPUTS();
             }
             PREDICT(LOAD_CONST);
         }
@@ -2121,7 +2111,7 @@ dummy_func(
                 }
                 /* iterator ended normally */
                 assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == END_FOR);
-                Py_DECREF(iter);
+                DECREF_INPUTS();
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2144,7 +2134,7 @@ dummy_func(
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            Py_DECREF(iter);
+            DECREF_INPUTS();
             STACK_SHRINK(1);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2167,7 +2157,7 @@ dummy_func(
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            Py_DECREF(iter);
+            DECREF_INPUTS();
             STACK_SHRINK(1);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
@@ -2951,9 +2941,7 @@ dummy_func(
             assert(PyTuple_CheckExact(callargs));
 
             result = do_call_core(tstate, func, callargs, kwargs, cframe.use_tracing);
-            Py_DECREF(func);
-            Py_DECREF(callargs);
-            Py_XDECREF(kwargs);
+            DECREF_INPUTS();
 
             assert(PEEK(3 + (oparg & 1)) == NULL);
             ERROR_IF(result == NULL, error);
@@ -3020,9 +3008,7 @@ dummy_func(
 
         inst(BUILD_SLICE, (start, stop, step if (oparg == 3) -- slice)) {
             slice = PySlice_New(start, stop, step);
-            Py_DECREF(start);
-            Py_DECREF(stop);
-            Py_XDECREF(step);
+            DECREF_INPUTS();
             ERROR_IF(slice == NULL, error);
         }
 
@@ -3068,8 +3054,7 @@ dummy_func(
             } else {
                 /* Actually call format(). */
                 result = PyObject_Format(value, fmt_spec);
-                Py_DECREF(value);
-                Py_XDECREF(fmt_spec);
+                DECREF_INPUTS();
                 ERROR_IF(result == NULL, error);
             }
         }
@@ -3095,8 +3080,7 @@ dummy_func(
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
             res = binary_ops[oparg](lhs, rhs);
-            Py_DECREF(lhs);
-            Py_DECREF(rhs);
+            DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
