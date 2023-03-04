@@ -323,13 +323,13 @@ class Instruction:
                     osize = string_effect_size(
                         list_effect_size([oeff for oeff in self.output_effects[:i]])
                     )
-                    offset = "(PyObject **)stack_pointer"
+                    offset = "stack_pointer"
                     if isize != osize:
                         if isize != "0":
                             offset += f" - ({isize})"
                         if osize != "0":
                             offset += f" + {osize}"
-                    src = StackEffect(offset, "PyObject **")
+                    src = StackEffect(offset, "_tagged_ptr *")
                     out.declare(oeffect, src)
                 else:
                     out.declare(oeffect, None)
@@ -359,9 +359,9 @@ class Instruction:
                     list_effect_size([oeff for oeff in oeffects[: i + 1]])
                 )
                 if oeffect.size:
-                    dst = StackEffect(f"(PyObject **)stack_pointer - {maybe_parenthesize(osize)}", "PyObject **")
+                    dst = StackEffect(f"stack_pointer - {maybe_parenthesize(osize)}", "_tagged_ptr *")
                 else:
-                    dst = StackEffect(f"((PyObject **)stack_pointer)[-{maybe_parenthesize(osize)}]", "")
+                    dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "_tagged_ptr")
                 out.assign(dst, oeffect)
         else:
             # Write output register assignments
