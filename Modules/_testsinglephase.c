@@ -17,12 +17,27 @@ typedef struct {
     PyObject *str_const;
 } module_state;
 
+
 /* Process-global state is only used by _testsinglephase
    since it's the only one that does not support re-init. */
 static struct {
     int initialized_count;
     module_state module;
-} global_state = { .initialized_count = -1 };
+} global_state = {
+
+#define NOT_INITIALIZED -1
+    .initialized_count = NOT_INITIALIZED,
+};
+
+static void clear_state(module_state *state);
+
+static void
+clear_global_state(void)
+{
+    clear_state(&global_state.module);
+    global_state.initialized_count = NOT_INITIALIZED;
+}
+
 
 static inline module_state *
 get_module_state(PyObject *module)
@@ -106,6 +121,7 @@ error:
     return -1;
 }
 
+
 static int
 init_module(PyObject *module, module_state *state)
 {
@@ -118,17 +134,27 @@ init_module(PyObject *module, module_state *state)
     if (PyModule_AddObjectRef(module, "str_const", state->str_const) != 0) {
         return -1;
     }
+
+    double d = _PyTime_AsSecondsDouble(state->initialized);
+    PyObject *initialized = PyFloat_FromDouble(d);
+    if (initialized == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "_module_initialized", initialized) != 0) {
+        return -1;
+    }
+
     return 0;
 }
 
 
-PyDoc_STRVAR(common_initialized_doc,
-"initialized()\n\
+PyDoc_STRVAR(common_state_initialized_doc,
+"state_initialized()\n\
 \n\
-Return the seconds-since-epoch when the module was initialized.");
+Return the seconds-since-epoch when the module state was initialized.");
 
 static PyObject *
-common_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
+common_state_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     module_state *state = get_module_state(self);
     if (state == NULL) {
@@ -138,9 +164,9 @@ common_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyFloat_FromDouble(d);
 }
 
-#define INITIALIZED_METHODDEF \
-    {"initialized", common_initialized, METH_NOARGS, \
-     common_initialized_doc}
+#define STATE_INITIALIZED_METHODDEF \
+    {"state_initialized", common_state_initialized, METH_NOARGS, \
+     common_state_initialized_doc}
 
 
 PyDoc_STRVAR(common_look_up_self_doc,
@@ -198,8 +224,26 @@ basic_initialized_count(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 #define INITIALIZED_COUNT_METHODDEF \
-    {"initialized_count", basic_initialized_count, METH_VARARGS, \
+    {"initialized_count", basic_initialized_count, METH_NOARGS, \
      basic_initialized_count_doc}
+
+
+PyDoc_STRVAR(basic__clear_globals_doc,
+"_clear_globals()\n\
+\n\
+Free all global state and set it to uninitialized.");
+
+static PyObject *
+basic__clear_globals(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    assert(PyModule_GetDef(self)->m_size == -1);
+    clear_global_state();
+    Py_RETURN_NONE;
+}
+
+#define _CLEAR_GLOBALS_METHODDEF \
+    {"_clear_globals", basic__clear_globals, METH_NOARGS, \
+     basic__clear_globals_doc}
 
 
 /*********************************************/
@@ -221,8 +265,9 @@ basic_initialized_count(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyMethodDef TestMethods_Basic[] = {
     LOOK_UP_SELF_METHODDEF,
     SUM_METHODDEF,
-    INITIALIZED_METHODDEF,
+    STATE_INITIALIZED_METHODDEF,
     INITIALIZED_COUNT_METHODDEF,
+    _CLEAR_GLOBALS_METHODDEF,
     {NULL, NULL}           /* sentinel */
 };
 
@@ -315,7 +360,7 @@ PyInit__testsinglephase_basic_copy(void)
 static PyMethodDef TestMethods_Reinit[] = {
     LOOK_UP_SELF_METHODDEF,
     SUM_METHODDEF,
-    INITIALIZED_METHODDEF,
+    STATE_INITIALIZED_METHODDEF,
     {NULL, NULL}           /* sentinel */
 };
 
@@ -376,7 +421,7 @@ finally:
 static PyMethodDef TestMethods_WithState[] = {
     LOOK_UP_SELF_METHODDEF,
     SUM_METHODDEF,
-    INITIALIZED_METHODDEF,
+    STATE_INITIALIZED_METHODDEF,
     {NULL, NULL}           /* sentinel */
 };
 
