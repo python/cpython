@@ -296,7 +296,7 @@ class TestOptionalsSingleDashCombined(ParserTestCase):
         Sig('-z'),
     ]
     failures = ['a', '--foo', '-xa', '-x --foo', '-x -z', '-z -x',
-                '-yx', '-yz a', '-yyyx', '-yyyza', '-xyza']
+                '-yx', '-yz a', '-yyyx', '-yyyza', '-xyza', '-x=']
     successes = [
         ('', NS(x=False, yyy=None, z=None)),
         ('-x', NS(x=True, yyy=None, z=None)),

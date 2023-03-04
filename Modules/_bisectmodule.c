@@ -66,7 +66,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
     if (sq_item == NULL) {
         return -1;
     }
-    if (Py_EnterRecursiveCall("in _bisect.bisect_right") < 0) {
+    if (Py_EnterRecursiveCall("in _bisect.bisect_right")) {
         return -1;
     }
     PyTypeObject *tp = Py_TYPE(item);
@@ -246,7 +246,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
     if (sq_item == NULL) {
         return -1;
     }
-    if (Py_EnterRecursiveCall("in _bisect.bisect_left") < 0) {
+    if (Py_EnterRecursiveCall("in _bisect.bisect_left")) {
         return -1;
     }
     PyTypeObject *tp = Py_TYPE(item);

@@ -2214,6 +2214,7 @@ class CoroutineTest(unittest.TestCase):
         gen = f()
         with self.assertWarns(RuntimeWarning):
             gen.cr_frame.clear()
+        gen.close()
 
     def test_stack_in_coroutine_throw(self):
         # Regression test for https://github.com/python/cpython/issues/93592
@@ -2418,7 +2419,8 @@ class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
     def test_unawaited_warning_during_shutdown(self):
         code = ("import asyncio\n"
                 "async def f(): pass\n"
-                "asyncio.gather(f())\n")
+                "async def t(): asyncio.gather(f())\n"
+                "asyncio.run(t())\n")
         assert_python_ok("-c", code)
 
         code = ("import sys\n"

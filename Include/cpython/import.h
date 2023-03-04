@@ -25,6 +25,7 @@ struct _inittab {
     const char *name;           /* ASCII encoded string */
     PyObject* (*initfunc)(void);
 };
+// This is not used after Py_Initialize() is called.
 PyAPI_DATA(struct _inittab *) PyImport_Inittab;
 PyAPI_FUNC(int) PyImport_ExtendInittab(struct _inittab *newtab);
 

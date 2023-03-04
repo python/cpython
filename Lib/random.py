@@ -336,7 +336,10 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        if not seq:
+
+        # As an accommodation for NumPy, we don't use "if not seq"
+        # because bool(numpy.array()) raises a ValueError.
+        if not len(seq):
             raise IndexError('Cannot choose from an empty sequence')
         return seq[self._randbelow(len(seq))]
 
@@ -577,7 +580,7 @@ class Random(_random.Random):
         """
         return _exp(self.normalvariate(mu, sigma))
 
-    def expovariate(self, lambd):
+    def expovariate(self, lambd=1.0):
         """Exponential distribution.
 
         lambd is 1.0 divided by the desired mean.  It should be
@@ -846,7 +849,7 @@ class SystemRandom(Random):
     """
 
     def random(self):
-        """Get the next random number in the range [0.0, 1.0)."""
+        """Get the next random number in the range 0.0 <= X < 1.0."""
         return (int.from_bytes(_urandom(7)) >> 3) * RECIP_BPF
 
     def getrandbits(self, k):

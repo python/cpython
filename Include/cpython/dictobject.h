@@ -16,7 +16,11 @@ typedef struct {
 
     /* Dictionary version: globally unique, value change each time
        the dictionary is modified */
+#ifdef Py_BUILD_CORE       
     uint64_t ma_version_tag;
+#else
+    Py_DEPRECATED(3.12) uint64_t ma_version_tag;
+#endif        
 
     PyDictKeysObject *ma_keys;
 

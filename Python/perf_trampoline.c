@@ -134,11 +134,6 @@ any DWARF information available for them).
 #include "pycore_frame.h"
 #include "pycore_interp.h"
 
-typedef enum {
-    PERF_STATUS_FAILED = -1,  // Perf trampoline is in an invalid state
-    PERF_STATUS_NO_INIT = 0,  // Perf trampoline is not initialized
-    PERF_STATUS_OK = 1,       // Perf trampoline is ready to be executed
-} perf_status_t;
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 
@@ -190,24 +185,13 @@ struct code_arena_st {
 };
 
 typedef struct code_arena_st code_arena_t;
-
-struct trampoline_api_st {
-    void* (*init_state)(void);
-    void (*write_state)(void* state, const void *code_addr,
-                        unsigned int code_size, PyCodeObject* code);
-    int (*free_state)(void* state);
-    void *state;
-};
-
 typedef struct trampoline_api_st trampoline_api_t;
 
-
-static perf_status_t perf_status = PERF_STATUS_NO_INIT;
-static Py_ssize_t extra_code_index = -1;
-static code_arena_t *code_arena;
-static trampoline_api_t trampoline_api;
-
-static FILE *perf_map_file;
+#define perf_status _PyRuntime.ceval.perf.status
+#define extra_code_index _PyRuntime.ceval.perf.extra_code_index
+#define perf_code_arena _PyRuntime.ceval.perf.code_arena
+#define trampoline_api _PyRuntime.ceval.perf.trampoline_api
+#define perf_map_file _PyRuntime.ceval.perf.map_file
 
 static void *
 perf_map_get_file(void)
@@ -344,17 +328,17 @@ new_code_arena(void)
     new_arena->size = mem_size;
     new_arena->size_left = mem_size;
     new_arena->code_size = code_size;
-    new_arena->prev = code_arena;
-    code_arena = new_arena;
+    new_arena->prev = perf_code_arena;
+    perf_code_arena = new_arena;
     return 0;
 }
 
 static void
 free_code_arenas(void)
 {
-    code_arena_t *cur = code_arena;
+    code_arena_t *cur = perf_code_arena;
     code_arena_t *prev;
-    code_arena = NULL;  // invalid static pointer
+    perf_code_arena = NULL;  // invalid static pointer
     while (cur) {
         munmap(cur->start_addr, cur->size);
         prev = cur->prev;
@@ -375,14 +359,14 @@ code_arena_new_code(code_arena_t *code_arena)
 static inline py_trampoline
 compile_trampoline(void)
 {
-    if ((code_arena == NULL) ||
-        (code_arena->size_left <= code_arena->code_size)) {
+    if ((perf_code_arena == NULL) ||
+        (perf_code_arena->size_left <= perf_code_arena->code_size)) {
         if (new_code_arena() < 0) {
             return NULL;
         }
     }
-    assert(code_arena->size_left <= code_arena->size);
-    return code_arena_new_code(code_arena);
+    assert(perf_code_arena->size_left <= perf_code_arena->size);
+    return code_arena_new_code(perf_code_arena);
 }
 
 static PyObject *
@@ -405,7 +389,7 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
             goto default_eval;
         }
         trampoline_api.write_state(trampoline_api.state, new_trampoline,
-                                   code_arena->code_size, co);
+                                   perf_code_arena->code_size, co);
         _PyCode_SetExtra((PyObject *)co, extra_code_index,
                          (void *)new_trampoline);
         f = new_trampoline;

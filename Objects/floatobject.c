@@ -371,8 +371,7 @@ convert_to_double(PyObject **v, double *dbl)
         }
     }
     else {
-        Py_INCREF(Py_NotImplemented);
-        *v = Py_NotImplemented;
+        *v = Py_NewRef(Py_NotImplemented);
         return -1;
     }
     return 0;
@@ -532,20 +531,17 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                 temp = _PyLong_Lshift(ww, 1);
                 if (temp == NULL)
                     goto Error;
-                Py_DECREF(ww);
-                ww = temp;
+                Py_SETREF(ww, temp);
 
                 temp = _PyLong_Lshift(vv, 1);
                 if (temp == NULL)
                     goto Error;
-                Py_DECREF(vv);
-                vv = temp;
+                Py_SETREF(vv, temp);
 
                 temp = PyNumber_Or(vv, _PyLong_GetOne());
                 if (temp == NULL)
                     goto Error;
-                Py_DECREF(vv);
-                vv = temp;
+                Py_SETREF(vv, temp);
             }
 
             r = PyObject_RichCompareBool(vv, ww, op);
@@ -904,8 +900,7 @@ float_is_integer_impl(PyObject *self)
                              PyExc_ValueError);
         return NULL;
     }
-    Py_INCREF(o);
-    return o;
+    return Py_NewRef(o);
 }
 
 /*[clinic input]
@@ -1124,11 +1119,12 @@ float___round___impl(PyObject *self, PyObject *o_ndigits)
 static PyObject *
 float_float(PyObject *v)
 {
-    if (PyFloat_CheckExact(v))
-        Py_INCREF(v);
-    else
-        v = PyFloat_FromDouble(((PyFloatObject *)v)->ob_fval);
-    return v;
+    if (PyFloat_CheckExact(v)) {
+        return Py_NewRef(v);
+    }
+    else {
+        return PyFloat_FromDouble(((PyFloatObject *)v)->ob_fval);
+    }
 }
 
 /*[clinic input]
@@ -1550,12 +1546,10 @@ float_fromhex(PyTypeObject *type, PyObject *string)
 /*[clinic input]
 float.as_integer_ratio
 
-Return integer ratio.
+Return a pair of integers, whose ratio is exactly equal to the original float.
 
-Return a pair of integers, whose ratio is exactly equal to the original float
-and with a positive denominator.
-
-Raise OverflowError on infinities and a ValueError on NaNs.
+The ratio is in lowest terms and has a positive denominator.  Raise
+OverflowError on infinities and a ValueError on NaNs.
 
 >>> (10.0).as_integer_ratio()
 (10, 1)
@@ -1567,7 +1561,7 @@ Raise OverflowError on infinities and a ValueError on NaNs.
 
 static PyObject *
 float_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=65f25f0d8d30a712 input=e21d08b4630c2e44]*/
+/*[clinic end generated code: output=65f25f0d8d30a712 input=d5ba7765655d75bd]*/
 {
     double self_double;
     double float_part;
@@ -1724,12 +1718,14 @@ float___getnewargs___impl(PyObject *self)
 }
 
 /* this is for the benefit of the pack/unpack routines below */
+typedef enum _py_float_format_type float_format_type;
+#define unknown_format _py_float_format_unknown
+#define ieee_big_endian_format _py_float_format_ieee_big_endian
+#define ieee_little_endian_format _py_float_format_ieee_little_endian
 
-typedef enum {
-    unknown_format, ieee_big_endian_format, ieee_little_endian_format
-} float_format_type;
+#define float_format (_PyRuntime.float_state.float_format)
+#define double_format (_PyRuntime.float_state.double_format)
 
-static float_format_type double_format, float_format;
 
 /*[clinic input]
 @classmethod
@@ -1930,13 +1926,9 @@ PyTypeObject PyFloat_Type = {
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
 };
 
-void
-_PyFloat_InitState(PyInterpreterState *interp)
+static void
+_init_global_state(void)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     float_format_type detected_double_format, detected_float_format;
 
     /* We attempt to determine if this machine is using IEEE
@@ -1984,6 +1976,15 @@ _PyFloat_InitState(PyInterpreterState *interp)
 
     double_format = detected_double_format;
     float_format = detected_float_format;
+}
+
+void
+_PyFloat_InitState(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+    _init_global_state();
 }
 
 PyStatus
