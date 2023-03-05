@@ -227,28 +227,24 @@ __all__ = []
 __all__.extend([kind for kind in globals() if kind.upper() == kind])
 
 
-# Substitution function, takes a list of up to 3 strings.
-# The last string is the triggering token.
-# Returns a new list of equal length with substitutions.
+# Substitution function, takes a list of strings and an index.
+# The triggering token is at the index.
+# To change a token, update the list in place.
 # To remove a token, use an empty string.
-Sub = Callable[[list[str]], list[str]]
+Sub = Callable[[list[str], int], None]
 
 def to_text(tkns: list[Token], dedent: int = 0, subs: dict[str, Sub] | None = None) -> str:
     res: list[str] = []
     line, col = -1, 1 + dedent
     if subs:
-        tkns = list(tkns)
-        for i, tkn in enumerate(tkns):
-            if tkn.kind == IDENTIFIER and tkn.text in subs:
-                start = max(i - 2, 0)
-                texts = [tkn.text for tkn in tkns[start:i+1]]
-                repls = subs[tkn.text](texts)
-                if repls != texts:
-                    # print(f"BEFORE: {texts}, AFTER: {repls}")
-                    assert len(repls) == len(texts)
-                    for j, (a, b) in enumerate(zip(texts, repls), start):
-                        if a != b:
-                            tkns[j] = tkns[j].replace_text(b)
+        texts: list[str] = [tkn.text for tkn in tkns]
+        for i, text in enumerate(texts):
+            if text in subs:
+                subs[text](texts, i)
+        assert len(texts) == len(tkns)
+        for i, (tkn, text) in enumerate(zip(tkns, texts)):
+            if tkn.text != text:
+                tkns[i] = tkn.replace_text(text)
     for tkn in tkns:
         if line == -1:
             line, _ = tkn.begin
