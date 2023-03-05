@@ -2423,9 +2423,9 @@ dummy_func(
                 args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)callable)->im_self;
-                args[0] = Py_NewRef(self);
-                method = ((PyMethodObject *)callable)->im_func;
-                args[-1] = Py_NewRef(method);
+                args[0] = untagged(Py_NewRef(self));
+                method = untagged(((PyMethodObject *)callable)->im_func);
+                args[-1] = untagged(Py_NewRef(method));
                 Py_DECREF(callable);
                 callable = method;
             }
