@@ -417,7 +417,7 @@ class Instruction:
                     assert texts[j] != "["
                     j += 1
                 assert texts[index + 1] == "[" and texts[j] == "]"
-                nexts = texts[index + 2 : j]
+                nexts = texts[j + 1 : j + 2]
                 if nexts and nexts[0] == "=":
                     return
                 # Replace args[i] with detag(args[i])

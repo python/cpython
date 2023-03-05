@@ -3051,9 +3051,9 @@
                 args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)detag(callable))->im_self;
-                detag(args[0]) = Py_NewRef(self);
+                args[0] = Py_NewRef(self);
                 method = ((PyMethodObject *)detag(callable))->im_func;
-                detag(args[-1]) = Py_NewRef(detag(method));
+                args[-1] = Py_NewRef(detag(method));
                 decref_unless_tagged(callable);
                 callable = method;
             }
