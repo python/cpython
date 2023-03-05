@@ -707,11 +707,7 @@ class Path(PurePath):
             warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args)
-        if self._flavour is not os.path:
-            raise NotImplementedError("cannot instantiate %r on your system"
-                                      % (cls.__name__,))
-        return self
+        return cls._from_parts(args)
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
@@ -1261,9 +1257,19 @@ class PosixPath(Path, PurePosixPath):
     """
     __slots__ = ()
 
+    if os.name == 'nt':
+        def __new__(cls, *args, **kwargs):
+            raise NotImplementedError(
+                f"cannot instantiate {cls.__name__!r} on your system")
+
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
 
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
+
+    if os.name != 'nt':
+        def __new__(cls, *args, **kwargs):
+            raise NotImplementedError(
+                f"cannot instantiate {cls.__name__!r} on your system")
