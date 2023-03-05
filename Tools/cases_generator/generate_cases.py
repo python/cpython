@@ -252,6 +252,8 @@ class Instruction:
         for effect in inst.outputs:
             if not effect.type and effect.name in self.ieff_by_name:
                 effect = effect.with_type(self.ieff_by_name[effect.name].type)
+            elif effect.size and effect.name != UNUSED and effect.type == "_tagged_ptr *":
+                effect = effect.with_type("PyObject **")
             self.output_effects.append(effect)
         unmoved_names: set[str] = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):

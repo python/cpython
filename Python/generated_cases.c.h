@@ -1169,7 +1169,7 @@
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
             _tagged_ptr seq = stack_pointer[-1];
-            _tagged_ptr *values = stack_pointer - (1);
+            PyObject **values = (PyObject **)stack_pointer - (1);
             DEOPT_IF(!PyTuple_CheckExact(detag(seq)), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(detag(seq)) != 2, UNPACK_SEQUENCE);
             assert(oparg == 2);
@@ -1185,7 +1185,7 @@
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
             _tagged_ptr seq = stack_pointer[-1];
-            _tagged_ptr *values = stack_pointer - (1);
+            PyObject **values = (PyObject **)stack_pointer - (1);
             DEOPT_IF(!PyTuple_CheckExact(detag(seq)), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(detag(seq)) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
@@ -1202,7 +1202,7 @@
 
         TARGET(UNPACK_SEQUENCE_LIST) {
             _tagged_ptr seq = stack_pointer[-1];
-            _tagged_ptr *values = stack_pointer - (1);
+            PyObject **values = (PyObject **)stack_pointer - (1);
             DEOPT_IF(!PyList_CheckExact(detag(seq)), UNPACK_SEQUENCE);
             DEOPT_IF(PyList_GET_SIZE(detag(seq)) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
