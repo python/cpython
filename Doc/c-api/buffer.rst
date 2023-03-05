@@ -499,7 +499,7 @@ Buffer-related functions
    This function fails if *len* != *src->len*.
 
 
-.. c:function:: int PyObject_CopyData(Py_buffer *dest, Py_buffer *src)
+.. c:function:: int PyObject_CopyData(PyObject *dest, PyObject *src)
 
    Copy data from *src* to *dest* buffer. Can convert between C-style and
    or Fortran-style buffers.
