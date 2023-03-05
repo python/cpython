@@ -3705,7 +3705,9 @@
                 if (tuple == NULL) {
                     goto error;
                 }
-                Py_SETREF(detag(callargs), tuple);
+                _tagged_ptr old_callargs = (_tagged_ptr)callargs;
+                callargs = untagged(tuple);
+                decref_unless_tagged(old_callargs);
             }
             assert(PyTuple_CheckExact(detag(callargs)));
 

@@ -389,6 +389,8 @@ class Instruction:
                 return
             if prevs == ["STEAL", "("]:
                 return
+            if prevs == ["_tagged_ptr", ")"]:
+                return
             if prevs == ["Py_DECREF", "("]:
                 texts[index - 2] = "decref_unless_tagged"
                 return
