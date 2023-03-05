@@ -1157,7 +1157,7 @@
             STAT_INC(UNPACK_SEQUENCE, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject **top = stack_pointer + oparg - 1;
+            PyObject **top = (PyObject **)stack_pointer + oparg - 1;
             int res = unpack_iterable(tstate, detag(seq), oparg, -1, top);
             decref_unless_tagged(seq);
             if (res == 0) goto pop_1_error;
@@ -1220,7 +1220,7 @@
         TARGET(UNPACK_EX) {
             _tagged_ptr seq = stack_pointer[-1];
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            PyObject **top = stack_pointer + totalargs - 1;
+            PyObject **top = (PyObject **)stack_pointer + totalargs - 1;
             int res = unpack_iterable(tstate, detag(seq), oparg & 0xFF, oparg >> 8, top);
             decref_unless_tagged(seq);
             if (res == 0) goto pop_1_error;
@@ -1612,7 +1612,8 @@
         TARGET(BUILD_LIST) {
             _tagged_ptr *values = (stack_pointer - oparg);
             PyObject *list;
-            list = _PyList_FromArraySteal(values, oparg);
+            PyObject **ovalues = plain_obj_array(values, oparg);
+            list = _PyList_FromArraySteal(ovalues, oparg);
             if (list == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
             STACK_GROW(1);
@@ -1678,9 +1679,10 @@
         TARGET(BUILD_MAP) {
             _tagged_ptr *values = (stack_pointer - oparg*2);
             PyObject *map;
+            PyObject **ovalues = plain_obj_array(values, oparg*2);
             map = _PyDict_FromItems(
-                    values, 2,
-                    values+1, 2,
+                    ovalues, 2,
+                    ovalues+1, 2,
                     oparg);
             if (map == NULL)
                 goto error;
@@ -1750,7 +1752,7 @@
             }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(detag(keys), 0), 1,
-                    values, 1, oparg);
+                    plain_obj_array(values, oparg), 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 decref_unless_tagged(values[_i]);
             }
@@ -3058,6 +3060,7 @@
                 callable = method;
             }
             int positional_args = total_args - KWNAMES_LEN();
+            PyObject **oargs = plain_obj_array(args, total_args);
             // Check if the call can be inlined or not
             if (Py_TYPE(detag(callable)) == &PyFunction_Type &&
                 tstate->interp->eval_frame == NULL &&
@@ -3067,7 +3070,7 @@
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(detag(callable)));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)detag(callable), locals,
-                    args, positional_args, kwnames
+                    oargs, positional_args, kwnames
                 );
                 kwnames = NULL;
                 // Manipulate stack directly since we leave using DISPATCH_INLINED().
@@ -3083,12 +3086,12 @@
             /* Callable is not a normal Python function */
             if (cframe.use_tracing) {
                 res = trace_call_function(
-                    tstate, detag(callable), args,
+                    tstate, detag(callable), oargs,
                     positional_args, kwnames);
             }
             else {
                 res = PyObject_Vectorcall(
-                    detag(callable), args,
+                    detag(callable), oargs,
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                     kwnames);
             }
@@ -3096,7 +3099,7 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             decref_unless_tagged(callable);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(detag(args[i]));
+                Py_DECREF(oargs[i]);
             }
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
             STACK_SHRINK(oparg);
@@ -3276,7 +3279,7 @@
             PyTypeObject *tp = (PyTypeObject *)detag(callable);
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
-            res = tp->tp_vectorcall((PyObject *)tp, args,
+            res = tp->tp_vectorcall((PyObject *)tp, plain_obj_array(args, total_args),
                                     total_args - kwnames_len, kwnames);
             kwnames = NULL;
             /* Free the arguments. */
@@ -3356,7 +3359,7 @@
             /* res = func(self, args, nargs) */
             res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(detag(callable)),
-                args,
+                plain_obj_array(args, total_args),
                 total_args);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
@@ -3403,7 +3406,7 @@
                 PyCFunction_GET_FUNCTION(detag(callable));
             res = cfunc(
                 PyCFunction_GET_SELF(detag(callable)),
-                args,
+                plain_obj_array(args, total_args),
                 total_args - KWNAMES_LEN(),
                 kwnames
             );
@@ -3588,7 +3591,7 @@
             int nargs = total_args - 1;
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            res = cfunc(self, args + 1, nargs - KWNAMES_LEN(), kwnames);
+            res = cfunc(self, plain_obj_array(args, total_args) + 1, nargs - KWNAMES_LEN(), kwnames);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             kwnames = NULL;
 
@@ -3669,7 +3672,7 @@
             _PyCFunctionFast cfunc =
                 (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
-            res = cfunc(self, args + 1, nargs);
+            res = cfunc(self, plain_obj_array(args, total_args) + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {

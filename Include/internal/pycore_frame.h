@@ -84,6 +84,14 @@ static inline void incref_if_tagged(_tagged_ptr tp) {
 
 #define STEAL(tp) (is_tagged(tp) ? Py_NewRef(detag(tp)) : tp.obj)
 
+static inline PyObject **plain_obj_array(_tagged_ptr *args, int size) {
+    while (--size >= 0) {
+        decref_unless_tagged(args[size]);
+        args[size].obj = detag(args[size]);
+    }
+    return &args[0].obj;
+}
+
 
 /* other API */
 

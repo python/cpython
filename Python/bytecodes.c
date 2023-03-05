@@ -915,7 +915,7 @@ dummy_func(
             STAT_INC(UNPACK_SEQUENCE, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject **top = stack_pointer + oparg - 1;
+            PyObject **top = (PyObject **)stack_pointer + oparg - 1;
             int res = unpack_iterable(tstate, seq, oparg, -1, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
@@ -955,7 +955,7 @@ dummy_func(
 
         inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            PyObject **top = stack_pointer + totalargs - 1;
+            PyObject **top = (PyObject **)stack_pointer + totalargs - 1;
             int res = unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
@@ -1276,7 +1276,8 @@ dummy_func(
         }
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
-            list = _PyList_FromArraySteal(values, oparg);
+            PyObject **ovalues = plain_obj_array(values, oparg);
+            list = _PyList_FromArraySteal(ovalues, oparg);
             ERROR_IF(list == NULL, error);
         }
 
@@ -1322,9 +1323,10 @@ dummy_func(
         }
 
         inst(BUILD_MAP, (values[oparg*2] -- map)) {
+            PyObject **ovalues = plain_obj_array(values, oparg*2);
             map = _PyDict_FromItems(
-                    values, 2,
-                    values+1, 2,
+                    ovalues, 2,
+                    ovalues+1, 2,
                     oparg);
             if (map == NULL)
                 goto error;
@@ -1384,7 +1386,7 @@ dummy_func(
             }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
-                    values, 1, oparg);
+                    plain_obj_array(values, oparg), 1, oparg);
             DECREF_INPUTS();
             ERROR_IF(map == NULL, error);
         }
@@ -2430,6 +2432,7 @@ dummy_func(
                 callable = method;
             }
             int positional_args = total_args - KWNAMES_LEN();
+            PyObject **oargs = plain_obj_array(args, total_args);
             // Check if the call can be inlined or not
             if (Py_TYPE(callable) == &PyFunction_Type &&
                 tstate->interp->eval_frame == NULL &&
@@ -2439,7 +2442,7 @@ dummy_func(
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)callable, locals,
-                    args, positional_args, kwnames
+                    oargs, positional_args, kwnames
                 );
                 kwnames = NULL;
                 // Manipulate stack directly since we leave using DISPATCH_INLINED().
@@ -2455,12 +2458,12 @@ dummy_func(
             /* Callable is not a normal Python function */
             if (cframe.use_tracing) {
                 res = trace_call_function(
-                    tstate, callable, args,
+                    tstate, callable, oargs,
                     positional_args, kwnames);
             }
             else {
                 res = PyObject_Vectorcall(
-                    callable, args,
+                    callable, oargs,
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                     kwnames);
             }
@@ -2468,7 +2471,7 @@ dummy_func(
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
+                Py_DECREF(oargs[i]);
             }
             ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
@@ -2603,7 +2606,7 @@ dummy_func(
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
-            res = tp->tp_vectorcall((PyObject *)tp, args,
+            res = tp->tp_vectorcall((PyObject *)tp, plain_obj_array(args, total_args),
                                     total_args - kwnames_len, kwnames);
             kwnames = NULL;
             /* Free the arguments. */
@@ -2665,7 +2668,7 @@ dummy_func(
             /* res = func(self, args, nargs) */
             res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
-                args,
+                plain_obj_array(args, total_args),
                 total_args);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
@@ -2703,7 +2706,7 @@ dummy_func(
                 PyCFunction_GET_FUNCTION(callable);
             res = cfunc(
                 PyCFunction_GET_SELF(callable),
-                args,
+                plain_obj_array(args, total_args),
                 total_args - KWNAMES_LEN(),
                 kwnames
             );
@@ -2852,7 +2855,7 @@ dummy_func(
             int nargs = total_args - 1;
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            res = cfunc(self, args + 1, nargs - KWNAMES_LEN(), kwnames);
+            res = cfunc(self, plain_obj_array(args, total_args) + 1, nargs - KWNAMES_LEN(), kwnames);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             kwnames = NULL;
 
@@ -2917,7 +2920,7 @@ dummy_func(
             _PyCFunctionFast cfunc =
                 (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
-            res = cfunc(self, args + 1, nargs);
+            res = cfunc(self, plain_obj_array(args, total_args) + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {

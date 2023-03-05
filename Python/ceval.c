@@ -1012,10 +1012,10 @@ exception_unwind:
                 assert(_PyErr_Occurred(tstate));
 
                 /* Pop remaining stack entries. */
-                PyObject **stackbase = _PyFrame_Stackbase(frame);
+                _tagged_ptr *stackbase = _PyFrame_Stackbase(frame);
                 while (stack_pointer > stackbase) {
-                    PyObject *o = POP();
-                    Py_XDECREF(o);
+                    _tagged_ptr o = *--stack_pointer;
+                    xdecref_unless_tagged(o);
                 }
                 assert(STACK_LEVEL() == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1025,10 +1025,10 @@ exception_unwind:
             }
 
             assert(STACK_LEVEL() >= level);
-            PyObject **new_top = _PyFrame_Stackbase(frame) + level;
+            _tagged_ptr *new_top = _PyFrame_Stackbase(frame) + level;
             while (stack_pointer > new_top) {
-                PyObject *v = POP();
-                Py_XDECREF(v);
+                _tagged_ptr v = *--stack_pointer;
+                xdecref_unless_tagged(v);
             }
             if (lasti) {
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
