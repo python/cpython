@@ -3833,7 +3833,7 @@
                     xdecref_unless_tagged(fmt_spec);
                     if (true) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
                 }
-                value = result;
+                value = untagged(result);
             }
 
             /* If value is a unicode object, and there's no fmt_spec,

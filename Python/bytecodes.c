@@ -3046,7 +3046,7 @@ dummy_func(
                     Py_XDECREF(fmt_spec);
                     ERROR_IF(true, error);
                 }
-                value = result;
+                value = untagged(result);
             }
 
             /* If value is a unicode object, and there's no fmt_spec,
