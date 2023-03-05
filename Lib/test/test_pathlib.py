@@ -168,7 +168,7 @@ class _BasePurePathTest(object):
 
     def test_bytes(self):
         P = self.cls
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "should be a str object or an os.PathLike object"):
             P(b'a')
         with self.assertRaises(TypeError):
             P(b'a', 'b')
