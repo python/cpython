@@ -1259,8 +1259,8 @@ class PosixPath(Path, PurePosixPath):
 
     if os.name == 'nt':
         def __new__(cls, *args, **kwargs):
-            raise NotImplementedError("cannot instantiate %r on your system"
-                                      % (cls.__name__,))
+            raise NotImplementedError(
+                f"cannot instantiate {cls.__name__!r} on your system")
 
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
@@ -1271,5 +1271,5 @@ class WindowsPath(Path, PureWindowsPath):
 
     if os.name != 'nt':
         def __new__(cls, *args, **kwargs):
-            raise NotImplementedError("cannot instantiate %r on your system"
-                                      % (cls.__name__,))
+            raise NotImplementedError(
+                f"cannot instantiate {cls.__name__!r} on your system")
