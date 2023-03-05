@@ -2485,7 +2485,7 @@ dummy_func(
             stack_pointer[-1 - oparg] = untagged(Py_NewRef(self));  // callable
             PyObject *meth = ((PyMethodObject *)callable)->im_func;
             stack_pointer[-2 - oparg] = untagged(Py_NewRef(meth));  // method
-            DECREF_INPUTS();
+            Py_DECREF(callable);
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 

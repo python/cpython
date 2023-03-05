@@ -3117,7 +3117,6 @@
             stack_pointer[-1 - oparg] = untagged(Py_NewRef(self));  // callable
             PyObject *meth = ((PyMethodObject *)detag(callable))->im_func;
             stack_pointer[-2 - oparg] = untagged(Py_NewRef(meth));  // method
-            decref_unless_tagged(method);
             decref_unless_tagged(callable);
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
