@@ -2921,8 +2921,8 @@ class ProtocolTests(BaseTestCase):
             def __init__(self):
                 self.x = None
 
-        self.assertIsInstance(C(), P)
-        self.assertIsInstance(D(), P)
+        self.assertIsInstance(CI(), P)
+        self.assertIsInstance(DI(), P)
 
     def test_protocols_in_unions(self):
         class P(Protocol):
