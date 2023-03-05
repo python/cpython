@@ -715,10 +715,10 @@
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = args[1];
+                cause = detag(args[1]);
                 /* fall through */
             case 1:
-                exc = args[0];
+                exc = detag(args[0]);
                 /* fall through */
             case 0:
                 if (do_raise(tstate, exc, cause)) { STACK_SHRINK(oparg); goto exception_unwind; }
@@ -1002,7 +1002,7 @@
             _tagged_ptr *values = (stack_pointer - (1 + oparg));
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                PyObject *lasti = values[0];
+                PyObject *lasti = detag(values[0]);
                 if (PyLong_Check(lasti)) {
                     frame->prev_instr = _PyCode_CODE(frame->f_code) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
@@ -1660,7 +1660,7 @@
                 goto error;
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                PyObject *item = values[i];
+                PyObject *item = detag(values[i]);
                 if (err == 0)
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
@@ -3051,9 +3051,9 @@
                 args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)detag(callable))->im_self;
-                args[0] = Py_NewRef(self);
+                detag(args[0]) = Py_NewRef(self);
                 method = ((PyMethodObject *)detag(callable))->im_func;
-                args[-1] = Py_NewRef(detag(method));
+                detag(args[-1]) = Py_NewRef(detag(method));
                 decref_unless_tagged(callable);
                 callable = detag(method);
             }
@@ -3096,7 +3096,7 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             decref_unless_tagged(callable);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
+                Py_DECREF(detag(args[i]));
             }
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
             STACK_SHRINK(oparg);
@@ -3146,7 +3146,7 @@
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
             for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = args[i];
+                new_frame->localsplus[i] = detag(args[i]);
             }
             // Manipulate stack directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
@@ -3179,7 +3179,7 @@
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, code->co_argcount);
             for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = args[i];
+                new_frame->localsplus[i] = detag(args[i]);
             }
             for (int i = argcount; i < code->co_argcount; i++) {
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i - min_args);
@@ -3200,7 +3200,7 @@
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
             DEOPT_IF(detag(null) != NULL, CALL);
-            PyObject *obj = args[0];
+            PyObject *obj = detag(args[0]);
             DEOPT_IF(detag(callable) != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
             res = Py_NewRef(Py_TYPE(obj));
@@ -3224,7 +3224,7 @@
             DEOPT_IF(detag(null) != NULL, CALL);
             DEOPT_IF(detag(callable) != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
+            PyObject *arg = detag(args[0]);
             res = PyObject_Str(arg);
             Py_DECREF(arg);
             Py_DECREF(&PyUnicode_Type);  // I.e., callable
@@ -3247,7 +3247,7 @@
             DEOPT_IF(detag(null) != NULL, CALL);
             DEOPT_IF(detag(callable) != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
+            PyObject *arg = detag(args[0]);
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
             Py_DECREF(&PyTuple_Type);  // I.e., tuple
@@ -3282,7 +3282,7 @@
             kwnames = NULL;
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
+                Py_DECREF(detag(args[i]));
             }
             Py_DECREF(tp);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3319,7 +3319,7 @@
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *arg = args[0];
+            PyObject *arg = detag(args[0]);
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(detag(callable)), arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3363,7 +3363,7 @@
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
+                Py_DECREF(detag(args[i]));
             }
             decref_unless_tagged(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3413,7 +3413,7 @@
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
+                Py_DECREF(detag(args[i]));
             }
             decref_unless_tagged(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3444,7 +3444,7 @@
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(detag(callable) != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
+            PyObject *arg = detag(args[0]);
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
                 goto error;
@@ -3481,8 +3481,8 @@
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(detag(callable) != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
-            PyObject *cls = args[1];
-            PyObject *inst = args[0];
+            PyObject *cls = detag(args[1]);
+            PyObject *inst = detag(args[0]);
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
                 goto error;
@@ -3513,7 +3513,7 @@
             DEOPT_IF(detag(method) != interp->callable_cache.list_append, CALL);
             DEOPT_IF(!PyList_Check(detag(self)), CALL);
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)detag(self), args[0]) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)detag(self), detag(args[0])) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             decref_unless_tagged(self);
@@ -3542,8 +3542,8 @@
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != METH_O, CALL);
-            PyObject *arg = args[1];
-            PyObject *self = args[0];
+            PyObject *arg = detag(args[1]);
+            PyObject *self = detag(args[0]);
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -3583,7 +3583,7 @@
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
             PyTypeObject *d_type = callable->d_common.d_type;
-            PyObject *self = args[0];
+            PyObject *self = detag(args[0]);
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
@@ -3595,7 +3595,7 @@
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
+                Py_DECREF(detag(args[i]));
             }
             Py_DECREF(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
@@ -3623,7 +3623,7 @@
             PyMethodDescrObject *callable = (PyMethodDescrObject *)SECOND();
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;
-            PyObject *self = args[0];
+            PyObject *self = detag(args[0]);
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             DEOPT_IF(meth->ml_flags != METH_NOARGS, CALL);
             STAT_INC(CALL, hit);
@@ -3664,7 +3664,7 @@
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != METH_FASTCALL, CALL);
-            PyObject *self = args[0];
+            PyObject *self = detag(args[0]);
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
             _PyCFunctionFast cfunc =
@@ -3674,7 +3674,7 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
+                Py_DECREF(detag(args[i]));
             }
             Py_DECREF(callable);
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }

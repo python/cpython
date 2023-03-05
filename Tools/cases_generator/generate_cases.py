@@ -388,10 +388,32 @@ class Instruction:
             if prevs == ["Py_XDECREF", "("]:
                 texts[index - 2] = "xdecref_unless_tagged"
                 return
-        nexts = texts[index + 1 : index + 3]
-        if nexts and nexts[0] == "=":
-            return
+        nexts = texts[index + 1 : index + 2]
+        if nexts:
+            if nexts[0] == "=":
+                return
         texts[index] = f"detag({text})"
+
+    def substitute_tagged_ptr_array(self, texts: list[str], index: int) -> None:
+        assert 0 <= index < len(texts)
+        text = texts[index]
+        nexts = texts[index + 1 : index + 2]
+        if nexts:
+            if nexts[0] == "=":
+                return
+            if nexts[0] == "[":
+                j = index + 2
+                while j < len(texts) and texts[j] != "]":
+                    assert texts[j] != "["
+                    j += 1
+                assert texts[index + 1] == "[" and texts[j] == "]"
+                nexts = texts[index + 2 : j]
+                if nexts and nexts[0] == "=":
+                    return
+                # Replace args[i] with detag(args[i])
+                texts[index] = f"detag({text}"
+                texts[j] = "])"
+                return
 
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
         """Write the instruction body."""
@@ -422,8 +444,12 @@ class Instruction:
         names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
         subs: dict[str, parser.Sub] = {}
         for ieffect in self.input_effects:
-            if ieffect.type == "_tagged_ptr" and ieffect.name != UNUSED:
+            if ieffect.name == UNUSED:
+                continue
+            if ieffect.type == "_tagged_ptr":
                 subs[ieffect.name] = self.substitute_tagged_ptr
+            elif ieffect.type == "_tagged_ptr *":
+                subs[ieffect.name] = self.substitute_tagged_ptr_array
         block_text, _, _ = extract_block_text(self.block, subs=subs)
         for line in block_text:
             if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*(?://.*)?$", line):
