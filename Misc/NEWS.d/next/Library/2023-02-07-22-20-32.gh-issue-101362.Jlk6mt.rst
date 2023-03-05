@@ -1,3 +1,4 @@
 Speed up :class:`pathlib.PurePath` construction by handling arguments more
-uniformly. When a path argument is supplied, we use its string
-representation rather than joining its parts with :func:`os.path.join`.
+uniformly. When a :class:`pathlib.Path argument is supplied,
+we use its string representation rather than joining its parts
+with :func:`os.path.join`.
