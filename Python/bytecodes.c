@@ -1265,13 +1265,15 @@ dummy_func(
         }
 
         inst(BUILD_STRING, (pieces[oparg] -- str)) {
-            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
+            PyObject **opieces = plain_obj_array(pieces, oparg);
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), opieces, oparg);
             DECREF_INPUTS();
             ERROR_IF(str == NULL, error);
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            tup = _PyTuple_FromArraySteal(values, oparg);
+            PyObject **ovalues = plain_obj_array(values, oparg);
+            tup = _PyTuple_FromArraySteal(ovalues, oparg);
             ERROR_IF(tup == NULL, error);
         }
 

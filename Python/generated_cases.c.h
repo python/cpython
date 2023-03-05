@@ -1587,7 +1587,8 @@
         TARGET(BUILD_STRING) {
             _tagged_ptr *pieces = (stack_pointer - oparg);
             PyObject *str;
-            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
+            PyObject **opieces = plain_obj_array(pieces, oparg);
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), opieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 decref_unless_tagged(pieces[_i]);
             }
@@ -1601,7 +1602,8 @@
         TARGET(BUILD_TUPLE) {
             _tagged_ptr *values = (stack_pointer - oparg);
             PyObject *tup;
-            tup = _PyTuple_FromArraySteal(values, oparg);
+            PyObject **ovalues = plain_obj_array(values, oparg);
+            tup = _PyTuple_FromArraySteal(ovalues, oparg);
             if (tup == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
             STACK_GROW(1);
