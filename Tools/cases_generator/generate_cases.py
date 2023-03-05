@@ -388,6 +388,9 @@ class Instruction:
             if prevs == ["Py_XDECREF", "("]:
                 texts[index - 2] = "xdecref_unless_tagged"
                 return
+        nexts = texts[index + 1 : index + 3]
+        if nexts and nexts[0] == "=":
+            return
         texts[index] = f"detag({text})"
 
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:

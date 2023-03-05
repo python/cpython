@@ -3031,7 +3031,7 @@
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(callable) = detag(method);
+                callable = detag(method);
                 args--;
                 total_args++;
             }
@@ -3052,10 +3052,10 @@
                 total_args++;
                 PyObject *self = ((PyMethodObject *)detag(callable))->im_self;
                 args[0] = Py_NewRef(self);
-                detag(method) = ((PyMethodObject *)detag(callable))->im_func;
+                method = ((PyMethodObject *)detag(callable))->im_func;
                 args[-1] = Py_NewRef(detag(method));
                 decref_unless_tagged(callable);
-                detag(callable) = detag(method);
+                callable = detag(method);
             }
             int positional_args = total_args - KWNAMES_LEN();
             // Check if the call can be inlined or not
@@ -3133,7 +3133,7 @@
             int is_meth = detag(method) != NULL;
             int argcount = oparg;
             if (is_meth) {
-                detag(callable) = detag(method);
+                callable = detag(method);
                 args--;
                 argcount++;
             }
@@ -3165,7 +3165,7 @@
             int is_meth = detag(method) != NULL;
             int argcount = oparg;
             if (is_meth) {
-                detag(callable) = detag(method);
+                callable = detag(method);
                 args--;
                 argcount++;
             }
@@ -3268,7 +3268,7 @@
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(callable) = detag(method);
+                callable = detag(method);
                 args--;
                 total_args++;
             }
@@ -3305,7 +3305,7 @@
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(callable) = detag(method);
+                callable = detag(method);
                 args--;
                 total_args++;
             }
@@ -3346,7 +3346,7 @@
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(callable) = detag(method);
+                callable = detag(method);
                 args--;
                 total_args++;
             }
@@ -3390,7 +3390,7 @@
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(callable) = detag(method);
+                callable = detag(method);
                 args--;
                 total_args++;
             }
@@ -3436,7 +3436,7 @@
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(callable) = detag(method);
+                callable = detag(method);
                 args--;
                 total_args++;
             }
@@ -3473,7 +3473,7 @@
             int is_meth = detag(method) != NULL;
             int total_args = oparg;
             if (is_meth) {
-                detag(callable) = detag(method);
+                callable = detag(method);
                 args--;
                 total_args++;
             }
@@ -3833,7 +3833,7 @@
                     xdecref_unless_tagged(fmt_spec);
                     if (true) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
                 }
-                detag(value) = result;
+                value = result;
             }
 
             /* If value is a unicode object, and there's no fmt_spec,
