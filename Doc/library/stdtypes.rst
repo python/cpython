@@ -530,11 +530,13 @@ class`. In addition, it provides a few more methods:
     is ``False``.
 
     The default values can be used to conveniently turn an integer into a
-    single byte object.  However, when using the default arguments, don't try
-    to convert a value greater than 255 or you'll get an :exc:`OverflowError`::
+    single byte object::
 
         >>> (65).to_bytes()
         b'A'
+
+    However, when using the default arguments, don't try
+    to convert a value greater than 255 or you'll get an :exc:`OverflowError`.
 
     Equivalent to::
 
