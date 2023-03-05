@@ -116,13 +116,7 @@ dummy_func(
 
         inst(LOAD_CONST, (-- value)) {
             value = GETITEM(consts, oparg);
-            if (PyLong_CheckExact(value) && PyLong_AsLongLong(value) == 424242) {
-                value = tagged(value).obj;
-                fprintf(stderr, "Tagged %p\n", value);
-            }
-            else {
-                Py_INCREF(value);
-            }
+            Py_INCREF(value);
         }
 
         inst(STORE_FAST, (value --)) {

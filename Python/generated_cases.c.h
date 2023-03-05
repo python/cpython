@@ -50,13 +50,7 @@
             PREDICTED(LOAD_CONST);
             PyObject *value;
             value = GETITEM(consts, oparg);
-            if (PyLong_CheckExact(value) && PyLong_AsLongLong(value) == 424242) {
-                value = tagged(value).obj;
-                fprintf(stderr, "Tagged %p\n", value);
-            }
-            else {
-                Py_INCREF(value);
-            }
+            Py_INCREF(value);
             STACK_GROW(1);
             stack_pointer[-1] = untagged(value);
             DISPATCH();
@@ -107,13 +101,7 @@
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
-                if (PyLong_CheckExact(value) && PyLong_AsLongLong(value) == 424242) {
-                    value = tagged(value).obj;
-                    fprintf(stderr, "Tagged %p\n", value);
-                }
-                else {
-                    Py_INCREF(value);
-                }
+                Py_INCREF(value);
                 _tmp_1 = value;
             }
             STACK_GROW(2);
@@ -162,13 +150,7 @@
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
-                if (PyLong_CheckExact(value) && PyLong_AsLongLong(value) == 424242) {
-                    value = tagged(value).obj;
-                    fprintf(stderr, "Tagged %p\n", value);
-                }
-                else {
-                    Py_INCREF(value);
-                }
+                Py_INCREF(value);
                 _tmp_2 = value;
             }
             oparg = (next_instr++)->op.arg;
