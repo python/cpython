@@ -352,16 +352,14 @@ class Instruction:
 
             # Write output stack effect assignments
             oeffects = list(reversed(self.output_effects))
+            names_to_skip = self.unmoved_names | frozenset({UNUSED})
             for i, oeffect in enumerate(oeffects):
-                if oeffect.name in self.unmoved_names:
+                if oeffect.name in names_to_skip or oeffect.size:
                     continue
                 osize = string_effect_size(
                     list_effect_size([oeff for oeff in oeffects[: i + 1]])
                 )
-                if oeffect.size:
-                    dst = StackEffect(f"stack_pointer - {maybe_parenthesize(osize)}", "_tagged_ptr *")
-                else:
-                    dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "_tagged_ptr")
+                dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "_tagged_ptr")
                 out.assign(dst, oeffect)
         else:
             # Write output register assignments
