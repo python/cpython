@@ -5882,13 +5882,10 @@ static Py_ssize_t
 int___sizeof___impl(PyObject *self)
 /*[clinic end generated code: output=3303f008eaa6a0a5 input=9b51620c76fc4507]*/
 {
-    Py_ssize_t res;
-
-    res = offsetof(PyLongObject, long_value.ob_digit)
-        /* using Py_MAX(..., 1) because we always allocate space for at least
-           one digit, even though the integer zero has a Py_SIZE of 0 */
-        + Py_MAX(Py_ABS(Py_SIZE(self)), 1)*sizeof(digit);
-    return res;
+    /* using Py_MAX(..., 1) because we always allocate space for at least
+       one digit, even though the integer zero has a Py_SIZE of 0 */
+    Py_ssize_t ndigits = Py_MAX(Py_ABS(Py_SIZE(self)), 1);
+    return Py_TYPE(self)->tp_basicsize + Py_TYPE(self)->tp_itemsize * ndigits;
 }
 
 /*[clinic input]
@@ -6023,10 +6020,9 @@ int_bit_count_impl(PyObject *self)
 /*[clinic input]
 int.as_integer_ratio
 
-Return integer ratio.
+Return a pair of integers, whose ratio is equal to the original int.
 
-Return a pair of integers, whose ratio is exactly equal to the original int
-and with a positive denominator.
+The ratio is in lowest terms and has a positive denominator.
 
 >>> (10).as_integer_ratio()
 (10, 1)
@@ -6038,7 +6034,7 @@ and with a positive denominator.
 
 static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=e60803ae1cc8621a input=55ce3058e15de393]*/
+/*[clinic end generated code: output=e60803ae1cc8621a input=384ff1766634bec2]*/
 {
     PyObject *ratio_tuple;
     PyObject *numerator = long_long(self);

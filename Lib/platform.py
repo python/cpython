@@ -1246,7 +1246,7 @@ def python_compiler():
 
 _platform_cache = {}
 
-def platform(aliased=0, terse=0):
+def platform(aliased=False, terse=False):
 
     """ Returns a single string identifying the underlying platform
         with as much useful information as possible (but no more :).

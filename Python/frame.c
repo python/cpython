@@ -29,17 +29,14 @@ PyFrameObject *
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 {
     assert(frame->frame_obj == NULL);
-    PyObject *error_type, *error_value, *error_traceback;
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     PyFrameObject *f = _PyFrame_New_NoTrack(frame->f_code);
     if (f == NULL) {
-        Py_XDECREF(error_type);
-        Py_XDECREF(error_value);
-        Py_XDECREF(error_traceback);
+        Py_XDECREF(exc);
         return NULL;
     }
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
     if (frame->frame_obj) {
         // GH-97002: How did we get into this horrible situation? Most likely,
         // allocating f triggered a GC collection, which ran some code that
@@ -84,6 +81,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     assert(frame->owner != FRAME_CLEARED);
     Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
+    Py_INCREF(frame->f_code);
     memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
     frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame = frame;
@@ -118,7 +116,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 }
 
 void
-_PyFrame_Clear(_PyInterpreterFrame *frame)
+_PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
@@ -144,7 +142,6 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_funcobj);
-    Py_DECREF(frame->f_code);
 }
 
 int

@@ -127,7 +127,6 @@ def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
 
-def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90             # real opcodes from here have an argument:
@@ -164,8 +163,10 @@ def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
+def_op('RETURN_CONST', 121)
+hasconst.append(121)
 def_op('BINARY_OP', 122)
-jrel_op('SEND', 123) # Number of bytes to skip
+jrel_op('SEND', 123)            # Number of words to skip
 def_op('LOAD_FAST', 124)        # Local variable number, no null check
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
@@ -222,6 +223,7 @@ def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
+def_op('CALL_INTRINSIC_2', 174)
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
@@ -368,6 +370,9 @@ _specializations = {
         "UNPACK_SEQUENCE_TUPLE",
         "UNPACK_SEQUENCE_TWO_TUPLE",
     ],
+    "SEND": [
+        "SEND_GEN",
+    ],
 }
 _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family
@@ -425,6 +430,9 @@ _cache_format = {
         "min_args": 1,
     },
     "STORE_SUBSCR": {
+        "counter": 1,
+    },
+    "SEND": {
         "counter": 1,
     },
 }
