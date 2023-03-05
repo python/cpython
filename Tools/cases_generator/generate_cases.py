@@ -237,6 +237,7 @@ class Instruction:
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
         self.input_effects = []
+        ieff_by_name = {}
         for effect in inst.inputs:
             if isinstance(effect, StackEffect):
                 if not effect.type:
@@ -245,7 +246,12 @@ class Instruction:
                         typ += " *"
                     effect = effect.with_type(typ)
                 self.input_effects.append(effect)
-        self.output_effects = inst.outputs  # For consistency/completeness
+                ieff_by_name[effect.name] = effect
+        self.output_effects = []
+        for effect in inst.outputs:
+            if not effect.type and effect.name in ieff_by_name:
+                effect = effect.with_type(ieff_by_name[effect.name].type)
+            self.output_effects.append(effect)
         unmoved_names: set[str] = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):
             if ieffect.name == oeffect.name:

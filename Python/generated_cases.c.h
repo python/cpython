@@ -584,7 +584,7 @@
         TARGET(LIST_APPEND) {
             _tagged_ptr v = stack_pointer[-1];
             _tagged_ptr list = stack_pointer[-(2 + (oparg-1))];
-            if (_PyList_AppendTakeRef((PyListObject *)detag(list), detag(v)) < 0) { STACK_SHRINK((oparg-1)); goto pop_2_error; }
+            if (_PyList_AppendTakeRef((PyListObject *)detag(list), detag(v)) < 0) goto pop_1_error;
             STACK_SHRINK(1);
             PREDICT(JUMP_BACKWARD);
             DISPATCH();
@@ -595,7 +595,7 @@
             _tagged_ptr set = stack_pointer[-(2 + (oparg-1))];
             int err = PySet_Add(detag(set), detag(v));
             decref_unless_tagged(v);
-            if (err) { STACK_SHRINK((oparg-1)); goto pop_2_error; }
+            if (err) goto pop_1_error;
             STACK_SHRINK(1);
             PREDICT(JUMP_BACKWARD);
             DISPATCH();
@@ -1634,7 +1634,7 @@
                           Py_TYPE(detag(iterable))->tp_name);
                 }
                 decref_unless_tagged(iterable);
-                if (true) { STACK_SHRINK((oparg-1)); goto pop_2_error; }
+                if (true) goto pop_1_error;
             }
             Py_DECREF(none_val);
             decref_unless_tagged(iterable);
@@ -1647,7 +1647,7 @@
             _tagged_ptr set = stack_pointer[-(2 + (oparg-1))];
             int err = _PySet_Update(detag(set), detag(iterable));
             decref_unless_tagged(iterable);
-            if (err < 0) { STACK_SHRINK((oparg-1)); goto pop_2_error; }
+            if (err < 0) goto pop_1_error;
             STACK_SHRINK(1);
             DISPATCH();
         }
@@ -2354,7 +2354,7 @@
             assert(PyExceptionInstance_Check(detag(left)));
             if (check_except_type_valid(tstate, detag(right)) < 0) {
                  decref_unless_tagged(right);
-                 if (true) goto pop_2_error;
+                 if (true) goto pop_1_error;
             }
 
             int res = PyErr_GivenExceptionMatches(detag(left), detag(right));
@@ -2383,7 +2383,7 @@
             PyObject *res;
             PyObject *name = GETITEM(names, oparg);
             res = import_from(tstate, detag(from), name);
-            if (res == NULL) goto pop_1_error;
+            if (res == NULL) goto error;
             STACK_GROW(1);
             stack_pointer[-1] = untagged(res);
             DISPATCH();
@@ -2548,9 +2548,9 @@
             PyObject *len_o;
             // PUSH(len(TOS))
             Py_ssize_t len_i = PyObject_Length(detag(obj));
-            if (len_i < 0) goto pop_1_error;
+            if (len_i < 0) goto error;
             len_o = PyLong_FromSsize_t(len_i);
-            if (len_o == NULL) goto pop_1_error;
+            if (len_o == NULL) goto error;
             STACK_GROW(1);
             stack_pointer[-1] = untagged(len_o);
             DISPATCH();
@@ -2608,7 +2608,7 @@
             PyObject *values_or_none;
             // On successful match, PUSH(values). Otherwise, PUSH(None).
             values_or_none = match_keys(tstate, detag(subject), detag(keys));
-            if (values_or_none == NULL) goto pop_2_error;
+            if (values_or_none == NULL) goto error;
             STACK_GROW(1);
             stack_pointer[-1] = untagged(values_or_none);
             DISPATCH();
@@ -2909,7 +2909,7 @@
             PyObject *stack[4] = {NULL, exc, detag(val), tb};
             res = PyObject_Vectorcall(detag(exit_func), stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-            if (res == NULL) goto pop_4_error;
+            if (res == NULL) goto error;
             STACK_GROW(1);
             stack_pointer[-1] = untagged(res);
             DISPATCH();
@@ -2928,7 +2928,7 @@
             assert(PyExceptionInstance_Check(detag(new_exc)));
             exc_info->exc_value = Py_NewRef(detag(new_exc));
             STACK_GROW(1);
-            stack_pointer[-1] = untagged(new_exc);
+            stack_pointer[-1] = new_exc;
             stack_pointer[-2] = untagged(prev_exc);
             DISPATCH();
         }
@@ -3900,8 +3900,8 @@
             _tagged_ptr top = stack_pointer[-1];
             _tagged_ptr bottom = stack_pointer[-(2 + (oparg-2))];
             assert(oparg >= 2);
-            stack_pointer[-1] = untagged(bottom);
-            stack_pointer[-(2 + (oparg-2))] = untagged(top);
+            stack_pointer[-1] = bottom;
+            stack_pointer[-(2 + (oparg-2))] = top;
             DISPATCH();
         }
 
