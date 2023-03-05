@@ -168,7 +168,9 @@ class _BasePurePathTest(object):
 
     def test_bytes(self):
         P = self.cls
-        with self.assertRaisesRegex(TypeError, "should be a str object or an os.PathLike object"):
+        message = (r"argument should be a str or an os\.PathLike object "
+                   r"where __fspath__ returns a str, not 'bytes'")
+        with self.assertRaisesRegex(TypeError, message):
             P(b'a')
         with self.assertRaises(TypeError):
             P(b'a', 'b')

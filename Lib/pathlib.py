@@ -286,8 +286,9 @@ class PurePath(object):
             path = str(path)
         else:
             raise TypeError(
-                "argument should be a str object or an os.PathLike "
-                f"object where __fspath__ returns a str, not {type(path)!r}")
+                "argument should be a str or an os.PathLike "
+                "object where __fspath__ returns a str, "
+                f"not {type(path).__name__!r}")
         if altsep:
             path = path.replace(altsep, sep)
         drv, root, rel = cls._flavour.splitroot(path)
