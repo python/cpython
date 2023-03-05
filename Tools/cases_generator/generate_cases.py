@@ -212,6 +212,7 @@ class Instruction:
     cache_effects: list[parser.CacheEffect]
     input_effects: list[StackEffect]
     output_effects: list[StackEffect]
+    ieff_by_name: dict[str, StackEffect]
     unmoved_names: frozenset[str]
     instr_fmt: str
 
@@ -237,7 +238,7 @@ class Instruction:
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
         self.input_effects = []
-        ieff_by_name = {}
+        self.ieff_by_name = {}
         for effect in inst.inputs:
             if isinstance(effect, StackEffect):
                 if not effect.type:
@@ -246,11 +247,11 @@ class Instruction:
                         typ += " *"
                     effect = effect.with_type(typ)
                 self.input_effects.append(effect)
-                ieff_by_name[effect.name] = effect
+                self.ieff_by_name[effect.name] = effect
         self.output_effects = []
         for effect in inst.outputs:
-            if not effect.type and effect.name in ieff_by_name:
-                effect = effect.with_type(ieff_by_name[effect.name].type)
+            if not effect.type and effect.name in self.ieff_by_name:
+                effect = effect.with_type(self.ieff_by_name[effect.name].type)
             self.output_effects.append(effect)
         unmoved_names: set[str] = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):
@@ -391,6 +392,9 @@ class Instruction:
                 return
             if prevs == ["Py_XDECREF", "("]:
                 texts[index - 2] = "xdecref_unless_tagged"
+                return
+            if len(prevs) >= 2 and prevs[-1] == "=" and prevs[-2] in self.ieff_by_name:
+                # E.g. `callable = method`
                 return
         nexts = texts[index + 1 : index + 2]
         if nexts:
