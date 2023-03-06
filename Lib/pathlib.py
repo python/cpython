@@ -320,8 +320,9 @@ class PurePath(object):
     def _format_parsed_parts(cls, drv, root, parts):
         if drv or root:
             return drv + root + cls._flavour.sep.join(parts[1:])
-        else:
-            return cls._flavour.sep.join(parts)
+        elif parts and cls._flavour.splitdrive(parts[0])[0]:
+            parts = ['.'] + parts
+        return cls._flavour.sep.join(parts)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
