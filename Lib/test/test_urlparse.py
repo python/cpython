@@ -686,6 +686,13 @@ class UrlParseTestCase(unittest.TestCase):
                         else:
                             self.assertEqual(p.scheme, "")
 
+    def test_attributes_bad_scheme_CVE_2023_24329(self):
+        """Check handling of invalid schemes that starts with blank characters."""
+        for parse in (urllib.parse.urlsplit, urllib.parse.urlparse):
+            url = " https://www.example.net"
+            p = parse(url)
+            self.assertEqual(p.scheme, "https")
+
     def test_attributes_without_netloc(self):
         # This example is straight from RFC 3261.  It looks like it
         # should allow the username, hostname, and port to be filled
