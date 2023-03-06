@@ -1650,7 +1650,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
         goto fail;
     }
     _PyFrame_Initialize(frame, func, locals, code, 0);
-    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
+    if (initialize_locals(tstate, func, localsplus_as_object_ptr(frame), args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
         clear_thread_frame(tstate, frame);
         return NULL;

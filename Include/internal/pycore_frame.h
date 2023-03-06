@@ -126,8 +126,8 @@ typedef struct _PyInterpreterFrame {
     int stacktop;  /* Offset of TOS from localsplus  */
     uint16_t yield_offset;
     char owner;
-    /* Locals and stack (locals are object ptrs, stack are tagged ptrs) */
-    PyObject *localsplus[1];
+    /* Locals and stack */
+    _tagged_ptr localsplus[1];
 } _PyInterpreterFrame;
 
 static inline _tagged_ptr *localsplus_as_tagged_ptr(_PyInterpreterFrame *f) {
