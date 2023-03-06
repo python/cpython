@@ -267,7 +267,9 @@ class PurePath(object):
         return cls._from_parts(args)
 
     def __reduce__(self):
-        return (self.__class__, (self._fspath,))
+        # Using the parts tuple helps share interned path parts
+        # when pickling related paths.
+        return (self.__class__, self.parts)
 
     @classmethod
     def _join_parts(cls, parts):
