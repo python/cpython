@@ -221,10 +221,7 @@ class _PathParents(Sequence):
         self._parts = path._parts
 
     def __len__(self):
-        if self._drv or self._root:
-            return len(self._parts) - 1
-        else:
-            return len(self._parts)
+        return len(self._parts)
 
     def __getitem__(self, idx):
         if isinstance(idx, slice):
@@ -269,7 +266,7 @@ class PurePath(object):
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
-        return (self.__class__, tuple(self._parts))
+        return (self.__class__, self.parts)
 
     @classmethod
     def _parse_parts(cls, parts):
@@ -295,8 +292,7 @@ class PurePath(object):
         if drv.startswith(sep):
             # pathlib assumes that UNC paths always have a root.
             root = sep
-        unfiltered_parsed = [drv + root] + rel.split(sep)
-        parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
+        parsed = [sys.intern(x) for x in rel.split(sep) if x and x != '.']
         return drv, root, parsed
 
     @classmethod
@@ -318,10 +314,11 @@ class PurePath(object):
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, parts):
+        tail = cls._flavour.sep.join(parts)
         if drv or root:
-            return drv + root + cls._flavour.sep.join(parts[1:])
+            return f'{drv}{root}{tail}'
         else:
-            return cls._flavour.sep.join(parts)
+            return tail
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -376,7 +373,7 @@ class PurePath(object):
         try:
             return self._parts_normcase_cached
         except AttributeError:
-            self._parts_normcase_cached = [self._flavour.normcase(p) for p in self._parts]
+            self._parts_normcase_cached = [self._flavour.normcase(p) for p in self.parts]
             return self._parts_normcase_cached
 
     def __eq__(self, other):
@@ -427,7 +424,7 @@ class PurePath(object):
     def name(self):
         """The final path component, if any."""
         parts = self._parts
-        if len(parts) == (1 if (self._drv or self._root) else 0):
+        if not parts:
             return ''
         return parts[-1]
 
@@ -551,7 +548,10 @@ class PurePath(object):
         try:
             return self._parts_tuple
         except AttributeError:
-            self._parts_tuple = tuple(self._parts)
+            if self._drv or self._root:
+                self._parts_tuple = (self._drv + self._root,) + tuple(self._parts)
+            else:
+                self._parts_tuple = tuple(self._parts)
             return self._parts_tuple
 
     def joinpath(self, *args):
@@ -564,13 +564,13 @@ class PurePath(object):
         drv2, root2, parts2 = self._parse_parts(args)
         if root2:
             if not drv2 and drv1:
-                return self._from_parsed_parts(drv1, root2, [drv1 + root2] + parts2[1:])
+                return self._from_parsed_parts(drv1, root2, parts2)
             else:
                 return self._from_parsed_parts(drv2, root2, parts2)
         elif drv2:
             if drv2 == drv1 or self._flavour.normcase(drv2) == self._flavour.normcase(drv1):
                 # Same drive => second path is relative to the first.
-                return self._from_parsed_parts(drv1, root1, parts1 + parts2[1:])
+                return self._from_parsed_parts(drv1, root1, parts1 + parts2)
             else:
                 return self._from_parsed_parts(drv2, root2, parts2)
         else:
@@ -595,7 +595,7 @@ class PurePath(object):
         drv = self._drv
         root = self._root
         parts = self._parts
-        if len(parts) == 1 and (drv or root):
+        if not parts:
             return self
         return self._from_parsed_parts(drv, root, parts[:-1])
 
@@ -622,7 +622,7 @@ class PurePath(object):
         # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
         # exist). We err on the side of caution and return True for paths
         # which are not considered reserved by Windows.
-        if self._parts[0].startswith('\\\\'):
+        if self._drv.startswith('\\\\'):
             # UNC paths are never reserved.
             return False
         name = self._parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
@@ -632,12 +632,12 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        path_pattern = self._flavour.normcase(path_pattern)
-        drv, root, pat_parts = self._parse_parts((path_pattern,))
+        pat = type(self)(path_pattern)
+        pat_parts = pat._parts_normcase
         if not pat_parts:
             raise ValueError("empty pattern")
         parts = self._parts_normcase
-        if drv or root:
+        if pat._drv or pat._root:
             if len(pat_parts) != len(parts):
                 return False
         elif len(pat_parts) > len(parts):
@@ -806,7 +806,7 @@ class Path(PurePath):
             cwd = self._flavour.abspath(self._drv)
         else:
             cwd = os.getcwd()
-        return self._from_parts([cwd] + self._parts)
+        return self._from_parts((cwd,) + self.parts)
 
     def resolve(self, strict=False):
         """
