@@ -19,12 +19,6 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     int optimize,
     struct _arena *arena);
 
-int _PyFuture_FromAST(
-    struct _mod * mod,
-    PyObject *filename,
-    PyFutureFeatures* futures);
-
-extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 typedef struct {
     int optimize;
