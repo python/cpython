@@ -254,7 +254,7 @@ PyAPI_FUNC(wchar_t *) _Py_normpath(wchar_t *path, Py_ssize_t size);
 // The Windows Games API family does not provide these functions
 // so provide our own implementations. Remove them in case they get added
 // to the Games API family
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
+#if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
 #include <winerror.h>
 
 extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootEnd);
