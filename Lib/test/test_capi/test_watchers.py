@@ -110,7 +110,7 @@ class TestDictWatchers(unittest.TestCase):
             with catch_unraisable_exception() as cm:
                 d["foo"] = "bar"
                 self.assertIn(
-                    "watcher callback for <dict at",
+                    "PyDict_EVENT_ADDED watcher callback for <dict at",
                     cm.unraisable.object
                 )
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
@@ -405,7 +405,10 @@ class TestCodeObjectWatchers(unittest.TestCase):
             with catch_unraisable_exception() as cm:
                 co = _testcapi.code_newempty("test_watchers", "dummy0", 0)
 
-                self.assertEqual(cm.unraisable.object, f"watcher callback for {co!r}")
+                self.assertEqual(
+                    cm.unraisable.object,
+                    f"PY_CODE_EVENT_CREATE watcher callback for {co!r}"
+                )
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
     def test_dealloc_error(self):
@@ -508,7 +511,7 @@ class TestFuncWatchers(unittest.TestCase):
 
                 self.assertEqual(
                     cm.unraisable.object,
-                    f"watcher callback for {myfunc!r}"
+                    f"PyFunction_EVENT_CREATE watcher callback for {myfunc!r}"
                 )
 
     def test_dealloc_watcher_raises_error(self):

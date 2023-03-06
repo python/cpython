@@ -13,6 +13,17 @@
 
 static PyObject* code_repr(PyCodeObject *co);
 
+static const char *
+code_event_name(PyCodeEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PY_CODE_EVENT_##op:         \
+            return "PY_CODE_EVENT_" #op;
+        FOREACH_CODE_EVENT(CASE)
+        #undef CASE
+    }
+}
+
 static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
@@ -33,7 +44,9 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
                 PyObject *context = NULL;
                 PyObject *repr = code_repr(co);
                 if (repr) {
-                    context = PyUnicode_FromFormat("watcher callback for %U", repr);
+                    context = PyUnicode_FromFormat(
+                        "%s watcher callback for %U",
+                        code_event_name(event), repr);
                     Py_DECREF(repr);
                 }
                 if (context == NULL) {

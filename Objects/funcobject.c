@@ -10,6 +10,17 @@
 
 static PyObject* func_repr(PyFunctionObject *op);
 
+static const char *
+func_event_name(PyFunction_WatchEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PyFunction_EVENT_##op:         \
+            return "PyFunction_EVENT_" #op;
+        FOREACH_FUNC_EVENT(CASE)
+        #undef CASE
+    }
+}
+
 static void
 notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
                      PyFunctionObject *func, PyObject *new_value)
@@ -28,7 +39,9 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
                 PyObject *context = NULL;
                 PyObject *repr = func_repr(func);
                 if (repr != NULL) {
-                    context = PyUnicode_FromFormat("watcher callback for %U", repr);
+                    context = PyUnicode_FromFormat(
+                        "%s watcher callback for %U",
+                        func_event_name(event), repr);
                     Py_DECREF(repr);
                 }
                 if (context == NULL) {

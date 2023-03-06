@@ -5739,6 +5739,17 @@ PyDict_ClearWatcher(int watcher_id)
     return 0;
 }
 
+static const char *
+dict_event_name(PyDict_WatchEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PyDict_EVENT_##op:         \
+            return "PyDict_EVENT_" #op;
+        FOREACH_DICT_EVENT(CASE)
+        #undef CASE
+    }
+}
+
 void
 _PyDict_SendEvent(int watcher_bits,
                   PyDict_WatchEvent event,
@@ -5756,7 +5767,8 @@ _PyDict_SendEvent(int watcher_bits,
                 // dict as context, just an informative string message.  Dict
                 // repr can call arbitrary code, so we invent a simpler version.
                 PyObject *context = PyUnicode_FromFormat(
-                    "watcher callback for <dict at %p>", mp);
+                    "%s watcher callback for <dict at %p>",
+                    dict_event_name(event), mp);
                 if (context == NULL) {
                     context = Py_NewRef(Py_None);
                 }
