@@ -314,9 +314,7 @@ typedef struct {
      * store exception information on the socket. The handshake, read, write,
      * and shutdown methods check for chained exceptions.
      */
-    PyObject *exc_type;
-    PyObject *exc_value;
-    PyObject *exc_tb;
+    PyObject *exc;
 } PySSLSocket;
 
 typedef struct {
@@ -560,13 +558,10 @@ fail:
 
 static int
 PySSL_ChainExceptions(PySSLSocket *sslsock) {
-    if (sslsock->exc_type == NULL)
+    if (sslsock->exc == NULL)
         return 0;
 
-    _PyErr_ChainExceptions(sslsock->exc_type, sslsock->exc_value, sslsock->exc_tb);
-    sslsock->exc_type = NULL;
-    sslsock->exc_value = NULL;
-    sslsock->exc_tb = NULL;
+    _PyErr_ChainExceptions1(sslsock->exc);
     return -1;
 }
 
@@ -803,9 +798,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->owner = NULL;
     self->server_hostname = NULL;
     self->err = err;
-    self->exc_type = NULL;
-    self->exc_value = NULL;
-    self->exc_tb = NULL;
+    self->exc = NULL;
 
     /* Make sure the SSL error state is initialized */
     ERR_clear_error();
@@ -2175,9 +2168,7 @@ Passed as \"self\" in servername callback.");
 static int
 PySSL_traverse(PySSLSocket *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->exc_type);
-    Py_VISIT(self->exc_value);
-    Py_VISIT(self->exc_tb);
+    Py_VISIT(self->exc);
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
@@ -2185,9 +2176,7 @@ PySSL_traverse(PySSLSocket *self, visitproc visit, void *arg)
 static int
 PySSL_clear(PySSLSocket *self)
 {
-    Py_CLEAR(self->exc_type);
-    Py_CLEAR(self->exc_value);
-    Py_CLEAR(self->exc_tb);
+    Py_CLEAR(self->exc);
     return 0;
 }
 
@@ -2532,7 +2521,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
         PySSL_SetError(self, retval, __FILE__, __LINE__);
         goto error;
     }
-    if (self->exc_type != NULL)
+    if (self->exc != NULL)
         goto error;
 
 done:
@@ -2658,7 +2647,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
         PySSL_SetError(self, ret, __FILE__, __LINE__);
         return NULL;
     }
-    if (self->exc_type != NULL)
+    if (self->exc != NULL)
         goto error;
     if (sock)
         /* It's already INCREF'ed */
