@@ -256,7 +256,7 @@ class PurePath(object):
     )
     _flavour = os.path
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args):
         """Construct a PurePath from one or several strings and or existing
         PurePath objects.  The strings and path objects are combined so as
         to yield a canonicalized path, which is incorporated into the
@@ -264,10 +264,28 @@ class PurePath(object):
         """
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return super().__new__(cls)
+        return cls._from_parts(args)
 
     def __reduce__(self):
         return (self.__class__, (self._fspath,))
+
+    @classmethod
+    def _join_parts(cls, parts):
+        if not parts:
+            return ''
+        elif len(parts) == 1:
+            path = os.fspath(parts[0])
+        else:
+            path = cls._flavour.join(*parts)
+        if isinstance(path, str):
+            # Force-cast str subclasses to str (issue #21127)
+            path = str(path)
+        else:
+            raise TypeError(
+                "argument should be a str or an os.PathLike "
+                "object where __fspath__ returns a str, "
+                f"not {type(path).__name__!r}")
+        return path
 
     @classmethod
     def _parse_path(cls, path):
@@ -285,22 +303,11 @@ class PurePath(object):
         parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
 
-    def __init__(self, *args):
-        if args:
-            if len(args) == 1:
-                path = os.fspath(args[0])
-            else:
-                path = self._flavour.join(*args)
-            if isinstance(path, str):
-                # Force-cast str subclasses to str (issue #21127)
-                self._fspath = str(path) or '.'
-            else:
-                raise TypeError(
-                    "argument should be a str or an os.PathLike "
-                    "object where __fspath__ returns a str, "
-                    f"not {type(path).__name__!r}")
-        else:
-            self._fspath = '.'
+    @classmethod
+    def _from_parts(cls, args):
+        self = object.__new__(cls)
+        self._fspath = cls._join_parts(args)
+        return self
 
     def _load_parts(self):
         drv, root, parts = self._parse_path(self._fspath)
@@ -310,9 +317,7 @@ class PurePath(object):
 
     @classmethod
     def _from_parsed_parts(cls, drv, root, parts):
-        path = cls._format_parsed_parts(drv, root, parts)
-        self = cls(path)
-        self._str = path
+        self = object.__new__(cls)
         self._drv = drv
         self._root = root
         self._parts_cached = parts
@@ -322,10 +327,8 @@ class PurePath(object):
     def _format_parsed_parts(cls, drv, root, parts):
         if drv or root:
             return drv + root + cls._flavour.sep.join(parts[1:])
-        elif parts:
-            return cls._flavour.sep.join(parts)
         else:
-            return '.'
+            return cls._flavour.sep.join(parts)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -334,11 +337,15 @@ class PurePath(object):
             return self._str
         except AttributeError:
             self._str = self._format_parsed_parts(self.drive, self.root,
-                                                  self._parts)
+                                                  self._parts) or '.'
             return self._str
 
     def __fspath__(self):
-        return self._fspath
+        try:
+            return self._fspath or '.'
+        except AttributeError:
+            self._fspath = str(self)
+            return self._fspath
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -584,7 +591,7 @@ class PurePath(object):
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return type(self)(self, *args)
+        return self._from_parts((self,) + args)
 
     def __truediv__(self, key):
         try:
@@ -594,7 +601,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return type(self)(key, self)
+            return self._from_parts([key] + self._parts)
         except TypeError:
             return NotImplemented
 
@@ -695,17 +702,14 @@ class Path(PurePath):
     """
     __slots__ = ()
 
-    def __init__(self, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):
         if kwargs:
             msg = ("support for supplying keyword arguments to pathlib.PurePath "
                    "is deprecated and scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
-        super().__init__(*args)
-
-    def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        return super().__new__(cls)
+        return cls._from_parts(args)
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
@@ -818,7 +822,7 @@ class Path(PurePath):
             cwd = self._flavour.abspath(self.drive)
         else:
             cwd = os.getcwd()
-        return type(self)(cwd, *self._parts)
+        return self._from_parts([cwd] + self._parts)
 
     def resolve(self, strict=False):
         """
@@ -836,7 +840,7 @@ class Path(PurePath):
         except OSError as e:
             check_eloop(e)
             raise
-        p = type(self)(s)
+        p = self._from_parts((s,))
 
         # In non-strict mode, realpath() doesn't raise on symlink loops.
         # Ensure we get an exception by calling stat()
@@ -926,7 +930,7 @@ class Path(PurePath):
         """
         if not hasattr(os, "readlink"):
             raise NotImplementedError("os.readlink() not available on this system")
-        return type(self)(os.readlink(self))
+        return self._from_parts((os.readlink(self),))
 
     def touch(self, mode=0o666, exist_ok=True):
         """
@@ -1200,7 +1204,7 @@ class Path(PurePath):
             homedir = self._flavour.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            return type(self)(homedir, *self._parts[1:])
+            return self._from_parts([homedir] + self._parts[1:])
 
         return self
 
