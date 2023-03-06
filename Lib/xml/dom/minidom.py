@@ -358,6 +358,8 @@ class Attr(Node):
         self._name = qName
         self.namespaceURI = namespaceURI
         self._prefix = prefix
+        if localName is not None:
+            self._localName = localName
         self.childNodes = NodeList()
 
         # Add the single child node that represents the value of the attr
@@ -719,6 +721,14 @@ class Element(Node):
         Node.unlink(self)
 
     def getAttribute(self, attname):
+        """Returns the value of the specified attribute.
+
+        Returns the value of the element's attribute named attname as
+        a string. An empty string is returned if the element does not
+        have such an attribute. Note that an empty string may also be
+        returned as an explicitly given attribute value, use the
+        hasAttribute method to distinguish these two cases.
+        """
         if self._attrs is None:
             return ""
         try:
@@ -829,6 +839,11 @@ class Element(Node):
     removeAttributeNodeNS = removeAttributeNode
 
     def hasAttribute(self, name):
+        """Checks whether the element has an attribute with the specified name.
+
+        Returns True if the element has an attribute with the specified name.
+        Otherwise, returns False.
+        """
         if self._attrs is None:
             return False
         return name in self._attrs
@@ -839,6 +854,11 @@ class Element(Node):
         return (namespaceURI, localName) in self._attrsNS
 
     def getElementsByTagName(self, name):
+        """Returns all descendant elements with the given tag name.
+
+        Returns the list of all descendant elements (not direct children
+        only) with the specified tag name.
+        """
         return _get_elements_by_tagName_helper(self, name, NodeList())
 
     def getElementsByTagNameNS(self, namespaceURI, localName):
@@ -849,6 +869,11 @@ class Element(Node):
         return "<DOM Element: %s at %#x>" % (self.tagName, id(self))
 
     def writexml(self, writer, indent="", addindent="", newl=""):
+        """Write an XML element to a file-like object
+
+        Write the element to the writer object that must provide
+        a write method (e.g. a file or StringIO object).
+        """
         # indent = current indentation
         # addindent = indentation to add to higher levels
         # newl = newline string

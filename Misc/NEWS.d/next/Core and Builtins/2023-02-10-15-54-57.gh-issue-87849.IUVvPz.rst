@@ -1,0 +1,3 @@
+Change the ``SEND`` instruction to leave the receiver on the stack. This
+allows the specialized form of ``SEND`` to skip the chain of C calls and jump
+directly to the ``RESUME`` in the generator or coroutine.

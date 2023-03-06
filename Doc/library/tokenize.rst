@@ -13,7 +13,7 @@
 
 The :mod:`tokenize` module provides a lexical scanner for Python source code,
 implemented in Python.  The scanner in this module returns comments as tokens
-as well, making it useful for implementing "pretty-printers," including
+as well, making it useful for implementing "pretty-printers", including
 colorizers for on-screen displays.
 
 To simplify token stream handling, all :ref:`operator <operators>` and

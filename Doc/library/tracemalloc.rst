@@ -202,10 +202,8 @@ ignoring ``<frozen importlib._bootstrap>`` and ``<unknown>`` files::
         print("Top %s lines" % limit)
         for index, stat in enumerate(top_stats[:limit], 1):
             frame = stat.traceback[0]
-            # replace "/path/to/module/file.py" with "module/file.py"
-            filename = os.sep.join(frame.filename.split(os.sep)[-2:])
             print("#%s: %s:%s: %.1f KiB"
-                  % (index, filename, frame.lineno, stat.size / 1024))
+                  % (index, frame.filename, frame.lineno, stat.size / 1024))
             line = linecache.getline(frame.filename, frame.lineno).strip()
             if line:
                 print('    %s' % line)
@@ -251,6 +249,47 @@ Example of output of the Python test suite::
 
 See :meth:`Snapshot.statistics` for more options.
 
+Record the current and peak size of all traced memory blocks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following code computes two sums like ``0 + 1 + 2 + ...`` inefficiently, by
+creating a list of those numbers. This list consumes a lot of memory
+temporarily. We can use :func:`get_traced_memory` and :func:`reset_peak` to
+observe the small memory usage after the sum is computed as well as the peak
+memory usage during the computations::
+
+  import tracemalloc
+
+  tracemalloc.start()
+
+  # Example code: compute a sum with a large temporary list
+  large_sum = sum(list(range(100000)))
+
+  first_size, first_peak = tracemalloc.get_traced_memory()
+
+  tracemalloc.reset_peak()
+
+  # Example code: compute a sum with a small temporary list
+  small_sum = sum(list(range(1000)))
+
+  second_size, second_peak = tracemalloc.get_traced_memory()
+
+  print(f"{first_size=}, {first_peak=}")
+  print(f"{second_size=}, {second_peak=}")
+
+Output::
+
+  first_size=664, first_peak=3592984
+  second_size=804, second_peak=29704
+
+Using :func:`reset_peak` ensured we could accurately record the peak during the
+computation of ``small_sum``, even though it is much smaller than the overall
+peak size of memory blocks since the :func:`start` call. Without the call to
+:func:`reset_peak`, ``second_peak`` would still be the peak from the
+computation ``large_sum`` (that is, equal to ``first_peak``). In this case,
+both peaks are much higher than the final memory usage, and which suggests we
+could optimise (by removing the unnecessary call to :class:`list`, and writing
+``sum(range(...))``).
 
 API
 ---
@@ -289,6 +328,24 @@ Functions
 
    Get the current size and peak size of memory blocks traced by the
    :mod:`tracemalloc` module as a tuple: ``(current: int, peak: int)``.
+
+
+.. function:: reset_peak()
+
+   Set the peak size of memory blocks traced by the :mod:`tracemalloc` module
+   to the current size.
+
+   Do nothing if the :mod:`tracemalloc` module is not tracing memory
+   allocations.
+
+   This function only modifies the recorded peak size, and does not modify or
+   clear any traces, unlike :func:`clear_traces`. Snapshots taken with
+   :func:`take_snapshot` before a call to :func:`reset_peak` can be
+   meaningfully compared to snapshots taken after the call.
+
+   See also :func:`get_traced_memory`.
+
+   .. versionadded:: 3.9
 
 
 .. function:: get_tracemalloc_memory()
@@ -683,12 +740,12 @@ Traceback
 
    .. method:: format(limit=None, most_recent_first=False)
 
-      Format the traceback as a list of lines with newlines. Use the
-      :mod:`linecache` module to retrieve lines from the source code.
-      If *limit* is set, format the *limit* most recent frames if *limit*
-      is positive. Otherwise, format the ``abs(limit)`` oldest frames.
-      If *most_recent_first* is ``True``, the order of the formatted frames
-      is reversed, returning the most recent frame first instead of last.
+      Format the traceback as a list of lines. Use the :mod:`linecache` module to
+      retrieve lines from the source code. If *limit* is set, format the *limit*
+      most recent frames if *limit* is positive. Otherwise, format the
+      ``abs(limit)`` oldest frames. If *most_recent_first* is ``True``, the order
+      of the formatted frames is reversed, returning the most recent frame first
+      instead of last.
 
       Similar to the :func:`traceback.format_tb` function, except that
       :meth:`.format` does not include newlines.
