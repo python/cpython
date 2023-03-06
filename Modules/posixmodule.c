@@ -1808,6 +1808,31 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
     return TRUE;
 }
 
+
+static void
+update_st_mode_from_path(const wchar_t *path, DWORD attr,
+                         struct _Py_stat_struct *result)
+{
+    if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+        /* Fix the file execute permissions. This hack sets S_IEXEC if
+           the filename has an extension that is commonly used by files
+           that CreateProcessW can execute. A real implementation calls
+           GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
+           AccessCheck to check for generic read, write, and execute
+           access. */
+        const wchar_t *fileExtension = wcsrchr(path, '.');
+        if (fileExtension) {
+            if (_wcsicmp(fileExtension, L".exe") == 0 ||
+                _wcsicmp(fileExtension, L".bat") == 0 ||
+                _wcsicmp(fileExtension, L".cmd") == 0 ||
+                _wcsicmp(fileExtension, L".com") == 0) {
+                result->st_mode |= 0111;
+            }
+        }
+    }
+}
+
+
 static int
 win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
                       BOOL traverse)
@@ -1971,24 +1996,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
     }
 
     _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, &idInfo, result);
-
-    if (!(fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        /* Fix the file execute permissions. This hack sets S_IEXEC if
-           the filename has an extension that is commonly used by files
-           that CreateProcessW can execute. A real implementation calls
-           GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
-           AccessCheck to check for generic read, write, and execute
-           access. */
-        const wchar_t *fileExtension = wcsrchr(path, '.');
-        if (fileExtension) {
-            if (_wcsicmp(fileExtension, L".exe") == 0 ||
-                _wcsicmp(fileExtension, L".bat") == 0 ||
-                _wcsicmp(fileExtension, L".cmd") == 0 ||
-                _wcsicmp(fileExtension, L".com") == 0) {
-                result->st_mode |= 0111;
-            }
-        }
-    }
+    update_st_mode_from_path(path, fileInfo.dwFileAttributes, result);
 
 cleanup:
     if (hFile != INVALID_HANDLE_VALUE) {
@@ -2018,6 +2026,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             || (!traverse && IsReparseTagNameSurrogate(statInfo.ReparseTag))
         ) {
             _Py_stat_basic_info_to_stat(&statInfo, result);
+            update_st_mode_from_path(path, statInfo.FileAttributes, result);
             return 0;
         }
     } else {
