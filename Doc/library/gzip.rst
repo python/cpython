@@ -143,6 +143,10 @@ The module defines the following items:
       :func:`time.time` and the :attr:`~os.stat_result.st_mtime` attribute of
       the object returned by :func:`os.stat`.
 
+   .. attribute:: name
+
+      The filename.
+
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added, along with the
       *mtime* constructor argument and :attr:`mtime` attribute.
