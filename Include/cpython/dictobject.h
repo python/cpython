@@ -90,17 +90,17 @@ PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
 
 /* Dictionary watchers */
 
-#define FOREACH_DICT_EVENT(V) \
-    V(ADDED)                  \
-    V(MODIFIED)               \
-    V(DELETED)                \
-    V(CLONED)                 \
-    V(CLEARED)                \
+#define PY_FOREACH_DICT_EVENT(V) \
+    V(ADDED)                     \
+    V(MODIFIED)                  \
+    V(DELETED)                   \
+    V(CLONED)                    \
+    V(CLEARED)                   \
     V(DEALLOCATED)
 
 typedef enum {
     #define DEF_EVENT(EVENT) PyDict_EVENT_##EVENT,
-    FOREACH_DICT_EVENT(DEF_EVENT)
+    PY_FOREACH_DICT_EVENT(DEF_EVENT)
     #undef DEF_EVENT
 } PyDict_WatchEvent;
 

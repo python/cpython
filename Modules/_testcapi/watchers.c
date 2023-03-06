@@ -683,7 +683,7 @@ _PyTestCapi_Init_Watchers(PyObject *mod)
                        PyFunction_EVENT_##event)) {   \
         return -1;                                    \
     }
-    FOREACH_FUNC_EVENT(ADD_EVENT);
+    PY_FOREACH_FUNC_EVENT(ADD_EVENT);
 #undef ADD_EVENT
 
     return 0;

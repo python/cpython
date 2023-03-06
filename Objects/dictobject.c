@@ -5745,9 +5745,10 @@ dict_event_name(PyDict_WatchEvent event) {
         #define CASE(op)                \
         case PyDict_EVENT_##op:         \
             return "PyDict_EVENT_" #op;
-        FOREACH_DICT_EVENT(CASE)
+        PY_FOREACH_DICT_EVENT(CASE)
         #undef CASE
     }
+    Py_UNREACHABLE();
 }
 
 void

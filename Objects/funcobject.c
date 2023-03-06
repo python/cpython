@@ -16,9 +16,10 @@ func_event_name(PyFunction_WatchEvent event) {
         #define CASE(op)                \
         case PyFunction_EVENT_##op:         \
             return "PyFunction_EVENT_" #op;
-        FOREACH_FUNC_EVENT(CASE)
+        PY_FOREACH_FUNC_EVENT(CASE)
         #undef CASE
     }
+    Py_UNREACHABLE();
 }
 
 static void

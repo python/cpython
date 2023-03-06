@@ -19,9 +19,10 @@ code_event_name(PyCodeEvent event) {
         #define CASE(op)                \
         case PY_CODE_EVENT_##op:         \
             return "PY_CODE_EVENT_" #op;
-        FOREACH_CODE_EVENT(CASE)
+        PY_FOREACH_CODE_EVENT(CASE)
         #undef CASE
     }
+    Py_UNREACHABLE();
 }
 
 static void
