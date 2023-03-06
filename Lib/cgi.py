@@ -896,7 +896,7 @@ def print_exception(type=None, value=None, tb=None, limit=None):
     print()
     print("<H3>Traceback (most recent call last):</H3>")
     list = traceback.format_tb(tb, limit) + \
-           traceback.format_exception_only(type, value)
+           traceback.format_exception_only(value)
     print("<PRE>%s<B>%s</B></PRE>" % (
         html.escape("".join(list[:-1])),
         html.escape(list[-1]),

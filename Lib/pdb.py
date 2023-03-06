@@ -387,7 +387,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         prefix = 'Internal ' if (not exc_traceback
                                     and exc_type is StopIteration) else ''
         self.message('%s%s' % (prefix,
-            traceback.format_exception_only(exc_type, exc_value)[-1].strip()))
+            traceback.format_exception_only(exc_value)[-1].strip()))
         self.interaction(frame, exc_traceback)
 
     # General interaction function
@@ -1258,14 +1258,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return eval(arg, self.curframe.f_globals, self.curframe_locals)
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
-        except:
-            exc_info = sys.exc_info()[:2]
-            err = traceback.format_exception_only(*exc_info)[-1].strip()
+        except Exception as exc:
+            err = traceback.format_exception_only(exc)[-1].strip()
             return _rstr('** raised %s **' % err)
 
     def _error_exc(self):
-        exc_info = sys.exc_info()[:2]
-        self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+        exc = sys.exc_info()[1]
+        self.error(traceback.format_exception_only(exc)[-1].strip())
 
     def _msg_val_func(self, arg, func):
         try:

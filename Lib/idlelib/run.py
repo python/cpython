@@ -229,7 +229,7 @@ def get_message_lines(typ, exc, tb):
             sys.__excepthook__(typ, exc, tb)
         return [err.getvalue().split("\n")[-2] + "\n"]
     else:
-        return traceback.format_exception_only(typ, exc)
+        return traceback.format_exception_only(exc)
 
 
 def print_exception():

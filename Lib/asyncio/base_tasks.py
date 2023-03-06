@@ -88,5 +88,5 @@ def _task_print_stack(task, limit, file):
 
     traceback.print_list(extracted_list, file=file)
     if exc is not None:
-        for line in traceback.format_exception_only(exc.__class__, exc):
+        for line in traceback.format_exception_only(exc):
             print(line, file=file, end='')

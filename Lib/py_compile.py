@@ -47,7 +47,7 @@ class PyCompileError(Exception):
         exc_type_name = exc_type.__name__
         if exc_type is SyntaxError:
             tbtext = ''.join(traceback.format_exception_only(
-                exc_type, exc_value))
+                exc_value))
             errmsg = tbtext.replace('File "<string>"', 'File "%s"' % file)
         else:
             errmsg = "Sorry: %s: %s" % (exc_type_name,exc_value)

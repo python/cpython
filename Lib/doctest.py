@@ -1376,7 +1376,7 @@ class DocTestRunner:
 
             # The example raised an exception:  check if it was expected.
             else:
-                exc_msg = traceback.format_exception_only(*exception[:2])[-1]
+                exc_msg = traceback.format_exception_only(exception[1])[-1]
                 if not quiet:
                     got += _exception_traceback(exception)
 
