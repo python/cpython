@@ -1054,6 +1054,7 @@ with_assertions
 enable_optimizations
 with_lto
 enable_bolt
+with_strict_overflow
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1825,6 +1826,8 @@ Optional Packages:
   --with-lto=[full|thin|no|yes]
                           enable Link-Time-Optimization in any build (default
                           is no)
+  --with-strict-overflow  if 'yes', add -fstrict-overflow to CFLAGS, else add
+                          -fno-strict-overflow (default is no)
   --with-dsymutil         link debug information into final executable with
                           dsymutil in macOS (default is no)
   --with-address-sanitizer
@@ -8376,6 +8379,64 @@ case $CC in
         fi
 esac
 
+save_CFLAGS=$CFLAGS
+CFLAGS="-fstrict-overflow -fno-strict-overflow"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CC supports -fstrict-overflow and -fno-strict-overflow" >&5
+$as_echo_n "checking if $CC supports -fstrict-overflow and -fno-strict-overflow... " >&6; }
+if ${ac_cv_cc_supports_fstrict_overflow+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_cc_supports_fstrict_overflow=yes
+else
+  ac_cv_cc_supports_fstrict_overflow=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_supports_fstrict_overflow" >&5
+$as_echo "$ac_cv_cc_supports_fstrict_overflow" >&6; }
+CFLAGS=$save_CFLAGS
+
+if test "x$ac_cv_cc_supports_fstrict_overflow" = xyes; then :
+  STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
+           NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
+else
+  STRICT_OVERFLOW_CFLAGS=""
+           NO_STRICT_OVERFLOW_CFLAGS=""
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-strict-overflow" >&5
+$as_echo_n "checking for --with-strict-overflow... " >&6; }
+
+# Check whether --with-strict-overflow was given.
+if test "${with_strict_overflow+set}" = set; then :
+  withval=$with_strict_overflow;
+    if test "x$ac_cv_cc_supports_fstrict_overflow" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&5
+$as_echo "$as_me: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&2;}
+fi
+
+else
+  with_strict_overflow=no
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_strict_overflow" >&5
+$as_echo "$with_strict_overflow" >&6; }
+
 # Check if CC supports -Og optimization level
 save_CFLAGS=$CFLAGS
 CFLAGS="-Og"
@@ -8428,15 +8489,8 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        # For gcc 4.x we need to use -fwrapv so lets check if its supported
-        if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
-           WRAP="-fwrapv"
-        fi
-
         if test -n "${cc_is_clang}"
         then
-            # Clang also needs -fwrapv
-            WRAP="-fwrapv"
             # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
             # see Makefile.pre.in for more information
             CFLAGS_ALIASING="-fno-strict-aliasing"
@@ -8447,7 +8501,7 @@ then
 	    if test "$Py_DEBUG" = 'true' ; then
 		OPT="-g $PYDEBUG_CFLAGS -Wall"
 	    else
-		OPT="-g $WRAP -O3 -Wall"
+		OPT="-g -O3 -Wall"
 	    fi
 	    ;;
 	*)
@@ -8580,6 +8634,12 @@ UNIVERSAL_ARCH_FLAGS=
 
 
 # tweak BASECFLAGS based on compiler and platform
+if test "x$with_strict_overflow" = xyes; then :
+  BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"
+else
+  BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"
+fi
+
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
@@ -27049,7 +27109,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__CTYPES_STATE=$py_cv_module__ctypes$as_nl"
   if test "x$py_cv_module__ctypes" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=$LIBFFI_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=$NO_STRICT_OVERFLOW_CFLAGS $LIBFFI_CFLAGS$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__CTYPES_LDFLAGS=$LIBFFI_LIBS$as_nl"
 
 fi

@@ -473,7 +473,6 @@ class TypeVarTests(BaseTestCase):
 
     def test_bad_var_substitution(self):
         T = TypeVar('T')
-        P = ParamSpec("P")
         bad_args = (
             (), (int, str), Union,
             Generic, Generic[T], Protocol, Protocol[T],
@@ -1037,8 +1036,6 @@ class TypeVarTupleTests(BaseTestCase):
 
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
-        T = TypeVar('T')
-        T2 = TypeVar('T2')
 
         class G1(Generic[*Ts]): pass
         class G2(Generic[Unpack[Ts]]): pass
@@ -1307,7 +1304,7 @@ class TypeVarTupleTests(BaseTestCase):
         i = Callable[[None], *Ts]
         j = Callable[[None], Unpack[Ts]]
         self.assertEqual(i.__args__, (type(None), *Ts))
-        self.assertEqual(i.__args__, (type(None), Unpack[Ts]))
+        self.assertEqual(j.__args__, (type(None), Unpack[Ts]))
 
         k = Callable[[None], tuple[int, *Ts]]
         l = Callable[[None], Tuple[int, Unpack[Ts]]]
@@ -1435,8 +1432,6 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(g.__annotations__, {'args': (*Ts,)[0]})
 
     def test_variadic_args_with_ellipsis_annotations_are_correct(self):
-        Ts = TypeVarTuple('Ts')
-
         def a(*args: *tuple[int, ...]): pass
         self.assertEqual(a.__annotations__,
                          {'args': (*tuple[int, ...],)[0]})
@@ -2921,8 +2916,8 @@ class ProtocolTests(BaseTestCase):
             def __init__(self):
                 self.x = None
 
-        self.assertIsInstance(C(), P)
-        self.assertIsInstance(D(), P)
+        self.assertIsInstance(CI(), P)
+        self.assertIsInstance(DI(), P)
 
     def test_protocols_in_unions(self):
         class P(Protocol):
@@ -4918,7 +4913,6 @@ class OverloadTests(BaseTestCase):
 # Definitions needed for features introduced in Python 3.6
 
 from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
-import asyncio
 
 T_a = TypeVar('T_a')
 
@@ -7077,16 +7071,6 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(get_type_hints(C, globals())['classvar'], ClassVar[int])
         self.assertEqual(get_type_hints(C, globals())['const'], Final[int])
 
-    def test_hash_eq(self):
-        self.assertEqual(len({Annotated[int, 4, 5], Annotated[int, 4, 5]}), 1)
-        self.assertNotEqual(Annotated[int, 4, 5], Annotated[int, 5, 4])
-        self.assertNotEqual(Annotated[int, 4, 5], Annotated[str, 4, 5])
-        self.assertNotEqual(Annotated[int, 4], Annotated[int, 4, 4])
-        self.assertEqual(
-            {Annotated[int, 4, 5], Annotated[int, 4, 5], Annotated[T, 4, 5]},
-            {Annotated[int, 4, 5], Annotated[T, 4, 5]}
-        )
-
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError, "Cannot subclass .*Annotated"):
             class C(Annotated):
@@ -7515,7 +7499,6 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(B.__args__, ((int, str,), Tuple[bytes, float]))
 
     def test_var_substitution(self):
-        T = TypeVar("T")
         P = ParamSpec("P")
         subst = P.__typing_subst__
         self.assertEqual(subst((int, str)), (int, str))
@@ -7835,7 +7818,7 @@ class SpecialAttrsTests(BaseTestCase):
         self.assertEqual(fr.__module__, 'typing')
         # Forward refs are currently unpicklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.assertRaises(TypeError) as exc:
+            with self.assertRaises(TypeError):
                 pickle.dumps(fr, proto)
 
         self.assertEqual(SpecialAttrsTests.TypeName.__name__, 'TypeName')

@@ -1,0 +1,1 @@
+Do not memoize incorrectly automatically generated loop rules in the parser. Patch by Pablo Galindo.
