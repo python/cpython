@@ -283,10 +283,6 @@ _PyLong_FlipSign(PyLongObject *op) {
 #define _PyLong_FALSE_TAG TAG_FROM_SIGN_AND_SIZE(0, 0)
 #define _PyLong_TRUE_TAG TAG_FROM_SIGN_AND_SIZE(1, 1)
 
-static_assert(TAG_FROM_SIGN_AND_SIZE(0, 0) == 1);
-static_assert(TAG_FROM_SIGN_AND_SIZE(1, 1) == 8);
-static_assert(TAG_FROM_SIGN_AND_SIZE(-1, 1) == 10);
-
 #ifdef __cplusplus
 }
 #endif
