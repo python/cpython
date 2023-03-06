@@ -296,9 +296,9 @@ class PurePath(object):
                 self._fspath = str(path) or '.'
             else:
                 raise TypeError(
-                    "argument should be a str object or an os.PathLike "
-                    "object returning str, not %r"
-                    % type(path))
+                    "argument should be a str or an os.PathLike "
+                    "object where __fspath__ returns a str, "
+                    f"not {type(path).__name__!r}")
         else:
             self._fspath = '.'
 
@@ -645,15 +645,10 @@ class PurePath(object):
         drv, root, pat_parts = self._parse_path(path_pattern)
         if not pat_parts:
             raise ValueError("empty pattern")
-        elif drv and drv != self._flavour.normcase(self.drive):
-            return False
-        elif root and root != self.root:
-            return False
         parts = self._parts_normcase
         if drv or root:
             if len(pat_parts) != len(parts):
                 return False
-            pat_parts = pat_parts[1:]
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
@@ -662,7 +657,7 @@ class PurePath(object):
         return True
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
-# optimizations in PurePath._parse_args().
+# optimizations in PurePath.__slots__.
 os.PathLike.register(PurePath)
 
 
@@ -710,9 +705,6 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        elif cls._flavour is not os.path:
-            raise NotImplementedError("cannot instantiate %r on your system"
-                                      % (cls.__name__,))
         return super().__new__(cls)
 
     def _make_child_relpath(self, part):
@@ -821,7 +813,12 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        return type(self)(os.getcwd(), *self._parts)
+        elif self.drive:
+            # There is a CWD on each drive-letter drive.
+            cwd = self._flavour.abspath(self.drive)
+        else:
+            cwd = os.getcwd()
+        return type(self)(cwd, *self._parts)
 
     def resolve(self, strict=False):
         """
@@ -1258,9 +1255,19 @@ class PosixPath(Path, PurePosixPath):
     """
     __slots__ = ()
 
+    if os.name == 'nt':
+        def __new__(cls, *args, **kwargs):
+            raise NotImplementedError(
+                f"cannot instantiate {cls.__name__!r} on your system")
+
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
 
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
+
+    if os.name != 'nt':
+        def __new__(cls, *args, **kwargs):
+            raise NotImplementedError(
+                f"cannot instantiate {cls.__name__!r} on your system")

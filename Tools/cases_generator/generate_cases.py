@@ -8,6 +8,7 @@ import argparse
 import contextlib
 import dataclasses
 import os
+import posixpath
 import re
 import sys
 import typing
@@ -17,7 +18,7 @@ from parser import StackEffect
 
 HERE = os.path.dirname(__file__)
 ROOT = os.path.join(HERE, "../..")
-THIS = os.path.relpath(__file__, ROOT)
+THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, posixpath.sep)
 
 DEFAULT_INPUT = os.path.relpath(os.path.join(ROOT, "Python/bytecodes.c"))
 DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"))
@@ -37,16 +38,13 @@ arg_parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 arg_parser.add_argument(
-    "-i", "--input", type=str, help="Instruction definitions", default=DEFAULT_INPUT
-)
-arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 arg_parser.add_argument(
-    "-m",
-    "--metadata",
-    action="store_true",
-    help=f"Generate metadata instead, changes output default to {DEFAULT_METADATA_OUTPUT}",
+    "-m", "--metadata", type=str, help="Generated metadata", default=DEFAULT_METADATA_OUTPUT
+)
+arg_parser.add_argument(
+    "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
 
 
@@ -173,22 +171,17 @@ class Formatter:
     def assign(self, dst: StackEffect, src: StackEffect):
         if src.name == UNUSED:
             return
+        if src.size:
+            # Don't write sized arrays -- it's up to the user code.
+            return
         cast = self.cast(dst, src)
-        if m := re.match(r"^PEEK\((.*)\)$", dst.name):
-            stmt = f"POKE({m.group(1)}, {cast}{src.name});"
+        if re.match(r"^REG\(oparg(\d+)\)$", dst.name):
+            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
+        else:
+            stmt = f"{dst.name} = {cast}{src.name};"
             if src.cond:
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
-        elif m := re.match(r"^&PEEK\(.*\)$", dst.name):
-            # NOTE: MOVE_ITEMS() does not actually exist.
-            # The only supported output array forms are:
-            # - unused[...]
-            # - X[...] where X[...] matches an input array exactly
-            self.emit(f"MOVE_ITEMS({dst.name}, {src.name}, {src.size});")
-        elif m := re.match(r"^REG\(oparg(\d+)\)$", dst.name):
-            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
-        else:
-            self.emit(f"{dst.name} = {cast}{src.name};")
 
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
@@ -230,7 +223,8 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.block_text, self.predictions = extract_block_text(self.block)
+        self.block_text, self.check_eval_breaker, self.predictions = \
+            extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
@@ -296,11 +290,11 @@ class Instruction:
                     list_effect_size([ieff for ieff in ieffects[: i + 1]])
                 )
                 if ieffect.size:
-                    src = StackEffect(f"&PEEK({isize})", "PyObject **")
+                    src = StackEffect(f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **")
                 elif ieffect.cond:
-                    src = StackEffect(f"({ieffect.cond}) ? PEEK({isize}) : NULL", "")
+                    src = StackEffect(f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL", "")
                 else:
-                    src = StackEffect(f"PEEK({isize})", "")
+                    src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
                 out.declare(ieffect, src)
         else:
             # Write input register variable declarations and initializations
@@ -309,12 +303,26 @@ class Instruction:
                 out.declare(ieffect, src)
 
         # Write output stack effect variable declarations
+        isize = string_effect_size(list_effect_size(self.input_effects))
         input_names = {ieffect.name for ieffect in self.input_effects}
-        for oeffect in self.output_effects:
+        for i, oeffect in enumerate(self.output_effects):
             if oeffect.name not in input_names:
-                out.declare(oeffect, None)
+                if oeffect.size:
+                    osize = string_effect_size(
+                        list_effect_size([oeff for oeff in self.output_effects[:i]])
+                    )
+                    offset = "stack_pointer"
+                    if isize != osize:
+                        if isize != "0":
+                            offset += f" - ({isize})"
+                        if osize != "0":
+                            offset += f" + {osize}"
+                    src = StackEffect(offset, "PyObject **")
+                    out.declare(oeffect, src)
+                else:
+                    out.declare(oeffect, None)
 
-        # out.emit(f"JUMPBY(OPSIZE({self.inst.name}) - 1);")
+        # out.emit(f"next_instr += OPSIZE({self.inst.name}) - 1;")
 
         self.write_body(out, 0)
 
@@ -339,9 +347,9 @@ class Instruction:
                     list_effect_size([oeff for oeff in oeffects[: i + 1]])
                 )
                 if oeffect.size:
-                    dst = StackEffect(f"&PEEK({osize})", "PyObject **")
+                    dst = StackEffect(f"stack_pointer - {maybe_parenthesize(osize)}", "PyObject **")
                 else:
-                    dst = StackEffect(f"PEEK({osize})", "")
+                    dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "")
                 out.assign(dst, oeffect)
         else:
             # Write output register assignments
@@ -351,7 +359,7 @@ class Instruction:
 
         # Write cache effect
         if self.cache_offset:
-            out.emit(f"JUMPBY({self.cache_offset});")
+            out.emit(f"next_instr += {self.cache_offset};")
 
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
         """Write the instruction body."""
@@ -379,9 +387,11 @@ class Instruction:
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
         extra = " " * -dedent
+        names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
         for line in self.block_text:
             if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*(?://.*)?$", line):
                 space, cond, label = m.groups()
+                space = extra + space
                 # ERROR_IF() must pop the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.
                 # NOTE: If the label doesn't exist, just add it to ceval.c.
@@ -400,16 +410,25 @@ class Instruction:
                     symbolic = ""
                 if symbolic:
                     out.write_raw(
-                        f"{extra}{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
+                        f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
                     )
                 else:
-                    out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
+                    out.write_raw(f"{space}if ({cond}) goto {label};\n")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 if not self.register:
-                    space = m.group(1)
+                    space = extra + m.group(1)
                     for ieff in self.input_effects:
-                        if ieff.name not in self.unmoved_names:
-                            out.write_raw(f"{extra}{space}Py_DECREF({ieff.name});\n")
+                        if ieff.name in names_to_skip:
+                            continue
+                        if ieff.size:
+                            out.write_raw(
+                                f"{space}for (int _i = {ieff.size}; --_i >= 0;) {{\n"
+                            )
+                            out.write_raw(f"{space}    Py_DECREF({ieff.name}[_i]);\n")
+                            out.write_raw(f"{space}}}\n")
+                        else:
+                            decref = "XDECREF" if ieff.cond else "DECREF"
+                            out.write_raw(f"{space}Py_{decref}({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
 
@@ -466,6 +485,11 @@ class MacroInstruction(SuperOrMacroInstruction):
     parts: list[Component | parser.CacheEffect]
 
 
+@dataclasses.dataclass
+class OverriddenInstructionPlaceHolder:
+    name: str
+
+
 AnyInstruction = Instruction | SuperInstruction | MacroInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
 
@@ -473,30 +497,33 @@ INSTR_FMT_PREFIX = "INSTR_FMT_"
 class Analyzer:
     """Parse input, analyze it, and write to output."""
 
-    filename: str
+    input_filenames: list[str]
     output_filename: str
-    src: str
+    metadata_filename: str
     errors: int = 0
 
-    def __init__(self, filename: str, output_filename: str):
+    def __init__(self, input_filenames: list[str], output_filename: str, metadata_filename: str):
         """Read the input file."""
-        self.filename = filename
+        self.input_filenames = input_filenames
         self.output_filename = output_filename
-        with open(filename) as f:
-            self.src = f.read()
+        self.metadata_filename = metadata_filename
 
     def error(self, msg: str, node: parser.Node) -> None:
         lineno = 0
+        filename = "<unknown file>"
         if context := node.context:
+            filename = context.owner.filename
             # Use line number of first non-comment in the node
             for token in context.owner.tokens[context.begin : context.end]:
                 lineno = token.line
                 if token.kind != "COMMENT":
                     break
-        print(f"{self.filename}:{lineno}: {msg}", file=sys.stderr)
+        print(f"{filename}:{lineno}: {msg}", file=sys.stderr)
         self.errors += 1
 
-    everything: list[parser.InstDef | parser.Super | parser.Macro]
+    everything: list[
+        parser.InstDef | parser.Super | parser.Macro | OverriddenInstructionPlaceHolder
+    ]
     instrs: dict[str, Instruction]  # Includes ops
     supers: dict[str, parser.Super]
     super_instrs: dict[str, SuperInstruction]
@@ -510,7 +537,31 @@ class Analyzer:
         We only want the parser to see the stuff between the
         begin and end markers.
         """
-        psr = parser.Parser(self.src, filename=self.filename)
+
+        self.everything = []
+        self.instrs = {}
+        self.supers = {}
+        self.macros = {}
+        self.families = {}
+
+        instrs_idx: dict[str, int] = dict()
+
+        for filename in self.input_filenames:
+            self.parse_file(filename, instrs_idx)
+
+        files = " + ".join(self.input_filenames)
+        print(
+            f"Read {len(self.instrs)} instructions/ops, "
+            f"{len(self.supers)} supers, {len(self.macros)} macros, "
+            f"and {len(self.families)} families from {files}",
+            file=sys.stderr,
+        )
+
+    def parse_file(self, filename: str, instrs_idx: dict[str, int]) -> None:
+        with open(filename) as file:
+            src = file.read()
+
+        psr = parser.Parser(src, filename=filename)
 
         # Skip until begin marker
         while tkn := psr.next(raw=True):
@@ -530,16 +581,27 @@ class Analyzer:
 
         # Parse from start
         psr.setpos(start)
-        self.everything = []
-        self.instrs = {}
-        self.supers = {}
-        self.macros = {}
-        self.families = {}
         thing: parser.InstDef | parser.Super | parser.Macro | parser.Family | None
+        thing_first_token = psr.peek()
         while thing := psr.definition():
             match thing:
                 case parser.InstDef(name=name):
+                    if name in self.instrs:
+                        if not thing.override:
+                            raise psr.make_syntax_error(
+                                f"Duplicate definition of '{name}' @ {thing.context} "
+                                f"previous definition @ {self.instrs[name].inst.context}",
+                                thing_first_token,
+                            )
+                        self.everything[instrs_idx[name]] = OverriddenInstructionPlaceHolder(name=name)
+                    if name not in self.instrs and thing.override:
+                        raise psr.make_syntax_error(
+                            f"Definition of '{name}' @ {thing.context} is supposed to be "
+                            "an override but no previous definition exists.",
+                            thing_first_token,
+                        )
                     self.instrs[name] = Instruction(thing)
+                    instrs_idx[name] = len(self.everything)
                     self.everything.append(thing)
                 case parser.Super(name):
                     self.supers[name] = thing
@@ -552,14 +614,7 @@ class Analyzer:
                 case _:
                     typing.assert_never(thing)
         if not psr.eof():
-            raise psr.make_syntax_error("Extra stuff at the end")
-
-        print(
-            f"Read {len(self.instrs)} instructions/ops, "
-            f"{len(self.supers)} supers, {len(self.macros)} macros, "
-            f"and {len(self.families)} families from {self.filename}",
-            file=sys.stderr,
-        )
+            raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
 
     def analyze(self) -> None:
         """Analyze the inputs.
@@ -858,6 +913,8 @@ class Analyzer:
         popped_data: list[tuple[AnyInstruction, str]] = []
         pushed_data: list[tuple[AnyInstruction, str]] = []
         for thing in self.everything:
+            if isinstance(thing, OverriddenInstructionPlaceHolder):
+                continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
                 popped_data.append((instr, popped))
@@ -866,21 +923,32 @@ class Analyzer:
         def write_function(
             direction: str, data: list[tuple[AnyInstruction, str]]
         ) -> None:
-            self.out.emit("\n#ifndef NDEBUG")
-            self.out.emit("static int")
+            self.out.emit("")
+            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit(f"extern int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump);")
+            self.out.emit("#else")
+            self.out.emit("int")
             self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg, bool jump) {{")
             self.out.emit("    switch(opcode) {")
             for instr, effect in data:
                 self.out.emit(f"        case {instr.name}:")
                 self.out.emit(f"            return {effect};")
             self.out.emit("        default:")
-            self.out.emit("            Py_UNREACHABLE();")
+            self.out.emit("            return -1;")
             self.out.emit("    }")
             self.out.emit("}")
             self.out.emit("#endif")
 
         write_function("popped", popped_data)
         write_function("pushed", pushed_data)
+        self.out.emit("")
+
+    def from_source_files(self) -> str:
+        paths = "\n//   ".join(
+            os.path.relpath(filename, ROOT).replace(os.path.sep, posixpath.sep)
+            for filename in self.input_filenames
+        )
+        return f"// from:\n//   {paths}\n"
 
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
@@ -889,6 +957,8 @@ class Analyzer:
         all_formats: set[str] = set()
         for thing in self.everything:
             match thing:
+                case OverriddenInstructionPlaceHolder():
+                    continue
                 case parser.InstDef():
                     format = self.instrs[thing.name].instr_fmt
                 case parser.Super():
@@ -901,10 +971,10 @@ class Analyzer:
         # Turn it into a list of enum definitions.
         format_enums = [INSTR_FMT_PREFIX + format for format in sorted(all_formats)]
 
-        with open(self.output_filename, "w") as f:
+        with open(self.metadata_filename, "w") as f:
             # Write provenance header
-            f.write(f"// This file is generated by {THIS} --metadata\n")
-            f.write(f"// from {os.path.relpath(self.filename, ROOT)}\n")
+            f.write(f"// This file is generated by {THIS}\n")
+            f.write(self.from_source_files())
             f.write(f"// Do not edit!\n")
 
             # Create formatter; the rest of the code uses this
@@ -912,7 +982,7 @@ class Analyzer:
 
             self.write_stack_effect_functions()
 
-            # Write variable definition
+            # Write type definitions
             self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
             self.out.emit("struct opcode_metadata {")
@@ -922,11 +992,20 @@ class Analyzer:
                 self.out.emit("enum Direction dir_op3;")
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
-            self.out.emit("} _PyOpcode_opcode_metadata[256] = {")
+            self.out.emit("};")
+            self.out.emit("")
+
+            # Write metadata array declaration
+            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];")
+            self.out.emit("#else")
+            self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {")
 
             # Write metadata for each instruction
             for thing in self.everything:
                 match thing:
+                    case OverriddenInstructionPlaceHolder():
+                        continue
                     case parser.InstDef():
                         if thing.kind != "op":
                             self.write_metadata_for_inst(self.instrs[thing.name])
@@ -939,6 +1018,7 @@ class Analyzer:
 
             # Write end of array
             self.out.emit("};")
+            self.out.emit("#endif")
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
@@ -975,7 +1055,7 @@ class Analyzer:
         with open(self.output_filename, "w") as f:
             # Write provenance header
             f.write(f"// This file is generated by {THIS}\n")
-            f.write(f"// from {os.path.relpath(self.filename, ROOT)}\n")
+            f.write(self.from_source_files())
             f.write(f"// Do not edit!\n")
 
             # Create formatter; the rest of the code uses this
@@ -987,6 +1067,8 @@ class Analyzer:
             n_macros = 0
             for thing in self.everything:
                 match thing:
+                    case OverriddenInstructionPlaceHolder():
+                        self.write_overridden_instr_place_holder(thing)
                     case parser.InstDef():
                         if thing.kind != "op":
                             n_instrs += 1
@@ -1006,9 +1088,17 @@ class Analyzer:
             file=sys.stderr,
         )
 
+    def write_overridden_instr_place_holder(self,
+            place_holder: OverriddenInstructionPlaceHolder) -> None:
+        self.out.emit("")
+        self.out.emit(
+            f"// TARGET({place_holder.name}) overridden by later definition")
+
     def write_instr(self, instr: Instruction) -> None:
         name = instr.name
         self.out.emit("")
+        if instr.inst.override:
+            self.out.emit("// Override")
         with self.out.block(f"TARGET({name})"):
             if instr.predicted:
                 self.out.emit(f"PREDICTED({name});")
@@ -1016,6 +1106,8 @@ class Analyzer:
             if not instr.always_exits:
                 for prediction in instr.predictions:
                     self.out.emit(f"PREDICT({prediction});")
+                if instr.check_eval_breaker:
+                    self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
 
     def write_super(self, sup: SuperInstruction) -> None:
@@ -1023,17 +1115,13 @@ class Analyzer:
         with self.wrap_super_or_macro(sup):
             first = True
             for comp in sup.parts:
-                if first:
-                    pass
-                    # self.out.emit("JUMPBY(OPSIZE(opcode) - 1);")
-                else:
-                    self.out.emit("NEXTOPARG();")
-                    self.out.emit("JUMPBY(1);")
-                    # self.out.emit("JUMPBY(OPSIZE(opcode));")
+                if not first:
+                    self.out.emit("oparg = (next_instr++)->op.arg;")
+                # self.out.emit("next_instr += OPSIZE(opcode) - 1;")
                 first = False
                 comp.write_body(self.out, 0)
                 if comp.instr.cache_offset:
-                    self.out.emit(f"JUMPBY({comp.instr.cache_offset});")
+                    self.out.emit(f"next_instr += {comp.instr.cache_offset};")
 
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
@@ -1050,7 +1138,7 @@ class Analyzer:
                         cache_adjust += comp.instr.cache_offset
 
             if cache_adjust:
-                self.out.emit(f"JUMPBY({cache_adjust});")
+                self.out.emit(f"next_instr += {cache_adjust};")
 
             if (
                 last_instr
@@ -1076,7 +1164,7 @@ class Analyzer:
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:
-                    src = StackEffect(f"PEEK({up.initial_sp - i})", "")
+                    src = StackEffect(f"stack_pointer[-{up.initial_sp - i}]", "")
                 self.out.declare(var, src)
 
             yield
@@ -1085,13 +1173,13 @@ class Analyzer:
             self.out.stack_adjust(up.final_sp - up.initial_sp, [], [])
 
             for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
-                dst = StackEffect(f"PEEK({i})", "")
+                dst = StackEffect(f"stack_pointer[-{i}]", "")
                 self.out.assign(dst, var)
 
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
+def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
 
@@ -1111,6 +1199,12 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
     while blocklines and not blocklines[-1].strip():
         blocklines.pop()
 
+    # Separate CHECK_EVAL_BREAKER() macro from end
+    check_eval_breaker = \
+        blocklines != [] and blocklines[-1].strip() == "CHECK_EVAL_BREAKER();"
+    if check_eval_breaker:
+        del blocklines[-1]
+
     # Separate PREDICT(...) macros from end
     predictions: list[str] = []
     while blocklines and (
@@ -1119,7 +1213,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
         predictions.insert(0, m.group(1))
         blocklines.pop()
 
-    return blocklines, predictions
+    return blocklines, check_eval_breaker, predictions
 
 
 def always_exits(lines: list[str]) -> bool:
@@ -1153,18 +1247,15 @@ def variable_used(node: parser.Node, name: str) -> bool:
 def main():
     """Parse command line, parse input, analyze, write output."""
     args = arg_parser.parse_args()  # Prints message and sys.exit(2) on error
-    if args.metadata:
-        if args.output == DEFAULT_OUTPUT:
-            args.output = DEFAULT_METADATA_OUTPUT
-    a = Analyzer(args.input, args.output)  # Raises OSError if input unreadable
+    if len(args.input) == 0:
+        args.input.append(DEFAULT_INPUT)
+    a = Analyzer(args.input, args.output, args.metadata)  # Raises OSError if input unreadable
     a.parse()  # Raises SyntaxError on failure
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
-    if args.metadata:
-        a.write_metadata()
-    else:
-        a.write_instructions()  # Raises OSError if output can't be written
+    a.write_instructions()  # Raises OSError if output can't be written
+    a.write_metadata()
 
 
 if __name__ == "__main__":

@@ -117,7 +117,7 @@ class TestTranforms(BytecodeTestCase):
             return None
 
         self.assertNotInBytecode(f, 'LOAD_GLOBAL')
-        self.assertInBytecode(f, 'LOAD_CONST', None)
+        self.assertInBytecode(f, 'RETURN_CONST', None)
         self.check_lnotab(f)
 
     def test_while_one(self):
@@ -134,7 +134,7 @@ class TestTranforms(BytecodeTestCase):
 
     def test_pack_unpack(self):
         for line, elem in (
-            ('a, = a,', 'LOAD_CONST',),
+            ('a, = a,', 'RETURN_CONST',),
             ('a, b = a, b', 'SWAP',),
             ('a, b, c = a, b, c', 'SWAP',),
             ):
@@ -165,7 +165,7 @@ class TestTranforms(BytecodeTestCase):
         # One LOAD_CONST for the tuple, one for the None return value
         load_consts = [instr for instr in dis.get_instructions(code)
                               if instr.opname == 'LOAD_CONST']
-        self.assertEqual(len(load_consts), 2)
+        self.assertEqual(len(load_consts), 1)
         self.check_lnotab(code)
 
         # Bug 1053819:  Tuple of constants misidentified when presented with:
@@ -984,6 +984,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         if expected_consts is None:
             expected_consts = consts
         opt_insts, opt_consts = self.get_optimized(insts, consts)
+        expected_insts = self.normalize_insts(expected_insts)
         self.assertInstructionsMatch(opt_insts, expected_insts)
         self.assertEqual(opt_consts, expected_consts)
 
@@ -996,11 +997,11 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 3, 14),
         ]
         expected = [
-            ('LOAD_NAME', '1', 11),
+            ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', '2', 13),
+            ('LOAD_CONST', 2, 13),
             lbl,
-            ('LOAD_CONST', '3', 14)
+            ('LOAD_CONST', 3, 14)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -1018,7 +1019,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         expected = [
             ('NOP', None, 11),
             ('NOP', None, 12),
-            ('LOAD_CONST', '3', 14)
+            ('LOAD_CONST', 3, 14)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -1031,9 +1032,9 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         expected = [
             lbl := self.Label(),
-            ('LOAD_NAME', '1', 11),
+            ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl, 12),
-            ('LOAD_CONST', '2', 13)
+            ('LOAD_CONST', 2, 13)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
