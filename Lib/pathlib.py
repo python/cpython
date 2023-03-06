@@ -211,17 +211,17 @@ class _RecursiveWildcardSelector(_Selector):
 class _PathParents(Sequence):
     """This object provides sequence-like access to the logical ancestors
     of a path.  Don't try to construct it yourself."""
-    __slots__ = ('_pathcls', '_drv', '_root', '_parts')
+    __slots__ = ('_pathcls', '_drv', '_root', '_tail')
 
     def __init__(self, path):
         # We don't store the instance to avoid reference cycles
         self._pathcls = type(path)
         self._drv = path._drv
         self._root = path._root
-        self._parts = path._parts
+        self._tail = path._tail
 
     def __len__(self):
-        return len(self._parts)
+        return len(self._tail)
 
     def __getitem__(self, idx):
         if isinstance(idx, slice):
@@ -232,7 +232,7 @@ class _PathParents(Sequence):
         if idx < 0:
             idx += len(self)
         return self._pathcls._from_parsed_parts(self._drv, self._root,
-                                                self._parts[:-idx - 1])
+                                                self._tail[:-idx - 1])
 
     def __repr__(self):
         return "<{}.parents>".format(self._pathcls.__name__)
@@ -248,7 +248,7 @@ class PurePath(object):
     directly, regardless of your system.
     """
     __slots__ = (
-        '_drv', '_root', '_parts',
+        '_drv', '_root', '_tail',
         '_str', '_hash', '_parts_tuple', '_parts_normcase_cached',
     )
     _flavour = os.path
@@ -298,23 +298,23 @@ class PurePath(object):
     @classmethod
     def _from_parts(cls, args):
         self = object.__new__(cls)
-        drv, root, parts = self._parse_parts(args)
+        drv, root, tail = self._parse_parts(args)
         self._drv = drv
         self._root = root
-        self._parts = parts
+        self._tail = tail
         return self
 
     @classmethod
-    def _from_parsed_parts(cls, drv, root, parts):
+    def _from_parsed_parts(cls, drv, root, tail):
         self = object.__new__(cls)
         self._drv = drv
         self._root = root
-        self._parts = parts
+        self._tail = tail
         return self
 
     @classmethod
-    def _format_parsed_parts(cls, drv, root, parts):
-        tail = cls._flavour.sep.join(parts)
+    def _format_parsed_parts(cls, drv, root, tail):
+        tail = cls._flavour.sep.join(tail)
         if drv or root:
             return f'{drv}{root}{tail}'
         else:
@@ -327,7 +327,7 @@ class PurePath(object):
             return self._str
         except AttributeError:
             self._str = self._format_parsed_parts(self._drv, self._root,
-                                                  self._parts) or '.'
+                                                  self._tail) or '.'
             return self._str
 
     def __fspath__(self):
@@ -423,10 +423,10 @@ class PurePath(object):
     @property
     def name(self):
         """The final path component, if any."""
-        parts = self._parts
-        if not parts:
+        tail = self._tail
+        if not tail:
             return ''
-        return parts[-1]
+        return tail[-1]
 
     @property
     def suffix(self):
@@ -474,7 +474,7 @@ class PurePath(object):
         if drv or root or not tail or f.sep in tail or (f.altsep and f.altsep in tail):
             raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self._drv, self._root,
-                                       self._parts[:-1] + [name])
+                                       self._tail[:-1] + [name])
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -499,7 +499,7 @@ class PurePath(object):
         else:
             name = name[:-len(old_suffix)] + suffix
         return self._from_parsed_parts(self._drv, self._root,
-                                       self._parts[:-1] + [name])
+                                       self._tail[:-1] + [name])
 
     def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
@@ -549,9 +549,9 @@ class PurePath(object):
             return self._parts_tuple
         except AttributeError:
             if self._drv or self._root:
-                self._parts_tuple = (self._drv + self._root,) + tuple(self._parts)
+                self._parts_tuple = (self._drv + self._root,) + tuple(self._tail)
             else:
-                self._parts_tuple = tuple(self._parts)
+                self._parts_tuple = tuple(self._tail)
             return self._parts_tuple
 
     def joinpath(self, *args):
@@ -560,22 +560,22 @@ class PurePath(object):
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        drv1, root1, parts1 = self._drv, self._root, self._parts
-        drv2, root2, parts2 = self._parse_parts(args)
+        drv1, root1, tail1 = self._drv, self._root, self._tail
+        drv2, root2, tail2 = self._parse_parts(args)
         if root2:
             if not drv2 and drv1:
-                return self._from_parsed_parts(drv1, root2, parts2)
+                return self._from_parsed_parts(drv1, root2, tail2)
             else:
-                return self._from_parsed_parts(drv2, root2, parts2)
+                return self._from_parsed_parts(drv2, root2, tail2)
         elif drv2:
             if drv2 == drv1 or self._flavour.normcase(drv2) == self._flavour.normcase(drv1):
                 # Same drive => second path is relative to the first.
-                return self._from_parsed_parts(drv1, root1, parts1 + parts2)
+                return self._from_parsed_parts(drv1, root1, tail1 + tail2)
             else:
-                return self._from_parsed_parts(drv2, root2, parts2)
+                return self._from_parsed_parts(drv2, root2, tail2)
         else:
             # Second path is non-anchored (common case).
-            return self._from_parsed_parts(drv1, root1, parts1 + parts2)
+            return self._from_parsed_parts(drv1, root1, tail1 + tail2)
 
     def __truediv__(self, key):
         try:
@@ -585,7 +585,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return self._from_parts([key] + self._parts)
+            return self._from_parts([key] + self._tail)
         except TypeError:
             return NotImplemented
 
@@ -594,10 +594,10 @@ class PurePath(object):
         """The logical parent of the path."""
         drv = self._drv
         root = self._root
-        parts = self._parts
-        if not parts:
+        tail = self._tail
+        if not tail:
             return self
-        return self._from_parsed_parts(drv, root, parts[:-1])
+        return self._from_parsed_parts(drv, root, tail[:-1])
 
     @property
     def parents(self):
@@ -615,7 +615,7 @@ class PurePath(object):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
-        if self._flavour is posixpath or not self._parts:
+        if self._flavour is posixpath or not self._tail:
             return False
 
         # NOTE: the rules for reserved names seem somewhat complicated
@@ -625,7 +625,7 @@ class PurePath(object):
         if self._drv.startswith('\\\\'):
             # UNC paths are never reserved.
             return False
-        name = self._parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
+        name = self._tail[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
 
     def match(self, path_pattern):
@@ -698,8 +698,8 @@ class Path(PurePath):
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
         # a single part relative to this path.
-        parts = self._parts + [part]
-        return self._from_parsed_parts(self._drv, self._root, parts)
+        tail = self._tail + [part]
+        return self._from_parsed_parts(self._drv, self._root, tail)
 
     def __enter__(self):
         # In previous versions of pathlib, __exit__() marked this path as
@@ -1184,11 +1184,11 @@ class Path(PurePath):
         (as returned by os.path.expanduser)
         """
         if (not (self._drv or self._root) and
-            self._parts and self._parts[0][:1] == '~'):
-            homedir = self._flavour.expanduser(self._parts[0])
+            self._tail and self._tail[0][:1] == '~'):
+            homedir = self._flavour.expanduser(self._tail[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            return self._from_parts([homedir] + self._parts[1:])
+            return self._from_parts([homedir] + self._tail[1:])
 
         return self
 
