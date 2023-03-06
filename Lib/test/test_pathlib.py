@@ -121,9 +121,6 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         # the second path is relative.
         check(['c:/a/b', 'c:x/y'], ('c:', '\\', ['c:\\', 'a', 'b', 'x', 'y']))
         check(['c:/a/b', 'c:/x/y'], ('c:', '\\', ['c:\\', 'x', 'y']))
-        # Second part has a drive but not root.
-        check(['a', 'Z:b', 'c'],        ('Z:', '', ['Z:', 'a', 'b', 'c']))
-        check(['Y:a', 'Z:b', 'c'],      ('Z:', '', ['Z:', 'a', 'b', 'c']))
         # Paths to files with NTFS alternate data streams
         check(['./c:s'],                ('', '', ['c:s']))
         check(['cc:s'],                 ('', '', ['cc:s']))
@@ -825,7 +822,6 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
     equivalences = _BasePurePathTest.equivalences.copy()
     equivalences.update({
         './a:b': [ ('./a:b',) ],
-        'a:b:c': [ ('./b:c', 'a:'), ('b:', 'a:b:c') ],
         'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('.', 'c:', 'a') ],
         'c:/a': [
             ('c:/', 'a'), ('c:', '/', 'a'), ('c:', '/a'),
