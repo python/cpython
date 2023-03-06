@@ -1013,6 +1013,18 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(next(i), '2')
             self.assertRaises(StopIteration, next, i)
 
+        class Foo:
+            def __init__(self):
+                self.state = 0
+
+            def __next__(self):
+                self.state += 1
+                return self.state
+        _iter = iter(Foo().__next__, 3)
+        self.assertEqual(next(_iter), 1)
+        self.assertEqual(next(_iter), 2)
+        self.assertRaises(StopIteration, next, _iter)
+
     def test_isinstance(self):
         class C:
             pass
