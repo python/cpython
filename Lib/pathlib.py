@@ -1186,10 +1186,11 @@ class Path(PurePath):
         """
         if (not (self._drv or self._root) and
             self._parts and self._parts[0][:1] == '~'):
-            homedir = self._flavour.expanduser(self)
+            homedir = self._flavour.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            return self._from_parts([homedir])
+            drv, root, parts = self._parse_parts((homedir,))
+            return self._from_parsed_parts(drv, root, parts + self._parts[1:])
 
         return self
 
