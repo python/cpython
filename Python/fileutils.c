@@ -2113,7 +2113,7 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 // Note that this implementation does not handle all the same cases as the real
 // function, but we expect games are very unlikely to encounter the more obscure
 // cases.
-#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
+#if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
 HRESULT
 PathCchSkipRoot(const wchar_t *path, const wchar_t **rootEnd)
 {
