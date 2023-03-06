@@ -166,6 +166,33 @@ class _BasePurePathTest(object):
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
 
+    def test_bytes(self):
+        P = self.cls
+        message = (r"argument should be a str or an os\.PathLike object "
+                   r"where __fspath__ returns a str, not 'bytes'")
+        with self.assertRaisesRegex(TypeError, message):
+            P(b'a')
+        with self.assertRaises(TypeError):
+            P(b'a', 'b')
+        with self.assertRaises(TypeError):
+            P('a', b'b')
+        with self.assertRaises(TypeError):
+            P('a').joinpath(b'b')
+        with self.assertRaises(TypeError):
+            P('a') / b'b'
+        with self.assertRaises(TypeError):
+            b'a' / P('b')
+        with self.assertRaises(TypeError):
+            P('a').match(b'b')
+        with self.assertRaises(TypeError):
+            P('a').relative_to(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_name(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_stem(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_suffix(b'b')
+
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
         # from a str subclass instance, and it then gets converted to

@@ -9795,11 +9795,6 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     static int dup3_works = -1;
 #endif
 
-    if (fd < 0 || fd2 < 0) {
-        posix_error();
-        return -1;
-    }
-
     /* dup2() can fail with EINTR if the target FD is already open, because it
      * then has to be closed. See os_close_impl() for why we don't handle EINTR
      * upon close(), and therefore below.
