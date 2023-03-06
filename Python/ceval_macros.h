@@ -365,8 +365,8 @@ do { \
     }\
     else { \
         result = PyFloat_FromDouble(dval); \
+        if ((result) == NULL) goto error; \
         _Py_DECREF_NO_DEALLOC(left); \
         _Py_DECREF_NO_DEALLOC(right); \
-        ERROR_IF((result) == NULL, error); \
     } \
 } while (0)
