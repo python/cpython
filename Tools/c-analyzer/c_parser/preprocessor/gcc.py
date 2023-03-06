@@ -29,7 +29,7 @@ COMPILER_DIRECTIVE_RE = re.compile(r'''
             [^()]*
          )*
      )  # <args>
-    ( [)] [)] )?  # <closed>
+    ( [)] [)] )  # <closed>
 ''', re.VERBOSE)
 
 POST_ARGS = (
