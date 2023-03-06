@@ -1,0 +1,1 @@
+Micro-optimise hashing of :class:`inspect.Parameter`, reducing the time it takes to hash an instance by around 40%.

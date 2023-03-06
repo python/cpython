@@ -61,9 +61,9 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
 static int
 _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
 {
-    PyObject *exctype, *excval, *exctb;
+    PyObject *exc;
     if (ignoreexc) {
-        PyErr_Fetch(&exctype, &excval, &exctb);
+        exc = PyErr_GetRaisedException();
     }
     int res = _PyCrossInterpreterData_Release(data);
     if (res < 0) {
@@ -84,7 +84,7 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
         }
     }
     if (ignoreexc) {
-        PyErr_Restore(exctype, excval, exctb);
+        PyErr_SetRaisedException(exc);
     }
     return res;
 }
@@ -294,9 +294,9 @@ _sharedexception_free(_sharedexception *exc)
 }
 
 static _sharedexception *
-_sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
+_sharedexception_bind(PyObject *exc)
 {
-    assert(exctype != NULL);
+    assert(exc != NULL);
     char *failure = NULL;
 
     _sharedexception *err = _sharedexception_new();
@@ -304,7 +304,7 @@ _sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
         goto finally;
     }
 
-    PyObject *name = PyUnicode_FromFormat("%S", exctype);
+    PyObject *name = PyUnicode_FromFormat("%S", Py_TYPE(exc));
     if (name == NULL) {
         failure = "unable to format exception type name";
         goto finally;
@@ -432,10 +432,7 @@ static int
 _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception **exc)
 {
-    PyObject *exctype = NULL;
     PyObject *excval = NULL;
-    PyObject *tb = NULL;
-
     PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
         goto error;
@@ -469,12 +466,9 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     return 0;
 
 error:
-    PyErr_Fetch(&exctype, &excval, &tb);
-
-    _sharedexception *sharedexc = _sharedexception_bind(exctype, excval, tb);
-    Py_XDECREF(exctype);
+    excval = PyErr_GetRaisedException();
+    _sharedexception *sharedexc = _sharedexception_bind(excval);
     Py_XDECREF(excval);
-    Py_XDECREF(tb);
     if (sharedexc == NULL) {
         fprintf(stderr, "RunFailedError: script raised an uncaught exception");
         PyErr_Clear();
