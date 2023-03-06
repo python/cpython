@@ -272,9 +272,9 @@ class PurePath(object):
         return (self.__class__, self.parts)
 
     @classmethod
-    def _join_parts(cls, parts):
+    def _from_parts(cls, parts):
         if not parts:
-            return ''
+            path = ''
         elif len(parts) == 1:
             path = os.fspath(parts[0])
         else:
@@ -287,7 +287,9 @@ class PurePath(object):
                 "argument should be a str or an os.PathLike "
                 "object where __fspath__ returns a str, "
                 f"not {type(path).__name__!r}")
-        return path
+        self = object.__new__(cls)
+        self._fspath = path
+        return self
 
     @classmethod
     def _parse_path(cls, path):
@@ -304,12 +306,6 @@ class PurePath(object):
         unfiltered_parsed = [drv + root] + rel.split(sep)
         parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
-
-    @classmethod
-    def _from_parts(cls, args):
-        self = object.__new__(cls)
-        self._fspath = cls._join_parts(args)
-        return self
 
     def _load_parts(self):
         drv, root, parts = self._parse_path(self._fspath)
