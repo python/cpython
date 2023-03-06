@@ -50,12 +50,6 @@ def clean_lines(text):
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
-Modules/_hacl/*.h
-Modules/_hacl/*.c
-Modules/sha1module.c
-Modules/sha2module.c
-Modules/md5module.c
-
 # OSX
 Modules/_scproxy.c                # SystemConfiguration/SystemConfiguration.h
 
@@ -111,9 +105,14 @@ glob	dirname
 *	./Include
 *	./Include/internal
 
-Modules/_tkinter.c	/usr/include/tcl8.6
-Modules/tkappinit.c	/usr/include/tcl
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
+Modules/_hacl/*.c	Modules/_hacl/include
+Modules/_hacl/*.h	Modules/_hacl/include
+Modules/_tkinter.c	/usr/include/tcl8.6
+Modules/md5module.c	Modules/_hacl/include
+Modules/sha1module.c	Modules/_hacl/include
+Modules/sha2module.c	Modules/_hacl/include
+Modules/tkappinit.c	/usr/include/tcl
 Objects/stringlib/*.h	Objects
 
 # @end=tsv@
@@ -303,6 +302,7 @@ MAX_SIZES = {
     # First match wins.
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
+    _abs('Modules/_hacl/*.c'): (200_000, 500),
     _abs('Modules/posixmodule.c'): (20_000, 500),
     _abs('Modules/termios.c'): (10_000, 800),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
