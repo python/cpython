@@ -1321,9 +1321,9 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 |               | ``C(arg)``         | underlying C version. This avoids going through the   |                   |                   |
 |               |                    | internal calling convention.                          |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``print()``        | The object's index in the globals/builtins namespace  | [#load-global]_   | Mark Shannon      |
+| Load          | ``print``          | The object's index in the globals/builtins namespace  | [#load-global]_   | Mark Shannon      |
 | global        |                    | is cached. Loading globals and builtins require       |                   |                   |
-| variable      | ``len()``          | zero namespace lookups.                               |                   |                   |
+| variable      | ``len``            | zero namespace lookups.                               |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | [#load-attr]_     | Mark Shannon      |
 | attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
