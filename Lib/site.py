@@ -194,7 +194,7 @@ def addpackage(sitedir, name, known_paths):
                 print("Error processing line {:d} of {}:\n".format(n+1, fullname),
                       file=sys.stderr)
                 import traceback
-                for record in traceback.format_exception(*sys.exc_info()):
+                for record in traceback.format_exc():
                     for line in record.splitlines():
                         print('  '+line, file=sys.stderr)
                 print("\nRemainder of file ignored", file=sys.stderr)
