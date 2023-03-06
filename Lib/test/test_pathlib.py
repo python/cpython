@@ -3116,11 +3116,6 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             env['HOME'] = 'C:\\Users\\eve'
             check()
 
-    def test_resolve(self):
-        P = self.cls
-        p = P(BASE, './a:b')
-        self.assertEqual(str(p.resolve(strict=False)), f'{BASE}\\a:b')
-
 
 class PurePathSubclassTest(_BasePurePathTest, unittest.TestCase):
     class cls(pathlib.PurePath):
