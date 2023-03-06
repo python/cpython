@@ -99,6 +99,7 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['//a/b/'],               ('\\\\a\\b', '\\', ['\\\\a\\b\\']))
         check(['//a/b/c'],              ('\\\\a\\b', '\\', ['\\\\a\\b\\', 'c']))
         # Second part is anchored, so that the first part is ignored.
+        check(['a', 'Z:b', 'c'],        ('Z:', '', ['Z:', 'b', 'c']))
         check(['a', 'Z:/b', 'c'],       ('Z:', '\\', ['Z:\\', 'b', 'c']))
         # UNC paths.
         check(['a', '//b/c', 'd'],      ('\\\\b\\c', '\\', ['\\\\b\\c\\', 'd']))
