@@ -2224,7 +2224,7 @@ PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
     }
     return S_OK;
 }
-#endif /* MS_WINDOWS && !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
+#endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
 
 // The caller must ensure "buffer" is big enough.
 static int
