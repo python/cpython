@@ -267,22 +267,7 @@
             STAT_INC(BINARY_OP, hit);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
-            if (Py_REFCNT(left) == 1) {
-                ((PyFloatObject *)left)->ob_fval = dprod;
-                _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-                prod = left;
-            }
-            else if (Py_REFCNT(right) == 1) {
-                ((PyFloatObject *)right)->ob_fval = dprod;
-                _Py_DECREF_NO_DEALLOC(left);
-                prod = right;
-            }
-            else {
-                prod = PyFloat_FromDouble(dprod);
-                _Py_DECREF_NO_DEALLOC(left);
-                _Py_DECREF_NO_DEALLOC(right);
-                if (prod == NULL) goto pop_2_error;
-            }
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dprod, prod);
             STACK_SHRINK(1);
             POKE(1, prod);
             JUMPBY(1);
@@ -316,22 +301,7 @@
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            if (Py_REFCNT(left) == 1) {
-                ((PyFloatObject *)left)->ob_fval = dsub;
-                _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-                sub = left;
-            }
-            else if (Py_REFCNT(right) == 1) {
-                ((PyFloatObject *)right)->ob_fval = dsub;
-                _Py_DECREF_NO_DEALLOC(left);
-                sub = right;
-            }
-            else {
-                sub = PyFloat_FromDouble(dsub);
-                _Py_DECREF_NO_DEALLOC(left);
-                _Py_DECREF_NO_DEALLOC(right);
-                if (sub == NULL) goto pop_2_error;
-            }
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsub, sub);
             STACK_SHRINK(1);
             POKE(1, sub);
             JUMPBY(1);
@@ -400,22 +370,7 @@
             STAT_INC(BINARY_OP, hit);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
-            if (Py_REFCNT(left) == 1) {
-                ((PyFloatObject *)left)->ob_fval = dsum;
-                _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-                sum = left;
-            }
-            else if (Py_REFCNT(right) == 1) {
-                ((PyFloatObject *)right)->ob_fval = dsum;
-                _Py_DECREF_NO_DEALLOC(left);
-                sum = right;
-            }
-            else {
-                sum = PyFloat_FromDouble(dsum);
-                _Py_DECREF_NO_DEALLOC(left);
-                _Py_DECREF_NO_DEALLOC(right);
-                if (sum == NULL) goto pop_2_error;
-            }
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
             STACK_SHRINK(1);
             POKE(1, sum);
             JUMPBY(1);
