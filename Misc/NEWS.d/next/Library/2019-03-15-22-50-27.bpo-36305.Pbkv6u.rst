@@ -1,1 +1,2 @@
-Fix a ``pathlib`` inconsistency in handling of paths containing colons.
+Fix handling of Windows filenames that resemble drives, such as ``./a:b``,
+in :mod:`pathlib`.
