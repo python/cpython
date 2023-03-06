@@ -1079,7 +1079,7 @@ class Handler(Filterer):
             t, v, tb = sys.exc_info()
             try:
                 sys.stderr.write('--- Logging error ---\n')
-                traceback.print_exception(t, v, tb, None, sys.stderr)
+                traceback.print_exc(limit=None, file=sys.stderr)
                 sys.stderr.write('Call stack:\n')
                 # Walk the stack frame up until we're out of logging,
                 # so as to print the calling context.
