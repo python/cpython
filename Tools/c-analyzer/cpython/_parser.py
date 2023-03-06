@@ -50,6 +50,15 @@ def clean_lines(text):
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
+Modules/_hacl/*.h
+Modules/_hacl/*.c
+Modules/sha1module.c
+Modules/sha2module.c
+Modules/md5module.c
+Objects/genobject.c
+Python/import.c
+Python/Python-ast.c
+
 # OSX
 Modules/_scproxy.c                # SystemConfiguration/SystemConfiguration.h
 
