@@ -57,14 +57,22 @@ jobs:
     - name: Get list of changed files
       id: changed_files
       uses: jitterbit/get-changed-files@v1
-    - name: 'Build with nitpicks'
+    - name: 'Build changed files with nitpicks'
       continue-on-error: true
       run: |
         # Mark files the pull request modified
         touch ${{ steps.changed_files.outputs.added_modified }}
-        # Build docs with the '-n' (nitpicky) option, convert warnings
-        make -C Doc/ PYTHON=../python SPHINXOPTS="-q --keep-going -n" html 2>&1 |
+        # Build docs with the '-n' (nit-picky) option, convert warnings
+        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n --keep-going" html 2>&1 |
             python Doc/tools/warnings-to-gh-actions.py
+
+    # Ensure some files always pass Sphinx nitpicks (missing references)
+    - name: 'Build others with nitpicks'
+      run: |
+        # Mark files that must pass nit-picky
+        touch Doc/whatsnew/3.12.rst
+        # Build docs with the '-n' (nit-picky) option, convert warnings to errors (-W)
+        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going" html 2>&1
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
