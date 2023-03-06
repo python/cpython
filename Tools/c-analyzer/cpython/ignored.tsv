@@ -340,6 +340,7 @@ Python/pyhash.c	-	PyHash_Func	-
 Python/pylifecycle.c	-	_C_LOCALE_WARNING	-
 Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	-
 Python/pylifecycle.c	-	_TARGET_LOCALES	-
+Python/pylifecycle.c	-	INTERPRETER_TRAMPOLINE_CODEDEF	-
 Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
@@ -462,11 +463,13 @@ Modules/_testcapimodule.c	-	meth_static_methods	-
 Modules/_testcapimodule.c	-	ml	-
 Modules/_testcapimodule.c	-	str1	-
 Modules/_testcapimodule.c	-	str2	-
+Modules/_testcapimodule.c	-	test_c_thread	-
 Modules/_testcapimodule.c	-	test_members	-
 Modules/_testcapimodule.c	-	test_run_counter	-
 Modules/_testcapimodule.c	-	test_structmembersType	-
 Modules/_testcapimodule.c	-	thread_done	-
 Modules/_testcapimodule.c	-	x	-
+Modules/_testcapimodule.c	-	wait_done	-
 Modules/_testcapimodule.c	getargs_keyword_only	keywords	-
 Modules/_testcapimodule.c	getargs_keywords	keywords	-
 Modules/_testcapimodule.c	getargs_positional_only_and_keywords	keywords	-
