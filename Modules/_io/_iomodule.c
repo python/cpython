@@ -437,10 +437,9 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
   error:
     if (result != NULL) {
-        PyObject *exc, *val, *tb, *close_result;
-        PyErr_Fetch(&exc, &val, &tb);
-        close_result = PyObject_CallMethodNoArgs(result, &_Py_ID(close));
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *close_result = PyObject_CallMethodNoArgs(result, &_Py_ID(close));
+        _PyErr_ChainExceptions1(exc);
         Py_XDECREF(close_result);
         Py_DECREF(result);
     }

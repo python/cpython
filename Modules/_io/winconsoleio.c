@@ -193,7 +193,7 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self, PyTypeObject *cls)
 /*[clinic end generated code: output=e50c1808c063e1e2 input=f200f26059fb2ecf]*/
 {
     PyObject *res;
-    PyObject *exc, *val, *tb;
+    PyObject *exc;
     int rc;
 
     _PyIO_State *state = get_io_state_by_cls(cls);
@@ -203,13 +203,16 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self, PyTypeObject *cls)
         self->fd = -1;
         return res;
     }
-    if (res == NULL)
-        PyErr_Fetch(&exc, &val, &tb);
+    if (res == NULL) {
+        exc = PyErr_GetRaisedException();
+    }
     rc = internal_close(self);
-    if (res == NULL)
-        _PyErr_ChainExceptions(exc, val, tb);
-    if (rc < 0)
+    if (res == NULL) {
+        _PyErr_ChainExceptions1(exc);
+    }
+    if (rc < 0) {
         Py_CLEAR(res);
+    }
     return res;
 }
 

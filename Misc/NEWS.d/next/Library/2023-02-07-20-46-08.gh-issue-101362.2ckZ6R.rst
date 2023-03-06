@@ -1,0 +1,2 @@
+Speed up :class:`pathlib.Path` construction by running the path flavour
+compatibility check only when pathlib is imported.
