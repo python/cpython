@@ -230,14 +230,13 @@ _PyLong_NonZeroSign(const PyLongObject *op)
     return 1 - (op->long_value.lv_tag & SIGN_MASK);
 }
 
-/* Do a and b have the same sign? Zero counts as positive. */
+/* Do a and b have the same sign? */
 static inline int
 _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
 {
     return (a->long_value.lv_tag & SIGN_MASK) == (b->long_value.lv_tag & SIGN_MASK);
 }
 
-//#define TAG_FROM_SIGN_AND_SIZE(neg, size) ((neg) ? -(size) : (size))
 #define TAG_FROM_SIGN_AND_SIZE(sign, size) ((1 - (sign)) | ((size) << NON_SIZE_BITS))
 
 static inline void
