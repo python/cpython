@@ -159,6 +159,15 @@ class Test_ErrSetAndRestore(unittest.TestCase):
             _testcapi.exc_set_object(OSError, PermissionError(24))
         self.assertEqual(e.exception.args, (24,))
 
+        class Meta(type):
+            def __subclasscheck__(cls, sub):
+                1/0
+
+        class Broken(Exception, metaclass=Meta):
+            pass
+
+        with self.assertRaises(ZeroDivisionError) as e:
+            _testcapi.exc_set_object(Broken, Broken())
 
 if __name__ == "__main__":
     unittest.main()
