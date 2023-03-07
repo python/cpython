@@ -469,10 +469,7 @@ ensure_array_large_enough(int index, void **arr_, int *alloc, int default_alloc,
             return ERROR;
         }
 
-        if (newsize == 0) {
-            PyErr_NoMemory();
-            return ERROR;
-        }
+        assert(newsize > 0);
         void *tmp = PyObject_Realloc(arr, newsize);
         if (tmp == NULL) {
             PyErr_NoMemory();
