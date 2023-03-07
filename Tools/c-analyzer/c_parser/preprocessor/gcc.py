@@ -82,6 +82,9 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
     ]:
         line = next(lines)
         if line != expected:
+            print('--------------------')
+            print(text)
+            print('--------------------')
             raise NotImplementedError((line, expected))
 
     # Do all the CLI-provided includes.
