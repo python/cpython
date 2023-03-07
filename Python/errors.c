@@ -152,13 +152,13 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
     Py_XINCREF(value);
     /* Normalize the exception */
     int is_subclass = 0;
-    if (value != NULL) {
+    if (value != NULL && PyExceptionInstance_Check(value)) {
         is_subclass = PyObject_IsSubclass((PyObject*)Py_TYPE(value), exception);
         if (is_subclass < 0) {
             return;
         }
     }
-    if (value == NULL || !is_subclass) {
+    if (!is_subclass) {
         /* We must normalize the value right now */
         PyObject *fixed_value;
 
