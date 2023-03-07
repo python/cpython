@@ -140,6 +140,34 @@ class Test_ErrSetAndRestore(unittest.TestCase):
             self.assertEqual(1, v.args[0])
             self.assertIs(tb, v.__traceback__.tb_next)
 
+    def test_set_object(self):
+
+        # new exception as obj is not an exception
+        with self.assertRaises(ValueError) as e:
+            _testcapi.exc_set_object(ValueError, 42)
+        self.assertEqual(e.exception.args, (42,))
+
+        # wraps the exception because unrelated types
+        with self.assertRaises(ValueError) as e:
+            _testcapi.exc_set_object(ValueError, TypeError(1,2,3))
+        wrapped = e.exception.args[0]
+        self.assertIsInstance(wrapped, TypeError)
+        self.assertEqual(wrapped.args, (1, 2, 3))
+
+        # is superclass, so does not wrap
+        with self.assertRaises(PermissionError) as e:
+            _testcapi.exc_set_object(OSError, PermissionError(24))
+        self.assertEqual(e.exception.args, (24,))
+
+        class Meta(type):
+            def __subclasscheck__(cls, sub):
+                1/0
+
+        class Broken(Exception, metaclass=Meta):
+            pass
+
+        with self.assertRaises(ZeroDivisionError) as e:
+            _testcapi.exc_set_object(Broken, Broken())
 
 if __name__ == "__main__":
     unittest.main()
