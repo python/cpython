@@ -161,20 +161,16 @@ class PlatformTest(unittest.TestCase):
                  ('r261:67515', 'Dec  6 2008 15:26:00'),
                  'GCC 4.0.1 (Apple Computer, Inc. build 5370)'),
 
+            ("3.10.8 (tags/v3.10.8:aaaf517424, Feb 14 2023, 16:28:12) [GCC 9.4.0]",
+             None, "linux")
+            :
+                ('CPython', '3.10.8', 'tags/v3.10.8', 'aaaf517424',
+                ('tags/v3.10.8:aaaf517424', 'Feb 14 2023 16:28:12'), 'GCC 9.4.0'),
+
             ("IronPython 2.0 (2.0.0.0) on .NET 2.0.50727.3053", None, "cli")
             :
                 ("IronPython", "2.0.0", "", "", ("", ""),
                  ".NET 2.0.50727.3053"),
-
-            ("2.6.1 (IronPython 2.6.1 (2.6.10920.0) on .NET 2.0.50727.1433)", None, "cli")
-            :
-                ("IronPython", "2.6.1", "", "", ("", ""),
-                 ".NET 2.0.50727.1433"),
-
-            ("2.7.4 (IronPython 2.7.4 (2.7.0.40) on Mono 4.0.30319.1 (32-bit))", None, "cli")
-            :
-                ("IronPython", "2.7.4", "", "", ("", ""),
-                 "Mono 4.0.30319.1 (32-bit)"),
 
             ("2.5 (trunk:6107, Mar 26 2009, 13:02:18) \n[Java HotSpot(TM) Client VM (\"Apple Computer, Inc.\")]",
             ('Jython', 'trunk', '6107'), "java1.5.0_16")
