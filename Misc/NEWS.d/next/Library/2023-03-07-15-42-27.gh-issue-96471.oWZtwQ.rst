@@ -1,0 +1,1 @@
+Add  `shutdown` method to multithreading.Queue, asyncio.Queue and multiprocessing.queue.Queue and multiprocessing.queue.JoinableQueue
