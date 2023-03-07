@@ -6,6 +6,11 @@ from . import common as _common
 
 TOOL = 'gcc'
 
+META_FILES = {
+    '<built-in>',
+    '<command-line>',
+}
+
 # https://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
 # flags:
 #  1  start of a new file
@@ -178,7 +183,8 @@ def _parse_marker_line(line, reqfile=None):
         return None, None, None
     lno, origfile, flags = m.groups()
     lno = int(lno)
-    assert lno > 0, (line, lno)
+    assert (lno in (0, 1) if origfile in META_FILES else lno > 0), (line, lno)
+    assert lno > 0 or (lno == 0 and origfile in META_FILES), (line, lno)
     assert origfile not in ('<built-in>', '<command-line>'), (line,)
     flags = set(int(f) for f in flags.split()) if flags else ()
 
