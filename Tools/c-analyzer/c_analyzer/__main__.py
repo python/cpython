@@ -64,7 +64,7 @@ EXPLANATION = textwrap.dedent('''
     it is actually const (and thus supported) then first try
     fixing the declaration appropriately in the code.  If that
     doesn't work then add the variable to the "should be const"
-    section of Tools/c-analyzer/cpython/_parser.py.
+    section of Tools/c-analyzer/cpython/ignored.tsv.
 
     If the tool otherwise reports an unsupported global variable
     then first try to make it non-global, possibly adding to
