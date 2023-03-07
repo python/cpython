@@ -213,7 +213,8 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
             Py_DECREF(exc_value);
         }
     }
-    if (value != NULL && PyExceptionInstance_Check(value))
+    assert(value != NULL);
+    if (PyExceptionInstance_Check(value))
         tb = PyException_GetTraceback(value);
     _PyErr_Restore(tstate, Py_NewRef(Py_TYPE(value)), value, tb);
 }
