@@ -164,7 +164,7 @@ class PlatformTest(unittest.TestCase):
             ("3.10.8 (tags/v3.10.8:aaaf517424, Feb 14 2023, 16:28:12) [GCC 9.4.0]",
              None, "linux")
             :
-                ('CPython', '3.10.8', 'tags/v3.10.8', 'aaaf517424',
+                ('CPython', '3.10.8', '', '',
                 ('tags/v3.10.8:aaaf517424', 'Feb 14 2023 16:28:12'), 'GCC 9.4.0'),
 
             ("IronPython 2.0 (2.0.0.0) on .NET 2.0.50727.3053", None, "cli")
