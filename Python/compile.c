@@ -416,7 +416,7 @@ typedef struct {
     location i_loc;
 } instruction;
 
-/* A write-only stream of instructions */
+
 typedef struct instr_sequence_ {
     instruction *s_instrs;
     int s_allocated;
@@ -434,7 +434,7 @@ typedef struct instr_sequence_ {
  * Resize the array if index is out of range.
  *
  * index: the index we want to access
- * arr pointer to the array
+ * arr: pointer to the array
  * alloc: pointer to the capacity of the array
  * default_alloc: initial number of items
  * item_size: size of each item
