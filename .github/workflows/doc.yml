@@ -56,7 +56,7 @@ jobs:
     # Add pull request annotations for Sphinx nitpicks (missing references)
     - name: Get list of changed files
       id: changed_files
-      uses: jitterbit/get-changed-files@v1
+      uses: Ana06/get-changed-files@v2.2.0
     - name: 'Build changed files with nitpicks'
       continue-on-error: true
       run: |
