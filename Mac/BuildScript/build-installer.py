@@ -244,9 +244,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1n",
-              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
-              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
+              name="OpenSSL 1.1.1t",
+              url="https://www.openssl.org/source/openssl-1.1.1t.tar.gz",
+              checksum='1cfee919e0eac6be62c88c5ae8bcd91e',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
