@@ -99,9 +99,9 @@ PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
     V(DEALLOCATED)
 
 typedef enum {
-    #define DEF_EVENT(EVENT) PyDict_EVENT_##EVENT,
-    PY_FOREACH_DICT_EVENT(DEF_EVENT)
-    #undef DEF_EVENT
+    #define PY_DEF_EVENT(EVENT) PyDict_EVENT_##EVENT,
+    PY_FOREACH_DICT_EVENT(PY_DEF_EVENT)
+    #undef PY_DEF_EVENT
 } PyDict_WatchEvent;
 
 // Callback to be invoked when a watched dict is cleared, dealloced, or modified.
