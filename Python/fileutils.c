@@ -2199,7 +2199,7 @@ PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
     size_t file_len = relfile ? wcslen(relfile) : 0;
     /* path is at max dirname + filename + backslash + \0 */
     size_t new_len = dir_len + file_len + 2;
-    if (bufsize >= MAXPATHLEN || new_len > bufsize) {
+    if (new_len > bufsize) {
         return E_INVALIDARG;
     }
 
