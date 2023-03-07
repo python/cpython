@@ -4,7 +4,6 @@ import os
 import os.path
 import re
 import sys
-import textwrap
 
 from c_common import fsutil
 from c_common.logging import VERBOSITY, Printer
@@ -42,39 +41,6 @@ KINDS = [
 ]
 
 logger = logging.getLogger(__name__)
-
-
-EXPLANATION = textwrap.dedent('''
-    -------------------------
-
-    Non-constant global variables are generally not supported
-    in the CPython repo.  We use a tool to analyze the C code
-    and report if any unsupported globals are found.  The tool
-    may be run manually with:
-
-      ./python Tools/c-analyzer/check-c-globals.py --format summary [FILE]
-
-    Occasionally the tool is unable to parse updated code.
-    If this happens then add the file to the "EXCLUDED" list
-    in Tools/c-analyzer/cpython/_parser.py and create a new
-    issue for fixing the tool (and CC ericsnowcurrently
-    on the issue).
-
-    If the tool reports an unsupported global variable and
-    it is actually const (and thus supported) then first try
-    fixing the declaration appropriately in the code.  If that
-    doesn't work then add the variable to the "should be const"
-    section of Tools/c-analyzer/cpython/ignored.tsv.
-
-    If the tool otherwise reports an unsupported global variable
-    then first try to make it non-global, possibly adding to
-    PyInterpreterState (for core code) or module state (for
-    extension modules).  In an emergency, you can add the
-    variable to Tools/c-analyzer/cpython/globals-to-fix.tsv
-    to get CI passing, but doing so should be avoided.  If
-    this course it taken, be sure to create an issue for
-    eliminating the global (and CC ericsnowcurrently).
-''')
 
 
 #######################################
@@ -357,45 +323,40 @@ def cmd_check(filenames, *,
     if track_progress:
         filenames = track_progress(filenames)
 
-    try:
-        logger.info('analyzing files...')
-        analyzed = _analyze(filenames, **kwargs)
-        analyzed.fix_filenames(relroot, normalize=False)
-        decls = filter_forward(analyzed, markpublic=True)
+    logger.info('analyzing files...')
+    analyzed = _analyze(filenames, **kwargs)
+    analyzed.fix_filenames(relroot, normalize=False)
+    decls = filter_forward(analyzed, markpublic=True)
 
-        logger.info('checking analysis results...')
-        failed = []
-        for data, failure in _check_all(decls, checks, failfast=failfast):
-            if data is None:
-                printer.info('stopping after one failure')
-                break
-            if div is not None and len(failed) > 0:
-                printer.info(div)
-            failed.append(data)
-            handle_failure(failure, data)
-        handle_after()
+    logger.info('checking analysis results...')
+    failed = []
+    for data, failure in _check_all(decls, checks, failfast=failfast):
+        if data is None:
+            printer.info('stopping after one failure')
+            break
+        if div is not None and len(failed) > 0:
+            printer.info(div)
+        failed.append(data)
+        handle_failure(failure, data)
+    handle_after()
 
-        printer.info('-------------------------')
-        logger.info(f'total failures: {len(failed)}')
-        logger.info('done checking')
+    printer.info('-------------------------')
+    logger.info(f'total failures: {len(failed)}')
+    logger.info('done checking')
 
-        if fmt == 'summary':
-            print('Categorized by storage:')
+    if fmt == 'summary':
+        print('Categorized by storage:')
+        print()
+        from .match import group_by_storage
+        grouped = group_by_storage(failed, ignore_non_match=False)
+        for group, decls in grouped.items():
             print()
-            from .match import group_by_storage
-            grouped = group_by_storage(failed, ignore_non_match=False)
-            for group, decls in grouped.items():
-                print()
-                print(group)
-                for decl in decls:
-                    print(' ', _fmt_one_summary(decl))
-                print(f'subtotal: {len(decls)}')
-    except Exception:
-        print(EXPLANATION)
-        raise  # re-raise
+            print(group)
+            for decl in decls:
+                print(' ', _fmt_one_summary(decl))
+            print(f'subtotal: {len(decls)}')
 
     if len(failed) > 0:
-        print(EXPLANATION)
         sys.exit(len(failed))
 
 
