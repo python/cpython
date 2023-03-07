@@ -2221,6 +2221,26 @@ class TestInvalidFD(unittest.TestCase):
     def test_dup2(self):
         self.check(os.dup2, 20)
 
+    @unittest.skipUnless(hasattr(os, 'dup2'), 'test needs os.dup2()')
+    @unittest.skipIf(
+        support.is_emscripten,
+        "dup2() with negative fds is broken on Emscripten (see gh-102179)"
+    )
+    def test_dup2_negative_fd(self):
+        valid_fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, valid_fd)
+        fds = [
+            valid_fd,
+            -1,
+            -2**31,
+        ]
+        for fd, fd2 in itertools.product(fds, repeat=2):
+            if fd != fd2:
+                with self.subTest(fd=fd, fd2=fd2):
+                    with self.assertRaises(OSError) as ctx:
+                        os.dup2(fd, fd2)
+                    self.assertEqual(ctx.exception.errno, errno.EBADF)
+
     @unittest.skipUnless(hasattr(os, 'fchmod'), 'test needs os.fchmod()')
     def test_fchmod(self):
         self.check(os.fchmod, 0)
@@ -4099,6 +4119,7 @@ class PathTConverterTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'get_blocking'),
                      'needs os.get_blocking() and os.set_blocking()')
 @unittest.skipIf(support.is_emscripten, "Cannot unset blocking flag")
+@unittest.skipIf(sys.platform == 'win32', 'Windows only supports blocking on pipes')
 class BlockingTests(unittest.TestCase):
     def test_blocking(self):
         fd = os.open(__file__, os.O_RDONLY)

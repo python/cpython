@@ -398,7 +398,7 @@ loops that truncate the stream.
 .. function:: filterfalse(predicate, iterable)
 
    Make an iterator that filters elements from iterable returning only those for
-   which the predicate is ``False``. If *predicate* is ``None``, return the items
+   which the predicate is false. If *predicate* is ``None``, return the items
    that are false. Roughly equivalent to::
 
       def filterfalse(predicate, iterable):
@@ -831,7 +831,7 @@ which incur interpreter overhead.
        return next(g, True) and not next(g, False)
 
    def quantify(iterable, pred=bool):
-       "Count how many times the predicate is true"
+       "Count how many times the predicate is True"
        return sum(map(pred, iterable))
 
    def ncycles(iterable, n):
@@ -886,9 +886,12 @@ which incur interpreter overhead.
        except AttributeError:
            # Slow path for general iterables
            it = islice(iterable, start, None)
-           for i, element in enumerate(it, start):
-               if element is value or element == value:
-                   yield i
+           i = start - 1
+           try:
+               while True:
+                   yield (i := i + operator.indexOf(it, value) + 1)
+           except ValueError:
+               pass
        else:
            # Fast path for sequences
            i = start - 1

@@ -166,6 +166,33 @@ class _BasePurePathTest(object):
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
 
+    def test_bytes(self):
+        P = self.cls
+        message = (r"argument should be a str or an os\.PathLike object "
+                   r"where __fspath__ returns a str, not 'bytes'")
+        with self.assertRaisesRegex(TypeError, message):
+            P(b'a')
+        with self.assertRaises(TypeError):
+            P(b'a', 'b')
+        with self.assertRaises(TypeError):
+            P('a', b'b')
+        with self.assertRaises(TypeError):
+            P('a').joinpath(b'b')
+        with self.assertRaises(TypeError):
+            P('a') / b'b'
+        with self.assertRaises(TypeError):
+            b'a' / P('b')
+        with self.assertRaises(TypeError):
+            P('a').match(b'b')
+        with self.assertRaises(TypeError):
+            P('a').relative_to(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_name(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_stem(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_suffix(b'b')
+
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
         # from a str subclass instance, and it then gets converted to
@@ -852,8 +879,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
     def test_match_common(self):
         P = self.cls
         # Absolute patterns.
-        self.assertTrue(P('c:/b.py').match('/*.py'))
-        self.assertTrue(P('c:/b.py').match('c:*.py'))
+        self.assertTrue(P('c:/b.py').match('*:/*.py'))
         self.assertTrue(P('c:/b.py').match('c:/*.py'))
         self.assertFalse(P('d:/b.py').match('c:/*.py'))  # wrong drive
         self.assertFalse(P('b.py').match('/*.py'))
@@ -864,7 +890,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertFalse(P('/b.py').match('c:*.py'))
         self.assertFalse(P('/b.py').match('c:/*.py'))
         # UNC patterns.
-        self.assertTrue(P('//some/share/a.py').match('/*.py'))
+        self.assertTrue(P('//some/share/a.py').match('//*/*/*.py'))
         self.assertTrue(P('//some/share/a.py').match('//some/share/*.py'))
         self.assertFalse(P('//other/share/a.py').match('//some/share/*.py'))
         self.assertFalse(P('//some/share/a/b.py').match('//some/share/*.py'))
@@ -872,6 +898,10 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertTrue(P('B.py').match('b.PY'))
         self.assertTrue(P('c:/a/B.Py').match('C:/A/*.pY'))
         self.assertTrue(P('//Some/Share/B.Py').match('//somE/sharE/*.pY'))
+        # Path anchor doesn't match pattern anchor
+        self.assertFalse(P('c:/b.py').match('/*.py'))  # 'c:/' vs '/'
+        self.assertFalse(P('c:/b.py').match('c:*.py'))  # 'c:/' vs 'c:'
+        self.assertFalse(P('//some/share/a.py').match('/*.py'))  # '//some/share/' vs '/'
 
     def test_ordering_common(self):
         # Case-insensitivity.
@@ -2970,6 +3000,26 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(str(P('a', 'b', 'c').absolute()),
                              os.path.join(share, 'a', 'b', 'c'))
 
+        drive = os.path.splitdrive(BASE)[0]
+        with os_helper.change_cwd(BASE):
+            # Relative path with root
+            self.assertEqual(str(P('\\').absolute()), drive + '\\')
+            self.assertEqual(str(P('\\foo').absolute()), drive + '\\foo')
+
+            # Relative path on current drive
+            self.assertEqual(str(P(drive).absolute()), BASE)
+            self.assertEqual(str(P(drive + 'foo').absolute()), os.path.join(BASE, 'foo'))
+
+        with os_helper.subst_drive(BASE) as other_drive:
+            # Set the working directory on the substitute drive
+            saved_cwd = os.getcwd()
+            other_cwd = f'{other_drive}\\dirA'
+            os.chdir(other_cwd)
+            os.chdir(saved_cwd)
+
+            # Relative path on another drive
+            self.assertEqual(str(P(other_drive).absolute()), other_cwd)
+            self.assertEqual(str(P(other_drive + 'foo').absolute()), other_cwd + '\\foo')
 
     def test_glob(self):
         P = self.cls
