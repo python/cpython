@@ -341,7 +341,7 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.12
       Leading and trailing C0 control and space characters are stripped from
-      the URL
+      the URL.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
