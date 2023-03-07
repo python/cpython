@@ -2114,30 +2114,22 @@ Build Changes
   and WASI contributed by Christian Heimes in :gh:`90473`;
   platforms promoted in :gh:`95085`)
 
-* Building Python now requires:
+* Building CPython now requires:
 
-  * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler.
+  * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler and standard library.
     `Optional C11 features
     <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
     are not required.
-    (Contributed by Victor Stinner in :issue:`46656`.)
+    (Contributed by Victor Stinner in :issue:`46656`,
+    :issue:`45440` and :issue:`46640`.)
 
   * Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
     floating point numbers.
     (Contributed by Victor Stinner in :issue:`46917`.)
 
-  * Support for `floating point Not-a-Number (NaN)
-    <https://en.wikipedia.org/wiki/NaN#Floating_point>`_,
-    as the :c:macro:`!Py_NO_NAN` macro has been removed.
-    (Contributed by Victor Stinner in :issue:`46656`.)
-
-  * A `C99 <https://en.cppreference.com/w/c/99>`_
-    ``<math.h>`` header file providing the
-    :c:func:`!copysign`, :c:func:`!hypot`, :c:func:`!isfinite`,
-    :c:func:`!isinf`, :c:func:`!isnan`, and :c:func:`!round` functions
-    (contributed by Victor Stinner in :issue:`45440`);
-    and a :c:data:`!NAN` constant or the :c:func:`!__builtin_nan` function
-    (Contributed by Victor Stinner in :issue:`46640`).
+* The :c:macro:`!Py_NO_NAN` macro has been removed.
+  Since CPython now requires IEEE 754 floats, NaN values are always available.
+  (Contributed by Victor Stinner in :issue:`46656`.)
 
 * The :mod:`tkinter` package now requires `Tcl/Tk <https://www.tcl.tk>`_
   version 8.5.12 or newer.
