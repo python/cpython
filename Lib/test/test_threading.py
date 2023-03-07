@@ -683,6 +683,55 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err.decode('utf-8'), "")
         self.assertEqual(data, "Thread-1 (func)\nTrue\nTrue\n")
 
+    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
+    @support.requires_fork()
+    @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
+    def test_main_thread_after_fork_from_foreign_thread(self):
+        code = """if 1:
+            import os, threading, sys, traceback, _thread
+            from test import support
+
+            def func(lock):
+                # call current_thread() before fork to allocate DummyThread
+                current = threading.current_thread()
+                print(current.name)
+                # flush before fork, so child won't flush it again
+                sys.stdout.flush()
+                pid = os.fork()
+                if pid == 0:
+                    main = threading.main_thread()
+                    print(main.ident == threading.current_thread().ident)
+                    print(main.ident == threading.get_ident())
+                    # stdout is fully buffered because not a tty,
+                    # we have to flush before exit.
+                    sys.stdout.flush()
+                    try:
+                        threading._shutdown()
+                        os._exit(0)
+                    except:
+                        os._exit(1)
+                else:
+                    try:
+                        support.wait_process(pid, exitcode=0)
+                    except Exception as e:
+                        # avoid 'could not acquire lock for
+                        # <_io.BufferedWriter name='<stderr>'> at interpreter shutdown,'
+                        traceback.print_exc()
+                        sys.stderr.flush()
+                    finally:
+                        lock.release()
+
+            join_lock = _thread.allocate_lock()
+            join_lock.acquire()
+            th = _thread.start_new_thread(func, (join_lock,))
+            join_lock.acquire()
+        """
+        # "DeprecationWarning: This process is multi-threaded, use of fork() may lead to deadlocks in the child"
+        _, out, err = assert_python_ok("-W", "ignore::DeprecationWarning", "-c", code)
+        data = out.decode().replace('\r', '')
+        self.assertEqual(err, b"")
+        self.assertEqual(data, "Dummy-1\nTrue\nTrue\n")
+
     def test_main_thread_during_shutdown(self):
         # bpo-31516: current_thread() should still point to the main thread
         # at shutdown
