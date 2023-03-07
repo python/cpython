@@ -167,6 +167,7 @@ _PyLong_New(Py_ssize_t size)
         return NULL;
     }
     _PyObject_InitVar((PyVarObject*)result, &PyLong_Type, size);
+    result->long_value.ob_digit[0] = 0;
     return result;
 }
 

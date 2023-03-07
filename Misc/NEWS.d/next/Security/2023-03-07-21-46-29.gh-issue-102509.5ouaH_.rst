@@ -1,0 +1,2 @@
+Start initializing ``ob_digit`` during creation of :c:type:`PyLongObject`
+objects. Patch by Illia Volochii.
