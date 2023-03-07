@@ -102,19 +102,23 @@ static PyObject * do_call_core(
 
 #ifdef LLTRACE
 static void
-dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
+dump_stack(_PyInterpreterFrame *frame, _tagged_ptr *stack_pointer)
 {
-    PyObject **stack_base = _PyFrame_Stackbase(frame);
+    _tagged_ptr *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();
     printf("    stack=[");
-    for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
+    for (_tagged_ptr *ptr = stack_base; ptr < stack_pointer; ptr++) {
         if (ptr != stack_base) {
             printf(", ");
         }
-        if (PyObject_Print(*ptr, stdout, 0) != 0) {
+        PyObject *val = detag(*ptr);
+        if (PyObject_Print(val, stdout, 0) != 0) {
             PyErr_Clear();
             printf("<%s object at %p>",
-                   Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
+                   Py_TYPE(val)->tp_name, (void *)(val));
+        }
+        if (is_tagged(*ptr)) {
+            printf("|TAG");
         }
     }
     printf("]\n");
@@ -124,7 +128,7 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 
 static void
 lltrace_instruction(_PyInterpreterFrame *frame,
-                    PyObject **stack_pointer,
+                    _tagged_ptr *stack_pointer,
                     _Py_CODEUNIT *next_instr)
 {
     /* This dump_stack() operation is risky, since the repr() of some
