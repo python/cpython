@@ -451,7 +451,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
     Note that % escapes are not expanded.
     """
 
-    url = url.lstrip()
+    url = url.strip()
     url, scheme, _coerce_result = _coerce_args(url, scheme)
 
     for b in _UNSAFE_URL_BYTES_TO_REMOVE:
