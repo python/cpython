@@ -408,7 +408,9 @@ class Instruction:
 
     def substitute_tagged_ptr_array(self, texts: list[str], index: int) -> None:
         assert 0 <= index < len(texts)
-        text = texts[index]
+        prevs, text = texts[max(index - 2, 0) : index], texts[index]
+        if prevs == ["STEAL", "("]:
+            return
         nexts = texts[index + 1 : index + 2]
         if nexts:
             if nexts[0] == "=":
