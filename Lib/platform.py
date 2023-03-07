@@ -1046,14 +1046,6 @@ _ironpython_sys_version_parser = re.compile(
     r'(?: \(([\d\.]+)\))?'
     r' on (.NET [\d\.]+)', re.ASCII)
 
-# IronPython covering 2.6 and 2.7
-_ironpython26_sys_version_parser = re.compile(
-    r'([\d.]+)\s*'
-    r'\(IronPython\s*'
-    r'[\d.]+\s*'
-    r'\(([\d.]+)\) on ([\w.]+ [\d.]+(?: \(\d+-bit\))?)\)'
-)
-
 _pypy_sys_version_parser = re.compile(
     r'([\w.+]+)\s*'
     r'\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
@@ -1094,10 +1086,7 @@ def _sys_version(sys_version=None):
     if 'IronPython' in sys_version:
         # IronPython
         name = 'IronPython'
-        if sys_version.startswith('IronPython'):
-            match = _ironpython_sys_version_parser.match(sys_version)
-        else:
-            match = _ironpython26_sys_version_parser.match(sys_version)
+        match = _ironpython_sys_version_parser.match(sys_version)
 
         if match is None:
             raise ValueError(
