@@ -439,6 +439,9 @@ struct compiler_unit {
     PyObject *u_cellvars;  /* cell variables */
     PyObject *u_freevars;  /* free variables */
 
+    // A set of names that should use fast-locals, even if not in a function */
+    PyObject *u_fastlocals;
+
     PyObject *u_private;        /* for private name mangling */
 
     Py_ssize_t u_argcount;        /* number of arguments for block */
@@ -3975,7 +3978,9 @@ compiler_nameop(struct compiler *c, location loc,
         optype = OP_DEREF;
         break;
     case LOCAL:
-        if (c->u->u_ste->ste_type == FunctionBlock)
+        if (c->u->u_ste->ste_type == FunctionBlock ||
+                (c->u->u_fastlocals &&
+                 PySet_Contains(c->u->u_fastlocals, mangled)))
             optype = OP_FAST;
         break;
     case GLOBAL_IMPLICIT:
@@ -5154,6 +5159,16 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
     // them from the outer scope as needed
     PyObject *k, *v;
     Py_ssize_t pos = 0;
+    assert(c->u->u_fastlocals == NULL);
+    if (c->u->u_ste->ste_type != FunctionBlock) {
+        // comprehension in non-function scope; for isolation, we'll need to
+        // override names bound in the comprehension to use fast locals, even
+        // though nothing else in this frame will
+        c->u->u_fastlocals = PySet_New(0);
+        if (c->u->u_fastlocals == NULL) {
+            return ERROR;
+        }
+    }
     while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
         assert(PyLong_Check(v));
         long symbol = PyLong_AS_LONG(v);
@@ -5162,6 +5177,12 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // assignment expression to a nonlocal in the comprehension, these don't
         // need handling here since they shouldn't be isolated
         if (symbol & DEF_LOCAL && ~symbol & DEF_NONLOCAL) {
+            if (c->u->u_fastlocals) {
+                // non-function scope: override this name to use fast locals,
+                // and that's all we need
+                PySet_Add(c->u->u_fastlocals, k);
+                continue;
+            }
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
             if (outv == NULL) {
@@ -5262,6 +5283,9 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
             ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
         }
     }
+    if (c->u->u_fastlocals) {
+        Py_CLEAR(c->u->u_fastlocals);
+    }
     return SUCCESS;
 }
 
@@ -5294,8 +5318,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     int is_inlined = entry->ste_comp_inlined;
     int is_async_generator = entry->ste_coroutine;
-    // we only inline comprehensions in functions
-    assert(!is_inlined || c->u->u_ste->ste_type == FunctionBlock);
 
     location loc = LOC(e);
 

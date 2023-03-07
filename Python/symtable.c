@@ -909,7 +909,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         // we inline comprehensions if inside a function and not a generator
         int inline_comp =
             entry->ste_comprehension &&
-            ste->ste_type == FunctionBlock &&
             !entry->ste_generator;
 
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
@@ -2306,4 +2305,3 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     assert(_PyUnicode_CheckConsistency(result, 1));
     return result;
 }
-
