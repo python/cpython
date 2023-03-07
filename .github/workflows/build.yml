@@ -113,7 +113,7 @@ jobs:
         run: make check-limited-abi
       - name: Check for Unsupported C Global Variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
-        run: python3 Tools/c-analyzer/check-c-globals.py --format summary
+        run: python3 Tools/c-analyzer/check-c-globals.py --format summary --traceback
 
   build_win32:
     name: 'Windows (x86)'
