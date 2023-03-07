@@ -1,0 +1,2 @@
+Fix handling threading after os.fork() called from a foreign thread (aka
+DummyThread).
