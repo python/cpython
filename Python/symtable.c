@@ -605,23 +605,12 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             }
             SET_SCOPE(scopes, k, scope);
         } else {
-            // name already exists in scope
-            PyObject *v_existing_scope = PyDict_GetItemWithError(scopes, k);
-            if (v_existing_scope == NULL) {
-                return 0;
-            }
-            long existing_scope = PyLong_AsLong(v_existing_scope);
-            // if name in comprehension was a cell, promote to cell
-            if (scope == CELL && existing_scope != CELL) {
-                SET_SCOPE(scopes, k, CELL);
-            } else {
-                // free vars in comprehension that are locals in outer scope can
-                // now simply be locals, unless they are free in comp children
-                if ((PyLong_AsLong(existing) & DEF_BOUND) &&
-                     !is_free_in_children(comp, k)) {
-                    if (PySet_Discard(comp_free, k) < 0) {
-                        return 0;
-                    }
+            // free vars in comprehension that are locals in outer scope can
+            // now simply be locals, unless they are free in comp children
+            if ((PyLong_AsLong(existing) & DEF_BOUND) &&
+                    !is_free_in_children(comp, k)) {
+                if (PySet_Discard(comp_free, k) < 0) {
+                    return 0;
                 }
             }
         }
@@ -906,7 +895,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
 
-        // we inline comprehensions if inside a function and not a generator
+        // we inline all non-generator-expression comprehensions
         int inline_comp =
             entry->ste_comprehension &&
             !entry->ste_generator;

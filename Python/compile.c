@@ -5162,8 +5162,8 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
     assert(c->u->u_fastlocals == NULL);
     if (c->u->u_ste->ste_type != FunctionBlock) {
         // comprehension in non-function scope; for isolation, we'll need to
-        // override names bound in the comprehension to use fast locals, even
-        // though nothing else in this frame will
+        // temporarily override names bound in the comprehension to use fast
+        // locals, even though nothing else in this frame will
         c->u->u_fastlocals = PySet_New(0);
         if (c->u->u_fastlocals == NULL) {
             return ERROR;
@@ -5190,15 +5190,10 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
             }
             assert(PyLong_Check(outv));
             long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
-            int outer_global = (outsc == GLOBAL_IMPLICIT || outsc == GLOBAL_EXPLICIT);
-            if (outer_global || ((outsc == CELL || outsc == FREE) && scope == LOCAL)) {
-                // If a name is global in the outer scope but local in the
-                // comprehension scope, we need to keep it global in outer scope
-                // but ensure the comprehension writes to the local, not the
-                // global; this is all the isolation we need.  If it's a cell in
-                // outer scope and a local inside the comprehension, we want the
-                // comprehension to treat it as a local, but we also need to
-                // save/restore the outer cell.
+            if (scope != outsc) {
+                // If a name has different scope inside than outside the
+                // comprehension, we need to temporarily handle it with the
+                // right scope while compiling the comprehension.
                 if (state->temp_symbols == NULL) {
                     state->temp_symbols = PyDict_New();
                     if (state->temp_symbols == NULL) {
@@ -5219,7 +5214,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 }
                 Py_DECREF(outv);
             }
-            if (!outer_global && (scope == LOCAL || scope == CELL)) {
+            if (outsc == LOCAL || outsc == CELL || outsc == FREE) {
                 // local names bound in comprehension must be isolated from
                 // outer scope; push existing value (which may be NULL if
                 // not defined) on stack
