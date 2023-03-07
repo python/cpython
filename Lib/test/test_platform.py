@@ -201,6 +201,9 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(platform.python_build(), info[4])
             self.assertEqual(platform.python_compiler(), info[5])
 
+        with self.assertRaises(ValueError):
+            platform._sys_version('2. 4.3 (truncation) \n[GCC]')
+
     def test_system_alias(self):
         res = platform.system_alias(
             platform.system(),
