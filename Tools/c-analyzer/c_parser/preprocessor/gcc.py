@@ -75,16 +75,17 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
 
     # The first line is special.
     # The next two lines are consistent.
-    for expected in [
-        f'# 1 "{reqfile}"',
-        '# 1 "<built-in>"',
-        '# 1 "<command-line>"',
-    ]:
+    firstlines = [
+        f'# 0 "{reqfile}"',
+        '# 0 "<built-in>"',
+        '# 0 "<command-line>"',
+    ]
+    if text.startswith('# 1 '):
+        # Some preprocessors emit a lineno of 1 for line-less entries.
+        firstlines = [l.replace('# 0 ', '# 1 ') for l in firstlines]
+    for expected in firstlines:
         line = next(lines)
         if line != expected:
-            print('--------------------')
-            print(text)
-            print('--------------------')
             raise NotImplementedError((line, expected))
 
     # Do all the CLI-provided includes.
