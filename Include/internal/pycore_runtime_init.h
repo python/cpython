@@ -14,6 +14,9 @@ extern "C" {
 #include "pycore_obmalloc_init.h"
 
 
+extern PyTypeObject _PyExc_MemoryError;
+
+
 /* The static initializers defined here should only be used
    in the runtime init code (in pystate.c and pylifecycle.c). */
 
@@ -119,6 +122,9 @@ extern "C" {
                 .hamt_empty = { \
                     .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
+                }, \
+                .last_resort_memory_error = { \
+                    _PyObject_IMMORTAL_INIT(&_PyExc_MemoryError), \
                 }, \
             }, \
         }, \
