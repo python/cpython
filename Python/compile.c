@@ -433,7 +433,7 @@ typedef struct instr_sequence_ {
 /*
  * Resize the array if index is out of range.
  *
- * index: the index we want to access
+ * idx: the index we want to access
  * arr: pointer to the array
  * alloc: pointer to the capacity of the array
  * default_alloc: initial number of items
@@ -441,13 +441,13 @@ typedef struct instr_sequence_ {
  *
  */
 static int
-ensure_array_large_enough(int index, void **arr_, int *alloc, int default_alloc, size_t item_size)
+ensure_array_large_enough(int idx, void **arr_, int *alloc, int default_alloc, size_t item_size)
 {
     void *arr = *arr_;
     if (arr == NULL) {
         int new_alloc = default_alloc;
-        if (index >= new_alloc) {
-            new_alloc = index + default_alloc;
+        if (idx >= new_alloc) {
+            new_alloc = idx + default_alloc;
         }
         arr = PyObject_Calloc(new_alloc, item_size);
         if (arr == NULL) {
@@ -456,11 +456,11 @@ ensure_array_large_enough(int index, void **arr_, int *alloc, int default_alloc,
         }
         *alloc = new_alloc;
     }
-    else if (index >= *alloc) {
+    else if (idx >= *alloc) {
         size_t oldsize = *alloc * item_size;
         int new_alloc = *alloc << 1;
-        if (index >= new_alloc) {
-            new_alloc = index + default_alloc;
+        if (idx >= new_alloc) {
+            new_alloc = idx + default_alloc;
         }
         size_t newsize = new_alloc * item_size;
 
