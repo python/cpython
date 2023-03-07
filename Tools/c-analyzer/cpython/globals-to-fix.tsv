@@ -539,7 +539,7 @@ Modules/_tkinter.c	-	command_mutex	-
 Modules/_tkinter.c	-	HeadFHCD	-
 Modules/_tkinter.c	-	stdin_ready	-
 Modules/_tkinter.c	-	event_tstate	-
-Modules/_xxsubinterpretersmodule.c	-	_globals	-
+Modules/_xxinterpchannelsmodule.c	-	_globals	-
 Modules/readline.c	-	completer_word_break_characters	-
 Modules/readline.c	-	_history_length	-
 Modules/readline.c	-	should_auto_add_history	-
