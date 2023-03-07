@@ -49,7 +49,9 @@ import os
 from concurrent.futures import _base
 import queue
 import multiprocessing as mp
-import multiprocessing.connection as mp_connection
+# This import is required to load the multiprocessing.connection submodule
+# so that it can be accessed later as `mp.connection`
+import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
 import weakref
@@ -404,7 +406,7 @@ class _ExecutorManagerThread(threading.Thread):
         wakeup_reader = self.thread_wakeup._reader
         readers = [result_reader, wakeup_reader]
         worker_sentinels = [p.sentinel for p in list(self.processes.values())]
-        ready = mp_connection.wait(readers + worker_sentinels)
+        ready = mp.connection.wait(readers + worker_sentinels)
 
         cause = None
         is_broken = True
