@@ -49,7 +49,7 @@ import os
 from concurrent.futures import _base
 import queue
 import multiprocessing as mp
-import multiprocessing.connection
+import multiprocessing.connection as mp_connection
 from multiprocessing.queues import Queue
 import threading
 import weakref
@@ -404,7 +404,7 @@ class _ExecutorManagerThread(threading.Thread):
         wakeup_reader = self.thread_wakeup._reader
         readers = [result_reader, wakeup_reader]
         worker_sentinels = [p.sentinel for p in list(self.processes.values())]
-        ready = mp.connection.wait(readers + worker_sentinels)
+        ready = mp_connection.wait(readers + worker_sentinels)
 
         cause = None
         is_broken = True
