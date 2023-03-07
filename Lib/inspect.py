@@ -2805,7 +2805,7 @@ class Parameter:
         return '<{} "{}">'.format(self.__class__.__name__, self)
 
     def __hash__(self):
-        return hash((self.name, self.kind, self.annotation, self.default))
+        return hash((self._name, self._kind, self._annotation, self._default))
 
     def __eq__(self, other):
         if self is other:

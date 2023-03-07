@@ -14,6 +14,9 @@ extern "C" {
 #include "pycore_obmalloc_init.h"
 
 
+extern PyTypeObject _PyExc_MemoryError;
+
+
 /* The static initializers defined here should only be used
    in the runtime init code (in pystate.c and pylifecycle.c). */
 
@@ -53,7 +56,6 @@ extern "C" {
         .gilstate = { \
             .check_enabled = 1, \
         }, \
-        .dtoa = _dtoa_runtime_state_INIT(runtime), \
         .fileutils = { \
             .force_ascii = -1, \
         }, \
@@ -94,10 +96,10 @@ extern "C" {
                 }, \
             }, \
         }, \
-        ._main_interpreter = _PyInterpreterState_INIT, \
+        ._main_interpreter = _PyInterpreterState_INIT(runtime._main_interpreter), \
     }
 
-#define _PyInterpreterState_INIT \
+#define _PyInterpreterState_INIT(INTERP) \
     { \
         .id_refcount = -1, \
         .imports = IMPORTS_INIT, \
@@ -113,12 +115,16 @@ extern "C" {
                 { .threshold = 10, }, \
             }, \
         }, \
+        .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
                 .hamt_empty = { \
                     .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
+                }, \
+                .last_resort_memory_error = { \
+                    _PyObject_IMMORTAL_INIT(&_PyExc_MemoryError), \
                 }, \
             }, \
         }, \

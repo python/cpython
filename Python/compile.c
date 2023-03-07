@@ -29,12 +29,12 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_code.h"          // _PyCode_New()
-#include "pycore_compile.h"       // _PyFuture_FromAST()
+#include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
-#include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
 #include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 
@@ -568,72 +568,6 @@ static int remove_redundant_nops(basicblock *bb);
 static PyCodeObject *assemble(struct compiler *, int addNone);
 
 #define CAPSULE_NAME "compile.c compiler unit"
-
-PyObject *
-_Py_Mangle(PyObject *privateobj, PyObject *ident)
-{
-    /* Name mangling: __private becomes _classname__private.
-       This is independent from how the name is used. */
-    PyObject *result;
-    size_t nlen, plen, ipriv;
-    Py_UCS4 maxchar;
-    if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
-        PyUnicode_READ_CHAR(ident, 0) != '_' ||
-        PyUnicode_READ_CHAR(ident, 1) != '_') {
-        return Py_NewRef(ident);
-    }
-    nlen = PyUnicode_GET_LENGTH(ident);
-    plen = PyUnicode_GET_LENGTH(privateobj);
-    /* Don't mangle __id__ or names with dots.
-
-       The only time a name with a dot can occur is when
-       we are compiling an import statement that has a
-       package name.
-
-       TODO(jhylton): Decide whether we want to support
-       mangling of the module name, e.g. __M.X.
-    */
-    if ((PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
-         PyUnicode_READ_CHAR(ident, nlen-2) == '_') ||
-        PyUnicode_FindChar(ident, '.', 0, nlen, 1) != -1) {
-        return Py_NewRef(ident); /* Don't mangle __whatever__ */
-    }
-    /* Strip leading underscores from class name */
-    ipriv = 0;
-    while (PyUnicode_READ_CHAR(privateobj, ipriv) == '_')
-        ipriv++;
-    if (ipriv == plen) {
-        return Py_NewRef(ident); /* Don't mangle if class is just underscores */
-    }
-    plen -= ipriv;
-
-    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "private identifier too large to be mangled");
-        return NULL;
-    }
-
-    maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
-    if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar)
-        maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
-
-    result = PyUnicode_New(1 + nlen + plen, maxchar);
-    if (!result) {
-        return NULL;
-    }
-    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
-    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
-    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    assert(_PyUnicode_CheckConsistency(result, 1));
-    return result;
-}
 
 
 static int
@@ -1633,8 +1567,7 @@ static void
 compiler_exit_scope(struct compiler *c)
 {
     // Don't call PySequence_DelItem() with an exception raised
-    PyObject *exc_type, *exc_val, *exc_tb;
-    PyErr_Fetch(&exc_type, &exc_val, &exc_tb);
+    PyObject *exc = PyErr_GetRaisedException();
 
     c->c_nestlevel--;
     compiler_unit_free(c->u);
@@ -1655,7 +1588,7 @@ compiler_exit_scope(struct compiler *c)
         c->u = NULL;
     }
 
-    PyErr_Restore(exc_type, exc_val, exc_tb);
+    PyErr_SetRaisedException(exc);
 }
 
 /* Search if variable annotations are present statically in a block. */
@@ -9704,56 +9637,77 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
 {
     assert(PyList_Check(instructions));
 
-    Py_ssize_t instr_size = PyList_GET_SIZE(instructions);
-    for (Py_ssize_t i = 0; i < instr_size; i++) {
+    Py_ssize_t num_insts = PyList_GET_SIZE(instructions);
+    bool *is_target = PyMem_Calloc(num_insts, sizeof(bool));
+    if (is_target == NULL) {
+        return ERROR;
+    }
+    for (Py_ssize_t i = 0; i < num_insts; i++) {
         PyObject *item = PyList_GET_ITEM(instructions, i);
-        if (PyLong_Check(item)) {
-            int lbl_id = PyLong_AsLong(item);
-            if (PyErr_Occurred()) {
-                return ERROR;
-            }
-            if (lbl_id <= 0 || lbl_id > instr_size) {
-                /* expect label in a reasonable range */
-                PyErr_SetString(PyExc_ValueError, "label out of range");
-                return ERROR;
-            }
-            jump_target_label lbl = {lbl_id};
-            RETURN_IF_ERROR(cfg_builder_use_label(g, lbl));
+        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
+            PyErr_SetString(PyExc_ValueError, "expected a 6-tuple");
+            goto error;
         }
-        else {
-            if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
-                PyErr_SetString(PyExc_ValueError, "expected a 6-tuple");
-                return ERROR;
-            }
-            int opcode = PyLong_AsLong(PyTuple_GET_ITEM(item, 0));
-            if (PyErr_Occurred()) {
-                return ERROR;
-            }
+        int opcode = PyLong_AsLong(PyTuple_GET_ITEM(item, 0));
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+        if (HAS_TARGET(opcode)) {
             int oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
             if (PyErr_Occurred()) {
-                return ERROR;
+                goto error;
             }
-            location loc;
-            loc.lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 2));
-            if (PyErr_Occurred()) {
-                return ERROR;
+            if (oparg < 0 || oparg >= num_insts) {
+                PyErr_SetString(PyExc_ValueError, "label out of range");
+                goto error;
             }
-            loc.end_lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 3));
-            if (PyErr_Occurred()) {
-                return ERROR;
-            }
-            loc.col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 4));
-            if (PyErr_Occurred()) {
-                return ERROR;
-            }
-            loc.end_col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 5));
-            if (PyErr_Occurred()) {
-                return ERROR;
-            }
-            RETURN_IF_ERROR(cfg_builder_addop(g, opcode, oparg, loc));
+            is_target[oparg] = true;
         }
     }
+
+    for (int i = 0; i < num_insts; i++) {
+        if (is_target[i]) {
+            jump_target_label lbl = {i};
+            RETURN_IF_ERROR(cfg_builder_use_label(g, lbl));
+        }
+        PyObject *item = PyList_GET_ITEM(instructions, i);
+        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
+            PyErr_SetString(PyExc_ValueError, "expected a 6-tuple");
+            goto error;
+        }
+        int opcode = PyLong_AsLong(PyTuple_GET_ITEM(item, 0));
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+        int oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+        location loc;
+        loc.lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 2));
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+        loc.end_lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 3));
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+        loc.col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 4));
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+        loc.end_col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 5));
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+        RETURN_IF_ERROR(cfg_builder_addop(g, opcode, oparg, loc));
+    }
+
+    PyMem_Free(is_target);
     return SUCCESS;
+error:
+    PyMem_Free(is_target);
+    return ERROR;
 }
 
 static PyObject *
@@ -9763,20 +9717,12 @@ cfg_to_instructions(cfg_builder *g)
     if (instructions == NULL) {
         return NULL;
     }
-    int lbl = 1;
+    int lbl = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        b->b_label = lbl++;
+        b->b_label = lbl;
+        lbl += b->b_iused;
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        PyObject *lbl = PyLong_FromLong(b->b_label);
-        if (lbl == NULL) {
-            goto error;
-        }
-        if (PyList_Append(instructions, lbl) != 0) {
-            Py_DECREF(lbl);
-            goto error;
-        }
-        Py_DECREF(lbl);
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             location loc = instr->i_loc;

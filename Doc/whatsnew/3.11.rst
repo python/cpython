@@ -1317,14 +1317,17 @@ This section covers specific optimizations independent of the
 Faster CPython
 ==============
 
-CPython 3.11 is on average `25% faster <https://github.com/faster-cpython/ideas#published-results>`_
-than CPython 3.10 when measured with the
+CPython 3.11 is an average of
+`25% faster <https://github.com/faster-cpython/ideas#published-results>`_
+than CPython 3.10 as measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
-and compiled with GCC on Ubuntu Linux. Depending on your workload, the speedup
-could be up to 10-60% faster.
+when compiled with GCC on Ubuntu Linux.
+Depending on your workload, the overall speedup could be 10-60%.
 
-This project focuses on two major areas in Python: faster startup and faster
-runtime. Other optimizations not under this project are listed in `Optimizations`_.
+This project focuses on two major areas in Python:
+:ref:`whatsnew311-faster-startup` and :ref:`whatsnew311-faster-runtime`.
+Optimizations not covered by this project are listed separately under
+:ref:`whatsnew311-optimizations`.
 
 
 .. _whatsnew311-faster-startup:
@@ -1337,8 +1340,8 @@ Faster Startup
 Frozen imports / Static code objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Python caches bytecode in the :ref:`__pycache__<tut-pycache>` directory to
-speed up module loading.
+Python caches :term:`bytecode` in the :ref:`__pycache__ <tut-pycache>`
+directory to speed up module loading.
 
 Previously in 3.10, Python module execution looked like this:
 
@@ -1347,8 +1350,9 @@ Previously in 3.10, Python module execution looked like this:
    Read __pycache__ -> Unmarshal -> Heap allocated code object -> Evaluate
 
 In Python 3.11, the core modules essential for Python startup are "frozen".
-This means that their code objects (and bytecode) are statically allocated
-by the interpreter. This reduces the steps in module execution process to this:
+This means that their :ref:`codeobjects` (and bytecode)
+are statically allocated by the interpreter.
+This reduces the steps in module execution process to:
 
 .. code-block:: text
 
@@ -1357,7 +1361,7 @@ by the interpreter. This reduces the steps in module execution process to this:
 Interpreter startup is now 10-15% faster in Python 3.11. This has a big
 impact for short-running programs using Python.
 
-(Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in numerous issues.)
+(Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in many issues.)
 
 
 .. _whatsnew311-faster-runtime:
@@ -1370,17 +1374,19 @@ Faster Runtime
 Cheaper, lazy Python frames
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Python frames are created whenever Python calls a Python function. This frame
-holds execution information. The following are new frame optimizations:
+Python frames, holding execution information,
+are created whenever Python calls a Python function.
+The following are new frame optimizations:
 
 - Streamlined the frame creation process.
 - Avoided memory allocation by generously re-using frame space on the C stack.
 - Streamlined the internal frame struct to contain only essential information.
   Frames previously held extra debugging and memory management information.
 
-Old-style frame objects are now created only when requested by debuggers or
-by Python introspection functions such as ``sys._getframe`` or
-``inspect.currentframe``. For most user code, no frame objects are
+Old-style :ref:`frame objects <frame-objects>`
+are now created only when requested by debuggers
+or by Python introspection functions such as :func:`sys._getframe` and
+:func:`inspect.currentframe`. For most user code, no frame objects are
 created at all. As a result, nearly all Python functions calls have sped
 up significantly. We measured a 3-7% speedup in pyperformance.
 
@@ -1401,10 +1407,11 @@ In 3.11, when CPython detects Python code calling another Python function,
 it sets up a new frame, and "jumps" to the new code inside the new frame. This
 avoids calling the C interpreting function altogether.
 
-Most Python function calls now consume no C stack space. This speeds up
-most of such calls. In simple recursive functions like fibonacci or
-factorial, a 1.7x speedup was observed. This also means recursive functions
-can recurse significantly deeper (if the user increases the recursion limit).
+Most Python function calls now consume no C stack space, speeding them up.
+In simple recursive functions like fibonacci or
+factorial, we observed a 1.7x speedup. This also means recursive functions
+can recurse significantly deeper
+(if the user increases the recursion limit with :func:`sys.setrecursionlimit`).
 We measured a 1-3% improvement in pyperformance.
 
 (Contributed by Pablo Galindo and Mark Shannon in :issue:`45256`.)
@@ -1415,7 +1422,7 @@ We measured a 1-3% improvement in pyperformance.
 PEP 659: Specializing Adaptive Interpreter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:pep:`659` is one of the key parts of the faster CPython project. The general
+:pep:`659` is one of the key parts of the Faster CPython project. The general
 idea is that while Python is a dynamic language, most code has regions where
 objects and types rarely change. This concept is known as *type stability*.
 
@@ -1424,17 +1431,18 @@ in the executing code. Python will then replace the current operation with a
 more specialized one. This specialized operation uses fast paths available only
 to those use cases/types, which generally outperform their generic
 counterparts. This also brings in another concept called *inline caching*, where
-Python caches the results of expensive operations directly in the bytecode.
+Python caches the results of expensive operations directly in the
+:term:`bytecode`.
 
 The specializer will also combine certain common instruction pairs into one
-superinstruction. This reduces the overhead during execution.
+superinstruction, reducing the overhead during execution.
 
 Python will only specialize
 when it sees code that is "hot" (executed multiple times). This prevents Python
-from wasting time for run-once code. Python can also de-specialize when code is
+from wasting time on run-once code. Python can also de-specialize when code is
 too dynamic or when the use changes. Specialization is attempted periodically,
-and specialization attempts are not too expensive. This allows specialization
-to adapt to new circumstances.
+and specialization attempts are not too expensive,
+allowing specialization to adapt to new circumstances.
 
 (PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
 See :pep:`659` for more information. Implementation by Mark Shannon and Brandt
@@ -1447,32 +1455,32 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 | Operation     | Form               | Specialization                                        | Operation speedup | Contributor(s)    |
 |               |                    |                                                       | (up to)           |                   |
 +===============+====================+=======================================================+===================+===================+
-| Binary        | ``x+x; x*x; x-x;`` | Binary add, multiply and subtract for common types    | 10%               | Mark Shannon,     |
-| operations    |                    | such as ``int``, ``float``, and ``str`` take custom   |                   | Dong-hee Na,      |
-|               |                    | fast paths for their underlying types.                |                   | Brandt Bucher,    |
+| Binary        | ``x + x``          | Binary add, multiply and subtract for common types    | 10%               | Mark Shannon,     |
+| operations    |                    | such as :class:`int`, :class:`float` and :class:`str` |                   | Dong-hee Na,      |
+|               | ``x - x``          | take custom fast paths for their underlying types.    |                   | Brandt Bucher,    |
 |               |                    |                                                       |                   | Dennis Sweeney    |
+|               | ``x * x``          |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Subscript     | ``a[i]``           | Subscripting container types such as ``list``,        | 10-25%            | Irit Katriel,     |
-|               |                    | ``tuple`` and ``dict`` directly index the underlying  |                   | Mark Shannon      |
-|               |                    | data structures.                                      |                   |                   |
+| Subscript     | ``a[i]``           | Subscripting container types such as :class:`list`,   | 10-25%            | Irit Katriel,     |
+|               |                    | :class:`tuple` and :class:`dict` directly index       |                   | Mark Shannon      |
+|               |                    | the underlying data structures.                       |                   |                   |
 |               |                    |                                                       |                   |                   |
-|               |                    | Subscripting custom ``__getitem__``                   |                   |                   |
+|               |                    | Subscripting custom :meth:`~object.__getitem__`       |                   |                   |
 |               |                    | is also inlined similar to :ref:`inline-calls`.       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Store         | ``a[i] = z``       | Similar to subscripting specialization above.         | 10-25%            | Dennis Sweeney    |
 | subscript     |                    |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Calls         | ``f(arg)``         | Calls to common builtin (C) functions and types such  | 20%               | Mark Shannon,     |
-|               | ``C(arg)``         | as ``len`` and ``str`` directly call their underlying |                   | Ken Jin           |
-|               |                    | C version. This avoids going through the internal     |                   |                   |
-|               |                    | calling convention.                                   |                   |                   |
-|               |                    |                                                       |                   |                   |
+|               |                    | as :func:`len` and :class:`str` directly call their   |                   | Ken Jin           |
+|               | ``C(arg)``         | underlying C version. This avoids going through the   |                   |                   |
+|               |                    | internal calling convention.                          |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``print``          | The object's index in the globals/builtins namespace  | [1]_              | Mark Shannon      |
-| global        | ``len``            | is cached. Loading globals and builtins require       |                   |                   |
-| variable      |                    | zero namespace lookups.                               |                   |                   |
+| Load          | ``print``          | The object's index in the globals/builtins namespace  | [#load-global]_   | Mark Shannon      |
+| global        |                    | is cached. Loading globals and builtins require       |                   |                   |
+| variable      | ``len``            | zero namespace lookups.                               |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | [2]_              | Mark Shannon      |
+| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | [#load-attr]_     | Mark Shannon      |
 | attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
 |               |                    | In most cases, attribute loading will require zero    |                   |                   |
 |               |                    | namespace lookups.                                    |                   |                   |
@@ -1484,14 +1492,15 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 | Store         | ``o.attr = z``     | Similar to load attribute optimization.               | 2%                | Mark Shannon      |
 | attribute     |                    |                                                       | in pyperformance  |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Unpack        | ``*seq``           | Specialized for common containers such as ``list``    | 8%                | Brandt Bucher     |
-| Sequence      |                    | and ``tuple``. Avoids internal calling convention.    |                   |                   |
+| Unpack        | ``*seq``           | Specialized for common containers such as             | 8%                | Brandt Bucher     |
+| Sequence      |                    | :class:`list` and :class:`tuple`.                     |                   |                   |
+|               |                    | Avoids internal calling convention.                   |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 
-.. [1] A similar optimization already existed since Python 3.8.  3.11
-       specializes for more forms and reduces some overhead.
+.. [#load-global] A similar optimization already existed since Python 3.8.
+       3.11 specializes for more forms and reduces some overhead.
 
-.. [2] A similar optimization already existed since Python 3.10.
+.. [#load-attr] A similar optimization already existed since Python 3.10.
        3.11 specializes for more forms. Furthermore, all attribute loads should
        be sped up by :issue:`45947`.
 
@@ -1501,13 +1510,24 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 Misc
 ----
 
-* Objects now require less memory due to lazily created object namespaces. Their
-  namespace dictionaries now also share keys more freely.
+* Objects now require less memory due to lazily created object namespaces.
+  Their namespace dictionaries now also share keys more freely.
   (Contributed Mark Shannon in :issue:`45340` and :issue:`40116`.)
+
+* "Zero-cost" exceptions are implemented, eliminating the cost
+  of :keyword:`try` statements when no exception is raised.
+  (Contributed by Mark Shannon in :issue:`40222`.)
 
 * A more concise representation of exceptions in the interpreter reduced the
   time required for catching an exception by about 10%.
   (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :mod:`re`'s regular expression matching engine has been partially refactored,
+  and now uses computed gotos (or "threaded code") on supported platforms. As a
+  result, Python 3.11 executes the `pyperformance regular expression benchmarks
+  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
+  faster than Python 3.10.
+  (Contributed by Brandt Bucher in :gh:`91404`.)
 
 
 .. _whatsnew311-faster-cpython-faq:
@@ -1515,35 +1535,47 @@ Misc
 FAQ
 ---
 
-| Q: How should I write my code to utilize these speedups?
-|
-| A: You don't have to change your code. Write Pythonic code that follows common
-  best practices. The Faster CPython project optimizes for common code
-  patterns we observe.
-|
-|
-| Q: Will CPython 3.11 use more memory?
-|
-| A: Maybe not. We don't expect memory use to exceed 20% more than 3.10.
-  This is offset by memory optimizations for frame objects and object
-  dictionaries as mentioned above.
-|
-|
-| Q: I don't see any speedups in my workload. Why?
-|
-| A: Certain code won't have noticeable benefits. If your code spends most of
-  its time on I/O operations, or already does most of its
-  computation in a C extension library like numpy, there won't be significant
-  speedup. This project currently benefits pure-Python workloads the most.
-|
-| Furthermore, the pyperformance figures are a geometric mean. Even within the
-  pyperformance benchmarks, certain benchmarks have slowed down slightly, while
-  others have sped up by nearly 2x!
-|
-|
-| Q: Is there a JIT compiler?
-|
-| A: No. We're still exploring other optimizations.
+.. _faster-cpython-faq-my-code:
+
+How should I write my code to utilize these speedups?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Write Pythonic code that follows common best practices;
+you don't have to change your code.
+The Faster CPython project optimizes for common code patterns we observe.
+
+
+.. _faster-cpython-faq-memory:
+
+Will CPython 3.11 use more memory?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Maybe not; we don't expect memory use to exceed 20% higher than 3.10.
+This is offset by memory optimizations for frame objects and object
+dictionaries as mentioned above.
+
+
+.. _faster-cpython-ymmv:
+
+I don't see any speedups in my workload. Why?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Certain code won't have noticeable benefits. If your code spends most of
+its time on I/O operations, or already does most of its
+computation in a C extension library like NumPy, there won't be significant
+speedups. This project currently benefits pure-Python workloads the most.
+
+Furthermore, the pyperformance figures are a geometric mean. Even within the
+pyperformance benchmarks, certain benchmarks have slowed down slightly, while
+others have sped up by nearly 2x!
+
+
+.. _faster-cpython-jit:
+
+Is there a JIT compiler?
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+No. We're still exploring other optimizations.
 
 
 .. _whatsnew311-faster-cpython-about:
