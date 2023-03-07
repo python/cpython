@@ -1335,7 +1335,7 @@ module on POSIX systems.
 .. nonce: 9TWMlz
 .. section: Library
 
-Revert GH-15522, which introduces a regression in
+Revert PR 15522, which introduces a regression in
 :meth:`mimetypes.guess_type` due to improper handling of filenames as urls.
 
 ..
@@ -1510,7 +1510,7 @@ asynchronous magic methods on a MagicMock now return an AsyncMock.
 .. section: Library
 
 Update the *length* parameter of :func:`os.pread` to accept
-:c:type:`Py_ssize_t` instead of :c:type:`int`.
+:c:type:`Py_ssize_t` instead of :c:expr:`int`.
 
 ..
 
@@ -5769,4 +5769,4 @@ Convert posixmodule.c statically allocated types ``DirEntryType`` and
 .. section: C API
 
 Use singular/plural noun in error message when instantiating an abstract
-class with non-overriden abstract method(s).
+class with non-overridden abstract method(s).

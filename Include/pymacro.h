@@ -1,6 +1,25 @@
 #ifndef Py_PYMACRO_H
 #define Py_PYMACRO_H
 
+// gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
+// defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
+// the static_assert() macro. Define the static_assert() macro in Python until
+// <sys/cdefs.h> suports C11:
+// https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=255290
+#if defined(__FreeBSD__) && !defined(static_assert)
+#  define static_assert _Static_assert
+#endif
+
+// static_assert is defined in glibc from version 2.16. Before it requires
+// compiler support (gcc >= 4.6) and is called _Static_assert.
+// In C++ 11 static_assert is a keyword, redefining is undefined behaviour.
+#if (defined(__GLIBC__) \
+     && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 16)) \
+     && !(defined(__cplusplus) && __cplusplus >= 201103L) \
+     && !defined(static_assert))
+#  define static_assert _Static_assert
+#endif
+
 /* Minimum value between x and y */
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 
@@ -132,5 +151,10 @@
 // Prevent using an expression as a l-value.
 // For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
 #define _Py_RVALUE(EXPR) ((void)0, (EXPR))
+
+// Return non-zero if the type is signed, return zero if it's unsigned.
+// Use "<= 0" rather than "< 0" to prevent the compiler warning:
+// "comparison of unsigned expression in '< 0' is always false".
+#define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
 #endif /* Py_PYMACRO_H */

@@ -43,7 +43,7 @@ typedef struct {
 
 typedef struct {
     PyDescr_COMMON;
-    struct PyMemberDef *d_member;
+    PyMemberDef *d_member;
 } PyMemberDescrObject;
 
 typedef struct {

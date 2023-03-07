@@ -67,7 +67,7 @@ The following constructs bind names:
 
   + :keyword:`for` loop header,
   + after :keyword:`!as` in a :keyword:`with` statement, :keyword:`except`
-    clause or in the as-pattern in structural pattern matching,
+    clause, :keyword:`except* <except_star>` clause, or in the as-pattern in structural pattern matching,
   + in a capture pattern in structural pattern matching
 
 * :keyword:`import` statements.
@@ -128,6 +128,8 @@ lead to errors when a name is used within a block before it is bound.  This rule
 is subtle.  Python lacks declarations and allows name binding operations to
 occur anywhere within a code block.  The local variables of a code block can be
 determined by scanning the entire text of the block for name binding operations.
+See :ref:`the FAQ entry on UnboundLocalError <faq-unboundlocalerror>`
+for examples.
 
 If the :keyword:`global` statement occurs within a block, all uses of the names
 specified in the statement refer to the bindings of those names in the top-level
@@ -259,8 +261,9 @@ a stack traceback, except when the exception is :exc:`SystemExit`.
 
 Exceptions are identified by class instances.  The :keyword:`except` clause is
 selected depending on the class of the instance: it must reference the class of
-the instance or a base class thereof.  The instance can be received by the
-handler and can carry additional information about the exceptional condition.
+the instance or a :term:`non-virtual base class <abstract base class>` thereof.
+The instance can be received by the handler and can carry additional information
+about the exceptional condition.
 
 .. note::
 

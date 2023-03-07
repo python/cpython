@@ -14,6 +14,7 @@ This module can be used to create the cached byte-code files at library
 installation time, which makes them available for use even by users who don't
 have write permission to the library directories.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Command-line use
 ----------------
@@ -198,7 +199,7 @@ Public functions
 
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
-   They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+   They may be specified as ``str`` or :py:class:`os.PathLike`.
 
    If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
    level have the same content, use hard links to consolidate duplicate files.
@@ -268,7 +269,7 @@ Public functions
 
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
-   They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+   They may be specified as ``str`` or :py:class:`os.PathLike`.
 
    If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
    level have the same content, use hard links to consolidate duplicate files.

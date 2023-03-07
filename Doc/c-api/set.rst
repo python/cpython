@@ -13,7 +13,7 @@ Set Objects
    object: frozenset
 
 This section details the public API for :class:`set` and :class:`frozenset`
-objects.  Any functionality not listed below is best accessed using the either
+objects.  Any functionality not listed below is best accessed using either
 the abstract object protocol (including :c:func:`PyObject_CallMethod`,
 :c:func:`PyObject_RichCompareBool`, :c:func:`PyObject_Hash`,
 :c:func:`PyObject_Repr`, :c:func:`PyObject_IsTrue`, :c:func:`PyObject_Print`, and
@@ -31,7 +31,7 @@ the abstract object protocol (including :c:func:`PyObject_CallMethod`,
    in that it is a fixed size for small sets (much like tuple storage) and will
    point to a separate, variable sized block of memory for medium and large sized
    sets (much like list storage). None of the fields of this structure should be
-   considered public and are subject to change.  All access should be done through
+   considered public and all are subject to change.  All access should be done through
    the documented API rather than by manipulating the values in the structure.
 
 
@@ -131,7 +131,7 @@ or :class:`frozenset` or instances of their subtypes.
 .. c:function:: int PySet_Add(PyObject *set, PyObject *key)
 
    Add *key* to a :class:`set` instance.  Also works with :class:`frozenset`
-   instances (like :c:func:`PyTuple_SetItem` it can be used to fill-in the values
+   instances (like :c:func:`PyTuple_SetItem` it can be used to fill in the values
    of brand new frozensets before they are exposed to other code).  Return ``0`` on
    success or ``-1`` on failure. Raise a :exc:`TypeError` if the *key* is
    unhashable. Raise a :exc:`MemoryError` if there is no room to grow.  Raise a

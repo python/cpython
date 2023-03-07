@@ -4,6 +4,7 @@
         <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
         <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
         
+        <PropertyRef Id="DetectTargetDir" />
         <PropertyRef Id="UpgradeTable" />
         <PropertyRef Id="REGISTRYKEY" />
         

@@ -38,6 +38,7 @@ users.
    :mod:`select`
       Low-level I/O multiplexing module.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Classes
 -------
