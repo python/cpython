@@ -79,6 +79,9 @@ scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
                 '0123456789'
                 '+-.')
 
+# Leading and trailing C0 control and space to be stripped per WHATWG spec
+_URL_CHARS_TO_STRIP = "".join([*(chr(i) for i in range(0, 0x1f + 1)), " "])
+
 # Unsafe bytes to be removed per WHATWG spec
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
 
@@ -452,6 +455,8 @@ def urlsplit(url, scheme='', allow_fragments=True):
     """
 
     url, scheme, _coerce_result = _coerce_args(url, scheme)
+    url = url.strip(_URL_CHARS_TO_STRIP)
+    scheme = scheme.strip(_URL_CHARS_TO_STRIP)
 
     for b in _UNSAFE_URL_BYTES_TO_REMOVE:
         url = url.replace(b, "")

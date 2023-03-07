@@ -649,6 +649,44 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(p.scheme, "http")
             self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
+    def test_urlsplit_strip_url(self):
+        noise = bytes([*range(0, 0x1f), 0x20])
+        base_url = "http://User:Pass@www.python.org:080/doc/?query=yes#frag"
+
+        url = noise.decode() + base_url + noise.decode()
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "User:Pass@www.python.org:080")
+        self.assertEqual(p.path, "/doc/")
+        self.assertEqual(p.query, "query=yes")
+        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.username, "User")
+        self.assertEqual(p.password, "Pass")
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, 80)
+        self.assertEqual(p.geturl(), base_url)
+
+        url = noise + base_url.encode() + noise
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, b"http")
+        self.assertEqual(p.netloc, b"User:Pass@www.python.org:080")
+        self.assertEqual(p.path, b"/doc/")
+        self.assertEqual(p.query, b"query=yes")
+        self.assertEqual(p.fragment, b"frag")
+        self.assertEqual(p.username, b"User")
+        self.assertEqual(p.password, b"Pass")
+        self.assertEqual(p.hostname, b"www.python.org")
+        self.assertEqual(p.port, 80)
+        self.assertEqual(p.geturl(), base_url.encode())
+
+        # with scheme as cache-key
+        url = "//www.python.org/"
+        scheme = noise.decode() + "https" + noise.decode()
+        for _ in range(2):
+            p = urllib.parse.urlsplit(url, scheme=scheme)
+            self.assertEqual(p.scheme, "https")
+            self.assertEqual(p.geturl(), "https://www.python.org/")
+
     def test_attributes_bad_port(self):
         """Check handling of invalid ports."""
         for bytes in (False, True):
@@ -656,7 +694,7 @@ class UrlParseTestCase(unittest.TestCase):
                 for port in ("foo", "1.5", "-1", "0x10", "-0", "1_1", " 1", "1 ", "६"):
                     with self.subTest(bytes=bytes, parse=parse, port=port):
                         netloc = "www.example.net:" + port
-                        url = "http://" + netloc
+                        url = "http://" + netloc + "/"
                         if bytes:
                             if netloc.isascii() and port.isascii():
                                 netloc = netloc.encode("ascii")
