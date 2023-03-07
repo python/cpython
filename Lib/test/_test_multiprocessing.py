@@ -1397,6 +1397,12 @@ class _TestQueue(BaseTestCase):
             with self.assertRaises(pyqueue.ShutDown):
                 q.get(True, 1.0)
 
+    def test_shutdown_all_methods(self):
+        return self._shutdown_all_methods(False)
+
+    def test_shutdown_immediate_all_methods(self):
+        return self._shutdown_all_methods(True)
+
 #
 #
 #
