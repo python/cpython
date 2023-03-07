@@ -49,6 +49,7 @@ import os
 from concurrent.futures import _base
 import queue
 import multiprocessing as mp
+import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
 import weakref
