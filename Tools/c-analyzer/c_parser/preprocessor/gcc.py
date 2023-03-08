@@ -130,7 +130,7 @@ def _iter_top_include_lines(lines, topfile, cwd,
     # _parse_marker_line() that the preprocessor reported lno as 1.
     lno = 1
     for line in lines:
-        if line == '# 1 "<command-line>" 2':
+        if line == '# 0 "<command-line>" 2' or line == '# 1 "<command-line>" 2':
             # We're done with this top-level include.
             return
 
@@ -183,8 +183,8 @@ def _parse_marker_line(line, reqfile=None):
         return None, None, None
     lno, origfile, flags = m.groups()
     lno = int(lno)
-    assert (lno in (0, 1) if origfile in META_FILES else lno > 0), (line, lno)
-    assert flags or origfile not in META_FILES, (line,)
+    assert origfile not in META_FILES, (line,)
+    assert lno > 0, (line, lno)
     flags = set(int(f) for f in flags.split()) if flags else ()
 
     if 1 in flags:
