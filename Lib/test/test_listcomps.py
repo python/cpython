@@ -115,7 +115,7 @@ And confirm that a closure can jump over the list comp scope
     >>> [x() for x in items]
     [2, 2, 2, 2, 2]
 
-We also repeat each of the above scoping tests inside a function
+We also repeat each of the above scoping tests inside a function:
 
     >>> def test_func():
     ...     items = [(lambda i=i: i) for i in range(5)]
@@ -143,7 +143,37 @@ We also repeat each of the above scoping tests inside a function
     >>> test_func()
     [2, 2, 2, 2, 2]
 
-Some more tests for scoping edge cases:
+And in class scope:
+
+    >>> class C:
+    ...     items = [(lambda i=i: i) for i in range(5)]
+    ...     ret = [x() for x in items]
+    >>> C.ret
+    [0, 1, 2, 3, 4]
+
+    >>> class C:
+    ...     items = [(lambda: i) for i in range(5)]
+    ...     ret = [x() for x in items]
+    >>> C.ret
+    [4, 4, 4, 4, 4]
+
+    >>> class C:
+    ...     items = [(lambda: i) for i in range(5)]
+    ...     i = 20
+    ...     ret = [x() for x in items]
+    >>> C.ret
+    [4, 4, 4, 4, 4]
+    >>> C.i
+    20
+
+    >>> class C:
+    ...     items = [(lambda: y) for i in range(5)]
+    ...     y = 2
+    ...     ret = [x() for x in items]
+    >>> C.ret
+    [2, 2, 2, 2, 2]
+
+Some more tests for scoping edge cases, each in func/module/class scope:
 
     >>> def test_func():
     ...     y = 10

@@ -2670,7 +2670,6 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         else {
             /* No methods referenced __class__, so just return None */
-            assert(PyDict_GET_SIZE(c->u->u_cellvars) == 0);
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
         ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
@@ -5318,10 +5317,8 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // need handling here since they shouldn't be isolated
         if (symbol & DEF_LOCAL && ~symbol & DEF_NONLOCAL) {
             if (c->u->u_fastlocals) {
-                // non-function scope: override this name to use fast locals,
-                // and that's all we need
+                // non-function scope: override this name to use fast locals
                 PySet_Add(c->u->u_fastlocals, k);
-                continue;
             }
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
