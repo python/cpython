@@ -39,6 +39,7 @@ __all__ = [
     "Attribute",
     "BlockFinder",
     "BoundArguments",
+    "BufferFlags",
     "CORO_CLOSED",
     "CORO_CREATED",
     "CORO_RUNNING",
