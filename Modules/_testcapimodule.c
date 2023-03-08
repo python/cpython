@@ -1654,15 +1654,10 @@ slot_tp_del(PyObject *self)
      */
     {
         Py_ssize_t refcnt = Py_REFCNT(self);
-        _Py_NewReference(self);
+        _Py_NewReferenceNoTotal(self);
         Py_SET_REFCNT(self, refcnt);
     }
     assert(!PyType_IS_GC(Py_TYPE(self)) || PyObject_GC_IsTracked(self));
-    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
-       _Py_RefTotal, so we need to undo that. */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
 }
 
 static PyObject *

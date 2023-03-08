@@ -4,7 +4,6 @@ import copy
 import types
 import inspect
 import keyword
-import builtins
 import functools
 import itertools
 import abc
