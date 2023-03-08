@@ -5,7 +5,7 @@
 # Minimally patched to make it even more xgettext compatible
 # by Peter Funk <pf@artcom-gmbh.de>
 #
-# 2002-11-22 Jürgen Hermann <jh@web.de>
+# 2002-11-22 Jï¿½rgen Hermann <jh@web.de>
 # Added checks that _() only contains string literals, and
 # command line args are resolved to module lists, i.e. you
 # can now pass a filename, a module or package name, or a
@@ -174,7 +174,6 @@ DEFAULTKEYWORDS = ', '.join(default_keywords)
 EMPTYSTRING = ''
 
 
-
 # The normal pot-file header. msgmerge and Emacs's po-mode work better if it's
 # there.
 pot_header = _('''\
@@ -196,7 +195,6 @@ msgstr ""
 
 ''')
 
-
 def usage(code, msg=''):
     print(__doc__ % globals(), file=sys.stderr)
     if msg:
@@ -204,12 +202,11 @@ def usage(code, msg=''):
     sys.exit(code)
 
 
-
 def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "Hï¿½he"' would result not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
@@ -258,7 +255,7 @@ def normalize(s, encoding):
         s = '""\n"' + lineterm.join(lines) + '"'
     return s
 
-
+
 def containsAny(str, set):
     """Check whether 'str' contains ANY of the chars in 'set'"""
     return 1 in [c in str for c in set]
@@ -307,7 +304,6 @@ def getFilesForName(name):
 
     return []
 
-
 class TokenEater:
     def __init__(self, options):
         self.__options = options
@@ -515,7 +511,6 @@ class TokenEater:
                 print('msgstr ""\n', file=fp)
 
 
-
 def main():
     global default_keywords
     try:
@@ -675,7 +670,6 @@ def main():
         if closep:
             fp.close()
 
-
 if __name__ == '__main__':
     main()
     # some more test strings
