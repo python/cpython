@@ -2076,7 +2076,7 @@ Corresponding to collections in :mod:`collections.abc`
    annotate arguments of any of the types mentioned above.
 
    .. deprecated:: 3.9
-      Prefer a union, like ``bytes | bytearray | memoryview``.
+      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 

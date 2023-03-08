@@ -274,8 +274,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. deprecated:: 3.12
       The :class:`ByteString` ABC has been deprecated.
-      For use in typing, prefer a union, like ``bytes | bytearray``.
-      For use as an ABC, prefer :class:`Sequence`.
+      For use in typing, prefer a union, like ``bytes | bytearray``, or
+      :class:`collections.abc.Buffer`.
+      For use as an ABC, prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
 
 .. class:: Set
            MutableSet
