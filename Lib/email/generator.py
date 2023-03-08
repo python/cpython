@@ -391,6 +391,7 @@ class Generator:
     def _compile_re(cls, s, flags):
         return re.compile(s, flags)
 
+
 class BytesGenerator(Generator):
     """Generates a bytes version of a Message object tree.
 
