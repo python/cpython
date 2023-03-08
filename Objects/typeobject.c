@@ -8579,7 +8579,7 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
     if (flags_obj == NULL) {
         return -1;
     }
-    PyObject *wrapper = NULL;
+    PyBufferWrapper *wrapper = NULL;
     PyObject *stack[2] = {self, flags_obj};
     PyObject *ret = vectorcall_method(&_Py_ID(__buffer__), stack, 2);
     if (ret == NULL) {
@@ -8600,11 +8600,11 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
     if (wrapper == NULL) {
         goto fail;
     }
-    ((PyBufferWrapper *)wrapper)->mv = ret;
-    ((PyBufferWrapper *)wrapper)->obj = Py_NewRef(self);
+    wrapper->mv = ret;
+    wrapper->obj = Py_NewRef(self);
     _PyObject_GC_TRACK(wrapper);
 
-    buffer->obj = wrapper;
+    buffer->obj = (PyObject *)wrapper;
     Py_DECREF(ret);
     Py_DECREF(flags_obj);
     return 0;
