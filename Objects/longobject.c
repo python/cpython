@@ -634,8 +634,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
     if (_PyLong_IsNonNegativeSingleDigit(v)) {
 #if SIZEOF_LONG < SIZEOF_VOID_P
         intptr_t tmp = _PyLong_SingleDigitValue(v);
-        unsigned long res = tmp
-        res = (long)tmp;
+        unsigned long res = (unsigned long)tmp;
         if (res != tmp) {
             goto overflow;
         }
