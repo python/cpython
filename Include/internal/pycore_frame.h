@@ -48,7 +48,7 @@ static inline PyObject *detag(_tagged_ptr tp) {
 }
 
 static inline _tagged_ptr untagged(PyObject *p) {
-    return (_tagged_ptr) { .val = (uintptr_t) p };
+    return (_tagged_ptr) { .obj = p };
 }
 
 static inline _tagged_ptr tagged(PyObject *p) {

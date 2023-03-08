@@ -137,7 +137,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     }
     assert(frame->stacktop >= 0);
     for (int i = 0; i < frame->stacktop; i++) {
-        xdecref_unless_tagged(frame->localsplus[i]);
+        xdecref_unless_tagged(localsplus_as_tagged_ptr(frame)[i]);
     }
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);

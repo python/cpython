@@ -53,6 +53,7 @@
             #if 0
             if (PyLong_CheckExact(value)) {
                 long lval = PyLong_AsLong(value);
+                PyErr_Clear();
                 value = tagged(value).obj;
                 // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
             }
@@ -112,6 +113,7 @@
                 #if 0
                 if (PyLong_CheckExact(value)) {
                     long lval = PyLong_AsLong(value);
+                    PyErr_Clear();
                     value = tagged(value).obj;
                     // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
                 }
@@ -169,6 +171,7 @@
                 #if 0
                 if (PyLong_CheckExact(value)) {
                     long lval = PyLong_AsLong(value);
+                    PyErr_Clear();
                     value = tagged(value).obj;
                     // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
                 }
@@ -581,8 +584,8 @@
             Py_INCREF(getitem);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2);
             STACK_SHRINK(2);
-            new_frame->localsplus[0] = (_tagged_ptr)container;
-            new_frame->localsplus[1] = (_tagged_ptr)sub;
+            new_frame->localsplus[0] = untagged(STEAL(container));
+            new_frame->localsplus[1] = untagged(STEAL(sub));
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             DISPATCH_INLINED(new_frame);
         }
@@ -2045,7 +2048,7 @@
             SET_TOP(NULL);
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
-            new_frame->localsplus[0] = (_tagged_ptr)owner;
+            new_frame->localsplus[0] = untagged(STEAL(owner));
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH_INLINED(new_frame);
         }
@@ -2076,7 +2079,7 @@
             SET_TOP(NULL);
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
-            new_frame->localsplus[0] = (_tagged_ptr)owner;
+            new_frame->localsplus[0] = untagged(STEAL(owner));
             new_frame->localsplus[1] = untagged(Py_NewRef(name));
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH_INLINED(new_frame);
@@ -3156,7 +3159,7 @@
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
             for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = (args)[i];
+                new_frame->localsplus[i] = untagged(STEAL(args[i]));
             }
             // Manipulate stack directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
@@ -3189,7 +3192,7 @@
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, code->co_argcount);
             for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = (args)[i];
+                new_frame->localsplus[i] = untagged(STEAL(args[i]));
             }
             for (int i = argcount; i < code->co_argcount; i++) {
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i - min_args);
