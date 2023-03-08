@@ -7962,9 +7962,9 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
 
 static int
 add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
-                                                struct compiler *c)
+                                                struct compiler_unit *u)
 {
-    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
     if (nlocals == 0) {
         return SUCCESS;
     }
@@ -7985,7 +7985,7 @@ add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
 
     // First origin of being uninitialized:
     // The non-parameter locals in the entry block.
-    int nparams = (int)PyList_GET_SIZE(c->u->u_ste->ste_varnames);
+    int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
     uint64_t start_mask = 0;
     for (int i = nparams; i < nlocals; i++) {
         start_mask |= (uint64_t)1 << i;
@@ -8121,29 +8121,29 @@ extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
                                    PyObject *, PyObject *);
 
 static void
-compute_localsplus_info(struct compiler *c, int nlocalsplus,
+compute_localsplus_info(struct compiler_unit *u, int nlocalsplus,
                         PyObject *names, PyObject *kinds)
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(c->u->u_varnames, &pos, &k, &v)) {
+    while (PyDict_Next(u->u_varnames, &pos, &k, &v)) {
         int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
         assert(offset < nlocalsplus);
         // For now we do not distinguish arg kinds.
         _PyLocals_Kind kind = CO_FAST_LOCAL;
-        if (PyDict_GetItem(c->u->u_cellvars, k) != NULL) {
+        if (PyDict_GetItem(u->u_cellvars, k) != NULL) {
             kind |= CO_FAST_CELL;
         }
         _Py_set_localsplus_info(offset, k, kind, names, kinds);
     }
-    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
 
     // This counter mirrors the fix done in fix_cell_offsets().
     int numdropped = 0;
     pos = 0;
-    while (PyDict_Next(c->u->u_cellvars, &pos, &k, &v)) {
-        if (PyDict_GetItem(c->u->u_varnames, k) != NULL) {
+    while (PyDict_Next(u->u_cellvars, &pos, &k, &v)) {
+        if (PyDict_GetItem(u->u_varnames, k) != NULL) {
             // Skip cells that are already covered by locals.
             numdropped += 1;
             continue;
@@ -8156,7 +8156,7 @@ compute_localsplus_info(struct compiler *c, int nlocalsplus,
     }
 
     pos = 0;
-    while (PyDict_Next(c->u->u_freevars, &pos, &k, &v)) {
+    while (PyDict_Next(u->u_freevars, &pos, &k, &v)) {
         int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
         offset += nlocals - numdropped;
@@ -8166,19 +8166,20 @@ compute_localsplus_info(struct compiler *c, int nlocalsplus,
 }
 
 static PyCodeObject *
-makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
-         int maxdepth, int nlocalsplus, int code_flags)
+makecode(struct compiler_unit *u, struct assembler *a, PyObject *const_cache,
+         PyObject *constslist, int maxdepth, int nlocalsplus, int code_flags,
+         PyObject *filename)
 {
     PyCodeObject *co = NULL;
     PyObject *names = NULL;
     PyObject *consts = NULL;
     PyObject *localsplusnames = NULL;
     PyObject *localspluskinds = NULL;
-    names = dict_keys_inorder(c->u->u_names, 0);
+    names = dict_keys_inorder(u->u_names, 0);
     if (!names) {
         goto error;
     }
-    if (merge_const_one(c->c_const_cache, &names) < 0) {
+    if (merge_const_one(const_cache, &names) < 0) {
         goto error;
     }
 
@@ -8186,17 +8187,17 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (consts == NULL) {
         goto error;
     }
-    if (merge_const_one(c->c_const_cache, &consts) < 0) {
+    if (merge_const_one(const_cache, &consts) < 0) {
         goto error;
     }
 
-    assert(c->u->u_posonlyargcount < INT_MAX);
-    assert(c->u->u_argcount < INT_MAX);
-    assert(c->u->u_kwonlyargcount < INT_MAX);
-    int posonlyargcount = (int)c->u->u_posonlyargcount;
-    int posorkwargcount = (int)c->u->u_argcount;
+    assert(u->u_posonlyargcount < INT_MAX);
+    assert(u->u_argcount < INT_MAX);
+    assert(u->u_kwonlyargcount < INT_MAX);
+    int posonlyargcount = (int)u->u_posonlyargcount;
+    int posorkwargcount = (int)u->u_argcount;
     assert(INT_MAX - posonlyargcount - posorkwargcount > 0);
-    int kwonlyargcount = (int)c->u->u_kwonlyargcount;
+    int kwonlyargcount = (int)u->u_kwonlyargcount;
 
     localsplusnames = PyTuple_New(nlocalsplus);
     if (localsplusnames == NULL) {
@@ -8206,16 +8207,16 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (localspluskinds == NULL) {
         goto error;
     }
-    compute_localsplus_info(c, nlocalsplus, localsplusnames, localspluskinds);
+    compute_localsplus_info(u, nlocalsplus, localsplusnames, localspluskinds);
 
     struct _PyCodeConstructor con = {
-        .filename = c->c_filename,
-        .name = c->u->u_name,
-        .qualname = c->u->u_qualname ? c->u->u_qualname : c->u->u_name,
+        .filename = filename,
+        .name = u->u_name,
+        .qualname = u->u_qualname ? u->u_qualname : u->u_name,
         .flags = code_flags,
 
         .code = a->a_bytecode,
-        .firstlineno = c->u->u_firstlineno,
+        .firstlineno = u->u_firstlineno,
         .linetable = a->a_linetable,
 
         .consts = consts,
@@ -8237,7 +8238,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    if (merge_const_one(c->c_const_cache, &localsplusnames) < 0) {
+    if (merge_const_one(const_cache, &localsplusnames) < 0) {
         goto error;
     }
     con.localsplusnames = localsplusnames;
@@ -8638,6 +8639,10 @@ add_return_at_end(struct compiler *c, int addNone)
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
+    struct compiler_unit *u = c->u;
+    PyObject *const_cache = c->c_const_cache;
+    PyObject *filename = c->c_filename;
+
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
     cfg_builder g_;
@@ -8670,12 +8675,12 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Set firstlineno if it wasn't explicitly set. */
-    if (!c->u->u_firstlineno) {
+    if (!u->u_firstlineno) {
         if (g->g_entryblock->b_instr && g->g_entryblock->b_instr->i_loc.lineno) {
-            c->u->u_firstlineno = g->g_entryblock->b_instr->i_loc.lineno;
+            u->u_firstlineno = g->g_entryblock->b_instr->i_loc.lineno;
         }
         else {
-            c->u->u_firstlineno = 1;
+            u->u_firstlineno = 1;
         }
     }
 
@@ -8691,17 +8696,17 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Optimization **/
-    consts = consts_dict_keys_inorder(c->u->u_consts);
+    consts = consts_dict_keys_inorder(u->u_consts);
     if (consts == NULL) {
         goto error;
     }
-    if (optimize_cfg(g, consts, c->c_const_cache)) {
+    if (optimize_cfg(g, consts, const_cache)) {
         goto error;
     }
     if (remove_unused_consts(g->g_entryblock, consts) < 0) {
         goto error;
     }
-    if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, c) < 0) {
+    if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, u) < 0) {
         goto error;
     }
 
@@ -8710,7 +8715,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     propagate_line_numbers(g->g_entryblock);
-    guarantee_lineno_for_exits(g->g_entryblock, c->u->u_firstlineno);
+    guarantee_lineno_for_exits(g->g_entryblock, u->u_firstlineno);
 
     if (push_cold_blocks_to_end(g, code_flags) < 0) {
         goto error;
@@ -8718,7 +8723,7 @@ assemble(struct compiler *c, int addNone)
 
     /** Assembly **/
 
-    int nlocalsplus = prepare_localsplus(c->u, g, code_flags);
+    int nlocalsplus = prepare_localsplus(u, g, code_flags);
     if (nlocalsplus < 0) {
         goto error;
     }
@@ -8742,7 +8747,7 @@ assemble(struct compiler *c, int addNone)
     assemble_jump_offsets(g->g_entryblock);
 
     /* Create assembler */
-    if (assemble_init(&a, c->u->u_firstlineno) < 0) {
+    if (assemble_init(&a, u->u_firstlineno) < 0) {
         goto error;
     }
 
@@ -8756,7 +8761,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Emit location info */
-    a.a_lineno = c->u->u_firstlineno;
+    a.a_lineno = u->u_firstlineno;
     location loc = NO_LOCATION;
     int size = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
@@ -8781,25 +8786,25 @@ assemble(struct compiler *c, int addNone)
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
         goto error;
     }
-    if (merge_const_one(c->c_const_cache, &a.a_except_table) < 0) {
+    if (merge_const_one(const_cache, &a.a_except_table) < 0) {
         goto error;
     }
 
     if (_PyBytes_Resize(&a.a_linetable, a.a_location_off) < 0) {
         goto error;
     }
-    if (merge_const_one(c->c_const_cache, &a.a_linetable) < 0) {
+    if (merge_const_one(const_cache, &a.a_linetable) < 0) {
         goto error;
     }
 
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
         goto error;
     }
-    if (merge_const_one(c->c_const_cache, &a.a_bytecode) < 0) {
+    if (merge_const_one(const_cache, &a.a_bytecode) < 0) {
         goto error;
     }
 
-    co = makecode(c, &a, consts, maxdepth, nlocalsplus, code_flags);
+    co = makecode(u, &a, const_cache, consts, maxdepth, nlocalsplus, code_flags, filename);
  error:
     Py_XDECREF(consts);
     cfg_builder_fini(g);
