@@ -196,7 +196,7 @@ _PyLong_Copy(PyLongObject *src)
             return get_small_int((sdigit)ival);
         }
     }
-    int size = _PyLong_DigitCount(src);
+    Py_ssize_t size = _PyLong_DigitCount(src);
     return (PyObject *)_PyLong_FromDigits(_PyLong_IsNegative(src), size, src->long_value.ob_digit);
 }
 
@@ -483,7 +483,15 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         do_decref = 1;
     }
     if (_PyLong_IsSingleDigit(v)) {
+#if SIZEOF_LONG < SIZEOF_VOID_P
+        intptr_t tmp = _PyLong_SingleDigitValue(v);
+        res = (long)tmp;
+        if (res != tmp) {
+            *overflow = tmp < 0 ? -1 : 1;
+        }
+#else
         res = _PyLong_SingleDigitValue(v);
+#endif
     }
     else {
         res = -1;
@@ -624,7 +632,16 @@ PyLong_AsUnsignedLong(PyObject *vv)
 
     v = (PyLongObject *)vv;
     if (_PyLong_IsNonNegativeSingleDigit(v)) {
+#if SIZEOF_LONG < SIZEOF_VOID_P
+        intptr_t tmp = _PyLong_SingleDigitValue(v);
+        unsigned long res = tmp
+        res = (long)tmp;
+        if (res != tmp) {
+            goto overflow;
+        }
+#else
         return _PyLong_SingleDigitValue(v);
+#endif
     }
     if (_PyLong_IsNegative(v)) {
         PyErr_SetString(PyExc_OverflowError,
@@ -637,13 +654,15 @@ PyLong_AsUnsignedLong(PyObject *vv)
         prev = x;
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
         if ((x >> PyLong_SHIFT) != prev) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "Python int too large to convert "
-                            "to C unsigned long");
-            return (unsigned long) -1;
+            goto overflow;
         }
     }
     return x;
+overflow:
+    PyErr_SetString(PyExc_OverflowError,
+                    "Python int too large to convert "
+                    "to C unsigned long");
+    return (unsigned long) -1;
 }
 
 /* Get a C size_t from an int object. Returns (size_t)-1 and sets
@@ -704,7 +723,7 @@ _PyLong_AsUnsignedLongMask(PyObject *vv)
     }
     v = (PyLongObject *)vv;
     if (_PyLong_IsNonNegativeSingleDigit(v)) {
-        return _PyLong_SingleDigitValue(v);
+        return (unsigned long)_PyLong_SingleDigitValue(v);
     }
     i = _PyLong_DigitCount(v);
     int sign = _PyLong_NonZeroSign(v);
@@ -4243,7 +4262,7 @@ long_true_divide(PyObject *v, PyObject *w)
     /* Reduce to case where a and b are both positive. */
     a_size = _PyLong_DigitCount(a);
     b_size = _PyLong_DigitCount(b);
-    negate = (_PyLong_IsNegative(a)) ^ (_PyLong_IsNegative(b));
+    negate = (_PyLong_IsNegative(a)) != (_PyLong_IsNegative(b));
     if (b_size == 0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "division by zero");

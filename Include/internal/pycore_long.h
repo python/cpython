@@ -118,6 +118,10 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 #define SIGN_NEGATIVE 2
 #define NON_SIZE_BITS 3
 
+/* All "single digit" values are guaranteed to fit into
+ * a Py_ssize_t with at least one bit to spare.
+ */
+
 /* Return 1 if the argument is positive single digit int */
 static inline int
 _PyLong_IsNonNegativeSingleDigit(const PyLongObject* op) {
@@ -138,6 +142,10 @@ _PyLong_BothAreSingleDigit(const PyLongObject* a, const PyLongObject* b) {
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
 }
 
+/* The value returned by this function will have at least one bit to spare,
+ * so that addition and subtraction can be performed on the values
+ * without risk of overflow.
+ */
 static inline Py_ssize_t
 _PyLong_SingleDigitValue(const PyLongObject *op)
 {
