@@ -54,9 +54,6 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 
 
 #ifdef Py_REF_DEBUG
-/* The symbol is only exposed in the API for the sake of extensions
-   built against the pre-3.12 stable ABI. */
-PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 Py_ssize_t _Py_RefTotal;
 
 static inline void

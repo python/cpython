@@ -38,7 +38,10 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     _Py_FatalRefcountErrorFunc(__func__, (message))
 
 
-extern Py_ssize_t _Py_RefTotal;
+/* The symbol is only exposed in the API for the sake of extensions
+   built against the pre-3.12 stable ABI. */
+PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
+
 extern void _Py_AddRefTotal(Py_ssize_t);
 extern void _Py_IncRefTotal(void);
 extern void _Py_DecRefTotal(void);
