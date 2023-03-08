@@ -1432,50 +1432,49 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
 }
 
 static Py_ssize_t
-compiler_add_const(struct compiler *c, PyObject *o)
+compiler_add_const(PyObject *const_cache, struct compiler_unit *u, PyObject *o)
 {
-    PyObject *key = merge_consts_recursive(c->c_const_cache, o);
+    assert(PyDict_CheckExact(const_cache));
+    PyObject *key = merge_consts_recursive(const_cache, o);
     if (key == NULL) {
         return ERROR;
     }
 
-    Py_ssize_t arg = dict_add_o(c->u->u_consts, key);
+    Py_ssize_t arg = dict_add_o(u->u_consts, key);
     Py_DECREF(key);
     return arg;
 }
 
 static int
-compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
+compiler_addop_load_const(PyObject *const_cache, struct compiler_unit *u, location loc, PyObject *o)
 {
-    Py_ssize_t arg = compiler_add_const(c, o);
+    Py_ssize_t arg = compiler_add_const(const_cache, u, o);
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), LOAD_CONST, arg, loc);
+    return codegen_addop_i(&u->u_instr_sequence, LOAD_CONST, arg, loc);
 }
 
 static int
-compiler_addop_o(struct compiler *c, location loc,
+compiler_addop_o(struct compiler_unit *u, location loc,
                  int opcode, PyObject *dict, PyObject *o)
 {
     Py_ssize_t arg = dict_add_o(dict, o);
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
+    return codegen_addop_i(&u->u_instr_sequence, opcode, arg, loc);
 }
 
 static int
-compiler_addop_name(struct compiler *c, location loc,
+compiler_addop_name(struct compiler_unit *u, location loc,
                     int opcode, PyObject *dict, PyObject *o)
 {
-    Py_ssize_t arg;
-
-    PyObject *mangled = _Py_Mangle(c->u->u_private, o);
+    PyObject *mangled = _Py_Mangle(u->u_private, o);
     if (!mangled) {
         return ERROR;
     }
-    arg = dict_add_o(dict, mangled);
+    Py_ssize_t arg = dict_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0) {
         return ERROR;
@@ -1488,7 +1487,7 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 1;
         arg |= 1;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
+    return codegen_addop_i(&u->u_instr_sequence, opcode, arg, loc);
 }
 
 /* Add an opcode with an integer argument */
@@ -1509,7 +1508,7 @@ codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
 
 static int
 codegen_addop_j(instr_sequence *seq, location loc,
-                    int opcode, jump_target_label target)
+                int opcode, jump_target_label target)
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
@@ -1527,7 +1526,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 #define ADDOP_LOAD_CONST(C, LOC, O) \
-    RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)))
+    RETURN_IF_ERROR(compiler_addop_load_const((C)->c_const_cache, (C)->u, (LOC), (O)))
 
 /* Same as ADDOP_LOAD_CONST, but steals a reference. */
 #define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
@@ -1535,7 +1534,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     if (__new_const == NULL) { \
         return ERROR; \
     } \
-    if (compiler_addop_load_const((C), (LOC), __new_const) < 0) { \
+    if (compiler_addop_load_const((C)->c_const_cache, (C)->u, (LOC), __new_const) < 0) { \
         Py_DECREF(__new_const); \
         return ERROR; \
     } \
@@ -1544,7 +1543,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) { \
     assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    if (compiler_addop_o((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) { \
+    if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) { \
         Py_DECREF((O)); \
         return ERROR; \
     } \
@@ -1552,7 +1551,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 #define ADDOP_NAME(C, LOC, OP, O, TYPE) \
-    RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)))
+    RETURN_IF_ERROR(compiler_addop_name((C)->u, (LOC), (OP), (C)->u->u_ ## TYPE, (O)))
 
 #define ADDOP_I(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
@@ -2556,7 +2555,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(body);
     }
-    if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
+    if (compiler_add_const(c->c_const_cache, c->u, docstring ? docstring : Py_None) < 0) {
         compiler_exit_scope(c);
         return ERROR;
     }
@@ -2924,7 +2923,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 
     /* Make None the first constant, so the lambda can't have a
        docstring. */
-    RETURN_IF_ERROR(compiler_add_const(c, Py_None));
+    RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
@@ -4915,7 +4914,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
         keyword_ty kw = asdl_seq_GET(keywords, i);
         PyTuple_SET_ITEM(names, i, Py_NewRef(kw->arg));
     }
-    Py_ssize_t arg = compiler_add_const(c, names);
+    Py_ssize_t arg = compiler_add_const(c->c_const_cache, c->u, names);
     if (arg < 0) {
         return ERROR;
     }
@@ -8092,7 +8091,7 @@ compute_code_flags(struct compiler *c)
 static int
 merge_const_one(PyObject *const_cache, PyObject **obj)
 {
-    PyDict_CheckExact(const_cache);
+    assert(PyDict_CheckExact(const_cache));
     PyObject *key = _PyCode_ConstantKey(*obj);
     if (key == NULL) {
         return ERROR;
