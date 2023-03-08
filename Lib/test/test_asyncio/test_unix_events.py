@@ -1884,7 +1884,9 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         if pid == 0:
             # child
             try:
-                loop = asyncio.get_event_loop_policy().get_event_loop()
+                with self.assertWarns(DeprecationWarning):
+                    loop = asyncio.get_event_loop_policy().get_event_loop()
+                os.write(w, b'LOOP:' + str(id(loop)).encode())
             except RuntimeError:
                 os.write(w, b'NO LOOP')
             except:
@@ -1893,7 +1895,9 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
                 os._exit(0)
         else:
             # parent
-            self.assertEqual(os.read(r, 100), b'NO LOOP')
+            result = os.read(r, 100)
+            self.assertEqual(result[:5], b'LOOP:', result)
+            self.assertNotEqual(int(result[5:]), id(loop))
             wait_process(pid, exitcode=0)
 
     @hashlib_helper.requires_hashdigest('md5')

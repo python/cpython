@@ -201,6 +201,11 @@ process and user.
    ``'surrogateescape'`` error handler. Use :data:`environb` if you would like
    to use a different encoding.
 
+   On Windows, the keys are converted to uppercase. This also applies when
+   getting, setting, or deleting an item. For example,
+   ``environ['monty'] = 'python'`` maps the key ``'MONTY'`` to the value
+   ``'python'``.
+
    .. note::
 
       Calling :func:`putenv` directly does not change :data:`os.environ`, so it's better
@@ -1091,13 +1096,17 @@ as internal buffering of data.
 
    See also :func:`set_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 .. function:: isatty(fd, /)
 
@@ -1565,13 +1574,17 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 .. data:: SF_NODISKIO
           SF_MNOWAIT
@@ -2467,6 +2480,8 @@ features:
    will fail with an :exc:`OSError` subclass in a number of cases:
 
    On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
+   The operation may fail if *src* and *dst* are on different filesystems. Use
+   :func:`shutil.move` to support moves to a different filesystem.
 
    On Unix, if *src* is a file and *dst* is a directory or vice-versa, an
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised

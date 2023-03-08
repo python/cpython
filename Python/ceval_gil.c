@@ -2,7 +2,7 @@
 #include "Python.h"
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
@@ -581,8 +581,7 @@ PyEval_AcquireThread(PyThreadState *tstate)
 
     take_gil(tstate);
 
-    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
-    if (_PyThreadState_Swap(gilstate, tstate) != NULL) {
+    if (_PyThreadState_Swap(tstate->interp->runtime, tstate) != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
 }
@@ -593,7 +592,7 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     assert(is_tstate_valid(tstate));
 
     _PyRuntimeState *runtime = tstate->interp->runtime;
-    PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
+    PyThreadState *new_tstate = _PyThreadState_Swap(runtime, NULL);
     if (new_tstate != tstate) {
         Py_FatalError("wrong thread state");
     }
@@ -625,7 +624,7 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
     }
 
     /* Destroy all threads except the current one */
-    _PyThreadState_DeleteExcept(runtime, tstate);
+    _PyThreadState_DeleteExcept(tstate);
     return _PyStatus_OK();
 }
 #endif
@@ -643,7 +642,7 @@ PyThreadState *
 PyEval_SaveThread(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
+    PyThreadState *tstate = _PyThreadState_Swap(runtime, NULL);
     _Py_EnsureTstateNotNULL(tstate);
 
     struct _ceval_runtime_state *ceval = &runtime->ceval;
@@ -660,8 +659,7 @@ PyEval_RestoreThread(PyThreadState *tstate)
 
     take_gil(tstate);
 
-    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
-    _PyThreadState_Swap(gilstate, tstate);
+    _PyThreadState_Swap(tstate->interp->runtime, tstate);
 }
 
 
@@ -872,10 +870,9 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
     }
 
     if (make_pending_calls(tstate->interp) < 0) {
-        PyObject *exc, *val, *tb;
-        _PyErr_Fetch(tstate, &exc, &val, &tb);
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
         PyErr_BadInternalCall();
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         _PyErr_Print(tstate);
     }
 }
@@ -965,7 +962,7 @@ _Py_HandlePending(PyThreadState *tstate)
     /* GIL drop request */
     if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->gil_drop_request)) {
         /* Give another thread a chance */
-        if (_PyThreadState_Swap(&runtime->gilstate, NULL) != tstate) {
+        if (_PyThreadState_Swap(runtime, NULL) != tstate) {
             Py_FatalError("tstate mix-up");
         }
         drop_gil(ceval, interp_ceval_state, tstate);
@@ -974,7 +971,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
         take_gil(tstate);
 
-        if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
+        if (_PyThreadState_Swap(runtime, tstate) != NULL) {
             Py_FatalError("orphan tstate");
         }
     }
