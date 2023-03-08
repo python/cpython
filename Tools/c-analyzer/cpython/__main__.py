@@ -170,10 +170,12 @@ def cmd_check(filenames=None, **kwargs):
         num_failed = exc.args[0] if getattr(exc, 'args', None) else None
         if isinstance(num_failed, int):
             if num_failed > 0:
-                print(CHECK_EXPLANATION)
+                sys.stderr.flush()
+                print(CHECK_EXPLANATION, flush=True)
         raise  # re-raise
     except Exception:
-        print(CHECK_EXPLANATION)
+        sys.stderr.flush()
+        print(CHECK_EXPLANATION, flush=True)
         raise  # re-raise
 
 
