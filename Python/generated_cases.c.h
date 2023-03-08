@@ -50,6 +50,14 @@
             PREDICTED(LOAD_CONST);
             PyObject *value;
             value = GETITEM(consts, oparg);
+            #if 0
+            if (PyLong_CheckExact(value)) {
+                long lval = PyLong_AsLong(value);
+                value = tagged(value).obj;
+                // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
+            }
+            else // Ugly to make diff smaller
+            #endif
             Py_INCREF(value);
             STACK_GROW(1);
             stack_pointer[-1] = untagged(value);
@@ -101,6 +109,14 @@
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
+                #if 0
+                if (PyLong_CheckExact(value)) {
+                    long lval = PyLong_AsLong(value);
+                    value = tagged(value).obj;
+                    // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
+                }
+                else // Ugly to make diff smaller
+                #endif
                 Py_INCREF(value);
                 _tmp_1 = value;
             }
@@ -150,6 +166,14 @@
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
+                #if 0
+                if (PyLong_CheckExact(value)) {
+                    long lval = PyLong_AsLong(value);
+                    value = tagged(value).obj;
+                    // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
+                }
+                else // Ugly to make diff smaller
+                #endif
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
@@ -237,8 +261,8 @@
             DEOPT_IF(!PyLong_CheckExact(detag(right)), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             prod = _PyLong_Multiply((PyLongObject *)detag(left), (PyLongObject *)detag(right));
-            _Py_DECREF_SPECIALIZED(detag(right), (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(detag(left), (destructor)PyObject_Free);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), (destructor)PyObject_Free);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), (destructor)PyObject_Free);
             if (prod == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = untagged(prod);
@@ -257,8 +281,8 @@
             double dprod = ((PyFloatObject *)detag(left))->ob_fval *
                 ((PyFloatObject *)detag(right))->ob_fval;
             prod = PyFloat_FromDouble(dprod);
-            _Py_DECREF_SPECIALIZED(detag(right), _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(detag(left), _PyFloat_ExactDealloc);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), _PyFloat_ExactDealloc);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), _PyFloat_ExactDealloc);
             if (prod == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = untagged(prod);
@@ -275,8 +299,8 @@
             DEOPT_IF(!PyLong_CheckExact(detag(right)), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             sub = _PyLong_Subtract((PyLongObject *)detag(left), (PyLongObject *)detag(right));
-            _Py_DECREF_SPECIALIZED(detag(right), (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(detag(left), (destructor)PyObject_Free);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), (destructor)PyObject_Free);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), (destructor)PyObject_Free);
             if (sub == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = untagged(sub);
@@ -294,8 +318,8 @@
             STAT_INC(BINARY_OP, hit);
             double dsub = ((PyFloatObject *)detag(left))->ob_fval - ((PyFloatObject *)detag(right))->ob_fval;
             sub = PyFloat_FromDouble(dsub);
-            _Py_DECREF_SPECIALIZED(detag(right), _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(detag(left), _PyFloat_ExactDealloc);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), _PyFloat_ExactDealloc);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), _PyFloat_ExactDealloc);
             if (sub == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = untagged(sub);
@@ -312,8 +336,8 @@
             DEOPT_IF(Py_TYPE(detag(right)) != Py_TYPE(detag(left)), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             res = PyUnicode_Concat(detag(left), detag(right));
-            _Py_DECREF_SPECIALIZED(detag(left), _PyUnicode_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(detag(right), _PyUnicode_ExactDealloc);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), _PyUnicode_ExactDealloc);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), _PyUnicode_ExactDealloc);
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = untagged(res);
@@ -345,9 +369,9 @@
              * that the string is safe to mutate.
              */
             assert(Py_REFCNT(detag(left)) >= 2);
-            _Py_DECREF_NO_DEALLOC(detag(left));
+            if (!is_tagged(left)) _Py_DECREF_NO_DEALLOC(detag(left));
             PyUnicode_Append(target_local, detag(right));
-            _Py_DECREF_SPECIALIZED(detag(right), _PyUnicode_ExactDealloc);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), _PyUnicode_ExactDealloc);
             if (*target_local == NULL) goto pop_2_error;
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
@@ -366,8 +390,8 @@
             double dsum = ((PyFloatObject *)detag(left))->ob_fval +
                 ((PyFloatObject *)detag(right))->ob_fval;
             sum = PyFloat_FromDouble(dsum);
-            _Py_DECREF_SPECIALIZED(detag(right), _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(detag(left), _PyFloat_ExactDealloc);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), _PyFloat_ExactDealloc);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), _PyFloat_ExactDealloc);
             if (sum == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = untagged(sum);
@@ -384,8 +408,8 @@
             DEOPT_IF(Py_TYPE(detag(right)) != Py_TYPE(detag(left)), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             sum = _PyLong_Add((PyLongObject *)detag(left), (PyLongObject *)detag(right));
-            _Py_DECREF_SPECIALIZED(detag(right), (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(detag(left), (destructor)PyObject_Free);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), (destructor)PyObject_Free);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), (destructor)PyObject_Free);
             if (sum == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = untagged(sum);
@@ -425,7 +449,7 @@
             _tagged_ptr start = stack_pointer[-2];
             _tagged_ptr container = stack_pointer[-3];
             PyObject *res;
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(detag(start), detag(stop));
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(STEAL(start), STEAL(stop));
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
@@ -447,7 +471,7 @@
             _tagged_ptr start = stack_pointer[-2];
             _tagged_ptr container = stack_pointer[-3];
             _tagged_ptr v = stack_pointer[-4];
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(detag(start), detag(stop));
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(STEAL(start), STEAL(stop));
             int err;
             if (slice == NULL) {
                 err = 1;
@@ -480,7 +504,7 @@
             res = PyList_GET_ITEM(detag(list), index);
             assert(res != NULL);
             Py_INCREF(res);
-            _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);
+            if (!is_tagged(sub)) _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);
             decref_unless_tagged(list);
             STACK_SHRINK(1);
             stack_pointer[-1] = untagged(res);
@@ -505,7 +529,7 @@
             res = PyTuple_GET_ITEM(detag(tuple), index);
             assert(res != NULL);
             Py_INCREF(res);
-            _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);
+            if (!is_tagged(sub)) _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);
             decref_unless_tagged(tuple);
             STACK_SHRINK(1);
             stack_pointer[-1] = untagged(res);
@@ -566,7 +590,7 @@
         TARGET(LIST_APPEND) {
             _tagged_ptr v = stack_pointer[-1];
             _tagged_ptr list = stack_pointer[-(2 + (oparg-1))];
-            if (_PyList_AppendTakeRef((PyListObject *)detag(list), detag(v)) < 0) goto pop_1_error;
+            if (_PyList_AppendTakeRef((PyListObject *)detag(list), STEAL(v)) < 0) goto pop_1_error;
             STACK_SHRINK(1);
             PREDICT(JUMP_BACKWARD);
             DISPATCH();
@@ -633,7 +657,7 @@
             PyList_SET_ITEM(detag(list), index, detag(value));
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);
+            if (!is_tagged(sub)) _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);
             decref_unless_tagged(list);
             STACK_SHRINK(3);
             next_instr += 1;
@@ -647,7 +671,7 @@
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(detag(dict)), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2((PyDictObject *)detag(dict), detag(sub), detag(value));
+            int err = _PyDict_SetItem_Take2((PyDictObject *)detag(dict), STEAL(sub), STEAL(value));
             decref_unless_tagged(dict);
             if (err) goto pop_3_error;
             STACK_SHRINK(3);
@@ -725,7 +749,7 @@
             assert(tstate->cframe->current_frame == frame->previous);
             assert(!_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallTstate(tstate);
-            return detag(retval);
+            return STEAL(retval);
         }
 
         TARGET(RETURN_VALUE) {
@@ -741,7 +765,7 @@
             _PyInterpreterFrame *dying = frame;
             frame = cframe.current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, detag(retval));
+            _PyFrame_StackPush(frame, STEAL(retval));
             goto resume_frame;
         }
 
@@ -967,7 +991,7 @@
             frame = cframe.current_frame = frame->previous;
             gen_frame->previous = NULL;
             frame->prev_instr -= frame->yield_offset;
-            _PyFrame_StackPush(frame, detag(retval));
+            _PyFrame_StackPush(frame, STEAL(retval));
             goto resume_frame;
         }
 
@@ -1786,7 +1810,7 @@
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
-            if (_PyDict_SetItem_Take2((PyDictObject *)dict, detag(key), detag(value)) != 0) goto pop_2_error;
+            if (_PyDict_SetItem_Take2((PyDictObject *)dict, STEAL(key), STEAL(value)) != 0) goto pop_2_error;
             STACK_SHRINK(2);
             PREDICT(JUMP_BACKWARD);
             DISPATCH();
@@ -1822,7 +1846,7 @@
                      */
                     assert(meth != NULL);  // No errors on this branch
                     res2 = meth;
-                    res = detag(owner);  // Transfer ownership
+                    res = STEAL(owner);  // Transfer ownership
                 }
                 else {
                     /* meth is not an unbound method (but a regular attr, or
@@ -2217,8 +2241,8 @@
             double dright = PyFloat_AS_DOUBLE(detag(right));
             // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
             int sign_ish = COMPARISON_BIT(dleft, dright);
-            _Py_DECREF_SPECIALIZED(detag(left), _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(detag(right), _PyFloat_ExactDealloc);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), _PyFloat_ExactDealloc);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), _PyFloat_ExactDealloc);
             if (sign_ish & oparg) {
                 int offset = next_instr[1].op.arg;
                 JUMPBY(offset);
@@ -2242,8 +2266,8 @@
             Py_ssize_t iright = Py_SIZE(detag(right)) * ((PyLongObject *)detag(right))->long_value.ob_digit[0];
             // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
             int sign_ish = COMPARISON_BIT(ileft, iright);
-            _Py_DECREF_SPECIALIZED(detag(left), (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(detag(right), (destructor)PyObject_Free);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), (destructor)PyObject_Free);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), (destructor)PyObject_Free);
             if (sign_ish & oparg) {
                 int offset = next_instr[1].op.arg;
                 JUMPBY(offset);
@@ -2262,8 +2286,8 @@
             STAT_INC(COMPARE_AND_BRANCH, hit);
             int res = _PyUnicode_Equal(detag(left), detag(right));
             assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
-            _Py_DECREF_SPECIALIZED(detag(left), _PyUnicode_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(detag(right), _PyUnicode_ExactDealloc);
+            if (!is_tagged(left)) _Py_DECREF_SPECIALIZED(detag(left), _PyUnicode_ExactDealloc);
+            if (!is_tagged(right)) _Py_DECREF_SPECIALIZED(detag(right), _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
@@ -2392,10 +2416,10 @@
             PREDICTED(POP_JUMP_IF_FALSE);
             _tagged_ptr cond = stack_pointer[-1];
             if (Py_IsTrue(detag(cond))) {
-                _Py_DECREF_NO_DEALLOC(detag(cond));
+                if (!is_tagged(cond)) _Py_DECREF_NO_DEALLOC(detag(cond));
             }
             else if (Py_IsFalse(detag(cond))) {
-                _Py_DECREF_NO_DEALLOC(detag(cond));
+                if (!is_tagged(cond)) _Py_DECREF_NO_DEALLOC(detag(cond));
                 JUMPBY(oparg);
             }
             else {
@@ -2415,10 +2439,10 @@
         TARGET(POP_JUMP_IF_TRUE) {
             _tagged_ptr cond = stack_pointer[-1];
             if (Py_IsFalse(detag(cond))) {
-                _Py_DECREF_NO_DEALLOC(detag(cond));
+                if (!is_tagged(cond)) _Py_DECREF_NO_DEALLOC(detag(cond));
             }
             else if (Py_IsTrue(detag(cond))) {
-                _Py_DECREF_NO_DEALLOC(detag(cond));
+                if (!is_tagged(cond)) _Py_DECREF_NO_DEALLOC(detag(cond));
                 JUMPBY(oparg);
             }
             else {
@@ -2442,7 +2466,7 @@
                 JUMPBY(oparg);
             }
             else {
-                _Py_DECREF_NO_DEALLOC(detag(value));
+                if (!is_tagged(value)) _Py_DECREF_NO_DEALLOC(detag(value));
             }
             STACK_SHRINK(1);
             DISPATCH();
@@ -2451,7 +2475,7 @@
         TARGET(POP_JUMP_IF_NONE) {
             _tagged_ptr value = stack_pointer[-1];
             if (Py_IsNone(detag(value))) {
-                _Py_DECREF_NO_DEALLOC(detag(value));
+                if (!is_tagged(value)) _Py_DECREF_NO_DEALLOC(detag(value));
                 JUMPBY(oparg);
             }
             else {
@@ -2466,7 +2490,7 @@
             bool jump = false;
             int err;
             if (Py_IsTrue(detag(cond))) {
-                _Py_DECREF_NO_DEALLOC(detag(cond));
+                if (!is_tagged(cond)) _Py_DECREF_NO_DEALLOC(detag(cond));
             }
             else if (Py_IsFalse(detag(cond))) {
                 JUMPBY(oparg);
@@ -2495,7 +2519,7 @@
             bool jump = false;
             int err;
             if (Py_IsFalse(detag(cond))) {
-                _Py_DECREF_NO_DEALLOC(detag(cond));
+                if (!is_tagged(cond)) _Py_DECREF_NO_DEALLOC(detag(cond));
             }
             else if (Py_IsTrue(detag(cond))) {
                 JUMPBY(oparg);
@@ -3499,7 +3523,7 @@
             DEOPT_IF(detag(method) != interp->callable_cache.list_append, CALL);
             DEOPT_IF(!PyList_Check(detag(self)), CALL);
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)detag(self), detag(args[0])) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)detag(self), STEAL(args[0])) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             decref_unless_tagged(self);

@@ -394,6 +394,8 @@ class Instruction:
             if prevs == ["Py_DECREF", "("]:
                 texts[index - 2] = "decref_unless_tagged"
                 return
+            if prevs == ["_Py_DECREF_SPECIALIZED", "("] or prevs == ["_Py_DECREF_NO_DEALLOC", "("]:
+                texts[index - 2] = f"if (!is_tagged({text})) {prevs[0]}"
             if prevs == ["Py_XDECREF", "("]:
                 texts[index - 2] = "xdecref_unless_tagged"
                 return

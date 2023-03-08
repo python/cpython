@@ -116,6 +116,14 @@ dummy_func(
 
         inst(LOAD_CONST, (-- value)) {
             value = GETITEM(consts, oparg);
+            #if 0
+            if (PyLong_CheckExact(value)) {
+                long lval = PyLong_AsLong(value);
+                value = tagged(value).obj;
+                // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
+            }
+            else // Ugly to make diff smaller
+            #endif
             Py_INCREF(value);
         }
 
@@ -323,7 +331,7 @@ dummy_func(
         }
 
         inst(BINARY_SLICE, (container, start, stop -- res)) {
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(STEAL(start), STEAL(stop));
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
@@ -338,7 +346,7 @@ dummy_func(
         }
 
         inst(STORE_SLICE, (v, container, start, stop -- )) {
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(STEAL(start), STEAL(stop));
             int err;
             if (slice == NULL) {
                 err = 1;
@@ -426,7 +434,7 @@ dummy_func(
         }
 
         inst(LIST_APPEND, (list, unused[oparg-1], v -- list, unused[oparg-1])) {
-            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
+            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, STEAL(v)) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
@@ -487,7 +495,7 @@ dummy_func(
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, STEAL(sub), STEAL(value));
             Py_DECREF(dict);
             ERROR_IF(err, error);
         }
@@ -544,7 +552,7 @@ dummy_func(
             assert(tstate->cframe->current_frame == frame->previous);
             assert(!_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallTstate(tstate);
-            return retval;
+            return STEAL(retval);
         }
 
         inst(RETURN_VALUE, (retval --)) {
@@ -559,7 +567,7 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = cframe.current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, retval);
+            _PyFrame_StackPush(frame, STEAL(retval));
             goto resume_frame;
         }
 
@@ -766,7 +774,7 @@ dummy_func(
             frame = cframe.current_frame = frame->previous;
             gen_frame->previous = NULL;
             frame->prev_instr -= frame->yield_offset;
-            _PyFrame_StackPush(frame, retval);
+            _PyFrame_StackPush(frame, STEAL(retval));
             goto resume_frame;
         }
 
@@ -1418,7 +1426,7 @@ dummy_func(
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
-            ERROR_IF(_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0, error);
+            ERROR_IF(_PyDict_SetItem_Take2((PyDictObject *)dict, STEAL(key), STEAL(value)) != 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
@@ -1461,7 +1469,7 @@ dummy_func(
                      */
                     assert(meth != NULL);  // No errors on this branch
                     res2 = meth;
-                    res = owner;  // Transfer ownership
+                    res = STEAL(owner);  // Transfer ownership
                 }
                 else {
                     /* meth is not an unbound method (but a regular attr, or
@@ -2786,7 +2794,7 @@ dummy_func(
             DEOPT_IF(method != interp->callable_cache.list_append, CALL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)self, STEAL(args[0])) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             Py_DECREF(self);
