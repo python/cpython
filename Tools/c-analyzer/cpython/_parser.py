@@ -109,6 +109,7 @@ Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
 Modules/_hacl/*.c	Modules/_hacl/include
 Modules/_hacl/*.h	Modules/_hacl/include
 Modules/_tkinter.c	/usr/include/tcl8.6
+Modules/_uuidmodule.c	/usr/include/uuid
 Modules/md5module.c	Modules/_hacl/include
 Modules/sha1module.c	Modules/_hacl/include
 Modules/sha2module.c	Modules/_hacl/include
