@@ -108,12 +108,7 @@ Number-theoretic and representation functions
 .. function:: fsum(iterable)
 
    Return an accurate floating point sum of values in the iterable.  Avoids
-   loss of precision by tracking multiple intermediate partial sums:
-
-        >>> sum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
-        0.9999999999999999
-        >>> fsum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
-        1.0
+   loss of precision by tracking multiple intermediate partial sums.
 
    The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
    typical case where the rounding mode is half-even.  On some non-Windows
@@ -294,6 +289,22 @@ Number-theoretic and representation functions
    operation is always exactly representable: no rounding error is introduced.
 
    .. versionadded:: 3.7
+
+
+.. function:: sumprod(p, q)
+
+   Return the sum of products of values from two iterables *p* and *q*.
+
+   Raises :exc:`ValueError` if the inputs do not have the same length.
+
+   Roughly equivalent to::
+
+       sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
+
+   For float and mixed int/float inputs, the intermediate products
+   and sums are computed with extended precision.
+
+   .. versionadded:: 3.12
 
 
 .. function:: trunc(x)

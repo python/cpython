@@ -343,14 +343,35 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. function:: iscoroutinefunction(object)
 
-   Return ``True`` if the object is a :term:`coroutine function`
-   (a function defined with an :keyword:`async def` syntax).
+   Return ``True`` if the object is a :term:`coroutine function` (a function
+   defined with an :keyword:`async def` syntax), a :func:`functools.partial`
+   wrapping a :term:`coroutine function`, or a sync function marked with
+   :func:`markcoroutinefunction`.
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
+
+   .. versionchanged:: 3.12
+      Sync functions marked with :func:`markcoroutinefunction` now return
+      ``True``.
+
+
+.. function:: markcoroutinefunction(func)
+
+   Decorator to mark a callable as a :term:`coroutine function` if it would not
+   otherwise be detected by :func:`iscoroutinefunction`.
+
+   This may be of use for sync functions that return a :term:`coroutine`, if
+   the function is passed to an API that requires :func:`iscoroutinefunction`.
+
+   When possible, using an :keyword:`async def` function is preferred. Also
+   acceptable is calling the function and testing the return with
+   :func:`iscoroutine`.
+
+   .. versionadded:: 3.12
 
 
 .. function:: iscoroutine(object)
@@ -668,7 +689,7 @@ function.
    modified copy.
 
    .. versionchanged:: 3.5
-      Signature objects are picklable and hashable.
+      Signature objects are picklable and :term:`hashable`.
 
    .. attribute:: Signature.empty
 
@@ -747,7 +768,7 @@ function.
    you can use :meth:`Parameter.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
-      Parameter objects are picklable and hashable.
+      Parameter objects are picklable and :term:`hashable`.
 
    .. attribute:: Parameter.empty
 
@@ -781,8 +802,9 @@ function.
 
    .. attribute:: Parameter.kind
 
-      Describes how argument values are bound to the parameter.  Possible values
-      (accessible via :class:`Parameter`, like ``Parameter.KEYWORD_ONLY``):
+      Describes how argument values are bound to the parameter.  The possible
+      values are accessible via :class:`Parameter` (like ``Parameter.KEYWORD_ONLY``),
+      and support comparison and ordering, in the following order:
 
       .. tabularcolumns:: |l|L|
 

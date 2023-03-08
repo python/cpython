@@ -1,0 +1,2 @@
+Fix a bug that caused a crash when deallocating deeply nested filter
+objects. Patch by Marta Gómez Macías.

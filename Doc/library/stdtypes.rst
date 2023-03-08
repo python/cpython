@@ -84,8 +84,8 @@ These are the Boolean operations, ordered by ascending priority:
 +-------------+---------------------------------+-------+
 | Operation   | Result                          | Notes |
 +=============+=================================+=======+
-| ``x or y``  | if *x* is false, then *y*, else | \(1)  |
-|             | *x*                             |       |
+| ``x or y``  | if *x* is true, then *x*, else  | \(1)  |
+|             | *y*                             |       |
 +-------------+---------------------------------+-------+
 | ``x and y`` | if *x* is false, then *x*, else | \(2)  |
 |             | *y*                             |       |
@@ -530,11 +530,13 @@ class`. In addition, it provides a few more methods:
     is ``False``.
 
     The default values can be used to conveniently turn an integer into a
-    single byte object.  However, when using the default arguments, don't try
-    to convert a value greater than 255 or you'll get an :exc:`OverflowError`::
+    single byte object::
 
         >>> (65).to_bytes()
         b'A'
+
+    However, when using the default arguments, don't try
+    to convert a value greater than 255 or you'll get an :exc:`OverflowError`.
 
     Equivalent to::
 
@@ -602,12 +604,18 @@ class`. In addition, it provides a few more methods:
 
 .. method:: int.as_integer_ratio()
 
-   Return a pair of integers whose ratio is exactly equal to the original
-   integer and with a positive denominator. The integer ratio of integers
+   Return a pair of integers whose ratio is equal to the original
+   integer and has a positive denominator.  The integer ratio of integers
    (whole numbers) is always the integer as the numerator and ``1`` as the
    denominator.
 
    .. versionadded:: 3.8
+
+.. method:: int.is_integer()
+
+   Returns ``True``. Exists for duck type compatibility with :meth:`float.is_integer`.
+
+   .. versionadded:: 3.12
 
 Additional Methods on Float
 ---------------------------
@@ -618,7 +626,7 @@ class`. float also has the following additional methods.
 .. method:: float.as_integer_ratio()
 
    Return a pair of integers whose ratio is exactly equal to the
-   original float and with a positive denominator.  Raises
+   original float. The ratio is in lowest terms and has a positive denominator.  Raises
    :exc:`OverflowError` on infinities and a :exc:`ValueError` on
    NaNs.
 
@@ -1624,25 +1632,28 @@ expression support in the :mod:`re` module).
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
-   Return an encoded version of the string as a bytes object. Default encoding
-   is ``'utf-8'``. *errors* may be given to set a different error handling scheme.
-   The default for *errors* is ``'strict'``, meaning that encoding errors raise
-   a :exc:`UnicodeError`. Other possible
-   values are ``'ignore'``, ``'replace'``, ``'xmlcharrefreplace'``,
-   ``'backslashreplace'`` and any other name registered via
-   :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
-   list of possible encodings, see section :ref:`standard-encodings`.
+   Return the string encoded to :class:`bytes`.
 
-   By default, the *errors* argument is not checked for best performances, but
-   only used at the first encoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check
-   *errors*.
+   *encoding* defaults to ``'utf-8'``;
+   see :ref:`standard-encodings` for possible values.
+
+   *errors* controls how encoding errors are handled.
+   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
+   Other possible values are ``'ignore'``,
+   ``'replace'``, ``'xmlcharrefreplace'``, ``'backslashreplace'`` and any
+   other name registered via :func:`codecs.register_error`.
+   See :ref:`error-handlers` for details.
+
+   For performance reasons, the value of *errors* is not checked for validity
+   unless an encoding error actually occurs,
+   :ref:`devmode` is enabled
+   or a :ref:`debug build <debug-build>` is used.
 
    .. versionchanged:: 3.1
-      Support for keyword arguments added.
+      Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and
+      The value of the *errors* argument is now checked in :ref:`devmode` and
       in :ref:`debug mode <debug-build>`.
 
 
@@ -2759,29 +2770,32 @@ arbitrary binary data.
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
 
-   Return a string decoded from the given bytes.  Default encoding is
-   ``'utf-8'``. *errors* may be given to set a different
-   error handling scheme.  The default for *errors* is ``'strict'``, meaning
-   that encoding errors raise a :exc:`UnicodeError`.  Other possible values are
-   ``'ignore'``, ``'replace'`` and any other name registered via
-   :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
-   list of possible encodings, see section :ref:`standard-encodings`.
+   Return the bytes decoded to a :class:`str`.
 
-   By default, the *errors* argument is not checked for best performances, but
-   only used at the first decoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check *errors*.
+   *encoding* defaults to ``'utf-8'``;
+   see :ref:`standard-encodings` for possible values.
+
+   *errors* controls how decoding errors are handled.
+   If ``'strict'`` (the default), a :exc:`UnicodeError` exception is raised.
+   Other possible values are ``'ignore'``, ``'replace'``,
+   and any other name registered via :func:`codecs.register_error`.
+   See :ref:`error-handlers` for details.
+
+   For performance reasons, the value of *errors* is not checked for validity
+   unless a decoding error actually occurs,
+   :ref:`devmode` is enabled or a :ref:`debug build <debug-build>` is used.
 
    .. note::
 
       Passing the *encoding* argument to :class:`str` allows decoding any
       :term:`bytes-like object` directly, without needing to make a temporary
-      bytes or bytearray object.
+      :class:`!bytes` or :class:`!bytearray` object.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and
+      The value of the *errors* argument is now checked in :ref:`devmode` and
       in :ref:`debug mode <debug-build>`.
 
 
@@ -3763,7 +3777,7 @@ copying.
       >>> data
       bytearray(b'z1spam')
 
-   One-dimensional memoryviews of hashable (read-only) types with formats
+   One-dimensional memoryviews of :term:`hashable` (read-only) types with formats
    'B', 'b' or 'c' are also hashable. The hash is defined as
    ``hash(m) == hash(m.tobytes())``::
 
@@ -3777,7 +3791,7 @@ copying.
 
    .. versionchanged:: 3.3
       One-dimensional memoryviews can now be sliced.
-      One-dimensional memoryviews with formats 'B', 'b' or 'c' are now hashable.
+      One-dimensional memoryviews with formats 'B', 'b' or 'c' are now :term:`hashable`.
 
    .. versionchanged:: 3.4
       memoryview is now registered automatically with
@@ -4698,7 +4712,7 @@ support membership tests:
 
    .. versionadded:: 3.10
 
-Keys views are set-like since their entries are unique and hashable.  If all
+Keys views are set-like since their entries are unique and :term:`hashable`.  If all
 values are hashable, so that ``(key, value)`` pairs are unique and hashable,
 then the items view is also set-like.  (Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the
@@ -5480,7 +5494,7 @@ to mitigate denial of service attacks. This limit *only* applies to decimal or
 other non-power-of-two number bases. Hexadecimal, octal, and binary conversions
 are unlimited. The limit can be configured.
 
-The :class:`int` type in CPython is an abitrary length number stored in binary
+The :class:`int` type in CPython is an arbitrary length number stored in binary
 form (commonly known as a "bignum"). There exists no algorithm that can convert
 a string to a binary integer or a binary integer to a string in linear time,
 *unless* the base is a power of 2. Even the best known algorithms for base 10
@@ -5544,7 +5558,7 @@ and :class:`str` or :class:`bytes`:
 * ``int(string)`` with default base 10.
 * ``int(string, base)`` for all bases that are not a power of 2.
 * ``str(integer)``.
-* ``repr(integer)``
+* ``repr(integer)``.
 * any other string conversion to base 10, for example ``f"{integer}"``,
   ``"{}".format(integer)``, or ``b"%d" % integer``.
 
@@ -5572,7 +5586,7 @@ command line flag to configure the limit:
   :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
   If both the env var and the ``-X`` option are set, the ``-X`` option takes
   precedence. A value of *-1* indicates that both were unset, thus a value of
-  :data:`sys.int_info.default_max_str_digits` was used during initilization.
+  :data:`sys.int_info.default_max_str_digits` was used during initialization.
 
 From code, you can inspect the current limit and set a new one using these
 :mod:`sys` APIs:

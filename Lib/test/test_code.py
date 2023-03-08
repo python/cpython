@@ -465,6 +465,32 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(code_b, code_d)
         self.assertNotEqual(code_c, code_d)
 
+    def test_code_hash_uses_firstlineno(self):
+        c1 = (lambda: 1).__code__
+        c2 = (lambda: 1).__code__
+        self.assertNotEqual(c1, c2)
+        self.assertNotEqual(hash(c1), hash(c2))
+        c3 = c1.replace(co_firstlineno=17)
+        self.assertNotEqual(c1, c3)
+        self.assertNotEqual(hash(c1), hash(c3))
+
+    def test_code_hash_uses_order(self):
+        # Swapping posonlyargcount and kwonlyargcount should change the hash.
+        c = (lambda x, y, *, z=1, w=1: 1).__code__
+        self.assertEqual(c.co_argcount, 2)
+        self.assertEqual(c.co_posonlyargcount, 0)
+        self.assertEqual(c.co_kwonlyargcount, 2)
+        swapped = c.replace(co_posonlyargcount=2, co_kwonlyargcount=0)
+        self.assertNotEqual(c, swapped)
+        self.assertNotEqual(hash(c), hash(swapped))
+
+    def test_code_hash_uses_bytecode(self):
+        c = (lambda x, y: x + y).__code__
+        d = (lambda x, y: x * y).__code__
+        c1 = c.replace(co_code=d.co_code)
+        self.assertNotEqual(c, c1)
+        self.assertNotEqual(hash(c), hash(c1))
+
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
@@ -676,7 +702,8 @@ class CodeLocationTest(unittest.TestCase):
 
     def check_lines(self, func):
         co = func.__code__
-        lines1 = list(dedup(l for (_, _, l) in co.co_lines()))
+        lines1 = [line for _, _, line in co.co_lines()]
+        self.assertEqual(lines1, list(dedup(lines1)))
         lines2 = list(lines_from_postions(positions_from_location_table(co)))
         for l1, l2 in zip(lines1, lines2):
             self.assertEqual(l1, l2)
@@ -696,6 +723,7 @@ class CodeLocationTest(unittest.TestCase):
             pass
         PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
         f.__code__ = f.__code__.replace(
+            co_stacksize=1,
             co_firstlineno=42,
             co_code=bytes(
                 [
@@ -724,15 +752,15 @@ if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi
     freefunc = ctypes.CFUNCTYPE(None,ctypes.c_voidp)
 
-    RequestCodeExtraIndex = py._PyEval_RequestCodeExtraIndex
+    RequestCodeExtraIndex = py.PyUnstable_Eval_RequestCodeExtraIndex
     RequestCodeExtraIndex.argtypes = (freefunc,)
     RequestCodeExtraIndex.restype = ctypes.c_ssize_t
 
-    SetExtra = py._PyCode_SetExtra
+    SetExtra = py.PyUnstable_Code_SetExtra
     SetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t, ctypes.c_voidp)
     SetExtra.restype = ctypes.c_int
 
-    GetExtra = py._PyCode_GetExtra
+    GetExtra = py.PyUnstable_Code_GetExtra
     GetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t,
                          ctypes.POINTER(ctypes.c_voidp))
     GetExtra.restype = ctypes.c_int

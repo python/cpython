@@ -54,6 +54,12 @@ class StructFieldsTestCase(unittest.TestCase):
         x.char = b'a\0b\0'
         self.assertEqual(bytes(x), b'a\x00###')
 
+    def test_6(self):
+        class X(Structure):
+            _fields_ = [("x", c_int)]
+        CField = type(X.x)
+        self.assertRaises(TypeError, CField)
+
     def test_gh99275(self):
         class BrokenStructure(Structure):
             def __init_subclass__(cls, **kwargs):
