@@ -195,6 +195,7 @@ msgstr ""
 
 ''')
 
+
 def usage(code, msg=''):
     print(__doc__ % globals(), file=sys.stderr)
     if msg:
@@ -303,6 +304,7 @@ def getFilesForName(name):
         return [name]
 
     return []
+
 
 class TokenEater:
     def __init__(self, options):
@@ -669,6 +671,7 @@ def main():
     finally:
         if closep:
             fp.close()
+
 
 if __name__ == '__main__':
     main()
