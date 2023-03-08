@@ -276,9 +276,9 @@ class Queue(mixins._LoopBoundMixin):
                 getter = self._getters.popleft()
                 if not getter.done():
                     getter.set_result(None)
-            # Release 'blocked' tasks/coros via `.join()`
+            # Release all 'blocked' tasks/coros in `join()`
             self._finished.set()
-        elif self._shutdown_state is _QueueState.ALIVE: # here
+        else:
             self._shutdown_state = _QueueState.SHUTDOWN
         while self._putters:
             putter = self._putters.popleft()

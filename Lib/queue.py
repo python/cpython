@@ -193,33 +193,27 @@ class Queue:
             # here `self.not_empty` uses `self.mutex`
             if self.shutdown_state == _queue_shutdown_immediate:
                 raise ShutDown
+            elif self.shutdown_state == _queue_shutdown and not self._qsize():
+                raise ShutDown
             if not block:
                 if not self._qsize():
-                    if self.shutdown_state != _queue_alive:
-                        raise ShutDown
                     raise Empty
             elif timeout is None:
                 while not self._qsize():
-                    if self.shutdown_state != _queue_alive:
-                        raise ShutDown
                     self.not_empty.wait()
-                    if self.shutdown_state != _queue_alive:
+                    if self.shutdown_state == _queue_shutdown_immediate:
                         raise ShutDown
             elif timeout < 0:
                 raise ValueError("'timeout' must be a non-negative number")
             else:
                 endtime = time() + timeout
                 while not self._qsize():
-                    if self.shutdown_state != _queue_alive:
-                        raise ShutDown
                     remaining = endtime - time()
                     if remaining <= 0.0:
                         raise Empty
                     self.not_empty.wait(remaining)
-                    if self.shutdown_state != _queue_alive:
+                    if self.shutdown_state == _queue_shutdown_immediate:
                         raise ShutDown
-            if self.shutdown_state == _queue_shutdown_immediate:
-                raise ShutDown
             item = self._get()
             self.not_full.notify()
             return item
@@ -252,14 +246,10 @@ class Queue:
         with self.mutex:
             if self.shutdown_state is _queue_shutdown_immediate:
                 return
-
             if immediate:
                 self.shutdown_state = _queue_shutdown_immediate
                 self.not_empty.notify_all()
-                # set self.unfinished_tasks to 0
-                # to break the loop in 'self.join()'
-                # when quits from `wait()`
-                self.unfinished_tasks = 0
+                # release all blocked threads in `join()`
                 self.all_tasks_done.notify_all()
             else:
                 self.shutdown_state = _queue_shutdown

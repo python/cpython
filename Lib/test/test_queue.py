@@ -277,17 +277,12 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
         q.shutdown(immediate=False)
         self.assertNotEqual("shutdown", q.shutdown_state)
-    @staticmethod
-    def _wait():
-        time.sleep(0.01)
 
     def _shutdown_all_methods(self, immediate):
         q = self.type2test(2)
         q.put("L")
-        self._wait()
         q.put_nowait("O")
         q.shutdown(immediate)
-        self._wait()
 
         with self.assertRaises(self.queue.ShutDown):
             q.put("E")
@@ -305,10 +300,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
         else:
             self.assertIn(q.get(), "LO")
             q.task_done()
-            self._wait()
             self.assertIn(q.get(), "LO")
             q.task_done()
-            self._wait()
             q.join()
             # on shutdown(immediate=False)
             # when queue is empty, should raise ShutDown Exception
@@ -399,7 +392,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for func, params in thrds:
             threads.append(threading.Thread(target=func, args=params))
             threads[-1].start()
-        self._wait()
         q.shutdown(immediate)
         go.set()
         for t in threads:
@@ -431,7 +423,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for func, params in thrds:
             threads.append(threading.Thread(target=func, args=params))
             threads[-1].start()
-        self._wait()
         q.shutdown()
         go.set()
         for t in threads:
@@ -466,13 +457,11 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for func, params in thrds:
             threads.append(threading.Thread(target=func, args=params))
             threads[-1].start()
-        self._wait()
         if not immediate:
             res = []
             for i in range(nb):
                 threads.append(threading.Thread(target=self._get_task_done, args=(q, go, res)))
                 threads[-1].start()
-        self._wait()
         q.shutdown(immediate)
         go.set()
         for t in threads:
@@ -492,7 +481,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         go = threading.Event()
         q.put("Y")
         nb = q.qsize()
-        # queue fulled
+        # queue not fulled
 
         if immediate:
             thrds = (
@@ -508,21 +497,18 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for func, params in thrds:
             threads.append(threading.Thread(target=func, args=params))
             threads[-1].start()
-        self._wait()
         if not immediate:
             self.assertEqual(q.unfinished_tasks, nb)
             for i in range(nb):
                 t = threading.Thread(target=q.task_done)
                 t.start()
                 threads.append(t)
-        self._wait()
         go.set()
         q.shutdown(immediate)
         for t in threads:
             t.join()
 
         self.assertEqual(results, [True]*len(thrds))
-        self.assertEqual(q.unfinished_tasks, 0)
 
     def test_shutdown_immediate_put_join(self):
         return self._shutdown_put_join(True)
@@ -548,7 +534,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for func, params in thrds:
             threads.append(threading.Thread(target=func, args=params))
             threads[-1].start()
-        self._wait()
         go.set()
         q.shutdown(False)
         for t in threads:
