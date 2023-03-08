@@ -1549,7 +1549,7 @@ ag_getframe(PyAsyncGenObject *ag, void *Py_UNUSED(ignored))
 static PyObject *
 ag_getcode(PyGenObject *gen, void *Py_UNUSED(ignored))
 {
-    return _gen_getcode(gen, "ag__code");
+    return _gen_getcode(gen, "ag_code");
 }
 
 static PyGetSetDef async_gen_getsetlist[] = {

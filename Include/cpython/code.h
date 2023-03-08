@@ -224,9 +224,14 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, int *);
 
-typedef enum PyCodeEvent {
-  PY_CODE_EVENT_CREATE,
-  PY_CODE_EVENT_DESTROY
+#define PY_FOREACH_CODE_EVENT(V) \
+    V(CREATE)                 \
+    V(DESTROY)
+
+typedef enum {
+    #define PY_DEF_EVENT(op) PY_CODE_EVENT_##op,
+    PY_FOREACH_CODE_EVENT(PY_DEF_EVENT)
+    #undef PY_DEF_EVENT
 } PyCodeEvent;
 
 
@@ -236,7 +241,7 @@ typedef enum PyCodeEvent {
  * The callback is invoked with a borrowed reference to co, after it is
  * created and before it is destroyed.
  *
- * If the callback returns with an exception set, it must return -1. Otherwise
+ * If the callback sets an exception, it must return -1. Otherwise
  * it should return 0.
  */
 typedef int (*PyCode_WatchCallback)(
