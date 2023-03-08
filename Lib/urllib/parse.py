@@ -80,7 +80,7 @@ scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
                 '+-.')
 
 # Leading and trailing C0 control and space to be stripped per WHATWG spec
-_URL_CHARS_TO_STRIP = "".join([*(chr(i) for i in range(0, 0x1f + 1)), " "])
+_URL_CHARS_TO_STRIP = "".join([chr(i) for i in range(0, 0x20 + 1)])
 
 # Unsafe bytes to be removed per WHATWG spec
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']

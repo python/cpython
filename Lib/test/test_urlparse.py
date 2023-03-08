@@ -650,7 +650,7 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
     def test_urlsplit_strip_url(self):
-        noise = bytes([*range(0, 0x1f), 0x20])
+        noise = bytes(range(0, 0x20 + 1))
         base_url = "http://User:Pass@www.python.org:080/doc/?query=yes#frag"
 
         url = noise.decode() + base_url + noise.decode()
