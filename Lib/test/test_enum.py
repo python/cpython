@@ -4580,22 +4580,6 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual(Double.__doc__, None)
 
 
-    def test_doc_1(self):
-        class Triple(Enum):
-            ONE = 1
-            TWO = 2
-            THREE = 3
-        self.assertEqual(Triple.__doc__, None)
-
-    def test_doc_1(self):
-        class Quadruple(Enum):
-            ONE = 1
-            TWO = 2
-            THREE = 3
-            FOUR = 4
-        self.assertEqual(Quadruple.__doc__, None)
-
-
 # These are unordered here on purpose to ensure that declaration order
 # makes no difference.
 CONVERT_TEST_NAME_D = 5
