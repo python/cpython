@@ -578,6 +578,9 @@ static inline void Py_DECREF(PyObject *op)
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 #endif
 
+#undef _Py_INC_REFTOTAL
+#undef _Py_DEC_REFTOTAL
+
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
  * and tp_dealloc implementations.
