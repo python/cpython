@@ -227,10 +227,11 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
     if (func->vectorcall != _PyFunction_Vectorcall) {
         return 0;
     }
-    if (_PyRuntime.func_state.next_version == 0) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->func_state.next_version == 0) {
         return 0;
     }
-    uint32_t v = _PyRuntime.func_state.next_version++;
+    uint32_t v = interp->func_state.next_version++;
     func->func_version = v;
     return v;
 }
