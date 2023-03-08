@@ -56,6 +56,24 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
 
+static inline void
+reftotal_increment(void)
+{
+    _Py_RefTotal++;
+}
+
+static inline void
+reftotal_decrement(void)
+{
+    _Py_RefTotal--;
+}
+
+void
+_Py_AddRefTotal(Py_ssize_t n)
+{
+    _Py_RefTotal += n;
+}
+
 Py_ssize_t
 _Py_GetRefTotal(void)
 {
@@ -121,6 +139,32 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
                            filename, lineno, __func__);
 }
 
+/* This is exposed strictly for use in Py_INCREF(). */
+PyAPI_FUNC(void)
+_Py_IncRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_increment();
+}
+
+/* This is exposed strictly for use in Py_DECREF(). */
+PyAPI_FUNC(void)
+_Py_DecRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_decrement();
+}
+
+void
+_Py_IncRefTotal(void)
+{
+    reftotal_increment();
+}
+
+void
+_Py_DecRefTotal(void)
+{
+    reftotal_decrement();
+}
+
 #endif /* Py_REF_DEBUG */
 
 void
@@ -138,12 +182,18 @@ Py_DecRef(PyObject *o)
 void
 _Py_IncRef(PyObject *o)
 {
+#ifdef Py_REF_DEBUG
+    reftotal_increment();
+#endif
     Py_INCREF(o);
 }
 
 void
 _Py_DecRef(PyObject *o)
 {
+#ifdef Py_REF_DEBUG
+    reftotal_decrement();
+#endif
     Py_DECREF(o);
 }
 
@@ -238,17 +288,12 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
     Py_ssize_t refcnt = Py_REFCNT(self);
-    _Py_NewReference(self);
+    _Py_NewReferenceNoTotal(self);
     Py_SET_REFCNT(self, refcnt);
 
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
-    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
-       _Py_RefTotal, so we need to undo that. */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
     return -1;
 }
 
@@ -2010,19 +2055,31 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
 }
 
 
-void
-_Py_NewReference(PyObject *op)
+static inline void
+new_reference(PyObject *op)
 {
     if (_PyRuntime.tracemalloc.config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
     Py_SET_REFCNT(op, 1);
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif
+}
+
+void
+_Py_NewReference(PyObject *op)
+{
+#ifdef Py_REF_DEBUG
+    reftotal_increment();
+#endif
+    new_reference(op);
+}
+
+void
+_Py_NewReferenceNoTotal(PyObject *op)
+{
+    new_reference(op);
 }
 
 

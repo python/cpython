@@ -947,21 +947,18 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(unicode);
 #endif
 
     new_unicode = (PyObject *)PyObject_Realloc(unicode, new_size);
     if (new_unicode == NULL) {
-        _Py_NewReference(unicode);
+        _Py_NewReferenceNoTotal(unicode);
         PyErr_NoMemory();
         return NULL;
     }
     unicode = new_unicode;
-    _Py_NewReference(unicode);
+    _Py_NewReferenceNoTotal(unicode);
 
     _PyUnicode_LENGTH(unicode) = length;
 #ifdef Py_DEBUG
