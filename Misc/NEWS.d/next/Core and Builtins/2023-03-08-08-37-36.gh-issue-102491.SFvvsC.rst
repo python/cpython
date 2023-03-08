@@ -1,0 +1,1 @@
+Improve import time of ``platform`` be removing a legacy ironpython 2.x version check.
