@@ -184,8 +184,7 @@ def _parse_marker_line(line, reqfile=None):
     lno, origfile, flags = m.groups()
     lno = int(lno)
     assert (lno in (0, 1) if origfile in META_FILES else lno > 0), (line, lno)
-    assert lno > 0 or (lno == 0 and origfile in META_FILES), (line, lno)
-    assert origfile not in ('<built-in>', '<command-line>'), (line,)
+    assert flags or origfile not in META_FILES, (line,)
     flags = set(int(f) for f in flags.split()) if flags else ()
 
     if 1 in flags:
