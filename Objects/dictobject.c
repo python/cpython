@@ -2308,7 +2308,14 @@ Fail:
 static void
 dict_dealloc(PyDictObject *mp)
 {
+    assert(Py_REFCNT(mp) == 0);
+    Py_SET_REFCNT(mp, 1);
     _PyDict_NotifyEvent(PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
+    if (Py_REFCNT(mp) > 1) {
+        Py_SET_REFCNT(mp, Py_REFCNT(mp) - 1);
+        return;
+    }
+    Py_SET_REFCNT(mp, 0);
     PyDictValues *values = mp->ma_values;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
@@ -5732,6 +5739,18 @@ PyDict_ClearWatcher(int watcher_id)
     return 0;
 }
 
+static const char *
+dict_event_name(PyDict_WatchEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PyDict_EVENT_##op:         \
+            return "PyDict_EVENT_" #op;
+        PY_FOREACH_DICT_EVENT(CASE)
+        #undef CASE
+    }
+    Py_UNREACHABLE();
+}
+
 void
 _PyDict_SendEvent(int watcher_bits,
                   PyDict_WatchEvent event,
@@ -5744,9 +5763,18 @@ _PyDict_SendEvent(int watcher_bits,
         if (watcher_bits & 1) {
             PyDict_WatchCallback cb = interp->dict_state.watchers[i];
             if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
-                // some dict modification paths (e.g. PyDict_Clear) can't raise, so we
-                // can't propagate exceptions from dict watchers.
-                PyErr_WriteUnraisable((PyObject *)mp);
+                // We don't want to resurrect the dict by potentially having an
+                // unraisablehook keep a reference to it, so we don't pass the
+                // dict as context, just an informative string message.  Dict
+                // repr can call arbitrary code, so we invent a simpler version.
+                PyObject *context = PyUnicode_FromFormat(
+                    "%s watcher callback for <dict at %p>",
+                    dict_event_name(event), mp);
+                if (context == NULL) {
+                    context = Py_NewRef(Py_None);
+                }
+                PyErr_WriteUnraisable(context);
+                Py_DECREF(context);
             }
         }
         watcher_bits >>= 1;
