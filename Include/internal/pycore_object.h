@@ -46,6 +46,7 @@ PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 extern void _Py_AddRefTotal(Py_ssize_t);
 extern void _Py_IncRefTotal(void);
 extern void _Py_DecRefTotal(void);
+#  define _Py_DEC_REFTOTAL() _Py_RefTotal--
 #endif
 
 // Increment reference count by n
@@ -63,7 +64,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
+    _Py_DEC_REFTOTAL();
 #endif
     if (--op->ob_refcnt != 0) {
         assert(op->ob_refcnt > 0);
@@ -81,7 +82,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
 {
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
+    _Py_DEC_REFTOTAL();
 #endif
     op->ob_refcnt--;
 #ifdef Py_DEBUG
@@ -90,6 +91,10 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     }
 #endif
 }
+
+#ifdef Py_REF_DEBUG
+#  undef _Py_DEC_REFTOTAL
+#endif
 
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
