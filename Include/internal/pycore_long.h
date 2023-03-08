@@ -132,7 +132,7 @@ _PyLong_IsSingleDigit(const PyLongObject* op) {
 }
 
 static inline int
-_PyLong_BothAreSingleDigit(const PyLongObject* a, PyLongObject* b) {
+_PyLong_BothAreSingleDigit(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(a));
     assert(PyLong_Check(b));
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
@@ -212,19 +212,19 @@ _PyLong_SetSignAndSize(PyLongObject *op, int sign, Py_ssize_t size)
     assert(size >= 0);
     assert(-1 <= sign && sign <= 1);
     assert(sign != 0 || size == 0);
-    op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, size);
+    op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, (size_t)size);
 }
 
 static inline void
 _PyLong_SetSize(PyLongObject *op, Py_ssize_t size)
 {
     assert(size >= 0);
-    op->long_value.lv_tag = (size << NON_SIZE_BITS) | (op->long_value.lv_tag & SIGN_MASK);
+    op->long_value.lv_tag = (((size_t)size) << NON_SIZE_BITS) | (op->long_value.lv_tag & SIGN_MASK);
 }
 
 static inline void
 _PyLong_FlipSign(PyLongObject *op) {
-    int flipped_sign = 2 - (op->long_value.lv_tag & SIGN_MASK);
+    unsigned int flipped_sign = 2 - (op->long_value.lv_tag & SIGN_MASK);
     op->long_value.lv_tag &= ~7;
     op->long_value.lv_tag |= flipped_sign;
 }
