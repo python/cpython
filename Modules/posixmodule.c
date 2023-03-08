@@ -4214,7 +4214,204 @@ os_listdir_impl(PyObject *module, path_t *path)
 #endif
 }
 
+
 #ifdef MS_WINDOWS
+
+/*[clinic input]
+os.listdrives
+
+Return a list containing the names of drives in the system.
+
+A drive name typically looks like 'C:\\'.
+
+[clinic start generated code]*/
+
+static PyObject *
+os_listdrives_impl(PyObject *module)
+/*[clinic end generated code: output=aaece9dacdf682b5 input=1af9ccc9e583798e]*/
+{
+    DWORD buflen = 64;
+    wchar_t defaultBuffer[64];
+    LPWSTR buffer = defaultBuffer;
+    if (PySys_Audit("os.listdrives", NULL) < 0) {
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS;
+    buflen = GetLogicalDriveStringsW(buflen, buffer);
+    if (buflen >= Py_ARRAY_LENGTH(defaultBuffer)) {
+        Py_BLOCK_THREADS;
+        buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (buflen + 1));
+        Py_UNBLOCK_THREADS;
+        if (buffer) {
+            buflen = GetLogicalDriveStringsW(buflen, buffer);
+        }
+    }
+    Py_END_ALLOW_THREADS;
+
+
+    PyObject *str = NULL;
+    PyObject *nullchar = NULL;
+    PyObject *r = NULL;
+
+    if (!buffer) {
+        goto exit;
+    }
+
+    if (buflen == 0) {
+        r = PyList_New(0);
+        goto exit;
+    }
+
+    /* buflen includes a null terminator, so remove it */
+    str = PyUnicode_FromWideChar(buffer, buflen - 1);
+    nullchar = PyUnicode_FromStringAndSize("\0", 1);
+    if (str && nullchar) {
+        r = PyUnicode_Split(str, nullchar, buflen);
+    }
+exit:
+    if (buffer && buffer != defaultBuffer) {
+        PyMem_Free((void *)buffer);
+    }
+    Py_XDECREF(nullchar);
+    Py_XDECREF(str);
+    return r;
+}
+
+/*[clinic input]
+os.listvolumes
+
+Return a list containing the volumes in the system.
+
+Volumes are typically represented as a GUID path.
+
+[clinic start generated code]*/
+
+static PyObject *
+os_listvolumes_impl(PyObject *module)
+/*[clinic end generated code: output=534e10ea2bf9d386 input=f6e4e70371f11e99]*/
+{
+    PyObject *result = PyList_New(0);
+    HANDLE find = INVALID_HANDLE_VALUE;
+    wchar_t buffer[256];
+    if (!result) {
+        return NULL;
+    }
+    if (PySys_Audit("os.listvolumes", NULL) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    int err = 0;
+    Py_BEGIN_ALLOW_THREADS;
+    find = FindFirstVolumeW(buffer, 256);
+    if (find == INVALID_HANDLE_VALUE) {
+        err = GetLastError();
+    }
+    Py_END_ALLOW_THREADS;
+
+    while (!err) {
+        PyObject *s = PyUnicode_FromWideChar(buffer, -1);
+        if (!s || PyList_Append(result, s) < 0) {
+            Py_XDECREF(s);
+            Py_CLEAR(result);
+            break;
+        }
+        Py_DECREF(s);
+
+        Py_BEGIN_ALLOW_THREADS;
+        if (!FindNextVolumeW(find, buffer, 256)) {
+            err = GetLastError();
+        }
+        Py_END_ALLOW_THREADS;
+    }
+
+    if (find != INVALID_HANDLE_VALUE) {
+        Py_BEGIN_ALLOW_THREADS;
+        FindVolumeClose(find);
+        Py_END_ALLOW_THREADS;
+    }
+    if (err && err != ERROR_NO_MORE_FILES) {
+        PyErr_SetFromWindowsErr(err);
+        if (result) {
+            Py_CLEAR(result);
+        }
+    }
+    return result;
+}
+
+
+/*[clinic input]
+os.listmounts
+
+    volume: path_t
+
+Return a list containing mount points for a particular volume.
+
+'volume' should be a GUID path as returned from os.listvolumes.
+
+[clinic start generated code]*/
+
+static PyObject *
+os_listmounts_impl(PyObject *module, path_t *volume)
+/*[clinic end generated code: output=06da49679de4512e input=a8a27178e3f67845]*/
+{
+    DWORD buflen = 64;
+    wchar_t defaultBuffer[64];
+    LPWSTR buffer = defaultBuffer;
+    int err = 0;
+    if (PySys_Audit("os.listmounts", "O", volume->object) < 0) {
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS;
+    if (!GetVolumePathNamesForVolumeNameW(volume->wide, buffer, buflen, &buflen)) {
+        err = GetLastError();
+        if (err == ERROR_MORE_DATA) {
+            Py_BLOCK_THREADS;
+            buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * buflen);
+            Py_UNBLOCK_THREADS;
+            if (buffer) {
+                if (!GetVolumePathNamesForVolumeNameW(volume->wide, buffer,
+                                                      buflen, &buflen)) {
+                    err = GetLastError();
+                }
+            }
+        }
+    }
+    Py_END_ALLOW_THREADS;
+
+    PyObject *str = NULL;
+    PyObject *nullchar = NULL;
+    PyObject *r = NULL;
+
+    if (err) {
+        PyErr_SetFromWindowsErr(err);
+        goto exit;
+    }
+    if (!buffer) {
+        goto exit;
+    }
+    if (buflen < 2) {
+        r = PyList_New(0);
+        goto exit;
+    }
+
+    /* buflen includes two null terminators (one for the last string
+       and one for the array of strings */
+    str = PyUnicode_FromWideChar(buffer, buflen - 2);
+    nullchar = PyUnicode_FromStringAndSize("\0", 1);
+    if (str && nullchar) {
+        r = PyUnicode_Split(str, nullchar, buflen);
+    }
+exit:
+    if (buffer && buffer != defaultBuffer) {
+        PyMem_Free((void *)buffer);
+    }
+    Py_XDECREF(nullchar);
+    Py_XDECREF(str);
+    return r;
+}
+
+
 int
 _PyOS_getfullpathname(const wchar_t *path, wchar_t **abspath_p)
 {
@@ -15227,6 +15424,9 @@ static PyMethodDef posix_methods[] = {
     OS_GETCWDB_METHODDEF
     OS_LINK_METHODDEF
     OS_LISTDIR_METHODDEF
+    OS_LISTDRIVES_METHODDEF
+    OS_LISTMOUNTS_METHODDEF
+    OS_LISTVOLUMES_METHODDEF
     OS_LSTAT_METHODDEF
     OS_MKDIR_METHODDEF
     OS_NICE_METHODDEF
