@@ -345,7 +345,7 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.6
       The *name* parameter accepts a :term:`path-like object`.
 
-   .. versionchange:: 3.12
+   .. versionchanged:: 3.12
       The *stream* parameter has been added.
 
 .. classmethod:: TarFile.open(...)
