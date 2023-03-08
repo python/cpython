@@ -43,12 +43,12 @@ class MIMEAudio(MIMENonMultipart):
 
 
 def _infer_subtype(h: bytes) -> str:
+    """Infer the audio format based on the data's header"""
     if   h.startswith(b'FORM') and h[8:12] in (b'AIFC', b'AIFF'):
         return 'x-aiff'
     elif h.startswith(b'.snd'):
         return 'basic'
-    elif h.startswith(b'RIFF') and h[8:12] == b'WAVE' and h[12:16] == b'fmt ':
-        # 'RIFF' <len> 'WAVE' 'fmt ' <len>
+    elif h.startswith(b'RIFF') and h[8:16] == b'WAVEfmt ':
         return 'x-wav'
 
     raise TypeError('Could not find audio MIME subtype')
