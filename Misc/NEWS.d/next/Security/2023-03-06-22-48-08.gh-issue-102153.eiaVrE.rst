@@ -1,1 +1,3 @@
-fix CVE-2023-24329
+Fix the parsing problem(CVE-2023-24329) in urlparse when the entire URL
+starts with blank characters. This vulnerability would help an attacker to bypass
+the protections set by the developer for scheme and host.
