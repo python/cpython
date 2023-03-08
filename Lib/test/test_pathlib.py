@@ -1938,7 +1938,7 @@ class _BasePathTest(object):
 
     @os_helper.skip_unless_symlink
     def test_resolve_dot(self):
-        # See https://bitbucket.org/pitrou/pathlib/issue/9/pathresolve-fails-on-complex-symlinks
+        # See http://web.archive.org/web/20200623062557/https://bitbucket.org/pitrou/pathlib/issues/9/
         p = self.cls(BASE)
         self.dirlink('.', join('0'))
         self.dirlink(os.path.join('0', '0'), join('1'))
