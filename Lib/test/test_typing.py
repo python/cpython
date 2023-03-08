@@ -23,6 +23,7 @@ from typing import Generic, ClassVar, Final, final, Protocol
 from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
+from typing import override
 from typing import is_typeddict
 from typing import reveal_type
 from typing import dataclass_transform
@@ -472,7 +473,6 @@ class TypeVarTests(BaseTestCase):
 
     def test_bad_var_substitution(self):
         T = TypeVar('T')
-        P = ParamSpec("P")
         bad_args = (
             (), (int, str), Union,
             Generic, Generic[T], Protocol, Protocol[T],
@@ -1036,8 +1036,6 @@ class TypeVarTupleTests(BaseTestCase):
 
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
-        T = TypeVar('T')
-        T2 = TypeVar('T2')
 
         class G1(Generic[*Ts]): pass
         class G2(Generic[Unpack[Ts]]): pass
@@ -1306,7 +1304,7 @@ class TypeVarTupleTests(BaseTestCase):
         i = Callable[[None], *Ts]
         j = Callable[[None], Unpack[Ts]]
         self.assertEqual(i.__args__, (type(None), *Ts))
-        self.assertEqual(i.__args__, (type(None), Unpack[Ts]))
+        self.assertEqual(j.__args__, (type(None), Unpack[Ts]))
 
         k = Callable[[None], tuple[int, *Ts]]
         l = Callable[[None], Tuple[int, Unpack[Ts]]]
@@ -1434,8 +1432,6 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(g.__annotations__, {'args': (*Ts,)[0]})
 
     def test_variadic_args_with_ellipsis_annotations_are_correct(self):
-        Ts = TypeVarTuple('Ts')
-
         def a(*args: *tuple[int, ...]): pass
         self.assertEqual(a.__annotations__,
                          {'args': (*tuple[int, ...],)[0]})
@@ -2920,8 +2916,8 @@ class ProtocolTests(BaseTestCase):
             def __init__(self):
                 self.x = None
 
-        self.assertIsInstance(C(), P)
-        self.assertIsInstance(D(), P)
+        self.assertIsInstance(CI(), P)
+        self.assertIsInstance(DI(), P)
 
     def test_protocols_in_unions(self):
         class P(Protocol):
@@ -4166,6 +4162,134 @@ class FinalDecoratorTests(BaseTestCase):
         self.assertIs(True, Methods.cached.__final__)
 
 
+class OverrideDecoratorTests(BaseTestCase):
+    def test_override(self):
+        class Base:
+            def normal_method(self): ...
+            @classmethod
+            def class_method_good_order(cls): ...
+            @classmethod
+            def class_method_bad_order(cls): ...
+            @staticmethod
+            def static_method_good_order(): ...
+            @staticmethod
+            def static_method_bad_order(): ...
+
+        class Derived(Base):
+            @override
+            def normal_method(self):
+                return 42
+
+            @classmethod
+            @override
+            def class_method_good_order(cls):
+                return 42
+            @override
+            @classmethod
+            def class_method_bad_order(cls):
+                return 42
+
+            @staticmethod
+            @override
+            def static_method_good_order():
+                return 42
+            @override
+            @staticmethod
+            def static_method_bad_order():
+                return 42
+
+        self.assertIsSubclass(Derived, Base)
+        instance = Derived()
+        self.assertEqual(instance.normal_method(), 42)
+        self.assertIs(True, Derived.normal_method.__override__)
+        self.assertIs(True, instance.normal_method.__override__)
+
+        self.assertEqual(Derived.class_method_good_order(), 42)
+        self.assertIs(True, Derived.class_method_good_order.__override__)
+        self.assertEqual(Derived.class_method_bad_order(), 42)
+        self.assertIs(False, hasattr(Derived.class_method_bad_order, "__override__"))
+
+        self.assertEqual(Derived.static_method_good_order(), 42)
+        self.assertIs(True, Derived.static_method_good_order.__override__)
+        self.assertEqual(Derived.static_method_bad_order(), 42)
+        self.assertIs(False, hasattr(Derived.static_method_bad_order, "__override__"))
+
+        # Base object is not changed:
+        self.assertIs(False, hasattr(Base.normal_method, "__override__"))
+        self.assertIs(False, hasattr(Base.class_method_good_order, "__override__"))
+        self.assertIs(False, hasattr(Base.class_method_bad_order, "__override__"))
+        self.assertIs(False, hasattr(Base.static_method_good_order, "__override__"))
+        self.assertIs(False, hasattr(Base.static_method_bad_order, "__override__"))
+
+    def test_property(self):
+        class Base:
+            @property
+            def correct(self) -> int:
+                return 1
+            @property
+            def wrong(self) -> int:
+                return 1
+
+        class Child(Base):
+            @property
+            @override
+            def correct(self) -> int:
+                return 2
+            @override
+            @property
+            def wrong(self) -> int:
+                return 2
+
+        instance = Child()
+        self.assertEqual(instance.correct, 2)
+        self.assertTrue(Child.correct.fget.__override__)
+        self.assertEqual(instance.wrong, 2)
+        self.assertFalse(hasattr(Child.wrong, "__override__"))
+        self.assertFalse(hasattr(Child.wrong.fset, "__override__"))
+
+    def test_silent_failure(self):
+        class CustomProp:
+            __slots__ = ('fget',)
+            def __init__(self, fget):
+                self.fget = fget
+            def __get__(self, obj, objtype=None):
+                return self.fget(obj)
+
+        class WithOverride:
+            @override  # must not fail on object with `__slots__`
+            @CustomProp
+            def some(self):
+                return 1
+
+        self.assertEqual(WithOverride.some, 1)
+        self.assertFalse(hasattr(WithOverride.some, "__override__"))
+
+    def test_multiple_decorators(self):
+        import functools
+
+        def with_wraps(f):  # similar to `lru_cache` definition
+            @functools.wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapper
+
+        class WithOverride:
+            @override
+            @with_wraps
+            def on_top(self, a: int) -> int:
+                return a + 1
+            @with_wraps
+            @override
+            def on_bottom(self, a: int) -> int:
+                return a + 2
+
+        instance = WithOverride()
+        self.assertEqual(instance.on_top(1), 2)
+        self.assertTrue(instance.on_top.__override__)
+        self.assertEqual(instance.on_bottom(1), 3)
+        self.assertTrue(instance.on_bottom.__override__)
+
+
 class CastTests(BaseTestCase):
 
     def test_basics(self):
@@ -4789,7 +4913,6 @@ class OverloadTests(BaseTestCase):
 # Definitions needed for features introduced in Python 3.6
 
 from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
-import asyncio
 
 T_a = TypeVar('T_a')
 
@@ -6948,16 +7071,6 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(get_type_hints(C, globals())['classvar'], ClassVar[int])
         self.assertEqual(get_type_hints(C, globals())['const'], Final[int])
 
-    def test_hash_eq(self):
-        self.assertEqual(len({Annotated[int, 4, 5], Annotated[int, 4, 5]}), 1)
-        self.assertNotEqual(Annotated[int, 4, 5], Annotated[int, 5, 4])
-        self.assertNotEqual(Annotated[int, 4, 5], Annotated[str, 4, 5])
-        self.assertNotEqual(Annotated[int, 4], Annotated[int, 4, 4])
-        self.assertEqual(
-            {Annotated[int, 4, 5], Annotated[int, 4, 5], Annotated[T, 4, 5]},
-            {Annotated[int, 4, 5], Annotated[T, 4, 5]}
-        )
-
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError, "Cannot subclass .*Annotated"):
             class C(Annotated):
@@ -7386,7 +7499,6 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(B.__args__, ((int, str,), Tuple[bytes, float]))
 
     def test_var_substitution(self):
-        T = TypeVar("T")
         P = ParamSpec("P")
         subst = P.__typing_subst__
         self.assertEqual(subst((int, str)), (int, str))
@@ -7706,7 +7818,7 @@ class SpecialAttrsTests(BaseTestCase):
         self.assertEqual(fr.__module__, 'typing')
         # Forward refs are currently unpicklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.assertRaises(TypeError) as exc:
+            with self.assertRaises(TypeError):
                 pickle.dumps(fr, proto)
 
         self.assertEqual(SpecialAttrsTests.TypeName.__name__, 'TypeName')

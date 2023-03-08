@@ -149,9 +149,16 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
                       exception);
         return;
     }
-    Py_XINCREF(value);
     /* Normalize the exception */
-    if (value == NULL || (PyObject *)Py_TYPE(value) != exception) {
+    int is_subclass = 0;
+    if (value != NULL && PyExceptionInstance_Check(value)) {
+        is_subclass = PyObject_IsSubclass((PyObject *)Py_TYPE(value), exception);
+        if (is_subclass < 0) {
+            return;
+        }
+    }
+    Py_XINCREF(value);
+    if (!is_subclass) {
         /* We must normalize the value right now */
         PyObject *fixed_value;
 
@@ -206,9 +213,10 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
             Py_DECREF(exc_value);
         }
     }
-    if (value != NULL && PyExceptionInstance_Check(value))
+    assert(value != NULL);
+    if (PyExceptionInstance_Check(value))
         tb = PyException_GetTraceback(value);
-    _PyErr_Restore(tstate, Py_XNewRef(exception), value, tb);
+    _PyErr_Restore(tstate, Py_NewRef(Py_TYPE(value)), value, tb);
 }
 
 void

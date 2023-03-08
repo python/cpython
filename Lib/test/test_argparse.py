@@ -3764,6 +3764,28 @@ class TestHelpUsage(HelpTestCase):
     version = ''
 
 
+class TestHelpUsageWithParentheses(HelpTestCase):
+    parser_signature = Sig(prog='PROG')
+    argument_signatures = [
+        Sig('positional', metavar='(example) positional'),
+        Sig('-p', '--optional', metavar='{1 (option A), 2 (option B)}'),
+    ]
+
+    usage = '''\
+        usage: PROG [-h] [-p {1 (option A), 2 (option B)}] (example) positional
+        '''
+    help = usage + '''\
+
+        positional arguments:
+          (example) positional
+
+        options:
+          -h, --help            show this help message and exit
+          -p {1 (option A), 2 (option B)}, --optional {1 (option A), 2 (option B)}
+        '''
+    version = ''
+
+
 class TestHelpOnlyUserGroups(HelpTestCase):
     """Test basic usage messages"""
 
