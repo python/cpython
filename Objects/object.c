@@ -74,14 +74,14 @@ reftotal_decrement(void)
     REFTOTAL--;
 }
 
-void
-_Py_AddRefTotal(Py_ssize_t n)
+static inline void
+reftotal_add(Py_ssize_t n)
 {
     REFTOTAL += n;
 }
 
-Py_ssize_t
-_Py_GetRefTotal(void)
+static inline Py_ssize_t
+get_global_reftotal(void)
 {
     return REFTOTAL;
 }
@@ -92,7 +92,7 @@ void
 _PyDebug_PrintTotalRefs(void) {
     fprintf(stderr,
             "[%zd refs, %zd blocks]\n",
-            _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+            get_global_reftotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
 
@@ -171,6 +171,18 @@ void
 _Py_DecRefTotal(void)
 {
     reftotal_decrement();
+}
+
+void
+_Py_AddRefTotal(Py_ssize_t n)
+{
+    reftotal_add(n);
+}
+
+Py_ssize_t
+_Py_GetRefTotal(void)
+{
+    return get_global_reftotal();
 }
 
 #endif /* Py_REF_DEBUG */
