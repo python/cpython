@@ -2490,7 +2490,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
     */
     if (PyLong_CheckExact(result)) {
         int overflow;
-        long i_result = PyLong_AsLongAndOverflow(result, &overflow);
+        Py_ssize_t i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
         if (overflow == 0) {
             Py_SETREF(result, NULL);
@@ -2504,7 +2504,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 return PyLong_FromLong(i_result);
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
-                long b;
+                Py_ssize_t b;
                 overflow = 0;
                 /* Single digits are common, fast, and cannot overflow on unpacking. */
                 if (_PyLong_IsSingleDigit((PyLongObject *)item)) {
